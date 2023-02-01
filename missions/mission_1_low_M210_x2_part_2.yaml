@@ -1,0 +1,14 @@
+frame_id: /gps
+
+uav_n: 2
+
+uav_1:  # 850 m, right UAV (M210) placed near the Ground Station (middle of the runway).
+  wp_n: 3
+  wp_0: [38.138786, -3.171963, 22]  # 446 m elevation (444 m in the map origin), 20 m inspection height.
+  wp_1: [38.138481, -3.173081, 21]  # 445 m elevation (444 m in the map origin), 20 m inspection height.
+  wp_2: [38.137538, -3.176196, 16]  # 440 m elevation (444 m in the map origin), 20 m inspection height.
+
+uav_2:  # 1225 m, left UAV (M210) placed at the end of the runway, passing the "07" on the floor.
+  wp_n: 2
+  wp_0: [38.138344, -3.179188, 15]  # 434 m elevation (444 m in the map origin), 25 m inspection height.
+  wp_1: [38.142768, -3.178503, 57]  # 476 m elevation (444 m in the map origin), 25 m inspection height.

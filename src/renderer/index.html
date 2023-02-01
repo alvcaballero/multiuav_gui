@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Aerial-Core GUI</title>
+  
+    <script src="utils/leaflet.js" type="text/javascript"></script>
+    <script src="utils/L.Control.LineStringSelect.min.js" type="text/javascript"></script>
+    <script src="utils/leaflet.draw.js" type="text/javascript"></script>
+    <script src="utils/roslib.min.js" type="text/javascript"></script>
+    <script src="utils/three.min.js"></script>
+
+    <script src="rotatedMarker.js" type="text/javascript"></script>
+    <script src="frontend.js" type="text/javascript"></script>
+    <script src="map.js" type="text/javascript"></script>
+    <!-- script src="ros-utils.js" type="text/javascript"></script-->
+
+
+    <link rel="stylesheet" href="../assets/css/photon.min.css">
+    <link rel="stylesheet" href="../assets/css/leaflet.css">
+    <link rel="stylesheet" href="../assets/css/general.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/leaflet.draw.css">
+
+    
+    <!-- <script src="leaflet.motion.min.js" type="text/javascript"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script> -->
+    
+</head>
+<body>
+  
+
+  <!-- Wrap your entire app inside .window -->
+  <div class="window">
+
+    <div class="navbar">
+      <a id="homeNavbar" href="#home">Home</a>
+      <!-- <a href="#news">News</a> -->
+      <div class="dropdown">
+        <button class="dropbtn">Ros
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a id="rosConnectNavbar" href="#">Connect Rosbridge Server</a>                    
+        </div>
+      </div>      
+      <div class="dropdown">
+        <button class="dropbtn">UAV
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a id="openAddUavNavbar" href="#">Connect UAV</a>
+          <a id="hideRosterNavbar">Show/Hide UAV Roster</a>          
+        </div>
+      </div>
+      <div class="dropdown">
+        <button class="dropbtn">File
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a id="openMissionNavbar" href="#">Open Mission File</a>
+          <a id="openKMLNavbar" href="#">Open Pylons & Wires File</a>
+          <a id="resetNavbar" href="#">Reset Markers</a>          
+        </div>
+      </div>
+      <div class="dropdown">
+        <button class="dropbtn">Mission
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a id="loadMissionNavbar" href="#">Load Mission</a>
+          <a id="commandMissionNavbar" href="#">Command Mission</a>          
+        </div>
+      </div>
+      <a id="more info" href="other.html">new device </a>
+    </div>
+    <!-- END navbar -->
+
+    <header class="toolbar toolbar-header">
+    
+      <div class="toolbar-actions">
+        <div class="btn-group">
+          
+            <button id="setHome" class="btn btn-default">
+              <span class="icon icon-home"></span>
+            </button>
+
+            <button id="openMission" class="btn btn-default">
+              <span class="icon icon-folder"></span>
+            </button>
+          
+            <button id="openAddUav" class="btn btn-default pull-right">
+              <span class="icon icon-flight"></span>
+            </button>            
+        
+        </div>
+        
+        <button id="rosConnect" class="btn btn-default">Connect ROS</button>
+        <button id="loadMission" style="visibility: none;" class="btn btn-default">
+          <span class="icon icon-upload"></span>
+        </button>
+
+        <button id="commandMission" style="visibility: none;" class="btn btn-default">Fly!</button>
+
+        <div id="openedmission" class="btn btn-default"> No mission load </div>
+        <button class="btn btn-default pull-right" onclick="hideStatusWindow()">Status</button>
+
+
+        
+        <button id="openTerminal" class="btn btn-default" style="visibility: hidden;">
+          <span class="icon icon-window"></span>
+        </button>      
+        <button id="UndoMission" class="btn btn-default" style="visibility: hidden;">
+          <span class="icon icon-reply"></span>
+        </button>
+
+        <button id="reset" class="btn btn-default pull-right">
+          <span class="icon icon-retweet"></span>
+        </button>
+          
+        <button id="showManualMode" class="btn btn-default pull-right">
+          <span class="icon icon-pencil"></span>
+        </button>
+          
+        <button id="commandManualMission" style="visibility: hidden;" class="btn btn-default pull-right">
+          <span class="icon icon-direction"></span>
+        </button>
+        
+      </div>
+      
+    </header>
+
+    <div class="window-content">
+    
+    <div id="container">
+      <div id="mapid">          
+      </div>
+      <!-- END MAPID -->
+      <div class="overlay">
+        <div class="window-content">
+          <div id="AddUav" class="sidenav">
+            <nav class="nav-group">
+              <div class="container">
+                <span><b>Uav Platform Login</b></span>
+                  <div class="row">
+                    <div class="col-25">
+                      <label>UAV Name</label>
+                    </div>
+                    <div class="col-75">
+                       <input type="text" id="UAV_NS" placeholder="UAV name">                    
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-25">
+                      <label for="uavtype">Uav Type</label>
+                    </div>
+                    <div class="col-75">
+                      <select id="UAV_options" name="UAV Type">
+                        <option value="dji">DJI</option>
+                        <option value="px4">PX4</option>
+                        <option value="ext">EXT</option>                        
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="form-btn-size">
+                      <button style= "font-family: inherit;" id="closeAddUav" class="btn btn-dafault">Close</button>
+                      <button style= "font-family: inherit;" id="connectAddUav" class="btn btn-primary">Connect</button>
+                      <button style= "font-family: inherit;" id="disConnectAddUav" class="btn btn-negative">Disconnect</button>
+                    </div>
+                  </div>                    
+              </div>                  
+            </nav>
+          </div>
+        </div>
+      </div>
+      <!-- END Overlay Add Uav -->
+
+      
+      <div class="overlayTab">
+        
+        <div id="myitem">
+          
+          <span> UAV Roster</span>
+          <button id="hideRosterButton" class="btn btn-dafault hideRosterBtn">
+            <span class="icon icon-eye"></span>                        
+          </button>
+          
+          
+          <div style = "overflow-x:auto;">
+                
+          <table id="uavTable">            
+            <tr>
+              <th>Name</th>
+              <th>Altitude</th>
+              <th>Velocity</th>
+              <th>Battery</th>
+              <th>Mission</th>
+              <th>Info</th>
+            </tr>
+            <tr>
+              <td>No uavs</td>
+              <td>0</td>
+              <td>0</td>
+              <td>0</td>
+              <td>
+                <button class="btn btn-default icon-front">
+                <span class="icon icon-upload"></span>
+                </button><button class = "btn btn-default icon-front">Fly!</button>
+              </td>
+              <td>No info</td>
+            </tr>
+          </table>
+        
+          </div>
+          <!-- END overflow-x -->
+      </div>
+      <!-- END myitem -->
+      </div>
+      <!-- END OverlayTab -->
+      <div id="statusWindow">
+        Status Window.
+      </div>
+      
+    </div>
+    <!-- END container -->
+  
+    </div>
+    <!-- END Window-content -->
+
+    <!-- Your app's content goes inside .window-content -->
+    
+    <footer class="toolbar toolbar-footer" style="min-height: 30px;">
+      <button id="changeMap" class="btn btn-default" title="Change map source" style="margin: 2px;position: absolute;">
+        <span class="icon icon-map"></span>
+      </button>
+      <div style="padding-top: 5px;">
+        <h1 class="title">GRVC Robotic Labs - Sevilla</h1>
+      </div>
+    </footer>
+  </div>
+  <!-- END Window -->
+
+
+</body>
+</html>

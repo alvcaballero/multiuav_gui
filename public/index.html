@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My Aplicación con Sockets</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="main.js"></script>
+
+    <style>
+
+      input[type=text], select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      }
+
+      input[type=text2], select {
+      width: 550px;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      }
+
+      input[type=text3], select {
+      width: 170px;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      }
+
+      label {
+      padding: 12px 12px 12px 0;
+      display: inline-block;
+      }
+
+      table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+        border: 1px solid #ddd;
+      }
+
+      td {
+        text-align: center;
+        padding: 5px;
+        font-weight: bold;
+        border: 2px solid white;
+      }
+
+      tr:nth-child(odd){
+        color: rgb(8, 8, 8);
+        background-color: #b9e7e1;
+        /* width: 100% */
+      }
+         
+      tr:nth-child(even){
+        color: rgb(8, 8, 8);
+        background-color: #f2f2f2;
+        /* width: 100% */
+      }
+
+      th {
+        text-align: center;
+        padding: 8px;
+        background-color: #4CAF50;
+        color: white;
+        width: 180px
+      }
+      icon-upload {
+        margin-left: 25%;
+      }
+
+    </style>
+
+  </head>
+  <body>
+    <h1>Socket</h1>
+    <h3>Comunicacion Iniciada</h3>
+    <div id="messages"></div>
+    <br />
+    <form onsubmit="return addMessage(this)">
+      <div id="divVar00">
+        <input type="text3" id="id_uav" placeholder="ID del UAV" />        
+      </div>
+      <div id="divVar01">        
+        <input type="float" id="lat" placeholder="latitud" />
+        <input type="float" id="lon" placeholder="longitud" />        
+      </div>
+      <div>
+        <input type="float" id="ori" placeholder="heading" />
+      </div>
+      <div>
+        <input type="float" id="vel" placeholder="velocidad" />
+      </div>
+      <div>
+        <input type="float" id="vel_x" placeholder="vel_x" />
+      </div>
+      <div>
+        <input type="float" id="vel_y" placeholder="vel_y" />
+      </div>
+      <div>
+        <input type="float" id="alt" placeholder="altitud" />
+        <input type="float" id="alt_MSL" placeholder="altitud_MSL" />
+        <input type="float" id="alt_rel" placeholder="altitud_relative" />
+      </div>
+      <div id="divVar02">        
+        <input type="float" id="bat" placeholder="bateria" />
+      </div>
+      <div>
+        <input type="text2" id="info" placeholder="info" />        
+      </div>
+      <!-- <div>
+        <input type="number" id="id" placeholder="Escribir un 2 para pedir mision" />
+      </div> -->
+      <input type="submit" value="Send Telemetry!" />
+    </form>
+    <br />
+    <form onsubmit="return requestMission(this)">      
+      <input type="submit" value="Request Mission" />
+    </form>
+    <form onsubmit="return requestToFly(this)">      
+      <input type="submit" value="Ready To Fly" />
+    </form>
+
+    <table id="uavTable">
+      <tr>
+        <th>Name</th>
+        <th>Altitude</th>
+        <th>Velocity</th>
+        <th>Battery</th>
+        <th>Mission</th>
+      </tr>
+      <tr id="fuvex">
+        <td>FuVex</td>
+        <td>0</td>
+        <td>0</td>
+        <td>0</td>
+        <td><button class="btn btn-default icon-front"><span class="icon icon-upload"></span></button><button class = "btn btn-default icon-front">Fly!</button></td>
+      </tr>
+      <!-- <tr>
+        <td></td>
+        <td>0</td>
+        <td>0</td>
+        <td>0</td>
+      </tr> -->
+    </table>
+  </body>
+</html>
