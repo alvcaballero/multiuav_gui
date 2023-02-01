@@ -1,0 +1,101 @@
+.nav-group{
+  padding: 5px;
+  background-color: rgb(205, 205, 205,0.5);
+  height: inherit;
+}
+
+.sidenav {
+  height: 100%; /* 100% Full-height */
+  width: 0; /* 0 width - change this with JavaScript */
+  z-index: 1; /* Stay on top */
+  left: 0;
+  overflow-x: hidden; /* Disable horizontal scroll */
+  transition: 0.5s; /* 0.5 second transition effect to slide in the sidenav */
+}
+
+.form-btn-size{
+    padding-top: 10px;
+    width: max-content;
+}
+
+.window {
+  overflow-y: auto;
+}
+
+.toolbar{
+  min-height: 35px;
+}
+
+caption{
+  text-align: left;
+  font-weight: bold;
+}
+
+.title-form{width: max-content}
+
+.window-content {
+  background: url(../images/logo_website.jpeg) no-repeat center center;
+  height: 100%;
+  width: 100%;
+}
+
+.container {
+  width: 240px;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  padding: 20px;
+}
+.containerTab {
+  width: auto;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  padding: 30%;
+}
+
+.col-25 {
+  float: left;
+  width: 25%;
+  margin-top: 6px;
+}
+
+.col-75 {
+  float: right;
+  width: 60%;
+  margin-top: 6px;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.uav-row-button {
+  width: 20%;
+  background-color: #f89602;
+  padding: 2px;
+  /* float: left; */
+  margin-left: 25%;
+}
+
+.loadbut {
+  
+  margin-left: 25%;
+
+}
+
+.icon-front {
+  margin-left: 3%;
+  font-weight: normal;
+}
+
+.uav-buttonMarker {
+  border-radius: 50%;
+  float : left;
+}
+
+.hideRosterBtn {
+  margin-right: 0%;
+  background-color: #4CAF50;
+}

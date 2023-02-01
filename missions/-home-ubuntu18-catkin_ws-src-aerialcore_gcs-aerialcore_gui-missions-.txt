@@ -1,0 +1,1 @@
+/home/ubuntu18/catkin_ws/src/aerialcore_gcs/aerialcore_gui/missions/mision_FUVEX.yaml

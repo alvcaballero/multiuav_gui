@@ -1,0 +1,26 @@
+frame_id: /gps
+
+uav_n: 2
+
+uav_1:  # M210 (road inspection)
+  wp_n: 5
+  wp_0: [37.53395362,-6.30202515,10] # north face (start)
+  wp_1: [37.53416584,-6.30152855,10] # north face (finish)
+  wp_2: [37.53400583,-6.30142265,10] # south face (start)
+  wp_3: [37.53379393,-6.30191159,10] # south face (finish)
+  wp_4: [37.53363462,-6.30226540,10] # landing point (H1)
+
+uav_2:  # M210 (bridge inspection)
+  wp_n: 11
+  wp_0: [37.53375739,-6.30195608,8] # approaching to south face
+  wp_1: [37.53380326,-6.30192918,0] # south face (start, pillar 1)
+  wp_2: [37.53390408,-6.30169976,0] # south face (pillar 2)
+  wp_3: [37.53400562,-6.30146636,0] # south face (finish , pillar 3, low height)
+  wp_4: [37.53400562,-6.30146636,8] # south face (finish , pillar 3, high height)
+  wp_5: [37.53415122,-6.30156173,8] # north face (start , pillar 3, high height)
+  wp_6: [37.53415122,-6.30156173,0] # north face (start , pillar 3, low height)
+  wp_7: [37.53405367,-6.30179179,0] # north face (pillar 2)
+  wp_8: [37.53395307,-6.30202334,0] # north face (finish, pillar 1, low height)
+  wp_9: [37.53395307,-6.30202334,8] # north face (finish, pillar 1, high height)
+  wp_10: [37.53369292,-6.30224148,8] # landing point (H1)
+

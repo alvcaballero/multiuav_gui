@@ -1,0 +1,14 @@
+.DS_Store
+Thumbs.db
+node_modules
+bag
+.env
+.vs/
+.vscode/
+*.log
+*.pyc
+*.sln
+*.swp
+**/package-lock.json
+compile_commands.json
+.envrc

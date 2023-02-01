@@ -1,0 +1,34 @@
+{
+  "name": "aerialcore_gui",
+  "version": "1.0.0",
+  "description": "Aerial-Core GUI",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development electron src/index.js",
+    "lint": "standard",
+    "lint-fix": "standard --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Manuel J. Fernandez",
+  "license": "MIT",
+  "dependencies": {
+    "@tmcw/togeojson": "^4.0.0",
+    "cross-env": "^7.0.2",
+    "electron-compile": "^6.4.4",
+    "electron-debug": "^3.1.0",
+    "exec-sh": "^0.4.0",
+    "express": "^4.17.1",
+    "js-yaml": "^4.1.0",
+    "node-datetime": "^2.1.2",
+    "rosnodejs": "^3.0.2",
+    "shelljs": "^0.8.5",
+    "socketio": "^1.0.0",
+    "sweetalert": "^2.1.2",
+    "xmldom": "^0.3.0"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.12.1",
+    "devtron": "^1.4.0",
+    "electron-prebuilt-compile": "^8.2.0"
+  }
+}
