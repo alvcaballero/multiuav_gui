@@ -41,9 +41,21 @@
 rosbag with 
 https://github.com/foxglove/rosbag
 
+07/02/2023
+    subir los repositorios git y arreglar cambios
+06/02/2023
+    se realizo pruebas del rosbag
+03/02/2023
+    se programo el rosbaf
+02/02/2023
+    ---falte poque tenia proyecto
+01/02/2023
+    reunion con ivan 
+    progrmacacion de cambios de rosbag
 
 31/01/2023
-    
+    revision con carlos del autonomos landing
+    programacion de modulo de para rosbag
 
 
 30/01/2023

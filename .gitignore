@@ -12,3 +12,4 @@ bag
 **/package-lock.json
 compile_commands.json
 .envrc
+guides/Activities.md
