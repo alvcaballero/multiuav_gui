@@ -84,7 +84,7 @@ Depende de Fuvex. SU GCS ha de conectarse al puerto 3000 de la GCS USE (éste pc
 - Conectar antena al pc en puerto serie (receptor del VTOL)
 - Lanzar roslaunch ```aerialcore_onboard_px4 atlas.launch``` (en el Vtol)
 - Lanzar el multimaster ```roslaunch aerialcore_gui connect_uas.launch```(ya levanta roscore)
-- Lanzar rosbridge_server ``` roslaunch rosbridge_server rosbridge_websocket.launch``` (necesita los archivos de grvc)
+- Lanzar rosbridge_server ```roslaunch cd .. rosbridge_websocket.launch``` (necesita los archivos de grvc)
 - Lanzar GUI (desde la carpeta "aerialcore_gui" -> ```npm run dev```)
 - conectar Ros
 - añadir drones
@@ -97,7 +97,7 @@ Revisar bien los uav_id que coincidan con los correspondientes en la mision.
 Para que se comunicuuqe con ros master
 
 ## Configuracion en la pc
-
+ere are lots of resources for it and can be easily implemen
 1. instalacion de multimaster
 
     sudo apt-get install ros-melodic-multimaster-fkie
