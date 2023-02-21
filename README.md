@@ -9,7 +9,11 @@ Interface for control and monitoring of multiple UAV in mision
 
 # Descripcions
 
+By install the GUI its necesary  install node 10 you can use nvm [like this tutorial for multiple](https://www.baeldung.com/linux/multiple-node-js-versions)
 
+and after to clone  npm install to download all dependencies of the proyect.
+
+        npm install 
 
 
 # Setting up the project
