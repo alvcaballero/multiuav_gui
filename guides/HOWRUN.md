@@ -4,6 +4,7 @@
 
 First, install nodejs (v10) and npm (v6):
 
+ahora estoy trabajando con la verison de nodejs V14
 ```
 $ cd ~
 $ curl -sL https://deb.nodesource.com/setup_10.x -o nodesource_setup.sh

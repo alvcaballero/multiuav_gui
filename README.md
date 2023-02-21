@@ -57,3 +57,11 @@ Finally, install dependencies with npm:
 $ roscd aerialcore_gcs/aerialcore_gui
 $ npm i
 ```
+# References
+* (inspector software_UAV)[https://github.com/AlejandroCastillejo/inspector_software_uav]  en este proyecto se optiene archivos de la camara mediante ftp y se almacenas en la mochila del dron para luego ser enviados a la gcs  mediante sshpass  usando  y scp, esto se ejeucta directamente en el drone
+
+* (autonomus landing)[https://github.com/MikeS96/autonomous_landing_uav/blob/master/Usage.md]
+
+* (altitude sensor)[https://github.com/AlejandroCastillejo/sf11_altitude_sensor]
+
+*(inspector software_UAV)[https://github.com/AlejandroCastillejo/inspector_software_uav] 

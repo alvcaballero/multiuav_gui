@@ -67,8 +67,8 @@ DRON DJI (aterrizaje en estacion de carga) - uav_1
 1. Verificar coneccion(hacer ping)
 1. Lanzar Roscore
 1. Indicar al drone que se va alanzar simulacion ```$M210-sim-on``` 
-1. Lanzar dji_vehicle_node  ```$roslaunch aerialcore_onboard_dji atlas.launch```
-1. Lanzar el multimasater ```roslaunch aerialcore_onboard_dji multimaster.launch```
+1. Lanzar dji_vehicle_node  ```$roslaunch onboard_dji atlas.launch ```
+1. Lanzar el multimasater ```roslaunch onboard_dji multimaster.launch```
 1. En el caso de que el vuelo sea real  hay que quitarle el comando al piloto ```rosservice call /uav_2/dji_control/get_control "data: true```
 
 ### VTOL - uav_3
@@ -84,7 +84,7 @@ Depende de Fuvex. SU GCS ha de conectarse al puerto 3000 de la GCS USE (éste pc
 - Conectar antena al pc en puerto serie (receptor del VTOL)
 - Lanzar roslaunch ```aerialcore_onboard_px4 atlas.launch``` (en el Vtol)
 - Lanzar el multimaster ```roslaunch aerialcore_gui connect_uas.launch```(ya levanta roscore)
-- Lanzar rosbridge_server ```roslaunch cd .. rosbridge_websocket.launch``` (necesita los archivos de grvc)
+- Lanzar rosbridge_server ```roslaunch rosbridge_server rosbridge_websocket.launch``` (necesita los archivos de grvc)
 - Lanzar GUI (desde la carpeta "aerialcore_gui" -> ```npm run dev```)
 - conectar Ros
 - añadir drones
