@@ -1,10 +1,19 @@
-const { each } = require("async");
-const { INSPECT_MAX_BYTES } = require("buffer");
-const { on } = require("process");
+//const { each } = require("async");
+//const { INSPECT_MAX_BYTES } = require("buffer");
+//const { on } = require("process");
 const { exec } = require("child_process");
-const { resolve } = require("dns");
-const { rejects } = require("assert");
-var dateTime = require('node-datetime');
+const {ipcMain, dialog} = require('electron')
+const yaml = require('js-yaml');
+//const { dialog } = require('electron');
+const fs = require("fs");
+//const { resolve } = require("dns");
+//const { rejects } = require("assert");
+const dateTime = require( 'node-datetime');
+const tj = require("@tmcw/togeojson");
+
+const DOMParser = require("xmldom").DOMParser;
+const path = require("path");
+
 
 let MIN_DIST_WP = 500,
 circle_set = false;
@@ -132,11 +141,6 @@ window.addEventListener('load', () => {
 	document.getElementsByClassName("leaflet-draw")[0].hidden = true;
 
 
-	const tj = require("@tmcw/togeojson");
-	const fs = require("fs");
-	const DOMParser = require("xmldom").DOMParser;
-	const path = require("path");
-
 	var uav_circle = L.circle(uav_pose, MIN_DIST_WP,{fillOpacity: 0, opacity: 0, interactive:false}).addTo(map);
 	var uav_marker = L.marker(uav_pose, {icon: uav_icon, draggable: false, opacity: 0}).addTo(map);
 	uav_marker.on('dragend', function (e) {
@@ -146,8 +150,8 @@ window.addEventListener('load', () => {
 
 	document.getElementById('setHome').addEventListener('click', setHome);
 	document.getElementById('homeNavbar').addEventListener('click', setHome);	
-	document.getElementById('openMission').addEventListener('click', openMission);
-	document.getElementById('openMissionNavbar').addEventListener('click', openMission);
+	document.getElementById('openMission').addEventListener('change', openMissionf);
+	document.getElementById('file-input').addEventListener('change', openMission);
 	document.getElementById('openKMLNavbar').addEventListener('click', openKML);
 	document.getElementById('openTerminal').addEventListener('click', openTerminal);
 	document.getElementById('UndoMission').addEventListener('click', UndoInspectionPoints);
@@ -171,6 +175,9 @@ window.addEventListener('load', () => {
 	document.getElementById('resetNavbar').addEventListener('click', reset);
 
 	document.getElementById('changeMap').addEventListener('click', changeMap);
+
+	const fileInput = document.getElementById('file-input');
+	const openMission1 = document.getElementById('openMission');
 	var openedmission = document.getElementById('openedmission');
 
 	function clearMap() {
@@ -187,31 +194,18 @@ window.addEventListener('load', () => {
 		}
 	}
 
-	function openMission(){
-		const { dialog } = require('electron').remote;
-		const yaml = require('js-yaml');
+	function openMissionf(){
+		console.log("entro a arhci")		
+
+		const fileReader = new FileReader();
 		
-		let options = {
-			title: 'Pick a mission plan file',
-			filters: [
-				{ name: 'Yaml files', extensions: ['yaml'] },
-				{ name: 'KML files', extensions: ['kml'] }
-			]
-		};
-	
-		dialog.showOpenDialog(options).then
-		(
-		  result => {
-			if (!result.canceled)
-			{
-			  let paths = result.filePaths;
-			  if (paths && paths.length > 0) {
-				if(paths[0].split('.').pop() === 'yaml'){
-					let filename = paths[0].replace(/^.*[\\\/]/, '');
-					//console.log(filename);
-					openedmission.innerHTML = filename;
-					plan_mission = yaml.load(fs.readFileSync(paths[0], 'utf8'));
-					//console.log(plan_mission)
+		file = openMission1.files[0];
+
+		fileReader.readAsText(file);
+		fileReader.onload = () => {
+			console.log( fileReader.result );
+					plan_mission = yaml.load(fileReader.result);
+					console.log(plan_mission)
 					let plan_mission_msg = plan_mission;
 					plan_mission_msg = Object.assign({id: 2}, plan_mission_msg);
 					// plan_mission_msg.id = 2;					
@@ -239,14 +233,58 @@ window.addEventListener('load', () => {
 						}
 						showFlyButton()
 					}
-				}else{
-					kml = new DOMParser().parseFromString(fs.readFileSync(path.resolve(__dirname, paths[0]), "utf8"));
-					configure_kml();
+
+				};
+				fileReader.onerror = () => {
+					  console.log( fileReader.error );
 				}
-			  }
-			}
-		  }
-		);
+	}
+
+
+	function openMission(){
+		console.log("entro a arhci")		
+
+		const fileReader = new FileReader();
+		
+		const file = fileInput.files[0];
+
+		fileReader.readAsText(file);
+		fileReader.onload = () => {
+			console.log( fileReader.result );
+					plan_mission = yaml.load(fileReader.result);
+					console.log(plan_mission)
+					let plan_mission_msg = plan_mission;
+					plan_mission_msg = Object.assign({id: 2}, plan_mission_msg);
+					// plan_mission_msg.id = 2;					
+					//console.log(plan_mission_msg);
+					let yamlStr = yaml.dump(plan_mission_msg);
+					fs.writeFileSync('missions/mission.yaml', yamlStr, 'utf8');
+					console.log(plan_mission["mode_landing"])
+					mode_landing = plan_mission["mode_landing"];
+					clearMap();
+					for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
+						let latlngs = [];
+						mission_layers.push(L.layerGroup([]));
+						for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
+							latlngs.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
+							mission_layers[n_uav-1].addLayer(L.marker(plan_mission["uav_"+n_uav]["wp_"+n_wp],{icon: wp_blue_icon})
+								.bindPopup('<b>wp_'+n_wp+' (uav_'+n_uav+')</b> <br>lat: '+plan_mission["uav_"+n_uav]["wp_"+n_wp][0]+'<br>long: '+plan_mission["uav_"+n_uav]["wp_"+n_wp][1]+'<br>alt: '+plan_mission["uav_"+n_uav]["wp_"+n_wp][2]))
+						};
+						let polygon = L.polyline(latlngs,{color: rand_color()}).bindPopup("uav_"+n_uav);
+						mission_layers[n_uav-1].addLayer(polygon).addTo(map);
+						map.fitBounds(polygon.getBounds());
+						let uav_idx = uav_list.findIndex(element => element.name == "uav_"+n_uav)
+						// if findIndex fail uav_idx = -1 
+						if(uav_idx >= 0 ){
+							uav_list[uav_idx].wp_list = latlngs
+						}
+						showFlyButton()
+					}
+
+				};
+				fileReader.onerror = () => {
+					  console.log( fileReader.error );
+				}
 	}
 
 	function configure_kml(){
@@ -493,8 +531,6 @@ window.addEventListener('load', () => {
 	});
 
 	function writeYaml(message) {
-		const fs = require('fs');
-		const yaml = require('js-yaml');
 
 		let data = {message};
 
@@ -503,8 +539,7 @@ window.addEventListener('load', () => {
 	}
 
 	function readYaml() {
-		const fs = require('fs');
-		const yaml = require('js-yaml');
+
 
 		try {
 			let fileContents = fs.readFileSync('missions/mission.yaml', 'utf8');
@@ -671,6 +706,18 @@ window.addEventListener('load', () => {
 					messageType : 'sensor_msgs/BatteryState'
 				});
 
+				uav_list[cur_uav_idx].camera_stream_comprese = new ROSLIB.Topic({
+					ros : ros,
+					name : uav_ns+'/video_stream_compress',
+					messageType : 'sensor_msgs/CompressedImage'
+				});
+				uav_list[cur_uav_idx].camera_stream = new ROSLIB.Topic({
+					ros : ros,
+					name : uav_ns+'/video_stream',
+					messageType : 'sensor_msgs/Image'
+				});
+				
+
 				uav_list[cur_uav_idx].listener.subscribe(function(message) {
 					// console.log('Received message on ' + listen_gps_pos.name + ': ' + message.latitude);
 					uav_list[cur_uav_idx].pose = [message.latitude, message.longitude];
@@ -707,6 +754,12 @@ window.addEventListener('load', () => {
 				uav_list[cur_uav_idx].listener_bat.subscribe(function(message) {
 					var showData = document.getElementById(uav_ns).cells;
   					showData[3].innerHTML = message.percentage + "%";
+				});
+
+				uav_list[cur_uav_idx].camera_stream_comprese.subscribe(function(message) {
+					console.log(message);
+					//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
+					document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
 				});
 				
 			}else if(uav_type == "px4"){
