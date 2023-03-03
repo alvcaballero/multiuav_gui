@@ -60,7 +60,9 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a id="openMissionNavbar" href="#">Open Mission File</a>
+          <!--a id="openMissionNavbar" href="#">Open Mission File</a-->
+          <label for="file-input">Open Mission</label>
+          <input type="file" multiple="false" style="display:none" id="file-input">
           <a id="openKMLNavbar" href="#">Open Pylons & Wires File</a>
           <a id="resetNavbar" href="#">Reset Markers</a>          
         </div>
@@ -87,9 +89,8 @@
               <span class="icon icon-home"></span>
             </button>
 
-            <button id="openMission" class="btn btn-default">
-              <span class="icon icon-folder"></span>
-            </button>
+            <label class="btn btn-default" for="openMission"> <span class="icon icon-folder"></span></label>
+            <input type="file" multiple="false" style="display:none" id="openMission">
           
             <button id="openAddUav" class="btn btn-default pull-right">
               <span class="icon icon-flight"></span>
@@ -216,9 +217,14 @@
         
           </div>
           <!-- END overflow-x -->
+        </div>
+        <!-- END myitem -->
       </div>
-      <!-- END myitem -->
+      <div class="camera_container">
+        <img id="my_image" style='height: 200px; width: 200px; object-fit: contain' src="../assets/img/placeholder.jpg">
       </div>
+
+
       <!-- END OverlayTab -->
       <div id="statusWindow">
         Status Window.

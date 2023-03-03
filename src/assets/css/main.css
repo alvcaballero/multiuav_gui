@@ -24,6 +24,14 @@
     display: none;
   }
 
+.camera_container {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 314159;
+    pointer-events: auto;
+}
+
 #mydiv {
     position: absolute;
     /* z-index: 9; */
@@ -216,6 +224,17 @@ text-align: left;
 z-index: 314159;
 }
 
+/* Links inside the dropdown */
+.dropdown-content label {
+  float: none;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+  font-size: 16px;
+  z-index: 314159;
+  }
 /* Add a grey background color to dropdown links on hover */
 .dropdown-content a:hover {
 background-color: #ddd;
@@ -226,6 +245,9 @@ z-index: 314159;
 .dropdown:hover .dropdown-content {
 display: block;
 }
+
+
+
 
 #statusWindow {
 /* width: 100%; */
