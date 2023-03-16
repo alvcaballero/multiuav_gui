@@ -447,7 +447,7 @@ window.addEventListener('load', () => {
 			  }
 			}
 		  }
-		);
+		); 
 	}
 
 

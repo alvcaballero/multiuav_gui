@@ -18,7 +18,8 @@
     "js-yaml": "^4.1.0",
     "node-datetime": "^2.1.2",
     "socketio": "^1.0.0",
-    "xmldom": "^0.6.0"
+    "xmldom": "^0.6.0",
+    "yarn": "^1.22.19"
   },
   "devDependencies": {
     "electron": "^18.3.15"
