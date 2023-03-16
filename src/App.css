@@ -1,3 +1,137 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.nav-group{
+  padding: 5px;
+  background-color: rgb(205, 205, 205,0.5);
+  height: inherit;
+}
+
+
+
+.form-btn-size{
+    padding-top: 10px;
+    width: max-content;
+}
+
+.window {
+  overflow-y: auto;
+}
+
+.toolbar{
+  min-height: 35px;
+}
+
+caption{
+  text-align: left;
+  font-weight: bold;
+}
+
+.title-form{width: max-content}
+
+.window-content {
+  height: 100%;
+  width: 100%;
+}
+
+.container {
+  width: 240px;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  padding: 20px;
+}
+.containerTab {
+  width: auto;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  padding: 30%;
+}
+
+.col-25 {
+  float: left;
+  width: 25%;
+  margin-top: 6px;
+}
+
+.col-75 {
+  float: right;
+  width: 60%;
+  margin-top: 6px;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.uav-row-button {
+  width: 20%;
+  background-color: #f89602;
+  padding: 2px;
+  /* float: left; */
+  margin-left: 25%;
+}
+
+.loadbut {
+  
+  margin-left: 25%;
+
+}
+
+.icon-front {
+  margin-left: 3%;
+  font-weight: normal;
+}
+
+.uav-buttonMarker {
+  border-radius: 50%;
+  float : left;
+}
+
+.hideRosterBtn {
+  margin-right: 0%;
+  background-color: #4CAF50;
+}
+
 #mapid { width: 100%; height: 100% }
 
 .overlay {
@@ -162,78 +296,6 @@ input[type=text], select {
     cursor: pointer;
     /* border-width: 20px; */
   }
-
-/* Navbar container */
-.navbar {
-overflow: hidden;
-background-color: #333;
-font-family: Arial;
-}
-
-/* Links inside the navbar */
-.navbar a {
-float: left;
-font-size: 16px;
-color: white;
-text-align: center;
-padding: 14px 16px;
-text-decoration: none;
-}
-
-/* The dropdown container */
-.dropdown {
-float: left;
-overflow: hidden;
-}
-
-/* Dropdown button */
-.dropdown .dropbtn {
-font-size: 16px;
-border: none;
-outline: none;
-color: white;
-padding: 14px 16px;
-background-color: inherit;
-font-family: inherit; /* Important for vertical align on mobile phones */
-margin: 0; /* Important for vertical align on mobile phones */
-}
-
-/* Add a red background color to navbar links on hover */
-.navbar a:hover, .dropdown:hover .dropbtn {
-background-color: red;
-}
-
-/* Dropdown content (hidden by default) */
-.dropdown-content {
-display: none;
-position: absolute;
-background-color: #f9f9f9;
-min-width: 160px;
-box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-z-index: 314159;
-}
-
-/* Links inside the dropdown */
-.dropdown-content a {
-float: none;
-color: black;
-padding: 12px 16px;
-text-decoration: none;
-display: block;
-text-align: left;
-z-index: 314159;
-}
-
-/* Add a grey background color to dropdown links on hover */
-.dropdown-content a:hover {
-background-color: #ddd;
-z-index: 314159;
-}
-
-/* Show the dropdown menu on hover */
-.dropdown:hover .dropdown-content {
-display: block;
-}
 
 
 

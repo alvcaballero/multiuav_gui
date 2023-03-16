@@ -13,3 +13,7 @@ bag
 compile_commands.json
 .envrc
 guides/Activities.md
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
