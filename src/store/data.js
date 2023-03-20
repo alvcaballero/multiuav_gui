@@ -37,7 +37,28 @@ const { reducer, actions } = createSlice({
       });
     },
     updatePosition(state, action) {
-        state.positions[action.payload.deviceId] = action.payload;
+      //state.positions[action.payload.deviceId] = action.payload;
+      if (state.positions[action.payload.deviceId] === undefined) {
+        state.positions[action.payload.deviceId] = {}
+      };
+      state.positions[action.payload.deviceId]["id"] = action.payload.id;
+      state.positions[action.payload.deviceId]["deviceId"] = action.payload.deviceId;
+      state.positions[action.payload.deviceId]["latitude"] = action.payload.latitude;
+      state.positions[action.payload.deviceId]["longitude"] = action.payload.longitude;
+      state.positions[action.payload.deviceId]["altitude"] = action.payload.altitude;
+      state.positions[action.payload.deviceId]["deviceTime"] = action.payload.deviceTime;
+
+
+
+        
+
+    },
+    updateCourse(state, action){
+      if (state.positions[action.payload.deviceId] === undefined) {
+        state.positions[action.payload.deviceId] = {}
+      };
+      state.positions[action.payload.deviceId]["course"] = action.payload.course;        
+      state.positions[action.payload.deviceId]["attributes"] = {};  
     },
   },
 });

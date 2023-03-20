@@ -344,30 +344,13 @@ export const RosControl = ({children}) => {
           });
           
         }else if(uav_type == "px4"){
-          // PX4
-  
-          var buttonLoad = document.createElement("button");
-          buttonLoad.setAttribute("class", "btn btn-default icon-front icon icon-upload");
-          // buttonLoad.style.marginLeft = '25%';
-          //buttonLoad.addEventListener("click", function () {
-          //  loadMissionToUAV(uav_ns);				
-          //  });			
-          //cell5.appendChild(buttonLoad);
-          var buttonFlyToUav = document.createElement("button");
-          buttonFlyToUav.setAttribute("class", "btn btn-default icon-front");
-          buttonFlyToUav.innerHTML = "Fly!";			
-          //buttonFlyToUav.addEventListener("click", function () {
-          //  commandMissionToUAV(uav_ns);				
-          //      });			
-          //cell5.appendChild(buttonFlyToUav);
-  
   
           uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
             ros : ros,
             name : uav_ns+'/mavros/global_position/global',
             messageType : 'sensor_msgs/NavSatFix'
           });
-  
+
           uav_list[cur_uav_idx].listener_hdg = new ROSLIB.Topic({
             ros : ros,
             name : uav_ns+'/mavros/global_position/compass_hdg',
@@ -395,26 +378,11 @@ export const RosControl = ({children}) => {
           uav_list[cur_uav_idx].listener.subscribe(function(msg) {
             let id_uav = cur_uav_idx;
             dispatch(dataActions.updatePosition({id:msg.header.seq,deviceId:id_uav,latitude:msg.latitude,longitude:msg.longitude,altitude:msg.altitude,deviceTime:"2023-03-09T22:12:44.000+00:00"})); 
-            //uav_list[cur_uav_idx].pose = [message.latitude, message.longitude];
-            //uav_list[cur_uav_idx].marker.setLatLng(uav_list[cur_uav_idx].pose);
-  
-            // Fill info cell. Lo hacemos aqui para que se actualice cada vez que recibimos un mensaje en este topic
-            //var showData = document.getElementById(uav_ns).cells;
-            // podemos poner aqui una condicion para que solo muestre connected al principio (por ejemplo: si innerHTML == "Waiting uav", o no hacerlo si es == "Ready to launch")
-            //showData[5].innerHTML = "Connected";
-  
-            //var buttonMarkerSelect = '<img src="../assets/css/images/px4-marker'+marker_n.toString()+'.png " width="24" height="24" />';
-            //buttonMarker.innerHTML = buttonMarkerSelect;
-                      
-            //if (uav_list[cur_uav_idx].watch_bound){
-            //  uav_list[cur_uav_idx].marker.setOpacity(1);
-              //map.fitBounds(L.latLngBounds([ uav_list[cur_uav_idx].marker.getLatLng() ]));  
-            //  uav_list[cur_uav_idx].watch_bound = false
-            //}
           });
   
-          uav_list[cur_uav_idx].listener_hdg.subscribe(function(message) {
-            //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
+          uav_list[cur_uav_idx].listener_hdg.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;
+            dispatch(dataActions.updateCourse({deviceId:id_uav,course:msg.data}));//uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
           });
   
           uav_list[cur_uav_idx].listener_alt.subscribe(function(message) {

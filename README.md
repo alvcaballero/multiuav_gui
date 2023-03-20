@@ -51,7 +51,7 @@ $ sudo bash nodesource_setup.sh
 $ sudo apt install nodejs
 ```
 
-Then, install the rosbridge-server package:
+Then, install the rosbridge-server package
 ```
 $ sudo apt x ros-melodic-rosbridge-server
 ```
