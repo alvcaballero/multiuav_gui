@@ -50,6 +50,7 @@ const DeviceRow = ({ data, index, style }) => {
   const dispatch = useDispatch();
 
   const item = data[index];
+  const position = useSelector((state) => state.data.positions[item.id]);
 
 
 
@@ -71,6 +72,47 @@ const DeviceRow = ({ data, index, style }) => {
           primary={devicePrimary}
           primaryTypographyProps={{ noWrap: true }}
         />
+        {position && (
+          <>
+            {position.attributes.hasOwnProperty('alarm') && (
+              <Tooltip title={`${'eventAlarm'}: ${formatAlarm(position.attributes.alarm)}`}>
+                <IconButton size="small">
+                  <ErrorIcon fontSize="small" style={negativecolor} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {position.attributes.hasOwnProperty('ignition') && (
+              <Tooltip title={`${'positionIgnition'}: ${formatBoolean(position.attributes.ignition)}`}>
+                <IconButton size="small">
+                  {position.attributes.ignition ? (
+                    <EngineIcon width={20} height={20} style={positivecolor} />
+                  ) : (
+                    <EngineIcon width={20} height={20} style={neutralcolor} />
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
+            {position.attributes.hasOwnProperty('batteryLevel') && (
+              <Tooltip title={`${'positionBatteryLevel'}: ${formatPercentage(position.attributes.batteryLevel)}`}>
+                <IconButton size="small">
+                  {position.attributes.batteryLevel > 70 ? (
+                    position.attributes.charge
+                      ? (<BatteryChargingFullIcon fontSize="small" style={positivecolor} />)
+                      : (<BatteryFullIcon fontSize="small" style={positivecolor}  />)
+                  ) : position.attributes.batteryLevel > 30 ? (
+                    position.attributes.charge
+                      ? (<BatteryCharging60Icon fontSize="small" style={mediumcolor} />)
+                      : (<Battery60Icon fontSize="small" style={mediumcolor} />)
+                  ) : (
+                    position.attributes.charge
+                      ? (<BatteryCharging20Icon fontSize="small" style={negativecolor}/>)
+                      : (<Battery20Icon fontSize="small" style={negativecolor} />)
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
+        )}
       </ListItemButton>
     </div>
   );
