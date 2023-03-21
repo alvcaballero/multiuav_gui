@@ -382,7 +382,7 @@ export const RosControl = ({children}) => {
   
           uav_list[cur_uav_idx].listener_hdg.subscribe(function(msg) {
             let id_uav = cur_uav_idx;
-            dispatch(dataActions.updateCourse({deviceId:id_uav,course:msg.data}));//uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
+            dispatch(dataActions.updatePosition({deviceId:id_uav,course:msg.data}));//uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
           });
   
           uav_list[cur_uav_idx].listener_alt.subscribe(function(message) {
@@ -391,14 +391,14 @@ export const RosControl = ({children}) => {
                     
           });
   
-          uav_list[cur_uav_idx].listener_vel.subscribe(function(message) {
-            //var showData = document.getElementById(uav_ns).cells;
-            // showData[2].innerHTML = Math.sqrt(Math.pow(message.twist.linear.x,2) + Math.pow(message.twist.linear.y,2)).toFixed(2);
+          uav_list[cur_uav_idx].listener_vel.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
+            dispatch(dataActions.updatePosition({deviceId:id_uav,speed:Math.sqrt(Math.pow(msg.twist.linear.x,2) + Math.pow(msg.twist.linear.y,2)).toFixed(2)}));// showData[2].innerHTML = Math.sqrt(Math.pow(message.twist.linear.x,2) + Math.pow(message.twist.linear.y,2)).toFixed(2);
           });
   
-          uav_list[cur_uav_idx].listener_bat.subscribe(function(message) {
-            //var showData = document.getElementById(uav_ns).cells;
-            //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+          uav_list[cur_uav_idx].listener_bat.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
+            dispatch(dataActions.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)}));//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
           });
         } else {
   

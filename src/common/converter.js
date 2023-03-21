@@ -10,15 +10,15 @@ const speedConverter = (unit) => {
   }
 };
 
-export const speedUnitString = (unit, t) => {
+export const speedUnitString = (unit) => {
   switch (unit) {
     case 'kmh':
-      return t('sharedKmh');
+      return 'sharedKmh';
     case 'mph':
-      return t('sharedMph');
+      return 'sharedMph';
     case 'kn':
     default:
-      return t('sharedKn');
+      return 'sharedKn';
   }
 };
 
@@ -38,15 +38,15 @@ const distanceConverter = (unit) => {
   }
 };
 
-export const distanceUnitString = (unit, t) => {
+export const distanceUnitString = (unit) => {
   switch (unit) {
     case 'mi':
-      return t('sharedMi');
+      return 'sharedMi';
     case 'nmi':
-      return t('sharedNmi');
+      return 'sharedNmi';
     case 'km':
     default:
-      return t('sharedKm');
+      return 'sharedKm';
   }
 };
 
@@ -64,13 +64,13 @@ const altitudeConverter = (unit) => {
   }
 };
 
-export const altitudeUnitString = (unit, t) => {
+export const altitudeUnitString = (unit) => {
   switch (unit) {
     case 'ft':
-      return t('sharedFeet');
+      return 'sharedFeet';
     case 'm':
     default:
-      return t('sharedMeters');
+      return 'sharedMeters';
   }
 };
 
@@ -90,15 +90,15 @@ const volumeConverter = (unit) => {
   }
 };
 
-export const volumeUnitString = (unit, t) => {
+export const volumeUnitString = (unit) => {
   switch (unit) {
     case 'impGal':
-      return t('sharedGallonAbbreviation');
+      return 'sharedGallonAbbreviation';
     case 'usGal':
-      return t('sharedGallonAbbreviation');
+      return 'sharedGallonAbbreviation';
     case 'ltr':
     default:
-      return t('sharedLiterAbbreviation');
+      return 'sharedLiterAbbreviation';
   }
 };
 
