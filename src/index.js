@@ -6,6 +6,8 @@ import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import store from './store';
 import preloadImages from './Mapview/preloadImages';
+import { CssBaseline, ThemeProvider, StyledEngineProvider } from '@mui/material';
+import theme from './common/theme';
 
 preloadImages();
 
@@ -14,7 +16,13 @@ root.render(
   <React.StrictMode>
      <Provider store={store}>
 
-      <App />
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={theme}>
+          <CssBaseline />
+            <App />
+          </ThemeProvider>
+        </StyledEngineProvider>
+
      </Provider>
     
   </React.StrictMode>

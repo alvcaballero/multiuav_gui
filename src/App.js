@@ -15,6 +15,7 @@ import { RosControl } from './components/RosControl';
 import MapView from './Mapview/Mapview';
 import MapPositions from './Mapview/MapPositions';
 import DeviceList from './components/DeviceList';
+import StatusCard from './components/StatusCard';
 
 import { devicesActions } from './store';
 
@@ -86,6 +87,12 @@ function App() {
                 </Paper>
               </div>
           </div>
+          <StatusCard
+          deviceId={selectedDeviceId}
+          position={selectedPosition}
+          onClose={() => dispatch(devicesActions.selectId(null))}
+          desktopPadding={theme.dimensions.drawerWidthDesktop}
+        />
         </RosControl>
       </div>
 
