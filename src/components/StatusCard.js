@@ -117,7 +117,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const deviceImage = device?.attributes?.deviceImage;
 
-  const positionItems = 'speed,course';
+  const positionItems = 'speed,course,batteryLevel';
 
   const [anchorEl, setAnchorEl] = useState(null);
 

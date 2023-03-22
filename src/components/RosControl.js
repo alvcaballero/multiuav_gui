@@ -209,62 +209,18 @@ export const RosControl = ({children}) => {
           alert("Dispositivo ya se encuentra anadido"+uav_ns);
           return null
         }
-        let cur_uav_idx = String(Object.values(devices).length+1)
+
+        let cur_uav_idx = String(Object.values(devices).length)
 
         dispatch(devicesActions.update({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online'}));
 
-  
-
-        let uav_marker = new maplibregl.Marker().setLngLat(uav_pose).setPopup(new maplibregl.Popup().setText('pup up')).addTo(map);
         
-        let uavAdded = { name : uav_ns, type : uav_type, pose : [] , marker : uav_marker, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",bag : false};
+        let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",bag : false};
         uav_list.push(uavAdded);
-        uav_list.push(uavAdded);
-        uav_list.push(uavAdded);
-        //var cur_uav_idx = uav_list.length-1;
-        console.log("valor de cur uav_idx");
-        console.log(cur_uav_idx)
 
-        var buttonReady = document.createElement("button");
-        buttonReady.setAttribute("class", "btn btn-default icon-front");
-        buttonReady.setAttribute("id", "Ready"+uav_ns);
-        buttonReady.innerHTML = "Not Ready";
-        buttonReady.style.marginLeft = 0;
-        buttonReady.addEventListener("click", function () {
-          changeReady(uav_ns);				
-          });			
-        //cell5.appendChild(buttonReady);
-  
-        // Add some text to the new cells:
-              
-        //cell1.innerHTML = uavAdded.name;
-        //cell1.float = "right";
-        // Add button & image after uav name
-        var buttonMarker = document.createElement("button");
-        //buttonMarker.onclick = function () {
-        //  GoToUavPosition(map, cur_uav_idx);				
-        //  };
-        buttonMarker.setAttribute("class", "uav-buttonMarker");
-        //cell1.appendChild(buttonMarker);
-              
         // Subscribing
         // DJI 
         if(uav_type == "dji"){
-  
-          var buttonLoad = document.createElement("button");
-          buttonLoad.setAttribute("class", "btn btn-default icon-front icon icon-upload");
-          // buttonLoad.style.marginLeft = '25%';
-          //buttonLoad.addEventListener("click", function () {
-          //  loadMissionToUAV(uav_ns);				
-          //  });			
-          //cell5.appendChild(buttonLoad);
-          var buttonFlyToUav = document.createElement("button");
-          buttonFlyToUav.setAttribute("class", "btn btn-default icon-front");
-          buttonFlyToUav.innerHTML = "Fly!";			
-          //buttonFlyToUav.addEventListener("click", function () {
-          //commandMissionToUAV(uav_ns);				
-          //    });			
-          //cell5.appendChild(buttonFlyToUav);
   
           uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
             ros : ros,
@@ -309,12 +265,6 @@ export const RosControl = ({children}) => {
           uav_list[cur_uav_idx].listener.subscribe(function(msg) {
             let id_uav = cur_uav_idx;
             dispatch(dataActions.updatePosition({id : msg.header.seq,deviceId:id_uav,  latitude:msg.latitude,longitude:msg.longitude, altitude:msg.altitude,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"}));
-
-
-            // console.log('Received message on ' + listen_gps_pos.name + ': ' + message.latitude);
-            //uav_list[cur_uav_idx].pose = [ message.longitude ,message.latitude];
-            //uav_list[cur_uav_idx].marker.setLngLat(uav_list[cur_uav_idx].pose);
-            //uav_list[cur_uav_idx].marker.addTo(map);
             
           });
           uav_list[cur_uav_idx].listenerov.subscribe(function(msg) {
@@ -325,7 +275,6 @@ export const RosControl = ({children}) => {
           uav_list[cur_uav_idx].listener_hdg.subscribe(function(message) {
             //uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
             var markerRotation = message.data+90;
-            buttonMarker.style.transform = 'rotate(' + markerRotation.toString() + 'deg)';
           });				
           
           uav_list[cur_uav_idx].listener_vel.subscribe(function(message) {
@@ -340,7 +289,7 @@ export const RosControl = ({children}) => {
   
           uav_list[cur_uav_idx].camera_stream_comprese.subscribe(function(message) {
             //document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
-            document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
+            //document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
           });
           
         }else if(uav_type == "px4"){
@@ -401,27 +350,7 @@ export const RosControl = ({children}) => {
             dispatch(dataActions.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)}));//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
           });
         } else {
-  
           //EXT (FUVEX)
-  
-          var buttonLoad = document.createElement("button");
-          buttonLoad.setAttribute("class", "btn btn-default icon-front icon icon-upload");
-          // buttonLoad.style.marginLeft = '25%';
-          //buttonLoad.addEventListener("click", function () {
-          //  loadMissionToExt(uav_ns);				
-          //});			
-          //cell5.appendChild(buttonLoad);
-          var buttonFlyToUav = document.createElement("button");
-          buttonFlyToUav.setAttribute("class", "btn btn-default icon-front");
-          buttonFlyToUav.setAttribute("id", "ReadyToFly"+uav_ns);
-          // buttonFlyToUav.style.marginLeft = '50%';
-          buttonFlyToUav.innerHTML = "X";			
-          //buttonFlyToUav.addEventListener("click", function () {
-          //  commandMissionToEXT(uav_ns);				
-          //  });			
-          //cell5.appendChild(buttonFlyToUav);
-  
-  
           uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
             ros : ros,
             name : uav_ns+'/mavros/global_position/global',
@@ -455,15 +384,6 @@ export const RosControl = ({children}) => {
           uav_list[cur_uav_idx].listener.subscribe(function(message) {
             uav_list[cur_uav_idx].pose = [message.latitude, message.longitude];
             uav_list[cur_uav_idx].marker.setLatLng(uav_list[cur_uav_idx].pose);
-  
-            var buttonMarkerSelect = '<img src="../assets/css/images/ext-marker'+marker_n.toString()+'.png " width="24" height="24" />';
-            buttonMarker.innerHTML = buttonMarkerSelect;
-            
-            if (uav_list[cur_uav_idx].watch_bound){
-              uav_list[cur_uav_idx].marker.setOpacity(1);
-              //map.fitBounds(L.latLngBounds([ uav_list[cur_uav_idx].marker.getLatLng() ]));  
-              uav_list[cur_uav_idx].watch_bound = false
-            }
           });
   
           uav_list[cur_uav_idx].listener_hdg.subscribe(function(message) {
@@ -490,17 +410,10 @@ export const RosControl = ({children}) => {
         uav_list.forEach(function(uav, indice, array) {
           console.log(uav, indice);
         })
-  
-        // alert("Total de drones conectados: "+uav_list.length+"\n Dron añadido a la lista:\n\nNombre: "+uavAdded.name +"\n Tipo: "+ uavAdded.type);
-        updateStatusWindow(uavAdded.name + " added. Type: "+ uavAdded.type);
-  
-      // showAddUav();
+          updateStatusWindow(uavAdded.name + " added. Type: "+ uavAdded.type);
       }else{
         alert("\nRos no está conectado.\n\n Por favor conéctelo primero.")
-  
-      } // if ros connected
-  
-  
+      } 
     }
 
     function loadMissionToUAV(ns){
@@ -553,12 +466,7 @@ export const RosControl = ({children}) => {
         + result);
       });
   
-      // let flyButton = document.getElementById("commandMission");
-      // if(flyButton.style.cssText == "visibility: none;"){
-      // 	flyButton.style.cssText = "visibility: hidden;"
-      // }else{
-      // 	flyButton.style.cssText = "visibility: none;"
-      // }
+
       updateStatusWindow("Loadding mission to: " + ns);
     }
 
