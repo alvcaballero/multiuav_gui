@@ -16,7 +16,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
   const iconScale = 1;// useAttributePreference('iconScale', 1);
   const mapCluster = true;//useAttributePreference('mapCluster', true);
   const hours12 = false;//usePreference('twelveHourFormat');
-  const directionType = 'none';//useAttributePreference('mapDirection', 'selected');
+  const directionType = 'all';//useAttributePreference('mapDirection', 'selected');
 
   const createFeature = (devices, position, selectedPositionId) => {
     const device = devices[position.deviceId];

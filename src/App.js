@@ -76,9 +76,10 @@ function App() {
           <MapView>
             {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
-            <Overlaytab/>
+            
             <Statuswindow/>
-            <Camera/>
+            {/*<Overlaytab/>
+            <Camera/>*/}
           </MapView>
           <div style={sidebarStyle}>
               <div style={middleStyle}>
@@ -92,7 +93,7 @@ function App() {
           position={selectedPosition}
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
-        />
+          />
         </RosControl>
       </div>
 

@@ -13,12 +13,12 @@ const speedConverter = (unit) => {
 export const speedUnitString = (unit) => {
   switch (unit) {
     case 'kmh':
-      return 'sharedKmh';
+      return 'Km/h';
     case 'mph':
       return 'sharedMph';
     case 'kn':
     default:
-      return 'sharedKn';
+      return 'Km/h';
   }
 };
 
@@ -41,12 +41,12 @@ const distanceConverter = (unit) => {
 export const distanceUnitString = (unit) => {
   switch (unit) {
     case 'mi':
-      return 'sharedMi';
+      return 'Mi';
     case 'nmi':
-      return 'sharedNmi';
+      return 'Nmi';
     case 'km':
     default:
-      return 'sharedKm';
+      return 'Km';
   }
 };
 

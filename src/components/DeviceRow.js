@@ -19,6 +19,7 @@ import { devicesActions } from '../store';
 import { formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusColor,} from '../common/formatter';
 import { mapIconKey, mapIcons } from '../Mapview/preloadImages';
 import { ReactComponent as EngineIcon } from '../resources/images/data/engine.svg';
+import { fontSize } from '@mui/system';
 //import { useAttributePreference } from '../common/util/preferences';
 
 
@@ -92,8 +93,23 @@ const DeviceRow = ({ data, index, style }) => {
                 </IconButton>
               </Tooltip>
             )}
+            
+            {position.hasOwnProperty('speed') && (
+              <Tooltip title={`${'speed'}: ${position.speed}`}>
+                <IconButton size="small">
+                  <div style={fontSize="10px"}> v {position.speed}km/s</div>
+                </IconButton>
+              </Tooltip>
+            )}
+            {position.hasOwnProperty('altitude') && (
+              <Tooltip title={`${'altitude'}: ${Math.round(position.altitude)}`}>
+                <IconButton size="small">
+                  <div>H {Math.round(position.altitude-470)}m</div>
+                </IconButton>
+              </Tooltip>
+            )}
             {position.attributes.hasOwnProperty('batteryLevel') && (
-              <Tooltip title={`${'positionBatteryLevel'}: ${formatPercentage(position.attributes.batteryLevel)}`}>
+              <Tooltip title={`${'BatteryLevel'}: ${formatPercentage(position.attributes.batteryLevel)}`}>
                 <IconButton size="small">
                   {position.attributes.batteryLevel > 70 ? (
                     position.attributes.charge
