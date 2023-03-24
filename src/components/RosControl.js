@@ -8,11 +8,10 @@ const ROSLIB = require('roslib');
 
 export const RosContext = React.createContext()
 
-
-var uav_pose = [0,0];
 var plan_mission = "";
 var mission_layers = [];
 var mode_landing =0;
+var mode_yaw =0;
 let uav_list = [];
 let statusLog = [];
 
@@ -28,12 +27,16 @@ export const RosControl = ({children}) => {
     const [textmission,settextmission] = useState("");
 
     const openMision=(text_mission)=>{
-      let plan_mission = YAML.parse(text_mission);
+      plan_mission = YAML.parse(text_mission);
+      mode_landing = plan_mission["mode_landing"];
+      mode_yaw = plan_mission["mode_yaw"];
+
       console.log(plan_mission["uav_n"]);
       removeMarker();
       
       for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
         let latlngs = [];
+        let wp_position =[];
         if (map.getLayer('route_'+n_uav)) {//if (map.getSource(id)) 
           map.removeLayer('route_'+n_uav);
           map.removeSource('route_'+n_uav);
@@ -41,13 +44,19 @@ export const RosControl = ({children}) => {
         //mission_layers.push(L.layerGroup([]));
         for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
           latlngs.push([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
+          wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
           const oneMarker = new maplibregl.Marker().setLngLat([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
             .setPopup(new maplibregl.Popup().setText('pup up')).addTo(map);
             mission_layers.push(oneMarker)
 
-         // mission_layers[n_uav-1].addLayer(L.marker(plan_mission["uav_"+n_uav]["wp_"+n_wp],{icon: wp_blue_icon})
-          //  .bindPopup('<b>wp_'+n_wp+' (uav_'+n_uav+')</b> <br>lat: '+plan_mission["uav_"+n_uav]["wp_"+n_wp][0]+'<br>long: '+plan_mission["uav_"+n_uav]["wp_"+n_wp][1]+'<br>alt: '+plan_mission["uav_"+n_uav]["wp_"+n_wp][2]))
         };
+        for (var i = 0, len = arr.length; i < len; i++) {
+          if(uav_list[i].name == ("uav_"+n_uav)){
+            uav_list[i].wp_list = wp_position;
+          }
+        }
+
+
         map.easeTo({
           center: latlngs[0],
           zoom: Math.max(map.getZoom(), 10),
@@ -77,15 +86,6 @@ export const RosControl = ({children}) => {
           'line-width': 8
           }
           });
-        //let polygon = L.polyline(latlngs,{color: rand_color()}).bindPopup("uav_"+n_uav);
-        //mission_layers[n_uav-1].addLayer(polygon).addTo(map);
-        //map.fitBounds(polygon.getBounds());
-        //let uav_idx = uav_list.findIndex(element => element.name == "uav_"+n_uav)
-        // if findIndex fail uav_idx = -1 
-        //if(uav_idx >= 0 ){
-        //  uav_list[uav_idx].wp_list = latlngs
-        //}
-        //showFlyButton()
       }
 
     }
@@ -416,63 +416,139 @@ export const RosControl = ({children}) => {
       } 
     }
 
-    function loadMissionToUAV(ns){
-      let uav_idx = uav_list.findIndex(element => element.name == ns)
-      let wp_command = []
-      uav_list[uav_idx].wp_list.forEach(function prepare_wp(item,idx,arr){
-        let pos = new ROSLIB.Message({
-          latitude: item[0], 
-          longitude: item[1],
-          altitude: item[2]
-        });
+    function loadMission(){ 
+      // console.log(control.getSelection())
+      // let path_wp = control.getSelection()
+      let cur_roster = []
+      let cur_ns = ""
+      uav_list.forEach(function prepare_wp(item,idx,arr){
+        cur_ns = item.name
+        cur_roster.push(cur_ns);
+        if (item.type != "ext"){
+          let wp_command = [];
+          let yaw_pos =[];
+            item.wp_list.forEach(
+              function prepare_wp(item,idx,arr){
+                let pos = new ROSLIB.Message({
+                  latitude: item[0], 
+                  longitude: item[1],
+                  altitude: item[2]  //Creo que aqui si añadimos otro campo, cuando le des arriba a load mission se subiria bien añadiendo yaw, por ej. Load missiontouav creo que es para subirle la mision de forma individual a cada uno, desde la tabla
+                });
+              yaw_pos.push(item[3])
+              wp_command.push(pos);
+            })
   
-        wp_command.push(pos)
+          
+          if(item.type == "dji"){
+            var missionClient = new ROSLIB.Service({
+              ros : ros,
+              name : cur_ns + '/dji_control/configure_mission',
+              serviceType : 'aerialcore_common/ConfigMission'
+            });
+          }else{
+            var missionClient = new ROSLIB.Service({
+              ros : ros,
+              name : cur_ns + '/mission/new',
+              serviceType : 'aerialcore_common/ConfigMission'
+            });
+          }
+  
+          var request = new ROSLIB.ServiceRequest({
+            type : "waypoint",
+            waypoint: wp_command,
+            radius : 0,
+            maxVel:	3,
+            idleVel: 1.8,
+            yaw: yaw_pos,
+            yawMode: mode_yaw,
+            traceMode: 0,
+            finishAction: mode_landing
+          });
+          console.log(request)
+  
+          missionClient.callService(request, function(result) {
+            console.log('load mission'+ missionClient.name+': '+result.success);
+              if(result.success){
+                updateStatusWindow("Load mission to:" + cur_roster + " ok");
+              } else{
+                updateStatusWindow("Load mission to:" + cur_roster + " fail");
+              }
+          }, function(result) {
+            console.log('Error:'
+            + result);
+            alert('Error:'
+            + result);
+          });
+          console.log('loading mision to'+cur_ns);			
+        } else{
+          // if (item.type == ext)
+          // Si mandamos la mision individual para cada uav, hay que hacerlo por este camino, y descomentar la linea siguiente.
+          //loadMissionToExt(cur_ns);
+          // var info = "Loading Mission";
+          // updateInfoCell(cur_ns, info);
+        }
+      
       })
-  
-      if(uav_list[uav_idx].type == "dji"){
-        var missionClient = new ROSLIB.Service({
-          ros : ros,
-          name : ns + '/dji_control/configure_mission',
-          serviceType : 'aerialcore_common/ConfigMission'
-        });
+      // La linea siguiente tiene en cuenta que se mandan las misiones de todos los uavs EXT a la vez. Si no fuese así, habría que comentar la linea siguiente.
+      // loadMissionToExt(cur_ns);
+      let flyButton = document.getElementById("commandMission");
+      if(flyButton.style.cssText == "visibility: none;"){
+        flyButton.style.cssText = "visibility: hidden;"
       }else{
-        var missionClient = new ROSLIB.Service({
-          ros : ros,
-          name : ns + '/mission/new',
-          serviceType : 'aerialcore_common/ConfigMission'
-        });
+        flyButton.style.cssText = "visibility: none;"
       }
-  
-      var request = new ROSLIB.ServiceRequest({
-        type : "waypoint",
-        waypoint: wp_command,
-        radius : 0,
-        maxVel:	3,
-        idleVel: 2,
-        yawMode: 0,
-        traceMode: 0,
-        finishAction: mode_landing
-      });
-  
-      missionClient.callService(request, function(result) {
-        console.log('Result for service call on '
-        + missionClient.name
-        + ': '
-        + result.success);
-      }, function(result) {
-        console.log('Error:'
-        + result);
-        alert('Error:'
-        + result);
-      });
+      updateStatusWindow("Loadding mission to: " + cur_roster);
+    }
   
 
-      updateStatusWindow("Loadding mission to: " + ns);
+    function commandMission(){
+      //var r = confirm("Comand mission?");
+      var r =true;
+      if (r == true) {
+        let cur_roster = []
+        uav_list.forEach(function prepare_wp(uav,idx,arr){
+          cur_roster.push(uav.name);
+          let missionClient;
+          if (uav.type != "ext"){
+            if(uav.type == "dji"){
+              missionClient = new ROSLIB.Service({
+                ros : ros,
+                name : uav.name+'/dji_control/start_mission',
+                serviceType : 'std_srvs/SetBool'
+              });
+  
+            }else{
+              missionClient = new ROSLIB.Service({
+                ros : ros,
+                name : uav.name+'/mission/start_stop',
+                serviceType : 'std_srvs/SetBool'
+              });
+            }
+          
+            let request = new ROSLIB.ServiceRequest({data: true});
+  
+            missionClient.callService(request, function(result) {
+              console.log(result.message);
+              if(result.success){
+                updateStatusWindow("Start mission:" + cur_roster + " ok");
+              } else{
+                updateStatusWindow("Start mission:" + cur_roster + " FAIL!");
+              }
+            });
+          } else {
+            console.log(uav.name);
+            //commandMissionToEXT(uav.name);
+          }
+        });
+        updateStatusWindow("Commanding mission to: " + cur_roster);
+      } else {
+        console.log("Mission canceled")
+      }
     }
 
   return (
     <div style={{    width: '100%',height: '100%'}}>    
-      <RosContext.Provider value={{rosConnect , rosState,openMision,connectAddUav}}>
+      <RosContext.Provider value={{rosConnect , rosState,openMision,connectAddUav,commandMission,loadMission}}>
         {children}
       </RosContext.Provider>
     </div>

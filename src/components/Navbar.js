@@ -74,8 +74,8 @@ export const Navbar = ({SetAddUAVOpen}) => {
           <i className="fa fa-caret-down"></i>
         </button>
         <div className="dropdown-content">
-          <a id="loadMissionNavbar"  >Load Mission</a>
-          <a id="commandMissionNavbar"  >Command Mission</a>          
+          <a id="loadMissionNavbar" onClick={rosContex.loadMission} >Load Mission</a>
+          <a id="commandMissionNavbar" onClick={rosContex.commandMission} >Command Mission</a>          
         </div>
       </div>
       <a id="more info" >new device </a>
