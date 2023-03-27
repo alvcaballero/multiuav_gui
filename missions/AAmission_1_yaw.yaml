@@ -15,5 +15,4 @@ uav_2:  # 850 m, left UAV (M210) placed at the end of the runway, passing the "0
   wp_0: [38.137538, -3.176196, 26, 90]  # 440 m elevation (444 m in the map origin), 30 m inspection height.
   wp_1: [38.136549, -3.179444, 23, 120]  # 437 m elevation (444 m in the map origin), 30 m inspection height.
   wp_2: [38.138344, -3.179188, 20, 100]  # 434 m elevation (444 m in the map origin), 30 m inspection height.
-  # wp_3: [38.138500, -3.176587, 20]  # Approach point
-  wp_3: [38.138500, -3.176587, 160]  # Charging point
+  wp_3: [38.138500, -3.176587, 25, 160]  # Charging point

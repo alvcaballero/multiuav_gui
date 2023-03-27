@@ -50,13 +50,11 @@ export const RosControl = ({children}) => {
             mission_layers.push(oneMarker)
 
         };
-        for (var i = 0, len = arr.length; i < len; i++) {
+        for (var i = 0; i < uav_list.length; i++) {
           if(uav_list[i].name == ("uav_"+n_uav)){
             uav_list[i].wp_list = wp_position;
           }
-        }
-
-
+        };
         map.easeTo({
           center: latlngs[0],
           zoom: Math.max(map.getZoom(), 10),
@@ -434,9 +432,14 @@ export const RosControl = ({children}) => {
                   longitude: item[1],
                   altitude: item[2]  //Creo que aqui si añadimos otro campo, cuando le des arriba a load mission se subiria bien añadiendo yaw, por ej. Load missiontouav creo que es para subirle la mision de forma individual a cada uno, desde la tabla
                 });
+                
               yaw_pos.push(item[3])
               wp_command.push(pos);
-            })
+            });
+            
+            let yaw_pos_msg = new ROSLIB.Message({
+              data: yaw_pos
+            });
   
           
           if(item.type == "dji"){
@@ -459,7 +462,7 @@ export const RosControl = ({children}) => {
             radius : 0,
             maxVel:	3,
             idleVel: 1.8,
-            yaw: yaw_pos,
+            yaw: yaw_pos_msg,
             yawMode: mode_yaw,
             traceMode: 0,
             finishAction: mode_landing

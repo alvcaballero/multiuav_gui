@@ -97,7 +97,7 @@ const DeviceRow = ({ data, index, style }) => {
             {position.hasOwnProperty('speed') && (
               <Tooltip title={`${'speed'}: ${position.speed}`}>
                 <IconButton size="small">
-                  <div style={fontSize="10px"}> v {position.speed}km/s</div>
+                  <div style={fontSize="0.9rem"}> v {position.speed}km/s</div>
                 </IconButton>
               </Tooltip>
             )}
