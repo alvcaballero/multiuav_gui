@@ -1,10 +1,31 @@
-import React ,{ useState }from 'react'
+import { Height } from '@mui/icons-material';
+import React ,{ useState ,useContext }from 'react'
 import { map } from '../Mapview/Mapview.js'
+import { RosContext } from './RosControl'
+
+export const Menu = ({SetAddUAVOpen}) => {
+  const rosContex = useContext(RosContext);
+
+  const [myValue, setMyValue] = useState('');
 
 
-export const Menu = () => {
+  const readFile = ( e ) => {
+    //https://www.youtube.com/watch?v=K3SshoCXC2g
+    const file = e.target.files[0];
+    if ( !file ) return;
 
-  
+    const fileReader = new FileReader();
+    fileReader.readAsText( file );
+    fileReader.onload = () => {
+      console.log( fileReader.result );
+      console.log( file.name );
+      setMyValue( fileReader.result );
+      rosContex.openMision(fileReader.result)
+    }
+    fileReader.onerror = () => {
+      console.log( fileReader.error );
+    }
+  }
 
   function HomeMap(){
     map.easeTo({
@@ -12,6 +33,10 @@ export const Menu = () => {
       zoom: Math.max(map.getZoom(), 5),
       offset: [0, -1 / 2],
     });
+  }
+
+  function openAddUav(){
+    SetAddUAVOpen(true);
   }
 
     const [hidestatus,sethidestatus]  = useState(true);
@@ -29,14 +54,15 @@ export const Menu = () => {
               <span className="icon icon-home"></span>
             </button>
             <button id="openMission" className="btn btn-default">
-              <span className="icon icon-folder"></span>
+              <label htmlFor="openMissionNavbar" className="icon icon-folder"></label>
+              <input type="file" multiple={false} style={{display:"none"}} id="openMissionNavbar" onChange={readFile} />
             </button>
-            <button id="openAddUav" className="btn btn-default pull-right">
+            <button id="openAddUav" onClick={openAddUav} className="btn btn-default pull-right">
               <span className="icon icon-flight"></span>
             </button>            
         </div>
         
-        <button id="rosConnect" className="btn btn-default">Connect ROS</button>
+        <button id="rosConnect" onClick={rosContex.rosConnect} className="btn btn-default">Connect ROS</button>
         <button id="loadMission" style={{visibility: true}} className="btn btn-default">
           <span className="icon icon-upload"></span>
         </button>
