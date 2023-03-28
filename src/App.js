@@ -72,11 +72,10 @@ function App() {
       <div className="window">
         <RosControl>
           <Navbar SetAddUAVOpen={SetAddUAVOpen} />
-          <Menu/>
+          <Menu SetAddUAVOpen={SetAddUAVOpen} />
           <MapView>
             {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
-            
             <Statuswindow/>
             {/*<Overlaytab/>
             <Camera/>*/}
