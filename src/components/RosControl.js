@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector, connect } from 'react-redux';
 import maplibregl from 'maplibre-gl';
 import { map } from '../Mapview/Mapview.js';
-import { dataActions, devicesActions } from '../store'; // here update device action with position of uav for update in map
+import { dataActions, devicesActions ,missionActions} from '../store'; // here update device action with position of uav for update in map
 const YAML = require('yaml')
 const ROSLIB = require('roslib');
 
@@ -26,10 +26,12 @@ export const RosControl = ({children}) => {
   	const [rosState,setrosState] = useState(false);
     const [textmission,settextmission] = useState("");
 
-    const openMision=(text_mission)=>{
+    const openMision=(name_mission,text_mission)=>{
       plan_mission = YAML.parse(text_mission);
       mode_landing = plan_mission["mode_landing"];
       mode_yaw = plan_mission["mode_yaw"];
+      dispatch(missionActions.updateMission({name:name_mission,mission:plan_mission}));
+
 
       console.log(plan_mission["uav_n"]);
       removeMarker();
@@ -132,7 +134,6 @@ export const RosControl = ({children}) => {
 
 
     const rosConnect = () =>{
-      //var text = document.getElementById("rosConnect");
       if(!rosState){
         ros = new ROSLIB.Ros({url : 'ws://localhost:9090'});
         ros.on('connection', function() {

@@ -1,12 +1,11 @@
 import { Height } from '@mui/icons-material';
-import React ,{ useState ,useContext }from 'react'
+import React ,{ useEffect,useState ,useContext }from 'react'
 import { map } from '../Mapview/Mapview.js'
 import { RosContext } from './RosControl'
 
 export const Menu = ({SetAddUAVOpen}) => {
   const rosContex = useContext(RosContext);
-
-  const [myValue, setMyValue] = useState('');
+  const [MissionName, setMissionName] = useState('no load mission');
 
 
   const readFile = ( e ) => {
@@ -19,8 +18,8 @@ export const Menu = ({SetAddUAVOpen}) => {
     fileReader.onload = () => {
       console.log( fileReader.result );
       console.log( file.name );
-      setMyValue( fileReader.result );
-      rosContex.openMision(fileReader.result)
+      setMissionName( file.name );
+      rosContex.openMision(file.name,fileReader.result)
     }
     fileReader.onerror = () => {
       console.log( fileReader.error );
@@ -61,15 +60,18 @@ export const Menu = ({SetAddUAVOpen}) => {
               <span className="icon icon-flight"></span>
             </button>            
         </div>
-        
-        <button id="rosConnect" onClick={rosContex.rosConnect} className="btn btn-default">Connect ROS</button>
+        <RosContext.Consumer>
+          {({rosState}) => (
+          <button id="rosConnect" onClick={rosContex.rosConnect} className="btn btn-default">{rosState && "conectado"} {!rosState && "desconectado"}  </button>
+          )}
+        </RosContext.Consumer>
         <button id="loadMission" style={{visibility: true}} className="btn btn-default">
           <span className="icon icon-upload"></span>
         </button>
 
         <button id="commandMission" style={{visibility: true}} className="btn btn-default">Fly!</button>
 
-        <div id="openedmission" className="btn btn-default"> No mission load </div>
+        <div id="openedmission" className="btn btn-default"> {MissionName}</div>
         <button className="btn btn-default pull-right" onClick={e => hideStatusWindow() } >Status</button>
 
 
