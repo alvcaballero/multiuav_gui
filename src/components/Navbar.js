@@ -20,7 +20,7 @@ export const Navbar = ({SetAddUAVOpen}) => {
       console.log( fileReader.result );
       console.log( file.name );
       setMyValue( fileReader.result );
-      rosContex.openMision(fileReader.result)
+      rosContex.openMision(file.name,fileReader.result)
     }
     fileReader.onerror = () => {
       console.log( fileReader.error );
