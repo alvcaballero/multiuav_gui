@@ -34,7 +34,7 @@ export const RosControl = ({children}) => {
 
 
       console.log(plan_mission["uav_n"]);
-      removeMarker();
+//      removeMarker();
       
       for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
         let latlngs = [];
@@ -47,9 +47,9 @@ export const RosControl = ({children}) => {
         for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
           latlngs.push([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
           wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
-          const oneMarker = new maplibregl.Marker().setLngLat([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
-            .setPopup(new maplibregl.Popup().setText('pup up')).addTo(map);
-            mission_layers.push(oneMarker)
+//          const oneMarker = new maplibregl.Marker().setLngLat([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
+//            .setPopup(new maplibregl.Popup().setText('pup up')).addTo(map);
+//            mission_layers.push(oneMarker)
 
         };
         for (var i = 0; i < uav_list.length; i++) {
@@ -57,12 +57,12 @@ export const RosControl = ({children}) => {
             uav_list[i].wp_list = wp_position;
           }
         };
-        map.easeTo({
+         map.easeTo({
           center: latlngs[0],
           zoom: Math.max(map.getZoom(), 10),
           offset: [0, -1 / 2],
         });
-        map.addSource('route_'+n_uav, {
+/*        map.addSource('route_'+n_uav, {
           'type': 'geojson',
           'data': {
             'type': 'Feature',
@@ -85,7 +85,7 @@ export const RosControl = ({children}) => {
           'line-color': '#888',
           'line-width': 8
           }
-          });
+          }); */
       }
 
     }
