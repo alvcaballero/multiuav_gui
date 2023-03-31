@@ -15,6 +15,7 @@ import { RosControl } from './components/RosControl';
 import MapView from './Mapview/Mapview';
 import MapPositions from './Mapview/MapPositions';
 import MapMissions from './Mapview/MapMissions';
+import MapSelectedDevice from './Mapview/MapSelectedDevice';
 import DeviceList from './components/DeviceList';
 import StatusCard from './components/StatusCard';
 
@@ -78,6 +79,7 @@ function App() {
             {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
             <MapMissions/>
+            <MapSelectedDevice/>
             <Statuswindow/>
             {/*<Overlaytab/>
             <Camera/>*/}
