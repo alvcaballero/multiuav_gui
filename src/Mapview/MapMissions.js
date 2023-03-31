@@ -7,9 +7,10 @@ import { findFonts } from './mapUtil';
 export const MapMissions = () => {
     const id = useId();
     const route_points = `${id}-points`;
+    const clusters = `${id}-points-clusters`;
     const routes = useSelector((state) => state.mission.route);
     const mapCluster = true;
-    const iconScale = 1;
+    const iconScale = 0.6;
 
     const createFeature = (myroute,point) => {
         return {
@@ -33,6 +34,9 @@ export const MapMissions = () => {
                 type: 'FeatureCollection',
                 features: [],
             },
+            cluster: mapCluster,
+            clusterMaxZoom: 14,
+            clusterRadius: 50,
             });
 
           map.addSource(id, {
@@ -69,20 +73,31 @@ export const MapMissions = () => {
             id: 'mission-points',
             type: 'symbol',
             source: route_points,
+            filter: ['!has', 'point_count'],
             layout: {
-              'icon-image': '{category}-{color}',
+              'icon-image': 'background',
               'icon-size': iconScale,
-              'icon-allow-overlap': true,
+              "icon-allow-overlap": true,
               'text-field': '{id}',
-              'text-allow-overlap': true,
-              'text-anchor': 'bottom',
-              'text-offset': [0, 0.75 * iconScale],
               'text-font': findFonts(map),
-              'text-size': 15,
+              'text-size': 14,
             },
             paint: {
               'text-halo-color': 'white',
               'text-halo-width': 1,
+            },
+          });
+          map.addLayer({
+            id: clusters,
+            type: 'symbol',
+            source: route_points,
+            filter: ['has', 'point_count'],
+            layout: {
+              'icon-image': 'background',
+              'icon-size': iconScale,
+              'text-field': 'M',
+              'text-font': findFonts(map),
+              'text-size': 14,
             },
           });
     
@@ -95,6 +110,9 @@ export const MapMissions = () => {
             }
             if (map.getLayer('mission-points')) {
                 map.removeLayer('mission-points');
+              }
+              if (map.getLayer(clusters)) {
+                map.removeLayer(clusters);
               }
             if (map.getSource(id)) {
                 map.removeSource(id);

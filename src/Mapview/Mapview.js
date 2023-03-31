@@ -82,7 +82,7 @@ const switcher = new SwitcherControl(
     const activeMapStyles = 'osm';
     const [defaultMapStyle] = 'osm';
     const mapboxAccessToken = 'my tocken';
-    const maxZoom = 20;
+    const maxZoom = 22;
   
     useEffect(() => {
       if (maxZoom) {
