@@ -17,7 +17,7 @@ const element = document.createElement('div');
     container: element,
     attributionControl: false,
     center: [ -6.0025 , 37.412 ],
-    zoom: 12
+    zoom: 8
   });
 
   let ready = false;
@@ -82,7 +82,7 @@ const switcher = new SwitcherControl(
     const activeMapStyles = 'osm';
     const [defaultMapStyle] = 'osm';
     const mapboxAccessToken = 'my tocken';
-    const maxZoom = 22;
+    const maxZoom = 21;
   
     useEffect(() => {
       if (maxZoom) {

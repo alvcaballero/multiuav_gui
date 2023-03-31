@@ -2,7 +2,7 @@ import { useId, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { map } from './Mapview';
 import { findFonts } from './mapUtil';
-
+import maplibregl from 'maplibre-gl';
 
 export const MapMissions = () => {
     const id = useId();
@@ -35,7 +35,7 @@ export const MapMissions = () => {
                 features: [],
             },
             cluster: mapCluster,
-            clusterMaxZoom: 14,
+            clusterMaxZoom: 17,
             clusterRadius: 50,
             });
 
@@ -77,7 +77,8 @@ export const MapMissions = () => {
             layout: {
               'icon-image': 'background',
               'icon-size': iconScale,
-              "icon-allow-overlap": true,
+              'icon-allow-overlap': true,
+              'text-allow-overlap': true,
               'text-field': '{id}',
               'text-font': findFonts(map),
               'text-size': 14,
@@ -100,6 +101,14 @@ export const MapMissions = () => {
               'text-size': 14,
             },
           });
+          map.on('click','mission-points',function(e) {
+            new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML('<h4>'+ "Ruta: "+ e.features[0].properties.name+ '</h4>' +
+                    '<p>'+"Altitud:   " + e.features[0].properties.altitud + '</p>' +
+                    '<p>' +"Heading:   "+ e.features[0].properties.headin + '</p>')
+            .addTo(map);
+          } )
     
           return () => {
             if (map.getLayer('mission-line')) {
