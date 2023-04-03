@@ -15,8 +15,6 @@ var mode_yaw =0;
 let uav_list = [];
 let statusLog = [];
 
-
-
 let ros = "";
 
 export const RosControl = ({children}) => {
@@ -34,23 +32,17 @@ export const RosControl = ({children}) => {
 
 
       console.log(plan_mission["uav_n"]);
-//      removeMarker();
-      
+
       for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
         let latlngs = [];
         let wp_position =[];
-        if (map.getLayer('route_'+n_uav)) {//if (map.getSource(id)) 
+        if (map.getLayer('route_'+n_uav)) {
           map.removeLayer('route_'+n_uav);
           map.removeSource('route_'+n_uav);
         }
-        //mission_layers.push(L.layerGroup([]));
         for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
           latlngs.push([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
           wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
-//          const oneMarker = new maplibregl.Marker().setLngLat([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
-//            .setPopup(new maplibregl.Popup().setText('pup up')).addTo(map);
-//            mission_layers.push(oneMarker)
-
         };
         for (var i = 0; i < uav_list.length; i++) {
           if(uav_list[i].name == ("uav_"+n_uav)){
@@ -62,30 +54,6 @@ export const RosControl = ({children}) => {
           zoom: Math.max(map.getZoom(), 10),
           offset: [0, -1 / 2],
         });
-/*        map.addSource('route_'+n_uav, {
-          'type': 'geojson',
-          'data': {
-            'type': 'Feature',
-            'properties': {},
-            'geometry': {
-            'type': 'LineString',
-            'coordinates':latlngs
-                        }
-                  }
-          });
-          map.addLayer({
-          'id': 'route'+n_uav,
-          'type': 'line',
-          'source': 'route_'+n_uav,
-          'layout': {
-          'line-join': 'round',
-          'line-cap': 'round'
-          },
-          'paint': {
-          'line-color': '#888',
-          'line-width': 8
-          }
-          }); */
       }
 
     }
@@ -110,15 +78,9 @@ export const RosControl = ({children}) => {
     function changeReady(uav_ns){
       var button = document.getElementById("Ready"+uav_ns);
       if(button.innerHTML == "Ready"){
-        //var r = confirm("Change to Not Ready");
-        //if (r == true) {
           button.innerHTML = "Not Ready";
-        //  } else{
-        //  console.log("UAV still Ready");
-        //}
       }else{
       button.innerHTML = "Ready";
-      // fila.cell5.buttonReady.innerHTML = "Ready";
       var info = "Mission requested";
       updateInfoCell(uav_ns, info);
       }
@@ -271,23 +233,24 @@ export const RosControl = ({children}) => {
             //dispatch(dataActions.updatePosition({id:msg.header.seq,deviceId:id_uav,latitude:msg.x,longitude:msg.y,altitude:msg.z,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"}));          
           });
 
-          uav_list[cur_uav_idx].listener_hdg.subscribe(function(message) {
-            //uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
-            var markerRotation = message.data+90;
+          uav_list[cur_uav_idx].listener_hdg.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;
+            dispatch(dataActions.updatePosition({deviceId:id_uav,course:msg.data+90}));//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
           });				
           
-          uav_list[cur_uav_idx].listener_vel.subscribe(function(message) {
-           // var showData = document.getElementById(uav_ns).cells;
-             // showData[2].innerHTML = Math.sqrt(Math.pow(message.vector.x,2) + Math.pow(message.vector.y,2)).toFixed(2);
+          uav_list[cur_uav_idx].listener_vel.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;// var showData = document.getElementById(uav_ns).cells;
+           dispatch(dataActions.updatePosition({deviceId:id_uav,speed:Math.sqrt(Math.sqrt(Math.pow(msg.vector.x,2) + Math.pow(msg.vector.y,2)).toFixed(2))}));// showData[2].innerHTML = Math.sqrt(Math.pow(message.vector.x,2) + Math.pow(message.vector.y,2)).toFixed(2);
           });				
           
-          uav_list[cur_uav_idx].listener_bat.subscribe(function(message) {
-            //var showData = document.getElementById(uav_ns).cells;
-            // showData[3].innerHTML = message.percentage + "%";
+          uav_list[cur_uav_idx].listener_bat.subscribe(function(msg) {
+            let id_uav = cur_uav_idx//var showData = document.getElementById(uav_ns).cells;
+            dispatch(dataActions.updatePosition({deviceId:id_uav,batteryLevel:msg.percentage}));// showData[3].innerHTML = message.percentage + "%";
           });
   
-          uav_list[cur_uav_idx].camera_stream_comprese.subscribe(function(message) {
-            //document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
+          uav_list[cur_uav_idx].camera_stream_comprese.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;
+            dispatch(dataActions.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data}));//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
             //document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
           });
           
@@ -335,8 +298,7 @@ export const RosControl = ({children}) => {
   
           uav_list[cur_uav_idx].listener_alt.subscribe(function(message) {
             //var showData = document.getElementById(uav_ns).cells;
-            //showData[1].innerHTML = (message.relative).toFixed(2);
-                    
+            //showData[1].innerHTML = (message.relative).toFixed(2);   
           });
   
           uav_list[cur_uav_idx].listener_vel.subscribe(function(msg) {

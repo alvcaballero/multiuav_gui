@@ -80,9 +80,6 @@ function App() {
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
             <MapMissions/>
             <MapSelectedDevice/>
-            <Statuswindow/>
-            {/*<Overlaytab/>
-            <Camera/>*/}
           </MapView>
           <div style={sidebarStyle}>
               <div style={middleStyle}>
@@ -97,6 +94,12 @@ function App() {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
           />
+          <Camera
+          deviceId={selectedDeviceId}
+          position={selectedPosition}
+          onClose={() => dispatch(devicesActions.selectId(null))}
+          />
+          <Statuswindow/>
         </RosControl>
       </div>
 

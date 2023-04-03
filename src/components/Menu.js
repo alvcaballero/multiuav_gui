@@ -2,10 +2,12 @@ import { Height } from '@mui/icons-material';
 import React ,{ useEffect,useState ,useContext }from 'react'
 import { map } from '../Mapview/Mapview.js'
 import { RosContext } from './RosControl'
+import { useSelector } from 'react-redux';
 
 export const Menu = ({SetAddUAVOpen}) => {
   const rosContex = useContext(RosContext);
   const [MissionName, setMissionName] = useState('no load mission');
+  const Mission_Name = useSelector((state) => state.mission.name);
 
 
   const readFile = ( e ) => {
@@ -18,7 +20,6 @@ export const Menu = ({SetAddUAVOpen}) => {
     fileReader.onload = () => {
       console.log( fileReader.result );
       console.log( file.name );
-      setMissionName( file.name );
       rosContex.openMision(file.name,fileReader.result)
     }
     fileReader.onerror = () => {
@@ -42,6 +43,10 @@ export const Menu = ({SetAddUAVOpen}) => {
     const hideStatusWindow =() =>{
       sethidestatus(!hidestatus);
     }
+    useEffect(() => {
+      setMissionName(Mission_Name);
+    }, [Mission_Name]);
+    
 
   return (
 
@@ -52,8 +57,8 @@ export const Menu = ({SetAddUAVOpen}) => {
             <button id="setHome" onClick={HomeMap} className="btn btn-default">
               <span className="icon icon-home"></span>
             </button>
-            <button id="openMission" className="btn btn-default">
-              <label htmlFor="openMissionNavbar" className="icon icon-folder"></label>
+            <button id="openMission" className="btn btn-default" >
+              <label htmlFor="openMissionNavbar" className="icon icon-folder" style={{padding: 0}} ></label>
               <input type="file" multiple={false} style={{display:"none"}} id="openMissionNavbar" onChange={readFile} />
             </button>
             <button id="openAddUav" onClick={openAddUav} className="btn btn-default pull-right">
