@@ -59,6 +59,9 @@ const { reducer, actions } = createSlice({
         state.positions[action.payload.deviceId]['attributes']['batteryLevel'] = action.payload.batteryLevel;  
       }
     },
+    updateCamera(state, action) {
+      state.camera[action.payload.deviceId] = action.payload;
+    },
   },
 });
 

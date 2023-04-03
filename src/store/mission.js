@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const { reducer, actions } = createSlice({
   name: 'mission',
   initialState: {
-    name: null,
+    name: "no mission load",
     route: {},
     attributes: {},
   },
