@@ -7,8 +7,7 @@ import { makeStyles } from '@mui/system';
 import { Navbar } from './components/Navbar';
 import { Menu } from './components/Menu';
 import './assets/css/photon.min.css'
-import { Overlaytab } from './components/Overlaytab';
-import { Statuswindow } from './components/Statuswindow';
+import Toast from './components/Toast';
 import { Adduav } from './components/Adduav';
 import { Camera } from './components/Camera';
 import { RosControl } from './components/RosControl';
@@ -60,6 +59,51 @@ function App() {
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
 
+  const [list, setList] = useState([]);
+  let toastProperties = null;
+  const showToast = (type,description)=> {
+    switch(type) {
+      case 'success':
+        toastProperties = {
+          id: list.length+1,
+          title: 'Success',
+          description: 'This is a success toast component',
+          backgroundColor: '#5cb85c'
+        }
+        break;
+      case 'danger':
+        toastProperties = {
+          id: list.length+1,
+          title: 'Danger',
+          description: 'This is a danger toast component',
+          backgroundColor: '#d9534f'
+        }
+        break;
+      case 'info':
+        toastProperties = {
+          id: list.length+1,
+          title: 'Info',
+          description: 'This is a info toast component',
+          backgroundColor: '#5bc0de'
+        }
+        break;
+      case 'warning':
+        toastProperties = {
+          id: list.length+1,
+          title: 'Warning',
+          description: 'This is a warning toast component',
+          backgroundColor: '#f0ad4e'
+        }
+        break;
+      default:
+        toastProperties = [];
+      }
+      setList([...list, toastProperties]);
+  }
+
+
+
+
   const onMarkerClick = useCallback((_, deviceId) => {
     dispatch(devicesActions.selectId(deviceId));
   }, [dispatch]);
@@ -72,7 +116,7 @@ function App() {
   return (
     <div className="App">
       <div className="window">
-        <RosControl>
+        <RosControl notification={showToast}>
           <Navbar SetAddUAVOpen={SetAddUAVOpen} />
           <Menu SetAddUAVOpen={SetAddUAVOpen} />
           <MapView>
@@ -99,7 +143,7 @@ function App() {
           position={selectedPosition}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />
-          <Statuswindow/>
+          <Toast toastlist={list} position="buttom-right" setList={setList} />
         </RosControl>
       </div>
 

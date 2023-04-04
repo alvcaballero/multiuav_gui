@@ -17,7 +17,7 @@ let statusLog = [];
 
 let ros = "";
 
-export const RosControl = ({children}) => {
+export const RosControl = ({children,notification}) => {
     const devices = useSelector((state) => state.devices.items);
     const dispatch = useDispatch();
   
@@ -58,18 +58,6 @@ export const RosControl = ({children}) => {
 
     }
 
-
-
-    function updateStatusWindow (text) {
-      var statusLenght;
-      var status = document.getElementById("statusWindow");
-      statusLenght = statusLog.push("\n"+text);
-      if (statusLenght > 7){
-        statusLog.shift();
-      }
-      status.innerHTML = statusLog;
-    }
-
     function updateInfoCell (uav_ns, info) {
       var showData = document.getElementById(uav_ns).cells;
         showData[5].innerHTML = info;
@@ -104,6 +92,7 @@ export const RosControl = ({children}) => {
         });
         ros.on('error', function(error) {
           console.log('Error connecting to websocket server: ', error);
+          notification('danger','no se puede conectar');
         });
         ros.on('close', function() {
           console.log('Connection to websocket server closed.');
@@ -371,7 +360,7 @@ export const RosControl = ({children}) => {
         uav_list.forEach(function(uav, indice, array) {
           console.log(uav, indice);
         })
-          updateStatusWindow(uavAdded.name + " added. Type: "+ uavAdded.type);
+        notification('success', uavAdded.name + " added. Type: "+ uavAdded.type);
       }else{
         alert("\nRos no está conectado.\n\n Por favor conéctelo primero.")
       } 
@@ -435,9 +424,9 @@ export const RosControl = ({children}) => {
           missionClient.callService(request, function(result) {
             console.log('load mission'+ missionClient.name+': '+result.success);
               if(result.success){
-                updateStatusWindow("Load mission to:" + cur_roster + " ok");
+                notification('success',"Load mission to:" + cur_roster + " ok");
               } else{
-                updateStatusWindow("Load mission to:" + cur_roster + " fail");
+                notification('danger',"Load mission to:" + cur_roster + " fail");
               }
           }, function(result) {
             console.log('Error:'
@@ -463,7 +452,7 @@ export const RosControl = ({children}) => {
       }else{
         flyButton.style.cssText = "visibility: none;"
       }
-      updateStatusWindow("Loadding mission to: " + cur_roster);
+      notification('success',"Loadding mission to: " + cur_roster);
     }
   
 
@@ -496,9 +485,9 @@ export const RosControl = ({children}) => {
             missionClient.callService(request, function(result) {
               console.log(result.message);
               if(result.success){
-                updateStatusWindow("Start mission:" + cur_roster + " ok");
+                notification('success',"Start mission:" + cur_roster + " ok");
               } else{
-                updateStatusWindow("Start mission:" + cur_roster + " FAIL!");
+                notification('danger',"Start mission:" + cur_roster + " FAIL!");
               }
             });
           } else {
@@ -506,7 +495,7 @@ export const RosControl = ({children}) => {
             //commandMissionToEXT(uav.name);
           }
         });
-        updateStatusWindow("Commanding mission to: " + cur_roster);
+        notification('success',"Commanding mission to: " + cur_roster);
       } else {
         console.log("Mission canceled")
       }

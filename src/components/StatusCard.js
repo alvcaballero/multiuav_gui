@@ -95,7 +95,7 @@ const StatusRow = ({ name, content }) => {
 
   return (
     <TableRow>
-      <TableCell className={styles.card}>
+      <TableCell className={classes.card}>
         <Typography variant="body2">{name}</Typography>
       </TableCell>
       <TableCell className={classes.cell}>
