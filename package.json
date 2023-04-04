@@ -16,7 +16,6 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@turf/circle": "^6.5.0",
-    "bootstrap": "^5.2.3",
     "electron-is-dev": "^2.0.0",
     "maplibre-gl": "^2.4.0",
     "moment": "^2.29.4",
