@@ -24,6 +24,27 @@ export const RosControl = ({children,notification}) => {
   	const [rosState,setrosState] = useState(false);
     const [textmission,settextmission] = useState("");
 
+
+    const serverConecRos = async (event) => {
+      event.preventDefault();
+      try {
+        const response = await fetch('/api/conectRos', {
+          method: 'POST',
+          body: new URLSearchParams(`rosState=${encodeURIComponent(rosState)}`),
+        });
+        if (response.ok) {
+          console.log()
+          const user = await response.json();
+          console.log(user)
+          setrosState(true);
+        } else {
+          throw Error(await response.text());
+        }
+      } catch (error) {
+        setrosState(false);
+      }
+    };
+
     const openMision=(name_mission,text_mission)=>{
       plan_mission = YAML.parse(text_mission);
       mode_landing = plan_mission["mode_landing"];
@@ -84,6 +105,7 @@ export const RosControl = ({children,notification}) => {
 
 
     const rosConnect = () =>{
+      serverConecRos();
       if(!rosState){
         ros = new ROSLIB.Ros({url : 'ws://localhost:9090'});
         ros.on('connection', function() {
