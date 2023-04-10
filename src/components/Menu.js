@@ -8,13 +8,11 @@ export const Menu = ({SetAddUAVOpen}) => {
   const rosContex = useContext(RosContext);
   const [MissionName, setMissionName] = useState('no load mission');
   const Mission_Name = useSelector((state) => state.mission.name);
+  const [hidestatus,sethidestatus]  = useState(true);
 
-
-  const readFile = ( e ) => {
-    //https://www.youtube.com/watch?v=K3SshoCXC2g
+  const readFile = ( e ) => {//https://www.youtube.com/watch?v=K3SshoCXC2g
     const file = e.target.files[0];
     if ( !file ) return;
-
     const fileReader = new FileReader();
     fileReader.readAsText( file );
     fileReader.onload = () => {
@@ -35,18 +33,20 @@ export const Menu = ({SetAddUAVOpen}) => {
     });
   }
 
+  
   function openAddUav(){
     SetAddUAVOpen(true);
   }
 
-    const [hidestatus,sethidestatus]  = useState(true);
-    const hideStatusWindow =() =>{
-      sethidestatus(!hidestatus);
-    }
-    useEffect(() => {
-      setMissionName(Mission_Name);
-    }, [Mission_Name]);
-    
+  
+  const hideStatusWindow =() =>{
+    sethidestatus(!hidestatus);
+  }
+  
+  useEffect(() => {
+    setMissionName(Mission_Name);
+  }, [Mission_Name]);
+  
 
   return (
 
