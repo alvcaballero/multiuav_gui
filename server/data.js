@@ -1,10 +1,14 @@
-const state = {
+ var state = {
   camera: {},
   positions: {},
   history: {},
+  devices: {},
 };
+ function updatedevice( payload) {
+  state.devices[payload.id] = payload;
+}
 
-function updatePosition(state, payload) {
+ function updatePosition( payload) {
     //state.positions[payload.deviceId] = payload;
     if (state.positions[payload.deviceId] === undefined) {
       state.positions[payload.deviceId] = {attributes:{}}
@@ -28,6 +32,13 @@ function updatePosition(state, payload) {
     }
 }
 
-function updateCamera(state, action) {
+ function updateCamera( payload) {
       state.camera[payload.deviceId] = payload;
-    }
+}
+
+module.exports = {
+  state,
+  updatedevice,
+  updatePosition,
+  updateCamera,
+};
