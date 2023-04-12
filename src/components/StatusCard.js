@@ -129,9 +129,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     <>
       <div className={classes.root}>
         {device && (
-          <Draggable
-            handle={`.${classes.media}, .${classes.header}`}
-          >
+
             <Card elevation={3} className={classes.card}>
               {deviceImage ? (
                 <CardMedia
@@ -216,7 +214,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                 </IconButton>
               </CardActions>
             </Card>
-          </Draggable>
+
         )}
       </div>
       {position && (

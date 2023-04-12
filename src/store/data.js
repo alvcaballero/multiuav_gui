@@ -60,7 +60,7 @@ const { reducer, actions } = createSlice({
       }
     },
     updateCamera(state, action) {
-      state.camera[action.payload.deviceId] = action.payload;
+      state.camera[action.payload.deviceId] = action.payload.camera;
     },
   },
 });

@@ -26,7 +26,7 @@ export const RosControl = ({children,notification}) => {
 
 
     const serverConecRos = async (event) => {
-      event.preventDefault();
+      //event.preventDefault();
       try {
         const response = await fetch('/api/conectRos', {
           method: 'POST',
@@ -122,7 +122,6 @@ export const RosControl = ({children,notification}) => {
       }else{
         for (var i = 0; i < uav_list.length; i++) {
           uav_list[i].listener.unsubscribe();
-          uav_list[i].marker.setOpacity(0);				
           uav_list[i].pose = [0, 0];
         }
         uav_list = [];
@@ -187,7 +186,7 @@ export const RosControl = ({children,notification}) => {
         dispatch(devicesActions.update({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online'}));
 
         
-        let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",bag : false};
+        let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",bag : false};
         uav_list.push(uavAdded);
 
         // Subscribing
@@ -222,7 +221,7 @@ export const RosControl = ({children,notification}) => {
             messageType : 'sensor_msgs/BatteryState'
           });
   
-          uav_list[cur_uav_idx].camera_stream_comprese = new ROSLIB.Topic({
+          uav_list[cur_uav_idx].listener_cam = new ROSLIB.Topic({
             ros : ros,
             name : uav_ns+'/video_stream_compress',
             messageType : 'sensor_msgs/CompressedImage'
@@ -259,8 +258,9 @@ export const RosControl = ({children,notification}) => {
             dispatch(dataActions.updatePosition({deviceId:id_uav,batteryLevel:msg.percentage}));// showData[3].innerHTML = message.percentage + "%";
           });
   
-          uav_list[cur_uav_idx].camera_stream_comprese.subscribe(function(msg) {
+          uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
             let id_uav = cur_uav_idx;
+            console.log("camradji")
             dispatch(dataActions.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data}));//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
             //document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
           });
@@ -296,6 +296,11 @@ export const RosControl = ({children,notification}) => {
             name : uav_ns+'/mavros/battery',
             messageType : 'sensor_msgs/BatteryState'
           });
+          uav_list[cur_uav_idx].listener_cam = new ROSLIB.Topic({
+            ros : ros,
+            name : uav_ns+'/video_stream_compress',
+            messageType : 'sensor_msgs/CompressedImage'
+          });
   
           uav_list[cur_uav_idx].listener.subscribe(function(msg) {
             let id_uav = cur_uav_idx;
@@ -321,6 +326,13 @@ export const RosControl = ({children,notification}) => {
             let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
             dispatch(dataActions.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)}));//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
           });
+          uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;
+            dispatch(dataActions.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data}));//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
+            //document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
+          });
+
+
         } else {
           //EXT (FUVEX)
           uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
@@ -376,6 +388,8 @@ export const RosControl = ({children,notification}) => {
             var showData = document.getElementById(uav_ns).cells;
               showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
           });
+
+
         }
   
         console.log("\nLa Lista de uav's es: ");
