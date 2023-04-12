@@ -40,14 +40,14 @@ const styles = theme => ({
     pointerEvents: 'none',
     position: 'fixed',
     zIndex: 5,
-    left: '50%',
+    left: '39%',
     [theme.breakpoints.up('md')]: {
-      left: `calc(50% + 10/ 2)`,
-      bottom: theme.spacing(3),
+      left: `calc(25% + 10/ 2)`,
+      top: theme.spacing(15),
     },
     [theme.breakpoints.down('md')]: {
       left: '50%',
-      bottom: `calc(${theme.spacing(3)} + 10 px)`,
+      top: `calc(${theme.spacing(15)} + 10 px)`,
     },
     transform: 'translateX(-50%)',
   },
@@ -65,12 +65,10 @@ export const Camera = ({ deviceId,position, onClose}) => {
   return (
     <div className={classes.root}>
       {device && (
-          <Draggable
-            handle={`.${classes.media}, .${classes.header}`}
-          >
       <Card elevation={3} className={classes.card}>
         <CardMedia
           className={classes.media}
+          //style={{height: 0, paddingTop: '56.25%'}}
           image={camera_image}
         >
           <IconButton
@@ -81,8 +79,7 @@ export const Camera = ({ deviceId,position, onClose}) => {
             <CloseIcon fontSize="small" className={classes.mediaButton} />
           </IconButton>
         </CardMedia>
-      </Card>
-      </Draggable>)}
+      </Card>)}
   </div>
   )
 }
