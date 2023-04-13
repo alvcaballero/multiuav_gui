@@ -47,6 +47,12 @@ export const prepareIcon = (background, icon, color) => {
     } else {
       context.drawImage(canvasTintImage(icon, color), (canvas.width - imageWidth) / 2, (canvas.height - imageHeight) / 2, imageWidth, imageHeight);
     }
+  }else{
+    if (color){
+      console.log("entro")
+      context.drawImage(canvasTintImage(background, color), 0, 0, canvas.width, canvas.height);
+    }
+
   }
 
   return context.getImageData(0, 0, canvas.width, canvas.height);
