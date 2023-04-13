@@ -337,6 +337,15 @@ app.get('/api/devices', (req, res) => {
   res.json(data.state.devices)
 });
 
+app.get('/api/positions', (req, res) => {
+  console.log('positionsget')
+  res.json(data.state.positions)
+});
+// camera
+app.get('/api/camera', (req, res) => {
+  console.log('cameraget')
+  res.json(data.state.camera)
+});
 
 app.post('/api/devices',function(req,res,next){
   console.log('devicespost')
