@@ -342,9 +342,14 @@ app.get('/api/positions', (req, res) => {
   res.json(data.state.positions)
 });
 // camera
-app.get('/api/camera', (req, res) => {
-  console.log('cameraget')
-  res.json(data.state.camera)
+app.get('/api/media/:deviceid', (req, res) => {
+  console.log('cameraget'+req.params.deviceid)
+  if (data.state.camera[req.params.deviceid]){
+    res.json(data.state.camera[req.params.deviceid])
+  }else{
+    res.status(404).end()
+  }
+  
 });
 
 app.post('/api/devices',function(req,res,next){
