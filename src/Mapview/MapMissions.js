@@ -12,16 +12,17 @@ export const MapMissions = () => {
     const mapCluster = true;
     const iconScale = 0.6;
 
+    const colors = {1: '#F34C28' , 2: '#F39A28',3: '#1EC910 ',4: '#1012C9',5: '#C310C9',6: '#1FDBF1',7: '#F6FD04',8: '#808080'}
+
     const createFeature = (myroute,point) => {
         return {
           id: point.id,
           name: myroute[point.routeid]['name'],
-          color: '#3bb2d0',
           altitud: myroute[point.routeid]['wp'][point.id][2],
           headin: myroute[point.routeid]['wp'][point.id][3],
           attributes: myroute[point.routeid]['attributes'],
           category: 'default',
-          color: 'neutral',
+          color: myroute[point.routeid]['id'],
         };
       };
 
@@ -35,7 +36,7 @@ export const MapMissions = () => {
                 features: [],
             },
             cluster: mapCluster,
-            clusterMaxZoom: 17,
+            clusterMaxZoom: 10,
             clusterRadius: 50,
             });
 
@@ -75,7 +76,7 @@ export const MapMissions = () => {
             source: route_points,
             filter: ['!has', 'point_count'],
             layout: {
-              'icon-image': 'background',
+              'icon-image': 'background-{color}',
               'icon-size': iconScale,
               'icon-allow-overlap': true,
               'text-allow-overlap': true,
@@ -84,8 +85,7 @@ export const MapMissions = () => {
               'text-size': 14,
             },
             paint: {
-              'text-halo-color': 'white',
-              'text-halo-width': 1,
+              'text-color':'white',
             },
           });
           map.addLayer({
@@ -148,7 +148,7 @@ export const MapMissions = () => {
                 },
             properties: {
                 name: item.name,
-                color: '#3bb2d0',
+                color: colors[item.id],
               },
           };
     }

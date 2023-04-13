@@ -66,7 +66,7 @@ export const RosControl = ({children,notification}) => {
           wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
         };
         for (var i = 0; i < uav_list.length; i++) {
-          if(uav_list[i].name == ("uav_"+n_uav)){
+          if(uav_list[i].name === ("uav_"+n_uav)){
             uav_list[i].wp_list = wp_position;
           }
         };
@@ -86,7 +86,7 @@ export const RosControl = ({children,notification}) => {
 
     function changeReady(uav_ns){
       var button = document.getElementById("Ready"+uav_ns);
-      if(button.innerHTML == "Ready"){
+      if(button.innerHTML === "Ready"){
           button.innerHTML = "Not Ready";
       }else{
       button.innerHTML = "Ready";
@@ -121,7 +121,7 @@ export const RosControl = ({children,notification}) => {
         });
       }else{
         for (var i = 0; i < uav_list.length; i++) {
-          uav_list[i].listener.unsubscribe();
+          uav_list[i].listener.unsubscribe();   
           uav_list[i].pose = [0, 0];
         }
         uav_list = [];
@@ -168,15 +168,15 @@ export const RosControl = ({children,notification}) => {
           //console.log(element);
         });
         uav_list.forEach(element =>{
-          if( element.name == uav_ns){
+          if( element.name === uav_ns){
             repeat_device =true;
           }
         });
-        if( find_device == false){ 
+        if( find_device === false){ 
           alert("Dispositivo no encontrado"+uav_ns);
           return null
         }
-        if( repeat_device == true){ 
+        if( repeat_device === true){ 
           alert("Dispositivo ya se encuentra anadido"+uav_ns);
           return null
         }
@@ -191,7 +191,7 @@ export const RosControl = ({children,notification}) => {
 
         // Subscribing
         // DJI 
-        if(uav_type == "dji"){
+        if(uav_type === "dji"){
   
           uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
             ros : ros,
@@ -265,7 +265,7 @@ export const RosControl = ({children,notification}) => {
             //document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
           });
           
-        }else if(uav_type == "px4"){
+        }else if(uav_type === "px4"){
   
           uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
             ros : ros,
@@ -410,7 +410,7 @@ export const RosControl = ({children,notification}) => {
       uav_list.forEach(function prepare_wp(item,idx,arr){
         cur_ns = item.name
         cur_roster.push(cur_ns);
-        if (item.type != "ext"){
+        if (item.type !== "ext"){
           let wp_command = [];
           let yaw_pos =[];
             item.wp_list.forEach(
@@ -429,15 +429,15 @@ export const RosControl = ({children,notification}) => {
               data: yaw_pos
             });
   
-          
-          if(item.type == "dji"){
-            var missionClient = new ROSLIB.Service({
+          let missionClient;
+          if(item.type === "dji"){
+            missionClient = new ROSLIB.Service({
               ros : ros,
               name : cur_ns + '/dji_control/configure_mission',
               serviceType : 'aerialcore_common/ConfigMission'
             });
           }else{
-            var missionClient = new ROSLIB.Service({
+            missionClient = new ROSLIB.Service({
               ros : ros,
               name : cur_ns + '/mission/new',
               serviceType : 'aerialcore_common/ConfigMission'
@@ -483,7 +483,7 @@ export const RosControl = ({children,notification}) => {
       // La linea siguiente tiene en cuenta que se mandan las misiones de todos los uavs EXT a la vez. Si no fuese así, habría que comentar la linea siguiente.
       // loadMissionToExt(cur_ns);
       let flyButton = document.getElementById("commandMission");
-      if(flyButton.style.cssText == "visibility: none;"){
+      if(flyButton.style.cssText === "visibility: none;"){
         flyButton.style.cssText = "visibility: hidden;"
       }else{
         flyButton.style.cssText = "visibility: none;"
@@ -495,13 +495,13 @@ export const RosControl = ({children,notification}) => {
     function commandMission(){
       //var r = confirm("Comand mission?");
       var r =true;
-      if (r == true) {
+      if (r === true) {
         let cur_roster = []
         uav_list.forEach(function prepare_wp(uav,idx,arr){
           cur_roster.push(uav.name);
           let missionClient;
-          if (uav.type != "ext"){
-            if(uav.type == "dji"){
+          if (uav.type !== "ext"){
+            if(uav.type === "dji"){
               missionClient = new ROSLIB.Service({
                 ros : ros,
                 name : uav.name+'/dji_control/start_mission',
