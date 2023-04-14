@@ -7,7 +7,9 @@ import { useSelector } from 'react-redux';
 export const Menu = ({SetAddUAVOpen}) => {
   const rosContex = useContext(RosContext);
   const [MissionName, setMissionName] = useState('no load mission');
+  const [MissionHome, setMissionHome] = useState([0,0]);
   const Mission_Name = useSelector((state) => state.mission.name);
+  const Mission_Home = useSelector((state) => state.mission.home);
   const [hidestatus,sethidestatus]  = useState(true);
 
   const readFile = ( e ) => {//https://www.youtube.com/watch?v=K3SshoCXC2g
@@ -33,6 +35,14 @@ export const Menu = ({SetAddUAVOpen}) => {
     });
   }
 
+  function MissionMap(){
+    map.easeTo({
+      center: [MissionHome[1],MissionHome[0]],
+      zoom: Math.max(map.getZoom(), 15),
+      offset: [0, -1 / 2],
+    });
+  }
+
   
   function openAddUav(){
     SetAddUAVOpen(true);
@@ -46,6 +56,9 @@ export const Menu = ({SetAddUAVOpen}) => {
   useEffect(() => {
     setMissionName(Mission_Name);
   }, [Mission_Name]);
+  useEffect(() => {
+    setMissionHome(Mission_Home);
+  }, [Mission_Home]);
   
 
   return (
@@ -76,7 +89,7 @@ export const Menu = ({SetAddUAVOpen}) => {
 
         <button id="commandMission" style={{visibility: true}} className="btn btn-default">Fly!</button>
 
-        <div id="openedmission" className="btn btn-default"> {MissionName}</div>
+        <div id="openedmission" onClick={MissionMap} className="btn btn-default"> {MissionName}</div>
         <button className="btn btn-default pull-right" onClick={e => hideStatusWindow() } >Status</button>
 
 
