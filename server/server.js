@@ -9,7 +9,7 @@ const port = 4000
 
 
 //app.use(express.urlencoded({extended:true}))
-//app.use(express.json())
+app.use(express.json())
 //app.use(cors)
 
 var rosState = false;
@@ -103,11 +103,11 @@ async function rosConnect(){
       });
       if( find_device == false){ 
         console.log("Dispositivo no encontrado"+uav_ns);
-        return null
+        return {state:'fail',msg:`Dispositivo no encontrado+${uav_ns}`};
       }
       if( repeat_device == true){ 
-        console.log("Dispositivo ya se encuentra anadido"+uav_ns);
-        return null
+        console.log("Dispositivo se encuentra registrado "+uav_ns);
+        return {state:'fail',msg:`Dispositivo se encuentra registrado${uav_ns}`};
       }
 
       let cur_uav_idx = String(Object.values(data.state.devices).length)
@@ -310,11 +310,15 @@ async function rosConnect(){
         console.log(uav, indice);
       })
       console.log('success', uavAdded.name + " added. Type: "+ uavAdded.type);
-      return true;
+      return {state:'success',msg:"conectado Correctamente"};
     }else{
       console.log("\nRos no está conectado.\n\n Por favor conéctelo primero.")
-      return null;
+      return {state:'fail',msg:"Ros no está conectado"};
     } 
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   app.get('/', (request, response) => {
@@ -328,7 +332,8 @@ app.get('/api/notes', (request, response) => {
 
 app.get('/api/notes/:id', (request, response) => {
   const id = request.params.id
-  const note = notes.find(note => note.id === id)
+  console.log(id)
+  let note = notes.find(note => note.id == id)
   response.json(note)
 });
 
@@ -343,29 +348,35 @@ app.get('/api/positions', (req, res) => {
 });
 // camera
 app.get('/api/media/:deviceid', (req, res) => {
+  console.log('cameraget')
   console.log('cameraget'+req.params.deviceid)
   if (data.state.camera[req.params.deviceid]){
     res.json(data.state.camera[req.params.deviceid])
   }else{
     res.status(404).end()
   }
-  
 });
 
-app.post('/api/devices',function(req,res,next){
+app.post('/api/devices',async function(req,res){
   console.log('devicespost')
-   connectAddUav(req.body.device.uav_ns,req.body.device.uav_type)
-  return res.json({device:'ok'});
-  //next(); // pasa el control al siguiente manejador
+  console.log(req.body)
+  let myresponse = await connectAddUav(req.body.uav_ns,req.body.uav_type)
+  return res.json(myresponse);
 });
-app.post('/api/rosConnect',async function(req,res,next){
-  console.log('rosconnect');
-  let car = await rosConnect();
-  console.log('rosconnect end');
+
+app.post('/api/rosConnect',async function(req,res){
+  rosConnect();
+  await sleep(200);
   return res.json({connect:rosState});
 });
 
-app.get('/api/topics',async function(req,res,next){
+app.get('/api/rosConnect',function(req,res){
+  console.log('getrosconnect');
+  return res.json({connect:rosState});
+});
+
+
+app.get('/api/topics',async function(req,res){
   console.log('rosTopic');
   const topiclist = await getTopics2();
   return res.json(topiclist);
