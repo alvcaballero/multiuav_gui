@@ -19,6 +19,7 @@ let ros = "";
 
 export const RosControl = ({children,notification}) => {
     const devices = useSelector((state) => state.devices.items);
+    const missions = useSelector((state) => state.mission);
     const dispatch = useDispatch();
   
   	const [rosState,setrosState] = useState(false);
@@ -51,32 +52,28 @@ export const RosControl = ({children,notification}) => {
       mode_yaw = plan_mission["mode_yaw"];
       dispatch(missionActions.updateMission({name:name_mission,mission:plan_mission}));
 
-
-      console.log(plan_mission["uav_n"]);
+      //console.log(plan_mission["uav_n"]);
+      let wp_home = [0,0];
 
       for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
-        let latlngs = [];
-        let wp_position =[];
-        if (map.getLayer('route_'+n_uav)) {
-          map.removeLayer('route_'+n_uav);
-          map.removeSource('route_'+n_uav);
+        if (plan_mission.hasOwnProperty("uav_"+n_uav)){
+          let wp_position =[];
+          wp_home = plan_mission["uav_"+n_uav]["wp_"+0];
+          for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
+            wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
+          };
+          for (var i = 0; i < uav_list.length; i++) {
+            if(uav_list[i].name === ("uav_"+n_uav)){
+              uav_list[i].wp_list = wp_position;//uav_list[i].wp_list =Object.values(missions.route[n_uav]['wp']);
+            }
+          };
         }
-        for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
-          latlngs.push([plan_mission["uav_"+n_uav]["wp_"+n_wp][1],plan_mission["uav_"+n_uav]["wp_"+n_wp][0]])
-          wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
-        };
-        for (var i = 0; i < uav_list.length; i++) {
-          if(uav_list[i].name === ("uav_"+n_uav)){
-            uav_list[i].wp_list = wp_position;
-          }
-        };
-         map.easeTo({
-          center: latlngs[0],
-          zoom: Math.max(map.getZoom(), 10),
-          offset: [0, -1 / 2],
-        });
       }
-
+      map.easeTo({
+        center: [wp_home[1],wp_home[0]],
+        zoom: Math.max(map.getZoom(), 15),
+        offset: [0, -1 / 2],
+      });
     }
 
     function updateInfoCell (uav_ns, info) {
