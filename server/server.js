@@ -1,58 +1,74 @@
 const data = require ("./data")
 const express = require("express")
-//const router = express.Router();
+const cors = require("cors")
+
+
+const WebSocket = require("ws");
 const ROSLIB = require('roslib');
-//const cors = require("cors")
-const app = express()
+
+const uuidv4 = require('uuid').v4;
+
+
 const port = 4000
 
+const app = express()
+app.set("port", port);
+app.use(cors());
+app.use(express.json());
 
 
-//app.use(express.urlencoded({extended:true}))
-app.use(express.json())
-//app.use(cors)
+//const expressWs = require('express-ws')(app);
+const server = require('http').createServer(app);
+//app.use(express.static(path.join(__dirname, "./public")));
 
-var rosState = false;
+const clients = {};
+//console.log(server)
+//const wsServer = new WebSocketServer({  httpServer:server,autoAcceptConnections: false });
+const wss = new WebSocket.Server({ server:server });
+
+
+wss.on('connection', function connection(ws) {
+
+  console.log("newclient")
+  ws.on('error', console.error);
+
+  ws.on('message', function message(data) {
+    console.log('received: %s', data);
+  });
+  const interval = setInterval(() => {
+    ws.send(JSON.stringify({ devices: data.state.devices , positions: data.state.positions}));
+  }, 500);
+});
+
+
+
+// Iniciamos el servidor en el puerto establecido por la variable port (3000)
+server.listen(app.get('port'), () =>{console.log('Servidor iniciado en el puerto: ' +app.get('port'));})
+
+var rosState = {state:'fail',msg:"init msg"};
 let uav_list = [];
 let ros = "";
 
 
-let notes = [
-  {
-    id: 1,
-    content: "HTML is easy",
-    important: true
-  },
-  {
-    id: 2,
-    content: "Browser can execute only JavaScript",
-    important: false
-  },
-  {
-    id: 3,
-    content: "GET and POST are the most important methods of HTTP protocol",
-    important: true
-  }
-]
 
 function setrosState(state){
     rosState = state;
 }
 
 async function rosConnect(){
-    if(!rosState){
+    if(rosState.state != 'connect'){
       ros = new ROSLIB.Ros({url : 'ws://localhost:9090'});
       ros.on('connection', function() {
         console.log('Connected to websocket server.');
-        setrosState(true);
+        setrosState({state:'connect',msg:"Conectado a ros Correctamente"});
       });
       ros.on('error', function(error) {
         console.log('Error connecting to websocket server: ', error);
-        setrosState(false);
+        setrosState({state:'error',msg:"no se ha posido conectar a ros"});
       });
       ros.on('close', function() {
         console.log('Connection to websocket server closed.');
-        setrosState(false);
+        setrosState({state:'disconnect',msg:"Desconectado a ros Correctamente"});
       });
     }else{
       for (var i = 0; i < uav_list.length; i++) {
@@ -60,7 +76,6 @@ async function rosConnect(){
       }
       uav_list = [];
       ros.close();
-      setrosState(false);
     }
   }
   const getTopics2 = () => {
@@ -80,16 +95,16 @@ async function rosConnect(){
   };
 
   async function connectAddUav(uav_ns,uav_type){	
-    if(rosState){
+    if(rosState.state ==='connect'){
 
       const topiclist = await getTopics2();
       console.log("despues del await")
 
       console.log("Conectando Uav");
+      console.log(topiclist)
 
-      let marker_n = uav_list.length;
-      let iconSelect = '../assets/css/images/' + uav_type + '-marker' + marker_n.toString() + '.png';
-      //uav_icon = L.icon({iconUrl: iconSelect, iconSize: [24, 24],iconAnchor: [12, 12]});
+
+
       let find_device = false;
       let repeat_device = false;
       topiclist.forEach(element =>{
@@ -326,17 +341,6 @@ async function rosConnect(){
   })
   
 
-app.get('/api/notes', (request, response) => {
-    response.json(notes)
-});
-
-app.get('/api/notes/:id', (request, response) => {
-  const id = request.params.id
-  console.log(id)
-  let note = notes.find(note => note.id == id)
-  response.json(note)
-});
-
 app.get('/api/devices', (req, res) => {
   console.log('devicesget')
   res.json(data.state.devices)
@@ -359,20 +363,21 @@ app.get('/api/media/:deviceid', (req, res) => {
 
 app.post('/api/devices',async function(req,res){
   console.log('devicespost')
-  console.log(req.body)
+  console.log(req.body.uav_ns)
   let myresponse = await connectAddUav(req.body.uav_ns,req.body.uav_type)
   return res.json(myresponse);
 });
 
 app.post('/api/rosConnect',async function(req,res){
+  console.log('rosconect')
   rosConnect();
   await sleep(200);
-  return res.json({connect:rosState});
+  return res.json(rosState);
 });
 
 app.get('/api/rosConnect',function(req,res){
   console.log('getrosconnect');
-  return res.json({connect:rosState});
+  return res.json(rosState);
 });
 
 
@@ -380,8 +385,4 @@ app.get('/api/topics',async function(req,res){
   console.log('rosTopic');
   const topiclist = await getTopics2();
   return res.json(topiclist);
-});
-
-app.listen(port, ()=>{
-    console.log(`listen at http://localhost:${port}`)
 });
