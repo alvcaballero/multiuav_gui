@@ -157,6 +157,87 @@ export const RosControl = ({children,notification}) => {
       } catch (error) {
       }
     };
+    const serverRMUAV = async (uav_ns) => {
+      //event.preventDefault();
+      console.log(uav_ns)
+      try {
+        const response = await fetch('/api/disconectdevice', {
+          method: 'POST',
+          body: JSON.stringify({uav_ns: uav_ns}),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          let myresponse = await response.json();
+          if(myresponse.state ==='connect'){
+            notification('success', myresponse.msg);
+          }
+          if(myresponse.state ==='fail'){
+            notification('danger',myresponse.msg)
+          }
+          console.log(myresponse)
+        } else {
+          throw Error(await response.text());
+        }
+      } catch (error) {
+      }
+    };
+
+    const serverloadmission = async (uav_ns, uav_type) => {
+      //event.preventDefault();
+      console.log(uav_type)
+      console.log(uav_ns)
+      try {
+        const response = await fetch('/api/devices', {
+          method: 'POST',
+          body: JSON.stringify({uav_ns: uav_ns, uav_type: uav_type}),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          let myresponse = await response.json();
+          if(myresponse.state ==='connect'){
+            notification('success', myresponse.msg);
+          }
+          if(myresponse.state ==='fail'){
+            notification('danger',myresponse.msg)
+          }
+          console.log(myresponse)
+        } else {
+          throw Error(await response.text());
+        }
+      } catch (error) {
+      }
+    };
+    const servercommandmission = async (uav_ns, uav_type) => {
+      //event.preventDefault();
+      console.log(uav_type)
+      console.log(uav_ns)
+      try {
+        const response = await fetch('/api/devices', {
+          method: 'POST',
+          body: JSON.stringify({uav_ns: uav_ns, uav_type: uav_type}),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          let myresponse = await response.json();
+          if(myresponse.state ==='connect'){
+            notification('success', myresponse.msg);
+          }
+          if(myresponse.state ==='fail'){
+            notification('danger',myresponse.msg)
+          }
+          console.log(myresponse)
+        } else {
+          throw Error(await response.text());
+        }
+      } catch (error) {
+      }
+    };
 
     const openMision=(name_mission,text_mission)=>{
       plan_mission = YAML.parse(text_mission);
