@@ -67,7 +67,7 @@ function App() {
         toastProperties = {
           id: list.length+1,
           title: 'Success',
-          description: 'This is a success toast component',
+          description: description,
           backgroundColor: '#5cb85c'
         }
         break;
@@ -75,7 +75,7 @@ function App() {
         toastProperties = {
           id: list.length+1,
           title: 'Danger',
-          description: 'This is a danger toast component',
+          description: description,
           backgroundColor: '#d9534f'
         }
         break;
@@ -83,7 +83,7 @@ function App() {
         toastProperties = {
           id: list.length+1,
           title: 'Info',
-          description: 'This is a info toast component',
+          description: description,
           backgroundColor: '#5bc0de'
         }
         break;
@@ -91,7 +91,7 @@ function App() {
         toastProperties = {
           id: list.length+1,
           title: 'Warning',
-          description: 'This is a warning toast component',
+          description: description,
           backgroundColor: '#f0ad4e'
         }
         break;

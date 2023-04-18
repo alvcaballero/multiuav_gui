@@ -343,8 +343,12 @@ async function rosConnect(){
   }
 
   function loadMission(mission){ 
+    console.log(mission)
+    console.log(uav_list)
     let cur_roster = []
     let cur_ns = ""
+    let mode_yaw = 0;
+    let mode_landing =0;
     uav_list.forEach(function prepare_wp(item,idx,arr){
       cur_ns = item.name
       cur_roster.push(cur_ns);
@@ -352,8 +356,9 @@ async function rosConnect(){
         let wp_command = [];
         let yaw_pos =[];
         Object.values(mission).forEach(route => {
-          if(route[n_uav]['name'] == "uav_"+n_uav){
-            Object.values(route[n_uav]['wp']).forEach(
+          if(route['name'] == cur_ns){
+            console.log(route)
+            Object.values(route['wp']).forEach(
               function prepare_wp(item,idx,arr){
                 let pos = new ROSLIB.Message({
                   latitude: item[0], 
@@ -364,25 +369,18 @@ async function rosConnect(){
               yaw_pos.push(item[3])
               wp_command.push(pos);
             });
+            if (route.attributes.hasOwnProperty("mode_landing")){
+              mode_landing =  route.attributes["mode_landing"];  
+            }
+            if (route.attributes.hasOwnProperty("mode_yaw")){
+              mode_yaw =  route.attributes["mode_yaw"];  
+            }
           }
-      })
+        })
+        let yaw_pos_msg = new ROSLIB.Message({
+          data: yaw_pos
+        });
    
-//          item.wp_list.forEach(
-//            function prepare_wp(item,idx,arr){
-//              let pos = new ROSLIB.Message({
-//                latitude: item[0], 
-//                longitude: item[1],
-//                altitude: item[2]  
-//              });
-//              
-//            yaw_pos.push(item[3])
-//            wp_command.push(pos);
-//          });
-//          
-//          let yaw_pos_msg = new ROSLIB.Message({
-//            data: yaw_pos
-//          });
-//
         let missionClient;
         if(item.type === "dji"){
           missionClient = new ROSLIB.Service({
@@ -397,6 +395,7 @@ async function rosConnect(){
             serviceType : 'aerialcore_common/ConfigMission'
           });
         }
+
 
         var request = new ROSLIB.ServiceRequest({
           type : "waypoint",
