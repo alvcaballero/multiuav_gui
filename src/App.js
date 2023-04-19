@@ -121,8 +121,9 @@ function App() {
           <Menu SetAddUAVOpen={SetAddUAVOpen} />
           <MapView>
             {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
-            <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
             <MapMissions/>
+            <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
+            
             <MapSelectedDevice/>
           </MapView>
           <div style={sidebarStyle}>

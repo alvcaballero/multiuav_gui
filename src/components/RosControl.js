@@ -26,6 +26,7 @@ export const RosControl = ({children,notification}) => {
     const socketRef = useRef();
   
   	const [rosState,setrosState] = useState(false);
+    const [socketState,setsocketState] = useState(true);
     const [textmission,settextmission] = useState("");
 
     const connectSocket = () => {
@@ -64,10 +65,7 @@ export const RosControl = ({children,notification}) => {
       };
   
       socket.onmessage = (event) => {
-        //console.log("funcion web socket message")
-        //console.log(event)
         const data = JSON.parse(event.data);
-        //console.log(data.positions)
         if (data.devices ) {
           dispatch(devicesActions.update(Object.values(data.devices)));
         }
@@ -84,6 +82,9 @@ export const RosControl = ({children,notification}) => {
       };
     };
     useEffectAsync(async () => {
+      if(socketState){
+        setsocketState(false);
+      
       const response = await fetch('/api/devices',{method: 'GET'});
       if (response.ok) {
         //dispatch(devicesActions.refresh(await response.json()));
@@ -98,6 +99,10 @@ export const RosControl = ({children,notification}) => {
           socket.close(logoutCode);
         }
       };
+    }
+    else{
+      return null;
+    }
     }, []);
 
 

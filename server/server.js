@@ -37,7 +37,7 @@ wss.on('connection', function connection(ws) {
   });
   const interval = setInterval(() => {
     ws.send(JSON.stringify({ devices: data.state.devices , positions: data.state.positions}));
-  }, 500);
+  }, 200);
 });
 
 
@@ -418,10 +418,7 @@ async function rosConnect(){
               return {state:'fail',msg:"Load mission to:" + cur_roster + " fail"};//notification('danger',"Load mission to:" + cur_roster + " fail");
             }
         }, function(result) {
-          console.log('Error:'
-          + result);
-          alert('Error:'
-          + result);
+          console.log('Error:'+ result);
         });
         console.log('loading mision to'+cur_ns);			
       } else{
@@ -492,28 +489,16 @@ async function rosConnect(){
       Key_listener.forEach(element => {
         uav_list[cur_uav_idx][element].unsubscribe();
       })
-			//uav_list[cur_uav_idx].listener.unsubscribe();
-			//uav_list[cur_uav_idx].listener_hdg.unsubscribe();
-			//uav_list[cur_uav_idx].listener_vel.unsubscribe();
-			//uav_list[cur_uav_idx].listener_bat.unsubscribe();
-			//if( uav_list[cur_uav_idx].bag)
-			//{
-				//Rosbagtestend(uav_list[cur_uav_idx].name)
-			//}
-			//uav_list[cur_uav_idx].pose = [];
-			//if (uav_list[cur_uav_idx].type != "dji"){
-			//	uav_list[cur_uav_idx].listener_alt.unsubscribe();
-			//}
 
 			uav_list.pop();
-			alert("Último dron eliminado de la lista");
+			console.log("Último dron eliminado de la lista");
 			if (uav_list.length != 0){
 				console.log("\nLa Lista de uav actualizada es: ");
 				uav_list.forEach(function(elemento, indice, array) {
 				console.log(elemento, indice);
 				})
 			}else{
-				alert("No quedan drones en la lista");
+				console.log("No quedan drones en la lista");
 			}
     return {state:'success',msg:"Se ha eliminado el "+cur_uav_idx};//notification('success',"Commanding mission to: " + cur_roster);
 		}else{
