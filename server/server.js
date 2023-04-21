@@ -477,8 +477,8 @@ async function rosConnect(){
       });
       return {state:'success',msg:"Commanding mission to: " + cur_roster};//notification('success',"Commanding mission to: " + cur_roster);
     } else {
-      return {state:'fail',msg:"Mission canceled"};
       console.log("Mission canceled")
+      return {state:'fail',msg:"Mission canceled"};
     }
   }
 
@@ -489,7 +489,6 @@ async function rosConnect(){
       Key_listener.forEach(element => {
         uav_list[cur_uav_idx][element].unsubscribe();
       })
-
 			uav_list.pop();
 			console.log("Último dron eliminado de la lista");
 			if (uav_list.length != 0){
