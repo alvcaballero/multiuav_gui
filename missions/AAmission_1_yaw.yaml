@@ -1,6 +1,6 @@
 frame_id: /gps
 
-uav_n: 2
+uav_n: 3
 #uav_n: 1
 
 uav_1:  # 1250 m, right UAV (M210) placed near the Ground Station (middle of the runway).
@@ -11,6 +11,13 @@ uav_1:  # 1250 m, right UAV (M210) placed near the Ground Station (middle of the
   wp_3: [38.139294, -3.173453, 10, 0]  # Charging point
 
 uav_2:  # 850 m, left UAV (M210) placed at the end of the runway, passing the "07" on the floor.
+  wp_n: 4
+  wp_0: [38.137538, -3.176196, 26, 90]  # 440 m elevation (444 m in the map origin), 30 m inspection height.
+  wp_1: [38.136549, -3.179444, 23, 120]  # 437 m elevation (444 m in the map origin), 30 m inspection height.
+  wp_2: [38.138344, -3.179188, 20, 100]  # 434 m elevation (444 m in the map origin), 30 m inspection height.
+  wp_3: [38.138500, -3.176587, 25, 160]  # Charging point
+
+uav_3:  # 850 m, left UAV (M210) placed at the end of the runway, passing the "07" on the floor.
   wp_n: 4
   wp_0: [38.137538, -3.176196, 26, 90]  # 440 m elevation (444 m in the map origin), 30 m inspection height.
   wp_1: [38.136549, -3.179444, 23, 120]  # 437 m elevation (444 m in the map origin), 30 m inspection height.
