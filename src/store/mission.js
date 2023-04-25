@@ -13,6 +13,7 @@ const { reducer, actions } = createSlice({
       state.name = action.payload.name;
       state.route = {};
       state.attributes = {};
+      console.log(action.payload.mission)
       if (action.payload.mission.hasOwnProperty('mode_landing')){
         state.attributes["mode_landing"] = action.payload.mission["mode_landing"];  
       }
@@ -30,6 +31,16 @@ const { reducer, actions } = createSlice({
           state.home = action.payload.mission["uav_"+n_uav]['wp_0'];
           for(let wp_n = 0; wp_n < action.payload.mission["uav_"+n_uav]['wp_n']; wp_n++){
             state.route[n_uav]['wp'][wp_n] = action.payload.mission["uav_"+n_uav]['wp_'+wp_n];
+          }
+          if (action.payload.mission["uav_"+n_uav].hasOwnProperty('attributes')){
+            console.log("have atribute")
+            if (action.payload.mission["uav_"+n_uav]['attributes'].hasOwnProperty('mode_landing')){
+              console.log("have modelanding"+n_uav)
+              state.route[n_uav]['attributes']['mode_landing'] = action.payload.mission["uav_"+n_uav]['attributes']["mode_landing"];  
+            }
+            if (action.payload.mission["uav_"+n_uav]['attributes'].hasOwnProperty('mode_yaw')){
+              state.route[n_uav]['attributes']['mode_yaw'] = action.payload.mission["uav_"+n_uav]['attributes']["mode_yaw"];  
+            }
           }
         }
 

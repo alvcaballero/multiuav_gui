@@ -343,7 +343,9 @@ async function rosConnect(){
   }
 
   function loadMission(mission){ 
+    console.log("  load  - mission")
     console.log(mission)
+    console.log("uav list")
     console.log(uav_list)
     let cur_roster = []
     let cur_ns = ""
@@ -357,6 +359,7 @@ async function rosConnect(){
         let yaw_pos =[];
         Object.values(mission).forEach(route => {
           if(route['name'] == cur_ns){
+            console.log("route")
             console.log(route)
             Object.values(route['wp']).forEach(
               function prepare_wp(item,idx,arr){
@@ -408,6 +411,7 @@ async function rosConnect(){
           traceMode: 0,
           finishAction: mode_landing
         });
+        console.log("request")
         console.log(request)
 
         missionClient.callService(request, function(result) {
