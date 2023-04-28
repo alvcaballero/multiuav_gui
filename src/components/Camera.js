@@ -55,43 +55,46 @@ const styles = theme => ({
 
 export const Camera = ({ deviceId,position, onClose}) => {
   const classes = useClasses(styles);
-  const [camera_image, setcamera_image] = useState('no load mission');
+  const [camera_image, setcamera_image] = useState(novideo);
+  const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
+  const mediaStream = new MediaStream();
 
 
   useEffect(() => {
     if(deviceId != null){
     const fetchData = async () => {
-      await fetch(`/api/media/${deviceId}`)
-      .then((res) => res.json())
+      await fetch(`/api/media1/${deviceId}`)
+      .then((res) => res.blob())
       .then((res) => {
         //console.log(res.camera)
-        setcamera_image(res.camera)
+         
+        setcamera_image(URL.createObjectURL(res))
+        //setcamera_image(res)
       })
       .catch((e) => console.error(e));
     };
 
     const interval = setInterval(() => {
       fetchData();
-    }, 200);
+    }, 100);
 
     return () => clearInterval(interval);
 
     }else{
-      setcamera_image("../assets/img/placeholder.jpg")
+      setcamera_image(novideo)
     }
 
   }, [deviceId]);
+
 
   return (
     <div className={classes.root}>
       {device && (
       <Card elevation={3} className={classes.card}>
-        <CardMedia 
-        className={classes.media}
-        image={camera_image}//"../assets/img/placeholder.jpg" //component='img' src = {camera_image}//src={`data:image/png;base64, ${encodedImg}`}//image={`/api/media/${deviceId}`}         
-        >
+        <img src={camera_image} className={classes.media} />
+
           <IconButton
             size="small"
             onClick={onClose}
@@ -99,7 +102,6 @@ export const Camera = ({ deviceId,position, onClose}) => {
           >
             <CloseIcon fontSize="small" className={classes.mediaButton} />
           </IconButton>
-        </CardMedia>
       </Card>)}
   </div>
   )
