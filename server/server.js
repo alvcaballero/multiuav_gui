@@ -1,7 +1,10 @@
+//https://www.youtube.com/watch?v=gnM3Ld6_upE-- REVISAR
+//Server-Sent Events vs. WebSockets
+
 const data = require ("./data")
 const express = require("express")
 const cors = require("cors")
-
+const fs = require("fs");
 
 const WebSocket = require("ws");
 const ROSLIB = require('roslib');
@@ -170,11 +173,7 @@ async function rosConnect(){
           name : uav_ns+'/video_stream_compress',
           messageType : 'sensor_msgs/CompressedImage'
         });
-        uav_list[cur_uav_idx].camera_stream = new ROSLIB.Topic({
-          ros : ros,
-          name : uav_ns+'/video_stream',
-          messageType : 'sensor_msgs/Image'
-        });
+
         
 
         uav_list[cur_uav_idx].listener.subscribe(function(msg) {
@@ -532,21 +531,6 @@ app.get('/api/positions', (req, res) => {
   console.log('positionsget')
   res.json(data.state.positions)
 });
-// camera
-app.get('/api/media/:deviceid', (req, res) => {
-  console.log('cameraget---')
-  console.log('cameraget'+req.params.deviceid)
-  if (data.state.camera[req.params.deviceid]){
-    return res.json(data.state.camera[req.params.deviceid])
-    //res.json(data.state.camera[req.params.deviceid]["camera"])
-    //res.set('content-type', 'image/jpg');
-    //res.send(data.state.camera[req.params.deviceid]["camera"])
-
-    
-  }else{
-    res.status(404).end()
-  }
-});
 
 app.post('/api/devices',async function(req,res){
   console.log('devicespost')
@@ -604,12 +588,40 @@ app.get("/api/test.png", (req, res) => {
   });
   res.end(img);
 });
+app.get("/api/placeholder", (req, res) => {
+  // A 1x1 pixel red colored PNG file.
+  const base64 = fs.readFileSync("./src/assets/img/placeholder.jpg", "base64");
+  //console.log(base64)
+  const img = Buffer.from(base64, "base64");
+  //console.log(img)
+  res.writeHead(200, {
+    'Content-Type': 'image/png',
+    'Content-Length': img.length
+  });
+  res.end(img);
+});
+
 // camera
-app.get('/api/media1/:deviceid', (req, res) => {
+app.get('/api/media/:deviceid', (req, res) => {
   console.log('cameraget---')
   console.log('cameraget'+req.params.deviceid)
   if (data.state.camera[req.params.deviceid]){
-    const img = Buffer.from(data.state.camera[req.params.deviceid], "base64");
+    let base64 = data.state.camera[req.params.deviceid].camera;
+    res.type('image/png')
+    res.send(base64)
+  }else{
+    res.status(404).end()
+  }
+});
+// camera
+app.get('/api/media1/:deviceid', (req, res) => {
+  console.log('cameraget1---')
+  console.log('cameraget --'+req.params.deviceid)
+  if (data.state.camera[req.params.deviceid]){
+    let base64 = data.state.camera[req.params.deviceid].camera;
+    //console.log(base64)
+    const img = Buffer.from(base64, "base64");
+    //console.log(img)
     res.writeHead(200, {
       'Content-Type': 'image/png',
       'Content-Length': img.length
