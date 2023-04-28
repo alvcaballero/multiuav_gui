@@ -58,18 +58,39 @@ export const Camera = ({ deviceId,position, onClose}) => {
   const [camera_image, setcamera_image] = useState('no load mission');
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
+
+
   useEffect(() => {
-    setcamera_image(camera_stream);
-  }, [camera_stream]);
+    if(deviceId != null){
+    const fetchData = async () => {
+      await fetch(`/api/media/${deviceId}`)
+      .then((res) => res.json())
+      .then((res) => {
+        //console.log(res.camera)
+        setcamera_image(res.camera)
+      })
+      .catch((e) => console.error(e));
+    };
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, 200);
+
+    return () => clearInterval(interval);
+
+    }else{
+      setcamera_image("../assets/img/placeholder.jpg")
+    }
+
+  }, [deviceId]);
 
   return (
     <div className={classes.root}>
       {device && (
       <Card elevation={3} className={classes.card}>
-        <CardMedia
-          className={classes.media}
-          //style={{height: 0, paddingTop: '56.25%'}}
-          image={camera_image}
+        <CardMedia 
+        className={classes.media}
+        image={camera_image}//"../assets/img/placeholder.jpg" //component='img' src = {camera_image}//src={`data:image/png;base64, ${encodedImg}`}//image={`/api/media/${deviceId}`}         
         >
           <IconButton
             size="small"

@@ -22,11 +22,14 @@ const MapSelectedDevice = () => {
 
   useEffect(() => {
     if ((selectedDeviceId !== previousDeviceId || mapFollow) && position) {
-      map.easeTo({
-        center: [position.longitude, position.latitude],
-        zoom: Math.max(map.getZoom(), selectZoom),
-        offset: [0, -300/ 2],
-      });
+      if(position.hasOwnProperty('latitude')){
+        map.easeTo({
+          center: [position.longitude, position.latitude],
+          zoom: Math.max(map.getZoom(), selectZoom),
+          offset: [0, -300/ 2],
+        });
+      }
+
     }
   });
 

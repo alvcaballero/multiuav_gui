@@ -218,10 +218,11 @@ export const RosControl = ({children,notification}) => {
     };
     const servercommandmission = async (uav_ns, uav_type) => {
       //event.preventDefault();
+      console.log("command mission ")
       console.log(uav_type)
       console.log(uav_ns)
       try {
-        const response = await fetch('/api/devices', {
+        const response = await fetch('/api/commandmission', {
           method: 'POST',
           body: JSON.stringify({uav_ns: uav_ns, uav_type: uav_type}),
           headers: {
@@ -689,7 +690,7 @@ export const RosControl = ({children,notification}) => {
     }
   
     function commandMission(){
-      servercommandmission();
+      servercommandmission("uav_3","px4");
 
 //      //var r = confirm("Comand mission?");
 //      var r =true;
