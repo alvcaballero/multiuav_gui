@@ -204,7 +204,7 @@ async function rosConnect(){
 
         uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
-          data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
+          data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
           //document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
         });
         
@@ -271,8 +271,10 @@ async function rosConnect(){
         });
         uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
             let id_uav = cur_uav_idx;
-            dispatch(dataActions.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data}));//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
-        });
+            data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
+            //data.updateCamera({deviceId:id_uav,camera: msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
+
+          });
       } else {
         //EXT (FUVEX)
         uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
@@ -532,10 +534,15 @@ app.get('/api/positions', (req, res) => {
 });
 // camera
 app.get('/api/media/:deviceid', (req, res) => {
-  console.log('cameraget')
+  console.log('cameraget---')
   console.log('cameraget'+req.params.deviceid)
   if (data.state.camera[req.params.deviceid]){
-    res.json(data.state.camera[req.params.deviceid])
+    return res.json(data.state.camera[req.params.deviceid])
+    //res.json(data.state.camera[req.params.deviceid]["camera"])
+    //res.set('content-type', 'image/jpg');
+    //res.send(data.state.camera[req.params.deviceid]["camera"])
+
+    
   }else{
     res.status(404).end()
   }
@@ -556,8 +563,8 @@ app.post('/api/loadmission',async function(req,res){
 });
 
 app.post('/api/commandmission',async function(req,res){
-  console.log('loadmission-post')
-  //console.log(req.body.uav_ns)
+  console.log('command-mission-post')
+  console.log(req.body)
   let myresponse = await commandMission();
   return res.json(myresponse);
 });
@@ -586,4 +593,29 @@ app.get('/api/topics',async function(req,res){
   console.log('rosTopic');
   const topiclist = await getTopics2();
   return res.json(topiclist);
+});
+
+app.get("/api/test.png", (req, res) => {
+  // A 1x1 pixel red colored PNG file.
+  const img = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==", "base64");
+  res.writeHead(200, {
+    'Content-Type': 'image/png',
+    'Content-Length': img.length
+  });
+  res.end(img);
+});
+// camera
+app.get('/api/media1/:deviceid', (req, res) => {
+  console.log('cameraget---')
+  console.log('cameraget'+req.params.deviceid)
+  if (data.state.camera[req.params.deviceid]){
+    const img = Buffer.from(data.state.camera[req.params.deviceid], "base64");
+    res.writeHead(200, {
+      'Content-Type': 'image/png',
+      'Content-Length': img.length
+    });
+    res.end(img);
+  }else{
+    res.status(404).end()
+  }
 });

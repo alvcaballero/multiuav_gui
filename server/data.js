@@ -11,11 +11,11 @@
  function updatePosition( payload) {
     //state.positions[payload.deviceId] = payload;
     if (state.positions[payload.deviceId] === undefined) {
-      state.positions[payload.deviceId] = {attributes:{}}
+      state.positions[payload.deviceId] = {deviceId:payload.deviceId,attributes:{}}
     };
+
     if (payload.hasOwnProperty('latitude')){
-      state.positions[payload.deviceId]["id"] = payload.id;
-      state.positions[payload.deviceId]["deviceId"] = payload.deviceId;
+      //state.positions[payload.deviceId]["deviceId"] = payload.deviceId;
       state.positions[payload.deviceId]["latitude"] = payload.latitude;
       state.positions[payload.deviceId]["longitude"] = payload.longitude;
       state.positions[payload.deviceId]["altitude"] = payload.altitude;
