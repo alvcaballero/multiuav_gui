@@ -41,6 +41,14 @@ const { reducer, actions } = createSlice({
             if (action.payload.mission["uav_"+n_uav]['attributes'].hasOwnProperty('mode_yaw')){
               state.route[n_uav]['attributes']['mode_yaw'] = action.payload.mission["uav_"+n_uav]['attributes']["mode_yaw"];  
             }
+          }else{
+            if (action.payload.mission.hasOwnProperty('mode_landing')){
+              state.route[n_uav]['attributes']['mode_landing'] = action.payload.mission["mode_landing"];  
+            }
+            if (action.payload.mission.hasOwnProperty('mode_yaw')){
+              state.route[n_uav]['attributes']['mode_yaw'] = action.payload.mission["mode_yaw"];  
+            }
+            
           }
         }
 
