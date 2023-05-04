@@ -78,7 +78,7 @@ export const Camera = ({ deviceId,position, onClose}) => {
 
     const interval = setInterval(() => {
       fetchData();
-    }, 100);
+    }, 1000);
 
     return () => clearInterval(interval);
 

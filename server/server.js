@@ -1,4 +1,5 @@
 //https://www.youtube.com/watch?v=gnM3Ld6_upE-- REVISAR
+//https://medium.com/agora-io/how-does-webrtc-work-996748603141
 //Server-Sent Events vs. WebSockets
 
 const data = require ("./data")
@@ -359,6 +360,7 @@ async function rosConnect(){
         let wp_command = [];
         let yaw_pos =[];
         Object.values(mission).forEach(route => {
+          console.log(route)
           if(route['name'] == cur_ns){
             console.log("route")
             console.log(route)
