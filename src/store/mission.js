@@ -56,8 +56,8 @@ const { reducer, actions } = createSlice({
     },
     clearMission(state,action){
       state.name = "Mission no loaded";
+      state.home = [0,0];
       state.route = {};
-      state.home = {};
       state.attributes = {};
     },
   },

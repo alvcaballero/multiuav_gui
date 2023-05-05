@@ -28,9 +28,9 @@ const sidebarStyle= {
     position: 'fixed',
     left: 0,
     top: '100px',
-    height: `calc(100% - 200px)`,
+    height: `calc(100% - 100px)`,
     width: '360px',
-    margin: '20px',
+    margin: '0px',
     zIndex: 3,
   };
   const middleStyle= {
