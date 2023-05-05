@@ -12,7 +12,7 @@ var plan_mission = "";
 var mission_layers = [];
 var mode_landing =0;
 var mode_yaw =0;
-let uav_list = [];
+//let uav_list = [];
 let statusLog = [];
 
 let ros = "";
@@ -190,9 +190,6 @@ export const RosControl = ({children,notification}) => {
     };
 
     const serverloadmission = async () => {
-      //event.preventDefault();
-      //console.log(uav_type)
-      //console.log(uav_ns)
       try {
         const response = await fetch('/api/loadmission', {
           method: 'POST',
@@ -249,6 +246,7 @@ export const RosControl = ({children,notification}) => {
       plan_mission = YAML.parse(text_mission);
       mode_landing = plan_mission["mode_landing"];
       mode_yaw = plan_mission["mode_yaw"];
+      dispatch(missionActions.clearMission())
       dispatch(missionActions.updateMission({name:name_mission,mission:plan_mission}));
 
       //console.log(plan_mission["uav_n"]);
@@ -256,16 +254,16 @@ export const RosControl = ({children,notification}) => {
 
       for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
         if (plan_mission.hasOwnProperty("uav_"+n_uav)){
-          let wp_position =[];
+          //let wp_position =[];
           wp_home = plan_mission["uav_"+n_uav]["wp_"+0];
-          for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
-            wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
-          };
-          for (var i = 0; i < uav_list.length; i++) {
-            if(uav_list[i].name === ("uav_"+n_uav)){
-              uav_list[i].wp_list = wp_position;//uav_list[i].wp_list =Object.values(missions.route[n_uav]['wp']);
-            }
-          };
+          //for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
+          //  wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
+          //};
+          //for (var i = 0; i < uav_list.length; i++) {
+          //  if(uav_list[i].name === ("uav_"+n_uav)){
+          //    uav_list[i].wp_list = wp_position;//uav_list[i].wp_list =Object.values(missions.route[n_uav]['wp']);
+          //  }
+          //};
         }
       }
       map.easeTo({
@@ -291,39 +289,8 @@ export const RosControl = ({children,notification}) => {
       }
     }
 
-    const removeMarker = () =>{
-      if (mission_layers!==null) {
-        for (var i = mission_layers.length - 1; i >= 0; i--) {
-          mission_layers[i].remove();
-        }
-      }
-    }
-
-
     const rosConnect = () =>{
       serverConecRos();
-      //if(!rosState){
-      //  ros = new ROSLIB.Ros({url : 'ws://localhost:9090'});
-      //  ros.on('connection', function() {
-      //    console.log('Connected to websocket server.');
-      //    setrosState(true);
-      //  });
-      //  ros.on('error', function(error) {
-      //    console.log('Error connecting to websocket server: ', error);
-      //    notification('danger','no se puede conectar');
-      //  });
-      //  ros.on('close', function() {
-      //    console.log('Connection to websocket server closed.');
-      //  });
-      //}else{
-      //  for (var i = 0; i < uav_list.length; i++) {
-      //    uav_list[i].listener.unsubscribe();   
-      //    uav_list[i].pose = [0, 0];
-      //  }
-      //  uav_list = [];
-      //  ros.close();
-      //  setrosState(false);
-      //}
     }
 
     const getTopics2 = () => {

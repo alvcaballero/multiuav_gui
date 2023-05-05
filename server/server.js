@@ -143,7 +143,7 @@ async function rosConnect(){
 
         uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
           ros : ros,
-          name : uav_ns+'/dji_osdk_ros/rtk_position',
+          name : uav_ns+'/dji_osdk_ros/gps_position',//'/dji_osdk_ros/rtk_position',
           messageType : 'sensor_msgs/NavSatFix'
         });
         uav_list[cur_uav_idx].listenerov = new ROSLIB.Topic({
