@@ -129,6 +129,7 @@ async function rosConnect(){
         return {state:'fail',msg:`Dispositivo se encuentra registrado${uav_ns}`};
       }
 
+      
       let cur_uav_idx = String(Object.values(data.state.devices).length)
 
       data.updatedevice({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online'})
