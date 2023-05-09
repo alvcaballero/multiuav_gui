@@ -17,6 +17,7 @@ import MapMissions from './Mapview/MapMissions';
 import MapSelectedDevice from './Mapview/MapSelectedDevice';
 import DeviceList from './components/DeviceList';
 import StatusCard from './components/StatusCard';
+import MainToolbar from './components/MainToolbar';
 
 import { devicesActions } from './store';
 
@@ -27,8 +28,8 @@ const sidebarStyle= {
     flexDirection: 'column',
     position: 'fixed',
     left: 0,
-    top: '100px',
-    height: `calc(100% - 100px)`,
+    top: '88px',
+    height: `calc(100% - 88px)`,
     width: '360px',
     margin: '0px',
     zIndex: 3,
@@ -129,6 +130,7 @@ function App() {
           <div style={sidebarStyle}>
               <div style={middleStyle}>
                 <Paper square style={contentListStyle} >
+                  <MainToolbar/>
                   <DeviceList devices={listdevices} />
                 </Paper>
               </div>

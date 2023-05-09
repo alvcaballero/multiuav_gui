@@ -133,7 +133,7 @@ async function rosConnect(){
 
       data.updatedevice({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online'})
 
-      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",bag : false};
+      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state: "",bag : false};
 
       uav_list.push(uavAdded);
 
@@ -239,11 +239,17 @@ async function rosConnect(){
           name : uav_ns+'/mavros/battery',
           messageType : 'aerialcore_common/BatteryState'//messageType : 'sensor_msgs/BatteryState'
         });
+        uav_list[cur_uav_idx].listener_state = new ROSLIB.Topic({
+          ros : ros,
+          name : '/muav_sm/'+uav_ns+'/uavstate',
+          messageType : 'muav_state_machine/UAVState'
+      });
         uav_list[cur_uav_idx].listener_cam = new ROSLIB.Topic({
             ros : ros,
            name : uav_ns+'/video_stream_compress',
             messageType : 'sensor_msgs/CompressedImage'
         });
+
 
         uav_list[cur_uav_idx].listener.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
@@ -269,12 +275,23 @@ async function rosConnect(){
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
         });
+
+
+        uav_list[cur_uav_idx].listener_state.subscribe(function(msg) {
+          let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
+          //console.log(msg.airframe_type)
+          //console.log(msg.mission_state)
+          //console.log(msg.wp_reached)
+          //console.log(msg.uav_state)
+          //console.log(msg.landed_state)
+        });
+
         uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
             let id_uav = cur_uav_idx;
             data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
             //data.updateCamera({deviceId:id_uav,camera: msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
-
           });
+
       } else {
         //EXT (FUVEX)
         uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
