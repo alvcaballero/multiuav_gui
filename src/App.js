@@ -21,7 +21,6 @@ import MainToolbar from './components/MainToolbar';
 
 import { devicesActions } from './store';
 
-
 const sidebarStyle= {
     pointerEvents: 'none',
     display: 'flex',
