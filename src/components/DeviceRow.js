@@ -20,7 +20,34 @@ import { formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusCo
 import { mapIconKey, mapIcons } from '../Mapview/preloadImages';
 import { ReactComponent as EngineIcon } from '../resources/images/data/engine.svg';
 import { fontSize } from '@mui/system';
+import useClasses from './useClasses'
 //import { useAttributePreference } from '../common/util/preferences';
+
+const styles = theme => ({
+  icon: {
+    width: '25px',
+    height: '25px',
+    filter: 'brightness(0) invert(1)',
+  },
+  batteryText: {
+    fontSize: '0.75rem',
+    fontWeight: 'normal',
+    lineHeight: '0.875rem',
+  },
+  positive: {
+    color: theme.palette.colors.positive,
+  },
+  medium: {
+    color: theme.palette.colors.medium,
+  },
+  negative: {
+    color: theme.palette.colors.negative,
+  },
+  neutral: {
+    color: theme.palette.colors.neutral,
+  },
+});
+
 
 
   const iconStyle= {
@@ -48,6 +75,7 @@ import { fontSize } from '@mui/system';
 
 
 const DeviceRow = ({ data, index, style }) => {
+  const classes = useClasses(styles);
   const dispatch = useDispatch();
 
   const item = data[index];
@@ -56,6 +84,22 @@ const DeviceRow = ({ data, index, style }) => {
 
 
   const devicePrimary = item['name']; //'name';//useAttributePreference('devicePrimary', 'name');
+  const deviceSecondary = "test" ;
+  const secondaryText = () => {
+    let status;
+    if (item.status === 'online' || !item.lastUpdate) {
+      status = item.status
+    } else {
+      status = moment(item.lastUpdate).fromNow();
+    }
+    return (
+      <>
+        {deviceSecondary && item[deviceSecondary] }
+        <span className={classes[getStatusColor(item.status)]}>{status}</span>
+        <span > - {status}</span>
+      </>
+    );
+  };
 
   return (
     <div style={style}>
@@ -72,6 +116,8 @@ const DeviceRow = ({ data, index, style }) => {
         <ListItemText
           primary={devicePrimary}
           primaryTypographyProps={{ noWrap: true }}
+          secondary={secondaryText()}
+          secondaryTypographyProps={{ noWrap: true }}
         />
         {position && (
           <>
