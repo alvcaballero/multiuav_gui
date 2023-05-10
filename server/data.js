@@ -33,12 +33,26 @@
     if (payload.hasOwnProperty('batteryLevel')){
       state.positions[payload.deviceId]['attributes']['batteryLevel'] = payload.batteryLevel;  
     }
+    if (payload.hasOwnProperty('uav_state')){
+      state.positions[payload.deviceId]['attributes']['protocol'] = payload.protocol; 
+      state.positions[payload.deviceId]['attributes']['mission_state'] = payload.mission_state;   
+      state.positions[payload.deviceId]['attributes']['wp_reached'] = payload.wp_reached; 
+      state.positions[payload.deviceId]['attributes']['uav_state'] = payload.uav_state; 
+      state.positions[payload.deviceId]['attributes']['landed_state'] = convert_landed_state(payload.protocol,payload.landed_state); 
+    }
 }
 
  function updateCamera( payload) {
       state.camera[payload.deviceId] = payload;
 }
-
+function convert_landed_state(protocol,landed_state){
+  state_px4_stol=["UNDEFINED","ON GROUND","IN AIR","TAKEOFF","LANDING"]
+  state_dji=["STOPED","ON GROUND","IN AIR"]
+  if(protocol =='dji' ){
+    return state_dji[landed_state]
+  }
+  return state_px4_stol[landed_state]
+}
 module.exports = {
   state,
   updatedevice,

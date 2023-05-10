@@ -147,7 +147,7 @@ async function rosConnect(){
       
       data.updatedevice({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online',lastUpdate:null})
 
-      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state: "",bag : false};
+      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state : "",bag : false};
 
       console.log(data.state.devices)
       uav_list.push(uavAdded);
@@ -287,14 +287,16 @@ async function rosConnect(){
         });
 
         uav_list[cur_uav_idx].listener_bat.subscribe(function(msg) {
+          console.log("batery listener")
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
         });
 
 
         uav_list[cur_uav_idx].listener_state.subscribe(function(msg) {
+          console.log("state listener")
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
-          data.updatePosition({deviceId:id_uav,attributes:{protocol:msg.airframe_type,mission_state:msg.mission_state,wp_reached:msg.wp_reached,uav_state:msg.uav_state,landed_state:msg.landed_state}});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+          data.updatePosition({deviceId:id_uav,protocol:msg.airframe_type,mission_state:msg.mission_state,wp_reached:msg.wp_reached,uav_state:msg.uav_state,landed_state:msg.landed_state});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
 
           //console.log(msg.airframe_type)
           //console.log(msg.mission_state)
