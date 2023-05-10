@@ -10,6 +10,9 @@
 
  function updatePosition( payload) {
     //state.positions[payload.deviceId] = payload;
+    let currentTime = new Date()
+    state.devices[payload.deviceId]["lastUpdate"] =currentTime
+
     if (state.positions[payload.deviceId] === undefined) {
       state.positions[payload.deviceId] = {deviceId:payload.deviceId,attributes:{}}
     };

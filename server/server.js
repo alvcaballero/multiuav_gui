@@ -44,6 +44,19 @@ wss.on('connection', function connection(ws) {
   }, 200);
 });
 
+const CheckDeviceOnline = setInterval(() => {
+  let currentTime = new Date()
+  let checkdevices =  Object.keys(data.state.devices)
+  checkdevices.forEach(element => {
+    console.log(data.state.devices[element])
+    console.log(currentTime)
+    if ((currentTime -data.state.devices[element]["lastUpdate"])<5000){
+      data.state.devices[element]["status"] = "online"
+    }else{
+      data.state.devices[element]["status"] = "offline"
+    }
+  })
+}, 5000);
 
 
 // Iniciamos el servidor en el puerto establecido por la variable port (3000)
@@ -131,11 +144,12 @@ async function rosConnect(){
 
       
       let cur_uav_idx = String(Object.values(data.state.devices).length)
-
-      data.updatedevice({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online'})
+      
+      data.updatedevice({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online',lastUpdate:null})
 
       let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state: "",bag : false};
 
+      console.log(data.state.devices)
       uav_list.push(uavAdded);
 
       // Subscribing
@@ -280,6 +294,8 @@ async function rosConnect(){
 
         uav_list[cur_uav_idx].listener_state.subscribe(function(msg) {
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
+          data.updatePosition({deviceId:id_uav,attributes:{protocol:msg.airframe_type,mission_state:msg.mission_state,wp_reached:msg.wp_reached,uav_state:msg.uav_state,landed_state:msg.landed_state}});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+
           //console.log(msg.airframe_type)
           //console.log(msg.mission_state)
           //console.log(msg.wp_reached)
