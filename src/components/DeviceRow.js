@@ -151,7 +151,7 @@ const DeviceRow = ({ data, index, style }) => {
             {position.hasOwnProperty('altitude') && (
               <Tooltip title={`${'altitude'}: ${Math.round(position.altitude)}`}>
                 <IconButton size="small">
-                  <div style={{fontSize:"0.9rem"}}>H {Math.round(position.altitude-470)}m</div>
+                  <div style={{fontSize:"0.9rem"}}>H {Math.round(position.altitude)}m</div>
                 </IconButton>
               </Tooltip>
             )}
