@@ -14,6 +14,7 @@ import {
   Menu,
   MenuItem,
   CardMedia,
+  Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ReplayIcon from '@mui/icons-material/Replay';
@@ -21,11 +22,12 @@ import PublishIcon from '@mui/icons-material/Publish';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PendingIcon from '@mui/icons-material/Pending';
-
+import makeStyles from '@mui/styles/makeStyles';
 
 import PositionValue from './PositionValue';
 import useClasses from './useClasses'
 import { devicesActions } from '../store';
+import { Alarm } from '@mui/icons-material';
 
 
 const styles = theme => ({
@@ -175,6 +177,18 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           )}
                         />
                       ))}
+                      {position.attributes.hasOwnProperty('alarm') && (
+                        <StatusRow
+                        key="Alarm"
+                        name={"Alarm "+position.attributes.alarm} 
+                        content={(
+                          <div>
+                          <Button variant="text">Return</Button>
+                          <Button variant="text">Continue</Button>
+                          </div>
+                        )}
+                        />
+                        )}
                     </TableBody>
                   </Table>
                 </CardContent>

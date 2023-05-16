@@ -30,6 +30,7 @@ export const Adduav = ({SetAddUAVOpen}) => {
         let uav_type_idx = document.getElementById("UAV_options").selectedIndex;
         let uav_type = document.getElementById("UAV_options").options[uav_type_idx].value;
         rosContex.connectAddUav(uav_ns,uav_type)
+        SetAddUAVOpen(false);
 
     }
     function disConnectUav (){
@@ -61,7 +62,8 @@ export const Adduav = ({SetAddUAVOpen}) => {
                       <select id="UAV_options" name="UAV Type">
                         <option value="dji">DJI</option>
                         <option value="px4">PX4</option>
-                        <option value="ext">EXT</option>                        
+                        <option value="fuvex">Fuvex</option>
+                        <option value="catec">Catec</option>                        
                       </select>
                     </div>
                   </div>

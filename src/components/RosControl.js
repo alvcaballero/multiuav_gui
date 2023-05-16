@@ -67,11 +67,17 @@ export const RosControl = ({children,notification}) => {
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.devices ) {
-          dispatch(devicesActions.update(Object.values(data.devices)));
+          if(Object.values(data.devices).length>0){
+            dispatch(devicesActions.update(Object.values(data.devices)));
+          }else{
+            dispatch(devicesActions.clear());
+          }
         }
         if (data.positions) {
-          //console.log(data.positions)
           dispatch(dataActions.updatePositions(Object.values(data.positions)));
+        }
+        if (data.server){
+          (data.server.rosState ==='connect')?setrosState(true):setrosState(false);
         }
         //if (data.events) {
         //  if (!features.disableEvents) {

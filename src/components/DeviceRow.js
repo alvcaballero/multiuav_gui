@@ -122,13 +122,7 @@ const DeviceRow = ({ data, index, style }) => {
         />
         {position && (
           <>
-            {position.attributes.hasOwnProperty('alarm') && (
-              <Tooltip title={`${'eventAlarm'}: ${formatAlarm(position.attributes.alarm)}`}>
-                <IconButton size="small">
-                  <ErrorIcon fontSize="small" style={negativecolor} />
-                </IconButton>
-              </Tooltip>
-            )}
+
             {position.attributes.hasOwnProperty('ignition') && (
               <Tooltip title={`${'positionIgnition'}: ${formatBoolean(position.attributes.ignition)}`}>
                 <IconButton size="small">
@@ -171,6 +165,13 @@ const DeviceRow = ({ data, index, style }) => {
                       ? (<BatteryCharging20Icon fontSize="small" style={negativecolor}/>)
                       : (<Battery20Icon fontSize="small" style={negativecolor} />)
                   )}
+                </IconButton>
+              </Tooltip>
+            )}
+            {position.attributes.hasOwnProperty('alarm') && (
+              <Tooltip title={`${'eventAlarm'}: ${formatAlarm(position.attributes.alarm)}`}>
+                <IconButton size="small">
+                  <ErrorIcon fontSize="small" style={negativecolor} />
                 </IconButton>
               </Tooltip>
             )}
