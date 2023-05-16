@@ -30,7 +30,7 @@ import { devicesActions } from '../store';
 import { Alarm } from '@mui/icons-material';
 
 
-const styles = theme => ({
+const useStyles = makeStyles((theme) => ({
   card: {
     pointerEvents: 'auto',
     width: theme.dimensions.popupMaxWidth,
@@ -75,25 +75,25 @@ const styles = theme => ({
   actions: {
     justifyContent: 'space-between',
   },
-  root: {
+  root: ({ desktopPadding }) => ({
     pointerEvents: 'none',
     position: 'fixed',
     zIndex: 5,
     left: '50%',
     [theme.breakpoints.up('md')]: {
-      left: `calc(50% + 10/ 2)`,
+      left: `calc(50% + ${desktopPadding} / 2)`,
       bottom: theme.spacing(3),
     },
     [theme.breakpoints.down('md')]: {
       left: '50%',
-      bottom: `calc(${theme.spacing(3)} + 10 px)`,
+      bottom: `calc(${theme.spacing(3)} + ${theme.dimensions.bottomBarHeight}px)`,
     },
     transform: 'translateX(-50%)',
-  },
-});
+  }),
+}));
 
 const StatusRow = ({ name, content }) => {
-  const classes = useClasses(styles);
+  const classes = useStyles();
 
   return (
     <TableRow>
@@ -108,7 +108,7 @@ const StatusRow = ({ name, content }) => {
 };
 
 const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPadding = 0 }) => {
-  const classes = useClasses(styles);
+  const classes = useStyles();
   //const navigate = useNavigate();
   const dispatch = useDispatch();
   //const t = useTranslation();
@@ -177,18 +177,28 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           )}
                         />
                       ))}
+                      <StatusRow
+                          key="alarm"
+                          name="test" 
+                          content="test"
+                        />
                       {position.attributes.hasOwnProperty('alarm') && (
                         <StatusRow
-                        key="Alarm"
-                        name={"Alarm "+position.attributes.alarm} 
-                        content={(
-                          <div>
-                          <Button variant="text">Return</Button>
-                          <Button variant="text">Continue</Button>
-                          </div>
-                        )}
+                          key="alarm1"
+                          name={"Alarm "+position.attributes.alarm} 
+                          content={(
+                            <div>
+                            <Button variant="text">Return</Button>
+                            <Button variant="text">Continue</Button>
+                            </div>
+                          )}
                         />
-                        )}
+                      )}
+                      <StatusRow
+                          key="test"
+                          name="test" 
+                          content="test"
+                        />
                     </TableBody>
                   </Table>
                 </CardContent>
