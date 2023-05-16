@@ -6,8 +6,9 @@ import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import store from './store';
 import preloadImages from './Mapview/preloadImages';
-import { CssBaseline, ThemeProvider, StyledEngineProvider } from '@mui/material';
-import theme from './common/theme';
+import { CssBaseline, StyledEngineProvider } from '@mui/material';
+
+import AppThemeProvider from './AppThemeProvider';
 
 preloadImages();
 
@@ -15,10 +16,10 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
      <Provider store={store}>
         <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={theme}>
-          <CssBaseline />
+          <AppThemeProvider>
+            <CssBaseline />
             <App />
-          </ThemeProvider>
+          </AppThemeProvider>
         </StyledEngineProvider>
 
      </Provider>
