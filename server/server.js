@@ -147,7 +147,7 @@ async function rosConnect(){
       
       data.updatedevice({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online',lastUpdate:null})
 
-      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state : "",bag : false};
+      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state : "",threat : "",bag : false};
 
       console.log(data.state.devices)
       uav_list.push(uavAdded);
@@ -189,8 +189,6 @@ async function rosConnect(){
           name : uav_ns+'/video_stream_compress',
           messageType : 'sensor_msgs/CompressedImage'
         });
-
-        
 
         uav_list[cur_uav_idx].listener.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
@@ -265,7 +263,6 @@ async function rosConnect(){
             messageType : 'sensor_msgs/CompressedImage'
         });
 
-
         uav_list[cur_uav_idx].listener.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
           data.updatePosition({id:msg.header.seq,deviceId:id_uav,latitude:msg.latitude,longitude:msg.longitude,altitude:msg.altitude,deviceTime:"2023-03-09T22:12:44.000+00:00"}); 
@@ -297,12 +294,6 @@ async function rosConnect(){
           console.log("state listener")
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({deviceId:id_uav,protocol:msg.airframe_type,mission_state:msg.mission_state,wp_reached:msg.wp_reached,uav_state:msg.uav_state,landed_state:msg.landed_state});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
-
-          //console.log(msg.airframe_type)
-          //console.log(msg.mission_state)
-          //console.log(msg.wp_reached)
-          //console.log(msg.uav_state)
-          //console.log(msg.landed_state)
         });
 
         uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
@@ -311,7 +302,7 @@ async function rosConnect(){
             //data.updateCamera({deviceId:id_uav,camera: msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
           });
 
-      } else {
+      }else if(uav_type == "fuvex"){
         //EXT (FUVEX)
         uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
           ros : ros,
@@ -365,6 +356,85 @@ async function rosConnect(){
         uav_list[cur_uav_idx].listener_bat.subscribe(function(message) {
           //var showData = document.getElementById(uav_ns).cells;
           //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+        });
+      }else if(uav_type == "catec"){
+
+        uav_list[cur_uav_idx].listener = new ROSLIB.Topic({
+          ros : ros,
+          name : uav_ns+'/gps',
+          messageType : 'sensor_msgs/NavSatFix'
+        });
+
+        uav_list[cur_uav_idx].listener_hdg = new ROSLIB.Topic({
+          ros : ros,
+          name : uav_ns+'/compass_hdg',
+          messageType : 'std_msgs/Float64'
+        });
+
+        uav_list[cur_uav_idx].listener_vel = new ROSLIB.Topic({
+          ros : ros,
+          name : uav_ns+'/velocity',
+          messageType : 'geometry_msgs/TwistStamped'
+        });
+
+        uav_list[cur_uav_idx].listener_alt = new ROSLIB.Topic({
+          ros : ros,
+          name : uav_ns+'/mavros/altitude',
+          messageType : 'mavros_msgs/Altitude'
+        });
+
+        uav_list[cur_uav_idx].listener_bat = new ROSLIB.Topic({
+          ros : ros,
+          name : uav_ns+'/battery',
+          messageType : 'aerialcore_common/BatteryState'//messageType : 'sensor_msgs/BatteryState'
+        });
+        uav_list[cur_uav_idx].listener_state = new ROSLIB.Topic({
+          ros : ros,
+          name : uav_ns+'/fligh_state',
+          messageType : 'std_msgs/String'
+        });
+        uav_list[cur_uav_idx].threat = new ROSLIB.Topic({
+            ros : ros,
+           name : uav_ns+'/threat',
+            messageType : 'std_msgs/Bool'
+        });
+
+        uav_list[cur_uav_idx].listener.subscribe(function(msg) {
+          let id_uav = cur_uav_idx;
+          data.updatePosition({id:msg.header.seq,deviceId:id_uav,latitude:msg.latitude,longitude:msg.longitude,altitude:msg.altitude,deviceTime:"2023-03-09T22:12:44.000+00:00"}); 
+        });
+
+        uav_list[cur_uav_idx].listener_hdg.subscribe(function(msg) {
+          let id_uav = cur_uav_idx;
+          data.updatePosition({deviceId:id_uav,course:msg.data});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
+        });
+
+        uav_list[cur_uav_idx].listener_alt.subscribe(function(message) {
+          //var showData = document.getElementById(uav_ns).cells;
+          //showData[1].innerHTML = (message.relative).toFixed(2);   
+        });
+
+        uav_list[cur_uav_idx].listener_vel.subscribe(function(msg) {
+          let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
+          data.updatePosition({deviceId:id_uav,speed:Math.sqrt(Math.pow(msg.twist.linear.x,2) + Math.pow(msg.twist.linear.y,2)).toFixed(2)});// showData[2].innerHTML = Math.sqrt(Math.pow(message.twist.linear.x,2) + Math.pow(message.twist.linear.y,2)).toFixed(2);
+        });
+
+        uav_list[cur_uav_idx].listener_bat.subscribe(function(msg) {
+          console.log("batery listener")
+          let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
+          data.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+        });
+
+
+        uav_list[cur_uav_idx].listener_state.subscribe(function(msg) {
+          console.log("state listener")
+          let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
+          data.updatePosition({deviceId:id_uav,protocol:"catec",mission_state:"0",wp_reached:"0",uav_state:"ok",landed_state:msg.data});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+        });
+
+        uav_list[cur_uav_idx].threat.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;
+            data.updatePosition({deviceId:id_uav,threat: msg.data});
         });
       }
 
