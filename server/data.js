@@ -41,7 +41,10 @@
       state.positions[payload.deviceId]['attributes']['landed_state'] = convert_landed_state(payload.protocol,payload.landed_state); 
     }
     if (payload.hasOwnProperty('threat')){
-      state.positions[payload.deviceId]['attributes']['threat'] = payload.threat; 
+      //state.positions[payload.deviceId]['attributes']['threat'] = payload.threat; 
+      if (payload.threat == true){
+        state.positions[payload.deviceId]['attributes']['alarm'] = "threat"; 
+      }
     }
 }
 
@@ -53,6 +56,9 @@ function convert_landed_state(protocol,landed_state){
   state_dji=["STOPED","ON GROUND","IN AIR"]
   if(protocol =='dji' ){
     return state_dji[landed_state]
+  }
+  if(protocol =='catec' ){
+    return landed_state
   }
   return state_px4_stol[landed_state]
 }

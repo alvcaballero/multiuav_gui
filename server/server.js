@@ -31,6 +31,18 @@ const clients = {};
 const wss = new WebSocket.Server({ server:server });
 
 
+var rosState = {state:'disconnect',msg:"init msg"};
+let uav_list = [];
+let ros = "";
+
+
+
+function setrosState(state){
+    rosState = state;
+}
+
+
+
 wss.on('connection', function connection(ws) {
 
   console.log("newclient")
@@ -40,8 +52,12 @@ wss.on('connection', function connection(ws) {
     console.log('received: %s', data);
   });
   const interval = setInterval(() => {
-    ws.send(JSON.stringify({ devices: data.state.devices , positions: data.state.positions}));
+    ws.send(JSON.stringify({ positions: data.state.positions}));
   }, 200);
+  
+  const interval_server = setInterval(() => {
+    ws.send(JSON.stringify({ server:{rosState:rosState.state} , devices: data.state.devices}));
+  }, 1000);
 });
 
 const CheckDeviceOnline = setInterval(() => {
@@ -62,15 +78,7 @@ const CheckDeviceOnline = setInterval(() => {
 // Iniciamos el servidor en el puerto establecido por la variable port (3000)
 server.listen(app.get('port'), () =>{console.log('Servidor iniciado en el puerto: ' +app.get('port'));})
 
-var rosState = {state:'fail',msg:"init msg"};
-let uav_list = [];
-let ros = "";
 
-
-
-function setrosState(state){
-    rosState = state;
-}
 
 async function rosConnect(){
     if(rosState.state != 'connect'){
