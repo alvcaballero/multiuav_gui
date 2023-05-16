@@ -40,6 +40,9 @@
       state.positions[payload.deviceId]['attributes']['uav_state'] = payload.uav_state; 
       state.positions[payload.deviceId]['attributes']['landed_state'] = convert_landed_state(payload.protocol,payload.landed_state); 
     }
+    if (payload.hasOwnProperty('threat')){
+      state.positions[payload.deviceId]['attributes']['threat'] = payload.threat; 
+    }
 }
 
  function updateCamera( payload) {
