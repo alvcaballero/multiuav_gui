@@ -4,11 +4,11 @@
   history: {},
   devices: {},
 };
- function updatedevice( payload) {
+ function updatedevice(payload) {
   state.devices[payload.id] = payload;
 }
 
- function updatePosition( payload) {
+ function updatePosition(payload) {
     //state.positions[payload.deviceId] = payload;
     let currentTime = new Date()
     state.devices[payload.deviceId]["lastUpdate"] =currentTime

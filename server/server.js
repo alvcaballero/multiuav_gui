@@ -64,8 +64,8 @@ const CheckDeviceOnline = setInterval(() => {
   let currentTime = new Date()
   let checkdevices =  Object.keys(data.state.devices)
   checkdevices.forEach(element => {
-    console.log(data.state.devices[element])
-    console.log(currentTime)
+    //console.log(data.state.devices[element])
+    //console.log(currentTime)
     if ((currentTime -data.state.devices[element]["lastUpdate"])<5000){
       data.state.devices[element]["status"] = "online"
     }else{
@@ -176,11 +176,11 @@ async function rosConnect(){
           messageType : 'dji_osdk_ros/VOPosition'
         });
         //http://wiki.ros.org/dji_sdk
-        //revisar -- https://robotics.stackexchange.com/questions/16471/get-yaw-from-quaternion
+        //revisar -- https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
         uav_list[cur_uav_idx].listener_hdg = new ROSLIB.Topic({
           ros : ros,
-          name : uav_ns+'/dji_osdk_ros/rtk_yaw',
-          messageType : 'std_msgs/Int16'
+          name : uav_ns+'/dji_osdk_ros/imu', //uav_ns+'/dji_osdk_ros/rtk_yaw',
+          messageType : 'sensor_msgs/Imu'//'std_msgs/Int16'
         });
 
         uav_list[cur_uav_idx].listener_vel = new ROSLIB.Topic({
@@ -203,17 +203,23 @@ async function rosConnect(){
 
         uav_list[cur_uav_idx].listener.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
-          data.updatePosition({id : msg.header.seq,deviceId:id_uav,  latitude:msg.latitude,longitude:msg.longitude, altitude:msg.altitude,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"});
+          data.updatePosition({id : msg.header.seq,deviceId:id_uav,  latitude:msg.latitude,longitude:msg.longitude, altitude:msg.altitude,deviceTime:"2023-03-09T22:12:44.000+00:00"});
           
         });
         uav_list[cur_uav_idx].listenerov.subscribe(function(msg) {
           //let id_uav = cur_uav_idx;
           //dispatch(dataActions.updatePosition({id:msg.header.seq,deviceId:id_uav,latitude:msg.x,longitude:msg.y,altitude:msg.z,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"}));          
         });
-
+        //https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
         uav_list[cur_uav_idx].listener_hdg.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
-          data.updatePosition({deviceId:id_uav,course:msg.data+90});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
+          let q =msg.orientation;
+          //let response = Math.atan2(2.0 * (w * z + x * y), w * w + x * x - y * y - z * z);
+          let yaw = Math.atan2(2.0*(q.y*q.z + q.w*q.x), 1-2*( q.x*q.x + q.y*q.y ) );
+          let pitch = Math.asin(-2.0*(q.x*q.z - q.w*q.y));
+          let roll = Math.atan2(2.0*(q.x*q.y + q.w*q.z),-1+2*(q.w*q.w + q.x*q.x ) );
+          console.log("yaw:"+(yaw*57.295).toFixed(2)+" pitch:" + (pitch*57.295).toFixed(2) +" roll:" +(roll*57.295).toFixed(2))
+          data.updatePosition({deviceId:id_uav,course:roll*57.295});//data.updatePosition({deviceId:id_uav,course:msg.data+90});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
         });				
         
         uav_list[cur_uav_idx].listener_vel.subscribe(function(msg) {
@@ -295,14 +301,12 @@ async function rosConnect(){
         });
 
         uav_list[cur_uav_idx].listener_bat.subscribe(function(msg) {
-          console.log("batery listener")
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
         });
 
 
         uav_list[cur_uav_idx].listener_state.subscribe(function(msg) {
-          console.log("state listener")
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({deviceId:id_uav,protocol:msg.airframe_type,mission_state:msg.mission_state,wp_reached:msg.wp_reached,uav_state:msg.uav_state,landed_state:msg.landed_state});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
         });
@@ -431,14 +435,12 @@ async function rosConnect(){
         });
 
         uav_list[cur_uav_idx].listener_bat.subscribe(function(msg) {
-          console.log("batery listener")
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({deviceId:id_uav,batteryLevel:(msg.percentage*100).toFixed(0)});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
         });
 
 
         uav_list[cur_uav_idx].listener_state.subscribe(function(msg) {
-          console.log("state listener")
           let id_uav = cur_uav_idx;//var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({deviceId:id_uav,protocol:"catec",mission_state:"0",wp_reached:"0",uav_state:"ok",landed_state:msg.data});//  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
         });

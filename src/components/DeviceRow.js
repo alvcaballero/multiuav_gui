@@ -94,9 +94,9 @@ const DeviceRow = ({ data, index, style }) => {
     }
     return (
       <>
-        {position && position.attributes.hasOwnProperty('landed_state') && (<div style={{fontSize:12}} > {position.attributes.landed_state}</div>)}
+        {position && position.attributes.hasOwnProperty('landed_state') && (
+        <div style={{fontSize:12}} > {position.attributes.landed_state}</div>)}
         <div style={{fontSize:12}}  className={classes[getStatusColor(item.status)]}>{status}</div>
-        
       </>
     );
   };
