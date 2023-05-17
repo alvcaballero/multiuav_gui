@@ -1,12 +1,13 @@
 import React,{ useContext } from 'react'
 import { RosContext } from './RosControl'
+import {Select, MenuItem } from "@mui/material"
 
 export const Adduav = ({SetAddUAVOpen}) => {
     const rosContex = useContext(RosContext);
 
     const sidenavStyle={
         height: '100%', /* 100% Full-height */
-        width: '250px', /* 0 width - change this with JavaScript */
+        width: '260px', /* 0 width - change this with JavaScript */
         Zindex: '1', /* Stay on top */
         left: '0',
         overflowX:'hidden',/* Disable horizontal scroll */
@@ -54,11 +55,11 @@ export const Adduav = ({SetAddUAVOpen}) => {
                        <input type="text" id="UAV_NS" placeholder="UAV name"/>                    
                     </div>
                   </div>
-                  <div className="row">
+                  <div className="row" style={{display:"inline-block"}}>
                     <div className="col-25">
-                      <label htmlFor="uavtype">Uav Type</label>
+                      <label htmlFor="uavtype">Uav Type    </label>
                     </div>
-                    <div className="col-75">
+                    <div className="col-75" style={{width:"125px"}}>
                       <select id="UAV_options" name="UAV Type">
                         <option value="dji">DJI</option>
                         <option value="px4">PX4</option>

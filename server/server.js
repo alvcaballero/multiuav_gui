@@ -141,7 +141,8 @@ async function rosConnect(){
           repeat_device =true;
         }
       });
-      if( find_device == false){ 
+      
+      if( find_device == false || uav_ns == ""){ 
         console.log("Dispositivo no encontrado"+uav_ns);
         return {state:'fail',msg:`Dispositivo no encontrado+${uav_ns}`};
       }
@@ -174,6 +175,8 @@ async function rosConnect(){
           name : uav_ns+'/dji_osdk_ros/vo_position',
           messageType : 'dji_osdk_ros/VOPosition'
         });
+        //http://wiki.ros.org/dji_sdk
+        //revisar -- https://robotics.stackexchange.com/questions/16471/get-yaw-from-quaternion
         uav_list[cur_uav_idx].listener_hdg = new ROSLIB.Topic({
           ros : ros,
           name : uav_ns+'/dji_osdk_ros/rtk_yaw',
