@@ -72,7 +72,7 @@ caption{
 }
 
 .container {
-  width: 240px;
+  width: 250px;
   border-radius: 5px;
   background-color: #f2f2f2;
   padding: 20px;
@@ -146,17 +146,6 @@ caption{
     pointer-events: initial;
 }
 
-.overlayTab {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    z-index: 314158;
-    pointer-events: auto;
-}
-
-.overlayTab #uavTable {
-    display: none;
-  }
 
 .camera_container {
     position: absolute;

@@ -177,11 +177,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           )}
                         />
                       ))}
-                      <StatusRow
-                          key="alarm"
-                          name="test" 
-                          content="test"
-                        />
+
                       {position.attributes.hasOwnProperty('alarm') && (
                         <StatusRow
                           key="alarm1"
@@ -194,11 +190,6 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           )}
                         />
                       )}
-                      <StatusRow
-                          key="test"
-                          name="test" 
-                          content="test"
-                        />
                     </TableBody>
                   </Table>
                 </CardContent>
