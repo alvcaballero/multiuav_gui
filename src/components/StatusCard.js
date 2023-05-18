@@ -124,6 +124,28 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const [anchorEl, setAnchorEl] = useState(null);
 
   const [removing, setRemoving] = useState(false);
+  
+  const serverthreat = async (uav_ns) => {
+    //event.preventDefault();
+    console.log("send tread ")
+    console.log(uav_ns)
+    try {
+      const response = await fetch('/api/threat', {
+        method: 'POST',
+        body: JSON.stringify({uav_ns: uav_ns}),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        let myresponse = await response.json();
+        console.log(myresponse)
+      } else {
+        throw Error(await response.text());
+      }
+    } catch (error) {
+    }
+  };
 
 
 
@@ -184,7 +206,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           name={"Alarm "+position.attributes.alarm} 
                           content={(
                             <div>
-                            <Button variant="text">Return</Button>
+                            <Button variant="text" onClick={() => serverthreat(device.name)}>Return</Button>
                             <Button variant="text">Continue</Button>
                             </div>
                           )}

@@ -219,7 +219,7 @@ async function rosConnect(){
           let pitch = Math.asin(-2.0*(q.x*q.z - q.w*q.y));
           let roll = Math.atan2(2.0*(q.x*q.y + q.w*q.z),-1+2*(q.w*q.w + q.x*q.x ) );
           console.log("yaw:"+(yaw*57.295).toFixed(2)+" pitch:" + (pitch*57.295).toFixed(2) +" roll:" +(roll*57.295).toFixed(2))
-          data.updatePosition({deviceId:id_uav,course:roll*57.295});//data.updatePosition({deviceId:id_uav,course:msg.data+90});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
+          data.updatePosition({deviceId:id_uav,course:(roll*57.295)});//data.updatePosition({deviceId:id_uav,course:msg.data+90});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
         });				
         
         uav_list[cur_uav_idx].listener_vel.subscribe(function(msg) {
@@ -463,6 +463,26 @@ async function rosConnect(){
     } 
   }
 
+  function threatUAV(uavname){
+    threadmessage = new ROSLIB.Service({
+      ros : ros,
+      name : uavname + '/threat_confirmation',
+      serviceType : 'std_srvs/Trigger'
+    });
+    var request = new ROSLIB.ServiceRequest({ });
+    threadmessage.callService(request, function(result) {
+      console.log('send threat');
+      console.log(result)
+        if(result.success){
+          return {state:'success',msg:"threat to" + uavname+" ok" + result.message};//notification('success',"Load mission to:" + cur_roster + " ok");
+        } else{
+          return {state:'fail',msg:"threat to:" + uavname + " fail"+ result.message};//notification('danger',"Load mission to:" + cur_roster + " fail");
+        }
+    }, function(result) {
+      console.log('Error:'+ result);
+    });
+  }
+
   function loadMission(mission){ 
     console.log("  load  - mission")
     console.log(mission)
@@ -671,6 +691,12 @@ app.post('/api/commandmission',async function(req,res){
   console.log('command-mission-post')
   console.log(req.body)
   let myresponse = await commandMission();
+  return res.json(myresponse);
+});
+app.post('/api/threat',async function(req,res){
+  console.log('threat-post')
+  //console.log(req.body.uav_ns)
+  let myresponse = await threatUAV(req.body.uav_ns);
   return res.json(myresponse);
 });
 
