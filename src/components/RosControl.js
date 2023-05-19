@@ -3,6 +3,7 @@ import { useDispatch, useSelector, connect } from 'react-redux';
 import { map } from '../Mapview/Mapview.js';
 import { useEffectAsync } from '../reactHelper';
 import { dataActions, devicesActions ,missionActions,sessionActions} from '../store'; // here update device action with position of uav for update in map
+//import { constants } from 'original-fs';
 const YAML = require('yaml')
 const ROSLIB = require('roslib');
 
@@ -285,7 +286,35 @@ export const RosControl = ({children,notification}) => {
         console.log(mission_yaml)
         dispatch(missionActions.updateMission({name:name_mission,mission:mission_yaml}));
 
-
+      }else if (name_mission.endsWith(".kml")){
+        let xmlDocument = new DOMParser().parseFromString(text_mission,"text/xml")
+        let mission_line = xmlDocument.querySelector("coordinates").textContent.replace(/(\r\n|\n|\r|\t)/gm, "").split(" ");
+        let mission_array = mission_line.map(x => x.split(","));
+        let mission_yaml = {uav_n:1,uav_1:{}};
+        let count_wp=0;
+        mission_array.forEach( element => {
+            if(element.length == 3){
+              mission_yaml.uav_1["wp_"+count_wp] = [element[1],element[0],element[2]];
+              count_wp = count_wp +1;
+            }
+        })
+        mission_yaml.uav_1["wp_n"] = count_wp;
+        console.log(mission_yaml)
+        dispatch(missionActions.updateMission({name:name_mission,mission:mission_yaml}));
+      }else if (name_mission.endsWith(".plan")){
+        let jsondoc = JSON.parse(text_mission)
+        console.log(jsondoc)
+        console.log(jsondoc.mission)
+        console.log(jsondoc.mission.items)
+        let mission_yaml = {uav_n:1,uav_1:{}};
+        let count_wp=0;
+        jsondoc.mission.items.forEach( element => {
+              mission_yaml.uav_1["wp_"+count_wp] = [element.params[4],element.params[5],element.Altitude];
+              count_wp = count_wp +1;
+        })
+        mission_yaml.uav_1["wp_n"] = count_wp;
+        console.log(mission_yaml)
+        dispatch(missionActions.updateMission({name:name_mission,mission:mission_yaml}));
 
       }else{
         notification('danger', "Formato de mission no compatible");
