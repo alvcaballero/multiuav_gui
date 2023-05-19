@@ -6,7 +6,6 @@ import { useTheme } from '@mui/material/styles';
 //import { makeStyles } from '@mui/system';
 import { Navbar } from './components/Navbar';
 import { Menu } from './components/Menu';
-import './assets/css/photon.min.css'
 import Toast from './components/Toast';
 import { Adduav } from './components/Adduav';
 import { Camera } from './components/Camera';

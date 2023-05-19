@@ -3,6 +3,22 @@ import React ,{ useEffect,useState ,useContext }from 'react'
 import { map } from '../Mapview/Mapview.js'
 import { RosContext } from './RosControl'
 import { useSelector } from 'react-redux';
+import HomeIcon from '@mui/icons-material/Home';
+import FolderIcon from '@mui/icons-material/Folder';
+import FlightIcon from '@mui/icons-material/Flight';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import TabIcon from '@mui/icons-material/Tab';
+import ReplyIcon from '@mui/icons-material/Reply';
+import CallMadeIcon from '@mui/icons-material/CallMade';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import CachedIcon from '@mui/icons-material/Cached';
+
+import {
+  Card,
+  IconButton,Button,ButtonGroup,
+  CardMedia,
+} from '@mui/material';
+
 
 export const Menu = ({SetAddUAVOpen}) => {
   const rosContex = useContext(RosContext);
@@ -58,6 +74,7 @@ export const Menu = ({SetAddUAVOpen}) => {
   }, [Mission_Name]);
   useEffect(() => {
     setMissionHome(Mission_Home);
+    MissionMap();
   }, [Mission_Home]);
   
 
@@ -66,52 +83,58 @@ export const Menu = ({SetAddUAVOpen}) => {
     <header className="toolbar toolbar-header">
 
       <div className="toolbar-actions">
-        <div className="btn-group">
-            <button id="setHome" onClick={HomeMap} className="btn btn-default">
-              <span className="icon icon-home"></span>
-            </button>
-            <button id="openMission" className="btn btn-default" >
-              <label htmlFor="openMissionNavbar" className="icon icon-folder" style={{padding: 0}} ></label>
+
+        <ButtonGroup variant="contained" size="small" aria-label="outlined primary button group">
+          <Button onClick={HomeMap}>
+            <HomeIcon fontSize="small"  />
+          </Button>
+            <Button id="openMission" >
+              <label htmlFor="openMissionNavbar" className="icon icon-folder" style={{padding: 0}} >
+              <FolderIcon fontSize="small"  />
+              </label>
               <input type="file" multiple={false} style={{display:"none"}} id="openMissionNavbar" onChange={readFile} />
-            </button>
-            <button id="openAddUav" onClick={openAddUav} className="btn btn-default pull-right">
-              <span className="icon icon-flight"></span>
-            </button>            
-        </div>
+            </Button>
+            <Button id="openAddUav" onClick={openAddUav} >
+              <FlightIcon fontSize="small"  />
+            </Button>            
+        </ButtonGroup>
         <RosContext.Consumer>
           {({rosState}) => (
-          <button id="rosConnect" onClick={rosContex.rosConnect} className="btn btn-default">{rosState && "conectado"} {!rosState && "desconectado"}  </button>
+          <Button id="rosConnect" onClick={rosContex.rosConnect} >{rosState && "conectado"} {!rosState && "desconectado"}  </Button>
           )}
         </RosContext.Consumer>
-        <button id="loadMission" style={{visibility: true}} className="btn btn-default">
-          <span className="icon icon-upload"></span>
-        </button>
+        
+        <Button id="loadMission" size="small" variant="contained" onClick={openAddUav} >
+              <FileUploadIcon fontSize="small"  />
+        </Button>   
 
-        <button id="commandMission" style={{visibility: true}} className="btn btn-default">Fly!</button>
+        <Button id="commandMission"  variant="contained" onClick={openAddUav} >
+        Fly!
+        </Button>   
 
-        <div id="openedmission" onClick={MissionMap} className="btn btn-default"> {MissionName}</div>
-        <button className="btn btn-default pull-right" onClick={e => hideStatusWindow() } >Status</button>
+        <Button id="openedmission" variant="contained" onClick={MissionMap} > {MissionName}</Button>
+        <Button variant="filledTonal" onClick={e => hideStatusWindow() } >Status</Button>
 
 
         
-        <button id="openTerminal" className="btn btn-default" style={{visibility: true}}>
-          <span className="icon icon-window"></span>
-        </button>      
-        <button id="UndoMission" className="btn btn-default" style={{visibility: true}}>
-          <span className="icon icon-reply"></span>
-        </button>
+        <Button id="openTerminal" className="btn btn-default" style={{visibility: true}}>
+        <TabIcon fontSize="small"  />
+        </Button>      
+        <Button id="UndoMission" className="btn btn-default" style={{visibility: true}}>
+        <ReplyIcon fontSize="small"  />
+        </Button>
 
-        <button id="reset" className="btn btn-default pull-right">
-          <span className="icon icon-retweet"></span>
-        </button>
+        <Button id="reset" className="btn btn-default pull-right">
+        <CallMadeIcon fontSize="small"  />
+        </Button>
           
-        <button id="showManualMode" className="btn btn-default pull-right">
-          <span className="icon icon-pencil"></span>
-        </button>
+        <Button id="showManualMode" className="btn btn-default pull-right">
+        <ModeEditIcon fontSize="small"  />
+        </Button>
           
-        <button id="commandManualMission" style={{visibility: true}} className="btn btn-default pull-right">
-          <span className="icon icon-direction"></span>
-        </button>
+        <Button id="commandManualMission" style={{visibility: true}} className="btn btn-default pull-right">
+          <CachedIcon fontSize="small"  />
+        </Button>
         
       </div>
       

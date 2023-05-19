@@ -1,6 +1,6 @@
 import React, { useState,useRef ,useEffect} from 'react';
 import { useDispatch, useSelector, connect } from 'react-redux';
-import { map } from '../Mapview/Mapview.js';
+//import { map } from '../Mapview/Mapview.js';
 import { useEffectAsync } from '../reactHelper';
 import { dataActions, devicesActions ,missionActions,sessionActions} from '../store'; // here update device action with position of uav for update in map
 //import { constants } from 'original-fs';
@@ -255,23 +255,11 @@ export const RosControl = ({children,notification}) => {
         plan_mission = YAML.parse(text_mission);
         mode_landing = plan_mission["mode_landing"];
         mode_yaw = plan_mission["mode_yaw"];
-
         dispatch(missionActions.clearMission())
         dispatch(missionActions.updateMission({name:name_mission,mission:plan_mission}));
 
-        let wp_home = [0,0];
-
-        for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
-          if (plan_mission.hasOwnProperty("uav_"+n_uav)){
-            wp_home = plan_mission["uav_"+n_uav]["wp_"+0];
-          }
-        }
-        map.easeTo({
-          center: [wp_home[1],wp_home[0]],
-          zoom: Math.max(map.getZoom(), 15),
-          offset: [0, -1 / 2],
-        });
       }else if (name_mission.endsWith(".waypoints")){
+
         let mission_line = text_mission.split("\n");
         let mission_array = mission_line.map(x => x.split("\t"));
         let mission_yaml = {uav_n:1,uav_1:{}};
@@ -283,10 +271,11 @@ export const RosControl = ({children,notification}) => {
           }
         })
         mission_yaml.uav_1["wp_n"] = count_wp;
-        console.log(mission_yaml)
+        //console.log(mission_yaml)
         dispatch(missionActions.updateMission({name:name_mission,mission:mission_yaml}));
 
       }else if (name_mission.endsWith(".kml")){
+
         let xmlDocument = new DOMParser().parseFromString(text_mission,"text/xml")
         let mission_line = xmlDocument.querySelector("coordinates").textContent.replace(/(\r\n|\n|\r|\t)/gm, "").split(" ");
         let mission_array = mission_line.map(x => x.split(","));
@@ -299,13 +288,12 @@ export const RosControl = ({children,notification}) => {
             }
         })
         mission_yaml.uav_1["wp_n"] = count_wp;
-        console.log(mission_yaml)
+        //console.log(mission_yaml)
         dispatch(missionActions.updateMission({name:name_mission,mission:mission_yaml}));
+
       }else if (name_mission.endsWith(".plan")){
+
         let jsondoc = JSON.parse(text_mission)
-        console.log(jsondoc)
-        console.log(jsondoc.mission)
-        console.log(jsondoc.mission.items)
         let mission_yaml = {uav_n:1,uav_1:{}};
         let count_wp=0;
         jsondoc.mission.items.forEach( element => {
@@ -313,7 +301,7 @@ export const RosControl = ({children,notification}) => {
               count_wp = count_wp +1;
         })
         mission_yaml.uav_1["wp_n"] = count_wp;
-        console.log(mission_yaml)
+        //console.log(mission_yaml)
         dispatch(missionActions.updateMission({name:name_mission,mission:mission_yaml}));
 
       }else{
