@@ -401,7 +401,7 @@ async function rosConnect(){
         uav_list[cur_uav_idx].listener_bat = new ROSLIB.Topic({
           ros : ros,
           name : uav_ns+'/battery',
-          messageType : 'aerialcore_common/BatteryState'//messageType : 'sensor_msgs/BatteryState'
+          messageType : 'aerialcore_common/BatteryState'//'sensor_msgs/BatteryState'
         });
         uav_list[cur_uav_idx].listener_state = new ROSLIB.Topic({
           ros : ros,

@@ -44,6 +44,8 @@
       //state.positions[payload.deviceId]['attributes']['threat'] = payload.threat; 
       if (payload.threat == true){
         state.positions[payload.deviceId]['attributes']['alarm'] = "threat"; 
+      }else{
+        state.positions[payload.deviceId]['attributes']['alarm'] = undefined;
       }
     }
 }
