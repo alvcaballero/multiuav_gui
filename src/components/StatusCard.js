@@ -206,8 +206,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           name={"Alarm "+position.attributes.alarm} 
                           content={(
                             <div>
-                            <Button variant="text" onClick={() => serverthreat(device.name)}>Return</Button>
-                            <Button variant="text">Continue</Button>
+                            <Button variant="text" onClick={() => serverthreat(device.name)}>Validate</Button>
+                            <Button variant="text">Dismiss</Button>
                             </div>
                           )}
                         />

@@ -249,34 +249,47 @@ export const RosControl = ({children,notification}) => {
     };
 
     const openMision=(name_mission,text_mission)=>{
-      plan_mission = YAML.parse(text_mission);
-      mode_landing = plan_mission["mode_landing"];
-      mode_yaw = plan_mission["mode_yaw"];
-      dispatch(missionActions.clearMission())
-      dispatch(missionActions.updateMission({name:name_mission,mission:plan_mission}));
 
-      //console.log(plan_mission["uav_n"]);
-      let wp_home = [0,0];
+      if (name_mission.endsWith(".yaml")){
+        plan_mission = YAML.parse(text_mission);
+        mode_landing = plan_mission["mode_landing"];
+        mode_yaw = plan_mission["mode_yaw"];
 
-      for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
-        if (plan_mission.hasOwnProperty("uav_"+n_uav)){
-          //let wp_position =[];
-          wp_home = plan_mission["uav_"+n_uav]["wp_"+0];
-          //for(let n_wp = 0 ; n_wp < plan_mission["uav_"+n_uav]["wp_n"]; n_wp++){
-          //  wp_position.push(plan_mission["uav_"+n_uav]["wp_"+n_wp])
-          //};
-          //for (var i = 0; i < uav_list.length; i++) {
-          //  if(uav_list[i].name === ("uav_"+n_uav)){
-          //    uav_list[i].wp_list = wp_position;//uav_list[i].wp_list =Object.values(missions.route[n_uav]['wp']);
-          //  }
-          //};
+        dispatch(missionActions.clearMission())
+        dispatch(missionActions.updateMission({name:name_mission,mission:plan_mission}));
+
+        let wp_home = [0,0];
+
+        for(let n_uav = 1; n_uav <= plan_mission["uav_n"]; n_uav++){
+          if (plan_mission.hasOwnProperty("uav_"+n_uav)){
+            wp_home = plan_mission["uav_"+n_uav]["wp_"+0];
+          }
         }
+        map.easeTo({
+          center: [wp_home[1],wp_home[0]],
+          zoom: Math.max(map.getZoom(), 15),
+          offset: [0, -1 / 2],
+        });
+      }else if (name_mission.endsWith(".waypoints")){
+        let mission_line = text_mission.split("\n");
+        let mission_array = mission_line.map(x => x.split("\t"));
+        let mission_yaml = {uav_n:1,uav_1:{}};
+        let count_wp=0;
+        mission_array.forEach( element => {
+          if (element[3] =="16"){
+            mission_yaml.uav_1["wp_"+count_wp] = [element[8],element[9],element[10]];
+            count_wp = count_wp +1;
+          }
+        })
+        mission_yaml.uav_1["wp_n"] = count_wp;
+        console.log(mission_yaml)
+        dispatch(missionActions.updateMission({name:name_mission,mission:mission_yaml}));
+
+
+
+      }else{
+        notification('danger', "Formato de mission no compatible");
       }
-      map.easeTo({
-        center: [wp_home[1],wp_home[0]],
-        zoom: Math.max(map.getZoom(), 15),
-        offset: [0, -1 / 2],
-      });
     }
 
     function updateInfoCell (uav_ns, info) {
