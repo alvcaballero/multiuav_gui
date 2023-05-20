@@ -35,7 +35,7 @@ export const Adduav = ({SetAddUAVOpen}) => {
 
     }
     function disConnectUav (){
-
+      SetAddUAVOpen(false);
     }
 
 
