@@ -12,15 +12,40 @@ import ReplyIcon from '@mui/icons-material/Reply';
 import CallMadeIcon from '@mui/icons-material/CallMade';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CachedIcon from '@mui/icons-material/Cached';
-
+import useClasses from './useClasses'
+import { grey } from '@mui/material/colors';
 import {
   Card,
   IconButton,Button,ButtonGroup,
   CardMedia,
 } from '@mui/material';
+import { border, borderColor } from '@mui/system';
 
+const styles = theme => ({
+  toolbar: {
+    height: '36px',
+    backgroundColor: grey[300],
+  },
+  mediaButton:{
+    width: 'auto',
+    color: grey[700],
+    backgroundColor: grey[50],
+    maxHeight: '26px',
+    top:"0px",
+    border: "1px solid black",
+    margin:"5px 10px",
+    "&:hover": {
+      backgroundColor: grey[300],
+    }
+  },
+  mediaicon:{
+    color: grey[700],
+  }
+
+  });
 
 export const Menu = ({SetAddUAVOpen}) => {
+  const classes = useClasses(styles);
   const rosContex = useContext(RosContext);
   const [MissionName, setMissionName] = useState('no load mission');
   const [MissionHome, setMissionHome] = useState([0,0]);
@@ -80,64 +105,63 @@ export const Menu = ({SetAddUAVOpen}) => {
 
   return (
 
-    <header className="toolbar toolbar-header">
+    <header className={classes.toolbar}>
+      <div >
 
-      <div className="toolbar-actions">
-
-        <ButtonGroup variant="contained" size="small" aria-label="outlined primary button group">
-          <Button onClick={HomeMap}>
-            <HomeIcon fontSize="small"  />
+        <ButtonGroup style={{height:"26px",display:"inline",  justifyContent:"flex-end"}} >
+          <Button onClick={HomeMap} className={classes.mediaButton} style={{margin:"0px 0px"}}>
+            <HomeIcon fontSize="small" className={classes.mediaicon} />
           </Button>
-            <Button id="openMission" >
-              <label htmlFor="openMissionNavbar" className="icon icon-folder" style={{padding: 0}} >
-              <FolderIcon fontSize="small"  />
+            <Button id="openMission" className={classes.mediaButton} style={{margin:"0px 0px"}}>
+              <label htmlFor="openMissionNavbar" style={{padding: 0}} >
+              <FolderIcon fontSize="small" className={classes.mediaicon} style={{position: "relative", top: "3px"}}/>
               </label>
               <input type="file" multiple={false} style={{display:"none"}} id="openMissionNavbar" onChange={readFile} />
             </Button>
-            <Button id="openAddUav" onClick={openAddUav} >
-              <FlightIcon fontSize="small"  />
+            <Button id="openAddUav" onClick={openAddUav} className={classes.mediaButton} style={{margin:"0px 0px"}}>
+              <FlightIcon fontSize="small"  className={classes.mediaicon} style={{transform: "rotate(90deg)"}}/>
             </Button>            
         </ButtonGroup>
+
         <RosContext.Consumer>
           {({rosState}) => (
-          <Button id="rosConnect" onClick={rosContex.rosConnect} >{rosState && "conectado"} {!rosState && "desconectado"}  </Button>
+          <Button id="rosConnect" onClick={rosContex.rosConnect} className={classes.mediaButton}>{rosState && "conectado"} {!rosState && "desconectado"}  </Button>
           )}
         </RosContext.Consumer>
         
-        <Button id="loadMission" size="small" variant="contained" onClick={openAddUav} >
-              <FileUploadIcon fontSize="small"  />
+        <Button id="loadMission" size="small" onClick={openAddUav} className={classes.mediaButton}  >
+              <FileUploadIcon fontSize="small" className={classes.mediaicon} />
         </Button>   
 
-        <Button id="commandMission"  variant="contained" onClick={openAddUav} >
+        <Button id="commandMission"  onClick={openAddUav} className={classes.mediaButton}>
         Fly!
         </Button>   
 
-        <Button id="openedmission" variant="contained" onClick={MissionMap} > {MissionName}</Button>
-        <Button variant="filledTonal" onClick={e => hideStatusWindow() } >Status</Button>
+        <Button id="openedmission" onClick={MissionMap} className={classes.mediaButton} style={{margin:"0px 100px",width:"500px"}}> {MissionName}</Button>
+        <Button variant="filledTonal" onClick={e => hideStatusWindow() } className={classes.mediaButton}>Status</Button>
 
 
         
-        <Button id="openTerminal" className="btn btn-default" style={{visibility: true}}>
-        <TabIcon fontSize="small"  />
+        <Button id="openTerminal" style={{visibility: true}} className={classes.mediaButton}>
+          <TabIcon fontSize="small"  className={classes.mediaicon}/>
         </Button>      
-        <Button id="UndoMission" className="btn btn-default" style={{visibility: true}}>
-        <ReplyIcon fontSize="small"  />
+        <Button id="UndoMission" style={{visibility: true}} className={classes.mediaButton}>
+        <ReplyIcon fontSize="small" className={classes.mediaicon} />
         </Button>
 
-        <Button id="reset" className="btn btn-default pull-right">
-        <CallMadeIcon fontSize="small"  />
+        <Button id="reset"  className={classes.mediaButton}>
+        <CallMadeIcon fontSize="small" className={classes.mediaicon} />
         </Button>
           
-        <Button id="showManualMode" className="btn btn-default pull-right">
-        <ModeEditIcon fontSize="small"  />
+        <Button id="showManualMode" className={classes.mediaButton}>
+        <ModeEditIcon fontSize="small" className={classes.mediaicon} />
         </Button>
           
-        <Button id="commandManualMission" style={{visibility: true}} className="btn btn-default pull-right">
-          <CachedIcon fontSize="small"  />
+        <Button id="commandManualMission" style={{visibility: true}} className={classes.mediaButton}>
+          <CachedIcon fontSize="small" className={classes.mediaicon}  />
         </Button>
         
       </div>
-      
   </header>
 
 

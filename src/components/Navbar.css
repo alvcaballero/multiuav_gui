@@ -48,6 +48,7 @@ box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
 z-index: 314159;
 }
 
+
 /* Links inside the dropdown */
 .dropdown-content a {
 float: none;
@@ -57,6 +58,7 @@ text-decoration: none;
 display: block;
 text-align: left;
 z-index: 314159;
+
 }
 
 .dropdown-content label {
@@ -70,8 +72,12 @@ z-index: 314159;
     font-size: 16px;
     }
 
+#menuopenmission:hover{
+    background-color: #ddd;
+    z-index: 314159;
+    }
 /* Add a grey background color to dropdown links on hover */
-.dropdown-content a:hover {
+.dropdown-content a:hover{
 background-color: #ddd;
 z-index: 314159;
 }
@@ -81,3 +87,20 @@ z-index: 314159;
 display: block;
 }
 
+.mytest{
+display: none;
+position: absolute;
+background-color: #f9f9f9;
+min-width: 160px;
+box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+z-index: 314159;
+}
+/*
+.mytest:has( a:active){
+    display: none;
+}
+
+.dropdown-content a:active{
+    display: none;
+    }
+    */
