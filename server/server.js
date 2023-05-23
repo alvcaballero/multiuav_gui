@@ -214,12 +214,24 @@ async function rosConnect(){
         uav_list[cur_uav_idx].listener_hdg.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
           let q =msg.orientation;
+          //let magnitude = Math.sqrt( q.x*q.x + q.y*q.y +q.z*q.z + q.w*q.w );
+          //console.log(q);
+          //console.log(magnitude);
+          //q.x = q.x/magnitude;
+          //q.y = q.y/magnitude;
+          //q.z = q.z/magnitude;
+          //q.w = q.w/magnitude;
+          //console.log(q);
           //let response = Math.atan2(2.0 * (w * z + x * y), w * w + x * x - y * y - z * z);
-          let yaw = Math.atan2(2.0*(q.y*q.z + q.w*q.x), 1-2*( q.x*q.x + q.y*q.y ) );
+          let roll = Math.atan2(2.0*(q.y*q.z + q.w*q.x), 1-2*( q.x*q.x + q.y*q.y ) );
           let pitch = Math.asin(-2.0*(q.x*q.z - q.w*q.y));
-          let roll = Math.atan2(2.0*(q.x*q.y + q.w*q.z),-1+2*(q.w*q.w + q.x*q.x ) );
+          let yaw= Math.atan2(2.0*(q.x*q.y + q.w*q.z),-1+2*(q.w*q.w + q.x*q.x ) )*(-1);
+          //let yaw= Math.atan2(2.0*(q.x*q.y + q.w*q.z),1-2*(q.y*q.y + q.z*q.z ) )*(-1);
+          //let yaw= Math.atan2(2.0*(q.y*q.z + q.w*q.x),q.w*q.w -q.x*q.x -q.y*q.y +q.z*q.z);
+          //let yaw= Math.atan2(q.z,q.w )*2;
+
           console.log("yaw:"+(yaw*57.295).toFixed(2)+" pitch:" + (pitch*57.295).toFixed(2) +" roll:" +(roll*57.295).toFixed(2))
-          data.updatePosition({deviceId:id_uav,course:(roll*57.295)});//data.updatePosition({deviceId:id_uav,course:msg.data+90});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
+          data.updatePosition({deviceId:id_uav,course:(90+yaw*57.295)});//data.updatePosition({deviceId:id_uav,course:msg.data+90});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
         });				
         
         uav_list[cur_uav_idx].listener_vel.subscribe(function(msg) {
