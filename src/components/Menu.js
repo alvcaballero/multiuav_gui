@@ -30,16 +30,18 @@ const styles = theme => ({
     width: 'auto',
     color: grey[700],
     backgroundColor: grey[50],
-    maxHeight: '26px',
-    top:"0px",
-    border: "1px solid black",
+    maxHeight: '22px',
+    top:"2px",
+    border: "1px solid gray",
     margin:"5px 10px",
+    fontSize: "12px",
     "&:hover": {
       backgroundColor: grey[300],
     }
   },
   mediaicon:{
     color: grey[700],
+    width: '15px',
   }
 
   });
