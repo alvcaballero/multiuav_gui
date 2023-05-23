@@ -94,7 +94,7 @@ export const Navbar = ({SetAddUAVOpen}) => {
           </Typography>
 
       <div className="dropdown">
-        <button className="dropbtn" >Ros </button>
+        <button className="dropbtn" >ROS </button>
         <div name="otrotest" className="dropdown-content"  >
           <a id="rosConnectNavbar" onClick={()=>{rosContex.rosConnect();handleClick()}}>Connect Rosbridge Server</a>                    
         </div>
