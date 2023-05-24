@@ -16,13 +16,15 @@
     if (state.positions[payload.deviceId] === undefined) {
       state.positions[payload.deviceId] = {deviceId:payload.deviceId,attributes:{}}
     };
-
+    
     if (payload.hasOwnProperty('latitude')){
       //state.positions[payload.deviceId]["deviceId"] = payload.deviceId;
       state.positions[payload.deviceId]["latitude"] = payload.latitude;
       state.positions[payload.deviceId]["longitude"] = payload.longitude;
-      state.positions[payload.deviceId]["altitude"] = payload.altitude;
       state.positions[payload.deviceId]["deviceTime"] = payload.deviceTime;
+    }
+    if (payload.hasOwnProperty('altitude')){
+      state.positions[payload.deviceId]["altitude"] = payload.altitude;
     }
     if (payload.hasOwnProperty('course')){
       state.positions[payload.deviceId]["course"] = payload.course;  

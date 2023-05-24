@@ -170,6 +170,12 @@ async function rosConnect(){
           name : uav_ns+'/dji_osdk_ros/gps_position',//'/dji_osdk_ros/rtk_position',
           messageType : 'sensor_msgs/NavSatFix'
         });
+
+        uav_list[cur_uav_idx].listener_alt = new ROSLIB.Topic({
+          ros : ros,
+          name : uav_ns+'/dji_osdk_ros/height_above_takeoff',
+          messageType : 'std_msgs/Float32'
+        });
         uav_list[cur_uav_idx].listenerov = new ROSLIB.Topic({
           ros : ros,
           name : uav_ns+'/dji_osdk_ros/vo_position',
@@ -204,33 +210,22 @@ async function rosConnect(){
         uav_list[cur_uav_idx].listener.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
           data.updatePosition({id : msg.header.seq,deviceId:id_uav,  latitude:msg.latitude,longitude:msg.longitude, altitude:msg.altitude,deviceTime:"2023-03-09T22:12:44.000+00:00"});
-          
+        });
+        uav_list[cur_uav_idx].listener_alt.subscribe(function(msg) {//Altitud de ultrasonico
+          //let id_uav = cur_uav_idx;
+          //data.updatePosition({deviceId:id_uav,altitude:msg.data});          
         });
         uav_list[cur_uav_idx].listenerov.subscribe(function(msg) {
           //let id_uav = cur_uav_idx;
+          console.log(msg)
           //dispatch(dataActions.updatePosition({id:msg.header.seq,deviceId:id_uav,latitude:msg.x,longitude:msg.y,altitude:msg.z,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"}));          
         });
         //https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
         uav_list[cur_uav_idx].listener_hdg.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
-          let q =msg.orientation;
-          //let magnitude = Math.sqrt( q.x*q.x + q.y*q.y +q.z*q.z + q.w*q.w );
-          //console.log(q);
-          //console.log(magnitude);
-          //q.x = q.x/magnitude;
-          //q.y = q.y/magnitude;
-          //q.z = q.z/magnitude;
-          //q.w = q.w/magnitude;
-          //console.log(q);
-          //let response = Math.atan2(2.0 * (w * z + x * y), w * w + x * x - y * y - z * z);
-          let roll = Math.atan2(2.0*(q.y*q.z + q.w*q.x), 1-2*( q.x*q.x + q.y*q.y ) );
-          let pitch = Math.asin(-2.0*(q.x*q.z - q.w*q.y));
+          let q =msg.orientation;//let roll = Math.atan2(2.0*(q.y*q.z + q.w*q.x), 1-2*( q.x*q.x + q.y*q.y ) );//let pitch = Math.asin(-2.0*(q.x*q.z - q.w*q.y));
           let yaw= Math.atan2(2.0*(q.x*q.y + q.w*q.z),-1+2*(q.w*q.w + q.x*q.x ) )*(-1);
-          //let yaw= Math.atan2(2.0*(q.x*q.y + q.w*q.z),1-2*(q.y*q.y + q.z*q.z ) )*(-1);
-          //let yaw= Math.atan2(2.0*(q.y*q.z + q.w*q.x),q.w*q.w -q.x*q.x -q.y*q.y +q.z*q.z);
-          //let yaw= Math.atan2(q.z,q.w )*2;
-
-          console.log("yaw:"+(yaw*57.295).toFixed(2)+" pitch:" + (pitch*57.295).toFixed(2) +" roll:" +(roll*57.295).toFixed(2))
+          //console.log("yaw:"+(yaw*57.295).toFixed(2)+" pitch:" + (pitch*57.295).toFixed(2) +" roll:" +(roll*57.295).toFixed(2))
           data.updatePosition({deviceId:id_uav,course:(90+yaw*57.295)});//data.updatePosition({deviceId:id_uav,course:msg.data+90});//uav_list[cur_uav_idx].marker.setRotationAngle(message.data+90);
         });				
         
@@ -503,6 +498,7 @@ async function rosConnect(){
     let cur_roster = []
     let cur_ns = ""
     let mode_yaw = 0;
+    let idle_vel = 1.8;
     let mode_landing =0;
     uav_list.forEach(function prepare_wp(item,idx,arr){
       cur_ns = item.name
@@ -532,6 +528,9 @@ async function rosConnect(){
             if (route.attributes.hasOwnProperty("mode_yaw")){
               mode_yaw =  route.attributes["mode_yaw"];  
             }
+            if (route.attributes.hasOwnProperty("idle_vel")){
+              idle_vel =  route.attributes["idle_vel"];  
+            }
           }
         })
         let yaw_pos_msg = new ROSLIB.Message({
@@ -558,8 +557,8 @@ async function rosConnect(){
           type : "waypoint",
           waypoint: wp_command,
           radius : 0,
-          maxVel:	3,
-          idleVel: 1.8,
+          maxVel:	10,
+          idleVel: idle_vel,
           yaw: yaw_pos_msg,
           yawMode: mode_yaw,
           traceMode: 0,
