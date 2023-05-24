@@ -72,7 +72,6 @@ export const Adduav = ({SetAddUAVOpen}) => {
                     <div className="form-btn-size">
                       <button style={{fontFamily : "inherit"}} id="closeAddUav" onClick={closeAddUav} className="btn btn-dafault">Close</button>
                       <button style={{fontFamily : "inherit"}} id="connectAddUav" onClick={AddnewUAV} className="btn btn-primary">Connect</button>
-                      <button style={{fontFamily : "inherit"}} id="disConnectAddUav" onClick={disConnectUav} className="btn btn-negative">Disconnect</button>
                     </div>
                   </div>                    
               </div>                  
