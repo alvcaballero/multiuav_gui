@@ -24,15 +24,18 @@ import { border, borderColor } from '@mui/system';
 const styles = theme => ({
   toolbar: {
     height: '36px',
-    backgroundColor: grey[300],
+    //backgroundColor: grey[300],
+    background: "linear-gradient(#E7E5E7, #D3D1D3)",
+    borderTop: "1px solid rgba(255, 255, 255, .6)",
   },
   mediaButton:{
     width: 'auto',
     color: grey[700],
-    backgroundColor: grey[50],
+    backgroundColor: "#F9F9F9",//grey[50],
+    boxShadow: "inset 0px -4px 4px 0 rgba(0, 0, 0, 0.1)",
     maxHeight: '22px',
     top:"2px",
-    border: "1px solid gray",
+    border: "1px solid #C2C0C2",
     margin:"5px 10px",
     fontSize: "12px",
     "&:hover": {
