@@ -42,6 +42,10 @@ const { reducer, actions } = createSlice({
           //waipoints
           for(let wp_n = 0; wp_n < action.payload.mission["uav_"+n_uav]['wp_n']; wp_n++){
             state.route[n_uav]['wp'][wp_n] = action.payload.mission["uav_"+n_uav]['wp_'+wp_n];
+            if(state.route[n_uav]['wp'][wp_n].length==3){
+
+              state.route[n_uav]['wp'][wp_n].push(0);
+            }
           }
           //
           if (action.payload.mission["uav_"+n_uav].hasOwnProperty('attributes')){
@@ -69,7 +73,6 @@ const { reducer, actions } = createSlice({
             }
           }
         }
-
       }
     },
     clearMission(state,action){

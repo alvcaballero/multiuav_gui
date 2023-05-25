@@ -1,6 +1,5 @@
 import React, { useState,useRef ,useEffect} from 'react';
 import { useDispatch, useSelector, connect } from 'react-redux';
-//import { map } from '../Mapview/Mapview.js';
 import { useEffectAsync } from '../reactHelper';
 import { dataActions, devicesActions ,missionActions,sessionActions} from '../store'; // here update device action with position of uav for update in map
 //import { constants } from 'original-fs';
@@ -255,7 +254,6 @@ export const RosControl = ({children,notification}) => {
         plan_mission = YAML.parse(text_mission);
         mode_landing = plan_mission["mode_landing"];
         mode_yaw = plan_mission["mode_yaw"];
-        dispatch(missionActions.clearMission())
         dispatch(missionActions.updateMission({name:name_mission,mission:plan_mission}));
 
       }else if (name_mission.endsWith(".waypoints")){

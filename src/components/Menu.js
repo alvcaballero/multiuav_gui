@@ -53,7 +53,7 @@ export const Menu = ({SetAddUAVOpen}) => {
   const classes = useClasses(styles);
   const rosContex = useContext(RosContext);
   const [MissionName, setMissionName] = useState('no load mission');
-  const [MissionHome, setMissionHome] = useState([0,0]);
+  //const [MissionHome, setMissionHome] = useState([0,0]);
   const Mission_Name = useSelector((state) => state.mission.name);
   const Mission_Home = useSelector((state) => state.mission.home);
   const [hidestatus,sethidestatus]  = useState(true);
@@ -83,7 +83,7 @@ export const Menu = ({SetAddUAVOpen}) => {
 
   function MissionMap(){
     map.easeTo({
-      center: [MissionHome[1],MissionHome[0]],
+      center: [Mission_Home[1],Mission_Home[0]],
       zoom: Math.max(map.getZoom(), 15),
       offset: [0, -1 / 2],
     });
@@ -103,7 +103,6 @@ export const Menu = ({SetAddUAVOpen}) => {
     setMissionName(Mission_Name);
   }, [Mission_Name]);
   useEffect(() => {
-    setMissionHome(Mission_Home);
     MissionMap();
   }, [Mission_Home]);
   
