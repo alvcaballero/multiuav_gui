@@ -1,4 +1,5 @@
 import React, { useState, useContext} from 'react'
+import { useDispatch, useSelector, connect } from 'react-redux';
 import "./Navbar.css"
 import { map } from '../Mapview/Mapview.js'
 import { RosContext } from './RosControl'
@@ -12,8 +13,16 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { grey } from '@mui/material/colors';
 
+import { missionActions} from '../store'; 
+
 export const Navbar = ({SetAddUAVOpen}) => {
   const [isActive, setIsActive] = useState(false);
+  const dispatch = useDispatch();
+  
+
+  const clearmission =() =>{
+    dispatch(missionActions.clearMission({}))
+  }
 
   const handleClick = () => {
     // 👇️ toggle
@@ -96,7 +105,7 @@ export const Navbar = ({SetAddUAVOpen}) => {
       <div className="dropdown">
         <button className="dropbtn" >ROS </button>
         <div name="otrotest" className="dropdown-content"  >
-          <a id="rosConnectNavbar" onClick={()=>{rosContex.rosConnect();handleClick()}}>Connect Rosbridge Server</a>                    
+          <a id="rosConnectNavbar" onClick={()=>{rosContex.rosConnect();handleClick()}}>Connect Rosbridge Server</a>                                     
         </div>
       </div>     
       <div className="dropdown">
@@ -113,10 +122,10 @@ export const Navbar = ({SetAddUAVOpen}) => {
           <i className="fa fa-caret-down"></i>
         </button>
         <div name="otrotest" className="dropdown-content">
-            <label id="menuopenmission" htmlFor="openMissionNavbar" >Abrir Mision</label>
+            <label id="menuopenmission" htmlFor="openMissionNavbar" >Open Mision</label>
             <input type="file" multiple={false} style={{display:"none"}} id="openMissionNavbar" onChange={readFile} />
-            <a id="openKMLNavbar" onClick={()=>{handleClick()}} >Open Pylons & Wires File</a>
-            <a id="resetNavbar"  onClick={()=>{handleClick()}}>Reset Markers</a>        
+            <a id="Clear mission" onClick={()=>{clearmission();handleClick()}} >Clear Mission </a>   
+            <a id="editmission" onClick={()=>{handleClick()}} >edit mission </a> 
         </div>
       </div>
       <div className="dropdown">
@@ -128,7 +137,11 @@ export const Navbar = ({SetAddUAVOpen}) => {
             <a id="commandMissionNavbar" onClick={()=>{rosContex.commandMission();handleClick()}} >Command Mission</a>     
         </div>
       </div>
-      <a id="more info" >new device </a>
+      <div className="dropdown">
+        <button className="dropbtn">Report
+          <i className="fa fa-caret-down"></i>
+        </button>
+      </div>
       </Toolbar>
       </Container>
     </AppBar>

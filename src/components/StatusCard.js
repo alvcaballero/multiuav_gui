@@ -25,6 +25,7 @@ import PendingIcon from '@mui/icons-material/Pending';
 import makeStyles from '@mui/styles/makeStyles';
 
 import PositionValue from './PositionValue';
+import RemoveDialog from './RemoveDialog';
 import useClasses from './useClasses'
 import { devicesActions } from '../store';
 import { Alarm } from '@mui/icons-material';
@@ -147,6 +148,19 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     }
   };
 
+  const handleRemove = async (removed) => {
+    if (removed) {
+      const response = await fetch('/api/devices');
+      if (response.ok) {
+        let myresponse = await response.json();
+        dispatch(devicesActions.refresh( Object.values(myresponse)));
+      } else {
+        throw Error(await response.text());
+      }
+    }
+    setRemoving(false);
+  };
+
 
 
   return (
@@ -261,12 +275,12 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           <MenuItem component="a" target="_blank" href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${position.latitude}%2C${position.longitude}&heading=${position.course}`}>{'linkStreetView'}</MenuItem>
         </Menu>
       )}
-      {/*<RemoveDialog
+      {<RemoveDialog
         open={removing}
         endpoint="devices"
         itemId={deviceId}
         onResult={(removed) => handleRemove(removed)}
-      />*/}
+      />}
     </>
   );
 };

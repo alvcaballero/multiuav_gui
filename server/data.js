@@ -8,6 +8,9 @@
   state.devices[payload.id] = payload;
 }
 
+function removedevice(payload) {
+  delete state.devices[payload.id] ;
+}
  function updatePosition(payload) {
     //state.positions[payload.deviceId] = payload;
     let currentTime = new Date()
@@ -71,4 +74,5 @@ module.exports = {
   updatedevice,
   updatePosition,
   updateCamera,
+  removedevice,
 };

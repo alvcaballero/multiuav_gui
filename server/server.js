@@ -60,6 +60,8 @@ wss.on('connection', function connection(ws) {
   }, 1000);
 });
 
+
+
 const CheckDeviceOnline = setInterval(() => {
   let currentTime = new Date()
   let checkdevices =  Object.keys(data.state.devices)
@@ -73,7 +75,6 @@ const CheckDeviceOnline = setInterval(() => {
     }
   })
 }, 5000);
-
 
 // Iniciamos el servidor en el puerto establecido por la variable port (3000)
 server.listen(app.get('port'), () =>{console.log('Servidor iniciado en el puerto: ' +app.get('port'));})
@@ -102,7 +103,15 @@ async function rosConnect(){
       uav_list = [];
       ros.close();
     }
-  }
+}
+
+  const autoconectRos = setInterval(() => {
+    if(rosState.state != 'connect'){
+      rosConnect()
+    }
+  }, 30000);
+
+
   const getTopics2 = () => {
     var topicsClient = new ROSLIB.Service({
     ros : ros,
@@ -242,7 +251,6 @@ async function rosConnect(){
         uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
           data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
-          //document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
         });
         
       }else if(uav_type == "px4"){
@@ -746,6 +754,9 @@ app.get("/api/test.png", (req, res) => {
   });
   res.end(img);
 });
+
+
+
 app.get("/api/placeholder", (req, res) => {
   // A 1x1 pixel red colored PNG file.
   const base64 = fs.readFileSync("./src/assets/img/placeholder.jpg", "base64");
@@ -758,6 +769,12 @@ app.get("/api/placeholder", (req, res) => {
   });
   res.end(img);
 });
+
+app.delete('/api/:endpoint/:itemid', (req, res) => {
+  console.log(req.params)
+  data.removedevice({id:req.itemid})
+  res.send(req.params)
+})
 
 // camera
 app.get('/api/media/:deviceid', (req, res) => {
