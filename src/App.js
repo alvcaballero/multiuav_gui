@@ -139,11 +139,11 @@ function App() {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
           />
-          <Camera
+          {false && <Camera
           deviceId={selectedDeviceId}
           position={selectedPosition}
           onClose={() => dispatch(devicesActions.selectId(null))}
-          />
+          />}
           <Toast toastlist={list} position="buttom-right" setList={setList} />
         </RosControl>
       </div>
