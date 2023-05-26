@@ -26,6 +26,7 @@ const RemoveDialog = ({
   const handleRemove = async () => {
     const response = await fetch(`/api/${endpoint}/${itemId}`, { method: 'DELETE' });
     if (response.ok) {
+      console.log("elemento eliminado")
       onResult(true);
     } else {
       onResult(false);
