@@ -9,6 +9,7 @@ const fs = require("fs");
 
 const WebSocket = require("ws");
 const ROSLIB = require('roslib');
+const { Key } = require("@mui/icons-material");
 
 const uuidv4 = require('uuid').v4;
 
@@ -209,6 +210,11 @@ async function rosConnect(){
           name : uav_ns+'/dji_osdk_ros/battery_state',
           messageType : 'sensor_msgs/BatteryState'
         });
+        uav_list[cur_uav_idx].listener_state = new ROSLIB.Topic({
+          ros : ros,
+          name : '/muav_sm/'+uav_ns+'/uavstate',
+          messageType : 'muav_state_machine/UAVState'
+        });
 
         uav_list[cur_uav_idx].listener_cam = new ROSLIB.Topic({
           ros : ros,
@@ -226,7 +232,7 @@ async function rosConnect(){
         });
         uav_list[cur_uav_idx].listenerov.subscribe(function(msg) {
           //let id_uav = cur_uav_idx;
-          console.log(msg)
+          //console.log(msg)
           //dispatch(dataActions.updatePosition({id:msg.header.seq,deviceId:id_uav,latitude:msg.x,longitude:msg.y,altitude:msg.z,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"}));          
         });
         //https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
@@ -648,13 +654,15 @@ async function rosConnect(){
   }
 
   function disConnectAddUav(uav_ns){
-    Key_listener = Object.keys(data.state.devices).find(element => element.includes("listener"))
+    let Key_listener = Object.keys(uav_list[uav_ns]).filter(element => element.includes('listener'));
 		let cur_uav_idx = uav_ns//uav_list.length-1;
+    console.log(Key_listener)
 		if (uav_list.length != 0){
       Key_listener.forEach(element => {
+        console.log(element)
         uav_list[cur_uav_idx][element].unsubscribe();
       })
-			uav_list.pop();
+			uav_list.slice(cur_uav_idx,1)
 			console.log("Último dron eliminado de la lista");
 			if (uav_list.length != 0){
 				console.log("\nLa Lista de uav actualizada es: ");
@@ -770,9 +778,12 @@ app.get("/api/placeholder", (req, res) => {
   res.end(img);
 });
 
-app.delete('/api/:endpoint/:itemid', (req, res) => {
+app.delete('/api/:endpoint/:itemid',async (req, res) => {
   console.log(req.params)
-  data.removedevice({id:req.itemid})
+  //av_list[req.params.itemid].listener.unsubscribe();
+  let myresponse = await disConnectAddUav(req.params.itemid);
+  console.log(uav_list)
+  data.removedevice({id:req.params.itemid})
   res.send(req.params)
 })
 
