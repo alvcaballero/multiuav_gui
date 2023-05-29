@@ -200,6 +200,19 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                 <CardContent className={classes.content}>
                   <Table size="small" classes={{ root: classes.table }}>
                     <TableBody>
+                      {position.hasOwnProperty('latitude') && (
+                        <StatusRow
+                          key="latitude"
+                          name={"Position"} 
+                          content={(
+                            <a href={"https://www.google.com/maps?q="+position.latitude+","+position.longitude  } target="_blank">
+                            {"["+position.latitude.toFixed(6)+","+position.longitude.toFixed(6)+"]" }
+                            </a>
+                          )}
+                        />
+                      )}
+                      
+                      
                       {positionItems.split(',').filter((key) => position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key)).map((key) => (
                         <StatusRow
                           key={key}
