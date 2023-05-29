@@ -1,0 +1,185 @@
+openapi: 3.0.1
+info:
+  title: GSC (Ground Station control MultiUAV)
+  description: Descripcion de API de Alto nivel para comunicacion de Ros  con UAV.
+  version: "2.3.1"
+servers:
+  - url: https://localhost:4000/api/
+tags:
+  - name: Devices
+    description: UAV que se encuentran enlasados a la plataforma
+  - name: Missions
+  - name: Positions
+  - name: Command
+  - name: session
+
+paths:
+  /devices:
+
+    get:
+      tags:
+      - Devices
+      summary: Fetch a list of Devices
+      description: returns a list of devices
+      parameters:
+      - $ref: '#/components/parameters/token'
+      responses:
+        200:
+          description: (ok) lista de dispositivos registrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+
+    post:
+      tags:
+      - Devices
+      parameters:
+      - $ref: '#/components/parameters/token'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BodyAddUAV'
+        required: true
+      responses:
+        200:
+          description: ok
+
+    delete:
+      summary: Delete a Device
+      tags:
+      - Devices
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '204':
+          description: No Content
+          content: {}
+
+  /postitions:
+    get:
+      summary: Fetches a list of Positions
+      description: We strongly recommend using Websocket
+        instead of periodically polling positions endpoint. Without any params, it
+        returns a list of last known positions for all the user's Devices. _from_
+        and _to_ fields are not required with _id_.
+      tags:
+      - Positions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Position"
+
+
+
+components:
+  responses:
+    
+  parameters:
+    token:
+        in: header
+        description: Token de autenticacion
+        required: false
+    
+  schemas:
+    BodyAddUAV:
+      type: object
+      properties:
+        uav_id:
+          type: string
+        uav_type:
+          type: string
+
+    Device:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          type: string
+        lastUpdate:
+          type: string
+          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          format: date-time
+        #model:
+        #  type: string
+        category:
+          type: string
+        #attributes:
+        #  type: object
+        #  properties: {}
+
+    Position:
+      type: object
+      properties:
+        #id:
+        #  type: integer
+        deviceId:
+          type: integer
+        #protocol:
+        #  type: string
+        deviceTime:
+          type: string
+          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          format: date-time
+        #fixTime:
+        #  type: string
+        #  description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+        #  format: date-time
+        #serverTime:
+        #  type: string
+        #  description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+        #  format: date-time
+        #outdated:
+        #  type: boolean
+        #valid:
+        #  type: boolean
+        latitude:
+          type: number
+        longitude:
+          type: number
+        altitude:
+          type: number
+        speed:
+          type: number
+          description: in knots
+        course:
+          type: number
+        #address:
+        #  type: string
+        #accuracy:
+        #  type: number
+        #network:
+        #  type: object
+        #  properties: {}
+        attributes:
+          type: object
+          properties:
+            protocol:
+              type: string
+            mission_state:
+              type: string
+            wp_reached:
+              type: integer
+            uav_state:
+              type: string
+            landed_state:
+              type: string
+            alarm:
+              type: string
+    
+  
