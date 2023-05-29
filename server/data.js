@@ -9,7 +9,8 @@
 }
 
 function removedevice(payload) {
-  delete state.devices[payload.id] ;
+  delete state.devices[payload.id];
+  console.log(state.devices)
 }
  function updatePosition(payload) {
     //state.positions[payload.deviceId] = payload;
