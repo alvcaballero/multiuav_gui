@@ -20,4 +20,4 @@ uav_2:  # 850 m, left UAV (M210) placed at the end of the runway, passing the "0
   wp_4: [37.41031527664839, -6.002355556298255, 5, 90]  # Charging point
 
 mode_landing: 2  # 3 return to point 0, 1 return to home, 2 auto landing., 0 no action
-mode_yaw: 2 # 0 automode, 1 lock as inicital value , 2 control Rc,3 use wayarpoints
+mode_yaw: 2 # 0 automode, 1 lock as inicital value , 2 control Rc,3 use wayarpoints/uav_2/dji_osdk_ros/height_above_takeoff
