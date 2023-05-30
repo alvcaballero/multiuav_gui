@@ -1,4 +1,5 @@
 openapi: 3.0.1
+#this is based of https://www.traccar.org/api-reference/#tag/Commands/paths/~1commands~1%7Bid%7D/put
 info:
   title: GSC (Ground Station control MultiUAV)
   description: Descripcion de API de Alto nivel para comunicacion de Ros  con UAV.
@@ -8,19 +9,31 @@ servers:
 tags:
   - name: Devices
     description: UAV que se encuentran enlasados a la plataforma
-  - name: Missions
   - name: Positions
-  - name: Command
-  - name: session
+    description: Obtiene la informacion en bruto del UAV
+  - name: Missions
+    description: Gestion de la mission
+  - name: Commands
+    description: envio de commandos al UAV
+#  - name: Events
+#    description: Obtiene informacion de eventos
+#  - name: Notifications
+#    description: Gestion de notificaciones de usuario
+#  - name: session
+#    description: for future
+#  - name: Reports
+#    description: for future
+#  - name: Camera
+#    description: for future
+
 
 paths:
   /devices:
-
     get:
       tags:
       - Devices
       summary: Fetch a list of Devices
-      description: returns a list of devices
+      description: devuelve lista de dispositivos
       parameters:
       - $ref: '#/components/parameters/token'
       responses:
@@ -32,8 +45,11 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Device'
-
+        400:
+          description: No permission
+          content: {}
     post:
+      summary: Create a Device
       tags:
       - Devices
       parameters:
@@ -46,8 +62,14 @@ paths:
         required: true
       responses:
         200:
-          description: ok
-
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BodyAddUAV'
+      x-codegen-request-body-name: body
+      
+  /devices/{id}:
     delete:
       summary: Delete a Device
       tags:
@@ -81,17 +103,76 @@ paths:
                 type: array
                 items:
                   "$ref": "#/components/schemas/Position"
+  /loadmission/{id}:
+    put:
+      summary: Load mission to devices
+      description: sin ningun parametro, carga la mission a todos los UAV's
+      tags:
+        - Missions
+      parameters:
+      - name: id
+        in: path
+        schema:
+          type: integer
+      responses:
+        '204':
+          description: No Content
+          content: {}
+        
+
+  /commandmission/{id}:
+    put:
+      summary: Command to exec mission
+      description: sin ningun parametro, carga la mission a todos los UAV's
+      tags:
+        - Missions
+      parameters:
+      - name: id
+        in: path
+        schema:
+          type: integer
+      responses:
+        '204':
+          description: No Content
+          content: {}
+
+  /comands/send:
+    post:
+      summary: Send command to devices
+      description: Envio de commandos a los dispositivos
+      tags:
+      - Commands
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Command"
+        required: true
+      responses:
+        '200':
+          description: Command sent
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Command"
+        '400':
+          description: Command no match 
+          content: {}
+      x-codegen-request-body-name: body
 
 
 
 components:
-  responses:
+  #responses:
     
   parameters:
     token:
-        in: header
-        description: Token de autenticacion
-        required: false
+      name: token
+      in: header
+      description: Token de autenticacion
+      required: false
+      schema:
+        type: string
     
   schemas:
     BodyAddUAV:
@@ -181,5 +262,22 @@ components:
               type: string
             alarm:
               type: string
+    Command:
+      type: object
+      properties:
+        deviceId:
+          type: integer
+        attributes:
+          type: object
+          properties: {}
     
-  
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        attributes:
+          type: object
+          properties: {}
