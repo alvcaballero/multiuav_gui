@@ -8,13 +8,13 @@ servers:
   - url: https://localhost:4000/api/
 tags:
   - name: Devices
-    description: UAV que se encuentran enlasados a la plataforma
+    description: Management of UAV-devices
   - name: Positions
-    description: Obtiene la informacion en bruto del UAV
+    description: Obtains raw data from the UAV
   - name: Missions
-    description: Gestion de la mission
+    description: Management the mission
   - name: Commands
-    description: envio de commandos al UAV
+    description: Send command the UAV
 #  - name: Events
 #    description: Obtiene informacion de eventos
 #  - name: Notifications
@@ -33,12 +33,12 @@ paths:
       tags:
       - Devices
       summary: Fetch a list of Devices
-      description: devuelve lista de dispositivos
+      description: Return the list of devices
       parameters:
       - $ref: '#/components/parameters/token'
       responses:
         200:
-          description: (ok) lista de dispositivos registrados
+          description: (ok) list of devices
           content:
             application/json:
               schema:
@@ -106,7 +106,7 @@ paths:
   /loadmission/{id}:
     put:
       summary: Load mission to devices
-      description: sin ningun parametro, carga la mission a todos los UAV's
+      description: without any parameter,load the mission all UAV's
       tags:
         - Missions
       parameters:
@@ -123,7 +123,7 @@ paths:
   /commandmission/{id}:
     put:
       summary: Command to exec mission
-      description: sin ningun parametro, carga la mission a todos los UAV's
+      description: without any parameter,load the mission all UAV's
       tags:
         - Missions
       parameters:
@@ -139,7 +139,7 @@ paths:
   /comands/send:
     post:
       summary: Send command to devices
-      description: Envio de commandos a los dispositivos
+      description: Send command to  devices
       tags:
       - Commands
       requestBody:
