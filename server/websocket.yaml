@@ -1,5 +1,6 @@
 asyncapi: 2.0.0
 #souce https://www.asyncapi.com/blog/websocket-part1
+# visualizador https://redocly.github.io/redoc/
 info:
   title: GCS Websockets API for multiUAV
   version: '1.8.0'
