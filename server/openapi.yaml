@@ -1,5 +1,6 @@
 openapi: 3.0.1
 #this is based of https://www.traccar.org/api-reference/#tag/Commands/paths/~1commands~1%7Bid%7D/put
+# you can view in  https://redocly.github.io/redoc/
 info:
   title: GSC (Ground Station control MultiUAV)
   description: Descripcion de API de Alto nivel para comunicacion de Ros  con UAV.
