@@ -3,8 +3,16 @@ openapi: 3.0.1
 # you can view in  https://redocly.github.io/redoc/
 info:
   title: GSC (Ground Station control MultiUAV)
-  description: Descripcion de API de Alto nivel para comunicacion de Ros  con UAV.
+  description: |-
+    Descripcion de API de Alto nivel para comunicacion de Ros  con UAV.
+    some usefull link:
+    - [Repositorio](https://github.com/alvcaballero/multiuav_gui/tree/react)
   version: "2.3.1"
+  contac:
+    email: arpoma167@gmail.com
+externalDocs:
+  description: Find more about the project
+  url: https://grvc.us.es/
 servers:
   - url: https://localhost:4000/api/
 tags:
