@@ -1,45 +1,41 @@
-asyncapi: 2.0.0
+asyncapi: 2.6.0
 #souce https://www.asyncapi.com/blog/websocket-part1
 # visualizador https://redocly.github.io/redoc/
+# generar la documentacion https://github.com/asyncapi/html-template
 info:
   title: GCS Websockets API for multiUAV
-  version: '1.8.0'
-  description: |
-    Ademas de la  REST API, la GCS posee un punto de acceso final WebSocket para actualizaciones en directo. 
-
-
+  version: 1.8.0
+  description: >
+    Ademas de la  REST API, la GCS posee un punto de acceso final WebSocket para
+    actualizaciones en directo. 
   #  La cookie de sesión es la única opción de autorización para la conexión WebSocket. 
-     
-
 
 servers:
   public:
-    url: localhost:4000/api/socket
+    url: 'localhost:4000/api/socket'
     protocol: wss
     description: |
       Servidor publico disponible sin autenticacion
-
-
 channels:
   /:
-
     subscribe:
       description: Messages that you receive from the websocket
       operationId: sendMessage
       message:
         oneOf:
           - $ref: '#/components/messages/update'
-
 components:
   messages:
     update:
-      summary: array con serverstate,  device and positions
-      description: elemento del array contiene un objeto tipo Json de devices, positions.Si un mensaje no contiene ningún objeto de un determinado tipo, la key no se incluirá en la estructura JSON. En la mayoría de los casos, un mensaje contiene un único tipo de objetos.
+      summary: 'array con serverstate,  device and positions'
+      description: >-
+        elemento del array contiene un objeto tipo Json de devices, positions.Si
+        un mensaje no contiene ningún objeto de un determinado tipo, la key no
+        se incluirá en la estructura JSON. En la mayoría de los casos, un
+        mensaje contiene un único tipo de objetos.
       payload:
         $ref: '#/components/schemas/update'
-
   schemas:
-
     update:
       type: object
       properties:
@@ -53,7 +49,6 @@ components:
             $ref: '#/components/schemas/Position'
         RosState:
           type: boolean
-
     Device:
       type: object
       properties:
@@ -65,41 +60,19 @@ components:
           type: string
         lastUpdate:
           type: string
-          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          description: 'in IS0 8601 format. eg. `1963-11-22T18:30:00Z`'
           format: date-time
-        #model:
-        #  type: string
         category:
           type: string
-        #attributes:
-        #  type: object
-        #  properties: {}
-
     Position:
       type: object
       properties:
-        #id:
-        #  type: integer
         deviceId:
           type: integer
-        #protocol:
-        #  type: string
         deviceTime:
           type: string
-          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          description: 'in IS0 8601 format. eg. `1963-11-22T18:30:00Z`'
           format: date-time
-        #fixTime:
-        #  type: string
-        #  description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
-        #  format: date-time
-        #serverTime:
-        #  type: string
-        #  description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
-        #  format: date-time
-        #outdated:
-        #  type: boolean
-        #valid:
-        #  type: boolean
         latitude:
           type: number
         longitude:
@@ -111,13 +84,6 @@ components:
           description: in knots
         course:
           type: number
-        #address:
-        #  type: string
-        #accuracy:
-        #  type: number
-        #network:
-        #  type: object
-        #  properties: {}
         attributes:
           type: object
           properties:
