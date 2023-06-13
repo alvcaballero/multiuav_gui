@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate} from 'react-router-dom';
 import Draggable from 'react-draggable';
 import {
   Card,
@@ -110,9 +111,8 @@ const StatusRow = ({ name, content }) => {
 
 const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPadding = 0 }) => {
   const classes = useStyles();
-  //const navigate = useNavigate();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-  //const t = useTranslation();
 
   //const deviceReadonly = useDeviceReadonly();
 
@@ -252,7 +252,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   <PendingIcon />
                 </IconButton>
                 <IconButton
-                  //onClick={() => navigate('/replay')}
+                  onClick={() => navigate('/replay')}
                   disabled={disableActions || !position}
                 >
                   <ReplayIcon />
@@ -283,6 +283,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
       </div>
       {position && (
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+          <MenuItem onClick={() => navigate(`/device/${deviceId}`)}><Typography color="secondary">Detalle Dispositivo</Typography></MenuItem>
           <MenuItem component="a" target="_blank" href={`https://www.google.com/maps/search/?api=1&query=${position.latitude}%2C${position.longitude}`}>{'linkGoogleMaps'}</MenuItem>
           <MenuItem component="a" target="_blank" href={`http://maps.apple.com/?ll=${position.latitude},${position.longitude}`}>{'linkAppleMaps'}</MenuItem>
           <MenuItem component="a" target="_blank" href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${position.latitude}%2C${position.longitude}&heading=${position.course}`}>{'linkStreetView'}</MenuItem>

@@ -1,5 +1,6 @@
 import React, { useState, useContext} from 'react'
-import { useDispatch, useSelector, connect } from 'react-redux';
+import { useDispatch} from 'react-redux';
+import { useNavigate} from 'react-router-dom';
 import "./Navbar.css"
 import { map } from '../Mapview/Mapview.js'
 import { RosContext } from './RosControl'
@@ -18,6 +19,7 @@ import { missionActions} from '../store';
 export const Navbar = ({SetAddUAVOpen}) => {
   const [isActive, setIsActive] = useState(false);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   
 
   const clearmission =() =>{
@@ -125,7 +127,7 @@ export const Navbar = ({SetAddUAVOpen}) => {
             <label id="menuopenmission" htmlFor="openMissionNavbar" >Open Mision</label>
             <input type="file" multiple={false} style={{display:"none"}} id="openMissionNavbar" onChange={readFile} />
             <a id="Clear mission" onClick={()=>{clearmission();handleClick()}} >Clear Mission </a>   
-            <a id="editmission" onClick={()=>{handleClick()}} >edit mission </a> 
+            <a id="editmission" onClick={()=>{navigate('/mission');;handleClick()}} >edit mission </a> 
         </div>
       </div>
       <div className="dropdown">

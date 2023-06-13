@@ -28,6 +28,7 @@
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.5",
     "react-redux": "^8.0.5",
+    "react-router-dom": "^6.12.1",
     "react-scripts": "5.0.1",
     "react-virtualized-auto-sizer": "^1.0.7",
     "react-window": "^1.8.8",
