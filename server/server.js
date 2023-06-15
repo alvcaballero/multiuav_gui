@@ -129,6 +129,7 @@ async function rosConnect(){
     });
   };
 
+
   async function connectAddUav(uav_ns,uav_type){	
     if(rosState.state ==='connect'){
 
@@ -258,6 +259,9 @@ async function rosConnect(){
           let id_uav = cur_uav_idx;
           data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
         });
+        let ipdevice = await Getservicehost(uav_ns+'/camera_task_zoom_ctrl');
+        console.log("ip de uav"+ ipdevice);
+        data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
         
       }else if(uav_type == "px4"){
 
@@ -483,6 +487,37 @@ async function rosConnect(){
       return {state:'fail',msg:"Ros no está conectado"};
     } 
   }
+
+  function getUAVip(){
+    listmasters = new ROSLIB.Service({
+      ros : ros,
+      name : '/master_discovery/list_masters',
+      serviceType : 'multimaster_msgs_fkie/DiscoverMasters'
+    });
+    var request = new ROSLIB.ServiceRequest({ });
+
+
+    listmasters.callService(request, function(result) {
+      console.log(result);
+    });
+  }
+
+  const Getservicehost = (nameService) => {
+    var servicehost = new ROSLIB.Service({
+    ros : ros,
+    name : '/rosapi/service_host',
+    serviceType : 'rosapi/ServiceHost'
+    });
+    
+    var request = new ROSLIB.ServiceRequest({service: nameService});
+  
+    return new Promise((resolve,rejects) => {
+      servicehost.callService(request, function(result) {
+        resolve(result.host);
+      });
+    });
+  };
+
 
   function threatUAV(uavname){
     threadmessage = new ROSLIB.Service({
