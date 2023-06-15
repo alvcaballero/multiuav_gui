@@ -122,7 +122,6 @@ const MainPage = () => {
             {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
             <MapMissions/>
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
-            
             <MapSelectedDevice/>
           </MapView>
           <div style={sidebarStyle}>

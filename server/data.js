@@ -4,14 +4,20 @@
   history: {},
   devices: {},
 };
- function updatedevice(payload) {
+
+function updatedevice(payload) {
   state.devices[payload.id] = payload;
 }
+function updatedeviceIP(payload){
+  state.devices[payload.id]["ip"] = payload.ip;
+}
+
 
 function removedevice(payload) {
   delete state.devices[payload.id];
   console.log(state.devices)
 }
+
  function updatePosition(payload) {
     //state.positions[payload.deviceId] = payload;
     let currentTime = new Date()
@@ -73,6 +79,7 @@ function convert_landed_state(protocol,landed_state){
 module.exports = {
   state,
   updatedevice,
+  updatedeviceIP,
   updatePosition,
   updateCamera,
   removedevice,
