@@ -53,34 +53,35 @@ const styles = theme => ({
   },
 });
 
-export const Camera = ({ deviceId,camera, onClose}) => {
+export const Camera = ({ deviceId,datacamera, onClose}) => {
   const classes = useClasses(styles);
   const [camera_image, setcamera_image] = useState(novideo);
   const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  //const mediaStream = new MediaStream();
+  const mediaStream = new MediaStream();
 
   const VideoRef = useRef();
 
 
   useEffect(() => {
     if(deviceId != null){
-      VideoRef.current.srcObject = camera.find(element => element.deviceId == deviceId);;
-
+      console.log(Object.values(datacamera).find(element => element.deviceId == deviceId).camera)
+      //VideoRef.current.srcObject = "data:image/bgr8;base64,"+Object.values(datacamera).find(element => element.deviceId == deviceId).camera;
+      setcamera_image("data:image/bgr8;base64,"+Object.values(datacamera).find(element => element.deviceId == deviceId).camera)
     }else{
       //VideoRef.current.srcObjec = novideo;
     }
 
-  }, [deviceId]);
+  }, [datacamera]);
 
 
   return (
     <div className={classes.root}>
       {device && (
       <Card elevation={3} className={classes.card}>
-        {false && <img src={camera_image} className={classes.media} />}
-        <video ref={VideoRef} autoPlay playsInline></video>
+        <img src={camera_image} className={classes.media} />
+        {false && <video ref={VideoRef} autoPlay playsInline></video>}
 
           <IconButton
             size="small"
