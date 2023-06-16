@@ -148,7 +148,7 @@ const MainPage = () => {
           />}
           {<Camera
           deviceId={selectedDeviceId}
-          camera={cameradata}
+          datacamera={cameradata}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />}
           <Toast toastlist={list} position="buttom-right" setList={setList} />
