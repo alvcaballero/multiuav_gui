@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react'
+import React,{useRef,useEffect,useState} from 'react'
 import novideo from '../assets/img/placeholder.jpg';
 import { useDispatch, useSelector } from 'react-redux';
 import Draggable from 'react-draggable';
@@ -53,37 +53,23 @@ const styles = theme => ({
   },
 });
 
-export const Camera = ({ deviceId,position, onClose}) => {
+export const Camera = ({ deviceId,camera, onClose}) => {
   const classes = useClasses(styles);
   const [camera_image, setcamera_image] = useState(novideo);
   const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const mediaStream = new MediaStream();
+  //const mediaStream = new MediaStream();
+
+  const VideoRef = useRef();
 
 
   useEffect(() => {
     if(deviceId != null){
-    const fetchData = async () => {
-      await fetch(`/api/media1/${deviceId}`)
-      .then((res) => res.blob())
-      .then((res) => {
-        //console.log(res.camera)
-         
-        setcamera_image(URL.createObjectURL(res))
-        //setcamera_image(res)
-      })
-      .catch((e) => console.error(e));
-    };
-
-    const interval = setInterval(() => {
-      fetchData();
-    }, 1000);
-
-    return () => clearInterval(interval);
+      VideoRef.current.srcObject = camera.find(element => element.deviceId == deviceId);;
 
     }else{
-      setcamera_image(novideo)
+      //VideoRef.current.srcObjec = novideo;
     }
 
   }, [deviceId]);
@@ -93,7 +79,8 @@ export const Camera = ({ deviceId,position, onClose}) => {
     <div className={classes.root}>
       {device && (
       <Card elevation={3} className={classes.card}>
-        <img src={camera_image} className={classes.media} />
+        {false && <img src={camera_image} className={classes.media} />}
+        <video ref={VideoRef} autoPlay playsInline></video>
 
           <IconButton
             size="small"

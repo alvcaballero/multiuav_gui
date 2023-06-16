@@ -17,6 +17,7 @@ import MapSelectedDevice from './Mapview/MapSelectedDevice';
 import DeviceList from './components/DeviceList';
 import StatusCard from './components/StatusCard';
 import MainToolbar from './components/MainToolbar';
+import { CameraWebRTC } from './components/CameraWebRTC';
 
 import { devicesActions } from './store';
 
@@ -50,9 +51,11 @@ const MainPage = () => {
 
   const devices = useSelector((state) => state.devices.items);
   const positions = useSelector((state) => state.data.positions);
+  const cameradata = useSelector((state) => state.data.camera);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const [filteredPositions, setFilteredPositions] = useState([]);
   const selectedPosition = filteredPositions.find((position) => selectedDeviceId && position.deviceId === selectedDeviceId);
+  
   
   let listdevices =Object.values(devices);
 
@@ -138,9 +141,14 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
           />
-          {false && <Camera
+          {false && <CameraWebRTC
           deviceId={selectedDeviceId}
           position={selectedPosition}
+          onClose={() => dispatch(devicesActions.selectId(null))}
+          />}
+          {<Camera
+          deviceId={selectedDeviceId}
+          camera={cameradata}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />}
           <Toast toastlist={list} position="buttom-right" setList={setList} />

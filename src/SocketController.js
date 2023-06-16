@@ -58,6 +58,10 @@ const SocketController = () => {
           if (data.positions) {
             dispatch(dataActions.updatePositions(Object.values(data.positions)));
           }
+          if (data.camera){
+            dispatch(dataActions.updateCamera(Object.values(data.camera)));
+            //(data.server.rosState ==='connect')?setrosState(true):setrosState(false);
+          }
           if (data.server){
             //(data.server.rosState ==='connect')?setrosState(true):setrosState(false);
           }
