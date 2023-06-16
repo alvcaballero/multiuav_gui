@@ -59,7 +59,7 @@ export const CameraWebRTC = ({ deviceId,position, onClose}) => {
   const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const mediaStream = new MediaStream();
+  //const mediaStream = new MediaStream();
 
   const restartPause = 2000;
   const localVideoRef = useRef();
