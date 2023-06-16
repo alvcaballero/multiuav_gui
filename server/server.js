@@ -53,7 +53,7 @@ wss.on('connection', function connection(ws) {
     console.log('received: %s', data);
   });
   const interval = setInterval(() => {
-    ws.send(JSON.stringify({ positions: data.state.positions}));
+    ws.send(JSON.stringify({ positions: data.state.positions ,camera:data.state.camera}));
   }, 200);
   
   const interval_server = setInterval(() => {
