@@ -257,6 +257,7 @@ async function rosConnect(){
 
         uav_list[cur_uav_idx].listener_cam.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
+          //console.log("dato camara"+ id_uav + "--"+ msg.data)
           data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
         });
         let ipdevice = await Getservicehost(uav_ns+'/camera_task_zoom_ctrl');

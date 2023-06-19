@@ -54,8 +54,9 @@ const MainPage = () => {
   const cameradata = useSelector((state) => state.data.camera);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const [filteredPositions, setFilteredPositions] = useState([]);
+  const [filteredImages, setFilteredImages] = useState([]);
   const selectedPosition = filteredPositions.find((position) => selectedDeviceId && position.deviceId === selectedDeviceId);
-  
+  const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId)
   
   let listdevices =Object.values(devices);
 
@@ -114,6 +115,9 @@ const MainPage = () => {
   useEffect(() => {
   setFilteredPositions(Object.values(positions))
   }, [positions]); 
+  useEffect(() => {
+    setFilteredImages(Object.values(cameradata))
+  }, [cameradata]); 
 
   return (
     <div className="App">
@@ -148,7 +152,7 @@ const MainPage = () => {
           />}
           {<Camera
           deviceId={selectedDeviceId}
-          camera={cameradata}
+          datacamera={selectedImage}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />}
           <Toast toastlist={list} position="buttom-right" setList={setList} />
