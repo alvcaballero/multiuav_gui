@@ -9,19 +9,21 @@ import {
   CardMedia,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-const cameraStyle={
-  height: '300px',
-  width: '300px',
-  objectFit: 'contain'
-};
+import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
+
 
 const styles = theme => ({
   card: {
     pointerEvents: 'auto',
     width: theme.dimensions.popupMaxWidth,
   },
+  card_max: {
+    pointerEvents: 'auto',
+    width: "100%",
+  },
   media: {
-    height: theme.dimensions.popupImageHeight,
+    //height: theme.dimensions.popupImageHeight,
+    width: "100%",
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
@@ -39,56 +41,65 @@ const styles = theme => ({
   root: {
     pointerEvents: 'none',
     position: 'fixed',
-    zIndex: 5,
+    zIndex: 6,
     left: '39%',
-    [theme.breakpoints.up('md')]: {
-      left: `calc(25% + 10/ 2)`,
-      top: theme.spacing(15),
-    },
-    [theme.breakpoints.down('md')]: {
-      left: '50%',
-      top: `calc(${theme.spacing(15)} + 10 px)`,
-    },
+    top: theme.spacing(15),
     transform: 'translateX(-50%)',
+  },
+  root_max: {
+    pointerEvents: 'none',
+    position: 'fixed',
+    zIndex: 6,
+    left: '51%',
+    top: '5%',
+    transform: 'translateX(-50%)',
+    width: '75%'
   },
 });
 
-export const Camera = ({ deviceId,camera, onClose}) => {
+export const Camera = ({ deviceId,datacamera, onClose}) => {
   const classes = useClasses(styles);
   const [camera_image, setcamera_image] = useState(novideo);
-  const [img, setimg] = useState(novideo);
-  const camera_stream = useSelector((state) => state.data.camera[deviceId]);
+  const [maxsize, setmaxsize] = useState(false);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  //const mediaStream = new MediaStream();
+  
+  let btn_class = maxsize ? classes.card_max: classes.card;
+  let rootclass = maxsize ? classes.root_max: classes.root;
 
-  const VideoRef = useRef();
-
-
+  function Changemaxsize(){
+    setmaxsize(!maxsize);
+  }
   useEffect(() => {
     if(deviceId != null){
-      VideoRef.current.srcObject = camera.find(element => element.deviceId == deviceId);;
-
-    }else{
-      //VideoRef.current.srcObjec = novideo;
+      if(datacamera != null){
+      setcamera_image("data:image/bgr8;base64,"+datacamera.camera)
+      }else{
+        setcamera_image(novideo)
+      }
     }
 
-  }, [deviceId]);
+  }, [datacamera]);
 
 
   return (
-    <div className={classes.root}>
+    <div className={rootclass}>
       {device && (
-      <Card elevation={3} className={classes.card}>
-        {false && <img src={camera_image} className={classes.media} />}
-        <video ref={VideoRef} autoPlay playsInline></video>
+      <Card elevation={3} className={btn_class}>
+          <div style={{display:'flex',right:"5px",height:"35px",position:"absolute"}}>
+            <IconButton size="small" onClick={Changemaxsize} onTouchStart={Changemaxsize}>
+              <ZoomOutMapIcon fontSize="small" className={classes.mediaButton} />
+            </IconButton>
+            <IconButton size="small" onClick={()=>{onClose();setmaxsize(false)}} onTouchStart={onClose}>
+              <CloseIcon fontSize="small" className={classes.mediaButton} />
+            </IconButton>
+          </div>
+        
+          <div style={{display: 'block',width:"calc( 100% - 60pt )",paddingLeft:"15pt",paddingTop:"10pt",paddingBottom:"10pt",textAlign:"left"}}> {"Image "+device.name} </div>
 
-          <IconButton
-            size="small"
-            onClick={onClose}
-            onTouchStart={onClose}
-          >
-            <CloseIcon fontSize="small" className={classes.mediaButton} />
-          </IconButton>
+
+        <img src={camera_image} className={classes.media} />
+
+
       </Card>)}
   </div>
   )
