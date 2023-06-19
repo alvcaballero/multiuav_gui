@@ -126,7 +126,7 @@ const MainPage = () => {
           <Navbar SetAddUAVOpen={SetAddUAVOpen} />
           <Menu SetAddUAVOpen={SetAddUAVOpen} />
           <MapView>
-            {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
+            
             <MapMissions/>
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
             <MapSelectedDevice/>
@@ -150,6 +150,7 @@ const MainPage = () => {
           position={selectedPosition}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />}
+          {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
           {<Camera
           deviceId={selectedDeviceId}
           datacamera={selectedImage}

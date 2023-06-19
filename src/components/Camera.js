@@ -60,9 +60,10 @@ const styles = theme => ({
 export const Camera = ({ deviceId,datacamera, onClose}) => {
   const classes = useClasses(styles);
   const [camera_image, setcamera_image] = useState(novideo);
-  const [maxsize, setmaxsize] = useState(false);
+  
   const device = useSelector((state) => state.devices.items[deviceId]);
   
+  const [maxsize, setmaxsize] = useState(false);
   let btn_class = maxsize ? classes.card_max: classes.card;
   let rootclass = maxsize ? classes.root_max: classes.root;
 
