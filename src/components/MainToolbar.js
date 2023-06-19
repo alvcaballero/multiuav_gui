@@ -16,7 +16,7 @@ const toolbar= {
     borderBottom: "3px solid rgb(212, 212, 212)",
 };
 
-const MainToolbar = () =>{
+const MainToolbar = ({SetAddUAVOpen}) =>{
     
     return (
         <Toolbar style={toolbar}>
@@ -37,7 +37,7 @@ const MainToolbar = () =>{
             size="small"
             fullWidth
             />
-            <IconButton edge="end"  >
+            <IconButton edge="end" onClick={()=>{SetAddUAVOpen(true)}}  >
                 <Tooltip  >
                     <AddIcon />
                 </Tooltip>

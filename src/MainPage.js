@@ -130,7 +130,7 @@ const MainPage = () => {
           <div style={sidebarStyle}>
               <div style={middleStyle}>
                 <Paper square style={contentListStyle} >
-                  <MainToolbar/>
+                  <MainToolbar SetAddUAVOpen={SetAddUAVOpen}/>
                   <DeviceList devices={listdevices} />
                 </Paper>
               </div>
