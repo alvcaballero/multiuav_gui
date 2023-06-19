@@ -1,18 +1,70 @@
-import React,{ useContext } from 'react'
+import React,{ useContext,useState } from 'react'
 import { RosContext } from './RosControl'
-import {Select, MenuItem } from "@mui/material"
+import useClasses from './useClasses'
+import CloseIcon from '@mui/icons-material/Close';
+
+import {
+  Card,
+  IconButton,
+  MenuItem,
+  Button,
+  Select,
+  TextField,
+  FormControl,
+  InputLabel,
+} from '@mui/material';
+
+const styles = theme => ({
+  card: {
+    pointerEvents: 'auto',
+    width: theme.dimensions.popupMaxWidth,
+  },
+  media: {
+    //height: theme.dimensions.popupImageHeight,
+    width: "100%",
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
+  },
+  mediaButton: {
+    color: theme.palette.colors.white,
+    mixBlendMode: 'difference',
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing(1, 1, 0, 2),
+  },
+  root: {
+    pointerEvents: 'none',
+    position: 'fixed',
+    zIndex: 6,
+    left: '50%',
+    top: '35%',
+    transform: 'translateX(-50%)',
+  },
+  button: {
+    width: '80%',
+    paddingBottom:'10pt',
+  },
+  formControl: {
+    margin: theme.spacing(1),
+    width: '80%',
+    minWidth: 120,
+    paddingBottom:'20pt',
+  },
+  inputtext:{
+    paddingBottom:'10pt',
+  }
+});
+
 
 export const Adduav = ({SetAddUAVOpen}) => {
+    const classes = useClasses(styles);
     const rosContex = useContext(RosContext);
-
-    const sidenavStyle={
-        height: '100%', /* 100% Full-height */
-        width: '260px', /* 0 width - change this with JavaScript */
-        Zindex: '1', /* Stay on top */
-        left: '0',
-        overflowX:'hidden',/* Disable horizontal scroll */
-        transition: '0.5s' /* 0.5 second transition effect to slide in the sidenav */
-      }
+    const [uavtype, setuavtype] = useState('dji');
+    const [uavid, setuavid] = useState('');
 
 	function showAddUav(){
 		if(document.getElementById("AddUav").style.width === "250px"){
@@ -27,10 +79,8 @@ export const Adduav = ({SetAddUAVOpen}) => {
 
     }
     function AddnewUAV(){
-        let uav_ns = document.getElementById("UAV_NS").value;
-        let uav_type_idx = document.getElementById("UAV_options").selectedIndex;
-        let uav_type = document.getElementById("UAV_options").options[uav_type_idx].value;
-        rosContex.connectAddUav(uav_ns,uav_type)
+        console.log("add uav-"+uavid+"-"+uavtype)
+        rosContex.connectAddUav(uavid,uavtype)
         SetAddUAVOpen(false);
 
     }
@@ -40,44 +90,43 @@ export const Adduav = ({SetAddUAVOpen}) => {
 
 
   return (
-
-    <div className="overlay">
-        <div className="window-content">
-          <div id="AddUav" style={sidenavStyle}>
-            <nav className="nav-group">
-              <div className="container">
-                <span><b>Uav Platform Login</b></span>
-                  <div className="row">
-                    <div className="col-25">
-                      <label>UAV Name</label>
-                    </div>
-                    <div className="col-75">
-                       <input type="text" id="UAV_NS" placeholder="UAV name"/>                    
-                    </div>
-                  </div>
-                  <div className="row" style={{display:"inline-block"}}>
-                    <div className="col-25">
-                      <label htmlFor="uavtype">Uav Type    </label>
-                    </div>
-                    <div className="col-75" style={{width:"125px"}}>
-                      <select id="UAV_options" name="UAV Type">
-                        <option value="dji">DJI</option>
-                        <option value="px4">PX4</option>
-                        <option value="fuvex">Fuvex</option>
-                        <option value="catec">Catec</option>                        
-                      </select>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="form-btn-size">
-                      <button style={{fontFamily : "inherit"}} id="closeAddUav" onClick={closeAddUav} className="btn btn-dafault">Close</button>
-                      <button style={{fontFamily : "inherit"}} id="connectAddUav" onClick={AddnewUAV} className="btn btn-primary">Connect</button>
-                    </div>
-                  </div>                    
-              </div>                  
-            </nav>
+    <div className={classes.root}>
+    <Card elevation={3} className={classes.card}>
+          <div style={{display:'flex',right:"5px",height:"35px",position:"absolute"}}>
+            <IconButton size="small" onClick={closeAddUav} onTouchStart={closeAddUav}>
+              <CloseIcon fontSize="small" className={classes.mediaButton} />
+            </IconButton>
           </div>
-        </div>
+        
+          <b><div style={{display: 'block',width:"calc( 100% - 60pt )",paddingLeft:"15pt",paddingTop:"10pt",paddingBottom:"20pt",textAlign:"left"}}>Add device  </div></b>
+            <TextField
+            required
+            label="UAV ID"
+            name="uavid"
+            value={uavid}
+            onChange={(e) => setuavid(e.target.value)} className={classes.inputtext}
+          />
+      <FormControl variant="outlined" className={classes.formControl}>
+        <InputLabel id="demo-simple-select-outlined-label">UAV type</InputLabel>
+        <Select
+          labelId="demo-simple-select-outlined-label"
+          id="demo-simple-select-outlined"
+          value={uavtype}
+          onChange={(e) => setuavtype(e.target.value)}
+          label="uavtipe"
+        >
+          <MenuItem value="dji">DJI</MenuItem>
+          <MenuItem value="px4">PX4</MenuItem>
+          <MenuItem value="fuvex">Fuvex</MenuItem>
+          <MenuItem value="catec">Catec</MenuItem>
+        </Select>
+      </FormControl>
+  
+      <div style={{paddingBottom: '20pt'}}>
+        <Button className={classes.button} variant="contained" onClick={AddnewUAV}>ADD</Button>
+        </div>                
+
+      </Card>
       </div>
   )
 }
