@@ -18,6 +18,7 @@ import DeviceList from './components/DeviceList';
 import StatusCard from './components/StatusCard';
 import MainToolbar from './components/MainToolbar';
 import { CameraWebRTC } from './components/CameraWebRTC';
+import { CameraWebRTCV2 } from './components/CameraWebRTCV2';
 
 import { devicesActions } from './store';
 
@@ -55,8 +56,10 @@ const MainPage = () => {
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const [filteredPositions, setFilteredPositions] = useState([]);
   const [filteredImages, setFilteredImages] = useState([]);
+  const [filteredDeviceIp, setFilteredDeviceIp] = useState([]);
   const selectedPosition = filteredPositions.find((position) => selectedDeviceId && position.deviceId === selectedDeviceId);
-  const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId)
+  const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
+  const selectedDeviceIp = filteredDeviceIp.find((device) => selectedDeviceId && device.Id == selectedDeviceId)
   
   let listdevices =Object.values(devices);
 
@@ -118,6 +121,12 @@ const MainPage = () => {
   useEffect(() => {
     setFilteredImages(Object.values(cameradata))
   }, [cameradata]); 
+  useEffect(() => {
+    //console.log(devices[selectedDeviceId])
+    //console.log(selectedDeviceId ? devices[selectedDeviceId].hasOwnProperty('ip'):null)
+    //console.log(selectedDeviceId ? devices[selectedDeviceId]['ip']:null)
+    setFilteredDeviceIp(Object.values(devices))
+  }, [devices]); 
 
   return (
     <div className="App">
@@ -145,13 +154,13 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
           />
-          {false && <CameraWebRTC
+          { <CameraWebRTCV2
           deviceId={selectedDeviceId}
-          position={selectedPosition}
+          deviceIp={selectedDeviceIp}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />}
           {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
-          {<Camera
+          {false && <Camera
           deviceId={selectedDeviceId}
           datacamera={selectedImage}
           onClose={() => dispatch(devicesActions.selectId(null))}

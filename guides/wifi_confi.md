@@ -13,5 +13,5 @@ si primero esta ethernet borrarlo
 
 cambiar la fecha y la hora para que pueda hacer el update 
 
-    sudo date --set "2023-02-01 11:18"
+    sudo date --set "2023-06-23 15:03"
 
