@@ -58,12 +58,14 @@ const styles = theme => ({
   },
 });
 
-export const CameraWebRTC = ({ deviceId,position, onClose}) => {
+export const CameraWebRTC = ({ deviceId,deviceIp, onClose}) => {
   const classes = useClasses(styles);
   const [camera_image, setcamera_image] = useState(novideo);
   const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
+  const deviceip = '10.42.0.41';//device?.ip;
+  //const deviceip = useSelector((state) => state.devices.items[deviceId]);
   //const mediaStream = new MediaStream();
   const [maxsize, setmaxsize] = useState(false);
   let btn_class = maxsize ? classes.card_max: classes.card;
@@ -82,7 +84,14 @@ export const CameraWebRTC = ({ deviceId,position, onClose}) => {
 
 
   useEffect(()=>{
-		start();
+    console.log("device in camera-"+device)
+    if(deviceId){
+      //if( device.hasOwnProperty('ip')){
+        start();
+     // }
+    }
+
+
     // here initial your data with default value
   
   }, [deviceId])
@@ -90,9 +99,9 @@ export const CameraWebRTC = ({ deviceId,position, onClose}) => {
 
 
   function start() {
-		console.log("connecting");
+		console.log("connecting"+deviceip);
 
-        ws = new WebSocket('ws://localhost:8889/test/' + 'ws');
+        ws = new WebSocket('ws://'+deviceip+':8889/test/' + 'ws');
 
         ws.onerror = () => {
             console.log("ws error");
@@ -113,6 +122,8 @@ export const CameraWebRTC = ({ deviceId,position, onClose}) => {
 	}
 
   function onIceServers(msg) {
+    console.log("ICE")
+    console.log(msg)
     if (ws === null) {
         return;
     }

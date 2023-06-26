@@ -261,7 +261,10 @@ async function rosConnect(){
           data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
         });
         let ipdevice = await Getservicehost(uav_ns+'/camera_task_zoom_ctrl');
-        console.log("ip de uav"+ ipdevice);
+        let ipmaster = await Getlistmaster();
+        
+        console.log("ip de uav-"+ ipdevice);
+        console.log(ipmaster);
         data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
         
       }else if(uav_type == "px4"){
@@ -342,6 +345,10 @@ async function rosConnect(){
             data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
             //data.updateCamera({deviceId:id_uav,camera: msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
           });
+
+        let ipdevice = await Getservicehost(uav_ns+'/mavros/mission/clear');
+        console.log("ip de uav"+ ipdevice);
+        data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
 
       }else if(uav_type == "fuvex"){
         //EXT (FUVEX)
@@ -489,32 +496,35 @@ async function rosConnect(){
     } 
   }
 
-  function getUAVip(){
-    listmasters = new ROSLIB.Service({
-      ros : ros,
-      name : '/master_discovery/list_masters',
-      serviceType : 'multimaster_msgs_fkie/DiscoverMasters'
-    });
-    var request = new ROSLIB.ServiceRequest({ });
-
-
-    listmasters.callService(request, function(result) {
-      console.log(result);
-    });
-  }
 
   const Getservicehost = (nameService) => {
-    var servicehost = new ROSLIB.Service({
+    let servicehost = new ROSLIB.Service({
     ros : ros,
     name : '/rosapi/service_host',
     serviceType : 'rosapi/ServiceHost'
     });
     
-    var request = new ROSLIB.ServiceRequest({service: nameService});
+    let request = new ROSLIB.ServiceRequest({service: nameService});
   
     return new Promise((resolve,rejects) => {
       servicehost.callService(request, function(result) {
         resolve(result.host);
+      });
+    });
+  };
+  const Getlistmaster = () => {
+    let servicemaster = new ROSLIB.Service({
+    ros : ros,
+    name : '/master_discovery/list_masters',
+    serviceType : 'multimaster_msgs_fkie/DiscoverMasters'
+    });
+    
+    let request = new ROSLIB.ServiceRequest();
+  
+    return new Promise((resolve,rejects) => {
+      servicemaster.callService(request, function(result) {
+        console.log("masterip -- "+result.length)
+        resolve(result);
       });
     });
   };
@@ -698,7 +708,8 @@ async function rosConnect(){
         console.log(element)
         uav_list[cur_uav_idx][element].unsubscribe();
       })
-			uav_list.slice(cur_uav_idx,1)
+      uav_list[cur_uav_idx] = null;
+			//uav_list.slice(cur_uav_idx,1)
 			console.log("Último dron eliminado de la lista");
 			if (uav_list.length != 0){
 				console.log("\nLa Lista de uav actualizada es: ");
@@ -815,6 +826,8 @@ app.get("/api/placeholder", (req, res) => {
 });
 
 app.delete('/api/:endpoint/:itemid',async (req, res) => {
+  console.log("endpoint")
+  console.log(itemid)
   console.log(req.params)
   //av_list[req.params.itemid].listener.unsubscribe();
   let myresponse = await disConnectAddUav(req.params.itemid);
