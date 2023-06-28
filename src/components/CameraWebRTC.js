@@ -236,7 +236,7 @@ export const CameraWebRTC = ({ deviceId,deviceIp, onClose}) => {
         
           <div style={{display: 'block',width:"calc( 100% - 60pt )",paddingLeft:"15pt",paddingTop:"10pt",paddingBottom:"10pt",textAlign:"left"}}> {"Image "+device.name} </div>
 
-        <video  ref={localVideoRef} autoPlay playsInline></video>
+        <video  ref={localVideoRef} autoPlay playsInline className={classes.media}></video>
 
 
       </Card>)}
