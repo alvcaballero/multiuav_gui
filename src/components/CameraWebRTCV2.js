@@ -54,7 +54,7 @@ const styles = theme => ({
     left: '51%',
     top: '5%',
     transform: 'translateX(-50%)',
-    width: '75%'
+    width: '55%'
   },
 });
 
@@ -76,14 +76,6 @@ export const CameraWebRTCV2 = ({ deviceId,deviceIp, onClose}) => {
 
   const restartPause = 2000;
   const localVideoRef = useRef();
-
-  let ws = useRef(null);
-  
-  let restartTimeout = useRef(null);
-  let terminated = false;
-  let eTag = '';
-  let queuedCandidates = [];
-  let offerData = null;
 
   const closecard = () =>{
     onClose();
@@ -345,7 +337,7 @@ const pc = new WHEPClient()
         
           <div style={{display: 'block',width:"calc( 100% - 60pt )",paddingLeft:"15pt",paddingTop:"10pt",paddingBottom:"10pt",textAlign:"left"}}> {"Image "+device.name} </div>
 
-        <video  ref={localVideoRef} autoPlay playsInline></video>
+        <video  ref={localVideoRef} autoPlay playsInline className={classes.media}></video>
       </Card>)}
   </div>
   )
