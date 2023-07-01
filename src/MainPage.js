@@ -154,13 +154,13 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
           />
-          { <CameraWebRTCV2
+          { false &&<CameraWebRTCV2
           deviceId={selectedDeviceId}
           deviceIp={selectedDeviceIp}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />}
           {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
-          {false && <Camera
+          { <Camera
           deviceId={selectedDeviceId}
           datacamera={selectedImage}
           onClose={() => dispatch(devicesActions.selectId(null))}

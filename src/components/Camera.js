@@ -42,9 +42,9 @@ const styles = theme => ({
     pointerEvents: 'none',
     position: 'fixed',
     zIndex: 6,
-    left: '39%',
+    left: '360px',
     top: theme.spacing(15),
-    transform: 'translateX(-50%)',
+    transform: 'translateX(1%)',
   },
   root_max: {
     pointerEvents: 'none',
@@ -53,7 +53,7 @@ const styles = theme => ({
     left: '51%',
     top: '5%',
     transform: 'translateX(-50%)',
-    width: '75%'
+    width: '55%'
   },
 });
 

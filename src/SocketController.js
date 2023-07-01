@@ -62,10 +62,9 @@ const SocketController = () => {
             //console.log(data.camera)
             dispatch(dataActions.updateCamera(Object.values(data.camera)));
             
-            //(data.server.rosState ==='connect')?setrosState(true):setrosState(false);
           }
           if (data.server){
-            //(data.server.rosState ==='connect')?setrosState(true):setrosState(false);
+            (data.server.rosState ==='connect')?dispatch(sessionActions.updateServer(true)):dispatch(sessionActions.updateServer(false));
           }
           //if (data.events) {
           //  if (!features.disableEvents) {
