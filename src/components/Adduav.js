@@ -12,6 +12,13 @@ import {
   TextField,
   FormControl,
   InputLabel,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+  FormControlLabel,
+  Checkbox,
+  TextField,
 } from '@mui/material';
 
 const styles = theme => ({
@@ -56,7 +63,13 @@ const styles = theme => ({
   },
   inputtext:{
     paddingBottom:'10pt',
-  }
+  },
+    details: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    paddingBottom: theme.spacing(3),
+  },
 });
 
 
@@ -121,6 +134,25 @@ export const Adduav = ({SetAddUAVOpen}) => {
           <MenuItem value="catec">Catec</MenuItem>
         </Select>
       </FormControl>
+      <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1">icon
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails className={classes.details}>
+              <TextField
+                value={item.name || ''}
+                onChange={(event) => setItem({ ...item, name: event.target.value })}
+                label='icon'
+              />
+              <TextField
+                value={item.uniqueId || ''}
+                onChange={(event) => setItem({ ...item, uniqueId: event.target.value })}
+                label='icon'
+                helperText='icon'
+              />
+            </AccordionDetails>
+          </Accordion>
   
       <div style={{paddingBottom: '20pt'}}>
         <Button className={classes.button} variant="contained" onClick={AddnewUAV}>ADD</Button>

@@ -21,6 +21,7 @@ let ros = "";
 export const RosControl = ({children,notification}) => {
     const devices = useSelector((state) => state.devices.items);
     const missions = useSelector((state) => state.mission);
+    const serverState = useSelector((state) => state.session.server);
     const dispatch = useDispatch();
 
 
@@ -28,6 +29,9 @@ export const RosControl = ({children,notification}) => {
   	const [rosState,setrosState] = useState(false);
     const [textmission,settextmission] = useState("");
 
+    useEffect(()=>{
+      setrosState(serverState);
+    },[serverState]);
 
 
 

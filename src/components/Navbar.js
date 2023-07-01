@@ -127,7 +127,7 @@ export const Navbar = ({SetAddUAVOpen}) => {
             <label id="menuopenmission" htmlFor="openMissionNavbar" >Open Mision</label>
             <input type="file" multiple={false} style={{display:"none"}} id="openMissionNavbar" onChange={readFile} />
             <a id="Clear mission" onClick={()=>{clearmission();handleClick()}} >Clear Mission </a>   
-            <a id="editmission" onClick={()=>{navigate('/mission');;handleClick()}} >edit mission </a> 
+            <a id="editmission" onClick={()=>{navigate('/mission');;handleClick()}} >Edit mission </a> 
         </div>
       </div>
       <div className="dropdown">

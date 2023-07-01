@@ -54,7 +54,7 @@ const styles = theme => ({
     left: '51%',
     top: '5%',
     transform: 'translateX(-50%)',
-    width: '75%'
+    width: '55%'
   },
 });
 
