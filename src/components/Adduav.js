@@ -78,7 +78,7 @@ export const Adduav = ({SetAddUAVOpen}) => {
     const rosContex = useContext(RosContext);
     const [uavtype, setuavtype] = useState("dji");
     const [uavid, setuavid] = useState('');
-    const [item, setItem] = useState({});
+    const [item, setItem] = useState({id:'',type:'dji',ip:'10.42.0.42',cameratype:'Websocket',camera:'video0'});
 
     const validate = () => item && item.name && item.uniqueId;
 
@@ -95,8 +95,8 @@ export const Adduav = ({SetAddUAVOpen}) => {
 
     }
     function AddnewUAV(){
-        console.log("add uav-"+uavid+"-"+uavtype)
-        rosContex.connectAddUav(uavid,uavtype)
+        console.log("add uav-"+item.id+"-"+item.type)
+        rosContex.connectAddUav(item.id,item.type)
         SetAddUAVOpen(false);
 
     }
@@ -121,8 +121,8 @@ export const Adduav = ({SetAddUAVOpen}) => {
             required
             label="UAV ID"
             name="uavid"
-            value={uavid}
-            onChange={(e) => setuavid(e.target.value)} 
+            value={item.id}
+            onChange={(event) => setItem({ ...item, id: event.target.value })}
             className={classes.inputtext}
           />
 
@@ -131,8 +131,8 @@ export const Adduav = ({SetAddUAVOpen}) => {
           <Select
             labelId="demo-simple-select-outlined-label"
             id="demo-simple-select-outlined"
-            value={uavtype}
-            onChange={(e) => setuavtype(e.target.value)}
+            value={item.type}
+            onChange={(event) => setItem({ ...item, type: event.target.value })}
             label="uavtipe"
           >
             <MenuItem value="dji">DJI</MenuItem>
@@ -142,7 +142,7 @@ export const Adduav = ({SetAddUAVOpen}) => {
           </Select>
         </FormControl>
         <TextField 
-          value={'10.42.0.42'}
+          value={item.ip}
           onChange={(event) => setItem({ ...item, ip: event.target.value })}
           label='ip'
         />
@@ -158,8 +158,8 @@ export const Adduav = ({SetAddUAVOpen}) => {
               <Select
                 labelId="demo-simple-select-outlined-label"
                 id="demo-simple-select-outlined"
-                value="Websocket"
-                onChange={(e) => setuavtype(e.target.value)}
+                value={item.cameratype}
+                onChange={(event) => setItem({ ...item, cameratype: event.target.value })}
                 label="uavtipe"
               >
                 <MenuItem value="Websocket">Websocket</MenuItem>
@@ -167,8 +167,8 @@ export const Adduav = ({SetAddUAVOpen}) => {
               </Select>
             </FormControl>
               <TextField
-                value={'videocompress'}
-                onChange={(event) => setItem({ ...item, uniqueId: event.target.value })}
+                value={item.camera}
+                onChange={(event) => setItem({ ...item, camera: event.target.value })}
                 label='Camera route'
                 helperText='videocompress or video0  '
               />
