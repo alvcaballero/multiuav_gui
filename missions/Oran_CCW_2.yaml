@@ -25,15 +25,15 @@ uav_2:  # 850 m, left UAV (M210) placed at the end of the runway, passing the "0
 
 
 
-uav_3:  # 850 m, left UAV (M210) placed at the end of the runway, passing the "07" on the floor.
-  wp_n: 7
-  wp_0: [37.198216061944045, -5.8784682568858955, 65, 90]  # 440 m elevation (444 m in the map origin), 30 m inspection height.
-  wp_1: [37.19967656, -5.8825209, 65, 120]  # 437 m elevation (444 m in the map origin), 30 m inspection height.
-  wp_2: [37.19935059, -5.88452401, 65, 100]  # 434 m elevation (444 m in the map origin), 30 m inspection height.
-  wp_3: [37.19665697, -5.88412554, 50, 160]  # Charging point
-  wp_4: [37.19369731418096, -5.8825532093859465, 35, 160]  # Charging point
-  wp_5: [37.193877476105335, -5.880528557052514, 25, 160]  # Charging point
-  wp_6: [37.19623662393965, -5.880399326473508, 18.595397121795962, 160]  # Charging point
+#uav_3:  # 850 m, left UAV (M210) placed at the end of the runway, passing the "07" on the floor.
+#  wp_n: 7
+#  wp_0: [37.198216061944045, -5.8784682568858955, 65, 90]  # 440 m elevation (444 m in the map origin), 30 m inspection height.
+#  wp_1: [37.19967656, -5.8825209, 65, 120]  # 437 m elevation (444 m in the map origin), 30 m inspection height.
+#  wp_2: [37.19935059, -5.88452401, 65, 100]  # 434 m elevation (444 m in the map origin), 30 m inspection height.
+#  wp_3: [37.19665697, -5.88412554, 50, 160]  # Charging point
+#  wp_4: [37.19369731418096, -5.8825532093859465, 35, 160]  # Charging point
+#  wp_5: [37.193877476105335, -5.880528557052514, 25, 160]  # Charging point
+#  wp_6: [37.19623662393965, -5.880399326473508, 18.595397121795962, 160]  # Charging point
 
 mode_landing: 0  # 3 return to point 0, 1 return to home, 2 auto landing., 0 no action
 mode_yaw: 0 # 0 automode, 1 lock as inicital value , 2 control Rc,3 use wayarpoints
