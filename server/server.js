@@ -3,6 +3,7 @@
 //Server-Sent Events vs. WebSockets
 
 const data = require ("./data")
+const path = require("path");
 const express = require("express")
 const cors = require("cors")
 const fs = require("fs");
@@ -732,9 +733,12 @@ async function rosConnect(){
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  app.get('/', (request, response) => {
-    response.send('<h1>Hello World!</h1>')
-  })
+  //app.use(express.static('../build'));
+  app.use(express.static(path.resolve(__dirname, '../build')));
+
+  app.get('/',(req, res) => {
+    res.sendFile(path.join(__dirname, "../build", "index.html"));
+  });
   
 
 app.get('/api/devices', (req, res) => {
