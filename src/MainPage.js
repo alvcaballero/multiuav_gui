@@ -135,7 +135,6 @@ const MainPage = () => {
           <Navbar SetAddUAVOpen={SetAddUAVOpen} />
           <Menu SetAddUAVOpen={SetAddUAVOpen} />
           <MapView>
-            
             <MapMissions/>
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
             <MapSelectedDevice/>

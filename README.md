@@ -1,10 +1,32 @@
-# multiuav_gui
-GRVC repository including the Graphical User Interface developed for the operation of a team of heterogeneous UAVs.
+
 
 
 # GCS for multiple UAV
 Interface for control and monitoring of multiple UAV in mision
 
+this work is divide in two parts, multiauv_gui and mauv-lc.
+
+you have to install  dependencies 
+for run  the project:
+nvm use 18 
+cd server
+npm install
+
+
+
+for run the project  you can access to http://localhost:4000/
+nvm use 18 // this is onli for change the version of npm, if you hav installed npm 18 dont need this line
+cd server
+npm run server
+
+for development of MUAV-GUI  can access to http://localhost:3000/
+nvm use 18
+npm install 
+npm run start
+
+
+# multiuav_gui
+GRVC repository including the Graphical User Interface developed for the operation of a team of heterogeneous UAVs.
 
 
 # Descripcions
