@@ -4,7 +4,12 @@
 # GCS for multiple UAV
 Interface for control and monitoring of multiple UAV in mision
 
+
+
 this work is divide in two parts, multiauv_gui and mauv-lc.
+
+
+solo esta disponible para navegadores Web basados en Chromiun
 
 you have to install  dependencies 
 for run  the project:
