@@ -540,8 +540,8 @@ async function rosConnect(){
   function sincronizeUAV(uavname){
     threadmessage = new ROSLIB.Service({
       ros : ros,
-      name : uavname + '/threat_confirmation',
-      serviceType : 'std_srvs/Trigger'
+      name : uavname + '/dji_control/send_bags',
+      serviceType : 'std_srvs/Bool'
     });
     var request = new ROSLIB.ServiceRequest({ });
     threadmessage.callService(request, function(result) {
