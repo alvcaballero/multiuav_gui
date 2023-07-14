@@ -1,0 +1,15 @@
+{
+  "name": "muavGCS",
+  "version": "1.2.0",
+  "dependencies": {
+    "roslib": "^1.3.0",
+    "websocket": "^1.0.34",
+    "ws": "^8.13.0",
+    "yaml": "^2.2.1",
+    "express": "^4.18.2",
+    "express-ws": "^5.0.2"
+  },
+  "scripts": {
+    "server": "node ./server.js"
+  }
+}

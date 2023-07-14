@@ -6,7 +6,7 @@ import MapMissionsCreate from './Mapview/draw/MapMissionsCreate';
 import Drawer from '@mui/material/Drawer';
 import RoutesList from './components/RoutesList';
 import {
-  Divider, Typography, IconButton, useMediaQuery, Toolbar,
+  Divider, Typography, IconButton, Toolbar,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -24,7 +24,7 @@ const useStyles = makeStyles(() => ({
     flexGrow: 1,
     overflow: 'hidden',
     display: 'flex',
-    flexDirection: 'row',
+    //flexDirection: 'row',
     flexDirection: 'column-reverse',
   },
   drawerPaper: {

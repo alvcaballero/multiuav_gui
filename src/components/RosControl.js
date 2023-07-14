@@ -2,9 +2,7 @@ import React, { useState,useRef ,useEffect} from 'react';
 import { useDispatch, useSelector, connect } from 'react-redux';
 
 import { missionActions} from '../store'; // here update device action with position of uav for update in map
-//import { constants } from 'original-fs';
 const YAML = require('yaml')
-const ROSLIB = require('roslib');
 
 export const RosContext = React.createContext()
 
@@ -250,21 +248,6 @@ export const RosControl = ({children,notification}) => {
       serverConecRos();
     }
 
-    const getTopics2 = () => {
-      var topicsClient = new ROSLIB.Service({
-      ros : ros,
-      name : '/rosapi/topics',
-      serviceType : 'rosapi/Topics'
-      });
-      
-      var request = new ROSLIB.ServiceRequest();
-    
-      return new Promise((resolve,rejects) => {
-        topicsClient.callService(request, function(result) {
-          resolve(result.topics);
-        });
-      });
-    };
     
 
     async function connectAddUav(uav_ns,uav_type){	
