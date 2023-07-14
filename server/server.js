@@ -10,10 +10,6 @@ const fs = require("fs");
 
 const WebSocket = require("ws");
 const ROSLIB = require('roslib');
-const { Key } = require("@mui/icons-material");
-
-const uuidv4 = require('uuid').v4;
-
 
 const port = 4000
 
@@ -23,28 +19,20 @@ app.use(cors());
 app.use(express.json());
 
 
-//const expressWs = require('express-ws')(app);
 const server = require('http').createServer(app);
-//app.use(express.static(path.join(__dirname, "./public")));
-
-const clients = {};
-//console.log(server)
-//const wsServer = new WebSocketServer({  httpServer:server,autoAcceptConnections: false });
-const wss = new WebSocket.Server({ server:server });
-
+app.use(express.static(path.resolve(__dirname, '../build')));
 
 var rosState = {state:'disconnect',msg:"init msg"};
 let uav_list = [];
 let ros = "";
-
-
 
 function setrosState(state){
     rosState = state;
 }
 
 
-
+//const uuidv4 = require('uuid').v4;
+const wss = new WebSocket.Server({ server:server });
 wss.on('connection', function connection(ws) {
 
   console.log("newclient")
@@ -63,6 +51,8 @@ wss.on('connection', function connection(ws) {
 });
 
 
+server.listen(app.get('port'), () =>{console.log('Servidor iniciado en el puerto: ' +app.get('port'));})
+
 
 const CheckDeviceOnline = setInterval(() => {
   let currentTime = new Date()
@@ -78,8 +68,6 @@ const CheckDeviceOnline = setInterval(() => {
   })
 }, 5000);
 
-// Iniciamos el servidor en el puerto establecido por la variable port (3000)
-server.listen(app.get('port'), () =>{console.log('Servidor iniciado en el puerto: ' +app.get('port'));})
 
 
 
@@ -139,8 +127,6 @@ async function rosConnect(){
 
       console.log("Conectando Uav");
       console.log(topiclist)
-
-
 
       let find_device = false;
       let repeat_device = false;
@@ -551,6 +537,26 @@ async function rosConnect(){
     });
   }
 
+  function sincronizeUAV(uavname){
+    threadmessage = new ROSLIB.Service({
+      ros : ros,
+      name : uavname + '/threat_confirmation',
+      serviceType : 'std_srvs/Trigger'
+    });
+    var request = new ROSLIB.ServiceRequest({ });
+    threadmessage.callService(request, function(result) {
+      console.log('send threat');
+      console.log(result)
+        if(result.success){
+          return {state:'success',msg:"threat to" + uavname+" ok" + result.message};//notification('success',"Load mission to:" + cur_roster + " ok");
+        } else{
+          return {state:'fail',msg:"threat to:" + uavname + " fail"+ result.message};//notification('danger',"Load mission to:" + cur_roster + " fail");
+        }
+    }, function(result) {
+      console.log('Error:'+ result);
+    });
+  }
+
   function loadMission(mission){ 
     console.log("  load  - mission")
     console.log(mission)
@@ -733,8 +739,7 @@ async function rosConnect(){
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  //app.use(express.static('../build'));
-  app.use(express.static(path.resolve(__dirname, '../build')));
+  
 
   app.get('/',(req, res) => {
     res.sendFile(path.join(__dirname, "../build", "index.html"));
@@ -777,6 +782,21 @@ app.post('/api/threat',async function(req,res){
   let myresponse = await threatUAV(req.body.uav_ns);
   return res.json(myresponse);
 });
+app.post('/api/commands',async function(req,res){//here get id and description, where description is string like threat,1 or sincronize, landing,1
+  console.log('command')
+  let response ={state:'fail',msg:"Command to:" + uavname + " no exist"};;
+  if(req.body.description =="threat"){
+  //console.log(req.body.uav_ns)
+  response = await threatUAV(req.body.uav_ns);
+  }else  if(req.body.description =="sincronize"){
+    //console.log(req.body.uav_ns)
+    response = await sincronizeUAV(req.body.uav_ns);
+  }
+  
+
+  return res.json(response);
+});
+
 
 app.post('/api/disconectdevice',async function(req,res){
   console.log('loadmission-post')

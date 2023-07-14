@@ -148,6 +148,28 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     }
   };
 
+  const serverCommand = async (uav_id) => {
+    //event.preventDefault();
+    console.log("send command ")
+    console.log(uav_id)
+    try {
+      const response = await fetch('/api/threat', {
+        method: 'POST',
+        body: JSON.stringify({uav_id: uav_id}),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        let myresponse = await response.json();
+        console.log(myresponse)
+      } else {
+        throw Error(await response.text());
+      }
+    } catch (error) {
+    }
+  };
+
   const handleRemove = async (removed) => {
     if (removed) {
       const response = await fetch('/api/devices');
@@ -252,8 +274,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   <PendingIcon />
                 </IconButton>
                 <IconButton
-                  onClick={() => navigate('/replay')}
-                  disabled={disableActions || !position}
+                  onClick={() => serverCommand(device.id)}
+                  //disabled={disableActions || !position}
                 >
                   <ReplayIcon />
                 </IconButton>
