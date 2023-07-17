@@ -7,6 +7,7 @@ const path = require("path");
 const express = require("express")
 const cors = require("cors")
 const fs = require("fs");
+const YAML = require('yaml')
 
 const WebSocket = require("ws");
 const ROSLIB = require('roslib');
@@ -17,6 +18,15 @@ const app = express()
 app.set("port", port);
 app.use(cors());
 app.use(express.json());
+
+var devices_msg ={}
+try {
+    let fileContents = fs.readFileSync(path.resolve(__dirname, './devices_msg.yaml'), 'utf8');
+    devices_msg = YAML.parse(fileContents);
+    console.log(devices_msg);
+} catch (e) {
+    console.log(e);
+}
 
 
 const server = require('http').createServer(app);
@@ -295,6 +305,11 @@ async function rosConnect(){
            name : uav_ns+'/video_stream_compress',
             messageType : 'sensor_msgs/CompressedImage'
         });
+        uav_list[cur_uav_idx].threat = new ROSLIB.Topic({
+          ros : ros,
+         name : uav_ns+'/threat',
+          messageType : 'std_msgs/Bool'
+      });
 
         uav_list[cur_uav_idx].listener.subscribe(function(msg) {
           let id_uav = cur_uav_idx;
@@ -332,6 +347,10 @@ async function rosConnect(){
             data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
             //data.updateCamera({deviceId:id_uav,camera: msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
           });
+          uav_list[cur_uav_idx].threat.subscribe(function(msg) {
+            let id_uav = cur_uav_idx;
+            data.updatePosition({deviceId:id_uav,threat: msg.data});
+        });
 
         let ipdevice = await Getservicehost(uav_ns+'/mavros/mission/clear');
         console.log("ip de uav"+ ipdevice);
@@ -517,13 +536,14 @@ async function rosConnect(){
   };
 
 
-  function threatUAV(uavname){
+  function threatUAV(uav_id){
+    let uavname = data.get_device_ns(uav_id)
     threadmessage = new ROSLIB.Service({
       ros : ros,
       name : uavname + '/threat_confirmation',
       serviceType : 'std_srvs/Trigger'
     });
-    var request = new ROSLIB.ServiceRequest({ });
+    let request = new ROSLIB.ServiceRequest({ });
     threadmessage.callService(request, function(result) {
       console.log('send threat');
       console.log(result)
@@ -534,26 +554,34 @@ async function rosConnect(){
         }
     }, function(result) {
       console.log('Error:'+ result);
+      return {state:'fail',msg:"Sincronize to:" + uavname + ' Error:'+ result};
     });
   }
 
-  function sincronizeUAV(uavname){
-    threadmessage = new ROSLIB.Service({
+  function sincronizeUAV(uav_id){
+    console.log("sincronize uav_id"+uav_id)
+    let uavname = data.get_device_ns(uav_id)
+    let uavcategory = data.get_device_category(uav_id)
+    console.log("sincronize uav_id"+uav_id+"--"+uavcategory+"--"+devices_msg[uavcategory]["services"]["sincronize"]["name"])
+    
+    sincronizemessage = new ROSLIB.Service({
       ros : ros,
-      name : uavname + '/dji_control/send_bags',
-      serviceType : 'std_srvs/Bool'
+      name : uavname + devices_msg[uavcategory]["services"]["sincronize"]["name"],
+      serviceType : devices_msg[uavcategory]["services"]["sincronize"]["serviceType"]
     });
-    var request = new ROSLIB.ServiceRequest({ });
-    threadmessage.callService(request, function(result) {
+    
+    let request = new ROSLIB.ServiceRequest({ });
+    sincronizemessage.callService(request, function(result) {
       console.log('send threat');
       console.log(result)
         if(result.success){
-          return {state:'success',msg:"threat to" + uavname+" ok" + result.message};//notification('success',"Load mission to:" + cur_roster + " ok");
+          return {state:'success',msg:"Sincronize to" + uavname+" ok" + result.message};//notification('success',"Load mission to:" + cur_roster + " ok");
         } else{
-          return {state:'fail',msg:"threat to:" + uavname + " fail"+ result.message};//notification('danger',"Load mission to:" + cur_roster + " fail");
+          return {state:'fail',msg:"Sincronize to:" + uavname + " fail"+ result.message};//notification('danger',"Load mission to:" + cur_roster + " fail");
         }
     }, function(result) {
       console.log('Error:'+ result);
+      return {state:'fail',msg:"Sincronize to:" + uavname + ' Error:'+ result};
     });
   }
 
@@ -659,7 +687,6 @@ async function rosConnect(){
     return {state:'success',msg:"Loadding mission to" + cur_roster};//notification('success',"Loadding mission to: " + cur_roster);
   }
 
-
   function commandMission(){
     //var r = confirm("Comand mission?");
     var r =true;
@@ -669,20 +696,11 @@ async function rosConnect(){
         cur_roster.push(uav.name);
         let missionClient;
         if (uav.type !== "ext"){
-          if(uav.type === "dji"){
-            missionClient = new ROSLIB.Service({
-              ros : ros,
-              name : uav.name+'/dji_control/start_mission',
-              serviceType : 'std_srvs/SetBool'
-            });
-
-          }else{
-            missionClient = new ROSLIB.Service({
-              ros : ros,
-              name : uav.name+'/mission/start_stop',
-              serviceType : 'std_srvs/SetBool'
-            });
-          }
+          missionClient = new ROSLIB.Service({
+            ros : ros,
+            name : uav.name+devices_msg[uav.type].services.commandmision.name,
+            serviceType : devices_msg[uav.type].services.commandmision.serviceType
+          });
         
           let request = new ROSLIB.ServiceRequest({data: true});
 
@@ -704,6 +722,36 @@ async function rosConnect(){
       console.log("Mission canceled")
       return {state:'fail',msg:"Mission canceled"};
     }
+  }
+
+  function commandMission1(uav_id){
+    //var r = confirm("Comand mission?");
+        let uav_ns = data.get_device_ns(uav_id)
+        let uav_category = data.get_device_category(uav_id)
+        let missionClient;
+        if (uav.type !== "ext"){
+            missionClient = new ROSLIB.Service({
+              ros : ros,
+              name : uav_ns+devices_msg[uav_category].services.commandmision.name,
+              serviceType : devices_msg[uav_category].services.commandmision.serviceType
+            });
+        
+          let request = new ROSLIB.ServiceRequest({data: true});
+          missionClient.callService(request, function(result) {
+            console.log(result.message);
+            if(result.success){
+              return {state:'success',msg:"Start mission:" + uav_ns + " ok"};//notification('success',"Start mission:" + cur_roster + " ok");
+            } else{
+              return {state:'fail',msg:"Start mission:" + uav_ns + " FAIL!"};//notification('danger',"Start mission:" + cur_roster + " FAIL!");
+            }
+          });
+        } else {
+          console.log(uav.name);
+          //commandMissionToEXT(uav.name);
+        }
+
+      return {state:'success',msg:"Commanding mission to: " + uav_ns};//notification('success',"Commanding mission to: " + cur_roster);
+
   }
 
   function disConnectAddUav(uav_ns){
@@ -776,24 +824,27 @@ app.post('/api/commandmission',async function(req,res){
   let myresponse = await commandMission();
   return res.json(myresponse);
 });
-app.post('/api/threat',async function(req,res){
-  console.log('threat-post')
-  //console.log(req.body.uav_ns)
-  let myresponse = await threatUAV(req.body.uav_ns);
+app.post('/api/commandmission/:id',async function(req,res){
+  console.log('command-mission-post')
+  console.log(req.body)
+  let myresponse = await commandMission1(req.params.id);
   return res.json(myresponse);
 });
+//app.post('/api/threat',async function(req,res){
+//  console.log('threat-post')
+  //console.log(req.body.uav_ns)
+//  let myresponse = await threatUAV(req.body.uav_ns);
+//  return res.json(myresponse);
+//});
 app.post('/api/commands',async function(req,res){//here get id and description, where description is string like threat,1 or sincronize, landing,1
   console.log('command')
-  let response ={state:'fail',msg:"Command to:" + uavname + " no exist"};;
-  if(req.body.description =="threat"){
-  //console.log(req.body.uav_ns)
-  response = await threatUAV(req.body.uav_ns);
-  }else  if(req.body.description =="sincronize"){
-    //console.log(req.body.uav_ns)
-    response = await sincronizeUAV(req.body.uav_ns);
+  console.log(req.body)
+  let response ={state:'fail',msg:"Command to:" + data.get_device_ns(req.body.uav_id) + " no exist"};
+  if(req.body.description =='threat'){
+      response = await threatUAV(req.body.uav_id);
+  }else  if(req.body.description =='sincronize'){
+      response = await sincronizeUAV(req.body.uav_id);
   }
-  
-
   return res.json(response);
 });
 

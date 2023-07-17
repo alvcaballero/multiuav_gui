@@ -11,6 +11,12 @@ function updatedevice(payload) {
 function updatedeviceIP(payload){
   state.devices[payload.id]["ip"] = payload.ip;
 }
+function get_device_ns(uav_id){
+  return state.devices[uav_id].name
+} 
+function get_device_category(uav_id){
+  return state.devices[uav_id].category
+} 
 
 
 function removedevice(payload) {
@@ -80,6 +86,8 @@ module.exports = {
   state,
   updatedevice,
   updatedeviceIP,
+  get_device_ns,
+  get_device_category,
   updatePosition,
   updateCamera,
   removedevice,
