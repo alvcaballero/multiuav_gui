@@ -126,14 +126,14 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const [removing, setRemoving] = useState(false);
   
-  const serverthreat = async (uav_ns) => {
+  const serverCommand = async (uav_id,command) => {
     //event.preventDefault();
-    console.log("send tread ")
-    console.log(uav_ns)
+    console.log("send command ")
+    console.log(uav_id)
     try {
-      const response = await fetch('/api/threat', {
+      const response = await fetch('/api/commands', {
         method: 'POST',
-        body: JSON.stringify({uav_ns: uav_ns}),
+        body: JSON.stringify({uav_id: uav_id,description:command}),
         headers: {
           'Content-Type': 'application/json'
         }
@@ -142,26 +142,35 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
         let myresponse = await response.json();
         console.log(myresponse)
       } else {
+        console.log('Error1:'+ response);
         throw Error(await response.text());
+        
       }
     } catch (error) {
+      console.log('Error2:'+ error);
     }
   };
-
-  const serverCommand = async (uav_id) => {
+  const servercommandmission = async (uav_ns, uav_type) => {
     //event.preventDefault();
-    console.log("send command ")
-    console.log(uav_id)
+    console.log("command mission ")
+    console.log(uav_type)
+    console.log(uav_ns)
     try {
-      const response = await fetch('/api/threat', {
+      const response = await fetch('/api/commandmission', {
         method: 'POST',
-        body: JSON.stringify({uav_id: uav_id}),
+        body: JSON.stringify({uav_ns: uav_ns, uav_type: uav_type}),
         headers: {
           'Content-Type': 'application/json'
         }
       });
       if (response.ok) {
         let myresponse = await response.json();
+        if(myresponse.state ==='connect'){
+          notification('success', myresponse.msg);
+        }
+        if(myresponse.state ==='fail'){
+          notification('danger',myresponse.msg)
+        }
         console.log(myresponse)
       } else {
         throw Error(await response.text());
@@ -254,9 +263,9 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           key="alarm1"
                           name={"Alarm "+position.attributes.alarm} 
                           content={(
-                            <div>
-                            <Button variant="text" onClick={() => serverthreat(device.name)}>Validate</Button>
-                            <Button variant="text">Dismiss</Button>
+                            <div style={{width:"100%"}}>
+                              <Button variant="contained" size="small" color="primary" style={{margin:"1px",display:"inline-block"}} onClick={() => serverCommand(device.id,"threat")}>Validate</Button>
+                              <Button variant="contained" size="small" color="secondary" style={{margin:"1px",display:"inline-block"}} >Dismiss</Button>
                             </div>
                           )}
                         />
@@ -274,7 +283,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   <PendingIcon />
                 </IconButton>
                 <IconButton
-                  onClick={() => serverCommand(device.id)}
+                  onClick={() => serverCommand(device.id,"sincronize")}
                   //disabled={disableActions || !position}
                 >
                   <ReplayIcon />

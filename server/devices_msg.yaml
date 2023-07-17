@@ -1,0 +1,121 @@
+dji:
+  topics:
+    position:
+      name: '/dji_osdk_ros/gps_position'
+      messageType: 'sensor_msgs/NavSatFix'
+    sensor_height:
+      name: '/dji_osdk_ros/height_above_takeoff'
+      messageType: 'std_msgs/Float32'
+    vo_position:
+      name: '/dji_osdk_ros/vo_position'
+      messageType: 'dji_osdk_ros/VOPosition'
+    listener_hdg:
+      name: '/dji_osdk_ros/imu'
+      messageType: 'sensor_msgs/Imu'
+    speed:
+      name: '/dji_osdk_ros/velocity'
+      messageType: 'geometry_msgs/Vector3Stamped'
+    battery:
+      name: '/dji_osdk_ros/battery_state'
+      messageType: 'sensor_msgs/BatteryState'
+    state_machine:
+      name: '/uavstate'
+      messageType: 'muav_state_machine/UAVState'
+    camera:
+      name: '/video_stream_compress'
+      messageType: 'sensor_msgs/CompressedImage'
+  services:
+    missionClient:
+      name : '/dji_control/configure_mission'
+      serviceType : 'aerialcore_common/ConfigMission'
+    commandmision:
+      name : '/dji_control/start_mission'
+      serviceType : 'std_srvs/SetBool'
+    sincronize:
+      name : '/dji_control/send_bags'
+      serviceType : 'std_srvs/Bool'
+
+px4:
+  topics:
+    position:
+      name: '/mavros/global_position/global'
+      messageType: 'sensor_msgs/NavSatFix'
+    sensor_height:
+      name: '/mavros/altitude'
+      messageType: 'mavros_msgs/Altitude'
+    listener_hdg:
+      name: '/mavros/global_position/compass_hdg'
+      messageType: 'std_msgs/Float64'
+    speed:
+      name: '/mavros/local_position/velocity_local'
+      messageType: 'geometry_msgs/TwistStamped'
+    battery:
+      name: '/mavros/battery'
+      messageType: 'aerialcore_common/BatteryState'
+    state_machine:
+      name: '/uavstate'
+      messageType: 'muav_state_machine/UAVState'
+    camera:
+      name: '/video_stream_compress'
+      messageType: 'sensor_msgs/CompressedImage'
+    threat:
+      name: '/threat'
+      messageType: 'std_msgs/Bool'
+  services:
+    missionClient:
+      name : '/mission/new'
+      serviceType : 'aerialcore_common/ConfigMission'
+    commandmision:
+      name : '/mission/start_stop'
+      serviceType : 'std_srvs/SetBool'
+    sincronize:
+      name : '/px4_mission_node/send_bags'
+      serviceType : 'std_srvs/Bool'
+
+
+fuvex:
+  topics:
+    position:
+      name: '/mavros/global_position/global'
+      messageType: 'sensor_msgs/NavSatFix'
+    sensor_height:
+      name: '/mavros/altitude'
+      messageType: 'mavros_msgs/Altitude'
+    listener_hdg:
+      name: '/mavros/global_position/compass_hdg'
+      messageType: 'std_msgs/Float64'
+    speed:
+      name: '/mavros/local_position/velocity_local'
+      messageType: 'geometry_msgs/TwistStamped'
+    battery:
+      name: '/mavros/battery'
+      messageType: 'aerialcore_common/BatteryState'
+  services:
+
+catec:
+  topics:
+    position:
+      name: '/gps'
+      messageType: 'sensor_msgs/NavSatFix'
+    sensor_height:
+      name: '/mavros/altitude'
+      messageType: 'mavros_msgs/Altitude'
+    listener_hdg:
+      name: '/compass_hdg'
+      messageType: 'std_msgs/Float64'
+    speed:
+      name: '/velocity'
+      messageType: 'geometry_msgs/TwistStamped'
+    battery:
+      name: '/battery'
+      messageType: 'aerialcore_common/BatteryState'
+    state_machine:
+      name: '/fligh_state'
+      messageType: 'std_msgs/String'
+    threat:
+      name: '/threat'
+      messageType: 'std_msgs/Bool'
+  services:
+    threat:
+      name : '/threat_confirmation'
+      serviceType : 'std_srvs/Trigger'
