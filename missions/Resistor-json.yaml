@@ -1,0 +1,16 @@
+mission_id: 1234
+objetivo: 0
+loc:
+  tramo0:
+    - {lat: 37.121203,  lon: -6.492668 }
+    - {lat: 37.116616 , lon: -6.484771 }
+    - {lat: 37.107177 , lon: -6.479203 }
+  tramo1:
+    - {lat: 37.121100, lon: -6.495395 }
+    - {lat: 37.119171, lon: -6.496007 }
+  meteo:
+    wind_vel: 12
+    wind_dir: 360
+    temp: 38
+    humidity: 90
+    pres_atm: 5

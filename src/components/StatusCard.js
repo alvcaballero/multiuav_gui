@@ -150,15 +150,13 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
       console.log('Error2:'+ error);
     }
   };
-  const servercommandmission = async (uav_ns, uav_type) => {
+  const servercommandmission = async (uav_id) => {
     //event.preventDefault();
-    console.log("command mission ")
-    console.log(uav_type)
-    console.log(uav_ns)
+    console.log("command mission "+uav_id)
     try {
-      const response = await fetch('/api/commandmission', {
+      const response = await fetch(`/api/commandmission/${uav_id}`, {
         method: 'POST',
-        body: JSON.stringify({uav_ns: uav_ns, uav_type: uav_type}),
+        body: JSON.stringify({uav_id: uav_id}),
         headers: {
           'Content-Type': 'application/json'
         }
@@ -289,7 +287,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   <ReplayIcon />
                 </IconButton>
                 <IconButton
-                  //onClick={() => navigate(`/settings/command-send/${deviceId}`)}
+                  onClick={() => servercommandmission(device.id)}
                   disabled={disableActions}
                 >
                   <PublishIcon />
