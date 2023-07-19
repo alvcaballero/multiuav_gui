@@ -901,8 +901,7 @@ app.get("/api/placeholder", (req, res) => {
 });
 
 app.delete('/api/:endpoint/:itemid',async (req, res) => {
-  console.log("endpoint")
-  console.log(itemid)
+  console.log("Delete UAV"+req.params.itemid)
   console.log(req.params)
   //av_list[req.params.itemid].listener.unsubscribe();
   let myresponse = await disConnectAddUav(req.params.itemid);
