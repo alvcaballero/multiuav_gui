@@ -129,8 +129,10 @@ async function rosConnect(){
   };
 
 
-  async function connectAddUav(uav_ns,uav_type){	
+  async function connectAddUav(device){	
     if(rosState.state ==='connect'){
+      uav_ns = device.name
+      uav_type = device.category
 
       const topiclist = await getTopics2();
       console.log("despues del await")
@@ -162,7 +164,7 @@ async function rosConnect(){
       
       let cur_uav_idx = String(Object.values(data.state.devices).length)
       
-      data.updatedevice({id:cur_uav_idx,name:uav_ns,category:uav_type,status:'online',lastUpdate:null})
+      data.updatedevice({id:cur_uav_idx,name:device.name,category:device.category,ip:device.ip,cameratype:device.cameratype,camera_src:device.camera_src,status:'online',lastUpdate:null})
 
       let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state : "",threat : "",bag : false};
 
@@ -257,12 +259,12 @@ async function rosConnect(){
           //console.log("dato camara"+ id_uav + "--"+ msg.data)
           data.updateCamera({deviceId:id_uav,camera: msg.data});//data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
         });
-        let ipdevice = await Getservicehost(uav_ns+'/camera_task_zoom_ctrl');
-        let ipmaster = await Getlistmaster();
+        //let ipdevice = await Getservicehost(uav_ns+'/camera_task_zoom_ctrl');
+        //let ipmaster = await Getlistmaster();
         
-        console.log("ip de uav-"+ ipdevice);
-        console.log(ipmaster);
-        data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
+        //console.log("ip de uav-"+ ipdevice);
+        //console.log(ipmaster);
+        //data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
         
       }else if(uav_type == "px4"){
 
@@ -807,7 +809,7 @@ app.get('/api/positions', (req, res) => {
 app.post('/api/devices',async function(req,res){
   console.log('devicespost')
   console.log(req.body.uav_ns)
-  let myresponse = await connectAddUav(req.body.uav_ns,req.body.uav_type)
+  let myresponse = await connectAddUav(req.body)
   return res.json(myresponse);
 });
 
