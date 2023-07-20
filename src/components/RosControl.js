@@ -62,14 +62,13 @@ export const RosControl = ({children,notification}) => {
         setrosState(false);
       }
     };
-    const serverAddUAV = async (uav_ns, uav_type) => {
+    const serverAddUAV = async (device) => {
       //event.preventDefault();
-      console.log(uav_type)
-      console.log(uav_ns)
+      console.log(device.name+"-"+device.category)
       try {
         const response = await fetch('/api/devices', {
           method: 'POST',
-          body: JSON.stringify({uav_ns: uav_ns, uav_type: uav_type}),
+          body: JSON.stringify(device),
           headers: {
             'Content-Type': 'application/json'
           }
@@ -250,10 +249,10 @@ export const RosControl = ({children,notification}) => {
 
     
 
-    async function connectAddUav(uav_ns,uav_type){	
+    async function connectAddUav(device){	
 
       if(rosState){
-        serverAddUAV(uav_ns,uav_type);
+        serverAddUAV(device);
       }else{
         alert("\nRos no está conectado.\n\n Por favor conéctelo primero.")
       } 
