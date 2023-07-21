@@ -147,6 +147,7 @@ const MainPage = () => {
                 </Paper>
               </div>
           </div>
+          {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
           <StatusCard
           deviceId={selectedDeviceId}
           position={selectedPosition}
@@ -158,7 +159,6 @@ const MainPage = () => {
           deviceIp={selectedDeviceIp}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />}
-          {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
           { <Camera
           deviceId={selectedDeviceId}
           datacamera={selectedImage}
