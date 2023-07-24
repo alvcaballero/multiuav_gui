@@ -56,10 +56,11 @@ const MainPage = () => {
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const [filteredPositions, setFilteredPositions] = useState([]);
   const [filteredImages, setFilteredImages] = useState([]);
-  const [filteredDeviceIp, setFilteredDeviceIp] = useState([]);
+  const [filteredDevice, setFilteredDevice] = useState([]);
   const selectedPosition = filteredPositions.find((position) => selectedDeviceId && position.deviceId === selectedDeviceId);
   const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
-  const selectedDeviceIp = filteredDeviceIp.find((device) => selectedDeviceId && device.Id == selectedDeviceId)
+  //const selectedDeviceIp = filteredDevice.find((device) => selectedDeviceId && device.Id == selectedDeviceId);
+  //const selectedCamera = filteredDevice.find((device) => selectedDeviceId && device.Id == selectedDeviceId);
   
   let listdevices =Object.values(devices);
 
@@ -114,7 +115,6 @@ const MainPage = () => {
     dispatch(devicesActions.selectId(deviceId));
   }, [dispatch]);
 
-
   useEffect(() => {
   setFilteredPositions(Object.values(positions))
   }, [positions]); 
@@ -122,10 +122,7 @@ const MainPage = () => {
     setFilteredImages(Object.values(cameradata))
   }, [cameradata]); 
   useEffect(() => {
-    //console.log(devices[selectedDeviceId])
-    //console.log(selectedDeviceId ? devices[selectedDeviceId].hasOwnProperty('ip'):null)
-    //console.log(selectedDeviceId ? devices[selectedDeviceId]['ip']:null)
-    setFilteredDeviceIp(Object.values(devices))
+    setFilteredDevice(Object.values(devices))
   }, [devices]); 
 
   return (
@@ -154,16 +151,18 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
           />
-          { false &&<CameraWebRTCV2
+          { devices[selectedDeviceId].cameratype  === 'WebRTC' ?( 
+          <CameraWebRTCV2
           deviceId={selectedDeviceId}
-          deviceIp={selectedDeviceIp}
+          deviceIp={devices[selectedDeviceId].ip}
           onClose={() => dispatch(devicesActions.selectId(null))}
-          />}
-          { <Camera
+          />
+          ) : (
+           <Camera
           deviceId={selectedDeviceId}
           datacamera={selectedImage}
           onClose={() => dispatch(devicesActions.selectId(null))}
-          />}
+          />)}
           <Toast toastlist={list} position="buttom-right" setList={setList} />
         </RosControl>
       </div>
