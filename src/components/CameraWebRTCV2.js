@@ -1,5 +1,5 @@
 import React,{ useRef,useEffect,useState} from 'react'
-import novideo from '../assets/img/placeholder.jpg';
+import novideo from '../assets/img/video_loading.mp4';
 import { useDispatch, useSelector } from 'react-redux';
 import Draggable from 'react-draggable';
 import useClasses from './useClasses'
@@ -28,6 +28,7 @@ const styles = theme => ({
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
+    background: 'black',
   },
   mediaButton: {
     color: theme.palette.colors.white,
@@ -60,22 +61,19 @@ const styles = theme => ({
 
 export const CameraWebRTCV2 = ({ deviceId,deviceIp,camera_src, onClose}) => {
   const classes = useClasses(styles);
-  const [camera_image, setcamera_image] = useState(novideo);
-  const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
   const deviceip = 'http://'+deviceIp+':8889/'+camera_src+'/'+'whep';//device?.ip;
   const [maxsize, setmaxsize] = useState(false);
+  const [instCP, setinstCP] = useState(false)
   let btn_class = maxsize ? classes.card_max: classes.card;
   let rootclass = maxsize ? classes.root_max: classes.root;
-  var mypc = null;
+  //var mypc = null;
   function Changemaxsize(){
     setmaxsize(!maxsize);
   }
-
   const restartPause = 2000;
   const localVideoRef = useRef();
-
 
 
   const linkToIceServers = (links) => (
@@ -112,7 +110,6 @@ const parseOffer = (offer) => {
           ret.icePwd = line.slice('a=ice-pwd:'.length);
       }
   }
-
   return ret;
 };
 
@@ -142,7 +139,6 @@ const generateSdpFragment = (myofferData, candidates) => {
       }
       mid++;
   }
-
   return frag;
 }
 
@@ -152,6 +148,7 @@ class WHEPClient {
 		this.restartTimeout = null;
         this.eTag = '';
         this.queuedCandidates = [];
+        this.start();
 	}
 
 	start() {
@@ -280,21 +277,17 @@ class WHEPClient {
         if (this.restartTimeout !== null) {
             return;
         }
-
         if (this.pc !== null) {
             this.pc.close();
             this.pc = null;
         }
-
         this.restartTimeout = window.setTimeout(() => {
             this.restartTimeout = null;
             this.start();
         }, restartPause);
-
         this.eTag = '';
         this.queuedCandidates = [];
     }
-
 
     close() {
         if (this.pc && (this.pc.connectionState === 'connected' || this.pc.connectionState === 'connecting')) {
@@ -312,22 +305,24 @@ function closecard() {
     onClose();
     setmaxsize(false);
     console.log("close card")
-    console.log(mypc)
-    if (mypc) {
+    console.log(instCP)
+    if (instCP) {
         console.log("close card2")
-        mypc.close();
-        mypc = null;
+        instCP.close();
+        setinstCP(null) ;
     }
   }
 
   useEffect(()=>{
     console.log("device in camera-"+device+"-"+deviceIp+"+"+camera_src)
     if(deviceId){
-        mypc = new WHEPClient()
-        mypc.start();
-        console.log(mypc)
+        //ocalVideoRef.current.srcObject = novideo;
+        //localVideoRef.current.play();
+        setinstCP( new WHEPClient())
+        //instCP.start();
         console.log("crear")
     } // here initial your data with default value
+    //console.log(instCP)
   }, [deviceId])
 
   return (
@@ -345,7 +340,9 @@ function closecard() {
         
           <div style={{display: 'block',width:"calc( 100% - 60pt )",paddingLeft:"15pt",paddingTop:"10pt",paddingBottom:"10pt",textAlign:"left"}}> {"Image "+device.name} </div>
 
-        <video  ref={localVideoRef} muted autoPlay playsInline className={classes.media}></video>
+        <video  ref={localVideoRef} autoPlay={true} playsInline={true} className={classes.media} >
+        <source src={novideo} type="video/mp4" />
+        </video>
       </Card>)}
   </div>
   )
