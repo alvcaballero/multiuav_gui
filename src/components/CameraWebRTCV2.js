@@ -58,18 +58,17 @@ const styles = theme => ({
   },
 });
 
-export const CameraWebRTCV2 = ({ deviceId,deviceIp, onClose}) => {
+export const CameraWebRTCV2 = ({ deviceId,deviceIp,camera_src, onClose}) => {
   const classes = useClasses(styles);
   const [camera_image, setcamera_image] = useState(novideo);
   const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const deviceip = 'http://'+'10.42.0.41'+':8889/test/'+'whep';//device?.ip;
-  //const deviceip = useSelector((state) => state.devices.items[deviceId]);
-  //const mediaStream = new MediaStream();
+  const deviceip = 'http://'+deviceIp+':8889/'+camera_src+'/'+'whep';//device?.ip;
   const [maxsize, setmaxsize] = useState(false);
   let btn_class = maxsize ? classes.card_max: classes.card;
   let rootclass = maxsize ? classes.root_max: classes.root;
+  var mypc = null;
   function Changemaxsize(){
     setmaxsize(!maxsize);
   }
@@ -77,26 +76,7 @@ export const CameraWebRTCV2 = ({ deviceId,deviceIp, onClose}) => {
   const restartPause = 2000;
   const localVideoRef = useRef();
 
-  const closecard = () =>{
-    onClose();
-    setmaxsize(false);
 
-    pc.close();
-
-  }
-
-
-  useEffect(()=>{
-    console.log("device in camera-"+device)
-    if(deviceId && pc){
-      pc.start();
-        console.log("crear")
-    }
-
-
-    // here initial your data with default value
-  
-  }, [deviceId])
 
   const linkToIceServers = (links) => (
     (links !== null) ? links.split(', ').map((link) => {
@@ -172,7 +152,6 @@ class WHEPClient {
 		this.restartTimeout = null;
         this.eTag = '';
         this.queuedCandidates = [];
-		//this.start();
 	}
 
 	start() {
@@ -315,12 +294,41 @@ class WHEPClient {
         this.eTag = '';
         this.queuedCandidates = [];
     }
-    close(){
-      this.pc.close();
-      this.pc = null;
+
+
+    close() {
+        if (this.pc && (this.pc.connectionState === 'connected' || this.pc.connectionState === 'connecting')) {
+            // Close the RTCPeerConnection
+            this.pc.close();
+            console.log('WebRTC session closed.');
+          } else {
+            console.log('No active WebRTC session to close.');
+          }
     }
 }
-const pc = new WHEPClient()
+
+
+function closecard() {
+    onClose();
+    setmaxsize(false);
+    console.log("close card")
+    console.log(mypc)
+    if (mypc) {
+        console.log("close card2")
+        mypc.close();
+        mypc = null;
+    }
+  }
+
+  useEffect(()=>{
+    console.log("device in camera-"+device+"-"+deviceIp+"+"+camera_src)
+    if(deviceId){
+        mypc = new WHEPClient()
+        mypc.start();
+        console.log(mypc)
+        console.log("crear")
+    } // here initial your data with default value
+  }, [deviceId])
 
   return (
     <div className={rootclass}>
@@ -337,7 +345,7 @@ const pc = new WHEPClient()
         
           <div style={{display: 'block',width:"calc( 100% - 60pt )",paddingLeft:"15pt",paddingTop:"10pt",paddingBottom:"10pt",textAlign:"left"}}> {"Image "+device.name} </div>
 
-        <video  ref={localVideoRef} autoPlay playsInline className={classes.media}></video>
+        <video  ref={localVideoRef} muted autoPlay playsInline className={classes.media}></video>
       </Card>)}
   </div>
   )

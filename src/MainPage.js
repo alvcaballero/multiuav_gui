@@ -56,11 +56,12 @@ const MainPage = () => {
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const [filteredPositions, setFilteredPositions] = useState([]);
   const [filteredImages, setFilteredImages] = useState([]);
-  const [filteredDevice, setFilteredDevice] = useState([]);
+  const [selectedDeviceIp, setselectedDeviceIp]= useState();
+  const [selectedDeviceCam, setselectedDeviceCam]= useState();
+  const [selectedDeviceCamsrc, setselectedDeviceCamsrc] = useState();
   const selectedPosition = filteredPositions.find((position) => selectedDeviceId && position.deviceId === selectedDeviceId);
   const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
-  //const selectedDeviceIp = filteredDevice.find((device) => selectedDeviceId && device.Id == selectedDeviceId);
-  //const selectedCamera = filteredDevice.find((device) => selectedDeviceId && device.Id == selectedDeviceId);
+
   
   let listdevices =Object.values(devices);
 
@@ -122,8 +123,15 @@ const MainPage = () => {
     setFilteredImages(Object.values(cameradata))
   }, [cameradata]); 
   useEffect(() => {
-    setFilteredDevice(Object.values(devices))
-  }, [devices]); 
+    if(selectedDeviceId){
+      setselectedDeviceIp(devices[selectedDeviceId].ip)
+      setselectedDeviceCam(devices[selectedDeviceId].cameratype)
+      setselectedDeviceCamsrc(devices[selectedDeviceId].camera_src)
+    }else{
+      setselectedDeviceIp(null)
+      setselectedDeviceCam(null)
+    }
+  }, [selectedDeviceId]); 
 
   return (
     <div className="App">
@@ -151,18 +159,22 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
           />
-          { devices[selectedDeviceId].cameratype  === 'WebRTC' ?( 
+
+          { selectedDeviceCam === 'WebRTC' && ( 
           <CameraWebRTCV2
           deviceId={selectedDeviceId}
-          deviceIp={devices[selectedDeviceId].ip}
+          deviceIp={selectedDeviceIp}
+          camera_src={selectedDeviceCamsrc}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />
-          ) : (
+          )}
+          { selectedDeviceCam === 'Websocket' &&  (
            <Camera
           deviceId={selectedDeviceId}
           datacamera={selectedImage}
           onClose={() => dispatch(devicesActions.selectId(null))}
           />)}
+
           <Toast toastlist={list} position="buttom-right" setList={setList} />
         </RosControl>
       </div>
