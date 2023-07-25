@@ -147,6 +147,7 @@ async function rosConnect(){
         //console.log(element);
       });
       uav_list.forEach(element =>{
+        console.log(element)
         if( element.name == uav_ns){
           repeat_device =true;
         }
@@ -354,9 +355,9 @@ async function rosConnect(){
             data.updatePosition({deviceId:id_uav,threat: msg.data});
         });
 
-        let ipdevice = await Getservicehost(uav_ns+'/mavros/mission/clear');
-        console.log("ip de uav"+ ipdevice);
-        data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
+        //let ipdevice = await Getservicehost(uav_ns+'/mavros/mission/clear');
+        //console.log("ip de uav"+ ipdevice);
+        //data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
 
       }else if(uav_type == "fuvex"){
         //EXT (FUVEX)

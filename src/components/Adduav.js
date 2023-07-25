@@ -96,6 +96,7 @@ export const Adduav = ({SetAddUAVOpen}) => {
     }
     function AddnewUAV(){
         console.log("add uav-"+item.name+"-"+item.category)
+        console.log(item)
         rosContex.connectAddUav(item)
         SetAddUAVOpen(false);
 
