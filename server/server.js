@@ -148,8 +148,10 @@ async function rosConnect(){
       });
       uav_list.forEach(element =>{
         console.log(element)
-        if( element.name == uav_ns){
-          repeat_device =true;
+        if (element){
+          if( element.name == uav_ns){
+            repeat_device =true;
+          }
         }
       });
       
@@ -596,6 +598,7 @@ async function rosConnect(){
     let cur_roster = []
     let cur_ns = ""
     let mode_yaw = 0;
+    let mode_gimbal = 0;
     let idle_vel = 1.8;
     let mode_landing =0;
     uav_list.forEach(function prepare_wp(item,idx,arr){
@@ -604,52 +607,48 @@ async function rosConnect(){
       if (item.type !== "ext"){
         let wp_command = [];
         let yaw_pos =[];
+        let gimbal_pos =[];
         Object.values(mission).forEach(route => {
           console.log(route)
-          if(route['name'] == cur_ns){
+          if(route['uav'] == cur_ns){
             console.log("route")
             console.log(route)
-            Object.values(route['wp']).forEach(
-              function prepare_wp(item,idx,arr){
-                let pos = new ROSLIB.Message({
-                  latitude: item[0], 
-                  longitude: item[1],
-                  altitude: item[2]  
-                });
-                
-              yaw_pos.push(item[3])
+            Object.values(route['wp']).forEach( item => {
+              let yaw,gimbal;
+              let pos = new ROSLIB.Message({
+                latitude: item.pos[0], 
+                longitude: item.pos[1],
+                altitude: item.pos[2]  
+              });
+              yaw = item.hasOwnProperty("yaw") ? item.yaw : 0;
+              gimbal = item.hasOwnProperty("gimbal") ?  item.gimbal:0;
+
+              gimbal_pos.push(gimbal)
+              yaw_pos.push(yaw)
               wp_command.push(pos);
             });
-            if (route.attributes.hasOwnProperty("mode_landing")){
-              mode_landing =  route.attributes["mode_landing"];  
+            if (route.attributes.hasOwnProperty("idle_vel")){
+              idle_vel =  route.attributes["idle_vel"];  
             }
             if (route.attributes.hasOwnProperty("mode_yaw")){
               mode_yaw =  route.attributes["mode_yaw"];  
             }
-            if (route.attributes.hasOwnProperty("idle_vel")){
-              idle_vel =  route.attributes["idle_vel"];  
+            if (route.attributes.hasOwnProperty("mode_gimbal")){
+              mode_gimbal =  route.attributes["mode_gimbal"];  
+            }
+            if (route.attributes.hasOwnProperty("mode_landing")){//finish_action
+              mode_landing =  route.attributes["mode_landing"];  
             }
           }
         })
-        let yaw_pos_msg = new ROSLIB.Message({
-          data: yaw_pos
-        });
+        let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
+        let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
    
-        let missionClient;
-        if(item.type === "dji"){
-          missionClient = new ROSLIB.Service({
-            ros : ros,
-            name : cur_ns + '/dji_control/configure_mission',
-            serviceType : 'aerialcore_common/ConfigMission'
-          });
-        }else{
-          missionClient = new ROSLIB.Service({
-            ros : ros,
-            name : cur_ns + '/mission/new',
-            serviceType : 'aerialcore_common/ConfigMission'
-          });
-        }
-
+        let missionClient = new ROSLIB.Service({
+          ros : ros,
+          name : cur_ns + devices_msg[item.type]["services"]["configureMission"]["name"],
+          serviceType :devices_msg[item.type]["services"]["configureMission"]["serviceType"],
+        });
 
         var request = new ROSLIB.ServiceRequest({
           type : "waypoint",
@@ -658,8 +657,10 @@ async function rosConnect(){
           maxVel:	10,
           idleVel: idle_vel,
           yaw: yaw_pos_msg,
+          gimbalPitch: gimbal_pos_msg,
           yawMode: mode_yaw,
           traceMode: 0,
+          gimbalPitchMode: 0,
           finishAction: mode_landing
         });
         console.log("request")

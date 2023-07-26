@@ -20,6 +20,7 @@ export const MapMissions = () => {
         return {
           id: point.id,
           name: myroute[point.routeid]['name'],
+          uav: myroute[point.routeid]['uav'],
           latitude: myroute[point.routeid]['wp'][point.id]['pos'][0],
           longitude: myroute[point.routeid]['wp'][point.id]['pos'][1],
           altitud: myroute[point.routeid]['wp'][point.id]['pos'][2],
@@ -108,9 +109,10 @@ export const MapMissions = () => {
           map.on('click','mission-points',function(e) {
             new maplibregl.Popup()
             .setLngLat(e.lngLat)
-            .setHTML('<h4>'+ "Ruta: "+ e.features[0].properties.name+ '</h4>' +
-            '<a href="https://www.google.com/maps?q='+e.features[0].properties.latitude+","+e.features[0].properties.longitude+'" >'+
-            "["+e.features[0].properties.latitude+","+e.features[0].properties.longitude+"]" +'</a>'+
+            .setHTML('<h4>'+ "UAV: "+ e.features[0].properties.uav+ '</h4>' +
+                    '<p>'+"ruta:   " + e.features[0].properties.name + '</p>' +
+                    '<a href="https://www.google.com/maps?q='+e.features[0].properties.latitude+","+e.features[0].properties.longitude+'" >'+
+                    "["+e.features[0].properties.latitude+","+e.features[0].properties.longitude+"]" +'</a>'+
                     '<p>'+"Altitud:   " + e.features[0].properties.altitud + '</p>' +
                     '<p>' +"Heading:   "+ e.features[0].properties.headin + '</p>')
             .addTo(map);
@@ -153,7 +155,7 @@ export const MapMissions = () => {
                 coordinates: waypoint_pos,
                 },
             properties: {
-                name: item.name,
+                name: item.uav,//name,
                 color: colors[item.id],
               },
           };

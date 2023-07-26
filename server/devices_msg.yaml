@@ -25,10 +25,10 @@ dji:
       name: '/video_stream_compress'
       messageType: 'sensor_msgs/CompressedImage'
   services:
-    missionClient:
+    configureMission:
       name : '/dji_control/configure_mission'
       serviceType : 'aerialcore_common/ConfigMission'
-    commandmision:
+    commandMission:
       name : '/dji_control/start_mission'
       serviceType : 'std_srvs/SetBool'
     sincronize:
@@ -62,10 +62,10 @@ px4:
       name: '/threat'
       messageType: 'std_msgs/Bool'
   services:
-    missionClient:
+    configureMission:
       name : '/mission/new'
       serviceType : 'aerialcore_common/ConfigMission'
-    commandmision:
+    commandMission:
       name : '/mission/start_stop'
       serviceType : 'std_srvs/SetBool'
     sincronize:
