@@ -151,3 +151,10 @@ List of services
 /uav_2/stereo_vga_subscription
 /uav_2/vehicle_node/get_loggers
 /uav_2/vehicle_node/set_logger_level
+
+
+Documentation dJI
+
+https://developer.dji.com/onboard-api-reference/structDJI_1_1OSDK_1_1WayPointSettings.html
+
+https://github.com/dji-sdk/Onboard-SDK-ROS/blob/master/msg/MissionWaypointTask.msg
