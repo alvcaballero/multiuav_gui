@@ -14,14 +14,16 @@ export const MapMissions = () => {
     const mapCluster = true;
     const iconScale = 0.6;
 
-    const colors = {1: '#F34C28' , 2: '#F39A28',3: '#1EC910 ',4: '#1012C9',5: '#C310C9',6: '#1FDBF1',7: '#F6FD04',8: '#808080'}
+    const colors = {0: '#F34C28' , 1: '#F39A28',2: '#1EC910',3: '#1012C9',4: '#C310C9',5: '#1FDBF1',6: '#F6FD04',7: '#808080'}
 
     const createFeature = (myroute,point) => {
         return {
           id: point.id,
           name: myroute[point.routeid]['name'],
-          altitud: myroute[point.routeid]['wp'][point.id][2],
-          headin: myroute[point.routeid]['wp'][point.id][3],
+          latitude: myroute[point.routeid]['wp'][point.id]['pos'][0],
+          longitude: myroute[point.routeid]['wp'][point.id]['pos'][1],
+          altitud: myroute[point.routeid]['wp'][point.id]['pos'][2],
+          headin: myroute[point.routeid]['wp'][point.id]['yaw'],
           attributes: myroute[point.routeid]['attributes'],
           category: 'default',
           color: myroute[point.routeid]['id'],
@@ -107,6 +109,8 @@ export const MapMissions = () => {
             new maplibregl.Popup()
             .setLngLat(e.lngLat)
             .setHTML('<h4>'+ "Ruta: "+ e.features[0].properties.name+ '</h4>' +
+            '<a href="https://www.google.com/maps?q='+e.features[0].properties.latitude+","+e.features[0].properties.longitude+'" >'+
+            "["+e.features[0].properties.latitude+","+e.features[0].properties.longitude+"]" +'</a>'+
                     '<p>'+"Altitud:   " + e.features[0].properties.altitud + '</p>' +
                     '<p>' +"Heading:   "+ e.features[0].properties.headin + '</p>')
             .addTo(map);
@@ -139,7 +143,7 @@ export const MapMissions = () => {
 
     function routesToFeature(item){
         let waypoint_pos = Object.values(item.wp).map(function(it) {
-            return [it[1], it[0]];
+            return [it['pos'][1], it['pos'][0]];
          });
         return {
             id: item.id,
@@ -158,7 +162,7 @@ export const MapMissions = () => {
         let waypoint = [];
         Object.values(myroute).forEach( rt => {
             Object.keys(rt.wp).forEach( wp_key => {
-                waypoint.push({longitude: rt['wp'][wp_key][1],latitude:rt['wp'][wp_key][0], id:wp_key,routeid:rt['id']});
+                waypoint.push({longitude: rt['wp'][wp_key]['pos'][1],latitude:rt['wp'][wp_key]['pos'][0], id:wp_key,routeid:rt['id']});
             })
           })
         return waypoint;
