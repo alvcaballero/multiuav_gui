@@ -12,6 +12,11 @@ route:
   - {pos: [37.53401713, -6.30139770, 10],yaw: 20.0,gimbal: 10 }
   - {pos: [37.53379289, -6.30191991, 10],yaw: 50.0,gimbal: 10 }
   - {pos: [37.53360706, -6.30226291, 10],yaw: 60.0,gimbal: 10 }
+  attributes:
+    mode_landing: 2
+    mode_yaw: 3
+    mode_gimbal: 0
+    mode_trace: 0
 
 - name: "doñana linea2"
   uav: 'uav_2'
@@ -41,11 +46,8 @@ route:
   - {pos: [37.534439, -6.301349, 20]}
   - {pos: [37.534167, -6.302454, 12]}
   - {pos: [37.533703, -6.302975, 20]}
-  attributes:
-    mode_landing: 2
-    mode_yaw: 3
+
 
 
 attributes:  
   mode_landing: 2
-  mode_yaw: 3

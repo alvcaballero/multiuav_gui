@@ -23,8 +23,8 @@ const { reducer, actions } = createSlice({
           if(action.payload.mission.route[n_uav].hasOwnProperty('uav')){
             state.route[n_uav]['uav'] = action.payload.mission.route[n_uav].uav;
           }
-          state.route[n_uav]['id'] = n_uav
-          state.route[n_uav]['name'] = "uav_"+n_uav;
+          state.route[n_uav]['id'] = n_uav;
+          state.route[n_uav]['name'] = action.payload.mission.route[n_uav].name;
           state.route[n_uav]['wp'] = {} ;
           state.route[n_uav]['attributes'] = {} ;
           state.home = action.payload.mission.route[n_uav]['wp'][0].pos;
