@@ -44,6 +44,12 @@ const { reducer, actions } = createSlice({
           if (action.payload.mission.attributes.hasOwnProperty('mode_yaw')){
             state.route[n_uav]['attributes']['mode_yaw'] = action.payload.mission.attributes["mode_yaw"];  
           }
+          if (action.payload.mission.attributes.hasOwnProperty('mode_gimbal')){
+            state.route[n_uav]['attributes']['mode_gimbal'] = action.payload.mission.attributes["mode_gimbal"];  
+          }
+          if (action.payload.mission.attributes.hasOwnProperty('mode_trace')){
+            state.route[n_uav]['attributes']['mode_trace'] = action.payload.mission.attributes["mode_trace"];  
+          }
           if (action.payload.mission.attributes.hasOwnProperty('idle_vel')){
             state.route[n_uav]['attributes']['idle_vel'] = action.payload.mission.attributes["idle_vel"];  
           }}
@@ -56,6 +62,12 @@ const { reducer, actions } = createSlice({
             if (action.payload.mission.route[n_uav]['attributes'].hasOwnProperty('mode_yaw')){
               state.route[n_uav]['attributes']['mode_yaw'] = action.payload.mission.route[n_uav]['attributes']["mode_yaw"];  
             }
+            if (action.payload.mission.route[n_uav]['attributes'].hasOwnProperty('mode_gimbal')){
+              state.route[n_uav]['attributes']['mode_gimbal'] = action.payload.mission.route[n_uav]['attributes']["mode_gimbal"];  
+            }
+            if (action.payload.mission.route[n_uav]['attributes'].hasOwnProperty('mode_trace')){
+              state.route[n_uav]['attributes']['mode_trace'] = action.payload.mission.route[n_uav]['attributes']["mode_trace"];  
+            }
             if (action.payload.mission.route[n_uav]['attributes'].hasOwnProperty('idle_vel')){
               state.route[n_uav]['attributes']['idle_vel'] = action.payload.mission.route[n_uav]['attributes']["idle_vel"];  
             }
@@ -67,12 +79,19 @@ const { reducer, actions } = createSlice({
             if (action.payload.mission.route[n_uav].hasOwnProperty('mode_yaw')){
               state.route[n_uav]['attributes']['mode_yaw'] = action.payload.mission.route[n_uav]["mode_yaw"];  
             }
+            if (action.payload.mission.route[n_uav].hasOwnProperty('mode_gimbal')){
+              state.route[n_uav]['attributes']['mode_gimbal'] = action.payload.mission.route[n_uav]["mode_gimbal"];  
+            }
+            if (action.payload.mission.route[n_uav].hasOwnProperty('mode_trace')){
+              state.route[n_uav]['attributes']['mode_trace'] = action.payload.mission.route[n_uav]["mode_trace"];  
+            }
             if (action.payload.mission.route[n_uav].hasOwnProperty('idle_vel')){
               state.route[n_uav]['attributes']['idle_vel'] = action.payload.mission.route[n_uav]["idle_vel"];  
             }
           } 
         }
       }else{
+        console.log("mission < 3")
         if (action.payload.mission.hasOwnProperty('mode_landing')){
           state.attributes["mode_landing"] = action.payload.mission["mode_landing"];  
         }
@@ -82,17 +101,22 @@ const { reducer, actions } = createSlice({
         for(let n_uav = 1; n_uav <= action.payload.mission["uav_n"]; n_uav++){
           if (action.payload.mission.hasOwnProperty("uav_"+n_uav)){
             state.route[n_uav] = {}; 
-            state.route[n_uav]['n'] = action.payload.mission["uav_"+n_uav]['wp_n'];
+            //state.route[n_uav]['n'] = action.payload.mission["uav_"+n_uav]['wp_n'];
             state.route[n_uav]['id'] = n_uav;
+            state.route[n_uav]['uav'] = "uav_"+n_uav;
             state.route[n_uav]['name'] = "uav_"+n_uav;
             state.route[n_uav]['wp'] = {} ;
             state.route[n_uav]['attributes'] = {} ;
             state.home = action.payload.mission["uav_"+n_uav]['wp_0'];
             //waipoints
             for(let wp_n = 0; wp_n < action.payload.mission["uav_"+n_uav]['wp_n']; wp_n++){
-              state.route[n_uav]['wp'][wp_n] = action.payload.mission["uav_"+n_uav]['wp_'+wp_n];
-              if(state.route[n_uav]['wp'][wp_n].length==3){
-                state.route[n_uav]['wp'][wp_n].push(0);
+              state.route[n_uav]['wp'][wp_n]={};
+              if(action.payload.mission["uav_"+n_uav]['wp_'+wp_n].length==3){
+                state.route[n_uav]['wp'][wp_n]["yaw"] = 0
+                state.route[n_uav]['wp'][wp_n]["pos"] = action.payload.mission["uav_"+n_uav]['wp_'+wp_n];
+              }else{
+                state.route[n_uav]['wp'][wp_n]["yaw"] = action.payload.mission["uav_"+n_uav]['wp_'+wp_n][3]
+                state.route[n_uav]['wp'][wp_n]["pos"] = action.payload.mission["uav_"+n_uav]['wp_'+wp_n].slice(0, -1)
               }
             }
             // Attributes
@@ -134,8 +158,8 @@ const { reducer, actions } = createSlice({
       }
     },
     clearMission(state,action){
+      console.log("clear mission")
       state.name = "Mission no loaded";
-      state.home = [0,0];
       state.route = {};
       state.attributes = {};
     },

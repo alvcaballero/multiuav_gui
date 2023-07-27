@@ -1,0 +1,37 @@
+version: '3'
+frame_id: /gps
+
+# Falta ver ocmo poener en el wp el Gimbal
+description: 'mission 1'
+route:
+- name: "doñana linea1"
+  uav: 'uav_1'
+  wp:
+  - {pos: [37.41031527664839, -6.002355556298255, 5],yaw: 0.0 }
+  - {pos: [37.41035892250692, -6.002406773965073, 5],yaw: 90.0 }
+  - {pos: [37.41041474947755, -6.002324068339875, 5],yaw: 180 }
+  - {pos: [37.41037167365715, -6.002275066705595, 5],yaw: 0.0 }
+  attributes:
+    mode_landing: 2
+    mode_yaw: 3
+    mode_gimbal: 0
+    mode_trace: 0
+
+- name: "doñana linea3"
+  uav: 'uav_2'
+  wp:
+  - {pos: [37.410466, -6.002292, 5],yaw: 0,gimbal: 40}
+  - {pos: [37.410446, -6.002330, 5],yaw: 55,gimbal: 0}
+  - {pos: [37.410418, -6.002370, 5],yaw: 30,gimbal: -40}
+  - {pos: [37.410383, -6.002422, 5],yaw: -90,gimbal: 0}
+  - {pos: [37.410350, -6.002478, 5],yaw: -30,gimbal: 25}
+  attributes:
+    mode_landing: 2
+    mode_yaw: 3
+    mode_gimbal: 0
+    mode_trace: 0
+
+attributes:  
+  mode_landing: 2  # 3 return to point 0, 1 return to home, 2 auto landing., 0 no action
+  mode_yaw: 3 # 0 automode, 1 lock as inicital value , 2 control Rc,3 use wayarpoints/uav_2/dji_osdk_ros/height_above_takeoff
+  mode_gimbal: 1

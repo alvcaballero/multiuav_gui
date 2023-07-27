@@ -599,6 +599,7 @@ async function rosConnect(){
     let cur_ns = ""
     let mode_yaw = 0;
     let mode_gimbal = 0;
+    let mode_trace = 0;
     let idle_vel = 1.8;
     let mode_landing =0;
     uav_list.forEach(function prepare_wp(item,idx,arr){
@@ -636,6 +637,9 @@ async function rosConnect(){
             if (route.attributes.hasOwnProperty("mode_gimbal")){
               mode_gimbal =  route.attributes["mode_gimbal"];  
             }
+            if (route.attributes.hasOwnProperty("mode_trace")){
+              mode_trace =  route.attributes["mode_trace"];  
+            }
             if (route.attributes.hasOwnProperty("mode_landing")){//finish_action
               mode_landing =  route.attributes["mode_landing"];  
             }
@@ -659,8 +663,8 @@ async function rosConnect(){
           yaw: yaw_pos_msg,
           gimbalPitch: gimbal_pos_msg,
           yawMode: mode_yaw,
-          traceMode: 0,
-          gimbalPitchMode: 0,
+          traceMode: mode_trace,
+          gimbalPitchMode: mode_gimbal,
           finishAction: mode_landing
         });
         console.log("request")
@@ -698,12 +702,13 @@ async function rosConnect(){
       let cur_roster = []
       uav_list.forEach(function prepare_wp(uav,idx,arr){
         cur_roster.push(uav.name);
+        console.log
         let missionClient;
         if (uav.type !== "ext"){
           missionClient = new ROSLIB.Service({
             ros : ros,
-            name : uav.name+devices_msg[uav.type].services.commandmision.name,
-            serviceType : devices_msg[uav.type].services.commandmision.serviceType
+            name : uav.name+devices_msg[uav.type].services.commandMission.name,
+            serviceType : devices_msg[uav.type].services.commandMission.serviceType
           });
         
           let request = new ROSLIB.ServiceRequest({data: true});
@@ -736,8 +741,8 @@ async function rosConnect(){
         if (uav.type !== "ext"){
             missionClient = new ROSLIB.Service({
               ros : ros,
-              name : uav_ns+devices_msg[uav_category].services.commandmision.name,
-              serviceType : devices_msg[uav_category].services.commandmision.serviceType
+              name : uav_ns+devices_msg[uav_category].services.commandMission.name,
+              serviceType : devices_msg[uav_category].services.commandMission.serviceType
             });
         
           let request = new ROSLIB.ServiceRequest({data: true});
@@ -832,6 +837,12 @@ app.post('/api/commandmission/:id',async function(req,res){
   console.log('command-mission-post')
   console.log(req.body)
   let myresponse = await commandMission1(req.params.id);
+  return res.json(myresponse);
+});
+app.post('/api/sendTask',async function(req,res){
+  console.log('command-sendtask')
+  console.log(req.body)
+  let myresponse = {res: "aun no hay metodo"};
   return res.json(myresponse);
 });
 //app.post('/api/threat',async function(req,res){
