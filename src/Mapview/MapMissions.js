@@ -1,5 +1,7 @@
 // direction on line
 // https://stackoverflow.com/questions/53257291/how-to-make-a-custom-line-layer-in-mapbox-gl
+// example 2
+// https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 import { useId, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { map } from './Mapview';
@@ -24,7 +26,8 @@ export const MapMissions = () => {
           latitude: myroute[point.routeid]['wp'][point.id]['pos'][0],
           longitude: myroute[point.routeid]['wp'][point.id]['pos'][1],
           altitud: myroute[point.routeid]['wp'][point.id]['pos'][2],
-          headin: myroute[point.routeid]['wp'][point.id]['yaw'],
+          yaw: myroute[point.routeid]['wp'][point.id]['yaw'],
+          gimbal: myroute[point.routeid]['wp'][point.id]['gimbal'],
           attributes: myroute[point.routeid]['attributes'],
           category: 'default',
           color: myroute[point.routeid]['id'],
@@ -107,14 +110,21 @@ export const MapMissions = () => {
             },
           });
           map.on('click','mission-points',function(e) {
+            let html= '<h4>'+ "UAV: "+ e.features[0].properties.uav+ '</h4>' +
+            '<p>'+"ruta:   " + e.features[0].properties.name + '</p>' +
+            '<a href="https://www.google.com/maps?q='+e.features[0].properties.latitude+","+e.features[0].properties.longitude+'" >'+
+            "["+e.features[0].properties.latitude.toFixed(6)+","+e.features[0].properties.longitude.toFixed(6)+"]" +'</a>'+
+            '<p>'+"Altitud:   " + e.features[0].properties.altitud + '</p>' ;
+            html =  e.features[0].properties.hasOwnProperty('yaw') ? html +'<p>' +"yaw:   "+ e.features[0].properties.yaw + '</p>': html ;
+            html =  e.features[0].properties.hasOwnProperty('gimbal') ? html +'<p>' +"gimbal:   "+ e.features[0].properties.gimbal + '</p>': html;
+            let attribute = JSON.parse(e.features[0].properties.attributes);
+            let myatribute = Object.entries(attribute)
+            for(let i=0;i< myatribute.length;i++){
+              html =  html +'<p>'+myatribute[i] + '</p>';
+            }
             new maplibregl.Popup()
             .setLngLat(e.lngLat)
-            .setHTML('<h4>'+ "UAV: "+ e.features[0].properties.uav+ '</h4>' +
-                    '<p>'+"ruta:   " + e.features[0].properties.name + '</p>' +
-                    '<a href="https://www.google.com/maps?q='+e.features[0].properties.latitude+","+e.features[0].properties.longitude+'" >'+
-                    "["+e.features[0].properties.latitude+","+e.features[0].properties.longitude+"]" +'</a>'+
-                    '<p>'+"Altitud:   " + e.features[0].properties.altitud + '</p>' +
-                    '<p>' +"Heading:   "+ e.features[0].properties.headin + '</p>')
+            .setHTML(html)
             .addTo(map);
           } )
     
