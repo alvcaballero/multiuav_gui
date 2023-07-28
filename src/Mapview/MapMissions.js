@@ -110,21 +110,23 @@ export const MapMissions = () => {
             },
           });
           map.on('click','mission-points',function(e) {
-            let html= '<h4>'+ "UAV: "+ e.features[0].properties.uav+ '</h4>' +
-            '<p>'+"ruta:   " + e.features[0].properties.name + '</p>' +
-            '<a href="https://www.google.com/maps?q='+e.features[0].properties.latitude+","+e.features[0].properties.longitude+'" >'+
-            "["+e.features[0].properties.latitude.toFixed(6)+","+e.features[0].properties.longitude.toFixed(6)+"]" +'</a>'+
-            '<p>'+"Altitud:   " + e.features[0].properties.altitud + '</p>' ;
-            html =  e.features[0].properties.hasOwnProperty('yaw') ? html +'<p>' +"yaw:   "+ e.features[0].properties.yaw + '</p>': html ;
-            html =  e.features[0].properties.hasOwnProperty('gimbal') ? html +'<p>' +"gimbal:   "+ e.features[0].properties.gimbal + '</p>': html;
+            let html= `<h4 style="color: #FF7A59" >UAV:${e.features[0].properties.uav}</h4>
+            <div><span>Route :${ e.features[0].properties.name}</span>
+            <span><a href="https://www.google.com/maps?q=${e.features[0].properties.latitude},${e.features[0].properties.longitude}" target="_blank">
+            Punto_${e.features[0].properties.id}</a></span></div>
+            <div><span> Altitud:</span><span>${e.features[0].properties.altitud}</span></div>`;
+            html =  e.features[0].properties.hasOwnProperty('yaw') ? html +`<div><span>Yaw:</span><span>${e.features[0].properties.yaw }</span></div>`: html ;
+            html =  e.features[0].properties.hasOwnProperty('gimbal') ? html +`<div><span>Gimbal:</span><span>${e.features[0].properties.gimbal}</span></div>`: html;
+            html =  html +'<p> Atributes_mission: </p>';
             let attribute = JSON.parse(e.features[0].properties.attributes);
-            let myatribute = Object.entries(attribute)
-            for(let i=0;i< myatribute.length;i++){
-              html =  html +'<p>'+myatribute[i] + '</p>';
-            }
+            let html_atributes = Object.keys(attribute).map(key => {
+              return `<div>  <span>${key}:</span>
+              <span>${attribute[key]}: </span>
+              </div>`;
+            }).join(''); 
             new maplibregl.Popup()
             .setLngLat(e.lngLat)
-            .setHTML(html)
+            .setHTML(html+html_atributes)
             .addTo(map);
           } )
     

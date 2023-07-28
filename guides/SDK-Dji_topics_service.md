@@ -157,4 +157,8 @@ Documentation dJI
 
 https://developer.dji.com/onboard-api-reference/structDJI_1_1OSDK_1_1WayPointSettings.html
 
+https://developer.dji.com/onboard-api-reference/classDJI_1_1OSDK_1_1WaypointMission.html
+
 https://github.com/dji-sdk/Onboard-SDK-ROS/blob/master/msg/MissionWaypointTask.msg
+https://github.com/dji-sdk/Onboard-SDK/blob/118e2825a347499efb8ed253146552c5b9b10779/osdk-core/api/inc/dji_mission_type.hpp#L126
+https://github.com/dji-sdk/Onboard-SDK/blob/master/sample/platform/linux/missions/mission_sample.cpp
