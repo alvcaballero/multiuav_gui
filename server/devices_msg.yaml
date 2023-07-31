@@ -35,6 +35,26 @@ dji:
       name : '/dji_control/send_bags'
       serviceType : 'std_srvs/Bool'
   attributes:
+    mission_action:
+      action_stay:
+        id: 0
+        param: false
+      simple_shot:
+        id: 1
+        param: false
+      video_start:
+        id: 2
+        param: false
+      video_stop:
+        id: 3
+        param: false
+      craft_yaw:
+        id: 4
+        param: true
+      gimbal_pitch:
+        id: 5
+        param: true
+    mission_param:
       mode_yaw:
         0: 'Auto'           # auto mode (point to next waypoint)
         1: 'Lock'           # lock as an initial value
