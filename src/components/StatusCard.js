@@ -116,6 +116,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   //const deviceReadonly = useDeviceReadonly();
 
+
   const device = useSelector((state) => state.devices.items[deviceId]);
 
   const deviceImage = device?.attributes?.deviceImage;

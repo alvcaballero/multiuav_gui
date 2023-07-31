@@ -1,0 +1,21 @@
+name: muav-gui
+root: ~/
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: tiled
+      panes:
+        - backend: 
+          -  cd ~/work/px4/multiuav_gui18/server
+          -  nvm use 18
+          -  npm run server
+        - multimaster:
+          -  cd ~/work/px4/
+          -  ./px4-docker-melodic.sh
+          -  roslaunch aerialcore_gui connect_uas.launch
+        - aux:
+          -  cd ~/work/px4/
+          -  ./px4-docker-melodic.sh
+          -  cd /home/user/catkin_ws
+          -  sleep 2;rostopic list

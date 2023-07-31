@@ -110,19 +110,18 @@ export const MapMissions = () => {
             },
           });
           map.on('click','mission-points',function(e) {
-            let html= `<h4 style="color: #FF7A59" >UAV:${e.features[0].properties.uav}</h4>
-            <div><span>Route :${ e.features[0].properties.name}</span>
+            let html= `<h4 style="color: #FF7A59" >UAV: ${e.features[0].properties.uav}</h4>
+            <div><span>Route: ${ e.features[0].properties.name}</span>
             <span><a href="https://www.google.com/maps?q=${e.features[0].properties.latitude},${e.features[0].properties.longitude}" target="_blank">
             Punto_${e.features[0].properties.id}</a></span></div>
-            <div><span> Altitud:</span><span>${e.features[0].properties.altitud}</span></div>`;
-            html =  e.features[0].properties.hasOwnProperty('yaw') ? html +`<div><span>Yaw:</span><span>${e.features[0].properties.yaw }</span></div>`: html ;
-            html =  e.features[0].properties.hasOwnProperty('gimbal') ? html +`<div><span>Gimbal:</span><span>${e.features[0].properties.gimbal}</span></div>`: html;
+            <div style="display:inline"><span> Height: </span><span>${e.features[0].properties.altitud}m </span></div>`;
+            html =  e.features[0].properties.hasOwnProperty('yaw') ? html +`<div style="display:inline"><span>Yaw: </span><span>${e.features[0].properties.yaw }° </span></div>`: html ;
+            html =  e.features[0].properties.hasOwnProperty('gimbal') ? html +`<div style="display:inline"><span>Gimbal: </span><span>${e.features[0].properties.gimbal}° </span></div>`: html;
             html =  html +'<p> Atributes_mission: </p>';
             let attribute = JSON.parse(e.features[0].properties.attributes);
             let html_atributes = Object.keys(attribute).map(key => {
-              return `<div>  <span>${key}:</span>
-              <span>${attribute[key]}: </span>
-              </div>`;
+              let unit =  key == ('idle_vel')? 'm/s': '';
+              return `<div style="display:inline"><span>${key}: </span><span>${attribute[key]} ${unit} </span></div>`;
             }).join(''); 
             new maplibregl.Popup()
             .setLngLat(e.lngLat)
