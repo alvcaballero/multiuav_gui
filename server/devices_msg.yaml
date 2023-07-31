@@ -34,6 +34,25 @@ dji:
     sincronize:
       name : '/dji_control/send_bags'
       serviceType : 'std_srvs/Bool'
+  attributes:
+      mode_yaw:
+        0: 'Auto'           # auto mode (point to next waypoint)
+        1: 'Lock'           # lock as an initial value
+        2: 'RC'             # controlled by RC
+        3: 'Waypoint'       # use waypoint's yaw(tgt_yaw)
+      mode_trace:
+        0: 'point to point' #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
+        1: 'smooth'         #Coordinated turn mode, smooth transition between waypts, no waypts task
+      mode_landing:
+        0: 'no action'      # no action
+        1: 'return to home' # return to home
+        2: 'auto landing'   # auto landing
+        3: 'return to point 0' # return to point 0
+        4: 'infinite mode'  # infinite mode， no exit
+      gimbal_mode:
+        0: 'Gimbal free'    # free mode, no control on gimbal
+        1: 'Waypoint'       # auto mode, Smooth transition between waypoints on gimbal
+      idle_velocity: 'Cruising Speed'     # Cruising Speed (without joystick input, no more than vel_cmd_range)
 
 px4:
   topics:
@@ -71,7 +90,8 @@ px4:
     sincronize:
       name : '/px4_mission_node/send_bags'
       serviceType : 'std_srvs/Bool'
-
+  attributes:
+    idle_velocity: 'Cruising Speed'     # Cruising Speed (without joystick input, no more than vel_cmd_range)
 
 fuvex:
   topics:
