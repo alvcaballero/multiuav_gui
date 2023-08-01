@@ -36,24 +36,36 @@ dji:
       serviceType : 'std_srvs/Bool'
   attributes:
     mission_action:
-      action_stay:
+      stay: #action_stay
+        name: 'stay'
         id: 0
         param: true
-      simple_shot:
+        description: "action_stay"
+      photo: #simple_shot
+        name: 'photo'
         id: 1
         param: false
+        description: "simple_shot"
       video_start:
+        name: 'video_start'
         id: 2
         param: false
+        description: "video_start"
       video_stop:
+        name: 'video_stop'
         id: 3
         param: false
-      craft_yaw:
+        description: "video_stop"
+      yaw: # craft_yaw
+        name: 'yaw'
         id: 4
         param: true
-      gimbal_pitch:
+        description: "craft_yaw"
+      gimbal: #gimbal_pitch
+        name: 'gimbal'
         id: 5
         param: true
+        description: "gimbal_pitch"
     mission_param:
       mode_yaw:
         0: 'Auto'           # auto mode (point to next waypoint)
@@ -111,7 +123,41 @@ px4:
       name : '/px4_mission_node/send_bags'
       serviceType : 'std_srvs/Bool'
   attributes:
-    idle_velocity: 'Cruising Speed'     # Cruising Speed (without joystick input, no more than vel_cmd_range)
+    mission_action:
+      stay: #action_stay
+        name: 'stay'
+        id: 0
+        param: true
+        description: "action_stay"
+      photo: #simple_shot
+        name: 'photo'
+        id: 1
+        param: false
+        description: "simple_shot"
+      video_start:
+        name: 'video_start'
+        id: 2
+        param: false
+        description: "video_start"
+      video_stop:
+        name: 'video_stop'
+        id: 3
+        param: false
+        description: "video_stop"
+      yaw: # craft_yaw
+        name: 'yaw'
+        id: 4
+        param: true
+        description: "craft_yaw"
+      gimbal: #gimbal_pitch
+        name: 'gimbal'
+        id: 5
+        param: true
+        description: "gimbal_pitch"
+    mission_param:
+      idle_velocity: 'Cruising Speed'     # Cruising Speed (without joystick input, no more than vel_cmd_range)
+
+
 
 fuvex:
   topics:
