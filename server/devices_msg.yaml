@@ -38,7 +38,7 @@ dji:
     mission_action:
       action_stay:
         id: 0
-        param: false
+        param: true
       simple_shot:
         id: 1
         param: false
