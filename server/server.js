@@ -593,8 +593,8 @@ async function rosConnect(){
   function loadMission(mission){ 
     console.log("  load  - mission")
     console.log(mission)
-    console.log("uav list")
-    console.log(uav_list)
+    //console.log("uav list")
+    //console.log(uav_list)
     let cur_roster = []
     let cur_ns = ""
     let mode_yaw = 0;
@@ -602,13 +602,15 @@ async function rosConnect(){
     let mode_trace = 0;
     let idle_vel = 1.8;
     let mode_landing =0;
-    uav_list.forEach(function prepare_wp(item,idx,arr){
-      cur_ns = item.name
+    uav_list.forEach(function prepare_wp(uav,idx,arr){
+      cur_ns = uav.name
       cur_roster.push(cur_ns);
-      if (item.type !== "ext"){
+      if (uav.type !== "ext"){
         let wp_command = [];
         let yaw_pos =[];
         let gimbal_pos =[];
+        let action_matrix =[];
+        let param_matrix=[];
         Object.values(mission).forEach(route => {
           console.log(route)
           if(route['uav'] == cur_ns){
@@ -616,6 +618,8 @@ async function rosConnect(){
             console.log(route)
             Object.values(route['wp']).forEach( item => {
               let yaw,gimbal;
+              let action_array =Array(10).fill(0)
+              let param_array =Array(10).fill(0);
               let pos = new ROSLIB.Message({
                 latitude: item.pos[0], 
                 longitude: item.pos[1],
@@ -623,10 +627,21 @@ async function rosConnect(){
               });
               yaw = item.hasOwnProperty("yaw") ? item.yaw : 0;
               gimbal = item.hasOwnProperty("gimbal") ?  item.gimbal:0;
-
+              if (item.hasOwnProperty("action")){
+                Object.keys(item.action).forEach((action_val, index, arr)=>{
+                  found =  Object.values(devices_msg[uav.type]["attributes"]["mission_action"]).find(element =>  element.name == action_val)
+                  if( found){
+                    action_array[index]= found.id;
+                    param_array[index] = found.param ? item.action[action_val] : 0;
+                  }
+                })
+              }
+              wp_command.push(pos);
               gimbal_pos.push(gimbal)
               yaw_pos.push(yaw)
-              wp_command.push(pos);
+              action_matrix.push(action_array);
+              param_matrix.push(param_array)
+
             });
             if (route.attributes.hasOwnProperty("idle_vel")){
               idle_vel =  route.attributes["idle_vel"];  
@@ -650,8 +665,8 @@ async function rosConnect(){
    
         let missionClient = new ROSLIB.Service({
           ros : ros,
-          name : cur_ns + devices_msg[item.type]["services"]["configureMission"]["name"],
-          serviceType :devices_msg[item.type]["services"]["configureMission"]["serviceType"],
+          name : cur_ns + devices_msg[uav.type]["services"]["configureMission"]["name"],
+          serviceType :devices_msg[uav.type]["services"]["configureMission"]["serviceType"],
         });
 
         var request = new ROSLIB.ServiceRequest({
@@ -665,7 +680,9 @@ async function rosConnect(){
           yawMode: mode_yaw,
           traceMode: mode_trace,
           gimbalPitchMode: mode_gimbal,
-          finishAction: mode_landing
+          finishAction: mode_landing,
+          commandList: action_matrix,
+          commandParameter: param_matrix,
         });
         console.log("request")
         console.log(request)

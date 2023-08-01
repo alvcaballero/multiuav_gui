@@ -34,6 +34,9 @@ const { reducer, actions } = createSlice({
             state.route[n_uav]['wp'][wp_n]["pos"] = action.payload.mission.route[n_uav]['wp'][wp_n].pos;
             state.route[n_uav]['wp'][wp_n]["yaw"] = action.payload.mission.route[n_uav]['wp'][wp_n].yaw;
             state.route[n_uav]['wp'][wp_n]["gimbal"] = action.payload.mission.route[n_uav]['wp'][wp_n].gimbal;
+            if(action.payload.mission.route[n_uav]['wp'][wp_n].hasOwnProperty('action')){
+              state.route[n_uav]['wp'][wp_n]["action"] = action.payload.mission.route[n_uav]['wp'][wp_n].action;
+            }
           }
           if(action.payload.mission.hasOwnProperty('attributes')){
             console.log("global attributes")

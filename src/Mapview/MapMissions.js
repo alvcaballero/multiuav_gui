@@ -28,6 +28,7 @@ export const MapMissions = () => {
           altitud: myroute[point.routeid]['wp'][point.id]['pos'][2],
           yaw: myroute[point.routeid]['wp'][point.id]['yaw'],
           gimbal: myroute[point.routeid]['wp'][point.id]['gimbal'],
+          actions: myroute[point.routeid]['wp'][point.id]['action'],
           attributes: myroute[point.routeid]['attributes'],
           category: 'default',
           color: myroute[point.routeid]['id'],
@@ -117,15 +118,23 @@ export const MapMissions = () => {
             <div style="display:inline"><span> Height: </span><span>${e.features[0].properties.altitud}m </span></div>`;
             html =  e.features[0].properties.hasOwnProperty('yaw') ? html +`<div style="display:inline"><span>Yaw: </span><span>${e.features[0].properties.yaw }° </span></div>`: html ;
             html =  e.features[0].properties.hasOwnProperty('gimbal') ? html +`<div style="display:inline"><span>Gimbal: </span><span>${e.features[0].properties.gimbal}° </span></div>`: html;
-            html =  html +'<p> Atributes_mission: </p>';
+            let html_action = '<p> Waypoint actions: </p>';
+            if (e.features[0].properties.actions){
+              let action = JSON.parse(e.features[0].properties.actions);
+              html_action = html_action + Object.keys(action).map(key => {
+              let unit =  key == ('idle_vel')? 'm/s': '';
+              return `<div style="display:inline"><span>${key}: </span><span>${action[key]} ${unit} </span></div>`;
+            }).join(''); 
+            }
+            let html_atributes =  '<p> Atributes_mission: </p>';
             let attribute = JSON.parse(e.features[0].properties.attributes);
-            let html_atributes = Object.keys(attribute).map(key => {
+            html_atributes = html_atributes + Object.keys(attribute).map(key => {
               let unit =  key == ('idle_vel')? 'm/s': '';
               return `<div style="display:inline"><span>${key}: </span><span>${attribute[key]} ${unit} </span></div>`;
             }).join(''); 
             new maplibregl.Popup()
             .setLngLat(e.lngLat)
-            .setHTML(html+html_atributes)
+            .setHTML(html+html_action+html_atributes)
             .addTo(map);
           } )
     
