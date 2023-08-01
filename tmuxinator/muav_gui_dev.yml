@@ -13,7 +13,6 @@ windows:
         - frontend:
           -  cd ~/work/px4/multiuav_gui18
           -  nvm use 18
-          -  open -a "Google Chrome" http://127.0.0.1:3000
           -  sleep 2;npm run start
   - Docker:
       layout: tiled
