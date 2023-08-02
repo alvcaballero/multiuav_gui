@@ -162,7 +162,7 @@ async function rosConnect(){
       
       data.updatedevice({id:cur_uav_idx,name:device.name,category:device.category,ip:device.ip,cameratype:device.cameratype,camera_src:device.camera_src,status:'online',lastUpdate:null})
 
-      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] , listener : "", listener_hdg : "", listener_alt : "", listener_vel : "", listener_bat : "",listener_cam : "",listener_state : "",threat : "",bag : false};
+      let uavAdded = { name : uav_ns, type : uav_type, watch_bound : true, wp_list : [] ,bag : false};
 
       console.log(data.state.devices)
       uav_list.push(uavAdded);
@@ -170,6 +170,7 @@ async function rosConnect(){
       // Subscribing
       // create subcribin mesage
       Object.keys(devices_msg[uav_type]["topics"]).forEach(element => {
+        console.log(element)
         uav_list[cur_uav_idx]["listener_"+element] = new ROSLIB.Topic({
           ros : ros,
           name : uav_ns+devices_msg[uav_type]["topics"][element]["name"],//'/dji_osdk_ros/rtk_position',
@@ -482,21 +483,12 @@ async function rosConnect(){
               param_matrix.push(param_array)
 
             });
-            if (route.attributes.hasOwnProperty("idle_vel")){
-              idle_vel =  route.attributes["idle_vel"];  
-            }
-            if (route.attributes.hasOwnProperty("mode_yaw")){
-              mode_yaw =  route.attributes["mode_yaw"];  
-            }
-            if (route.attributes.hasOwnProperty("mode_gimbal")){
-              mode_gimbal =  route.attributes["mode_gimbal"];  
-            }
-            if (route.attributes.hasOwnProperty("mode_trace")){
-              mode_trace =  route.attributes["mode_trace"];  
-            }
-            if (route.attributes.hasOwnProperty("mode_landing")){//finish_action
-              mode_landing =  route.attributes["mode_landing"];  
-            }
+
+            idle_vel =route.attributes.hasOwnProperty("idle_vel")? route.attributes["idle_vel"] : idle_vel;  
+            mode_yaw = route.attributes.hasOwnProperty("mode_yaw") ? route.attributes["mode_yaw"] : mode_yaw;  
+            mode_gimbal =  route.attributes.hasOwnProperty("mode_gimbal") ? route.attributes["mode_gimbal"] : mode_gimbal;  
+            mode_trace = route.attributes.hasOwnProperty("mode_trace") ? route.attributes["mode_trace"] : mode_trace ;  
+            mode_landing = route.attributes.hasOwnProperty("mode_landing") ? route.attributes["mode_landing"] : mode_landing;  
           }
         })
         let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
@@ -529,7 +521,7 @@ async function rosConnect(){
         console.log(request)
 
         missionClient.callService(request, function(result) {
-          console.log('load mission'+ missionClient.name+': '+result.success);
+          console.log('load mission '+ missionClient.name+': '+result.success);
             if(result.success){
               return {state:'success',msg:"Loadding mission to" + cur_roster+" ok"};//notification('success',"Load mission to:" + cur_roster + " ok");
             } else{

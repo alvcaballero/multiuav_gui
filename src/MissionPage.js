@@ -2,19 +2,19 @@ import './MainPage.css';
 import React from 'react'
 import MapView from './Mapview/Mapview'
 import { Navbar } from './components/Navbar';
+import { Menu } from './components/Menu';
 import MapMissionsCreate from './Mapview/draw/MapMissionsCreate';
 import Drawer from '@mui/material/Drawer';
 import RoutesList from './components/RoutesList';
-import {
-  Divider, Typography, IconButton, Toolbar,
-} from '@mui/material';
+import {   Divider, Typography, IconButton, Toolbar,} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useNavigate } from 'react-router-dom';
 import makeStyles from '@mui/styles/makeStyles';
+import MapMissions from './Mapview/MapMissions';
 
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     height: '100%',
     display: 'flex',
@@ -24,13 +24,15 @@ const useStyles = makeStyles(() => ({
     flexGrow: 1,
     overflow: 'hidden',
     display: 'flex',
-    //flexDirection: 'row',
-    flexDirection: 'column-reverse',
+    flexDirection: 'row'
+  },
+  drawer: {
+    zIndex: 1,
   },
   drawerPaper: {
     position: 'relative',
     zIndex: 0,
-    width: "30%",
+    width: "400px",
   },
   mapContainer: {
     flexGrow: 1,
@@ -49,9 +51,9 @@ const MissionPage = () => {
 
   return (
     <div className={classes.root} >
+      <Navbar/>
       <div className={classes.content}>
-        <Navbar  />
-        <Drawer anchor='left' variant="permanent" classes={{ paper: classes.drawerPaper }}  >
+        <Drawer className={classes.drawer} anchor='left' variant="permanent" classes={{ paper: classes.drawerPaper }}  >
           <Toolbar>
           <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
               <ArrowBackIcon />
@@ -66,14 +68,13 @@ const MissionPage = () => {
           </Toolbar>
           <Divider/>
           <RoutesList RouteSelect/>
-
         </Drawer>
         <div className={classes.mapContainer}>
           <MapView>
             <MapMissionsCreate/>
+            <MapMissions/>
           </MapView>
         </div>
-
       </div>
     </div>
   )

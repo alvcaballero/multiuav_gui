@@ -29,8 +29,12 @@ y se esta usando el siguiente scrip para poder  acceder a la maquina
  se siguio las instrucciones del siguiente [tutorial](https://docs.px4.io/main/en/test_and_ci/docker.html)
 
 y se ejecuto la siguiente  linea de codigo para simular el Vtool
-
+```
+export PX4_HOME_LAT=37.410415
+export PX4_HOME_LON=-6.002324
+export PX4_HOME_ALT=28.5
     ~/src/PX$-Autopilot$ make px4_sitl gazebo_standard_vtol
+```
     or
     make px4_sitl_default gazebo
 
@@ -51,7 +55,10 @@ se baso en este link    http://docs.px4.io/main/en/simulation/multi_vehicle_simu
 
 
     roslaunch px4 multi_uav_mavros_sitl.launch
+```
 
+    roslaunch onboard_px4 px4-simulation.launch
+```
 
 ## GNS  - interfaz grafica
 

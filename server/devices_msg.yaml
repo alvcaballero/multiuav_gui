@@ -9,7 +9,7 @@ dji:
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    IMU:
+    IMU: #hdg
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     speed:
@@ -94,7 +94,7 @@ px4:
     sensor_height:
       name: '/mavros/altitude'
       messageType: 'mavros_msgs/Altitude'
-    listener_hdg:
+    hdg:
       name: '/mavros/global_position/compass_hdg'
       messageType: 'std_msgs/Float64'
     speed:
@@ -167,7 +167,7 @@ fuvex:
     sensor_height:
       name: '/mavros/altitude'
       messageType: 'mavros_msgs/Altitude'
-    listener_hdg:
+    hdg:
       name: '/mavros/global_position/compass_hdg'
       messageType: 'std_msgs/Float64'
     speed:

@@ -1,7 +1,7 @@
 <launch>
     <node name="master_discovery" pkg="master_discovery_fkie" type="master_discovery">
-        <rosparam param="robot_hosts">[ubuntu18-Lenovo, ubuntu-black, grvc-Xavier-NX,ubuntu]</rosparam>
-        <rosparam param="static_hosts">[ubuntu18-Lenovo, ubuntu-black, grvc-Xavier-NX,ubuntu]</rosparam>
+        <rosparam param="robot_hosts">[ubuntu18-Lenovo, ubuntu-black, grvc-Xavier-NX,ubuntu,deltapi]</rosparam>
+        <rosparam param="static_hosts">[ubuntu18-Lenovo, ubuntu-black, grvc-Xavier-NX,ubuntu,deltapi]</rosparam>
         <rosparam param="send_mcast">False</rosparam>
         <rosparam param="listen_mcast">False</rosparam>
     </node>
