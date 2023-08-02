@@ -3,7 +3,7 @@ import React, { useState , useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-//import { makeStyles } from '@mui/system';
+import makeStyles from '@mui/styles/makeStyles';
 import { Navbar } from './components/Navbar';
 import { Menu } from './components/Menu';
 import Toast from './components/Toast';
@@ -22,7 +22,11 @@ import { CameraWebRTCV2 } from './components/CameraWebRTCV2';
 
 import { devicesActions } from './store';
 
-const sidebarStyle= {
+const useStyles = makeStyles((theme) => ({
+  root: {
+    height: '100%',
+  },
+  sidebarStyle: {
     pointerEvents: 'none',
     display: 'flex',
     flexDirection: 'column',
@@ -33,19 +37,21 @@ const sidebarStyle= {
     width: '360px',
     margin: '0px',
     zIndex: 3,
-  };
-  const middleStyle= {
+  },
+  middleStyle: {
     flex: 1,
     display: 'grid',
-  };
-  const contentListStyle= {
+  },
+  contentListStyle: {
     pointerEvents: 'auto',
     gridArea: '1 / 1',
     zIndex: 4,
-  };
+  }
 
+}));
 
 const MainPage = () => {
+  const classes = useStyles();
   const dispatch = useDispatch();
   const theme = useTheme();
 
@@ -134,8 +140,7 @@ const MainPage = () => {
   }, [selectedDeviceId]); 
 
   return (
-    <div className="App">
-      <div className="window">
+    <div className={classes.root}>
         <RosControl notification={showToast}>
           <Navbar SetAddUAVOpen={SetAddUAVOpen} />
           <Menu SetAddUAVOpen={SetAddUAVOpen} />
@@ -144,9 +149,9 @@ const MainPage = () => {
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
             <MapSelectedDevice/>
           </MapView>
-          <div style={sidebarStyle}>
-              <div style={middleStyle}>
-                <Paper square style={contentListStyle} >
+          <div className={classes.sidebarStyle}>
+              <div className={classes.middleStyle}>
+                <Paper square className={classes.contentListStyle} >
                   <MainToolbar SetAddUAVOpen={SetAddUAVOpen}/>
                   <DeviceList devices={listdevices} />
                 </Paper>
@@ -178,8 +183,6 @@ const MainPage = () => {
           <Toast toastlist={list} position="buttom-right" setList={setList} />
         </RosControl>
       </div>
-
-    </div>
   );
 };
 

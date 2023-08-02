@@ -5,7 +5,7 @@ frame_id: /gps
 description: 'mission 1'
 route:
 - name: "doñana linea1"
-  uav: 'uav_2'
+  uav: 'uav_3'
   wp:
   - {pos: [37.41031527664839, -6.002355556298255, 5],yaw: 0,gimbal: -40,  action: {photo: true}}
   - {pos: [37.41035892250692, -6.002406773965073, 5],yaw: 55,gimbal: 0,   action: {video_start: 0, gimbal: -40, yaw: -20}}
@@ -33,20 +33,16 @@ route:
     mode_trace: 0
 
 - name: "Deltaquad"
-  uav: 'uav_3'
+  uav: 'uav_2'
   wp:
-  - {pos: [37.410755, -6.002559, 5]}
-  - {pos: [37.411324, -6.002947, 5]}
-  - {pos: [37.411293, -6.003455, 5]}
-  - {pos: [37.410946, -6.003201, 5]}
-  - {pos: [37.410624, -6.002894, 5]}
+  - {pos: [37.410755, -6.002559, 62]}
+  - {pos: [37.411324, -6.002947, 40]}
+  - {pos: [37.411293, -6.003455, 40]}
+  - {pos: [37.410946, -6.003201, 40]}
+  - {pos: [37.410624, -6.002894, 55]}
   attributes:
     mode_landing: 2
-    mode_yaw: 3
-    mode_gimbal: 1
-    mode_trace: 0
 
 
 attributes:  
   mode_landing: 2  # 3 return to point 0, 1 return to home, 2 auto landing., 0 no action
-  mode_yaw: 3 # 0 automode, 1 lock as inicital value , 2 control Rc,3 use wayarpoints/uav_2/dji_osdk_ros/height_above_takeoff
