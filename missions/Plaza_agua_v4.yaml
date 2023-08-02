@@ -5,7 +5,7 @@ frame_id: /gps
 description: 'mission 1'
 route:
 - name: "doñana linea1"
-  uav: 'uav_1'
+  uav: 'uav_2'
   wp:
   - {pos: [37.41031527664839, -6.002355556298255, 5],yaw: 0,gimbal: -40,  action: {photo: true}}
   - {pos: [37.41035892250692, -6.002406773965073, 5],yaw: 55,gimbal: 0,   action: {video_start: 0, gimbal: -40, yaw: -20}}
@@ -19,7 +19,7 @@ route:
     idle_vel: 1.0
 
 - name: "doñana linea3"
-  uav: 'uav_2'
+  uav: 'uav_1'
   wp:
   - {pos: [37.410466, -6.002292, 5],yaw: 0,gimbal: 40}
   - {pos: [37.410446, -6.002330, 5],yaw: 55,gimbal: 0}

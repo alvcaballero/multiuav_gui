@@ -9,7 +9,7 @@ dji:
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    listener_hdg:
+    IMU:
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     speed:
@@ -19,7 +19,7 @@ dji:
       name: '/dji_osdk_ros/battery_state'
       messageType: 'sensor_msgs/BatteryState'
     state_machine:
-      name: '/uavstate'
+      name: 'muav_sm/uavstate'
       messageType: 'muav_state_machine/UAVState'
     camera:
       name: '/video_stream_compress'
@@ -104,7 +104,7 @@ px4:
       name: '/mavros/battery'
       messageType: 'aerialcore_common/BatteryState'
     state_machine:
-      name: '/uavstate'
+      name: 'muav_sm/uavstate'
       messageType: 'muav_state_machine/UAVState'
     camera:
       name: '/video_stream_compress'
