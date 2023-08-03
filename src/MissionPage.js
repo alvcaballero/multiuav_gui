@@ -33,6 +33,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
     zIndex: 0,
     width: "400px",
+    height: `calc(100% - 88px)`,
   },
   mapContainer: {
     flexGrow: 1,
@@ -58,7 +59,7 @@ const MissionPage = () => {
           <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h6" className={classes.title}>sharedGeofences</Typography>
+            <Typography variant="h6" className={classes.title}>Mission Task</Typography>
             <label htmlFor="upload-gpx">
               <input accept=".gpx" id="upload-gpx" type="file" className={classes.fileInput} />
               <IconButton edge="end" component="span" onClick={() => {}}>
