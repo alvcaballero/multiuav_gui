@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from 'react';
+import React, { Fragment, useEffect,useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import makeStyles from '@mui/styles/makeStyles';
 import {
@@ -14,8 +14,10 @@ import {
 } from '@mui/material';
 import ArrowRight from '@mui/icons-material/ArrowRight';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
+import Typography from '@mui/material/Typography';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+
 //import { geofencesActions } from '../store';
 //import CollectionActions from '../settings/components/CollectionActions';
 //import { useCatchCallback } from '../reactHelper';
@@ -34,12 +36,25 @@ const useStyles = makeStyles(() => ({
   }));
 
 const RoutesList = ({ onGeofenceSelected }) => {
-  const [open_routes, setOpen_routes] = React.useState(true);
-    const classes = useStyles();
-    const items = useSelector((state) => state.mission.route);
-    useEffect(()=>{
 
-    },[items])
+    const classes = useStyles();
+    const Mission_route = useSelector((state) => state.mission.route);
+
+    const [items, setItems] = useState({});
+    const [open_routes, setOpen_routes] = useState(true);
+    const [expanded_route, setExpanded_route] = useState(false);
+    const [expanded_wp, setExpanded_wp] = useState(false);
+
+    useEffect(()=>{
+      setItems(Mission_route)
+    },[Mission_route])
+
+    const handleChange_route = (panel) => (event, isExpanded) => {
+      setExpanded_route(isExpanded ? panel : false);
+    };
+    const handleChange_wp = (panel) => (event, isExpanded) => {
+      setExpanded_wp(isExpanded ? panel : false);
+    };
 
   return (
     <div>
@@ -50,27 +65,38 @@ const RoutesList = ({ onGeofenceSelected }) => {
     <List className={classes.list}>
     {Object.values(items).map((item_route, index, list) => (
       <Fragment key={item_route.id}>
-        <ListItemButton key={item_route.id} onClick={() => setOpen_routes(!open_routes)}>
-          <ListItemText primary={"Ruta "+item_route.name+"         "+"uav: "+item_route.uav} />
-          {open_routes ? <ExpandLess /> : <ExpandMore />}
-        </ListItemButton>
-        {open_routes &&
-          Object.values(item.wp).map((waypoint, index_wp, list_wp) => (
-            <Collapse in={open_routes} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding>
-              <ListItemButton
-              key={index_wp}
-              sx={{ py: 0, minHeight: 32, color: 'rgba(0,0,0,.8)'}}
-            >
-                      <ListItemText
-                        primary={"WP"+index_wp+"-"+waypoint.pos[0]}
-                        primaryTypographyProps={{ fontSize: 14, fontWeight: 'medium' }}
-                      />
-                      {open_routes ? <ExpandLess /> : <ExpandMore />}
-              </ListItemButton>
-              </List>
-            </Collapse>
+
+      <Accordion expanded={expanded_route === ('Rute '+ index)} onChange={handleChange_route('Rute '+ index)} >
+        <AccordionSummary
+          expandIcon={<ExpandMore />}
+          aria-controls="panel1bh-content"
+          id="panel1bh-header"
+        >
+          <Typography sx={{ width: '33%', flexShrink: 0 }}> {'Rute '+ index}</Typography>
+          <Typography sx={{ color: 'text.secondary' }}> {item_route.name+"- "+item_route.uav} </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+        {Object.values(item_route.wp).map((waypoint, index_wp, list_wp) => (
+              <Accordion expanded={expanded_wp === ('Rute '+ index_wp)} onChange={handleChange_wp('Rute '+ index_wp)}>
+              <AccordionSummary
+                expandIcon={<ExpandMore />}
+                aria-controls="panel1bh-content"
+                id="panel1bh-header"
+              >
+                <Typography sx={{ width: '33%', flexShrink: 0 }}> {'wp '+ index_wp}</Typography>
+                <Typography sx={{ color: 'text.secondary' }}>I am an waypoint</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography>
+                  Nulla facilisi. Phasellus sollicitudin nulla et quam mattis feugiat.
+                  Aliquam eget maximus est, id dignissim quam.
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
         ))}
+
+        </AccordionDetails>
+      </Accordion>
         {index < list.length - 1 ? <Divider /> : null}
       </Fragment>
     ))}
