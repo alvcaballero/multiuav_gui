@@ -5,7 +5,7 @@ frame_id: /gps
 description: 'mission 1'
 route:
 - name: "doñana linea1"
-  uav: 'uav_3'
+  uav: 'uav_2'
   wp:
   - {pos: [37.41031527664839, -6.002355556298255, 5],yaw: 0,gimbal: -40,  action: {photo: true}}
   - {pos: [37.41035892250692, -6.002406773965073, 5],yaw: 55,gimbal: 0,   action: {video_start: 0, gimbal: -40, yaw: -20}}
@@ -33,7 +33,7 @@ route:
     mode_trace: 0
 
 - name: "Deltaquad"
-  uav: 'uav_2'
+  uav: 'uav_3'
   wp:
   - {pos: [37.410755, -6.002559, 62]}
   - {pos: [37.411324, -6.002947, 40]}

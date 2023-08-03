@@ -78,7 +78,7 @@ export const Adduav = ({SetAddUAVOpen}) => {
     const rosContex = useContext(RosContext);
     const [uavtype, setuavtype] = useState("dji");
     const [uavid, setuavid] = useState('');
-    const [item, setItem] = useState({name:'',category:'dji',ip:'10.42.0.42',cameratype:'Websocket',camera_src:'video0'});
+    const [item, setItem] = useState({name:'uav_',category:'dji',ip:'10.42.0.42',cameratype:'Websocket',camera_src:'video0'});
 
     const validate = () => item && item.name && item.uniqueId;
 
