@@ -9,9 +9,12 @@ import RoutesList from './components/RoutesList';
 import {   Divider, Typography, IconButton, Toolbar,} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 import makeStyles from '@mui/styles/makeStyles';
 import MapMissions from './Mapview/MapMissions';
+
 
 
 const useStyles = makeStyles((theme) => ({
@@ -32,7 +35,7 @@ const useStyles = makeStyles((theme) => ({
   drawerPaper: {
     position: 'relative',
     zIndex: 0,
-    width: "400px",
+    width: "500px",
     height: `calc(100% - 88px)`,
   },
   mapContainer: {
@@ -60,12 +63,18 @@ const MissionPage = () => {
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h6" className={classes.title}>Mission Task</Typography>
+            <IconButton onClick={() => console.log("save")} >
+                  <SaveAltIcon />
+            </IconButton>
+            <IconButton onClick={() => console.log("remove")} >
+                  <DeleteIcon />
+            </IconButton>
             <label htmlFor="upload-gpx">
               <input accept=".gpx" id="upload-gpx" type="file" className={classes.fileInput} />
               <IconButton edge="end" component="span" onClick={() => {}}>
                 <UploadFileIcon />
               </IconButton>
-              </label>
+            </label>
           </Toolbar>
           <Divider/>
           <RoutesList RouteSelect/>
