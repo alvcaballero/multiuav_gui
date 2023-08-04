@@ -5,7 +5,7 @@ const { reducer, actions } = createSlice({
   initialState: {
     name: "Mission no loaded",
     home:[0,0],
-    route: {},
+    route: [],
     attributes: {},
   },
   reducers: {
@@ -163,7 +163,7 @@ const { reducer, actions } = createSlice({
     clearMission(state,action){
       console.log("clear mission")
       state.name = "Mission no loaded";
-      state.route = {};
+      state.route = [];
       state.attributes = {};
     },
   },
