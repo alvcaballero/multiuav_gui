@@ -192,6 +192,23 @@ const RoutesList = ({ onGeofenceSelected }) => {
                   style={{display: 'inline',width: "200px"}}
                 />
               </div>
+              <div >
+                <Typography variant="subtitle1" style={{display: 'inline'}} > Gimbal mode </Typography>
+                <SelectField
+                  emptyValue={null}
+                  value={item_route.attributes.mode_gimbal ? item_route.attributes.mode_gimbal : 0}
+                  onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
+                    let copiedrt = JSON.parse(JSON.stringify(rt));
+                    rt === items.route[index] ? copiedrt.attributes.mode_gimbal = e.target.value : copiedrt=rt;
+                    return copiedrt
+                    })})}
+                  endpoint={"/api/mission/atributesparam/dji/mode_gimbal"}
+                  keyGetter={(it) => it.id}
+                  titleGetter={(it) => it.name}
+                  label={'Type-uav-mission'}
+                  style={{display: 'inline',width: "200px"}}
+                />
+              </div>
             </Fragment>}
           </AccordionDetails>
         </Accordion>
