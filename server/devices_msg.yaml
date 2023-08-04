@@ -90,7 +90,7 @@ dji:
           - {id: 2,name: 'auto landing' }  # auto landing
           - {id: 3,name: 'return to point 0'} # return to point 0
           - {id: 4,name: 'infinite mode'}  # infinite mode， no exit
-      gimbal_mode:
+      mode_gimbal:
         Name: "trace_mode"
         id: "mode_trace"
         param:
