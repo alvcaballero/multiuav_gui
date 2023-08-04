@@ -11,7 +11,7 @@ const { reducer, actions } = createSlice({
   reducers: {
     updateMission(state, action) {
       state.name = action.payload.name;
-      state.route = {};
+      state.route = [];
       state.attributes = {};
       console.log(action.payload.mission)
       if(action.payload.mission.version == "3") {
@@ -25,7 +25,7 @@ const { reducer, actions } = createSlice({
           }
           state.route[n_uav]['id'] = n_uav;
           state.route[n_uav]['name'] = action.payload.mission.route[n_uav].name;
-          state.route[n_uav]['wp'] = {} ;
+          state.route[n_uav]['wp'] = [] ;
           state.route[n_uav]['attributes'] = {} ;
           state.home = action.payload.mission.route[n_uav]['wp'][0].pos;
           //waipoints
@@ -108,7 +108,7 @@ const { reducer, actions } = createSlice({
             state.route[n_uav]['id'] = n_uav;
             state.route[n_uav]['uav'] = "uav_"+n_uav;
             state.route[n_uav]['name'] = "uav_"+n_uav;
-            state.route[n_uav]['wp'] = {} ;
+            state.route[n_uav]['wp'] = [] ;
             state.route[n_uav]['attributes'] = {} ;
             state.home = action.payload.mission["uav_"+n_uav]['wp_0'];
             //waipoints

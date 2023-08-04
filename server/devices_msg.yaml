@@ -68,23 +68,38 @@ dji:
         description: "gimbal_pitch"
     mission_param:
       mode_yaw:
-        0: 'Auto'           # auto mode (point to next waypoint)
-        1: 'Lock'           # lock as an initial value
-        2: 'RC'             # controlled by RC
-        3: 'Waypoint'       # use waypoint's yaw(tgt_yaw)
+        Name: "mode yaw"
+        id: "mode_yaw"
+        param:
+          - {id: 0,name: 'Auto'}           # auto mode (point to next waypoint)
+          - {id: 1,name: 'Lock'}          # lock as an initial value
+          - {id: 2,name: 'RC'}             # controlled by RC
+          - {id: 3,name: 'Waypoint'}       # use waypoint's yaw(tgt_yaw)
       mode_trace:
-        0: 'point to point' #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-        1: 'smooth'         #Coordinated turn mode, smooth transition between waypts, no waypts task
+        Name: "trace_mode"
+        id: "mode_trace"
+        param:
+          - {id: 0,name: 'point to point'} #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
+          - {id: 1,name: 'smooth'}         #Coordinated turn mode, smooth transition between waypts, no waypts task
       mode_landing:
-        0: 'no action'      # no action
-        1: 'return to home' # return to home
-        2: 'auto landing'   # auto landing
-        3: 'return to point 0' # return to point 0
-        4: 'infinite mode'  # infinite mode， no exit
+        Name: "finish action"
+        id: "mode_landing"
+        param:
+          - {id: 0,name: 'no action' } # no action
+          - {id: 1,name: 'return to home'} # return to home
+          - {id: 2,name: 'auto landing' }  # auto landing
+          - {id: 3,name: 'return to point 0'} # return to point 0
+          - {id: 4,name: 'infinite mode'}  # infinite mode， no exit
       gimbal_mode:
-        0: 'Gimbal free'    # free mode, no control on gimbal
-        1: 'Waypoint'       # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: 'Cruising Speed'     # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "trace_mode"
+        id: "mode_trace"
+        param:
+          - {id: 0,name: 'Gimbal free' }   # free mode, no control on gimbal
+          - {id: 1,name: 'Waypoint'    }   # auto mode, Smooth transition between waypoints on gimbal
+      idle_velocity:     # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: 'Cruising Speed' 
+        id: "mode_trace"
+        param: true
 
 px4:
   topics:
