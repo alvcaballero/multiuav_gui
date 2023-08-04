@@ -670,6 +670,26 @@ app.post('/api/devices',async function(req,res){
   return res.json(myresponse);
 });
 
+app.get('/api/devices/type',async function(req,res){
+  console.log('devices type')
+  return res.json(Object.keys(devices_msg));
+});
+app.get('/api/mission/atributes/:type',async function(req,res){
+  console.log('devices attributes '+req.params.type)
+  return res.json(Object.values(devices_msg[req.params.type]["attributes"]["mission_param"]));
+});
+app.get('/api/mission/atributesparam/:type/:param',async function(req,res){
+  console.log('devices atributes '+req.params.type+"-"+req.params.param)
+  console.log(devices_msg[req.params.type]["attributes"]["mission_param"][req.params.param]["param"])
+  return res.json(devices_msg[req.params.type]["attributes"]["mission_param"][req.params.param]["param"]);
+});
+
+app.get('/api/mission/actions/:type',async function(req,res){0
+  console.log('devices acction '+req.params.type)
+  return res.json(Object.values(devices_msg[req.params.type]["attributes"]["mission_action"]));
+});
+
+
 app.post('/api/loadmission',async function(req,res){
   console.log('loadmission-post')
   //console.log(req.body.uav_ns)
