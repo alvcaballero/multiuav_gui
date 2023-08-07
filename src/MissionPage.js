@@ -36,7 +36,8 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
     zIndex: 0,
     width: "500px",
-    height: `calc(100% - 88px)`,
+    height: "100%",
+    maxHeight: "100%",
   },
   mapContainer: {
     flexGrow: 1,
@@ -56,6 +57,7 @@ const MissionPage = () => {
   return (
     <div className={classes.root} >
       <Navbar/>
+      <div style={{width:"100%",height:"36px"}}></div>
       <div className={classes.content}>
         <Drawer className={classes.drawer} anchor='left' variant="permanent" classes={{ paper: classes.drawerPaper }}  >
           <Toolbar>
@@ -77,7 +79,10 @@ const MissionPage = () => {
             </label>
           </Toolbar>
           <Divider/>
-          <RoutesList RouteSelect/>
+          <div style={{overflow:'auto',height: `calc(100% - 152px)`}}>
+            <RoutesList RouteSelect />
+          </div>
+          
         </Drawer>
         <div className={classes.mapContainer}>
           <MapView>

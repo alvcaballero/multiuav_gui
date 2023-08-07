@@ -69,7 +69,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
       console.log(value)
     }
     const Removing_wp = () =>{
-
+      console.log("remove uno")
     }
 
     const handleChange_route = (panel) => (event, isExpanded) => {
@@ -82,7 +82,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
       setExpanded_ac(isExpanded ? panel : false);
     };
   return (
-    <div>
+    <Fragment>
     {add_mission ? 
       <Box textAlign='center'>
         <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={() => console.log("save")}>Create New Mission </Button>
@@ -111,8 +111,8 @@ const RoutesList = ({ onGeofenceSelected }) => {
           <AccordionSummary expandIcon={<ExpandMore />} >
             <Typography sx={{ width: '33%', flexShrink: 0 }}> {'Rute '+ index}</Typography>
             <Typography sx={{ color: 'text.secondary' }}> {item_route.name+"- "+item_route.uav} </Typography>
-            <IconButton onClick={() => Removing_wp(true)} className={classes.negative} >
-                          <DeleteIcon />
+            <IconButton sx={{ py:0,pr:2,marginLeft: "auto" }} onClick={() => Removing_wp(true)} >
+              <DeleteIcon />
             </IconButton>
           </AccordionSummary>
           <AccordionDetails className={classes.details}>
@@ -240,7 +240,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
                 <Accordion expanded={expanded_wp === ('wp '+ index_wp)} onChange={handleChange_wp('wp '+ index_wp)}>
                 <AccordionSummary expandIcon={<ExpandMore />} >
                   <Typography sx={{ width: '33%', flexShrink: 0 }}> {'WP '+ index_wp}</Typography>
-                  <IconButton onClick={() => Removing_wp(true)} className={classes.negative} >
+                  <IconButton sx={{ py:0,pr:2,marginLeft: "auto" }} onClick={() => Removing_wp(true)} >
                           <DeleteIcon />
                   </IconButton>
                 </AccordionSummary>
@@ -379,8 +379,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
       </Box>
     </Fragment>
     }
-
-  </div>
+  </Fragment>
   )
 }
 

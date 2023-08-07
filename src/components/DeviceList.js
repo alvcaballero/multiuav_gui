@@ -4,25 +4,29 @@ import { FixedSizeList } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { devicesActions } from '../store';
 import DeviceRow from './DeviceRow';
+import makeStyles from '@mui/styles/makeStyles';
 
-const liststyle ={
-  maxHeight: '100%',
-};
-const listInnerStyle= {
-  position: 'relative',
-  margin: '15px 0px',
-};
+const useStyles = makeStyles((theme) => ({
+  list: {
+    maxHeight: '100%',
+  },
+  listInner: {
+    position: 'relative',
+    margin: theme.spacing(1.5, 0),
+  },
+}));
 
 const Row = ({ index, style }) => (
   <div style={style}>Row {index}</div>
 );
 
 const DeviceList = ({ devices }) => {
+  const classes = useStyles();
   const dispatch = useDispatch();
   const listInnerEl = useRef(null);
 
   if (listInnerEl.current) {
-    listInnerEl.current.className = listInnerStyle;
+    listInnerEl.current.className = classes.listInner;
   }
 
   const [, setTime] = useState(Date.now());
@@ -36,7 +40,7 @@ const DeviceList = ({ devices }) => {
 
 
   return (
-    <AutoSizer style={liststyle}>
+    <AutoSizer className={classes.list}>
       {({ height, width }) => (
         <FixedSizeList
           width={width}
