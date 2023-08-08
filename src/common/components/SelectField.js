@@ -32,7 +32,7 @@ const SelectField = ({
 
   if (items) {
     return (
-      <FormControl fullWidth={fullWidth} style={{minWidth: 120}}>
+      <FormControl fullWidth={fullWidth} >
         <InputLabel>{label}</InputLabel>
         <Select
           label={label}
