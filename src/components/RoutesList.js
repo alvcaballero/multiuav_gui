@@ -73,6 +73,8 @@ const RoutesList = ({ onGeofenceSelected }) => {
     const [expanded_wp, setExpanded_wp] = useState(false);
     const [expanded_ac, setExpanded_ac] = useState(false);
     const [add_mission, setaddMission] = useState(true)
+    const [newactionmenu,setnewactionmenu] = useState(true)
+    const [newactionid,setnewactionid] = useState(0)
 
     useEffect(()=>{
       setItems(Mission_route)
@@ -95,7 +97,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
     const AddnewWp = (index_route) =>{
       console.log("add new wp"+index_route)
       let auxroute = items.route;
-      auxroute[index_route].wp.push({pos:[]});
+      auxroute[index_route].wp.push({pos:[],action:{}});
       setItems({...items,route:auxroute})
     }
     const Removing_wp = () =>{
@@ -111,6 +113,33 @@ const RoutesList = ({ onGeofenceSelected }) => {
     const handleChange_ac = (panel) => (event, isExpanded) => {
       setExpanded_ac(isExpanded ? panel : false);
     };
+    const handleChange_acnew = (panel) => (event, isExpanded) => {
+      setnewactionmenu(false);
+    };
+    async function setnewaction(index_route,index_wp){
+      let command;
+      if (true) {
+        const response = await fetch("/api/mission/actions/dji");
+        if (response.ok) {
+          command = await response.json();
+        } else {
+          throw Error(await response.text());
+        }
+      } 
+      console.log(command)
+      console.log(newactionid)
+      let selectcmd = command.find(element => element.id == newactionid);
+      
+      let auxroute = items.route;
+      if(selectcmd.param){
+        auxroute[index_route]['wp'][index_wp]['action'][selectcmd.name]=0;
+      } else{
+        auxroute[index_route]['wp'][index_wp]['action'][selectcmd.name]=true;
+      }
+      setItems({...items,route:auxroute})
+      setnewactionmenu(true)
+    }
+
   return (
     <Fragment>
     {add_mission ? 
@@ -346,7 +375,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
                       label="Gimbal "
                       type="number"
                       variant='standard'
-                      value={waypoint.gimbal ? waypoint.gimbal  : 0}
+                      value={waypoint.gimbal}
                       onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
                         let copiedrt = JSON.parse(JSON.stringify(rt));
                         rt == items.route[index] ? copiedrt.wp[index_wp]["gimbal"] = e.target.value : copiedrt=rt;
@@ -383,7 +412,25 @@ const RoutesList = ({ onGeofenceSelected }) => {
                 </Fragment>
                 )))}
                 <Box textAlign='center'>
-                  <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={() => console.log("save")}>Add new action </Button>
+                  {newactionmenu ? <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={handleChange_acnew('wp '+ index_wp)}>Add new action </Button>
+                  : (
+                    <div >
+                    <Typography variant="subtitle1">Tipo de acccion a añadir </Typography>
+                    <SelectField
+                    emptyValue={null} fullWidth={true}
+                    value={newactionid}
+                    onChange={(e) => setnewactionid(e.target.value)}
+                    endpoint={"/api/mission/actions/dji"}
+                    keyGetter={(it) => it.id}
+                    titleGetter={(it) => it.description}
+                  />
+                  <div>
+                    <Button onClick={()=>  setnewactionmenu(true)}> Cancel</Button>
+                    <Button onClick={()=>  setnewaction(index,index_wp)}> Add </Button>
+                    
+                  </div>
+                  </div>
+                  ) }
                 </Box>
 
                 </AccordionDetails>
