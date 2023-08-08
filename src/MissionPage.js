@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'fixed',
     left: 0,
     top: '88px',
-    height: `calc(100% - 88px)`,
+    height: `calc(100% - 95px)`,
     width: '560px',
     margin: '0px',
     zIndex: 3,
@@ -101,10 +101,17 @@ const MissionPage = () => {
       <RosControl notification={showToast}>
         <Navbar/>
         <Menu/>
-        <MapView>
-          <MapMissionsCreate/>
-          <MapMissions/>
-        </MapView>
+        <div style={{position:"relative",width:'100%',height:`calc(100vh - 95px)`}}>
+          <div style={{display:"inline-block",position:"relative",width:'560px',height:'100%'}}></div>
+          <div style={{display:"inline-block",position:"relative",width:`calc(100vw - 575px)`,height:'100%'}}>
+          <MapView>
+            <MapMissionsCreate/>
+            <MapMissions/>
+          </MapView>
+          </div>
+
+        </div>
+
         <div className={classes.sidebarStyle}>
           <div className={classes.middleStyle}>
             <Paper square className={classes.contentListStyle} >          
@@ -129,7 +136,6 @@ const MissionPage = () => {
                 <div className={classes.list}>
                 <RoutesList RouteSelect />
                 </div>
-                
             </Paper>
           </div>
         </div>

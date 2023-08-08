@@ -120,7 +120,7 @@ const switcher = new SwitcherControl(
     }, [containerEl]);
   
     return (
-      <div style={{position:"relative",width:'100%',height:`calc(100vh - 89px)`}} ref={containerEl}>
+      <div style={{position:"relative",width:'100%',height:'100%'}} ref={containerEl}>
         {mapReady && children}
       </div>
     );
