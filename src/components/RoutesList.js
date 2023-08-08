@@ -23,6 +23,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import { Padding, Tune } from '@mui/icons-material';
 
 //import { geofencesActions } from '../store';
 //import CollectionActions from '../settings/components/CollectionActions';
@@ -45,6 +46,20 @@ const useStyles = makeStyles((theme) => ({
       gap: theme.spacing(2),
       paddingBottom: theme.spacing(3),
     },
+    attributeName:{
+      display:"inline-block",
+      width:"40%",
+      textAlign:"left",
+      verticalAlign:"middle"
+    },
+    attributeValue:{
+      display:"inline-block",
+      width:"58%"
+    },
+    actionValue:{
+      display:"inline-block",
+      width:"40%"
+    }
   }));
 
 const RoutesList = ({ onGeofenceSelected }) => {
@@ -64,9 +79,24 @@ const RoutesList = ({ onGeofenceSelected }) => {
       console.log("edit mission");
       console.log(Mission_route);
       Mission_route.route.length >0 ? setaddMission(false) : setaddMission(true);
-    },[Mission_route])
-    const changetype = (value) =>{
-      console.log(value)
+    },[])
+
+    const AddnewMission = () =>{
+      setItems({name:"new Mission",description:"",route:[]})
+      setaddMission(false)
+      console.log("add new mission")
+    }
+    const AddnewRoute = () =>{
+      let auxroute = items.route;
+      auxroute.push({name:"",uav:'',attributes:{},wp:[]});
+      setItems({...items,route:auxroute})
+      console.log("add new route")
+    }
+    const AddnewWp = (index_route) =>{
+      console.log("add new wp"+index_route)
+      let auxroute = items.route;
+      auxroute[index_route].wp.push({pos:[]});
+      setItems({...items,route:auxroute})
     }
     const Removing_wp = () =>{
       console.log("remove uno")
@@ -85,7 +115,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
     <Fragment>
     {add_mission ? 
       <Box textAlign='center'>
-        <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={() => console.log("save")}>Create New Mission </Button>
+        <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={AddnewMission} >Create New Mission </Button>
         </Box>
         :
     <Fragment>
@@ -121,10 +151,9 @@ const RoutesList = ({ onGeofenceSelected }) => {
             required
             label="Route Name"
             variant='standard'
-            value={item_route.name ? item_route.name  : "route name"}
+            value={item_route.name ? item_route.name  : ""}
             onChange={(e) => setItems({ ...items, route: items.route.map((rt)=> rt == items.route[index] ? {...item_route, name: e.target.value}:rt)})}
           />
-
 
           <TextField
             required
@@ -133,7 +162,6 @@ const RoutesList = ({ onGeofenceSelected }) => {
             value={item_route.uav ? item_route.uav  : "uav_1"}
             onChange={(e) => setItems({ ...items, route: items.route.map((rt)=> rt == items.route[index] ? {...item_route, uav: e.target.value}:rt)})}
           />
-
 
           <SelectField
             emptyValue={null}
@@ -154,11 +182,11 @@ const RoutesList = ({ onGeofenceSelected }) => {
             <AccordionDetails className={classes.details}>
             { item_route.attributes &&
               <Fragment>
-                <div >
-                  <Typography variant="subtitle1" style={{display: 'inline'}} >Speed crucer</Typography>
+                <div>
+                  <Typography variant="subtitle1" className={classes.attributeName} >Speed idle: </Typography>
                   <TextField
-                      required
-                      style={{display: 'inline',width: "200px"}}
+                      fullWidth
+                      required type="number" className={classes.attributeValue}
                       value={item_route.attributes.idle_vel ? item_route.attributes.idle_vel  : 1.85}
                       onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
                         let copiedrt = JSON.parse(JSON.stringify(rt));
@@ -168,9 +196,10 @@ const RoutesList = ({ onGeofenceSelected }) => {
                     />
                 </div>
                 <div >
-                  <Typography variant="subtitle1" style={{display: 'inline'}} > landing mode </Typography>
+                  <Typography variant="subtitle1" className={classes.attributeName} > landing mode </Typography>
+                  <div className={classes.attributeValue}>
                   <SelectField
-                    emptyValue={null}
+                    emptyValue={null} fullWidth={true}
                     value={item_route.attributes.mode_landing ? item_route.attributes.mode_landing : 0}
                     onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
                       let copiedrt = JSON.parse(JSON.stringify(rt));
@@ -180,13 +209,14 @@ const RoutesList = ({ onGeofenceSelected }) => {
                     endpoint={"/api/mission/atributesparam/dji/mode_landing"}
                     keyGetter={(it) => it.id}
                     titleGetter={(it) => it.name}
-                    style={{display: 'inline',width: "200px"}}
                   />
+                  </div>
                 </div>
                 <div >
-                  <Typography variant="subtitle1" style={{display: 'inline'}} > YAW mode </Typography>
+                  <Typography variant="subtitle1" className={classes.attributeName} > YAW mode </Typography>
+                  <div className={classes.attributeValue}>
                   <SelectField
-                    emptyValue={null}
+                    emptyValue={null} fullWidth={true}
                     value={item_route.attributes.mode_yaw ? item_route.attributes.mode_yaw : 0}
                     onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
                       let copiedrt = JSON.parse(JSON.stringify(rt));
@@ -196,13 +226,14 @@ const RoutesList = ({ onGeofenceSelected }) => {
                     endpoint={"/api/mission/atributesparam/dji/mode_yaw"}
                     keyGetter={(it) => it.id}
                     titleGetter={(it) => it.name}
-                    style={{display: 'inline',width: "200px"}}
                   />
+                  </div>
                 </div>
                 <div >
-                  <Typography variant="subtitle1" style={{display: 'inline'}} > Gimbal mode </Typography>
+                  <Typography variant="subtitle1" className={classes.attributeName} > Gimbal mode </Typography>
+                  <div className={classes.attributeValue}>
                   <SelectField
-                    emptyValue={null}
+                    emptyValue={null} fullWidth={true}
                     value={item_route.attributes.mode_gimbal ? item_route.attributes.mode_gimbal : 0}
                     onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
                       let copiedrt = JSON.parse(JSON.stringify(rt));
@@ -212,13 +243,14 @@ const RoutesList = ({ onGeofenceSelected }) => {
                     endpoint={"/api/mission/atributesparam/dji/mode_gimbal"}
                     keyGetter={(it) => it.id}
                     titleGetter={(it) => it.name}
-                    style={{display: 'inline',width: "200px"}}
                   />
+                  </div>
                 </div>
                 <div >
-                  <Typography variant="subtitle1" style={{display: 'inline'}} > Trace mode </Typography>
+                  <Typography variant="subtitle1" className={classes.attributeName} > Trace mode: </Typography>
+                  <div className={classes.attributeValue}>
                   <SelectField
-                    emptyValue={null}
+                    emptyValue={null} fullWidth={true}
                     value={item_route.attributes.mode_trace ? item_route.attributes.mode_trace : 0}
                     onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
                       let copiedrt = JSON.parse(JSON.stringify(rt));
@@ -228,8 +260,8 @@ const RoutesList = ({ onGeofenceSelected }) => {
                     endpoint={"/api/mission/atributesparam/dji/mode_trace"}
                     keyGetter={(it) => it.id}
                     titleGetter={(it) => it.name}
-                    style={{display: 'inline',width: "200px"}}
                   />
+                  </div>
                 </div>
               </Fragment>}
             </AccordionDetails>
@@ -253,9 +285,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
                       }} >
                         <div>
                         <Typography variant="subtitle1" style={{display: 'inline'}} >Position</Typography>
-
                         </div>
-
                         <TextField
                         required
                         label="Latitud "
@@ -331,12 +361,12 @@ const RoutesList = ({ onGeofenceSelected }) => {
                 </AccordionSummary>
                 <AccordionDetails className={classes.details}>
                 {waypoint.action && React.Children.toArray(Object.keys(waypoint.action).map((action_key, index_ac, list_ac) => (
+                <Fragment>
                 <div >
-                  <Typography variant="subtitle1" style={{display: 'inline'}} >{action_key}</Typography>
+                  <Typography variant="subtitle1" className={classes.attributeName} >{action_key}</Typography>
+                  <div className={classes.actionValue}>
                   <TextField
-                      required
-                      label={action_key}
-                      style={{display: 'inline',width: "200px"}}
+                      required  fullWidth={true}
                       value={waypoint.action[action_key] ? waypoint.action[action_key]  : 0}
                       onChange={(e) => setItems({ ...items, route: items.route.map((rt)=>{
                         let copiedrt = JSON.parse(JSON.stringify(rt));
@@ -344,14 +374,13 @@ const RoutesList = ({ onGeofenceSelected }) => {
                         return copiedrt
                       })})}
                     />
-                  <IconButton
-                    onClick={() => Removing_wp(true)}
-                    //disabled={disableActions || deviceReadonly}
-                    className={classes.negative}
-                  >
-                  <DeleteIcon />
+                  </div>
+                  <IconButton sx={{ py:0,pr:2,marginLeft: "auto" }} onClick={() => Removing_wp(true)}  className={classes.negative}  >
+                    <DeleteIcon />
                   </IconButton>
                 </div>
+                <Divider></Divider>
+                </Fragment>
                 )))}
                 <Box textAlign='center'>
                   <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={() => console.log("save")}>Add new action </Button>
@@ -365,7 +394,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
           )))}
 
           <Box textAlign='center'>
-            <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={() => console.log("save")}>Add new Waypoint </Button>
+            <Button value={index} variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={e => AddnewWp(e.target.value)}>Add new Waypoint </Button>
           </Box>
 
           </AccordionDetails>
@@ -374,7 +403,7 @@ const RoutesList = ({ onGeofenceSelected }) => {
         </Fragment>
       )))}
       <Box textAlign='center'>
-        <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={() => console.log("save")}>Add new Route </Button>
+        <Button variant="contained" size='large'  sx={{width: '80%', flexShrink: 0 }} style={{marginTop: '15px'}} onClick={AddnewRoute}>Add new Route </Button>
       </Box>
       </Box>
     </Fragment>

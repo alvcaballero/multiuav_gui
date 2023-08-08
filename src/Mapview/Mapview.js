@@ -1,12 +1,12 @@
-import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
-import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import './Mapview.css';
-import useMapStyles from './useMapStyles';
+import maplibregl from 'maplibre-gl';
+import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
+import { SwitcherControl } from './switcher';
 import { useAttributePreference, usePreference } from '../common/preferences';
 import usePersistedState, { savePersistedState } from '../common/usePersistedState';
-import { SwitcherControl } from './switcher';
+
 import { mapImages } from './preloadImages';
+import useMapStyles from './useMapStyles';
 
 const element = document.createElement('div');
   element.style.width = '100%';
@@ -83,6 +83,8 @@ const switcher = new SwitcherControl(
     const [defaultMapStyle] = 'osm';
     const mapboxAccessToken = 'my tocken';
     const maxZoom = 21;
+    //let btn_class = maxsize ? classes.card_max: classes.card;
+
   
     useEffect(() => {
       if (maxZoom) {
@@ -118,7 +120,7 @@ const switcher = new SwitcherControl(
     }, [containerEl]);
   
     return (
-      <div className='map-wrap' ref={containerEl}>
+      <div style={{position:"relative",width:'100%',height:`calc(100vh - 89px)`}} ref={containerEl}>
         {mapReady && children}
       </div>
     );
