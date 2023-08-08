@@ -144,11 +144,14 @@ const MainPage = () => {
         <RosControl notification={showToast}>
           <Navbar SetAddUAVOpen={SetAddUAVOpen} />
           <Menu SetAddUAVOpen={SetAddUAVOpen} />
+          <div style={{position:"relative",width:'100%',height: `calc(100vh - 88px)`}}>
           <MapView>
             <MapMissions/>
             <MapPositions positions={filteredPositions} onClick={onMarkerClick} selectedPosition={selectedPosition} showStatus />
             <MapSelectedDevice/>
           </MapView>
+          </div>
+
           <div className={classes.sidebarStyle}>
               <div className={classes.middleStyle}>
                 <Paper square className={classes.contentListStyle} >

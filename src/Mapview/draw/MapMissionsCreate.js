@@ -51,7 +51,7 @@ export const MapMissionsCreate = () => {
           'type': 'Feature',
           'geometry': {
             'type': 'Point',
-            'coordinates': [0, 0]
+            'coordinates': [ -6.002425,37.410385]
                       }
           }
         ]
