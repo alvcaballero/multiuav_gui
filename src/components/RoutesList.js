@@ -19,6 +19,7 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 import SelectField from "../common/components/SelectField";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { Padding, Tune } from "@mui/icons-material";
 
 //import { geofencesActions } from '../store';
