@@ -7,7 +7,7 @@ const { reducer, actions } = createSlice({
     home: [0, 0],
     route: [],
     attributes: {},
-    selectpoint: {},
+    selectpoint: { id: -1 },
   },
   reducers: {
     selectpoint(state, action) {
