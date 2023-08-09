@@ -22,6 +22,7 @@ import makeStyles from "@mui/styles/makeStyles";
 import MapMissions from "./Mapview/MapMissions";
 import { RosControl, RosContext } from "./components/RosControl";
 import { MissionPanel } from "./components/MissionPanel";
+import MapMissionsExample from "./Mapview/draw/MapMissionExample";
 
 const YAML = require("yaml");
 
@@ -117,8 +118,8 @@ const MissionPage = () => {
             }}
           >
             <MapView>
+              <MapMissionsExample />
               <MapMissionsCreate />
-              <MapMissions />
             </MapView>
           </div>
         </div>
