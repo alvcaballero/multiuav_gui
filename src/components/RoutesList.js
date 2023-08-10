@@ -21,6 +21,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { Padding, Tune } from "@mui/icons-material";
+import { missionActions } from "../store"; // here update device action with position of uav for update in map
+import { colors } from "../Mapview/preloadImages";
+import { map } from "../Mapview/Mapview.js";
 
 //import { geofencesActions } from '../store';
 //import CollectionActions from '../settings/components/CollectionActions';
@@ -59,11 +62,12 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const RoutesList = ({ mission, setmission }) => {
+const RoutesList = ({ mission, setmission, setScrool }) => {
   const classes = useStyles();
   const Mission_route = useSelector((state) => state.mission);
-
-  //const [mission, setmission] = useState({ name: "no mission" });
+  const selectwp = useSelector((state) => state.mission.selectpoint);
+  const dispatch = useDispatch();
+  const [init, setinit] = useState(false);
   const [open_routes, setOpen_routes] = useState(true);
   const [expanded_route, setExpanded_route] = useState(false);
   const [expanded_wp, setExpanded_wp] = useState(false);
@@ -74,13 +78,26 @@ const RoutesList = ({ mission, setmission }) => {
 
   useEffect(() => {
     setmission(Mission_route);
-    console.log("edit mission");
-    console.log(Mission_route);
+    console.log("otro use effect");
     Mission_route.route.length > 0 ? setaddMission(false) : setaddMission(true);
-  }, []);
+    setinit(true);
+  }, [Mission_route]);
+
   useEffect(() => {
+    if (init) {
+      console.log("update mission");
+      console.log(mission);
+      dispatch(missionActions.reloadMission(mission.route));
+    }
     mission.route.length > 0 ? setaddMission(false) : setaddMission(true);
   }, [mission]);
+
+  useEffect(() => {
+    console.log(expanded_route);
+    setExpanded_route("Rute " + selectwp.route_id);
+    setExpanded_wp("wp " + selectwp.id);
+    setScrool(500 + selectwp.route_id * 50 + selectwp.id * 50);
+  }, [selectwp]);
 
   const AddnewMission = () => {
     let auxmission = { name: "new Mission", description: "", route: [] };
@@ -98,7 +115,11 @@ const RoutesList = ({ mission, setmission }) => {
   const AddnewWp = (index_route) => {
     console.log("add new wp" + index_route);
     let auxroute = JSON.parse(JSON.stringify(mission.route));
-    auxroute[index_route].wp.push({ pos: [], action: {} });
+    let center = map.getCenter();
+    auxroute[index_route].wp.push({
+      pos: [center.lat, center.lng, 5],
+      action: {},
+    });
     setmission({ ...mission, route: auxroute });
   };
   async function setnewaction(index_route, index_wp) {
@@ -211,7 +232,13 @@ const RoutesList = ({ mission, setmission }) => {
                     onChange={handleChange_route("Rute " + index)}
                   >
                     <AccordionSummary expandIcon={<ExpandMore />}>
-                      <Typography sx={{ width: "33%", flexShrink: 0 }}>
+                      <Typography
+                        sx={{
+                          width: "33%",
+                          flexShrink: 0,
+                          color: colors[index],
+                        }}
+                      >
                         {"Rute " + index}
                       </Typography>
                       <Typography sx={{ color: "text.secondary" }}>
@@ -504,7 +531,6 @@ const RoutesList = ({ mission, setmission }) => {
                                 <Typography
                                   sx={{ width: "33%", flexShrink: 0 }}
                                 >
-                                  {" "}
                                   {"WP " + index_wp}
                                 </Typography>
                                 <IconButton
@@ -535,6 +561,10 @@ const RoutesList = ({ mission, setmission }) => {
                                     type="number"
                                     sx={{ width: "15ch" }}
                                     variant="standard"
+                                    inputProps={{
+                                      maxLength: 16,
+                                      step: 0.0001,
+                                    }}
                                     value={waypoint.pos ? waypoint.pos[0] : 0}
                                     onChange={(e) =>
                                       setmission({
@@ -558,6 +588,10 @@ const RoutesList = ({ mission, setmission }) => {
                                     type="number"
                                     variant="standard"
                                     sx={{ width: "15ch" }}
+                                    inputProps={{
+                                      maxLength: 16,
+                                      step: 0.0001,
+                                    }}
                                     value={waypoint.pos ? waypoint.pos[1] : 0}
                                     onChange={(e) =>
                                       setmission({
@@ -628,7 +662,7 @@ const RoutesList = ({ mission, setmission }) => {
                                   label="Gimbal "
                                   type="number"
                                   variant="standard"
-                                  value={waypoint.gimbal}
+                                  value={waypoint.gimbal ? waypoint.gimbal : 0}
                                   onChange={(e) =>
                                     setmission({
                                       ...mission,
