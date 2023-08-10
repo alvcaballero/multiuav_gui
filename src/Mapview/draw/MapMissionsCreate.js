@@ -2,6 +2,7 @@
 // https://stackoverflow.com/questions/53257291/how-to-make-a-custom-line-layer-in-mapbox-gl
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
+//https://docs.maptiler.com/sdk-js/examples/elevation-profile/
 import { useId, useCallback, useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { map } from "../Mapview";
@@ -234,7 +235,9 @@ export const MapMissionsCreate = () => {
         // coordinates of the point on the map that was clicked.
         console.log("A click event has occurred at " + e.lngLat);
       });
-
+      //https://stackoverflow.com/questions/72010274/stopping-map-on-listener-in-mapbox-gl-js
+      //https://stackoverflow.com/questions/63036623/how-to-disable-an-event-listener-in-mapbox
+      //map.off("click", "mission-points");
       return () => {
         if (map.getLayer("mission-line")) {
           map.removeLayer("mission-line");
