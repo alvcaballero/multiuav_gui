@@ -7,60 +7,100 @@ import { useSelector, useDispatch } from "react-redux";
 import { map } from "../Mapview";
 import { findFonts } from "../mapUtil";
 import { missionActions } from "../../store"; // here update device action with position of uav for update in map
-import maplibregl from "maplibre-gl";
+//import maplibregl from "maplibre-gl";
+import { colors } from "../preloadImages";
 
-export const MapMissions = () => {
+class keepvalue {
+  constructor() {
+    this.routes = [];
+    this.selecwp = { id: -1 };
+  }
+  initroute(routes) {
+    console.log("init routes");
+    console.log(routes);
+    this.routes = JSON.parse(JSON.stringify(routes));
+  }
+  getroute() {
+    return this.routes;
+  }
+  setroute(routes) {
+    this.routes = routes;
+  }
+  getSelectwp() {
+    return this.selecwp;
+  }
+  setSelecwp(value) {
+    this.selecwp = value;
+  }
+}
+
+export const MapMissionsCreate = () => {
   const id = useId();
   const route_points = `${id}-points`;
   const clusters = `${id}-points-clusters`;
   const routes = useSelector((state) => state.mission.route);
-  //const selectpoint = useSelector((state) => state.mission.selectpoint);
+  const selecwp = useSelector((state) => state.mission.selectpoint);
   const mapCluster = true;
   const iconScale = 0.6;
   const dispatch = useDispatch();
-  const [movepoint, setmovepoint] = useState({ lat: 0, lon: 0 });
-  const [selectpoint, setselectpoint] = useState({ id: -1 });
+  const [testkeepvalue, settestkeepvalue] = useState(new keepvalue());
 
   let canvas = map.getCanvasContainer();
 
-  const colors = {
-    0: "#F34C28",
-    1: "#F39A28",
-    2: "#1EC910",
-    3: "#1012C9",
-    4: "#C310C9",
-    5: "#1FDBF1",
-    6: "#F6FD04",
-    7: "#808080",
-  };
-  useEffect(() => {
-    console.log(
-      selectpoint + "new position" + movepoint.lng + "-" + movepoint.lat
-    );
-  }, [movepoint]);
-
   function onMove(e) {
-    var coords = e.lngLat;
+    let coords = e.lngLat;
     // Set a UI indicator for dragging.
     canvas.style.cursor = "grabbing";
     // Update the Point feature in `geojson` coordinates
     // and call setData to the source layer `point` on it.
-    console.log("onmove ");
-    console.log(selectpoint);
-    setmovepoint({ lat: coords.lng, lon: coords.lat });
-    //console.log(e);
     console.log("new position" + coords.lng + "-" + coords.lat);
-    // geojson.features[0].geometry.coordinates = [coords.lng, coords.lat];
-    //map.getSource("point").setData(geojson);
+    let auxroute = testkeepvalue.getroute();
+    console.log(auxroute);
+
+    let auxselectpoint = testkeepvalue.getSelectwp();
+    if (auxselectpoint.id >= 0) {
+      auxroute[auxselectpoint.route_id]["wp"][auxselectpoint.id]["pos"][0] =
+        e.lngLat.lat;
+      auxroute[auxselectpoint.route_id]["wp"][auxselectpoint.id]["pos"][1] =
+        e.lngLat.lng;
+    }
+
+    let waypoint_position = routeTowaypoints(auxroute);
+    map.getSource(route_points).setData({
+      type: "FeatureCollection",
+      features: waypoint_position.map((position) => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [position.longitude, position.latitude],
+        },
+        properties: createFeature(auxroute, position),
+      })),
+    });
+
+    map.getSource(id).setData({
+      type: "FeatureCollection",
+      features: Object.values(auxroute).map((route) => routesToFeature(route)),
+    });
   }
   function onUp(e) {
     var coords = e.lngLat;
 
     // Print the coordinates of where the point had
     // finished being dragged to on the map.
-    canvas.style.cursor = "";
-    console.log(`Longitude: ${coords.lng} Latitude: ${coords.lat}`);
 
+    canvas.style.cursor = "";
+    let auxselectpoint = testkeepvalue.getSelectwp();
+    console.log(`Longitude: ${coords.lng} Latitude: ${coords.lat}`);
+    dispatch(
+      missionActions.updateWpPos({
+        wp_id: auxselectpoint.id,
+        route_id: auxselectpoint.route_id,
+        lng: e.lngLat.lng,
+        lat: e.lngLat.lat,
+      })
+    );
+    testkeepvalue.setSelecwp({ id: -1 });
     // Unbind mouse/touch events
     map.off("mousemove", onMove);
     map.off("touchmove", onMove);
@@ -69,6 +109,7 @@ export const MapMissions = () => {
   const createFeature = (myroute, point) => {
     return {
       id: point.id,
+      route_id: point.routeid,
       name: myroute[point.routeid]["name"],
       uav: myroute[point.routeid]["uav"],
       latitude: myroute[point.routeid]["wp"][point.id]["pos"][0],
@@ -169,10 +210,9 @@ export const MapMissions = () => {
       map.on("mousedown", "mission-points", function (e) {
         // Prevent the default map drag behavior.
         e.preventDefault();
-        console.log("mouse down ");
-        console.log(e.features[0].properties);
+
+        testkeepvalue.setSelecwp(e.features[0].properties);
         dispatch(missionActions.selectpoint(e.features[0].properties));
-        setselectpoint(e.features[0].properties);
 
         canvas.style.cursor = "grab";
         map.on("mousemove", onMove);
@@ -252,6 +292,8 @@ export const MapMissions = () => {
   }
 
   useEffect(() => {
+    console.log("Mapmission upload mission");
+    testkeepvalue.initroute(routes);
     let waypoint_position = routeTowaypoints(routes);
 
     map.getSource(route_points).setData({
@@ -274,4 +316,4 @@ export const MapMissions = () => {
 
   return null;
 };
-export default MapMissions;
+export default MapMissionsCreate;

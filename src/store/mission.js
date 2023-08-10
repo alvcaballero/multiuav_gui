@@ -10,7 +10,18 @@ const { reducer, actions } = createSlice({
     selectpoint: { id: -1 },
   },
   reducers: {
+    updateWpPos(state, action) {
+      if (action.payload.route_id >= 0) {
+        state.route[action.payload.route_id]["wp"][action.payload.wp_id][
+          "pos"
+        ][0] = action.payload.lat;
+        state.route[action.payload.route_id]["wp"][action.payload.wp_id][
+          "pos"
+        ][1] = action.payload.lng;
+      }
+    },
     selectpoint(state, action) {
+      console.log("selec point");
       state.selectpoint = action.payload;
     },
     reloadMission(state, action) {

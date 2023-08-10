@@ -118,7 +118,6 @@ const MissionPage = () => {
             }}
           >
             <MapView>
-              <MapMissionsExample />
               <MapMissionsCreate />
             </MapView>
           </div>

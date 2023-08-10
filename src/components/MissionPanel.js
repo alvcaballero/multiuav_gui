@@ -1,4 +1,4 @@
-import React, { useContext, useState, Fragment, useEffect } from "react";
+import React, { useContext, useState, Fragment, useRef } from "react";
 import RoutesList from "./RoutesList";
 import { Divider, Typography, IconButton, Toolbar } from "@mui/material";
 import makeStyles from "@mui/styles/makeStyles";
@@ -8,8 +8,6 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useDispatch, useSelector, connect } from "react-redux";
-import { missionActions } from "../store"; // here update device action with position of uav for update in map
 
 const useStyles = makeStyles((theme) => ({
   toolbar: {
@@ -34,17 +32,20 @@ export const MissionPanel = () => {
   const classes = useStyles();
   const navigate = useNavigate();
   const rosContex = useContext(RosContext);
-  const dispatch = useDispatch();
+  const scroolRef = useRef(null);
+
   const [mission, setmission] = useState({
     name: "no mission",
     description: "",
     route: [],
   });
-  useEffect(() => {
-    console.log("update mission");
-    console.log(mission);
-    dispatch(missionActions.reloadMission(mission.route));
-  }, [mission]);
+
+  const setScrool = (value) => {
+    console.log("scrool" + value);
+    setTimeout(() => {
+      scroolRef.current.scroll(0, value);
+    }, 1000);
+  };
 
   const readFile = (e) => {
     //https://www.youtube.com/watch?v=K3SshoCXC2g
@@ -104,8 +105,12 @@ export const MissionPanel = () => {
           </IconButton>
         </label>
       </Toolbar>
-      <div className={classes.list}>
-        <RoutesList mission={mission} setmission={setmission} />
+      <div ref={scroolRef} className={classes.list}>
+        <RoutesList
+          mission={mission}
+          setmission={setmission}
+          setScrool={setScrool}
+        />
       </div>
     </Fragment>
   );
