@@ -19,6 +19,7 @@ import StatusCard from "./components/StatusCard";
 import MainToolbar from "./components/MainToolbar";
 import { CameraWebRTC } from "./components/CameraWebRTC";
 import { CameraWebRTCV2 } from "./components/CameraWebRTCV2";
+import { CameraWebRTCV3 } from "./components/CameraWebRTCV3";
 
 import { devicesActions } from "./store";
 
@@ -181,7 +182,7 @@ const MainPage = () => {
         />
 
         {selectedDeviceCam === "WebRTC" && (
-          <CameraWebRTCV2
+          <CameraWebRTCV3
             deviceId={selectedDeviceId}
             deviceIp={selectedDeviceIp}
             camera_src={selectedDeviceCamsrc}

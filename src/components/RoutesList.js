@@ -112,16 +112,25 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
     setmission({ ...mission, route: auxroute });
     console.log("add new route");
   };
-  const AddnewWp = (index_route) => {
+  const AddnewWp = (index_route, index_wp) => {
     console.log("add new wp" + index_route);
     let auxroute = JSON.parse(JSON.stringify(mission.route));
     let center = map.getCenter();
-    auxroute[index_route].wp.push({
-      pos: [center.lat, center.lng, 5],
-      action: {},
-    });
+    if (index_wp < 0) {
+      auxroute[index_route].wp.push({
+        pos: [center.lat, center.lng, 5],
+        action: {},
+      });
+    } else {
+      auxroute[index_route].wp.splice(index_wp, 0, {
+        pos: [center.lat, center.lng, 5],
+        action: {},
+      });
+    }
+
     setmission({ ...mission, route: auxroute });
   };
+
   async function setnewaction(index_route, index_wp) {
     let command;
     if (true) {
@@ -792,12 +801,12 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                             "wp " + index_wp
                                           )}
                                         >
-                                          Add new action{" "}
+                                          Add new action
                                         </Button>
                                       ) : (
                                         <div>
                                           <Typography variant="subtitle1">
-                                            Tipo de acccion a añadir{" "}
+                                            Tipo de acccion a añadir
                                           </Typography>
                                           <SelectField
                                             emptyValue={null}
@@ -818,7 +827,6 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                                 setnewactionmenu(true)
                                               }
                                             >
-                                              {" "}
                                               Cancel
                                             </Button>
                                             <Button
@@ -826,8 +834,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                                 setnewaction(index, index_wp)
                                               }
                                             >
-                                              {" "}
-                                              Add{" "}
+                                              Add
                                             </Button>
                                           </div>
                                         </div>
@@ -835,6 +842,17 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     </Box>
                                   </AccordionDetails>
                                 </Accordion>
+                                <Box textAlign="center">
+                                  <Button
+                                    variant="contained"
+                                    size="large"
+                                    sx={{ width: "80%", flexShrink: 0 }}
+                                    style={{ marginTop: "15px" }}
+                                    onClick={() => AddnewWp(index, index_wp)}
+                                  >
+                                    Add new Waypoint
+                                  </Button>
+                                </Box>
                               </AccordionDetails>
                             </Accordion>
                           )
@@ -848,9 +866,9 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                           size="large"
                           sx={{ width: "80%", flexShrink: 0 }}
                           style={{ marginTop: "15px" }}
-                          onClick={(e) => AddnewWp(e.target.value)}
+                          onClick={(e) => AddnewWp(e.target.value, -1)}
                         >
-                          Add new Waypoint{" "}
+                          Add new Waypoint
                         </Button>
                       </Box>
                     </AccordionDetails>
