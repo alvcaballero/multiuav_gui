@@ -18,7 +18,6 @@ import { devicesActions } from '../store';
 import { formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusColor,} from '../common/formatter';
 import { mapIconKey, mapIcons } from '../Mapview/preloadImages';
 import { ReactComponent as EngineIcon } from '../resources/images/data/engine.svg';
-import { fontSize } from '@mui/system';
 import useClasses from './useClasses'
 //import { useAttributePreference } from '../common/util/preferences';
 

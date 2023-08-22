@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
-import { map } from "../Mapview/Mapview.js";
+import { map } from "../Mapview/Mapview";
 import { RosContext } from "./RosControl";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";

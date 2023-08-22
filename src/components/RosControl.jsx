@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector, connect } from "react-redux";
 import { missionActions } from "../store"; // here update device action with position of uav for update in map
-const YAML = require("yaml");
+import YAML from 'yaml'
+
 
 export const RosContext = React.createContext();
 

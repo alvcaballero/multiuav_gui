@@ -1,6 +1,6 @@
 import { Height } from '@mui/icons-material';
 import React ,{ useEffect,useState ,useContext }from 'react'
-import { map } from '../Mapview/Mapview.js'
+import { map } from '../Mapview/Mapview'
 import { RosContext } from './RosControl'
 import { useSelector } from 'react-redux';
 import HomeIcon from '@mui/icons-material/Home';
@@ -19,7 +19,6 @@ import {
   IconButton,Button,ButtonGroup,
   CardMedia,
 } from '@mui/material';
-import { border, borderColor } from '@mui/system';
 
 const styles = theme => ({
   toolbar: {
