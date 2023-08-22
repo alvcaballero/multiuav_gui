@@ -13,18 +13,11 @@ import {
   Paper,
   Toolbar,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { useNavigate } from "react-router-dom";
+
 import makeStyles from "@mui/styles/makeStyles";
-import MapMissions from "./Mapview/MapMissions";
 import { RosControl, RosContext } from "./components/RosControl";
 import { MissionPanel } from "./components/MissionPanel";
-import MapMissionsExample from "./Mapview/draw/MapMissionExample";
 
-const YAML = require("yaml");
 
 const useStyles = makeStyles((theme) => ({
   root: {

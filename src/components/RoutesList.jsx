@@ -23,7 +23,7 @@ import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { Padding, Tune } from "@mui/icons-material";
 import { missionActions } from "../store"; // here update device action with position of uav for update in map
 import { colors } from "../Mapview/preloadImages";
-import { map } from "../Mapview/Mapview.js";
+import { map } from "../Mapview/Mapview";
 
 //import { geofencesActions } from '../store';
 //import CollectionActions from '../settings/components/CollectionActions';

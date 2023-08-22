@@ -17,8 +17,6 @@ import MapSelectedDevice from "./Mapview/MapSelectedDevice";
 import DeviceList from "./components/DeviceList";
 import StatusCard from "./components/StatusCard";
 import MainToolbar from "./components/MainToolbar";
-import { CameraWebRTC } from "./components/CameraWebRTC";
-import { CameraWebRTCV2 } from "./components/CameraWebRTCV2";
 import { CameraWebRTCV3 } from "./components/CameraWebRTCV3";
 
 import { devicesActions } from "./store";

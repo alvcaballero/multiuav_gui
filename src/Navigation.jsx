@@ -39,7 +39,7 @@ const Navigation = () => {
         </Route>
 
     </Routes>
-  )
-}
+  );
+};
 
 export default Navigation;

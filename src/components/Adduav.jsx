@@ -54,7 +54,7 @@ const styles = theme => ({
   button: {
     width: '80%',
     paddingBottom:'10pt',
-    paddingTop:'10pt'
+    paddingTop:'10pt',
   },
   formControl: {
     margin: theme.spacing(1),
@@ -176,7 +176,7 @@ export const Adduav = ({SetAddUAVOpen}) => {
             </AccordionDetails>
           </Accordion>}
   
-      <div style={{paddingBottom: '20pt',paddingTop: '20pt'}}>
+      <div style={{paddingBottom: '20pt',paddingTop: '20pt',display: "flex",justifyContent:"center",}}>
         <Button className={classes.button} variant="contained" onClick={AddnewUAV}>ADD</Button>
         </div>                
 

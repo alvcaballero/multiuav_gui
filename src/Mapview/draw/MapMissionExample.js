@@ -4,11 +4,9 @@
 //custom draw
 // https://medium.com/nyc-planning-digital/building-a-custom-draw-mode-for-mapbox-gl-draw-1dab71d143ee
 import { useId, useCallback, useEffect } from "react";
-import { useSelector } from "react-redux";
+
 import { map } from "../Mapview";
-import { findFonts } from "../mapUtil";
-import maplibregl from "maplibre-gl";
-import { borderRadius, display, lineHeight } from "@mui/system";
+
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import theme from "./theme";
 
