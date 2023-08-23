@@ -2,12 +2,12 @@ import React, { useRef, useEffect, useState } from "react";
 import novideo from "../assets/img/video_loading.mp4";
 import { useDispatch, useSelector } from "react-redux";
 import Draggable from "react-draggable";
-import useClasses from "./useClasses";
+import makeStyles from "@mui/styles/makeStyles";
 import { Card, IconButton, CardMedia } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ZoomOutMapIcon from "@mui/icons-material/ZoomOutMap";
 
-const styles = (theme) => ({
+const useStyles = makeStyles((theme) => ({
   card: {
     pointerEvents: "auto",
     width: theme.dimensions.popupMaxWidth,
@@ -51,10 +51,10 @@ const styles = (theme) => ({
     transform: "translateX(-50%)",
     width: "55%",
   },
-});
+}));
 
 export const CameraWebRTCV2 = ({ deviceId, deviceIp, camera_src, onClose }) => {
-  const classes = useClasses(styles);
+  const classes = useStyles();
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
   const deviceip = "http://" + deviceIp + ":8889/" + camera_src + "/" + "whep"; //device?.ip;

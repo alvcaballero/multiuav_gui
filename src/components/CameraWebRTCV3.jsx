@@ -1,8 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import novideo from "../assets/img/video_loading.mp4";
 import { useDispatch, useSelector } from "react-redux";
-import Draggable from "react-draggable";
-import useClasses from "./useClasses";
 import { Card, IconButton, CardMedia, ButtonGroup } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ZoomOutMapIcon from "@mui/icons-material/ZoomOutMap";

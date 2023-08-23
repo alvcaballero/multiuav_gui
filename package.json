@@ -31,7 +31,7 @@
     "react-virtualized-auto-sizer": "^1.0.20",
     "react-scripts": "^5.0.1",
     "react-window": "^1.8.9",
-    "recharts": "^2.6.2",
+    "recharts": "^2.7.3",
     "redux": "^4.2.1",
     "vite": "^4.4.9",
     "vite-plugin-pwa": "^0.16.4",
