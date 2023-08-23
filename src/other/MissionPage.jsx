@@ -1,9 +1,9 @@
-import "./MainPage.css";
+//import "./MainPage.css";
 import React, { useContext, useState } from "react";
-import MapView from "./Mapview/Mapview";
-import { Navbar } from "./components/Navbar";
-import { Menu } from "./components/Menu";
-import MapMissionsCreate from "./Mapview/draw/MapMissionsCreate";
+import MapView from "../Mapview/Mapview";
+import { Navbar } from "../components/Navbar";
+import { Menu } from "../components/Menu";
+import MapMissionsCreate from "../Mapview/draw/MapMissionsCreate";
 
 import {
   Divider,
@@ -15,8 +15,8 @@ import {
 } from "@mui/material";
 
 import makeStyles from "@mui/styles/makeStyles";
-import { RosControl, RosContext } from "./components/RosControl";
-import { MissionPanel } from "./components/MissionPanel";
+import { RosControl, RosContext } from "../components/RosControl";
+import { MissionPanel } from "../components/MissionPanel";
 
 
 const useStyles = makeStyles((theme) => ({
