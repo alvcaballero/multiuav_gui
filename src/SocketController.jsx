@@ -49,18 +49,18 @@ const SocketController = () => {
         socket.onmessage = (event) => {
           const data = JSON.parse(event.data);
           if (data.devices ) {
-            if(Object.values(data.devices).length>0){
-              dispatch(devicesActions.update(Object.values(data.devices)));
+            if(data.devices.length>0){
+              dispatch(devicesActions.update(data.devices));
             }else{
               dispatch(devicesActions.clear());
             }
           }
           if (data.positions) {
-            dispatch(dataActions.updatePositions(Object.values(data.positions)));
+            dispatch(dataActions.updatePositions(data.positions));
           }
           if (data.camera){
             //console.log(data.camera)
-            dispatch(dataActions.updateCamera(Object.values(data.camera)));
+            dispatch(dataActions.updateCamera(data.camera));
             
           }
           if (data.server){

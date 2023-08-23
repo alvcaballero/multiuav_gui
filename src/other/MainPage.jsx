@@ -1,25 +1,25 @@
-import "./MainPage.css";
+//import "./MainPage.css";
 import React, { useState, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Paper } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import makeStyles from "@mui/styles/makeStyles";
-import { Navbar } from "./components/Navbar";
-import { Menu } from "./components/Menu";
-import Toast from "./components/Toast";
-import { Adduav } from "./components/Adduav";
-import { Camera } from "./components/Camera";
-import { RosControl } from "./components/RosControl";
-import MapView from "./Mapview/Mapview";
-import MapPositions from "./Mapview/MapPositions";
-import MapMissions from "./Mapview/MapMissions";
-import MapSelectedDevice from "./Mapview/MapSelectedDevice";
-import DeviceList from "./components/DeviceList";
-import StatusCard from "./components/StatusCard";
-import MainToolbar from "./components/MainToolbar";
-import { CameraWebRTCV3 } from "./components/CameraWebRTCV3";
+import { Navbar } from "../components/Navbar";
+import { Menu } from "../components/Menu";
+import Toast from "../components/Toast";
+import { Adduav } from "../components/Adduav";
+import { Camera } from "../components/Camera";
+import { RosControl } from "../components/RosControl";
+import MapView from "../Mapview/Mapview";
+import MapPositions from "../Mapview/MapPositions";
+import MapMissions from "../Mapview/MapMissions";
+import MapSelectedDevice from "../Mapview/MapSelectedDevice";
+import DeviceList from "../components/DeviceList";
+import StatusCard from "../components/StatusCard";
+import MainToolbar from "../components/MainToolbar";
+import { CameraWebRTCV3 } from "../components/CameraWebRTCV3";
 
-import { devicesActions } from "./store";
+import { devicesActions } from "../store";
 
 const useStyles = makeStyles((theme) => ({
   root: {
