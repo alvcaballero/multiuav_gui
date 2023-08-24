@@ -17,8 +17,8 @@ import {
 import makeStyles from "@mui/styles/makeStyles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffectAsync } from "./reactHelper";
-import { prefixString } from "./common/stringUtils";
+import { useEffectAsync } from "../reactHelper";
+import { prefixString } from "../common/stringUtils";
 
 const useStyles = makeStyles((theme) => ({
   root: {

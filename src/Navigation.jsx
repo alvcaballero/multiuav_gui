@@ -5,11 +5,11 @@ import {
 import { useEffectAsync } from './reactHelper';
 import App from './App';
 import useQuery from './common/useQuery';
-import MainPage from './MainPage'
-import MissionPage from './MissionPage';
-import EventPage from './EventPage';
-import ReplayPage from './ReplayPage';
-import DevicePage from './DevicePage';
+import MainPage from './other/MainPage'
+import MissionPage from './other/MissionPage';
+import EventPage from './other/EventPage';
+import ReplayPage from './other/ReplayPage';
+import DevicePage from './other/DevicePage';
 
 const padding = {
     padding: 5
