@@ -1,11 +1,11 @@
 <launch>
-    <node name="master_discovery" pkg="master_discovery_fkie" type="master_discovery">
+    <node name="master_discovery" pkg="fkie_master_discovery" type="master_discovery">
         <rosparam param="robot_hosts">[ubuntu18-Lenovo, ubuntu-black, grvc-Xavier-NX,ubuntu,delta-pi]</rosparam>
         <rosparam param="static_hosts">[ubuntu18-Lenovo, ubuntu-black, grvc-Xavier-NX,ubuntu,delta-pi]</rosparam>
         <rosparam param="send_mcast">False</rosparam>
         <rosparam param="listen_mcast">False</rosparam>
     </node>
-    <node name="master_sync" pkg="master_sync_fkie" type="master_sync">
+    <node name="master_sync" pkg="fkie_master_sync" type="master_sync">
         <!--rosparam param="sync_hosts">[ubuntu18-Lenovo, ubuntu-black, grvc-Xavier-NX]</rosparam-->
     </node>
 
