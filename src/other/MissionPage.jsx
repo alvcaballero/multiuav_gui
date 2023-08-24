@@ -17,7 +17,7 @@ import {
 import makeStyles from "@mui/styles/makeStyles";
 import { RosControl, RosContext } from "../components/RosControl";
 import { MissionPanel } from "../components/MissionPanel";
-
+import MissionElevation from "../components/MissionElevation";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -37,6 +37,17 @@ const useStyles = makeStyles((theme) => ({
   middleStyle: {
     flex: 1,
     display: "grid",
+  },
+  panelElevation: {
+    display: "flex",
+    flexDirection: "column",
+    position: "fixed",
+    right: 0,
+    bottom: 0,
+    height: `30vh`,
+    width: `calc(100% - 560px)`,
+    margin: "0px",
+    zIndex: 3,
   },
 }));
 const showToast = (type, description) => {
@@ -118,8 +129,15 @@ const MissionPage = () => {
 
         <div className={classes.sidebarStyle}>
           <div className={classes.middleStyle}>
-            <Paper square className={classes.contentListStyle}>
+            <Paper square>
               <MissionPanel></MissionPanel>
+            </Paper>
+          </div>
+        </div>
+        <div className={classes.panelElevation}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <MissionElevation></MissionElevation>
             </Paper>
           </div>
         </div>

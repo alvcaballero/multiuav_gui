@@ -42,9 +42,11 @@ export const MissionPanel = () => {
 
   const setScrool = (value) => {
     console.log("scrool" + value);
-    setTimeout(() => {
-      scroolRef.current.scroll(0, value);
-    }, 1000);
+    if (scroolRef.current.scroll) {
+      setTimeout(() => {
+        scroolRef.current.scroll(0, value);
+      }, 1000);
+    }
   };
 
   const readFile = (e) => {
