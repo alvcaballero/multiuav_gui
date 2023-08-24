@@ -54,8 +54,8 @@ wss.on("connection", function connection(ws) {
   const interval = setInterval(() => {
     ws.send(
       JSON.stringify({
-        positions: data.state.positions,
-        camera: data.state.camera,
+        positions: Object.values(data.state.positions),
+        camera: Object.values(data.state.camera),
       })
     );
   }, 200);
@@ -64,7 +64,7 @@ wss.on("connection", function connection(ws) {
     ws.send(
       JSON.stringify({
         server: { rosState: rosState.state },
-        devices: data.state.devices,
+        devices: Object.values(data.state.devices),
       })
     );
   }, 1000);
@@ -810,12 +810,12 @@ app.get("/", (req, res) => {
 
 app.get("/api/devices", (req, res) => {
   console.log("devicesget");
-  res.json(data.state.devices);
+  res.json(Object.values(data.state.devices));
 });
 
 app.get("/api/positions", (req, res) => {
   console.log("positionsget");
-  res.json(data.state.positions);
+  res.json(Object.values(data.state.positions));
 });
 
 app.post("/api/devices", async function (req, res) {
