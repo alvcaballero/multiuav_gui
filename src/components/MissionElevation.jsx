@@ -34,12 +34,14 @@ const MissionElevation = () => {
     let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
     let listwaypoint = "";
     let listwp = [];
+    let wpaltitude = [];
     if (auxroute.length > 0) {
       auxroute.forEach((route, index_rt, array_rt) => {
         let listwp_aux = [];
         route.wp.forEach((wp, index, array) => {
           listwaypoint = listwaypoint + wp.pos[0] + "," + wp.pos[1] + "|";
           listwp_aux.push([wp.pos[0], wp.pos[1]]);
+          wpaltitude.push(wp.pos[2])
         });
         listwp.push(listwp_aux);
         if (array_rt.length - 1 == index_rt) {
@@ -103,26 +105,18 @@ const MissionElevation = () => {
     }
     console.log("data elevation");
     console.log(command.results);
+    console.log(wpaltitude);
     //obener array de distancia
+    let acumulative=[]
     let mydata = command.results.map((element, index, array) => {
       console.log(index);
-      let custon_array = [];
-      if (index == 0) {
-        custon_array = [
-          Object.values(command.results[0]["location"]),
-          Object.values(element.location),
-        ];
-      } else {
-        custon_array = [
-          Object.values(command.results[index - 1]["location"]),
-          Object.values(element.location),
-        ];
-      }
-
-      var linestring = turf.lineString(custon_array);
-
-      let lineLength = turf.length(linestring, { units: "meters" });
-      return { name: lineLength, cost: element.elevation, impression: 2 };
+      let lineLength = 0;
+      acumulative.push(Object.values(element.location))
+      if (index != 0) {
+        let linestring = turf.lineString(acumulative);
+        lineLength = turf.length(linestring, { units: "meters" });
+      } 
+      return { name: lineLength, cost: element.elevation, impression: command.results[0]["elevation"]+wpaltitude[index] };
     });
     console.log(mydata);
     setItems(mydata);
