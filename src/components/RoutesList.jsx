@@ -133,19 +133,20 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
 
   async function setnewaction(index_route, index_wp) {
     let command;
-    if (true) {
-      const response = await fetch("/api/mission/actions/dji");
-      if (response.ok) {
-        command = await response.json();
-      } else {
-        throw Error(await response.text());
-      }
+
+    const response = await fetch("/api/mission/actions/dji");
+    if (response.ok) {
+      command = await response.json();
+    } else {
+      throw Error(await response.text());
     }
-    console.log(command);
-    console.log(newactionid);
+    
     let selectcmd = command.find((element) => element.id == newactionid);
 
     let auxroute = JSON.parse(JSON.stringify(mission.route));
+    if(!auxroute[index_route]["wp"][index_wp].hasOwnProperty("action")){
+      auxroute[index_route]["wp"][index_wp]["action"]={}
+    }
     if (selectcmd.param) {
       auxroute[index_route]["wp"][index_wp]["action"][selectcmd.name] = 0;
     } else {
@@ -356,7 +357,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         );
                                         rt == mission.route[index]
                                           ? (copiedrt.attributes.idle_vel =
-                                              e.target.value)
+                                              +e.target.value)
                                           : (copiedrt = rt);
                                         return copiedrt;
                                       }),
@@ -584,7 +585,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                           );
                                           rt == mission.route[index]
                                             ? (copiedrt.wp[index_wp]["pos"][0] =
-                                                e.target.value)
+                                            +e.target.value)
                                             : (copiedrt = rt);
                                           return copiedrt;
                                         }),
@@ -611,7 +612,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                           );
                                           rt == mission.route[index]
                                             ? (copiedrt.wp[index_wp]["pos"][1] =
-                                                e.target.value)
+                                            +e.target.value)
                                             : (copiedrt = rt);
                                           return copiedrt;
                                         }),
@@ -634,7 +635,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                           );
                                           rt == mission.route[index]
                                             ? (copiedrt.wp[index_wp]["pos"][2] =
-                                                e.target.value)
+                                                +e.target.value)
                                             : (copiedrt = rt);
                                           return copiedrt;
                                         }),
@@ -658,7 +659,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         );
                                         rt == mission.route[index]
                                           ? (copiedrt.wp[index_wp]["yaw"] =
-                                              e.target.value)
+                                          +e.target.value)
                                           : (copiedrt = rt);
                                         return copiedrt;
                                       }),
@@ -681,7 +682,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         );
                                         rt == mission.route[index]
                                           ? (copiedrt.wp[index_wp]["gimbal"] =
-                                              e.target.value)
+                                          +e.target.value)
                                           : (copiedrt = rt);
                                         return copiedrt;
                                       }),
