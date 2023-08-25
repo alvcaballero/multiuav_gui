@@ -16,6 +16,7 @@ const port = 4000;
 
 const app = express();
 app.set("port", port);
+
 app.use(cors());
 app.use(express.json());
 
@@ -942,9 +943,23 @@ app.get("/api/test.png", (req, res) => {
   res.end(img);
 });
 
+app.get("/api/map/elevation", async function (req, res) {
+  console.log("using ---- elevation");
+  let locations = req.query.locations;
+  let myresponse = {};
+  await fetch(
+    `https://maps.googleapis.com/maps/api/elevation/json?locations=${locations}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
+  )
+    .then((response) => response.json())
+    .then((body) => {
+      myresponse = body;
+      console.log(body);
+    });
+  res.json(myresponse);
+});
 app.get("/api/placeholder", (req, res) => {
   // A 1x1 pixel red colored PNG file.
-  const base64 = fs.readFileSync("./src/assets/img/placeholder.jpg", "base64");
+  const base64 = fs.readFileSync("../src/assets/img/placeholder.jpg", "base64");
   //console.log(base64)
   const img = Buffer.from(base64, "base64");
   //console.log(img)
