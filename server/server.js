@@ -983,14 +983,16 @@ app.post("/api/map/elevation", async function (req, res) {
     let elevationprofile = await ApiElevation(listwaypoint);
     //anadir elevacion profile
     let auxcount = 0;
+    let initElevationIndex= 0;
     wpaltitude.forEach((route, index_rt, array_rt) => {
       route.forEach((wp, index, array) => {
         wpaltitude[index_rt][index]["elevation"] = Number(
           elevationprofile.results[auxcount].elevation.toFixed(1)
         );
-        wpaltitude[index_rt][index]["uavheight"] =
-          wpaltitude[index_rt][index]["uavheight"] +
-          Number(elevationprofile.results[auxcount].elevation.toFixed(1));
+        if(index == 0){
+          initElevationIndex = auxcount;
+        }
+        wpaltitude[index_rt][index]["uavheight"] = wpaltitude[index_rt][index]["uavheight"] +   Number(elevationprofile.results[initElevationIndex].elevation.toFixed(1));
         auxcount = auxcount + 1;
       });
     });

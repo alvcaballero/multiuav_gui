@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { useSelector } from "react-redux";
 import {
   CartesianGrid,
@@ -28,6 +28,12 @@ const MissionElevation = () => {
   const classes = useStyles();
   const [items, setItems] = useState([]);
   const Mission_route = useSelector((state) => state.mission);
+  
+  const values = items.map((it) => it["elevation"]);
+  const values1 = items.map((it) => it["uavheight"]);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values1);
+  const valueRange = maxValue - minValue;
 
   async function elevation() {
     console.log("elevation funtion");
@@ -98,20 +104,21 @@ const MissionElevation = () => {
               <XAxis
                 dataKey="length"
                 type="number"
+                domain={['dataMin', 'dataMax']}
                 //tickFormatter={(value) => formatTime(value, "time", hours12)}
                 //domain={["dataMin", "dataMax"]}
-                scale="meters"
+                //scale="meters"
               />
               <YAxis
                 type="number"
                 tickFormatter={(value) => value.toFixed(2)}
-                //domain={[minValue - valueRange / 5, maxValue + valueRange / 5]}
+                domain={[minValue - valueRange / 5, maxValue + valueRange / 5]}
               />
               <CartesianGrid strokeDasharray="3 3" />
               <Tooltip />
               <Legend />
               {items.map((s, s_index, s_array) => (
-                <>
+                <Fragment key={"s-" + s_index}>
                   <Line
                     type="monotone"
                     dataKey="elevation"
@@ -126,11 +133,12 @@ const MissionElevation = () => {
                     type="monotone"
                     dataKey="uavheight"
                     data={s.data}
-                    name={s.name + "uav"}
-                    key={s.name + "uav"}
+                    name={s.name + "-v"}
+                    key={s.name + "-v"}
                     stroke={colors[s_index]}
+                    strokeDasharray="5 5"
                   />
-                </>
+                </Fragment>
               ))}
             </LineChart>
           </ResponsiveContainer>
