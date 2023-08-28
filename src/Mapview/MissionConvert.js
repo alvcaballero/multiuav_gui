@@ -1,3 +1,9 @@
+var mission_home = [];
+
+export const GetMissionHome = () => {
+  return mission_home;
+};
+
 export const RuteConvert = (route) => {
   let rt = [];
   console.log("version 3");

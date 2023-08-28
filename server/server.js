@@ -969,7 +969,10 @@ app.post("/api/map/elevation", async function (req, res) {
           let linestring = turf.lineString(acumulative);
           lineLength = turf.length(linestring, { units: "meters" });
         }
-        wpaltitude[index_rt].push({ length: lineLength, uavheight: wp[2] });
+        wpaltitude[index_rt].push({
+          length: Number(lineLength.toFixed(1)),
+          uavheight: wp[2],
+        });
       });
       if (array_rt.length - 1 == index_rt) {
         console.log("delete last value");
@@ -982,11 +985,12 @@ app.post("/api/map/elevation", async function (req, res) {
     let auxcount = 0;
     wpaltitude.forEach((route, index_rt, array_rt) => {
       route.forEach((wp, index, array) => {
-        wpaltitude[index_rt][index]["elevation"] =
-          elevationprofile.results[auxcount].elevation;
+        wpaltitude[index_rt][index]["elevation"] = Number(
+          elevationprofile.results[auxcount].elevation.toFixed(1)
+        );
         wpaltitude[index_rt][index]["uavheight"] =
           wpaltitude[index_rt][index]["uavheight"] +
-          elevationprofile.results[auxcount].elevation;
+          Number(elevationprofile.results[auxcount].elevation.toFixed(1));
         auxcount = auxcount + 1;
       });
     });

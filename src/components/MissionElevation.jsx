@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import * as turf from "@turf/turf"; //import { length } from "@turf/length";
 import {
   CartesianGrid,
   Line,
@@ -29,102 +28,6 @@ const MissionElevation = () => {
   const classes = useStyles();
   const [items, setItems] = useState([]);
   const Mission_route = useSelector((state) => state.mission);
-
-  async function setnewaction() {
-    let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
-    let listwaypoint = "";
-    let listwp = [];
-    let wpaltitude = [];
-    if (auxroute.length > 0) {
-      auxroute.forEach((route, index_rt, array_rt) => {
-        let listwp_aux = [];
-        route.wp.forEach((wp, index, array) => {
-          listwaypoint = listwaypoint + wp.pos[0] + "," + wp.pos[1] + "|";
-          listwp_aux.push([wp.pos[0], wp.pos[1]]);
-          wpaltitude.push(wp.pos[2]);
-        });
-        listwp.push(listwp_aux);
-        if (array_rt.length - 1 == index_rt) {
-          console.log("delete last value");
-          listwaypoint = listwaypoint.slice(0, -1);
-        }
-      });
-      console.log("Elevation-----------");
-      console.log(listwp);
-      var linestring = turf.lineString(listwp[0]);
-      let lineLength = turf.length(linestring, { units: "meters" });
-      let divisionLength = lineLength / 20;
-      let newLine = turf.lineChunk(linestring, 10, {
-        units: "meters",
-      }).features;
-      let wp_new = newLine.map((feature, index_ft, list_ft) => {
-        if (list_ft.length - 1 == index_ft) {
-          console.log("delete last value");
-          return (
-            feature.geometry.coordinates[0][0] +
-            "," +
-            feature.geometry.coordinates[0][1] +
-            "|" +
-            feature.geometry.coordinates[1][0] +
-            "," +
-            feature.geometry.coordinates[1][1]
-          );
-        }
-        return (
-          feature.geometry.coordinates[0][0] +
-          "," +
-          feature.geometry.coordinates[0][1] +
-          "|"
-        );
-      });
-
-      console.log(lineLength);
-      console.log(divisionLength);
-      console.log(linestring);
-      console.log(newLine);
-      console.log(wp_new);
-    }
-
-    let command;
-    if (true) {
-      try {
-        const response = await fetch(
-          `/api/map/elevation?locations=${listwaypoint}`
-        );
-        if (response.ok) {
-          command = await response.json();
-        } else {
-          console.log("no ok response");
-          console.log(response);
-          throw new Error(response.status);
-        }
-      } catch (error) {
-        console.log("error");
-        console.log(error);
-      }
-    }
-    console.log("data elevation");
-    console.log(command.results);
-    console.log(wpaltitude);
-    //obener array de distancia
-    let acumulative = [];
-    let mydata = command.results.map((element, index, array) => {
-      console.log(index);
-      let lineLength = 0;
-      acumulative.push(Object.values(element.location));
-      if (index != 0) {
-        let linestring = turf.lineString(acumulative);
-        lineLength = turf.length(linestring, { units: "meters" });
-      }
-      return {
-        name: lineLength,
-        cost: element.elevation,
-        impression: command.results[0]["elevation"] + wpaltitude[index],
-      };
-    });
-    console.log(mydata);
-    setItems(mydata);
-  }
 
   async function elevation() {
     console.log("elevation funtion");
@@ -163,7 +66,7 @@ const MissionElevation = () => {
       console.log(error);
     }
     let elevationRoute = command.map((route, index_rt) => {
-      return { name: "Route" + index_rt, data: route };
+      return { name: "RT" + index_rt, data: route };
     });
     console.log(elevationRoute);
     setItems(elevationRoute);
@@ -216,7 +119,6 @@ const MissionElevation = () => {
                     name={s.name}
                     key={s.name}
                     stroke={colors[s_index]}
-                    strokeDasharray="5 5"
                     activeDot={{ r: 8 }}
                   />
                   <Line
