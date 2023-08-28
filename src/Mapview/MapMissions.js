@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { map } from "./Mapview";
 import { findFonts } from "./mapUtil";
 import maplibregl from "maplibre-gl";
+import { colors } from "./preloadImages";
 
 export const MapMissions = () => {
   const id = useId();
@@ -15,17 +16,6 @@ export const MapMissions = () => {
   const routes = useSelector((state) => state.mission.route);
   const mapCluster = true;
   const iconScale = 0.6;
-
-  const colors = {
-    0: "#F34C28",
-    1: "#F39A28",
-    2: "#1EC910",
-    3: "#1012C9",
-    4: "#C310C9",
-    5: "#1FDBF1",
-    6: "#F6FD04",
-    7: "#808080",
-  };
 
   const createFeature = (myroute, point) => {
     return {

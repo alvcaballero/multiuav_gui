@@ -1,7 +1,7 @@
 //https://www.youtube.com/watch?v=gnM3Ld6_upE-- REVISAR
 //https://medium.com/agora-io/how-does-webrtc-work-996748603141
 //Server-Sent Events vs. WebSockets
-
+const turf = require("@turf/turf");
 const data = require("./data");
 const path = require("path");
 const express = require("express");
@@ -942,21 +942,70 @@ app.get("/api/test.png", (req, res) => {
   });
   res.end(img);
 });
-
+// recibir un  array de objetos  y devolver el mismo array con la longitud y la altitud
 app.get("/api/map/elevation", async function (req, res) {
   console.log("using ---- elevation");
   let locations = req.query.locations;
+  let myresponse = await ApiElevationApiElevation(locations);
+  res.json(myresponse);
+});
+
+// recibir un  array de objetos  y devolver el mismo array con la longitud y la altitud
+app.post("/api/map/elevation", async function (req, res) {
+  console.log("using ---- elevation");
+  listpoint = req.body.routes;
+  console.log(listpoint);
+  let wpaltitude = [];
+  let listwaypoint = "";
+  if (listpoint.length > 0) {
+    listpoint.forEach((route, index_rt, array_rt) => {
+      let acumulative = [];
+      wpaltitude.push([]);
+      route.forEach((wp, index, array) => {
+        let lineLength = 0;
+        acumulative.push(wp);
+        listwaypoint = listwaypoint + wp[0] + "," + wp[1] + "|";
+        if (index != 0) {
+          let linestring = turf.lineString(acumulative);
+          lineLength = turf.length(linestring, { units: "meters" });
+        }
+        wpaltitude[index_rt].push({ length: lineLength, uavheight: wp[2] });
+      });
+      if (array_rt.length - 1 == index_rt) {
+        console.log("delete last value");
+        listwaypoint = listwaypoint.slice(0, -1);
+      }
+    });
+
+    let elevationprofile = await ApiElevation(listwaypoint);
+    //anadir elevacion profile
+    let auxcount = 0;
+    wpaltitude.forEach((route, index_rt, array_rt) => {
+      route.forEach((wp, index, array) => {
+        wpaltitude[index_rt][index]["elevation"] =
+          elevationprofile.results[auxcount].elevation;
+        wpaltitude[index_rt][index]["uavheight"] =
+          wpaltitude[index_rt][index]["uavheight"] +
+          elevationprofile.results[auxcount].elevation;
+        auxcount = auxcount + 1;
+      });
+    });
+  }
+  res.json(wpaltitude);
+});
+
+const ApiElevation = async (stringLocationList) => {
   let myresponse = {};
   await fetch(
-    `https://maps.googleapis.com/maps/api/elevation/json?locations=${locations}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
+    `https://maps.googleapis.com/maps/api/elevation/json?locations=${stringLocationList}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
   )
     .then((response) => response.json())
     .then((body) => {
       myresponse = body;
       console.log(body);
     });
-  res.json(myresponse);
-});
+  return myresponse;
+};
 app.get("/api/placeholder", (req, res) => {
   // A 1x1 pixel red colored PNG file.
   const base64 = fs.readFileSync("../src/assets/img/placeholder.jpg", "base64");
