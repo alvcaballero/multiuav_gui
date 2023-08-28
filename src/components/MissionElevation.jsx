@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
+import { colors } from "../Mapview/preloadImages";
 import { makeStyles } from "@mui/styles";
 //https://www.opentopodata.org/
 //https://open-elevation.com/
@@ -41,7 +41,7 @@ const MissionElevation = () => {
         route.wp.forEach((wp, index, array) => {
           listwaypoint = listwaypoint + wp.pos[0] + "," + wp.pos[1] + "|";
           listwp_aux.push([wp.pos[0], wp.pos[1]]);
-          wpaltitude.push(wp.pos[2])
+          wpaltitude.push(wp.pos[2]);
         });
         listwp.push(listwp_aux);
         if (array_rt.length - 1 == index_rt) {
@@ -107,16 +107,20 @@ const MissionElevation = () => {
     console.log(command.results);
     console.log(wpaltitude);
     //obener array de distancia
-    let acumulative=[]
+    let acumulative = [];
     let mydata = command.results.map((element, index, array) => {
       console.log(index);
       let lineLength = 0;
-      acumulative.push(Object.values(element.location))
+      acumulative.push(Object.values(element.location));
       if (index != 0) {
         let linestring = turf.lineString(acumulative);
         lineLength = turf.length(linestring, { units: "meters" });
-      } 
-      return { name: lineLength, cost: element.elevation, impression: command.results[0]["elevation"]+wpaltitude[index] };
+      }
+      return {
+        name: lineLength,
+        cost: element.elevation,
+        impression: command.results[0]["elevation"] + wpaltitude[index],
+      };
     });
     console.log(mydata);
     setItems(mydata);
@@ -124,42 +128,59 @@ const MissionElevation = () => {
 
   async function elevation() {
     console.log("elevation funtion");
+    let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
+    let listwp = [];
+    if (auxroute.length > 0) {
+      auxroute.forEach((route, index_rt, array_rt) => {
+        let listwp_aux = [];
+        route.wp.forEach((wp, index, array) => {
+          listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
+        });
+        listwp.push(listwp_aux);
+      });
+      console.log("Elevation-----------");
+      console.log(listwp);
+    }
+    let command;
+    try {
+      const response = await fetch("/api/map/elevation", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ routes: listwp }),
+      });
+      if (response.ok) {
+        command = await response.json();
+      } else {
+        console.log("no ok response");
+        console.log(response);
+        throw new Error(response.status);
+      }
+    } catch (error) {
+      console.log("error");
+      console.log(error);
+    }
+    let elevationRoute = command.map((route, index_rt) => {
+      return { name: "Route" + index_rt, data: route };
+    });
+    console.log(elevationRoute);
+    setItems(elevationRoute);
   }
 
-  const data = [
-    { name: 1, cost: 4.11, impression: 300 },
-    { name: 2, cost: 2.39, impression: 120 },
-    { name: 3, cost: 1.37, impression: 150 },
-    { name: 4, cost: 1.16, impression: 180 },
-    { name: 5, cost: 2.29, impression: 200 },
-    { name: 6, cost: 3 },
-    { name: 7, cost: 0.53, impression: 50 },
-    { name: 8, cost: 2.52, impression: 100 },
-    { name: 9, cost: 1.79, impression: 200 },
-    { name: 10, cost: 2.94, impression: 222 },
-    { name: 11, cost: 4.3, impression: 210 },
-    { name: 12, cost: 4.41, impression: 300 },
-    { name: 13, cost: 2.1, impression: 50 },
-    { name: 14, cost: 8, impression: 190 },
-    { name: 15, cost: 0, impression: 300 },
-    { name: 16, cost: 9, impression: 400 },
-    { name: 17, cost: 3, impression: 200 },
-    { name: 18, cost: 2 },
-    { name: 19, cost: 3 },
-    { name: 20, cost: 7 },
-  ];
   useEffect(() => {
     console.log("mission Elevation");
-    setItems(data);
+    //setItems(data);
   }, []);
 
   useEffect(() => {
-    setnewaction();
+    elevation();
   }, [Mission_route]);
 
   return (
     <div style={{ height: "100%", width: "100%" }}>
-      {data.length > 0 && (
+      {items.length > 0 && (
         <div className={classes.chart}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
@@ -172,11 +193,11 @@ const MissionElevation = () => {
               }}
             >
               <XAxis
-                dataKey="name"
+                dataKey="length"
                 type="number"
                 //tickFormatter={(value) => formatTime(value, "time", hours12)}
                 //domain={["dataMin", "dataMax"]}
-                //scale="time"
+                scale="meters"
               />
               <YAxis
                 type="number"
@@ -186,18 +207,29 @@ const MissionElevation = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <Tooltip />
               <Legend />
-              <Line
-                type="monotone"
-                dataKey="cost"
-                stroke="#8884d8"
-                activeDot={{ r: 8 }}
-              />
-              <Line
-                connectNulls
-                type="monotone"
-                dataKey="impression"
-                stroke="#82ca9d"
-              />
+              {items.map((s, s_index, s_array) => (
+                <>
+                  <Line
+                    type="monotone"
+                    dataKey="elevation"
+                    data={s.data}
+                    name={s.name}
+                    key={s.name}
+                    stroke={colors[s_index]}
+                    strokeDasharray="5 5"
+                    activeDot={{ r: 8 }}
+                  />
+                  <Line
+                    connectNulls
+                    type="monotone"
+                    dataKey="uavheight"
+                    data={s.data}
+                    name={s.name + "uav"}
+                    key={s.name + "uav"}
+                    stroke={colors[s_index]}
+                  />
+                </>
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </div>
