@@ -57,6 +57,13 @@ const MissionElevation = () => {
           rt: 0,
         },
         {
+          length: 4,
+          uavheight: 20.5,
+          elevation: 20.5,
+          wp: 0,
+          rt: 0,
+        },
+        {
           length: 7.5,
           uavheight: 20.5,
           elevation: 1.5,
@@ -166,7 +173,7 @@ const MissionElevation = () => {
 
   async function elevation() {
     // mas robusto y llamar cuando cambie la altura del drone
-    if (true) {
+    if (false) {
       let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
       let listwp = [];
       if (auxroute.length > 0) {

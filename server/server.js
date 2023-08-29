@@ -975,34 +975,29 @@ app.post("/api/map/elevation", async function (req, res) {
         });
       });
       if (array_rt.length - 1 == index_rt) {
-        console.log("delete last value");
         listwaypoint = listwaypoint.slice(0, -1);
       }
     });
+    console.log(wpaltitude)
 
     let elevationprofile = await ApiElevation(listwaypoint);
     //anadir elevacion profile
     let auxcount = 0;
     let initElevationIndex = 0;
-    wpaltitude.forEach((route, index_rt, array_rt) => {
-      route.forEach((wp, index, array) => {
-        wpaltitude[index_rt][index]["elevation"] = Number(
-          elevationprofile.results[auxcount].elevation.toFixed(1)
-        );
+    for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
+      for (let index = 0; index < wpaltitude[index_rt].length; index++) {
+        wpaltitude[index_rt][index]["elevation"] = Number(elevationprofile.results[auxcount].elevation.toFixed(1));
         wpaltitude[index_rt][index]["wp"] = index;
         wpaltitude[index_rt][index]["rt"] = index_rt;
         if (index == 0) {
           initElevationIndex = auxcount;
         }
-        wpaltitude[index_rt][index]["uavheight"] =
-          wpaltitude[index_rt][index]["uavheight"] +
-          Number(
-            elevationprofile.results[initElevationIndex].elevation.toFixed(1)
-          );
+        wpaltitude[index_rt][index]["uavheight"] =(wpaltitude[index_rt][index]["uavheight"] + Number(elevationprofile.results[initElevationIndex].elevation)).toFixed(1);
         auxcount = auxcount + 1;
-      });
-    });
+      }
+    }
   }
+  console.log(wpaltitude)
   res.json(wpaltitude);
 });
 
