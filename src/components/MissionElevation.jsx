@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { FormControl, InputLabel, Select, Box, MenuItem } from "@mui/material";
 import { colors } from "../Mapview/preloadImages";
 import { makeStyles } from "@mui/styles";
 //https://www.opentopodata.org/
@@ -19,76 +20,272 @@ import { makeStyles } from "@mui/styles";
 const useStyles = makeStyles((theme) => ({
   chart: {
     flexGrow: 1,
-    maxWidth: `calc(100vw - 560px)`,
+    overflow: "hidden",
+  },
+  content: {
     height: "100%",
+    flexGrow: 1,
+    alignItems: "stretch",
+    display: "flex",
+    flexDirection: "column",
+    overflowY: "auto",
   },
 }));
 
 const MissionElevation = () => {
   const classes = useStyles();
   const [items, setItems] = useState([]);
+  const [ElevProfile, setElevProfile] = useState([]);
+  const [SelectRT, setSelectRT] = useState(-1);
   const Mission_route = useSelector((state) => state.mission);
-  
+
   const values = items.map((it) => it["elevation"]);
   const values1 = items.map((it) => it["uavheight"]);
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values1);
   const valueRange = maxValue - minValue;
 
-  async function elevation() {
-    console.log("elevation funtion");
-    let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
-    let listwp = [];
-    if (auxroute.length > 0) {
-      auxroute.forEach((route, index_rt, array_rt) => {
-        let listwp_aux = [];
-        route.wp.forEach((wp, index, array) => {
-          listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
-        });
-        listwp.push(listwp_aux);
-      });
-      console.log("Elevation-----------");
-      console.log(listwp);
-    }
-    let command;
-    try {
-      const response = await fetch("/api/map/elevation", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
+  const data = [
+    {
+      name: "RT0",
+      data: [
+        {
+          length: 0,
+          uavheight: 20.5,
+          elevation: 15.5,
+          wp: 0,
+          rt: 0,
         },
-        body: JSON.stringify({ routes: listwp }),
-      });
-      if (response.ok) {
-        command = await response.json();
-      } else {
-        console.log("no ok response");
-        console.log(response);
-        throw new Error(response.status);
+        {
+          length: 7.5,
+          uavheight: 20.5,
+          elevation: 1.5,
+          wp: 1,
+          rt: 0,
+        },
+        {
+          length: 18.5,
+          uavheight: 20.5,
+          elevation: 15.5,
+          wp: 2,
+          rt: 0,
+        },
+        {
+          length: 25.8,
+          uavheight: 20.5,
+          elevation: 15.5,
+          wp: 3,
+          rt: 0,
+        },
+      ],
+      color: "#F34C28",
+    },
+    {
+      name: "RT1",
+      data: [
+        {
+          length: 0,
+          uavheight: 10.5,
+          elevation: 5.5,
+          wp: 0,
+          rt: 1,
+        },
+        {
+          length: 4.8,
+          uavheight: 10.5,
+          elevation: 5.5,
+          wp: 1,
+          rt: 1,
+        },
+        {
+          length: 10.2,
+          uavheight: 10.5,
+          elevation: 5.4,
+          wp: 2,
+          rt: 1,
+        },
+        {
+          length: 17.1,
+          uavheight: 10.5,
+          elevation: 5.4,
+          wp: 3,
+          rt: 1,
+        },
+        {
+          length: 24.4,
+          uavheight: 10.5,
+          elevation: 5.5,
+          wp: 4,
+          rt: 1,
+        },
+      ],
+      color: "#F39A28",
+    },
+    {
+      name: "RT2",
+      data: [
+        {
+          length: 0,
+          uavheight: 28.2,
+          elevation: 6.2,
+          wp: 0,
+          rt: 2,
+        },
+        {
+          length: 6.3,
+          uavheight: 26.2,
+          elevation: 8.6,
+          wp: 1,
+          rt: 2,
+        },
+        {
+          length: 13.9,
+          uavheight: 36.2,
+          elevation: 8.2,
+          wp: 2,
+          rt: 2,
+        },
+        {
+          length: 18.5,
+          uavheight: 26.2,
+          elevation: 8.1,
+          wp: 3,
+          rt: 2,
+        },
+        {
+          length: 22.9,
+          uavheight: 31.2,
+          elevation: 7.1,
+          wp: 4,
+          rt: 2,
+        },
+      ],
+      color: "#1EC910",
+    },
+  ];
+
+  async function elevation() {
+    // mas robusto y llamar cuando cambie la altura del drone
+    if (true) {
+      let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
+      let listwp = [];
+      if (auxroute.length > 0) {
+        auxroute.forEach((route, index_rt, array_rt) => {
+          let listwp_aux = [];
+          route.wp.forEach((wp, index, array) => {
+            listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
+          });
+          listwp.push(listwp_aux);
+        });
       }
-    } catch (error) {
-      console.log("error");
-      console.log(error);
+      let command;
+      try {
+        const response = await fetch("/api/map/elevation", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ routes: listwp }),
+        });
+        if (response.ok) {
+          command = await response.json();
+        } else {
+          throw new Error(response.status);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+      let elevationRoute = command.map((route, index_rt) => {
+        return { name: "RT" + index_rt, data: route, color: colors[index_rt] };
+      });
+      console.log(elevationRoute);
+      setSelectRT(-1);
+      setElevProfile(elevationRoute);
+      setItems(elevationRoute);
+    } else {
+      setSelectRT(-1);
+      setElevProfile(data);
+      setItems(data);
     }
-    let elevationRoute = command.map((route, index_rt) => {
-      return { name: "RT" + index_rt, data: route };
-    });
-    console.log(elevationRoute);
-    setItems(elevationRoute);
   }
 
   useEffect(() => {
     console.log("mission Elevation");
-    //setItems(data);
+    //elevation();
   }, []);
-
   useEffect(() => {
     elevation();
   }, [Mission_route]);
+  useEffect(() => {
+    if (SelectRT == -1) {
+      setItems(ElevProfile);
+    } else {
+      setItems([ElevProfile[SelectRT]]);
+    }
+  }, [SelectRT]);
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    //console.log(payload);
+    if (active && payload && payload.length) {
+      let list = [payload[0].payload];
+      list[0]["color"] = payload[0].color;
+      payload.map((key) => {
+        let match = true;
+        list.map((listkey) => {
+          if (key.payload.rt == listkey.rt) {
+            match = false;
+          }
+        });
+        key.payload["color"] = key.color;
+        match ? list.push(key.payload) : null;
+      });
+      //console.log(list);
+      return (
+        <div style={{ background: "#FFFFFF" }}>
+          {list.map((key) => (
+            <Fragment>
+              <div
+                key={`trt${key.rt}`}
+                style={{ color: key.color, fontSize: 16 }}
+              >{`Ruta ${key.rt} - wp ${key.wp}`}</div>
+              <div
+                key={`drt${key.rt}`}
+                style={{ color: key.color, fontSize: 16 }}
+              >{`Terreno:${key.elevation} - UAV: ${key.uavheight}`}</div>
+            </Fragment>
+          ))}
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
-    <div style={{ height: "100%", width: "100%" }}>
+    <div className={classes.content}>
+      <Box style={{ display: "flex", margin: "10px", alignItems: "center" }}>
+        <a style={{ marginInline: "20px" }}>Elevation Profile</a>
+        <FormControl>
+          <InputLabel id="demo-simple-select-label">Route</InputLabel>
+          <Select
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            value={SelectRT}
+            label="Elevation Profile"
+            onChange={(event) => setSelectRT(event.target.value)}
+          >
+            <MenuItem value={-1}>All Routes</MenuItem>
+            {ElevProfile.map((name, index, other) => (
+              <MenuItem
+                key={`sel${index}`}
+                value={index}
+              >{`Route${index}`}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
       {items.length > 0 && (
         <div className={classes.chart}>
           <ResponsiveContainer width="100%" height="100%">
@@ -104,10 +301,7 @@ const MissionElevation = () => {
               <XAxis
                 dataKey="length"
                 type="number"
-                domain={['dataMin', 'dataMax']}
-                //tickFormatter={(value) => formatTime(value, "time", hours12)}
-                //domain={["dataMin", "dataMax"]}
-                //scale="meters"
+                domain={["dataMin", "dataMax"]}
               />
               <YAxis
                 type="number"
@@ -115,7 +309,7 @@ const MissionElevation = () => {
                 domain={[minValue - valueRange / 5, maxValue + valueRange / 5]}
               />
               <CartesianGrid strokeDasharray="3 3" />
-              <Tooltip />
+              <Tooltip content={<CustomTooltip />} />
               <Legend />
               {items.map((s, s_index, s_array) => (
                 <Fragment key={"s-" + s_index}>
@@ -125,7 +319,7 @@ const MissionElevation = () => {
                     data={s.data}
                     name={s.name}
                     key={s.name}
-                    stroke={colors[s_index]}
+                    stroke={s.color}
                     activeDot={{ r: 8 }}
                   />
                   <Line
@@ -135,7 +329,7 @@ const MissionElevation = () => {
                     data={s.data}
                     name={s.name + "-v"}
                     key={s.name + "-v"}
-                    stroke={colors[s_index]}
+                    stroke={s.color}
                     strokeDasharray="5 5"
                   />
                 </Fragment>

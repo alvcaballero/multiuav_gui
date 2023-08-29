@@ -70,6 +70,20 @@ const useStyles = makeStyles((theme) => ({
     gap: theme.spacing(2),
     paddingBottom: theme.spacing(3),
   },
+  title: {
+    display: "block",
+    width: "calc( 100% - 60pt )",
+    paddingLeft: "15pt",
+    paddingTop: "10pt",
+    paddingBottom: "20pt",
+    textAlign: "left",
+  },
+  closeBtn: {
+    display: "flex",
+    right: "5px",
+    height: "35px",
+    position: "absolute",
+  },
 }));
 
 export const Adduav = ({ SetAddUAVOpen }) => {
@@ -111,14 +125,7 @@ export const Adduav = ({ SetAddUAVOpen }) => {
   return (
     <div className={classes.root}>
       <Card elevation={3} className={classes.card}>
-        <div
-          style={{
-            display: "flex",
-            right: "5px",
-            height: "35px",
-            position: "absolute",
-          }}
-        >
+        <div className={classes.closeBtn}>
           <IconButton
             size="small"
             onClick={closeAddUav}
@@ -129,18 +136,7 @@ export const Adduav = ({ SetAddUAVOpen }) => {
         </div>
 
         <b>
-          <div
-            style={{
-              display: "block",
-              width: "calc( 100% - 60pt )",
-              paddingLeft: "15pt",
-              paddingTop: "10pt",
-              paddingBottom: "20pt",
-              textAlign: "left",
-            }}
-          >
-            Add device{" "}
-          </div>
+          <div className={classes.title}>Add device </div>
         </b>
 
         <FormGroup style={{ margin: "20px" }}>
