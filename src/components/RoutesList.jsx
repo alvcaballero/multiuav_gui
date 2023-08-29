@@ -140,12 +140,12 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
     } else {
       throw Error(await response.text());
     }
-    
+
     let selectcmd = command.find((element) => element.id == newactionid);
 
     let auxroute = JSON.parse(JSON.stringify(mission.route));
-    if(!auxroute[index_route]["wp"][index_wp].hasOwnProperty("action")){
-      auxroute[index_route]["wp"][index_wp]["action"]={}
+    if (!auxroute[index_route]["wp"][index_wp].hasOwnProperty("action")) {
+      auxroute[index_route]["wp"][index_wp]["action"] = {};
     }
     if (selectcmd.param) {
       auxroute[index_route]["wp"][index_wp]["action"][selectcmd.name] = 0;
@@ -370,8 +370,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                   variant="subtitle1"
                                   className={classes.attributeName}
                                 >
-                                  {" "}
-                                  landing mode{" "}
+                                  landing mode
                                 </Typography>
                                 <div className={classes.attributeValue}>
                                   <SelectField
@@ -585,7 +584,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                           );
                                           rt == mission.route[index]
                                             ? (copiedrt.wp[index_wp]["pos"][0] =
-                                            +e.target.value)
+                                                +e.target.value)
                                             : (copiedrt = rt);
                                           return copiedrt;
                                         }),
@@ -612,7 +611,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                           );
                                           rt == mission.route[index]
                                             ? (copiedrt.wp[index_wp]["pos"][1] =
-                                            +e.target.value)
+                                                +e.target.value)
                                             : (copiedrt = rt);
                                           return copiedrt;
                                         }),
@@ -659,7 +658,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         );
                                         rt == mission.route[index]
                                           ? (copiedrt.wp[index_wp]["yaw"] =
-                                          +e.target.value)
+                                              +e.target.value)
                                           : (copiedrt = rt);
                                         return copiedrt;
                                       }),
@@ -682,7 +681,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         );
                                         rt == mission.route[index]
                                           ? (copiedrt.wp[index_wp]["gimbal"] =
-                                          +e.target.value)
+                                              +e.target.value)
                                           : (copiedrt = rt);
                                         return copiedrt;
                                       }),
