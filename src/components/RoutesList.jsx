@@ -134,9 +134,9 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
 
   const Removing_route = (index_route) => {
     console.log("remove route" + index_route);
-    let auxroute = [...mission.route];
-    console.log(auxroute);
+    let auxroute = JSON.parse(JSON.stringify(mission.route));
     auxroute.splice(index_route, 1);
+    console.log(auxroute);
     setmission({ ...mission, route: auxroute });
   };
 
