@@ -24,6 +24,7 @@ import { Padding, Tune } from "@mui/icons-material";
 import { missionActions } from "../store"; // here update device action with position of uav for update in map
 import { colors } from "../Mapview/preloadImages";
 import { map } from "../Mapview/Mapview";
+import { center } from "@turf/turf";
 
 //import { geofencesActions } from '../store';
 //import CollectionActions from '../settings/components/CollectionActions';
@@ -115,7 +116,18 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
   const AddnewWp = (index_route, index_wp) => {
     console.log("add new wp" + index_route);
     let auxroute = JSON.parse(JSON.stringify(mission.route));
-    let center = map.getCenter();
+    let center = map.getCenter(); // cuando index es 0 o -1
+    if (index_wp > 0) {
+      center.lat =
+        (auxroute[index_route]["wp"][index_wp]["pos"][0] +
+          auxroute[index_route]["wp"][index_wp - 1]["pos"][0]) /
+        2;
+      center.lng =
+        (auxroute[index_route]["wp"][index_wp]["pos"][1] +
+          auxroute[index_route]["wp"][index_wp - 1]["pos"][1]) /
+        2;
+    } //console.log(center);
+
     if (index_wp < 0) {
       auxroute[index_route].wp.push({
         pos: [center.lat, center.lng, 5],
@@ -885,7 +897,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                 style={{ marginTop: "15px" }}
                 onClick={AddnewRoute}
               >
-                Add new Route{" "}
+                Add new Route
               </Button>
             </Box>
           </Box>
