@@ -949,6 +949,25 @@ app.get("/api/map/elevation", async function (req, res) {
   res.json(myresponse);
 });
 
+function divideLineIntoPoints(line, steps, dist) {
+  let dividedLine = []; // Start with the first point
+  let accumulatedDistance = 0;
+  let prevPoint = line[0];
+  let currentPoint = line[1];
+  let latStep = (currentPoint[0] - prevPoint[0]) / steps;
+  let lngStep = (currentPoint[1] - prevPoint[1]) / steps;
+  let distStep = dist / steps;
+  for (let i = 1; i < steps; i++) {
+    let newLat = prevPoint.lat + i * latStep;
+    let newLon = prevPoint.lon + i * lngStep;
+    let newdist = i * distStep;
+    dividedLine.push({ lat: newLat, lon: newLon, dist: newdist });
+  }
+
+  //dividedLine.push(line[line.length - 1]); // Add the last point
+  console.log(dividedLine);
+  return dividedLine;
+}
 // recibir un  array de objetos  y devolver el mismo array con la longitud y la altitud
 app.post("/api/map/elevation", async function (req, res) {
   console.log("using ---- elevation");
@@ -959,19 +978,45 @@ app.post("/api/map/elevation", async function (req, res) {
   if (listpoint.length > 0) {
     listpoint.forEach((route, index_rt, array_rt) => {
       let acumulative = [];
+      let lastindex = 0;
+      let lastdist = 0;
       wpaltitude.push([]);
       route.forEach((wp, index, array) => {
         let lineLength = 0;
+        let altitud = wp[2];
         acumulative.push(wp);
-        listwaypoint = listwaypoint + wp[0] + "," + wp[1] + "|";
         if (index != 0) {
           let linestring = turf.lineString(acumulative);
           lineLength = turf.length(linestring, { units: "meters" });
+          //medir que distancia sea mayor
+          let otherline = turf.lineString([wp, array[lastindex]]);
+          let distbetweenwp = turf.length(otherline, { units: "meters" });
+          console.log(distbetweenwp);
+          if (distbetweenwp > 200) {
+            console.log("mayor a 200 metros");
+            //funcion de slice and add to  //altitud = -1;
+            let steps = Math.floor(distbetweenwp / 200) + 1;
+            let newpoints = divideLineIntoPoints(
+              [wp, array[lastindex]],
+              steps,
+              distbetweenwp
+            );
+            newpoints.map((nwp) => {
+              listwaypoint = listwaypoint + nwp.lat + "," + nwp.lng + "|";
+              wpaltitude[index_rt].push({
+                length: Number(lastdist + nwp.dist.toFixed(1)),
+                uav: null,
+              });
+            });
+          }
         }
+        listwaypoint = listwaypoint + wp[0] + "," + wp[1] + "|";
         wpaltitude[index_rt].push({
           length: Number(lineLength.toFixed(1)),
-          uavheight: wp[2],
+          uav: altitud,
         });
+        lastindex = index;
+        lastdist = lineLength;
       });
       if (array_rt.length - 1 == index_rt) {
         listwaypoint = listwaypoint.slice(0, -1);
@@ -993,10 +1038,12 @@ app.post("/api/map/elevation", async function (req, res) {
         if (index == 0) {
           initElevationIndex = auxcount;
         }
-        wpaltitude[index_rt][index]["uavheight"] = (
-          wpaltitude[index_rt][index]["uavheight"] +
-          Number(elevationprofile.results[initElevationIndex].elevation)
-        ).toFixed(1);
+        if (wpaltitude[index_rt][index]["uav"]) {
+          wpaltitude[index_rt][index]["uavheight"] = (
+            wpaltitude[index_rt][index]["uav"] +
+            Number(elevationprofile.results[initElevationIndex].elevation)
+          ).toFixed(1);
+        }
         auxcount = auxcount + 1;
       }
     }

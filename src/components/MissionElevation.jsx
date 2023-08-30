@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { useSelector } from "react-redux";
+import * as turf from "@turf/turf";
 import {
   CartesianGrid,
   Line,
@@ -57,10 +58,20 @@ const MissionElevation = () => {
           rt: 0,
         },
         {
-          length: 4,
+          length: 3,
           uavheight: 20.5,
           elevation: 20.5,
           wp: 0,
+          rt: 0,
+        },
+        {
+          length: 4,
+          elevation: 15.5,
+          rt: 0,
+        },
+        {
+          length: 5,
+          elevation: 15.5,
           rt: 0,
         },
         {
@@ -171,20 +182,46 @@ const MissionElevation = () => {
     },
   ];
 
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Radius of the Earth in meters
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  }
+
   async function elevation() {
     // mas robusto y llamar cuando cambie la altura del drone
-    if (false) {
-      let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
-      let listwp = [];
-      if (auxroute.length > 0) {
-        auxroute.forEach((route, index_rt, array_rt) => {
-          let listwp_aux = [];
-          route.wp.forEach((wp, index, array) => {
-            listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
-          });
-          listwp.push(listwp_aux);
+
+    let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
+    let listwp = [];
+    if (auxroute.length > 0) {
+      auxroute.forEach((route, index_rt, array_rt) => {
+        let listwp_aux = [];
+        route.wp.forEach((wp, index, array) => {
+          listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
         });
-      }
+        listwp.push(listwp_aux);
+      });
+    }
+    console.log(listwp);
+    var linestring = turf.lineString(listwp[0]);
+    let lineLength = turf.length(linestring, { units: "meters" });
+    let divisionLength = 0.2;
+    let newLine = turf.lineChunk(linestring, divisionLength, {
+      units: "kilometers",
+    }).features;
+    console.log(linestring);
+    console.log(lineLength + "+" + divisionLength);
+    console.log(newLine);
+    if (true) {
       let command;
       try {
         const response = await fetch("/api/map/elevation", {
@@ -233,7 +270,6 @@ const MissionElevation = () => {
   }, [SelectRT]);
 
   const CustomTooltip = ({ active, payload, label }) => {
-    //console.log(payload);
     if (active && payload && payload.length) {
       let list = [payload[0].payload];
       list[0]["color"] = payload[0].color;
@@ -247,17 +283,17 @@ const MissionElevation = () => {
         key.payload["color"] = key.color;
         match ? list.push(key.payload) : null;
       });
-      //console.log(list);
       return (
         <div style={{ background: "#FFFFFF" }}>
+          <div>{`distancia ${label} m `}</div>
           {list.map((key) => (
-            <Fragment>
+            <Fragment key={"s-" + key.rt}>
               <div
-                key={`trt${key.rt}`}
+                key={`tr${key.rt}`}
                 style={{ color: key.color, fontSize: 16 }}
               >{`Ruta ${key.rt} - wp ${key.wp}`}</div>
               <div
-                key={`drt${key.rt}`}
+                key={`dr${key.rt}`}
                 style={{ color: key.color, fontSize: 16 }}
               >{`Terreno:${key.elevation} - UAV: ${key.uavheight}`}</div>
             </Fragment>
@@ -331,7 +367,6 @@ const MissionElevation = () => {
                   />
                   <Line
                     connectNulls
-                    type="monotone"
                     dataKey="uavheight"
                     data={s.data}
                     name={s.name + "-v"}
