@@ -17,8 +17,6 @@ class keepvalue {
     this.selecwp = { id: -1 };
   }
   initroute(routes) {
-    console.log("init routes");
-    console.log(routes);
     this.routes = JSON.parse(JSON.stringify(routes));
   }
   getroute() {
@@ -81,7 +79,7 @@ export const MapMissionsCreate = () => {
 
     map.getSource(id).setData({
       type: "FeatureCollection",
-      features: Object.values(auxroute).map((route) => routesToFeature(route)),
+      features: auxroute.map((route) => routesToFeature(route)),
     });
   }
   function onUp(e) {
@@ -281,13 +279,13 @@ export const MapMissionsCreate = () => {
   }
   function routeTowaypoints(myroute) {
     let waypoint = [];
-    Object.values(myroute).forEach((rt) => {
-      Object.keys(rt.wp).forEach((wp_key) => {
+    myroute.map((rt,index_rt) => {
+      rt.wp.map((wp,index_wp) => {
         waypoint.push({
-          longitude: rt["wp"][wp_key]["pos"][1],
-          latitude: rt["wp"][wp_key]["pos"][0],
-          id: wp_key,
-          routeid: rt["id"],
+          longitude: wp["pos"][1],
+          latitude: wp["pos"][0],
+          id: index_wp,
+          routeid: index_rt,
         });
       });
     });
@@ -296,6 +294,7 @@ export const MapMissionsCreate = () => {
 
   useEffect(() => {
     console.log("Mapmission upload mission");
+    console.log(routes)
     testkeepvalue.initroute(routes);
     let waypoint_position = routeTowaypoints(routes);
 
@@ -313,7 +312,7 @@ export const MapMissionsCreate = () => {
 
     map.getSource(id).setData({
       type: "FeatureCollection",
-      features: Object.values(routes).map((route) => routesToFeature(route)),
+      features: routes.map((route) => routesToFeature(route)),
     });
   }, [routes]);
 

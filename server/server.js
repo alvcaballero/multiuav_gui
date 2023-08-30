@@ -950,6 +950,8 @@ app.get("/api/map/elevation", async function (req, res) {
 });
 
 function divideLineIntoPoints(line, steps, dist) {
+  console.log("line")
+  console.log(line)
   let dividedLine = []; // Start with the first point
   let accumulatedDistance = 0;
   let prevPoint = line[0];
@@ -958,13 +960,14 @@ function divideLineIntoPoints(line, steps, dist) {
   let lngStep = (currentPoint[1] - prevPoint[1]) / steps;
   let distStep = dist / steps;
   for (let i = 1; i < steps; i++) {
-    let newLat = prevPoint.lat + i * latStep;
-    let newLon = prevPoint.lon + i * lngStep;
+    let newLat = prevPoint[0] + i * latStep;
+    let newLon = prevPoint[1] + i * lngStep;
     let newdist = i * distStep;
     dividedLine.push({ lat: newLat, lon: newLon, dist: newdist });
   }
 
   //dividedLine.push(line[line.length - 1]); // Add the last point
+  console.log("dividedLine------------");
   console.log(dividedLine);
   return dividedLine;
 }
@@ -991,7 +994,7 @@ app.post("/api/map/elevation", async function (req, res) {
           //medir que distancia sea mayor
           let otherline = turf.lineString([wp, array[lastindex]]);
           let distbetweenwp = turf.length(otherline, { units: "meters" });
-          console.log(distbetweenwp);
+          console.log("distancia puntos "+distbetweenwp);
           if (distbetweenwp > 200) {
             console.log("mayor a 200 metros");
             //funcion de slice and add to  //altitud = -1;
@@ -1002,9 +1005,12 @@ app.post("/api/map/elevation", async function (req, res) {
               distbetweenwp
             );
             newpoints.map((nwp) => {
-              listwaypoint = listwaypoint + nwp.lat + "," + nwp.lng + "|";
+              listwaypoint = listwaypoint + nwp.lat + "," + nwp.lon + "|";
+              let nwpdist = +lastdist.toFixed(1) + +nwp.dist.toFixed(1)
+              console.log("lastdist "+lastdist+" caldist "+nwp.dist.toFixed(1))
+
               wpaltitude[index_rt].push({
-                length: Number(lastdist + nwp.dist.toFixed(1)),
+                length: nwpdist,
                 uav: null,
               });
             });
@@ -1016,16 +1022,18 @@ app.post("/api/map/elevation", async function (req, res) {
           uav: altitud,
         });
         lastindex = index;
-        lastdist = lineLength;
+        lastdist = Number(lineLength.toFixed(1));
       });
       if (array_rt.length - 1 == index_rt) {
         listwaypoint = listwaypoint.slice(0, -1);
       }
     });
     console.log(wpaltitude);
+    console.log(listwaypoint);
 
     let elevationprofile = await ApiElevation(listwaypoint);
     //anadir elevacion profile
+    console.log(elevationprofile)
     let auxcount = 0;
     let initElevationIndex = 0;
     for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
@@ -1033,12 +1041,14 @@ app.post("/api/map/elevation", async function (req, res) {
         wpaltitude[index_rt][index]["elevation"] = Number(
           elevationprofile.results[auxcount].elevation.toFixed(1)
         );
-        wpaltitude[index_rt][index]["wp"] = index;
-        wpaltitude[index_rt][index]["rt"] = index_rt;
+
         if (index == 0) {
           initElevationIndex = auxcount;
         }
-        if (wpaltitude[index_rt][index]["uav"]) {
+        
+        wpaltitude[index_rt][index]["rt"] = index_rt;
+        if (wpaltitude[index_rt][index]["uav"] !== null) {
+          wpaltitude[index_rt][index]["wp"] = index;
           wpaltitude[index_rt][index]["uavheight"] = (
             wpaltitude[index_rt][index]["uav"] +
             Number(elevationprofile.results[initElevationIndex].elevation)

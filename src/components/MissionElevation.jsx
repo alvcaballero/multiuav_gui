@@ -38,7 +38,7 @@ const MissionElevation = () => {
   const [items, setItems] = useState([]);
   const [ElevProfile, setElevProfile] = useState([]);
   const [SelectRT, setSelectRT] = useState(-1);
-  const Mission_route = useSelector((state) => state.mission);
+  const Mission_route = useSelector((state) => state.mission);//cambiar esto por  state.mission.route
 
   const values = items.map((it) => it["elevation"]);
   const values1 = items.map((it) => it["uavheight"]);
@@ -182,75 +182,52 @@ const MissionElevation = () => {
     },
   ];
 
-  function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Radius of the Earth in meters
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-    return distance;
-  }
-
   async function elevation() {
     // mas robusto y llamar cuando cambie la altura del drone
-
-    let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
-    let listwp = [];
-    if (auxroute.length > 0) {
-      auxroute.forEach((route, index_rt, array_rt) => {
-        let listwp_aux = [];
-        route.wp.forEach((wp, index, array) => {
-          listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
+    if(Mission_route.route.length>0){
+      let auxroute = JSON.parse(JSON.stringify(Mission_route.route));
+      let listwp = [];
+      if (auxroute.length > 0) {
+        auxroute.forEach((route, index_rt, array_rt) => {
+          let listwp_aux = [];
+          route.wp.forEach((wp, index, array) => {
+            listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
+          });
+          listwp.push(listwp_aux);
         });
-        listwp.push(listwp_aux);
-      });
-    }
-    console.log(listwp);
-    var linestring = turf.lineString(listwp[0]);
-    let lineLength = turf.length(linestring, { units: "meters" });
-    let divisionLength = 0.2;
-    let newLine = turf.lineChunk(linestring, divisionLength, {
-      units: "kilometers",
-    }).features;
-    console.log(linestring);
-    console.log(lineLength + "+" + divisionLength);
-    console.log(newLine);
-    if (true) {
-      let command;
-      try {
-        const response = await fetch("/api/map/elevation", {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ routes: listwp }),
-        });
-        if (response.ok) {
-          command = await response.json();
-        } else {
-          throw new Error(response.status);
-        }
-      } catch (error) {
-        console.log(error);
       }
-      let elevationRoute = command.map((route, index_rt) => {
-        return { name: "RT" + index_rt, data: route, color: colors[index_rt] };
-      });
-      console.log(elevationRoute);
-      setSelectRT(-1);
-      setElevProfile(elevationRoute);
-      setItems(elevationRoute);
-    } else {
-      setSelectRT(-1);
-      setElevProfile(data);
-      setItems(data);
+      console.log(listwp);
+      if (true) {
+        let command;
+        try {
+          const response = await fetch("/api/map/elevation", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ routes: listwp }),
+          });
+          if (response.ok) {
+            command = await response.json();
+          } else {
+            throw new Error(response.status);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+        let elevationRoute = command.map((route, index_rt) => {
+          return { name: "RT" + index_rt, data: route, color: colors[index_rt] };
+        });
+        console.log(elevationRoute);
+        setSelectRT(-1);
+        setElevProfile(elevationRoute);
+        setItems(elevationRoute);
+      } else {
+        setSelectRT(-1);
+        setElevProfile(data);
+        setItems(data);
+      }
     }
   }
 
@@ -283,23 +260,32 @@ const MissionElevation = () => {
         key.payload["color"] = key.color;
         match ? list.push(key.payload) : null;
       });
-      return (
-        <div style={{ background: "#FFFFFF" }}>
-          <div>{`distancia ${label} m `}</div>
-          {list.map((key) => (
+      if(list[0].uavheight){
+        return (
+          <div style={{ background: "#FFFFFF" }}>
+            <div>{`distancia ${label} m `}</div>
+            {list.map((key) => (
+            <Fragment key={"s-"+key.rt}>
+                <div key={`tr${key.rt}`}style={{ color: key.color, fontSize: 16 }}>{`Ruta ${key.rt} - wp ${key.wp}`}</div>
+                <div key={`dr${key.rt}`} style={{ color: key.color, fontSize: 16 }}>{`Terreno:${key.elevation} - UAV: ${key.uavheight}`}</div>
+              </Fragment>
+            ))}
+          </div>
+        );
+      }else{
+        return (
+          <div style={{ background: "#FFFFFF" }}>
+            <div>{`distancia ${label} m `}</div>
+            {list.map((key) => (
             <Fragment key={"s-" + key.rt}>
-              <div
-                key={`tr${key.rt}`}
-                style={{ color: key.color, fontSize: 16 }}
-              >{`Ruta ${key.rt} - wp ${key.wp}`}</div>
-              <div
-                key={`dr${key.rt}`}
-                style={{ color: key.color, fontSize: 16 }}
-              >{`Terreno:${key.elevation} - UAV: ${key.uavheight}`}</div>
-            </Fragment>
-          ))}
-        </div>
-      );
+                <div  key={`tr${key.rt}`} style={{ color: key.color, fontSize: 16 }} >{`Ruta ${key.rt}`}</div>
+                <div  key={`dr${key.rt}`} style={{ color: key.color, fontSize: 16 }} >{`Terreno:${key.elevation} `}</div>
+              </Fragment>
+            ))}
+          </div>
+        );
+      }
+
     }
 
     return null;
