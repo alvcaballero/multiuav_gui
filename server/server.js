@@ -851,7 +851,6 @@ app.get("/api/mission/atributesparam/:type/:param", async function (req, res) {
 });
 
 app.get("/api/mission/actions/:type", async function (req, res) {
-  0;
   console.log("devices acction " + req.params.type);
   return res.json(
     Object.values(devices_msg[req.params.type]["attributes"]["mission_action"])
@@ -978,7 +977,7 @@ app.post("/api/map/elevation", async function (req, res) {
         listwaypoint = listwaypoint.slice(0, -1);
       }
     });
-    console.log(wpaltitude)
+    console.log(wpaltitude);
 
     let elevationprofile = await ApiElevation(listwaypoint);
     //anadir elevacion profile
@@ -986,18 +985,23 @@ app.post("/api/map/elevation", async function (req, res) {
     let initElevationIndex = 0;
     for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
       for (let index = 0; index < wpaltitude[index_rt].length; index++) {
-        wpaltitude[index_rt][index]["elevation"] = Number(elevationprofile.results[auxcount].elevation.toFixed(1));
+        wpaltitude[index_rt][index]["elevation"] = Number(
+          elevationprofile.results[auxcount].elevation.toFixed(1)
+        );
         wpaltitude[index_rt][index]["wp"] = index;
         wpaltitude[index_rt][index]["rt"] = index_rt;
         if (index == 0) {
           initElevationIndex = auxcount;
         }
-        wpaltitude[index_rt][index]["uavheight"] =(wpaltitude[index_rt][index]["uavheight"] + Number(elevationprofile.results[initElevationIndex].elevation)).toFixed(1);
+        wpaltitude[index_rt][index]["uavheight"] = (
+          wpaltitude[index_rt][index]["uavheight"] +
+          Number(elevationprofile.results[initElevationIndex].elevation)
+        ).toFixed(1);
         auxcount = auxcount + 1;
       }
     }
   }
-  console.log(wpaltitude)
+  console.log(wpaltitude);
   res.json(wpaltitude);
 });
 
