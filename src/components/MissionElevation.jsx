@@ -329,50 +329,12 @@ const MissionElevation = () => {
               setlocation(curentlocation);
               break;
             } else {
-              //delete a waypoint
-              if(curentlocation[i].length < location[i].length){
-                for (let j = 0; j < location[i].length; j = j + 1) {
-                  // recorre la elevacion de prefi
-                  console.log("j"+j+"+"+curentlocation[i][j]+"  "+location[i][j]);
-                  if ((JSON.stringify(curentlocation[i][j]) != JSON.stringify(location[i][j]))|| (curentlocation[i][j] === undefined)){
-                    console.log("diferent waypoint");
-                    //cambiar la altura de este punto en la elevacion
-                    let auxElevprofile = JSON.parse(
-                      JSON.stringify(ElevProfileRef.current)
-                    );
-                    for (
-                      let k = 0;
-                      k < auxElevprofile[i].data.length;
-                      k = k + 1
-                    ) {
-                      if (auxElevprofile[i]["data"][k].hasOwnProperty("wp")) {
-
-                        if (auxElevprofile[i].data[k].wp == j ) {
-                          console.log("encontrado wp delete" + j);
-                          auxElevprofile[i].data.splice(k, 1);
-                            for(let l = auxElevprofile[i].data.length-1;l>=0;l=l-1 ){
-                              if (auxElevprofile[i]["data"][l].hasOwnProperty("wp")) {
-                                break;
-                              }
-                              auxElevprofile[i].data.splice(l, 1);
-                            }
-
-                        }
-                      }
-                    }
-                    console.log(auxElevprofile);
-                    setElevProfile(auxElevprofile);
-                    
-                  }
-                }
-                setlocation(curentlocation);
-                break;
-              }else{
+              //delete a waypoint -- a que las distancias entre los waypoints que  quedan son diferentes y tiene que se calculadas de nuevo
               //add  a waypoint
               console.log("nuevas posiciones");
               change = true;
               break;
-              }
+              
             }
           }
         }
