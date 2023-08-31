@@ -68,7 +68,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
 
   useEffect(() => {
     setmission(Mission_route);
-    console.log("otro use effect");
+    //console.log("otro use effect");
     Mission_route.route.length > 0 ? setaddMission(false) : setaddMission(true);
     setinit(true);
   }, [Mission_route]);
@@ -76,14 +76,14 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
   useEffect(() => {
     if (init) {
       console.log("update mission");
-      console.log(mission);
+      //console.log(mission);
       dispatch(missionActions.reloadMission(mission.route));
     }
     mission.route.length > 0 ? setaddMission(false) : setaddMission(true);
   }, [mission]);
 
   useEffect(() => {
-    console.log(expanded_route);
+    //console.log(expanded_route);
     setExpanded_route("Rute " + selectwp.route_id);
     setExpanded_wp("wp " + selectwp.id);
     setScrool(500 + selectwp.route_id * 50 + selectwp.id * 50);
@@ -91,16 +91,22 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
 
   const AddnewMission = () => {
     let auxmission = { name: "new Mission", description: "", route: [] };
-    auxmission.route.push({ name: "", uav: "", attributes: {}, wp: [] });
+    auxmission.route.push({ name: "", uav: "", id: 0, attributes: {}, wp: [] });
     setmission(auxmission);
     setaddMission(false);
     console.log("add new mission");
   };
   const AddnewRoute = () => {
     let auxroute = [...mission.route];
-    auxroute.push({ name: "", uav: "", attributes: {}, wp: [] });
+    let myid = auxroute.length > 0 ? +auxroute.slice(-1)[0].id + +1 : 0;
+    auxroute.push({
+      name: "",
+      uav: "",
+      id: myid,
+      attributes: {},
+      wp: [],
+    });
     setmission({ ...mission, route: auxroute });
-    console.log("add new route");
   };
   const AddnewWp = (index_route, index_wp) => {
     console.log("add new wp" + index_route);
@@ -136,7 +142,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
     console.log("remove route" + index_route);
     let auxroute = JSON.parse(JSON.stringify(mission.route));
     auxroute.splice(index_route, 1);
-    console.log(auxroute);
+    //console.log(auxroute);
     setmission({ ...mission, route: auxroute });
   };
 
@@ -201,7 +207,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                         sx={{
                           width: "33%",
                           flexShrink: 0,
-                          color: colors[index],
+                          color: colors[item_route.id],
                         }}
                       >
                         {"Rute " + index}

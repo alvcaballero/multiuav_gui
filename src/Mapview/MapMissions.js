@@ -177,7 +177,7 @@ export const MapMissions = () => {
   }, []);
 
   function routesToFeature(item) {
-    let waypoint_pos = Object.values(item.wp).map(function (it) {
+    let waypoint_pos = item.wp.map(function (it) {
       return [it["pos"][1], it["pos"][0]];
     });
     return {
@@ -195,13 +195,13 @@ export const MapMissions = () => {
   }
   function routeTowaypoints(myroute) {
     let waypoint = [];
-    Object.values(myroute).forEach((rt) => {
-      Object.keys(rt.wp).forEach((wp_key) => {
+    myroute.forEach((rt, index_rt) => {
+      rt.wp.forEach((wp, index_wp) => {
         waypoint.push({
-          longitude: rt["wp"][wp_key]["pos"][1],
-          latitude: rt["wp"][wp_key]["pos"][0],
-          id: wp_key,
-          routeid: rt["id"],
+          longitude: wp["pos"][1],
+          latitude: wp["pos"][0],
+          id: index_wp,
+          routeid: index_rt,
         });
       });
     });
@@ -225,7 +225,7 @@ export const MapMissions = () => {
 
     map.getSource(id).setData({
       type: "FeatureCollection",
-      features: Object.values(routes).map((route) => routesToFeature(route)),
+      features: routes.map((route) => routesToFeature(route)),
     });
   }, [routes]);
 

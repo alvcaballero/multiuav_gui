@@ -23,7 +23,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
   const handleClick = () => {
     // 👇️ toggle
     const element = document.getElementsByName("otrotest");
-    console.log(element);
+    //console.log(element);
     for (let i = 0; i < element.length; i++) {
       element[i].setAttribute("class", "mytest");
     }
@@ -49,11 +49,12 @@ export const Navbar = ({ SetAddUAVOpen }) => {
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
-      console.log(fileReader.result);
-      console.log(file.name);
+      //console.log(fileReader.result);
+      //console.log(file.name);
       rosContex.openMision(file.name, fileReader.result);
     };
     fileReader.onerror = () => {
+      console.log("error");
       console.log(fileReader.error);
     };
   };
