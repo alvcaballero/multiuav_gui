@@ -5,12 +5,32 @@ frame_id: /gps
 description: "mission 1"
 route:
   - name: "doñana linea1"
-    uav: 'uav_2'
+    uav: "uav_2"
     wp:
-    - {pos: [37.41031527664839, -6.002355556298255, 5],yaw: 0,gimbal: -40,  action: {photo: true}}
-    - {pos: [37.41035892250692, -6.002406773965073, 5],yaw: 55,gimbal: 0,   action: {video_start: 0, gimbal: -40, yaw: -20}}
-    - {pos: [37.41041474947755, -6.002324068339875, 5],yaw: 30,gimbal: -80, action: {gimbal: -40, yaw: -20 }}
-    - {pos: [37.41037167365715, -6.002275066705595, 5],yaw: -90,gimbal: -30,action: {video_stop: 0 }}
+      - {
+          pos: [37.41031527664839, -6.002355556298255, 5],
+          yaw: 0,
+          gimbal: -40,
+          action: { photo: true },
+        }
+      - {
+          pos: [37.41035892250692, -6.002406773965073, 5],
+          yaw: 55,
+          gimbal: 0,
+          action: { video_start: 0, gimbal: -40, yaw: -20 },
+        }
+      - {
+          pos: [37.41041474947755, -6.002324068339875, 5],
+          yaw: 30,
+          gimbal: -80,
+          action: { gimbal: -40, yaw: -20 },
+        }
+      - {
+          pos: [37.41037167365715, -6.002275066705595, 5],
+          yaw: -90,
+          gimbal: -30,
+          action: { video_stop: 0 },
+        }
     attributes:
       mode_landing: 2
       mode_yaw: 3

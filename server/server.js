@@ -950,8 +950,8 @@ app.get("/api/map/elevation", async function (req, res) {
 });
 
 function divideLineIntoPoints(line, steps, dist) {
-  console.log("line")
-  console.log(line)
+  console.log("line");
+  console.log(line);
   let dividedLine = []; // Start with the first point
   let accumulatedDistance = 0;
   let prevPoint = line[0];
@@ -994,7 +994,7 @@ app.post("/api/map/elevation", async function (req, res) {
           //medir que distancia sea mayor
           let otherline = turf.lineString([wp, array[lastindex]]);
           let distbetweenwp = turf.length(otherline, { units: "meters" });
-          console.log("distancia puntos "+distbetweenwp);
+          console.log("distancia puntos " + distbetweenwp);
           if (distbetweenwp > 200) {
             console.log("mayor a 200 metros");
             //funcion de slice and add to  //altitud = -1;
@@ -1006,8 +1006,10 @@ app.post("/api/map/elevation", async function (req, res) {
             );
             newpoints.map((nwp) => {
               listwaypoint = listwaypoint + nwp.lat + "," + nwp.lon + "|";
-              let nwpdist = +lastdist.toFixed(1) + +nwp.dist.toFixed(1)
-              console.log("lastdist "+lastdist+" caldist "+nwp.dist.toFixed(1))
+              let nwpdist = +lastdist.toFixed(1) + +nwp.dist.toFixed(1);
+              console.log(
+                "lastdist " + lastdist + " caldist " + nwp.dist.toFixed(1)
+              );
 
               wpaltitude[index_rt].push({
                 length: nwpdist,
@@ -1033,10 +1035,11 @@ app.post("/api/map/elevation", async function (req, res) {
 
     let elevationprofile = await ApiElevation(listwaypoint);
     //anadir elevacion profile
-    console.log(elevationprofile)
+    console.log(elevationprofile);
     let auxcount = 0;
     let initElevationIndex = 0;
     for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
+      let wp_count = 0;
       for (let index = 0; index < wpaltitude[index_rt].length; index++) {
         wpaltitude[index_rt][index]["elevation"] = Number(
           elevationprofile.results[auxcount].elevation.toFixed(1)
@@ -1045,14 +1048,15 @@ app.post("/api/map/elevation", async function (req, res) {
         if (index == 0) {
           initElevationIndex = auxcount;
         }
-        
+
         wpaltitude[index_rt][index]["rt"] = index_rt;
         if (wpaltitude[index_rt][index]["uav"] !== null) {
-          wpaltitude[index_rt][index]["wp"] = index;
+          wpaltitude[index_rt][index]["wp"] = wp_count;
           wpaltitude[index_rt][index]["uavheight"] = (
-            wpaltitude[index_rt][index]["uav"] +
-            Number(elevationprofile.results[initElevationIndex].elevation)
+            +wpaltitude[index_rt][index]["uav"] +
+            +elevationprofile.results[initElevationIndex].elevation
           ).toFixed(1);
+          wp_count = wp_count + 1;
         }
         auxcount = auxcount + 1;
       }
@@ -1064,6 +1068,7 @@ app.post("/api/map/elevation", async function (req, res) {
 
 const ApiElevation = async (stringLocationList) => {
   let myresponse = {};
+  //https://api.opentopodata.org/v1/eudem25m?locations=37.413745,-5.996710|37.414947,-5.989437
   await fetch(
     `https://maps.googleapis.com/maps/api/elevation/json?locations=${stringLocationList}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
   )
