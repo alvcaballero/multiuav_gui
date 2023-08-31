@@ -310,9 +310,7 @@ const MissionElevation = () => {
                     k < auxElevprofile[i].data.length;
                     k = k + 1
                   ) {
-                    console.log("j=" + j);
                     if (auxElevprofile[i]["data"][k].hasOwnProperty("wp")) {
-                      console.log(auxElevprofile[i]["data"][k]["wp"]);
                       if (auxElevprofile[i].data[k].wp == j) {
                         console.log("encontrado elev profile wp");
                         auxElevprofile[i].data[k].uavheight =
@@ -326,15 +324,55 @@ const MissionElevation = () => {
                   }
                   console.log(auxElevprofile);
                   setElevProfile(auxElevprofile);
-                  break;
                 }
               }
               setlocation(curentlocation);
               break;
             } else {
+              //delete a waypoint
+              if(curentlocation[i].length < location[i].length){
+                for (let j = 0; j < location[i].length; j = j + 1) {
+                  // recorre la elevacion de prefi
+                  console.log("j"+j+"+"+curentlocation[i][j]+"  "+location[i][j]);
+                  if ((JSON.stringify(curentlocation[i][j]) != JSON.stringify(location[i][j]))|| (curentlocation[i][j] === undefined)){
+                    console.log("diferent waypoint");
+                    //cambiar la altura de este punto en la elevacion
+                    let auxElevprofile = JSON.parse(
+                      JSON.stringify(ElevProfileRef.current)
+                    );
+                    for (
+                      let k = 0;
+                      k < auxElevprofile[i].data.length;
+                      k = k + 1
+                    ) {
+                      if (auxElevprofile[i]["data"][k].hasOwnProperty("wp")) {
+
+                        if (auxElevprofile[i].data[k].wp == j ) {
+                          console.log("encontrado wp delete" + j);
+                          auxElevprofile[i].data.splice(k, 1);
+                            for(let l = auxElevprofile[i].data.length-1;l>=0;l=l-1 ){
+                              if (auxElevprofile[i]["data"][l].hasOwnProperty("wp")) {
+                                break;
+                              }
+                              auxElevprofile[i].data.splice(l, 1);
+                            }
+
+                        }
+                      }
+                    }
+                    console.log(auxElevprofile);
+                    setElevProfile(auxElevprofile);
+                    
+                  }
+                }
+                setlocation(curentlocation);
+                break;
+              }else{
+              //add  a waypoint
               console.log("nuevas posiciones");
               change = true;
               break;
+              }
             }
           }
         }
