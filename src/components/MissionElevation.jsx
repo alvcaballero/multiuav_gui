@@ -50,142 +50,7 @@ const MissionElevation = () => {
   const maxValue = Math.max(...values1);
   const valueRange = maxValue - minValue;
 
-  const data = [
-    {
-      name: "RT0",
-      data: [
-        {
-          length: 0,
-          uavheight: 20.5,
-          elevation: 15.5,
-          wp: 0,
-          rt: 0,
-        },
-        {
-          length: 3,
-          uavheight: 20.5,
-          elevation: 20.5,
-          wp: 0,
-          rt: 0,
-        },
-        {
-          length: 4,
-          elevation: 15.5,
-          rt: 0,
-        },
-        {
-          length: 5,
-          elevation: 15.5,
-          rt: 0,
-        },
-        {
-          length: 7.5,
-          uavheight: 20.5,
-          elevation: 1.5,
-          wp: 1,
-          rt: 0,
-        },
-        {
-          length: 18.5,
-          uavheight: 20.5,
-          elevation: 15.5,
-          wp: 2,
-          rt: 0,
-        },
-        {
-          length: 25.8,
-          uavheight: 20.5,
-          elevation: 15.5,
-          wp: 3,
-          rt: 0,
-        },
-      ],
-      color: "#F34C28",
-    },
-    {
-      name: "RT1",
-      data: [
-        {
-          length: 0,
-          uavheight: 10.5,
-          elevation: 5.5,
-          wp: 0,
-          rt: 1,
-        },
-        {
-          length: 4.8,
-          uavheight: 10.5,
-          elevation: 5.5,
-          wp: 1,
-          rt: 1,
-        },
-        {
-          length: 10.2,
-          uavheight: 10.5,
-          elevation: 5.4,
-          wp: 2,
-          rt: 1,
-        },
-        {
-          length: 17.1,
-          uavheight: 10.5,
-          elevation: 5.4,
-          wp: 3,
-          rt: 1,
-        },
-        {
-          length: 24.4,
-          uavheight: 10.5,
-          elevation: 5.5,
-          wp: 4,
-          rt: 1,
-        },
-      ],
-      color: "#F39A28",
-    },
-    {
-      name: "RT2",
-      data: [
-        {
-          length: 0,
-          uavheight: 28.2,
-          elevation: 6.2,
-          wp: 0,
-          rt: 2,
-        },
-        {
-          length: 6.3,
-          uavheight: 26.2,
-          elevation: 8.6,
-          wp: 1,
-          rt: 2,
-        },
-        {
-          length: 13.9,
-          uavheight: 36.2,
-          elevation: 8.2,
-          wp: 2,
-          rt: 2,
-        },
-        {
-          length: 18.5,
-          uavheight: 26.2,
-          elevation: 8.1,
-          wp: 3,
-          rt: 2,
-        },
-        {
-          length: 22.9,
-          uavheight: 31.2,
-          elevation: 7.1,
-          wp: 4,
-          rt: 2,
-        },
-      ],
-      color: "#1EC910",
-    },
-  ];
-
+  
   const GetWplist = (auxroute) => {
     let listwp = [];
     if (auxroute.length > 0) {
@@ -209,7 +74,7 @@ const MissionElevation = () => {
       let listwp = GetWplist(auxroute);
       setlocation(listwp);
       //console.log(listwp);
-      if (true) {
+
         let command;
         try {
           const response = await fetch("/api/map/elevation", {
@@ -238,10 +103,6 @@ const MissionElevation = () => {
         console.log(elevationRoute);
         setSelectRT(-1);
         setElevProfile(elevationRoute);
-      } else {
-        setSelectRT(-1);
-        setElevProfile(data);
-      }
     }
   }
 

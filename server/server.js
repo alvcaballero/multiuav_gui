@@ -1068,9 +1068,11 @@ app.post("/api/map/elevation", async function (req, res) {
 
 const ApiElevation = async (stringLocationList) => {
   let myresponse = {};
-  //https://api.opentopodata.org/v1/eudem25m?locations=37.413745,-5.996710|37.414947,-5.989437
+  //`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList}`
+  //`https://maps.googleapis.com/maps/api/elevation/json?locations=${stringLocationList}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
+
   await fetch(
-    `https://maps.googleapis.com/maps/api/elevation/json?locations=${stringLocationList}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
+    `https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList}`
   )
     .then((response) => response.json())
     .then((body) => {
