@@ -129,6 +129,15 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               <a id="hideRosterNavbar" onClick={handleClick}>
                 Show/Hide UAV Roster
               </a>
+              <a
+                id="cameraView"
+                onClick={() => {
+                  navigate("/camera");
+                  handleClick();
+                }}
+              >
+                Camera view
+              </a>
             </div>
           </div>
           <div className="dropdown">
