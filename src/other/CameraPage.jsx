@@ -6,7 +6,7 @@ import makeStyles from "@mui/styles/makeStyles";
 import { RosControl, RosContext } from "../components/RosControl";
 import DeviceList from "../components/DeviceList";
 import { Paper, Grid, Box } from "@mui/material";
-import { CameraWebRTCV3 } from "../components/CameraWebRTCV3";
+import { CameraWebRTCV4 } from "../components/CameraWebRTCV4";
 
 import { useDispatch, useSelector } from "react-redux";
 import { experimentalStyled as styled } from "@mui/material/styles";
@@ -91,7 +91,7 @@ const CameraPage = () => {
           style={{
             position: "relative",
             width: "100%",
-            height: `calc(100vh - 95px)`,
+            height: `calc(100vh - 90px)`,
           }}
         >
           <Box
@@ -101,18 +101,18 @@ const CameraPage = () => {
               width: `calc(100vw - 360px)`,
               height: "100%",
               padding: "20px",
-              right: "0px",
+              float:"right"
             }}
           >
             <Grid container spacing={3}>
-              <Grid item xs>
-                <CameraWebRTCV3 />
+              <Grid item >
+              <CameraWebRTCV4 />
               </Grid>
-              <Grid item xs={6}>
-                <CameraWebRTCV3 />
+              <Grid item >
+              <CameraWebRTCV4 />
               </Grid>
-              <Grid item xs>
-                <CameraWebRTCV3 />
+              <Grid item >
+                <CameraWebRTCV4 />
               </Grid>
             </Grid>
           </Box>
