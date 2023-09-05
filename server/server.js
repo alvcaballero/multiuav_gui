@@ -12,13 +12,17 @@ const YAML = require("yaml");
 const WebSocket = require("ws");
 const ROSLIB = require("roslib");
 
-const port = 4000;
-
 const app = express();
+const port = 4000;
 app.set("port", port);
-
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.resolve(__dirname, "../build")));
+const server = require("http").createServer(app);
+const wss = new WebSocket.Server({
+  path: "/api/socket",
+  server: server,
+});
 
 var devices_msg = {};
 try {
@@ -27,13 +31,10 @@ try {
     "utf8"
   );
   devices_msg = YAML.parse(fileContents);
-  console.log(devices_msg);
+  console.log("load devices msg");
 } catch (e) {
   console.log(e);
 }
-
-const server = require("http").createServer(app);
-app.use(express.static(path.resolve(__dirname, "../build")));
 
 var rosState = { state: "disconnect", msg: "init msg" };
 let uav_list = [];
@@ -44,7 +45,7 @@ function setrosState(state) {
 }
 
 //const uuidv4 = require('uuid').v4;
-const wss = new WebSocket.Server({ server: server });
+
 wss.on("connection", function connection(ws) {
   console.log("newclient");
   ws.on("error", console.error);
@@ -52,6 +53,15 @@ wss.on("connection", function connection(ws) {
   ws.on("message", function message(data) {
     console.log("received: %s", data);
   });
+  ws.send(
+    JSON.stringify({
+      positions: Object.values(data.state.positions),
+      camera: Object.values(data.state.camera),
+      server: { rosState: rosState.state },
+      devices: Object.values(data.state.devices),
+    })
+  );
+
   const interval = setInterval(() => {
     ws.send(
       JSON.stringify({
@@ -69,6 +79,18 @@ wss.on("connection", function connection(ws) {
       })
     );
   }, 1000);
+});
+//https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
+const interval = setInterval(function ping() {
+  wss.clients.forEach(function each(ws) {
+    //if (ws.isAlive === false) return ws.terminate();
+    //ws.isAlive = false;
+    //ws.ping();
+  });
+}, 30000);
+
+wss.on("close", function close() {
+  clearInterval(interval);
 });
 
 server.listen(app.get("port"), () => {
@@ -878,8 +900,46 @@ app.post("/api/commandmission/:id", async function (req, res) {
 });
 app.post("/api/sendTask", async function (req, res) {
   console.log("command-sendtask");
-  console.log(req.body);
-  let myresponse = { res: "aun no hay metodo" };
+  let uav = "uav_1";
+  let home = [37.193736, -6.702947, 50];
+  let reqRoute = Object.values(req.body.loc);
+  let mission = {
+    version: "3",
+    route: [{ name: "datetime", uav: "uav_1", wp: [] }],
+    status: "OK",
+  };
+  let response = { uav: "uav_1", points: [], status: "OK" };
+  response.points.push(home);
+  for (let i = 0; i < reqRoute.length; i = i + 1) {
+    let wp_len = reqRoute[i].length;
+    for (let j = 0; j < wp_len; j = j + 1) {
+      if (j == 0) {
+        response.points.push([
+          reqRoute[i][j]["lat"],
+          reqRoute[i][j]["lon"],
+          50,
+        ]);
+      }
+      response.points.push([reqRoute[i][j]["lat"], reqRoute[i][j]["lon"], 30]);
+      if (j == +wp_len + -1) {
+        response.points.push([
+          reqRoute[i][j]["lat"],
+          reqRoute[i][j]["lon"],
+          50,
+        ]);
+      }
+    }
+  }
+
+  response.points.push(home);
+  mission.route[0]["wp"] = response.points.map((element) => {
+    return { pos: element };
+  });
+  console.log(mission.route[0]["wp"][0]["pos"]);
+  wss.clients.forEach(function each(ws) {
+    ws.send(JSON.stringify({ mission: { name: "name", mission: mission } }));
+  });
+  let myresponse = { response };
   return res.json(myresponse);
 });
 //app.post('/api/threat',async function(req,res){

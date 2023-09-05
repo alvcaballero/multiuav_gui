@@ -1,108 +1,122 @@
-import React , { useState,useRef,useEffect} from 'react'
-import { useDispatch ,connect } from 'react-redux';
-import { useEffectAsync } from './reactHelper';
-import { dataActions, devicesActions ,sessionActions} from './store'; // here update device action with position of uav for update in map
+import React, { useState, useRef, useEffect } from "react";
+import { useDispatch, connect } from "react-redux";
+import { useEffectAsync } from "./reactHelper";
+import {
+  dataActions,
+  devicesActions,
+  missionActions,
+  sessionActions,
+} from "./store"; // here update device action with position of uav for update in map
 
 const logoutCode = 4000;
 
 const SocketController = () => {
-    const dispatch = useDispatch();
-    
-    const socketRef = useRef();
-    const [socketState,setsocketState] = useState(true);
+  const dispatch = useDispatch();
 
-    const connectSocket = () => {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const socket = new WebSocket(`${protocol}//${window.location.host}/api/socket`);
-        //const socket = new WebSocket(`${protocol}//${window.location.host}`);
-        socketRef.current = socket;
-        console.log("funcion web socket")
-    
-        socket.onopen = () => {
-          dispatch(sessionActions.updateSocket(true));
-          console.log("funcion web socket open")
-        };
-    
-        socket.onclose = async (event) => {
-          console.log("funcion web socket close")
-          dispatch(sessionActions.updateSocket(false));
-          if (event.code !== logoutCode) {
-            try {
-              const devicesResponse = await fetch('/api/devices');
-              if (devicesResponse.ok) {
-                dispatch(devicesActions.update(await devicesResponse.json()));
-              }
-              const positionsResponse = await fetch('/api/positions');
-              if (positionsResponse.ok) {
-                dispatch(dataActions.updatePositions(await positionsResponse.json()));
-              }
-              if (devicesResponse.status === 401 || positionsResponse.status === 401) {
-                //navigate('/login');
-              }
-            } catch (error) {
-              // ignore errors
-            }
-            setTimeout(() => connectSocket(), 60000);
+  const socketRef = useRef();
+  const [socketState, setsocketState] = useState(true);
+
+  const connectSocket = () => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(
+      `${protocol}//${window.location.host}/api/socket`
+    );
+    console.log(`${protocol}//${window.location.host}/api/socket`);
+    //const socket = new WebSocket(`${protocol}//${window.location.host}`);
+    socketRef.current = socket;
+    console.log("funcion web socket");
+
+    socket.onopen = () => {
+      dispatch(sessionActions.updateSocket(true));
+      console.log("funcion web socket open");
+    };
+
+    socket.onclose = async (event) => {
+      console.log("funcion web socket close");
+      dispatch(sessionActions.updateSocket(false));
+      if (event.code !== logoutCode) {
+        try {
+          const devicesResponse = await fetch("/api/devices");
+          if (devicesResponse.ok) {
+            dispatch(devicesActions.update(await devicesResponse.json()));
           }
-        };
-    
-        socket.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          if (data.devices ) {
-            if(data.devices.length>0){
-              dispatch(devicesActions.update(data.devices));
-            }else{
-              dispatch(devicesActions.clear());
-            }
+          const positionsResponse = await fetch("/api/positions");
+          if (positionsResponse.ok) {
+            dispatch(
+              dataActions.updatePositions(await positionsResponse.json())
+            );
           }
-          if (data.positions) {
-            dispatch(dataActions.updatePositions(data.positions));
+          if (
+            devicesResponse.status === 401 ||
+            positionsResponse.status === 401
+          ) {
+            //navigate('/login');
           }
-          if (data.camera){
-            //console.log(data.camera)
-            dispatch(dataActions.updateCamera(data.camera));
-            
-          }
-          if (data.server){
-            (data.server.rosState ==='connect')?dispatch(sessionActions.updateServer(true)):dispatch(sessionActions.updateServer(false));
-          }
-          //if (data.events) {
-          //  if (!features.disableEvents) {
-          //    dispatch(eventsActions.add(data.events));
-          //  }
-          //  setEvents(data.events);
-          //}
-        };
-      };
-      useEffectAsync(async () => {
-        if(socketState){
-          setsocketState(false);
-        
-        const response = await fetch('/api/devices',{method: 'GET'});
-        if (response.ok) {
-          //dispatch(devicesActions.refresh(await response.json()));
-        } else {
-          //throw Error(await response.text());
+        } catch (error) {
+          // ignore errors
         }
-        console.log("primera conexion --s")
-        connectSocket();
-        return () => {
-          const socket = socketRef.current;
-          if (socket) {
-            socket.close(logoutCode);
-          }
-        };
+        setTimeout(() => connectSocket(), 60000);
       }
-      else{
-        return null;
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.devices) {
+        if (data.devices.length > 0) {
+          dispatch(devicesActions.update(data.devices));
+        } else {
+          dispatch(devicesActions.clear());
+        }
       }
-      }, []);
+      if (data.positions) {
+        dispatch(dataActions.updatePositions(data.positions));
+      }
+      if (data.camera) {
+        //console.log(data.camera)
+        dispatch(dataActions.updateCamera(data.camera));
+      }
+      if (data.server) {
+        data.server.rosState === "connect"
+          ? dispatch(sessionActions.updateServer(true))
+          : dispatch(sessionActions.updateServer(false));
+      }
+      if (data.mission) {
+        console.log("data mission");
+        console.log(data.mission);
+        dispatch(missionActions.updateMission(data.mission));
+      }
+      //if (data.events) {
+      //  if (!features.disableEvents) {
+      //    dispatch(eventsActions.add(data.events));
+      //  }
+      //  setEvents(data.events);
+      //}
+    };
+  };
+  useEffectAsync(async () => {
+    if (socketState) {
+      setsocketState(false);
 
+      const response = await fetch("/api/devices", { method: "GET" });
+      if (response.ok) {
+        //dispatch(devicesActions.refresh(await response.json()));
+      } else {
+        //throw Error(await response.text());
+      }
+      console.log("primera conexion --s");
+      connectSocket();
+      return () => {
+        const socket = socketRef.current;
+        if (socket) {
+          socket.close(logoutCode);
+        }
+      };
+    } else {
+      return null;
+    }
+  }, []);
 
-  return (
-    <>
-    </>
-  );
+  return <></>;
 };
 
 export default connect()(SocketController);
