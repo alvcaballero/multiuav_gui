@@ -31,11 +31,13 @@ const { reducer, actions } = createSlice({
     updateMission(state, action) {
       state.name = action.payload.name;
       //state.attributes = {};
-      let n_uav = 1;
+
       if (action.payload.mission.version == "3") {
+        let n_uav = 0;
         state.home = action.payload.mission.route[n_uav]["wp"][0].pos;
         state.route = RuteConvert(action.payload.mission.route);
       } else {
+        let n_uav = 1;
         state.home = action.payload.mission["uav_" + n_uav]["wp_0"];
         state.route = RuteConvertlegacy(action.payload.mission);
       }
