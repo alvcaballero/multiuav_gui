@@ -50,7 +50,6 @@ const MissionElevation = () => {
   const maxValue = Math.max(...values1);
   const valueRange = maxValue - minValue;
 
-  
   const GetWplist = (auxroute) => {
     let listwp = [];
     if (auxroute.length > 0) {
@@ -75,34 +74,34 @@ const MissionElevation = () => {
       setlocation(listwp);
       //console.log(listwp);
 
-        let command;
-        try {
-          const response = await fetch("/api/map/elevation", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ routes: listwp }),
-          });
-          if (response.ok) {
-            command = await response.json();
-          } else {
-            throw new Error(response.status);
-          }
-        } catch (error) {
-          console.log(error);
-        }
-        let elevationRoute = command.map((route, index_rt) => {
-          return {
-            name: "RT" + index_rt,
-            data: route,
-            color: colors[ruteColor[index_rt]],
-          };
+      let command;
+      try {
+        const response = await fetch("/api/map/elevation", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ routes: listwp }),
         });
-        console.log(elevationRoute);
-        setSelectRT(-1);
-        setElevProfile(elevationRoute);
+        if (response.ok) {
+          command = await response.json();
+        } else {
+          throw new Error(response.status);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+      let elevationRoute = command.map((route, index_rt) => {
+        return {
+          name: "RT" + index_rt,
+          data: route,
+          color: colors[ruteColor[index_rt]],
+        };
+      });
+      console.log(elevationRoute);
+      setSelectRT(-1);
+      setElevProfile(elevationRoute);
     }
   }
 
@@ -195,7 +194,6 @@ const MissionElevation = () => {
               console.log("nuevas posiciones");
               change = true;
               break;
-              
             }
           }
         }
@@ -326,7 +324,14 @@ const MissionElevation = () => {
                     name={s.name}
                     key={s.name}
                     stroke={s.color}
-                    activeDot={{ r: 8 }}
+                    activeDot={{
+                      r: 8,
+                      onClick: (event, payload) => {
+                        console.log(payload);
+                        let url = `https://www.google.com/maps?q=${payload.payload.lat},${payload.payload.lng}`;
+                        window.open(url, "_blank");
+                      },
+                    }}
                   />
                   <Line
                     connectNulls
@@ -336,6 +341,11 @@ const MissionElevation = () => {
                     key={s.name + "-v"}
                     stroke={s.color}
                     strokeDasharray="5 5"
+                    activeDot={{
+                      onClick: (event, payload) => {
+                        console.log(payload);
+                      },
+                    }}
                   />
                 </Fragment>
               ))}

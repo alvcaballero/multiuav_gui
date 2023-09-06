@@ -901,7 +901,8 @@ app.post("/api/commandmission/:id", async function (req, res) {
 app.post("/api/sendTask", async function (req, res) {
   console.log("command-sendtask");
   let uav = "uav_1";
-  let home = [37.193736, -6.702947, 50];
+  //let home = [37.193736, -6.702947, 50];
+  let home = [37.134092, -6.472401, 50];
   let reqRoute = Object.values(req.body.loc);
   let mission = {
     version: "3",
@@ -1005,7 +1006,7 @@ app.get("/api/test.png", (req, res) => {
 app.get("/api/map/elevation", async function (req, res) {
   console.log("using ---- elevation");
   let locations = req.query.locations;
-  let myresponse = await ApiElevationApiElevation(locations);
+  let myresponse = await ApiElevation(locations);
   res.json(myresponse);
 });
 
@@ -1060,7 +1061,7 @@ app.post("/api/map/elevation", async function (req, res) {
             //funcion de slice and add to  //altitud = -1;
             let steps = Math.floor(distbetweenwp / 200) + 1;
             let newpoints = divideLineIntoPoints(
-              [wp, array[lastindex]],
+              [array[lastindex], wp],
               steps,
               distbetweenwp
             );
@@ -1100,6 +1101,12 @@ app.post("/api/map/elevation", async function (req, res) {
       for (let index = 0; index < wpaltitude[index_rt].length; index++) {
         wpaltitude[index_rt][index]["elevation"] = Number(
           elevationprofile.results[auxcount].elevation.toFixed(1)
+        );
+        wpaltitude[index_rt][index]["lat"] = Number(
+          elevationprofile.results[auxcount].location.lat
+        );
+        wpaltitude[index_rt][index]["lng"] = Number(
+          elevationprofile.results[auxcount].location.lng
         );
 
         if (index == 0) {
