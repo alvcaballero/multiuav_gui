@@ -1037,7 +1037,7 @@ app.post("/api/map/elevation", async function (req, res) {
   listpoint = req.body.routes;
   console.log(listpoint);
   let wpaltitude = [];
-  let listwaypoint = "";
+  let listwaypoint = [];
   if (listpoint.length > 0) {
     listpoint.forEach((route, index_rt, array_rt) => {
       let acumulative = [];
@@ -1065,7 +1065,7 @@ app.post("/api/map/elevation", async function (req, res) {
               distbetweenwp
             );
             newpoints.map((nwp) => {
-              listwaypoint = listwaypoint + nwp.lat + "," + nwp.lon + "|";
+              listwaypoint.push([nwp.lat, nwp.lon]);
               let nwpdist = +lastdist.toFixed(1) + +nwp.dist.toFixed(1);
               console.log(
                 "lastdist " + lastdist + " caldist " + nwp.dist.toFixed(1)
@@ -1078,7 +1078,7 @@ app.post("/api/map/elevation", async function (req, res) {
             });
           }
         }
-        listwaypoint = listwaypoint + wp[0] + "," + wp[1] + "|";
+        listwaypoint.push([wp[0], wp[1]]);
         wpaltitude[index_rt].push({
           length: Number(lineLength.toFixed(1)),
           uav: altitud,
@@ -1086,9 +1086,6 @@ app.post("/api/map/elevation", async function (req, res) {
         lastindex = index;
         lastdist = Number(lineLength.toFixed(1));
       });
-      if (array_rt.length - 1 == index_rt) {
-        listwaypoint = listwaypoint.slice(0, -1);
-      }
     });
     console.log(wpaltitude);
     console.log(listwaypoint);
@@ -1126,19 +1123,45 @@ app.post("/api/map/elevation", async function (req, res) {
   res.json(wpaltitude);
 });
 
-const ApiElevation = async (stringLocationList) => {
+const ApiElevation = async (LocationList) => {
   let myresponse = {};
+  let divLocationList = [];
+  let maxAPIlocation = 99;
+  if (LocationList.length > maxAPIlocation) {
+  }
+  for (let i = 0; i < LocationList.length; i = i + maxAPIlocation) {
+    if (LocationList.length - i < maxAPIlocation) {
+      divLocationList.push(LocationList.slice(i));
+      break;
+    }
+    divLocationList.push(LocationList.slice(i, i + maxAPIlocation));
+  }
+  divLocationList.map((element) => console.log(element.length));
+
+  let stringLocationList = divLocationList.map((list) =>
+    list.map((waypoint) => waypoint.join(",")).join("|")
+  );
+  divLocationList.map((element) => console.log(element));
   //`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList}`
   //`https://maps.googleapis.com/maps/api/elevation/json?locations=${stringLocationList}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
+  console.log("response elevation----");
+  for (let i = 0; i < stringLocationList.length; i = i + 1) {
+    await fetch(
+      `https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList[i]}`
+    )
+      .then((response) => response.json())
+      .then((body) => {
+        console.log(body);
+        if (myresponse.hasOwnProperty("results")) {
+          body.results.map((element) => {
+            myresponse.results.push(element);
+          });
+        } else {
+          myresponse = body;
+        }
+      });
+  }
 
-  await fetch(
-    `https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList}`
-  )
-    .then((response) => response.json())
-    .then((body) => {
-      myresponse = body;
-      console.log(body);
-    });
   return myresponse;
 };
 app.get("/api/placeholder", (req, res) => {
