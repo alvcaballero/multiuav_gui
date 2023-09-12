@@ -34,21 +34,13 @@ export default () => {
   //const t = useTranslation();
 
   const mapTilerKey = "mykey"; //useAttributePreference('mapTilerKey');
-  const locationIqKey = "mykey"; //useAttributePreference('locationIqKey');
+  const locationIqKey = "pk.0f147952a41c555a5b70614039fd148b"; //useAttributePreference('locationIqKey');
   const bingMapsKey = "mykey"; //useAttributePreference('bingMapsKey');
   const tomTomKey = "mykey"; //useAttributePreference('tomTomKey');
   const hereKey = "mykey"; //useAttributePreference('hereKey');
   const mapboxAccessToken = "mykey"; //useAttributePreference('mapboxAccessToken');
 
   return [
-    {
-      id: "locationIqStreets",
-      title: "mapLocationIqStreets",
-      style: `https://tiles.locationiq.com/v3/streets/vector.json?key=${
-        locationIqKey || "pk.0f147952a41c555a5b70614039fd148b"
-      }`,
-      available: true,
-    },
     {
       id: "osm",
       title: "mapOsm",
@@ -58,6 +50,18 @@ export default () => {
         attribution:
           '© <a target="_top" rel="noopener" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }),
+      available: true,
+    },
+    {
+      id: "locationIqStreets",
+      title: "mapLocationIqStreets",
+      style: `https://tiles.locationiq.com/v3/streets/vector.json?key=${locationIqKey}`,
+      available: true,
+    },
+    {
+      id: "locationIqDark",
+      title: "mapLocationIqDark",
+      style: `https://tiles.locationiq.com/v3/dark/vector.json?key=${locationIqKey}`,
       available: true,
     },
     {
@@ -283,7 +287,7 @@ export default () => {
         tiles: ["http://localhost:8080/tile/{z}/{x}/{y}.png"],
         maxZoom: 19,
       }),
-      available: !!customMapUrl,
+      available: true,
     },
   ];
 };

@@ -1,4 +1,8 @@
-# Stream the video
+# Stream the video server and drone onli serve in drone
+
+https://github.com/CircusMonkey/ros_rtsp/tree/master
+
+# Stream the video server and drone server in all devices
 
 The stream of video use Mediamtx.yml in the drone and the server.
 https://github.com/bluenviron/mediamtx
@@ -17,7 +21,6 @@ For run de server
 
 ```
 docker run --rm -it --network=host -v $PWD/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
-
 ```
 
 For access to the server
