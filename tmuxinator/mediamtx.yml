@@ -243,12 +243,12 @@ srtAddress: :8890
 # Settings under the path "all" are applied to all paths that do not match
 # another entry.
 paths:
-  uav_2:
-    source: rtsp://10.42.0.43:8554/uav2_fpv
-    #source: rtsp://10.222.6.151:8554/uav2_fpv
-    #source: whep://10.222.6.151:8889/uav2_fpv/ # no valio
-    #test:
-    #source: rtsp://127.0.0.1:8553/back
+  #uav_2:
+  #source: rtsp://10.42.0.43:8554/uav2_fpv
+  #source: rtsp://10.222.6.151:8554/uav2_fpv
+  #source: whep://10.222.6.151:8889/uav2_fpv/ # no valio
+  #test:
+  #source:
   all:
     ###############################################
     # General path settings

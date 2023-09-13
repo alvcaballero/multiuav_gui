@@ -1,9 +1,10 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, Fragment } from "react";
 import { RosContext } from "./RosControl";
 import makeStyles from "@mui/styles/makeStyles";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
+  Divider,
   Card,
   IconButton,
   MenuItem,
@@ -20,18 +21,16 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const useStyles = makeStyles((theme) => ({
   card: {
     pointerEvents: "auto",
-    width: theme.dimensions.popupMaxWidth,
-  },
-  media: {
-    //height: theme.dimensions.popupImageHeight,
-    width: "100%",
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "flex-start",
+    display: "block",
+    width: "400px",
+    height: "70vh",
+    transitionDuration: "0.3s",
+    overflowY: "auto",
   },
   mediaButton: {
     color: theme.palette.colors.white,
@@ -84,30 +83,31 @@ const useStyles = makeStyles((theme) => ({
     height: "35px",
     position: "absolute",
   },
+  attributeName: {
+    display: "inline-block",
+    width: "40%",
+    textAlign: "left",
+    verticalAlign: "middle",
+  },
+  attributeValue: {
+    display: "inline-block",
+    width: "58%",
+  },
+  actionValue: {
+    display: "inline-block",
+    width: "40%",
+  },
 }));
 
 export const Adduav = ({ SetAddUAVOpen }) => {
   const classes = useStyles();
   const rosContex = useContext(RosContext);
-  const [uavtype, setuavtype] = useState("dji");
-  const [uavid, setuavid] = useState("");
   const [item, setItem] = useState({
     name: "uav_",
     category: "dji",
     ip: "10.42.0.42",
-    cameratype: "Websocket",
-    camera_src: "video0",
+    camera: [],
   });
-
-  const validate = () => item && item.name && item.uniqueId;
-
-  function showAddUav() {
-    if (document.getElementById("AddUav").style.width === "250px") {
-      document.getElementById("AddUav").style.width = "0";
-    } else {
-      document.getElementById("AddUav").style.width = "250px";
-    }
-  }
 
   function closeAddUav() {
     SetAddUAVOpen(false);
@@ -118,8 +118,15 @@ export const Adduav = ({ SetAddUAVOpen }) => {
     rosContex.connectAddUav(item);
     SetAddUAVOpen(false);
   }
-  function disConnectUav() {
-    SetAddUAVOpen(false);
+  const Remove_camera = (index) => {
+    let auxcamera = JSON.parse(JSON.stringify(item.camera));
+    auxcamera.splice(index, 1);
+    setItem({ ...item, camera: auxcamera });
+  };
+  function addNewcamera() {
+    let auxcamera = JSON.parse(JSON.stringify(item.camera));
+    auxcamera.push({ type: "WebRTC", source: "" });
+    setItem({ ...item, camera: auxcamera });
   }
 
   return (
@@ -139,72 +146,138 @@ export const Adduav = ({ SetAddUAVOpen }) => {
           <div className={classes.title}>Add device </div>
         </b>
 
-        <FormGroup style={{ margin: "20px" }}>
-          <TextField
-            required
-            label="UAV ID"
-            name="uavid"
-            value={item.name}
-            onChange={(event) => setItem({ ...item, name: event.target.value })}
-            className={classes.inputtext}
-          />
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle1">Datos UAV</Typography>
+          </AccordionSummary>
+          <AccordionDetails className={classes.details}>
+            <FormGroup style={{ margin: "20px" }}>
+              <TextField
+                required
+                label="UAV ID"
+                name="uavid"
+                value={item.name}
+                onChange={(event) =>
+                  setItem({ ...item, name: event.target.value })
+                }
+                className={classes.inputtext}
+              />
 
-          <FormControl style={{ paddingBottom: "20px" }} variant="outlined">
-            <InputLabel id="demo-simple-select-outlined-label">
-              UAV type
-            </InputLabel>
-            <Select
-              labelId="demo-simple-select-outlined-label"
-              id="demo-simple-select-outlined"
-              value={item.category}
-              onChange={(event) =>
-                setItem({ ...item, category: event.target.value })
-              }
-              label="uavtipe"
-            >
-              <MenuItem value="dji">DJI</MenuItem>
-              <MenuItem value="px4">PX4</MenuItem>
-              <MenuItem value="fuvex">Fuvex</MenuItem>
-              <MenuItem value="catec">Catec</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            value={item.ip}
-            onChange={(event) => setItem({ ...item, ip: event.target.value })}
-            label="ip"
-          />
-        </FormGroup>
+              <FormControl style={{ paddingBottom: "20px" }} variant="outlined">
+                <InputLabel id="demo-simple-select-outlined-label">
+                  UAV type
+                </InputLabel>
+                <Select
+                  label="uavtipe"
+                  labelId="demo-simple-select-outlined-label"
+                  id="demo-simple-select-outlined"
+                  value={item.category}
+                  onChange={(event) =>
+                    setItem({ ...item, category: event.target.value })
+                  }
+                >
+                  <MenuItem value="dji">DJI</MenuItem>
+                  <MenuItem value="px4">PX4</MenuItem>
+                  <MenuItem value="fuvex">Fuvex</MenuItem>
+                  <MenuItem value="catec">Catec</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                label="ip"
+                value={item.ip}
+                onChange={(event) =>
+                  setItem({ ...item, ip: event.target.value })
+                }
+              />
+            </FormGroup>
+          </AccordionDetails>
+        </Accordion>
         {item && (
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="subtitle1">Camera</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
-              <FormControl variant="outlined">
-                <InputLabel id="demo-simple-select-outlined-label">
-                  CameraSource
-                </InputLabel>
-                <Select
-                  labelId="demo-simple-select-outlined-label"
-                  id="demo-simple-select-outlined"
-                  value={item.cameratype}
-                  onChange={(event) =>
-                    setItem({ ...item, cameratype: event.target.value })
-                  }
-                  label="uavtipe"
-                >
-                  <MenuItem value="Websocket">Websocket</MenuItem>
-                  <MenuItem value="WebRTC">WebRTC</MenuItem>
-                </Select>
-              </FormControl>
-              <TextField
-                value={item.camera_src}
-                onChange={(event) =>
-                  setItem({ ...item, camera_src: event.target.value })
-                }
-                label="Camera route"
-                helperText="videocompress or video0  "
-              />
+              {item.camera &&
+                item.camera.map((action_key, index_ac, list_ac) => (
+                  <Fragment key={"fragment-action-" + index_ac}>
+                    <Typography
+                      variant="subtitle1"
+                      className={classes.attributeName}
+                    >
+                      {"Camera " + index_ac}
+                    </Typography>
+                    <div>
+                      <FormControl variant="outlined">
+                        <InputLabel id="demo-simple-select-outlined-label">
+                          CameraType
+                        </InputLabel>
+                        <Select
+                          labelId="demo-simple-select-outlined-label"
+                          id="demo-simple-select-outlined"
+                          value={action_key["type"]}
+                          label="type"
+                          onChange={(e) =>
+                            setItem({
+                              ...item,
+                              camera: item.camera.map((cam, cam_ind) => {
+                                let mycam = JSON.parse(JSON.stringify(cam));
+                                index_ac == cam_ind
+                                  ? (mycam["type"] = e.target.value)
+                                  : null;
+                                return mycam;
+                              }),
+                            })
+                          }
+                        >
+                          <MenuItem value="WebRTC">WebRTC</MenuItem>
+                          <MenuItem value="Websocket">Websocket</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <div className={classes.actionValue}>
+                        <TextField
+                          required
+                          fullWidth={true}
+                          value={action_key["source"]}
+                          onChange={(e) =>
+                            setItem({
+                              ...item,
+                              camera: item.camera.map((cam, cam_ind) => {
+                                let mycam = JSON.parse(JSON.stringify(cam));
+                                index_ac == cam_ind
+                                  ? (mycam["source"] = e.target.value)
+                                  : null;
+                                return mycam;
+                              }),
+                            })
+                          }
+                        />
+                      </div>
+                      <IconButton
+                        sx={{
+                          py: 0,
+                          pr: 2,
+                          marginLeft: "auto",
+                        }}
+                        onClick={() => Remove_camera(index_ac)}
+                        className={classes.negative}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </div>
+                    <Divider></Divider>
+                  </Fragment>
+                ))}
+
+              <Button
+                variant="contained"
+                size="large"
+                sx={{ width: "80%", flexShrink: 0 }}
+                style={{ marginTop: "15px" }}
+                onClick={addNewcamera}
+              >
+                Add camera source
+              </Button>
             </AccordionDetails>
           </Accordion>
         )}
