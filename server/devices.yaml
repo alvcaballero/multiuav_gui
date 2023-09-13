@@ -1,0 +1,16 @@
+M210:
+  mass: 7.2 #kg
+  number_of_rotors: 4
+  rotor_of_rotors_blades: 2
+  rotor_radious: 0.226 #m
+  blade_chord: 0.0247 #x=0.7R
+  section_lift_coefficient: 1.01
+  section_draft_coefificient: 0.01
+  introduced_power_factor: 1.15
+  energy_efficiency: 0.72
+  P0_numerical_constrant: 4.65
+  equivalent_flat_platearea: 0.32 #m2
+  battery:
+    capacity: 80000 #mAh
+    number_of_cells: 4
+    Voltage_per_cell: 3.9 # v/cell

@@ -171,6 +171,7 @@ async function connectAddUav(device) {
     topiclist.forEach((element) => {
       find_device = element.includes(uav_ns) || find_device;
     });
+    find_device = true;
     if (uav_list.length > 0) {
       uav_list.forEach((element) => {
         console.log(element);
@@ -199,11 +200,27 @@ async function connectAddUav(device) {
       name: device.name,
       category: device.category,
       ip: device.ip,
-      cameratype: device.cameratype,
-      camera_src: device.camera_src,
+      camera: device.camera,
       status: "online",
       lastUpdate: null,
     });
+
+    for (let i = 0; i < device.camera.length; i = i + 1) {
+      if (device.camera[i]["type"]) {
+        await fetch(
+          `http://localhost:9997/v2/config/paths/add/${device.name}_${device.camera[i].source}`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+    }
 
     let uavAdded = {
       name: uav_ns,

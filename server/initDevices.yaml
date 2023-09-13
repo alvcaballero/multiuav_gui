@@ -1,0 +1,48 @@
+init:
+  - id: "1"
+    name: "uav_1"
+    category: "px4"
+    ip: "10.42.0.2"
+    camera:
+      - type: "Webrtc"
+        source: "video0"
+  - id: "2"
+    name: "uav_2"
+    category: "dji"
+    ip: "10.42.0.43"
+    camera:
+      - type: "Webrtc"
+        source: "fpv"
+  - id: "3"
+    name: "uav_3"
+    category: "dji"
+    ip: "10.42.0.99"
+    camera:
+      - type: "Webrtc"
+        source: "fpv"
+
+  - id: "4"
+    name: "uav_4"
+    category: "dji"
+    ip: "10.42.0.50"
+    camera:
+      - type: "Webrtc"
+        source: "fpv"
+
+  - id: "6"
+    name: "uav_4"
+    category: "dji"
+    ip: "10.42.0.45"
+    camera:
+      - type: "Webrtc"
+        source: "fpv"
+Camera:
+  fpv_M210:
+    height: 300
+    width: 200
+
+  fpv_M300:
+
+  flir_duo:
+
+  laptop:

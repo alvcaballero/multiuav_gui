@@ -29,7 +29,7 @@ const useStyles = makeStyles((theme) => ({
   gruopBtn: {
     //display: "flex",
     //right: "5px",
-    float:"right",
+    float: "right",
     height: "40px",
     //position: "absolute",
   },
@@ -48,7 +48,6 @@ const useStyles = makeStyles((theme) => ({
   root: {
     pointerEvents: "none",
     //position: "fixed",
-
   },
   root_max: {
     pointerEvents: "none",
@@ -56,10 +55,17 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const CameraWebRTCV4 = ({ deviceId, deviceIp="127.0.0.1", camera_src="video0", onClose }) => {
+export const CameraWebRTCV4 = ({
+  deviceId,
+  deviceIp = "127.0.0.1",
+  camera_src = "video0",
+  onClose,
+}) => {
   const classes = useStyles();
   //const camera_stream ="20"// useSelector((state) => state.data.camera[deviceId]);
-  const device = deviceId ?  useSelector((state) => state.devices.items[deviceId]) :{name:"test"};
+  const device = deviceId
+    ? useSelector((state) => state.devices.items[deviceId])
+    : { name: "test" };
   const deviceip = "http://" + deviceIp + ":8889/" + camera_src; //device?.ip;
   const [maxsize, setmaxsize] = useState(false);
   let btn_class = classes.card;
@@ -76,28 +82,27 @@ export const CameraWebRTCV4 = ({ deviceId, deviceIp="127.0.0.1", camera_src="vid
     setmaxsize(false);
   }
 
-
   return (
     <div className={rootclass}>
       {device && (
         <Card className={btn_class}>
           <div>
-          <div className={classes.gruopBtn}>
-            <IconButton
-              size="small"
-              onClick={Changemaxsize}
-              onTouchStart={Changemaxsize}
-            >
-              <ZoomOutMapIcon
-                fontSize="small"
-                className={classes.mediaButton}
-              />
-            </IconButton>
-            <IconButton size="small" onClick={closecard}>
-              <CloseIcon fontSize="small" className={classes.mediaButton} />
-            </IconButton>
-          </div>
-          <div className={classes.tittle}>{"Image " + device.name}</div>
+            <div className={classes.gruopBtn}>
+              <IconButton
+                size="small"
+                onClick={Changemaxsize}
+                onTouchStart={Changemaxsize}
+              >
+                <ZoomOutMapIcon
+                  fontSize="small"
+                  className={classes.mediaButton}
+                />
+              </IconButton>
+              <IconButton size="small" onClick={closecard}>
+                <CloseIcon fontSize="small" className={classes.mediaButton} />
+              </IconButton>
+            </div>
+            <div className={classes.tittle}>{"Image " + device.name}</div>
           </div>
           <iframe src={deviceip} className={frameclass} />
         </Card>
