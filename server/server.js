@@ -811,7 +811,23 @@ function commandMission1(uav_id) {
   return { state: "success", msg: "Commanding mission to: " + uav_ns }; //notification('success',"Commanding mission to: " + cur_roster);
 }
 
-function disConnectAddUav(uav_ns) {
+async function disConnectAddUav(uav_ns) {
+  let device_del = data.state.devices[uav_ns];
+  if (device_del.hasOwnProperty("camera")) {
+    for (let i = 0; i < device_del.camera.length; i = i + 1) {
+      if (device_del.camera[i]["type"]) {
+        await fetch(
+          `http://localhost:9997/v2/config/paths/remove/${device_del.name}_${device_del.camera[i].source}`,
+          {
+            method: "POST",
+          }
+        );
+      }
+    }
+  }
+
+  data.removedevice({ id: uav_ns });
+
   let Key_listener = Object.keys(uav_list[uav_ns]).filter((element) =>
     element.includes("listener")
   );
@@ -1207,7 +1223,6 @@ app.delete("/api/:endpoint/:itemid", async (req, res) => {
   //av_list[req.params.itemid].listener.unsubscribe();
   let myresponse = await disConnectAddUav(req.params.itemid);
   console.log(uav_list);
-  data.removedevice({ id: req.params.itemid });
   res.send(req.params);
 });
 
