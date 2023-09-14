@@ -10,6 +10,7 @@ si primero esta ethernet borrarlo
 
     sudo ip r delete default via 10.42.0.1 dev eth0 proto static
 
+d
 cambiar la fecha y la hora para que pueda hacer el update
 
     sudo date --set "2023-06-23 15:03"
@@ -29,3 +30,6 @@ $ sudo apt-get update
 $ sudo apt-get install ca-certificates curl gnupg
 
 https://developer.dji.com/doc/cloud-api-tutorial/en/quick-start/environment-prepare-list.html
+
+Configuracion de netplan DNS en caso de que no coga internet
+https://www.ochobitshacenunbyte.com/2021/04/26/netplan-configurar-la-red-en-ubuntu-20-04/

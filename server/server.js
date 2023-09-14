@@ -206,7 +206,7 @@ async function connectAddUav(device) {
     });
 
     for (let i = 0; i < device.camera.length; i = i + 1) {
-      if (device.camera[i]["type"]) {
+      if (device.camera[i]["type"] == "WebRTC") {
         await fetch(
           `http://localhost:9997/v2/config/paths/add/${device.name}_${device.camera[i].source}`,
           {
@@ -302,12 +302,6 @@ async function connectAddUav(device) {
         let id_uav = cur_uav_idx; //console.log("dato camara"+ id_uav + "--"+ msg.data)
         data.updateCamera({ deviceId: id_uav, camera: msg.data }); //data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
       });
-      //let ipdevice = await Getservicehost(uav_ns+'/camera_task_zoom_ctrl');
-      //let ipmaster = await Getlistmaster();
-
-      //console.log("ip de uav-"+ ipdevice);
-      //console.log(ipmaster);
-      //data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
     } else if (uav_type == "px4") {
       uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
         let id_uav = cur_uav_idx;
@@ -815,7 +809,7 @@ async function disConnectAddUav(uav_ns) {
   let device_del = data.state.devices[uav_ns];
   if (device_del.hasOwnProperty("camera")) {
     for (let i = 0; i < device_del.camera.length; i = i + 1) {
-      if (device_del.camera[i]["type"]) {
+      if (device_del.camera[i]["type"] == "WebRTC") {
         await fetch(
           `http://localhost:9997/v2/config/paths/remove/${device_del.name}_${device_del.camera[i].source}`,
           {
