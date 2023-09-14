@@ -1,5 +1,8 @@
 # Stream the video server and drone onli serve in drone
 
+rosservice call /uav_2/setup_camera_stream "cameraType: 0
+start: 1"
+
 https://github.com/CircusMonkey/ros_rtsp/tree/master
 
 # Stream the video server and drone server in all devices

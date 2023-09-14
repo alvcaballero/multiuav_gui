@@ -1,0 +1,15 @@
+# ./.tmuxinator.yml
+
+name: dji_missions
+root: ~/
+
+windows:
+  - M210-real:
+      layout: tiled
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - M210-real
+        - sleep 2; roslaunch onboard_dji atlas.launch
+        - sleep 5; roslaunch onboard_dji multimaster-noetic.launch
