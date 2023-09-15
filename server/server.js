@@ -244,7 +244,7 @@ async function connectAddUav(device) {
       });
     });
     // DJI
-    if (uav_type == "dji") {
+    if (uav_type == "dji" || uav_type == "dji_M300") {
       uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
         let id_uav = cur_uav_idx;
         data.updatePosition({

@@ -68,11 +68,18 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const CameraWebRTCV3 = ({ deviceId, deviceIp, camera_src, onClose }) => {
+export const CameraWebRTCV3 = ({
+  deviceId,
+  deviceIp,
+  devicename,
+  camera_src,
+  onClose,
+}) => {
   const classes = useStyles();
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const deviceip = "http://" + deviceIp + ":8889/" + camera_src; //device?.ip;
+  const deviceip =
+    "http://" + deviceIp + ":8889/" + devicename + "_" + camera_src; //device?.ip;
   const [maxsize, setmaxsize] = useState(false);
   let btn_class = classes.card;
   let rootclass = maxsize ? classes.root_max : classes.root;
