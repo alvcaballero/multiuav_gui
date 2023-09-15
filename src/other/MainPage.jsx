@@ -62,6 +62,7 @@ const MainPage = () => {
   const [selectedDeviceIp, setselectedDeviceIp] = useState();
   const [selectedDeviceCam, setselectedDeviceCam] = useState();
   const [selectedDeviceCamsrc, setselectedDeviceCamsrc] = useState();
+  const [selectedDeviceName, setlectedDeviceName] = useState();
   const selectedPosition = filteredPositions.find(
     (position) => selectedDeviceId && position.deviceId === selectedDeviceId
   );
@@ -131,8 +132,9 @@ const MainPage = () => {
   useEffect(() => {
     if (selectedDeviceId) {
       setselectedDeviceIp(devices[selectedDeviceId].ip);
-      setselectedDeviceCam(devices[selectedDeviceId].cameratype);
-      setselectedDeviceCamsrc(devices[selectedDeviceId].camera_src);
+      setselectedDeviceCam(devices[selectedDeviceId].camera[0].type);
+      setselectedDeviceCamsrc(devices[selectedDeviceId].camera[0].source);
+      setlectedDeviceName(devices[selectedDeviceId].name);
     } else {
       setselectedDeviceIp(null);
       setselectedDeviceCam(null);
@@ -182,7 +184,8 @@ const MainPage = () => {
         {selectedDeviceCam === "WebRTC" && (
           <CameraWebRTCV3
             deviceId={selectedDeviceId}
-            deviceIp={selectedDeviceIp}
+            deviceIp={"127.0.0.1"}
+            devicename={selectedDeviceName}
             camera_src={selectedDeviceCamsrc}
             onClose={() => dispatch(devicesActions.selectId(null))}
           />

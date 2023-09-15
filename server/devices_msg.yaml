@@ -1,68 +1,68 @@
 dji:
   topics:
     position:
-      name: '/dji_osdk_ros/gps_position'
-      messageType: 'sensor_msgs/NavSatFix'
+      name: "/dji_osdk_ros/gps_position"
+      messageType: "sensor_msgs/NavSatFix"
     sensor_height:
-      name: '/dji_osdk_ros/height_above_takeoff'
-      messageType: 'std_msgs/Float32'
+      name: "/dji_osdk_ros/height_above_takeoff"
+      messageType: "std_msgs/Float32"
     vo_position:
-      name: '/dji_osdk_ros/vo_position'
-      messageType: 'dji_osdk_ros/VOPosition'
+      name: "/dji_osdk_ros/vo_position"
+      messageType: "dji_osdk_ros/VOPosition"
     IMU: #hdg
-      name: '/dji_osdk_ros/imu'
-      messageType: 'sensor_msgs/Imu'
+      name: "/dji_osdk_ros/imu"
+      messageType: "sensor_msgs/Imu"
     speed:
-      name: '/dji_osdk_ros/velocity'
-      messageType: 'geometry_msgs/Vector3Stamped'
+      name: "/dji_osdk_ros/velocity"
+      messageType: "geometry_msgs/Vector3Stamped"
     battery:
-      name: '/dji_osdk_ros/battery_state'
-      messageType: 'sensor_msgs/BatteryState'
+      name: "/dji_osdk_ros/battery_state"
+      messageType: "sensor_msgs/BatteryState"
     state_machine:
-      name: 'muav_sm/uavstate'
-      messageType: 'muav_state_machine/UAVState'
+      name: "muav_sm/uavstate"
+      messageType: "muav_state_machine/UAVState"
     camera:
-      name: '/video_stream_compress'
-      messageType: 'sensor_msgs/CompressedImage'
+      name: "/video_stream_compress"
+      messageType: "sensor_msgs/CompressedImage"
   services:
     configureMission:
-      name : '/dji_control/configure_mission'
-      serviceType : 'aerialcore_common/ConfigMission'
+      name: "/dji_control/configure_mission"
+      serviceType: "aerialcore_common/ConfigMission"
     commandMission:
-      name : '/dji_control/start_mission'
-      serviceType : 'std_srvs/SetBool'
+      name: "/dji_control/start_mission"
+      serviceType: "std_srvs/SetBool"
     sincronize:
-      name : '/dji_control/send_bags'
-      serviceType : 'std_srvs/Bool'
+      name: "/dji_control/send_bags"
+      serviceType: "std_srvs/Bool"
   attributes:
     mission_action:
       stay: #action_stay
-        name: 'stay'
+        name: "stay"
         id: 0
         param: true
         description: "action_stay"
       photo: #simple_shot
-        name: 'photo'
+        name: "photo"
         id: 1
         param: false
         description: "simple_shot"
       video_start:
-        name: 'video_start'
+        name: "video_start"
         id: 2
         param: false
         description: "video_start"
       video_stop:
-        name: 'video_stop'
+        name: "video_stop"
         id: 3
         param: false
         description: "video_stop"
       yaw: # craft_yaw
-        name: 'yaw'
+        name: "yaw"
         id: 4
         param: true
         description: "craft_yaw"
       gimbal: #gimbal_pitch
-        name: 'gimbal'
+        name: "gimbal"
         id: 5
         param: true
         description: "gimbal_pitch"
@@ -71,152 +71,256 @@ dji:
         Name: "mode yaw"
         id: "mode_yaw"
         param:
-          - {id: 0,name: 'Auto'}           # auto mode (point to next waypoint)
-          - {id: 1,name: 'Lock'}          # lock as an initial value
-          - {id: 2,name: 'RC'}             # controlled by RC
-          - {id: 3,name: 'Waypoint'}       # use waypoint's yaw(tgt_yaw)
+          - { id: 0, name: "Auto" } # auto mode (point to next waypoint)
+          - { id: 1, name: "Lock" } # lock as an initial value
+          - { id: 2, name: "RC" } # controlled by RC
+          - { id: 3, name: "Waypoint" } # use waypoint's yaw(tgt_yaw)
       mode_trace:
         Name: "trace_mode"
         id: "mode_trace"
         param:
-          - {id: 0,name: 'point to point'} #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - {id: 1,name: 'smooth'}         #Coordinated turn mode, smooth transition between waypts, no waypts task
+          - { id: 0, name: "point to point" } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
+          - { id: 1, name: "smooth" } #Coordinated turn mode, smooth transition between waypts, no waypts task
       mode_landing:
         Name: "finish action"
         id: "mode_landing"
         param:
-          - {id: 0,name: 'no action' } # no action
-          - {id: 1,name: 'return to home'} # return to home
-          - {id: 2,name: 'auto landing' }  # auto landing
-          - {id: 3,name: 'return to point 0'} # return to point 0
-          - {id: 4,name: 'infinite mode'}  # infinite mode， no exit
+          - { id: 0, name: "no action" } # no action
+          - { id: 1, name: "return to home" } # return to home
+          - { id: 2, name: "auto landing" } # auto landing
+          - { id: 3, name: "return to point 0" } # return to point 0
+          - { id: 4, name: "infinite mode" } # infinite mode， no exit
       mode_gimbal:
         Name: "trace_mode"
         id: "mode_trace"
         param:
-          - {id: 0,name: 'Gimbal free' }   # free mode, no control on gimbal
-          - {id: 1,name: 'Waypoint'    }   # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity:     # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed' 
+          - { id: 0, name: "Gimbal free" } # free mode, no control on gimbal
+          - { id: 1, name: "Waypoint" } # auto mode, Smooth transition between waypoints on gimbal
+      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "Cruising Speed"
+        id: "mode_trace"
+        param: true
+
+dji_M300:
+  topics:
+    position:
+      name: "/dji_osdk_ros/gps_position"
+      messageType: "sensor_msgs/NavSatFix"
+    sensor_height:
+      name: "/dji_osdk_ros/height_above_takeoff"
+      messageType: "std_msgs/Float32"
+    vo_position:
+      name: "/dji_osdk_ros/vo_position"
+      messageType: "dji_osdk_ros/VOPosition"
+    IMU: #hdg
+      name: "/dji_osdk_ros/imu"
+      messageType: "sensor_msgs/Imu"
+    speed:
+      name: "/dji_osdk_ros/velocity"
+      messageType: "geometry_msgs/Vector3Stamped"
+    battery:
+      name: "/dji_osdk_ros/battery_state"
+      messageType: "sensor_msgs/BatteryState"
+    state_machine:
+      name: "muav_sm/uavstate"
+      messageType: "muav_state_machine/UAVState"
+    camera:
+      name: "/video_stream_compress"
+      messageType: "sensor_msgs/CompressedImage"
+  services:
+    configureMission:
+      name: "/dji_control/configure_mission"
+      serviceType: "aerialcore_common/ConfigMission"
+    commandMission:
+      name: "/dji_osdk_ros/waypointV2_startMission"
+      serviceType: "dji_osdk_ros/StartWaypointV2Mission"
+    resumemission:
+      name: "/uav_4/dji_osdk_ros/waypointV2_resumeMission"
+      serviceType: "dji_osdk_ros/ResumeWaypointV2Mission"
+    sincronize:
+      name: "/dji_control/send_bags"
+      serviceType: "std_srvs/Bool"
+  attributes:
+    mission_action:
+      stay: #action_stay
+        name: "stay"
+        id: 0
+        param: true
+        description: "action_stay"
+      photo: #simple_shot
+        name: "photo"
+        id: 1
+        param: false
+        description: "simple_shot"
+      video_start:
+        name: "video_start"
+        id: 2
+        param: false
+        description: "video_start"
+      video_stop:
+        name: "video_stop"
+        id: 3
+        param: false
+        description: "video_stop"
+      yaw: # craft_yaw
+        name: "yaw"
+        id: 4
+        param: true
+        description: "craft_yaw"
+      gimbal: #gimbal_pitch
+        name: "gimbal"
+        id: 5
+        param: true
+        description: "gimbal_pitch"
+    mission_param:
+      mode_yaw:
+        Name: "mode yaw"
+        id: "mode_yaw"
+        param:
+          - { id: 0, name: "Auto" } # auto mode (point to next waypoint)
+          - { id: 1, name: "Lock" } # lock as an initial value
+          - { id: 2, name: "RC" } # controlled by RC
+          - { id: 3, name: "Waypoint" } # use waypoint's yaw(tgt_yaw)
+      mode_trace:
+        Name: "trace_mode"
+        id: "mode_trace"
+        param:
+          - { id: 0, name: "point to point" } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
+          - { id: 1, name: "smooth" } #Coordinated turn mode, smooth transition between waypts, no waypts task
+      mode_landing:
+        Name: "finish action"
+        id: "mode_landing"
+        param:
+          - { id: 0, name: "no action" } # no action
+          - { id: 1, name: "return to home" } # return to home
+          - { id: 2, name: "auto landing" } # auto landing
+          - { id: 3, name: "return to point 0" } # return to point 0
+          - { id: 4, name: "infinite mode" } # infinite mode， no exit
+      mode_gimbal:
+        Name: "trace_mode"
+        id: "mode_trace"
+        param:
+          - { id: 0, name: "Gimbal free" } # free mode, no control on gimbal
+          - { id: 1, name: "Waypoint" } # auto mode, Smooth transition between waypoints on gimbal
+      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "Cruising Speed"
         id: "mode_trace"
         param: true
 
 px4:
   topics:
     position:
-      name: '/mavros/global_position/global'
-      messageType: 'sensor_msgs/NavSatFix'
+      name: "/mavros/global_position/global"
+      messageType: "sensor_msgs/NavSatFix"
     sensor_height:
-      name: '/mavros/altitude'
-      messageType: 'mavros_msgs/Altitude'
+      name: "/mavros/altitude"
+      messageType: "mavros_msgs/Altitude"
     hdg:
-      name: '/mavros/global_position/compass_hdg'
-      messageType: 'std_msgs/Float64'
+      name: "/mavros/global_position/compass_hdg"
+      messageType: "std_msgs/Float64"
     speed:
-      name: '/mavros/local_position/velocity_local'
-      messageType: 'geometry_msgs/TwistStamped'
+      name: "/mavros/local_position/velocity_local"
+      messageType: "geometry_msgs/TwistStamped"
     battery:
-      name: '/mavros/battery'
-      messageType: 'aerialcore_common/BatteryState'
+      name: "/mavros/battery"
+      messageType: "aerialcore_common/BatteryState"
     state_machine:
-      name: 'muav_sm/uavstate'
-      messageType: 'muav_state_machine/UAVState'
+      name: "muav_sm/uavstate"
+      messageType: "muav_state_machine/UAVState"
     camera:
-      name: '/video_stream_compress'
-      messageType: 'sensor_msgs/CompressedImage'
+      name: "/video_stream_compress"
+      messageType: "sensor_msgs/CompressedImage"
     threat:
-      name: '/threat'
-      messageType: 'std_msgs/Bool'
+      name: "/threat"
+      messageType: "std_msgs/Bool"
   services:
     configureMission:
-      name : '/mission/new'
-      serviceType : 'aerialcore_common/ConfigMission'
+      name: "/mission/new"
+      serviceType: "aerialcore_common/ConfigMission"
     commandMission:
-      name : '/mission/start_stop'
-      serviceType : 'std_srvs/SetBool'
+      name: "/mission/start_stop"
+      serviceType: "std_srvs/SetBool"
     sincronize:
-      name : '/px4_mission_node/send_bags'
-      serviceType : 'std_srvs/Bool'
+      name: "/px4_mission_node/send_bags"
+      serviceType: "std_srvs/Bool"
   attributes:
     mission_action:
       stay: #action_stay
-        name: 'stay'
+        name: "stay"
         id: 0
         param: true
         description: "action_stay"
       photo: #simple_shot
-        name: 'photo'
+        name: "photo"
         id: 1
         param: false
         description: "simple_shot"
       video_start:
-        name: 'video_start'
+        name: "video_start"
         id: 2
         param: false
         description: "video_start"
       video_stop:
-        name: 'video_stop'
+        name: "video_stop"
         id: 3
         param: false
         description: "video_stop"
       yaw: # craft_yaw
-        name: 'yaw'
+        name: "yaw"
         id: 4
         param: true
         description: "craft_yaw"
       gimbal: #gimbal_pitch
-        name: 'gimbal'
+        name: "gimbal"
         id: 5
         param: true
         description: "gimbal_pitch"
     mission_param:
-      idle_velocity: 'Cruising Speed'     # Cruising Speed (without joystick input, no more than vel_cmd_range)
-
-
+      idle_velocity: "Cruising Speed" # Cruising Speed (without joystick input, no more than vel_cmd_range)
 
 fuvex:
   topics:
     position:
-      name: '/mavros/global_position/global'
-      messageType: 'sensor_msgs/NavSatFix'
+      name: "/mavros/global_position/global"
+      messageType: "sensor_msgs/NavSatFix"
     sensor_height:
-      name: '/mavros/altitude'
-      messageType: 'mavros_msgs/Altitude'
+      name: "/mavros/altitude"
+      messageType: "mavros_msgs/Altitude"
     hdg:
-      name: '/mavros/global_position/compass_hdg'
-      messageType: 'std_msgs/Float64'
+      name: "/mavros/global_position/compass_hdg"
+      messageType: "std_msgs/Float64"
     speed:
-      name: '/mavros/local_position/velocity_local'
-      messageType: 'geometry_msgs/TwistStamped'
+      name: "/mavros/local_position/velocity_local"
+      messageType: "geometry_msgs/TwistStamped"
     battery:
-      name: '/mavros/battery'
-      messageType: 'aerialcore_common/BatteryState'
+      name: "/mavros/battery"
+      messageType: "aerialcore_common/BatteryState"
   services:
 
 catec:
   topics:
     position:
-      name: '/gps'
-      messageType: 'sensor_msgs/NavSatFix'
+      name: "/gps"
+      messageType: "sensor_msgs/NavSatFix"
     sensor_height:
-      name: '/mavros/altitude'
-      messageType: 'mavros_msgs/Altitude'
+      name: "/mavros/altitude"
+      messageType: "mavros_msgs/Altitude"
     listener_hdg:
-      name: '/compass_hdg'
-      messageType: 'std_msgs/Float64'
+      name: "/compass_hdg"
+      messageType: "std_msgs/Float64"
     speed:
-      name: '/velocity'
-      messageType: 'geometry_msgs/TwistStamped'
+      name: "/velocity"
+      messageType: "geometry_msgs/TwistStamped"
     battery:
-      name: '/battery'
-      messageType: 'aerialcore_common/BatteryState'
+      name: "/battery"
+      messageType: "aerialcore_common/BatteryState"
     state_machine:
-      name: '/fligh_state'
-      messageType: 'std_msgs/String'
+      name: "/fligh_state"
+      messageType: "std_msgs/String"
     threat:
-      name: '/threat'
-      messageType: 'std_msgs/Bool'
+      name: "/threat"
+      messageType: "std_msgs/Bool"
   services:
     threat:
-      name : '/threat_confirmation'
-      serviceType : 'std_srvs/Trigger'
+      name: "/threat_confirmation"
+      serviceType: "std_srvs/Trigger"

@@ -177,6 +177,7 @@ export const Adduav = ({ SetAddUAVOpen }) => {
                   }
                 >
                   <MenuItem value="dji">DJI</MenuItem>
+                  <MenuItem value="dji_M300">DJI M300</MenuItem>
                   <MenuItem value="px4">PX4</MenuItem>
                   <MenuItem value="fuvex">Fuvex</MenuItem>
                   <MenuItem value="catec">Catec</MenuItem>

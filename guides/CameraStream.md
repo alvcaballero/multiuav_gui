@@ -55,6 +55,7 @@ and after set up the camera with the command
 
 ```
 rosservice call /setup_camera_stream "cameraType: 0 start: 1"
+rosservice call /setup_camera_stream "{cameraType: 0, start: 1}"
 ```
 
 after read the tocpic and send de image to the server
