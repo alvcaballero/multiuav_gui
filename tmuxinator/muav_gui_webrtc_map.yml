@@ -15,7 +15,7 @@ windows:
             - cd ~/work/px4/multiuav_gui18
             - nvm use 18
             - open -a "Google Chrome" http://127.0.0.1:3000
-            - sleep 2;npm run start
+            - sleep 5;npm run start
   - Docker:
       layout: tiled
       panes:
@@ -40,3 +40,4 @@ windows:
             - docker run --rm -it --network=host -v $PWD/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
         - gtreamer:
             - cd ~/work/px4/
+            - docker start 0f77a2f7ea1d

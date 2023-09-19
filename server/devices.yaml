@@ -11,6 +11,13 @@ M210:
   P0_numerical_constrant: 4.65
   equivalent_flat_platearea: 0.32 #m2
   battery:
+    number: 2
     capacity: 80000 #mAh
     number_of_cells: 4
     Voltage_per_cell: 3.9 # v/cell
+
+Camera:
+  fpv_M210: [509, 480]
+  fpv_M300: [509, 480]
+  flir_duo: [509, 480]
+  laptop: [509, 480]

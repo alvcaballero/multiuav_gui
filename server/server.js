@@ -36,6 +36,18 @@ try {
   console.log(e);
 }
 
+var devices_init = {};
+try {
+  let fileContents = fs.readFileSync(
+    path.resolve(__dirname, "./devices_init.yaml"),
+    "utf8"
+  );
+  devices_init = YAML.parse(fileContents);
+  console.log("load devices msg");
+} catch (e) {
+  console.log(e);
+}
+
 var rosState = { state: "disconnect", msg: "init msg" };
 let uav_list = [];
 let ros = "";
@@ -112,18 +124,20 @@ const CheckDeviceOnline = setInterval(() => {
 }, 5000);
 
 async function rosConnect() {
+  console.log("try to connect to ros");
   if (rosState.state != "connect") {
     ros = new ROSLIB.Ros({ url: "ws://localhost:9090" });
     ros.on("connection", function () {
-      console.log("Connected to websocket server.");
+      console.log("ROS Connected to websocket server.");
       setrosState({ state: "connect", msg: "Conectado a ROS" });
+      connectAllUAV();
     });
     ros.on("error", function (error) {
-      console.log("Error connecting to websocket server: ", error);
+      console.log("ROS Error connecting to websocket server: ", error);
       setrosState({ state: "error", msg: "No se ha posido conectar a ROS" });
     });
     ros.on("close", function () {
-      console.log("Connection to websocket server closed.");
+      console.log("ROS Connection to websocket server closed.");
       setrosState({ state: "disconnect", msg: "Desconectado a ROS" });
     });
   } else {
@@ -135,8 +149,22 @@ async function rosConnect() {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+rosConnect();
+
+async function connectAllUAV() {
+  for (let element of devices_init.init) {
+    console.log(element);
+    let uno = await connectAddUav(element);
+    console.log("finish to add ------------");
+  }
+}
+
 const autoconectRos = setInterval(() => {
   if (rosState.state != "connect") {
+    console.log("try to connect ros");
     rosConnect();
   }
 }, 30000);
@@ -161,9 +189,11 @@ async function connectAddUav(device) {
   if (rosState.state === "connect") {
     uav_ns = device.name;
     uav_type = device.category;
+    console.log("");
 
     const topiclist = await getTopics2();
     console.log("Conectando Uav");
+    console.log("name" + uav_ns + "  type" + uav_type);
     console.log(topiclist);
 
     let find_device = false,
@@ -186,10 +216,10 @@ async function connectAddUav(device) {
       return { state: "fail", msg: `Dispositivo no encontrado+${uav_ns}` };
     }
     if (repeat_device == true) {
-      console.log("Dispositivo se encuentra registrado " + uav_ns);
+      console.log("Dispositivo ya se encuentra registrado " + uav_ns);
       return {
         state: "fail",
-        msg: `Dispositivo se encuentra registrado${uav_ns}`,
+        msg: `Dispositivo ya se encuentra registrado ${uav_ns}`,
       };
     }
 
@@ -588,11 +618,8 @@ function sincronizeUAV(uav_id) {
 
 function loadMission(mission) {
   console.log("  load  - mission");
-  console.log(mission);
-  //console.log("uav list")
-  //console.log(uav_list)
-  let cur_roster = [];
-  let cur_ns = "";
+  let cur_ns = "",
+    cur_roster = [];
   let mode_yaw = 0;
   let mode_gimbal = 0;
   let mode_trace = 0;
@@ -658,67 +685,71 @@ function loadMission(mission) {
           mode_landing = route.attributes.hasOwnProperty("mode_landing")
             ? route.attributes["mode_landing"]
             : mode_landing;
-        }
-      });
-      let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
-      let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
-      let action_matrix_msg = new ROSLIB.Message({
-        data: action_matrix.flat(),
-      });
-      let param_matrix_msg = new ROSLIB.Message({ data: param_matrix.flat() });
 
-      let missionClient = new ROSLIB.Service({
-        ros: ros,
-        name:
-          cur_ns +
-          devices_msg[uav.type]["services"]["configureMission"]["name"],
-        serviceType:
-          devices_msg[uav.type]["services"]["configureMission"]["serviceType"],
-      });
+          let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
+          let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
+          let action_matrix_msg = new ROSLIB.Message({
+            data: action_matrix.flat(),
+          });
+          let param_matrix_msg = new ROSLIB.Message({
+            data: param_matrix.flat(),
+          });
 
-      var request = new ROSLIB.ServiceRequest({
-        type: "waypoint",
-        waypoint: wp_command,
-        radius: 0,
-        maxVel: 10,
-        idleVel: idle_vel,
-        yaw: yaw_pos_msg,
-        gimbalPitch: gimbal_pos_msg,
-        yawMode: mode_yaw,
-        traceMode: mode_trace,
-        gimbalPitchMode: mode_gimbal,
-        finishAction: mode_landing,
-        commandList: action_matrix_msg,
-        commandParameter: param_matrix_msg,
-      });
-      console.log("request");
-      console.log(request);
+          let missionClient = new ROSLIB.Service({
+            ros: ros,
+            name:
+              cur_ns +
+              devices_msg[uav.type]["services"]["configureMission"]["name"],
+            serviceType:
+              devices_msg[uav.type]["services"]["configureMission"][
+                "serviceType"
+              ],
+          });
 
-      missionClient.callService(
-        request,
-        function (result) {
-          console.log(
-            "load mission " + missionClient.name + ": " + result.success
+          var request = new ROSLIB.ServiceRequest({
+            type: "waypoint",
+            waypoint: wp_command,
+            radius: 0,
+            maxVel: 10,
+            idleVel: idle_vel,
+            yaw: yaw_pos_msg,
+            gimbalPitch: gimbal_pos_msg,
+            yawMode: mode_yaw,
+            traceMode: mode_trace,
+            gimbalPitchMode: mode_gimbal,
+            finishAction: mode_landing,
+            commandList: action_matrix_msg,
+            commandParameter: param_matrix_msg,
+          });
+          console.log("request");
+          console.log(request);
+
+          missionClient.callService(
+            request,
+            function (result) {
+              console.log(
+                "load mission " + missionClient.name + ": " + result.success
+              );
+              if (result.success) {
+                return {
+                  state: "success",
+                  msg: "Loadding mission to" + cur_roster + " ok",
+                }; //notification('success',"Load mission to:" + cur_roster + " ok");
+              } else {
+                return {
+                  state: "fail",
+                  msg: "Load mission to:" + cur_roster + " fail",
+                }; //notification('danger',"Load mission to:" + cur_roster + " fail");
+              }
+            },
+            function (result) {
+              console.log("Error:" + result);
+            }
           );
-          if (result.success) {
-            return {
-              state: "success",
-              msg: "Loadding mission to" + cur_roster + " ok",
-            }; //notification('success',"Load mission to:" + cur_roster + " ok");
-          } else {
-            return {
-              state: "fail",
-              msg: "Load mission to:" + cur_roster + " fail",
-            }; //notification('danger',"Load mission to:" + cur_roster + " fail");
-          }
-        },
-        function (result) {
-          console.log("Error:" + result);
+          console.log("loading mision to" + cur_ns);
         }
-      );
-      console.log("loading mision to" + cur_ns);
+      });
     } else {
-      // if (item.type == ext)
       // Si mandamos la mision individual para cada uav, hay que hacerlo por este camino, y descomentar la linea siguiente.
       //loadMissionToExt(cur_ns);
       // var info = "Loading Mission";
@@ -730,57 +761,11 @@ function loadMission(mission) {
   return { state: "success", msg: "Loadding mission to" + cur_roster }; //notification('success',"Loadding mission to: " + cur_roster);
 }
 
-function commandMission() {
-  //var r = confirm("Comand mission?");
-  var r = true;
-  if (r === true) {
-    let cur_roster = [];
-    uav_list.forEach(function prepare_wp(uav, idx, arr) {
-      cur_roster.push(uav.name);
-      console.log;
-      let missionClient;
-      if (uav.type !== "ext") {
-        missionClient = new ROSLIB.Service({
-          ros: ros,
-          name: uav.name + devices_msg[uav.type].services.commandMission.name,
-          serviceType:
-            devices_msg[uav.type].services.commandMission.serviceType,
-        });
-
-        let request = new ROSLIB.ServiceRequest({ data: true });
-
-        missionClient.callService(request, function (result) {
-          console.log(result.message);
-          if (result.success) {
-            return {
-              state: "success",
-              msg: "Start mission:" + cur_roster + " ok",
-            }; //notification('success',"Start mission:" + cur_roster + " ok");
-          } else {
-            return {
-              state: "fail",
-              msg: "Start mission:" + cur_roster + " FAIL!",
-            }; //notification('danger',"Start mission:" + cur_roster + " FAIL!");
-          }
-        });
-      } else {
-        console.log(uav.name);
-        //commandMissionToEXT(uav.name);
-      }
-    });
-    return { state: "success", msg: "Commanding mission to: " + cur_roster }; //notification('success',"Commanding mission to: " + cur_roster);
-  } else {
-    console.log("Mission canceled");
-    return { state: "fail", msg: "Mission canceled" };
-  }
-}
-
-function commandMission1(uav_id) {
-  //var r = confirm("Comand mission?");
+function commandMission(uav_id) {
   let uav_ns = data.get_device_ns(uav_id);
   let uav_category = data.get_device_category(uav_id);
   let missionClient;
-  if (uav.type !== "ext") {
+  if (uav_category !== "ext") {
     missionClient = new ROSLIB.Service({
       ros: ros,
       name: uav_ns + devices_msg[uav_category].services.commandMission.name,
@@ -788,7 +773,12 @@ function commandMission1(uav_id) {
         devices_msg[uav_category].services.commandMission.serviceType,
     });
 
-    let request = new ROSLIB.ServiceRequest({ data: true });
+    let request;
+    if (uav_category !== "dji_M300") {
+      request = new ROSLIB.ServiceRequest({ data: true });
+    } else {
+      request = new ROSLIB.ServiceRequest({});
+    }
     missionClient.callService(request, function (result) {
       console.log(result.message);
       if (result.success) {
@@ -798,11 +788,23 @@ function commandMission1(uav_id) {
       }
     });
   } else {
-    console.log(uav.name);
     //commandMissionToEXT(uav.name);
   }
-
   return { state: "success", msg: "Commanding mission to: " + uav_ns }; //notification('success',"Commanding mission to: " + cur_roster);
+}
+
+function commandMissionAll() {
+  var r = true;
+  let alldevices = data.state.devices;
+  if (r === true) {
+    Object.keys(alldevices).forEach((device_id) => {
+      console.log("command mission to " + device_id);
+      commandMission(device_id);
+    });
+  } else {
+    console.log("Mission canceled");
+    return { state: "fail", msg: "Mission canceled" };
+  }
 }
 
 async function disConnectAddUav(uav_ns) {
@@ -848,10 +850,6 @@ async function disConnectAddUav(uav_ns) {
   } else {
     return { state: "success", msg: "no quedan UAV de la lista" };
   }
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 app.get("/", (req, res) => {
@@ -916,13 +914,13 @@ app.post("/api/loadmission", async function (req, res) {
 app.post("/api/commandmission", async function (req, res) {
   console.log("command-mission-post");
   console.log(req.body);
-  let myresponse = await commandMission();
+  let myresponse = await commandMissionAll();
   return res.json(myresponse);
 });
 app.post("/api/commandmission/:id", async function (req, res) {
   console.log("command-mission-post");
   console.log(req.body);
-  let myresponse = await commandMission1(req.params.id);
+  let myresponse = await commandMission(req.params.id);
   return res.json(myresponse);
 });
 app.post("/api/sendTask", async function (req, res) {

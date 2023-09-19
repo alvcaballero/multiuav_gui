@@ -1,0 +1,15 @@
+init:
+  - id: "0"
+    name: "uav_2"
+    category: "dji"
+    ip: "10.42.0.43"
+    camera:
+      - type: "Webrtc"
+        source: "main"
+  - id: "1"
+    name: "uav_4"
+    category: "dji_M300"
+    ip: "10.42.0.44"
+    camera:
+      - type: "Webrtc"
+        source: "main"

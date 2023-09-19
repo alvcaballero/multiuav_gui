@@ -9,6 +9,7 @@ windows:
         - backend:
             - cd ~/work/px4/multiuav_gui18/server
             - nvm use 18
+            - sleep 3
             - npm run server
         - frontend:
             - cd ~/work/px4/multiuav_gui18
