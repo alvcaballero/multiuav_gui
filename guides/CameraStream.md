@@ -54,8 +54,8 @@ first run the device node of OSDK
 and after set up the camera with the command
 
 ```
-rosservice call /setup_camera_stream "cameraType: 0 start: 1"
-rosservice call /setup_camera_stream "{cameraType: 0, start: 1}"
+rosservice call /uav_2/setup_camera_stream "cameraType: 0 start: 1"
+rosservice call /uav_2/setup_camera_stream "{cameraType: 0, start: 1}"
 ```
 
 after read the tocpic and send de image to the server

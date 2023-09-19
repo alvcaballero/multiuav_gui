@@ -26,6 +26,7 @@ export const mapIcons = {
   plane: planeSvg,
   drone: droneSvg,
   dji: dronedjiSvg,
+  dji_M300: dronedjiSvg,
   px4: planeSvg,
   catec: dronePx4Svg,
   fuvex: dronePx4Svg,
