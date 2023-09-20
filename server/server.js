@@ -311,17 +311,26 @@ async function connectAddUav(device) {
         data.updatePosition({ deviceId: id_uav, course: 90 + yaw * 57.295 });
       });
 
-      uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
-        let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
-        data.updatePosition({
-          deviceId: id_uav,
-          speed: Math.sqrt(
-            Math.sqrt(
+      if (uav_type == "dji") {
+        uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
+          let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
+          data.updatePosition({
+            deviceId: id_uav,
+            speed: Math.sqrt(
               Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2)
-            ).toFixed(2)
-          ),
-        }); // showData[2].innerHTML = Math.sqrt(Math.pow(message.vector.x,2) + Math.pow(message.vector.y,2)).toFixed(2);
-      });
+            ).toFixed(2),
+          }); // showData[2].innerHTML = Math.sqrt(Math.pow(message.vector.x,2) + Math.pow(message.vector.y,2)).toFixed(2);
+        });
+      }
+      if (uav_type == "dji_M300") {
+        uav_list[cur_uav_idx].listener_mission_state.subscribe(function (msg) {
+          let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
+          data.updatePosition({
+            deviceId: id_uav,
+            speed: msg.velocity,
+          });
+        });
+      }
 
       uav_list[cur_uav_idx].listener_battery.subscribe(function (msg) {
         let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;

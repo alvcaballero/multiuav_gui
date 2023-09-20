@@ -165,7 +165,7 @@ export const RosControl = ({ children, notification }) => {
       mode_yaw = plan_mission["mode_yaw"];
       dispatch(
         missionActions.updateMission({
-          name: name_mission,
+          name: name_mission.slice(0, -5),
           mission: plan_mission,
         })
       );
@@ -188,7 +188,7 @@ export const RosControl = ({ children, notification }) => {
       //console.log(mission_yaml)
       dispatch(
         missionActions.updateMission({
-          name: name_mission,
+          name: name_mission.slice(0, -10),
           mission: mission_yaml,
         })
       );
@@ -218,7 +218,7 @@ export const RosControl = ({ children, notification }) => {
       //console.log(mission_yaml)
       dispatch(
         missionActions.updateMission({
-          name: name_mission,
+          name: name_mission.slice(0, -4),
           mission: mission_yaml,
         })
       );
@@ -238,7 +238,7 @@ export const RosControl = ({ children, notification }) => {
       //console.log(mission_yaml)
       dispatch(
         missionActions.updateMission({
-          name: name_mission,
+          name: name_mission.slice(0, -5),
           mission: mission_yaml,
         })
       );
