@@ -656,9 +656,9 @@ function loadMission(mission) {
                   devices_msg[uav.type]["attributes"]["mission_action"]
                 ).find((element) => element.name == action_val);
                 if (found) {
-                  action_array[index] = found.id;
+                  action_array[index] = Number(found.id);
                   param_array[index] = found.param
-                    ? item.action[action_val]
+                    ? Number(item.action[action_val])
                     : 0;
                 }
               });

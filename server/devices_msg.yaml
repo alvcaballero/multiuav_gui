@@ -34,6 +34,9 @@ dji:
     sincronize:
       name: "/dji_control/send_bags"
       serviceType: "std_srvs/Bool"
+    setupcamera:
+      name: "setup_camera_stream"
+      serviceType: "dji_osdk_ros/SetupCameraStream"
   attributes:
     mission_action:
       stay: #action_stay
@@ -118,6 +121,9 @@ dji_M300:
     speed:
       name: "/dji_osdk_ros/velocity"
       messageType: "geometry_msgs/Vector3Stamped"
+    mission_state:
+      name: "/dji_osdk_ros/waypointV2_mission_state"
+      messageType: "dji_osdk_ros/WaypointV2MissionStatePush"
     battery:
       name: "/dji_osdk_ros/battery_state"
       messageType: "sensor_msgs/BatteryState"
@@ -140,6 +146,10 @@ dji_M300:
     sincronize:
       name: "/dji_control/send_bags"
       serviceType: "std_srvs/Bool"
+    setupcamera:
+      name: "setup_camera_stream"
+      serviceType: "dji_osdk_ros/SetupCameraStream"
+
   attributes:
     mission_action:
       stay: #action_stay

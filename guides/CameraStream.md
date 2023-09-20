@@ -56,6 +56,26 @@ and after set up the camera with the command
 ```
 rosservice call /uav_2/setup_camera_stream "cameraType: 0 start: 1"
 rosservice call /uav_2/setup_camera_stream "{cameraType: 0, start: 1}"
+
+
+```
+
+UAV_2
+
+```
+docker run --rm -it --network=host bluenviron/mediamtx:latest
+rosservice call /uav_2/setup_camera_stream "{cameraType: 1, start: 1}"
+rosrun simple_vs gstramer-ros.py
+
+
+```
+
+UAV_4
+
+```
+rosservice call /uav_4/setup_camera_stream "{cameraType: 1, start: 1}"
+roslaunch ros_rtsp rtsp_streams.launch
+roslaunch simple_vs video_resize.launch
 ```
 
 after read the tocpic and send de image to the server
