@@ -327,7 +327,7 @@ async function connectAddUav(device) {
           let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
           data.updatePosition({
             deviceId: id_uav,
-            speed: msg.velocity,
+            speed: msg.velocity * 0.01,
           });
         });
       }
@@ -335,6 +335,11 @@ async function connectAddUav(device) {
       uav_list[cur_uav_idx].listener_battery.subscribe(function (msg) {
         let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
         data.updatePosition({ deviceId: id_uav, batteryLevel: msg.percentage }); // showData[3].innerHTML = message.percentage + "%";
+      });
+
+      uav_list[cur_uav_idx].listener_gimbal.subscribe(function (msg) {
+        let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
+        data.updatePosition({ deviceId: id_uav, gimbal: msg.vector }); // showData[3].innerHTML = message.percentage + "%";
       });
 
       uav_list[cur_uav_idx].listener_camera.subscribe(function (msg) {

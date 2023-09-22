@@ -24,6 +24,9 @@ dji:
     camera:
       name: "/video_stream_compress"
       messageType: "sensor_msgs/CompressedImage"
+    gimbal:
+      name: "/dji_osdk_ros/gimbal_angle"
+      messageType: "geometry_msgs/Vector3Stamped"
   services:
     configureMission:
       name: "/dji_control/configure_mission"
@@ -133,6 +136,9 @@ dji_M300:
     camera:
       name: "/video_stream_compress"
       messageType: "sensor_msgs/CompressedImage"
+    gimbal:
+      name: "/dji_osdk_ros/gimbal_angle"
+      messageType: "geometry_msgs/Vector3Stamped"
   services:
     configureMission:
       name: "/dji_control/configure_mission"

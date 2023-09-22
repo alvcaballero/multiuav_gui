@@ -71,12 +71,14 @@ export const MissionPanel = () => {
     setmission({ name: "no mission", description: "", route: [] });
   };
   const SaveMission = () => {
-    const fileData = YAML.stringify(mission);
-    //console.log(YAML.stringify(mission,))
+    let auxmission = { version: "3" }; //JSON.parse(JSON.stringify(mission));
+    auxmission["name"] = mission.name;
+    auxmission["route"] = mission.route;
+    const fileData = YAML.stringify(auxmission);
     const blob = new Blob([fileData], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.download = "mission-" + mission.name + ".yaml";
+    link.download = mission.name + ".yaml";
     link.href = url;
     link.click();
   };
