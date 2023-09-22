@@ -128,7 +128,7 @@ const StatusCard = ({
 
   const deviceImage = device?.attributes?.deviceImage;
 
-  const positionItems = "speed,course,batteryLevel";
+  const positionItems = "speed,course,batteryLevel,gimbal";
 
   const [anchorEl, setAnchorEl] = useState(null);
 

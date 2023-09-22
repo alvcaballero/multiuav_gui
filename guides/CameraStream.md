@@ -65,7 +65,7 @@ UAV_2
 ```
 docker run --rm -it --network=host bluenviron/mediamtx:latest
 rosservice call /uav_2/setup_camera_stream "{cameraType: 1, start: 1}"
-rosrun simple_vs gstramer-ros.py
+rosrun simple_vs gstreamer-ros.py
 
 
 ```
