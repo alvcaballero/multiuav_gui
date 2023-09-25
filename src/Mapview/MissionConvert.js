@@ -74,6 +74,10 @@ export const RuteConvert = (route) => {
         rt[n_uav]["attributes"]["idle_vel"] =
           route[n_uav]["attributes"]["idle_vel"];
       }
+      if (route[n_uav]["attributes"].hasOwnProperty("max_vel")) {
+        rt[n_uav]["attributes"]["max_vel"] =
+          route[n_uav]["attributes"]["max_vel"];
+      }
     } else {
       if (route[n_uav].hasOwnProperty("mode_landing")) {
         console.log("have modelanding" + n_uav);
@@ -90,6 +94,9 @@ export const RuteConvert = (route) => {
       }
       if (route[n_uav].hasOwnProperty("idle_vel")) {
         rt[n_uav]["attributes"]["idle_vel"] = route[n_uav]["idle_vel"];
+      }
+      if (route[n_uav].hasOwnProperty("max_vel")) {
+        rt[n_uav]["attributes"]["max_vel"] = route[n_uav]["max_vel"];
       }
     }
   }
@@ -151,6 +158,10 @@ export const RuteConvertlegacy = (mission) => {
         if (mission["uav_" + n_uav]["attributes"].hasOwnProperty("idle_vel")) {
           rt[n_uavx]["attributes"]["idle_vel"] =
             mission["uav_" + n_uav]["attributes"]["idle_vel"];
+        }
+        if (mission["uav_" + n_uav]["attributes"].hasOwnProperty("max_vel")) {
+          rt[n_uav]["attributes"]["max_vel"] =
+            mission["uav_" + n_uav]["attributes"]["max_vel"];
         }
       } else {
         if (mission["uav_" + n_uav].hasOwnProperty("mode_landing")) {

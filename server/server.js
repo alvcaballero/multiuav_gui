@@ -638,6 +638,7 @@ function loadMission(mission) {
   let mode_gimbal = 0;
   let mode_trace = 0;
   let idle_vel = 1.8;
+  let max_vel = 10;
   let mode_landing = 0;
   uav_list.forEach(function prepare_wp(uav, idx, arr) {
     cur_ns = uav.name;
@@ -687,6 +688,9 @@ function loadMission(mission) {
           idle_vel = route.attributes.hasOwnProperty("idle_vel")
             ? route.attributes["idle_vel"]
             : idle_vel;
+          max_vel = route.attributes.hasOwnProperty("max_vel")
+            ? route.attributes["max_vel"]
+            : max_vel;
           mode_yaw = route.attributes.hasOwnProperty("mode_yaw")
             ? route.attributes["mode_yaw"]
             : mode_yaw;
@@ -724,7 +728,7 @@ function loadMission(mission) {
             type: "waypoint",
             waypoint: wp_command,
             radius: 0,
-            maxVel: 10,
+            maxVel: max_vel,
             idleVel: idle_vel,
             yaw: yaw_pos_msg,
             gimbalPitch: gimbal_pos_msg,
