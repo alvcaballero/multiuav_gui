@@ -99,11 +99,19 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
   const AddnewRoute = () => {
     let auxroute = [...mission.route];
     let myid = auxroute.length > 0 ? +auxroute.slice(-1)[0].id + +1 : 0;
+    let initAtributes = {
+      max_vel: 12,
+      idle_vel: 3,
+      mode_yaw: 2,
+      mode_gimbal: 0,
+      mode_trace: 0,
+      mode_landing: 2,
+    };
     auxroute.push({
       name: "",
       uav: "",
       id: myid,
-      attributes: {},
+      attributes: initAtributes,
       wp: [],
     });
     setmission({ ...mission, route: auxroute });
@@ -296,7 +304,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                   variant="subtitle1"
                                   className={classes.attributeName}
                                 >
-                                  Speed idle:{" "}
+                                  Speed idle:
                                 </Typography>
                                 <TextField
                                   fullWidth
@@ -317,6 +325,40 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         );
                                         rt == mission.route[index]
                                           ? (copiedrt.attributes.idle_vel =
+                                              +e.target.value)
+                                          : (copiedrt = rt);
+                                        return copiedrt;
+                                      }),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Typography
+                                  variant="subtitle1"
+                                  className={classes.attributeName}
+                                >
+                                  Speed MAX:
+                                </Typography>
+                                <TextField
+                                  fullWidth
+                                  required
+                                  type="number"
+                                  className={classes.attributeValue}
+                                  value={
+                                    item_route.attributes.max_vel
+                                      ? item_route.attributes.max_vel
+                                      : 12
+                                  }
+                                  onChange={(e) =>
+                                    setmission({
+                                      ...mission,
+                                      route: mission.route.map((rt) => {
+                                        let copiedrt = JSON.parse(
+                                          JSON.stringify(rt)
+                                        );
+                                        rt == mission.route[index]
+                                          ? (copiedrt.attributes.max_vel =
                                               +e.target.value)
                                           : (copiedrt = rt);
                                         return copiedrt;
