@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
 import { Navbar } from "../components/Navbar";
 import { Menu } from "../components/Menu";
 import MainToolbar from "../components/MainToolbar";
@@ -7,6 +7,7 @@ import { RosControl, RosContext } from "../components/RosControl";
 import DeviceList from "../components/DeviceList";
 import { Paper, Grid, Box } from "@mui/material";
 import { CameraWebRTCV4 } from "../components/CameraWebRTCV4";
+import { CameraWebRTCV3 } from "../components/CameraWebRTCV3";
 
 import { useDispatch, useSelector } from "react-redux";
 import { experimentalStyled as styled } from "@mui/material/styles";
@@ -101,19 +102,29 @@ const CameraPage = () => {
               width: `calc(100vw - 360px)`,
               height: "100%",
               padding: "20px",
-              float:"right"
+              float: "right",
             }}
           >
-            <Grid container spacing={3}>
-              <Grid item >
-              <CameraWebRTCV4 />
-              </Grid>
-              <Grid item >
-              <CameraWebRTCV4 />
-              </Grid>
-              <Grid item >
-                <CameraWebRTCV4 />
-              </Grid>
+            <Grid container spacing={4} justifyContent="space-around">
+              {React.Children.toArray(
+                Object.values(devices).map((device) => (
+                  <Fragment key={"dev" + device.id}>
+                    {device.camera.map((camera, cam_index) => (
+                      <Grid key={"card-" + device.id + "-" + cam_index} item>
+                        <CameraWebRTCV4
+                          deviceId={device.id}
+                          deviceIp={"127.0.0.1"}
+                          devicename={device.name}
+                          camera_src={camera.source}
+                          onClose={() => {
+                            console.log("cerrar ");
+                          }}
+                        />
+                      </Grid>
+                    ))}
+                  </Fragment>
+                ))
+              )}
             </Grid>
           </Box>
         </div>
