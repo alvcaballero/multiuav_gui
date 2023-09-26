@@ -4,10 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import { map } from "../Mapview/Mapview";
 import { RosContext } from "./RosControl";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
+import { AppBar, Toolbar, Container, Typography, Button } from "@mui/material";
 
 import { missionActions } from "../store";
 
@@ -78,25 +75,29 @@ export const Navbar = ({ SetAddUAVOpen }) => {
     >
       <Container maxWidth="x">
         <Toolbar disableGutters>
-          <Typography
-            variant="h6"
-            noWrap
-            component="a"
-            //href="/"
-            onClick={sethome}
-            sx={{
-              mr: 2,
-              display: { xs: "none", md: "flex" },
-              fontFamily: "monospace",
-              fontWeight: 700,
-              letterSpacing: ".3rem",
-              color: "inherit",
-              textDecoration: "none",
+          <Button
+            onClick={() => {
+              sethome();
+              navigate("/");
             }}
           >
-            Management Tool
-          </Typography>
-
+            <Typography
+              variant="h6"
+              noWrap
+              component="a"
+              sx={{
+                mr: 2,
+                display: { xs: "none", md: "flex" },
+                fontFamily: "monospace",
+                fontWeight: 700,
+                letterSpacing: ".3rem",
+                color: "#FFFFFF",
+                textDecoration: "none",
+              }}
+            >
+              Management Tool
+            </Typography>
+          </Button>
           <div className="dropdown">
             <button className="dropbtn">ROS </button>
             <div name="otrotest" className="dropdown-content">

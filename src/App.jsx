@@ -1,13 +1,13 @@
-import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import makeStyles from '@mui/styles/makeStyles';
-import { LinearProgress, useMediaQuery, useTheme } from '@mui/material';
-import SocketController from './SocketController';
+import React from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import makeStyles from "@mui/styles/makeStyles";
+import { LinearProgress, useMediaQuery, useTheme } from "@mui/material";
+import SocketController from "./SocketController";
 
 const useStyles = makeStyles(() => ({
   page: {
     flexGrow: 1,
-    overflow: 'auto',
+    overflow: "auto",
   },
   menu: {
     zIndex: 4,
@@ -19,12 +19,12 @@ const App = () => {
   const theme = useTheme();
 
   return (
-  <>
-    <SocketController/>
-    <div className={classes.page}>
-          <Outlet />
-    </div>
-  </>
+    <>
+      <SocketController />
+      <div className={classes.page}>
+        <Outlet />
+      </div>
+    </>
   );
 };
 

@@ -102,7 +102,7 @@ export const CameraWebRTCV4 = ({
                 <CloseIcon fontSize="small" className={classes.mediaButton} />
               </IconButton>
             </div>
-            <div className={classes.tittle}>{"Image " + device.name}</div>
+            <div className={classes.tittle}>{"Id: " + device.name}</div>
           </div>
           <iframe src={deviceip} className={frameclass} />
         </Card>
