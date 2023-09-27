@@ -104,7 +104,11 @@ dji:
           - { id: 1, name: "Waypoint" } # auto mode, Smooth transition between waypoints on gimbal
       idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
         Name: "Cruising Speed"
-        id: "mode_trace"
+        id: "idle_speed"
+        param: true
+      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "Max Speed"
+        id: "max_speed"
         param: true
 
 dji_M300:
@@ -220,8 +224,19 @@ dji_M300:
           - { id: 1, name: "Waypoint" } # auto mode, Smooth transition between waypoints on gimbal
       idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
         Name: "Cruising Speed"
-        id: "mode_trace"
+        id: "idle_speed"
         param: true
+      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "Max Speed"
+        id: "max_speed"
+        param: true
+      mode_speed: # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "Mode Speed"
+        id: "mode_speed"
+        param:
+          - { id: 0, name: "Idle speed" } #  one speed
+          - { id: 1, name: "idle and max speed" } # two speed
+          - { id: 2, name: "Waypoint Speed" } # custon speed for each waypoint
 
 px4:
   topics:

@@ -25,6 +25,9 @@ export const RuteConvert = (route) => {
       rt[n_uav]["wp"][wp_n]["pos"] = route[n_uav]["wp"][wp_n].pos;
       rt[n_uav]["wp"][wp_n]["yaw"] = route[n_uav]["wp"][wp_n].yaw;
       rt[n_uav]["wp"][wp_n]["gimbal"] = route[n_uav]["wp"][wp_n].gimbal;
+      if (route[n_uav]["wp"][wp_n].hasOwnProperty("speed")) {
+        rt[n_uav]["wp"][wp_n]["speed"] = route[n_uav]["wp"][wp_n].speed;
+      }
       if (route[n_uav]["wp"][wp_n].hasOwnProperty("action")) {
         rt[n_uav]["wp"][wp_n]["action"] = route[n_uav]["wp"][wp_n].action;
       }

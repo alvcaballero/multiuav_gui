@@ -91,9 +91,10 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
 
   const AddnewMission = () => {
     let auxmission = { name: "new Mission", description: "", route: [] };
-    auxmission.route.push({ name: "", uav: "", id: 0, attributes: {}, wp: [] });
+    //auxmission.route.push({ name: "", uav: "", id: 0, attributes: {}, wp: [] });
     setmission(auxmission);
     setaddMission(false);
+    AddnewRoute();
     console.log("add new mission");
   };
   const AddnewRoute = () => {
@@ -304,7 +305,46 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                   variant="subtitle1"
                                   className={classes.attributeName}
                                 >
-                                  Speed idle:
+                                  Speed Mode
+                                </Typography>
+                                <div className={classes.attributeValue}>
+                                  <SelectField
+                                    emptyValue={null}
+                                    fullWidth={true}
+                                    value={
+                                      item_route.attributes.mode_speed
+                                        ? item_route.attributes.mode_speed
+                                        : 0
+                                    }
+                                    onChange={(e) =>
+                                      setmission({
+                                        ...mission,
+                                        route: mission.route.map((rt) => {
+                                          let copiedrt = JSON.parse(
+                                            JSON.stringify(rt)
+                                          );
+                                          rt === mission.route[index]
+                                            ? (copiedrt.attributes.mode_speed =
+                                                e.target.value)
+                                            : (copiedrt = rt);
+                                          return copiedrt;
+                                        }),
+                                      })
+                                    }
+                                    endpoint={
+                                      "/api/mission/atributesparam/dji_M300/mode_speed"
+                                    }
+                                    keyGetter={(it) => it.id}
+                                    titleGetter={(it) => it.name}
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Typography
+                                  variant="subtitle1"
+                                  className={classes.attributeName}
+                                >
+                                  Speed idle (m/s):
                                 </Typography>
                                 <TextField
                                   fullWidth
@@ -338,7 +378,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                   variant="subtitle1"
                                   className={classes.attributeName}
                                 >
-                                  Speed MAX:
+                                  Speed MAX (m/s):
                                 </Typography>
                                 <TextField
                                   fullWidth

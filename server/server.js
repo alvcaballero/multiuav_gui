@@ -646,6 +646,7 @@ function loadMission(mission) {
     if (uav.type !== "ext") {
       let wp_command = [];
       let yaw_pos = [];
+      let speed_pos = [];
       let gimbal_pos = [];
       let action_matrix = [];
       let param_matrix = [];
@@ -654,36 +655,6 @@ function loadMission(mission) {
         if (route["uav"] == cur_ns) {
           console.log("route");
           console.log(route);
-          Object.values(route["wp"]).forEach((item) => {
-            let yaw, gimbal;
-            let action_array = Array(10).fill(0);
-            let param_array = Array(10).fill(0);
-            let pos = new ROSLIB.Message({
-              latitude: item.pos[0],
-              longitude: item.pos[1],
-              altitude: item.pos[2],
-            });
-            yaw = item.hasOwnProperty("yaw") ? item.yaw : 0;
-            gimbal = item.hasOwnProperty("gimbal") ? item.gimbal : 0;
-            if (item.hasOwnProperty("action")) {
-              Object.keys(item.action).forEach((action_val, index, arr) => {
-                found = Object.values(
-                  devices_msg[uav.type]["attributes"]["mission_action"]
-                ).find((element) => element.name == action_val);
-                if (found) {
-                  action_array[index] = Number(found.id);
-                  param_array[index] = found.param
-                    ? Number(item.action[action_val])
-                    : 0;
-                }
-              });
-            }
-            wp_command.push(pos);
-            gimbal_pos.push(gimbal);
-            yaw_pos.push(yaw);
-            action_matrix.push(action_array);
-            param_matrix.push(param_array);
-          });
 
           idle_vel = route.attributes.hasOwnProperty("idle_vel")
             ? route.attributes["idle_vel"]
@@ -704,7 +675,41 @@ function loadMission(mission) {
             ? route.attributes["mode_landing"]
             : mode_landing;
 
+          Object.values(route["wp"]).forEach((item) => {
+            let yaw, gimbal, speed;
+            let action_array = Array(10).fill(0);
+            let param_array = Array(10).fill(0);
+            let pos = new ROSLIB.Message({
+              latitude: item.pos[0],
+              longitude: item.pos[1],
+              altitude: item.pos[2],
+            });
+            yaw = item.hasOwnProperty("yaw") ? item.yaw : 0;
+            speed = item.hasOwnProperty("speed") ? item.speed : idle_vel;
+            gimbal = item.hasOwnProperty("gimbal") ? item.gimbal : 0;
+            if (item.hasOwnProperty("action")) {
+              Object.keys(item.action).forEach((action_val, index, arr) => {
+                found = Object.values(
+                  devices_msg[uav.type]["attributes"]["mission_action"]
+                ).find((element) => element.name == action_val);
+                if (found) {
+                  action_array[index] = Number(found.id);
+                  param_array[index] = found.param
+                    ? Number(item.action[action_val])
+                    : 0;
+                }
+              });
+            }
+            wp_command.push(pos);
+            gimbal_pos.push(gimbal);
+            yaw_pos.push(yaw);
+            speed_pos.push(speed);
+            action_matrix.push(action_array);
+            param_matrix.push(param_array);
+          });
+
           let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
+          let speed_pos_msg = new ROSLIB.Message({ data: speed_pos });
           let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
           let action_matrix_msg = new ROSLIB.Message({
             data: action_matrix.flat(),
@@ -731,6 +736,7 @@ function loadMission(mission) {
             maxVel: max_vel,
             idleVel: idle_vel,
             yaw: yaw_pos_msg,
+            speed: speed_pos_msg,
             gimbalPitch: gimbal_pos_msg,
             yawMode: mode_yaw,
             traceMode: mode_trace,
