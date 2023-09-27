@@ -26,6 +26,7 @@ export const MapMissions = () => {
       longitude: myroute[point.routeid]["wp"][point.id]["pos"][1],
       altitud: myroute[point.routeid]["wp"][point.id]["pos"][2],
       yaw: myroute[point.routeid]["wp"][point.id]["yaw"],
+      speed: myroute[point.routeid]["wp"][point.id]["speed"],
       gimbal: myroute[point.routeid]["wp"][point.id]["gimbal"],
       actions: myroute[point.routeid]["wp"][point.id]["action"],
       attributes: myroute[point.routeid]["attributes"],
@@ -33,6 +34,60 @@ export const MapMissions = () => {
       color: myroute[point.routeid]["id"],
     };
   };
+
+  function WaypoointDetail(e) {
+    console.log("target");
+    console.log(e);
+    let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${
+      e.features[0].properties.uav
+    }</b>
+    <span><a href="https://www.google.com/maps?q=${
+      e.features[0].properties.latitude
+    },${e.features[0].properties.longitude}" target="_blank">
+    Point_${e.features[0].properties.id}</a></span></div>
+        <div><span>Route: ${e.features[0].properties.name}</span></div>
+        <div style="display:inline"><span> Height: </span><span>${e.features[0].properties.altitud.toFixed(
+          1
+        )}m </span></div>`;
+    html = e.features[0].properties.hasOwnProperty("speed")
+      ? html +
+        `<div style="display:inline"><span>Speed: </span><span>${e.features[0].properties.speed} m/s </span></div>`
+      : html;
+    html = e.features[0].properties.hasOwnProperty("yaw")
+      ? html +
+        `<div style="display:inline"><span>Yaw: </span><span>${e.features[0].properties.yaw}° </span></div>`
+      : html;
+    html = e.features[0].properties.hasOwnProperty("gimbal")
+      ? html +
+        `<div style="display:inline"><span>Gimbal: </span><span>${e.features[0].properties.gimbal}° </span></div>`
+      : html;
+    let html_action = "<div><b> Waypoint actions: </b></div>";
+    if (e.features[0].properties.actions) {
+      let action = JSON.parse(e.features[0].properties.actions);
+      html_action =
+        html_action +
+        Object.keys(action)
+          .map((key) => {
+            let unit = key == "idle_vel" ? "m/s" : "";
+            return `<div style="display:inline"><span>${key}: </span><span>${action[key]} ${unit} </span></div>`;
+          })
+          .join("");
+    }
+    let html_atributes = "<div><b> Attributes_mission: </b></div>";
+    let attribute = JSON.parse(e.features[0].properties.attributes);
+    html_atributes =
+      html_atributes +
+      Object.keys(attribute)
+        .map((key) => {
+          let unit = key == "idle_vel" || key == "max_vel" ? "m/s" : "";
+          return `<div style="display:inline"><span>${key}: </span><span>${attribute[key]} ${unit} </span></div>`;
+        })
+        .join("");
+    new maplibregl.Popup()
+      .setLngLat(e.lngLat)
+      .setHTML(html + html_action + html_atributes)
+      .addTo(map);
+  }
 
   useEffect(() => {
     if (true) {
@@ -108,48 +163,12 @@ export const MapMissions = () => {
           "text-size": 14,
         },
       });
-      map.on("click", "mission-points", function (e) {
-        console.log("target");
-        console.log(e);
-        let html = `<h4 style="color: #FF7A59" >UAV: ${e.features[0].properties.uav}</h4>
-            <div><span>Route: ${e.features[0].properties.name}</span>
-            <span><a href="https://www.google.com/maps?q=${e.features[0].properties.latitude},${e.features[0].properties.longitude}" target="_blank">
-            Punto_${e.features[0].properties.id}</a></span></div>
-            <div style="display:inline"><span> Height: </span><span>${e.features[0].properties.altitud}m </span></div>`;
-        html = e.features[0].properties.hasOwnProperty("yaw")
-          ? html +
-            `<div style="display:inline"><span>Yaw: </span><span>${e.features[0].properties.yaw}° </span></div>`
-          : html;
-        html = e.features[0].properties.hasOwnProperty("gimbal")
-          ? html +
-            `<div style="display:inline"><span>Gimbal: </span><span>${e.features[0].properties.gimbal}° </span></div>`
-          : html;
-        let html_action = "<p> Waypoint actions: </p>";
-        if (e.features[0].properties.actions) {
-          let action = JSON.parse(e.features[0].properties.actions);
-          html_action =
-            html_action +
-            Object.keys(action)
-              .map((key) => {
-                let unit = key == "idle_vel" ? "m/s" : "";
-                return `<div style="display:inline"><span>${key}: </span><span>${action[key]} ${unit} </span></div>`;
-              })
-              .join("");
-        }
-        let html_atributes = "<p> Atributes_mission: </p>";
-        let attribute = JSON.parse(e.features[0].properties.attributes);
-        html_atributes =
-          html_atributes +
-          Object.keys(attribute)
-            .map((key) => {
-              let unit = key == "idle_vel" ? "m/s" : "";
-              return `<div style="display:inline"><span>${key}: </span><span>${attribute[key]} ${unit} </span></div>`;
-            })
-            .join("");
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(html + html_action + html_atributes)
-          .addTo(map);
+      map.on("click", "mission-points", WaypoointDetail);
+      map.on("mouseenter", "mission-points", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "mission-points", () => {
+        map.getCanvas().style.cursor = "";
       });
 
       return () => {

@@ -219,6 +219,30 @@ const WaypointRouteList = ({
 
         <TextField
           required
+          label="Speed "
+          type="number"
+          variant="standard"
+          value={
+            waypoint.speed
+              ? waypoint.speed
+              : mission.route[index].attributes.idle_vel
+          }
+          onChange={(e) =>
+            setmission({
+              ...mission,
+              route: mission.route.map((rt) => {
+                let copiedrt = JSON.parse(JSON.stringify(rt));
+                mission.route[index]
+                  ? (copiedrt.wp[index_wp]["speed"] = +e.target.value)
+                  : (copiedrt = rt);
+                return copiedrt;
+              }),
+            })
+          }
+        />
+
+        <TextField
+          required
           label="YAW "
           type="number"
           variant="standard"
