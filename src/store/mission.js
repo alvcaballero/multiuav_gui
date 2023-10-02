@@ -5,6 +5,7 @@ const { reducer, actions } = createSlice({
   name: "mission",
   initialState: {
     name: "Mission no loaded",
+    description: "",
     home: [0, 0],
     route: [],
     attributes: {},
@@ -27,6 +28,10 @@ const { reducer, actions } = createSlice({
     },
     reloadMission(state, action) {
       state.route = action.payload;
+    },
+    reloadName(state, action) {
+      state.name = action.payload.name;
+      state.description = action.payload.description;
     },
     updateMission(state, action) {
       state.name = action.payload.name;

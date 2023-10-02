@@ -151,7 +151,7 @@ dji_M300:
       name: "/dji_osdk_ros/waypointV2_startMission"
       serviceType: "dji_osdk_ros/StartWaypointV2Mission"
     resumemission:
-      name: "/uav_4/dji_osdk_ros/waypointV2_resumeMission"
+      name: "/dji_osdk_ros/waypointV2_resumeMission"
       serviceType: "dji_osdk_ros/ResumeWaypointV2Mission"
     sincronize:
       name: "/dji_control/send_bags"
@@ -312,20 +312,20 @@ px4:
 fuvex:
   topics:
     position:
-      name: "/mavros/global_position/global"
+      name: "/gps"
       messageType: "sensor_msgs/NavSatFix"
     sensor_height:
       name: "/mavros/altitude"
       messageType: "mavros_msgs/Altitude"
     hdg:
-      name: "/mavros/global_position/compass_hdg"
+      name: "/compass_hdg"
       messageType: "std_msgs/Float64"
     speed:
-      name: "/mavros/local_position/velocity_local"
+      name: "/velocity"
       messageType: "geometry_msgs/TwistStamped"
     battery:
-      name: "/mavros/battery"
-      messageType: "aerialcore_common/BatteryState"
+      name: "/battery"
+      messageType: "sensor_msgs/BatteryState"
   services:
 
 catec:
@@ -336,7 +336,7 @@ catec:
     sensor_height:
       name: "/mavros/altitude"
       messageType: "mavros_msgs/Altitude"
-    listener_hdg:
+    hdg:
       name: "/compass_hdg"
       messageType: "std_msgs/Float64"
     speed:
