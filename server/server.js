@@ -185,6 +185,11 @@ const getTopics2 = () => {
   });
 };
 
+const getDatetime = () => {
+  var datetime = new Date();
+  return datetime.toISOString();
+};
+
 async function connectAddUav(device) {
   if (rosState.state === "connect") {
     uav_ns = device.name;
@@ -283,7 +288,7 @@ async function connectAddUav(device) {
           latitude: msg.latitude,
           longitude: msg.longitude,
           altitude: msg.altitude,
-          deviceTime: "2023-03-09T22:12:44.000+00:00",
+          deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
         });
       });
 
@@ -355,7 +360,7 @@ async function connectAddUav(device) {
           latitude: msg.latitude,
           longitude: msg.longitude,
           altitude: msg.altitude,
-          deviceTime: "2023-03-09T22:12:44.000+00:00",
+          deviceTime: getDatetime(), //"2023-03-09T22:12:44.000+00:00",
         });
       });
 
@@ -415,32 +420,37 @@ async function connectAddUav(device) {
       //console.log("ip de uav"+ ipdevice);
       //data.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
     } else if (uav_type == "fuvex") {
-      //EXT (FUVEX)
-
-      uav_list[cur_uav_idx].listener_position.subscribe(function (message) {
-        //uav_list[cur_uav_idx].pose = [message.latitude, message.longitude];
-        //uav_list[cur_uav_idx].marker.setLatLng(uav_list[cur_uav_idx].pose);
+      uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
+        let id_uav = cur_uav_idx;
+        data.updatePosition({
+          id: msg.header.seq,
+          deviceId: id_uav,
+          latitude: msg.latitude,
+          longitude: msg.longitude,
+          altitude: msg.altitude,
+          deviceTime: getDatetime(), //"2023-03-09T22:12:44.000+00:00",
+        });
+      });
+      uav_list[cur_uav_idx].listener_hdg.subscribe(function (msg) {
+        let id_uav = cur_uav_idx;
+        data.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
+      });
+      uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
+        let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
+        data.updatePosition({
+          deviceId: id_uav,
+          speed: Math.sqrt(
+            Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)
+          ).toFixed(2),
+        }); // showData[2].innerHTML = Math.sqrt(Math.pow(message.twist.linear.x,2) + Math.pow(message.twist.linear.y,2)).toFixed(2);
       });
 
-      uav_list[cur_uav_idx].listener_hdg.subscribe(function (message) {
-        //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
-      });
-
-      uav_list[cur_uav_idx].listener_sensor_height.subscribe(function (
-        message
-      ) {
-        //var showData = document.getElementById(uav_ns).cells;
-        //  showData[1].innerHTML = (message.relative).toFixed(2);
-      });
-
-      uav_list[cur_uav_idx].listener_speed.subscribe(function (message) {
-        //var showData = document.getElementById(uav_ns).cells;
-        //  showData[2].innerHTML = Math.sqrt(Math.pow(message.twist.linear.x,2) + Math.pow(message.twist.linear.y,2)).toFixed(2);
-      });
-
-      uav_list[cur_uav_idx].listener_battery.subscribe(function (message) {
-        //var showData = document.getElementById(uav_ns).cells;
-        //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+      uav_list[cur_uav_idx].listener_battery.subscribe(function (msg) {
+        let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
+        data.updatePosition({
+          deviceId: id_uav,
+          batteryLevel: (msg.percentage * 100).toFixed(0),
+        }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
       });
     } else if (uav_type == "catec") {
       uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
@@ -451,20 +461,13 @@ async function connectAddUav(device) {
           latitude: msg.latitude,
           longitude: msg.longitude,
           altitude: msg.altitude,
-          deviceTime: "2023-03-09T22:12:44.000+00:00",
+          deviceTime: getDatetime(), //"2023-03-09T22:12:44.000+00:00",
         });
       });
 
       uav_list[cur_uav_idx].listener_hdg.subscribe(function (msg) {
         let id_uav = cur_uav_idx;
         data.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
-      });
-
-      uav_list[cur_uav_idx].listener_sensor_height.subscribe(function (
-        message
-      ) {
-        //var showData = document.getElementById(uav_ns).cells;
-        //showData[1].innerHTML = (message.relative).toFixed(2);
       });
 
       uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
@@ -1088,6 +1091,7 @@ app.post("/api/map/elevation", async function (req, res) {
   console.log(listpoint);
   let wpaltitude = [];
   let listwaypoint = [];
+  let status = true;
   if (listpoint.length > 0) {
     listpoint.forEach((route, index_rt, array_rt) => {
       let acumulative = [];
@@ -1145,38 +1149,47 @@ app.post("/api/map/elevation", async function (req, res) {
     console.log(elevationprofile);
     let auxcount = 0;
     let initElevationIndex = 0;
-    for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
-      let wp_count = 0;
-      for (let index = 0; index < wpaltitude[index_rt].length; index++) {
-        wpaltitude[index_rt][index]["elevation"] = Number(
-          elevationprofile.results[auxcount].elevation.toFixed(1)
-        );
-        wpaltitude[index_rt][index]["lat"] = Number(
-          elevationprofile.results[auxcount].location.lat
-        );
-        wpaltitude[index_rt][index]["lng"] = Number(
-          elevationprofile.results[auxcount].location.lng
-        );
 
-        if (index == 0) {
-          initElevationIndex = auxcount;
-        }
+    try {
+      for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
+        let wp_count = 0;
+        for (let index = 0; index < wpaltitude[index_rt].length; index++) {
+          wpaltitude[index_rt][index]["elevation"] = Number(
+            elevationprofile.results[auxcount].elevation.toFixed(1)
+          );
+          wpaltitude[index_rt][index]["lat"] = Number(
+            elevationprofile.results[auxcount].location.lat
+          );
+          wpaltitude[index_rt][index]["lng"] = Number(
+            elevationprofile.results[auxcount].location.lng
+          );
 
-        wpaltitude[index_rt][index]["rt"] = index_rt;
-        if (wpaltitude[index_rt][index]["uav"] !== null) {
-          wpaltitude[index_rt][index]["wp"] = wp_count;
-          wpaltitude[index_rt][index]["uavheight"] = (
-            +wpaltitude[index_rt][index]["uav"] +
-            +elevationprofile.results[initElevationIndex].elevation
-          ).toFixed(1);
-          wp_count = wp_count + 1;
+          if (index == 0) {
+            initElevationIndex = auxcount;
+          }
+
+          wpaltitude[index_rt][index]["rt"] = index_rt;
+          if (wpaltitude[index_rt][index]["uav"] !== null) {
+            wpaltitude[index_rt][index]["wp"] = wp_count;
+            wpaltitude[index_rt][index]["uavheight"] = (
+              +wpaltitude[index_rt][index]["uav"] +
+              +elevationprofile.results[initElevationIndex].elevation
+            ).toFixed(1);
+            wp_count = wp_count + 1;
+          }
+          auxcount = auxcount + 1;
         }
-        auxcount = auxcount + 1;
       }
+    } catch (error) {
+      status = false;
     }
   }
   console.log(wpaltitude);
-  res.json(wpaltitude);
+  if (status) {
+    res.json({ elevation: wpaltitude, status: true });
+  } else {
+    res.json({ elevation: [], status: false });
+  }
 });
 
 const ApiElevation = async (LocationList) => {

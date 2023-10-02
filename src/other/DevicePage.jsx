@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import {
@@ -13,12 +13,21 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Button,
 } from "@mui/material";
 import makeStyles from "@mui/styles/makeStyles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffectAsync } from "../reactHelper";
 import { prefixString } from "../common/stringUtils";
+import PositionValue from "../components/PositionValue";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SelectField from "../common/components/SelectField";
+import BaseCommandView from "../common/components/BaseCommandView";
+import { useCatch } from "../reactHelper";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -40,20 +49,15 @@ const DevicePage = () => {
   const { id } = useParams();
 
   const [item, setItem] = useState();
-
-  useEffectAsync(async () => {
+  const [itemc, setItemc] = useState({});
+  const deviceposition = useSelector((state) => state.data.positions);
+  const [savedId, setSavedId] = useState(0);
+  const limitCommands = null;
+  useEffect(() => {
     if (id) {
-      const response = await fetch(`/api/positions?id=${id}`);
-      if (response.ok) {
-        const positions = await response.json();
-        if (positions.length > 0) {
-          setItem(positions[0]);
-        }
-      } else {
-        throw Error(await response.text());
-      }
+      setItem(deviceposition[id]);
     }
-  }, [id]);
+  }, [id, deviceposition]);
 
   const deviceName = useSelector((state) => {
     if (item) {
@@ -64,6 +68,36 @@ const DevicePage = () => {
     }
     return null;
   });
+
+  const handleSend = useCatch(async () => {
+    let command;
+    if (savedId) {
+      const response = await fetch(`/api/commands/${savedId}`);
+      if (response.ok) {
+        command = await response.json();
+      } else {
+        throw Error(await response.text());
+      }
+    } else {
+      command = item;
+    }
+
+    command.deviceId = parseInt(id, 10);
+
+    const response = await fetch("/api/commands/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(command),
+    });
+
+    if (response.ok) {
+      navigate(-1);
+    } else {
+      throw Error(await response.text());
+    }
+  });
+
+  const validate = () => savedId || (item && item.type);
 
   return (
     <div className={classes.root}>
@@ -101,7 +135,9 @@ const DevicePage = () => {
                         <TableCell>
                           <strong>{prefixString("position", property)}</strong>
                         </TableCell>
-                        <TableCell>{property} </TableCell>
+                        <TableCell>
+                          <PositionValue position={item} property={property} />
+                        </TableCell>
                       </TableRow>
                     ))}
                 {item &&
@@ -115,13 +151,64 @@ const DevicePage = () => {
                               prefixString("device", attribute)}
                           </strong>
                         </TableCell>
-                        <TableCell>{attribute} </TableCell>
+                        <TableCell>
+                          <PositionValue
+                            position={item}
+                            attribute={attribute}
+                          />
+                        </TableCell>
                       </TableRow>
                     )
                   )}
               </TableBody>
             </Table>
           </Paper>
+        </Container>
+      </div>
+      <div>
+        <Container maxWidth="xs" className={classes.container}>
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1">{"sharedRequired"}</Typography>
+            </AccordionSummary>
+            <AccordionDetails className={classes.details}>
+              <SelectField
+                value={savedId}
+                emptyValue={limitCommands ? null : 0}
+                emptyTitle={"sharedNew"}
+                onChange={(e) => setSavedId(e.target.value)}
+                endpoint={`/api/commands/send?deviceId=${id}`}
+                titleGetter={(it) => it.description}
+                label={"sharedSavedCommand"}
+              />
+              {!limitCommands && !savedId && (
+                <BaseCommandView
+                  deviceId={id}
+                  item={itemc}
+                  setItem={setItemc}
+                />
+              )}
+            </AccordionDetails>
+          </Accordion>
+          <div className={classes.buttons}>
+            <Button
+              type="button"
+              color="primary"
+              variant="outlined"
+              onClick={() => navigate(-1)}
+            >
+              {"sharedCancel"}
+            </Button>
+            <Button
+              type="button"
+              color="primary"
+              variant="contained"
+              onClick={handleSend}
+              disabled={!validate()}
+            >
+              {"commandSend"}
+            </Button>
+          </div>
         </Container>
       </div>
     </div>

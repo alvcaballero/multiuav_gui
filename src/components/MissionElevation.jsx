@@ -92,16 +92,20 @@ const MissionElevation = () => {
       } catch (error) {
         console.log(error);
       }
-      let elevationRoute = command.map((route, index_rt) => {
-        return {
-          name: "RT" + index_rt,
-          data: route,
-          color: colors[ruteColor[index_rt]],
-        };
-      });
-      console.log(elevationRoute);
-      setSelectRT(-1);
-      setElevProfile(elevationRoute);
+      if (command.status) {
+        let elevationRoute = command.elevation.map((route, index_rt) => {
+          return {
+            name: "RT" + index_rt,
+            data: route,
+            color: colors[ruteColor[index_rt]],
+          };
+        });
+        console.log(elevationRoute);
+        setSelectRT(-1);
+        setElevProfile(elevationRoute);
+      } else {
+        console.log("no get elevation of point");
+      }
     }
   }
 

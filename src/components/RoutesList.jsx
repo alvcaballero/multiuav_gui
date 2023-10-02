@@ -80,7 +80,18 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
       dispatch(missionActions.reloadMission(mission.route));
     }
     mission.route.length > 0 ? setaddMission(false) : setaddMission(true);
-  }, [mission]);
+  }, [mission.route]);
+
+  useEffect(() => {
+    if (init) {
+      dispatch(
+        missionActions.reloadName({
+          name: mission.name,
+          description: mission.description,
+        })
+      );
+    }
+  }, [mission.name, mission.description]);
 
   useEffect(() => {
     //console.log(expanded_route);

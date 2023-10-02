@@ -132,8 +132,12 @@ const MainPage = () => {
   useEffect(() => {
     if (selectedDeviceId) {
       setselectedDeviceIp(devices[selectedDeviceId].ip);
-      setselectedDeviceCam(devices[selectedDeviceId].camera[0].type);
-      setselectedDeviceCamsrc(devices[selectedDeviceId].camera[0].source);
+      if (devices[selectedDeviceId].camera.length > 0) {
+        setselectedDeviceCam(devices[selectedDeviceId].camera[0].type);
+        setselectedDeviceCamsrc(devices[selectedDeviceId].camera[0].source);
+      } else {
+        setselectedDeviceCam(null);
+      }
       setlectedDeviceName(devices[selectedDeviceId].name);
     } else {
       setselectedDeviceIp(null);
