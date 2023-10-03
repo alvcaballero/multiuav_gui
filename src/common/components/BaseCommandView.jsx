@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { TextField, FormControlLabel, Checkbox } from "@mui/material";
-import SelectField from "../../common/components/SelectField";
-import { prefixString } from "../../common/stringUtils";
-import useCommandAttributes from "../../common/attributes/useCommandAttributes";
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { TextField, FormControlLabel, Checkbox } from '@mui/material';
+import SelectField from '../../common/components/SelectField';
+import { prefixString } from '../../common/stringUtils';
+import useCommandAttributes from '../../common/attributes/useCommandAttributes';
 
 const BaseCommandView = ({ deviceId, item, setItem }) => {
   const textEnabled = useSelector((state) => state.session.server.textEnabled);
@@ -23,23 +23,21 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
   return (
     <>
       <SelectField
-        value={item.type || ""}
-        onChange={(e) =>
-          setItem({ ...item, type: e.target.value, attributes: {} })
-        }
+        value={item.type || ''}
+        onChange={(e) => setItem({ ...item, type: e.target.value, attributes: {} })}
         endpoint={
           deviceId
             ? `/api/commands/types?${new URLSearchParams({
                 deviceId,
               }).toString()}`
-            : "/api/commands/types"
+            : '/api/commands/types'
         }
         keyGetter={(it) => it.type}
-        titleGetter={(it) => prefixString("command", it.type)}
-        label={"sharedType"}
+        titleGetter={(it) => prefixString('command_', it.type)}
+        label={'Command type'}
       />
       {attributes.map(({ key, name, type }) => {
-        if (type === "boolean") {
+        if (type === 'boolean') {
           return (
             <FormControlLabel
               control={
@@ -61,7 +59,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
         }
         return (
           <TextField
-            type={type === "number" ? "number" : "text"}
+            type={type === 'number' ? 'number' : 'text'}
             value={item.attributes[key]}
             onChange={(e) => {
               const updateItem = {
@@ -69,7 +67,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
                 attributes: { ...item.attributes },
               };
               updateItem.attributes[key] =
-                type === "number" ? Number(e.target.value) : e.target.value;
+                type === 'number' ? Number(e.target.value) : e.target.value;
               setItem(updateItem);
             }}
             label={name}
@@ -81,12 +79,10 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
           control={
             <Checkbox
               checked={item.textChannel}
-              onChange={(event) =>
-                setItem({ ...item, textChannel: event.target.checked })
-              }
+              onChange={(event) => setItem({ ...item, textChannel: event.target.checked })}
             />
           }
-          label={"commandSendSms"}
+          label={'commandSendSms'}
         />
       )}
     </>
