@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 
 import {
   Typography,
@@ -17,28 +17,43 @@ import {
   AccordionSummary,
   AccordionDetails,
   Button,
-} from "@mui/material";
-import makeStyles from "@mui/styles/makeStyles";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useNavigate, useParams } from "react-router-dom";
-import { useEffectAsync } from "../reactHelper";
-import { prefixString } from "../common/stringUtils";
-import PositionValue from "../components/PositionValue";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import SelectField from "../common/components/SelectField";
-import BaseCommandView from "../common/components/BaseCommandView";
-import { useCatch } from "../reactHelper";
+} from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useEffectAsync } from '../reactHelper';
+import { prefixString } from '../common/stringUtils';
+import PositionValue from '../components/PositionValue';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SelectField from '../common/components/SelectField';
+import BaseCommandView from '../common/components/BaseCommandView';
+import { useCatch } from '../reactHelper';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
   },
   content: {
-    overflow: "auto",
+    overflow: 'auto',
     paddingTop: theme.spacing(2),
     paddingBottom: theme.spacing(2),
+  },
+  buttons: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+    display: 'flex',
+    justifyContent: 'space-evenly',
+    '& > *': {
+      flexBasis: '33%',
+    },
+  },
+  details: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    paddingBottom: theme.spacing(3),
   },
 }));
 
@@ -52,7 +67,7 @@ const DevicePage = () => {
   const [itemc, setItemc] = useState({});
   const deviceposition = useSelector((state) => state.data.positions);
   const [savedId, setSavedId] = useState(0);
-  const limitCommands = null;
+  const limitCommands = 0;
   useEffect(() => {
     if (id) {
       setItem(deviceposition[id]);
@@ -79,14 +94,14 @@ const DevicePage = () => {
         throw Error(await response.text());
       }
     } else {
-      command = item;
+      command = itemc;
     }
 
     command.deviceId = parseInt(id, 10);
 
-    const response = await fetch("/api/commands/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/commands/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(command),
     });
 
@@ -97,25 +112,20 @@ const DevicePage = () => {
     }
   });
 
-  const validate = () => savedId || (item && item.type);
+  const validate = () => savedId || (itemc && itemc.type);
 
   return (
     <div className={classes.root}>
-      <AppBar position="sticky" color="inherit">
+      <AppBar position='sticky' color='inherit'>
         <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            sx={{ mr: 2 }}
-            onClick={() => navigate(-1)}
-          >
+          <IconButton color='inherit' edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6">{deviceName}</Typography>
+          <Typography variant='h6'>{deviceName}</Typography>
         </Toolbar>
       </AppBar>
       <div className={classes.content}>
-        <Container maxWidth="sm">
+        <Container maxWidth='sm'>
           <Paper>
             <Table>
               <TableHead>
@@ -128,12 +138,12 @@ const DevicePage = () => {
               <TableBody>
                 {item &&
                   Object.getOwnPropertyNames(item)
-                    .filter((it) => it !== "attributes")
+                    .filter((it) => it !== 'attributes')
                     .map((property) => (
                       <TableRow key={property}>
                         <TableCell>{property}</TableCell>
                         <TableCell>
-                          <strong>{prefixString("position", property)}</strong>
+                          <strong>{prefixString('position', property)}</strong>
                         </TableCell>
                         <TableCell>
                           <PositionValue position={item} property={property} />
@@ -141,72 +151,57 @@ const DevicePage = () => {
                       </TableRow>
                     ))}
                 {item &&
-                  Object.getOwnPropertyNames(item.attributes).map(
-                    (attribute) => (
-                      <TableRow key={attribute}>
-                        <TableCell>{attribute}</TableCell>
-                        <TableCell>
-                          <strong>
-                            {prefixString("position", attribute) ||
-                              prefixString("device", attribute)}
-                          </strong>
-                        </TableCell>
-                        <TableCell>
-                          <PositionValue
-                            position={item}
-                            attribute={attribute}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
+                  Object.getOwnPropertyNames(item.attributes).map((attribute) => (
+                    <TableRow key={attribute}>
+                      <TableCell>{attribute}</TableCell>
+                      <TableCell>
+                        <strong>
+                          {prefixString('position', attribute) || prefixString('device', attribute)}
+                        </strong>
+                      </TableCell>
+                      <TableCell>
+                        <PositionValue position={item} attribute={attribute} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </Paper>
         </Container>
       </div>
       <div>
-        <Container maxWidth="xs" className={classes.container}>
+        <Container maxWidth='xs' className={classes.container}>
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">{"sharedRequired"}</Typography>
+              <Typography variant='subtitle1'>{'Command'}</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
               <SelectField
                 value={savedId}
                 emptyValue={limitCommands ? null : 0}
-                emptyTitle={"sharedNew"}
+                emptyTitle={'New..'}
                 onChange={(e) => setSavedId(e.target.value)}
                 endpoint={`/api/commands/send?deviceId=${id}`}
                 titleGetter={(it) => it.description}
-                label={"sharedSavedCommand"}
+                label={'sharedSavedCommand'}
               />
               {!limitCommands && !savedId && (
-                <BaseCommandView
-                  deviceId={id}
-                  item={itemc}
-                  setItem={setItemc}
-                />
+                <BaseCommandView deviceId={id} item={itemc} setItem={setItemc} />
               )}
             </AccordionDetails>
           </Accordion>
           <div className={classes.buttons}>
-            <Button
-              type="button"
-              color="primary"
-              variant="outlined"
-              onClick={() => navigate(-1)}
-            >
-              {"sharedCancel"}
+            <Button type='button' color='primary' variant='outlined' onClick={() => navigate(-1)}>
+              {'Cancel'}
             </Button>
             <Button
-              type="button"
-              color="primary"
-              variant="contained"
+              type='button'
+              color='primary'
+              variant='contained'
               onClick={handleSend}
               disabled={!validate()}
             >
-              {"commandSend"}
+              {'Send'}
             </Button>
           </div>
         </Container>
