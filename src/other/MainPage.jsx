@@ -1,49 +1,49 @@
 //import "./MainPage.css";
-import React, { useState, useCallback, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Paper } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import makeStyles from "@mui/styles/makeStyles";
-import { Navbar } from "../components/Navbar";
-import { Menu } from "../components/Menu";
-import Toast from "../components/Toast";
-import { Adduav } from "../components/Adduav";
-import { Camera } from "../components/Camera";
-import { RosControl } from "../components/RosControl";
-import MapView from "../Mapview/Mapview";
-import MapPositions from "../Mapview/MapPositions";
-import MapMissions from "../Mapview/MapMissions";
-import MapSelectedDevice from "../Mapview/MapSelectedDevice";
-import DeviceList from "../components/DeviceList";
-import StatusCard from "../components/StatusCard";
-import MainToolbar from "../components/MainToolbar";
-import { CameraWebRTCV3 } from "../components/CameraWebRTCV3";
+import React, { useState, useCallback, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Paper } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import makeStyles from '@mui/styles/makeStyles';
+import { Navbar } from '../components/Navbar';
+import { Menu } from '../components/Menu';
+import Toast from '../components/Toast';
+import { Adduav } from '../components/Adduav';
+import { Camera } from '../components/Camera';
+import { RosControl } from '../components/RosControl';
+import MapView from '../Mapview/Mapview';
+import MapPositions from '../Mapview/MapPositions';
+import MapMissions from '../Mapview/MapMissions';
+import MapSelectedDevice from '../Mapview/MapSelectedDevice';
+import DeviceList from '../components/DeviceList';
+import StatusCard from '../components/StatusCard';
+import MainToolbar from '../components/MainToolbar';
+import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
 
-import { devicesActions } from "../store";
+import { devicesActions } from '../store';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    height: "100%",
+    height: '100%',
   },
   sidebarStyle: {
-    pointerEvents: "none",
-    display: "flex",
-    flexDirection: "column",
-    position: "fixed",
+    pointerEvents: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
     left: 0,
-    top: "88px",
+    top: '88px',
     height: `calc(100% - 88px)`,
-    width: "360px",
-    margin: "0px",
+    width: '360px',
+    margin: '0px',
     zIndex: 3,
   },
   middleStyle: {
     flex: 1,
-    display: "grid",
+    display: 'grid',
   },
   contentListStyle: {
-    pointerEvents: "auto",
-    gridArea: "1 / 1",
+    pointerEvents: 'auto',
+    gridArea: '1 / 1',
     zIndex: 4,
   },
 }));
@@ -78,36 +78,36 @@ const MainPage = () => {
   let toastProperties = null;
   const showToast = (type, description) => {
     switch (type) {
-      case "success":
+      case 'success':
         toastProperties = {
           id: list.length + 1,
-          title: "Success",
+          title: 'Success',
           description: description,
-          backgroundColor: "#5cb85c",
+          backgroundColor: '#5cb85c',
         };
         break;
-      case "danger":
+      case 'danger':
         toastProperties = {
           id: list.length + 1,
-          title: "Danger",
+          title: 'Danger',
           description: description,
-          backgroundColor: "#d9534f",
+          backgroundColor: '#d9534f',
         };
         break;
-      case "info":
+      case 'info':
         toastProperties = {
           id: list.length + 1,
-          title: "Info",
+          title: 'Info',
           description: description,
-          backgroundColor: "#5bc0de",
+          backgroundColor: '#5bc0de',
         };
         break;
-      case "warning":
+      case 'warning':
         toastProperties = {
           id: list.length + 1,
-          title: "Warning",
+          title: 'Warning',
           description: description,
-          backgroundColor: "#f0ad4e",
+          backgroundColor: '#f0ad4e',
         };
         break;
       default:
@@ -152,8 +152,8 @@ const MainPage = () => {
         <Menu SetAddUAVOpen={SetAddUAVOpen} />
         <div
           style={{
-            position: "relative",
-            width: "100%",
+            position: 'relative',
+            width: '100%',
             height: `calc(100vh - 88px)`,
           }}
         >
@@ -185,16 +185,23 @@ const MainPage = () => {
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
 
-        {selectedDeviceCam === "WebRTC" && (
+        {selectedDeviceCam === 'WebRTC' && (
           <CameraWebRTCV3
             deviceId={selectedDeviceId}
-            deviceIp={"127.0.0.1"}
-            devicename={selectedDeviceName}
+            deviceIp={'127.0.0.1'}
+            camera_src={selectedDeviceName + '_' + selectedDeviceCamsrc}
+            onClose={() => dispatch(devicesActions.selectId(null))}
+          />
+        )}
+        {selectedDeviceCam === 'WebRTC_env' && (
+          <CameraWebRTCV3
+            deviceId={selectedDeviceId}
+            deviceIp={selectedDeviceIp}
             camera_src={selectedDeviceCamsrc}
             onClose={() => dispatch(devicesActions.selectId(null))}
           />
         )}
-        {selectedDeviceCam === "Websocket" && (
+        {selectedDeviceCam === 'Websocket' && (
           <Camera
             deviceId={selectedDeviceId}
             datacamera={selectedImage}
@@ -202,7 +209,7 @@ const MainPage = () => {
           />
         )}
 
-        <Toast toastlist={list} position="buttom-right" setList={setList} />
+        <Toast toastlist={list} position='buttom-right' setList={setList} />
       </RosControl>
     </div>
   );
