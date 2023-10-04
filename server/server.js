@@ -273,7 +273,7 @@ async function connectAddUav(device) {
       });
     });
     // DJI
-    if (uav_type == 'dji' || uav_type == 'dji_M300') {
+    if (uav_type == 'dji_M210_noetic' || uav_type == 'dji_M210_melodic' || uav_type == 'dji_M300') {
       uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
         let id_uav = cur_uav_idx;
         data.updatePosition({
@@ -306,15 +306,6 @@ async function connectAddUav(device) {
         data.updatePosition({ deviceId: id_uav, course: 90 + yaw * 57.295 });
       });
 
-      if (uav_type == 'dji') {
-        uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
-          let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
-          data.updatePosition({
-            deviceId: id_uav,
-            speed: Math.sqrt(Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2)).toFixed(2),
-          }); // showData[2].innerHTML = Math.sqrt(Math.pow(message.vector.x,2) + Math.pow(message.vector.y,2)).toFixed(2);
-        });
-      }
       if (uav_type == 'dji_M300') {
         uav_list[cur_uav_idx].listener_mission_state.subscribe(function (msg) {
           let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
@@ -322,6 +313,14 @@ async function connectAddUav(device) {
             deviceId: id_uav,
             speed: msg.velocity * 0.01,
           });
+        });
+      } else {
+        uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
+          let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
+          data.updatePosition({
+            deviceId: id_uav,
+            speed: Math.sqrt(Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2)).toFixed(2),
+          }); // showData[2].innerHTML = Math.sqrt(Math.pow(message.vector.x,2) + Math.pow(message.vector.y,2)).toFixed(2);
         });
       }
 
@@ -335,10 +334,14 @@ async function connectAddUav(device) {
         data.updatePosition({ deviceId: id_uav, gimbal: msg.vector }); // showData[3].innerHTML = message.percentage + "%";
       });
 
-      uav_list[cur_uav_idx].listener_camera.subscribe(function (msg) {
-        let id_uav = cur_uav_idx; //console.log("dato camara"+ id_uav + "--"+ msg.data)
-        data.updateCamera({ deviceId: id_uav, camera: msg.data }); //data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
-      });
+      for (let i = 0; i < device.camera.length; i = i + 1) {
+        if (device.camera[i]['type'] == 'Websocket') {
+          uav_list[cur_uav_idx].listener_camera.subscribe(function (msg) {
+            let id_uav = cur_uav_idx; //console.log("dato camara"+ id_uav + "--"+ msg.data)
+            data.updateCamera({ deviceId: id_uav, camera: msg.data }); //data.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
+          });
+        }
+      }
     } else if (uav_type == 'px4') {
       uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
         let id_uav = cur_uav_idx;
@@ -620,8 +623,7 @@ function sincronizeUAV(uav_id) {
 
 function loadMission(mission) {
   console.log('  load  - mission');
-  let cur_ns = '',
-    cur_roster = [];
+  let cur_roster = [];
   let mode_yaw = 0;
   let mode_gimbal = 0;
   let mode_trace = 0;
@@ -629,9 +631,8 @@ function loadMission(mission) {
   let max_vel = 10;
   let mode_landing = 0;
   uav_list.forEach(function prepare_wp(uav, idx, arr) {
-    cur_ns = uav.name;
-    cur_roster.push(cur_ns);
-    if (uav.type !== 'ext') {
+    if (devices_msg[uav.type]['services'].hasOwnProperty('configureMission')) {
+      cur_roster.push(uav.name);
       let wp_command = [];
       let yaw_pos = [];
       let speed_pos = [];
@@ -640,7 +641,7 @@ function loadMission(mission) {
       let param_matrix = [];
       Object.values(mission).forEach((route) => {
         console.log(route);
-        if (route['uav'] == cur_ns) {
+        if (route['uav'] == uav.name) {
           console.log('route');
           console.log(route);
 
@@ -706,7 +707,7 @@ function loadMission(mission) {
 
           let missionClient = new ROSLIB.Service({
             ros: ros,
-            name: cur_ns + devices_msg[uav.type]['services']['configureMission']['name'],
+            name: uav.name + devices_msg[uav.type]['services']['configureMission']['name'],
             serviceType: devices_msg[uav.type]['services']['configureMission']['serviceType'],
           });
 
@@ -752,15 +753,8 @@ function loadMission(mission) {
           console.log('loading mision to' + cur_ns);
         }
       });
-    } else {
-      // Si mandamos la mision individual para cada uav, hay que hacerlo por este camino, y descomentar la linea siguiente.
-      //loadMissionToExt(cur_ns);
-      // var info = "Loading Mission";
-      // updateInfoCell(cur_ns, info);
     }
   });
-  // La linea siguiente tiene en cuenta que se mandan las misiones de todos los uavs EXT a la vez. Si no fuese así, habría que comentar la linea siguiente.
-  // loadMissionToExt(cur_ns);
   return { state: 'success', msg: 'Loadding mission to' + cur_roster }; //notification('success',"Loadding mission to: " + cur_roster);
 }
 
@@ -768,7 +762,7 @@ function commandMission(uav_id) {
   let uav_ns = data.get_device_ns(uav_id);
   let uav_category = data.get_device_category(uav_id);
   let missionClient;
-  if (uav_category !== 'ext') {
+  if (devices_msg[uav_category]['services'].hasOwnProperty('commandMission')) {
     missionClient = new ROSLIB.Service({
       ros: ros,
       name: uav_ns + devices_msg[uav_category].services.commandMission.name,
@@ -790,13 +784,13 @@ function commandMission(uav_id) {
       }
     });
   } else {
-    //commandMissionToEXT(uav.name);
+    return { state: 'fail', msg: 'Start mission:' + uav_ns + ' FAIL!' }; //notification('danger',"Start mission:" + cur_roster + " FAIL!");
   }
   return { state: 'success', msg: 'Commanding mission to: ' + uav_ns }; //notification('success',"Commanding mission to: " + cur_roster);
 }
 
 function commandMissionAll() {
-  var r = true;
+  let r = true;
   let alldevices = data.state.devices;
   if (r === true) {
     Object.keys(alldevices).forEach((device_id) => {
