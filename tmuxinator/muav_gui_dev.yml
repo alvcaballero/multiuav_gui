@@ -11,6 +11,11 @@ windows:
             - nvm use 18
             - sleep 3
             - npm run server
+        - glyphserver:
+            - cd ~/work/px4/glyphserver
+            - nvm use 12
+            - sleep 3
+            - npm start
         - frontend:
             - cd ~/work/px4/multiuav_gui18
             - nvm use 18

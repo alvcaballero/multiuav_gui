@@ -13,3 +13,7 @@ For run the container
 ```
 docker start 0f77a2f7ea1d
 ```
+
+#Problem with Glyphs
+https://github.com/openmaptiles/fonts#open-font-glyphs-for-gl-styles
+https://github.com/Geodan/glyphserver

@@ -1,11 +1,11 @@
-version: "3"
+version: '3'
 frame_id: /gps
 
 # Falta ver ocmo poener en el wp el Gimbal
-description: "mission 1"
+description: 'mission 1'
 route:
-  - name: "doñana linea1"
-    uav: "uav_2"
+  - name: 'doñana linea1'
+    uav: 'uav_2'
     wp:
       - {
           pos: [37.41031527664839, -6.002355556298255, 5],
@@ -38,8 +38,8 @@ route:
       mode_trace: 0
       idle_vel: 1.0
 
-  - name: "doñana linea3"
-    uav: "uav_1"
+  - name: 'doñana linea3'
+    uav: 'uav_1'
     wp:
       - { pos: [37.410466, -6.002292, 5], yaw: 0, gimbal: 40 }
       - { pos: [37.410446, -6.002330, 5], yaw: 55, gimbal: 0 }
@@ -52,8 +52,8 @@ route:
       mode_gimbal: 1
       mode_trace: 0
 
-  - name: "Deltaquad"
-    uav: "uav_3"
+  - name: 'Deltaquad'
+    uav: 'uav_3'
     wp:
       - { pos: [37.410755, -6.002559, 62] }
       - { pos: [37.411324, -6.002947, 40] }
