@@ -1172,15 +1172,10 @@ app.post('/api/map/elevation', async function (req, res) {
       for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
         let wp_count = 0;
         for (let index = 0; index < wpaltitude[index_rt].length; index++) {
-          wpaltitude[index_rt][index]['elevation'] = Number(
-            elevationprofile.results[auxcount].elevation.toFixed(1)
-          );
-          wpaltitude[index_rt][index]['lat'] = Number(
-            elevationprofile.results[auxcount].location.lat
-          );
-          wpaltitude[index_rt][index]['lng'] = Number(
-            elevationprofile.results[auxcount].location.lng
-          );
+          wpaltitude[index_rt][index]['elevation'] =
+            +elevationprofile.results[auxcount].elevation.toFixed(1);
+          wpaltitude[index_rt][index]['lat'] = +elevationprofile.results[auxcount].location.lat;
+          wpaltitude[index_rt][index]['lng'] = +elevationprofile.results[auxcount].location.lng;
 
           if (index == 0) {
             initElevationIndex = auxcount;
