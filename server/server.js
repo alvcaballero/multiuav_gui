@@ -750,7 +750,7 @@ function loadMission(mission) {
               console.log('Error:' + result);
             }
           );
-          console.log('loading mision to' + cur_ns);
+          console.log('loading mision to' + uav.name);
         }
       });
     }
@@ -879,12 +879,15 @@ app.get('/api/mission/atributes/:type', async function (req, res) {
 });
 app.get('/api/mission/atributesparam/:type/:param', async function (req, res) {
   console.log('devices atributes ' + req.params.type + '-' + req.params.param);
-  console.log(
-    devices_msg[req.params.type]['attributes']['mission_param'][req.params.param]['param']
-  );
-  return res.json(
-    devices_msg[req.params.type]['attributes']['mission_param'][req.params.param]['param']
-  );
+  let response = {};
+  if (devices_msg.hasOwnProperty(req.params.type)) {
+    console.log(
+      devices_msg[req.params.type]['attributes']['mission_param'][req.params.param]['param']
+    );
+    response =
+      devices_msg[req.params.type]['attributes']['mission_param'][req.params.param]['param'];
+  }
+  return res.json(response);
 });
 
 app.get('/api/mission/actions/:type', async function (req, res) {
@@ -1232,6 +1235,10 @@ const ApiElevation = async (LocationList) => {
   for (let i = 0; i < stringLocationList.length; i = i + 1) {
     await fetch(`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList[i]}`)
       .then((response) => response.json())
+      .catch(function (error) {
+        console.log('Hubo un problema con la petición Fetch:' + error.message);
+        return myresponse;
+      })
       .then((body) => {
         console.log(body);
         if (myresponse.hasOwnProperty('results')) {
