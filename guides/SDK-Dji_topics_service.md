@@ -1,7 +1,7 @@
+https://github.com/xaedes/Onboard-SDK-ROS
 
+## List of topic
 
-List of topic 
--------------------------------------------------------------------------------
 /rosout
 /rosout_agg
 /uav_2/dji_control/velocity
@@ -49,12 +49,7 @@ List of topic
 /uav_2/dji_osdk_ros/waypointV2_mission_event
 /uav_2/dji_osdk_ros/waypointV2_mission_state
 
-
-
-
-
-List of services
-------------------------------------------------------------------------------------------------
+## List of services
 
 /master_discovery/get_loggers
 /master_discovery/list_masters
@@ -151,7 +146,6 @@ List of services
 /uav_2/stereo_vga_subscription
 /uav_2/vehicle_node/get_loggers
 /uav_2/vehicle_node/set_logger_level
-
 
 Documentation dJI
 

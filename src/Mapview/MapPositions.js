@@ -1,6 +1,6 @@
 import { useId, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { map } from './Mapview';
+import { map } from './MapView';
 import { formatTime, getStatusColor } from '../common/formatter';
 import { mapIconKey } from './preloadImages';
 import { findFonts } from './mapUtil';
@@ -13,10 +13,10 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
 
   const devices = useSelector((state) => state.devices.items);
 
-  const iconScale = 1;// useAttributePreference('iconScale', 1);
-  const mapCluster = true;//useAttributePreference('mapCluster', true);
-  const hours12 = false;//usePreference('twelveHourFormat');
-  const directionType = 'all';//useAttributePreference('mapDirection', 'selected');
+  const iconScale = 1; // useAttributePreference('iconScale', 1);
+  const mapCluster = true; //useAttributePreference('mapCluster', true);
+  const hours12 = false; //usePreference('twelveHourFormat');
+  const directionType = 'all'; //useAttributePreference('mapDirection', 'selected');
 
   const createFeature = (devices, position, selectedPositionId) => {
     const device = devices[position.deviceId];
@@ -44,38 +44,47 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
     };
   };
 
-  const onMouseEnter = () => map.getCanvas().style.cursor = 'pointer';
-  const onMouseLeave = () => map.getCanvas().style.cursor = '';
+  const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
+  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
-  const onMapClick = useCallback((event) => {
-    if (!event.defaultPrevented && onClick) {
-      onClick();
-    }
-  }, [onClick]);
-
-  const onMarkerClick = useCallback((event) => {
-    event.preventDefault();
-    const feature = event.features[0];
-    if (onClick) {
-      onClick(feature.properties.id, feature.properties.deviceId);
-    }
-  }, [onClick]);
-
-  const onClusterClick = useCallback((event) => {
-    event.preventDefault();
-    const features = map.queryRenderedFeatures(event.point, {
-      layers: [clusters],
-    });
-    const clusterId = features[0].properties.cluster_id;
-    map.getSource(id).getClusterExpansionZoom(clusterId, (error, zoom) => {
-      if (!error) {
-        map.easeTo({
-          center: features[0].geometry.coordinates,
-          zoom,
-        });
+  const onMapClick = useCallback(
+    (event) => {
+      if (!event.defaultPrevented && onClick) {
+        onClick();
       }
-    });
-  }, [clusters]);
+    },
+    [onClick]
+  );
+
+  const onMarkerClick = useCallback(
+    (event) => {
+      event.preventDefault();
+      const feature = event.features[0];
+      if (onClick) {
+        onClick(feature.properties.id, feature.properties.deviceId);
+      }
+    },
+    [onClick]
+  );
+
+  const onClusterClick = useCallback(
+    (event) => {
+      event.preventDefault();
+      const features = map.queryRenderedFeatures(event.point, {
+        layers: [clusters],
+      });
+      const clusterId = features[0].properties.cluster_id;
+      map.getSource(id).getClusterExpansionZoom(clusterId, (error, zoom) => {
+        if (!error) {
+          map.easeTo({
+            center: features[0].geometry.coordinates,
+            zoom,
+          });
+        }
+      });
+    },
+    [clusters]
+  );
 
   useEffect(() => {
     map.addSource(id, {
@@ -126,11 +135,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
       id: direction,
       type: 'symbol',
       source: id,
-      filter: [
-        'all',
-        ['!has', 'point_count'],
-        ['==', 'direction', true],
-      ],
+      filter: ['all', ['!has', 'point_count'], ['==', 'direction', true]],
       layout: {
         'icon-image': 'direction',
         'icon-size': iconScale,
@@ -175,14 +180,16 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
   useEffect(() => {
     map.getSource(id).setData({
       type: 'FeatureCollection',
-      features: positions.filter((it) => devices.hasOwnProperty(it.deviceId)).map((position) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [position.longitude, position.latitude],
-        },
-        properties: createFeature(devices, position, selectedPosition && selectedPosition.id),
-      })),
+      features: positions
+        .filter((it) => devices.hasOwnProperty(it.deviceId))
+        .map((position) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [position.longitude, position.latitude],
+          },
+          properties: createFeature(devices, position, selectedPosition && selectedPosition.id),
+        })),
     });
   }, [devices, positions, selectedPosition]);
 

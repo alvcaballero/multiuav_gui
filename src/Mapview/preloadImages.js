@@ -9,6 +9,8 @@ import helicopterSvg from '../resources/images/icon/helicopter.svg';
 import droneSvg from '../resources/images/icon/drone1.svg';
 import dronedjiSvg from '../resources/images/icon/drone2.svg';
 import dronePx4Svg from '../resources/images/icon/drone3.svg';
+import triangleSvg from '../resources/images/icon/triangle.svg';
+import RectangleSvg from '../resources/images/icon/Rectangle.svg';
 
 export const colors = {
   0: '#F34C28',
@@ -41,6 +43,8 @@ export const mapImages = {};
 export default async () => {
   const background = await loadImage(backgroundSvg);
   mapImages.background = await prepareIcon(background);
+  mapImages.item = await prepareIcon(await loadImage(triangleSvg));
+  mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
   mapImages.direction = await prepareIcon(await loadImage(directionSvg));
   Object.keys(colors).forEach((color) => {
     mapImages[`background-${color}`] = prepareIcon(background, null, colors[color]);
