@@ -1,87 +1,80 @@
 //import "./MainPage.css";
-import React, { useContext, useState } from "react";
-import MapView from "../Mapview/Mapview";
-import { Navbar } from "../components/Navbar";
-import { Menu } from "../components/Menu";
-import MapMissionsCreate from "../Mapview/draw/MapMissionsCreate";
+import React, { useContext, useState } from 'react';
+import MapView from '../Mapview/MapView';
+import { Navbar } from '../components/Navbar';
+import { Menu } from '../components/Menu';
+import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
 
-import {
-  Divider,
-  Typography,
-  IconButton,
-  Drawer,
-  Paper,
-  Toolbar,
-} from "@mui/material";
+import { Divider, Typography, IconButton, Drawer, Paper, Toolbar } from '@mui/material';
 
-import makeStyles from "@mui/styles/makeStyles";
-import { RosControl, RosContext } from "../components/RosControl";
-import { MissionPanel } from "../components/MissionPanel";
-import MissionElevation from "../components/MissionElevation";
+import makeStyles from '@mui/styles/makeStyles';
+import { RosControl, RosContext } from '../components/RosControl';
+import { MissionPanel } from '../components/MissionPanel';
+import MissionElevation from '../components/MissionElevation';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    height: "100%",
+    height: '100%',
   },
   sidebarStyle: {
-    display: "flex",
-    flexDirection: "column",
-    position: "fixed",
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
     left: 0,
-    top: "88px",
+    top: '88px',
     height: `calc(100% - 95px)`,
-    width: "560px",
-    margin: "0px",
+    width: '560px',
+    margin: '0px',
     zIndex: 3,
   },
   middleStyle: {
     flex: 1,
-    display: "grid",
+    display: 'grid',
   },
   panelElevation: {
-    display: "flex",
-    flexDirection: "column",
-    position: "fixed",
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
     right: 0,
     bottom: 0,
     height: `30vh`,
     width: `calc(100% - 560px)`,
-    margin: "0px",
+    margin: '0px',
     zIndex: 3,
   },
 }));
 const showToast = (type, description) => {
   switch (type) {
-    case "success":
+    case 'success':
       toastProperties = {
         id: list.length + 1,
-        title: "Success",
+        title: 'Success',
         description: description,
-        backgroundColor: "#5cb85c",
+        backgroundColor: '#5cb85c',
       };
       break;
-    case "danger":
+    case 'danger':
       toastProperties = {
         id: list.length + 1,
-        title: "Danger",
+        title: 'Danger',
         description: description,
-        backgroundColor: "#d9534f",
+        backgroundColor: '#d9534f',
       };
       break;
-    case "info":
+    case 'info':
       toastProperties = {
         id: list.length + 1,
-        title: "Info",
+        title: 'Info',
         description: description,
-        backgroundColor: "#5bc0de",
+        backgroundColor: '#5bc0de',
       };
       break;
-    case "warning":
+    case 'warning':
       toastProperties = {
         id: list.length + 1,
-        title: "Warning",
+        title: 'Warning',
         description: description,
-        backgroundColor: "#f0ad4e",
+        backgroundColor: '#f0ad4e',
       };
       break;
     default:
@@ -100,25 +93,25 @@ const MissionPage = () => {
         <Menu />
         <div
           style={{
-            position: "relative",
-            width: "100%",
+            position: 'relative',
+            width: '100%',
             height: `calc(100vh - 95px)`,
           }}
         >
           <div
             style={{
-              display: "inline-block",
-              position: "relative",
-              width: "560px",
-              height: "100%",
+              display: 'inline-block',
+              position: 'relative',
+              width: '560px',
+              height: '100%',
             }}
           ></div>
           <div
             style={{
-              display: "inline-block",
-              position: "relative",
+              display: 'inline-block',
+              position: 'relative',
               width: `calc(100vw - 575px)`,
-              height: "100%",
+              height: '100%',
             }}
           >
             <MapView>

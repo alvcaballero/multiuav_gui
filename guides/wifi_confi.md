@@ -13,7 +13,7 @@ si primero esta ethernet borrarlo
 d
 cambiar la fecha y la hora para que pueda hacer el update
 
-    sudo date --set "2023-10-05 10:31"
+    sudo date --set "2023-10-06 09:31"
 
 vpn
 

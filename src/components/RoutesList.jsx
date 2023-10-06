@@ -18,7 +18,7 @@ import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { missionActions } from '../store'; // here update device action with position of uav for update in map
 import { colors } from '../Mapview/preloadImages';
-import { map } from '../Mapview/Mapview';
+import { map } from '../Mapview/MapView';
 import WaypointRouteList from './WaypointRouteList';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi

@@ -10,9 +10,10 @@ import Toast from '../components/Toast';
 import { Adduav } from '../components/Adduav';
 import { Camera } from '../components/Camera';
 import { RosControl } from '../components/RosControl';
-import MapView from '../Mapview/Mapview';
+import MapView from '../Mapview/MapView';
 import MapPositions from '../Mapview/MapPositions';
 import MapMissions from '../Mapview/MapMissions';
+import MapMarkers from '../Mapview/MapMarkers';
 import MapSelectedDevice from '../Mapview/MapSelectedDevice';
 import DeviceList from '../components/DeviceList';
 import StatusCard from '../components/StatusCard';
@@ -57,7 +58,9 @@ const MainPage = () => {
   const positions = useSelector((state) => state.data.positions);
   const cameradata = useSelector((state) => state.data.camera);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
+  const sessionmarkers = useSelector((state) => state.session.markers);
   const [filteredPositions, setFilteredPositions] = useState([]);
+  const [markers, setmarkers] = useState([]);
   const [filteredImages, setFilteredImages] = useState([]);
   const [selectedDeviceIp, setselectedDeviceIp] = useState();
   const [selectedDeviceCam, setselectedDeviceCam] = useState();
@@ -122,7 +125,9 @@ const MainPage = () => {
     },
     [dispatch]
   );
-
+  useEffect(() => {
+    setmarkers(sessionmarkers);
+  }, [sessionmarkers]);
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
@@ -159,6 +164,7 @@ const MainPage = () => {
         >
           <MapView>
             <MapMissions />
+
             <MapPositions
               positions={filteredPositions}
               onClick={onMarkerClick}
@@ -166,6 +172,7 @@ const MainPage = () => {
               showStatus
             />
             <MapSelectedDevice />
+            <MapMarkers markers={markers} />
           </MapView>
         </div>
 
