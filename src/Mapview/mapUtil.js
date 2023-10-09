@@ -1,11 +1,12 @@
 import { parse, stringify } from 'wellknown';
 import circle from '@turf/circle';
 
-export const loadImage = (url) => new Promise((imageLoaded) => {
-  const image = new Image();
-  image.onload = () => imageLoaded(image);
-  image.src = url;
-});
+export const loadImage = (url) =>
+  new Promise((imageLoaded) => {
+    const image = new Image();
+    image.onload = () => imageLoaded(image);
+    image.src = url;
+  });
 
 const canvasTintImage = (image, color) => {
   const canvas = document.createElement('canvas');
@@ -42,10 +43,16 @@ export const prepareIcon = (background, icon, color) => {
     const iconRatio = 0.5;
     const imageWidth = canvas.width * iconRatio;
     const imageHeight = canvas.height * iconRatio;
-    context.drawImage(canvasTintImage(icon, color), (canvas.width - imageWidth) / 2, (canvas.height - imageHeight) / 2, imageWidth, imageHeight);
-  }else{
-    if (color){
-      console.log("entro")
+    context.drawImage(
+      canvasTintImage(icon, color),
+      (canvas.width - imageWidth) / 2,
+      (canvas.height - imageHeight) / 2,
+      imageWidth,
+      imageHeight
+    );
+  } else {
+    if (color) {
+      //console.log("entro")
       context.drawImage(canvasTintImage(background, color), 0, 0, canvas.width, canvas.height);
     }
   }
@@ -56,7 +63,8 @@ export const prepareIcon = (background, icon, color) => {
 export const reverseCoordinates = (it) => {
   if (!it) {
     return it;
-  } if (Array.isArray(it)) {
+  }
+  if (Array.isArray(it)) {
     if (it.length === 2 && typeof it[0] === 'number' && typeof it[1] === 'number') {
       return [it[1], it[0]];
     }
@@ -71,9 +79,16 @@ export const reverseCoordinates = (it) => {
 export const geofenceToFeature = (theme, item) => {
   let geometry;
   if (item.area.indexOf('CIRCLE') > -1) {
-    const coordinates = item.area.replace(/CIRCLE|\(|\)|,/g, ' ').trim().split(/ +/);
+    const coordinates = item.area
+      .replace(/CIRCLE|\(|\)|,/g, ' ')
+      .trim()
+      .split(/ +/);
     const options = { steps: 32, units: 'meters' };
-    const polygon = circle([Number(coordinates[1]), Number(coordinates[0])], Number(coordinates[2]), options);
+    const polygon = circle(
+      [Number(coordinates[1]), Number(coordinates[0])],
+      Number(coordinates[2]),
+      options
+    );
     geometry = polygon.geometry;
   } else {
     geometry = reverseCoordinates(parse(item.area));

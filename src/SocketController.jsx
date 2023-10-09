@@ -5,11 +5,14 @@ import alarm from './resources/alarm.mp3';
 import { dataActions, devicesActions, missionActions, sessionActions } from './store'; // here update device action with position of uav for update in map
 import { eventsActions } from './store/events';
 import { Snackbar } from '@mui/material';
+import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
 
 const logoutCode = 4000;
+const snackBarDurationLongMs = 1000;
 
 const SocketController = () => {
   const dispatch = useDispatch();
+  //const { enqueueSnackbar } = useSnackbar();
 
   const devices = useSelector((state) => state.devices.items);
 
@@ -82,10 +85,12 @@ const SocketController = () => {
         dispatch(missionActions.updateMission(data.mission));
       }
       if (data.events) {
+        console.log('add data events -------');
         if (true) {
           dispatch(eventsActions.add(data.events));
         }
         setEvents(data.events);
+        console.log(data.events);
       }
     };
   };
@@ -113,34 +118,63 @@ const SocketController = () => {
   }, []);
 
   useEffect(() => {
-    setNotifications(
-      events.map((event) => ({
-        id: event.id,
-        message: event.attributes.message,
-        show: true,
-      }))
-    );
-  }, [events, devices]);
+    console.log('set notifications');
+    console.log(events);
+    //si eventoid es diferente a notificacionid añadir
+    let auxnot = [];
+    events.map((event) => {
+      let flag = true;
+      notifications.map((notification) => {
+        if (notification.id == event.id) {
+          flag = false;
+        }
+      });
+      if (flag) {
+        auxnot.push({
+          id: event.id,
+          type: event.type,
+          message: event.attributes.message,
+          show: true,
+        });
+      }
+    });
+    console.log('aux console log');
+    console.log(auxnot);
+    if (auxnot.length > 0) {
+      setNotifications(auxnot);
+    }
 
-  useEffect(() => {
-    events.forEach((event) => {
-      if (event.type === 'alarm') {
+    auxnot.forEach((event) => {
+      if (event.type === 'error') {
         new Audio(alarm).play();
       }
     });
   }, [events]);
 
+  useEffect(() => {
+    console.log('notifications');
+    notifications.map((notification) => {
+      enqueueSnackbar(notification.message, {
+        variant: notification.type,
+        autoHideDuration: 3000,
+        persist: false,
+        onClose: () => setEvents(events.filter((e) => e.id !== notification.id)),
+      });
+    });
+    //
+  }, [notifications]);
+
   return (
     <>
-      {notifications.map((notification) => (
-        <Snackbar
-          key={notification.id}
-          open={notification.show}
-          message={notification.message}
-          autoHideDuration={snackBarDurationLongMs}
-          onClose={() => setEvents(events.filter((e) => e.id !== notification.id))}
-        />
-      ))}
+      <SnackbarProvider
+        preventDuplicate
+        maxSnack={6}
+        autoHideDuration={5000}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      />
     </>
   );
 };

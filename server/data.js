@@ -4,6 +4,7 @@ var state = {
   history: {},
   devices: {},
   events: {},
+  eventsCount: 0,
 };
 
 function updatedevice(payload) {
@@ -76,7 +77,30 @@ function updatePosition(payload) {
     }
   }
 }
+function addEvent(payload) {
+  let eventPosition = state.positions[payload.deviceId];
+  let eventPosition2 = [0, 0, 0];
+  if (eventPosition) {
+    eventPosition2 = [eventPosition.latitude, eventPosition.longitude, eventPosition.altitude];
+  }
 
+  state.events[state.eventsCount] = {
+    id: state.eventsCount,
+    type: payload.type,
+    eventTime: payload.eventTime,
+    deviceId: payload.deviceId,
+    positionid: eventPosition2,
+    attributes: payload.attributes,
+  };
+  state.eventsCount = state.eventsCount + 1;
+}
+function clearEvents(payload) {
+  payload.eventId.forEach((element) => {
+    delete state.events[element];
+  });
+  //delete state.events[payload.id];
+  //state.events = {};
+}
 function updateCamera(payload) {
   state.camera[payload.deviceId] = payload;
 }
@@ -100,4 +124,6 @@ module.exports = {
   updatePosition,
   updateCamera,
   removedevice,
+  addEvent,
+  clearEvents,
 };
