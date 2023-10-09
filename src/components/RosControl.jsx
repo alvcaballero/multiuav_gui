@@ -1,18 +1,18 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useDispatch, useSelector, connect } from "react-redux";
-import { missionActions } from "../store"; // here update device action with position of uav for update in map
-import YAML from "yaml";
+import React, { useState, useRef, useEffect } from 'react';
+import { useDispatch, useSelector, connect } from 'react-redux';
+import { missionActions } from '../store'; // here update device action with position of uav for update in map
+import YAML from 'yaml';
 
 export const RosContext = React.createContext();
 
-var plan_mission = "";
+var plan_mission = '';
 var mission_layers = [];
 var mode_landing = 0;
 var mode_yaw = 0;
 //let uav_list = [];
 let statusLog = [];
 
-let ros = "";
+let ros = '';
 
 export const RosControl = ({ children, notification }) => {
   const devices = useSelector((state) => state.devices.items);
@@ -21,7 +21,7 @@ export const RosControl = ({ children, notification }) => {
   const dispatch = useDispatch();
 
   const [rosState, setrosState] = useState(false);
-  const [textmission, settextmission] = useState("");
+  const [textmission, settextmission] = useState('');
 
   useEffect(() => {
     setrosState(serverState);
@@ -30,22 +30,22 @@ export const RosControl = ({ children, notification }) => {
   const serverConecRos = async (event) => {
     //event.preventDefault();
     try {
-      const response = await fetch("/api/rosConnect", {
-        method: "POST",
+      const response = await fetch('/api/rosConnect', {
+        method: 'POST',
         body: new URLSearchParams(`rosState=${encodeURIComponent(rosState)}`),
       });
       if (response.ok) {
         let myresponse = await response.json();
-        if (myresponse.state === "connect") {
-          notification("success", myresponse.msg);
+        if (myresponse.state === 'connect') {
+          notification('success', myresponse.msg);
           setrosState(true);
         }
-        if (myresponse.state === "error") {
+        if (myresponse.state === 'error') {
           setrosState(false);
-          notification("danger", myresponse.msg);
+          notification('danger', myresponse.msg);
         }
-        if (myresponse.state === "disconnect") {
-          notification("danger", myresponse.msg);
+        if (myresponse.state === 'disconnect') {
+          notification('danger', myresponse.msg);
           setrosState(false);
         }
         console.log(myresponse);
@@ -58,22 +58,22 @@ export const RosControl = ({ children, notification }) => {
   };
   const serverAddUAV = async (device) => {
     //event.preventDefault();
-    console.log(device.name + "-" + device.category);
+    console.log(device.name + '-' + device.category);
     try {
-      const response = await fetch("/api/devices", {
-        method: "POST",
+      const response = await fetch('/api/devices', {
+        method: 'POST',
         body: JSON.stringify(device),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
         let myresponse = await response.json();
-        if (myresponse.state === "connect") {
-          notification("success", myresponse.msg);
+        if (myresponse.state === 'connect') {
+          notification('success', myresponse.msg);
         }
-        if (myresponse.state === "fail") {
-          notification("danger", myresponse.msg);
+        if (myresponse.state === 'error') {
+          notification('danger', myresponse.msg);
         }
         console.log(myresponse);
       } else {
@@ -85,20 +85,20 @@ export const RosControl = ({ children, notification }) => {
     //event.preventDefault();
     console.log(uav_ns);
     try {
-      const response = await fetch("/api/disconectdevice", {
-        method: "POST",
+      const response = await fetch('/api/disconectdevice', {
+        method: 'POST',
         body: JSON.stringify({ uav_ns: uav_ns }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
         let myresponse = await response.json();
-        if (myresponse.state === "connect") {
-          notification("success", myresponse.msg);
+        if (myresponse.state === 'connect') {
+          notification('success', myresponse.msg);
         }
-        if (myresponse.state === "fail") {
-          notification("danger", myresponse.msg);
+        if (myresponse.state === 'error') {
+          notification('danger', myresponse.msg);
         }
         console.log(myresponse);
       } else {
@@ -109,20 +109,20 @@ export const RosControl = ({ children, notification }) => {
 
   const serverloadmission = async () => {
     try {
-      const response = await fetch("/api/loadmission", {
-        method: "POST",
-        body: JSON.stringify({ mission: missions["route"] }),
+      const response = await fetch('/api/loadmission', {
+        method: 'POST',
+        body: JSON.stringify({ mission: missions['route'] }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
         let myresponse = await response.json();
-        if (myresponse.state === "connect") {
-          notification("success", myresponse.msg);
+        if (myresponse.state === 'connect') {
+          notification('success', myresponse.msg);
         }
-        if (myresponse.state === "fail") {
-          notification("danger", myresponse.msg);
+        if (myresponse.state === 'error') {
+          notification('danger', myresponse.msg);
         }
         console.log(myresponse);
       } else {
@@ -130,26 +130,24 @@ export const RosControl = ({ children, notification }) => {
       }
     } catch (error) {}
   };
-  const servercommandmission = async (uav_ns, uav_type) => {
+  const servercommandmission = async () => {
     //event.preventDefault();
-    console.log("command mission ");
-    console.log(uav_type);
-    console.log(uav_ns);
+    console.log('command mission ');
     try {
-      const response = await fetch("/api/commandmission", {
-        method: "POST",
-        body: JSON.stringify({ uav_ns: uav_ns, uav_type: uav_type }),
+      const response = await fetch('/api/commandmission', {
+        method: 'POST',
+        body: JSON.stringify({}),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
         let myresponse = await response.json();
-        if (myresponse.state === "connect") {
-          notification("success", myresponse.msg);
+        if (myresponse.state === 'connect') {
+          notification('success', myresponse.msg);
         }
-        if (myresponse.state === "fail") {
-          notification("danger", myresponse.msg);
+        if (myresponse.state === 'error') {
+          notification('danger', myresponse.msg);
         }
         console.log(myresponse);
       } else {
@@ -159,32 +157,28 @@ export const RosControl = ({ children, notification }) => {
   };
 
   const openMision = (name_mission, text_mission) => {
-    if (name_mission.endsWith(".yaml")) {
+    if (name_mission.endsWith('.yaml')) {
       plan_mission = YAML.parse(text_mission);
-      mode_landing = plan_mission["mode_landing"];
-      mode_yaw = plan_mission["mode_yaw"];
+      mode_landing = plan_mission['mode_landing'];
+      mode_yaw = plan_mission['mode_yaw'];
       dispatch(
         missionActions.updateMission({
           name: name_mission.slice(0, -5),
           mission: plan_mission,
         })
       );
-    } else if (name_mission.endsWith(".waypoints")) {
-      let mission_line = text_mission.split("\n");
-      let mission_array = mission_line.map((x) => x.split("\t"));
+    } else if (name_mission.endsWith('.waypoints')) {
+      let mission_line = text_mission.split('\n');
+      let mission_array = mission_line.map((x) => x.split('\t'));
       let mission_yaml = { uav_n: 1, uav_1: {} };
       let count_wp = 0;
       mission_array.forEach((element) => {
-        if (element[3] == "16") {
-          mission_yaml.uav_1["wp_" + count_wp] = [
-            element[8],
-            element[9],
-            element[10],
-          ];
+        if (element[3] == '16') {
+          mission_yaml.uav_1['wp_' + count_wp] = [element[8], element[9], element[10]];
           count_wp = count_wp + 1;
         }
       });
-      mission_yaml.uav_1["wp_n"] = count_wp;
+      mission_yaml.uav_1['wp_n'] = count_wp;
       //console.log(mission_yaml)
       dispatch(
         missionActions.updateMission({
@@ -192,29 +186,22 @@ export const RosControl = ({ children, notification }) => {
           mission: mission_yaml,
         })
       );
-    } else if (name_mission.endsWith(".kml")) {
-      let xmlDocument = new DOMParser().parseFromString(
-        text_mission,
-        "text/xml"
-      );
+    } else if (name_mission.endsWith('.kml')) {
+      let xmlDocument = new DOMParser().parseFromString(text_mission, 'text/xml');
       let mission_line = xmlDocument
-        .querySelector("coordinates")
-        .textContent.replace(/(\r\n|\n|\r|\t)/gm, "")
-        .split(" ");
-      let mission_array = mission_line.map((x) => x.split(","));
+        .querySelector('coordinates')
+        .textContent.replace(/(\r\n|\n|\r|\t)/gm, '')
+        .split(' ');
+      let mission_array = mission_line.map((x) => x.split(','));
       let mission_yaml = { uav_n: 1, uav_1: {} };
       let count_wp = 0;
       mission_array.forEach((element) => {
         if (element.length == 3) {
-          mission_yaml.uav_1["wp_" + count_wp] = [
-            element[1],
-            element[0],
-            element[2],
-          ];
+          mission_yaml.uav_1['wp_' + count_wp] = [element[1], element[0], element[2]];
           count_wp = count_wp + 1;
         }
       });
-      mission_yaml.uav_1["wp_n"] = count_wp;
+      mission_yaml.uav_1['wp_n'] = count_wp;
       //console.log(mission_yaml)
       dispatch(
         missionActions.updateMission({
@@ -222,19 +209,19 @@ export const RosControl = ({ children, notification }) => {
           mission: mission_yaml,
         })
       );
-    } else if (name_mission.endsWith(".plan")) {
+    } else if (name_mission.endsWith('.plan')) {
       let jsondoc = JSON.parse(text_mission);
       let mission_yaml = { uav_n: 1, uav_1: {} };
       let count_wp = 0;
       jsondoc.mission.items.forEach((element) => {
-        mission_yaml.uav_1["wp_" + count_wp] = [
+        mission_yaml.uav_1['wp_' + count_wp] = [
           element.params[4],
           element.params[5],
           element.Altitude,
         ];
         count_wp = count_wp + 1;
       });
-      mission_yaml.uav_1["wp_n"] = count_wp;
+      mission_yaml.uav_1['wp_n'] = count_wp;
       //console.log(mission_yaml)
       dispatch(
         missionActions.updateMission({
@@ -243,7 +230,7 @@ export const RosControl = ({ children, notification }) => {
         })
       );
     } else {
-      notification("danger", "Formato de mission no compatible");
+      notification('danger', 'Formato de mission no compatible');
     }
   };
 
@@ -253,12 +240,12 @@ export const RosControl = ({ children, notification }) => {
   }
 
   function changeReady(uav_ns) {
-    var button = document.getElementById("Ready" + uav_ns);
-    if (button.innerHTML === "Ready") {
-      button.innerHTML = "Not Ready";
+    var button = document.getElementById('Ready' + uav_ns);
+    if (button.innerHTML === 'Ready') {
+      button.innerHTML = 'Not Ready';
     } else {
-      button.innerHTML = "Ready";
-      var info = "Mission requested";
+      button.innerHTML = 'Ready';
+      var info = 'Mission requested';
       updateInfoCell(uav_ns, info);
     }
   }
@@ -271,7 +258,7 @@ export const RosControl = ({ children, notification }) => {
     if (rosState) {
       serverAddUAV(device);
     } else {
-      alert("\nRos no está conectado.\n\n Por favor conéctelo primero.");
+      alert('\nRos no está conectado.\n\n Por favor conéctelo primero.');
     }
   }
 
@@ -280,11 +267,11 @@ export const RosControl = ({ children, notification }) => {
   }
 
   function commandMission() {
-    servercommandmission("uav_3", "px4");
+    servercommandmission();
   }
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <RosContext.Provider
         value={{
           rosConnect,

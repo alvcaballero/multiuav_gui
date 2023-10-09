@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import Draggable from "react-draggable";
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import Draggable from 'react-draggable';
 import {
   Card,
   CardContent,
@@ -16,39 +16,39 @@ import {
   MenuItem,
   CardMedia,
   Button,
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import ReplayIcon from "@mui/icons-material/Replay";
-import PublishIcon from "@mui/icons-material/Publish";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import PendingIcon from "@mui/icons-material/Pending";
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import ReplayIcon from '@mui/icons-material/Replay';
+import PublishIcon from '@mui/icons-material/Publish';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import PendingIcon from '@mui/icons-material/Pending';
 
-import PositionValue from "./PositionValue";
-import RemoveDialog from "./RemoveDialog";
-import makeStyles from "@mui/styles/makeStyles";
-import { devicesActions } from "../store";
-import { Alarm } from "@mui/icons-material";
+import PositionValue from './PositionValue';
+import RemoveDialog from './RemoveDialog';
+import makeStyles from '@mui/styles/makeStyles';
+import { devicesActions } from '../store';
+import { Alarm } from '@mui/icons-material';
 
 const useStyles = makeStyles((theme) => ({
   card: {
-    pointerEvents: "auto",
+    pointerEvents: 'auto',
     width: theme.dimensions.popupMaxWidth,
   },
   media: {
     height: theme.dimensions.popupImageHeight,
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "flex-start",
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
   },
   mediaButton: {
     color: theme.palette.colors.white,
-    mixBlendMode: "difference",
+    mixBlendMode: 'difference',
   },
   header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: theme.spacing(1, 1, 0, 2),
   },
   content: {
@@ -59,38 +59,36 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.colors.negative,
   },
   icon: {
-    width: "25px",
-    height: "25px",
-    filter: "brightness(0) invert(1)",
+    width: '25px',
+    height: '25px',
+    filter: 'brightness(0) invert(1)',
   },
   table: {
-    "& .MuiTableCell-sizeSmall": {
+    '& .MuiTableCell-sizeSmall': {
       paddingLeft: 0,
       paddingRight: 0,
     },
   },
   cell: {
-    borderBottom: "none",
+    borderBottom: 'none',
   },
   actions: {
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
   root: ({ desktopPadding }) => ({
-    pointerEvents: "none",
-    position: "fixed",
+    pointerEvents: 'none',
+    position: 'fixed',
     zIndex: 5,
-    left: "50%",
-    [theme.breakpoints.up("md")]: {
+    left: '50%',
+    [theme.breakpoints.up('md')]: {
       left: `calc(50% + ${desktopPadding} / 2)`,
       bottom: theme.spacing(3),
     },
-    [theme.breakpoints.down("md")]: {
-      left: "50%",
-      bottom: `calc(${theme.spacing(3)} + ${
-        theme.dimensions.bottomBarHeight
-      }px)`,
+    [theme.breakpoints.down('md')]: {
+      left: '50%',
+      bottom: `calc(${theme.spacing(3)} + ${theme.dimensions.bottomBarHeight}px)`,
     },
-    transform: "translateX(-50%)",
+    transform: 'translateX(-50%)',
   }),
 }));
 
@@ -100,10 +98,10 @@ const StatusRow = ({ name, content }) => {
   return (
     <TableRow>
       <TableCell className={classes.card}>
-        <Typography variant="body2">{name}</Typography>
+        <Typography variant='body2'>{name}</Typography>
       </TableCell>
       <TableCell className={classes.cell}>
-        <Typography variant="body2" color="textSecondary">
+        <Typography variant='body2' color='textSecondary'>
           {content}
         </Typography>
       </TableCell>
@@ -111,13 +109,7 @@ const StatusRow = ({ name, content }) => {
   );
 };
 
-const StatusCard = ({
-  deviceId,
-  position,
-  onClose,
-  disableActions,
-  desktopPadding = 0,
-}) => {
+const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPadding = 0 }) => {
   const classes = useStyles();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -128,7 +120,7 @@ const StatusCard = ({
 
   const deviceImage = device?.attributes?.deviceImage;
 
-  const positionItems = "speed,course,batteryLevel,gimbal";
+  const positionItems = 'speed,course,batteryLevel,gimbal';
 
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -136,45 +128,45 @@ const StatusCard = ({
 
   const serverCommand = async (uav_id, command) => {
     //event.preventDefault();
-    console.log("send command ");
+    console.log('send command ');
     console.log(uav_id);
     try {
-      const response = await fetch("/api/commands", {
-        method: "POST",
+      const response = await fetch('/api/commands', {
+        method: 'POST',
         body: JSON.stringify({ uav_id: uav_id, description: command }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
         let myresponse = await response.json();
         console.log(myresponse);
       } else {
-        console.log("Error1:" + response);
+        console.log('Error1:' + response);
         throw Error(await response.text());
       }
     } catch (error) {
-      console.log("Error2:" + error);
+      console.log('Error2:' + error);
     }
   };
   const servercommandmission = async (uav_id) => {
     //event.preventDefault();
-    console.log("command mission " + uav_id);
+    console.log('command mission ' + uav_id);
     try {
       const response = await fetch(`/api/commandmission/${uav_id}`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({ uav_id: uav_id }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
         let myresponse = await response.json();
-        if (myresponse.state === "connect") {
-          notification("success", myresponse.msg);
+        if (myresponse.state === 'connect') {
+          notification('success', myresponse.msg);
         }
-        if (myresponse.state === "fail") {
-          notification("danger", myresponse.msg);
+        if (myresponse.state === 'error') {
+          notification('danger', myresponse.msg);
         }
         console.log(myresponse);
       } else {
@@ -185,7 +177,7 @@ const StatusCard = ({
 
   const handleRemove = async (removed) => {
     if (removed) {
-      const response = await fetch("/api/devices");
+      const response = await fetch('/api/devices');
       if (response.ok) {
         let myresponse = await response.json();
         dispatch(devicesActions.refresh(Object.values(myresponse)));
@@ -206,62 +198,53 @@ const StatusCard = ({
                 className={classes.media}
                 image={`/api/media/${device.uniqueId}/${deviceImage}`}
               >
-                <IconButton
-                  size="small"
-                  onClick={onClose}
-                  onTouchStart={onClose}
-                >
-                  <CloseIcon fontSize="small" className={classes.mediaButton} />
+                <IconButton size='small' onClick={onClose} onTouchStart={onClose}>
+                  <CloseIcon fontSize='small' className={classes.mediaButton} />
                 </IconButton>
               </CardMedia>
             ) : (
               <div className={classes.header}>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant='body2' color='textSecondary'>
                   {device.name}
                 </Typography>
-                <IconButton
-                  size="small"
-                  onClick={onClose}
-                  onTouchStart={onClose}
-                >
-                  <CloseIcon fontSize="small" />
+                <IconButton size='small' onClick={onClose} onTouchStart={onClose}>
+                  <CloseIcon fontSize='small' />
                 </IconButton>
               </div>
             )}
             {position && (
               <CardContent className={classes.content}>
-                <Table size="small" classes={{ root: classes.table }}>
+                <Table size='small' classes={{ root: classes.table }}>
                   <TableBody>
-                    {position.hasOwnProperty("latitude") && (
+                    {position.hasOwnProperty('latitude') && (
                       <StatusRow
-                        key="latitude"
-                        name={"Position"}
+                        key='latitude'
+                        name={'Position'}
                         content={
                           <a
                             href={
-                              "https://www.google.com/maps?q=" +
+                              'https://www.google.com/maps?q=' +
                               position.latitude +
-                              "," +
+                              ',' +
                               position.longitude
                             }
-                            target="_blank"
+                            target='_blank'
                           >
-                            {"[" +
+                            {'[' +
                               position.latitude.toFixed(6) +
-                              "," +
+                              ',' +
                               position.longitude.toFixed(6) +
-                              "]"}
+                              ']'}
                           </a>
                         }
                       />
                     )}
 
                     {positionItems
-                      .split(",")
+                      .split(',')
                       .filter(
                         (key) =>
-                          position.hasOwnProperty(key) ||
-                          position.attributes.hasOwnProperty(key)
+                          position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key)
                       )
                       .map((key) => (
                         <StatusRow
@@ -270,37 +253,33 @@ const StatusCard = ({
                           content={
                             <PositionValue
                               position={position}
-                              property={
-                                position.hasOwnProperty(key) ? key : null
-                              }
-                              attribute={
-                                position.hasOwnProperty(key) ? null : key
-                              }
+                              property={position.hasOwnProperty(key) ? key : null}
+                              attribute={position.hasOwnProperty(key) ? null : key}
                             />
                           }
                         />
                       ))}
 
-                    {position.attributes.hasOwnProperty("alarm") && (
+                    {position.attributes.hasOwnProperty('alarm') && (
                       <StatusRow
-                        key="alarm1"
-                        name={"Alarm " + position.attributes.alarm}
+                        key='alarm1'
+                        name={'Alarm ' + position.attributes.alarm}
                         content={
-                          <div style={{ width: "100%" }}>
+                          <div style={{ width: '100%' }}>
                             <Button
-                              variant="contained"
-                              size="small"
-                              color="primary"
-                              style={{ margin: "1px", display: "inline-block" }}
-                              onClick={() => serverCommand(device.id, "threat")}
+                              variant='contained'
+                              size='small'
+                              color='primary'
+                              style={{ margin: '1px', display: 'inline-block' }}
+                              onClick={() => serverCommand(device.id, 'threat')}
                             >
                               Validate
                             </Button>
                             <Button
-                              variant="contained"
-                              size="small"
-                              color="secondary"
-                              style={{ margin: "1px", display: "inline-block" }}
+                              variant='contained'
+                              size='small'
+                              color='secondary'
+                              style={{ margin: '1px', display: 'inline-block' }}
                             >
                               Dismiss
                             </Button>
@@ -314,22 +293,19 @@ const StatusCard = ({
             )}
             <CardActions classes={{ root: classes.actions }} disableSpacing>
               <IconButton
-                color="secondary"
+                color='secondary'
                 onClick={(e) => setAnchorEl(e.currentTarget)}
                 disabled={!position}
               >
                 <PendingIcon />
               </IconButton>
               <IconButton
-                onClick={() => serverCommand(device.id, "sincronize")}
+                onClick={() => serverCommand(device.id, 'sincronize')}
                 //disabled={disableActions || !position}
               >
                 <ReplayIcon />
               </IconButton>
-              <IconButton
-                onClick={() => servercommandmission(device.id)}
-                disabled={disableActions}
-              >
+              <IconButton onClick={() => servercommandmission(device.id)} disabled={disableActions}>
                 <PublishIcon />
               </IconButton>
               <IconButton
@@ -350,41 +326,37 @@ const StatusCard = ({
         )}
       </div>
       {position && (
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={() => setAnchorEl(null)}
-        >
+        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
           <MenuItem onClick={() => navigate(`/device/${deviceId}`)}>
-            <Typography color="secondary">Detalle Dispositivo</Typography>
+            <Typography color='secondary'>Detalle Dispositivo</Typography>
           </MenuItem>
           <MenuItem
-            component="a"
-            target="_blank"
+            component='a'
+            target='_blank'
             href={`https://www.google.com/maps/search/?api=1&query=${position.latitude}%2C${position.longitude}`}
           >
-            {"linkGoogleMaps"}
+            {'linkGoogleMaps'}
           </MenuItem>
           <MenuItem
-            component="a"
-            target="_blank"
+            component='a'
+            target='_blank'
             href={`http://maps.apple.com/?ll=${position.latitude},${position.longitude}`}
           >
-            {"linkAppleMaps"}
+            {'linkAppleMaps'}
           </MenuItem>
           <MenuItem
-            component="a"
-            target="_blank"
+            component='a'
+            target='_blank'
             href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${position.latitude}%2C${position.longitude}&heading=${position.course}`}
           >
-            {"linkStreetView"}
+            {'linkStreetView'}
           </MenuItem>
         </Menu>
       )}
       {
         <RemoveDialog
           open={removing}
-          endpoint="devices"
+          endpoint='devices'
           itemId={deviceId}
           onResult={(removed) => handleRemove(removed)}
         />

@@ -69,12 +69,20 @@ wss.on('connection', function connection(ws) {
   );
 
   const interval = setInterval(() => {
-    ws.send(
-      JSON.stringify({
-        positions: Object.values(data.state.positions),
-        camera: Object.values(data.state.camera),
-      })
-    );
+    let currentsocket = {};
+    if (Object.values(data.state.positions).length) {
+      currentsocket['positions'] = Object.values(data.state.positions);
+    }
+    if (Object.values(data.state.camera).length) {
+      currentsocket['camera'] = Object.values(data.state.camera);
+    }
+    let currentevent = data.state.events;
+    if (Object.values(currentevent).length) {
+      console.log(currentevent);
+      currentsocket['events'] = Object.values(currentevent);
+      data.clearEvents({ eventId: Object.keys(currentevent) });
+    }
+    ws.send(JSON.stringify(currentsocket));
   }, 200);
 
   const interval_server = setInterval(() => {
@@ -84,7 +92,7 @@ wss.on('connection', function connection(ws) {
         devices: Object.values(data.state.devices),
       })
     );
-  }, 1000);
+  }, 5000);
 });
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
 const interval = setInterval(function ping() {
@@ -212,12 +220,12 @@ async function connectAddUav(device) {
 
     if (find_device == false || uav_ns == '') {
       console.log('Dispositivo no encontrado' + uav_ns);
-      return { state: 'fail', msg: `Dispositivo no encontrado+${uav_ns}` };
+      return { state: 'error', msg: `Dispositivo no encontrado+${uav_ns}` };
     }
     if (repeat_device == true) {
       console.log('Dispositivo ya se encuentra registrado ' + uav_ns);
       return {
-        state: 'fail',
+        state: 'error',
         msg: `Dispositivo ya se encuentra registrado ${uav_ns}`,
       };
     }
@@ -252,6 +260,7 @@ async function connectAddUav(device) {
     }
 
     let uavAdded = {
+      id: cur_uav_idx,
       name: uav_ns,
       type: uav_type,
       watch_bound: true,
@@ -492,6 +501,12 @@ async function connectAddUav(device) {
       uav_list[cur_uav_idx].listener_threat.subscribe(function (msg) {
         let id_uav = cur_uav_idx;
         data.updatePosition({ deviceId: id_uav, threat: msg.data });
+        data.addEvent({
+          type: 'warning',
+          eventTime: getDatetime(),
+          deviceId: id_uav,
+          attributes: { message: data.get_device_ns(id_uav) + ':treat event' },
+        });
       });
     }
 
@@ -503,7 +518,7 @@ async function connectAddUav(device) {
     return { state: 'success', msg: 'conectado Correctamente' };
   } else {
     console.log('\nRos no está conectado.\n\n Por favor conéctelo primero.');
-    return { state: 'fail', msg: 'Ros no está conectado' };
+    return { state: 'error', msg: 'Ros no está conectado' };
   }
 }
 
@@ -559,15 +574,15 @@ function threatUAV(uav_id) {
         }; //notification('success',"Load mission to:" + cur_roster + " ok");
       } else {
         return {
-          state: 'fail',
-          msg: 'threat to:' + uavname + ' fail' + result.message,
-        }; //notification('danger',"Load mission to:" + cur_roster + " fail");
+          state: 'error',
+          msg: 'threat to:' + uavname + ' error' + result.message,
+        }; //notification('danger',"Load mission to:" + cur_roster + " error");
       }
     },
     function (result) {
       console.log('Error:' + result);
       return {
-        state: 'fail',
+        state: 'error',
         msg: 'Sincronize to:' + uavname + ' Error:' + result,
       };
     }
@@ -606,15 +621,15 @@ function sincronizeUAV(uav_id) {
         }; //notification('success',"Load mission to:" + cur_roster + " ok");
       } else {
         return {
-          state: 'fail',
-          msg: 'Sincronize to:' + uavname + ' fail' + result.message,
-        }; //notification('danger',"Load mission to:" + cur_roster + " fail");
+          state: 'error',
+          msg: 'Sincronize to:' + uavname + ' error' + result.message,
+        }; //notification('danger',"Load mission to:" + cur_roster + " error");
       }
     },
     function (result) {
       console.log('Error:' + result);
       return {
-        state: 'fail',
+        state: 'error',
         msg: 'Sincronize to:' + uavname + ' Error:' + result,
       };
     }
@@ -639,12 +654,20 @@ function loadMission(mission) {
       let gimbal_pos = [];
       let action_matrix = [];
       let param_matrix = [];
+      if (Object.values(mission).length == 0) {
+        data.addEvent({
+          type: 'info',
+          eventTime: getDatetime(),
+          deviceId: null,
+          attributes: { message: 'no mission' },
+        });
+        return { state: 'info', msg: 'no mission' };
+      }
       Object.values(mission).forEach((route) => {
         console.log(route);
         if (route['uav'] == uav.name) {
           console.log('route');
           console.log(route);
-
           idle_vel = route.attributes.hasOwnProperty('idle_vel')
             ? route.attributes['idle_vel']
             : idle_vel;
@@ -729,27 +752,28 @@ function loadMission(mission) {
           });
           console.log('request');
           console.log(request);
+          let statuscommand = { state: 'error', msg: 'Load mission:' + uav_ns + ' error!' };
 
-          missionClient.callService(
-            request,
-            function (result) {
-              console.log('load mission ' + missionClient.name + ': ' + result.success);
-              if (result.success) {
-                return {
-                  state: 'success',
-                  msg: 'Loadding mission to' + cur_roster + ' ok',
-                }; //notification('success',"Load mission to:" + cur_roster + " ok");
-              } else {
-                return {
-                  state: 'fail',
-                  msg: 'Load mission to:' + cur_roster + ' fail',
-                }; //notification('danger',"Load mission to:" + cur_roster + " fail");
-              }
-            },
-            function (result) {
-              console.log('Error:' + result);
+          missionClient.callService(request, function (result) {
+            console.log('load mission ' + missionClient.name + ': ' + result.success);
+            if (result.success) {
+              statuscommand = {
+                state: 'success',
+                msg: 'Loadding mission to' + uav.name + ' ok',
+              };
+            } else {
+              statuscommand = {
+                state: 'error',
+                msg: 'Load mission to:' + uav.name + ' error',
+              };
             }
-          );
+          });
+          data.addEvent({
+            type: statuscommand.state,
+            eventTime: getDatetime(),
+            deviceId: uav.id,
+            attributes: { message: statuscommand.msg },
+          });
           console.log('loading mision to' + uav.name);
         }
       });
@@ -775,32 +799,50 @@ function commandMission(uav_id) {
     } else {
       request = new ROSLIB.ServiceRequest({});
     }
+    let statuscommand = { state: 'error', msg: 'Start mission:' + uav_ns + ' error!' };
     missionClient.callService(request, function (result) {
       console.log(result.message);
       if (result.success) {
-        return { state: 'success', msg: 'Start mission:' + uav_ns + ' ok' }; //notification('success',"Start mission:" + cur_roster + " ok");
+        console.log('success');
+        statuscommand = { state: 'success', msg: 'Start mission:' + uav_ns + ' ok' };
       } else {
-        return { state: 'fail', msg: 'Start mission:' + uav_ns + ' FAIL!' }; //notification('danger',"Start mission:" + cur_roster + " FAIL!");
+        statuscommand = { state: 'error', msg: 'Start mission:' + uav_ns + ' error!' };
+        console.log('error');
       }
     });
+
+    data.addEvent({
+      type: statuscommand.state,
+      eventTime: getDatetime(),
+      deviceId: uav_id,
+      attributes: { message: statuscommand.msg },
+    });
+
+    return statuscommand;
   } else {
-    return { state: 'fail', msg: 'Start mission:' + uav_ns + ' FAIL!' }; //notification('danger',"Start mission:" + cur_roster + " FAIL!");
+    data.addEvent({
+      type: 'error',
+      eventTime: getDatetime(),
+      deviceId: uav_id,
+      attributes: { message: 'No command Mission ' },
+    });
+    return { state: 'error', msg: 'Start mission:' + uav_ns + ' error!' }; //notification('danger',"Start mission:" + cur_roster + " error!");
   }
-  return { state: 'success', msg: 'Commanding mission to: ' + uav_ns }; //notification('success',"Commanding mission to: " + cur_roster);
 }
 
 function commandMissionAll() {
   let r = true;
   let alldevices = data.state.devices;
+  let uavresponse = { state: 'error', msg: 'Mission canceled' };
   if (r === true) {
     Object.keys(alldevices).forEach((device_id) => {
       console.log('command mission to ' + device_id);
-      commandMission(device_id);
+      uavresponse = commandMission(device_id);
     });
   } else {
     console.log('Mission canceled');
-    return { state: 'fail', msg: 'Mission canceled' };
   }
+  return uavresponse;
 }
 
 async function disConnectAddUav(uav_ns) {
@@ -903,13 +945,12 @@ app.post('/api/loadmission', async function (req, res) {
 });
 
 app.post('/api/commandmission', async function (req, res) {
-  console.log('command-mission-post');
-  console.log(req.body);
+  console.log('command-mission-all');
   let myresponse = await commandMissionAll();
   return res.json(myresponse);
 });
 app.post('/api/commandmission/:id', async function (req, res) {
-  console.log('command-mission-post');
+  console.log('command-mission-uno');
   console.log(req.body);
   let myresponse = await commandMission(req.params.id);
   return res.json(myresponse);
@@ -1030,7 +1071,7 @@ app.post('/api/commands', async function (req, res) {
   console.log('command');
   console.log(req.body);
   let response = {
-    state: 'fail',
+    state: 'error',
     msg: 'Command to:' + data.get_device_ns(req.body.uav_id) + ' no exist',
   };
   if (req.body.description == 'threat') {

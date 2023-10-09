@@ -66,6 +66,6 @@ export default async () => {
       await Promise.all(results);
     })
   );
-  console.log('preload icon');
-  console.log(mapImages);
+  //console.log('preload icon');
+  //console.log(mapImages);
 };

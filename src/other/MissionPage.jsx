@@ -61,6 +61,14 @@ const showToast = (type, description) => {
         backgroundColor: '#d9534f',
       };
       break;
+    case 'error':
+      toastProperties = {
+        id: list.length + 1,
+        title: 'Danger',
+        description: description,
+        backgroundColor: '#d9534f',
+      };
+      break;
     case 'info':
       toastProperties = {
         id: list.length + 1,

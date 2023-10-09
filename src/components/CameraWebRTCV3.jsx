@@ -89,9 +89,8 @@ export const CameraWebRTCV3 = ({ deviceId, deviceIp, camera_src, onClose }) => {
   }
 
   useEffect(() => {
-    console.log('device in camera-' + device + '-' + deviceIp + '+' + camera_src);
     if (deviceId) {
-      console.log('crear');
+      console.log('device in camera-' + device.name + '-' + deviceIp + '+' + camera_src);
     }
   }, [deviceId]);
 
