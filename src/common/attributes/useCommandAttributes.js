@@ -212,18 +212,16 @@ export default () =>
           type: 'string',
         },
       ],
-      ResumeMission: [
+      SetupCamera: [
         {
-          key: 'enable',
-          name: 'commandEnable',
-          type: 'boolean',
+          key: 'type',
+          name: 'Type',
+          type: 'number',
         },
-      ],
-      StopMission: [
         {
           key: 'enable',
-          name: 'commandEnable',
-          type: 'boolean',
+          name: 'Enable',
+          type: 'number',
         },
       ],
       Gimbal: [
@@ -245,16 +243,28 @@ export default () =>
       ],
       GimbalPitch: [
         {
-          key: 'Pitch',
+          key: 'pitch',
           name: 'Pitch',
           type: 'number',
         },
       ],
-      SincroniseFiles: [
+      treat: [
         {
           key: 'enable',
           name: 'commandEnable',
           type: 'boolean',
+        },
+      ],
+      setupcamera: [
+        {
+          key: 'cameraType',
+          name: 'cameraType',
+          type: 'number',
+        },
+        {
+          key: 'start',
+          name: 'start',
+          type: 'number',
         },
       ],
     }),

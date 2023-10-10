@@ -1,6 +1,6 @@
 init:
   - id: '0'
-    name: 'uav_1'
+    name: 'uav_99'
     category: 'px4'
     ip: '10.42.0.2'
     camera: []
@@ -26,7 +26,7 @@ init:
       - type: 'WebRTC'
         source: 'main'
   - id: '4'
-    name: 'uav_99'
+    name: 'uav_1'
     category: 'dji_M210_melodic'
     ip: '10.42.0.99'
     camera: []

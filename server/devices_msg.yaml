@@ -38,8 +38,11 @@ dji_M210_noetic:
       name: '/dji_control/send_bags'
       serviceType: 'std_srvs/Bool'
     setupcamera:
-      name: 'setup_camera_stream'
+      name: '/setup_camera_stream'
       serviceType: 'dji_osdk_ros/SetupCameraStream'
+    Gimbal:
+      name: '/gimbal_task_control'
+      serviceType: 'dji_osdk_ros/GimbalAction'
   attributes:
     mission_action:
       stay: #action_stay
@@ -152,6 +155,9 @@ dji_M210_melodic:
     setupcamera:
       name: 'setup_camera_stream'
       serviceType: 'dji_osdk_ros/SetupCameraStream'
+    Gimbal:
+      name: '/gimbal_task_control'
+      serviceType: 'dji_osdk_ros/GimbalAction'
   attributes:
     mission_action:
       stay: #action_stay
@@ -262,16 +268,24 @@ dji_M300:
     commandMission:
       name: '/dji_osdk_ros/waypointV2_startMission'
       serviceType: 'dji_osdk_ros/StartWaypointV2Mission'
+    stopMission:
+      name: '/dji_osdk_ros/waypointV2_stopMission'
+      serviceType: 'dji_osdk_ros/StopWaypointV2Mission'
     resumemission:
       name: '/dji_osdk_ros/waypointV2_resumeMission'
       serviceType: 'dji_osdk_ros/ResumeWaypointV2Mission'
+    pausemission:
+      name: '/dji_osdk_ros/waypointV2_pauseMission'
+      serviceType: 'dji_osdk_ros/PauseWaypointV2Mission'
     sincronize:
       name: '/dji_control/send_bags'
       serviceType: 'std_srvs/Bool'
     setupcamera:
       name: 'setup_camera_stream'
       serviceType: 'dji_osdk_ros/SetupCameraStream'
-
+    Gimbal:
+      name: '/gimbal_task_control'
+      serviceType: 'dji_osdk_ros/GimbalAction'
   attributes:
     mission_action:
       stay: #action_stay
