@@ -128,12 +128,11 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const serverCommand = async (uav_id, command) => {
     //event.preventDefault();
-    console.log('send command ');
-    console.log(uav_id);
+    console.log('send command uavud: ' + uav_id + command);
     try {
-      const response = await fetch('/api/commands', {
+      const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({ uav_id: uav_id, description: command }),
+        body: JSON.stringify({ deviceId: uav_id, type: command }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -149,7 +148,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
       console.log('Error2:' + error);
     }
   };
-  const servercommandmission = async (uav_id) => {
+  const servercommandmission = async (uav_id, msg) => {
     //event.preventDefault();
     console.log('command mission ' + uav_id);
     try {
@@ -300,7 +299,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                 <PendingIcon />
               </IconButton>
               <IconButton
-                onClick={() => serverCommand(device.id, 'sincronize')}
+                onClick={() => serverCommand(device.id, 'SincroniseFiles')}
                 //disabled={disableActions || !position}
               >
                 <ReplayIcon />

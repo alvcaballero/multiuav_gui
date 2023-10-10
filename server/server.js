@@ -556,84 +556,91 @@ const Getlistmaster = () => {
 
 function threatUAV(uav_id) {
   let uavname = data.get_device_ns(uav_id);
+  let myresponse = { state: 'error', msg: 'threat to:' + uavname + ' error' };
   threadmessage = new ROSLIB.Service({
     ros: ros,
     name: uavname + '/threat_confirmation',
     serviceType: 'std_srvs/Trigger',
   });
   let request = new ROSLIB.ServiceRequest({});
+
   threadmessage.callService(
     request,
     function (result) {
       console.log('send threat');
       console.log(result);
       if (result.success) {
-        return {
+        myresponse = {
           state: 'success',
           msg: 'threat to' + uavname + ' ok' + result.message,
-        }; //notification('success',"Load mission to:" + cur_roster + " ok");
+        };
       } else {
-        return {
+        myresponse = {
           state: 'error',
           msg: 'threat to:' + uavname + ' error' + result.message,
-        }; //notification('danger',"Load mission to:" + cur_roster + " error");
+        };
       }
     },
     function (result) {
       console.log('Error:' + result);
-      return {
-        state: 'error',
-        msg: 'Sincronize to:' + uavname + ' Error:' + result,
-      };
+      myresponse = { state: 'error', msg: 'Error:' + result };
     }
   );
+  return myresponse;
 }
 
-function sincronizeUAV(uav_id) {
-  console.log('sincronize uav_id' + uav_id);
+function standarCommand(uav_id, type, attributes) {
+  console.log(type + ' uav_id' + uav_id);
   let uavname = data.get_device_ns(uav_id);
   let uavcategory = data.get_device_category(uav_id);
+  let myresponse = { state: 'error', msg: type + ' to:' + uavname + ' error' };
+
   console.log(
-    'sincronize uav_id' +
+    type +
+      ' uav_id' +
       uav_id +
       '--' +
       uavcategory +
       '--' +
-      devices_msg[uavcategory]['services']['sincronize']['name']
+      devices_msg[uavcategory]['services'][type]['name']
   );
-
-  sincronizemessage = new ROSLIB.Service({
-    ros: ros,
-    name: uavname + devices_msg[uavcategory]['services']['sincronize']['name'],
-    serviceType: devices_msg[uavcategory]['services']['sincronize']['serviceType'],
-  });
-
-  let request = new ROSLIB.ServiceRequest({});
-  sincronizemessage.callService(
-    request,
-    function (result) {
-      console.log('send threat');
-      console.log(result);
-      if (result.success) {
-        return {
-          state: 'success',
-          msg: 'Sincronize to' + uavname + ' ok' + result.message,
-        }; //notification('success',"Load mission to:" + cur_roster + " ok");
-      } else {
-        return {
-          state: 'error',
-          msg: 'Sincronize to:' + uavname + ' error' + result.message,
-        }; //notification('danger',"Load mission to:" + cur_roster + " error");
-      }
-    },
-    function (result) {
-      console.log('Error:' + result);
-      return {
-        state: 'error',
-        msg: 'Sincronize to:' + uavname + ' Error:' + result,
-      };
+  if (devices_msg[uavcategory]['services'].hasOwnProperty(type)) {
+    let standarmessage = new ROSLIB.Service({
+      ros: ros,
+      name: uavname + devices_msg[uavcategory]['services'][type]['name'],
+      serviceType: devices_msg[uavcategory]['services'][type]['serviceType'],
+    });
+    let request;
+    if (attributes) {
+      request = new ROSLIB.ServiceRequest(attributes);
+    } else {
+      request = new ROSLIB.ServiceRequest({});
     }
-  );
+    console.log(request);
+    standarmessage.callService(
+      request,
+      function (result) {
+        console.log('send threat');
+        console.log(result);
+        if (result.success) {
+          myresponse = {
+            state: 'success',
+            msg: type + ' to' + uavname + ' ok' + result.message,
+          };
+        } else {
+          myresponse = {
+            state: 'error',
+            msg: type + ' to:' + uavname + ' error' + result.message,
+          };
+        }
+      },
+      function (result) {
+        console.log('Error:' + result);
+        myresponse = { state: 'error', msg: 'Error:' + result };
+      }
+    );
+  }
+  return myresponse;
 }
 
 function loadMission(mission) {
@@ -1005,83 +1012,114 @@ app.get('/api/commands/send', async function (req, res) {
   return res.json([]);
 });
 app.post('/api/commands/send', async function (req, res) {
-  let data = req.body;
-  console.log(data);
-  //console.log("devices acction " + deviceid);
-  return res.json([]);
+  console.log('POST API command send');
+  console.log(req.body);
+  //here get id and description, where description is string like threat,1 or sincronize, landing,1
+  let response = {
+    state: 'error',
+    msg: 'Command to:' + data.get_device_ns(req.body.deviceId) + ' no exist',
+  };
+  if (req.body.type == 'threat') {
+    response = await threatUAV(req.body.deviceId);
+  }
+  if (req.body.type == 'SincroniseFiles') {
+    response = await standarCommand(req.body.deviceId, 'sincronize');
+  }
+  if (req.body.type == 'ResumeMission') {
+    response = await standarCommand(req.body.deviceId, 'resumemission');
+  }
+  if (req.body.type == 'StopMission') {
+    response = await standarCommand(req.body.deviceId, 'stopMission');
+  }
+  if (req.body.type == 'Pausemission') {
+    response = await standarCommand(req.body.deviceId, 'pausemission');
+  }
+  if (req.body.type == 'Gimbal') {
+    response = await GimbalUAV(req.body.deviceId, req.body.attributes);
+  }
+  if (req.body.type == 'GimbalPitch') {
+    response = await GimbalUAV(req.body.deviceId, req.body.attributes);
+  }
+  if (req.body.type == 'ResetGimbal') {
+    response = await GimbalUAV(req.body.deviceId, { reset: true });
+  }
+  if (req.body.type == 'setupcamera') {
+    response = await standarCommand(req.body.deviceId, 'setupcamera', req.body.attributes);
+  }
+  data.addEvent({
+    type: response.state,
+    eventTime: getDatetime(),
+    deviceId: req.body.deviceId,
+    attributes: { message: response.msg },
+  });
+  console.log(response);
+  return res.json(response);
 });
+function GimbalUAV(uav_id, attributes) {
+  let uav_ns = data.get_device_ns(uav_id);
+  let uav_category = data.get_device_category(uav_id);
+  let serviceGibal;
+  console.log(attributes);
+  console.log(
+    'Gimbal ' +
+      uav_ns +
+      '--' +
+      uav_category +
+      '--' +
+      devices_msg[uav_category]['services']['Gimbal']['name']
+  );
+  let statuscommand = { state: 'error', msg: 'Gimbal ' + uav_ns + ' error!' };
+  if (devices_msg[uav_category]['services'].hasOwnProperty('Gimbal')) {
+    console.log('entro');
+    serviceGibal = new ROSLIB.Service({
+      ros: ros,
+      name: uav_ns + devices_msg[uav_category].services.Gimbal.name,
+      serviceType: devices_msg[uav_category].services.Gimbal.serviceType,
+    });
+
+    let request = new ROSLIB.ServiceRequest({
+      header: { seq: 0, stamp: { secs: 0, nsecs: 0 }, frame_id: '' },
+      is_reset: attributes.reset ? true : false,
+      payload_index: 0,
+      rotationMode: 0, // rotation cooradiration 0 = execute angle command based on the previously set reference point,1 = execute angle command based on the current point
+      pitch: attributes.pitch ? attributes.pitch : 0.0,
+      roll: attributes.roll ? attributes.roll : 0.0,
+      yaw: attributes.yaw ? attributes.yaw : 0.0,
+      time: 0.0,
+    });
+    console.log(request);
+
+    serviceGibal.callService(request, function (result) {
+      console.log('resultado gimbal');
+      console.log(result);
+      console.log(result.result);
+      if (result.result == true) {
+        statuscommand = { state: 'success', msg: 'Gimbal:' + uav_ns + ' ok' };
+      } else {
+        statuscommand = { state: 'error', msg: 'Gimbal:' + uav_ns + '- error!' };
+      }
+    });
+  } else {
+    statuscommand = { state: 'error', msg: 'Gimbal:' + uav_ns + '--error!' };
+  }
+  return statuscommand;
+}
 app.get('/api/commands/types', async function (req, res) {
   let deviceid = req.query.deviceId;
   let response = [
     { type: 'custom' },
-    { type: 'deviceIdentification' },
-    { type: 'positionSingle' },
-    { type: 'positionPeriodic' },
-    { type: 'positionStop' },
-    { type: 'engineStop' },
-    { type: 'engineResume' },
-    { type: 'alarmArm' },
-    { type: 'alarmDisarm' },
-    { type: 'alarmDismiss' },
-    { type: 'setTimezone' },
-    { type: 'requestPhoto' },
-    { type: 'powerOff' },
-    { type: 'rebootDevice' },
-    { type: 'factoryReset' },
-    { type: 'sendSms' },
-    { type: 'sendUssd' },
-    { type: 'sosNumber' },
-    { type: 'silenceTime' },
-    { type: 'setPhonebook' },
-    { type: 'message' },
-    { type: 'voiceMessage' },
-    { type: 'outputControl' },
-    { type: 'voiceMonitoring' },
-    { type: 'setAgps' },
-    { type: 'setIndicator' },
-    { type: 'configuration' },
-    { type: 'getVersion' },
-    { type: 'firmwareUpdate' },
-    { type: 'setConnection' },
-    { type: 'setOdometer' },
-    { type: 'getModemStatus' },
-    { type: 'getDeviceStatus' },
-    { type: 'setSpeedLimit' },
-    { type: 'modePowerSaving' },
-    { type: 'modeDeepSleep' },
-    { type: 'alarmGeofence' },
-    { type: 'alarmBattery' },
-    { type: 'alarmSos' },
-    { type: 'alarmRemove' },
-    { type: 'alarmClock' },
-    { type: 'alarmSpeed' },
-    { type: 'alarmFall' },
-    { type: 'alarmVibration' },
     { type: 'ResumeMission' },
     { type: 'StopMission' },
     { type: 'Gimbal' },
     { type: 'GimbalPitch' },
+    { type: 'ResetGimbal' },
     { type: 'SincroniseFiles' },
+    { type: 'threat' },
+    { type: 'setupcamera' },
   ];
   console.log('devices acction ' + deviceid);
   return res.json(response);
 });
-app.post('/api/commands', async function (req, res) {
-  //here get id and description, where description is string like threat,1 or sincronize, landing,1
-  console.log('command');
-  console.log(req.body);
-  let response = {
-    state: 'error',
-    msg: 'Command to:' + data.get_device_ns(req.body.uav_id) + ' no exist',
-  };
-  if (req.body.description == 'threat') {
-    response = await threatUAV(req.body.uav_id);
-  } else if (req.body.description == 'sincronize') {
-    response = await sincronizeUAV(req.body.uav_id);
-  }
-  return res.json(response);
-});
-
 app.post('/api/disconectdevice', async function (req, res) {
   console.log('loadmission-post');
   //console.log(req.body.uav_ns)
