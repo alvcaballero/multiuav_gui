@@ -589,11 +589,10 @@ function threatUAV(uav_id) {
   return myresponse;
 }
 
-function standarCommand(uav_id, type, attributes) {
+async function standarCommand(uav_id, type, attributes) {
   console.log(type + ' uav_id' + uav_id);
   let uavname = data.get_device_ns(uav_id);
   let uavcategory = data.get_device_category(uav_id);
-  let myresponse = { state: 'error', msg: type + ' to:' + uavname + ' error' };
 
   console.log(
     type +
@@ -604,43 +603,46 @@ function standarCommand(uav_id, type, attributes) {
       '--' +
       devices_msg[uavcategory]['services'][type]['name']
   );
-  if (devices_msg[uavcategory]['services'].hasOwnProperty(type)) {
-    let standarmessage = new ROSLIB.Service({
-      ros: ros,
-      name: uavname + devices_msg[uavcategory]['services'][type]['name'],
-      serviceType: devices_msg[uavcategory]['services'][type]['serviceType'],
-    });
-    let request;
-    if (attributes) {
-      request = new ROSLIB.ServiceRequest(attributes);
-    } else {
-      request = new ROSLIB.ServiceRequest({});
-    }
-    console.log(request);
+  if (!devices_msg[uavcategory]['services'].hasOwnProperty(type)) {
+    return { state: 'error', msg: type + ' to:' + uavname + ' dont have this service' };
+  }
+
+  let standarmessage = new ROSLIB.Service({
+    ros: ros,
+    name: uavname + devices_msg[uavcategory]['services'][type]['name'],
+    serviceType: devices_msg[uavcategory]['services'][type]['serviceType'],
+  });
+  let request;
+  if (attributes) {
+    request = new ROSLIB.ServiceRequest(attributes);
+  } else {
+    request = new ROSLIB.ServiceRequest({});
+  }
+
+  return new Promise((resolve, rejects) => {
     standarmessage.callService(
       request,
       function (result) {
         console.log('send threat');
         console.log(result);
         if (result.success) {
-          myresponse = {
+          resolve({
             state: 'success',
             msg: type + ' to' + uavname + ' ok' + result.message,
-          };
+          });
         } else {
-          myresponse = {
+          resolve({
             state: 'error',
             msg: type + ' to:' + uavname + ' error' + result.message,
-          };
+          });
         }
       },
       function (result) {
         console.log('Error:' + result);
-        myresponse = { state: 'error', msg: 'Error:' + result };
+        resolve({ state: 'error', msg: 'Error:' + result });
       }
     );
-  }
-  return myresponse;
+  });
 }
 
 function loadMission(mission) {
