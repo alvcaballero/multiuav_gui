@@ -21,13 +21,6 @@ import {
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEffectAsync } from '../reactHelper';
-import { prefixString } from '../common/stringUtils';
-import PositionValue from '../components/PositionValue';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SelectField from '../common/components/SelectField';
-import BaseCommandView from '../common/components/BaseCommandView';
-import { useCatch } from '../reactHelper';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -70,8 +63,8 @@ const EventsPage = () => {
   }, [events]);
   useEffect(() => {
     setItemdevice({ ...devices, '-1': { name: 'GCS' } });
-    console.log('my devices');
-    console.log({ ...devices, '-1': { name: 'GCS' } });
+    //console.log('my devices');
+    //console.log({ ...devices, '-1': { name: 'GCS' } });
   }, [devices]);
   const deviceName = useSelector((state) => {
     if (item) {

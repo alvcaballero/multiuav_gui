@@ -21,7 +21,6 @@ import {
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEffectAsync } from '../reactHelper';
 import { prefixString } from '../common/stringUtils';
 import PositionValue from '../components/PositionValue';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -176,15 +175,6 @@ const DevicePage = () => {
               <Typography variant='subtitle1'>{'Command'}</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
-              <SelectField
-                value={savedId}
-                emptyValue={limitCommands ? null : 0}
-                emptyTitle={'New..'}
-                onChange={(e) => setSavedId(e.target.value)}
-                endpoint={`/api/commands/send?deviceId=${id}`}
-                titleGetter={(it) => it.description}
-                label={'sharedSavedCommand'}
-              />
               {!limitCommands && !savedId && (
                 <BaseCommandView deviceId={id} item={itemc} setItem={setItemc} />
               )}
@@ -192,7 +182,7 @@ const DevicePage = () => {
           </Accordion>
           <div className={classes.buttons}>
             <Button type='button' color='primary' variant='outlined' onClick={() => navigate(-1)}>
-              {'Cancel'}
+              Cancel
             </Button>
             <Button
               type='button'
@@ -201,7 +191,7 @@ const DevicePage = () => {
               onClick={handleSend}
               disabled={!validate()}
             >
-              {'Send'}
+              Send
             </Button>
           </div>
         </Container>
