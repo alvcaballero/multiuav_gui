@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { TextField, FormControlLabel, Checkbox } from '@mui/material';
 import SelectField from '../../common/components/SelectField';
@@ -21,7 +21,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
   }, [availableAttributes, item]);
 
   return (
-    <>
+    <Fragment key='sdf'>
       <SelectField
         value={item.type || ''}
         onChange={(e) => setItem({ ...item, type: e.target.value, attributes: {} })}
@@ -85,7 +85,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
           label={'commandSendSms'}
         />
       )}
-    </>
+    </Fragment>
   );
 };
 

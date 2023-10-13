@@ -558,20 +558,12 @@ async function standarCommand(uav_id, type, attributes) {
   console.log(type + ' uav_id' + uav_id);
   let uavname = data.get_device_ns(uav_id);
   let uavcategory = data.get_device_category(uav_id);
+  console.log(type + ' --' + uavname + '--' + uavcategory);
 
   if (!devices_msg[uavcategory]['services'].hasOwnProperty(type)) {
     console.log(type + ' to:' + uavname + ' dont have this service');
     return { state: 'error', msg: type + ' to:' + uavname + ' dont have this service' };
   }
-  console.log(
-    type +
-      ' --' +
-      uavname +
-      '--' +
-      uavcategory +
-      '--' +
-      devices_msg[uavcategory]['services'][type]['name']
-  );
 
   let standarmessage = new ROSLIB.Service({
     ros: ros,
@@ -611,133 +603,6 @@ async function standarCommand(uav_id, type, attributes) {
   });
 }
 
-async function loadmissionDevice(deviceId, mission) {
-  console.log('load mission device ' + deviceId);
-  let alldevices = data.state.devices;
-  let response = { state: 'error', msg: 'load mission error' };
-  if (Object.values(mission).length == 0) {
-    response = { state: 'info', msg: 'no mission' };
-  }
-  Object.keys(alldevices).forEach(async (device_id) => {
-    if (deviceId < 0 || deviceId == device_id) {
-      console.log('load mission to ' + device_id);
-      let attributes = loadMission(device_id, mission);
-      if (attributes) {
-        response = await standarCommand(device_id, 'configureMission', attributes);
-      }
-    }
-  });
-  return response;
-}
-
-function loadMission(uav_id, mission) {
-  console.log('  load  - mission' + uav_id);
-  let uavname = data.get_device_ns(uav_id);
-  let uavcategory = data.get_device_category(uav_id);
-  let cur_roster = [];
-  let mode_yaw = 0;
-  let mode_gimbal = 0;
-  let mode_trace = 0;
-  let idle_vel = 1.8;
-  let max_vel = 10;
-  let mode_landing = 0;
-  let response = null;
-  if (devices_msg[uavcategory]['services'].hasOwnProperty('configureMission')) {
-    cur_roster.push(uavname);
-    let wp_command = [];
-    let yaw_pos = [];
-    let speed_pos = [];
-    let gimbal_pos = [];
-    let action_matrix = [];
-    let param_matrix = [];
-
-    Object.values(mission).forEach((route) => {
-      console.log(route);
-      if (route['uav'] == uavname) {
-        console.log('route');
-        console.log(route);
-        idle_vel = route.attributes.hasOwnProperty('idle_vel')
-          ? route.attributes['idle_vel']
-          : idle_vel;
-        max_vel = route.attributes.hasOwnProperty('max_vel')
-          ? route.attributes['max_vel']
-          : max_vel;
-        mode_yaw = route.attributes.hasOwnProperty('mode_yaw')
-          ? route.attributes['mode_yaw']
-          : mode_yaw;
-        mode_gimbal = route.attributes.hasOwnProperty('mode_gimbal')
-          ? route.attributes['mode_gimbal']
-          : mode_gimbal;
-        mode_trace = route.attributes.hasOwnProperty('mode_trace')
-          ? route.attributes['mode_trace']
-          : mode_trace;
-        mode_landing = route.attributes.hasOwnProperty('mode_landing')
-          ? route.attributes['mode_landing']
-          : mode_landing;
-
-        Object.values(route['wp']).forEach((item) => {
-          let yaw, gimbal, speed;
-          let action_array = Array(10).fill(0);
-          let param_array = Array(10).fill(0);
-          let pos = new ROSLIB.Message({
-            latitude: item.pos[0],
-            longitude: item.pos[1],
-            altitude: item.pos[2],
-          });
-          yaw = item.hasOwnProperty('yaw') ? item.yaw : 0;
-          speed = item.hasOwnProperty('speed') ? item.speed : idle_vel;
-          gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
-          if (item.hasOwnProperty('action')) {
-            Object.keys(item.action).forEach((action_val, index, arr) => {
-              found = Object.values(devices_msg[uavcategory]['attributes']['mission_action']).find(
-                (element) => element.name == action_val
-              );
-              if (found) {
-                action_array[index] = Number(found.id);
-                param_array[index] = found.param ? Number(item.action[action_val]) : 0;
-              }
-            });
-          }
-          wp_command.push(pos);
-          gimbal_pos.push(gimbal);
-          yaw_pos.push(yaw);
-          speed_pos.push(speed);
-          action_matrix.push(action_array);
-          param_matrix.push(param_array);
-        });
-
-        let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
-        let speed_pos_msg = new ROSLIB.Message({ data: speed_pos });
-        let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
-        let action_matrix_msg = new ROSLIB.Message({
-          data: action_matrix.flat(),
-        });
-        let param_matrix_msg = new ROSLIB.Message({
-          data: param_matrix.flat(),
-        });
-
-        response = {
-          type: 'waypoint',
-          waypoint: wp_command,
-          radius: 0,
-          maxVel: max_vel,
-          idleVel: idle_vel,
-          yaw: yaw_pos_msg,
-          speed: speed_pos_msg,
-          gimbalPitch: gimbal_pos_msg,
-          yawMode: mode_yaw,
-          traceMode: mode_trace,
-          gimbalPitchMode: mode_gimbal,
-          finishAction: mode_landing,
-          commandList: action_matrix_msg,
-          commandParameter: param_matrix_msg,
-        };
-      }
-    });
-  }
-  return response;
-}
-
 async function commandMissionDevice(deviceId) {
   let r = true;
   let alldevices = data.state.devices;
@@ -751,6 +616,149 @@ async function commandMissionDevice(deviceId) {
       } else {
         response = await standarCommand(device_id, 'commandMission');
       }
+      if (deviceId < 0) {
+        data.addEvent({
+          type: response.state,
+          eventTime: getDatetime(),
+          deviceId: device_id,
+          attributes: { message: response.msg },
+        });
+      }
+    }
+  });
+  return response;
+}
+
+async function loadmissionDevice(deviceId, mission) {
+  console.log('load mission device ' + deviceId);
+  let alldevices = data.state.devices;
+  let response = { state: 'warning', msg: 'UAV no asing mission' };
+  if (Object.values(mission).length == 0) {
+    response = { state: 'info', msg: 'no mission' };
+  }
+  Object.keys(alldevices).forEach(async (device_id) => {
+    if (deviceId < 0 || deviceId == device_id) {
+      console.log('load mission to ' + device_id);
+      let uavcategory = data.get_device_category(uav_id);
+      if (devices_msg[uavcategory]['services'].hasOwnProperty('configureMission')) {
+        let attributes = loadMission(device_id, mission);
+        if (attributes) {
+          response = await standarCommand(device_id, 'configureMission', attributes);
+        } else {
+          response = { state: 'warning', msg: 'UAV no asing mission' };
+        }
+      } else {
+        response = { state: 'warning', msg: 'UAV service load mission' };
+      }
+      if (deviceId < 0) {
+        data.addEvent({
+          type: response.state,
+          eventTime: getDatetime(),
+          deviceId: device_id,
+          attributes: { message: response.msg },
+        });
+      }
+    }
+  });
+  return response;
+}
+
+function loadMission(uav_id, mission) {
+  console.log('  load  - mission' + uav_id);
+  let uavname = data.get_device_ns(uav_id);
+  let uavcategory = data.get_device_category(uav_id);
+  let mode_yaw = 0;
+  let mode_gimbal = 0;
+  let mode_trace = 0;
+  let idle_vel = 1.8;
+  let max_vel = 10;
+  let mode_landing = 0;
+  let response = null;
+  let wp_command = [];
+  let yaw_pos = [];
+  let speed_pos = [];
+  let gimbal_pos = [];
+  let action_matrix = [];
+  let param_matrix = [];
+
+  Object.values(mission).forEach((route) => {
+    if (route['uav'] == uavname) {
+      console.log('route');
+      console.log(route);
+      idle_vel = route.attributes.hasOwnProperty('idle_vel')
+        ? route.attributes['idle_vel']
+        : idle_vel;
+      max_vel = route.attributes.hasOwnProperty('max_vel') ? route.attributes['max_vel'] : max_vel;
+      mode_yaw = route.attributes.hasOwnProperty('mode_yaw')
+        ? route.attributes['mode_yaw']
+        : mode_yaw;
+      mode_gimbal = route.attributes.hasOwnProperty('mode_gimbal')
+        ? route.attributes['mode_gimbal']
+        : mode_gimbal;
+      mode_trace = route.attributes.hasOwnProperty('mode_trace')
+        ? route.attributes['mode_trace']
+        : mode_trace;
+      mode_landing = route.attributes.hasOwnProperty('mode_landing')
+        ? route.attributes['mode_landing']
+        : mode_landing;
+
+      Object.values(route['wp']).forEach((item) => {
+        let yaw, gimbal, speed;
+        let action_array = Array(10).fill(0);
+        let param_array = Array(10).fill(0);
+        let pos = new ROSLIB.Message({
+          latitude: item.pos[0],
+          longitude: item.pos[1],
+          altitude: item.pos[2],
+        });
+        yaw = item.hasOwnProperty('yaw') ? item.yaw : 0;
+        speed = item.hasOwnProperty('speed') ? item.speed : idle_vel;
+        gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
+        if (item.hasOwnProperty('action')) {
+          Object.keys(item.action).forEach((action_val, index, arr) => {
+            found = Object.values(devices_msg[uavcategory]['attributes']['mission_action']).find(
+              (element) => element.name == action_val
+            );
+            if (found) {
+              action_array[index] = Number(found.id);
+              param_array[index] = found.param ? Number(item.action[action_val]) : 0;
+            }
+          });
+        }
+        wp_command.push(pos);
+        gimbal_pos.push(gimbal);
+        yaw_pos.push(yaw);
+        speed_pos.push(speed);
+        action_matrix.push(action_array);
+        param_matrix.push(param_array);
+      });
+
+      let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
+      let speed_pos_msg = new ROSLIB.Message({ data: speed_pos });
+      let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
+      let action_matrix_msg = new ROSLIB.Message({
+        data: action_matrix.flat(),
+      });
+      let param_matrix_msg = new ROSLIB.Message({
+        data: param_matrix.flat(),
+      });
+
+      response = {
+        type: 'waypoint',
+        waypoint: wp_command,
+        radius: 0,
+        maxVel: max_vel,
+        idleVel: idle_vel,
+        yaw: yaw_pos_msg,
+        speed: speed_pos_msg,
+        gimbalPitch: gimbal_pos_msg,
+        yawMode: mode_yaw,
+        traceMode: mode_trace,
+        gimbalPitchMode: mode_gimbal,
+        finishAction: mode_landing,
+        commandList: action_matrix_msg,
+        commandParameter: param_matrix_msg,
+      };
     }
   });
   return response;
@@ -885,121 +893,14 @@ app.post('/api/sendTask', async function (req, res) {
   let myresponse = { response };
   return res.json(myresponse);
 });
-//app.post('/api/threat',async function(req,res){
-//  console.log('threat-post')
-//console.log(req.body.uav_ns)
-//  let myresponse = await threatUAV(req.body.uav_ns);
-//  return res.json(myresponse);
-//});
+
 app.get('/api/commands/send', async function (req, res) {
   let deviceid = req.query.deviceId;
 
   console.log('devices acction ' + deviceid);
   return res.json([]);
 });
-app.post('/api/commands/send', async function (req, res) {
-  console.log('POST API command send');
-  console.log(req.body);
-  //here get id and description, where description is string like threat,1 or sincronize, landing,1
-  let response = {};
-  if (req.body.deviceId >= 0) {
-    response = {
-      state: 'error',
-      msg: 'Command to:' + data.get_device_ns(req.body.deviceId) + ' no exist',
-    };
-  }
 
-  if (req.body.type == 'loadMission') {
-    response = await loadmissionDevice(req.body.deviceId, req.body.mission);
-  }
-  if (req.body.type == 'commandMission') {
-    response = await commandMissionDevice(req.body.deviceId);
-  }
-  if (req.body.type == 'threat') {
-    response = await standarCommand(req.body.deviceId, 'threat'); //threatUAV(req.body.deviceId);
-  }
-  if (req.body.type == 'SincroniseFiles') {
-    response = await standarCommand(req.body.deviceId, 'sincronize');
-  }
-  if (req.body.type == 'ResumeMission') {
-    response = await standarCommand(req.body.deviceId, 'resumemission');
-  }
-  if (req.body.type == 'StopMission') {
-    response = await standarCommand(req.body.deviceId, 'stopMission');
-  }
-  if (req.body.type == 'Pausemission') {
-    response = await standarCommand(req.body.deviceId, 'pausemission');
-  }
-  if (req.body.type == 'Gimbal') {
-    response = await GimbalUAV(req.body.deviceId, req.body.attributes);
-  }
-  if (req.body.type == 'GimbalPitch') {
-    response = await GimbalUAV(req.body.deviceId, req.body.attributes);
-  }
-  if (req.body.type == 'ResetGimbal') {
-    response = await GimbalUAV(req.body.deviceId, { reset: true });
-  }
-  if (req.body.type == 'setupcamera') {
-    response = await standarCommand(req.body.deviceId, 'setupcamera', req.body.attributes);
-  }
-  data.addEvent({
-    type: response.state,
-    eventTime: getDatetime(),
-    deviceId: req.body.deviceId,
-    attributes: { message: response.msg },
-  });
-  console.log(response);
-  return res.json(response);
-});
-function GimbalUAV(uav_id, attributes) {
-  let uav_ns = data.get_device_ns(uav_id);
-  let uav_category = data.get_device_category(uav_id);
-  let serviceGibal;
-  console.log(attributes);
-  console.log(
-    'Gimbal ' +
-      uav_ns +
-      '--' +
-      uav_category +
-      '--' +
-      devices_msg[uav_category]['services']['Gimbal']['name']
-  );
-  let statuscommand = { state: 'error', msg: 'Gimbal ' + uav_ns + ' error!' };
-  if (devices_msg[uav_category]['services'].hasOwnProperty('Gimbal')) {
-    console.log('entro');
-    serviceGibal = new ROSLIB.Service({
-      ros: ros,
-      name: uav_ns + devices_msg[uav_category].services.Gimbal.name,
-      serviceType: devices_msg[uav_category].services.Gimbal.serviceType,
-    });
-
-    let request = new ROSLIB.ServiceRequest({
-      header: { seq: 0, stamp: { secs: 0, nsecs: 0 }, frame_id: '' },
-      is_reset: attributes.reset ? true : false,
-      payload_index: 0,
-      rotationMode: 0, // rotation cooradiration 0 = execute angle command based on the previously set reference point,1 = execute angle command based on the current point
-      pitch: attributes.pitch ? attributes.pitch : 0.0,
-      roll: attributes.roll ? attributes.roll : 0.0,
-      yaw: attributes.yaw ? attributes.yaw : 0.0,
-      time: 0.0,
-    });
-    console.log(request);
-
-    serviceGibal.callService(request, function (result) {
-      console.log('resultado gimbal');
-      console.log(result);
-      console.log(result.result);
-      if (result.result == true) {
-        statuscommand = { state: 'success', msg: 'Gimbal:' + uav_ns + ' ok' };
-      } else {
-        statuscommand = { state: 'error', msg: 'Gimbal:' + uav_ns + '- error!' };
-      }
-    });
-  } else {
-    statuscommand = { state: 'error', msg: 'Gimbal:' + uav_ns + '--error!' };
-  }
-  return statuscommand;
-}
 app.get('/api/commands/types', async function (req, res) {
   let deviceid = req.query.deviceId;
   let response = [
@@ -1018,6 +919,78 @@ app.get('/api/commands/types', async function (req, res) {
   console.log('devices acction ' + deviceid);
   return res.json(response);
 });
+app.post('/api/commands/send', async function (req, res) {
+  console.log('POST API command send');
+  console.log(req.body);
+  //here get id and description, where description is string like threat,1 or sincronize, landing,1
+  let response = { state: 'info', msg: 'Command no found' };
+  if (req.body.deviceId >= 0) {
+    response = {
+      state: 'error',
+      msg: 'Command to:' + data.get_device_ns(req.body.deviceId) + ' no exist',
+    };
+  }
+
+  if (req.body.type == 'loadMission') {
+    response = await loadmissionDevice(req.body.deviceId, req.body.mission);
+  }
+  if (req.body.type == 'commandMission') {
+    response = await commandMissionDevice(req.body.deviceId);
+  }
+  if (req.body.deviceId >= 0) {
+    if (req.body.type == 'threat') {
+      response = await standarCommand(req.body.deviceId, 'threat'); //threatUAV(req.body.deviceId);
+    }
+    if (req.body.type == 'SincroniseFiles') {
+      response = await standarCommand(req.body.deviceId, 'sincronize');
+    }
+    if (req.body.type == 'ResumeMission') {
+      response = await standarCommand(req.body.deviceId, 'resumemission');
+    }
+    if (req.body.type == 'StopMission') {
+      response = await standarCommand(req.body.deviceId, 'stopMission');
+    }
+    if (req.body.type == 'Pausemission') {
+      response = await standarCommand(req.body.deviceId, 'pausemission');
+    }
+    if (req.body.type == 'Gimbal') {
+      response = await GimbalUAV(req.body.deviceId, req.body.attributes);
+    }
+    if (req.body.type == 'GimbalPitch') {
+      response = await GimbalUAV(req.body.deviceId, req.body.attributes);
+    }
+    if (req.body.type == 'ResetGimbal') {
+      response = await GimbalUAV(req.body.deviceId, { reset: true });
+    }
+    if (req.body.type == 'setupcamera') {
+      response = await standarCommand(req.body.deviceId, 'setupcamera', req.body.attributes);
+    }
+
+    data.addEvent({
+      type: response.state,
+      eventTime: getDatetime(),
+      deviceId: req.body.deviceId,
+      attributes: { message: response.msg },
+    });
+  }
+
+  console.log(response);
+  return res.json(response);
+});
+async function GimbalUAV(uav_id, attributes) {
+  let statuscommand = await standarCommand(uav_id, 'Gimbal', {
+    header: { seq: 0, stamp: { secs: 0, nsecs: 0 }, frame_id: '' },
+    is_reset: attributes.reset ? true : false,
+    payload_index: 0,
+    rotationMode: 0, // rotation cooradiration 0 = execute angle command based on the previously set reference point,1 = execute angle command based on the current point
+    pitch: attributes.pitch ? attributes.pitch : 0.0,
+    roll: attributes.roll ? attributes.roll : 0.0,
+    yaw: attributes.yaw ? attributes.yaw : 0.0,
+    time: 0.0,
+  });
+  return statuscommand;
+}
+
 app.post('/api/disconectdevice', async function (req, res) {
   console.log('loadmission-post');
   //console.log(req.body.uav_ns)
