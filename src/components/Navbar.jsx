@@ -301,7 +301,12 @@ export const Navbar = ({ SetAddUAVOpen }) => {
             </div>
           </div>
           <div className='dropdown'>
-            <button className='dropbtn'>
+            <button
+              className='dropbtn'
+              onClick={() => {
+                navigate('/events');
+              }}
+            >
               Report
               <i className='fa fa-caret-down'></i>
             </button>

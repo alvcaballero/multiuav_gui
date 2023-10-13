@@ -109,9 +109,9 @@ export const RosControl = ({ children, notification }) => {
 
   const serverloadmission = async () => {
     try {
-      const response = await fetch('/api/loadmission', {
+      const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({ mission: missions['route'] }),
+        body: JSON.stringify({ deviceId: -1, type: 'loadMission', mission: missions['route'] }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -134,9 +134,9 @@ export const RosControl = ({ children, notification }) => {
     //event.preventDefault();
     console.log('command mission ');
     try {
-      const response = await fetch('/api/commandmission', {
+      const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({}),
+        body: JSON.stringify({ deviceId: -1, type: 'commandMission' }),
         headers: {
           'Content-Type': 'application/json',
         },
