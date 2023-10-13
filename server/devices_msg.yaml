@@ -153,7 +153,7 @@ dji_M210_melodic:
       name: '/dji_control/send_bags'
       serviceType: 'std_srvs/Bool'
     setupcamera:
-      name: 'setup_camera_stream'
+      name: '/setup_camera_stream'
       serviceType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'
@@ -281,7 +281,7 @@ dji_M300:
       name: '/dji_control/send_bags'
       serviceType: 'std_srvs/Bool'
     setupcamera:
-      name: 'setup_camera_stream'
+      name: '/setup_camera_stream'
       serviceType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'

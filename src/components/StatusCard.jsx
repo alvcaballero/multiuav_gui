@@ -148,31 +148,6 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
       console.log('Error2:' + error);
     }
   };
-  const servercommandmission = async (uav_id, msg) => {
-    //event.preventDefault();
-    console.log('command mission ' + uav_id);
-    try {
-      const response = await fetch(`/api/commandmission/${uav_id}`, {
-        method: 'POST',
-        body: JSON.stringify({ uav_id: uav_id }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.ok) {
-        let myresponse = await response.json();
-        if (myresponse.state === 'connect') {
-          notification('success', myresponse.msg);
-        }
-        if (myresponse.state === 'error') {
-          notification('danger', myresponse.msg);
-        }
-        console.log(myresponse);
-      } else {
-        throw Error(await response.text());
-      }
-    } catch (error) {}
-  };
 
   const handleRemove = async (removed) => {
     if (removed) {
@@ -304,7 +279,10 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
               >
                 <ReplayIcon />
               </IconButton>
-              <IconButton onClick={() => servercommandmission(device.id)} disabled={disableActions}>
+              <IconButton
+                onClick={() => serverCommand(device.id, 'commandMission')}
+                disabled={disableActions}
+              >
                 <PublishIcon />
               </IconButton>
               <IconButton

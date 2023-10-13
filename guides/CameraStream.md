@@ -73,7 +73,7 @@ rosrun simple_vs gstreamer-ros.py
 UAV_4
 
 ```
-rosservice call /uav_4/setup_camera_stream "{cameraType: 1, start: 1}"
+rosservice call /uav_15/setup_camera_stream "{cameraType: 1, start: 1}"
 roslaunch ros_rtsp rtsp_streams.launch
 roslaunch simple_vs video_resize.launch
 ```
