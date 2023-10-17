@@ -163,6 +163,7 @@ const MainPage = () => {
           }}
         >
           <MapView>
+            <MapMarkers markers={markers} />
             <MapMissions />
 
             <MapPositions
@@ -172,7 +173,6 @@ const MainPage = () => {
               showStatus
             />
             <MapSelectedDevice />
-            <MapMarkers markers={markers} />
           </MapView>
         </div>
 

@@ -991,13 +991,6 @@ async function GimbalUAV(uav_id, attributes) {
   return statuscommand;
 }
 
-app.post('/api/disconectdevice', async function (req, res) {
-  console.log('loadmission-post');
-  //console.log(req.body.uav_ns)
-  let myresponse = await disConnectAddUav(req.body.uav_ns);
-  return res.json(myresponse);
-});
-
 app.post('/api/rosConnect', async function (req, res) {
   console.log('rosconect');
   rosConnect();
