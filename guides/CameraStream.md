@@ -56,8 +56,6 @@ and after set up the camera with the command
 ```
 rosservice call /uav_2/setup_camera_stream "cameraType: 0 start: 1"
 rosservice call /uav_2/setup_camera_stream "{cameraType: 0, start: 1}"
-
-
 ```
 
 UAV_2 -M210

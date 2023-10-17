@@ -109,7 +109,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               markers.push({
                 latitude: Number(y[1]),
                 longitude: Number(y[0]),
-                image: 'item',
+                image: 'powerTower',
               });
             }
           });
