@@ -60,7 +60,7 @@ rosservice call /uav_2/setup_camera_stream "{cameraType: 0, start: 1}"
 
 ```
 
-UAV_2
+UAV_2 -M210
 
 ```
 docker run --rm -it --network=host bluenviron/mediamtx:latest
@@ -70,7 +70,15 @@ rosrun simple_vs gstreamer-ros.py
 
 ```
 
-UAV_4
+UAV_3 - PX4 -Vtool
+
+```
+
+docker run --rm -it --network=host  aler9/rtsp-simple-server
+gst-launch-1.0 v4l2src device=/dev/video0 ! video/x-raw,width=640,height=480 ! videoconvert ! x264enc bframes=0 tune=zerolatency bitrate=500 speed-preset=superfast ! h264parse  ! rtspclientsink location=rtsp://0.0.0.0:8554/video0 rtpjpegpay name=pj
+```
+
+UAV_4 -M300
 
 ```
 rosservice call /uav_15/setup_camera_stream "{cameraType: 1, start: 1}"

@@ -8,7 +8,7 @@ const MapMarkers = ({ markers, showTitles }) => {
 
   const theme = useTheme();
   const desktop = true;
-  const iconScale = 0.5;
+  const iconScale = 0.4;
 
   useEffect(() => {
     map.addSource(id, {

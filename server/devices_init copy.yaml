@@ -36,3 +36,58 @@ init:
     camera:
       - type: "Webrtc"
         source: "fpv"
+#############
+
+init:
+  - id: '0'
+    name: 'uav_99'
+    category: 'px4'
+    ip: '10.42.0.2'
+    camera: []
+  - id: '1'
+    name: 'uav_2'
+    category: 'dji_M210_noetic'
+    ip: '10.42.0.43'
+    camera:
+      - type: 'WebRTC'
+        source: 'main'
+  - id: '2'
+    name: 'uav_14'
+    category: 'dji_M300'
+    ip: '10.42.0.44'
+    camera:
+      - type: 'WebRTC'
+        source: 'main'
+  - id: '3'
+    name: 'uav_15'
+    category: 'dji_M300'
+    ip: '10.42.0.45'
+    camera:
+      - type: 'WebRTC'
+        source: 'main'
+  - id: '4'
+    name: 'uav_1'
+    category: 'dji_M210_melodic'
+    ip: '10.42.0.99'
+    camera: []
+  - id: '5'
+    name: 'uav_3'
+    category: 'px4'
+    ip: '10.42.0.41'
+    camera:
+      - type: 'Webrtc'
+        source: 'fpv'
+  - id: '6'
+    name: 'uav_100'
+    category: 'catec'
+    ip: '10.42.0.100'
+    camera:
+      - type: 'WebRTC_env'
+        source: 'main'
+      - type: 'WebRTC_env'
+        source: 'main'
+  - id: '7'
+    name: 'uav_101'
+    category: 'fuvex'
+    ip: '10.42.0.101'
+    camera: []

@@ -19,7 +19,7 @@ dji_M210_noetic:
       name: '/dji_osdk_ros/battery_state'
       messageType: 'sensor_msgs/BatteryState'
     state_machine:
-      name: 'muav_sm/uavstate'
+      name: '/muav_sm/uavstate'
       messageType: 'muav_state_machine/UAVState'
     camera:
       name: '/video_stream_compress'
@@ -134,7 +134,7 @@ dji_M210_melodic:
       name: '/dji_osdk_ros/battery_state'
       messageType: 'aerialcore_common/BatteryState_melodic'
     state_machine:
-      name: 'muav_sm/uavstate'
+      name: '/muav_sm/uavstate'
       messageType: 'muav_state_machine/UAVState'
     camera:
       name: '/video_stream_compress'
@@ -253,7 +253,7 @@ dji_M300:
       name: '/dji_osdk_ros/battery_state'
       messageType: 'sensor_msgs/BatteryState'
     state_machine:
-      name: 'muav_sm/uavstate'
+      name: '/muav_sm/uavstate'
       messageType: 'muav_state_machine/UAVState'
     camera:
       name: '/video_stream_compress'
@@ -382,7 +382,7 @@ px4:
       name: '/mavros/battery'
       messageType: 'aerialcore_common/BatteryState'
     state_machine:
-      name: 'muav_sm/uavstate'
+      name: '/muav_sm/uavstate'
       messageType: 'muav_state_machine/UAVState'
     camera:
       name: '/video_stream_compress'

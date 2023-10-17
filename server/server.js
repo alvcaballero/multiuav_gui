@@ -639,7 +639,7 @@ async function loadmissionDevice(deviceId, mission) {
   Object.keys(alldevices).forEach(async (device_id) => {
     if (deviceId < 0 || deviceId == device_id) {
       console.log('load mission to ' + device_id);
-      let uavcategory = data.get_device_category(uav_id);
+      let uavcategory = data.get_device_category(device_id);
       if (devices_msg[uavcategory]['services'].hasOwnProperty('configureMission')) {
         let attributes = loadMission(device_id, mission);
         if (attributes) {
