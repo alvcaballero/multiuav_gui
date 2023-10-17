@@ -1,0 +1,180 @@
+### Get devices 
+GET http://localhost:4000/api/devices
+
+### Get positions 
+GET http://localhost:4000/api/positions
+
+### Get position
+GET http://localhost:4000/api/positions?id=1
+
+### Add Devices
+POST http://localhost:4000/api/devices
+Content-Type: application/json
+
+{
+    "name": "uav_757",
+    "category": "dji_M300",
+    "ip": "10.42.0.44",
+    "camera":[
+        {
+            "type": "WebRTC",
+            "source": "main"
+        }
+    ]
+}
+
+### delete a device
+
+DELETE http://localhost:4000/api/devices/7
+
+### update  a device 
+PATCH http://localhost:4000/api/device/2
+Content-Type: application/json
+
+{
+  "ip": "10.42.0.44"
+}
+
+### Devices type
+GET http://localhost:4000/api/devices/type
+
+### Atributes 
+GET http://localhost:4000/api/mission/atributes/dji_M210_noetic
+
+### Atributes
+GET http://localhost:4000/api/mission/atributesparam/dji_M210_noetic/mode_yaw
+
+### Actions 
+
+GET http://localhost:4000/api/mission/actions/dji_M210_noetic
+
+### Sendtask
+POST http://localhost:4000/api/sendTask
+Content-Type: application/json
+
+{
+  "misision_id": 1234,
+  "objectivo": 0,
+  "loc": {
+    "tramo0": [
+      {
+        "lat": 37.121203,
+        "lon": -6.492668
+      },
+      {
+        "lat": 37.116616,
+        "lon": -6.484771
+      },
+      {
+        "lat": 37.107177,
+        "lon": -6.479203
+      }
+    ],
+    "tramo1": [
+      {
+        "lat": 37.1211,
+        "lon": -6.495395
+      },
+      {
+        "lat": 37.119171,
+        "lon": -6.496007
+      }
+    ]
+  },
+  "meteo": [
+    {
+      "lat": 37.01455061559604,
+      "lon": -6.5625427378086485,
+      "wind_vel": 12,
+      "wind_dir": 360,
+      "temp": 38,
+      "humidity": 90,
+      "pres_atm": 5
+    },
+    {
+      "lat": 37.01455061559604,
+      "lon": -6.5625427378086485,
+      "wind_vel": 12,
+      "wind_dir": 360,
+      "temp": 38,
+      "humidity": 90,
+      "pres_atm": 5
+    }
+  ]
+}
+
+### Commandos 
+
+GET http://localhost:4000/api/commands/send
+
+
+### Commands types
+
+GET http://localhost:4000/api/commands/types
+
+### send command
+
+POST http://localhost:4000/api/commands/send
+Content-Type: application/json
+
+{
+    "deviceId": 1, 
+    "type": "threat"
+}
+
+### Ros
+
+POST http://localhost:4000/api/rosConnect
+
+###
+
+GET http://localhost:4000/api/rosConnect
+
+###
+
+GET http://localhost:4000/api/topics
+
+
+###
+
+GET http://localhost:4000/api/test.png
+
+
+### Elevation 
+
+GET http://localhost:4000/api/map/elevation
+
+
+### Elevation 
+
+POST http://localhost:4000/api/map/elevation
+Content-Type: application/json
+
+{
+  "routes":[
+      [
+      [37.410266, -6.002490,2],
+      [37.410572, -6.002949,3],
+      [37.411010, -6.003243,3]
+      ],
+      [
+      [37.410446, -6.002205,12],
+      [37.410241, -6.002221,12],
+      [37.410302, -6.002534,12]
+      ]
+    ]
+}
+
+### Images
+GET http://localhost:4000/api/placeholder
+
+
+### Images
+GET http://localhost:4000/api/placeholder
+
+
+### Image ros
+GET http://localhost:4000/api/media/:deviceid
+
+### Image Ros
+GET http://localhost:4000/api/media1/:deviceid
