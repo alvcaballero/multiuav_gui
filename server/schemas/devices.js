@@ -13,10 +13,12 @@ const deviceSchema = z.object({
     }
   ),
   ip: z.string().ip({ version: 'v4', message: 'Invalid IP address' }),
-  camera: z.array(),
+  camera: z.array(z.object({ type: z.string(), source: z.string() })),
 });
 
 export function validateDevice(input) {
+  console.log('check validate device');
+  console.log(input);
   return deviceSchema.safeParse(input);
 }
 

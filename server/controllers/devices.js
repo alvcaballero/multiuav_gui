@@ -15,6 +15,8 @@ export class devicesController {
   }
 
   static async create(req, res) {
+    console.log('create new device');
+    console.log(req.body);
     const result = validateDevice(req.body);
 
     if (!result.success) {
@@ -22,13 +24,14 @@ export class devicesController {
       return res.status(400).json({ error: JSON.parse(result.error.message) });
     }
 
-    const newDevice = await DevicesModel.create({ input: result.data });
+    const newDevice = await DevicesModel.create(result.data);
 
     res.status(201).json(newDevice);
   }
 
   static async delete(req, res) {
     const { id } = req.params;
+    console.log(req.params);
 
     const result = await DevicesModel.delete({ id });
 
@@ -54,6 +57,7 @@ export class devicesController {
   }
 
   static async GetDeviceCategory(req, res) {
+    console.log('device Category');
     return await DevicesModel.GetdevicesCategory();
   }
 }
