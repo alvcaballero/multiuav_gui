@@ -138,7 +138,7 @@ export class DevicesModel {
       const topiclist = await getTopics2();
       console.log('Conectando Uav');
       console.log('name' + uav_ns + '  type' + uav_type);
-      console.log(topiclist);
+      //console.log(topiclist);
 
       let find_device = false,
         repeat_device = false;
@@ -148,7 +148,7 @@ export class DevicesModel {
       find_device = true;
       if (uav_list.length > 0) {
         uav_list.forEach((element) => {
-          console.log(element);
+          //console.log(element);
           if (element) {
             repeat_device = element.name == uav_ns ? true : false;
           }
@@ -169,7 +169,7 @@ export class DevicesModel {
 
       let cur_uav_idx = String(Object.values(devices).length);
 
-      updatedevice({
+      this.updatedevice({
         id: cur_uav_idx,
         name: device.name,
         category: device.category,
@@ -469,8 +469,9 @@ export class DevicesModel {
     return device;
   }
 
-  static async delete({ uav_ns }) {
-    let device_del = devices[uav_ns];
+  static async delete({ id }) {
+    console.log(id);
+    let device_del = devices[id];
     if (device_del.hasOwnProperty('camera')) {
       for (let i = 0; i < device_del.camera.length; i = i + 1) {
         if (device_del.camera[i]['type'] == 'WebRTC') {
@@ -484,12 +485,10 @@ export class DevicesModel {
       }
     }
 
-    this.removedevice({ id: uav_ns });
+    this.removedevice({ id: id });
 
-    let Key_listener = Object.keys(uav_list[uav_ns]).filter((element) =>
-      element.includes('listener')
-    );
-    let cur_uav_idx = uav_ns; //uav_list.length-1;
+    let Key_listener = Object.keys(uav_list[id]).filter((element) => element.includes('listener'));
+    let cur_uav_idx = id; //uav_list.length-1;
     console.log(Key_listener);
     if (uav_list.length != 0) {
       Key_listener.forEach((element) => {
@@ -539,8 +538,8 @@ export class DevicesModel {
     return devices[uav_id].category;
   }
 
-  static removedevice(payload) {
-    delete devices[payload.id];
+  static removedevice({ id }) {
+    delete devices[id];
     console.log(devices);
   }
   static GetdevicesCategory() {
