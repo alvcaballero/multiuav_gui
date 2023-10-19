@@ -1,6 +1,59 @@
+import  { DevicesModel, ros } from '../models/devices.js';
+import { eventsModel } from '../models/events.js';
+import { readYAML,getDatetime } from '../utils.js';
+import ROSLIB from 'roslib';
+
+const devices_msg = readYAML('./devices_msg.yaml');
+
 export class commandsModel {
-  static getCommandTypes({ id }) {
-    let deviceid = id;
+
+  static async sendTask ({loc}) {
+    console.log('command-sendtask');
+    let uav = 'uav_1';
+    //let home = [37.193736, -6.702947, 50];
+    let home = [37.134092, -6.472401, 50];
+    let reqRoute = Object.values(loc);
+    let mission = {
+      version: '3',
+      route: [{ name: 'datetime', uav: 'uav_1', wp: [] }],
+      status: 'OK',
+    };
+    let response = { uav: 'uav_1', points: [], status: 'OK' };
+    response.points.push(home);
+    for (let i = 0; i < reqRoute.length; i = i + 1) {
+      let wp_len = reqRoute[i].length;
+      for (let j = 0; j < wp_len; j = j + 1) {
+        if (j == 0) {
+          response.points.push([reqRoute[i][j]['lat'], reqRoute[i][j]['lon'], 50]);
+        }
+        response.points.push([reqRoute[i][j]['lat'], reqRoute[i][j]['lon'], 30]);
+        if (j == +wp_len + -1) {
+          response.points.push([reqRoute[i][j]['lat'], reqRoute[i][j]['lon'], 50]);
+        }
+      }
+    }
+  
+    response.points.push(home);
+    mission.route[0]['wp'] = response.points.map((element) => {
+      return { pos: element };
+    });
+    console.log(mission.route[0]['wp'][0]['pos']);
+    //wss.clients.forEach(function each(ws) {
+    //  ws.send(JSON.stringify({ mission: { name: 'name', mission: mission } }));
+    //});
+    let myresponse = { response };
+    return myresponse;
+  }
+
+  static getSaveCommands(deviceId){
+    let deviceid = deviceId;
+  
+    console.log('devices acction ' + deviceid);
+    return [];
+  }
+
+  static getCommandTypes(deviceid) {
+
     let response = [
       { type: 'custom' },
       { type: 'ResumeMission' },
@@ -15,57 +68,57 @@ export class commandsModel {
       { type: 'commandMission' },
     ];
     console.log('devices acction ' + deviceid);
-    return res.json(response);
+    return response;
   }
 
-  static async sendCommand(deviceId, type, attributes) {
+  static async sendCommand({deviceId, type, attributes}) {
     console.log('POST API command send');
-    console.log(req.body);
+    console.log({deviceId, type, attributes});
     //here get id and description, where description is string like threat,1 or sincronize, landing,1
     let response = { state: 'info', msg: 'Command no found' };
     if (deviceId >= 0) {
       response = {
         state: 'error',
-        msg: 'Command to:' + data.get_device_ns(deviceId) + ' no exist',
+        msg: 'Command to:' + DevicesModel.get_device_ns(deviceId) + ' no exist',
       };
     }
 
     if (type == 'loadMission') {
-      response = await loadmissionDevice(deviceId, attributes);
+      response = await this.loadmissionDevice(deviceId, attributes);
     }
     if (type == 'commandMission') {
-      response = await commandMissionDevice(deviceId);
+      response = await this.commandMissionDevice(deviceId);
     }
     if (deviceId >= 0) {
       if (type == 'threat') {
-        response = await standarCommand(deviceId, 'threat'); //threatUAV(deviceId);
+        response = await this.standarCommand(deviceId, 'threat'); //threatUAV(deviceId);
       }
       if (type == 'SincroniseFiles') {
-        response = await standarCommand(deviceId, 'sincronize');
+        response = await this.standarCommand(deviceId, 'sincronize');
       }
       if (type == 'ResumeMission') {
-        response = await standarCommand(deviceId, 'resumemission');
+        response = await this.standarCommand(deviceId, 'resumemission');
       }
       if (type == 'StopMission') {
-        response = await standarCommand(deviceId, 'stopMission');
+        response = await this.standarCommand(deviceId, 'stopMission');
       }
       if (type == 'Pausemission') {
-        response = await standarCommand(deviceId, 'pausemission');
+        response = await this.standarCommand(deviceId, 'pausemission');
       }
       if (type == 'Gimbal') {
-        response = await GimbalUAV(deviceId, attributes);
+        response = await this.GimbalUAV(deviceId, attributes);
       }
       if (type == 'GimbalPitch') {
-        response = await GimbalUAV(deviceId, attributes);
+        response = await this.GimbalUAV(deviceId, attributes);
       }
       if (type == 'ResetGimbal') {
-        response = await GimbalUAV(deviceId, { reset: true });
+        response = await this.GimbalUAV(deviceId, { reset: true });
       }
       if (type == 'setupcamera') {
-        response = await standarCommand(deviceId, 'setupcamera', attributes);
+        response = await this.standarCommand(deviceId, 'setupcamera', attributes);
       }
 
-      data.addEvent({
+      eventsModel.addEvent({
         type: response.state,
         eventTime: getDatetime(),
         deviceId: deviceId,
@@ -74,7 +127,7 @@ export class commandsModel {
     }
 
     console.log(response);
-    return res.json(response);
+    return response;
   }
 
   static async GimbalUAV(uav_id, attributes) {
@@ -92,8 +145,8 @@ export class commandsModel {
   }
   static async standarCommand(uav_id, type, attributes) {
     console.log(type + ' uav_id' + uav_id);
-    let uavname = data.get_device_ns(uav_id);
-    let uavcategory = data.get_device_category(uav_id);
+    let uavname = DevicesModel.get_device_ns(uav_id);
+    let uavcategory = DevicesModel.get_device_category(uav_id);
     console.log(type + ' --' + uavname + '--' + uavcategory);
 
     if (!devices_msg[uavcategory]['services'].hasOwnProperty(type)) {
@@ -141,7 +194,7 @@ export class commandsModel {
 
   static async loadmissionDevice(deviceId, mission) {
     console.log('load mission device ' + deviceId);
-    let alldevices = data.state.devices;
+    let alldevices = DevicesModel.getAll;
     let response = { state: 'warning', msg: 'UAV no asing mission' };
     if (Object.values(mission).length == 0) {
       response = { state: 'info', msg: 'no mission' };
@@ -149,7 +202,7 @@ export class commandsModel {
     Object.keys(alldevices).forEach(async (device_id) => {
       if (deviceId < 0 || deviceId == device_id) {
         console.log('load mission to ' + device_id);
-        let uavcategory = data.get_device_category(device_id);
+        let uavcategory = DevicesModel.get_device_category(device_id);
         if (devices_msg[uavcategory]['services'].hasOwnProperty('configureMission')) {
           let attributes = loadMission(device_id, mission);
           if (attributes) {
@@ -161,7 +214,7 @@ export class commandsModel {
           response = { state: 'warning', msg: 'UAV service load mission' };
         }
         if (deviceId < 0) {
-          data.addEvent({
+          eventsModel.addEvent({
             type: response.state,
             eventTime: getDatetime(),
             deviceId: device_id,
@@ -175,11 +228,11 @@ export class commandsModel {
 
   static async commandMissionDevice(deviceId) {
     let r = true;
-    let alldevices = data.state.devices;
+    let alldevices = DevicesModel.getAll;
     let response = { state: 'error', msg: 'Mission canceled' };
     Object.keys(alldevices).forEach(async (device_id) => {
       if (deviceId < 0 || deviceId == device_id) {
-        let uavcategory = data.get_device_category(device_id);
+        let uavcategory = DevicesModel.get_device_category(device_id);
         console.log('command mission to ' + device_id);
         if (uavcategory !== 'dji_M300') {
           response = await standarCommand(device_id, 'commandMission', { data: true });
@@ -187,7 +240,7 @@ export class commandsModel {
           response = await standarCommand(device_id, 'commandMission');
         }
         if (deviceId < 0) {
-          data.addEvent({
+          eventsModel.addEvent({
             type: response.state,
             eventTime: getDatetime(),
             deviceId: device_id,

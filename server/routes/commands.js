@@ -1,14 +1,13 @@
 import { Router } from 'express';
 
-import { commandController } from '../controllers/devices.js';
+import { commandsController } from '../controllers/commands.js';
 
-export const devicesRouter = Router();
+export const commandsRouter = Router();
 
-devicesRouter.get('/', devicesController.getAll);
-devicesRouter.post('/', devicesController.create);
+commandsRouter.get('/types', commandsController.getAvalaibleCommands);
+commandsRouter.get('/send', commandsController.getSaveCommands);
+commandsRouter.post('/send', commandsController.sendCommand);
+commandsRouter.post('/sendTask', commandsController.sendTask);
 
-devicesRouter.get('/:id', devicesController.getById);
-devicesRouter.delete('/:id', devicesController.delete);
-devicesRouter.patch('/:id');
 
-devicesRouter.get('/type', devicesController.GetDeviceCategory);
+

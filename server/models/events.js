@@ -1,8 +1,13 @@
 const events = {};
+import { positionsModel } from '../models/positions.js';
+var eventsCount = 0;
 
-export class eventModel {
+export class eventsModel {
+  static getall(){
+    return events
+  }
   static addEvent(payload) {
-    let eventPosition = state.positions[payload.deviceId];
+    let eventPosition = positionsModel.getDevice(payload.deviceId);
     let eventPosition2 = [0, 0, 0];
     if (eventPosition) {
       eventPosition2 = [eventPosition.latitude, eventPosition.longitude, eventPosition.altitude];

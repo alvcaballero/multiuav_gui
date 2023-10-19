@@ -1,4 +1,10 @@
-devicesRouter.get('/api/positions', (req, res) => {
-  console.log('positionsget');
-  res.json(Object.values(data.state.positions));
-});
+import { Router } from 'express';
+
+import { positionsController } from '../controllers/positions.js';
+
+export const positionsRouter = Router();
+
+positionsRouter.get('/', positionsController.getAll);
+
+
+

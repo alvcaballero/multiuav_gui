@@ -1,9 +1,9 @@
-import { positionsModel } from '../models/positions.js';
+import { eventsModel } from '../models/events.js';
 
-export class positionsController {
+export class eventsController {
   static async getAll(req, res) {
     console.log('controller get all');
-    const positions = await positionsModel.getAll();
+    const positions = await eventsModel.getAll();
     res.json(positions);
   }
 

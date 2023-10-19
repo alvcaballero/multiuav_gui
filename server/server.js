@@ -10,24 +10,35 @@ import express, { json } from 'express';
 import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
 import { devicesRouter } from './routes/devices.js';
+import { categoryRouter } from './routes/category.js';
+import { positionsRouter } from './routes/positions.js';
+import { eventsRouter } from './routes/events.js';
+import { commandsRouter } from './routes/commands.js';
+import { rosRouter } from './routes/ros.js';
+import { websocketController }from './controllers/websocket.js'
+
 
 import WebSocket, { WebSocketServer } from 'ws';
+
+
 
 const app = express();
 const port = 4000;
 app.set('port', port);
 app.use(corsMiddleware());
 app.use(json());
+
 app.use(express.static(path.resolve(__dirname, '../build')));
+app.use('/api/devices', devicesRouter);
+app.use('/api/category', categoryRouter);
+app.use('/api/positions', positionsRouter);
+//app.use('/api/events', eventsRouter);
+app.use('/api/commands', commandsRouter);
+//app.use('/api/ros', rosRouter);
 
 const server = createServer(app);
 
-const wss = new WebSocketServer({
-  path: '/api/socket',
-  server: server,
-});
-
-app.use('/api/devices', devicesRouter);
+const wss = new WebSocketServer({path: '/api/socket', server: server,});
 
 wss.on('connection', function connection(ws) {
   console.log('newclient');
@@ -36,29 +47,15 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function message(data) {
     console.log('received: %s', data);
   });
-  ws.send(JSON.stringify({ positions: [], camera: [], server: [], devices: [] }));
+
+  ws.send(websocketController.init());
 
   const interval = setInterval(() => {
-    let currentsocket = {};
-    if (true) {
-      currentsocket['positions'] = [];
-    }
-    if (true) {
-      currentsocket['camera'] = [];
-    }
-    if (true) {
-      currentsocket['events'] = [];
-    }
-    ws.send(JSON.stringify(currentsocket));
+    ws.send(websocketController.update());
   }, 200);
 
   const interval_server = setInterval(() => {
-    ws.send(
-      JSON.stringify({
-        server: { rosState: true },
-        devices: [],
-      })
-    );
+    ws.send(websocketController.updateserver());
   }, 5000);
 });
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
@@ -74,6 +71,10 @@ wss.on('close', function close() {
   clearInterval(interval);
 });
 
+//
+// Start the server.
+//
 server.listen(app.get('port'), () => {
   console.log('Servidor iniciado en el puerto: ' + app.get('port'));
 });
+

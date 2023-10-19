@@ -56,8 +56,4 @@ export class devicesController {
     return res.json(updatedDevice);
   }
 
-  static async GetDeviceCategory(req, res) {
-    console.log('device Category');
-    return await DevicesModel.GetdevicesCategory();
-  }
 }
