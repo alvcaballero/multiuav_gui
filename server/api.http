@@ -47,20 +47,20 @@ Content-Type: application/json
 }
 
 ### Devices type
-GET http://localhost:4000/api/devices/type
+GET http://localhost:4000/api/category
 
 ### Atributes 
-GET http://localhost:4000/api/mission/atributes/dji_M210_noetic
+GET http://localhost:4000/api/category/atributes/dji_M210_noetic
 
 ### Atributes
-GET http://localhost:4000/api/mission/atributesparam/dji_M210_noetic/mode_yaw
+GET http://localhost:4000/api/category/atributesparam/dji_M210_noetic/mode_yaw
 
 ### Actions 
 
-GET http://localhost:4000/api/mission/actions/dji_M210_noetic
+GET http://localhost:4000/api/category/actions/dji_M210_noetic
 
 ### Sendtask
-POST http://localhost:4000/api/sendTask
+POST http://localhost:4000/api/commands/sendTask
 Content-Type: application/json
 
 {
@@ -129,7 +129,7 @@ POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
 {
-    "deviceId": 1, 
+    "deviceId": 7, 
     "type": "threat"
 }
 

@@ -1,6 +1,6 @@
-import { readJSON, readYAML } from '../utils.js';
-import { positionModel } from './positions.js';
-import { eventModel } from './events.js';
+import { readJSON, readYAML,getDatetime } from '../utils.js';
+import { positionsModel } from '../models/positions.js';
+import { eventsModel } from '../models/events.js';
 import ROSLIB from 'roslib';
 
 const devices_msg = readYAML('./devices_msg.yaml');
@@ -9,6 +9,7 @@ const devices = {};
 const uav_list = [];
 const rosState = { state: 'disconnect', msg: 'init msg' };
 var ros = '';
+export {ros}
 console.log('out of  device model');
 
 const autoconectRos = setInterval(() => {
@@ -127,6 +128,9 @@ export class DevicesModel {
   static async getAll() {
     return devices;
   }
+  static async serverStatus() {
+    return rosState;
+  }
 
   static async create(device) {
     console.log(device);
@@ -226,7 +230,7 @@ export class DevicesModel {
       ) {
         uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             id: msg.header.seq,
             deviceId: id_uav,
             latitude: msg.latitude,
@@ -239,7 +243,7 @@ export class DevicesModel {
         uav_list[cur_uav_idx].listener_sensor_height.subscribe(function (msg) {
           //Altitud de ultrasonico
           //let id_uav = cur_uav_idx;
-          //positionModel.updatePosition({deviceId:id_uav,altitude:msg.data});
+          //positionsModel.updatePosition({deviceId:id_uav,altitude:msg.data});
         });
 
         uav_list[cur_uav_idx].listener_vo_position.subscribe(function (msg) {
@@ -254,13 +258,13 @@ export class DevicesModel {
           let q = msg.orientation;
           let yaw =
             Math.atan2(2.0 * (q.x * q.y + q.w * q.z), -1 + 2 * (q.w * q.w + q.x * q.x)) * -1;
-          positionModel.updatePosition({ deviceId: id_uav, course: 90 + yaw * 57.295 });
+          positionsModel.updatePosition({ deviceId: id_uav, course: 90 + yaw * 57.295 });
         });
 
         if (uav_type == 'dji_M300') {
           uav_list[cur_uav_idx].listener_mission_state.subscribe(function (msg) {
             let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
-            positionModel.updatePosition({
+            positionsModel.updatePosition({
               deviceId: id_uav,
               speed: msg.velocity * 0.01,
             });
@@ -268,7 +272,7 @@ export class DevicesModel {
         } else {
           uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
             let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;
-            positionModel.updatePosition({
+            positionsModel.updatePosition({
               deviceId: id_uav,
               speed: Math.sqrt(Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2)).toFixed(2),
             }); // showData[2].innerHTML = Math.sqrt(Math.pow(message.vector.x,2) + Math.pow(message.vector.y,2)).toFixed(2);
@@ -277,26 +281,26 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_battery.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({ deviceId: id_uav, batteryLevel: msg.percentage }); // showData[3].innerHTML = message.percentage + "%";
+          positionsModel.updatePosition({ deviceId: id_uav, batteryLevel: msg.percentage }); // showData[3].innerHTML = message.percentage + "%";
         });
 
         uav_list[cur_uav_idx].listener_gimbal.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({ deviceId: id_uav, gimbal: msg.vector }); // showData[3].innerHTML = message.percentage + "%";
+          positionsModel.updatePosition({ deviceId: id_uav, gimbal: msg.vector }); // showData[3].innerHTML = message.percentage + "%";
         });
 
         for (let i = 0; i < device.camera.length; i = i + 1) {
           if (device.camera[i]['type'] == 'Websocket') {
             uav_list[cur_uav_idx].listener_camera.subscribe(function (msg) {
               let id_uav = cur_uav_idx; //console.log("dato camara"+ id_uav + "--"+ msg.data)
-              positionModel.updateCamera({ deviceId: id_uav, camera: msg.data }); //positionModel.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
+              positionsModel.updateCamera({ deviceId: id_uav, camera: msg.data }); //positionsModel.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;
             });
           }
         }
       } else if (uav_type == 'px4') {
         uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             id: msg.header.seq,
             deviceId: id_uav,
             latitude: msg.latitude,
@@ -308,7 +312,7 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_hdg.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
+          positionsModel.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
         });
 
         uav_list[cur_uav_idx].listener_sensor_height.subscribe(function (message) {
@@ -318,7 +322,7 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             speed: Math.sqrt(
               Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)
@@ -328,7 +332,7 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_battery.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             batteryLevel: (msg.percentage * 100).toFixed(0),
           }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
@@ -336,7 +340,7 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_state_machine.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             protocol: msg.airframe_type,
             mission_state: msg.mission_state,
@@ -348,21 +352,21 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_camera.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updateCamera({ deviceId: id_uav, camera: msg.data }); //positionModel.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
+          positionsModel.updateCamera({ deviceId: id_uav, camera: msg.data }); //positionsModel.updateCamera({deviceId:id_uav,camera:"data:image/jpg;base64," + msg.data});//document.getElementById('my_image').src = "data:image/jpg;base64," + message.data;//document.getElementById('my_image').src = "data:image/bgr8;base64," + message.data;
         });
 
         uav_list[cur_uav_idx].listener_threat.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({ deviceId: id_uav, threat: msg.data });
+          positionsModel.updatePosition({ deviceId: id_uav, threat: msg.data });
         });
 
         //let ipdevice = await Getservicehost(uav_ns+'/mavros/mission/clear');
         //console.log("ip de uav"+ ipdevice);
-        //positionModel.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
+        //positionsModel.updatedeviceIP({id: cur_uav_idx,ip:ipdevice});
       } else if (uav_type == 'fuvex') {
         uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             id: msg.header.seq,
             deviceId: id_uav,
             latitude: msg.latitude,
@@ -373,11 +377,11 @@ export class DevicesModel {
         });
         uav_list[cur_uav_idx].listener_hdg.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
+          positionsModel.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
         });
         uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             speed: Math.sqrt(
               Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)
@@ -387,7 +391,7 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_battery.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             batteryLevel: (msg.percentage * 100).toFixed(0),
           }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
@@ -395,7 +399,7 @@ export class DevicesModel {
       } else if (uav_type == 'catec') {
         uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             id: msg.header.seq,
             deviceId: id_uav,
             latitude: msg.latitude,
@@ -407,12 +411,12 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_hdg.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
+          positionsModel.updatePosition({ deviceId: id_uav, course: msg.data }); //uav_list[cur_uav_idx].marker.setRotationAngle(message.data)
         });
 
         uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             speed: Math.sqrt(
               Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)
@@ -422,7 +426,7 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_battery.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             batteryLevel: (msg.percentage * 100).toFixed(0),
           }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
@@ -430,7 +434,7 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_state_machine.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
-          positionModel.updatePosition({
+          positionsModel.updatePosition({
             deviceId: id_uav,
             protocol: 'catec',
             mission_state: '0',
@@ -442,8 +446,8 @@ export class DevicesModel {
 
         uav_list[cur_uav_idx].listener_threat.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
-          positionModel.updatePosition({ deviceId: id_uav, threat: msg.data });
-          eventModel.addEvent({
+          positionsModel.updatePosition({ deviceId: id_uav, threat: msg.data });
+          eventsModel.addEvent({
             type: 'warning',
             eventTime: getDatetime(),
             deviceId: id_uav,
@@ -530,6 +534,11 @@ export class DevicesModel {
   }
   static updatedeviceIP(payload) {
     devices[payload.id]['ip'] = payload.ip;
+  }
+  static updatedevicetime(id){
+    let currentTime = new Date();
+    devices[id]['lastUpdate'] = currentTime;
+
   }
   static get_device_ns(uav_id) {
     return devices[uav_id].name;

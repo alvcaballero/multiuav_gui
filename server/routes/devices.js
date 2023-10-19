@@ -11,4 +11,3 @@ devicesRouter.get('/:id', devicesController.getById);
 devicesRouter.delete('/:id', devicesController.delete);
 devicesRouter.patch('/:id');
 
-devicesRouter.get('/type', devicesController.GetDeviceCategory);

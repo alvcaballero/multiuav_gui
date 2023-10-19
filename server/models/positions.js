@@ -1,11 +1,18 @@
+import { DevicesModel } from '../models/devices.js';
 const positions = {};
 const history = {};
 
-export class positionModel {
+export class positionsModel {
+
+  static async getAll() {
+    return positions;
+  }
+  static async getDevice(deviceId) {
+    return positions[deviceId];
+  }
   static async updatePosition(payload) {
     //positions[payload.deviceId] = payload;
-    let currentTime = new Date();
-    state.devices[payload.deviceId]['lastUpdate'] = currentTime;
+    DevicesModel.updatedevicetime(payload.deviceId)
 
     if (positions[payload.deviceId] === undefined) {
       positions[payload.deviceId] = {
