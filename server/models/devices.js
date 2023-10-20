@@ -2,22 +2,11 @@ import { readJSON, readYAML,getDatetime } from '../utils.js';
 import { positionsModel } from '../models/positions.js';
 import { eventsModel } from '../models/events.js';
 import ROSLIB from 'roslib';
-
+import  { ros ,rosModel} from '../models/ros.js';
 const devices_msg = readYAML('./devices_msg.yaml');
 const devices_init = readYAML('./devices_init.yaml');
 const devices = {};
 const uav_list = [];
-const rosState = { state: 'disconnect', msg: 'init msg' };
-var ros = '';
-export {ros}
-console.log('out of  device model');
-
-const autoconectRos = setInterval(() => {
-  if (rosState.state != 'connect') {
-    console.log('try to connect ros');
-    rosConnect();
-  }
-}, 30000);
 
 const CheckDeviceOnline = setInterval(() => {
   let currentTime = new Date();
@@ -33,92 +22,6 @@ const CheckDeviceOnline = setInterval(() => {
   });
 }, 5000);
 
-async function rosConnect() {
-  console.log('try to connect to ros');
-  if (rosState.state != 'connect') {
-    ros = new ROSLIB.Ros({ url: 'ws://localhost:9090' });
-    ros.on('connection', function () {
-      console.log('ROS Connected to websocket server.');
-      setrosState({ state: 'connect', msg: 'Conectado a ROS' });
-      connectAllUAV();
-    });
-    ros.on('error', function (error) {
-      console.log('ROS Error connecting to websocket server: ', error);
-      setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
-    });
-    ros.on('close', function () {
-      console.log('ROS Connection to websocket server closed.');
-      setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
-    });
-  } else {
-    for (var i = 0; i < uav_list.length; i++) {
-      uav_list[i].listener.unsubscribe();
-    }
-    uav_list = [];
-    ros.close();
-  }
-}
-
-async function connectAllUAV() {
-  for (let device of devices_init.init) {
-    console.log(device);
-    let uno = await DevicesModel.create(device);
-    console.log('finish to add ------------');
-  }
-}
-function setrosState({ state, msg }) {
-  rosState['state'] = state;
-  rosState['msg'] = msg;
-}
-
-function getTopics2() {
-  var topicsClient = new ROSLIB.Service({
-    ros: ros,
-    name: '/rosapi/topics',
-    serviceType: 'rosapi/Topics',
-  });
-
-  var request = new ROSLIB.ServiceRequest();
-
-  return new Promise((resolve, rejects) => {
-    topicsClient.callService(request, function (result) {
-      resolve(result.topics);
-    });
-  });
-}
-
-function Getservicehost(nameService) {
-  let servicehost = new ROSLIB.Service({
-    ros: ros,
-    name: '/rosapi/service_host',
-    serviceType: 'rosapi/ServiceHost',
-  });
-
-  let request = new ROSLIB.ServiceRequest({ service: nameService });
-
-  return new Promise((resolve, rejects) => {
-    servicehost.callService(request, function (result) {
-      resolve(result.host);
-    });
-  });
-}
-function Getlistmaster() {
-  let servicemaster = new ROSLIB.Service({
-    ros: ros,
-    name: '/master_discovery/list_masters',
-    serviceType: 'multimaster_msgs_fkie/DiscoverMasters',
-  });
-
-  let request = new ROSLIB.ServiceRequest();
-
-  return new Promise((resolve, rejects) => {
-    servicemaster.callService(request, function (result) {
-      console.log('masterip -- ' + result.length);
-      resolve(result);
-    });
-  });
-}
-
 export class DevicesModel {
   constructor() {
     // conect with ros and other things
@@ -128,18 +31,15 @@ export class DevicesModel {
   static async getAll() {
     return devices;
   }
-  static async serverStatus() {
-    return rosState;
-  }
 
   static async create(device) {
     console.log(device);
-    if (rosState.state === 'connect') {
+    let serverState= rosModel.serverStatus() ;
+    if (serverState.state === 'connect') {
       let uav_ns = device.name;
       let uav_type = device.category;
-      console.log('');
 
-      const topiclist = await getTopics2();
+      const topiclist = await rosModel.getTopics();
       console.log('Conectando Uav');
       console.log('name' + uav_ns + '  type' + uav_type);
       //console.log(topiclist);
@@ -516,6 +416,15 @@ export class DevicesModel {
       return { state: 'success', msg: 'no quedan UAV de la lista' };
     }
   }
+  static async unsubscribe(id){
+    if (id<0){
+      for (var i = 0; i < uav_list.length; i++) {
+        uav_list[i].listener.unsubscribe();
+      }
+      uav_list = [];
+    }
+
+  }
 
   static async update({ id, input }) {
     const movieIndex = movies.findIndex((movie) => movie.id === id);
@@ -551,8 +460,13 @@ export class DevicesModel {
     delete devices[id];
     console.log(devices);
   }
-  static GetdevicesCategory() {
-    console.log('devices type');
-    return res.json(Object.keys(devices_msg));
+
+  static async connectAllUAV() {
+    for (let device of devices_init.init) {
+      console.log(device);
+      let uno = await this.create(device);
+      console.log('finish to add ------------');
+    }
   }
+  
 }
