@@ -75,7 +75,7 @@ const WaypointRouteList = ({
   async function setnewaction(index_route, index_wp) {
     let command;
 
-    const response = await fetch('/api/mission/actions/dji_M210_noetic');
+    const response = await fetch('/api/category/actions/dji_M210_noetic');
     if (response.ok) {
       command = await response.json();
     } else {
@@ -345,7 +345,7 @@ const WaypointRouteList = ({
                     fullWidth={true}
                     value={newactionid}
                     onChange={(e) => setnewactionid(e.target.value)}
-                    endpoint={'/api/mission/actions/dji_M210_noetic'}
+                    endpoint={'/api/category/actions/dji_M210_noetic'}
                     keyGetter={(it) => it.id}
                     titleGetter={(it) => it.description}
                   />
