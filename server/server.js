@@ -15,12 +15,10 @@ import { positionsRouter } from './routes/positions.js';
 import { eventsRouter } from './routes/events.js';
 import { commandsRouter } from './routes/commands.js';
 import { rosRouter } from './routes/ros.js';
-import { websocketController }from './controllers/websocket.js'
-
+import { mapRouter } from './routes/map.js';
+import { websocketController } from './controllers/websocket.js';
 
 import WebSocket, { WebSocketServer } from 'ws';
-
-
 
 const app = express();
 const port = 4000;
@@ -32,43 +30,63 @@ app.use(express.static(path.resolve(__dirname, '../build')));
 app.use('/api/devices', devicesRouter);
 app.use('/api/category', categoryRouter);
 app.use('/api/positions', positionsRouter);
-//app.use('/api/events', eventsRouter);
+app.use('/api/events', eventsRouter);
 app.use('/api/commands', commandsRouter);
-//app.use('/api/ros', rosRouter);
+app.use('/api/ros', rosRouter);
+app.use('/api/map', mapRouter);
 
 const server = createServer(app);
 
-const wss = new WebSocketServer({path: '/api/socket', server: server,});
+function heartbeat() {
+  this.isAlive = true;
+}
 
-wss.on('connection', function connection(ws) {
+const wss = new WebSocket.Server({ path: '/api/socket', server: server });
+
+wss.on('connection', async function connection(ws) {
   console.log('newclient');
+  ws.isAlive = true;
+
   ws.on('error', console.error);
+
+  ws.on('pong', heartbeat);
 
   ws.on('message', function message(data) {
     console.log('received: %s', data);
   });
 
-  ws.send(websocketController.init());
+  let init_msg = await websocketController.init();
 
-  const interval = setInterval(() => {
-    ws.send(websocketController.update());
-  }, 200);
-
-  const interval_server = setInterval(() => {
-    ws.send(websocketController.updateserver());
-  }, 5000);
+  ws.send(init_msg);
 });
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
+
+const interval_update = setInterval(() => {
+  wss.clients.forEach(async function each(ws) {
+    let msg = await websocketController.update();
+    ws.send(msg);
+  });
+}, 250);
+
+const interval_server = setInterval(async () => {
+  wss.clients.forEach(async function each(ws) {
+    let msg = await websocketController.updateserver();
+    ws.send(msg);
+  });
+}, 5000);
+
 const interval = setInterval(function ping() {
   wss.clients.forEach(function each(ws) {
-    //if (ws.isAlive === false) return ws.terminate();
-    //ws.isAlive = false;
-    //ws.ping();
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
   });
 }, 30000);
 
 wss.on('close', function close() {
   clearInterval(interval);
+  clearInterval(interval_update);
+  clearInterval(interval_server);
 });
 
 //
@@ -77,4 +95,3 @@ wss.on('close', function close() {
 server.listen(app.get('port'), () => {
   console.log('Servidor iniciado en el puerto: ' + app.get('port'));
 });
-

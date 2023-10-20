@@ -1,39 +1,57 @@
 import { DevicesModel } from '../models/devices.js';
-
-
-
+import { positionsModel } from '../models/positions.js';
+import { eventsModel } from '../models/events.js';
+import { response } from 'express';
 export class websocketController {
   static async init() {
-    return     JSON.stringify({
-        positions: Object.values(data.state.positions),
-        camera: Object.values(data.state.camera),
-        server: { rosState: DevicesModel.serverStatus()},
-        devices: Object.values(DevicesModel.getAll()),
-      })
+    const devices = await DevicesModel.getAll();
+    const positions = await positionsModel.getAll();
+    const server = await DevicesModel.serverStatus();
+    //console.log('devices');
+    //console.log(devices);
+    let response = JSON.stringify({
+      positions: Object.values(positions),
+      server: { rosState: server.state },
+      devices: Object.values(devices),
+    });
+    //console.log('init');
+    //console.log(response);
+    return response;
   }
 
   static async update() {
     let currentsocket = {};
-    if (Object.values(data.state.positions).length) {
-      currentsocket['positions'] = Object.values(data.state.positions);
+    const positions = await positionsModel.getAll();
+    const currentevent = await eventsModel.getall();
+    if (Object.values(positions).length) {
+      currentsocket['positions'] = Object.values(positions);
     }
-    if (Object.values(data.state.camera).length) {
-      currentsocket['camera'] = Object.values(data.state.camera);
-    }
-    let currentevent = data.state.events;
+    //if (Object.values(data.state.camera).length) {
+    //  currentsocket['camera'] = Object.values(data.state.camera);
+    //}
+
     if (Object.values(currentevent).length) {
-      console.log(currentevent);
+      //console.log(currentevent);
       currentsocket['events'] = Object.values(currentevent);
       data.clearEvents({ eventId: Object.keys(currentevent) });
     }
-    return JSON.stringify(currentsocket)
+    console.log('update');
+    //console.log(currentsocket);
+    return JSON.stringify(currentsocket);
   }
 
   static async updateserver() {
-    return       JSON.stringify({
-        server: { rosState:  DevicesModel.serverStatus().state },
-        devices: Object.values(DevicesModel.getAll()),
-      })
-  }
+    const devices = await DevicesModel.getAll();
+    const server = await DevicesModel.serverStatus();
 
+    //console.log('devices');
+    //console.log(devices);
+    let response = JSON.stringify({
+      server: { rosState: server.state },
+      devices: Object.values(devices),
+    });
+    //console.log('updateserver');
+    //console.log(response);
+    return response;
+  }
 }

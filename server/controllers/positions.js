@@ -4,12 +4,11 @@ export class positionsController {
   static async getAll(req, res) {
     console.log('controller get all');
     const positions = await positionsModel.getAll();
-    res.json(positions);
+    res.json(Object.values(positions));
   }
 
   static async getByDeviceId(req, res) {
-    position = {}
+    position = [];
     res.json(position);
   }
-
 }

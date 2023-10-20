@@ -1,6 +1,6 @@
 import * as turf from '@turf/turf';
 
-export class elevationModel {
+export class mapModel {
   static async ApiElevation(LocationList) {
     let myresponse = {};
     let divLocationList = [];
@@ -45,9 +45,9 @@ export class elevationModel {
     return myresponse;
   }
 
-  static async elevation(routes) {
+  static async calcElevation(routes) {
     console.log('using ---- elevation');
-    listpoint = routes;
+    let listpoint = routes;
     console.log(listpoint);
     let wpaltitude = [];
     let listwaypoint = [];
@@ -73,7 +73,11 @@ export class elevationModel {
               console.log('mayor a 200 metros');
               //funcion de slice and add to  //altitud = -1;
               let steps = Math.floor(distbetweenwp / 200) + 1;
-              let newpoints = divideLineIntoPoints([array[lastindex], wp], steps, distbetweenwp);
+              let newpoints = this.divideLineIntoPoints(
+                [array[lastindex], wp],
+                steps,
+                distbetweenwp
+              );
               newpoints.map((nwp) => {
                 listwaypoint.push([nwp.lat, nwp.lon]);
                 let nwpdist = +lastdist.toFixed(1) + +nwp.dist.toFixed(1);
@@ -98,7 +102,7 @@ export class elevationModel {
       console.log(wpaltitude);
       console.log(listwaypoint);
 
-      let elevationprofile = await ApiElevation(listwaypoint);
+      let elevationprofile = await this.ApiElevation(listwaypoint);
       //anadir elevacion profile
       console.log(elevationprofile);
       let auxcount = 0;
@@ -135,9 +139,9 @@ export class elevationModel {
     }
     console.log(wpaltitude);
     if (status) {
-      res.json({ elevation: wpaltitude, status: true });
+      return { elevation: wpaltitude, status: true };
     } else {
-      res.json({ elevation: [], status: false });
+      return { elevation: [], status: false };
     }
   }
 

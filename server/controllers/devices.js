@@ -4,7 +4,7 @@ export class devicesController {
   static async getAll(req, res) {
     console.log('controller get all');
     const devices = await DevicesModel.getAll();
-    res.json(devices);
+    res.json(Object.values(devices));
   }
 
   static async getById(req, res) {
@@ -55,5 +55,4 @@ export class devicesController {
 
     return res.json(updatedDevice);
   }
-
 }
