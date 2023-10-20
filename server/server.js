@@ -499,14 +499,17 @@ async function connectAddUav(device) {
       });
 
       uav_list[cur_uav_idx].listener_threat.subscribe(function (msg) {
+        console.log('read threat');
         let id_uav = cur_uav_idx;
         data.updatePosition({ deviceId: id_uav, threat: msg.data });
-        data.addEvent({
-          type: 'warning',
-          eventTime: getDatetime(),
-          deviceId: id_uav,
-          attributes: { message: data.get_device_ns(id_uav) + ':treat event' },
-        });
+        if (msg.data) {
+          data.addEvent({
+            type: 'warning',
+            eventTime: getDatetime(),
+            deviceId: id_uav,
+            attributes: { message: data.get_device_ns(id_uav) + ':treat event' },
+          });
+        }
       });
     }
 
@@ -939,7 +942,7 @@ app.post('/api/commands/send', async function (req, res) {
   }
   if (req.body.deviceId >= 0) {
     if (req.body.type == 'threat') {
-      response = await standarCommand(req.body.deviceId, 'threat'); //threatUAV(req.body.deviceId);
+      response = await standarCommand(req.body.deviceId, 'threat', req.body.attributes); //threatUAV(req.body.deviceId);
     }
     if (req.body.type == 'SincroniseFiles') {
       response = await standarCommand(req.body.deviceId, 'sincronize');

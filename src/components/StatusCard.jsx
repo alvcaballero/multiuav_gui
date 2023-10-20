@@ -126,13 +126,13 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const [removing, setRemoving] = useState(false);
 
-  const serverCommand = async (uav_id, command) => {
+  const serverCommand = async (uav_id, command, attributes) => {
     //event.preventDefault();
     console.log('send command uavud: ' + uav_id + command);
     try {
       const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({ deviceId: uav_id, type: command }),
+        body: JSON.stringify({ deviceId: uav_id, type: command, attributes: attributes }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -245,7 +245,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                               size='small'
                               color='primary'
                               style={{ margin: '1px', display: 'inline-block' }}
-                              onClick={() => serverCommand(device.id, 'threat')}
+                              onClick={() => serverCommand(device.id, 'threat', { data: true })}
                             >
                               Validate
                             </Button>
@@ -254,6 +254,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                               size='small'
                               color='secondary'
                               style={{ margin: '1px', display: 'inline-block' }}
+                              onClick={() => serverCommand(device.id, 'threat', { data: false })}
                             >
                               Dismiss
                             </Button>

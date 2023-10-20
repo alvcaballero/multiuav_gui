@@ -480,4 +480,4 @@ catec:
   services:
     threat:
       name: '/threat_confirmation'
-      serviceType: 'std_srvs/Trigger'
+      serviceType: 'std_srvs/SetBool'

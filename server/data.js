@@ -69,6 +69,7 @@ function updatePosition(payload) {
     );
   }
   if (payload.hasOwnProperty('threat')) {
+    console.log(payload);
     //state.positions[payload.deviceId]['attributes']['threat'] = payload.threat;
     if (payload.threat == true) {
       state.positions[payload.deviceId]['attributes']['alarm'] = 'threat';
