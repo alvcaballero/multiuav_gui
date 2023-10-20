@@ -6,6 +6,10 @@ export class rosController {
     let response = await rosModel.getTopics();
     res.json(response);
   }
-
+  static async getListMaster(req, res) {
+    console.log('controller get all');
+    let response = await rosModel.getListMaster();
+    res.json(response);
+  }
 
 }
