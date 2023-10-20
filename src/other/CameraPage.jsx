@@ -1,75 +1,75 @@
-import React, { Fragment, useState } from "react";
-import { Navbar } from "../components/Navbar";
-import { Menu } from "../components/Menu";
-import MainToolbar from "../components/MainToolbar";
-import makeStyles from "@mui/styles/makeStyles";
-import { RosControl, RosContext } from "../components/RosControl";
-import DeviceList from "../components/DeviceList";
-import { Paper, Grid, Box } from "@mui/material";
-import { CameraWebRTCV4 } from "../components/CameraWebRTCV4";
-import { CameraWebRTCV3 } from "../components/CameraWebRTCV3";
+import React, { Fragment, useState } from 'react';
+import { Navbar } from '../components/Navbar';
+import { Menu } from '../components/Menu';
+import MainToolbar from '../components/MainToolbar';
+import makeStyles from '@mui/styles/makeStyles';
+import { RosControl, RosContext } from '../components/RosControl';
+import DeviceList from '../components/DeviceList';
+import { Paper, Grid, Box } from '@mui/material';
+import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
+import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
 
-import { useDispatch, useSelector } from "react-redux";
-import { experimentalStyled as styled } from "@mui/material/styles";
+import { useDispatch, useSelector } from 'react-redux';
+import { experimentalStyled as styled } from '@mui/material/styles';
 const useStyles = makeStyles(() => ({
   root: {
-    height: "100%",
+    height: '100%',
   },
   sidebarStyle: {
-    pointerEvents: "none",
-    display: "flex",
-    flexDirection: "column",
-    position: "fixed",
+    pointerEvents: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
     left: 0,
-    top: "88px",
+    top: '88px',
     height: `calc(100% - 88px)`,
-    width: "360px",
-    margin: "0px",
+    width: '360px',
+    margin: '0px',
     zIndex: 3,
   },
   middleStyle: {
     flex: 1,
-    display: "grid",
+    display: 'grid',
   },
   contentListStyle: {
-    pointerEvents: "auto",
-    gridArea: "1 / 1",
+    pointerEvents: 'auto',
+    gridArea: '1 / 1',
     zIndex: 4,
   },
 }));
 
 const showToast = (type, description) => {
   switch (type) {
-    case "success":
+    case 'success':
       toastProperties = {
         id: list.length + 1,
-        title: "Success",
+        title: 'Success',
         description: description,
-        backgroundColor: "#5cb85c",
+        backgroundColor: '#5cb85c',
       };
       break;
-    case "danger":
+    case 'danger':
       toastProperties = {
         id: list.length + 1,
-        title: "Danger",
+        title: 'Danger',
         description: description,
-        backgroundColor: "#d9534f",
+        backgroundColor: '#d9534f',
       };
       break;
-    case "info":
+    case 'info':
       toastProperties = {
         id: list.length + 1,
-        title: "Info",
+        title: 'Info',
         description: description,
-        backgroundColor: "#5bc0de",
+        backgroundColor: '#5bc0de',
       };
       break;
-    case "warning":
+    case 'warning':
       toastProperties = {
         id: list.length + 1,
-        title: "Warning",
+        title: 'Warning',
         description: description,
-        backgroundColor: "#f0ad4e",
+        backgroundColor: '#f0ad4e',
       };
       break;
     default:
@@ -90,36 +90,49 @@ const CameraPage = () => {
         <Menu />
         <div
           style={{
-            position: "relative",
-            width: "100%",
+            position: 'relative',
+            width: '100%',
             height: `calc(100vh - 90px)`,
           }}
         >
           <Box
             sx={{ flexGrow: 1 }}
             style={{
-              backgroundColor: "#000000",
+              backgroundColor: '#000000',
               width: `calc(100vw - 360px)`,
-              height: "100%",
-              padding: "20px",
-              float: "right",
+              height: '100%',
+              padding: '20px',
+              float: 'right',
             }}
           >
-            <Grid container spacing={4} justifyContent="space-around">
+            <Grid container spacing={4} justifyContent='space-around'>
               {React.Children.toArray(
                 Object.values(devices).map((device) => (
-                  <Fragment key={"dev" + device.id}>
+                  <Fragment key={'dev' + device.id}>
                     {device.camera.map((camera, cam_index) => (
-                      <Grid key={"card-" + device.id + "-" + cam_index} item>
-                        <CameraWebRTCV4
-                          deviceId={device.id}
-                          deviceIp={"127.0.0.1"}
-                          devicename={device.name}
-                          camera_src={camera.source}
-                          onClose={() => {
-                            console.log("cerrar ");
-                          }}
-                        />
+                      <Grid key={'card-' + device.id + '-' + cam_index} item>
+                        {camera.type === 'WebRTC' && (
+                          <CameraWebRTCV4
+                            deviceId={device.id}
+                            deviceIp={'127.0.0.1'}
+                            devicename={device.name}
+                            camera_src={camera.source}
+                            onClose={() => {
+                              console.log('cerrar ');
+                            }}
+                          />
+                        )}
+                        {camera.type === 'WebRTC_env' && (
+                          <CameraWebRTCV4
+                            deviceId={device.id}
+                            deviceIp={device.ip}
+                            devicename={device.name}
+                            camera_src={camera.source}
+                            onClose={() => {
+                              console.log('cerrar ');
+                            }}
+                          />
+                        )}
                       </Grid>
                     ))}
                   </Fragment>

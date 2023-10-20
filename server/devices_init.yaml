@@ -38,23 +38,18 @@ init:
       - type: 'WebRTC'
         source: 'main'
 
-  - name: 'uav_1'
-    category: 'dji_M210_melodic'
-    ip: '10.42.0.99'
-    camera: []
-
   - name: 'uav_100'
     category: 'catec'
-    ip: '10.42.0.100'
+    ip: '10.0.3.5'
     camera:
       - type: 'WebRTC_env'
-        source: 'main1'
+        source: 'cam0'
       - type: 'WebRTC_env'
-        source: 'main2'
+        source: 'cam1'
       - type: 'WebRTC_env'
-        source: 'main3'
+        source: 'cam2'
       - type: 'WebRTC_env'
-        source: 'main4'
+        source: 'cam3'
 
   - id: '7'
     name: 'uav_101'
