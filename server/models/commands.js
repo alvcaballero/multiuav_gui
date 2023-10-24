@@ -1,14 +1,13 @@
-import  { ros } from '../models/ros.js';
-import  { DevicesModel } from '../models/devices.js';
+import { ros } from '../models/ros.js';
+import { DevicesModel } from '../models/devices.js';
 import { eventsModel } from '../models/events.js';
-import { readYAML,getDatetime } from '../utils.js';
+import { readYAML, getDatetime } from '../utils.js';
 import ROSLIB from 'roslib';
 
 const devices_msg = readYAML('./devices_msg.yaml');
 
 export class commandsModel {
-
-  static async sendTask ({loc}) {
+  static async sendTask({ loc }) {
     console.log('command-sendtask');
     let uav = 'uav_1';
     //let home = [37.193736, -6.702947, 50];
@@ -33,7 +32,7 @@ export class commandsModel {
         }
       }
     }
-  
+
     response.points.push(home);
     mission.route[0]['wp'] = response.points.map((element) => {
       return { pos: element };
@@ -46,15 +45,14 @@ export class commandsModel {
     return myresponse;
   }
 
-  static getSaveCommands(deviceId){
+  static getSaveCommands(deviceId) {
     let deviceid = deviceId;
-  
+
     console.log('devices acction ' + deviceid);
     return [];
   }
 
   static getCommandTypes(deviceid) {
-
     let response = [
       { type: 'custom' },
       { type: 'ResumeMission' },
@@ -72,9 +70,9 @@ export class commandsModel {
     return response;
   }
 
-  static async sendCommand({deviceId, type, attributes}) {
+  static async sendCommand({ deviceId, type, attributes }) {
     console.log('POST API command send');
-    console.log({deviceId, type, attributes});
+    console.log({ deviceId, type, attributes });
     //here get id and description, where description is string like threat,1 or sincronize, landing,1
     let response = { state: 'info', msg: 'Command no found' };
     if (deviceId >= 0) {
@@ -118,6 +116,9 @@ export class commandsModel {
       if (type == 'setupcamera') {
         response = await this.standarCommand(deviceId, 'setupcamera', attributes);
       }
+      if (type == 'custom') {
+        response = await this.standarCommand(deviceId, undefined, attributes);
+      }
 
       eventsModel.addEvent({
         type: response.state,
@@ -132,7 +133,7 @@ export class commandsModel {
   }
 
   static async GimbalUAV(uav_id, attributes) {
-    let statuscommand = await standarCommand(uav_id, 'Gimbal', {
+    let statuscommand = await this.standarCommand(uav_id, 'Gimbal', {
       header: { seq: 0, stamp: { secs: 0, nsecs: 0 }, frame_id: '' },
       is_reset: attributes.reset ? true : false,
       payload_index: 0,
@@ -195,7 +196,7 @@ export class commandsModel {
 
   static async loadmissionDevice(deviceId, mission) {
     console.log('load mission device ' + deviceId);
-    let alldevices = DevicesModel.getAll;
+    let alldevices = await DevicesModel.getAll();
     let response = { state: 'warning', msg: 'UAV no asing mission' };
     if (Object.values(mission).length == 0) {
       response = { state: 'info', msg: 'no mission' };
@@ -205,9 +206,9 @@ export class commandsModel {
         console.log('load mission to ' + device_id);
         let uavcategory = DevicesModel.get_device_category(device_id);
         if (devices_msg[uavcategory]['services'].hasOwnProperty('configureMission')) {
-          let attributes = loadMission(device_id, mission);
+          let attributes = this.loadMission(device_id, mission);
           if (attributes) {
-            response = await standarCommand(device_id, 'configureMission', attributes);
+            response = await this.standarCommand(device_id, 'configureMission', attributes);
           } else {
             response = { state: 'warning', msg: 'UAV no asing mission' };
           }
@@ -229,16 +230,16 @@ export class commandsModel {
 
   static async commandMissionDevice(deviceId) {
     let r = true;
-    let alldevices = DevicesModel.getAll;
+    let alldevices = await DevicesModel.getAll();
     let response = { state: 'error', msg: 'Mission canceled' };
     Object.keys(alldevices).forEach(async (device_id) => {
       if (deviceId < 0 || deviceId == device_id) {
         let uavcategory = DevicesModel.get_device_category(device_id);
         console.log('command mission to ' + device_id);
         if (uavcategory !== 'dji_M300') {
-          response = await standarCommand(device_id, 'commandMission', { data: true });
+          response = await this.standarCommand(device_id, 'commandMission', { data: true });
         } else {
-          response = await standarCommand(device_id, 'commandMission');
+          response = await this.standarCommand(device_id, 'commandMission');
         }
         if (deviceId < 0) {
           eventsModel.addEvent({
@@ -248,6 +249,109 @@ export class commandsModel {
             attributes: { message: response.msg },
           });
         }
+      }
+    });
+    return response;
+  }
+
+  static loadMission(uav_id, mission) {
+    console.log('  load  - mission' + uav_id);
+    let uavname = DevicesModel.get_device_ns(uav_id);
+    let uavcategory = DevicesModel.get_device_category(uav_id);
+    let mode_yaw = 0;
+    let mode_gimbal = 0;
+    let mode_trace = 0;
+    let idle_vel = 1.8;
+    let max_vel = 10;
+    let mode_landing = 0;
+    let response = null;
+    let wp_command = [];
+    let yaw_pos = [];
+    let speed_pos = [];
+    let gimbal_pos = [];
+    let action_matrix = [];
+    let param_matrix = [];
+
+    Object.values(mission).forEach((route) => {
+      if (route['uav'] == uavname) {
+        console.log('route');
+        console.log(route);
+        idle_vel = route.attributes.hasOwnProperty('idle_vel')
+          ? route.attributes['idle_vel']
+          : idle_vel;
+        max_vel = route.attributes.hasOwnProperty('max_vel')
+          ? route.attributes['max_vel']
+          : max_vel;
+        mode_yaw = route.attributes.hasOwnProperty('mode_yaw')
+          ? route.attributes['mode_yaw']
+          : mode_yaw;
+        mode_gimbal = route.attributes.hasOwnProperty('mode_gimbal')
+          ? route.attributes['mode_gimbal']
+          : mode_gimbal;
+        mode_trace = route.attributes.hasOwnProperty('mode_trace')
+          ? route.attributes['mode_trace']
+          : mode_trace;
+        mode_landing = route.attributes.hasOwnProperty('mode_landing')
+          ? route.attributes['mode_landing']
+          : mode_landing;
+
+        Object.values(route['wp']).forEach((item) => {
+          let yaw, gimbal, speed;
+          let action_array = Array(10).fill(0);
+          let param_array = Array(10).fill(0);
+          let pos = new ROSLIB.Message({
+            latitude: item.pos[0],
+            longitude: item.pos[1],
+            altitude: item.pos[2],
+          });
+          yaw = item.hasOwnProperty('yaw') ? item.yaw : 0;
+          speed = item.hasOwnProperty('speed') ? item.speed : idle_vel;
+          gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
+          if (item.hasOwnProperty('action')) {
+            Object.keys(item.action).forEach((action_val, index, arr) => {
+              let found = Object.values(
+                devices_msg[uavcategory]['attributes']['mission_action']
+              ).find((element) => element.name == action_val);
+              if (found) {
+                action_array[index] = Number(found.id);
+                param_array[index] = found.param ? Number(item.action[action_val]) : 0;
+              }
+            });
+          }
+          wp_command.push(pos);
+          gimbal_pos.push(gimbal);
+          yaw_pos.push(yaw);
+          speed_pos.push(speed);
+          action_matrix.push(action_array);
+          param_matrix.push(param_array);
+        });
+
+        let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
+        let speed_pos_msg = new ROSLIB.Message({ data: speed_pos });
+        let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
+        let action_matrix_msg = new ROSLIB.Message({
+          data: action_matrix.flat(),
+        });
+        let param_matrix_msg = new ROSLIB.Message({
+          data: param_matrix.flat(),
+        });
+
+        response = {
+          type: 'waypoint',
+          waypoint: wp_command,
+          radius: 0,
+          maxVel: max_vel,
+          idleVel: idle_vel,
+          yaw: yaw_pos_msg,
+          speed: speed_pos_msg,
+          gimbalPitch: gimbal_pos_msg,
+          yawMode: mode_yaw,
+          traceMode: mode_trace,
+          gimbalPitchMode: mode_gimbal,
+          finishAction: mode_landing,
+          commandList: action_matrix_msg,
+          commandParameter: param_matrix_msg,
+        };
       }
     });
     return response;

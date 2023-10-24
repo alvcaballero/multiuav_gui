@@ -1,4 +1,5 @@
 import { DevicesModel } from '../models/devices.js';
+import { rosModel } from '../models/ros.js';
 import { positionsModel } from '../models/positions.js';
 import { eventsModel } from '../models/events.js';
 import { response } from 'express';
@@ -6,7 +7,7 @@ export class websocketController {
   static async init() {
     const devices = await DevicesModel.getAll();
     const positions = await positionsModel.getAll();
-    const server = await DevicesModel.serverStatus();
+    const server = await rosModel.serverStatus();
     //console.log('devices');
     //console.log(devices);
     let response = JSON.stringify({
@@ -33,7 +34,7 @@ export class websocketController {
     if (Object.values(currentevent).length) {
       //console.log(currentevent);
       currentsocket['events'] = Object.values(currentevent);
-      data.clearEvents({ eventId: Object.keys(currentevent) });
+      eventsModel.clearEvents({ eventId: Object.keys(currentevent) });
     }
     console.log('update');
     //console.log(currentsocket);
@@ -42,7 +43,7 @@ export class websocketController {
 
   static async updateserver() {
     const devices = await DevicesModel.getAll();
-    const server = await DevicesModel.serverStatus();
+    const server = await rosModel.serverStatus();
 
     //console.log('devices');
     //console.log(devices);

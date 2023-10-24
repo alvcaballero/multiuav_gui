@@ -1,7 +1,7 @@
 import ROSLIB from 'roslib';
-import { DevicesModel } from "./devices";
+import { DevicesModel } from '../models/devices.js';
 var ros = '';
-export { ros }
+export { ros };
 const rosState = { state: 'disconnect', msg: 'init msg' };
 console.log('out of  device model');
 
@@ -12,9 +12,8 @@ const autoconectRos = setInterval(() => {
   }
 }, 30000);
 
-console.log("model ROS")
+console.log('model ROS');
 export class rosModel {
-
   static setrosState({ state, msg }) {
     rosState['state'] = state;
     rosState['msg'] = msg;
@@ -29,16 +28,16 @@ export class rosModel {
       ros = new ROSLIB.Ros({ url: 'ws://localhost:9090' });
       ros.on('connection', function () {
         console.log('ROS Connected to websocket server.');
-        this.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
+        rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
         DevicesModel.connectAllUAV();
       });
       ros.on('error', function (error) {
         console.log('ROS Error connecting to websocket server: ', error);
-        this.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
+        rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
       });
       ros.on('close', function () {
         console.log('ROS Connection to websocket server closed.');
-        this.setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
+        rosModel.setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
       });
     } else {
       DevicesModel.unsubscribe(-1);
@@ -46,14 +45,13 @@ export class rosModel {
     }
   }
 
-
   static getTopics() {
     var topicsClient = new ROSLIB.Service({
       ros: ros,
       name: '/rosapi/topics',
       serviceType: 'rosapi/Topics',
     });
-  
+
     var request = new ROSLIB.ServiceRequest();
     return new Promise((resolve, rejects) => {
       topicsClient.callService(request, function (result) {
@@ -68,9 +66,9 @@ export class rosModel {
       name: '/rosapi/service_host',
       serviceType: 'rosapi/ServiceHost',
     });
-  
+
     let request = new ROSLIB.ServiceRequest({ service: nameService });
-  
+
     return new Promise((resolve, rejects) => {
       servicehost.callService(request, function (result) {
         resolve(result.host);
@@ -84,9 +82,9 @@ export class rosModel {
       name: '/master_discovery/list_masters',
       serviceType: 'multimaster_msgs_fkie/DiscoverMasters',
     });
-  
+
     let request = new ROSLIB.ServiceRequest();
-  
+
     return new Promise((resolve, rejects) => {
       servicemaster.callService(request, function (result) {
         console.log('masterip -- ' + result.length);
@@ -94,7 +92,4 @@ export class rosModel {
       });
     });
   }
-
-
-  
 }

@@ -3,8 +3,8 @@ import { positionsModel } from '../models/positions.js';
 var eventsCount = 0;
 
 export class eventsModel {
-  static getall(){
-    return events
+  static getall() {
+    return events;
   }
   static addEvent(payload) {
     let eventPosition = positionsModel.getDevice(payload.deviceId);

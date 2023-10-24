@@ -38,7 +38,7 @@ init:
       - type: 'WebRTC'
         source: 'main'
 
-  - name: 'uav_1'
+  - name: 'uav_11'
     category: 'dji_M210_melodic'
     ip: '10.42.0.99'
     camera: []

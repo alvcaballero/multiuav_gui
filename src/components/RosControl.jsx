@@ -111,7 +111,7 @@ export const RosControl = ({ children, notification }) => {
     try {
       const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({ deviceId: -1, type: 'loadMission', mission: missions['route'] }),
+        body: JSON.stringify({ deviceId: -1, type: 'loadMission', attributes: missions['route'] }),
         headers: {
           'Content-Type': 'application/json',
         },
