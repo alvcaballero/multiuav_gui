@@ -1,3 +1,4 @@
+import { OnDeviceTraining } from '@mui/icons-material';
 import cors from 'cors';
 
 const ACCEPTED_ORIGINS = [
@@ -12,6 +13,12 @@ export const corsMiddleware = ({ acceptedOrigins = ACCEPTED_ORIGINS } = {}) =>
     origin: (origin, callback) => {
       if (acceptedOrigins.includes(origin)) {
         return callback(null, true);
+      }
+      if (origin) {
+        console.log(origin);
+        if (origin.includes('http://10.42.0.')) {
+          return callback(null, true);
+        }
       }
 
       if (!origin) {
