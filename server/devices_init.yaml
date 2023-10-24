@@ -1,11 +1,11 @@
 init:
-  - name: 'uav_11'
+  - name: 'uav_1'
     category: 'dji_M210_melodic'
     ip: '10.42.0.99'
     user: 'grvc'
     camera: []
 
-  - name: 'uav_1'
+  - name: 'uav_11'
     category: 'px4'
     ip: '10.42.0.2'
     camera: []
@@ -57,7 +57,7 @@ init:
         source: 'main4'
 
   - id: '7'
-    name: 'uav_101'
+    name: 'uav_20'
     category: 'fuvex'
     ip: '10.42.0.101'
     camera: []
