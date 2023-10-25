@@ -36,7 +36,7 @@ export class websocketController {
       currentsocket['events'] = Object.values(currentevent);
       eventsModel.clearEvents({ eventId: Object.keys(currentevent) });
     }
-    console.log('update');
+    //console.log('update');
     //console.log(currentsocket);
     return JSON.stringify(currentsocket);
   }

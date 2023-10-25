@@ -21,6 +21,7 @@ export const RosControl = ({ children, notification }) => {
   const dispatch = useDispatch();
 
   const [rosState, setrosState] = useState(false);
+  const [confirmMission, setconfirmMission] = useState(false);
   const [textmission, settextmission] = useState('');
 
   useEffect(() => {
@@ -280,6 +281,8 @@ export const RosControl = ({ children, notification }) => {
           connectAddUav,
           commandMission,
           loadMission,
+          confirmMission,
+          setconfirmMission,
         }}
       >
         {children}

@@ -1,5 +1,0 @@
-PING 10.10.2.5 (10.10.2.5) 56(84) bytes of data.
-
---- 10.10.2.5 ping statistics ---
-30 packets transmitted, 0 received, 100% packet loss, time 29683ms
-
