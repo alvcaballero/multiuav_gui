@@ -224,7 +224,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               <a
                 id='commandMissionNavbar'
                 onClick={() => {
-                  rosContex.commandMission();
+                  rosContex.setconfirmMission(true);
                   handleClick();
                 }}
               >
