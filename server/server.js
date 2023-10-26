@@ -61,16 +61,16 @@ wss.on('connection', async function connection(ws) {
 });
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
 
-const interval_update = setInterval(() => {
-  wss.clients.forEach(async function each(ws) {
-    let msg = await websocketController.update();
+const interval_update = setInterval(async () => {
+  let msg = await websocketController.update();
+  wss.clients.forEach(function each(ws) {
     ws.send(msg);
   });
 }, 250);
 
 const interval_server = setInterval(async () => {
+  let msg = await websocketController.updateserver();
   wss.clients.forEach(async function each(ws) {
-    let msg = await websocketController.updateserver();
     ws.send(msg);
   });
 }, 5000);
