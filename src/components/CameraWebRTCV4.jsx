@@ -11,18 +11,11 @@ const useStyles = makeStyles((theme) => ({
   },
   media: {
     //height: theme.dimensions.popupImageHeight,
-<<<<<<< HEAD
-    width: '100%',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-=======
     height: '20vw',
     width: '100%',
     //display: 'flex',
     //justifyContent: 'flex-end',
     //alignItems: 'flex-start',
->>>>>>> serverMVC
     background: 'black',
   },
   media1: {
