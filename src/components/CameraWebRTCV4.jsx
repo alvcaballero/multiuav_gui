@@ -11,10 +11,18 @@ const useStyles = makeStyles((theme) => ({
   },
   media: {
     //height: theme.dimensions.popupImageHeight,
+<<<<<<< HEAD
     width: '100%',
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
+=======
+    height: '20vw',
+    width: '100%',
+    //display: 'flex',
+    //justifyContent: 'flex-end',
+    //alignItems: 'flex-start',
+>>>>>>> serverMVC
     background: 'black',
   },
   media1: {
@@ -69,8 +77,8 @@ export const CameraWebRTCV4 = ({
   const deviceip = 'http://' + deviceIp + ':8889/' + camera_src; //device?.ip;
   const [maxsize, setmaxsize] = useState(false);
   let btn_class = classes.card;
-  let rootclass = maxsize ? classes.root_max : classes.root;
-  let frameclass = maxsize ? classes.media1 : classes.media;
+  let rootclass = classes.root_max;
+  let frameclass = classes.media;
   function Changemaxsize() {
     setmaxsize(!maxsize);
   }
@@ -87,15 +95,7 @@ export const CameraWebRTCV4 = ({
       {device && (
         <Card className={btn_class}>
           <div>
-            <div className={classes.gruopBtn}>
-              <IconButton size='small' onClick={Changemaxsize} onTouchStart={Changemaxsize}>
-                <ZoomOutMapIcon fontSize='small' className={classes.mediaButton} />
-              </IconButton>
-              <IconButton size='small' onClick={closecard}>
-                <CloseIcon fontSize='small' className={classes.mediaButton} />
-              </IconButton>
-            </div>
-            <div className={classes.tittle}>{'Id: ' + device.name + '-' + camera_src}</div>
+            <div className={classes.tittle}>{'Id: ' + device.name}</div>
           </div>
           <iframe src={deviceip} className={frameclass} />
         </Card>

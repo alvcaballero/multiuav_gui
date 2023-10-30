@@ -23,6 +23,17 @@ Content-Type: application/json
     ]
 }
 
+### Add Devices
+POST http://localhost:4000/api/devices
+Content-Type: application/json
+
+{
+    "name": "uav_758",
+    "category": "dji_M300",
+    "ip": "10.42.0.44",
+    "camera":[]
+}
+
 ### delete a device
 
 DELETE http://localhost:4000/api/devices/7
@@ -36,20 +47,20 @@ Content-Type: application/json
 }
 
 ### Devices type
-GET http://localhost:4000/api/devices/type
+GET http://localhost:4000/api/category
 
 ### Atributes 
-GET http://localhost:4000/api/mission/atributes/dji_M210_noetic
+GET http://localhost:4000/api/category/atributes/dji_M210_noetic
 
 ### Atributes
-GET http://localhost:4000/api/mission/atributesparam/dji_M210_noetic/mode_yaw
+GET http://localhost:4000/api/category/atributesparam/dji_M210_noetic/mode_yaw
 
 ### Actions 
 
-GET http://localhost:4000/api/mission/actions/dji_M210_noetic
+GET http://localhost:4000/api/category/actions/dji_M210_noetic
 
 ### Sendtask
-POST http://localhost:4000/api/sendTask
+POST http://localhost:4000/api/commands/sendTask
 Content-Type: application/json
 
 {
@@ -118,7 +129,7 @@ POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
 {
-    "deviceId": 1, 
+    "deviceId": 7, 
     "type": "threat"
 }
 
@@ -178,3 +189,25 @@ GET http://localhost:4000/api/media/:deviceid
 
 ### Image Ros
 GET http://localhost:4000/api/media1/:deviceid
+
+
+### Mediamtx 
+### GET 
+GET http://localhost:9997/v2/paths/list
+
+### ADD 
+POST http://localhost:9997/v2/config/paths/add/uav_6
+Content-Type: application/json
+
+{
+      "source": "rtsp://127.0.0.1:8553/back1"
+}
+
+### REMOVE 
+
+POST http://localhost:9997/v2/config/paths/remove/uav_5
+
+
+### REMOVE 
+
+POST http://localhost:9997/v2/config/paths/remove/uav_5

@@ -286,7 +286,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                             ),
                           })
                         }
-                        endpoint='/api/devices/type'
+                        endpoint='/api/category'
                         keyGetter={(it) => it}
                         titleGetter={(it) => it}
                         label={'Type UAV mission'}
@@ -330,7 +330,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         }),
                                       })
                                     }
-                                    endpoint={'/api/mission/atributesparam/dji_M300/mode_speed'}
+                                    endpoint={'/api/category/atributesparam/dji_M300/mode_speed'}
                                     keyGetter={(it) => it.id}
                                     titleGetter={(it) => it.name}
                                   />
@@ -417,7 +417,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         }),
                                       })
                                     }
-                                    endpoint={'/api/mission/atributesparam/dji_M300/mode_landing'}
+                                    endpoint={'/api/category/atributesparam/dji_M300/mode_landing'}
                                     keyGetter={(it) => it.id}
                                     titleGetter={(it) => it.name}
                                   />
@@ -448,7 +448,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         }),
                                       })
                                     }
-                                    endpoint={'/api/mission/atributesparam/dji_M300/mode_yaw'}
+                                    endpoint={'/api/category/atributesparam/dji_M300/mode_yaw'}
                                     keyGetter={(it) => it.id}
                                     titleGetter={(it) => it.name}
                                   />
@@ -480,7 +480,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         }),
                                       })
                                     }
-                                    endpoint={'/api/mission/atributesparam/dji_M300/mode_gimbal'}
+                                    endpoint={'/api/category/atributesparam/dji_M300/mode_gimbal'}
                                     keyGetter={(it) => it.id}
                                     titleGetter={(it) => it.name}
                                   />
@@ -512,7 +512,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         }),
                                       })
                                     }
-                                    endpoint={'/api/mission/atributesparam/dji_M300/mode_trace'}
+                                    endpoint={'/api/category/atributesparam/dji_M300/mode_trace'}
                                     keyGetter={(it) => it.id}
                                     titleGetter={(it) => it.name}
                                   />

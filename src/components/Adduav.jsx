@@ -162,7 +162,7 @@ export const Adduav = ({ SetAddUAVOpen }) => {
                 emptyValue={null}
                 value={item.category ? item.category : ''}
                 onChange={(e) => setItem({ ...item, category: e.target.value })}
-                endpoint='/api/devices/type'
+                endpoint='/api/category'
                 keyGetter={(it) => it}
                 titleGetter={(it) => it}
                 label={'Type UAV '}

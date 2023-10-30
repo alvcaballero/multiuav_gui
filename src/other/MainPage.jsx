@@ -1,5 +1,5 @@
 //import "./MainPage.css";
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useContext, useState, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -9,7 +9,7 @@ import { Menu } from '../components/Menu';
 import Toast from '../components/Toast';
 import { Adduav } from '../components/Adduav';
 import { Camera } from '../components/Camera';
-import { RosControl } from '../components/RosControl';
+import { RosControl, RosContext } from '../components/RosControl';
 import MapView from '../Mapview/MapView';
 import MapPositions from '../Mapview/MapPositions';
 import MapMissions from '../Mapview/MapMissions';
@@ -17,6 +17,7 @@ import MapMarkers from '../Mapview/MapMarkers';
 import MapSelectedDevice from '../Mapview/MapSelectedDevice';
 import DeviceList from '../components/DeviceList';
 import StatusCard from '../components/StatusCard';
+import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/MainToolbar';
 import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
 
@@ -66,6 +67,7 @@ const MainPage = () => {
   const [selectedDeviceCam, setselectedDeviceCam] = useState();
   const [selectedDeviceCamsrc, setselectedDeviceCamsrc] = useState();
   const [selectedDeviceName, setlectedDeviceName] = useState();
+  const myhostname = `${window.location.hostname}`;
   const selectedPosition = filteredPositions.find(
     (position) => selectedDeviceId && position.deviceId === selectedDeviceId
   );
@@ -74,6 +76,7 @@ const MainPage = () => {
   );
 
   let listdevices = Object.values(devices);
+  const rosContex = useContext(RosContext);
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
 
@@ -191,11 +194,20 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
+        <RosContext.Consumer>
+          {({ confirmMission, setconfirmMission, commandMission }) => (
+            <SwipeConfirm
+              enable={confirmMission}
+              onClose={() => setconfirmMission(false)}
+              onSucces={() => commandMission()}
+            />
+          )}
+        </RosContext.Consumer>
 
         {selectedDeviceCam === 'WebRTC' && (
           <CameraWebRTCV3
             deviceId={selectedDeviceId}
-            deviceIp={'127.0.0.1'}
+            deviceIp={myhostname}
             camera_src={selectedDeviceName + '_' + selectedDeviceCamsrc}
             onClose={() => dispatch(devicesActions.selectId(null))}
           />
