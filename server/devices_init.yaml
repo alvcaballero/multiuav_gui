@@ -5,11 +5,6 @@ init:
     user: 'grvc'
     camera: []
 
-  - name: 'uav_99'
-    category: 'px4'
-    ip: '10.42.0.2'
-    camera: []
-
   - name: 'uav_2'
     category: 'dji_M210_noetic'
     ip: '10.42.0.43'
@@ -19,9 +14,10 @@ init:
 
   - name: 'uav_3'
     category: 'px4'
-    ip: '10.42.0.41'
+    ip: '10.42.0.52'
+    user: 'rock'
     camera:
-      - type: 'Webrtc'
+      - type: 'WebRTC'
         source: 'video0'
 
   - name: 'uav_14'
@@ -51,8 +47,7 @@ init:
       - type: 'WebRTC_env'
         source: 'cam3'
 
-  - id: '7'
-    name: 'uav_101'
+  - name: 'uav_20'
     category: 'fuvex'
     ip: '10.42.0.101'
     camera: []

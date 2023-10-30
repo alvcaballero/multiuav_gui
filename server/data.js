@@ -116,7 +116,7 @@ function convert_landed_state(protocol, landed_state) {
   }
   return state_px4_stol[landed_state];
 }
-module.exports = {
+export {
   state,
   updatedevice,
   updatedeviceIP,

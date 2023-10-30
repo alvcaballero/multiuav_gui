@@ -81,6 +81,7 @@ const CameraPage = () => {
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
   const devices = useSelector((state) => state.devices.items);
   let listdevices = Object.values(devices);
+  const myhostname = `${window.location.hostname}`;
 
   const classes = useStyles();
   return (
@@ -100,23 +101,23 @@ const CameraPage = () => {
             style={{
               backgroundColor: '#000000',
               width: `calc(100vw - 360px)`,
-              height: '100%',
+              height: `calc(100vh - 90px`,
               padding: '20px',
               float: 'right',
             }}
           >
-            <Grid container spacing={4} justifyContent='space-around'>
+            <Grid container spacing={2} justifyContent='space-around'>
               {React.Children.toArray(
                 Object.values(devices).map((device) => (
                   <Fragment key={'dev' + device.id}>
                     {device.camera.map((camera, cam_index) => (
-                      <Grid key={'card-' + device.id + '-' + cam_index} item>
+                      <Grid item xs={12} sm={6} key={'card-' + device.id + '-' + cam_index}>
                         {camera.type === 'WebRTC' && (
                           <CameraWebRTCV4
                             deviceId={device.id}
-                            deviceIp={'127.0.0.1'}
+                            deviceIp={myhostname}
                             devicename={device.name}
-                            camera_src={camera.source}
+                            camera_src={device.name + '_' + camera.source}
                             onClose={() => {
                               console.log('cerrar ');
                             }}

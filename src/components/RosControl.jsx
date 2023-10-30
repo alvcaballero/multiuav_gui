@@ -21,6 +21,7 @@ export const RosControl = ({ children, notification }) => {
   const dispatch = useDispatch();
 
   const [rosState, setrosState] = useState(false);
+  const [confirmMission, setconfirmMission] = useState(false);
   const [textmission, settextmission] = useState('');
 
   useEffect(() => {
@@ -111,7 +112,7 @@ export const RosControl = ({ children, notification }) => {
     try {
       const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({ deviceId: -1, type: 'loadMission', mission: missions['route'] }),
+        body: JSON.stringify({ deviceId: -1, type: 'loadMission', attributes: missions['route'] }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -280,6 +281,8 @@ export const RosControl = ({ children, notification }) => {
           connectAddUav,
           commandMission,
           loadMission,
+          confirmMission,
+          setconfirmMission,
         }}
       >
         {children}
