@@ -67,6 +67,10 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
   const [add_mission, setaddMission] = useState(true);
 
   useEffect(() => {
+    console.log('render Router list');
+  }, []);
+
+  useEffect(() => {
     setmission(Mission_route);
     //console.log("otro use effect");
     Mission_route.route.length > 0 ? setaddMission(false) : setaddMission(true);
@@ -239,317 +243,350 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                       </IconButton>
                     </AccordionSummary>
                     <AccordionDetails className={classes.details}>
-                      <TextField
-                        required
-                        label='Route Name'
-                        variant='standard'
-                        value={item_route.name ? item_route.name : ''}
-                        onChange={(e) =>
-                          setmission({
-                            ...mission,
-                            route: mission.route.map((rt) =>
-                              rt == mission.route[index]
-                                ? { ...item_route, name: e.target.value }
-                                : rt
-                            ),
-                          })
-                        }
-                      />
-
-                      <TextField
-                        required
-                        label='UAV id'
-                        variant='standard'
-                        value={item_route.uav ? item_route.uav : 'uav_'}
-                        onChange={(e) =>
-                          setmission({
-                            ...mission,
-                            route: mission.route.map((rt) =>
-                              rt == mission.route[index]
-                                ? { ...item_route, uav: e.target.value }
-                                : rt
-                            ),
-                          })
-                        }
-                      />
-
-                      <SelectField
-                        emptyValue={null}
-                        value={item_route.uav_type ? item_route.uav_type : ''}
-                        onChange={(e) =>
-                          setmission({
-                            ...mission,
-                            route: mission.route.map((rt) =>
-                              rt == mission.route[index]
-                                ? { ...item_route, uav_type: e.target.value }
-                                : rt
-                            ),
-                          })
-                        }
-                        endpoint='/api/category'
-                        keyGetter={(it) => it}
-                        titleGetter={(it) => it}
-                        label={'Type UAV mission'}
-                        style={{ display: 'inline', width: '200px' }}
-                      />
-
-                      <Accordion
-                        expanded={expanded_wp === 'wp -' + index}
-                        onChange={handleChange_wp('wp -' + index)}
-                      >
-                        <AccordionSummary expandIcon={<ExpandMore />}>
-                          <Typography sx={{ width: '53%', flexShrink: 0 }}>
-                            Route Attributes
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails className={classes.details}>
-                          {item_route.attributes && (
-                            <Fragment key={'fragment-route-atri-' + item_route.id}>
-                              <div>
-                                <Typography variant='subtitle1' className={classes.attributeName}>
-                                  Speed Mode
-                                </Typography>
-                                <div className={classes.attributeValue}>
-                                  <SelectField
-                                    emptyValue={null}
-                                    fullWidth={true}
-                                    value={
-                                      item_route.attributes.mode_speed
-                                        ? item_route.attributes.mode_speed
-                                        : 0
-                                    }
-                                    onChange={(e) =>
-                                      setmission({
-                                        ...mission,
-                                        route: mission.route.map((rt) => {
-                                          let copiedrt = JSON.parse(JSON.stringify(rt));
-                                          rt === mission.route[index]
-                                            ? (copiedrt.attributes.mode_speed = e.target.value)
-                                            : (copiedrt = rt);
-                                          return copiedrt;
-                                        }),
-                                      })
-                                    }
-                                    endpoint={'/api/category/atributesparam/dji_M300/mode_speed'}
-                                    keyGetter={(it) => it.id}
-                                    titleGetter={(it) => it.name}
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <Typography variant='subtitle1' className={classes.attributeName}>
-                                  Speed idle (m/s):
-                                </Typography>
-                                <TextField
-                                  fullWidth
-                                  required
-                                  type='number'
-                                  className={classes.attributeValue}
-                                  value={
-                                    item_route.attributes.idle_vel
-                                      ? item_route.attributes.idle_vel
-                                      : 1.85
-                                  }
-                                  onChange={(e) =>
-                                    setmission({
-                                      ...mission,
-                                      route: mission.route.map((rt) => {
-                                        let copiedrt = JSON.parse(JSON.stringify(rt));
-                                        rt == mission.route[index]
-                                          ? (copiedrt.attributes.idle_vel = +e.target.value)
-                                          : (copiedrt = rt);
-                                        return copiedrt;
-                                      }),
-                                    })
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Typography variant='subtitle1' className={classes.attributeName}>
-                                  Speed MAX (m/s):
-                                </Typography>
-                                <TextField
-                                  fullWidth
-                                  required
-                                  type='number'
-                                  className={classes.attributeValue}
-                                  value={
-                                    item_route.attributes.max_vel
-                                      ? item_route.attributes.max_vel
-                                      : 12
-                                  }
-                                  onChange={(e) =>
-                                    setmission({
-                                      ...mission,
-                                      route: mission.route.map((rt) => {
-                                        let copiedrt = JSON.parse(JSON.stringify(rt));
-                                        rt == mission.route[index]
-                                          ? (copiedrt.attributes.max_vel = +e.target.value)
-                                          : (copiedrt = rt);
-                                        return copiedrt;
-                                      }),
-                                    })
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Typography variant='subtitle1' className={classes.attributeName}>
-                                  landing mode
-                                </Typography>
-                                <div className={classes.attributeValue}>
-                                  <SelectField
-                                    emptyValue={null}
-                                    fullWidth={true}
-                                    value={
-                                      item_route.attributes.mode_landing
-                                        ? item_route.attributes.mode_landing
-                                        : 0
-                                    }
-                                    onChange={(e) =>
-                                      setmission({
-                                        ...mission,
-                                        route: mission.route.map((rt) => {
-                                          let copiedrt = JSON.parse(JSON.stringify(rt));
-                                          rt === mission.route[index]
-                                            ? (copiedrt.attributes.mode_landing = e.target.value)
-                                            : (copiedrt = rt);
-                                          return copiedrt;
-                                        }),
-                                      })
-                                    }
-                                    endpoint={'/api/category/atributesparam/dji_M300/mode_landing'}
-                                    keyGetter={(it) => it.id}
-                                    titleGetter={(it) => it.name}
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <Typography variant='subtitle1' className={classes.attributeName}>
-                                  Yaw mode
-                                </Typography>
-                                <div className={classes.attributeValue}>
-                                  <SelectField
-                                    emptyValue={null}
-                                    fullWidth={true}
-                                    value={
-                                      item_route.attributes.mode_yaw
-                                        ? item_route.attributes.mode_yaw
-                                        : 0
-                                    }
-                                    onChange={(e) =>
-                                      setmission({
-                                        ...mission,
-                                        route: mission.route.map((rt) => {
-                                          let copiedrt = JSON.parse(JSON.stringify(rt));
-                                          rt === mission.route[index]
-                                            ? (copiedrt.attributes.mode_yaw = e.target.value)
-                                            : (copiedrt = rt);
-                                          return copiedrt;
-                                        }),
-                                      })
-                                    }
-                                    endpoint={'/api/category/atributesparam/dji_M300/mode_yaw'}
-                                    keyGetter={(it) => it.id}
-                                    titleGetter={(it) => it.name}
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <Typography variant='subtitle1' className={classes.attributeName}>
-                                  {' '}
-                                  Gimbal mode{' '}
-                                </Typography>
-                                <div className={classes.attributeValue}>
-                                  <SelectField
-                                    emptyValue={null}
-                                    fullWidth={true}
-                                    value={
-                                      item_route.attributes.mode_gimbal
-                                        ? item_route.attributes.mode_gimbal
-                                        : 0
-                                    }
-                                    onChange={(e) =>
-                                      setmission({
-                                        ...mission,
-                                        route: mission.route.map((rt) => {
-                                          let copiedrt = JSON.parse(JSON.stringify(rt));
-                                          rt === mission.route[index]
-                                            ? (copiedrt.attributes.mode_gimbal = e.target.value)
-                                            : (copiedrt = rt);
-                                          return copiedrt;
-                                        }),
-                                      })
-                                    }
-                                    endpoint={'/api/category/atributesparam/dji_M300/mode_gimbal'}
-                                    keyGetter={(it) => it.id}
-                                    titleGetter={(it) => it.name}
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <Typography variant='subtitle1' className={classes.attributeName}>
-                                  {' '}
-                                  Trace mode:{' '}
-                                </Typography>
-                                <div className={classes.attributeValue}>
-                                  <SelectField
-                                    emptyValue={null}
-                                    fullWidth={true}
-                                    value={
-                                      item_route.attributes.mode_trace
-                                        ? item_route.attributes.mode_trace
-                                        : 0
-                                    }
-                                    onChange={(e) =>
-                                      setmission({
-                                        ...mission,
-                                        route: mission.route.map((rt) => {
-                                          let copiedrt = JSON.parse(JSON.stringify(rt));
-                                          rt === mission.route[index]
-                                            ? (copiedrt.attributes.mode_trace = e.target.value)
-                                            : (copiedrt = rt);
-                                          return copiedrt;
-                                        }),
-                                      })
-                                    }
-                                    endpoint={'/api/category/atributesparam/dji_M300/mode_trace'}
-                                    keyGetter={(it) => it.id}
-                                    titleGetter={(it) => it.name}
-                                  />
-                                </div>
-                              </div>
-                            </Fragment>
-                          )}
-                        </AccordionDetails>
-                      </Accordion>
-
-                      <Typography variant='subtitle1'>Waypoints</Typography>
-                      {React.Children.toArray(
-                        Object.values(item_route.wp).map((waypoint, index_wp, list_wp) => (
-                          <WaypointRouteList
-                            mission={mission}
-                            setmission={setmission}
-                            index_wp={index_wp}
-                            index={index}
-                            waypoint={waypoint}
-                            AddnewWp={AddnewWp}
-                            expand_wp={expanded_wp}
+                      {expanded_route === 'Rute ' + index && (
+                        <Fragment>
+                          <TextField
+                            required
+                            label='Route Name'
+                            variant='standard'
+                            value={item_route.name ? item_route.name : ''}
+                            onChange={(e) =>
+                              setmission({
+                                ...mission,
+                                route: mission.route.map((rt) =>
+                                  rt == mission.route[index]
+                                    ? { ...item_route, name: e.target.value }
+                                    : rt
+                                ),
+                              })
+                            }
                           />
-                        ))
-                      )}
 
-                      <Box textAlign='center'>
-                        <Button
-                          value={index}
-                          variant='contained'
-                          size='large'
-                          sx={{ width: '80%', flexShrink: 0 }}
-                          style={{ marginTop: '15px' }}
-                          onClick={(e) => AddnewWp(e.target.value, -1)}
-                        >
-                          Add new Waypoint
-                        </Button>
-                      </Box>
+                          <TextField
+                            required
+                            label='UAV id'
+                            variant='standard'
+                            value={item_route.uav ? item_route.uav : 'uav_'}
+                            onChange={(e) =>
+                              setmission({
+                                ...mission,
+                                route: mission.route.map((rt) =>
+                                  rt == mission.route[index]
+                                    ? { ...item_route, uav: e.target.value }
+                                    : rt
+                                ),
+                              })
+                            }
+                          />
+
+                          <SelectField
+                            emptyValue={null}
+                            value={item_route.uav_type ? item_route.uav_type : ''}
+                            onChange={(e) =>
+                              setmission({
+                                ...mission,
+                                route: mission.route.map((rt) =>
+                                  rt == mission.route[index]
+                                    ? { ...item_route, uav_type: e.target.value }
+                                    : rt
+                                ),
+                              })
+                            }
+                            endpoint='/api/category'
+                            keyGetter={(it) => it}
+                            titleGetter={(it) => it}
+                            label={'Type UAV mission'}
+                            style={{ display: 'inline', width: '200px' }}
+                          />
+
+                          <Accordion
+                            expanded={expanded_wp === 'wp -' + index}
+                            onChange={handleChange_wp('wp -' + index)}
+                          >
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Typography sx={{ width: '53%', flexShrink: 0 }}>
+                                Route Attributes
+                              </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.details}>
+                              {item_route.attributes && (
+                                <Fragment key={'fragment-route-atri-' + item_route.id}>
+                                  <div>
+                                    <Typography
+                                      variant='subtitle1'
+                                      className={classes.attributeName}
+                                    >
+                                      Speed Mode
+                                    </Typography>
+                                    <div className={classes.attributeValue}>
+                                      <SelectField
+                                        emptyValue={null}
+                                        fullWidth={true}
+                                        value={
+                                          item_route.attributes.mode_speed
+                                            ? item_route.attributes.mode_speed
+                                            : 0
+                                        }
+                                        onChange={(e) =>
+                                          setmission({
+                                            ...mission,
+                                            route: mission.route.map((rt) => {
+                                              let copiedrt = JSON.parse(JSON.stringify(rt));
+                                              rt === mission.route[index]
+                                                ? (copiedrt.attributes.mode_speed = e.target.value)
+                                                : (copiedrt = rt);
+                                              return copiedrt;
+                                            }),
+                                          })
+                                        }
+                                        endpoint={
+                                          '/api/category/atributesparam/dji_M300/mode_speed'
+                                        }
+                                        keyGetter={(it) => it.id}
+                                        titleGetter={(it) => it.name}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Typography
+                                      variant='subtitle1'
+                                      className={classes.attributeName}
+                                    >
+                                      Speed idle (m/s):
+                                    </Typography>
+                                    <TextField
+                                      fullWidth
+                                      required
+                                      type='number'
+                                      className={classes.attributeValue}
+                                      value={
+                                        item_route.attributes.idle_vel
+                                          ? item_route.attributes.idle_vel
+                                          : 1.85
+                                      }
+                                      onChange={(e) =>
+                                        setmission({
+                                          ...mission,
+                                          route: mission.route.map((rt) => {
+                                            let copiedrt = JSON.parse(JSON.stringify(rt));
+                                            rt == mission.route[index]
+                                              ? (copiedrt.attributes.idle_vel = +e.target.value)
+                                              : (copiedrt = rt);
+                                            return copiedrt;
+                                          }),
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Typography
+                                      variant='subtitle1'
+                                      className={classes.attributeName}
+                                    >
+                                      Speed MAX (m/s):
+                                    </Typography>
+                                    <TextField
+                                      fullWidth
+                                      required
+                                      type='number'
+                                      className={classes.attributeValue}
+                                      value={
+                                        item_route.attributes.max_vel
+                                          ? item_route.attributes.max_vel
+                                          : 12
+                                      }
+                                      onChange={(e) =>
+                                        setmission({
+                                          ...mission,
+                                          route: mission.route.map((rt) => {
+                                            let copiedrt = JSON.parse(JSON.stringify(rt));
+                                            rt == mission.route[index]
+                                              ? (copiedrt.attributes.max_vel = +e.target.value)
+                                              : (copiedrt = rt);
+                                            return copiedrt;
+                                          }),
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Typography
+                                      variant='subtitle1'
+                                      className={classes.attributeName}
+                                    >
+                                      landing mode
+                                    </Typography>
+                                    <div className={classes.attributeValue}>
+                                      <SelectField
+                                        emptyValue={null}
+                                        fullWidth={true}
+                                        value={
+                                          item_route.attributes.mode_landing
+                                            ? item_route.attributes.mode_landing
+                                            : 0
+                                        }
+                                        onChange={(e) =>
+                                          setmission({
+                                            ...mission,
+                                            route: mission.route.map((rt) => {
+                                              let copiedrt = JSON.parse(JSON.stringify(rt));
+                                              rt === mission.route[index]
+                                                ? (copiedrt.attributes.mode_landing =
+                                                    e.target.value)
+                                                : (copiedrt = rt);
+                                              return copiedrt;
+                                            }),
+                                          })
+                                        }
+                                        endpoint={
+                                          '/api/category/atributesparam/dji_M300/mode_landing'
+                                        }
+                                        keyGetter={(it) => it.id}
+                                        titleGetter={(it) => it.name}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Typography
+                                      variant='subtitle1'
+                                      className={classes.attributeName}
+                                    >
+                                      Yaw mode
+                                    </Typography>
+                                    <div className={classes.attributeValue}>
+                                      <SelectField
+                                        emptyValue={null}
+                                        fullWidth={true}
+                                        value={
+                                          item_route.attributes.mode_yaw
+                                            ? item_route.attributes.mode_yaw
+                                            : 0
+                                        }
+                                        onChange={(e) =>
+                                          setmission({
+                                            ...mission,
+                                            route: mission.route.map((rt) => {
+                                              let copiedrt = JSON.parse(JSON.stringify(rt));
+                                              rt === mission.route[index]
+                                                ? (copiedrt.attributes.mode_yaw = e.target.value)
+                                                : (copiedrt = rt);
+                                              return copiedrt;
+                                            }),
+                                          })
+                                        }
+                                        endpoint={'/api/category/atributesparam/dji_M300/mode_yaw'}
+                                        keyGetter={(it) => it.id}
+                                        titleGetter={(it) => it.name}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Typography
+                                      variant='subtitle1'
+                                      className={classes.attributeName}
+                                    >
+                                      {' '}
+                                      Gimbal mode{' '}
+                                    </Typography>
+                                    <div className={classes.attributeValue}>
+                                      <SelectField
+                                        emptyValue={null}
+                                        fullWidth={true}
+                                        value={
+                                          item_route.attributes.mode_gimbal
+                                            ? item_route.attributes.mode_gimbal
+                                            : 0
+                                        }
+                                        onChange={(e) =>
+                                          setmission({
+                                            ...mission,
+                                            route: mission.route.map((rt) => {
+                                              let copiedrt = JSON.parse(JSON.stringify(rt));
+                                              rt === mission.route[index]
+                                                ? (copiedrt.attributes.mode_gimbal = e.target.value)
+                                                : (copiedrt = rt);
+                                              return copiedrt;
+                                            }),
+                                          })
+                                        }
+                                        endpoint={
+                                          '/api/category/atributesparam/dji_M300/mode_gimbal'
+                                        }
+                                        keyGetter={(it) => it.id}
+                                        titleGetter={(it) => it.name}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Typography
+                                      variant='subtitle1'
+                                      className={classes.attributeName}
+                                    >
+                                      Trace mode:
+                                    </Typography>
+                                    <div className={classes.attributeValue}>
+                                      <SelectField
+                                        emptyValue={null}
+                                        fullWidth={true}
+                                        value={
+                                          item_route.attributes.mode_trace
+                                            ? item_route.attributes.mode_trace
+                                            : 0
+                                        }
+                                        onChange={(e) =>
+                                          setmission({
+                                            ...mission,
+                                            route: mission.route.map((rt) => {
+                                              let copiedrt = JSON.parse(JSON.stringify(rt));
+                                              rt === mission.route[index]
+                                                ? (copiedrt.attributes.mode_trace = e.target.value)
+                                                : (copiedrt = rt);
+                                              return copiedrt;
+                                            }),
+                                          })
+                                        }
+                                        endpoint={
+                                          '/api/category/atributesparam/dji_M300/mode_trace'
+                                        }
+                                        keyGetter={(it) => it.id}
+                                        titleGetter={(it) => it.name}
+                                      />
+                                    </div>
+                                  </div>
+                                </Fragment>
+                              )}
+                            </AccordionDetails>
+                          </Accordion>
+
+                          <Typography variant='subtitle1'>Waypoints</Typography>
+                          {React.Children.toArray(
+                            Object.values(item_route.wp).map((waypoint, index_wp, list_wp) => (
+                              <WaypointRouteList
+                                mission={mission}
+                                setmission={setmission}
+                                index_wp={index_wp}
+                                index={index}
+                                waypoint={waypoint}
+                                AddnewWp={AddnewWp}
+                                expand_wp={expanded_wp}
+                              />
+                            ))
+                          )}
+
+                          <Box textAlign='center'>
+                            <Button
+                              value={index}
+                              variant='contained'
+                              size='large'
+                              sx={{ width: '80%', flexShrink: 0 }}
+                              style={{ marginTop: '15px' }}
+                              onClick={(e) => AddnewWp(e.target.value, -1)}
+                            >
+                              Add new Waypoint
+                            </Button>
+                          </Box>
+                        </Fragment>
+                      )}
                     </AccordionDetails>
                   </Accordion>
                   {index < list.length - 1 ? <Divider /> : null}

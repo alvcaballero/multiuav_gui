@@ -63,6 +63,9 @@ const WaypointRouteList = ({
   const [newactionid, setnewactionid] = useState(0);
   const [expanded_wp, setExpanded_wp] = useState(false);
   //const waypoint = mission.route[index]["wp"][index_wp];
+  useEffect(() => {
+    console.log('render waypoint' + index + '-' + index_wp);
+  }, []);
 
   useEffect(() => {
     setExpanded_wp(expand_wp);
@@ -134,241 +137,246 @@ const WaypointRouteList = ({
         </IconButton>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        <Box
-          component='form'
-          sx={{
-            '& .MuiTextField-root': { m: 1 },
-          }}
-        >
-          <div>
-            <Typography variant='subtitle1' style={{ display: 'inline' }}>
-              Position
-            </Typography>
-          </div>
-          <TextField
-            required
-            label='Latitud '
-            type='number'
-            sx={{ width: '15ch' }}
-            variant='standard'
-            inputProps={{
-              maxLength: 16,
-              step: 0.0001,
-            }}
-            value={waypoint.pos ? waypoint.pos[0] : 0}
-            onChange={(e) =>
-              setmission({
-                ...mission,
-                route: mission.route.map((rt) => {
-                  let copiedrt = JSON.parse(JSON.stringify(rt));
-                  rt == mission.route[index]
-                    ? (copiedrt.wp[index_wp]['pos'][0] = +e.target.value)
-                    : (copiedrt = rt);
-                  return copiedrt;
-                }),
-              })
-            }
-          />
-          <TextField
-            required
-            label='Longitud '
-            type='number'
-            variant='standard'
-            sx={{ width: '15ch' }}
-            inputProps={{
-              maxLength: 16,
-              step: 0.0001,
-            }}
-            value={waypoint.pos ? waypoint.pos[1] : 0}
-            onChange={(e) =>
-              setmission({
-                ...mission,
-                route: mission.route.map((rt) => {
-                  let copiedrt = JSON.parse(JSON.stringify(rt));
-                  rt == mission.route[index]
-                    ? (copiedrt.wp[index_wp]['pos'][1] = +e.target.value)
-                    : (copiedrt = rt);
-                  return copiedrt;
-                }),
-              })
-            }
-          />
-          <TextField
-            required
-            label='altura '
-            type='number'
-            variant='standard'
-            sx={{ width: '7ch' }}
-            value={waypoint.pos ? waypoint.pos[2] : 0}
-            onChange={(e) =>
-              setmission({
-                ...mission,
-                route: mission.route.map((rt) => {
-                  let copiedrt = JSON.parse(JSON.stringify(rt));
-                  rt == mission.route[index]
-                    ? (copiedrt.wp[index_wp]['pos'][2] = +e.target.value)
-                    : (copiedrt = rt);
-                  return copiedrt;
-                }),
-              })
-            }
-          />
-        </Box>
-
-        <TextField
-          required
-          label='Speed '
-          type='number'
-          variant='standard'
-          value={waypoint.speed ? waypoint.speed : mission.route[index].attributes.idle_vel}
-          onChange={(e) =>
-            setmission({
-              ...mission,
-              route: mission.route.map((rt) => {
-                let copiedrt = JSON.parse(JSON.stringify(rt));
-                mission.route[index]
-                  ? (copiedrt.wp[index_wp]['speed'] = +e.target.value)
-                  : (copiedrt = rt);
-                return copiedrt;
-              }),
-            })
-          }
-        />
-
-        <TextField
-          required
-          label='YAW '
-          type='number'
-          variant='standard'
-          value={waypoint.yaw ? waypoint.yaw : 0}
-          onChange={(e) =>
-            setmission({
-              ...mission,
-              route: mission.route.map((rt) => {
-                let copiedrt = JSON.parse(JSON.stringify(rt));
-                rt == mission.route[index]
-                  ? (copiedrt.wp[index_wp]['yaw'] = +e.target.value)
-                  : (copiedrt = rt);
-                return copiedrt;
-              }),
-            })
-          }
-        />
-
-        <TextField
-          required
-          label='Gimbal '
-          type='number'
-          variant='standard'
-          value={waypoint.gimbal ? waypoint.gimbal : 0}
-          onChange={(e) =>
-            setmission({
-              ...mission,
-              route: mission.route.map((rt) => {
-                let copiedrt = JSON.parse(JSON.stringify(rt));
-                rt == mission.route[index]
-                  ? (copiedrt.wp[index_wp]['gimbal'] = +e.target.value)
-                  : (copiedrt = rt);
-                return copiedrt;
-              }),
-            })
-          }
-        />
-
-        <Accordion
-          expanded={expanded_ac === 'wp ' + index_wp}
-          onChange={handleChange_ac('wp ' + index_wp)}
-        >
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography sx={{ width: '33%', flexShrink: 0 }}>Actions</Typography>
-          </AccordionSummary>
-          <AccordionDetails className={classes.details}>
-            {waypoint.action &&
-              React.Children.toArray(
-                Object.keys(waypoint.action).map((action_key, index_ac, list_ac) => (
-                  <Fragment key={'fragment-action-' + index_ac}>
-                    <div>
-                      <Typography variant='subtitle1' className={classes.attributeName}>
-                        {action_key}
-                      </Typography>
-                      <div className={classes.actionValue}>
-                        <TextField
-                          required
-                          fullWidth={true}
-                          value={waypoint.action[action_key] ? waypoint.action[action_key] : 0}
-                          onChange={(e) =>
-                            setmission({
-                              ...mission,
-                              route: mission.route.map((rt) => {
-                                let copiedrt = JSON.parse(JSON.stringify(rt));
-                                rt == mission.route[index]
-                                  ? (copiedrt.wp[index_wp]['action'][action_key] = e.target.value)
-                                  : (copiedrt = rt);
-                                return copiedrt;
-                              }),
-                            })
-                          }
-                        />
-                      </div>
-                      <IconButton
-                        sx={{
-                          py: 0,
-                          pr: 2,
-                          marginLeft: 'auto',
-                        }}
-                        onClick={() => Removing_action(index, index_wp, action_key)}
-                        className={classes.negative}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </div>
-                    <Divider></Divider>
-                  </Fragment>
-                ))
-              )}
-            <Box textAlign='center'>
-              {newactionmenu ? (
-                <Button
-                  variant='contained'
-                  size='large'
-                  sx={{ width: '80%', flexShrink: 0 }}
-                  style={{ marginTop: '15px' }}
-                  onClick={handleChange_acnew('wp ' + index_wp)}
-                >
-                  Add new action
-                </Button>
-              ) : (
-                <div>
-                  <Typography variant='subtitle1'>Tipo de acccion a añadir</Typography>
-                  <SelectField
-                    emptyValue={null}
-                    fullWidth={true}
-                    value={newactionid}
-                    onChange={(e) => setnewactionid(e.target.value)}
-                    endpoint={'/api/category/actions/dji_M210_noetic'}
-                    keyGetter={(it) => it.id}
-                    titleGetter={(it) => it.description}
-                  />
-                  <div>
-                    <Button onClick={() => setnewactionmenu(true)}>Cancel</Button>
-                    <Button onClick={() => setnewaction(index, index_wp)}>Add</Button>
-                  </div>
-                </div>
-              )}
+        {expanded_wp === 'wp ' + index_wp && (
+          <Fragment>
+            <Box
+              component='form'
+              sx={{
+                '& .MuiTextField-root': { m: 1 },
+              }}
+            >
+              <div>
+                <Typography variant='subtitle1' style={{ display: 'inline' }}>
+                  Position
+                </Typography>
+              </div>
+              <TextField
+                required
+                label='Latitud '
+                type='number'
+                sx={{ width: '15ch' }}
+                variant='standard'
+                inputProps={{
+                  maxLength: 16,
+                  step: 0.0001,
+                }}
+                value={waypoint.pos ? waypoint.pos[0] : 0}
+                onChange={(e) =>
+                  setmission({
+                    ...mission,
+                    route: mission.route.map((rt) => {
+                      let copiedrt = JSON.parse(JSON.stringify(rt));
+                      rt == mission.route[index]
+                        ? (copiedrt.wp[index_wp]['pos'][0] = +e.target.value)
+                        : (copiedrt = rt);
+                      return copiedrt;
+                    }),
+                  })
+                }
+              />
+              <TextField
+                required
+                label='Longitud '
+                type='number'
+                variant='standard'
+                sx={{ width: '15ch' }}
+                inputProps={{
+                  maxLength: 16,
+                  step: 0.0001,
+                }}
+                value={waypoint.pos ? waypoint.pos[1] : 0}
+                onChange={(e) =>
+                  setmission({
+                    ...mission,
+                    route: mission.route.map((rt) => {
+                      let copiedrt = JSON.parse(JSON.stringify(rt));
+                      rt == mission.route[index]
+                        ? (copiedrt.wp[index_wp]['pos'][1] = +e.target.value)
+                        : (copiedrt = rt);
+                      return copiedrt;
+                    }),
+                  })
+                }
+              />
+              <TextField
+                required
+                label='altura '
+                type='number'
+                variant='standard'
+                sx={{ width: '7ch' }}
+                value={waypoint.pos ? waypoint.pos[2] : 0}
+                onChange={(e) =>
+                  setmission({
+                    ...mission,
+                    route: mission.route.map((rt) => {
+                      let copiedrt = JSON.parse(JSON.stringify(rt));
+                      rt == mission.route[index]
+                        ? (copiedrt.wp[index_wp]['pos'][2] = +e.target.value)
+                        : (copiedrt = rt);
+                      return copiedrt;
+                    }),
+                  })
+                }
+              />
             </Box>
-          </AccordionDetails>
-        </Accordion>
-        <Box textAlign='center'>
-          <Button
-            variant='contained'
-            size='large'
-            sx={{ width: '80%', flexShrink: 0 }}
-            style={{ marginTop: '15px' }}
-            onClick={() => AddnewWp(index, index_wp)}
-          >
-            Add new Waypoint
-          </Button>
-        </Box>
+
+            <TextField
+              required
+              label='Speed '
+              type='number'
+              variant='standard'
+              value={waypoint.speed ? waypoint.speed : mission.route[index].attributes.idle_vel}
+              onChange={(e) =>
+                setmission({
+                  ...mission,
+                  route: mission.route.map((rt) => {
+                    let copiedrt = JSON.parse(JSON.stringify(rt));
+                    mission.route[index]
+                      ? (copiedrt.wp[index_wp]['speed'] = +e.target.value)
+                      : (copiedrt = rt);
+                    return copiedrt;
+                  }),
+                })
+              }
+            />
+
+            <TextField
+              required
+              label='YAW '
+              type='number'
+              variant='standard'
+              value={waypoint.yaw ? waypoint.yaw : 0}
+              onChange={(e) =>
+                setmission({
+                  ...mission,
+                  route: mission.route.map((rt) => {
+                    let copiedrt = JSON.parse(JSON.stringify(rt));
+                    rt == mission.route[index]
+                      ? (copiedrt.wp[index_wp]['yaw'] = +e.target.value)
+                      : (copiedrt = rt);
+                    return copiedrt;
+                  }),
+                })
+              }
+            />
+
+            <TextField
+              required
+              label='Gimbal '
+              type='number'
+              variant='standard'
+              value={waypoint.gimbal ? waypoint.gimbal : 0}
+              onChange={(e) =>
+                setmission({
+                  ...mission,
+                  route: mission.route.map((rt) => {
+                    let copiedrt = JSON.parse(JSON.stringify(rt));
+                    rt == mission.route[index]
+                      ? (copiedrt.wp[index_wp]['gimbal'] = +e.target.value)
+                      : (copiedrt = rt);
+                    return copiedrt;
+                  }),
+                })
+              }
+            />
+
+            <Accordion
+              expanded={expanded_ac === 'wp ' + index_wp}
+              onChange={handleChange_ac('wp ' + index_wp)}
+            >
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography sx={{ width: '33%', flexShrink: 0 }}>Actions</Typography>
+              </AccordionSummary>
+              <AccordionDetails className={classes.details}>
+                {waypoint.action &&
+                  React.Children.toArray(
+                    Object.keys(waypoint.action).map((action_key, index_ac, list_ac) => (
+                      <Fragment key={'fragment-action-' + index_ac}>
+                        <div>
+                          <Typography variant='subtitle1' className={classes.attributeName}>
+                            {action_key}
+                          </Typography>
+                          <div className={classes.actionValue}>
+                            <TextField
+                              required
+                              fullWidth={true}
+                              value={waypoint.action[action_key] ? waypoint.action[action_key] : 0}
+                              onChange={(e) =>
+                                setmission({
+                                  ...mission,
+                                  route: mission.route.map((rt) => {
+                                    let copiedrt = JSON.parse(JSON.stringify(rt));
+                                    rt == mission.route[index]
+                                      ? (copiedrt.wp[index_wp]['action'][action_key] =
+                                          e.target.value)
+                                      : (copiedrt = rt);
+                                    return copiedrt;
+                                  }),
+                                })
+                              }
+                            />
+                          </div>
+                          <IconButton
+                            sx={{
+                              py: 0,
+                              pr: 2,
+                              marginLeft: 'auto',
+                            }}
+                            onClick={() => Removing_action(index, index_wp, action_key)}
+                            className={classes.negative}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </div>
+                        <Divider></Divider>
+                      </Fragment>
+                    ))
+                  )}
+                <Box textAlign='center'>
+                  {newactionmenu ? (
+                    <Button
+                      variant='contained'
+                      size='large'
+                      sx={{ width: '80%', flexShrink: 0 }}
+                      style={{ marginTop: '15px' }}
+                      onClick={handleChange_acnew('wp ' + index_wp)}
+                    >
+                      Add new action
+                    </Button>
+                  ) : (
+                    <div>
+                      <Typography variant='subtitle1'>Tipo de acccion a añadir</Typography>
+                      <SelectField
+                        emptyValue={null}
+                        fullWidth={true}
+                        value={newactionid}
+                        onChange={(e) => setnewactionid(e.target.value)}
+                        endpoint={'/api/category/actions/dji_M210_noetic'}
+                        keyGetter={(it) => it.id}
+                        titleGetter={(it) => it.description}
+                      />
+                      <div>
+                        <Button onClick={() => setnewactionmenu(true)}>Cancel</Button>
+                        <Button onClick={() => setnewaction(index, index_wp)}>Add</Button>
+                      </div>
+                    </div>
+                  )}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+            <Box textAlign='center'>
+              <Button
+                variant='contained'
+                size='large'
+                sx={{ width: '80%', flexShrink: 0 }}
+                style={{ marginTop: '15px' }}
+                onClick={() => AddnewWp(index, index_wp)}
+              >
+                Add new Waypoint
+              </Button>
+            </Box>
+          </Fragment>
+        )}
       </AccordionDetails>
     </Accordion>
   );
