@@ -52,9 +52,9 @@ export const MapMissionsCreate = () => {
     canvas.style.cursor = 'grabbing';
     // Update the Point feature in `geojson` coordinates
     // and call setData to the source layer `point` on it.
-    console.log('new position' + coords.lng + '-' + coords.lat);
+    console.log('on move point' + coords.lng + '-' + coords.lat);
     let auxroute = testkeepvalue.getroute();
-    console.log(auxroute);
+    //console.log(auxroute);
 
     let auxselectpoint = testkeepvalue.getSelectwp();
     if (auxselectpoint.id >= 0) {
@@ -292,7 +292,7 @@ export const MapMissionsCreate = () => {
 
   useEffect(() => {
     console.log('Mapmission upload mission');
-    console.log(routes);
+    //console.log(routes);
     testkeepvalue.initroute(routes);
     let waypoint_position = routeTowaypoints(routes);
 
