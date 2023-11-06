@@ -234,34 +234,35 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         />
                       ))}
 
-                    {position.attributes.hasOwnProperty('alarm') && (
-                      <StatusRow
-                        key='alarm1'
-                        name={'Alarm ' + position.attributes.alarm}
-                        content={
-                          <div style={{ width: '100%' }}>
-                            <Button
-                              variant='contained'
-                              size='small'
-                              color='primary'
-                              style={{ margin: '1px', display: 'inline-block' }}
-                              onClick={() => serverCommand(device.id, 'threat', { data: true })}
-                            >
-                              Validate
-                            </Button>
-                            <Button
-                              variant='contained'
-                              size='small'
-                              color='secondary'
-                              style={{ margin: '1px', display: 'inline-block' }}
-                              onClick={() => serverCommand(device.id, 'threat', { data: false })}
-                            >
-                              Dismiss
-                            </Button>
-                          </div>
-                        }
-                      />
-                    )}
+                    {position.attributes.hasOwnProperty('alarm') &&
+                      position.attributes.alarm == 'threat' && (
+                        <StatusRow
+                          key='alarm1'
+                          name={'Alarm ' + position.attributes.alarm}
+                          content={
+                            <div style={{ width: '100%' }}>
+                              <Button
+                                variant='contained'
+                                size='small'
+                                color='primary'
+                                style={{ margin: '1px', display: 'inline-block' }}
+                                onClick={() => serverCommand(device.id, 'threat', { data: true })}
+                              >
+                                Validate
+                              </Button>
+                              <Button
+                                variant='contained'
+                                size='small'
+                                color='secondary'
+                                style={{ margin: '1px', display: 'inline-block' }}
+                                onClick={() => serverCommand(device.id, 'threat', { data: false })}
+                              >
+                                Dismiss
+                              </Button>
+                            </div>
+                          }
+                        />
+                      )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -287,8 +288,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                 <PublishIcon />
               </IconButton>
               <IconButton
-              //onClick={() => navigate(`/settings/device/${deviceId}`)}
-              //disabled={disableActions || deviceReadonly}
+                onClick={() => navigate(`/device/${deviceId}`)}
+                //disabled={disableActions || deviceReadonly}
               >
                 <EditIcon />
               </IconButton>

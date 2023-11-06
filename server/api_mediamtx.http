@@ -1,0 +1,20 @@
+### Mediamtx 
+### GET 
+GET http://localhost:9997/v2/paths/list
+
+### ADD 
+POST http://localhost:9997/v2/config/paths/add/uav_6
+Content-Type: application/json
+
+{
+      "source": "rtsp://127.0.0.1:8553/back1"
+}
+
+### REMOVE 
+
+POST http://localhost:9997/v2/config/paths/remove/uav_5
+
+
+### REMOVE 
+
+POST http://localhost:9997/v2/config/paths/remove/uav_5

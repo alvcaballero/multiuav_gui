@@ -99,7 +99,7 @@ const DeviceRow = ({ data, index, style }) => {
     return (
       <React.Fragment>
         {position && position.attributes.hasOwnProperty('landed_state') && (
-          <Typography component='span' style={{ fontSize: 12 }}>
+          <Typography component='span' sx={{ display: 'block', fontSize: 10 }}>
             {position.attributes.landed_state}
           </Typography>
         )}
@@ -187,13 +187,14 @@ const DeviceRow = ({ data, index, style }) => {
                 </IconButton>
               </Tooltip>
             )}
-            {position.attributes.hasOwnProperty('alarm') && (
-              <Tooltip title={`${'eventAlarm'}: ${formatAlarm(position.attributes.alarm)}`}>
-                <IconButton size='small'>
-                  <ErrorIcon fontSize='small' style={negativecolor} />
-                </IconButton>
-              </Tooltip>
-            )}
+            {position.attributes.hasOwnProperty('alarm') &&
+              position.attributes.alarm == 'threat' && (
+                <Tooltip title={`${'eventAlarm'}: ${formatAlarm(position.attributes.alarm)}`}>
+                  <IconButton size='small'>
+                    <ErrorIcon fontSize='small' style={negativecolor} />
+                  </IconButton>
+                </Tooltip>
+              )}
           </>
         )}
       </ListItemButton>
