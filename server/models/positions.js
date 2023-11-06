@@ -3,7 +3,6 @@ const positions = {};
 const history = {};
 
 export class positionsModel {
-
   static async getAll() {
     return positions;
   }
@@ -12,12 +11,19 @@ export class positionsModel {
   }
   static async updatePosition(payload) {
     //positions[payload.deviceId] = payload;
-    DevicesModel.updatedevicetime(payload.deviceId)
+    DevicesModel.updatedevicetime(payload.deviceId);
 
     if (positions[payload.deviceId] === undefined) {
       positions[payload.deviceId] = {
         deviceId: payload.deviceId,
-        attributes: {},
+        attributes: {
+          mission_state: 'UNDEFINED',
+          wp_reached: 'UNDEFINED',
+          uav_state: 'OK',
+          landed_state: 'UNDEFINED',
+          gimbal: [0, 0, 0],
+          alarm: 'UNDEFINED',
+        },
       };
     }
 
@@ -36,14 +42,20 @@ export class positionsModel {
     if (payload.hasOwnProperty('speed')) {
       positions[payload.deviceId]['speed'] = payload.speed;
     }
+
+    //------------  Attributes -------
     if (payload.hasOwnProperty('batteryLevel')) {
       positions[payload.deviceId]['attributes']['batteryLevel'] = payload.batteryLevel;
     }
     if (payload.hasOwnProperty('gimbal')) {
-      positions[payload.deviceId]['attributes']['gimbal'] = payload.gimbal;
+      positions[payload.deviceId]['attributes']['gimbal'] = [
+        payload.gimbal.x.toFixed(),
+        payload.gimbal.y.toFixed(),
+        payload.gimbal.z.toFixed(),
+      ];
     }
     if (payload.hasOwnProperty('uav_state')) {
-      positions[payload.deviceId]['attributes']['protocol'] = payload.protocol;
+      //positions[payload.deviceId]['attributes']['protocol'] = payload.protocol;
       positions[payload.deviceId]['attributes']['mission_state'] = payload.mission_state;
       positions[payload.deviceId]['attributes']['wp_reached'] = payload.wp_reached;
       positions[payload.deviceId]['attributes']['uav_state'] = payload.uav_state;
