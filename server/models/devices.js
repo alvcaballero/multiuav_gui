@@ -1,8 +1,8 @@
-import { readJSON, readYAML,getDatetime } from '../utils.js';
+import { readJSON, readYAML, getDatetime } from '../utils.js';
 import { positionsModel } from '../models/positions.js';
 import { eventsModel } from '../models/events.js';
 import ROSLIB from 'roslib';
-import  { ros ,rosModel} from '../models/ros.js';
+import { ros, rosModel } from '../models/ros.js';
 const devices_msg = readYAML('./devices_msg.yaml');
 const devices_init = readYAML('./devices_init.yaml');
 const devices = {};
@@ -34,7 +34,7 @@ export class DevicesModel {
 
   static async create(device) {
     console.log(device);
-    let serverState= rosModel.serverStatus() ;
+    let serverState = rosModel.serverStatus();
     if (serverState.state === 'connect') {
       let uav_ns = device.name;
       let uav_type = device.category;
@@ -187,6 +187,11 @@ export class DevicesModel {
         uav_list[cur_uav_idx].listener_gimbal.subscribe(function (msg) {
           let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
           positionsModel.updatePosition({ deviceId: id_uav, gimbal: msg.vector }); // showData[3].innerHTML = message.percentage + "%";
+        });
+
+        uav_list[cur_uav_idx].listener_obstacle_info.subscribe(function (msg) {
+          let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
+          positionsModel.updatePosition({ deviceId: id_uav, obstacle_info: msg }); // showData[3].innerHTML = message.percentage + "%";
         });
 
         for (let i = 0; i < device.camera.length; i = i + 1) {
@@ -416,14 +421,13 @@ export class DevicesModel {
       return { state: 'success', msg: 'no quedan UAV de la lista' };
     }
   }
-  static async unsubscribe(id){
-    if (id<0){
+  static async unsubscribe(id) {
+    if (id < 0) {
       for (var i = 0; i < uav_list.length; i++) {
         uav_list[i].listener.unsubscribe();
       }
       uav_list = [];
     }
-
   }
 
   static async update({ id, input }) {
@@ -444,10 +448,9 @@ export class DevicesModel {
   static updatedeviceIP(payload) {
     devices[payload.id]['ip'] = payload.ip;
   }
-  static updatedevicetime(id){
+  static updatedevicetime(id) {
     let currentTime = new Date();
     devices[id]['lastUpdate'] = currentTime;
-
   }
   static get_device_ns(uav_id) {
     return devices[uav_id].name;
@@ -468,5 +471,4 @@ export class DevicesModel {
       console.log('finish to add ------------');
     }
   }
-  
 }
