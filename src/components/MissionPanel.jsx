@@ -1,48 +1,48 @@
-import React, { useContext, useState, Fragment, useRef } from "react";
-import RoutesList from "./RoutesList";
-import { Divider, Typography, IconButton, Toolbar } from "@mui/material";
-import makeStyles from "@mui/styles/makeStyles";
-import { useNavigate } from "react-router-dom";
-import { RosControl, RosContext } from "./RosControl";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import DeleteIcon from "@mui/icons-material/Delete";
-import YAML from "yaml";
+import React, { useContext, useState, Fragment, useRef } from 'react';
+import RoutesList from './RoutesList';
+import { Divider, Typography, IconButton, Toolbar } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import { useNavigate } from 'react-router-dom';
+import { RosControl, RosContext } from './RosControl';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import DeleteIcon from '@mui/icons-material/Delete';
+import YAML from 'yaml';
 
 const useStyles = makeStyles((theme) => ({
   toolbar: {
-    display: "flex",
-    gap: "10px 10px",
-    height: "30px",
-    borderBottom: "3px solid rgb(212, 212, 212)",
+    display: 'flex',
+    gap: '10px 10px',
+    height: '30px',
+    borderBottom: '3px solid rgb(212, 212, 212)',
   },
   list: {
     maxHeight: `calc(100vh - 152px)`,
-    overflowY: "auto",
+    overflowY: 'auto',
   },
   title: {
     flexGrow: 1,
   },
   fileInput: {
-    display: "none",
+    display: 'none',
   },
 }));
 
-export const MissionPanel = () => {
+export const MissionPanel = ({ SetOpenSave }) => {
   const classes = useStyles();
   const navigate = useNavigate();
   const rosContex = useContext(RosContext);
   const scroolRef = useRef(null);
 
   const [mission, setmission] = useState({
-    name: "no mission",
-    description: "",
+    name: 'no mission',
+    description: '',
     route: [],
   });
 
   const setScrool = (value) => {
-    console.log("scrool" + value);
+    console.log('scrool' + value);
     if (scroolRef.current.scroll) {
       setTimeout(() => {
         scroolRef.current.scroll(0, value);
@@ -68,27 +68,29 @@ export const MissionPanel = () => {
   };
 
   const DeleteMission = () => {
-    setmission({ name: "no mission", description: "", route: [] });
+    setmission({ name: 'no mission', description: '', route: [] });
   };
   const SaveMission = () => {
-    let auxmission = { version: "3" }; //JSON.parse(JSON.stringify(mission));
-    auxmission["name"] = mission.name;
-    auxmission["route"] = mission.route;
-    const fileData = YAML.stringify(auxmission);
-    const blob = new Blob([fileData], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.download = mission.name + ".yaml";
-    link.href = url;
-    link.click();
+    console.log('save mission');
+    SetOpenSave(true);
+    //let auxmission = { version: '3' }; //JSON.parse(JSON.stringify(mission));
+    //auxmission['name'] = mission.name;
+    //auxmission['route'] = mission.route;
+    //const fileData = YAML.stringify(auxmission);
+    //const blob = new Blob([fileData], { type: 'text/plain' });
+    //const url = URL.createObjectURL(blob);
+    //const link = document.createElement('a');
+    //link.download = mission.name + '.yaml';
+    //link.href = url;
+    //link.click();
   };
   return (
     <Fragment>
       <Toolbar className={classes.toolbar}>
-        <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
+        <IconButton edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h6" className={classes.title}>
+        <Typography variant='h6' className={classes.title}>
           Mission Task
         </Typography>
         <IconButton onClick={SaveMission}>
@@ -97,25 +99,21 @@ export const MissionPanel = () => {
         <IconButton onClick={DeleteMission}>
           <DeleteIcon />
         </IconButton>
-        <label htmlFor="upload-gpx">
+        <label htmlFor='upload-gpx'>
           <input
-            accept=".yaml, .plan, .waypoint, .kml"
-            id="upload-gpx"
-            type="file"
+            accept='.yaml, .plan, .waypoint, .kml'
+            id='upload-gpx'
+            type='file'
             className={classes.fileInput}
             onChange={readFile}
           />
-          <IconButton edge="end" component="span" onClick={() => {}}>
+          <IconButton edge='end' component='span' onClick={() => {}}>
             <UploadFileIcon />
           </IconButton>
         </label>
       </Toolbar>
       <div ref={scroolRef} className={classes.list}>
-        <RoutesList
-          mission={mission}
-          setmission={setmission}
-          setScrool={setScrool}
-        />
+        <RoutesList mission={mission} setmission={setmission} setScrool={setScrool} />
       </div>
     </Fragment>
   );

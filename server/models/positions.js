@@ -16,12 +16,15 @@ export class positionsModel {
     if (positions[payload.deviceId] === undefined) {
       positions[payload.deviceId] = {
         deviceId: payload.deviceId,
+        acuracy: 0.0,
         attributes: {
+          gimbal: [0, 0, 0],
+          obstacle_info: [0, 0, 0, 0, 0, 0],
+          takeoff_height: 400,
           mission_state: 'UNDEFINED',
-          wp_reached: 'UNDEFINED',
+          wp_reached: 0,
           uav_state: 'OK',
           landed_state: 'UNDEFINED',
-          gimbal: [0, 0, 0],
           alarm: 'UNDEFINED',
         },
       };
@@ -52,6 +55,16 @@ export class positionsModel {
         payload.gimbal.x.toFixed(),
         payload.gimbal.y.toFixed(),
         payload.gimbal.z.toFixed(),
+      ];
+    }
+    if (payload.hasOwnProperty('obstacle_info')) {
+      positions[payload.deviceId]['attributes']['obstacle_info'] = [
+        payload.obstacle_info.down.toFixed(),
+        payload.obstacle_info.front.toFixed(),
+        payload.obstacle_info.right.toFixed(),
+        payload.obstacle_info.back.toFixed(),
+        payload.obstacle_info.left.toFixed(),
+        payload.obstacle_info.up.toFixed(),
       ];
     }
     if (payload.hasOwnProperty('uav_state')) {

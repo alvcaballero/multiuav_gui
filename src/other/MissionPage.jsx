@@ -11,6 +11,7 @@ import makeStyles from '@mui/styles/makeStyles';
 import { RosControl, RosContext } from '../components/RosControl';
 import { MissionPanel } from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
+import { SaveFile } from '../components/SaveFile';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -93,6 +94,7 @@ const showToast = (type, description) => {
 
 const MissionPage = () => {
   const classes = useStyles();
+  const [Opensave, setOpenSave] = useState(true);
 
   return (
     <div className={classes.root}>
@@ -131,17 +133,18 @@ const MissionPage = () => {
         <div className={classes.sidebarStyle}>
           <div className={classes.middleStyle}>
             <Paper square>
-              <MissionPanel></MissionPanel>
+              <MissionPanel SetOpenSave={setOpenSave} />
             </Paper>
           </div>
         </div>
         <div className={classes.panelElevation}>
           <div className={classes.middleStyle}>
             <Paper square>
-              <MissionElevation></MissionElevation>
+              <MissionElevation />
             </Paper>
           </div>
         </div>
+        {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
       </RosControl>
     </div>
   );

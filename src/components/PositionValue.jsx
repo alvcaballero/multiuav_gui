@@ -51,6 +51,8 @@ const PositionValue = ({ position, property, attribute }) => {
 
       case 'gimbal':
         return value.toString();
+      case 'obstacle_info':
+        return value.toString();
       case 'odometer':
       case 'distance':
       case 'totalDistance':
