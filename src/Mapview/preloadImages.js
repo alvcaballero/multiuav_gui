@@ -3,6 +3,7 @@ import { loadImage, prepareIcon } from './mapUtil';
 
 import backgroundSvg from '../resources/images/background.svg';
 import directionSvg from '../resources/images/direction.svg';
+import backgroundBorderSvg from '../resources/images/background_border.svg';
 
 import planeSvg from '../resources/images/icon/plane.svg';
 import helicopterSvg from '../resources/images/icon/helicopter.svg';
@@ -43,14 +44,25 @@ export const mapImages = {};
 
 export default async () => {
   const background = await loadImage(backgroundSvg);
+  const backgroundBorder = await loadImage(backgroundBorderSvg);
   mapImages.background = await prepareIcon(background);
+  //mapImages.mission = await prepareIcon(backgroundBorder);
   mapImages.item = await prepareIcon(await loadImage(triangleSvg));
   mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
   mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
   mapImages.direction = await prepareIcon(await loadImage(directionSvg));
-  Object.keys(colors).forEach((color) => {
-    mapImages[`background-${color}`] = prepareIcon(background, null, colors[color]);
+  Object.keys(palette.colors_devices).forEach(async (color) => {
+    mapImages[`background-${color}`] = await prepareIcon(background, null, colors[color]);
+    mapImages[`mission-${color}`] = await prepareIcon(backgroundBorder, null, colors[color]);
   });
+  const dji_M210_noetic = await loadImage(dronedjiSvg);
+  mapImages[`dji_M210_melodic-primary-0`] = await prepareIcon(
+    background,
+    dji_M210_noetic,
+    palette.colors['primary'],
+    backgroundBorder,
+    colors[0]
+  );
   await Promise.all(
     Object.keys(mapIcons).map(async (category) => {
       const results = [];
