@@ -10,8 +10,10 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
   const id = useId();
   const clusters = `${id}-clusters`;
   const direction = `${id}-direction`;
+  const mission = `${id}-mission`;
 
   const devices = useSelector((state) => state.devices.items);
+  const routes = useSelector((state) => state.mission.route);
 
   const iconScale = 1; // useAttributePreference('iconScale', 1);
   const mapCluster = true; //useAttributePreference('mapCluster', true);
@@ -32,6 +34,8 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         showDirection = selectedPositionId === position.id;
         break;
     }
+    let thismission = routes.find((element) => element.uav == device.name);
+    let missionColor = thismission ? thismission.id : null;
     return {
       id: position.id,
       deviceId: position.deviceId,
@@ -41,6 +45,8 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
       color: showStatus ? getStatusColor(device.status) : 'neutral',
       rotation: position.course,
       direction: showDirection,
+      mission: thismission ? true : false,
+      missionColor: missionColor,
     };
   };
 
@@ -144,6 +150,16 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         'icon-rotation-alignment': 'map',
       },
     });
+    map.addLayer({
+      id: mission,
+      type: 'symbol',
+      source: id,
+      filter: ['all', ['!has', 'point_count'], ['==', 'mission', true]],
+      layout: {
+        'icon-image': 'mission-{missionColor}',
+        'icon-size': iconScale,
+      },
+    });
 
     map.on('mouseenter', id, onMouseEnter);
     map.on('mouseleave', id, onMouseLeave);
@@ -171,11 +187,14 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
       if (map.getLayer(direction)) {
         map.removeLayer(direction);
       }
+      if (map.getLayer(mission)) {
+        map.removeLayer(mission);
+      }
       if (map.getSource(id)) {
         map.removeSource(id);
       }
     };
-  }, [mapCluster, clusters, direction, onMarkerClick, onClusterClick]);
+  }, [mapCluster, clusters, direction, mission, onMarkerClick, onClusterClick]);
 
   useEffect(() => {
     map.getSource(id).setData({

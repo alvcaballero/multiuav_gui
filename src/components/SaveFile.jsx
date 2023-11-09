@@ -16,6 +16,7 @@ import {
   Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { colors } from '../Mapview/preloadImages';
 import ReplayIcon from '@mui/icons-material/Replay';
 import PublishIcon from '@mui/icons-material/Publish';
 import EditIcon from '@mui/icons-material/Edit';
@@ -106,30 +107,95 @@ export const SaveFile = ({ SetOpenSave, OpenSave }) => {
       let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xmlString += '<kml>\n';
       xmlString += '<Document>\n';
-      xmlString += '<Placemark>\n';
-      xmlString += '<MultiGeometry>\n';
+      mission.route.map((elem, elem_n, list) => {
+        xmlString += `<Style id="sn_ylw-pushpin1${elem_n}">\n`;
+        xmlString += '<LineStyle>\n';
+        xmlString += `<color>ff${colors[elem_n].substr(-6)}</color>\n`;
+        xmlString += '<width>3</width>\n';
+        xmlString += '</LineStyle>\n';
+        xmlString += '</Style>\n';
+      });
 
-      mission.route.map((elem) => {
+      mission.route.map((elem, elem_n) => {
+        xmlString += '<Placemark>\n';
+        xmlString += `<name>${elem.uav}-${elem.name}</name>\n`;
+        xmlString += `<styleUrl>#sn_ylw-pushpin1${elem_n}</styleUrl>\n`;
+        xmlString += '<open>1</open>\n';
         xmlString += '<LineString>\n';
         let auxcoord = '';
         elem.wp.map((mywp) => {
           auxcoord = auxcoord + mywp.pos[1] + ',' + mywp.pos[0] + ',' + mywp.pos[2] + ' ';
         });
         xmlString += '<tessellate>1</tessellate>\n';
+        xmlString += '<altitudeMode>relativeToGround</altitudeMode>\n';
         xmlString += '<coordinates>\n';
         xmlString += auxcoord + '\n';
         xmlString += '</coordinates>\n';
         xmlString += '</LineString>\n';
+        xmlString += '</Placemark>\n';
       });
-      xmlString += '</MultiGeometry>\n';
-      xmlString += '</Placemark>\n';
+
       xmlString += '</Document>\n';
       xmlString += '</kml>';
       fileData = xmlString;
     }
-    if (fileType == 'waypoint') {
-    }
     if (fileType == 'plan') {
+      archivetype = 'application/json';
+      auxmission = { fileType: 'Plan' }; //JSON.parse(JSON.stringify(mission));
+      auxmission['geoFence'] = {
+        circles: [],
+        polygons: [],
+        version: 2,
+      };
+      auxmission['groundStation'] = 'QGroundControl';
+      auxmission['mission'] = {};
+      auxmission['mission']['cruiseSpeed'] = mission.route[0].attributes.idle_vel;
+      auxmission['mission']['firmwareType'] = 12;
+      auxmission['mission']['globalPlanAltitudeMode'] = 0;
+      auxmission['mission']['hoverSpeed'] = 5;
+      auxmission['mission']['items'] = [];
+      mission.route.map((elem, elem_n, elem_list) => {
+        elem.wp.map((mywp, mywp_n, mywp_list) => {
+          let aux = {
+            AMSLAltAboveTerrain: null,
+            Altitude: mywp.pos[2],
+            AltitudeMode: 1,
+            autoContinue: true,
+            command: 16,
+            doJumpId: 1,
+            frame: 3,
+            params: [0, 0, 0, null, mywp.pos[0], mywp.pos[1], mywp.pos[2]],
+            type: 'SimpleItem',
+          };
+          if (mywp_n == 0) {
+            aux['command'] = 84;
+            auxmission['mission']['plannedHomePosition'] = [mywp.pos[0], mywp.pos[1], mywp.pos[2]];
+          }
+          mywp_n + 1 == mywp_list.length ? (aux['command'] = 84) : null;
+          auxmission['mission']['items'].push(aux);
+        });
+      });
+      auxmission['mission']['vehicleType'] = 20;
+      auxmission['mission']['version'] = 2;
+      auxmission['rallyPoints'] = {
+        points: [],
+        version: 2,
+      };
+      auxmission['version'] = 1;
+      fileData = JSON.stringify(auxmission);
+    }
+    if (fileType == 'waypoint') {
+      let xmlString = 'QGC WPL 110\n';
+      mission.route.map((elem) => {
+        elem.wp.map((mywp, mywp_n, mywp_list) => {
+          if (mywp_n == 0) {
+            xmlString += `${mywp_n}\t1\t0\t16\t0\t0\t0\t0\t${mywp.pos[0]}\t${mywp.pos[1]}\t${mywp.pos[2]}\t1\n`;
+          } else {
+            xmlString += `${mywp_n}\t0\t0\t16\t0\t0\t0\t0\t${mywp.pos[0]}\t${mywp.pos[1]}\t${mywp.pos[2]}\t1\n`;
+          }
+        });
+      });
+      fileData = xmlString;
     }
 
     const blob = new Blob([fileData], { type: archivetype });
