@@ -46,7 +46,6 @@ export default async () => {
   const background = await loadImage(backgroundSvg);
   const backgroundBorder = await loadImage(backgroundBorderSvg);
   mapImages.background = await prepareIcon(background);
-  //mapImages.mission = await prepareIcon(backgroundBorder);
   mapImages.item = await prepareIcon(await loadImage(triangleSvg));
   mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
   mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
@@ -55,14 +54,6 @@ export default async () => {
     mapImages[`background-${color}`] = await prepareIcon(background, null, colors[color]);
     mapImages[`mission-${color}`] = await prepareIcon(backgroundBorder, null, colors[color]);
   });
-  const dji_M210_noetic = await loadImage(dronedjiSvg);
-  mapImages[`dji_M210_melodic-primary-0`] = await prepareIcon(
-    background,
-    dji_M210_noetic,
-    palette.colors['primary'],
-    backgroundBorder,
-    colors[0]
-  );
   await Promise.all(
     Object.keys(mapIcons).map(async (category) => {
       const results = [];

@@ -180,7 +180,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               <a
                 id='rosConnectNavbar'
                 onClick={() => {
-                  rosContex.rosConnect();
+                  navigate('/topics');
                   handleClick();
                 }}
               >
