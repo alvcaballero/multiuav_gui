@@ -1,4 +1,4 @@
-M210:
+dji_M210_noetic:
   mass: 7.2 #kg
   number_of_rotors: 4
   rotor_of_rotors_blades: 2
@@ -10,6 +10,117 @@ M210:
   energy_efficiency: 0.72
   P0_numerical_constrant: 4.65
   equivalent_flat_platearea: 0.32 #m2
+  obstacle_sensor:
+    down: [0 15]
+    front: [0 30]
+    up: [0 20]
+
+  battery:
+    number: 2
+    capacity: 80000 #mAh
+    number_of_cells: 4
+    Voltage_per_cell: 3.9 # v/cell
+
+dji_M210_melodic:
+  mass: 7.2 #kg
+  number_of_rotors: 4
+  rotor_of_rotors_blades: 2
+  rotor_radious: 0.226 #m
+  blade_chord: 0.0247 #x=0.7R
+  section_lift_coefficient: 1.01
+  section_draft_coefificient: 0.01
+  introduced_power_factor: 1.15
+  energy_efficiency: 0.72
+  P0_numerical_constrant: 4.65
+  equivalent_flat_platearea: 0.32 #m2
+  obstacle_sensor:
+    down: [0 15]
+    front: [0 30]
+    up: [0 20]
+
+  battery:
+    number: 2
+    capacity: 80000 #mAh
+    number_of_cells: 4
+    Voltage_per_cell: 3.9 # v/cell
+
+dji_M300:
+  mass: 7.2 #kg
+  number_of_rotors: 4
+  rotor_of_rotors_blades: 2
+  rotor_radious: 0.226 #m
+  blade_chord: 0.0247 #x=0.7R
+  section_lift_coefficient: 1.01
+  section_draft_coefificient: 0.01
+  introduced_power_factor: 1.15
+  energy_efficiency: 0.72
+  P0_numerical_constrant: 4.65
+  equivalent_flat_platearea: 0.32 #m2
+  obstacle_sensor: #m[min max]
+    down: [0 15]
+    front: [0 30]
+    left: [0 12]
+    back: [0 12]
+    right: [0 12]
+    up: [0 20]
+
+  battery:
+    number: 2
+    capacity: 80000 #mAh
+    number_of_cells: 4
+    Voltage_per_cell: 3.9 # v/cell
+
+px4:
+  mass: 7.2 #kg
+  number_of_rotors: 4
+  rotor_of_rotors_blades: 2
+  rotor_radious: 0.226 #m
+  blade_chord: 0.0247 #x=0.7R
+  section_lift_coefficient: 1.01
+  section_draft_coefificient: 0.01
+  introduced_power_factor: 1.15
+  energy_efficiency: 0.72
+  P0_numerical_constrant: 4.65
+  equivalent_flat_platearea: 0.32 #m2
+  obstacle_sensor: {} #m[min max]
+  battery:
+    number: 2
+    capacity: 80000 #mAh
+    number_of_cells: 4
+    Voltage_per_cell: 3.9 # v/cell
+
+fuvex:
+  mass: 7.2 #kg
+  number_of_rotors: 4
+  rotor_of_rotors_blades: 2
+  rotor_radious: 0.226 #m
+  blade_chord: 0.0247 #x=0.7R
+  section_lift_coefficient: 1.01
+  section_draft_coefificient: 0.01
+  introduced_power_factor: 1.15
+  energy_efficiency: 0.72
+  P0_numerical_constrant: 4.65
+  equivalent_flat_platearea: 0.32 #m2
+  obstacle_sensor: {} #m[min max]
+  battery:
+    number: 2
+    capacity: 80000 #mAh
+    number_of_cells: 4
+    Voltage_per_cell: 3.9 # v/cell
+
+catec:
+  mass: 7.2 #kg
+  number_of_rotors: 4
+  rotor_of_rotors_blades: 2
+  rotor_radious: 0.226 #m
+  blade_chord: 0.0247 #x=0.7R
+  section_lift_coefficient: 1.01
+  section_draft_coefificient: 0.01
+  introduced_power_factor: 1.15
+  energy_efficiency: 0.72
+  P0_numerical_constrant: 4.65
+  equivalent_flat_platearea: 0.32 #m2
+  obstacle_sensor: {} #m[min max]
   battery:
     number: 2
     capacity: 80000 #mAh

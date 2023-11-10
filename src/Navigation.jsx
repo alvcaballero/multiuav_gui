@@ -10,6 +10,7 @@ import ReplayPage from './other/ReplayPage';
 import DevicePage from './other/DevicePage';
 import CameraPage from './other/CameraPage';
 import EventsPage from './other/EventsPage';
+import TopicsPage from './other/TopicsPage';
 
 const padding = {
   padding: 5,
@@ -36,6 +37,7 @@ const Navigation = () => {
         <Route path='events' element={<EventsPage />} />
 
         <Route path='replay' element={<ReplayPage />} />
+        <Route path='topics' element={<TopicsPage />} />
       </Route>
     </Routes>
   );
