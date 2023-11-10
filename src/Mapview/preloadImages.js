@@ -14,6 +14,8 @@ import triangleSvg from '../resources/images/icon/triangle.svg';
 import powerTowerSvg from '../resources/images/icon/PowerTower1.svg';
 import RectangleSvg from '../resources/images/icon/Rectangle.svg';
 
+import FrontDroneSvg from '../resources/images/icon/drone-svgrepo.svg';
+
 export const colors = {
   0: '#F34C28',
   1: '#F39A28',
@@ -36,6 +38,19 @@ export const mapIcons = {
   catec: dronePx4Svg,
   fuvex: planeSvg,
   default: planeSvg,
+};
+
+export const frontIcons = {
+  helicopter: FrontDroneSvg,
+  plane: FrontDroneSvg,
+  drone: FrontDroneSvg,
+  dji_M210_noetic: FrontDroneSvg,
+  dji_M210_melodic: FrontDroneSvg,
+  dji_M300: FrontDroneSvg,
+  px4: FrontDroneSvg,
+  catec: FrontDroneSvg,
+  fuvex: FrontDroneSvg,
+  default: FrontDroneSvg,
 };
 
 export const mapIconKey = (category) => (mapIcons.hasOwnProperty(category) ? category : 'default');
