@@ -1,63 +1,67 @@
 // SquareMove.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import makeStyles from '@mui/styles/makeStyles';
-import { mapIconKey, mapIcons } from '../Mapview/preloadImages';
+import { mapIconKey, mapIcons, frontIcons } from '../Mapview/preloadImages';
 //import styled from 'styled-components';
 
 const useStyles = makeStyles((theme) => ({
   root: {
     position: 'relative',
-    width: '500px',
-    height: '500px',
+    width: '400px',
+    height: '400px',
     left: '50px',
-    backgroundColor: 'grey',
-    //overflow: 'hidden',
+    backgroundColor: '#F7F9F9',
+    overflow: 'hidden',
     //margin: 'auto',
   },
   box_down: {
     width: '100%',
-    height: '50px',
-    backgroundColor: 'blue',
+    height: '50%',
+    backgroundColor: '#5D6D7E',
     position: 'absolute',
     transition: 'bottom 0.3s ease-in-out',
     bottom: 0,
     left: '50%',
-    transform: 'translate(-50%, -50%)',
+    transform: 'translate(-50%, 100%)',
+    borderTop: '6px solid #1B2631 ',
   },
   box_right: {
-    width: '50px',
+    width: '50%',
     height: '100%',
-    backgroundColor: 'blue',
+    backgroundColor: '#5D6D7E',
     position: 'absolute',
     transition: 'right 0.3s ease-in-out',
     top: '50%',
     right: 0,
-    transform: 'translate(+50%, -50%)',
+    transform: 'translate(100%, -50%)',
+    borderLeft: '6px solid #1B2631 ',
   },
   box_up: {
     width: '100%',
-    height: '50px',
-    backgroundColor: 'blue',
+    height: '50%',
+    backgroundColor: '#5D6D7E',
     position: 'absolute',
     transition: 'top 0.3s ease-in-out',
     top: 0,
     left: '50%',
-    transform: 'translate(-50%, -50%)',
+    transform: 'translate(-50%, -100%)',
+    borderBottom: '6px solid #1B2631 ',
   },
   box_left: {
-    width: '50px',
+    width: '50%',
     height: '100%',
-    backgroundColor: 'blue',
+    backgroundColor: '#5D6D7E',
     position: 'absolute',
     transition: 'left 0.3s ease-in-out',
     top: '50%',
     left: 0,
-    transform: 'translate(-50%, -50%)',
+    transform: 'translate(-100%, -50%)',
+    borderRight: '6px solid #1B2631 ',
   },
   icon: {
     position: 'absolute',
-    width: '100px',
-    height: '100px',
+    width: '20%',
+    height: '20%',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
@@ -70,12 +74,39 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const SquareMove = () => {
+const SquareMove = ({
+  device,
+  data = [10, 0, 0, 0, 12, 20],
+  sensors = {
+    down: [0, 15],
+    front: [0, 30],
+    left: [0, 12],
+    back: [0, 12],
+    right: [0, 12],
+    up: [0, 20],
+  },
+  front_view = false,
+  test = false,
+}) => {
   const classes = useStyles();
   const [left, setLeft] = useState(0);
   const [right, setRight] = useState(0);
   const [up, setUp] = useState(0);
   const [mydown, setDown] = useState(0);
+
+  useEffect(() => {
+    if (front_view) {
+      sensors.hasOwnProperty('down') ? setDown(40 - (40 * data[0]) / sensors.down[1]) : null;
+      sensors.hasOwnProperty('left') ? setRight(40 - (40 * data[2]) / sensors.left[1]) : null;
+      sensors.hasOwnProperty('right') ? setLeft(40 - (40 * data[4]) / sensors.right[1]) : null;
+      sensors.hasOwnProperty('up') ? setUp(40 - (40 * data[5]) / sensors.up[1]) : null;
+    } else {
+      sensors.hasOwnProperty('front') ? setUp(40 - (40 * data[1]) / sensors.front[1]) : null;
+      sensors.hasOwnProperty('left') ? setLeft(40 - (40 * data[2]) / sensors.left[1]) : null;
+      sensors.hasOwnProperty('back') ? setDown(40 - (40 * data[3]) / sensors.down[1]) : null;
+      sensors.hasOwnProperty('right') ? setRight(40 - (50 * data[4]) / sensors.right[1]) : null;
+    }
+  }, [data, device, sensors]);
 
   const handleMoveLeft = () => {
     setLeft((prevLeft) => prevLeft - 10);
@@ -94,16 +125,24 @@ const SquareMove = () => {
   return (
     <div>
       <div className={classes.root}>
-        <div className={classes.box_left} style={{ left: `${left}px` }}></div>
-        <div className={classes.box_right} style={{ right: `${right}px` }}></div>
-        <div className={classes.box_up} style={{ top: `${up}px` }}></div>
-        <div className={classes.box_down} style={{ bottom: `${mydown}px` }}></div>
-
-        <img className={classes.icon} src={mapIcons[mapIconKey('dji_M210_melodic')]} alt='' />
+        <div className={classes.box_left} style={{ left: `${left}%` }}></div>
+        <div className={classes.box_right} style={{ right: `${right}%` }}></div>
+        <div className={classes.box_up} style={{ top: `${up}%` }}></div>
+        <div className={classes.box_down} style={{ bottom: `${mydown}%` }}></div>
+        {!front_view && (
+          <img className={classes.icon} src={mapIcons[mapIconKey('dji_M210_melodic')]} alt='' />
+        )}
+        {front_view && (
+          <img className={classes.icon} src={frontIcons[mapIconKey('dji_M210_melodic')]} alt='' />
+        )}
       </div>
 
-      <button onClick={handleMoveLeft}>Move Left</button>
-      <button onClick={handleMoveRight}>Move Right</button>
+      {test && (
+        <div>
+          <button onClick={handleMoveLeft}>Move Left</button>
+          <button onClick={handleMoveRight}>Move Right</button>
+        </div>
+      )}
     </div>
   );
 };
