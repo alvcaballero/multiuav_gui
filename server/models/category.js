@@ -1,4 +1,4 @@
-import { readJSON, readYAML } from '../utils/utils.js';
+import { readJSON, readYAML } from '../common/utils.js';
 
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 
