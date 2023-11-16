@@ -1,7 +1,7 @@
 import { ros } from '../models/ros.js';
 import { DevicesModel } from '../models/devices.js';
 import { eventsModel } from '../models/events.js';
-import { readYAML, getDatetime } from '../utils.js';
+import { readYAML, getDatetime } from '../utils/utils.js';
 import ROSLIB from 'roslib';
 
 const devices_msg = readYAML('./devices_msg.yaml');
