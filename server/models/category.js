@@ -1,6 +1,6 @@
 import { readJSON, readYAML } from '../utils/utils.js';
 
-const devices_msg = readYAML('./devices_msg.yaml');
+const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 
 export class categoryModel {
   static getAll() {
