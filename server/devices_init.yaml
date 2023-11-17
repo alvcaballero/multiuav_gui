@@ -3,7 +3,9 @@ init:
     category: 'dji_M210_melodic'
     ip: '10.42.0.99'
     user: 'grvc'
-    camera: []
+    camera:
+      - type: 'WebRTC'
+        source: 'main'
 
   - name: 'uav_2'
     category: 'dji_M210_noetic'

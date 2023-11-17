@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts';
 import { FormControl, InputLabel, Select, Box, MenuItem } from '@mui/material';
-import { colors } from '../Mapview/preloadImages';
+import palette from '../common/palette';
 import { makeStyles } from '@mui/styles';
 //https://www.opentopodata.org/
 //https://open-elevation.com/
@@ -97,7 +97,7 @@ const MissionElevation = () => {
           return {
             name: 'RT' + index_rt,
             data: route,
-            color: colors[ruteColor[index_rt]],
+            color: palette.colors_devices[ruteColor[index_rt]],
           };
         });
         //console.log(elevationRoute);

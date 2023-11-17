@@ -16,7 +16,7 @@ import {
   Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { colors } from '../Mapview/preloadImages';
+import palette from '../common/palette';
 import ReplayIcon from '@mui/icons-material/Replay';
 import PublishIcon from '@mui/icons-material/Publish';
 import EditIcon from '@mui/icons-material/Edit';
@@ -110,7 +110,7 @@ export const SaveFile = ({ SetOpenSave, OpenSave }) => {
       mission.route.map((elem, elem_n, list) => {
         xmlString += `<Style id="sn_ylw-pushpin1${elem_n}">\n`;
         xmlString += '<LineStyle>\n';
-        xmlString += `<color>ff${colors[elem_n].substr(-6)}</color>\n`;
+        xmlString += `<color>ff${palette.colors_devices[elem_n].substr(-6)}</color>\n`;
         xmlString += '<width>3</width>\n';
         xmlString += '</LineStyle>\n';
         xmlString += '</Style>\n';

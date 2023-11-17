@@ -13,7 +13,7 @@ si primero esta ethernet borrarlo
 d
 cambiar la fecha y la hora para que pueda hacer el update
 
-    sudo date --set "2023-10-11 10:20"
+    sudo date --set "2023-11-14 9:27"
 
 vpn
 
@@ -33,3 +33,7 @@ https://developer.dji.com/doc/cloud-api-tutorial/en/quick-start/environment-prep
 
 Configuracion de netplan DNS en caso de que no coga internet
 https://www.ochobitshacenunbyte.com/2021/04/26/netplan-configurar-la-red-en-ubuntu-20-04/
+
+npt
+
+https://vitux.com/how-to-install-ntp-server-and-client-on-ubuntu/

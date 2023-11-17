@@ -9,7 +9,7 @@ import { map } from '../MapView';
 import { findFonts } from '../mapUtil';
 import { missionActions } from '../../store'; // here update device action with position of uav for update in map
 //import maplibregl from "maplibre-gl";
-import { colors } from '../preloadImages';
+import palette from '../../common/palette';
 
 class keepvalue {
   constructor() {
@@ -271,7 +271,7 @@ export const MapMissionsCreate = () => {
       },
       properties: {
         name: item.uav, //name,
-        color: colors[item.id],
+        color: palette.colors_devices[item.id],
       },
     };
   }

@@ -27,6 +27,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SelectField from '../common/components/SelectField';
 import BaseCommandView from '../common/components/BaseCommandView';
 import { useCatch } from '../reactHelper';
+import SquareMove from './SquareMove';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -167,6 +168,15 @@ const DevicePage = () => {
             </Table>
           </Paper>
         </Container>
+      </div>
+      <div>
+        {item && item.attributes && (
+          <div>
+            <SquareMove front_view={true} data={item.attributes.obstacle_info}></SquareMove>
+            <div></div>
+            <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
+          </div>
+        )}
       </div>
       <div>
         <Container maxWidth='xs' className={classes.container}>
