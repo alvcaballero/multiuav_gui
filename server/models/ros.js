@@ -62,6 +62,22 @@ export class rosModel {
   static getTopics2() {
 
   }
+  static ServiceMission() {
+    var ServiceMission = new ROSLIB.Service({
+      ros: ros,
+      name: '/GCS/Mission',
+      serviceType: 'std_srvs/SetBool',
+    });
+
+    
+    var request = new ROSLIB.ServiceRequest();
+    return new Promise((resolve, rejects) => {
+      topicsClient.callService(request, function (result) {
+        resolve(result.topics);
+      });
+    });
+
+  }
   static getServices(){
 
       const servicesPromise = new Promise((resolve, reject) => {
