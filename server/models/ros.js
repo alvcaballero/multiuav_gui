@@ -1,9 +1,11 @@
 import ROSLIB from 'roslib';
 import { DevicesModel } from '../models/devices.js';
+
 var ros = '';
 export { ros };
 const rosState = { state: 'disconnect', msg: 'init msg' };
 console.log('out of  device model');
+const service_list = [];
 
 const autoconectRos = setInterval(() => {
   if (rosState.state != 'connect') {
@@ -30,6 +32,7 @@ export class rosModel {
         console.log('ROS Connected to websocket server.');
         rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
         DevicesModel.connectAllUAV();
+        rosModel.ServiceMission();
       });
       ros.on('error', function (error) {
         console.log('ROS Error connecting to websocket server: ', error);
@@ -63,19 +66,25 @@ export class rosModel {
 
   }
   static ServiceMission() {
-    var ServiceMission = new ROSLIB.Service({
+    console.log('service mission')
+
+    let cur_uav_idx = String(service_list.length);
+    service_list.push({name:'service mission'})
+
+    service_list[cur_uav_idx]['ServiceMission'] = new ROSLIB.Service({
       ros: ros,
       name: '/GCS/Mission',
       serviceType: 'std_srvs/SetBool',
     });
 
-    
-    var request = new ROSLIB.ServiceRequest();
-    return new Promise((resolve, rejects) => {
-      topicsClient.callService(request, function (result) {
-        resolve(result.topics);
-      });
-    });
+    service_list[cur_uav_idx]['ServiceMission'].advertise(function(request,response){
+      console.log("callback funtion")
+      console.log(request)
+      
+      response['success'] = true; 
+      response['message'] = 'Set successfully'; 
+      return true;
+    })
 
   }
   static getServices(){
