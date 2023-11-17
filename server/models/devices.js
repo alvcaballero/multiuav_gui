@@ -1,10 +1,10 @@
-import { readJSON, readYAML, getDatetime } from '../utils.js';
+import { readJSON, readYAML, getDatetime } from '../common/utils.js';
 import { positionsModel } from '../models/positions.js';
 import { eventsModel } from '../models/events.js';
 import ROSLIB from 'roslib';
 import { ros, rosModel } from '../models/ros.js';
-const devices_msg = readYAML('./devices_msg.yaml');
-const devices_init = readYAML('./devices_init.yaml');
+const devices_msg = readYAML('../config/devices/devices_msg.yaml');
+const devices_init = readYAML('../config/devices/devices_init.yaml');
 const devices = {};
 const uav_list = [];
 
