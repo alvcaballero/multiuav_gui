@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { map } from './MapView';
 import { findFonts } from './mapUtil';
 import maplibregl from 'maplibre-gl';
-import { colors } from './preloadImages';
+import palette from '../common/palette';
 
 export const MapMissions = () => {
   const id = useId();
@@ -208,7 +208,7 @@ export const MapMissions = () => {
       },
       properties: {
         name: item.uav, //name,
-        color: colors[item.id],
+        color: palette.colors_devices[item.id],
       },
     };
   }

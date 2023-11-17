@@ -17,7 +17,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { missionActions } from '../store'; // here update device action with position of uav for update in map
-import { colors } from '../Mapview/preloadImages';
+import palette from '../common/palette';
 import { map } from '../Mapview/MapView';
 import WaypointRouteList from './WaypointRouteList';
 
@@ -227,7 +227,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                         sx={{
                           width: '33%',
                           flexShrink: 0,
-                          color: colors[item_route.id],
+                          color: palette.colors_devices[item_route.id],
                         }}
                       >
                         {'Rute ' + index}

@@ -236,7 +236,8 @@ export class commandsModel {
       if (deviceId < 0 || deviceId == device_id) {
         let uavcategory = DevicesModel.get_device_category(device_id);
         console.log('command mission to ' + device_id);
-        if (uavcategory !== 'dji_M300') {
+        if (true) {
+          //uavcategory !== 'dji_M300'
           response = await this.standarCommand(device_id, 'commandMission', { data: true });
         } else {
           response = await this.standarCommand(device_id, 'commandMission');

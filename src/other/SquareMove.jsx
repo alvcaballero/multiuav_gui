@@ -7,8 +7,8 @@ import { mapIconKey, mapIcons, frontIcons } from '../Mapview/preloadImages';
 const useStyles = makeStyles((theme) => ({
   root: {
     position: 'relative',
-    width: '400px',
-    height: '400px',
+    width: '200px',
+    height: '200px',
     left: '50px',
     backgroundColor: '#F7F9F9',
     overflow: 'hidden',
@@ -58,10 +58,32 @@ const useStyles = makeStyles((theme) => ({
     transform: 'translate(-100%, -50%)',
     borderRight: '6px solid #1B2631 ',
   },
+  text_right: {
+    position: 'absolute',
+    right: '15%',
+    top: '50%',
+  },
+  text_left: {
+    position: 'absolute',
+    left: '15%',
+    top: '50%',
+  },
+  text_down: {
+    position: 'absolute',
+    right: '50%',
+    bottom: '15%',
+    transform: 'translate(50%, 50%)',
+  },
+  text_up: {
+    position: 'absolute',
+    right: '50%',
+    top: '15%',
+    transform: 'translate(50%, -50%)',
+  },
   icon: {
     position: 'absolute',
-    width: '20%',
-    height: '20%',
+    width: '25%',
+    height: '25%',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
@@ -76,10 +98,10 @@ const useStyles = makeStyles((theme) => ({
 
 const SquareMove = ({
   device,
-  data = [10, 0, 0, 0, 12, 20],
+  data = [10, 15, 11, 0, 12, 20],
   sensors = {
     down: [0, 15],
-    front: [0, 30],
+    front: [0, 15],
     left: [0, 12],
     back: [0, 12],
     right: [0, 12],
@@ -92,7 +114,7 @@ const SquareMove = ({
   const [left, setLeft] = useState(0);
   const [right, setRight] = useState(0);
   const [up, setUp] = useState(0);
-  const [mydown, setDown] = useState(0);
+  const [down, setDown] = useState(0);
 
   useEffect(() => {
     if (front_view) {
@@ -128,12 +150,25 @@ const SquareMove = ({
         <div className={classes.box_left} style={{ left: `${left}%` }}></div>
         <div className={classes.box_right} style={{ right: `${right}%` }}></div>
         <div className={classes.box_up} style={{ top: `${up}%` }}></div>
-        <div className={classes.box_down} style={{ bottom: `${mydown}%` }}></div>
+        <div className={classes.box_down} style={{ bottom: `${down}%` }}></div>
+
         {!front_view && (
-          <img className={classes.icon} src={mapIcons[mapIconKey('dji_M210_melodic')]} alt='' />
+          <>
+            {left < 50 && <div className={classes.text_left}> {`${data[2]}m`}</div>}
+            {right < 50 && <div className={classes.text_right}> {`${data[4]}m`}</div>}
+            {up < 50 && <div className={classes.text_up}> {`${data[1]}m`}</div>}
+            {down < 50 && <div className={classes.text_down}> {`${data[3]}m`}</div>}
+            <img className={classes.icon} src={mapIcons[mapIconKey('dji_M210_melodic')]} alt='' />
+          </>
         )}
         {front_view && (
-          <img className={classes.icon} src={frontIcons[mapIconKey('dji_M210_melodic')]} alt='' />
+          <>
+            {left < 50 && <div className={classes.text_left}> {`${data[4]}m`}</div>}
+            {right < 50 && <div className={classes.text_right}> {`${data[2]}m`}</div>}
+            {up < 50 && <div className={classes.text_up}> {`${data[5]}m`}</div>}
+            {down < 50 && <div className={classes.text_down}> {`${data[0]}m`}</div>}
+            <img className={classes.icon} src={frontIcons[mapIconKey('dji_M210_melodic')]} alt='' />
+          </>
         )}
       </div>
 

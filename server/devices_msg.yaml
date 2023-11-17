@@ -275,8 +275,8 @@ dji_M300:
       name: '/dji_control/configure_mission'
       serviceType: 'aerialcore_common/ConfigMission'
     commandMission:
-      name: '/dji_osdk_ros/waypointV2_startMission'
-      serviceType: 'dji_osdk_ros/StartWaypointV2Mission'
+      name: '/dji_control/start_mission'
+      serviceType: 'std_srvs/SetBool'
     stopMission:
       name: '/dji_osdk_ros/waypointV2_stopMission'
       serviceType: 'dji_osdk_ros/StopWaypointV2Mission'

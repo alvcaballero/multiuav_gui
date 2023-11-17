@@ -16,6 +16,7 @@ import { eventsRouter } from './routes/events.js';
 import { commandsRouter } from './routes/commands.js';
 import { rosRouter } from './routes/ros.js';
 import { mapRouter } from './routes/map.js';
+import { utilsRouter } from './routes/utils.js';
 import { websocketController } from './controllers/websocket.js';
 
 import WebSocket, { WebSocketServer } from 'ws';
@@ -34,6 +35,7 @@ app.use('/api/events', eventsRouter);
 app.use('/api/commands', commandsRouter);
 app.use('/api/ros', rosRouter);
 app.use('/api/map', mapRouter);
+app.use('/api/utils', utilsRouter);
 
 const server = createServer(app);
 
