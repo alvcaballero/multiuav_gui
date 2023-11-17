@@ -59,7 +59,33 @@ export class rosModel {
       });
     });
   }
+  static getTopics2() {
 
+  }
+  static getServices(){
+
+      const servicesPromise = new Promise((resolve, reject) => {
+        ros.ROS.getServices((services) => {
+          const serviceList = services.map((serviceName) => {
+            return {
+              serviceName,
+            }
+          });
+          resolve({
+            services: serviceList
+          });
+          reject({
+            services: []
+          });
+        }, (message) => {
+          console.error("Failed to get services", message)
+          ros.services = []
+        });
+      });
+      servicesPromise.then((services) => setROS(ros => ({ ...ros, services: services })));
+      return ros.services;
+    
+  }
   static Getservicehost(nameService) {
     let servicehost = new ROSLIB.Service({
       ros: ros,
