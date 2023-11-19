@@ -4,7 +4,7 @@ https://www.linuxhispano.net/2011/02/07/configurar-vsftp-para-conexiones-seguras
 
 ```
 sudo apt update
-sudo apt intall vsftpd
+sudo apt install vsftpd
 
 
 ```
