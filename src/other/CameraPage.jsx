@@ -97,7 +97,7 @@ const CameraPage = () => {
           }}
         >
           <Box
-            sx={{ flexGrow: 1 }}
+            component="div" sx={{ overflow: 'auto' }}
             style={{
               backgroundColor: '#000000',
               width: `calc(100vw - 360px)`,

@@ -29,6 +29,16 @@ import BaseCommandView from '../common/components/BaseCommandView';
 import { useCatch } from '../reactHelper';
 import SquareMove from './SquareMove';
 
+import MapView from '../Mapview/MapView';
+import MapPositions from '../Mapview/MapPositions';
+import MapMissions from '../Mapview/MapMissions';
+import MapMarkers from '../Mapview/MapMarkers';
+import MapSelectedDevice from '../Mapview/MapSelectedDevice';
+
+import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
+import { PortableWifiOff } from '@mui/icons-material';
+
+
 const useStyles = makeStyles((theme) => ({
   root: {
     height: '100%',
@@ -57,6 +67,38 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+const RenderCamera =({device,myhostname})=>{
+  if (device.hasOwnProperty('camera')){
+    if(device.camera[0].type === 'WebRTC'){
+      return(
+        <CameraWebRTCV4
+          deviceId={device.id}
+          deviceIp={myhostname}
+          devicename={device.name}
+          camera_src={device.name + '_' + device.camera[0].source}
+          onClose={() => {
+            console.log('cerrar ');
+          }}
+        />)
+    }
+    else {
+      return(
+        <CameraWebRTCV4
+          deviceId={device.id}
+          deviceIp={device.ip}
+          devicename={device.name}
+          camera_src={device.camera[0].source}
+          onClose={() => {
+            console.log('cerrar ');
+          }}
+        />
+      )
+    }
+  }else{
+    return(null)
+  }
+}
+
 const DevicePage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
@@ -65,14 +107,27 @@ const DevicePage = () => {
 
   const [item, setItem] = useState();
   const [itemc, setItemc] = useState({});
+  const [thisDevice, setthisdevice] = useState({});
   const deviceposition = useSelector((state) => state.data.positions);
+  const devicelist = useSelector((state) => state.devices.items);
   const [savedId, setSavedId] = useState(0);
   const limitCommands = 0;
+  const [markers, setmarkers] = useState([]);
+  const [filteredPositions, setFilteredPositions] = useState([]);
+  const myhostname = `${window.location.hostname}`;
+
+  const onMarkerClick = ()=>{};
   useEffect(() => {
     if (id) {
       setItem(deviceposition[id]);
     }
   }, [id, deviceposition]);
+
+  useEffect(() => {
+    if (id) {
+      setthisdevice(devicelist[id])
+    }
+  }, [id]);
 
   const deviceName = useSelector((state) => {
     if (item) {
@@ -121,17 +176,46 @@ const DevicePage = () => {
           <IconButton color='inherit' edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant='h6'>{deviceName}</Typography>
+          <Typography variant='h6'>{thisDevice.name}</Typography>
         </Toolbar>
       </AppBar>
-      <div className={classes.content}>
+      <div>
+        <div
+          style={{
+            position: 'relative',
+            display: 'inline-block',
+            width: '49vw',
+            height: `50vh`,
+          }}
+        >
+          <MapView>
+            <MapMarkers markers={markers} />
+            <MapMissions />
+            <MapPositions
+              positions={filteredPositions}
+              onClick={onMarkerClick}
+              selectedPosition={item}
+              showStatus
+            />
+            <MapSelectedDevice />
+          </MapView>
+        </div>
+      <div className={classes.content}
+                  style={{
+                    display: 'inline-block',
+                    position: 'relative',
+                    width: '45vw',
+                    height: `50vh`,
+                    top: 0,
+                    right:0
+                  }}
+      >
         <Container maxWidth='sm'>
           <Paper>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>stateName</TableCell>
-                  <TableCell>sharedName</TableCell>
                   <TableCell>stateValue</TableCell>
                 </TableRow>
               </TableHead>
@@ -142,9 +226,7 @@ const DevicePage = () => {
                     .map((property) => (
                       <TableRow key={property}>
                         <TableCell>{property}</TableCell>
-                        <TableCell>
-                          <strong>{prefixString('position', property)}</strong>
-                        </TableCell>
+
                         <TableCell>
                           <PositionValue position={item} property={property} />
                         </TableCell>
@@ -155,11 +237,6 @@ const DevicePage = () => {
                     <TableRow key={attribute}>
                       <TableCell>{attribute}</TableCell>
                       <TableCell>
-                        <strong>
-                          {prefixString('position', attribute) || prefixString('device', attribute)}
-                        </strong>
-                      </TableCell>
-                      <TableCell>
                         <PositionValue position={item} attribute={attribute} />
                       </TableCell>
                     </TableRow>
@@ -169,42 +246,64 @@ const DevicePage = () => {
           </Paper>
         </Container>
       </div>
-      <div>
+      <div
+
+            style={{
+              display: 'inline-block',
+              position: 'relative',
+              width: '47vw',
+              height: `40vh`,
+            }}
+>
+      <RenderCamera device={thisDevice} myhostname={myhostname}/>
+
+      </div>
+      <div
+                  style={{
+                    display: 'inline-block',
+                    position: 'relative',
+                    width: '50vw',
+                    height: `40vh`,
+                  }}
+      >
         {item && item.attributes && (
-          <div>
+          <div style={{display: 'flex'}}>
             <SquareMove front_view={true} data={item.attributes.obstacle_info}></SquareMove>
-            <div></div>
+            <div style={{width:'10px'}}></div>
             <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
           </div>
         )}
+
+        <div>
+                <Container maxWidth='xs' className={classes.container}>
+                  <Accordion defaultExpanded>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography variant='subtitle1'>{'Command'}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails className={classes.details}>
+                      {!limitCommands && !savedId && (
+                        <BaseCommandView deviceId={id} item={itemc} setItem={setItemc} />
+                      )}
+                    </AccordionDetails>
+                  </Accordion>
+                  <div className={classes.buttons}>
+                    <Button type='button' color='primary' variant='outlined' onClick={() => navigate(-1)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type='button'
+                      color='primary'
+                      variant='contained'
+                      onClick={handleSend}
+                      disabled={!validate()}
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </Container>
+        </div>
       </div>
-      <div>
-        <Container maxWidth='xs' className={classes.container}>
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant='subtitle1'>{'Command'}</Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.details}>
-              {!limitCommands && !savedId && (
-                <BaseCommandView deviceId={id} item={itemc} setItem={setItemc} />
-              )}
-            </AccordionDetails>
-          </Accordion>
-          <div className={classes.buttons}>
-            <Button type='button' color='primary' variant='outlined' onClick={() => navigate(-1)}>
-              Cancel
-            </Button>
-            <Button
-              type='button'
-              color='primary'
-              variant='contained'
-              onClick={handleSend}
-              disabled={!validate()}
-            >
-              Send
-            </Button>
-          </div>
-        </Container>
+
       </div>
     </div>
   );
