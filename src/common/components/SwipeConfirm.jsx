@@ -6,16 +6,8 @@ import {
   Card,
   CardContent,
   Typography,
-  CardActions,
   IconButton,
-  Table,
-  TableBody,
-  TableRow,
-  TableCell,
-  Menu,
-  MenuItem,
-  CardMedia,
-  Button,
+
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -41,8 +33,8 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(1, 1, 0, 2),
   },
   content: {
-    paddingTop: '50px',
-    paddingBottom: '50px',
+    paddingTop: '20px',
+    paddingBottom: '20px',
   },
   negative: {
     color: theme.palette.colors.negative,
@@ -64,21 +56,14 @@ const useStyles = makeStyles((theme) => ({
   actions: {
     justifyContent: 'space-between',
   },
-  root: ({ desktopPadding }) => ({
+  root: {
     pointerEvents: 'none',
     position: 'fixed',
     zIndex: 5,
     left: '50%',
-    [theme.breakpoints.up('md')]: {
-      left: `calc(50% + ${desktopPadding} / 2)`,
-      bottom: theme.spacing(3),
-    },
-    [theme.breakpoints.down('md')]: {
-      left: '50%',
-      bottom: `calc(${theme.spacing(3)} + ${theme.dimensions.bottomBarHeight}px)`,
-    },
-    transform: 'translateX(-50%)',
-  }),
+    top: '50%',
+    transform: 'translate(-50%,-50%)',
+  },
 }));
 
 const SwipeConfirm = ({ enable, onClose, onSucces }) => {
@@ -102,12 +87,14 @@ const SwipeConfirm = ({ enable, onClose, onSucces }) => {
               <Typography variant='body1' color='textSecondary'>
                 Send all devices to command the mission load
               </Typography>
+              <div style={{marginTop:'10px',height:'50px'}}>
               <ReactSwipeButton
                 text='Slide to Command Mission'
                 color='#7393B3'
                 text_unlocked='Commanded'
                 onSuccess={onSucces}
               />
+              </div>
             </CardContent>
           </Card>
         )}
