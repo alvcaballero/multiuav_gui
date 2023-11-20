@@ -3,12 +3,9 @@ init:
     category: 'dji_M210_melodic'
     ip: '10.42.0.99'
     user: 'grvc'
-    camera: []
-
-  - name: 'uav_11'
-    category: 'px4'
-    ip: '10.42.0.2'
-    camera: []
+    camera:
+      - type: 'WebRTC'
+        source: 'main'
 
   - name: 'uav_2'
     category: 'dji_M210_noetic'
@@ -19,9 +16,10 @@ init:
 
   - name: 'uav_3'
     category: 'px4'
-    ip: '10.42.0.41'
+    ip: '10.42.0.52'
+    user: 'rock'
     camera:
-      - type: 'Webrtc'
+      - type: 'WebRTC'
         source: 'video0'
 
   - name: 'uav_14'
@@ -38,26 +36,20 @@ init:
       - type: 'WebRTC'
         source: 'main'
 
-  - name: 'uav_11'
-    category: 'dji_M210_melodic'
-    ip: '10.42.0.99'
-    camera: []
-
   - name: 'uav_100'
     category: 'catec'
-    ip: '10.42.0.100'
+    ip: '10.0.3.5'
     camera:
       - type: 'WebRTC_env'
-        source: 'main1'
+        source: 'cam0'
       - type: 'WebRTC_env'
-        source: 'main2'
+        source: 'cam1'
       - type: 'WebRTC_env'
-        source: 'main3'
+        source: 'cam2'
       - type: 'WebRTC_env'
-        source: 'main4'
+        source: 'cam3'
 
-  - id: '7'
-    name: 'uav_20'
+  - name: 'uav_20'
     category: 'fuvex'
     ip: '10.42.0.101'
     camera: []

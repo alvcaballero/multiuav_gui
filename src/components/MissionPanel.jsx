@@ -8,7 +8,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
-import YAML from 'yaml';
 
 const useStyles = makeStyles((theme) => ({
   toolbar: {
@@ -73,16 +72,6 @@ export const MissionPanel = ({ SetOpenSave }) => {
   const SaveMission = () => {
     console.log('save mission');
     SetOpenSave(true);
-    //let auxmission = { version: '3' }; //JSON.parse(JSON.stringify(mission));
-    //auxmission['name'] = mission.name;
-    //auxmission['route'] = mission.route;
-    //const fileData = YAML.stringify(auxmission);
-    //const blob = new Blob([fileData], { type: 'text/plain' });
-    //const url = URL.createObjectURL(blob);
-    //const link = document.createElement('a');
-    //link.download = mission.name + '.yaml';
-    //link.href = url;
-    //link.click();
   };
   return (
     <Fragment>

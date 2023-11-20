@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import Draggable from 'react-draggable';
+import { useSelector } from 'react-redux';
 import {
   Card,
   CardContent,
@@ -17,18 +15,8 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import palette from '../common/palette';
-import ReplayIcon from '@mui/icons-material/Replay';
-import PublishIcon from '@mui/icons-material/Publish';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PendingIcon from '@mui/icons-material/Pending';
-
-import PositionValue from './PositionValue';
-import RemoveDialog from './RemoveDialog';
 import makeStyles from '@mui/styles/makeStyles';
-import { devicesActions } from '../store';
-import { Alarm } from '@mui/icons-material';
-import SelectField from '../common/components/SelectField';
+import YAML from 'yaml';
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -94,13 +82,13 @@ export const SaveFile = ({ SetOpenSave, OpenSave }) => {
   const [fileName, setFileName] = useState(mission.name);
 
   const SaveMission = () => {
-    let auxmission, fileData;
+    let fileData;
     let archivetype = 'text/plain';
     if (fileType == 'yaml') {
-      auxmission = { version: '3' }; //JSON.parse(JSON.stringify(mission));
-      auxmission['name'] = mission.name;
-      auxmission['route'] = mission.route;
-      fileData = YAML.stringify(auxmission);
+      let yamlmission = { version: '3' }; //JSON.parse(JSON.stringify(mission));
+      yamlmission['name'] = mission.name;
+      yamlmission['route'] = mission.route;
+      fileData = YAML.stringify(yamlmission);
     }
     if (fileType == 'kml') {
       archivetype = 'application/xml';
@@ -141,19 +129,19 @@ export const SaveFile = ({ SetOpenSave, OpenSave }) => {
     }
     if (fileType == 'plan') {
       archivetype = 'application/json';
-      auxmission = { fileType: 'Plan' }; //JSON.parse(JSON.stringify(mission));
-      auxmission['geoFence'] = {
+      let planmission = { fileType: 'Plan' }; //JSON.parse(JSON.stringify(mission));
+      planmission['geoFence'] = {
         circles: [],
         polygons: [],
         version: 2,
       };
-      auxmission['groundStation'] = 'QGroundControl';
-      auxmission['mission'] = {};
-      auxmission['mission']['cruiseSpeed'] = mission.route[0].attributes.idle_vel;
-      auxmission['mission']['firmwareType'] = 12;
-      auxmission['mission']['globalPlanAltitudeMode'] = 0;
-      auxmission['mission']['hoverSpeed'] = 5;
-      auxmission['mission']['items'] = [];
+      planmission['groundStation'] = 'QGroundControl';
+      planmission['mission'] = {};
+      planmission['mission']['cruiseSpeed'] = mission.route[0].attributes.idle_vel;
+      planmission['mission']['firmwareType'] = 12;
+      planmission['mission']['globalPlanAltitudeMode'] = 0;
+      planmission['mission']['hoverSpeed'] = 5;
+      planmission['mission']['items'] = [];
       mission.route.map((elem, elem_n, elem_list) => {
         elem.wp.map((mywp, mywp_n, mywp_list) => {
           let aux = {
@@ -169,20 +157,20 @@ export const SaveFile = ({ SetOpenSave, OpenSave }) => {
           };
           if (mywp_n == 0) {
             aux['command'] = 84;
-            auxmission['mission']['plannedHomePosition'] = [mywp.pos[0], mywp.pos[1], mywp.pos[2]];
+            planmission['mission']['plannedHomePosition'] = [mywp.pos[0], mywp.pos[1], mywp.pos[2]];
           }
           mywp_n + 1 == mywp_list.length ? (aux['command'] = 84) : null;
-          auxmission['mission']['items'].push(aux);
+          planmission['mission']['items'].push(aux);
         });
       });
-      auxmission['mission']['vehicleType'] = 20;
-      auxmission['mission']['version'] = 2;
-      auxmission['rallyPoints'] = {
+      planmission['mission']['vehicleType'] = 20;
+      planmission['mission']['version'] = 2;
+      planmission['rallyPoints'] = {
         points: [],
         version: 2,
       };
-      auxmission['version'] = 1;
-      fileData = JSON.stringify(auxmission);
+      planmission['version'] = 1;
+      fileData = JSON.stringify(planmission);
     }
     if (fileType == 'waypoint') {
       let xmlString = 'QGC WPL 110\n';
@@ -237,7 +225,7 @@ export const SaveFile = ({ SetOpenSave, OpenSave }) => {
               <InputLabel>Type file mission</InputLabel>
               <Select
                 label={'Type file mission'}
-                value={fileType ? fileType : 'yaml'}
+                value={fileType}
                 onChange={(e) => setFileType(e.target.value)}
                 sx={{ width: '120px' }}
               >

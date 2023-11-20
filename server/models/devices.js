@@ -126,7 +126,9 @@ export class DevicesModel {
       if (
         uav_type == 'dji_M210_noetic' ||
         uav_type == 'dji_M210_melodic' ||
-        uav_type == 'dji_M300'
+        uav_type == 'dji_M300' ||
+        uav_type == 'dji_M210_noetic_rtk' ||
+        uav_type == 'dji_M210_melodic_rtk'
       ) {
         uav_list[cur_uav_idx].listener_position.subscribe(function (msg) {
           let id_uav = cur_uav_idx;
