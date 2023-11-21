@@ -23,13 +23,14 @@ export class websocketController {
   static async update() {
     let currentsocket = {};
     const positions = await positionsModel.getAll();
+    const camera = await positionsModel.getCamera();
     const currentevent = await eventsModel.getall();
     if (Object.values(positions).length) {
       currentsocket['positions'] = Object.values(positions);
     }
-    //if (Object.values(data.state.camera).length) {
-    //  currentsocket['camera'] = Object.values(data.state.camera);
-    //}
+    if (Object.values(camera).length) {
+      currentsocket['camera'] = Object.values(camera);
+    }
 
     if (Object.values(currentevent).length) {
       //console.log(currentevent);
