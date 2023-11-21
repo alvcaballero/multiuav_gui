@@ -7,7 +7,7 @@ import { RosControl, RosContext } from '../components/RosControl';
 import DeviceList from '../components/DeviceList';
 import { Paper, Grid, Box } from '@mui/material';
 import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
-import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
+import { CameraV1 } from '../components/CameraV1';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { experimentalStyled as styled } from '@mui/material/styles';
@@ -97,7 +97,8 @@ const CameraPage = () => {
           }}
         >
           <Box
-            component="div" sx={{ overflow: 'auto' }}
+            component='div'
+            sx={{ overflow: 'auto' }}
             style={{
               backgroundColor: '#000000',
               width: `calc(100vw - 360px)`,
@@ -132,6 +133,13 @@ const CameraPage = () => {
                             onClose={() => {
                               console.log('cerrar ');
                             }}
+                          />
+                        )}
+                        {camera.type === 'Websocket' && (
+                          <CameraV1
+                            deviceId={device.id}
+                            datacamera={null}
+                            onClose={() => console.log('cerrar ')}
                           />
                         )}
                       </Grid>

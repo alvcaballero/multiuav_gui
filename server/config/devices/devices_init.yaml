@@ -1,15 +1,15 @@
 init:
   - name: 'uav_1'
-    category: 'dji_M210_melodic_rtk'
+    category: 'dji_M210_melodic'
     ip: '10.42.0.99'
     user: 'grvc'
     camera:
-      - type: 'WebRTC'
+      - type: 'Websocket'
         source: 'main'
 
   - name: 'uav_2'
-    category: 'dji_M210_noetic_rtk'
+    category: 'dji_M210_noetic'
     ip: '10.42.0.43'
     camera:
-      - type: 'WebRTC'
+      - type: 'Websocket'
         source: 'main'

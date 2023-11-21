@@ -1,6 +1,7 @@
 import { DevicesModel } from '../models/devices.js';
 const positions = {};
 const history = {};
+const camera = {};
 
 export class positionsModel {
   static async getAll() {
@@ -8,6 +9,12 @@ export class positionsModel {
   }
   static async getDevice(deviceId) {
     return positions[deviceId];
+  }
+  static async getCamera() {
+    return camera;
+  }
+  static updateCamera(payload) {
+    camera[payload.deviceId] = payload;
   }
   static async updatePosition(payload) {
     //positions[payload.deviceId] = payload;
@@ -21,10 +28,10 @@ export class positionsModel {
           gimbal: [0, 0, 0],
           obstacle_info: [0, 0, 0, 0, 0, 0],
           takeoff_height: 400,
-          mission_state: 'UNDEFINED',
+          mission_state: 'Ready',
           wp_reached: 0,
           uav_state: 'OK',
-          landed_state: 'UNDEFINED',
+          landed_state: 'Ready',
           alarm: 'UNDEFINED',
         },
       };
