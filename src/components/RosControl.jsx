@@ -6,13 +6,6 @@ import YAML from 'yaml';
 export const RosContext = React.createContext();
 
 var plan_mission = '';
-var mission_layers = [];
-var mode_landing = 0;
-var mode_yaw = 0;
-//let uav_list = [];
-let statusLog = [];
-
-let ros = '';
 
 export const RosControl = ({ children, notification }) => {
   const devices = useSelector((state) => state.devices.items);
@@ -160,8 +153,6 @@ export const RosControl = ({ children, notification }) => {
   const openMision = (name_mission, text_mission) => {
     if (name_mission.endsWith('.yaml')) {
       plan_mission = YAML.parse(text_mission);
-      mode_landing = plan_mission['mode_landing'];
-      mode_yaw = plan_mission['mode_yaw'];
       dispatch(
         missionActions.updateMission({
           name: name_mission.slice(0, -5),

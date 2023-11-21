@@ -1,14 +1,17 @@
 //import "./MainPage.css";
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import MapView from '../Mapview/MapView';
 import { Navbar } from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
+import MapPositions from '../Mapview/MapPositions';
+import { useSelector } from 'react-redux';
 
-import { Divider, Typography, IconButton, Drawer, Paper, Toolbar } from '@mui/material';
+import { Paper } from '@mui/material';
 
 import makeStyles from '@mui/styles/makeStyles';
-import { RosControl, RosContext } from '../components/RosControl';
+import { RosControl } from '../components/RosControl';
+import { MissionController } from '../components/MissionController';
 import { MissionPanel } from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import { SaveFile } from '../components/SaveFile';
@@ -96,56 +99,72 @@ const MissionPage = () => {
   const classes = useStyles();
   const [Opensave, setOpenSave] = useState(false);
 
+  const positions = useSelector((state) => state.data.positions);
+
+  const [filteredPositions, setFilteredPositions] = useState([]);
+
+  useEffect(() => {
+    setFilteredPositions(Object.values(positions));
+  }, [positions]);
+
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
-        <Navbar />
-        <Menu />
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: `calc(100vh - 95px)`,
-          }}
-        >
+      <MissionController>
+        <RosControl notification={showToast}>
+          <Navbar />
+          <Menu />
           <div
             style={{
-              display: 'inline-block',
               position: 'relative',
-              width: '560px',
-              height: '100%',
-            }}
-          ></div>
-          <div
-            style={{
-              display: 'inline-block',
-              position: 'relative',
-              width: `calc(100vw - 575px)`,
-              height: '100%',
+              width: '100%',
+              height: `calc(100vh - 95px)`,
             }}
           >
-            <MapView>
-              <MapMissionsCreate />
-            </MapView>
+            <div
+              style={{
+                display: 'inline-block',
+                position: 'relative',
+                width: '560px',
+                height: '100%',
+              }}
+            ></div>
+            <div
+              style={{
+                display: 'inline-block',
+                position: 'relative',
+                width: `calc(100vw - 575px)`,
+                height: '100%',
+              }}
+            >
+              <MapView>
+                <MapMissionsCreate />
+                <MapPositions
+                  positions={filteredPositions}
+                  onClick={null}
+                  selectedPosition={null}
+                  showStatus
+                />
+              </MapView>
+            </div>
           </div>
-        </div>
 
-        <div className={classes.sidebarStyle}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <MissionPanel SetOpenSave={setOpenSave} />
-            </Paper>
+          <div className={classes.sidebarStyle}>
+            <div className={classes.middleStyle}>
+              <Paper square>
+                <MissionPanel SetOpenSave={setOpenSave} />
+              </Paper>
+            </div>
           </div>
-        </div>
-        <div className={classes.panelElevation}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <MissionElevation />
-            </Paper>
+          <div className={classes.panelElevation}>
+            <div className={classes.middleStyle}>
+              <Paper square>
+                <MissionElevation />
+              </Paper>
+            </div>
           </div>
-        </div>
-        {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
-      </RosControl>
+          {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
+        </RosControl>
+      </MissionController>
     </div>
   );
 };

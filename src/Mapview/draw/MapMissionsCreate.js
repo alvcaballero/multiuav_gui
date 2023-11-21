@@ -3,13 +3,14 @@
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 //https://docs.maptiler.com/sdk-js/examples/elevation-profile/
-import { useId, useCallback, useState, useEffect } from 'react';
+import { useId, useCallback, useState, useEffect, useContext } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { map } from '../MapView';
 import { findFonts } from '../mapUtil';
 import { missionActions } from '../../store'; // here update device action with position of uav for update in map
 //import maplibregl from "maplibre-gl";
 import palette from '../../common/palette';
+import { MissionContext } from '../../components/MissionController';
 
 class keepvalue {
   constructor() {
@@ -43,6 +44,7 @@ export const MapMissionsCreate = () => {
   const iconScale = 0.6;
   const dispatch = useDispatch();
   const [testkeepvalue, settestkeepvalue] = useState(new keepvalue());
+  const missionContext = useContext(MissionContext);
 
   let canvas = map.getCanvasContainer();
 
@@ -89,14 +91,20 @@ export const MapMissionsCreate = () => {
     canvas.style.cursor = '';
     let auxselectpoint = testkeepvalue.getSelectwp();
     console.log(`Longitude: ${coords.lng} Latitude: ${coords.lat}`);
-    dispatch(
-      missionActions.updateWpPos({
-        wp_id: auxselectpoint.id,
-        route_id: auxselectpoint.route_id,
-        lng: e.lngLat.lng,
-        lat: e.lngLat.lat,
-      })
-    );
+    missionContext.setChangeWp({
+      wp_id: auxselectpoint.id,
+      route_id: auxselectpoint.route_id,
+      lng: e.lngLat.lng,
+      lat: e.lngLat.lat,
+    });
+    //dispatch(
+    //  missionActions.updateWpPos({
+    //    wp_id: auxselectpoint.id,
+    //    route_id: auxselectpoint.route_id,
+    //    lng: e.lngLat.lng,
+    //    lat: e.lngLat.lat,
+    //  })
+    //);
     testkeepvalue.setSelecwp({ id: -1 });
     // Unbind mouse/touch events
     map.off('mousemove', onMove);
@@ -209,6 +217,8 @@ export const MapMissionsCreate = () => {
         e.preventDefault();
 
         testkeepvalue.setSelecwp(e.features[0].properties);
+
+        // when click  visualize in list
         dispatch(missionActions.selectpoint(e.features[0].properties));
 
         canvas.style.cursor = 'grab';
