@@ -36,8 +36,9 @@ import MapMarkers from '../Mapview/MapMarkers';
 import MapSelectedDevice from '../Mapview/MapSelectedDevice';
 
 import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
-import { PortableWifiOff } from '@mui/icons-material';
+import { CameraV1 } from '../components/CameraV1';
 
+import { PortableWifiOff } from '@mui/icons-material';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -67,37 +68,38 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const RenderCamera =({device,myhostname})=>{
-  if (device.hasOwnProperty('camera')){
-    if(device.camera[0].type === 'WebRTC'){
-      return(
+const RenderCamera = ({ device, myhostname }) => {
+  const camera = device.camera && device.camera.length > 0 ? device.camera[0] : { type: '' };
+  return (
+    <>
+      {camera.type === 'WebRTC' && (
         <CameraWebRTCV4
           deviceId={device.id}
           deviceIp={myhostname}
           devicename={device.name}
-          camera_src={device.name + '_' + device.camera[0].source}
-          onClose={() => {
-            console.log('cerrar ');
-          }}
-        />)
-    }
-    else {
-      return(
-        <CameraWebRTCV4
-          deviceId={device.id}
-          deviceIp={device.ip}
-          devicename={device.name}
-          camera_src={device.camera[0].source}
+          camera_src={device.name + '_' + camera.source}
           onClose={() => {
             console.log('cerrar ');
           }}
         />
-      )
-    }
-  }else{
-    return(null)
-  }
-}
+      )}
+      {camera.type === 'WebRTC_env' && (
+        <CameraWebRTCV4
+          deviceId={device.id}
+          deviceIp={device.ip}
+          devicename={device.name}
+          camera_src={camera.source}
+          onClose={() => {
+            console.log('cerrar ');
+          }}
+        />
+      )}
+      {camera.type === 'Websocket' && (
+        <CameraV1 deviceId={device.id} datacamera={null} onClose={() => console.log('cerrar ')} />
+      )}
+    </>
+  );
+};
 
 const DevicePage = () => {
   const classes = useStyles();
@@ -116,7 +118,7 @@ const DevicePage = () => {
   const [filteredPositions, setFilteredPositions] = useState([]);
   const myhostname = `${window.location.hostname}`;
 
-  const onMarkerClick = ()=>{};
+  const onMarkerClick = () => {};
   useEffect(() => {
     if (id) {
       setItem(deviceposition[id]);
@@ -125,19 +127,10 @@ const DevicePage = () => {
 
   useEffect(() => {
     if (id) {
-      setthisdevice(devicelist[id])
+      setthisdevice(devicelist[id]);
+      console.log(devicelist[id]);
     }
   }, [id]);
-
-  const deviceName = useSelector((state) => {
-    if (item) {
-      const device = state.devices.items[item.deviceId];
-      if (device) {
-        return device.name;
-      }
-    }
-    return null;
-  });
 
   const handleSend = useCatch(async () => {
     let command;
@@ -200,110 +193,115 @@ const DevicePage = () => {
             <MapSelectedDevice />
           </MapView>
         </div>
-      <div className={classes.content}
-                  style={{
-                    display: 'inline-block',
-                    position: 'relative',
-                    width: '45vw',
-                    height: `50vh`,
-                    top: 0,
-                    right:0
-                  }}
-      >
-        <Container maxWidth='sm'>
-          <Paper>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>stateName</TableCell>
-                  <TableCell>stateValue</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {item &&
-                  Object.getOwnPropertyNames(item)
-                    .filter((it) => it !== 'attributes')
-                    .map((property) => (
-                      <TableRow key={property}>
-                        <TableCell>{property}</TableCell>
+        <div
+          className={classes.content}
+          style={{
+            display: 'inline-block',
+            position: 'relative',
+            width: '45vw',
+            height: `50vh`,
+            top: 0,
+            right: 0,
+          }}
+        >
+          <Container maxWidth='sm'>
+            <Paper>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>stateName</TableCell>
+                    <TableCell>stateValue</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {item &&
+                    Object.getOwnPropertyNames(item)
+                      .filter((it) => it !== 'attributes')
+                      .map((property) => (
+                        <TableRow key={property}>
+                          <TableCell>{property}</TableCell>
 
+                          <TableCell>
+                            <PositionValue position={item} property={property} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  {item &&
+                    Object.getOwnPropertyNames(item.attributes).map((attribute) => (
+                      <TableRow key={attribute}>
+                        <TableCell>{attribute}</TableCell>
                         <TableCell>
-                          <PositionValue position={item} property={property} />
+                          <PositionValue position={item} attribute={attribute} />
                         </TableCell>
                       </TableRow>
                     ))}
-                {item &&
-                  Object.getOwnPropertyNames(item.attributes).map((attribute) => (
-                    <TableRow key={attribute}>
-                      <TableCell>{attribute}</TableCell>
-                      <TableCell>
-                        <PositionValue position={item} attribute={attribute} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </Paper>
-        </Container>
-      </div>
-      <div
-
-            style={{
-              display: 'inline-block',
-              position: 'relative',
-              width: '47vw',
-              height: `40vh`,
-            }}
->
-      <RenderCamera device={thisDevice} myhostname={myhostname}/>
-
-      </div>
-      <div
-                  style={{
-                    display: 'inline-block',
-                    position: 'relative',
-                    width: '50vw',
-                    height: `40vh`,
-                  }}
-      >
-        {item && item.attributes && (
-          <div style={{display: 'flex'}}>
-            <SquareMove front_view={true} data={item.attributes.obstacle_info}></SquareMove>
-            <div style={{width:'10px'}}></div>
-            <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
-          </div>
-        )}
-
-        <div>
-                <Container maxWidth='xs' className={classes.container}>
-                  <Accordion defaultExpanded>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Typography variant='subtitle1'>{'Command'}</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails className={classes.details}>
-                      {!limitCommands && !savedId && (
-                        <BaseCommandView deviceId={id} item={itemc} setItem={setItemc} />
-                      )}
-                    </AccordionDetails>
-                  </Accordion>
-                  <div className={classes.buttons}>
-                    <Button type='button' color='primary' variant='outlined' onClick={() => navigate(-1)}>
-                      Cancel
-                    </Button>
-                    <Button
-                      type='button'
-                      color='primary'
-                      variant='contained'
-                      onClick={handleSend}
-                      disabled={!validate()}
-                    >
-                      Send
-                    </Button>
-                  </div>
-                </Container>
+                </TableBody>
+              </Table>
+            </Paper>
+          </Container>
         </div>
-      </div>
+        <div
+          style={{
+            display: 'inline-block',
+            position: 'relative',
+            width: '47vw',
+            height: `40vh`,
+          }}
+        >
+          {Object.keys(thisDevice).length > 0 && (
+            <RenderCamera device={thisDevice} myhostname={myhostname} />
+          )}
+        </div>
+        <div
+          style={{
+            display: 'inline-block',
+            position: 'relative',
+            width: '50vw',
+            height: `40vh`,
+          }}
+        >
+          {item && item.attributes && (
+            <div style={{ display: 'flex' }}>
+              <SquareMove front_view={true} data={item.attributes.obstacle_info}></SquareMove>
+              <div style={{ width: '10px' }}></div>
+              <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
+            </div>
+          )}
 
+          <div>
+            <Container maxWidth='xs' className={classes.container}>
+              <Accordion defaultExpanded>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant='subtitle1'>{'Command'}</Typography>
+                </AccordionSummary>
+                <AccordionDetails className={classes.details}>
+                  {!limitCommands && !savedId && (
+                    <BaseCommandView deviceId={id} item={itemc} setItem={setItemc} />
+                  )}
+                </AccordionDetails>
+              </Accordion>
+              <div className={classes.buttons}>
+                <Button
+                  type='button'
+                  color='primary'
+                  variant='outlined'
+                  onClick={() => navigate(-1)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type='button'
+                  color='primary'
+                  variant='contained'
+                  onClick={handleSend}
+                  disabled={!validate()}
+                >
+                  Send
+                </Button>
+              </div>
+            </Container>
+          </div>
+        </div>
       </div>
     </div>
   );
