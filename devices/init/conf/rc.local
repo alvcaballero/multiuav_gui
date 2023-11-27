@@ -1,0 +1,8 @@
+#!/bin/sh
+# add your commands 
+# call your scripts here
+
+/home/ubuntu/init/init.sh
+
+# last line must be exit 0 
+exit 0

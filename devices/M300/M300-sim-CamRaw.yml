@@ -4,17 +4,16 @@ name: dji_missions
 root: ~/
 
 windows:
-  - M210-real:
+  - M300-sim:
       layout: tiled
       # Synchronize all panes of this window, can be enabled before or after the pane commands run.
       # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
       # synchronize: after
       panes:
-        - M210-real
-        - sleep 2; roslaunch onboard_dji atlas.launch
-        - sleep 5; roslaunch onboard_dji multimaster-noetic.launch
-        - docker run --rm -it --network=host bluenviron/mediamtx:latest
         - config:
-            - sleep 20
+            - M300-sim-on
+            - sleep 30
             - 'rosservice call /uav_2/setup_camera_stream "{cameraType: 1, start: 1}"'
-            - rosrun simple_vs gstreamer-ros.py'
+        - sleep 10; roslaunch onboard_dji resisto.launch uav_id:=15
+        - sleep 15; roslaunch onboard_dji multimaster-noetic.launch
+        - sleep 2;

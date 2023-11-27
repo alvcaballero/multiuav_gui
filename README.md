@@ -109,6 +109,26 @@ $ roscd aerialcore_gcs/aerialcore_gui
 $ npm i
 ```
 
+# Releases
+
+## Tag V1.4 (Download images form UAV)
+
+## Tag V1.3
+
+Test and Setup for Muav on Proyect Omicron Demo in Plaza de Agua
+
+- Group points and move all route , in edit mission
+- streaming of video using Websockets in MVS Architecture
+- Donwload mission in diferentes file format
+
+# Tag V1.2
+
+- Calcule middle point for create a new mission
+
+# Tag V1.1
+
+- Creation mission page for eddit mission
+
 # References
 
 - (inspector software_UAV)[https://github.com/AlejandroCastillejo/inspector_software_uav] en este proyecto se optiene archivos de la camara mediante ftp y se almacenas en la mochila del dron para luego ser enviados a la gcs mediante sshpass usando y scp, esto se ejeucta directamente en el drone

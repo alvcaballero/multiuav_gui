@@ -1,0 +1,19 @@
+# ./.tmuxinator.yml
+
+name: dji_missions
+root: ~/
+
+windows:
+  - M300-real:
+      layout: tiled
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - config:
+            - M300-real
+            - sleep 30
+            - 'rosservice call /uav_2/setup_camera_h264 "{request_view: 0, start: 1}"'
+        - sleep 10; roslaunch onboard_dji resisto.launch uav_id:=15
+        - sleep 15; roslaunch onboard_dji multimaster-noetic.launch
+        - sleep 2;
