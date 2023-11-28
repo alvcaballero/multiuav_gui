@@ -1,0 +1,22 @@
+# ./.tmuxinator.yml
+
+name: px4_missions
+root: ~/
+
+windows:
+  - PX4-real:
+      layout: tiled
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - main:
+            - sleep 2
+            - roslaunch onboard_px4 atlas.launch
+        - multimaster:
+            - sleep 5
+            - roslaunch onboard_px4 multimaster.launch
+        - video-stream:
+            - gst-launch-1.0 v4l2src device=/dev/video5 ! video/x-raw,width=640,height=480 ! videoconvert ! x264enc bframes=0 tune=zerolatency bitrate=500 speed-preset=superfast ! h264parse  ! rtspclientsink location=rtsp://0.0.0.0:8554/video0 rtpjpegpay name=pj
+        - server:
+            - docker run --rm -it --network=host bluenviron/mediamtx:latest

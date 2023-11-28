@@ -1,0 +1,18 @@
+# ./.tmuxinator.yml
+
+name: px4_missions
+root: ~/
+
+windows:
+  - PX4-real:
+      layout: tiled
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - main:
+            - sleep 2
+            - roslaunch onboard_px4 atlas.launch
+        - multimaster:
+            - sleep 5
+            - roslaunch onboard_px4 multimaster.launch

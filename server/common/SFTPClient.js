@@ -10,13 +10,13 @@
 //
 // 3) Run the script
 //   node sftp.js
-// 
+//
 // Compatible with Node.js >= v12
 // Using ssh2-sftp-client v8.0.0
 
-import sftp from  'ssh2-sftp-client';
+import sftp from 'ssh2-sftp-client';
 
-class SFTPClient {
+export class SFTPClient {
   constructor() {
     this.client = new sftp();
   }
