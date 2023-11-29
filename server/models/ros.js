@@ -71,9 +71,8 @@ export class rosModel {
 
     service_list[cur_uav_idx]['ServiceMission'] = new ROSLIB.Service({
       ros: ros,
-      serviceType: 'std_srvs/SetBool',
       name: '/GCS/FinishMission',
-      //serviceType: 'aerialcore_common/ConfigMission',
+      serviceType: 'aerialcore_common/finishMission',
     });
 
     service_list[cur_uav_idx]['ServiceMission'].advertise(function (request, response) {
@@ -89,13 +88,13 @@ export class rosModel {
     cur_uav_idx = String(service_list.length);
     service_list.push({ name: 'service mission' });
 
-    service_list[cur_uav_idx]['ServiceUpload'] = new ROSLIB.Service({
+    service_list[cur_uav_idx]['ServiceDownload'] = new ROSLIB.Service({
       ros: ros,
-      name: '/GCS/FinishUpload',
-      serviceType: 'std_srvs/SetBool',
+      name: '/GCS/FinishDownload',
+      serviceType: 'aerialcore_common/finishGetFiles',
     });
 
-    service_list[cur_uav_idx]['ServiceUpload'].advertise(function (request, response) {
+    service_list[cur_uav_idx]['ServiceDownload'].advertise(function (request, response) {
       console.log('callback Service finish donwload files');
       console.log(request);
 
