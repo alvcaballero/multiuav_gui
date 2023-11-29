@@ -1,0 +1,106 @@
+{
+    "deviceId": -1, 
+    "type": "loadMission",
+    "attributes":  [
+    {
+      "uav": "uav_2",
+      "wp": [
+        {
+          "pos": [
+            38.13898041,
+            -3.17466429,
+            9
+          ],
+          "action": {
+            "video_start": 0,
+            "gimbal": -90,
+            "yaw": 153.6
+          }
+        },
+        {
+          "pos": [
+            38.13898041,
+            -3.17466429,
+            30
+          ],
+          "action": {
+            "gimbal": -90,
+            "yaw": 153.6
+          }
+        },
+        {
+          "pos": [
+            38.13816516,
+            -3.17414854,
+            29.188751
+          ],
+          "action": {
+            "gimbal": -90,
+            "yaw": -110.8
+          }
+        },
+        {
+          "pos": [
+            38.13785254,
+            -3.17518588,
+            26.939178
+          ],
+          "action": {
+            "gimbal": -90,
+            "yaw": -110.8
+          }
+        }
+      ],
+      "attributes": {
+        "mode_landing": 2,
+        "mode_yaw": 2,
+        "mode_gimbal": 0,
+        "idle_vel": 7
+      }
+    },
+    {
+      "uav": "uav_1",
+      "wp": [
+        {
+          "pos": [
+            38.13921488,
+            -3.17343119,
+            9
+          ],
+          "action": {
+            "video_start": 0,
+            "gimbal": -45,
+            "yaw": 83.4
+          }
+        },
+        {
+          "pos": [
+            38.13921488,
+            -3.17343119,
+            30
+          ],
+          "action": {
+            "gimbal": -45,
+            "yaw": 83.4
+          }
+        },
+        {
+          "pos": [
+            38.13921488,
+            -3.17343119,
+            15
+          ],
+          "action": {
+            "video_stop": 0
+          }
+        }
+      ],
+      "attributes": {
+        "mode_landing": 0,
+        "mode_yaw": 2,
+        "mode_gimbal": 0,
+        "idle_vel": 7
+      }
+    }
+  ]
+}

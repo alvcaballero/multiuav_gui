@@ -63,56 +63,7 @@ GET http://localhost:4000/api/category/actions/dji_M210_noetic
 POST http://localhost:4000/api/commands/sendTask
 Content-Type: application/json
 
-{
-  "misision_id": 1234,
-  "objectivo": 0,
-  "loc": {
-    "tramo0": [
-      {
-        "lat": 37.121203,
-        "lon": -6.492668
-      },
-      {
-        "lat": 37.116616,
-        "lon": -6.484771
-      },
-      {
-        "lat": 37.107177,
-        "lon": -6.479203
-      }
-    ],
-    "tramo1": [
-      {
-        "lat": 37.1211,
-        "lon": -6.495395
-      },
-      {
-        "lat": 37.119171,
-        "lon": -6.496007
-      }
-    ]
-  },
-  "meteo": [
-    {
-      "lat": 37.01455061559604,
-      "lon": -6.5625427378086485,
-      "wind_vel": 12,
-      "wind_dir": 360,
-      "temp": 38,
-      "humidity": 90,
-      "pres_atm": 5
-    },
-    {
-      "lat": 37.01455061559604,
-      "lon": -6.5625427378086485,
-      "wind_vel": 12,
-      "wind_dir": 360,
-      "temp": 38,
-      "humidity": 90,
-      "pres_atm": 5
-    }
-  ]
-}
+< ./json/task.json
 
 ### Commandos 
 
@@ -138,112 +89,7 @@ Content-Type: application/json
 POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
-{
-    "deviceId": -1, 
-    "type": "loadMission",
-    "attributes":  [
-    {
-      "uav": "uav_2",
-      "wp": [
-        {
-          "pos": [
-            38.13898041,
-            -3.17466429,
-            9
-          ],
-          "action": {
-            "video_start": 0,
-            "gimbal": -90,
-            "yaw": 153.6
-          }
-        },
-        {
-          "pos": [
-            38.13898041,
-            -3.17466429,
-            30
-          ],
-          "action": {
-            "gimbal": -90,
-            "yaw": 153.6
-          }
-        },
-        {
-          "pos": [
-            38.13816516,
-            -3.17414854,
-            29.188751
-          ],
-          "action": {
-            "gimbal": -90,
-            "yaw": -110.8
-          }
-        },
-        {
-          "pos": [
-            38.13785254,
-            -3.17518588,
-            26.939178
-          ],
-          "action": {
-            "gimbal": -90,
-            "yaw": -110.8
-          }
-        }
-      ],
-      "attributes": {
-        "mode_landing": 2,
-        "mode_yaw": 2,
-        "mode_gimbal": 0,
-        "idle_vel": 7
-      }
-    },
-    {
-      "uav": "uav_1",
-      "wp": [
-        {
-          "pos": [
-            38.13921488,
-            -3.17343119,
-            9
-          ],
-          "action": {
-            "video_start": 0,
-            "gimbal": -45,
-            "yaw": 83.4
-          }
-        },
-        {
-          "pos": [
-            38.13921488,
-            -3.17343119,
-            30
-          ],
-          "action": {
-            "gimbal": -45,
-            "yaw": 83.4
-          }
-        },
-        {
-          "pos": [
-            38.13921488,
-            -3.17343119,
-            15
-          ],
-          "action": {
-            "video_stop": 0
-          }
-        }
-      ],
-      "attributes": {
-        "mode_landing": 0,
-        "mode_yaw": 2,
-        "mode_gimbal": 0,
-        "idle_vel": 7
-      }
-    }
-  ]
-}
+< ./json/loadmission.json
 
 ### send command command mission
 
@@ -256,69 +102,28 @@ Content-Type: application/json
 }
 
 ### Mission
-### get mission
 
-### list files
-
-### update files
-
-### show files
-GET  http://localhost:4000/api/missions/showFiles/4/1
 ### Sendtask
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
-{
-  "misision_id": 1234,
-  "objectivo": 0,
-  "loc": {
-    "tramo0": [
-      {
-        "lat": 37.121203,
-        "lon": -6.492668
-      },
-      {
-        "lat": 37.116616,
-        "lon": -6.484771
-      },
-      {
-        "lat": 37.107177,
-        "lon": -6.479203
-      }
-    ],
-    "tramo1": [
-      {
-        "lat": 37.1211,
-        "lon": -6.495395
-      },
-      {
-        "lat": 37.119171,
-        "lon": -6.496007
-      }
-    ]
-  },
-  "meteo": [
-    {
-      "lat": 37.01455061559604,
-      "lon": -6.5625427378086485,
-      "wind_vel": 12,
-      "wind_dir": 360,
-      "temp": 38,
-      "humidity": 90,
-      "pres_atm": 5
-    },
-    {
-      "lat": 37.01455061559604,
-      "lon": -6.5625427378086485,
-      "wind_vel": 12,
-      "wind_dir": 360,
-      "temp": 38,
-      "humidity": 90,
-      "pres_atm": 5
-    }
-  ]
-}
+< ./json/task.json
 
+# varibles 
+
+@uav_id = 4
+@mission_id = 1
+### get mission
+
+### show files
+GET  http://localhost:4000/api/missions/showFiles/{{uav_id}}/{{mission_id}}
+
+### update files
+
+GET  http://localhost:4000/api/missions/updateFiles/{{uav_id}}/{{mission_id}}
+
+### list files
+GET  http://localhost:4000/api/missions/listFiles/{{mission_id}}/{{uav_id}}
 
 ### Ros
 

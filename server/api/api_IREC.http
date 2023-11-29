@@ -1,4 +1,4 @@
-### Get tocken  
+# @name login
 POST http://10.10.2.12:8866/token/provide/RESISTO-API
 Content-Type: application/application/x-www-form-urlencoded
 
@@ -6,9 +6,21 @@ username="drone"
 &password="F1PpE9V!E#Pwz8k53b7b"
 
 ### Mission Result
-POST http://localhost:4000/api/devices
+POST http://10.10.2.5:8000/resultado_mision
 Content-Type: application/json
 Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2OTUwMzM3NDUsIm5iZiI6MTY5NTAzMzc0NSwiZXhwIjoxNjk1MDMzODA1LCJ1c2VyX2lkIjoiNSIsInJvbGVzIjpbImRyb25lc19leHRlcm5hbCJdfQ.EGQgwHu3tm-S42XxKKzk_bmuf-flaMN-STkZvTLh4VA
+
+{
+  "mission_id": 1234,
+  "resolution_code": 0,
+  "description": "Nothing to add."
+}
+
+
+### Mission Result 2
+POST http://10.10.2.5:8000/resultado_mision
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
 
 {
   "mission_id": 1234,
