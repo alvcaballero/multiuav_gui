@@ -62,54 +62,72 @@ export class rosModel {
       });
     });
   }
-  static getTopics2() {
-
-  }
+  static getTopics2() {}
   static ServiceMission() {
-    console.log('service mission')
+    console.log('service mission finish');
 
     let cur_uav_idx = String(service_list.length);
-    service_list.push({name:'service mission'})
+    service_list.push({ name: 'service mission' });
 
     service_list[cur_uav_idx]['ServiceMission'] = new ROSLIB.Service({
       ros: ros,
-      name: '/GCS/Mission',
+      serviceType: 'std_srvs/SetBool',
+      name: '/GCS/FinishMission',
+      //serviceType: 'aerialcore_common/ConfigMission',
+    });
+
+    service_list[cur_uav_idx]['ServiceMission'].advertise(function (request, response) {
+      console.log('callback Sevice finish mission');
+      console.log(request);
+
+      response['success'] = true;
+      response['message'] = 'Set successfully';
+      return true;
+    });
+    console.log('service mission');
+
+    cur_uav_idx = String(service_list.length);
+    service_list.push({ name: 'service mission' });
+
+    service_list[cur_uav_idx]['ServiceUpload'] = new ROSLIB.Service({
+      ros: ros,
+      name: '/GCS/FinishUpload',
       serviceType: 'std_srvs/SetBool',
     });
 
-    service_list[cur_uav_idx]['ServiceMission'].advertise(function(request,response){
-      console.log("callback funtion")
-      console.log(request)
-      
-      response['success'] = true; 
-      response['message'] = 'Set successfully'; 
+    service_list[cur_uav_idx]['ServiceUpload'].advertise(function (request, response) {
+      console.log('callback Service finish donwload files');
+      console.log(request);
+
+      response['success'] = true;
+      response['message'] = 'Set successfully';
       return true;
-    })
-
+    });
   }
-  static getServices(){
-
-      const servicesPromise = new Promise((resolve, reject) => {
-        ros.ROS.getServices((services) => {
+  static getServices() {
+    const servicesPromise = new Promise((resolve, reject) => {
+      ros.ROS.getServices(
+        (services) => {
           const serviceList = services.map((serviceName) => {
             return {
               serviceName,
-            }
+            };
           });
           resolve({
-            services: serviceList
+            services: serviceList,
           });
           reject({
-            services: []
+            services: [],
           });
-        }, (message) => {
-          console.error("Failed to get services", message)
-          ros.services = []
-        });
-      });
-      servicesPromise.then((services) => setROS(ros => ({ ...ros, services: services })));
-      return ros.services;
-    
+        },
+        (message) => {
+          console.error('Failed to get services', message);
+          ros.services = [];
+        }
+      );
+    });
+    servicesPromise.then((services) => setROS((ros) => ({ ...ros, services: services })));
+    return ros.services;
   }
   static Getservicehost(nameService) {
     let servicehost = new ROSLIB.Service({

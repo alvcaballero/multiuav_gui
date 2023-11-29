@@ -1,12 +1,12 @@
 <launch>
     <node name="master_discovery" pkg="fkie_master_discovery" type="master_discovery">
-        <rosparam param="robot_hosts">[ grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia]</rosparam>
-        <rosparam param="static_hosts">[ grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia]</rosparam>
+        <rosparam param="robot_hosts">[ grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia,khadas]</rosparam>
+        <rosparam param="static_hosts">[ grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia,khadas]</rosparam>
         <rosparam param="send_mcast">False</rosparam>
         <rosparam param="listen_mcast">False</rosparam>
     </node>
     <node name="master_sync" pkg="fkie_master_sync" type="master_sync">
-        <rosparam param="sync_hosts">[grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia]</rosparam>
+        <rosparam param="sync_hosts">[grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia,khadas]</rosparam>
     </node>
 
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
