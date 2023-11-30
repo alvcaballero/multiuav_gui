@@ -34,7 +34,16 @@ export class SFTPClient {
     await this.client.end();
   }
 
-  async listFiles(remoteDir, fileGlob) {
+  /**
+   *
+   * List contents of a remote directory. If a pattern is provided,
+   * filter the results to only include files with names that match
+   * the supplied pattern. Return value is an array of file entry
+   * objects that include properties for type, name, size, modifiyTime,
+   * accessTime, rights {user, group other}, owner and group.
+   * typefile = '-' =>, 'd' => directory, 'l'
+   */
+  async listFiles(remoteDir, fileGlob,typefile='all',order=false) {
     console.log(`Listing ${remoteDir} ...`);
     let fileObjects;
     try {
@@ -43,18 +52,26 @@ export class SFTPClient {
       console.log('Listing failed:', err);
     }
 
-    const fileNames = [];
+    if(order){
+      console.log("into in order")
+      fileObjects=fileObjects.sort(function(a, b){return b.modifyTime - a.modifyTime});
+    }
+
+    let fileNames = [];
 
     for (const file of fileObjects) {
       if (file.type === 'd') {
         console.log(`${new Date(file.modifyTime).toISOString()} PRE ${file.name}`);
-      } else {
-        console.log(`${new Date(file.modifyTime).toISOString()} ${file.size} ${file.name}`);
+      } else if (file.type === '-') {
+        console.log(`${new Date(file.modifyTime).toISOString()} - ${file.size} ${file.name}`);
+      }else {
+        console.log(`${new Date(file.modifyTime).toISOString()} l ${file.size} ${file.name}`);
+        fileNames.push(file.name);
       }
-
-      fileNames.push(file.name);
+      if (file.type === typefile || typefile === 'all') {
+        fileNames.push(file.name);
+      } 
     }
-
     return fileNames;
   }
 

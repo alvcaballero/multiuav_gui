@@ -80,7 +80,7 @@ POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
 {
-    "deviceId": 7, 
+    "deviceId": 5, 
     "type": "threat"
 }
 
@@ -97,19 +97,18 @@ POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
 {
-    "deviceId": 7, 
+    "deviceId": 5, 
     "type": "commandMission"
 }
 
 ### Mission
-
 ### Sendtask
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
 < ./json/task.json
 
-# varibles 
+### varibles 
 
 @uav_id = 4
 @mission_id = 1

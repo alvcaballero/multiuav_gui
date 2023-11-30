@@ -2,7 +2,7 @@ import { DevicesModel } from '../models/devices.js';
 import { rosModel } from '../models/ros.js';
 import { positionsModel } from '../models/positions.js';
 import { eventsModel } from '../models/events.js';
-import { response } from 'express';
+
 export class websocketController {
   static async init() {
     const devices = await DevicesModel.getAll();

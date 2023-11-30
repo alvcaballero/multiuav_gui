@@ -4,11 +4,13 @@ import { readYAML, getDatetime } from '../common/utils.js';
 import ROSLIB from 'roslib';
 import { SFTPClient } from '../common/SFTPClient.js';
 import * as fs from 'fs';
+import { WebsocketManager } from '../WebsocketManager.js';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const mission = {} // current mission // id , status (init, planing, doing, finish,time inti, time_end))
 const sftconections = {};// manage connection to drone 
 const filestodownload = {}; //manage files that fail download// list of objects,with name, and fileroute, number of try.
+
 
 
 export class missionModel {
@@ -19,16 +21,16 @@ export class missionModel {
 
   static async sendTask({ loc }) {
     console.log('command-sendtask');
-    let uav = 'uav_1';
-    //let home = [37.193736, -6.702947, 50];
+    let uav = 'uav_15';
+
     let home = [37.134092, -6.472401, 50];
     let reqRoute = Object.values(loc);
     let mission = {
       version: '3',
-      route: [{ name: 'datetime', uav: 'uav_1', wp: [] }],
+      route: [{ name: 'datetime', uav: uav, wp: [] }],
       status: 'OK',
     };
-    let response = { uav: 'uav_1', points: [], status: 'OK' };
+    let response = { uav: uav, points: [], status: 'OK' };
     response.points.push(home);
     for (let i = 0; i < reqRoute.length; i = i + 1) {
       let wp_len = reqRoute[i].length;
@@ -48,15 +50,14 @@ export class missionModel {
       return { pos: element };
     });
     console.log(mission.route[0]['wp'][0]['pos']);
-    //wss.clients.forEach(function each(ws) {
-    //  ws.send(JSON.stringify({ mission: { name: 'name', mission: mission } }));
-    //});
+    var ws = new WebsocketManager(null,'/api/socket')
+    ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
     let myresponse = { response };
     return myresponse;
   }
 
   static async updateFiles({ id_uav, id_mission }) {
-    console.log('update files ' + id_uav);
+    console.log('update files ' + id_uav +'-'+id_mission);
     let uav_name = DevicesModel.get_device_ns(id_uav);
     let mydevice = devices_init.init.find(({ name }) => name === uav_name);
     const client = new SFTPClient();
@@ -66,7 +67,7 @@ export class missionModel {
     const port = parsedURL.port || 22;
     const { host, username, password } = parsedURL;
     await client.connect({ host, port, username, password });
-    let listfiles = await client.listFiles('./uav_media/');// que devuelva un  lista de objetos con la fecha de creacion
+    let listfiles = await client.listFiles('./uav_media/',"^mission_");// que devuelva un  lista de objetos con la fecha de creacion
     let myfiledownload = 'mission_2023-11-27_13:00'
     //En lista archivos y directorios, los directorios no se pueden descargar da error, se uede probar errores
     // crear funcion que solo enliste los archivos
@@ -87,7 +88,7 @@ export class missionModel {
   }
 
   static async showFiles({ id_uav, id_mission }) {
-    console.log('show files ' + id_uav);
+    console.log('show files ' + id_uav +'-'+id_mission);
     let uav_name = DevicesModel.get_device_ns(id_uav);
     let mydevice = devices_init.init.find(({ name }) => name === uav_name);
     const client = new SFTPClient();
@@ -97,7 +98,14 @@ export class missionModel {
     const port = parsedURL.port || 22;
     const { host, username, password } = parsedURL;
     await client.connect({ host, port, username, password });
-    let listfiles = await client.listFiles('./uav_media/');
+    let listfiles = await client.listFiles('./uav_media/',"^mission_");// que devuelva un  lista de objetos con la fecha de creacion
+    listfiles = await client.listFiles('./uav_media/');
+    listfiles = await client.listFiles('./uav_media/','','d');
+    console.log(listfiles)
+    listfiles = await client.listFiles('./uav_media/mission_2023-11-27_13:00','','all',true);
+    console.log(listfiles)
+    listfiles = await client.listFiles('./uav_media/mission_2023-11-27_13:00');
+    listfiles = await client.listFiles('./uav_media/mission_2023-11-27_13:00',".jpg$");
     //* Close the connection
     await client.disconnect();
     return listfiles;

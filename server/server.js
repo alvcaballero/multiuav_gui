@@ -18,9 +18,7 @@ import { rosRouter } from './routes/ros.js';
 import { mapRouter } from './routes/map.js';
 import { utilsRouter } from './routes/utils.js';
 import { missionRouter } from './routes/mission.js';
-import { websocketController } from './controllers/websocket.js';
-
-import WebSocket, { WebSocketServer } from 'ws';
+import { WebsocketManager } from './WebsocketManager.js';
 
 const app = express();
 const port = 4000;
@@ -40,58 +38,7 @@ app.use('/api/utils', utilsRouter);
 app.use('/api/missions', missionRouter);
 
 const server = createServer(app);
-
-function heartbeat() {
-  this.isAlive = true;
-}
-
-const wss = new WebSocket.Server({ path: '/api/socket', server: server });
-
-wss.on('connection', async function connection(ws) {
-  console.log('newclient');
-  ws.isAlive = true;
-
-  ws.on('error', console.error);
-
-  ws.on('pong', heartbeat);
-
-  ws.on('message', function message(data) {
-    console.log('received: %s', data);
-  });
-
-  let init_msg = await websocketController.init();
-
-  ws.send(init_msg);
-});
-//https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
-
-const interval_update = setInterval(async () => {
-  let msg = await websocketController.update();
-  wss.clients.forEach(function each(ws) {
-    ws.send(msg);
-  });
-}, 250);
-
-const interval_server = setInterval(async () => {
-  let msg = await websocketController.updateserver();
-  wss.clients.forEach(async function each(ws) {
-    ws.send(msg);
-  });
-}, 5000);
-
-const interval = setInterval(function ping() {
-  wss.clients.forEach(function each(ws) {
-    if (ws.isAlive === false) return ws.terminate();
-    ws.isAlive = false;
-    ws.ping();
-  });
-}, 30000);
-
-wss.on('close', function close() {
-  clearInterval(interval);
-  clearInterval(interval_update);
-  clearInterval(interval_server);
-});
+var ws = new WebsocketManager(server,'/api/socket')
 
 //
 // Start the server.

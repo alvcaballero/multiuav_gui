@@ -78,15 +78,16 @@ export class rosModel {
     service_list[cur_uav_idx]['ServiceMission'].advertise(function (request, response) {
       console.log('callback Sevice finish mission');
       console.log(request);
+      console.log(response);
 
       response['success'] = true;
-      response['message'] = 'Set successfully';
+      response['msg'] = 'Set successfully';
       return true;
     });
-    console.log('service mission');
+    console.log('ServiceDownload');
 
     cur_uav_idx = String(service_list.length);
-    service_list.push({ name: 'service mission' });
+    service_list.push({ name: 'ServiceDownload' });
 
     service_list[cur_uav_idx]['ServiceDownload'] = new ROSLIB.Service({
       ros: ros,
@@ -97,9 +98,11 @@ export class rosModel {
     service_list[cur_uav_idx]['ServiceDownload'].advertise(function (request, response) {
       console.log('callback Service finish donwload files');
       console.log(request);
+      console.log(response);
+
 
       response['success'] = true;
-      response['message'] = 'Set successfully';
+      response['msg'] = 'Set successfully';
       return true;
     });
   }
