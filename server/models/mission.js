@@ -7,19 +7,19 @@ import * as fs from 'fs';
 import { WebsocketManager } from '../WebsocketManager.js';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
-const mission = {} // current mission // id , status (init, planing, doing, finish,time inti, time_end))
+const Mission = {id:-1,uav:[],status:'init',route:[],initTime:null} // current mission // id , status (init, planing, doing, finish,time inti, time_end))
 const sftconections = {};// manage connection to drone 
-const filestodownload = {}; //manage files that fail download// list of objects,with name, and fileroute, number of try.
+const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
 
 
 
 export class missionModel {
   static getmission() {
     console.log('Get mission');
-    return [];
+    return Mission;
   }
 
-  static async sendTask({ loc }) {
+  static async sendTask({ misision_id,objectivo,loc,meteo }) {
     console.log('command-sendtask');
     let uav = 'uav_15';
 
@@ -52,9 +52,18 @@ export class missionModel {
     console.log(mission.route[0]['wp'][0]['pos']);
     var ws = new WebsocketManager(null,'/api/socket')
     ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
+    Mission['id']= misision_id;
+    Mission['uav'].push({uav:'uav_15',status:'init'})
+    Mission['route']= mission.route;
+    Mission['status']= 'command';
+    Mission['initTime']=new Date();
     let myresponse = { response };
     return myresponse;
   }
+
+    //En lista archivos y directorios, los directorios no se pueden descargar da error, se uede probar errores
+    // crear funcion que solo enliste los archivos
+    // hacer que las funciones devuelvan errores  para poder manejarlos
 
   static async updateFiles({ id_uav, id_mission }) {
     console.log('update files ' + id_uav +'-'+id_mission);
@@ -67,25 +76,64 @@ export class missionModel {
     const port = parsedURL.port || 22;
     const { host, username, password } = parsedURL;
     await client.connect({ host, port, username, password });
-    let listfiles = await client.listFiles('./uav_media/',"^mission_");// que devuelva un  lista de objetos con la fecha de creacion
-    let myfiledownload = 'mission_2023-11-27_13:00'
-    //En lista archivos y directorios, los directorios no se pueden descargar da error, se uede probar errores
-    // crear funcion que solo enliste los archivos
-    // hacer que las funciones devuelvan errores  para poder manejarlos
-    listfiles = await client.listFiles(`./uav_media/${myfiledownload}`);
-    let dir =`/home/arpa/GCS_media/mission_1/${uav_name}`
-    if (!fs.existsSync(dir)){
-      console.log("no exist " + dir)
-      fs.mkdirSync(dir, { recursive: true });
+    let listfiles = await client.listFiles('./uav_media/',"^mission_",'d',true);// que devuelva un  lista de objetos con la fecha de creacion
+    let namefolder = null;
+    for (const myfiles of listfiles) {
+      var matches = myfiles.match(/^mission_(\d{4})-(\d{2})-(\d{2})_(\d{2}):(\d{2})$/);
+      if (matches ){
+        console.log(matches[0])
+        namefolder =myfiles;
+        let folderdate = (myfiles.slice(8)).replace('_','T')+':00';
+        let currentdate = new Date(folderdate);
+        console.log(folderdate+" date  "+currentdate.toJSON())
+        if(Mission['initTime'] && currentdate > Mission['initTime']){
+          console.log('folder mayor')
+        }
+        break;
+      } 
     }
-    for (let myfile of listfiles) {
-      console.log(myfile);
-      await client.downloadFile(`./uav_media/${myfiledownload}/${myfile}`, `${dir}/${myfile}`);
+    if(namefolder){
+      let dir =`/home/arpa/GCS_media/mission_${Mission['id']}/${uav_name}`
+
+      if (!fs.existsSync(dir)){
+        console.log("no exist " + dir)
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      listfiles = await client.listFiles('./uav_media/'+namefolder+'/',".jpg$",'-',true)
+      downloadOk= true
+      for (let myfile of listfiles) {
+        console.log(myfile);
+        let response = await client.downloadFile(`./uav_media/${myfiledownload}/${myfile}`, `${dir}/${myfile}`);
+        console.log(response)
+        filestodownload.push({source:`./uav_media/${myfiledownload}/${myfile}`,dist:`${dir}/${myfile}`,status:response.status})
+        if(!response.status){
+          downloadOk = false;
+        }
+      }
+      if(downloadOk){ 
+        let sendresponse = await fetch('http://localhost:8000/resultado_mision', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ mission_id: Mission['id'],resolution_code:'0',resultado: filestodownload }),
+        });
+        if (sendresponse.ok) {
+          let command = await sendresponse.json();
+        } else {
+          throw new Error(sendresponse.status);
+          console.log('uboi')
+        }
+      }
+      
     }
     //* Close the connection
     await client.disconnect();
     return listfiles;
   }
+
 
   static async showFiles({ id_uav, id_mission }) {
     console.log('show files ' + id_uav +'-'+id_mission);
@@ -98,14 +146,26 @@ export class missionModel {
     const port = parsedURL.port || 22;
     const { host, username, password } = parsedURL;
     await client.connect({ host, port, username, password });
-    let listfiles = await client.listFiles('./uav_media/',"^mission_");// que devuelva un  lista de objetos con la fecha de creacion
-    listfiles = await client.listFiles('./uav_media/');
-    listfiles = await client.listFiles('./uav_media/','','d');
-    console.log(listfiles)
-    listfiles = await client.listFiles('./uav_media/mission_2023-11-27_13:00','','all',true);
-    console.log(listfiles)
-    listfiles = await client.listFiles('./uav_media/mission_2023-11-27_13:00');
-    listfiles = await client.listFiles('./uav_media/mission_2023-11-27_13:00',".jpg$");
+    //let listfiles = await client.listFiles('./uav_media/',"^mission_");// ^mission_2\d{3}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])_([0-2][0-9]):([0-5][0-9])
+    let listfiles = await client.listFiles('./uav_media/',"^mission_",'d',true);// que devuelva un  lista de objetos con la fecha de creacion
+    let namefolder = null;
+    for (const myfiles of listfiles) {
+      var matches = myfiles.match(/^mission_(\d{4})-(\d{2})-(\d{2})_(\d{2}):(\d{2})$/);
+      if (matches ){
+        console.log(matches[0])
+        namefolder =myfiles;
+        let folderdate = (myfiles.slice(8)).replace('_','T')+':00';
+        let currentdate = new Date(folderdate);
+        console.log(folderdate+" date  "+currentdate.toJSON())
+        if(Mission['initTime'] && currentdate > Mission['initTime']){
+          console.log('folder mayor')
+        }
+        break;
+      } 
+    }
+    if(namefolder){
+      listfiles = await client.listFiles('./uav_media/'+namefolder+'/',".jpg$",'-',true)
+    }
     //* Close the connection
     await client.disconnect();
     return listfiles;

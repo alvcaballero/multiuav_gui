@@ -114,6 +114,8 @@ Content-Type: application/json
 @mission_id = 1
 ### get mission
 
+GET  http://localhost:4000/api/missions
+
 ### show files
 GET  http://localhost:4000/api/missions/showFiles/{{uav_id}}/{{mission_id}}
 
@@ -152,20 +154,7 @@ GET http://localhost:4000/api/map/elevation
 POST http://localhost:4000/api/map/elevation
 Content-Type: application/json
 
-{
-  "routes":[
-      [
-      [37.410266, -6.002490,2],
-      [37.410572, -6.002949,3],
-      [37.411010, -6.003243,3]
-      ],
-      [
-      [37.410446, -6.002205,12],
-      [37.410241, -6.002221,12],
-      [37.410302, -6.002534,12]
-      ]
-    ]
-}
+< ./json/elevationRoute.json
 
 ### Images
 GET http://localhost:4000/api/placeholder

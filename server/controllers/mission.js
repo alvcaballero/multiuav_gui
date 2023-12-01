@@ -3,7 +3,7 @@ import { missionModel } from '../models/mission.js';
 export class missionController {
   static async getmission(req, res) {
     console.log('get missions');
-    const response = await missionModel.getAll();
+    const response = await missionModel.getmission();
     res.json(response);
   }
   static async sendTask(req, res) {

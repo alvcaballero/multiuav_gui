@@ -66,7 +66,6 @@ export class SFTPClient {
         console.log(`${new Date(file.modifyTime).toISOString()} - ${file.size} ${file.name}`);
       }else {
         console.log(`${new Date(file.modifyTime).toISOString()} l ${file.size} ${file.name}`);
-        fileNames.push(file.name);
       }
       if (file.type === typefile || typefile === 'all') {
         fileNames.push(file.name);
@@ -78,9 +77,11 @@ export class SFTPClient {
   async uploadFile(localFile, remoteFile) {
     console.log(`Uploading ${localFile} to ${remoteFile} ...`);
     try {
-      await this.client.put(localFile, remoteFile);
+      let data =await this.client.put(localFile, remoteFile);
+      return {status:true, data:data}
     } catch (err) {
       console.error('Uploading failed:', err);
+      return {status:false, data:'Uploading failed'}
     }
   }
 

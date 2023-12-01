@@ -13,7 +13,11 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2OTUwMzM3N
 {
   "mission_id": 1234,
   "resolution_code": 0,
-  "description": "Nothing to add."
+  "resultados": [
+  "mission_1/uav_1/DJI_20231124131954_0001_WIDE.jpg",
+  "mission_1/uav_1/DJI_20231124131954_0001_ZOOM.jpg",
+  "mission_1/uav_1/DJI_20231124131954_0001_THRM.jpg"
+  ]
 }
 
 
@@ -25,6 +29,10 @@ Authorization: Bearer {{login.response.body.access_token}}
 {
   "mission_id": 1234,
   "resolution_code": 0,
-  "description": "Nothing to add."
+  "resultados": [
+  "mission_1/uav_1/DJI_20231124131954_0001_WIDE.jpg",
+  "mission_1/uav_1/DJI_20231124131954_0001_ZOOM.jpg",
+  "mission_1/uav_1/DJI_20231124131954_0001_THRM.jpg"
+  ]
 }
 
