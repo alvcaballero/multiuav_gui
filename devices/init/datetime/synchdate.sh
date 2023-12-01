@@ -20,3 +20,4 @@ done
 property_value=$(echo "$myvar" | grep -o '"datetime": *"[^"]*"' | awk -F'"' '{print $4}')
 echo -e  "$property_value"
 date --set "$property_value"
+echo -n “End synch time”

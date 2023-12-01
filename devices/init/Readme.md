@@ -1,7 +1,7 @@
 https://marsown.com/wordpress/how-to-enable-etc-rc-local-with-systemd-on-ubuntu-20-04/
 
 # Configurations and Deamons
-
+nano /etc/systemd/system/rc-local.service
 nano /etc/rc.local
 
 ```
