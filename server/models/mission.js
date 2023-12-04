@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import { WebsocketManager } from '../WebsocketManager.js';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
+const mission_conf = readYAML('../config/mission.yaml');
 const Mission = {id:-1,uav:[],status:'init',route:[],initTime:null} // current mission // id , status (init, planing, doing, finish,time inti, time_end))
 const sftconections = {};// manage connection to drone 
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
@@ -49,14 +50,20 @@ export class missionModel {
     mission.route[0]['wp'] = response.points.map((element) => {
       return { pos: element };
     });
+
     console.log(mission.route[0]['wp'][0]['pos']);
+
+    mission = mission_conf;
+    
     var ws = new WebsocketManager(null,'/api/socket')
     ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
+    
     Mission['id']= misision_id;
     Mission['uav'].push({uav:'uav_15',status:'init'})
     Mission['route']= mission.route;
     Mission['status']= 'command';
     Mission['initTime']=new Date();
+
     let myresponse = { response };
     return myresponse;
   }
@@ -112,19 +119,38 @@ export class missionModel {
         }
       }
       if(downloadOk){ 
-        let sendresponse = await fetch('http://localhost:8000/resultado_mision', {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ mission_id: Mission['id'],resolution_code:'0',resultado: filestodownload }),
+        let access_token = null; 
+        let response = await fetch('http://localhost:1234/token/provide/RESISTO-API', {
+            method: 'POST',
+            headers:{
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },    
+            body: new URLSearchParams({
+                'username': 'drone',
+                'password': 'F1PpE9V!E#Pwz8k53b7b'
+            })
         });
-        if (sendresponse.ok) {
-          let command = await sendresponse.json();
-        } else {
-          throw new Error(sendresponse.status);
-          console.log('uboi')
+        if (response.ok) {
+          let myresponse = await response.json();
+          if(myresponse.access_token){
+            access_token= myresponse.access_token;
+          }
+        }
+        if(access_token){
+          let sendresponse = await fetch('http://localhost:1234/resultado_mision', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mission_id: Mission['id'],resolution_code:'0',resultado: filestodownload }),
+          });
+          if (sendresponse.ok) {
+            let command = await sendresponse.json();
+            console.log(command)
+          } else {
+            throw new Error(sendresponse.status);
+          }
         }
       }
       

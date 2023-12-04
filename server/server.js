@@ -18,6 +18,7 @@ import { rosRouter } from './routes/ros.js';
 import { mapRouter } from './routes/map.js';
 import { utilsRouter } from './routes/utils.js';
 import { missionRouter } from './routes/mission.js';
+import { filesRouter } from './routes/files.js';
 import { WebsocketManager } from './WebsocketManager.js';
 
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/ros', rosRouter);
 app.use('/api/map', mapRouter);
 app.use('/api/utils', utilsRouter);
 app.use('/api/missions', missionRouter);
+app.use('/api/files', missionRouter);
 
 const server = createServer(app);
 var ws = new WebsocketManager(server,'/api/socket')
