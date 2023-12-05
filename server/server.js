@@ -37,10 +37,10 @@ app.use('/api/ros', rosRouter);
 app.use('/api/map', mapRouter);
 app.use('/api/utils', utilsRouter);
 app.use('/api/missions', missionRouter);
-app.use('/api/files', missionRouter);
+app.use('/api/files', filesRouter);
 
 const server = createServer(app);
-var ws = new WebsocketManager(server,'/api/socket')
+var ws = new WebsocketManager(server, '/api/socket');
 
 //
 // Start the server.

@@ -9,19 +9,18 @@ export class categoryController {
   static async getAtributes(req, res) {
     console.log('device Category');
     let response = await categoryModel.getAtributes(req.params.type);
-    res.json(response)  
-}
+    res.json(response);
+  }
 
   static async getAtributesParam(req, res) {
     console.log('device Category');
     let response = await categoryModel.getAtributesParam(req.params);
-    res.json(response) 
+    res.json(response);
   }
 
   static async getActions(req, res) {
     console.log('device Category');
     let response = await categoryModel.getActions(req.params);
-    res.json(response) 
+    res.json(response);
   }
 }
-
