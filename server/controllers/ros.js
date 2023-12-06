@@ -11,5 +11,4 @@ export class rosController {
     let response = await rosModel.getListMaster();
     res.json(response);
   }
-
 }

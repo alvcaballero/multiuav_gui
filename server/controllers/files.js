@@ -1,6 +1,12 @@
 import { filesModel } from '../models/files.js';
 
 export class filesController {
+  static async getfiles(req, res) {
+    console.log('controller get foles');
+    let response = await filesModel.getfiles();
+    res.json(response);
+  }
+
   static async donwload(req, res) {
     //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
     //https://medium.com/@imajeet5/how-to-serve-files-using-node-js-d99de4653a3
