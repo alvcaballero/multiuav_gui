@@ -171,6 +171,14 @@ export class DevicesModel {
               speed: msg.velocity * 0.01,
             });
           });
+          uav_list[cur_uav_idx].listener_flight_status.subscribe(function (msg) {
+            let id_uav = cur_uav_idx; //var showData = document.getElementById(uav_ns).cells;
+            positionsModel.updatePosition({
+              deviceId: id_uav,
+              protocol: 'dji',
+              landed_state: msg.data,
+            }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+          });
         } else {
           uav_list[cur_uav_idx].listener_speed.subscribe(function (msg) {
             let id_uav = cur_uav_idx; // var showData = document.getElementById(uav_ns).cells;

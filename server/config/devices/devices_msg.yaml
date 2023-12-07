@@ -506,6 +506,9 @@ dji_M300:
     obstacle_info:
       name: '/dji_osdk_ros/obstacle_info'
       messageType: 'dji_osdk_ros/ObstacleInfo'
+    flight_status:
+      name: '/dji_osdk_ros/flight_status'
+      messageType: 'std_msgs/UInt8'
   services:
     configureMission:
       name: '/dji_control/configure_mission'

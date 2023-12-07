@@ -83,7 +83,19 @@ export class positionsModel {
         payload.protocol,
         payload.landed_state
       );
+    } else {
+      if (payload.hasOwnProperty('landed_state')) {
+        positions[payload.deviceId]['attributes']['uav_state'] = this.convert_landed_state(
+          payload.protocol,
+          payload.landed_state
+        );
+        positions[payload.deviceId]['attributes']['landed_state'] = this.convert_landed_state(
+          payload.protocol,
+          payload.landed_state
+        );
+      }
     }
+
     if (payload.hasOwnProperty('threat')) {
       //positions[payload.deviceId]['attributes']['threat'] = payload.threat;
       if (payload.threat == true) {
@@ -94,8 +106,8 @@ export class positionsModel {
     }
   }
   static convert_landed_state(protocol, landed_state) {
-    state_px4_stol = ['UNDEFINED', 'ON GROUND', 'IN AIR', 'TAKEOFF', 'LANDING'];
-    state_dji = ['STOPED', 'ON GROUND', 'IN AIR'];
+    let state_px4_stol = ['UNDEFINED', 'ON GROUND', 'IN AIR', 'TAKEOFF', 'LANDING'];
+    let state_dji = ['STOPED', 'ON GROUND', 'IN AIR'];
     if (protocol == 'dji') {
       return state_dji[landed_state];
     }
