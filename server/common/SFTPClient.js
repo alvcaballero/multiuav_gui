@@ -43,7 +43,7 @@ export class SFTPClient {
    * accessTime, rights {user, group other}, owner and group.
    * typefile = '-' =>, 'd' => directory, 'l'
    */
-  async listFiles(remoteDir, fileGlob,typefile='all',order=false) {
+  async listFiles(remoteDir, fileGlob, typefile = 'all', order = false) {
     console.log(`Listing ${remoteDir} ...`);
     let fileObjects;
     try {
@@ -52,9 +52,11 @@ export class SFTPClient {
       console.log('Listing failed:', err);
     }
 
-    if(order){
-      console.log("into in order")
-      fileObjects=fileObjects.sort(function(a, b){return b.modifyTime - a.modifyTime});
+    if (order) {
+      console.log('into in order');
+      fileObjects = fileObjects.sort(function (a, b) {
+        return b.modifyTime - a.modifyTime;
+      });
     }
 
     let fileNames = [];
@@ -64,12 +66,12 @@ export class SFTPClient {
         console.log(`${new Date(file.modifyTime).toISOString()} PRE ${file.name}`);
       } else if (file.type === '-') {
         console.log(`${new Date(file.modifyTime).toISOString()} - ${file.size} ${file.name}`);
-      }else {
+      } else {
         console.log(`${new Date(file.modifyTime).toISOString()} l ${file.size} ${file.name}`);
       }
       if (file.type === typefile || typefile === 'all') {
         fileNames.push(file.name);
-      } 
+      }
     }
     return fileNames;
   }
@@ -77,20 +79,22 @@ export class SFTPClient {
   async uploadFile(localFile, remoteFile) {
     console.log(`Uploading ${localFile} to ${remoteFile} ...`);
     try {
-      let data =await this.client.put(localFile, remoteFile);
-      return {status:true, data:data}
+      let data = await this.client.put(localFile, remoteFile);
+      return { status: true, data: data };
     } catch (err) {
       console.error('Uploading failed:', err);
-      return {status:false, data:'Uploading failed'}
+      return { status: false, data: 'Uploading failed' };
     }
   }
 
   async downloadFile(remoteFile, localFile) {
     console.log(`Downloading ${remoteFile} to ${localFile} ...`);
     try {
-      await this.client.get(remoteFile, localFile);
+      let data = await this.client.get(remoteFile, localFile);
+      return { status: true, data: data };
     } catch (err) {
       console.error('Downloading failed:', err);
+      return { status: false, data: 'download failed' };
     }
   }
 

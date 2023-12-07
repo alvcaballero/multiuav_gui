@@ -379,6 +379,10 @@ export class DevicesModel {
     const device = Object.values(devices).find((device) => device.id === id);
     return device;
   }
+  static getByname(name) {
+    const device = Object.values(devices).find((device) => device.name === name);
+    return device;
+  }
 
   static async delete({ id }) {
     console.log(id);

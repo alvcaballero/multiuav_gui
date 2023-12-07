@@ -19,7 +19,7 @@ export class missionModel {
     return Mission;
   }
   static sleep(ms) {
-    return new Promise((resolve) => setInterval(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
   static async sendTask({ misision_id, objectivo, loc, meteo }) {
     console.log('command-sendtask');
@@ -72,9 +72,11 @@ export class missionModel {
   //En lista archivos y directorios, los directorios no se pueden descargar da error, se uede probar errores
   // crear funcion que solo enliste los archivos
   // hacer que las funciones devuelvan errores  para poder manejarlos
+  // when in gcs are a file with the same name of file to download
 
   static async updateFiles({ id_uav, id_mission }) {
     console.log('update files ' + id_uav + '-' + id_mission);
+    let listimages = [];
     let uav_name = DevicesModel.get_device_ns(id_uav);
     let mydevice = devices_init.init.find(({ name }) => name === uav_name);
     const client = new SFTPClient();
@@ -84,16 +86,18 @@ export class missionModel {
     const port = parsedURL.port || 22;
     const { host, username, password } = parsedURL;
     await client.connect({ host, port, username, password });
-    let listfiles = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
+    let listfolders = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
     let namefolder = null;
-    for (const myfiles of listfiles) {
+    for (const myfiles of listfolders) {
       var matches = myfiles.match(/^mission_(\d{4})-(\d{2})-(\d{2})_(\d{2}):(\d{2})$/);
       if (matches) {
         console.log(matches[0]);
         namefolder = myfiles;
         let folderdate = myfiles.slice(8).replace('_', 'T') + ':00';
         let currentdate = new Date(folderdate);
-        console.log(folderdate + ' date  ' + currentdate.toJSON());
+        console.log(
+          folderdate + ' date  ' + currentdate.toJSON() + ' gcs=' + Mission['initTime'].toJSON()
+        );
         if (Mission['initTime'] && currentdate > Mission['initTime']) {
           console.log('folder mayor');
         }
@@ -109,17 +113,18 @@ export class missionModel {
         fs.mkdirSync(dir, { recursive: true });
       }
 
-      listfiles = await client.listFiles('./uav_media/' + namefolder + '/', '.jpg$', '-', true);
-      downloadOk = true;
+      let listfiles = await client.listFiles('./uav_media/' + namefolder + '/', '.jpg$', '-', true);
+      console.log(listfiles);
+      let downloadOk = true;
       for (let myfile of listfiles) {
-        console.log(myfile);
+        console.log('download file' + myfile);
         let response = await client.downloadFile(
-          `./uav_media/${myfiledownload}/${myfile}`,
+          `./uav_media/${namefolder}/${myfile}`,
           `${dir}/${myfile}`
         );
         console.log(response);
         filestodownload.push({
-          source: `./uav_media/${myfiledownload}/${myfile}`,
+          source: `./uav_media/${namefolder}/${myfile}`,
           dist: `${dir}/${myfile}`,
           ref: `${dir2}/${myfile}`,
           status: response.status,
@@ -128,18 +133,24 @@ export class missionModel {
           downloadOk = false;
         }
       }
+      //* Close the connection
+      await client.disconnect();
+      console.log(filestodownload);
+
       if (downloadOk) {
-        let listimages = filestodownload.map((image) => image.ref);
+        listimages = filestodownload.map((image) => image.ref);
+        console.log(listimages);
         //source activate my_env && python my_script.py
         //python3 /home/arpa/work/px4/multiuav_gui/scripts/utils/circleOpencv.py  "/home/arpa/GCS_media/mission_1/uav_15/DJI_20231124131954_0001_THRM.jpg" "/home/arpa/GCS_media/mission_1/uav_15/DJI_20231124131954_0001_THRM_process.jpg"
-        let listimagestoprocess = filestodownload.filter((image) => image.ref.include('THRM'));
+        let listimagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
+        console.log('last images process');
+        console.log(listimagestoprocess);
         for (let imagetoprocess of listimagestoprocess) {
-          listimages.push(imagetoprocess.slice(0, -4) + '_process.jpg');
+          listimages.push(imagetoprocess.ref.slice(0, -4) + '_process.jpg');
           exec(
-            `python3 /home/arpa/work/px4/multiuav_gui/scripts/utils/circleOpencv.py  "${imagetoprocess}" "${imagetoprocess.slice(
-              0,
-              -4
-            )}_process.jpg"`,
+            `python3 /home/arpa/work/px4/multiuav_gui/scripts/utils/circleOpencv.py  "${
+              imagetoprocess.dist
+            }" "${imagetoprocess.dist.slice(0, -4)}_process.jpg"`,
             (error, stdout, stderr) => {
               if (error) {
                 console.log(`error: ${error.message}`);
@@ -153,7 +164,7 @@ export class missionModel {
             }
           );
         }
-        await sleep(5000);
+        await this.sleep(5000);
 
         let access_token = null;
         let response = await fetch('http://localhost:1234/token/provide/RESISTO-API', {
@@ -182,7 +193,7 @@ export class missionModel {
             body: JSON.stringify({
               mission_id: Mission['id'],
               resolution_code: '0',
-              resultado: listimages,
+              resultados: listimages,
             }),
           });
           if (sendresponse.ok) {
@@ -194,11 +205,14 @@ export class missionModel {
         }
       }
     }
-    //* Close the connection
-    await client.disconnect();
-    return listfiles;
+
+    return listimages;
   }
 
+  // de momento lee la fecha mayour
+  // puede hacer para que la lista de archivos se ordene de menor a mayour,
+  // el primero que supere la fecha sera la carpeta, de la mission
+  // this is importan when use database for get mission diferent
   static async showFiles({ id_uav, id_mission }) {
     console.log('show files ' + id_uav + '-' + id_mission);
     let uav_name = DevicesModel.get_device_ns(id_uav);
@@ -220,7 +234,9 @@ export class missionModel {
         namefolder = myfiles;
         let folderdate = myfiles.slice(8).replace('_', 'T') + ':00';
         let currentdate = new Date(folderdate);
-        console.log(folderdate + ' date  ' + currentdate.toJSON());
+        console.log(
+          folderdate + ' date  ' + currentdate.toJSON() + ' gcs=' + Mission['initTime'].toJSON()
+        );
         if (Mission['initTime'] && currentdate > Mission['initTime']) {
           console.log('folder mayor');
         }

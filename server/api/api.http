@@ -59,11 +59,6 @@ GET http://localhost:4000/api/category/atributesparam/dji_M210_noetic/mode_yaw
 
 GET http://localhost:4000/api/category/actions/dji_M210_noetic
 
-### Sendtask
-POST http://localhost:4000/api/commands/sendTask
-Content-Type: application/json
-
-< ./json/task.json
 
 ### Commandos 
 
@@ -129,7 +124,7 @@ GET  http://localhost:4000/api/missions/listFiles/{{mission_id}}/{{uav_id}}
 
 ### download files
 ### curl http://localhost:4000/api/files/download/mission_1/uav_15/DJI_20231124131954_0001_THRM.jpg --output some.jpg  
-GET http://localhost:4000/api/files/download/mission_1/uav_15/DJI_20231124131954_0001_THRM.jpg
+GET http://localhost:4000/api/files/download/mission_1240/uav_15/DJI_20231124132052_0002_THRM_process.jpg
 
 ### list files
 GET http://localhost:4000/api/files/routes

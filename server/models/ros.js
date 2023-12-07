@@ -1,5 +1,6 @@
 import ROSLIB from 'roslib';
 import { DevicesModel } from '../models/devices.js';
+import { missionModel } from './mission.js';
 
 var ros = '';
 export { ros };
@@ -78,7 +79,6 @@ export class rosModel {
     service_list[cur_uav_idx]['ServiceMission'].advertise(function (request, response) {
       console.log('callback Sevice finish mission');
       console.log(request);
-      console.log(response);
 
       response['success'] = true;
       response['msg'] = 'Set successfully';
@@ -98,8 +98,9 @@ export class rosModel {
     service_list[cur_uav_idx]['ServiceDownload'].advertise(function (request, response) {
       console.log('callback Service finish donwload files');
       console.log(request);
-      console.log(response);
-
+      let mydevice = DevicesModel.getByname(request.uav_id);
+      console.log('device' + mydevice.id);
+      missionModel.updateFiles({ id_uav: mydevice.id, id_mission: 1 });
 
       response['success'] = true;
       response['msg'] = 'Set successfully';

@@ -15,8 +15,4 @@ export class commandsController {
     let response = await commandsModel.sendCommand(req.body);
     res.json(response);
   }
-  static async sendTask(req, res) {
-    let response = await commandsModel.sendTask(req.body);
-    res.json(response);
-  }
 }

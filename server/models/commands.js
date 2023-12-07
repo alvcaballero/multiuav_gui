@@ -7,44 +7,6 @@ import ROSLIB from 'roslib';
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 
 export class commandsModel {
-  static async sendTask({ loc }) {
-    console.log('command-sendtask');
-    let uav = 'uav_1';
-    //let home = [37.193736, -6.702947, 50];
-    let home = [37.134092, -6.472401, 50];
-    let reqRoute = Object.values(loc);
-    let mission = {
-      version: '3',
-      route: [{ name: 'datetime', uav: 'uav_1', wp: [] }],
-      status: 'OK',
-    };
-    let response = { uav: 'uav_1', points: [], status: 'OK' };
-    response.points.push(home);
-    for (let i = 0; i < reqRoute.length; i = i + 1) {
-      let wp_len = reqRoute[i].length;
-      for (let j = 0; j < wp_len; j = j + 1) {
-        if (j == 0) {
-          response.points.push([reqRoute[i][j]['lat'], reqRoute[i][j]['lon'], 50]);
-        }
-        response.points.push([reqRoute[i][j]['lat'], reqRoute[i][j]['lon'], 30]);
-        if (j == +wp_len + -1) {
-          response.points.push([reqRoute[i][j]['lat'], reqRoute[i][j]['lon'], 50]);
-        }
-      }
-    }
-
-    response.points.push(home);
-    mission.route[0]['wp'] = response.points.map((element) => {
-      return { pos: element };
-    });
-    console.log(mission.route[0]['wp'][0]['pos']);
-    //wss.clients.forEach(function each(ws) {
-    //  ws.send(JSON.stringify({ mission: { name: 'name', mission: mission } }));
-    //});
-    let myresponse = { response };
-    return myresponse;
-  }
-
   static getSaveCommands(deviceId) {
     let deviceid = deviceId;
 
