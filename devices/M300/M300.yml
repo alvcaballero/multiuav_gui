@@ -1,0 +1,35 @@
+# ./.tmuxinator.yml
+# example tmuxinator start M210-real-CamH264 15 real #  si no se especifica al finall real  significa que es simulacion
+# Set var "uav_ns" and 'Config_cmd' to workdir
+<% if @args[0] 
+    uav_ns=@args[0] 
+  else 
+   uav_ns='15' 
+end %>
+
+<% 
+  Config_cmd='M300-sim-on'
+  if @args[1] 
+      if @args[1] == 'real' 
+          Config_cmd ='M300-real' 
+      end 
+  end %>
+
+name: dji_missions
+root: ~/
+
+windows:
+  - <%= Config_cmd %>:
+      layout: tiled
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - config:
+            - <%= Config_cmd %>
+        - mission:
+            - sleep 10; 
+            - roslaunch onboard_dji resisto.launch uav_id:=<%= uav_ns %>
+        - multimaster:
+            - sleep 15; 
+            - roslaunch onboard_dji multimaster-noetic.launch

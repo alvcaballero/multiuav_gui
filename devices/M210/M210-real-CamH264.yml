@@ -1,20 +1,36 @@
 # ./.tmuxinator.yml
+# example tmuxinator start M210-real-CamH264 15 real
+# Set var "uav_ns" to workdir
+<% if @args[0] 
+    uav_ns=@args[0] 
+  else 
+   uav_ns='15' 
+end %>
+
+<% 
+  Config_cmd='M210-sim-on'
+  if @args[1] 
+      if @args[1] == 'real' 
+          Config_cmd ='M210-real' 
+      end 
+  end 
+%>
 
 name: dji_missions
 root: ~/
 
 windows:
-  - M210-real:
+  - <%= Config_cmd %>:
       layout: tiled
       # Synchronize all panes of this window, can be enabled before or after the pane commands run.
       # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
       # synchronize: after
       panes:
-        - M210-real
-        - sleep 2; roslaunch onboard_dji atlas.launch
+        - <%= Config_cmd %>
+        - sleep 2; roslaunch onboard_dji atlas.launch uav_id:=<%= uav_ns %>
         - sleep 5; roslaunch onboard_dji multimaster-noetic.launch
         - docker run --rm -it --network=host bluenviron/mediamtx:latest
         - config:
             - sleep 20
-            - 'rosservice call /uav_2/setup_camera_stream "{cameraType: 1, start: 1}"'
+            - 'rosservice call /uav_<%= uav_ns %>/setup_camera_stream "{cameraType: 1, start: 1}"'
             - rosrun simple_vs gstreamer-ros.py'

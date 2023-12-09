@@ -42,7 +42,7 @@ init:
     pwd: 'khadas'
     camera:
       - type: 'WebRTC'
-        source: 'main'
+        source: 'main_resize'
 
   - name: 'uav_100'
     category: 'catec'

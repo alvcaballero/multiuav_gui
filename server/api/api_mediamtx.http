@@ -1,6 +1,6 @@
 ### Mediamtx 
 ### GET 
-GET http://localhost:9997/v2/paths/list
+GET http://localhost:9997/v3/paths/list
 
 ### ADD 
 POST http://localhost:9997/v2/config/paths/add/uav_6

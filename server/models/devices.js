@@ -86,7 +86,7 @@ export class DevicesModel {
       for (let i = 0; i < device.camera.length; i = i + 1) {
         if (device.camera[i]['type'] == 'WebRTC') {
           await fetch(
-            `http://localhost:9997/v2/config/paths/add/${device.name}_${device.camera[i].source}`,
+            `http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`,
             {
               method: 'POST',
               body: JSON.stringify({
@@ -399,7 +399,7 @@ export class DevicesModel {
       for (let i = 0; i < device_del.camera.length; i = i + 1) {
         if (device_del.camera[i]['type'] == 'WebRTC') {
           await fetch(
-            `http://localhost:9997/v2/config/paths/remove/${device_del.name}_${device_del.camera[i].source}`,
+            `http://localhost:9997/v3/config/paths/remove/${device_del.name}_${device_del.camera[i].source}`,
             {
               method: 'POST',
             }
