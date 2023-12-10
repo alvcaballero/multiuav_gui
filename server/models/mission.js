@@ -59,7 +59,7 @@ export class missionModel {
     var ws = new WebsocketManager(null, '/api/socket');
     ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
 
-    Mission['id'] = misision_id;
+    Mission['id'] = mission_id;
     Mission['uav'].push({ uav: 'uav_15', status: 'init' });
     Mission['route'] = mission.route;
     Mission['status'] = 'command';
