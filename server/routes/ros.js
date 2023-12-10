@@ -4,4 +4,4 @@ import { rosController } from '../controllers/ros.js';
 
 export const rosRouter = Router();
 
-rosRouter.get('/', rosController.getTopics);
+rosRouter.get('/topics', rosController.getTopics);
