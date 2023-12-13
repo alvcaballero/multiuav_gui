@@ -22,6 +22,9 @@ export const corsMiddleware = ({ acceptedOrigins = ACCEPTED_ORIGINS } = {}) =>
         if (origin.includes('http://10.42.0.')) {
           return callback(null, true);
         }
+        if (origin.includes('http://10.10.2.')) {
+          return callback(null, true);
+        }
       }
 
       if (!origin) {

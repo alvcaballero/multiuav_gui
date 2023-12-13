@@ -1,6 +1,6 @@
 //example that a men manage databases
 import * as fs from 'fs';
-const filespath = '/home/arpa/GCS_media/';
+const filespath = '/home/grvc/GCS_media/';
 export class filesModel {
   static getfiles() {
     let response = [];

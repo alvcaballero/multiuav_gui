@@ -23,7 +23,7 @@ export class positionsModel {
     if (positions[payload.deviceId] === undefined) {
       positions[payload.deviceId] = {
         deviceId: payload.deviceId,
-        acuracy: 0.0,
+        accuracy: 0.0,
         attributes: {
           gimbal: [0, 0, 0],
           obstacle_info: [0, 0, 0, 0, 0, 0],

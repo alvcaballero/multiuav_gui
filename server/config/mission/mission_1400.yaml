@@ -1,0 +1,45 @@
+version: '3'
+frame_id: /gps
+
+description: ''
+route:
+  - name: 'inspection_t2  Base 1'
+    uav: 'uav_14'
+    wp:
+      - {
+          pos: [37.19359808, -6.70251217, 5.000000],
+          action: { video_start: 0, gimbal: -45, yaw: 132.4 },
+        }
+      - { pos: [37.19359808, -6.70251217, 39.733158], action: { gimbal: -45, yaw: 132.4 } }
+      - { pos: [37.19286727, -6.70155557, 39.733158], action: { gimbal: -45, yaw: 132.4 } }
+      - {
+          pos: [37.19286727, -6.70155557, 19.733158],
+          action: { gimbal: -45, yaw: 132.4, photo: true },
+        }
+      - {
+          pos: [37.19288603, -6.70142529, 19.733158],
+          action: { gimbal: -45, yaw: -155.6, photo: true },
+        }
+      - {
+          pos: [37.19279299, -6.70136265, 19.733158],
+          action: { gimbal: -45, yaw: -83.6, photo: true },
+        }
+      - {
+          pos: [37.19271674, -6.70145422, 19.733158],
+          action: { gimbal: -45, yaw: -11.6, photo: true },
+        }
+      - {
+          pos: [37.19276265, -6.70157345, 19.733158],
+          action: { gimbal: -45, yaw: 60.4, photo: true },
+        }
+      - { pos: [37.19276265, -6.70157345, 39.733158], action: { gimbal: -45, yaw: -43.3 } }
+      - { pos: [37.19359808, -6.70251217, 39.733158], action: { gimbal: -45, yaw: -43.3 } }
+      - { pos: [37.19359808, -6.70251217, 5.000000], action: { video_stop: 0 } }
+    attributes:
+      mode_landing: 2
+
+      mode_yaw: 2
+
+      mode_gimbal: 0
+
+      idle_vel: 7.0

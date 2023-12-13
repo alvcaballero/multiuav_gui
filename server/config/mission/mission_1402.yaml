@@ -1,0 +1,37 @@
+version: '3'
+frame_id: /gps
+
+description: ''
+route:
+  - name: 'inspect_short  Base 1'
+    uav: 'uav_14'
+    wp:
+      - {
+          pos: [37.19359808, -6.70251217, 12.000000],
+          action: { video_start: 0, gimbal: -45, yaw: 137.5 },
+        }
+      - { pos: [37.19359808, -6.70251217, 42.000000], action: { gimbal: -45, yaw: 137.5 } }
+      - { pos: [37.19175000, -6.70049197, 40.924736], action: { gimbal: -45, yaw: 48.1 } }
+      - { pos: [37.19175000, -6.70049197, 20.924736], action: { gimbal: -45, yaw: 48.1 } }
+      - {
+          pos: [37.19274668, -6.70155973, 19.733158],
+          action: { gimbal: -45, yaw: 48, photo: true },
+        }
+      - {
+          pos: [37.19379082, -6.70268604, 22.085827],
+          action: { gimbal: -45, yaw: 162.9, photo: true },
+        }
+      - {
+          pos: [37.19379082, -6.70268604, 42.085827],
+          action: { gimbal: -45, yaw: 162.9, photo: true },
+        }
+      - { pos: [37.19359808, -6.70251217, 42.000000], action: { gimbal: 0, yaw: 0 } }
+      - { pos: [37.19359808, -6.70251217, 22.000000], action: { video_stop: 0 } }
+    attributes:
+      mode_landing: 2
+
+      mode_yaw: 2
+
+      mode_gimbal: 0
+
+      idle_vel: 7.0

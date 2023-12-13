@@ -1,13 +1,4 @@
 init:
-  - name: 'uav_1'
-    category: 'dji_M210_melodic'
-    ip: '10.42.0.99'
-    user: 'grvc'
-    pwd: 'grvc'
-    camera:
-      - type: 'WebRTC'
-        source: 'main'
-
   - name: 'uav_2'
     category: 'dji_M210_noetic'
     ip: '10.42.0.43'
@@ -28,7 +19,7 @@ init:
 
   - name: 'uav_14'
     category: 'dji_M300'
-    ip: '10.42.0.44'
+    ip: '10.42.0.51'
     user: 'nvidia'
     pwd: 'nvidia'
     camera:
@@ -43,21 +34,3 @@ init:
     camera:
       - type: 'WebRTC'
         source: 'main_resize'
-
-  - name: 'uav_100'
-    category: 'catec'
-    ip: '10.0.3.5'
-    camera:
-      - type: 'WebRTC_env'
-        source: 'cam0'
-      - type: 'WebRTC_env'
-        source: 'cam1'
-      - type: 'WebRTC_env'
-        source: 'cam2'
-      - type: 'WebRTC_env'
-        source: 'cam3'
-
-  - name: 'uav_20'
-    category: 'fuvex'
-    ip: '10.42.0.101'
-    camera: []

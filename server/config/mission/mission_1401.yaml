@@ -1,0 +1,77 @@
+version: '3'
+frame_id: /gps
+
+description: ''
+route:
+  - name: 'inspect_long  Base 1'
+    uav: 'uav_14'
+    wp:
+      - {
+          pos: [37.19359808, -6.70251217, 12.000000],
+          action: { video_start: 0, gimbal: -45, yaw: -37.3 },
+        }
+      - { pos: [37.19359808, -6.70251217, 42.000000], action: { gimbal: -45, yaw: -37.3 } }
+      - { pos: [37.19378743, -6.70268408, 42.167931], action: { gimbal: -45, yaw: 47.8 } }
+      - { pos: [37.19378743, -6.70268408, 22.167931], action: { gimbal: -45, yaw: 47.8 } }
+      - {
+          pos: [37.19274926, -6.70156196, 19.733158],
+          action: { gimbal: -45, yaw: 48, photo: true },
+        }
+      - {
+          pos: [37.19174901, -6.70049230, 20.924736],
+          action: { gimbal: -45, yaw: 48.1, photo: true },
+        }
+      - {
+          pos: [37.19076708, -6.69943661, 21.275627],
+          action: { gimbal: -45, yaw: 48, photo: true },
+        }
+      - {
+          pos: [37.19074018, -6.69938618, 21.275627],
+          action: { gimbal: -45, yaw: 16.7, photo: true },
+        }
+      - {
+          pos: [37.19013562, -6.69707303, 16.671825],
+          action: { gimbal: -45, yaw: 16.8, photo: true },
+        }
+      - {
+          pos: [37.18878749, -6.69196218, 22.773491],
+          action: { gimbal: -45, yaw: 16.7, photo: true },
+        }
+      - {
+          pos: [37.18849368, -6.69081767, 27.050522],
+          action: { gimbal: -45, yaw: 16.4, photo: true },
+        }
+      - {
+          pos: [37.18850006, -6.69083647, 27.050522],
+          action: { gimbal: -45, yaw: 26.8, photo: true },
+        }
+      - {
+          pos: [37.18776961, -6.68913191, 25.246506],
+          action: { gimbal: -45, yaw: 27.2, photo: true },
+        }
+      - {
+          pos: [37.18702747, -6.68745502, 22.343250],
+          action: { gimbal: -45, yaw: 27.6, photo: true },
+        }
+      - {
+          pos: [37.18613934, -6.68544775, 21.937107],
+          action: { gimbal: -45, yaw: 27.6, photo: true },
+        }
+      - {
+          pos: [37.18548766, -6.68396851, 23.410763],
+          action: { gimbal: -45, yaw: -63, photo: true },
+        }
+      - {
+          pos: [37.18548766, -6.68396851, 43.410763],
+          action: { gimbal: -45, yaw: -63, photo: true },
+        }
+      - { pos: [37.19359808, -6.70251217, 42.000000], action: { gimbal: 0, yaw: 0 } }
+      - { pos: [37.19359808, -6.70251217, 22.000000], action: { video_stop: 0 } }
+    attributes:
+      mode_landing: 2
+
+      mode_yaw: 2
+
+      mode_gimbal: 0
+
+      idle_vel: 7.0

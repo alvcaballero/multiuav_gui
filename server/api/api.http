@@ -101,7 +101,7 @@ Content-Type: application/json
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
-< ./json/task.json
+< ./json/task_Centro.json
 
 ### varibles 
 
@@ -124,7 +124,7 @@ GET  http://localhost:4000/api/missions/listFiles/{{mission_id}}/{{uav_id}}
 
 ### download files
 ### curl http://localhost:4000/api/files/download/mission_1/uav_15/DJI_20231124131954_0001_THRM.jpg --output some.jpg  
-GET http://localhost:4000/api/files/download/mission_1240/uav_15/DJI_20231124132052_0002_THRM_process.jpg
+GET http://localhost:4000/api/files/download/mission_1243/uav_15/DJI_20231124131954_0001_THRM.jpg
 
 ### list files
 GET http://localhost:4000/api/files/routes

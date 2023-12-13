@@ -9,6 +9,9 @@ import { WebsocketManager } from '../WebsocketManager.js';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const mission_conf = readYAML('../config/mission.yaml');
+const mission_conf_1400 = readYAML('../config/mission/mission_1400.yaml');
+const mission_conf_1401 = readYAML('../config/mission/mission_1401.yaml');
+const mission_conf_1402 = readYAML('../config/mission/mission_1402.yaml');
 const Mission = { id: -1, uav: [], status: 'init', route: [], initTime: null }; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
 const sftconections = {}; // manage connection to drone
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
@@ -21,7 +24,7 @@ export class missionModel {
   static sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  static async sendTask({ misision_id, objectivo, loc, meteo }) {
+  static async sendTask({ mission_id, objectivo, loc, meteo }) {
     console.log('command-sendtask');
     let uav = 'uav_15';
 
@@ -53,8 +56,15 @@ export class missionModel {
     });
 
     console.log(mission.route[0]['wp'][0]['pos']);
-
-    mission = mission_conf;
+    if (mission_id == 1400) {
+      mission = mission_conf_1400;
+    } else if (mission_id == 1401) {
+      mission = mission_conf_1401;
+    } else if (mission_id == 1402) {
+      mission = mission_conf_1402;
+    } else {
+      mission = mission_conf;
+    }
 
     var ws = new WebsocketManager(null, '/api/socket');
     ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
@@ -105,7 +115,7 @@ export class missionModel {
       }
     }
     if (namefolder) {
-      let dir = `/home/arpa/GCS_media/mission_${Mission['id']}/${uav_name}`;
+      let dir = `/home/grvc/GCS_media/mission_${Mission['id']}/${uav_name}`;
       let dir2 = `mission_${Mission['id']}/${uav_name}`;
 
       if (!fs.existsSync(dir)) {
@@ -148,7 +158,7 @@ export class missionModel {
         for (let imagetoprocess of listimagestoprocess) {
           listimages.push(imagetoprocess.ref.slice(0, -4) + '_process.jpg');
           exec(
-            `python3 /home/arpa/work/px4/multiuav_gui/scripts/utils/circleOpencv.py  "${
+            `python3 /home/grvc/work/px4/multiuav_gui/scripts/utils/circleOpencv.py  "${
               imagetoprocess.dist
             }" "${imagetoprocess.dist.slice(0, -4)}_process.jpg"`,
             (error, stdout, stderr) => {
