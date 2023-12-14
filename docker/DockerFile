@@ -1,0 +1,35 @@
+# Author: TaeYoung Kim
+# email: tyoung96@yonsei.ac.kr
+
+FROM px4io/px4-dev-ros-noetic
+# Install PCL & Eigen & essential libraries
+RUN apt-get update && apt-get upgrade
+
+RUN apt-get install -y nano 
+RUN apt-get install -y ros-noetic-rosbridge-server
+
+# multimaster
+RUN apt-get install -y ros-noetic-fkie-master-sync 
+RUN apt-get install -y ros-noetic-fkie-master-discovery
+# ROS SDK DJI
+RUN apt-get install -y ros-noetic-nmea-comms
+RUN apt-get install -y ffmpeg libavcodec-dev libswresample-dev
+# install opencv 3.3.X
+
+
+# dependencies simple VS
+RUN apt-get install -y ros-noetic-cv-bridge ros-noetic-image-transport ros-noetic-theora-image-transport 
+
+# install Gstreamer
+RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev libgstrtspserver-1.0-dev gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad
+
+RUN /bin/bash -c '. /opt/ros/noetic/setup.bash;'
+
+WORKDIR /root/ros2_ws
+
+# Load ROS environment at each run
+COPY ./ros_entrypoint.sh /
+RUN chmod 755 /ros_entrypoint.sh
+ENTRYPOINT ["/ros_entrypoint.sh"]
+
+CMD ["bash"]
