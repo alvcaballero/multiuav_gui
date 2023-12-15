@@ -20,6 +20,7 @@ import StatusCard from '../components/StatusCard';
 import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/MainToolbar';
 import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
+import MapScale from '../Mapview/MapScale';
 
 import { devicesActions } from '../store';
 
@@ -177,6 +178,7 @@ const MainPage = () => {
             />
             <MapSelectedDevice />
           </MapView>
+          <MapScale />
         </div>
 
         <div className={classes.sidebarStyle}>
