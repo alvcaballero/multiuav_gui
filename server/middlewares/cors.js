@@ -1,4 +1,3 @@
-import { OnDeviceTraining } from '@mui/icons-material';
 import cors from 'cors';
 
 const ACCEPTED_ORIGINS = [

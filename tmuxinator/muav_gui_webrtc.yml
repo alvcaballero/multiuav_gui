@@ -17,7 +17,7 @@ windows:
             - sleep 3
             - npm start
         - frontend:
-            - cd ~/work/px4/multiuav_gui
+            - cd ~/work/px4/multiuav_gui/client
             - nvm use 18
             - open -a "Google Chrome" http://127.0.0.1:3000
             - sleep 2;npm run start
@@ -25,24 +25,25 @@ windows:
       layout: tiled
       panes:
         - multimaster:
-            - cd ~/work/px4/
-            - ./px4-noetic.sh
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+            - cd /home/user
             - roslaunch aerialcore_gui connect_uas.launch
         - bag:
-            - cd ~/work/px4/
-            - ./px4-noetic.sh
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
             - cd /home/user/bags
             - sleep 10;
             - rosbag play -l uav_2_2023_10_26_10_02.bag #roslaunch simple_vs mavlink.launch
         - aux:
-            - cd ~/work/px4/
-            - ./px4-noetic.sh
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
             - cd /home/user/catkin_ws
   - webrtc:
       layout: tiled
       panes:
         - server:
             - cd ~/work/px4/multiuav_gui/tmuxinator
-            - docker run --rm -it --network=host -v $PWD/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
+            - docker run --rm -it --network=host -v $PWD/../server/config/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
         - gtreamer:
             - cd ~/work/px4/

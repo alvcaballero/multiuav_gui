@@ -27,7 +27,7 @@ import {
   getStatusColor,
 } from '../common/formatter';
 import { mapIconKey, mapIcons } from '../Mapview/preloadImages';
-import { ReactComponent as EngineIcon } from '../resources/images/data/engine.svg';
+import EngineIcon from '../resources/images/data/engine.svg';
 import makeStyles from '@mui/styles/makeStyles';
 
 //import { useAttributePreference } from '../common/util/preferences';

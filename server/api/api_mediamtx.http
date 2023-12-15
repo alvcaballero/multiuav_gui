@@ -3,7 +3,7 @@
 GET http://localhost:9997/v3/paths/list
 
 ### ADD 
-POST http://localhost:9997/v2/config/paths/add/uav_6
+POST http://localhost:9997/v3/config/paths/add/uav_6
 Content-Type: application/json
 
 {
@@ -12,9 +12,9 @@ Content-Type: application/json
 
 ### REMOVE 
 
-POST http://localhost:9997/v2/config/paths/remove/uav_5
+POST http://localhost:9997/v3/config/paths/remove/uav_5
 
 
 ### REMOVE 
 
-POST http://localhost:9997/v2/config/paths/remove/uav_5
+POST http://localhost:9997/v3/config/paths/remove/uav_5
