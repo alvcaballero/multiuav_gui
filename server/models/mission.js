@@ -1,17 +1,12 @@
-import { ros } from '../models/ros.js';
 import { DevicesModel } from '../models/devices.js';
 import { readYAML, getDatetime } from '../common/utils.js';
-import ROSLIB from 'roslib';
 import { SFTPClient } from '../common/SFTPClient.js';
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { WebsocketManager } from '../WebsocketManager.js';
+import { machine, createActorMission } from './missionSM.js';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
-const mission_conf = readYAML('../config/mission.yaml');
-const mission_conf_1400 = readYAML('../config/mission/mission_1400.yaml');
-const mission_conf_1401 = readYAML('../config/mission/mission_1401.yaml');
-const mission_conf_1402 = readYAML('../config/mission/mission_1402.yaml');
 const Mission = { id: -1, uav: [], status: 'init', route: [], initTime: null }; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
 const sftconections = {}; // manage connection to drone
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
@@ -26,6 +21,38 @@ export class missionModel {
   }
   static async sendTask({ mission_id, objectivo, loc, meteo }) {
     console.log('command-sendtask');
+    // plainig
+    let mission = this.planning({ mission_id, objectivo, loc, meteo });
+    // remplase planing with mission default
+    console.log(mission.route[0]['wp'][0]['pos']);
+    if (mission_id >= 1400) {
+      mission = readYAML(`../config/mission/mission_${mission_id}.yaml`);
+    } else {
+      mission = readYAML('../config/mission.yaml');
+    }
+
+    var ws = new WebsocketManager(null, '/api/socket');
+    ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
+
+    Mission['id'] = mission_id;
+    Mission['uav'].push({ uav: 'uav_15', status: 'init' });
+    Mission['route'] = mission.route;
+    Mission['status'] = 'command';
+    Mission['initTime'] = new Date();
+
+    const actor = createActorMission(mission_id);
+
+    // generate response
+    let response = { uav: mission.route[0].uav, points: [], status: 'OK' };
+    response.points = mission.route[0].wp.map((wp) => {
+      return [wp.pos[0], wp.pos[1], wp.pos[2]];
+    });
+
+    let myresponse = { response };
+    return myresponse;
+  }
+
+  static planning({ mission_id, objectivo, loc, meteo }) {
     let uav = 'uav_15';
 
     let home = [37.134092, -6.472401, 50];
@@ -54,29 +81,7 @@ export class missionModel {
     mission.route[0]['wp'] = response.points.map((element) => {
       return { pos: element };
     });
-
-    console.log(mission.route[0]['wp'][0]['pos']);
-    if (mission_id == 1400) {
-      mission = mission_conf_1400;
-    } else if (mission_id == 1401) {
-      mission = mission_conf_1401;
-    } else if (mission_id == 1402) {
-      mission = mission_conf_1402;
-    } else {
-      mission = mission_conf;
-    }
-
-    var ws = new WebsocketManager(null, '/api/socket');
-    ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
-
-    Mission['id'] = mission_id;
-    Mission['uav'].push({ uav: 'uav_15', status: 'init' });
-    Mission['route'] = mission.route;
-    Mission['status'] = 'command';
-    Mission['initTime'] = new Date();
-
-    let myresponse = { response };
-    return myresponse;
+    return mission;
   }
 
   //En lista archivos y directorios, los directorios no se pueden descargar da error, se uede probar errores
