@@ -4,7 +4,7 @@ import { SFTPClient } from '../common/SFTPClient.js';
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { WebsocketManager } from '../WebsocketManager.js';
-import { machine, createActorMission } from './missionSM.js';
+import { missionSMModel } from './missionSM.js';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const Mission = { id: -1, uav: [], status: 'init', route: [], initTime: null }; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
@@ -40,7 +40,10 @@ export class missionModel {
     Mission['status'] = 'command';
     Mission['initTime'] = new Date();
 
-    const actor = createActorMission(mission_id);
+    missionSMModel.createActorMission(mission_id); // create actor
+    // init actor
+    // poner uno de load plaing, for waiting the planer is load
+    // send planing
 
     // generate response
     let response = { uav: mission.route[0].uav, points: [], status: 'OK' };

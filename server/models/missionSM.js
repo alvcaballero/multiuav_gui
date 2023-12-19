@@ -1,10 +1,12 @@
 //https://stately.ai/docs/editor-states-and-transitions
 // https://dev.to/davidkpiano/you-don-t-need-a-library-for-state-machines-k7h
 import { createMachine, createActor } from 'xstate';
+const listSM = {}; // lista de acots maquinas de estados por id de UAV
 
-export const machine = createMachine(
+const machine = createMachine(
   {
     id: 'GCS-UAV',
+    context: { uav_id: 1 },
     initial: 'Initial state',
     states: {
       'Initial state': {
@@ -112,7 +114,9 @@ export const machine = createMachine(
   },
   {
     actions: {
-      load_mission: ({ context, event }) => {},
+      load_mission: ({ context, event }) => {
+        console.log(event.data);
+      },
       fetch_planing: ({ context, event }) => {},
     },
     actors: {},
@@ -120,11 +124,33 @@ export const machine = createMachine(
     delays: {},
   }
 );
-export function createActorMission(id) {
-  let myactor = createActor(machine);
-  myactor.subscribe((snapshot) => {
-    console.log('Value:', snapshot.value);
-  });
-  myactor.start();
-  return myactor;
+
+export class missionSMModel {
+  static createActorMission(id) {
+    const myMachine = machine.withContext({
+      uav_id: id,
+    });
+
+    listSM[id] = createActor(myMachine);
+    listSM[id].subscribe((snapshot) => {
+      console.log('Value:', snapshot.value);
+    });
+    listSM[id].start();
+    return true;
+  }
+
+  static get_status() {
+    return listSM[id].states;
+  }
+
+  static load_mission() {
+    // get  the  mission plan with id of  uav
+    //  load sendCommand of command model
+    // configure for get the answer and the andwer of this change the actor of the state machine,
+  }
+  static command_mission() {
+    // get  the  mission plan with id of  uav
+    //  load sendCommand of command model
+    // configure for get the answer and the andwer of this change the actor of the state machine,
+  }
 }
