@@ -1,0 +1,58 @@
+model {
+    extend GCS.backend {
+        missionManager = component 'Mission manager' {
+            #api
+            description 'Mision Inspection logic'
+        }
+        express = component 'RestAPI & websocket ' {
+            #api
+            description 'Rest api for the backend uses  Express'
+        }
+        //socket = component 'Websocket'
+        events = component 'Events Manager'
+        deviceManager = component 'Device Manager'
+        roslib = component 'RosLibjs'
+
+        GCS.ui -> express
+        //socket -> GCS.ui 
+
+        express -> deviceManager
+        express -> missionManager
+        missionManager -> elevationApi.ElevAPI 'HTTP'
+        missionManager -> deviceManager
+        deviceManager -> roslib
+        roslib -> deviceManager
+        
+        roslib -> events
+        deviceManager -> GCS.mediamtx
+        //events -> socket
+        //deviceManager -> socket
+        events -> express
+        //express -> GCS.ui
+        //deviceManager -> express
+        roslib -> GCS.Rosbridge 'Send/recv UDP msg'
+        //GCS.Rosbridge -> roslib 'UDP'
+
+    }
+
+}
+
+views {
+    view backend of GCS.backend {
+        include *,
+        -> GCS.ui
+
+        style GCS {
+            color muted
+        }
+
+        style GCS.backend {
+            color muted
+        }
+        style GCS.ui {
+            color green
+            
+        }
+
+    }
+}

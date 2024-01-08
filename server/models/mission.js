@@ -166,9 +166,9 @@ export class missionModel {
         for (let imagetoprocess of listimagestoprocess) {
           listimages.push(imagetoprocess.ref.slice(0, -4) + '_process.jpg');
           exec(
-            `python3 /home/grvc/work/px4/multiuav_gui/scripts/utils/circleOpencv.py  "${
+            `source activate DJIThermal && python3 /home/grvc/work/px4/multiuav_gui/scripts/utils/processThemalimages.py "${
               imagetoprocess.dist
-            }" "${imagetoprocess.dist.slice(0, -4)}_process.jpg"`,
+            }" "${imagetoprocess.dist.slice(0, -4)}_process.jpg"  && conda deactivate`,
             (error, stdout, stderr) => {
               if (error) {
                 console.log(`error: ${error.message}`);

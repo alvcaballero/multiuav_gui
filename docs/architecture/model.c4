@@ -1,0 +1,88 @@
+// https://likec4.dev/playground/
+specification {
+  element actor {
+    style{
+      shape person
+    }
+  }
+  element system
+  element service
+  element app
+  element container
+  element component
+  element UAV {
+    style{
+      icon https://icons.terrastruct.com/aws%2FInternet%20of%20Things%2FIoT_Travel_light-bg.svg
+    }
+  }
+
+  tag api
+  relationship async // allow "typed" relationship
+
+}
+ 
+model {
+  customer = actor 'Customer' {
+    description 'Monitor of UAV'
+    -> ui 'open in browser'
+  }
+  device = UAV 'device' {
+    description 'ROS enviroment & RSTP server'
+  }
+ 
+  GCS = system 'GCS' {
+    description  ''
+
+    ui = container 'Frontend' {
+      description 'Reactjs application'
+      style {
+        shape browser
+      }
+    }
+    backend = container 'Backend Services' {
+      description '
+        Implements business logic,
+        comunication with UAVs using ROS
+        and exposes as REST API 
+      '
+    }
+    mediamtx = container 'Multimedia server' {
+      description ' RealTime video Transmission'
+    }
+
+    Rosbridge = container 'RosBridge' 
+ 
+    // UI requests data from the Backend
+    ui -> backend 'request via HTTPS'
+    backend -> mediamtx 'API REST'
+  }
+ 
+  // Customer uses the UI
+  customer -> ui 'enjoys our product'
+  backend -> Rosbridge 'UDP'
+  mediamtx -> device 'RTSP H264'
+  Rosbridge -> device 'ROS'
+
+}
+ 
+views {
+ 
+  view index {
+    title 'Landscape view'
+ 
+    include *
+  }
+ 
+  view of GCS {
+    include *
+
+    style customer {
+      color secondary 
+    }
+ 
+    style GCS {
+      color muted
+    }
+  }
+ 
+}

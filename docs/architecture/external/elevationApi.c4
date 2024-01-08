@@ -1,0 +1,6 @@
+model {
+  elevationApi = system 'OpenTopoData' {
+    description 'Api of elevation'
+    ElevAPI = service 'ElevationAPI'
+  }
+}
