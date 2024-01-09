@@ -1,4 +1,5 @@
 // https://likec4.dev/playground/
+// https://github.dev/likec4/example-cloud-system
 specification {
   element actor {
     style{
@@ -27,17 +28,19 @@ model {
     -> ui 'open in browser'
   }
   device = UAV 'device' {
-    description 'ROS enviroment & RSTP server'
+    description 'ROS enviroment & RSTP server of UAV'
   }
  
   GCS = system 'GCS' {
     description  ''
 
     ui = container 'Frontend' {
-      description 'Reactjs application'
+      description 'Single web aplication'
+      technology: 'Reactjs node 18'
       style {
         shape browser
       }
+      -> backend 'request via HTTPS'
     }
     backend = container 'Backend Services' {
       description '
@@ -45,24 +48,24 @@ model {
         comunication with UAVs using ROS
         and exposes as REST API 
       '
+      -> mediamtx 'API REST'
+      -> Rosbridge 'UDP socket'
+      -> device 'FTP'
     }
     mediamtx = container 'Multimedia server' {
       description ' RealTime video Transmission'
+      -> device 'RTSP H264'
     }
 
-    Rosbridge = container 'RosBridge' 
- 
-    // UI requests data from the Backend
-    ui -> backend 'request via HTTPS'
-    backend -> mediamtx 'API REST'
+    Rosbridge = container 'RosBridge' {
+       -> RosMultimaster 'ROS'
+    } 
+    RosMultimaster = container 'Multimaster FLK' {
+      -> device 'ROS'
+    }
   }
- 
-  // Customer uses the UI
-  customer -> ui 'enjoys our product'
-  backend -> Rosbridge 'UDP'
-  mediamtx -> device 'RTSP H264'
-  Rosbridge -> device 'ROS'
-
+    customer -> GCS 'Control and monitoring'
+    GCS -> device '[FTP,ROS,RSTP]'
 }
  
 views {
@@ -70,11 +73,12 @@ views {
   view index {
     title 'Landscape view'
  
-    include *
+    include customer,
+    *
   }
  
   view of GCS {
-    include *
+    include customer,*
 
     style customer {
       color secondary 

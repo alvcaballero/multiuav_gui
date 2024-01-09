@@ -12,6 +12,7 @@ model {
         events = component 'Events Manager'
         deviceManager = component 'Device Manager'
         roslib = component 'RosLibjs'
+        ftp = component 'FileTransferManager'
 
         GCS.ui -> express
         //socket -> GCS.ui 
@@ -21,10 +22,11 @@ model {
         missionManager -> elevationApi.ElevAPI 'HTTP'
         missionManager -> deviceManager
         deviceManager -> roslib
+        missionManager -> ftp
         roslib -> deviceManager
-        
+        ftp -> device 'FTP'
         roslib -> events
-        deviceManager -> GCS.mediamtx
+        deviceManager -> GCS.mediamtx 'API REST'
         //events -> socket
         //deviceManager -> socket
         events -> express
@@ -39,8 +41,10 @@ model {
 
 views {
     view backend of GCS.backend {
-        include *,
-        -> GCS.ui
+        include GCS.ui,
+        *,
+        GCS,
+        -> device
 
         style GCS {
             color muted
@@ -54,5 +58,21 @@ views {
             
         }
 
+    }
+    view my_backend of GCS.backend {
+         include *,
+        -> GCS.ui,
+
+        style GCS {
+            color muted
+        }
+
+        style GCS.backend {
+            color muted
+        }
+        style GCS.ui {
+            color green
+            
+        }
     }
 }
