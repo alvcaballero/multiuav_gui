@@ -27,7 +27,7 @@ app.set('port', port);
 app.use(corsMiddleware());
 app.use(json());
 
-app.use(express.static(path.resolve(__dirname, '../build')));
+app.use(express.static(path.resolve(__dirname, '../client/build')));
 app.use('/api/devices', devicesRouter);
 app.use('/api/category', categoryRouter);
 app.use('/api/positions', positionsRouter);
