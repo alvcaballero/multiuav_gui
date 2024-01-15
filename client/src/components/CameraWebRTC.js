@@ -1,54 +1,54 @@
-import React, { useRef, useEffect, useState } from "react";
-import novideo from "../assets/img/placeholder.jpg";
-import { useDispatch, useSelector } from "react-redux";
-import Draggable from "react-draggable";
-import makeStyles from "@mui/styles/makeStyles";
-import { Card, IconButton, CardMedia } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import ZoomOutMapIcon from "@mui/icons-material/ZoomOutMap";
+import React, { useRef, useEffect, useState } from 'react';
+import novideo from '../resources/images/placeholder.jpg';
+import { useDispatch, useSelector } from 'react-redux';
+import Draggable from 'react-draggable';
+import makeStyles from '@mui/styles/makeStyles';
+import { Card, IconButton, CardMedia } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 
 const useStyles = makeStyles((theme) => ({
   card: {
-    pointerEvents: "auto",
+    pointerEvents: 'auto',
     width: theme.dimensions.popupMaxWidth,
   },
   card_max: {
-    pointerEvents: "auto",
-    width: "100%",
+    pointerEvents: 'auto',
+    width: '100%',
   },
   media: {
     //height: theme.dimensions.popupImageHeight,
-    width: "100%",
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "flex-start",
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
   },
   mediaButton: {
     color: theme.palette.colors.white,
-    mixBlendMode: "difference",
+    mixBlendMode: 'difference',
   },
   header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: theme.spacing(1, 1, 0, 2),
   },
   root: {
-    pointerEvents: "none",
-    position: "fixed",
+    pointerEvents: 'none',
+    position: 'fixed',
     zIndex: 6,
-    left: "39%",
+    left: '39%',
     top: theme.spacing(15),
-    transform: "translateX(-50%)",
+    transform: 'translateX(-50%)',
   },
   root_max: {
-    pointerEvents: "none",
-    position: "fixed",
+    pointerEvents: 'none',
+    position: 'fixed',
     zIndex: 6,
-    left: "51%",
-    top: "5%",
-    transform: "translateX(-50%)",
-    width: "55%",
+    left: '51%',
+    top: '5%',
+    transform: 'translateX(-50%)',
+    width: '55%',
   },
 }));
 
@@ -58,7 +58,7 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
   const [img, setimg] = useState(novideo);
   const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const deviceip = "10.42.0.41"; //device?.ip;
+  const deviceip = '10.42.0.41'; //device?.ip;
   //const deviceip = useSelector((state) => state.devices.items[deviceId]);
   //const mediaStream = new MediaStream();
   const [maxsize, setmaxsize] = useState(false);
@@ -77,7 +77,7 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
   let terminated = false;
 
   useEffect(() => {
-    console.log("device in camera-" + device);
+    console.log('device in camera-' + device);
     if (deviceId) {
       //if( device.hasOwnProperty('ip')){
       start();
@@ -88,12 +88,12 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
   }, [deviceId]);
 
   function start() {
-    console.log("connecting" + deviceip);
+    console.log('connecting' + deviceip);
 
-    ws = new WebSocket("ws://" + deviceip + ":8889/test/" + "ws");
+    ws = new WebSocket('ws://' + deviceip + ':8889/test/' + 'ws');
 
     ws.onerror = () => {
-      console.log("ws error");
+      console.log('ws error');
       if (ws === null) {
         return;
       }
@@ -102,7 +102,7 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
     };
 
     ws.onclose = () => {
-      console.log("ws closed");
+      console.log('ws closed');
       ws = null;
       scheduleRestart();
     };
@@ -111,7 +111,7 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
   }
 
   function onIceServers(msg) {
-    console.log("ICE");
+    console.log('ICE');
     console.log(msg);
     if (ws === null) {
       return;
@@ -131,22 +131,22 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
         return;
       }
 
-      console.log("peer connection state:", pc.iceConnectionState);
+      console.log('peer connection state:', pc.iceConnectionState);
 
       switch (pc.iceConnectionState) {
-        case "disconnected":
+        case 'disconnected':
           scheduleRestart();
       }
     };
 
     pc.ontrack = (evt) => {
-      console.log("new track " + evt.track.kind);
+      console.log('new track ' + evt.track.kind);
       localVideoRef.current.srcObject = evt.streams[0];
     };
 
-    const direction = "sendrecv";
-    pc.addTransceiver("video", { direction });
-    pc.addTransceiver("audio", { direction });
+    const direction = 'sendrecv';
+    pc.addTransceiver('video', { direction });
+    pc.addTransceiver('audio', { direction });
 
     pc.createOffer().then((desc) => {
       if (pc === null || ws === null) {
@@ -155,7 +155,7 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
 
       pc.setLocalDescription(desc);
 
-      console.log("sending offer");
+      console.log('sending offer');
       ws.send(JSON.stringify(desc));
     });
   }
@@ -174,7 +174,7 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
     }
 
     if (evt.candidate !== null) {
-      if (evt.candidate.candidate !== "") {
+      if (evt.candidate.candidate !== '') {
         ws.send(JSON.stringify(evt.candidate));
       }
     }
@@ -215,54 +215,42 @@ export const CameraWebRTC = ({ deviceId, deviceIp, onClose }) => {
         <Card elevation={3} className={btn_class}>
           <div
             style={{
-              display: "flex",
-              right: "5px",
-              height: "35px",
-              position: "absolute",
+              display: 'flex',
+              right: '5px',
+              height: '35px',
+              position: 'absolute',
             }}
           >
-            <IconButton
-              size="small"
-              onClick={Changemaxsize}
-              onTouchStart={Changemaxsize}
-            >
-              <ZoomOutMapIcon
-                fontSize="small"
-                className={classes.mediaButton}
-              />
+            <IconButton size='small' onClick={Changemaxsize} onTouchStart={Changemaxsize}>
+              <ZoomOutMapIcon fontSize='small' className={classes.mediaButton} />
             </IconButton>
             <IconButton
-              size="small"
+              size='small'
               onClick={() => {
                 onClose();
                 setmaxsize(false);
               }}
               onTouchStart={onClose}
             >
-              <CloseIcon fontSize="small" className={classes.mediaButton} />
+              <CloseIcon fontSize='small' className={classes.mediaButton} />
             </IconButton>
           </div>
 
           <div
             style={{
-              display: "block",
-              width: "calc( 100% - 60pt )",
-              paddingLeft: "15pt",
-              paddingTop: "10pt",
-              paddingBottom: "10pt",
-              textAlign: "left",
+              display: 'block',
+              width: 'calc( 100% - 60pt )',
+              paddingLeft: '15pt',
+              paddingTop: '10pt',
+              paddingBottom: '10pt',
+              textAlign: 'left',
             }}
           >
-            {" "}
-            {"Image " + device.name}{" "}
+            {' '}
+            {'Image ' + device.name}{' '}
           </div>
 
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            className={classes.media}
-          ></video>
+          <video ref={localVideoRef} autoPlay playsInline className={classes.media}></video>
         </Card>
       )}
     </div>

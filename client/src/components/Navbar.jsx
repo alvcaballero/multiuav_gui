@@ -267,6 +267,15 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               >
                 Edit mission
               </a>
+              <a
+                id='planning'
+                onClick={() => {
+                  navigate('/planning');
+                  handleClick();
+                }}
+              >
+                Mission Elements
+              </a>
             </div>
           </div>
           <div className='dropdown'>

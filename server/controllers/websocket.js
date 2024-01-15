@@ -2,7 +2,8 @@ import { DevicesModel } from '../models/devices.js';
 import { rosModel } from '../models/ros.js';
 import { positionsModel } from '../models/positions.js';
 import { eventsModel } from '../models/events.js';
-
+import { readYAML } from '../common/utils.js';
+const init_mission_elements = readYAML('../config/elements/config.yaml');
 export class websocketController {
   static async init() {
     const devices = await DevicesModel.getAll();
@@ -14,6 +15,7 @@ export class websocketController {
       positions: Object.values(positions),
       server: { rosState: server.state },
       devices: Object.values(devices),
+      markers: init_mission_elements.markers,
     });
     //console.log('init');
     //console.log(response);

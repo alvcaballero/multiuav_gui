@@ -11,6 +11,7 @@ import DevicePage from './other/DevicePage';
 import CameraPage from './other/CameraPage';
 import EventsPage from './other/EventsPage';
 import TopicsPage from './other/TopicsPage';
+import PlanningPage from './other/PlanningPage'
 
 const padding = {
   padding: 5,
@@ -31,6 +32,7 @@ const Navigation = () => {
         <Route index element={<MainPage />} />
 
         <Route path='mission' element={<MissionPage />} />
+        <Route path='planning' element={<PlanningPage />} />
         <Route path='camera' element={<CameraPage />} />
         <Route path='device/:id' element={<DevicePage />} />
         <Route path='event/:id' element={<EventPage />} />

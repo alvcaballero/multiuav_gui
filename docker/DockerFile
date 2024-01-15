@@ -2,6 +2,11 @@
 # email: tyoung96@yonsei.ac.kr
 
 FROM px4io/px4-dev-ros-noetic
+
+#add in /root/.bashrc 
+# source /opt/ros/noetic/setup.bash
+# source /home/user/catkin_ws/devel/setup.bash
+
 # Install PCL & Eigen & essential libraries
 RUN apt-get update 
 

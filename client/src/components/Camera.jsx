@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import novideo from '../assets/img/placeholder.jpg';
+import novideo from '../resources/images/placeholder.jpg';
 import { useDispatch, useSelector } from 'react-redux';
 import { Card, IconButton, CardMedia } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';

@@ -51,8 +51,8 @@ export class missionModel {
       return [wp.pos[0], wp.pos[1], wp.pos[2]];
     });
 
-    let myresponse = { response };
-    return myresponse;
+    //let myresponse = { response };
+    return { response: mission, status: 'OK' };
   }
 
   static planning({ mission_id, objectivo, loc, meteo }) {

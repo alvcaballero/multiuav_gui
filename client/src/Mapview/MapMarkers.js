@@ -64,10 +64,23 @@ const MapMarkers = ({ markers, showTitles }) => {
     };
   }, [showTitles]);
 
+  function listtoPoints(mylist) {
+    let waypoints = [];
+    mylist.forEach((conjunto, index_cj) => {
+      conjunto.items.forEach((items) => {
+        waypoints.push({ ...items, image: conjunto.type, title: 'none' });
+      });
+    });
+
+    return waypoints;
+  }
+
   useEffect(() => {
+    let markers_icons = listtoPoints(markers);
+    console.log(markers_icons);
     map.getSource(id)?.setData({
       type: 'FeatureCollection',
-      features: markers.map(({ latitude, longitude, image, title }) => ({
+      features: markers_icons.map(({ latitude, longitude, image, title }) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',

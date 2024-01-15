@@ -92,6 +92,11 @@ const SocketController = () => {
         setEvents(data.events);
         console.log(data.events);
       }
+      if (data.markers){
+        console.log('add markers')
+          dispatch(sessionActions.updateMarker(data.markers));
+        }
+      
     };
   };
   useEffectAsync(async () => {

@@ -127,11 +127,14 @@ const machine = createMachine(
 
 export class missionSMModel {
   static createActorMission(id) {
-    const myMachine = machine.withContext({
-      uav_id: id,
-    });
+    //--- poner un estado anterior donde se asigne el id
 
-    listSM[id] = createActor(myMachine);
+    //const myMachine = machine.withContext({
+    //  uav_id: id,
+    //});
+
+    //listSM[id] = createActor(myMachine);
+    listSM[id] = createActor(machine);
     listSM[id].subscribe((snapshot) => {
       console.log('Value:', snapshot.value);
     });
