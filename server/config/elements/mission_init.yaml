@@ -1,103 +1,62 @@
-missionTypes:
-  - id: 0
-    name: 'Inspeccion de linea'
-    type: 'path'
-    setting:
-      devices:
-        deviceId:
-          type: 'number'
-          name: 'device'
-          default: 0
-        speed_mission:
-          type: 'number'
-          name: 'Speed Mission'
-          default: 7
-        speed_navegation:
-          type: 'number'
-          name: 'Speed Navegation'
-          default: 15
-      mission:
-        height:
-          type: 'number'
-          name: 'Height'
-          default: 10
-        offset:
-          type: 'number'
-          name: 'offset'
-          default: 10
-        tower:
-          type: 'number'
-          name: 'height tower'
-          default: 10
-  - id: 1
-    name: 'inspeccion de torre'
-    type: 'object'
-    setting:
-      devices:
-        deviceId:
-          type: 'number'
-          name: 'device'
-          default: 0
-        speed_mission:
-          type: 'number'
-          name: 'Speed Mission'
-          default: 7
-        speed_navegation:
-          type: 'number'
-          name: 'Speed Navegation'
-          default: 15
-      mission:
-        height:
-          type: 'number'
-          name: 'Height'
-          default: 10
-        offset:
-          type: 'number'
-          name: 'offset'
-          default: 10
-        tower:
-          type: 'number'
-          name: 'height tower'
-          default: 10
-
-  - id: 2
-    name: 'inspeccion de Vegetacion'
-    type: 'path'
-    setting:
-      devices:
-        deviceId:
-          type: 'number'
-          name: 'device'
-          default: 0
-        speed_mission:
-          type: 'number'
-          name: 'Speed Mission'
-          default: 7
-        speed_navegation:
-          type: 'number'
-          name: 'Speed Navegation'
-          default: 15
-      mission:
-        height:
-          type: 'number'
-          name: 'Height'
-          default: 10
-        offset:
-          type: 'number'
-          name: 'offset'
-          default: 10
-        tower:
-          type: 'number'
-          name: 'height tower'
-          default: 10
-
 bases:
-  - pos: { latitude: 38.1385113182596, longitude: -3.176305522392061 }
-    device: 1
+  - latitude: 38.1385113182596
+    longitude: -3.176305522392061
 
   - latitude: 38.1384386169842
     longitude: -3.176704744391102
-    device: 2
+
+settings:
+  type: 0
+  loc:
+    - name: 'uno'
+      items:
+        - latitude: 38.13584764267765
+          longitude: -3.181036564547416
+        - latitude: 38.13561006397526
+          longitude: -3.182479552175073
+        - latitude: 38.13537374967324
+          longitude: -3.183772905702419
+    - name: 'lineas2'
+      items:
+        - latitude: 38.13307452738974
+          longitude: -3.195587887930005
+        - latitude: 38.13283223965048
+          longitude: -3.196579076533189
+        - latitude: 38.13218223715189
+          longitude: -3.198785434613106
+        - latitude: 38.13234494254377
+          longitude: -3.199576034561804
+  devices:
+    - deviceId: 0
+      speed_mission: 7
+      speed_navegation: 15
+      landing_mode: 0
+    - deviceId: 0
+      speed_mission: 7
+      speed_navegation: 15
+      landing_mode: 0
+  mission:
+    - height: 0
+      offset: 7
+      tower: 10
+    - height: 0
+      offset: 7
+      tower: 10
+  meteo:
+    - lat: 37.01455061559604
+      lon: -6.5625427378086485
+      wind_vel: 12
+      wind_dir: 360
+      temp: 38
+      humidity: 90
+      pres_atm: 5
+    - lat: 37.01455061559604
+      lon: -6.5625427378086485
+      wind_vel: 12
+      wind_dir: 360
+      temp: 38
+      humidity: 90
+      pres_atm: 5
 
 markers:
   - type: 'powerTower'

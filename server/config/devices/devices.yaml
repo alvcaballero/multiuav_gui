@@ -21,6 +21,9 @@ dji_M210_noetic:
     number_of_cells: 4
     Voltage_per_cell: 3.9 # v/cell
 
+  speed_mission: 7
+  speed_navegation: 15
+
 dji_M210_melodic:
   mass: 7.2 #kg
   number_of_rotors: 4
@@ -43,7 +46,8 @@ dji_M210_melodic:
     capacity: 80000 #mAh
     number_of_cells: 4
     Voltage_per_cell: 3.9 # v/cell
-
+  speed_mission: 7
+  speed_navegation: 15
 dji_M300:
   mass: 7.2 #kg
   number_of_rotors: 4
@@ -70,6 +74,9 @@ dji_M300:
     number_of_cells: 4
     Voltage_per_cell: 3.9 # v/cell
 
+  speed_mission: 7
+  speed_navegation: 15
+
 px4:
   mass: 7.2 #kg
   number_of_rotors: 4
@@ -88,6 +95,9 @@ px4:
     capacity: 80000 #mAh
     number_of_cells: 4
     Voltage_per_cell: 3.9 # v/cell
+
+  speed_mission: 7
+  speed_navegation: 15
 
 fuvex:
   mass: 7.2 #kg
@@ -108,6 +118,9 @@ fuvex:
     number_of_cells: 4
     Voltage_per_cell: 3.9 # v/cell
 
+  speed_mission: 7
+  speed_navegation: 15
+
 catec:
   mass: 7.2 #kg
   number_of_rotors: 4
@@ -126,6 +139,9 @@ catec:
     capacity: 80000 #mAh
     number_of_cells: 4
     Voltage_per_cell: 3.9 # v/cell
+
+  speed_mission: 7
+  speed_navegation: 15
 
 Camera:
   fpv_M210: [509, 480]

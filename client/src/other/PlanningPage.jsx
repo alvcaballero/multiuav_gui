@@ -8,12 +8,23 @@ import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
 import SelectField from '../common/components/SelectField';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import palette from '../common/palette';
-
+import BaseList from '../components/BaseList';
 
 import { useSelector } from 'react-redux';
 
-import { Paper, IconButton, Box,Accordion,  AccordionSummary,
-  AccordionDetails,Divider,Button,TextField,Toolbar ,Typography} from '@mui/material';
+import {
+  Paper,
+  IconButton,
+  Box,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Divider,
+  Button,
+  TextField,
+  Toolbar,
+  Typography,
+} from '@mui/material';
 
 import makeStyles from '@mui/styles/makeStyles';
 import { RosControl } from '../components/RosControl';
@@ -139,6 +150,7 @@ const PlanningPage = () => {
     objetivo: 0,
     loc: [],
     meteo: [],
+    setting: [],
   });
   useEffect(() => {
     setmarkers(sessionmarkers);
@@ -187,85 +199,87 @@ const PlanningPage = () => {
           <div className={classes.sidebarStyle}>
             <div className={classes.middleStyle}>
               <Paper square>
-              <Toolbar className={classes.toolbar}>
-                <IconButton edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
-                  <ArrowBackIcon />
-                </IconButton>
-                <Typography variant='h6' className={classes.title}>
-                  Mission Elements
-                </Typography>
-              </Toolbar>
-              <div className={classes.list}>
-              <Box style={{
-                  display: 'flex',
-                  gap: '10px',
-                  flexDirection: 'column',
-                  margin: '20px',
-                }}>
-                  <TextField
-                  required
-                  label='id'
-                  type='number'
-                  variant='standard'
-                  value={SendTask.id ? SendTask.id : 123}
-                  onChange={(event) => setSendTask({ ...SendTask, id: event.target.value })}
-                />
-                  <TextField
-                  required
-                  label='Name Mission'
-                  variant='standard'
-                  value={SendTask.name ? SendTask.name : ' '}
-                  onChange={(event) => setSendTask({ ...SendTask, name: event.target.value })}
-                />
-                          <SelectField
-                            emptyValue={null}
-                            value={SendTask.objetivo }
-                            onChange={(e) =>
-                              setSendTask({
-                                ...SendTask,
-                                objetivo: e.target.value
-                              })
-                            }
-                            data ={ [{id: 0,name:"Localizacion de inidencia"},{id: 1,name:"zona de aves"},{id: 2,name:"Vejetacion"}]} 
-                            label={'objetivo'}
-                            style={{ display: 'inline', width: '200px' }}
-                          />
+                <Toolbar className={classes.toolbar}>
+                  <IconButton edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
+                    <ArrowBackIcon />
+                  </IconButton>
+                  <Typography variant='h6' className={classes.title}>
+                    Mission Elements
+                  </Typography>
+                </Toolbar>
+                <div className={classes.list}>
+                  <Box
+                    style={{
+                      display: 'flex',
+                      gap: '10px',
+                      flexDirection: 'column',
+                      margin: '20px',
+                    }}
+                  >
+                    <TextField
+                      required
+                      label='id'
+                      type='number'
+                      variant='standard'
+                      value={SendTask.id ? SendTask.id : 123}
+                      onChange={(event) => setSendTask({ ...SendTask, id: event.target.value })}
+                    />
+                    <TextField
+                      required
+                      label='Name Mission'
+                      variant='standard'
+                      value={SendTask.name ? SendTask.name : ' '}
+                      onChange={(event) => setSendTask({ ...SendTask, name: event.target.value })}
+                    />
+                    <SelectField
+                      emptyValue={null}
+                      value={SendTask.objetivo}
+                      onChange={(e) =>
+                        setSendTask({
+                          ...SendTask,
+                          objetivo: e.target.value,
+                        })
+                      }
+                      data={[
+                        { id: 0, name: 'Localizacion de inidencia' },
+                        { id: 1, name: 'zona de aves' },
+                        { id: 2, name: 'Vegetacion' },
+                      ]}
+                      label={'objetivo'}
+                      style={{ display: 'inline', width: '200px' }}
+                    />
 
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>localizacion incidentia 
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails className={classes.details}>
+                    <Accordion>
+                      <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography>localizacion incidentia</Typography>
+                      </AccordionSummary>
+                      <AccordionDetails className={classes.details}></AccordionDetails>
+                    </Accordion>
+                    <Accordion>
+                      <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography>Meteo</Typography>
+                      </AccordionSummary>
+                      <AccordionDetails className={classes.details}></AccordionDetails>
+                    </Accordion>
+                    <Divider></Divider>
+                    <Accordion>
+                      <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography>Mission Settings</Typography>
+                      </AccordionSummary>
+                      <AccordionDetails className={classes.details}>
+                        <BaseList mission={SendTask} setmission={setSendTask} />
                       </AccordionDetails>
-                </Accordion>
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>Meteo 
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails className={classes.details}>
+                    </Accordion>
+                    <Accordion>
+                      <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography>Elementos Interes</Typography>
+                      </AccordionSummary>
+                      <AccordionDetails className={classes.details}>
+                        <BaseList mission={SendTask} setmission={setSendTask} />
                       </AccordionDetails>
-                </Accordion>
-                <Divider></Divider>
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>Bases 
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails className={classes.details}>
-                      </AccordionDetails>
-                </Accordion>
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>Elementos Interes
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails className={classes.details}>
-                      </AccordionDetails>
-                </Accordion>
-              </Box>
-              </div>
+                    </Accordion>
+                  </Box>
+                </div>
               </Paper>
             </div>
           </div>
