@@ -180,21 +180,36 @@ export const RosControl = ({ children, notification }) => {
       );
     } else if (name_mission.endsWith('.kml')) {
       let xmlDocument = new DOMParser().parseFromString(text_mission, 'text/xml');
-      let mission_line = xmlDocument
-        .querySelector('coordinates')
-        .textContent.replace(/(\r\n|\n|\r|\t)/gm, '')
-        .split(' ');
-      let mission_array = mission_line.map((x) => x.split(','));
-      let mission_yaml = { uav_n: 1, uav_1: {} };
-      let count_wp = 0;
-      mission_array.forEach((element) => {
-        if (element.length == 3) {
-          mission_yaml.uav_1['wp_' + count_wp] = [element[1], element[0], element[2]];
-          count_wp = count_wp + 1;
-        }
+      let missionxml = xmlDocument.getElementsByTagName('coordinates');
+      let mission_line2 = Object.values(missionxml).map((x) => {
+        let mywp = x.textContent
+          .replace('\t1', '')
+          .replace(/(\r\n|\n|\r|\t)/gm, '')
+          .split(' ');
+        return mywp.map((point) => point.split(','));
       });
-      mission_yaml.uav_1['wp_n'] = count_wp;
-      //console.log(mission_yaml)
+      let mission_yaml = { uav_n: mission_line2.length };
+      let count_uav = 1;
+      mission_line2.forEach((route) => {
+        console.log(route);
+        let count_wp = 0;
+        mission_yaml['uav_' + count_uav] = {};
+        route.forEach((element) => {
+          //console.log(element);
+          if (element.length == 3) {
+            mission_yaml['uav_' + count_uav]['wp_' + count_wp] = [
+              element[1],
+              element[0],
+              element[2],
+            ];
+            count_wp = count_wp + 1;
+          }
+        });
+        mission_yaml['uav_' + count_uav]['wp_n'] = count_wp;
+        count_uav = count_uav + 1;
+      });
+
+      console.log(mission_yaml);
       dispatch(
         missionActions.updateMission({
           name: name_mission.slice(0, -4),

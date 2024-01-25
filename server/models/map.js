@@ -2,6 +2,7 @@ import * as turf from '@turf/turf';
 
 export class mapModel {
   static async ApiElevation(LocationList) {
+    console.log(LocationList);
     let myresponse = {};
     let divLocationList = [];
     let maxAPIlocation = 99;

@@ -29,9 +29,9 @@ import {
 import makeStyles from '@mui/styles/makeStyles';
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
-import { MissionPanel } from '../components/MissionPanel';
+import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
-import { SaveFile } from '../components/SaveFile';
+import SaveFile from '../components/SaveFile';
 import MapMarkers from '../Mapview/MapMarkers';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 const useStyles = makeStyles((theme) => ({

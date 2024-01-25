@@ -4,7 +4,7 @@ export class mapController {
   static async getElevation(req, res) {
     console.log('controller get all');
     let locations = req.query.locations;
-    let response = await mapModel.ApiElevation(locations);
+    let response = await mapModel.ApiElevation(JSON.parse(locations));
     res.json(response);
   }
   static async calcElevation(req, res) {

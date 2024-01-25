@@ -12,9 +12,9 @@ import { Paper } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
-import { MissionPanel } from '../components/MissionPanel';
+import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
-import { SaveFile } from '../components/SaveFile';
+import SaveFile from '../components/SaveFile';
 
 const useStyles = makeStyles((theme) => ({
   root: {

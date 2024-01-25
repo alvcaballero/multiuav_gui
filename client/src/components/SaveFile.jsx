@@ -103,6 +103,24 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
         xmlString += '</LineStyle>\n';
         xmlString += '</Style>\n';
       });
+      let init_elev = [];
+      for (const initwp of mission.route) {
+        //console.log(initwp.wp);
+        if (initwp.wp.length) {
+          let response = await fetch(
+            `/api/map/elevation?locations=[[${initwp.wp[0].pos[0]},${initwp.wp[0].pos[1]}]]`
+          );
+          if (response.ok) {
+            let myresponse = await response.json();
+            //console.log(myresponse.results);
+            init_elev.push(myresponse.results[0].elevation);
+          } else {
+            init_elev.push(0);
+          }
+        } else {
+          init_elev.push(0);
+        }
+      }
 
       mission.route.map((elem, elem_n) => {
         xmlString += '<Placemark>\n';
@@ -112,10 +130,17 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
         xmlString += '<LineString>\n';
         let auxcoord = '';
         elem.wp.map((mywp) => {
-          auxcoord = auxcoord + mywp.pos[1] + ',' + mywp.pos[0] + ',' + mywp.pos[2] + ' ';
+          auxcoord =
+            auxcoord +
+            mywp.pos[1] +
+            ',' +
+            mywp.pos[0] +
+            ',' +
+            Number(+mywp.pos[2] + +init_elev[elem_n]) +
+            ' ';
         });
         xmlString += '<tessellate>1</tessellate>\n';
-        xmlString += '<altitudeMode>relativeToGround</altitudeMode>\n';
+        xmlString += '<altitudeMode>absolute</altitudeMode>\n'; // relativeToGround
         xmlString += '<coordinates>\n';
         xmlString += auxcoord + '\n';
         xmlString += '</coordinates>\n';
