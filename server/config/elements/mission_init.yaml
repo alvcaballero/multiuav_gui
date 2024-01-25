@@ -8,7 +8,7 @@ bases:
 settings:
   type: 0
   loc:
-    - name: 'uno'
+    - name: 'lineas1'
       items:
         - latitude: 38.13584764267765
           longitude: -3.181036564547416
@@ -27,19 +27,21 @@ settings:
         - latitude: 38.13234494254377
           longitude: -3.199576034561804
   devices:
-    - deviceId: 0
+    - device_id: 0
+      device_category: 'dji_M300'
       speed_mission: 7
       speed_navegation: 15
       landing_mode: 0
-    - deviceId: 0
+    - device_id: 1
+      device_category: 'dji_M300'
       speed_mission: 7
       speed_navegation: 15
       landing_mode: 0
   mission:
-    - height: 0
+    - height: 10
       offset: 7
       tower: 10
-    - height: 0
+    - height: 10
       offset: 7
       tower: 10
   meteo:

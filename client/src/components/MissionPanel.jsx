@@ -29,7 +29,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const MissionPanel = ({ SetOpenSave }) => {
+const MissionPanel = ({ SetOpenSave }) => {
   const classes = useStyles();
   const navigate = useNavigate();
   const rosContex = useContext(RosContext);
@@ -155,3 +155,4 @@ export const MissionPanel = ({ SetOpenSave }) => {
     </Fragment>
   );
 };
+export default MissionPanel;

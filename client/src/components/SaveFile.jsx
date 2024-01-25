@@ -74,14 +74,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const SaveFile = ({ SetOpenSave, OpenSave }) => {
+const SaveFile = ({ SetOpenSave, OpenSave }) => {
   const classes = useStyles();
   const mission = useSelector((state) => state.mission);
 
   const [fileType, setFileType] = useState('yaml');
   const [fileName, setFileName] = useState(mission.name);
 
-  const SaveMission = () => {
+  const SaveMission = async () => {
     let fileData;
     let archivetype = 'text/plain';
     if (fileType == 'yaml') {
@@ -199,49 +199,48 @@ export const SaveFile = ({ SetOpenSave, OpenSave }) => {
   };
 
   return (
-    <>
-      <div className={classes.root}>
-        <Card elevation={3} className={classes.card}>
-          <div className={classes.header}>
-            <Typography variant='body2' color='textSecondary'>
-              Save Mission
-            </Typography>
-            <IconButton size='small' onClick={CloseSaveMission} onTouchStart={CloseSaveMission}>
-              <CloseIcon fontSize='small' />
-            </IconButton>
-          </div>
+    <div className={classes.root}>
+      <Card elevation={3} className={classes.card}>
+        <div className={classes.header}>
+          <Typography variant='body2' color='textSecondary'>
+            Save Mission
+          </Typography>
+          <IconButton size='small' onClick={CloseSaveMission} onTouchStart={CloseSaveMission}>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </div>
 
-          <CardContent className={classes.content}>
-            <TextField
-              required
-              label='Name Mission'
-              variant='standard'
-              value={fileName ? fileName : ' '}
-              onChange={(event) => setFileName(event.target.value)}
-              style={{ width: '300px', marginRight: '5px' }}
-            />
+        <CardContent className={classes.content}>
+          <TextField
+            required
+            label='Name Mission'
+            variant='standard'
+            value={fileName ? fileName : ' '}
+            onChange={(event) => setFileName(event.target.value)}
+            style={{ width: '300px', marginRight: '5px' }}
+          />
 
-            <FormControl>
-              <InputLabel>Type file mission</InputLabel>
-              <Select
-                label={'Type file mission'}
-                value={fileType}
-                onChange={(e) => setFileType(e.target.value)}
-                sx={{ width: '120px' }}
-              >
-                {['yaml', 'kml', 'waypoint', 'plan'].map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </CardContent>
-          <CardActions classes={{ root: classes.actions }} disableSpacing>
-            <Button onClick={SaveMission}>Save Mission</Button>
-          </CardActions>
-        </Card>
-      </div>
-    </>
+          <FormControl>
+            <InputLabel>Type file mission</InputLabel>
+            <Select
+              label={'Type file mission'}
+              value={fileType}
+              onChange={(e) => setFileType(e.target.value)}
+              sx={{ width: '120px' }}
+            >
+              {['yaml', 'kml', 'waypoint', 'plan'].map((item) => (
+                <MenuItem key={item} value={item}>
+                  {item}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </CardContent>
+        <CardActions classes={{ root: classes.actions }} disableSpacing>
+          <Button onClick={SaveMission}>Save Mission</Button>
+        </CardActions>
+      </Card>
+    </div>
   );
 };
+export default SaveFile;
