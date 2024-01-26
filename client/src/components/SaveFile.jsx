@@ -14,9 +14,10 @@ import {
   Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import palette from '../common/palette';
 import makeStyles from '@mui/styles/makeStyles';
 import YAML from 'yaml';
+
+import palette from '../common/palette';
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -103,7 +104,7 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
         xmlString += '</LineStyle>\n';
         xmlString += '</Style>\n';
       });
-      let init_elev = [];
+      let initElev = [];
       for (const initwp of mission.route) {
         //console.log(initwp.wp);
         if (initwp.wp.length) {
@@ -113,12 +114,12 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
           if (response.ok) {
             let myresponse = await response.json();
             //console.log(myresponse.results);
-            init_elev.push(myresponse.results[0].elevation);
+            initElev.push(myresponse.results[0].elevation);
           } else {
-            init_elev.push(0);
+            initElev.push(0);
           }
         } else {
-          init_elev.push(0);
+          initElev.push(0);
         }
       }
 
@@ -136,7 +137,7 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
             ',' +
             mywp.pos[0] +
             ',' +
-            Number(+mywp.pos[2] + +init_elev[elem_n]) +
+            Number(+mywp.pos[2] + +initElev[elem_n]) +
             ' ';
         });
         xmlString += '<tessellate>1</tessellate>\n';

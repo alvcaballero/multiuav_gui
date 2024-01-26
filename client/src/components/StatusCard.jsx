@@ -332,14 +332,13 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           </MenuItem>
         </Menu>
       )}
-      {
-        <RemoveDialog
-          open={removing}
-          endpoint='devices'
-          itemId={deviceId}
-          onResult={(removed) => handleRemove(removed)}
-        />
-      }
+
+      <RemoveDialog
+        open={removing}
+        endpoint='devices'
+        itemId={deviceId}
+        onResult={(removed) => handleRemove(removed)}
+      />
     </>
   );
 };
