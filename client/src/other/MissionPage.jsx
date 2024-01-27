@@ -15,6 +15,7 @@ import { MissionController } from '../components/MissionController';
 import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
+import MapScale from '../Mapview/MapScale';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -145,6 +146,7 @@ const MissionPage = () => {
                   showStatus
                 />
               </MapView>
+              <MapScale />
             </div>
           </div>
 

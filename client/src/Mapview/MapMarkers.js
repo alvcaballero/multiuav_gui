@@ -77,7 +77,7 @@ const MapMarkers = ({ markers, showTitles }) => {
 
   useEffect(() => {
     let markers_icons = listtoPoints(markers);
-    console.log(markers_icons);
+    //console.log(markers_icons);
     map.getSource(id)?.setData({
       type: 'FeatureCollection',
       features: markers_icons.map(({ latitude, longitude, image, title }) => ({

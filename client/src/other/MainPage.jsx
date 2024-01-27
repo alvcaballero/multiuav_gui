@@ -21,6 +21,7 @@ import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/MainToolbar';
 import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
 import MapScale from '../Mapview/MapScale';
+import MainMap from '../Mapview/MainMap';
 
 import { devicesActions } from '../store';
 
@@ -166,19 +167,11 @@ const MainPage = () => {
             height: `calc(100vh - 88px)`,
           }}
         >
-          <MapView>
-            <MapMarkers markers={markers} />
-            <MapMissions />
-
-            <MapPositions
-              positions={filteredPositions}
-              onClick={onMarkerClick}
-              selectedPosition={selectedPosition}
-              showStatus
-            />
-            <MapSelectedDevice />
-          </MapView>
-          <MapScale />
+          <MainMap
+            filteredPositions={filteredPositions}
+            markers={markers}
+            selectedPosition={selectedPosition}
+          />
         </div>
 
         <div className={classes.sidebarStyle}>

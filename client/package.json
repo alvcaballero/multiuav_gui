@@ -20,6 +20,7 @@
     "@turf/line-chunk": "^6.5.0",
     "@turf/turf": "^6.5.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "dayjs": "^1.11.10",
     "mapbox-gl": "^1.13.3",
     "maplibre-gl": "^3.6.1",
     "moment": "^2.29.4",

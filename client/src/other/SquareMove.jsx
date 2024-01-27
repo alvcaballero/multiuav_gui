@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import makeStyles from '@mui/styles/makeStyles';
 import { mapIconKey, mapIcons, frontIcons } from '../Mapview/preloadImages';
+import { Typography } from '@mui/material';
 //import styled from 'styled-components';
 
 const useStyles = makeStyles((theme) => ({
@@ -9,10 +10,10 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
     width: '200px',
     height: '200px',
-    left: '50px',
+    //left: '50px',
     backgroundColor: '#F7F9F9',
     overflow: 'hidden',
-    //margin: 'auto',
+    margin: 'auto',
   },
   box_down: {
     width: '100%',
@@ -145,7 +146,7 @@ const SquareMove = ({
   };
 
   return (
-    <div>
+    <div style={{ flex: 1, margin: '10px' }}>
       <div className={classes.root}>
         <div className={classes.box_left} style={{ left: `${left}%` }}></div>
         <div className={classes.box_right} style={{ right: `${right}%` }}></div>
@@ -171,6 +172,8 @@ const SquareMove = ({
           </>
         )}
       </div>
+      {!front_view && <Typography align='center'>Front view</Typography>}
+      {front_view && <Typography align='center'>Top view</Typography>}
 
       {test && (
         <div>

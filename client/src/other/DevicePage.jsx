@@ -13,27 +13,22 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  Box,
   BottomNavigation,
   BottomNavigationAction,
-  Button,
 } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import RestoreIcon from '@mui/icons-material/Restore';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ReplayIcon from '@mui/icons-material/Replay';
+import PublishIcon from '@mui/icons-material/Publish';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../components/PositionValue';
-import { useCatch } from '../reactHelper';
+import usePersistedState from '../common/usePersistedState';
 import SquareMove from './SquareMove';
-
-import MapView from '../Mapview/MapView';
-import MapPositions from '../Mapview/MapPositions';
-import MapMissions from '../Mapview/MapMissions';
-import MapMarkers from '../Mapview/MapMarkers';
-import MapSelectedDevice from '../Mapview/MapSelectedDevice';
-
+import useFilter from '../common/useFilter';
+import MainMap from '../Mapview/MainMap';
 import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
 import { CameraV1 } from '../components/CameraV1';
 
@@ -108,20 +103,47 @@ const DevicePage = () => {
 
   const [item, setItem] = useState();
   const [thisDevice, setthisdevice] = useState({});
-  const deviceposition = useSelector((state) => state.data.positions);
+  const positions = useSelector((state) => state.data.positions);
   const devicelist = useSelector((state) => state.devices.items);
+  const sessionmarkers = useSelector((state) => state.session.markers);
+
   const [savedId, setSavedId] = useState(0);
   const limitCommands = 0;
   const [markers, setmarkers] = useState([]);
-  const [filteredPositions, setFilteredPositions] = useState([]);
+
   const myhostname = `${window.location.hostname}`;
+  const [filteredPositions, setFilteredPositions] = useState([]);
+  const [filteredDevices, setFilteredDevices] = useState([]);
+  const [keyword, setKeyword] = useState('');
+  const [filter, setFilter] = usePersistedState('filter', {
+    statuses: [],
+    groups: [],
+  });
+  const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
+  const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
+  useFilter(
+    keyword,
+    filter,
+    filterSort,
+    filterMap,
+    positions,
+    setFilteredDevices,
+    setFilteredPositions
+  );
 
   const onMarkerClick = () => {};
   useEffect(() => {
+    setmarkers(sessionmarkers);
+  }, [sessionmarkers]);
+
+  useEffect(() => {
     if (id) {
-      setItem(deviceposition[id]);
+      setItem(positions[id]);
     }
-  }, [id, deviceposition]);
+  }, [id, positions]);
+  //  useEffect(() => {
+  //    console.log(filteredPositions);
+  //  }, [filteredPositions]);
 
   useEffect(() => {
     if (id) {
@@ -141,27 +163,17 @@ const DevicePage = () => {
         </Toolbar>
       </AppBar>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div
-          style={{
-            flex: 1,
-          }}
-        >
+        <div style={{ flex: 1 }}>
           <div
             style={{
               height: '50vh',
             }}
           >
-            <MapView>
-              <MapMarkers markers={markers} />
-              <MapMissions />
-              <MapPositions
-                positions={filteredPositions}
-                onClick={onMarkerClick}
-                selectedPosition={item}
-                showStatus
-              />
-              <MapSelectedDevice />
-            </MapView>
+            <MainMap
+              filteredPositions={filteredPositions}
+              markers={markers}
+              selectedPosition={id}
+            />
           </div>
           <div>
             {Object.keys(thisDevice).length > 0 && (
@@ -172,16 +184,19 @@ const DevicePage = () => {
         <div
           style={{
             flex: 1,
+            justifyContent: 'space-between',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <div style={{ height: '50vh' }} className={classes.content}>
-            <Container maxWidth='sm'>
+            <Container maxWidth='false'>
               <Paper>
                 <Table aria-label='simple table'>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Attribute</TableCell>
-                      <TableCell>value</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Attributes</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Value</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -211,34 +226,37 @@ const DevicePage = () => {
               </Paper>
             </Container>
           </div>
-          <div style={{ padding: '20px', margin: '10px' }}>
+          <div style={{ padding: '15px', margin: '10px' }}>
             <Paper>
-              <Typography align='center' variant='h5' component='div'>
+              <Typography align='center' variant='h5' component='div' style={{ padding: '15px' }}>
                 Avoidance sensor
               </Typography>
               {item && item.attributes && (
-                <div style={{ display: 'flex' }}>
+                <div style={{ display: 'flex', flex: 1 }}>
                   <SquareMove front_view={true} data={item.attributes.obstacle_info}></SquareMove>
-                  <div style={{ width: '10px' }}></div>
+
                   <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
                 </div>
               )}
             </Paper>
           </div>
 
-          <Box style={{ Button: '0px' }}>
-            <BottomNavigation
-              showLabels
-              value={value}
-              onChange={(event, newValue) => {
-                setValue(newValue);
-              }}
-            >
-              <BottomNavigationAction label='Recents' icon={<RestoreIcon />} />
-              <BottomNavigationAction label='Favorites' icon={<FavoriteIcon />} />
-              <BottomNavigationAction label='Nearby' icon={<LocationOnIcon />} />
-            </BottomNavigation>
-          </Box>
+          <div style={{ padding: '15px', marginTop: 'auto' }}>
+            <Paper>
+              <BottomNavigation
+                showLabels
+                value={value}
+                onChange={(event, newValue) => {
+                  setValue(newValue);
+                }}
+              >
+                <BottomNavigationAction label='Edit' icon={<EditIcon />} />
+                <BottomNavigationAction label='Result' icon={<ReplayIcon />} />
+                <BottomNavigationAction label='Command' icon={<PublishIcon />} />
+                <BottomNavigationAction label='Delete' icon={<DeleteIcon />} />
+              </BottomNavigation>
+            </Paper>
+          </div>
         </div>
       </div>
     </div>

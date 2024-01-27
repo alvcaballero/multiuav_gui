@@ -9,7 +9,7 @@ import { findFonts } from './mapUtil';
 import maplibregl from 'maplibre-gl';
 import palette from '../common/palette';
 
-export const MapMissions = () => {
+export const MapMissions = ({ deviceid = -1 }) => {
   const id = useId();
   const route_points = `${id}-points`;
   const clusters = `${id}-points-clusters`;
