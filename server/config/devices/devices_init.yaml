@@ -5,7 +5,7 @@ init:
     user: 'ubuntu'
     pwd: 'ubuntu'
     camera:
-      - type: 'WebRTC'
+      - type: 'Websocket'
         source: 'main'
 
   - name: 'uav_3'

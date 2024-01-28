@@ -173,6 +173,7 @@ const DevicePage = () => {
               filteredPositions={filteredPositions}
               markers={markers}
               selectedPosition={id}
+              filteredMissiondeviceid={id}
             />
           </div>
           <div>

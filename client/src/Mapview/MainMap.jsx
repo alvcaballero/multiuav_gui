@@ -9,7 +9,13 @@ import MapSelectedDevice from './MapSelectedDevice';
 import MapScale from './MapScale';
 import { devicesActions } from '../store';
 
-const MainMap = ({ filteredPositions, markers = [], selectedPosition, onEventsClick }) => {
+const MainMap = ({
+  filteredPositions,
+  markers = [],
+  selectedPosition,
+  filteredMissiondeviceid = -1,
+  onEventsClick,
+}) => {
   const dispatch = useDispatch();
   const onMarkerClick = useCallback(
     (_, deviceId) => {
@@ -21,7 +27,7 @@ const MainMap = ({ filteredPositions, markers = [], selectedPosition, onEventsCl
     <>
       <MapView>
         <MapMarkers markers={markers} />
-        <MapMissions />
+        <MapMissions filtereddeviceid={filteredMissiondeviceid} />
 
         <MapPositions
           positions={filteredPositions}

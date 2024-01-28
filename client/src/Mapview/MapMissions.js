@@ -9,11 +9,13 @@ import { findFonts } from './mapUtil';
 import maplibregl from 'maplibre-gl';
 import palette from '../common/palette';
 
-export const MapMissions = ({ deviceid = -1 }) => {
+export const MapMissions = ({ filtereddeviceid = -1 }) => {
   const id = useId();
   const route_points = `${id}-points`;
   const clusters = `${id}-points-clusters`;
   const routes = useSelector((state) => state.mission.route);
+  const devices = useSelector((state) => state.devices.items);
+
   const mapCluster = true;
   const iconScale = 0.6;
 
@@ -228,7 +230,12 @@ export const MapMissions = ({ deviceid = -1 }) => {
   }
 
   useEffect(() => {
-    let waypoint_position = routeTowaypoints(routes);
+    let routerfiltered = routes.filter(
+      (route) => filtereddeviceid < 0 || route.uav == devices[filtereddeviceid].name
+    );
+    console.log('mission filtered');
+    console.log(routerfiltered);
+    let waypoint_position = routeTowaypoints(routerfiltered);
 
     map.getSource(route_points).setData({
       type: 'FeatureCollection',
@@ -238,13 +245,13 @@ export const MapMissions = ({ deviceid = -1 }) => {
           type: 'Point',
           coordinates: [position.longitude, position.latitude],
         },
-        properties: createFeature(routes, position),
+        properties: createFeature(routerfiltered, position),
       })),
     });
 
     map.getSource(id).setData({
       type: 'FeatureCollection',
-      features: routes.map((route) => routesToFeature(route)),
+      features: routerfiltered.map((route) => routesToFeature(route)),
     });
   }, [routes]);
 

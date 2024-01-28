@@ -172,8 +172,8 @@ const SquareMove = ({
           </>
         )}
       </div>
-      {!front_view && <Typography align='center'>Front view</Typography>}
-      {front_view && <Typography align='center'>Top view</Typography>}
+      {!front_view && <Typography align='center'>Top view</Typography>}
+      {front_view && <Typography align='center'>Front view</Typography>}
 
       {test && (
         <div>
