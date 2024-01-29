@@ -2,7 +2,7 @@
 
 this project have been developed in ubuntu 18 with ros noetic and autopilot .
 
-For continue with this work i use ubuntu 22 y docker.
+For continue with this work I use ubuntu 22 and docker px4io/px4-dev-ros-noetic.
 
 # projects elements:
 
@@ -10,38 +10,56 @@ For continue with this work i use ubuntu 22 y docker.
 - Developed packages
 - User Interface
 
-## Autopilot
+## Install
 
-I dont have ubuntu 18 in my personal machine,this is reason for work with docker and beacuse docker do the thingks more easy to share proyect.
+I recommend before to init check this link for use docker with ROS [link ](https://roboticseabass.com/2021/04/21/docker-and-ros/) y el [docker hub](https://hub.docker.com/r/px4io/px4-dev-ros-melodic)
 
-To run the proyect we try to install the firmware folder for simulate a drone.
-por lo cual se uso la siguiente imagen de docker, si estas interesado en utilizar docker con ros puedes revisar este [link ](https://roboticseabass.com/2021/04/21/docker-and-ros/) y el [docker hub](https://hub.docker.com/r/px4io/px4-dev-ros-melodic)
-
-    docker pull px4io/px4-dev-ros-melodic
-
-se clono la el repositorio
-
-    git clone https://github.com/PX4/PX4-Autopilot.git --recursive
-
-y se esta usando el siguiente scrip para poder acceder a la maquina
-
-    ~/work/px4$ ./px4-docker-melodic.sh
-
-se siguio las instrucciones del siguiente [tutorial](https://docs.px4.io/main/en/test_and_ci/docker.html)
-
-y se ejecuto la siguiente linea de codigo para simular el Vtool
+Step 1:
 
 ```
+    docker pull px4io/px4-dev-ros-melodic
+
+```
+
+Step 2: clone the repository
+
+```
+    git clone https://github.com/PX4/PX4-Autopilot.git --recursive
+
+```
+
+if don't use recursive use `git submodule update --init --recursive`
+
+Step3:
+
+Use the file for up the container
+
+```
+    ~/work/px4$ ./px4-docker-melodic.sh
+```
+
+Step 4:
+
+Follow the instructions of this [tutorial of PX4](https://docs.px4.io/main/en/test_and_ci/docker.html)
+
+For simulate VTOL Run the following code:
+
+```
+
 export PX4_HOME_LAT=37.410415
 export PX4_HOME_LON=-6.002324
 export PX4_HOME_ALT=28.5
-    ~/src/PX$-Autopilot$ make px4_sitl gazebo_standard_vtol
+~/src/PX$-Autopilot$ make px4_sitl gazebo_standard_vtol
+
 ```
 
-    or
+or
+
+```
     make px4_sitl_default gazebo
 
     make px4_sitl gazebo_typhoon_h480 (este tiene camara)
+```
 
 y para conectar a ros se sigio el siguiente [tutorial](https://dev.px4.io/v1.9.0_noredirect/en/simulation/ros_interface.html).
 
@@ -49,17 +67,30 @@ y para conectar a ros se sigio el siguiente [tutorial](https://dev.px4.io/v1.9.0
 
 para usar utilizando las herramientas de Px4
 
+# multi uav
+
+https://docs.px4.io/v1.12/en/simulation/multi_vehicle_simulation_gazebo.html
+
+```
+cd Firmware_clone
+git submodule update --init --recursive
+DONT_RUN=1 make px4_sitl_default gazebo
+```
+
+```
     cd /home/user/src/PX4-Autopilot
-    source Tools/simulation/gazebo/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default
-    export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd):$(pwd)/Tools/simulation/gazebo/sitl_gazebo
+source Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd):$(pwd)/Tools/simulation/gazebo-classic/sitl_gazebo-classic
+```
 
 se baso en este link http://docs.px4.io/main/en/simulation/multi_vehicle_simulation_gazebo.html
 
-    roslaunch px4 multi_uav_mavros_sitl.launch
+    roslaunch px4 multi_uav_mavros_sitl.launch vehicle:="standard_vtol"
 
 ```
 
     roslaunch onboard_px4 px4-simulation.launch
+
 ```
 
 ## GNS - interfaz grafica
@@ -74,9 +105,9 @@ Para la interfaz se a realizado de la misma manera un contenedor en ros melodic,
 
 you need to download onboard-sdk4.1.0,and install it.
 
-> $mkdir build  
->$cd build  
-> $cmake..  
+> $mkdir build
+>$cd build
+> $cmake..
 >$sudo make -j7 install
 
 como no se puede compilar el archivo de px4 se tiene el siguiente archivo
@@ -107,10 +138,16 @@ ahora PX4 ya tiene una propia herramienta para la gestion de multi-uav por lo ca
 /home/arpa/work/px4/src/PX4-Autopilot/Tools/simulation/gazebo/sitl_gazebo/models/typhoon_h480
 
 se adio en la linea 404
+
+```
 <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
 <frame_name>cgo3_camera_link_optica</frame_name>
 </plugin>
+```
+
 ys e descubrio que el protocolo maplink manda por estos puertos las imagenes.
+
+```
 <plugin name="GstCameraPlugin" filename="libgazebo_gst_camera_plugin.so">
 <robotNamespace></robotNamespace>
 <udpHost>127.0.0.1</udpHost>
@@ -127,3 +164,5 @@ ys e descubrio que el protocolo maplink manda por estos puertos las imagenes.
 <cam_component_id>100</cam_component_id>
 <mavlink_cam_udp_port>14530</mavlink_cam_udp_port>
 </plugin>
+
+```

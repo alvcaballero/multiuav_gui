@@ -1,0 +1,60 @@
+# Author: TaeYoung Kim
+# email: tyoung96@yonsei.ac.kr
+
+FROM nvidia/cudagl:11.4.2-base-ubuntu20.04
+ 
+# Minimal setup
+RUN apt-get update \
+ && apt-get install -y locales lsb-release
+ARG DEBIAN_FRONTEND=noninteractive
+RUN dpkg-reconfigure locales
+ 
+# Install ROS Noetic
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ros-noetic-desktop-full
+RUN apt-get install -y --no-install-recommends python3-rosdep
+RUN rosdep init \
+ && rosdep fix-permissions \
+ && rosdep update
+RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+
+#add in /root/.bashrc 
+# source /opt/ros/noetic/setup.bash
+# source /home/user/catkin_ws/devel/setup.bash
+
+# Install PCL & Eigen & essential libraries
+RUN apt-get update 
+
+RUN apt-get install -y nano 
+RUN apt-get install -y ros-noetic-rosbridge-server
+
+# multimaster
+RUN apt-get install -y ros-noetic-fkie-master-sync 
+RUN apt-get install -y ros-noetic-fkie-master-discovery
+# ROS SDK DJI
+RUN apt-get install -y ros-noetic-nmea-comms
+RUN apt-get install -y ffmpeg libavcodec-dev libswresample-dev
+RUN apt-get install -y libsdl2-dev
+# install opencv 3.3.X
+
+
+# dependencies simple VS
+RUN apt-get install -y ros-noetic-cv-bridge ros-noetic-image-transport ros-noetic-theora-image-transport 
+RUN apt-get install -y ros-noetic-tf2-kdl
+RUN apt-get install -y ros-noetic-geodesy
+RUN apt-get install -y ros-noetic-tf2-geometry-msgs
+# install Gstreamer
+RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev libgstrtspserver-1.0-dev gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad
+
+#RUN /bin/bash -c '. /opt/ros/noetic/setup.bash;'
+
+#WORKDIR /root/ros2_ws
+
+# Load ROS environment at each run
+COPY ./ros_entrypoint.sh /
+RUN chmod 755 /ros_entrypoint.sh
+ENTRYPOINT ["/ros_entrypoint.sh"]
+
+CMD ["bash"]

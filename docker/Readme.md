@@ -1,4 +1,6 @@
-# OctoMap-ROS2
+# Prerequisites:
+
+check this link https://roboticseabass.com/2021/04/21/docker-and-ros/ for work good with docker.
 
 This repository uses a part of the [octomap_mapping](https://github.com/OctoMap/octomap_mapping) `ros2` branch.
 

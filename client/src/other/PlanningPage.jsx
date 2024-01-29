@@ -1,14 +1,4 @@
-//import "./MainPage.css";
-import React, { useContext, useState, useEffect } from 'react';
-
-import MapView from '../Mapview/MapView';
-import { Navbar } from '../components/Navbar';
-import { Menu } from '../components/Menu';
-import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
-import SelectField from '../common/components/SelectField';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import palette from '../common/palette';
-import BaseList from '../components/BaseList';
+import React, { useState, useEffect } from 'react';
 
 import { useSelector } from 'react-redux';
 
@@ -19,24 +9,41 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Divider,
   Button,
   TextField,
   Toolbar,
+  Tabs,
+  Tab,
   Typography,
 } from '@mui/material';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import TabPanel from '@mui/lab/TabPanel';
 
 import makeStyles from '@mui/styles/makeStyles';
+import { useNavigate } from 'react-router-dom';
+
+import MapView from '../Mapview/MapView';
+import { Navbar } from '../components/Navbar';
+import { Menu } from '../components/Menu';
+import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
+import SelectField from '../common/components/SelectField';
+import palette from '../common/palette';
+import BaseList from '../components/BaseList';
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
 import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
 import MapMarkers from '../Mapview/MapMarkers';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
 const useStyles = makeStyles((theme) => ({
   root: {
-    height: '100%',
+    margin: '0',
+    height: '100vh',
   },
   sidebarStyle: {
     display: 'flex',
@@ -137,6 +144,7 @@ const showToast = (type, description) => {
 
 const PlanningPage = () => {
   const classes = useStyles();
+  const navigate = useNavigate();
   const [Opensave, setOpenSave] = useState(false);
 
   const positions = useSelector((state) => state.data.positions);
@@ -152,6 +160,11 @@ const PlanningPage = () => {
     meteo: [],
     setting: [],
   });
+  const [value, setValue] = React.useState('1');
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
   useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
@@ -204,7 +217,7 @@ const PlanningPage = () => {
                     <ArrowBackIcon />
                   </IconButton>
                   <Typography variant='h6' className={classes.title}>
-                    Mission Elements
+                    Planning mission
                   </Typography>
                 </Toolbar>
                 <div className={classes.list}>
@@ -216,68 +229,100 @@ const PlanningPage = () => {
                       margin: '20px',
                     }}
                   >
-                    <TextField
-                      required
-                      label='id'
-                      type='number'
-                      variant='standard'
-                      value={SendTask.id ? SendTask.id : 123}
-                      onChange={(event) => setSendTask({ ...SendTask, id: event.target.value })}
-                    />
-                    <TextField
-                      required
-                      label='Name Mission'
-                      variant='standard'
-                      value={SendTask.name ? SendTask.name : ' '}
-                      onChange={(event) => setSendTask({ ...SendTask, name: event.target.value })}
-                    />
-                    <SelectField
-                      emptyValue={null}
-                      value={SendTask.objetivo}
-                      onChange={(e) =>
-                        setSendTask({
-                          ...SendTask,
-                          objetivo: e.target.value,
-                        })
-                      }
-                      data={[
-                        { id: 0, name: 'Localizacion de inidencia' },
-                        { id: 1, name: 'zona de aves' },
-                        { id: 2, name: 'Vegetacion' },
-                      ]}
-                      label={'objetivo'}
-                      style={{ display: 'inline', width: '200px' }}
-                    />
+                    <TabContext value={value}>
+                      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                        <TabList onChange={handleChange} aria-label='lab API tabs example'>
+                          <Tab label='Elements' value='1' />
+                          <Tab label='Planning' value='2' />
+                          <Tab label='Settings' value='3' />
+                        </TabList>
+                      </Box>
+                      <TabPanel value='1'>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Base elements</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <BaseList mission={SendTask} setmission={setSendTask} />
+                          </AccordionDetails>
+                        </Accordion>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Interest Elements</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <BaseList mission={SendTask} setmission={setSendTask} />
+                          </AccordionDetails>
+                        </Accordion>
+                      </TabPanel>
+                      <TabPanel value='2'>
+                        <TextField
+                          required
+                          label='id'
+                          type='number'
+                          variant='standard'
+                          value={SendTask.id ? SendTask.id : 123}
+                          onChange={(event) => setSendTask({ ...SendTask, id: event.target.value })}
+                        />
+                        <TextField
+                          required
+                          label='Name Mission'
+                          variant='standard'
+                          value={SendTask.name ? SendTask.name : ' '}
+                          onChange={(event) =>
+                            setSendTask({ ...SendTask, name: event.target.value })
+                          }
+                        />
+                        <SelectField
+                          emptyValue={null}
+                          value={SendTask.objetivo}
+                          onChange={(e) =>
+                            setSendTask({
+                              ...SendTask,
+                              objetivo: e.target.value,
+                            })
+                          }
+                          data={[
+                            { id: 0, name: 'Localizacion de inidencia' },
+                            { id: 1, name: 'zona de aves' },
+                            { id: 2, name: 'Vegetacion' },
+                          ]}
+                          label={'objetivo'}
+                          style={{ display: 'inline', width: '200px' }}
+                        />
 
-                    <Accordion>
-                      <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>localizacion incidentia</Typography>
-                      </AccordionSummary>
-                      <AccordionDetails className={classes.details}></AccordionDetails>
-                    </Accordion>
-                    <Accordion>
-                      <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>Meteo</Typography>
-                      </AccordionSummary>
-                      <AccordionDetails className={classes.details}></AccordionDetails>
-                    </Accordion>
-                    <Divider></Divider>
-                    <Accordion>
-                      <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>Mission Settings</Typography>
-                      </AccordionSummary>
-                      <AccordionDetails className={classes.details}>
-                        <BaseList mission={SendTask} setmission={setSendTask} />
-                      </AccordionDetails>
-                    </Accordion>
-                    <Accordion>
-                      <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography>Elementos Interes</Typography>
-                      </AccordionSummary>
-                      <AccordionDetails className={classes.details}>
-                        <BaseList mission={SendTask} setmission={setSendTask} />
-                      </AccordionDetails>
-                    </Accordion>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>localizacion incidentia</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}></AccordionDetails>
+                        </Accordion>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Meteo</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}></AccordionDetails>
+                        </Accordion>
+                      </TabPanel>
+                      <TabPanel value='3'>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Base 1 - UAV 2</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <BaseList mission={SendTask} setmission={setSendTask} />
+                          </AccordionDetails>
+                        </Accordion>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Base 2 - UAV 4</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <BaseList mission={SendTask} setmission={setSendTask} />
+                          </AccordionDetails>
+                        </Accordion>
+                      </TabPanel>
+                    </TabContext>
                   </Box>
                 </div>
               </Paper>

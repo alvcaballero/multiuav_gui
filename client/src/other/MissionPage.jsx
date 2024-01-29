@@ -1,5 +1,4 @@
-//import "./MainPage.css";
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import MapView from '../Mapview/MapView';
 import { Navbar } from '../components/Navbar';
 import { Menu } from '../components/Menu';
