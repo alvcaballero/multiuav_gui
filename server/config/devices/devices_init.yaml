@@ -52,3 +52,27 @@ init:
     category: 'fuvex'
     ip: '10.42.0.101'
     camera: []
+
+  - name: 'uav_10'
+    category: 'px4'
+    ip: '10.42.0.52'
+    user: 'rock'
+    camera:
+      - type: 'WebRTC'
+        source: 'video0'
+
+  - name: 'uav_11'
+    category: 'px4'
+    ip: '10.42.0.52'
+    user: 'rock'
+    camera:
+      - type: 'WebRTC'
+        source: 'video0'
+
+  - name: 'uav_12'
+    category: 'px4'
+    ip: '10.42.0.52'
+    user: 'rock'
+    camera:
+      - type: 'WebRTC'
+        source: 'video0'

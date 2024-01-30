@@ -18,7 +18,8 @@ import MapScale from '../Mapview/MapScale';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    height: '100%',
+    margin: '0',
+    height: '100vh',
   },
   sidebarStyle: {
     display: 'flex',
