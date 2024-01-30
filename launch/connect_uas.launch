@@ -6,7 +6,7 @@
         <rosparam param="listen_mcast">False</rosparam>
     </node>
     <node name="master_sync" pkg="fkie_master_sync" type="master_sync">
-        <rosparam param="sync_hosts">[grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia,khadas,grvs-dell-miguel]</rosparam>
+        <rosparam param="sync_hosts">[grvc-Xavier-NX,ubuntu,delta-pi,rock-4c-plus,nvidia,khadas,grvc-dell-miguel]</rosparam>
     </node>
 
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
