@@ -8,7 +8,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { map } from '../MapView';
 import { findFonts } from '../mapUtil';
 import { missionActions } from '../../store'; // here update device action with position of uav for update in map
-//import maplibregl from "maplibre-gl";
 import palette from '../../common/palette';
 import { MissionContext } from '../../components/MissionController';
 
@@ -83,10 +82,7 @@ export const MapMissionsCreate = () => {
     });
   }
   function onUp(e) {
-    var coords = e.lngLat;
-
-    // Print the coordinates of where the point had
-    // finished being dragged to on the map.
+    let coords = e.lngLat;
 
     canvas.style.cursor = '';
     let auxselectpoint = testkeepvalue.getSelectwp();
@@ -97,19 +93,38 @@ export const MapMissionsCreate = () => {
       lng: e.lngLat.lng,
       lat: e.lngLat.lat,
     });
-    //dispatch(
-    //  missionActions.updateWpPos({
-    //    wp_id: auxselectpoint.id,
-    //    route_id: auxselectpoint.route_id,
-    //    lng: e.lngLat.lng,
-    //    lat: e.lngLat.lat,
-    //  })
-    //);
+
     testkeepvalue.setSelecwp({ id: -1 });
     // Unbind mouse/touch events
     map.off('mousemove', onMove);
     map.off('touchmove', onMove);
   }
+
+  const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
+  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+
+  const onMouseDown = (e) => {
+    e.preventDefault();
+
+    testkeepvalue.setSelecwp(e.features[0].properties);
+
+    // when click  visualize in list
+    dispatch(missionActions.selectpoint(e.features[0].properties));
+
+    canvas.style.cursor = 'grab';
+    map.on('mousemove', onMove);
+    map.once('mouseup', onUp);
+  };
+  const onMouseTouchStart = (e) => {
+    if (e.points.length !== 1) return;
+    console.log('touch start');
+
+    // Prevent the default map drag behavior.
+    e.preventDefault();
+
+    map.on('touchmove', onMove);
+    map.once('touchend', onUp);
+  };
 
   const createFeature = (myroute, point) => {
     return {
@@ -204,47 +219,19 @@ export const MapMissionsCreate = () => {
           'text-size': 14,
         },
       });
-      map.on('mouseenter', 'mission-points', function () {
-        //map.setPaintProperty("point", "circle-color", "#3bb2d0");
-        canvas.style.cursor = 'move';
-      });
-      map.on('mouseleave', 'mission-points', function () {
-        //map.setPaintProperty("point", "circle-color", "#3887be");
-        canvas.style.cursor = '';
-      });
-      map.on('mousedown', 'mission-points', function (e) {
-        // Prevent the default map drag behavior.
-        e.preventDefault();
+      map.on('mouseenter', 'mission-points', onMouseEnter);
+      map.on('mouseleave', 'mission-points', onMouseLeave);
+      map.on('mousedown', 'mission-points', onMouseDown);
+      map.on('touchstart', 'mission-points', onMouseTouchStart);
 
-        testkeepvalue.setSelecwp(e.features[0].properties);
-
-        // when click  visualize in list
-        dispatch(missionActions.selectpoint(e.features[0].properties));
-
-        canvas.style.cursor = 'grab';
-        map.on('mousemove', onMove);
-        map.once('mouseup', onUp);
-      });
-      map.on('touchstart', 'mission-points', function (e) {
-        if (e.points.length !== 1) return;
-        console.log('touch start');
-
-        // Prevent the default map drag behavior.
-        e.preventDefault();
-
-        map.on('touchmove', onMove);
-        map.once('touchend', onUp);
-      });
-
-      map.on('click', function (e) {
-        // The event object (e) contains information like the
-        // coordinates of the point on the map that was clicked.
-        console.log('A click event has occurred at ' + e.lngLat);
-      });
       //https://stackoverflow.com/questions/72010274/stopping-map-on-listener-in-mapbox-gl-js
       //https://stackoverflow.com/questions/63036623/how-to-disable-an-event-listener-in-mapbox
       //map.off("click", "mission-points");
       return () => {
+        map.off('mouseenter', 'mission-points', onMouseEnter);
+        map.off('mouseleave', 'mission-points', onMouseLeave);
+        map.off('mousedown', 'mission-points', onMouseDown);
+        map.off('touchstart', 'mission-points', onMouseTouchStart);
         if (map.getLayer('mission-line')) {
           map.removeLayer('mission-line');
         }

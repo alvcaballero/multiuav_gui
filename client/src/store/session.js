@@ -46,7 +46,10 @@ const { reducer, actions } = createSlice({
     updateMarker(state, action) {
       state.markers = action.payload;
     },
-    addMarker(state, action) {
+    addMarkerElement(state, action) {
+      state.markers.push(...action.payload);
+    },
+    addMarkerBase(state, action) {
       state.markers.push(...action.payload);
     },
   },

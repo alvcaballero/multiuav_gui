@@ -1,6 +1,8 @@
 import React, { Fragment, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import makeStyles from '@mui/styles/makeStyles';
 import {
+  Divider,
   Box,
   Button,
   IconButton,
@@ -12,9 +14,13 @@ import {
 } from '@mui/material';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { missionActions } from '../store'; // here update device action with position of uav for update in map
 import palette from '../common/palette';
 import { map } from '../Mapview/MapView';
+import WaypointRouteList from './WaypointRouteList';
+import BaseList from './BaseList';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
@@ -50,41 +56,40 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
+const ElementList = ({ markers, setMarkers }) => {
   const classes = useStyles();
 
+  const dispatch = useDispatch();
+  const [init, setinit] = useState(false);
+  //const [open_routes, setOpen_routes] = useState(true);
+  const [expanded_route, setExpanded_route] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [BasesExist, setBasesExist] = useState(true);
 
-  const handleChange = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
-  };
-  const AddNewElement = () => {
-    let center = map.getCenter();
+  const setElement = (index, value) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers.push({ latitude: center.lat, longitude: center.lng });
+    auxMarkers[index].items = value;
     setMarkers(auxMarkers);
   };
-  const DeleteElement = (index) => {
+  const DeleteList = (index) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers.splice(index, 1);
     setMarkers(auxMarkers);
   };
+  const AddList = () => {
+    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    auxMarkers.push({ type: 'powerTower', name: 'Elements', linea: true, items: [] });
+    setMarkers(auxMarkers);
+  };
+  const handleChange = (panel) => (event, isExpanded) => {
+    setExpanded(isExpanded ? panel : false);
+  };
 
-  const changeLat = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers[index].latitude = value;
-    setMarkers(auxMarkers);
-  };
-  const changeLng = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers[index].longitude = value;
-    setMarkers(auxMarkers);
-  };
   useEffect(() => {
     if (markers) {
       markers.length > 0 ? setBasesExist(false) : setBasesExist(true);
     }
+    console.log(markers);
   }, [markers]);
 
   return (
@@ -96,7 +101,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
             size='large'
             sx={{ width: '80%', flexShrink: 0 }}
             style={{ marginTop: '15px' }}
-            onClick={AddNewElement}
+            onClick={AddList}
           >
             Create New Base
           </Button>
@@ -106,63 +111,45 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
           {React.Children.toArray(
             Object.values(markers).map((base, index, list) => (
               <Accordion
-                expanded={expanded === 'wp ' + index}
-                onChange={handleChange('wp ' + index)}
+                expanded={expanded === 'Elements ' + index}
+                onChange={handleChange('Elements ' + index)}
               >
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{type + ' ' + index}</Typography>
+                  <Typography sx={{ width: '33%', flexShrink: 0 }}>
+                    {'Elements ' + index}
+                  </Typography>
                   <IconButton
                     sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                    onClick={() => DeleteElement(index)}
+                    onClick={() => DeleteList(index)}
                   >
                     <DeleteIcon />
                   </IconButton>
                 </AccordionSummary>
                 <AccordionDetails className={classes.details}>
-                  {expanded === 'wp ' + index && (
+                  {expanded === 'Elements ' + index && (
                     <Fragment>
-                      <Box
-                        component='form'
-                        sx={{
-                          '& .MuiTextField-root': { m: 1 },
-                        }}
-                      >
-                        <div>
-                          <Typography variant='subtitle1' style={{ display: 'inline' }}>
-                            Position
-                          </Typography>
-                        </div>
-                        <TextField
-                          required
-                          label='Latitude '
-                          type='number'
-                          sx={{ width: '15ch' }}
-                          variant='standard'
-                          inputProps={{
-                            maxLength: 8,
-                            step: 0.0001,
-                          }}
-                          value={base.latitude}
-                          onChange={(e) => {
-                            changeLat(index, e.target.value);
-                          }}
-                        />
-                        <TextField
-                          required
-                          label='Longitud '
-                          type='number'
-                          variant='standard'
-                          sx={{ width: '15ch' }}
-                          inputProps={{
-                            maxLength: 8,
-                            step: 0.0001,
-                          }}
-                          value={base.longitude}
-                          onChange={(e) => {
-                            changeLng(index, e.target.value);
-                          }}
-                        />
-                      </Box>
+                      <TextField
+                        required
+                        label='Type'
+                        variant='standard'
+                        value={base.name ? base.name : ''}
+                      />
+                      <SelectField
+                        emptyValue={null}
+                        value={0}
+                        data={[
+                          { id: 0, name: 'Power Tower' },
+                          { id: 1, name: 'wind turbine' },
+                          { id: 2, name: 'Solar Panel' },
+                        ]}
+                        label='objetivo'
+                        style={{ display: 'inline', width: '200px' }}
+                      />
+                      <BaseList
+                        markers={base.items}
+                        setMarkers={(value) => setElement(index, value)}
+                        type='Element'
+                      />
                     </Fragment>
                   )}
                 </AccordionDetails>
@@ -174,9 +161,9 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
             size='large'
             sx={{ width: '80%', flexShrink: 0 }}
             style={{ marginTop: '15px' }}
-            onClick={AddNewElement}
+            onClick={AddList}
           >
-            Create New Base
+            Create List of Elements
           </Button>
         </div>
       )}
@@ -184,4 +171,4 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
   );
 };
 
-export default BaseList;
+export default ElementList;

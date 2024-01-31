@@ -57,11 +57,10 @@ export const Navbar = ({ SetAddUAVOpen }) => {
     };
   };
 
+  // https://www.youtube.com/watch?v=K3SshoCXC2g
   const loadElements = (e) => {
-    //https://www.youtube.com/watch?v=K3SshoCXC2g
     const file = e.target.files[0];
     if (!file) return;
-
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
@@ -75,15 +74,15 @@ export const Navbar = ({ SetAddUAVOpen }) => {
 
       let mission_line1 = xmlDocument.getElementsByTagName('coordinates');
       console.log(mission_line1);
-      let mission_array1 = Object.values(mission_line1).map((x) =>
+      const mission_array1 = Object.values(mission_line1).map((x) =>
         x.textContent
           .replace('\t1', '')
           .replace(/(\r\n|\n|\r|\t)/gm, '')
           .split(' ')
       );
-      let mission_array2 = mission_array1.map((x) => x.map((y) => y.split(',')));
+      const missionArray2 = mission_array1.map((x) => x.map((y) => y.split(',')));
       console.log(mission_array1);
-      console.log(mission_array2);
+      console.log(missionArray2);
       let markers = [];
       if (mission_array.length) {
         console.log('add markers');
@@ -91,29 +90,31 @@ export const Navbar = ({ SetAddUAVOpen }) => {
           return { latitude: Number(x[1]), longitude: Number(x[0]), image: 'base' };
         });
         console.log(markers);
-        dispatch(sessionActions.addMarker(markers));
+        dispatch(sessionActions.addMarkerBase(markers));
         return null;
       }
-      if (mission_array2.length) {
+      if (missionArray2.length) {
         console.log('add towers markers');
-        mission_array2.map((x, index, list) => {
+        missionArray2.map((x) => {
           console.log(x);
+          const myList = [];
           x.map((y) => {
             console.log(y);
             if (y.length > 1) {
-              markers.push({
-                latitude: Number(y[1]),
-                longitude: Number(y[0]),
-                image: 'powerTower',
-              });
+              myList.push({ latitude: Number(y[1]), longitude: Number(y[0]) });
             }
+            return null;
+          });
+          markers.push({
+            type: 'powerTower',
+            items: myList,
           });
         });
         console.log(markers);
         dispatch(sessionActions.addMarker(markers));
       }
 
-      //rosContex.openMision(file.name, fileReader.result);
+      // rosContex.openMision(file.name, fileReader.result);
     };
     fileReader.onerror = () => {
       console.log('error');
@@ -269,7 +270,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
                   handleClick();
                 }}
               >
-                Mission Elements
+                Planning
               </a>
             </div>
           </div>

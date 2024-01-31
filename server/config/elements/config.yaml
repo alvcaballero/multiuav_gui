@@ -92,7 +92,8 @@ missionTypes:
           default: 10
 
 bases:
-  - pos: { latitude: 38.1385113182596, longitude: -3.176305522392061 }
+  - latitude: 38.1385113182596
+    longitude: -3.176305522392061
     device: 1
 
   - latitude: 38.1384386169842

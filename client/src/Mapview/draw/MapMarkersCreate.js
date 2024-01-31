@@ -1,9 +1,9 @@
 import { useId, useEffect } from 'react';
 import { useTheme } from '@mui/styles';
-import { map } from './MapView';
-import { findFonts } from './mapUtil';
+import { map } from '../MapView';
+import { findFonts } from '../mapUtil';
 
-const MapMarkers = ({ markers, showTitles }) => {
+const MapMarkersCreate = ({ markers, showTitles }) => {
   const id = useId();
 
   const theme = useTheme();
@@ -53,6 +53,20 @@ const MapMarkers = ({ markers, showTitles }) => {
         },
       });
     }
+    map.on('click', id, (e) => {
+      console.log(e);
+    });
+    map.on('mouseenter', id, () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', id, () => {
+      map.getCanvas().style.cursor = '';
+    });
+    map.on('click', function (e) {
+      // The event object (e) contains information like the
+      // coordinates of the point on the map that was clicked.
+      console.log('A click event has occurred at ' + e.lngLat);
+    });
 
     return () => {
       if (map.getLayer(id)) {
@@ -75,7 +89,7 @@ const MapMarkers = ({ markers, showTitles }) => {
     }
     if (mylist.bases) {
       mylist.bases.forEach((items, item_index) => {
-        waypoints.push({ ...items, image: 'base', title: item_index });
+        waypoints.push({ ...items, image: 'base', title: 'b-' + item_index });
       });
     }
 
@@ -103,4 +117,4 @@ const MapMarkers = ({ markers, showTitles }) => {
   return null;
 };
 
-export default MapMarkers;
+export default MapMarkersCreate;

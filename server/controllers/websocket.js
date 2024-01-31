@@ -9,16 +9,12 @@ export class websocketController {
     const devices = await DevicesModel.getAll();
     const positions = await positionsModel.getAll();
     const server = await rosModel.serverStatus();
-    //console.log('devices');
-    //console.log(devices);
     let response = JSON.stringify({
       positions: Object.values(positions),
       server: { rosState: server.state },
       devices: Object.values(devices),
-      markers: init_mission_elements.markers,
+      markers: { bases: init_mission_elements.bases, elements: init_mission_elements.markers },
     });
-    //console.log('init');
-    //console.log(response);
     return response;
   }
 

@@ -4,9 +4,10 @@
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 import { useId, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import maplibregl from 'maplibre-gl';
+
 import { map } from './MapView';
 import { findFonts } from './mapUtil';
-import maplibregl from 'maplibre-gl';
 import palette from '../common/palette';
 
 export const MapMissions = ({ filtereddeviceid = -1 }) => {
@@ -18,6 +19,9 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
 
   const mapCluster = true;
   const iconScale = 0.6;
+
+  const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
+  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
   const createFeature = (myroute, point) => {
     return {
@@ -37,20 +41,20 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
     };
   };
 
-  function WaypoointDetail(e) {
+  const WaypointDetail = (e) => {
     console.log('target');
     console.log(e);
     let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${
       e.features[0].properties.uav
     }</b>
-    <span><a href="https://www.google.com/maps?q=${e.features[0].properties.latitude},${
+      <span><a href="https://www.google.com/maps?q=${e.features[0].properties.latitude},${
       e.features[0].properties.longitude
     }" target="_blank">
-    Point_${e.features[0].properties.id}</a></span></div>
-        <div><span>Route: ${e.features[0].properties.name}</span></div>
-        <div style="display:inline"><span> Height: </span><span>${e.features[0].properties.altitud.toFixed(
-          1
-        )}m </span></div>`;
+      Point_${e.features[0].properties.id}</a></span></div>
+          <div><span>Route: ${e.features[0].properties.name}</span></div>
+          <div style="display:inline"><span> Height: </span><span>${e.features[0].properties.altitud.toFixed(
+            1
+          )}m </span></div>`;
     html = e.features[0].properties.hasOwnProperty('speed')
       ? html +
         `<div style="display:inline"><span>Speed: </span><span>${e.features[0].properties.speed} m/s </span></div>`
@@ -89,7 +93,7 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
       .setLngLat(e.lngLat)
       .setHTML(html + html_action + html_atributes)
       .addTo(map);
-  }
+  };
 
   useEffect(() => {
     if (true) {
@@ -165,15 +169,14 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
           'text-size': 14,
         },
       });
-      map.on('click', 'mission-points', WaypoointDetail);
-      map.on('mouseenter', 'mission-points', () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-      map.on('mouseleave', 'mission-points', () => {
-        map.getCanvas().style.cursor = '';
-      });
+      map.on('click', 'mission-points', WaypointDetail);
+      map.on('mouseenter', 'mission-points', onMouseEnter);
+      map.on('mouseleave', 'mission-points', onMouseLeave);
 
       return () => {
+        map.off('click', 'mission-points', WaypointDetail);
+        map.off('mouseenter', 'mission-points', onMouseEnter);
+        map.off('mouseleave', 'mission-points', onMouseLeave);
         if (map.getLayer('mission-line')) {
           map.removeLayer('mission-line');
         }
@@ -235,11 +238,11 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
     );
     console.log('mission filtered');
     console.log(routerfiltered);
-    let waypoint_position = routeTowaypoints(routerfiltered);
+    let waypointPosition = routeTowaypoints(routerfiltered);
 
     map.getSource(route_points).setData({
       type: 'FeatureCollection',
-      features: waypoint_position.map((position) => ({
+      features: waypointPosition.map((position) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',

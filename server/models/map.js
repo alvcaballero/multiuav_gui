@@ -22,13 +22,12 @@ export class mapModel {
     );
     divLocationList.map((element) => console.log(element));
     //`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList}`
-    //`https://maps.googleapis.com/maps/api/elevation/json?locations=${stringLocationList}&key=AIzaSyBglf9crAofRVtqTqfz7ZpdATsZY_H3ZFE`
     console.log('response elevation----');
     for (let i = 0; i < stringLocationList.length; i = i + 1) {
       await fetch(`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList[i]}`)
         .then((response) => response.json())
         .catch(function (error) {
-          console.log('Hubo un problema con la petición Fetch:' + error.message);
+          console.log('Problem in  Fetch:' + error.message);
           return myresponse;
         })
         .then((body) => {

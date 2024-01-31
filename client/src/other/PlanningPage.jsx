@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import {
   Paper,
@@ -29,16 +29,17 @@ import { useNavigate } from 'react-router-dom';
 import MapView from '../Mapview/MapView';
 import { Navbar } from '../components/Navbar';
 import { Menu } from '../components/Menu';
-import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
+import MapMissions from '../Mapview/MapMissions';
 import SelectField from '../common/components/SelectField';
 import palette from '../common/palette';
 import BaseList from '../components/BaseList';
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
-import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
-import MapMarkers from '../Mapview/MapMarkers';
+import MapMarkersCreate from '../Mapview/draw/MapMarkersCreate';
+import MapScale from '../Mapview/MapScale';
+import ElementList from '../components/ElementList';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -51,7 +52,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'fixed',
     left: 0,
     top: '88px',
-    height: `calc(100% - 95px)`,
+    height: 'calc(100% - 95px)',
     width: '560px',
     margin: '0px',
     zIndex: 3,
@@ -66,8 +67,8 @@ const useStyles = makeStyles((theme) => ({
     position: 'fixed',
     right: 0,
     bottom: 0,
-    height: `30vh`,
-    width: `calc(100% - 560px)`,
+    height: '30vh',
+    width: 'calc(100% - 560px)',
     margin: '0px',
     zIndex: 3,
   },
@@ -95,50 +96,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 const showToast = (type, description) => {
-  switch (type) {
-    case 'success':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Success',
-        description: description,
-        backgroundColor: '#5cb85c',
-      };
-      break;
-    case 'danger':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Danger',
-        description: description,
-        backgroundColor: '#d9534f',
-      };
-      break;
-    case 'error':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Danger',
-        description: description,
-        backgroundColor: '#d9534f',
-      };
-      break;
-    case 'info':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Info',
-        description: description,
-        backgroundColor: '#5bc0de',
-      };
-      break;
-    case 'warning':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Warning',
-        description: description,
-        backgroundColor: '#f0ad4e',
-      };
-      break;
-    default:
-      toastProperties = [];
-  }
   setList([...list, toastProperties]);
 };
 
@@ -151,7 +108,7 @@ const PlanningPage = () => {
   const sessionmarkers = useSelector((state) => state.session.markers);
 
   const [filteredPositions, setFilteredPositions] = useState([]);
-  const [markers, setmarkers] = useState([]);
+  const [markers, setMarkers] = useState({ bases: [], elements: [] });
   const [SendTask, setSendTask] = useState({
     id: 1234,
     name: 'no mission',
@@ -165,8 +122,16 @@ const PlanningPage = () => {
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
+
+  const setMarkersBase = (value) => {
+    setMarkers({ ...markers, bases: value });
+  };
+  const setMarkersElements = (value) => {
+    setMarkers({ ...markers, elements: value });
+  };
+
   useEffect(() => {
-    setmarkers(sessionmarkers);
+    setMarkers(sessionmarkers);
   }, [sessionmarkers]);
 
   useEffect(() => {
@@ -181,32 +146,18 @@ const PlanningPage = () => {
           <Menu />
           <div
             style={{
-              position: 'relative',
-              width: '100%',
-              height: `calc(100vh - 95px)`,
+              float: 'right',
+              width: 'calc(100% - 560px)',
+              height: 'calc(70vh - 95px)',
+              right: '0px',
+              margin: 'auto',
             }}
           >
-            <div
-              style={{
-                display: 'inline-block',
-                position: 'relative',
-                width: '560px',
-                height: '100%',
-              }}
-            ></div>
-            <div
-              style={{
-                display: 'inline-block',
-                position: 'relative',
-                width: `calc(100vw - 575px)`,
-                height: '100%',
-              }}
-            >
-              <MapView>
-                <MapMissionsCreate />
-                <MapMarkers markers={markers} />
-              </MapView>
-            </div>
+            <MapView>
+              <MapMissions />
+              <MapMarkersCreate markers={markers} showTitles={true} />
+            </MapView>
+            <MapScale />
           </div>
 
           <div className={classes.sidebarStyle}>
@@ -243,7 +194,7 @@ const PlanningPage = () => {
                             <Typography>Base elements</Typography>
                           </AccordionSummary>
                           <AccordionDetails className={classes.details}>
-                            <BaseList mission={SendTask} setmission={setSendTask} />
+                            <BaseList markers={markers.bases} setMarkers={setMarkersBase} />
                           </AccordionDetails>
                         </Accordion>
                         <Accordion>
@@ -251,58 +202,67 @@ const PlanningPage = () => {
                             <Typography>Interest Elements</Typography>
                           </AccordionSummary>
                           <AccordionDetails className={classes.details}>
-                            <BaseList mission={SendTask} setmission={setSendTask} />
+                            <ElementList
+                              markers={markers.elements}
+                              setMarkers={setMarkersElements}
+                            ></ElementList>
                           </AccordionDetails>
                         </Accordion>
                       </TabPanel>
                       <TabPanel value='2'>
-                        <TextField
-                          required
-                          label='id'
-                          type='number'
-                          variant='standard'
-                          value={SendTask.id ? SendTask.id : 123}
-                          onChange={(event) => setSendTask({ ...SendTask, id: event.target.value })}
-                        />
-                        <TextField
-                          required
-                          label='Name Mission'
-                          variant='standard'
-                          value={SendTask.name ? SendTask.name : ' '}
-                          onChange={(event) =>
-                            setSendTask({ ...SendTask, name: event.target.value })
-                          }
-                        />
-                        <SelectField
-                          emptyValue={null}
-                          value={SendTask.objetivo}
-                          onChange={(e) =>
-                            setSendTask({
-                              ...SendTask,
-                              objetivo: e.target.value,
-                            })
-                          }
-                          data={[
-                            { id: 0, name: 'Localizacion de inidencia' },
-                            { id: 1, name: 'zona de aves' },
-                            { id: 2, name: 'Vegetacion' },
-                          ]}
-                          label={'objetivo'}
-                          style={{ display: 'inline', width: '200px' }}
-                        />
+                        <Box>
+                          <TextField
+                            required
+                            fullWidth
+                            label='id'
+                            type='number'
+                            variant='standard'
+                            value={SendTask.id ? SendTask.id : 123}
+                            onChange={(event) =>
+                              setSendTask({ ...SendTask, id: event.target.value })
+                            }
+                          />
+                          <TextField
+                            required
+                            fullWidth
+                            label='Name Mission'
+                            variant='standard'
+                            value={SendTask.name ? SendTask.name : ' '}
+                          />
+                          <SelectField
+                            fullWidth
+                            emptyValue={null}
+                            value={SendTask.objetivo}
+                            onChange={(e) =>
+                              setSendTask({
+                                ...SendTask,
+                                objetivo: e.target.value,
+                              })
+                            }
+                            data={[
+                              { id: 0, name: 'Electic line Inspection' },
+                              { id: 1, name: 'Electric tower Inspection' },
+                              { id: 2, name: 'Vegetation fire inspection' },
+                            ]}
+                            label={'objetive'}
+                            style={{ display: 'inline', width: '200px' }}
+                          />
 
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>localizacion incidentia</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}></AccordionDetails>
-                        </Accordion>
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Meteo</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}></AccordionDetails>
-                        </Accordion>
+                          <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Typography>Points to inspect </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.details}></AccordionDetails>
+                          </Accordion>
+                          <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Typography>Meteo</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.details}>
+                              <Typography>Meteo</Typography>
+                            </AccordionDetails>
+                          </Accordion>
+                        </Box>
                       </TabPanel>
                       <TabPanel value='3'>
                         <Accordion>
@@ -310,7 +270,7 @@ const PlanningPage = () => {
                             <Typography>Base 1 - UAV 2</Typography>
                           </AccordionSummary>
                           <AccordionDetails className={classes.details}>
-                            <BaseList mission={SendTask} setmission={setSendTask} />
+                            <Typography>Meteo</Typography>
                           </AccordionDetails>
                         </Accordion>
                         <Accordion>
@@ -318,7 +278,7 @@ const PlanningPage = () => {
                             <Typography>Base 2 - UAV 4</Typography>
                           </AccordionSummary>
                           <AccordionDetails className={classes.details}>
-                            <BaseList mission={SendTask} setmission={setSendTask} />
+                            <Typography>Meteo</Typography>
                           </AccordionDetails>
                         </Accordion>
                       </TabPanel>
