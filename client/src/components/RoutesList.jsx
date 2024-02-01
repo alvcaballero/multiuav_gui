@@ -39,7 +39,7 @@ const useStyles = makeStyles((theme) => ({
     gap: theme.spacing(2),
     paddingBottom: theme.spacing(3),
   },
-  attributeName: {
+  attribute: {
     display: 'inline-block',
     width: '40%',
     textAlign: 'left',
@@ -312,10 +312,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                               {item_route.attributes && (
                                 <Fragment key={'fragment-route-atri-' + item_route.id}>
                                   <div>
-                                    <Typography
-                                      variant='subtitle1'
-                                      className={classes.attributeName}
-                                    >
+                                    <Typography variant='subtitle1' className={classes.attribute}>
                                       Speed Mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
@@ -348,10 +345,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography
-                                      variant='subtitle1'
-                                      className={classes.attributeName}
-                                    >
+                                    <Typography variant='subtitle1' className={classes.attribute}>
                                       Speed idle (m/s):
                                     </Typography>
                                     <TextField
@@ -379,10 +373,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     />
                                   </div>
                                   <div>
-                                    <Typography
-                                      variant='subtitle1'
-                                      className={classes.attributeName}
-                                    >
+                                    <Typography variant='subtitle1' className={classes.attribute}>
                                       Speed MAX (m/s):
                                     </Typography>
                                     <TextField
@@ -410,10 +401,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     />
                                   </div>
                                   <div>
-                                    <Typography
-                                      variant='subtitle1'
-                                      className={classes.attributeName}
-                                    >
+                                    <Typography variant='subtitle1' className={classes.attribute}>
                                       landing mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
@@ -447,10 +435,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography
-                                      variant='subtitle1'
-                                      className={classes.attributeName}
-                                    >
+                                    <Typography variant='subtitle1' className={classes.attribute}>
                                       Yaw mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
@@ -481,12 +466,8 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography
-                                      variant='subtitle1'
-                                      className={classes.attributeName}
-                                    >
-                                      {' '}
-                                      Gimbal mode{' '}
+                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                      Gimbal mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
                                       <SelectField
@@ -518,10 +499,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography
-                                      variant='subtitle1'
-                                      className={classes.attributeName}
-                                    >
+                                    <Typography variant='subtitle1' className={classes.attribute}>
                                       Trace mode:
                                     </Typography>
                                     <div className={classes.attributeValue}>

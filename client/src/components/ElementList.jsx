@@ -107,7 +107,7 @@ const ElementList = ({ markers, setMarkers }) => {
           </Button>
         </Box>
       ) : (
-        <div>
+        <div className={classes.details}>
           {React.Children.toArray(
             Object.values(markers).map((base, index, list) => (
               <Accordion

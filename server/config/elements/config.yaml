@@ -1,3 +1,9 @@
+types:
+  - 'path'
+  - 'point'
+  - 'object'
+  - 'area'
+
 missionTypes:
   - id: 0
     name: 'Inspeccion de linea'
@@ -61,8 +67,38 @@ missionTypes:
           default: 10
 
   - id: 2
-    name: 'inspeccion de Vegetacion'
+    name: 'inspeccion de lidar'
     type: 'path'
+    setting:
+      devices:
+        deviceId:
+          type: 'number'
+          name: 'device'
+          default: 0
+        speed_mission:
+          type: 'number'
+          name: 'Speed Mission'
+          default: 7
+        speed_navegation:
+          type: 'number'
+          name: 'Speed Navegation'
+          default: 15
+      mission:
+        height:
+          type: 'number'
+          name: 'Height'
+          default: 10
+        offset:
+          type: 'number'
+          name: 'offset'
+          default: 10
+        tower:
+          type: 'number'
+          name: 'height tower'
+          default: 10
+  - id: 3
+    name: 'inspeccion de vegetacion'
+    type: 'point'
     setting:
       devices:
         deviceId:

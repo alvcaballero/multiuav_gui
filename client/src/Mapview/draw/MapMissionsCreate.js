@@ -11,23 +11,28 @@ import { missionActions } from '../../store'; // here update device action with 
 import palette from '../../common/palette';
 import { MissionContext } from '../../components/MissionController';
 
-class keepvalue {
+class keepValue {
   constructor() {
     this.routes = [];
     this.selecwp = { id: -1 };
   }
+
   initroute(routes) {
     this.routes = JSON.parse(JSON.stringify(routes));
   }
+
   getroute() {
     return this.routes;
   }
+
   setroute(routes) {
     this.routes = routes;
   }
+
   getSelectwp() {
     return this.selecwp;
   }
+
   setSelecwp(value) {
     this.selecwp = value;
   }
@@ -35,38 +40,41 @@ class keepvalue {
 
 export const MapMissionsCreate = () => {
   const id = useId();
-  const route_points = `${id}-points`;
+  const routePoints = `${id}-points`;
   const clusters = `${id}-points-clusters`;
   const routes = useSelector((state) => state.mission.route);
   const selecwp = useSelector((state) => state.mission.selectpoint);
   const mapCluster = true;
   const iconScale = 0.6;
   const dispatch = useDispatch();
-  const [testkeepvalue, settestkeepvalue] = useState(new keepvalue());
+  const [testkeepValue, settestkeepValue] = useState(new keepValue());
   const missionContext = useContext(MissionContext);
 
   let canvas = map.getCanvasContainer();
 
-  function onMove(e) {
+  const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
+  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+
+  const onMove = (e) => {
     let coords = e.lngLat;
     // Set a UI indicator for dragging.
     canvas.style.cursor = 'grabbing';
     // Update the Point feature in `geojson` coordinates
     // and call setData to the source layer `point` on it.
     console.log('on move point' + coords.lng + '-' + coords.lat);
-    let auxroute = testkeepvalue.getroute();
+    let auxroute = testkeepValue.getroute();
     //console.log(auxroute);
 
-    let auxselectpoint = testkeepvalue.getSelectwp();
+    let auxselectpoint = testkeepValue.getSelectwp();
     if (auxselectpoint.id >= 0) {
       auxroute[auxselectpoint.route_id]['wp'][auxselectpoint.id]['pos'][0] = e.lngLat.lat;
       auxroute[auxselectpoint.route_id]['wp'][auxselectpoint.id]['pos'][1] = e.lngLat.lng;
     }
 
-    let waypoint_position = routeTowaypoints(auxroute);
-    map.getSource(route_points).setData({
+    let waypointPosition = routeTowaypoints(auxroute);
+    map.getSource(routePoints).setData({
       type: 'FeatureCollection',
-      features: waypoint_position.map((position) => ({
+      features: waypointPosition.map((position) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',
@@ -80,12 +88,12 @@ export const MapMissionsCreate = () => {
       type: 'FeatureCollection',
       features: auxroute.map((route) => routesToFeature(route)),
     });
-  }
-  function onUp(e) {
+  };
+  const onUp = (e) => {
     let coords = e.lngLat;
 
     canvas.style.cursor = '';
-    let auxselectpoint = testkeepvalue.getSelectwp();
+    let auxselectpoint = testkeepValue.getSelectwp();
     console.log(`Longitude: ${coords.lng} Latitude: ${coords.lat}`);
     missionContext.setChangeWp({
       wp_id: auxselectpoint.id,
@@ -94,19 +102,16 @@ export const MapMissionsCreate = () => {
       lat: e.lngLat.lat,
     });
 
-    testkeepvalue.setSelecwp({ id: -1 });
+    testkeepValue.setSelecwp({ id: -1 });
     // Unbind mouse/touch events
     map.off('mousemove', onMove);
     map.off('touchmove', onMove);
-  }
-
-  const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
-  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+  };
 
   const onMouseDown = (e) => {
     e.preventDefault();
 
-    testkeepvalue.setSelecwp(e.features[0].properties);
+    testkeepValue.setSelecwp(e.features[0].properties);
 
     // when click  visualize in list
     dispatch(missionActions.selectpoint(e.features[0].properties));
@@ -147,7 +152,7 @@ export const MapMissionsCreate = () => {
   useEffect(() => {
     console.log('render');
     if (true) {
-      map.addSource(route_points, {
+      map.addSource(routePoints, {
         type: 'geojson',
         data: {
           type: 'FeatureCollection',
@@ -191,7 +196,7 @@ export const MapMissionsCreate = () => {
       map.addLayer({
         id: 'mission-points',
         type: 'symbol',
-        source: route_points,
+        source: routePoints,
         filter: ['!has', 'point_count'],
         layout: {
           'icon-image': 'background-{color}',
@@ -209,7 +214,7 @@ export const MapMissionsCreate = () => {
       map.addLayer({
         id: clusters,
         type: 'symbol',
-        source: route_points,
+        source: routePoints,
         filter: ['has', 'point_count'],
         layout: {
           'icon-image': 'background',
@@ -247,8 +252,8 @@ export const MapMissionsCreate = () => {
         if (map.getSource(id)) {
           map.removeSource(id);
         }
-        if (map.getSource(route_points)) {
-          map.removeSource(route_points);
+        if (map.getSource(routePoints)) {
+          map.removeSource(routePoints);
         }
       };
     }
@@ -289,13 +294,13 @@ export const MapMissionsCreate = () => {
 
   useEffect(() => {
     console.log('Mapmission upload mission');
-    //console.log(routes);
-    testkeepvalue.initroute(routes);
-    let waypoint_position = routeTowaypoints(routes);
+    // console.log(routes);
+    testkeepValue.initroute(routes);
+    let waypointPosition = routeTowaypoints(routes);
 
-    map.getSource(route_points).setData({
+    map.getSource(routePoints).setData({
       type: 'FeatureCollection',
-      features: waypoint_position.map((position) => ({
+      features: waypointPosition.map((position) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',

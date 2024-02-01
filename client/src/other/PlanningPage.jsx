@@ -13,18 +13,18 @@ import {
   TextField,
   Toolbar,
   Tabs,
+  Divider,
   Tab,
   Typography,
 } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-
-import TabContext from '@mui/lab/TabContext';
-import TabList from '@mui/lab/TabList';
-import TabPanel from '@mui/lab/TabPanel';
+import { TabPanel, TabList, TabContext } from '@mui/lab';
 
 import makeStyles from '@mui/styles/makeStyles';
 import { useNavigate } from 'react-router-dom';
+
+import { sessionActions } from '../store';
 
 import MapView from '../Mapview/MapView';
 import { Navbar } from '../components/Navbar';
@@ -102,7 +102,11 @@ const showToast = (type, description) => {
 const PlanningPage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [Opensave, setOpenSave] = useState(false);
+  const [showTitles, setShowTitles] = useState(true);
+  const [showLines, setShowLines] = useState(true);
+  const [moveMarkers, SetMoveMarkers] = useState(false);
 
   const positions = useSelector((state) => state.data.positions);
   const sessionmarkers = useSelector((state) => state.session.markers);
@@ -117,10 +121,13 @@ const PlanningPage = () => {
     meteo: [],
     setting: [],
   });
-  const [value, setValue] = React.useState('1');
+  const [tabValue, setTabValue] = React.useState('2');
 
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
+  const TabHandleChange = (event, newTabValue) => {
+    setTabValue(newTabValue);
+    newTabValue == 2 || newTabValue == 1 ? setShowTitles(true) : setShowTitles(false);
+    newTabValue == 1 ? setShowLines(true) : setShowLines(false);
+    newTabValue == 1 ? SetMoveMarkers(true) : SetMoveMarkers(false);
   };
 
   const setMarkersBase = (value) => {
@@ -128,6 +135,13 @@ const PlanningPage = () => {
   };
   const setMarkersElements = (value) => {
     setMarkers({ ...markers, elements: value });
+  };
+
+  const SetSelectMarkers = () => {};
+
+  const SetMarkers = (value) => {
+    // setMarkers(value);
+    dispatch(sessionActions.updateMarker(value));
   };
 
   useEffect(() => {
@@ -155,7 +169,14 @@ const PlanningPage = () => {
           >
             <MapView>
               <MapMissions />
-              <MapMarkersCreate markers={markers} showTitles={true} />
+              <MapMarkersCreate
+                markers={markers}
+                showTitles={showTitles}
+                showLines={showLines}
+                moveMarkers={moveMarkers}
+                setMarkers={SetMarkers}
+                SelectItems={SetSelectMarkers}
+              />
             </MapView>
             <MapScale />
           </div>
@@ -180,37 +201,40 @@ const PlanningPage = () => {
                       margin: '20px',
                     }}
                   >
-                    <TabContext value={value}>
+                    <TabContext value={tabValue}>
                       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <TabList onChange={handleChange} aria-label='lab API tabs example'>
+                        <TabList onChange={TabHandleChange} aria-label='lab API tabs example'>
                           <Tab label='Elements' value='1' />
                           <Tab label='Planning' value='2' />
                           <Tab label='Settings' value='3' />
                         </TabList>
                       </Box>
                       <TabPanel value='1'>
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Base elements</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <BaseList markers={markers.bases} setMarkers={setMarkersBase} />
-                          </AccordionDetails>
-                        </Accordion>
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Interest Elements</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <ElementList
-                              markers={markers.elements}
-                              setMarkers={setMarkersElements}
-                            ></ElementList>
-                          </AccordionDetails>
-                        </Accordion>
+                        <div className={classes.details}>
+                          <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Typography>Base elements</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.details}>
+                              <BaseList markers={markers.bases} setMarkers={setMarkersBase} />
+                            </AccordionDetails>
+                          </Accordion>
+                          <Divider />
+                          <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Typography>Interest Elements</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.details}>
+                              <ElementList
+                                markers={markers.elements}
+                                setMarkers={setMarkersElements}
+                              />
+                            </AccordionDetails>
+                          </Accordion>
+                        </div>
                       </TabPanel>
                       <TabPanel value='2'>
-                        <Box>
+                        <Box className={classes.details}>
                           <TextField
                             required
                             fullWidth
@@ -254,6 +278,7 @@ const PlanningPage = () => {
                             </AccordionSummary>
                             <AccordionDetails className={classes.details}></AccordionDetails>
                           </Accordion>
+                          <Divider />
                           <Accordion>
                             <AccordionSummary expandIcon={<ExpandMore />}>
                               <Typography>Meteo</Typography>
@@ -265,22 +290,24 @@ const PlanningPage = () => {
                         </Box>
                       </TabPanel>
                       <TabPanel value='3'>
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Base 1 - UAV 2</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <Typography>Meteo</Typography>
-                          </AccordionDetails>
-                        </Accordion>
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Base 2 - UAV 4</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <Typography>Meteo</Typography>
-                          </AccordionDetails>
-                        </Accordion>
+                        <div className={classes.details}>
+                          <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Typography>Base 1 - UAV 2</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.details}>
+                              <Typography>Meteo</Typography>
+                            </AccordionDetails>
+                          </Accordion>
+                          <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Typography>Base 2 - UAV 4</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.details}>
+                              <Typography>Meteo</Typography>
+                            </AccordionDetails>
+                          </Accordion>
+                        </div>
                       </TabPanel>
                     </TabContext>
                   </Box>

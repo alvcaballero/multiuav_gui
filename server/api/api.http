@@ -129,7 +129,15 @@ GET http://localhost:4000/api/files/download/mission_1243/uav_15/DJI_20231124131
 ### list files
 GET http://localhost:4000/api/files/routes
 
+### planning
+### get planning
+GET http://localhost:4000/api/planning/mission
 
+### get planning
+GET http://localhost:4000/api/planning/missionstype
+
+### get planning
+GET http://localhost:4000/api/planning/missionparam/0
 
 ### Ros
 

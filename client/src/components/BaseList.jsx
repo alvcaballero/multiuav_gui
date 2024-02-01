@@ -40,7 +40,7 @@ const useStyles = makeStyles((theme) => ({
     textAlign: 'left',
     verticalAlign: 'middle',
   },
-  attributeValue: {
+  attribute: {
     display: 'inline-block',
     width: '58%',
   },
@@ -102,7 +102,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
           </Button>
         </Box>
       ) : (
-        <div>
+        <div className={classes.details}>
           {React.Children.toArray(
             Object.values(markers).map((base, index, list) => (
               <Accordion
@@ -169,15 +169,17 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
               </Accordion>
             ))
           )}
-          <Button
-            variant='contained'
-            size='large'
-            sx={{ width: '80%', flexShrink: 0 }}
-            style={{ marginTop: '15px' }}
-            onClick={AddNewElement}
-          >
-            Create New Base
-          </Button>
+          <Box textAlign='center'>
+            <Button
+              variant='contained'
+              size='large'
+              sx={{ width: '80%', flexShrink: 0 }}
+              style={{ marginTop: '15px' }}
+              onClick={AddNewElement}
+            >
+              Create new Base
+            </Button>
+          </Box>
         </div>
       )}
     </Fragment>
