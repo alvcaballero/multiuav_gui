@@ -10,6 +10,7 @@ export class planningModel {
       id: mission.id,
       name: mission.name,
       type: mission.type,
+      description: mission.description,
     }));
   }
   static getParam(type) {

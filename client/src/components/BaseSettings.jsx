@@ -50,7 +50,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
+const BaseSettings = ({ markers, setMarkers, type = 'Base' }) => {
   const classes = useStyles();
 
   const [expanded, setExpanded] = useState(false);
@@ -62,7 +62,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
   const AddNewElement = () => {
     let center = map.getCenter();
     let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers.push({ latitude: center.lat, longitude: center.lng, device: {}, mission: {} });
+    auxMarkers.push({ latitude: center.lat, longitude: center.lng });
     setMarkers(auxMarkers);
   };
   const DeleteElement = (index) => {
@@ -91,15 +91,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
     <Fragment>
       {BasesExist ? (
         <Box textAlign='center'>
-          <Button
-            variant='contained'
-            size='large'
-            sx={{ width: '80%', flexShrink: 0 }}
-            style={{ marginTop: '15px' }}
-            onClick={AddNewElement}
-          >
-            Create New Base
-          </Button>
+          <Typography>dont exits base</Typography>
         </Box>
       ) : (
         <div className={classes.details}>
@@ -169,21 +161,10 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
               </Accordion>
             ))
           )}
-          <Box textAlign='center'>
-            <Button
-              variant='contained'
-              size='large'
-              sx={{ width: '80%', flexShrink: 0 }}
-              style={{ marginTop: '15px' }}
-              onClick={AddNewElement}
-            >
-              Create new Base
-            </Button>
-          </Box>
         </div>
       )}
     </Fragment>
   );
 };
 
-export default BaseList;
+export default BaseSettings;

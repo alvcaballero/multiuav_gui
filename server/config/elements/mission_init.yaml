@@ -1,9 +1,29 @@
 bases:
   - latitude: 38.1385113182596
     longitude: -3.176305522392061
+    device:
+      device_id: 0
+      device_category: 'dji_M300'
+      speed_mission: 7
+      speed_navegation: 15
+      landing_mode: 0
+    mission:
+      height: 10
+      offset: 7
+      tower: 10
 
   - latitude: 38.1384386169842
     longitude: -3.176704744391102
+    device:
+      device_id: 1
+      device_category: 'dji_M300'
+      speed_mission: 7
+      speed_navegation: 15
+      landing_mode: 0
+    mission:
+      height: 10
+      offset: 7
+      tower: 10
 
 settings:
   type: 0

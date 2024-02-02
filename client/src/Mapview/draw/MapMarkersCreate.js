@@ -39,6 +39,7 @@ const MapMarkersCreate = ({
   setMarkers,
   SelectItems,
   CreateItems,
+  setLocations,
 }) => {
   const id = useId();
   const linesMarkers = `${id}-lines`;
@@ -48,13 +49,28 @@ const MapMarkersCreate = ({
   const [testkeepValue, settestkeepValue] = useState(new keepMarkers());
 
   const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
+  const onMouseEnterPointer = () => (map.getCanvas().style.cursor = 'pointer');
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
-  const onMouseClick = (e) => console.log(e);
+  const onMouseClick = (e) => {
+    if (e.hasOwnProperty('features')) {
+      //console.log(e.features[0]);
+      if (e.features[0].properties.type == 'element') {
+        setLocations(e.features[0].properties);
+      }
+    } else {
+      setLocations({
+        latitude: e.lngLat.lat,
+        longitude: e.lngLat.lng,
+        groupId: 0,
+        id: 0,
+        type: 'select',
+      });
+    }
+  };
   const onMove = (e) => {
     // Set a UI indicator for dragging.
     map.getCanvas().style.cursor = 'grabbing';
     console.log('on move point' + e.lngLat.lng + '-' + e.lngLat.lat);
-
     // Update the Point feature in `geojson` coordinates
     // and call setData to the source layer `point` on it.
     let auxMarkers = testkeepValue.getMarkers();
@@ -206,6 +222,8 @@ const MapMarkersCreate = ({
       });
     }
     if (SelectItems) {
+      map.on('mouseenter', id, onMouseEnterPointer);
+      map.on('mouseleave', id, onMouseLeave);
       map.on('click', id, onMouseClick);
     }
     if (CreateItems) {
@@ -220,7 +238,9 @@ const MapMarkersCreate = ({
 
     return () => {
       map.off('click', onMouseClick);
+
       map.off('click', id, onMouseClick);
+      map.off('mouseenter', id, onMouseEnterPointer);
       map.off('mouseenter', id, onMouseEnter);
       map.off('mouseleave', id, onMouseLeave);
       map.off('mousedown', id, onMouseDown);
@@ -233,12 +253,12 @@ const MapMarkersCreate = ({
         map.removeLayer('markers-line');
       }
     };
-  }, [showTitles, showLines, moveMarkers]);
+  }, [showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
 
-  function listtoPoints(mylist) {
+  function listtoPoints(myList) {
     const waypoints = [];
-    if (mylist.elements) {
-      mylist.elements.forEach((conjunto, index_cj) => {
+    if (myList.elements) {
+      myList.elements.forEach((conjunto, index_cj) => {
         conjunto.items.forEach((items, itemIndex) => {
           waypoints.push({
             ...items,
@@ -251,8 +271,8 @@ const MapMarkersCreate = ({
         });
       });
     }
-    if (mylist.bases) {
-      mylist.bases.forEach((items, itemIndex) => {
+    if (myList.bases) {
+      myList.bases.forEach((items, itemIndex) => {
         waypoints.push({
           ...items,
           type: 'base',
@@ -268,9 +288,8 @@ const MapMarkersCreate = ({
   }
 
   function markerstolines(item, index) {
-    let waypoint_pos = Object.values(item.items).map(function (it) {
-      return [it['latitude'], it['longitude']];
-    });
+    let waypoint_pos = Object.values(item.items).map((it) => [it['longitude'], it['latitude']]);
+    //console.log(waypoint_pos);
     return {
       id: item.id,
       type: 'Feature',
@@ -279,7 +298,7 @@ const MapMarkersCreate = ({
         coordinates: waypoint_pos,
       },
       properties: {
-        name: item.name, //name,
+        name: item.name, // name,
         color: palette.colors_devices[index],
       },
     };
@@ -304,7 +323,7 @@ const MapMarkersCreate = ({
       type: 'FeatureCollection',
       features: markers.elements.map((element, index) => markerstolines(element, index)),
     });
-  }, [markers, showTitles, showLines, moveMarkers]);
+  }, [markers]);
 
   return null;
 };

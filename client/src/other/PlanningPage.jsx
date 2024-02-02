@@ -33,6 +33,7 @@ import MapMissions from '../Mapview/MapMissions';
 import SelectField from '../common/components/SelectField';
 import palette from '../common/palette';
 import BaseList from '../components/BaseList';
+import BaseSettings from '../components/BaseSettings';
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
 import MissionElevation from '../components/MissionElevation';
@@ -40,6 +41,8 @@ import SaveFile from '../components/SaveFile';
 import MapMarkersCreate from '../Mapview/draw/MapMarkersCreate';
 import MapScale from '../Mapview/MapScale';
 import ElementList from '../components/ElementList';
+import { useEffectAsync } from '../reactHelper';
+import { SettingsOutlined } from '@mui/icons-material';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -107,21 +110,19 @@ const PlanningPage = () => {
   const [showTitles, setShowTitles] = useState(true);
   const [showLines, setShowLines] = useState(true);
   const [moveMarkers, SetMoveMarkers] = useState(false);
+  const [SelectMarkers, SetSelectMarkers] = useState(false);
+  const [CreateMarkers, SetCreateMarkers] = useState(false);
+  const [descriptionObject, Setdescription] = useState('select elements in the map');
 
   const positions = useSelector((state) => state.data.positions);
   const sessionmarkers = useSelector((state) => state.session.markers);
+  const sessionplanning = useSelector((state) => state.session.planning);
 
   const [filteredPositions, setFilteredPositions] = useState([]);
-  const [markers, setMarkers] = useState({ bases: [], elements: [] });
-  const [SendTask, setSendTask] = useState({
-    id: 1234,
-    name: 'no mission',
-    objetivo: 0,
-    loc: [],
-    meteo: [],
-    setting: [],
-  });
-  const [tabValue, setTabValue] = React.useState('2');
+  const [markers, setMarkers] = useState(sessionmarkers);
+  const [SendTask, setSendTask] = useState(sessionplanning);
+  const [tabValue, setTabValue] = useState('2');
+  const [setting, setsetting] = useState('');
 
   const TabHandleChange = (event, newTabValue) => {
     setTabValue(newTabValue);
@@ -132,25 +133,92 @@ const PlanningPage = () => {
 
   const setMarkersBase = (value) => {
     setMarkers({ ...markers, bases: value });
+    setSendTask((oldSendtask) => {
+      let auxbases = value.map((base) => {
+        if (!base.device.hasOwnProperty('id')) {
+          base.device = oldSendtask.settings.device;
+          base.missions = oldSendtask.settings.mission;
+        }
+        return base;
+      });
+      return { ...oldSendtask, bases: auxbases };
+    });
   };
   const setMarkersElements = (value) => {
     setMarkers({ ...markers, elements: value });
   };
-
-  const SetSelectMarkers = () => {};
-
-  const SetMarkers = (value) => {
-    // setMarkers(value);
-    dispatch(sessionActions.updateMarker(value));
+  const SetMapMarkers = (value) => {
+    setMarkers(value);
   };
+  const setLocations = (value) => {
+    setSendTask({ ...SendTask, loc: value });
+  };
+  const managepoints = (old, point, objetivo) => {
+    if (objetivo == 0 || objetivo == 0) {
+      if (old.length == 0) {
+        old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
+      } else {
+        const samerute = old.find((element) => element.items[0].groupId == point.groupId);
+        if (samerute === undefined) {
+          old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
+        } else {
+          old[+old.length - +1].items.push(point);
+        }
+      }
+    }
+    if (objetivo == 3 || objetivo == 1) {
+      old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
+    }
+
+    return old;
+  };
+  const addLocations = (value) => {
+    console.log(value);
+    setSendTask((oldSendtask) => {
+      let auxloc = JSON.parse(JSON.stringify(oldSendtask.loc));
+      return { ...oldSendtask, loc: managepoints(auxloc, value, oldSendtask.objetivo) };
+    });
+  };
+
+  useEffectAsync(async () => {
+    const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo}`);
+    if (response.ok) {
+      setsetting(await response.json());
+    } else {
+      throw Error(await response.text());
+    }
+  }, [SendTask.objetivo]);
+
+  useEffect(() => {
+    console.log(setting);
+    if (setting.hasOwnProperty('mission')) {
+      setSendTask({ ...SendTask, setting: setting });
+    }
+  }, [setting]);
+
+  useEffect(() => {
+    tabValue == 2 && SendTask.objetivo != 3 ? SetSelectMarkers(true) : SetSelectMarkers(false);
+    tabValue == 2 && SendTask.objetivo == 3 ? SetCreateMarkers(true) : SetCreateMarkers(false);
+  }, [tabValue, SendTask.objetivo]);
 
   useEffect(() => {
     setMarkers(sessionmarkers);
   }, [sessionmarkers]);
 
   useEffect(() => {
+    setSendTask(sessionplanning);
+  }, [sessionplanning]);
+
+  useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
+  useEffect(() => {
+    dispatch(sessionActions.updateMarker(markers));
+  }, [markers]);
+
+  useEffect(() => {
+    dispatch(sessionActions.updatePlanning(SendTask));
+  }, [SendTask]);
 
   return (
     <div className={classes.root}>
@@ -174,8 +242,10 @@ const PlanningPage = () => {
                 showTitles={showTitles}
                 showLines={showLines}
                 moveMarkers={moveMarkers}
-                setMarkers={SetMarkers}
-                SelectItems={SetSelectMarkers}
+                setMarkers={SetMapMarkers}
+                SelectItems={SelectMarkers}
+                CreateItems={CreateMarkers}
+                setLocations={addLocations}
               />
             </MapView>
             <MapScale />
@@ -252,31 +322,35 @@ const PlanningPage = () => {
                             label='Name Mission'
                             variant='standard'
                             value={SendTask.name ? SendTask.name : ' '}
+                            onChange={(event) =>
+                              setSendTask({ ...SendTask, name: event.target.value })
+                            }
                           />
                           <SelectField
-                            fullWidth
                             emptyValue={null}
-                            value={SendTask.objetivo}
-                            onChange={(e) =>
-                              setSendTask({
-                                ...SendTask,
-                                objetivo: e.target.value,
-                              })
-                            }
-                            data={[
-                              { id: 0, name: 'Electic line Inspection' },
-                              { id: 1, name: 'Electric tower Inspection' },
-                              { id: 2, name: 'Vegetation fire inspection' },
-                            ]}
+                            fullWidth={true}
                             label={'objetive'}
-                            style={{ display: 'inline', width: '200px' }}
+                            value={SendTask.objetivo}
+                            endpoint={'/api/planning/missionstype'}
+                            keyGetter={(it) => it.id}
+                            titleGetter={(it) => it.name}
+                            onChange={(e, items) => {
+                              setSendTask({ ...SendTask, objetivo: e.target.value });
+                              console.log(items[e.target.value]);
+                              Setdescription(items[e.target.value].description);
+                            }}
                           />
 
                           <Accordion>
                             <AccordionSummary expandIcon={<ExpandMore />}>
                               <Typography>Points to inspect </Typography>
                             </AccordionSummary>
-                            <AccordionDetails className={classes.details}></AccordionDetails>
+                            <AccordionDetails className={classes.details}>
+                              <div className={classes.details}>
+                                <Typography>{descriptionObject}</Typography>
+                                <ElementList markers={SendTask.loc} setMarkers={setLocations} />
+                              </div>
+                            </AccordionDetails>
                           </Accordion>
                           <Divider />
                           <Accordion>
@@ -291,22 +365,18 @@ const PlanningPage = () => {
                       </TabPanel>
                       <TabPanel value='3'>
                         <div className={classes.details}>
-                          <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography>Base 1 - UAV 2</Typography>
-                            </AccordionSummary>
-                            <AccordionDetails className={classes.details}>
-                              <Typography>Meteo</Typography>
-                            </AccordionDetails>
-                          </Accordion>
-                          <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography>Base 2 - UAV 4</Typography>
-                            </AccordionSummary>
-                            <AccordionDetails className={classes.details}>
-                              <Typography>Meteo</Typography>
-                            </AccordionDetails>
-                          </Accordion>
+                          <BaseSettings markers={markers.bases} setMarkers={setMarkersBase} />
+
+                          <Box textAlign='center'>
+                            <Button
+                              variant='contained'
+                              size='large'
+                              sx={{ width: '80%', flexShrink: 0 }}
+                              style={{ marginTop: '15px' }}
+                            >
+                              Plannig
+                            </Button>
+                          </Box>
                         </div>
                       </TabPanel>
                     </TabContext>

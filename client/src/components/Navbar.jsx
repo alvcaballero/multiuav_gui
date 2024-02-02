@@ -69,6 +69,12 @@ export const Navbar = ({ SetAddUAVOpen }) => {
       console.log(xmlDocument);
       let mission_line = xmlDocument.getElementsByTagName('Point');
       console.log(mission_line);
+      let mission_array = Object.values(mission_line).map((x) =>
+        x.textContent
+          .replace('\t1', '')
+          .replace(/(\r\n|\n|\r|\t)/gm, '')
+          .split(',')
+      );
 
       console.log(mission_array);
 
@@ -111,7 +117,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
           });
         });
         console.log(markers);
-        dispatch(sessionActions.addMarker(markers));
+        dispatch(sessionActions.addMarkerElement(markers));
       }
 
       // rosContex.openMision(file.name, fileReader.result);

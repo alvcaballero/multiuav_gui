@@ -115,9 +115,7 @@ const ElementList = ({ markers, setMarkers }) => {
                 onChange={handleChange('Elements ' + index)}
               >
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>
-                    {'Elements ' + index}
-                  </Typography>
+                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{'Group ' + index}</Typography>
                   <IconButton
                     sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
                     onClick={() => DeleteList(index)}
@@ -130,7 +128,7 @@ const ElementList = ({ markers, setMarkers }) => {
                     <Fragment>
                       <TextField
                         required
-                        label='Type'
+                        label='Name'
                         variant='standard'
                         value={base.name ? base.name : ''}
                       />
@@ -142,7 +140,7 @@ const ElementList = ({ markers, setMarkers }) => {
                           { id: 1, name: 'wind turbine' },
                           { id: 2, name: 'Solar Panel' },
                         ]}
-                        label='objetivo'
+                        label='Type'
                         style={{ display: 'inline', width: '200px' }}
                       />
                       <BaseList
@@ -156,15 +154,17 @@ const ElementList = ({ markers, setMarkers }) => {
               </Accordion>
             ))
           )}
-          <Button
-            variant='contained'
-            size='large'
-            sx={{ width: '80%', flexShrink: 0 }}
-            style={{ marginTop: '15px' }}
-            onClick={AddList}
-          >
-            Create List of Elements
-          </Button>
+          <Box textAlign='center'>
+            <Button
+              variant='contained'
+              size='large'
+              sx={{ width: '80%', flexShrink: 0 }}
+              style={{ marginTop: '15px' }}
+              onClick={AddList}
+            >
+              Create List of Elements
+            </Button>
+          </Box>
         </div>
       )}
     </Fragment>

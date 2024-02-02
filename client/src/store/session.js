@@ -8,7 +8,16 @@ const { reducer, actions } = createSlice({
     socket: null,
     positions: {},
     history: {},
-    markers: [],
+    markers: { bases: [], elements: [] },
+    planning: {
+      id: 1234,
+      name: 'no mission',
+      objetivo: 0,
+      loc: [],
+      meteo: [],
+      bases: [],
+      settings: {},
+    },
   },
   reducers: {
     updateServer(state, action) {
@@ -47,10 +56,13 @@ const { reducer, actions } = createSlice({
       state.markers = action.payload;
     },
     addMarkerElement(state, action) {
-      state.markers.push(...action.payload);
+      state.markers.elements.push(...action.payload);
     },
     addMarkerBase(state, action) {
-      state.markers.push(...action.payload);
+      state.markers.bases.push(...action.payload);
+    },
+    updatePlanning(state, action) {
+      state.planning = action.payload;
     },
   },
 });
