@@ -108,7 +108,7 @@ const PlanningPage = () => {
   const dispatch = useDispatch();
   const [Opensave, setOpenSave] = useState(false);
   const [showTitles, setShowTitles] = useState(true);
-  const [showLines, setShowLines] = useState(true);
+  const [showLines, setShowLines] = useState(false);
   const [moveMarkers, SetMoveMarkers] = useState(false);
   const [SelectMarkers, SetSelectMarkers] = useState(false);
   const [CreateMarkers, SetCreateMarkers] = useState(false);
@@ -122,7 +122,7 @@ const PlanningPage = () => {
   const [markers, setMarkers] = useState(sessionmarkers);
   const [SendTask, setSendTask] = useState(sessionplanning);
   const [tabValue, setTabValue] = useState('2');
-  const [setting, setsetting] = useState('');
+  const [settings, setsettings] = useState('');
 
   const TabHandleChange = (event, newTabValue) => {
     setTabValue(newTabValue);
@@ -131,18 +131,27 @@ const PlanningPage = () => {
     newTabValue == 1 ? SetMoveMarkers(true) : SetMoveMarkers(false);
   };
 
-  const setMarkersBase = (value) => {
+  const setMarkersBase = (value, meta = {}) => {
     setMarkers({ ...markers, bases: value });
-    setSendTask((oldSendtask) => {
-      let auxbases = value.map((base) => {
-        if (!base.device.hasOwnProperty('id')) {
-          base.device = oldSendtask.settings.device;
-          base.missions = oldSendtask.settings.mission;
-        }
-        return base;
-      });
-      return { ...oldSendtask, bases: auxbases };
-    });
+    if (meta.hasOwnProperty('meth')) {
+      if (meta.meth == 'add') {
+        setSendTask((oldSendtask) => {
+          let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
+          auxbases.push({
+            device: oldSendtask.settings.device,
+            missions: oldSendtask.settings.mission,
+          });
+          return { ...oldSendtask, bases: auxbases };
+        });
+      }
+      if (meta.meth == 'del') {
+        setSendTask((oldSendtask) => {
+          let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
+          auxbases.split(meta.index, 1);
+          return { ...oldSendtask, bases: auxbases };
+        });
+      }
+    }
   };
   const setMarkersElements = (value) => {
     setMarkers({ ...markers, elements: value });
@@ -183,18 +192,46 @@ const PlanningPage = () => {
   useEffectAsync(async () => {
     const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo}`);
     if (response.ok) {
-      setsetting(await response.json());
+      setsettings(await response.json());
     } else {
       throw Error(await response.text());
     }
   }, [SendTask.objetivo]);
+  useEffect(() => {
+    if (SendTask.bases.length != markers.bases.length) {
+    }
+  }, []);
 
   useEffect(() => {
-    console.log(setting);
-    if (setting.hasOwnProperty('mission')) {
-      setSendTask({ ...SendTask, setting: setting });
+    console.log(settings);
+    if (settings.hasOwnProperty('mission')) {
+      if (SendTask.bases.length == 0) {
+        let config = [];
+        markers.bases.forEach((element) => {
+          let auxconfig = {};
+          Object.keys(settings).map((key) => {
+            auxconfig[key] = {};
+          });
+          Object.keys(settings.devices).map((key) => {
+            auxconfig['devices'][key] = settings['devices'][key].default;
+          });
+          Object.keys(settings.mission).map((key) => {
+            auxconfig['mission'][key] = settings['mission'][key].default;
+          });
+
+          config.push(auxconfig);
+        });
+        setSendTask((SendTaskold) => {
+          let auxSendtask = JSON.parse(JSON.stringify(SendTaskold));
+          auxSendtask.bases = config;
+          auxSendtask.settings = settings;
+          return auxSendtask;
+        });
+      } else {
+        setSendTask({ ...SendTask, settings: settings });
+      }
     }
-  }, [setting]);
+  }, [settings]);
 
   useEffect(() => {
     tabValue == 2 && SendTask.objetivo != 3 ? SetSelectMarkers(true) : SetSelectMarkers(false);
@@ -365,7 +402,7 @@ const PlanningPage = () => {
                       </TabPanel>
                       <TabPanel value='3'>
                         <div className={classes.details}>
-                          <BaseSettings markers={markers.bases} setMarkers={setMarkersBase} />
+                          <BaseSettings markers={SendTask.bases} setMarkers={setMarkersBase} />
 
                           <Box textAlign='center'>
                             <Button

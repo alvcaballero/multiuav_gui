@@ -63,23 +63,23 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
     let center = map.getCenter();
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers.push({ latitude: center.lat, longitude: center.lng, device: {}, mission: {} });
-    setMarkers(auxMarkers);
+    setMarkers(auxMarkers, { meth: 'add', index: -1 });
   };
   const DeleteElement = (index) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers.splice(index, 1);
-    setMarkers(auxMarkers);
+    setMarkers(auxMarkers, { meth: 'del', index: index });
   };
 
   const changeLat = (index, value) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers[index].latitude = value;
-    setMarkers(auxMarkers);
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
   const changeLng = (index, value) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers[index].longitude = value;
-    setMarkers(auxMarkers);
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
   useEffect(() => {
     if (markers) {

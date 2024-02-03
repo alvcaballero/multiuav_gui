@@ -121,39 +121,56 @@ const BaseSettings = ({ markers, setMarkers, type = 'Base' }) => {
                       >
                         <div>
                           <Typography variant='subtitle1' style={{ display: 'inline' }}>
-                            Position
+                            Device
                           </Typography>
                         </div>
-                        <TextField
-                          required
-                          label='Latitude '
-                          type='number'
-                          sx={{ width: '15ch' }}
-                          variant='standard'
-                          inputProps={{
-                            maxLength: 8,
-                            step: 0.0001,
-                          }}
-                          value={base.latitude}
-                          onChange={(e) => {
-                            changeLat(index, e.target.value);
-                          }}
-                        />
-                        <TextField
-                          required
-                          label='Longitud '
-                          type='number'
-                          variant='standard'
-                          sx={{ width: '15ch' }}
-                          inputProps={{
-                            maxLength: 8,
-                            step: 0.0001,
-                          }}
-                          value={base.longitude}
-                          onChange={(e) => {
-                            changeLng(index, e.target.value);
-                          }}
-                        />
+                        <div>
+                          {base.devices &&
+                            React.Children.toArray(
+                              Object.keys(base.devices).map((action_key, index_ac, list_ac) => (
+                                <div>
+                                  <Typography variant='subtitle1' className={classes.attributeName}>
+                                    {action_key}
+                                  </Typography>
+                                  <div className={classes.actionValue}>
+                                    <TextField
+                                      required
+                                      fullWidth={true}
+                                      value={
+                                        base.devices[action_key] ? base.devices[action_key] : 0
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                        </div>
+                        <div>
+                          <Typography variant='subtitle1' style={{ display: 'inline' }}>
+                            mission
+                          </Typography>
+                        </div>
+                        <div>
+                          {base.mission &&
+                            React.Children.toArray(
+                              Object.keys(base.mission).map((action_key, index_ac, list_ac) => (
+                                <div>
+                                  <Typography variant='subtitle1' className={classes.attributeName}>
+                                    {action_key}
+                                  </Typography>
+                                  <div className={classes.actionValue}>
+                                    <TextField
+                                      required
+                                      fullWidth={true}
+                                      value={
+                                        base.mission[action_key] ? base.mission[action_key] : 0
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                        </div>
                       </Box>
                     </Fragment>
                   )}
