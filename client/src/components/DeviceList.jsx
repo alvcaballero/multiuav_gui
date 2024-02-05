@@ -2,9 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { FixedSizeList } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import makeStyles from '@mui/styles/makeStyles';
+
 import { devicesActions } from '../store';
 import DeviceRow from './DeviceRow';
-import makeStyles from '@mui/styles/makeStyles';
+import { useEffectAsync } from '../reactHelper';
 
 const useStyles = makeStyles((theme) => ({
   list: {
@@ -15,10 +17,6 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing(1.5, 0),
   },
 }));
-
-const Row = ({ index, style }) => (
-  <div style={style}>Row {index}</div>
-);
 
 const DeviceList = ({ devices }) => {
   const classes = useStyles();
@@ -38,6 +36,14 @@ const DeviceList = ({ devices }) => {
     };
   }, []);
 
+  useEffectAsync(async () => {
+    const response = await fetch('/api/devices');
+    if (response.ok) {
+      dispatch(devicesActions.refresh(await response.json()));
+    } else {
+      throw Error(await response.text());
+    }
+  }, []);
 
   return (
     <AutoSizer className={classes.list}>
@@ -51,7 +57,7 @@ const DeviceList = ({ devices }) => {
           overscanCount={10}
           innerRef={listInnerEl}
         >
-         {DeviceRow} 
+          {DeviceRow}
         </FixedSizeList>
       )}
     </AutoSizer>

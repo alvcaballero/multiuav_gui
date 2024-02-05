@@ -1,4 +1,3 @@
-//import "./MainPage.css";
 import React, { useContext, useState, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
@@ -10,17 +9,11 @@ import Toast from '../components/Toast';
 import { Adduav } from '../components/Adduav';
 import { Camera } from '../components/Camera';
 import { RosControl, RosContext } from '../components/RosControl';
-import MapView from '../Mapview/MapView';
-import MapPositions from '../Mapview/MapPositions';
-import MapMissions from '../Mapview/MapMissions';
-import MapMarkers from '../Mapview/MapMarkers';
-import MapSelectedDevice from '../Mapview/MapSelectedDevice';
 import DeviceList from '../components/DeviceList';
 import StatusCard from '../components/StatusCard';
 import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/MainToolbar';
 import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
-import MapScale from '../Mapview/MapScale';
 import MainMap from '../Mapview/MainMap';
 
 import { devicesActions } from '../store';
@@ -29,6 +22,45 @@ const useStyles = makeStyles((theme) => ({
   root: {
     height: '100%',
   },
+  sidebar: {
+    pointerEvents: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    [theme.breakpoints.up('md')]: {
+      position: 'fixed',
+      left: 0,
+      top: 0,
+      height: `calc(100% - ${theme.spacing(3)})`,
+      width: theme.dimensions.drawerWidthDesktop,
+      margin: theme.spacing(1.5),
+      zIndex: 3,
+    },
+    [theme.breakpoints.down('md')]: {
+      height: '100%',
+      width: '100%',
+    },
+  },
+  header: {
+    pointerEvents: 'auto',
+    zIndex: 6,
+  },
+  footer: {
+    pointerEvents: 'auto',
+    zIndex: 5,
+  },
+  middle: {
+    flex: 1,
+    display: 'grid',
+  },
+  contentMap: {
+    pointerEvents: 'auto',
+    gridArea: '1 / 1',
+  },
+  contentList: {
+    pointerEvents: 'auto',
+    gridArea: '1 / 1',
+    zIndex: 4,
+  },
   sidebarStyle: {
     pointerEvents: 'none',
     display: 'flex',
@@ -36,7 +68,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'fixed',
     left: 0,
     top: '88px',
-    height: `calc(100% - 88px)`,
+    height: 'calc(100% - 88px)',
     width: '360px',
     margin: '0px',
     zIndex: 3,
@@ -44,11 +76,6 @@ const useStyles = makeStyles((theme) => ({
   middleStyle: {
     flex: 1,
     display: 'grid',
-  },
-  contentListStyle: {
-    pointerEvents: 'auto',
-    gridArea: '1 / 1',
-    zIndex: 4,
   },
 }));
 
@@ -85,43 +112,7 @@ const MainPage = () => {
   const [list, setList] = useState([]);
   let toastProperties = null;
   const showToast = (type, description) => {
-    switch (type) {
-      case 'success':
-        toastProperties = {
-          id: list.length + 1,
-          title: 'Success',
-          description: description,
-          backgroundColor: '#5cb85c',
-        };
-        break;
-      case 'danger':
-        toastProperties = {
-          id: list.length + 1,
-          title: 'Danger',
-          description: description,
-          backgroundColor: '#d9534f',
-        };
-        break;
-      case 'info':
-        toastProperties = {
-          id: list.length + 1,
-          title: 'Info',
-          description: description,
-          backgroundColor: '#5bc0de',
-        };
-        break;
-      case 'warning':
-        toastProperties = {
-          id: list.length + 1,
-          title: 'Warning',
-          description: description,
-          backgroundColor: '#f0ad4e',
-        };
-        break;
-      default:
-        toastProperties = [];
-    }
-    setList([...list, toastProperties]);
+    console.log(`${type} - ${description}`);
   };
 
   const onMarkerClick = useCallback(
@@ -163,8 +154,9 @@ const MainPage = () => {
         <div
           style={{
             position: 'relative',
-            width: '100%',
-            height: `calc(100vh - 88px)`,
+            float: 'right',
+            width: 'calc(100% - 360px)',
+            height: 'calc(100vh - 88px)',
           }}
         >
           <MainMap
@@ -175,9 +167,11 @@ const MainPage = () => {
         </div>
 
         <div className={classes.sidebarStyle}>
+          <Paper square elevation={3} className={classes.header}>
+            <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
+          </Paper>
           <div className={classes.middleStyle}>
-            <Paper square className={classes.contentListStyle}>
-              <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
+            <Paper square className={classes.contentList}>
               <DeviceList devices={listdevices} />
             </Paper>
           </div>

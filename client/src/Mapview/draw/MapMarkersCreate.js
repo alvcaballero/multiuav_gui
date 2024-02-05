@@ -33,6 +33,7 @@ class keepMarkers {
 
 const MapMarkersCreate = ({
   markers,
+  selectMarkers = [],
   showTitles,
   showLines,
   moveMarkers,
@@ -43,6 +44,7 @@ const MapMarkersCreate = ({
 }) => {
   const id = useId();
   const linesMarkers = `${id}-lines`;
+  const idselectMarkers = `${id}-select`;
 
   const theme = useTheme();
   const iconScale = 0.4;
@@ -55,7 +57,7 @@ const MapMarkersCreate = ({
     if (e.hasOwnProperty('features')) {
       //console.log(e.features[0]);
       if (e.features[0].properties.type == 'element') {
-        setLocations(e.features[0].properties);
+        setLocations({ ...e.features[0].properties, type: 'object' });
       }
     } else {
       setLocations({
@@ -63,7 +65,7 @@ const MapMarkersCreate = ({
         longitude: e.lngLat.lng,
         groupId: 0,
         id: 0,
-        type: 'select',
+        type: 'point',
       });
     }
   };
@@ -164,17 +166,45 @@ const MapMarkersCreate = ({
         features: [],
       },
     });
+    map.addSource(idselectMarkers, {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+    });
     return () => {
-      if (map.getLayer(id)) {
-        map.removeLayer(id);
-      }
       if (map.getSource(id)) {
         map.removeSource(id);
+      }
+      if (map.getSource(linesMarkers)) {
+        map.removeSource(linesMarkers);
+      }
+      if (map.getSource(idselectMarkers)) {
+        map.removeSource(idselectMarkers);
       }
     };
   }, []);
 
   useEffect(() => {
+    map.addLayer({
+      id: 'select-points',
+      type: 'symbol',
+      source: idselectMarkers,
+      filter: ['!has', 'point_count'],
+      layout: {
+        'icon-image': 'background-{groupId}',
+        'icon-size': iconScale * 1.2,
+        'icon-allow-overlap': true,
+        'text-allow-overlap': true,
+        'text-field': '{title}',
+        'text-font': findFonts(map),
+        'text-size': 14,
+      },
+      paint: {
+        'text-color': 'white',
+      },
+    });
     if (showLines) {
       map.addLayer({
         source: linesMarkers,
@@ -248,9 +278,11 @@ const MapMarkersCreate = ({
       if (map.getLayer(id)) {
         map.removeLayer(id);
       }
-
       if (map.getLayer('markers-line')) {
         map.removeLayer('markers-line');
+      }
+      if (map.getLayer('select-points')) {
+        map.removeLayer('select-points');
       }
     };
   }, [showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
@@ -303,6 +335,26 @@ const MapMarkersCreate = ({
       },
     };
   }
+  function selectToPoints(myList) {
+    console.log(myList);
+    const waypoints = [];
+    if (myList.length > 0) {
+      myList.forEach((conjunto, index_cj) => {
+        conjunto.items.forEach((items, itemIndex) => {
+          waypoints.push({
+            ...items,
+            type: 'element',
+            groupId: index_cj,
+            id: itemIndex,
+            image: conjunto.type,
+            title: `${index_cj}-${itemIndex}`,
+          });
+        });
+      });
+    }
+
+    return waypoints;
+  }
 
   useEffect(() => {
     testkeepValue.initMarkers(markers);
@@ -324,6 +376,21 @@ const MapMarkersCreate = ({
       features: markers.elements.map((element, index) => markerstolines(element, index)),
     });
   }, [markers]);
+
+  useEffect(() => {
+    let selectPoints = selectToPoints(selectMarkers);
+    map.getSource(idselectMarkers).setData({
+      type: 'FeatureCollection',
+      features: selectPoints.map((point) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [point.longitude, point.latitude],
+        },
+        properties: { ...point },
+      })),
+    });
+  }, [selectMarkers]);
 
   return null;
 };

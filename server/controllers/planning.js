@@ -23,12 +23,12 @@ export class planningController {
   }
 
   static async setDefault(req, res) {
-    let response = await planningModel.setDefault(req.params);
+    let response = await planningModel.setDefault(req.body);
     res.json(response);
   }
 
   static async setMarkers(req, res) {
-    let response = await planningModel.setMarkers(req.params);
+    let response = await planningModel.setMarkers(req.body);
     res.json(response);
   }
   static async getBases(req, res) {

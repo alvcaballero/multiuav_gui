@@ -1,5 +1,5 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEffectAsync } from '../../reactHelper';
 
 const SelectField = ({
@@ -14,6 +14,7 @@ const SelectField = ({
   data,
   keyGetter = (item) => item.id,
   titleGetter = (item) => item.name,
+  getItems = (item) => item,
 }) => {
   const [items, setItems] = useState(data);
 
@@ -27,6 +28,12 @@ const SelectField = ({
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof items !== 'undefined') {
+      getItems(items[value]);
+    }
+  }, [items]);
 
   if (items) {
     return (

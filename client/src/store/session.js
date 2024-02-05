@@ -12,7 +12,7 @@ const { reducer, actions } = createSlice({
     planning: {
       id: 1234,
       name: 'no mission',
-      objetivo: 0,
+      objetivo: { id: 0 },
       loc: [],
       meteo: [],
       bases: [],

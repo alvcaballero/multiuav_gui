@@ -20,6 +20,9 @@ import {
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { TabPanel, TabList, TabContext } from '@mui/lab';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import DeleteIcon from '@mui/icons-material/Delete';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 import makeStyles from '@mui/styles/makeStyles';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +46,7 @@ import MapScale from '../Mapview/MapScale';
 import ElementList from '../components/ElementList';
 import { useEffectAsync } from '../reactHelper';
 import { SettingsOutlined } from '@mui/icons-material';
+import { useCatch } from '../reactHelper';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -124,6 +128,44 @@ const PlanningPage = () => {
   const [tabValue, setTabValue] = useState('2');
   const [settings, setsettings] = useState('');
 
+  const SendPlanning = useCatch(async () => {
+    let auxsendtask = JSON.parse(JSON.stringify(SendTask));
+    console.log(auxsendtask);
+    const response = await fetch('/api/planning/setDefault', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(auxsendtask),
+    });
+    if (response.ok) {
+      console.log('planning OK');
+    } else {
+      console.log('error');
+    }
+  });
+  const DeleteMission = () => {
+    console.log('uno');
+  };
+  const SaveMission = () => {
+    console.log('save mission');
+    SetOpenSave(true);
+  };
+  const readFile = (e) => {
+    //https://www.youtube.com/watch?v=K3SshoCXC2g
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileReader = new FileReader();
+    fileReader.readAsText(file);
+    fileReader.onload = () => {
+      console.log(fileReader.result);
+      console.log(file.name);
+      //rosContex.openMision(file.name, fileReader.result);
+    };
+    fileReader.onerror = () => {
+      console.log(fileReader.error);
+    };
+  };
+
   const TabHandleChange = (event, newTabValue) => {
     setTabValue(newTabValue);
     newTabValue == 2 || newTabValue == 1 ? setShowTitles(true) : setShowTitles(false);
@@ -137,10 +179,17 @@ const PlanningPage = () => {
       if (meta.meth == 'add') {
         setSendTask((oldSendtask) => {
           let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
-          auxbases.push({
-            device: oldSendtask.settings.device,
-            missions: oldSendtask.settings.mission,
+          let auxconfig = {};
+          Object.keys(settings).map((key) => {
+            auxconfig[key] = {};
           });
+          Object.keys(settings.devices).map((key) => {
+            auxconfig['devices'][key] = settings['devices'][key].default;
+          });
+          Object.keys(settings.mission).map((key) => {
+            auxconfig['mission'][key] = settings['mission'][key].default;
+          });
+          auxbases.push(auxconfig);
           return { ...oldSendtask, bases: auxbases };
         });
       }
@@ -163,7 +212,7 @@ const PlanningPage = () => {
     setSendTask({ ...SendTask, loc: value });
   };
   const managepoints = (old, point, objetivo) => {
-    if (objetivo == 0 || objetivo == 0) {
+    if (objetivo == 'path-object') {
       if (old.length == 0) {
         old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
       } else {
@@ -175,7 +224,10 @@ const PlanningPage = () => {
         }
       }
     }
-    if (objetivo == 3 || objetivo == 1) {
+    if (objetivo == 'object') {
+      old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
+    }
+    if (objetivo == 'point') {
       old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
     }
 
@@ -185,22 +237,29 @@ const PlanningPage = () => {
     console.log(value);
     setSendTask((oldSendtask) => {
       let auxloc = JSON.parse(JSON.stringify(oldSendtask.loc));
-      return { ...oldSendtask, loc: managepoints(auxloc, value, oldSendtask.objetivo) };
+      console.log(oldSendtask.objetivo.type);
+      return { ...oldSendtask, loc: managepoints(auxloc, value, oldSendtask.objetivo.type) };
+    });
+  };
+  const updateObjetive = (newObjetive) => {
+    setSendTask((oldSendtask) => {
+      let auxSendtask = JSON.parse(JSON.stringify(oldSendtask));
+      auxSendtask.objetivo = newObjetive;
+      if (newObjetive.type !== oldSendtask.objetivo.type) {
+        auxSendtask.loc = [];
+      }
+      return auxSendtask;
     });
   };
 
   useEffectAsync(async () => {
-    const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo}`);
+    const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo.id}`);
     if (response.ok) {
       setsettings(await response.json());
     } else {
       throw Error(await response.text());
     }
   }, [SendTask.objetivo]);
-  useEffect(() => {
-    if (SendTask.bases.length != markers.bases.length) {
-    }
-  }, []);
 
   useEffect(() => {
     console.log(settings);
@@ -234,8 +293,8 @@ const PlanningPage = () => {
   }, [settings]);
 
   useEffect(() => {
-    tabValue == 2 && SendTask.objetivo != 3 ? SetSelectMarkers(true) : SetSelectMarkers(false);
-    tabValue == 2 && SendTask.objetivo == 3 ? SetCreateMarkers(true) : SetCreateMarkers(false);
+    tabValue == 2 && SendTask.objetivo.id != 3 ? SetSelectMarkers(true) : SetSelectMarkers(false);
+    tabValue == 2 && SendTask.objetivo.id == 3 ? SetCreateMarkers(true) : SetCreateMarkers(false);
   }, [tabValue, SendTask.objetivo]);
 
   useEffect(() => {
@@ -276,6 +335,7 @@ const PlanningPage = () => {
               <MapMissions />
               <MapMarkersCreate
                 markers={markers}
+                selectMarkers={SendTask.loc}
                 showTitles={showTitles}
                 showLines={showLines}
                 moveMarkers={moveMarkers}
@@ -298,6 +358,25 @@ const PlanningPage = () => {
                   <Typography variant='h6' className={classes.title}>
                     Planning mission
                   </Typography>
+
+                  <IconButton onClick={SaveMission}>
+                    <SaveAltIcon />
+                  </IconButton>
+                  <IconButton onClick={DeleteMission}>
+                    <DeleteIcon />
+                  </IconButton>
+                  <label htmlFor='upload-gpx'>
+                    <input
+                      accept='.yaml, .plan, .waypoint, .kml'
+                      id='upload-gpx'
+                      type='file'
+                      className={classes.fileInput}
+                      onChange={readFile}
+                    />
+                    <IconButton edge='end' component='span' onClick={() => {}}>
+                      <UploadFileIcon />
+                    </IconButton>
+                  </label>
                 </Toolbar>
                 <div className={classes.list}>
                   <Box
@@ -367,14 +446,17 @@ const PlanningPage = () => {
                             emptyValue={null}
                             fullWidth={true}
                             label={'objetive'}
-                            value={SendTask.objetivo}
+                            value={SendTask.objetivo.id}
                             endpoint={'/api/planning/missionstype'}
                             keyGetter={(it) => it.id}
                             titleGetter={(it) => it.name}
                             onChange={(e, items) => {
-                              setSendTask({ ...SendTask, objetivo: e.target.value });
-                              console.log(items[e.target.value]);
-                              Setdescription(items[e.target.value].description);
+                              updateObjetive(items[e.target.value]);
+                            }}
+                            getItems={(it) => {
+                              console.log(it);
+
+                              setSendTask({ ...SendTask, objetivo: it });
                             }}
                           />
 
@@ -384,7 +466,11 @@ const PlanningPage = () => {
                             </AccordionSummary>
                             <AccordionDetails className={classes.details}>
                               <div className={classes.details}>
-                                <Typography>{descriptionObject}</Typography>
+                                {SendTask.objetivo.hasOwnProperty('description') ? (
+                                  <Typography>{SendTask.objetivo.description}</Typography>
+                                ) : (
+                                  <Typography>select doing click in the map</Typography>
+                                )}
                                 <ElementList markers={SendTask.loc} setMarkers={setLocations} />
                               </div>
                             </AccordionDetails>
@@ -402,7 +488,11 @@ const PlanningPage = () => {
                       </TabPanel>
                       <TabPanel value='3'>
                         <div className={classes.details}>
-                          <BaseSettings markers={SendTask.bases} setMarkers={setMarkersBase} />
+                          <BaseSettings
+                            markers={SendTask.bases}
+                            param={SendTask.settings}
+                            setMarkers={setMarkersBase}
+                          />
 
                           <Box textAlign='center'>
                             <Button
@@ -410,6 +500,7 @@ const PlanningPage = () => {
                               size='large'
                               sx={{ width: '80%', flexShrink: 0 }}
                               style={{ marginTop: '15px' }}
+                              onClick={SendPlanning}
                             >
                               Plannig
                             </Button>

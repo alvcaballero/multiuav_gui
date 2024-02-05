@@ -3,21 +3,20 @@ import { createSlice } from '@reduxjs/toolkit';
 const { reducer, actions } = createSlice({
   name: 'devices',
   initialState: {
-    items:  {},
+    items: {},
     selectedId: null,
     selectedIds: [],
   },
   reducers: {
     refresh(state, action) {
-      console.log(action.payload);
       state.items = {};
-      action.payload.forEach((item) => state.items[item.id] = item);
+      action.payload.forEach((item) => (state.items[item.id] = item));
     },
     update1(state, action) {
       state.items[action.payload.id] = action.payload;
     },
     update(state, action) {
-      action.payload.forEach((item) => state.items[item.id] = item);
+      action.payload.forEach((item) => (state.items[item.id] = item));
     },
     select(state, action) {
       state.selectedId = action.payload;
@@ -34,9 +33,8 @@ const { reducer, actions } = createSlice({
       delete state.items[action.payload];
     },
     clear(state, action) {
-      state.items={};
+      state.items = {};
     },
-    
   },
 });
 

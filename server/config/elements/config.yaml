@@ -7,7 +7,7 @@ types:
 missionTypes:
   - id: 0
     name: 'Inspeccion de linea'
-    type: 'path'
+    type: 'path-object'
     description: 'select towers to create a path'
     setting:
       devices:
@@ -71,7 +71,7 @@ missionTypes:
   - id: 2
     name: 'inspeccion de lidar'
     description: 'select towers to create a path'
-    type: 'path'
+    type: 'path-object'
     setting:
       devices:
         deviceId:
