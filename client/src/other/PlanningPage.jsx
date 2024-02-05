@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
+import YAML from 'yaml';
 
 import {
   Paper,
@@ -145,9 +146,15 @@ const PlanningPage = () => {
   const DeleteMission = () => {
     console.log('uno');
   };
-  const SaveMission = () => {
+  const SaveMission = (value) => {
     console.log('save mission');
-    SetOpenSave(true);
+    let fileData = YAML.stringify(value);
+    const blob = new Blob([fileData], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = value.name + '.yaml';
+    link.href = url;
+    link.click();
   };
   const readFile = (e) => {
     //https://www.youtube.com/watch?v=K3SshoCXC2g
@@ -159,6 +166,12 @@ const PlanningPage = () => {
     fileReader.onload = () => {
       console.log(fileReader.result);
       console.log(file.name);
+      setSendTask(fileReader.result);
+      setMarkers((oldmarkers) => {
+        let auxmarkers = JSON.parse(JSON.stringify(oldmarkers));
+        auxmarkers.bases = fileReader.result.markersbase;
+        return auxmarkers;
+      });
       //rosContex.openMision(file.name, fileReader.result);
     };
     fileReader.onerror = () => {
@@ -166,6 +179,9 @@ const PlanningPage = () => {
     };
   };
 
+  const setBaseSettings = (element) => {
+    setSendTask({ ...SendTask, bases: element });
+  };
   const TabHandleChange = (event, newTabValue) => {
     setTabValue(newTabValue);
     newTabValue == 2 || newTabValue == 1 ? setShowTitles(true) : setShowTitles(false);
@@ -352,28 +368,32 @@ const PlanningPage = () => {
             <div className={classes.middleStyle}>
               <Paper square>
                 <Toolbar className={classes.toolbar}>
-                  <IconButton edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
+                  <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
                     <ArrowBackIcon />
                   </IconButton>
-                  <Typography variant='h6' className={classes.title}>
+                  <Typography variant="h6" className={classes.title}>
                     Planning mission
                   </Typography>
 
-                  <IconButton onClick={SaveMission}>
+                  <IconButton
+                    onClick={() => {
+                      SaveMission({ ...SendTask, markersbase: markers.bases });
+                    }}
+                  >
                     <SaveAltIcon />
                   </IconButton>
                   <IconButton onClick={DeleteMission}>
                     <DeleteIcon />
                   </IconButton>
-                  <label htmlFor='upload-gpx'>
+                  <label htmlFor="upload-gpx">
                     <input
-                      accept='.yaml, .plan, .waypoint, .kml'
-                      id='upload-gpx'
-                      type='file'
+                      accept=".yaml, .plan, .waypoint, .kml"
+                      id="upload-gpx"
+                      type="file"
                       className={classes.fileInput}
                       onChange={readFile}
                     />
-                    <IconButton edge='end' component='span' onClick={() => {}}>
+                    <IconButton edge="end" component="span" onClick={() => {}}>
                       <UploadFileIcon />
                     </IconButton>
                   </label>
@@ -389,13 +409,13 @@ const PlanningPage = () => {
                   >
                     <TabContext value={tabValue}>
                       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <TabList onChange={TabHandleChange} aria-label='lab API tabs example'>
-                          <Tab label='Elements' value='1' />
-                          <Tab label='Planning' value='2' />
-                          <Tab label='Settings' value='3' />
+                        <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
+                          <Tab label="Elements" value="1" />
+                          <Tab label="Planning" value="2" />
+                          <Tab label="Settings" value="3" />
                         </TabList>
                       </Box>
-                      <TabPanel value='1'>
+                      <TabPanel value="1">
                         <div className={classes.details}>
                           <Accordion>
                             <AccordionSummary expandIcon={<ExpandMore />}>
@@ -419,14 +439,14 @@ const PlanningPage = () => {
                           </Accordion>
                         </div>
                       </TabPanel>
-                      <TabPanel value='2'>
+                      <TabPanel value="2">
                         <Box className={classes.details}>
                           <TextField
                             required
                             fullWidth
-                            label='id'
-                            type='number'
-                            variant='standard'
+                            label="id"
+                            type="number"
+                            variant="standard"
                             value={SendTask.id ? SendTask.id : 123}
                             onChange={(event) =>
                               setSendTask({ ...SendTask, id: event.target.value })
@@ -435,8 +455,8 @@ const PlanningPage = () => {
                           <TextField
                             required
                             fullWidth
-                            label='Name Mission'
-                            variant='standard'
+                            label="Name Mission"
+                            variant="standard"
                             value={SendTask.name ? SendTask.name : ' '}
                             onChange={(event) =>
                               setSendTask({ ...SendTask, name: event.target.value })
@@ -481,23 +501,62 @@ const PlanningPage = () => {
                               <Typography>Meteo</Typography>
                             </AccordionSummary>
                             <AccordionDetails className={classes.details}>
-                              <Typography>Meteo</Typography>
+                              <TextField
+                                required
+                                fullWidth
+                                label="wind speed"
+                                type="number"
+                                variant="standard"
+                                value={12}
+                              />
+                              <TextField
+                                required
+                                fullWidth
+                                label="Wind direction"
+                                type="number"
+                                variant="standard"
+                                value={12}
+                              />
+                              <TextField
+                                required
+                                fullWidth
+                                label="Temperature"
+                                type="number"
+                                variant="standard"
+                                value={12}
+                              />
+                              <TextField
+                                required
+                                fullWidth
+                                label="Humidity"
+                                type="number"
+                                variant="standard"
+                                value={12}
+                              />
+                              <TextField
+                                required
+                                fullWidth
+                                label="Pressure"
+                                type="number"
+                                variant="standard"
+                                value={12}
+                              />
                             </AccordionDetails>
                           </Accordion>
                         </Box>
                       </TabPanel>
-                      <TabPanel value='3'>
+                      <TabPanel value="3">
                         <div className={classes.details}>
                           <BaseSettings
-                            markers={SendTask.bases}
+                            data={SendTask.bases}
                             param={SendTask.settings}
-                            setMarkers={setMarkersBase}
+                            setData={setBaseSettings}
                           />
 
-                          <Box textAlign='center'>
+                          <Box textAlign="center">
                             <Button
-                              variant='contained'
-                              size='large'
+                              variant="contained"
+                              size="large"
                               sx={{ width: '80%', flexShrink: 0 }}
                               style={{ marginTop: '15px' }}
                               onClick={SendPlanning}

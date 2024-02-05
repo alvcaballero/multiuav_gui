@@ -13,7 +13,7 @@ missionTypes:
       devices:
         deviceId:
           type: 'number'
-          name: 'device'
+          name: 'Device'
           default: 0
         speed_mission:
           type: 'number'

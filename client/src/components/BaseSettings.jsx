@@ -13,8 +13,10 @@ import {
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import palette from '../common/palette';
 import { map } from '../Mapview/MapView';
+import SelectField from '../common/components/SelectField';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
@@ -50,129 +52,143 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const BaseSettings = ({ markers, setMarkers, type = 'Base' }) => {
+const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
   const classes = useStyles();
 
   const [expanded, setExpanded] = useState(false);
-  const [BasesExist, setBasesExist] = useState(true);
+  const [dataExist, setDataExist] = useState(false);
 
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
   };
-  const AddNewElement = () => {
-    let center = map.getCenter();
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers.push({ latitude: center.lat, longitude: center.lng });
-    setMarkers(auxMarkers);
-  };
-  const DeleteElement = (index) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers.splice(index, 1);
-    setMarkers(auxMarkers);
+  const modifyData = (index = 0, type = 'mission', key, value) => {
+    let auxData = JSON.parse(JSON.stringify(data));
+    auxData[index][type][key] = value;
+    setData(auxData);
   };
 
-  const changeLat = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers[index].latitude = value;
-    setMarkers(auxMarkers);
-  };
-  const changeLng = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers[index].longitude = value;
-    setMarkers(auxMarkers);
-  };
   useEffect(() => {
-    if (markers) {
-      markers.length > 0 ? setBasesExist(false) : setBasesExist(true);
+    if (data) {
+      data.length > 0 ? setDataExist(false) : setDataExist(true);
     }
-  }, [markers]);
+  }, [data]);
 
   return (
-    <Fragment>
-      {BasesExist ? (
-        <Box textAlign='center'>
+    <div>
+      {dataExist ? (
+        <Box textAlign="center">
           <Typography>dont exits base</Typography>
         </Box>
       ) : (
         <div className={classes.details}>
           {React.Children.toArray(
-            Object.values(markers).map((base, index, list) => (
+            Object.values(data).map((base, index, list) => (
               <Accordion
-                expanded={expanded === 'wp ' + index}
-                onChange={handleChange('wp ' + index)}
+                expanded={expanded === `wp ${index}`}
+                onChange={handleChange(`wp ${index}`)}
               >
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{type + ' ' + index}</Typography>
+                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{`${type} ${index}`}</Typography>
                   <IconButton
                     sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                    onClick={() => DeleteElement(index)}
+                    onClick={() => console.log('button')}
                   >
-                    <DeleteIcon />
+                    <MyLocationIcon />
                   </IconButton>
                 </AccordionSummary>
                 <AccordionDetails className={classes.details}>
-                  {expanded === 'wp ' + index && (
-                    <Fragment>
-                      <Box
-                        component='form'
-                        sx={{
-                          '& .MuiTextField-root': { m: 1 },
-                        }}
-                      >
-                        <div>
-                          <Typography variant='subtitle1' style={{ display: 'inline' }}>
-                            Device
-                          </Typography>
-                        </div>
-                        <div>
-                          {base.devices &&
-                            React.Children.toArray(
-                              Object.keys(base.devices).map((action_key, index_ac, list_ac) => (
-                                <div>
-                                  <Typography variant='subtitle1' className={classes.attributeName}>
-                                    {action_key}
-                                  </Typography>
-                                  <div className={classes.actionValue}>
-                                    <TextField
-                                      required
-                                      fullWidth={true}
-                                      value={
-                                        base.devices[action_key] ? base.devices[action_key] : 0
-                                      }
-                                    />
-                                  </div>
+                  {expanded === `wp ${index}` && (
+                    <Box
+                      component="form"
+                      sx={{
+                        '& .MuiTextField-root': { m: 1 },
+                      }}
+                    >
+                      <div>
+                        <Typography variant="subtitle1" style={{ display: 'inline' }}>
+                          Device params
+                        </Typography>
+                      </div>
+                      <div>
+                        {param.devices &&
+                          React.Children.toArray(
+                            Object.keys(param.devices).map((actionKey, index_ac, list_ac) => (
+                              <div>
+                                {actionKey == 'deviceId' ? (
+                                  <SelectField
+                                    emptyValue={null}
+                                    fullWidth
+                                    label="device"
+                                    value={base.devices[actionKey]}
+                                    endpoint="/api/devices"
+                                    keyGetter={(it) => it.id}
+                                    titleGetter={(it) => `${it.name} - ${it.category}`}
+                                    onChange={(e) => {
+                                      modifyData(index, 'devices', actionKey, e.target.value);
+                                    }}
+                                  />
+                                ) : (
+                                  <>
+                                    <Typography
+                                      variant="subtitle1"
+                                      className={classes.attributeName}
+                                    >
+                                      {param.devices[actionKey].name}
+                                    </Typography>
+                                    <div className={classes.actionValue}>
+                                      <TextField
+                                        required
+                                        fullWidth
+                                        type="number"
+                                        value={
+                                          base.devices[actionKey]
+                                            ? base.devices[actionKey]
+                                            : param.devices[actionKey].default
+                                        }
+                                        onChange={(e) => {
+                                          modifyData(index, 'devices', actionKey, e.target.value);
+                                        }}
+                                      />
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))
+                          )}
+                      </div>
+                      <div>
+                        <Typography variant="subtitle1" style={{ display: 'inline' }}>
+                          Mission Params
+                        </Typography>
+                      </div>
+                      <div>
+                        {param.mission &&
+                          React.Children.toArray(
+                            Object.keys(param.mission).map((actionKey) => (
+                              <div>
+                                <Typography variant="subtitle1" className={classes.attributeName}>
+                                  {actionKey}
+                                </Typography>
+                                <div className={classes.actionValue}>
+                                  <TextField
+                                    required
+                                    fullWidth
+                                    type="number"
+                                    value={
+                                      base.mission[actionKey]
+                                        ? base.mission[actionKey]
+                                        : param.devices[actionKey].default
+                                    }
+                                    onChange={(e) => {
+                                      modifyData(index, 'mission', actionKey, e.target.value);
+                                    }}
+                                  />
                                 </div>
-                              ))
-                            )}
-                        </div>
-                        <div>
-                          <Typography variant='subtitle1' style={{ display: 'inline' }}>
-                            mission
-                          </Typography>
-                        </div>
-                        <div>
-                          {base.mission &&
-                            React.Children.toArray(
-                              Object.keys(base.mission).map((action_key, index_ac, list_ac) => (
-                                <div>
-                                  <Typography variant='subtitle1' className={classes.attributeName}>
-                                    {action_key}
-                                  </Typography>
-                                  <div className={classes.actionValue}>
-                                    <TextField
-                                      required
-                                      fullWidth={true}
-                                      value={
-                                        base.mission[action_key] ? base.mission[action_key] : 0
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                        </div>
-                      </Box>
-                    </Fragment>
+                              </div>
+                            ))
+                          )}
+                      </div>
+                    </Box>
                   )}
                 </AccordionDetails>
               </Accordion>
@@ -180,7 +196,7 @@ const BaseSettings = ({ markers, setMarkers, type = 'Base' }) => {
           )}
         </div>
       )}
-    </Fragment>
+    </div>
   );
 };
 
