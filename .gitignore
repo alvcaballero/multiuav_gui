@@ -1,3 +1,8 @@
+guides/Activities.md
+devices/vpn/login.text
+server/config/devices/devices_init.yaml
+
+**/package-lock.json
 .DS_Store
 Thumbs.db
 node_modules
@@ -9,11 +14,9 @@ yarn.lock
 *.pyc
 *.sln
 *.swp
-**/package-lock.json
-compile_commands.json
+*.ovpn
 .envrc
-guides/Activities.md
-
+compile_commands.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

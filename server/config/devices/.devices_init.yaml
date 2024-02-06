@@ -1,27 +1,34 @@
 init:
+  - name: 'uav_1'
+    category: 'dji_M210_melodic'
+    ip: '10.42.0.99'
+    user: 'user'
+    pwd: 'password'
+    camera:
+      - type: 'WebRTC'
+        source: 'main'
+
   - name: 'uav_2'
     category: 'dji_M210_noetic'
     ip: '10.42.0.43'
-    user: 'ubuntu'
-    pwd: 'ubuntu'
+    user: 'user'
+    pwd: 'password'
     camera:
-      - type: 'Websocket'
+      - type: 'WebRTC'
         source: 'main'
 
   - name: 'uav_3'
     category: 'px4'
     ip: '10.42.0.52'
-    user: 'rock'
-    pwd: 'rock'
     camera:
       - type: 'WebRTC'
         source: 'video0'
 
-  - name: 'uav_16'
+  - name: 'uav_14'
     category: 'dji_M300'
-    ip: '10.42.0.51'
-    user: 'nvidia'
-    pwd: 'nvidia'
+    ip: '10.42.0.44'
+    user: 'user'
+    pwd: 'password'
     camera:
       - type: 'WebRTC'
         source: 'main'
@@ -29,11 +36,11 @@ init:
   - name: 'uav_15'
     category: 'dji_M300'
     ip: '10.42.0.45'
-    user: 'khadas'
-    pwd: 'khadas'
+    user: 'user'
+    pwd: 'password'
     camera:
       - type: 'WebRTC'
-        source: 'main_resize'
+        source: 'main'
 
   - name: 'uav_100'
     category: 'catec'
@@ -53,50 +60,23 @@ init:
     ip: '10.42.0.101'
     camera: []
 
-  - name: 'uav_10'
+  - name: 'uav0'
     category: 'px4'
     ip: '10.42.0.52'
-    user: 'rock'
     camera:
       - type: 'WebRTC'
         source: 'video0'
 
-  - name: 'uav_11'
+  - name: 'uav1'
     category: 'px4'
     ip: '10.42.0.52'
-    user: 'rock'
     camera:
       - type: 'WebRTC'
         source: 'video0'
 
-  - name: 'uav_12'
+  - name: 'uav2'
     category: 'px4'
     ip: '10.42.0.52'
-    user: 'rock'
-    camera:
-      - type: 'WebRTC'
-        source: 'video0'
-
-  - name: 'uav_13'
-    category: 'px4'
-    ip: '10.42.0.52'
-    user: 'rock'
-    camera:
-      - type: 'WebRTC'
-        source: 'video0'
-
-  - name: 'uav_14'
-    category: 'px4'
-    ip: '10.42.0.52'
-    user: 'rock'
-    camera:
-      - type: 'WebRTC'
-        source: 'video0'
-
-  - name: 'uav_15'
-    category: 'px4'
-    ip: '10.42.0.52'
-    user: 'rock'
     camera:
       - type: 'WebRTC'
         source: 'video0'

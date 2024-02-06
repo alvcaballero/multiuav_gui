@@ -1,6 +1,6 @@
-# GRVC - OMICRON
+# SITL Ardupilot
 
-this project have been developed in ubuntu 18 with ros noetic and autopilot .
+A little guide for simulate px4 with gazebo using docker
 
 For continue with this work I use ubuntu 22 and docker px4io/px4-dev-ros-noetic.
 
