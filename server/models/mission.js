@@ -191,8 +191,8 @@ export class missionModel {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-            username: 'drone',
-            password: 'F1PpE9V!E#Pwz8k53b7b',
+            username: 'username',
+            password: 'password',
           }),
         });
         if (response.ok) {
