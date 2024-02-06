@@ -1,5 +1,5 @@
 guides/Activities.md
-devices/vpn/login.text
+devices/init/vpn/login.text
 server/config/devices/devices_init.yaml
 
 **/package-lock.json
