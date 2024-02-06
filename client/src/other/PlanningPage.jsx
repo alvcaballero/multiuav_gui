@@ -13,7 +13,6 @@ import {
   Button,
   TextField,
   Toolbar,
-  Tabs,
   Divider,
   Tab,
   Typography,
@@ -41,13 +40,11 @@ import BaseSettings from '../components/BaseSettings';
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
 import MissionElevation from '../components/MissionElevation';
-import SaveFile from '../components/SaveFile';
 import MapMarkersCreate from '../Mapview/draw/MapMarkersCreate';
 import MapScale from '../Mapview/MapScale';
 import ElementList from '../components/ElementList';
-import { useEffectAsync } from '../reactHelper';
-import { SettingsOutlined } from '@mui/icons-material';
-import { useCatch } from '../reactHelper';
+import { useEffectAsync, useCatch } from '../reactHelper';
+import SelectList from '../components/SelectList';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -111,42 +108,107 @@ const PlanningPage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [Opensave, setOpenSave] = useState(false);
   const [showTitles, setShowTitles] = useState(true);
   const [showLines, setShowLines] = useState(false);
   const [moveMarkers, SetMoveMarkers] = useState(false);
   const [SelectMarkers, SetSelectMarkers] = useState(false);
   const [CreateMarkers, SetCreateMarkers] = useState(false);
-  const [descriptionObject, Setdescription] = useState('select elements in the map');
 
-  const positions = useSelector((state) => state.data.positions);
   const sessionmarkers = useSelector((state) => state.session.markers);
   const sessionplanning = useSelector((state) => state.session.planning);
 
-  const [filteredPositions, setFilteredPositions] = useState([]);
   const [markers, setMarkers] = useState(sessionmarkers);
   const [SendTask, setSendTask] = useState(sessionplanning);
   const [tabValue, setTabValue] = useState('2');
   const [settings, setsettings] = useState('');
+  const [notification, setnotification] = useState('');
 
   const SendPlanning = useCatch(async () => {
-    let auxsendtask = JSON.parse(JSON.stringify(SendTask));
-    console.log(auxsendtask);
-    const response = await fetch('/api/planning/setDefault', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(auxsendtask),
+    let auxsendtask = {};
+    auxsendtask.id = SendTask.id;
+    auxsendtask.name = SendTask.name;
+    //auxsendtask.settings = SendTask.bases;
+    auxsendtask.objetivo = SendTask.objetivo.id;
+    auxsendtask.bases = markers.bases;
+    auxsendtask.meteo = SendTask.meteo;
+    let auxloc = SendTask.loc.map((gruop) => {
+      let items = gruop.items.map((element) => ({
+        latitude: element.latitude,
+        longitude: element.longitude,
+      }));
+      return { name: gruop.name, items: items };
     });
-    if (response.ok) {
-      console.log('planning OK');
+
+    let listDevices = SendTask.bases.map((setting) => setting.devices.deviceId);
+    let deviceRepeat = false;
+    listDevices.map((id, index) => {
+      listDevices.map((id1, index1) => {
+        if (index !== index1) {
+          if (id == id1) {
+            deviceRepeat = true;
+          }
+        }
+      });
+    });
+    if (deviceRepeat) {
+      setnotification('the device is repeated please change');
+      return null;
     } else {
-      console.log('error');
+      setnotification('');
+    }
+
+    let devices = [];
+    const response = await fetch('/api/devices');
+
+    if (response.ok) {
+      devices = await response.json();
+    } else {
+      throw Error(await response.text());
+    }
+    console.log(devices);
+    console.log(SendTask.bases);
+
+    auxsendtask.settings = SendTask.bases.map((setting) => {
+      let mysetting = JSON.parse(JSON.stringify(setting));
+      let mydevice = devices.find((device) => device.id == setting.devices.deviceId);
+      console.log(mydevice);
+      mysetting.devices['category'] = mydevice.category;
+      return mysetting;
+    });
+
+    console.log(auxsendtask);
+
+    if (false) {
+      const response = await fetch('/api/planning/setDefault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(auxsendtask),
+      });
+      if (response.ok) {
+        console.log('planning OK');
+      } else {
+        console.log('error');
+      }
+    }
+    if (true) {
+      const response1 = await fetch('http://192.168.1.180:8004/input_test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(auxsendtask),
+      });
+      if (response1.ok) {
+        console.log('real planning OK');
+      } else {
+        console.log('real planning OK');
+      }
     }
   });
   const DeleteMission = () => {
     console.log('uno');
   };
   const SaveMission = (value) => {
+    // let auxvalue = JSON.parse(JSON.stringify(value));
+
     console.log('save mission');
     let fileData = YAML.stringify(value);
     const blob = new Blob([fileData], { type: 'text/plain' });
@@ -164,15 +226,15 @@ const PlanningPage = () => {
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
-      console.log(fileReader.result);
+      let auxsendtask = YAML.parse(fileReader.result);
+      console.log(auxsendtask);
       console.log(file.name);
-      setSendTask(fileReader.result);
-      setMarkers((oldmarkers) => {
-        let auxmarkers = JSON.parse(JSON.stringify(oldmarkers));
-        auxmarkers.bases = fileReader.result.markersbase;
-        return auxmarkers;
-      });
-      //rosContex.openMision(file.name, fileReader.result);
+      setMarkers((oldmarkers) => ({ ...oldmarkers, bases: auxsendtask.markersbase }));
+
+      if (auxsendtask.hasOwnProperty('markersbase')) {
+        delete auxsendtask.markersbase;
+      }
+      setSendTask(auxsendtask);
     };
     fileReader.onerror = () => {
       console.log(fileReader.error);
@@ -321,9 +383,6 @@ const PlanningPage = () => {
     setSendTask(sessionplanning);
   }, [sessionplanning]);
 
-  useEffect(() => {
-    setFilteredPositions(Object.values(positions));
-  }, [positions]);
   useEffect(() => {
     dispatch(sessionActions.updateMarker(markers));
   }, [markers]);
@@ -491,7 +550,7 @@ const PlanningPage = () => {
                                 ) : (
                                   <Typography>select doing click in the map</Typography>
                                 )}
-                                <ElementList markers={SendTask.loc} setMarkers={setLocations} />
+                                <SelectList Data={SendTask.loc} setData={setLocations} />
                               </div>
                             </AccordionDetails>
                           </Accordion>
@@ -564,6 +623,7 @@ const PlanningPage = () => {
                               Plannig
                             </Button>
                           </Box>
+                          <Typography>{notification}</Typography>
                         </div>
                       </TabPanel>
                     </TabContext>
@@ -579,7 +639,6 @@ const PlanningPage = () => {
               </Paper>
             </div>
           </div>
-          {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
         </RosControl>
       </MissionController>
     </div>

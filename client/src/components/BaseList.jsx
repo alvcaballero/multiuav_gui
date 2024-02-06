@@ -62,7 +62,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
   const AddNewElement = () => {
     let center = map.getCenter();
     let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers.push({ latitude: center.lat, longitude: center.lng, device: {}, mission: {} });
+    auxMarkers.push({ latitude: center.lat, longitude: center.lng });
     setMarkers(auxMarkers, { meth: 'add', index: -1 });
   };
   const DeleteElement = (index) => {
@@ -90,10 +90,10 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
   return (
     <Fragment>
       {BasesExist ? (
-        <Box textAlign='center'>
+        <Box textAlign="center">
           <Button
-            variant='contained'
-            size='large'
+            variant="contained"
+            size="large"
             sx={{ width: '80%', flexShrink: 0 }}
             style={{ marginTop: '15px' }}
             onClick={AddNewElement}
@@ -122,22 +122,22 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
                   {expanded === 'wp ' + index && (
                     <Fragment>
                       <Box
-                        component='form'
+                        component="form"
                         sx={{
                           '& .MuiTextField-root': { m: 1 },
                         }}
                       >
                         <div>
-                          <Typography variant='subtitle1' style={{ display: 'inline' }}>
+                          <Typography variant="subtitle1" style={{ display: 'inline' }}>
                             Position
                           </Typography>
                         </div>
                         <TextField
                           required
-                          label='Latitude '
-                          type='number'
+                          label="Latitude "
+                          type="number"
                           sx={{ width: '15ch' }}
-                          variant='standard'
+                          variant="standard"
                           inputProps={{
                             maxLength: 8,
                             step: 0.0001,
@@ -149,9 +149,9 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
                         />
                         <TextField
                           required
-                          label='Longitud '
-                          type='number'
-                          variant='standard'
+                          label="Longitud "
+                          type="number"
+                          variant="standard"
                           sx={{ width: '15ch' }}
                           inputProps={{
                             maxLength: 8,
@@ -169,10 +169,10 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
               </Accordion>
             ))
           )}
-          <Box textAlign='center'>
+          <Box textAlign="center">
             <Button
-              variant='contained'
-              size='large'
+              variant="contained"
+              size="large"
               sx={{ width: '80%', flexShrink: 0 }}
               style={{ marginTop: '15px' }}
               onClick={AddNewElement}
