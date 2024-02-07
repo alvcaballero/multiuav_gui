@@ -10,6 +10,10 @@ export class missionController {
     let response = await missionModel.sendTask(req.body);
     res.json(response);
   }
+  static async setMission(req, res) {
+    let response = await missionModel.setMission(req.body);
+    res.json(response);
+  }
 
   static async updateFiles(req, res) {
     console.log('updates Files');

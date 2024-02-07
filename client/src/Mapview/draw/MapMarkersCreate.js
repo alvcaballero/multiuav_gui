@@ -151,6 +151,7 @@ const MapMarkersCreate = ({
     map.on('touchmove', onMove);
     map.once('touchend', onUp);
   };
+
   useEffect(() => {
     map.addSource(id, {
       type: 'geojson',
@@ -173,22 +174,8 @@ const MapMarkersCreate = ({
         features: [],
       },
     });
-    return () => {
-      if (map.getSource(id)) {
-        map.removeSource(id);
-      }
-      if (map.getSource(linesMarkers)) {
-        map.removeSource(linesMarkers);
-      }
-      if (map.getSource(idselectMarkers)) {
-        map.removeSource(idselectMarkers);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     map.addLayer({
-      id: 'select-points',
+      id: idselectMarkers,
       type: 'symbol',
       source: idselectMarkers,
       filter: ['!has', 'point_count'],
@@ -208,7 +195,7 @@ const MapMarkersCreate = ({
     if (showLines) {
       map.addLayer({
         source: linesMarkers,
-        id: 'markers-line',
+        id: linesMarkers,
         type: 'line',
         paint: {
           'line-color': ['get', 'color'],
@@ -278,11 +265,20 @@ const MapMarkersCreate = ({
       if (map.getLayer(id)) {
         map.removeLayer(id);
       }
-      if (map.getLayer('markers-line')) {
-        map.removeLayer('markers-line');
+      if (map.getLayer(idselectMarkers)) {
+        map.removeLayer(idselectMarkers);
       }
-      if (map.getLayer('select-points')) {
-        map.removeLayer('select-points');
+      if (map.getLayer(linesMarkers)) {
+        map.removeLayer(linesMarkers);
+      }
+      if (map.getSource(id)) {
+        map.removeSource(id);
+      }
+      if (map.getSource(linesMarkers)) {
+        map.removeSource(linesMarkers);
+      }
+      if (map.getSource(idselectMarkers)) {
+        map.removeSource(idselectMarkers);
       }
     };
   }, [showTitles, showLines, moveMarkers, SelectItems, CreateItems]);

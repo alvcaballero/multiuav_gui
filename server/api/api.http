@@ -103,6 +103,15 @@ Content-Type: application/json
 
 < ./json/task_Centro1.json
 
+### setMission
+POST http://localhost:4000/api/missions/setMission
+Content-Type: application/json
+
+< ./json/mission.json
+
+### varibles 
+
+
 ### varibles 
 
 @uav_id = 4
@@ -188,6 +197,15 @@ GET http://localhost:4000/api/utils/datetime
 
 ###
 POST http://192.168.1.180:8004/input_test
+Content-Type: application/json
+
+{
+    "deviceId": 5, 
+    "type": "threat"
+}
+
+###
+GET http://192.168.1.180:8004/output
 Content-Type: application/json
 
 {

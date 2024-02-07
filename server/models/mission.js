@@ -55,6 +55,15 @@ export class missionModel {
     return { response: mission, status: 'OK' };
   }
 
+  static async setMission(mission) {
+    console.log('send mission');
+
+    var ws = new WebsocketManager(null, '/api/socket');
+    ws.broadcast(JSON.stringify({ mission: { name: 'name', id: '12', mission: mission } }));
+
+    return { response: mission, status: 'OK' };
+  }
+
   static planning({ mission_id, objectivo, loc, meteo }) {
     let uav = 'uav_15';
 

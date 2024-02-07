@@ -139,6 +139,8 @@ const PlanningPage = () => {
       return { name: gruop.name, items: items };
     });
 
+    auxsendtask.loc = auxloc;
+
     let listDevices = SendTask.bases.map((setting) => setting.devices.deviceId);
     let deviceRepeat = false;
     listDevices.map((id, index) => {
@@ -178,8 +180,9 @@ const PlanningPage = () => {
 
     console.log(auxsendtask);
 
-    if (false) {
-      const response = await fetch('/api/planning/setDefault', {
+    if (true) {
+      //const response = await fetch('/api/planning/setDefault', {
+      const response = await fetch('http://192.168.1.180:8004/input_json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(auxsendtask),
@@ -190,13 +193,15 @@ const PlanningPage = () => {
         console.log('error');
       }
     }
-    if (true) {
-      const response1 = await fetch('http://192.168.1.180:8004/input_test', {
+    if (false) {
+      const response1 = await fetch('http://192.168.1.180:8004/mission_request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(auxsendtask),
       });
       if (response1.ok) {
+        let response2 = await response1.json();
+        console.log(response2);
         console.log('real planning OK');
       } else {
         console.log('real planning OK');
