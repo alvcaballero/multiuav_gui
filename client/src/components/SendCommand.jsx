@@ -10,12 +10,8 @@ import {
   Button,
 } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
-import { prefixString } from '../common/stringUtils';
-import PositionValue from '../components/PositionValue';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SelectField from '../common/components/SelectField';
 import BaseCommandView from '../common/components/BaseCommandView';
 import { useCatch } from '../reactHelper';
 
@@ -53,16 +49,9 @@ const SendCommand = () => {
 
   const { id } = useParams();
 
-  const [item, setItem] = useState();
   const [itemc, setItemc] = useState({});
-  const [thisDevice, setthisdevice] = useState({});
-  const deviceposition = useSelector((state) => state.data.positions);
-  const devicelist = useSelector((state) => state.devices.items);
   const [savedId, setSavedId] = useState(0);
   const limitCommands = 0;
-  const [markers, setmarkers] = useState([]);
-  const [filteredPositions, setFilteredPositions] = useState([]);
-  const myhostname = `${window.location.hostname}`;
 
   const handleSend = useCatch(async () => {
     let command;
@@ -96,10 +85,10 @@ const SendCommand = () => {
 
   return (
     <div>
-      <Container maxWidth='xs' className={classes.container}>
+      <Container maxWidth="xs" className={classes.container}>
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant='subtitle1'>{'Command'}</Typography>
+            <Typography variant="subtitle1">{'Command'}</Typography>
           </AccordionSummary>
           <AccordionDetails className={classes.details}>
             {!limitCommands && !savedId && (
@@ -108,13 +97,13 @@ const SendCommand = () => {
           </AccordionDetails>
         </Accordion>
         <div className={classes.buttons}>
-          <Button type='button' color='primary' variant='outlined' onClick={() => navigate(-1)}>
+          <Button type="button" color="primary" variant="outlined" onClick={() => navigate(-1)}>
             Cancel
           </Button>
           <Button
-            type='button'
-            color='primary'
-            variant='contained'
+            type="button"
+            color="primary"
+            variant="contained"
             onClick={handleSend}
             disabled={!validate()}
           >

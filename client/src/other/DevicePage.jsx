@@ -31,6 +31,8 @@ import useFilter from '../common/useFilter';
 import MainMap from '../Mapview/MainMap';
 import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
 import { CameraV1 } from '../components/CameraV1';
+import SendCommand from '../components/SendCommand';
+import CommandCard from '../components/CommandCard';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -121,6 +123,7 @@ const DevicePage = () => {
   });
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
   const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
+  const [openSendCommand, setOpenSendCommand] = useState(false);
   useFilter(
     keyword,
     filter,
@@ -154,12 +157,12 @@ const DevicePage = () => {
 
   return (
     <div className={classes.root}>
-      <AppBar position='sticky' color='inherit'>
+      <AppBar position="sticky" color="inherit">
         <Toolbar>
-          <IconButton color='inherit' edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
+          <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant='h6'>{thisDevice.name}</Typography>
+          <Typography variant="h6">{thisDevice.name}</Typography>
         </Toolbar>
       </AppBar>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -191,9 +194,9 @@ const DevicePage = () => {
           }}
         >
           <div style={{ height: '50vh' }} className={classes.content}>
-            <Container maxWidth='false'>
+            <Container maxWidth="false">
               <Paper>
-                <Table aria-label='simple table'>
+                <Table aria-label="simple table">
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 'bold' }}>Attributes</TableCell>
@@ -229,7 +232,7 @@ const DevicePage = () => {
           </div>
           <div style={{ padding: '15px', margin: '10px' }}>
             <Paper>
-              <Typography align='center' variant='h5' component='div' style={{ padding: '15px' }}>
+              <Typography align="center" variant="h5" component="div" style={{ padding: '15px' }}>
                 Avoidance sensor
               </Typography>
               {item && item.attributes && (
@@ -251,15 +254,20 @@ const DevicePage = () => {
                   setValue(newValue);
                 }}
               >
-                <BottomNavigationAction label='Edit' icon={<EditIcon />} />
-                <BottomNavigationAction label='Result' icon={<ReplayIcon />} />
-                <BottomNavigationAction label='Command' icon={<PublishIcon />} />
-                <BottomNavigationAction label='Delete' icon={<DeleteIcon />} />
+                <BottomNavigationAction label="Edit" icon={<EditIcon />} />
+                <BottomNavigationAction label="Result" icon={<ReplayIcon />} />
+                <BottomNavigationAction
+                  label="Command"
+                  icon={<PublishIcon />}
+                  onClick={() => setOpenSendCommand(true)}
+                />
+                <BottomNavigationAction label="Delete" icon={<DeleteIcon />} />
               </BottomNavigation>
             </Paper>
           </div>
         </div>
       </div>
+      {openSendCommand && <CommandCard id={id} onClose={() => setOpenSendCommand(false)} />}
     </div>
   );
 };

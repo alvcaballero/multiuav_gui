@@ -21,7 +21,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
   }, [availableAttributes, item]);
 
   return (
-    <Fragment key='sdf'>
+    <Fragment key="sdf">
       <SelectField
         value={item.type || ''}
         onChange={(e) => setItem({ ...item, type: e.target.value, attributes: {} })}
@@ -35,6 +35,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
         keyGetter={(it) => it.type}
         titleGetter={(it) => prefixString('command_', it.type)}
         label={'Command type'}
+        getItems={(items) => console.log(items)}
       />
       {attributes.map(({ key, name, type }) => {
         if (type === 'boolean') {

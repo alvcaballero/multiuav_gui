@@ -25,6 +25,14 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const useStyles = makeStyles((theme) => ({
+  root: {
+    pointerEvents: 'none',
+    position: 'fixed',
+    zIndex: 6,
+    left: '50%',
+    top: '20%',
+    transform: 'translateX(-50%)',
+  },
   card: {
     pointerEvents: 'auto',
     display: 'block',
@@ -43,14 +51,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     padding: theme.spacing(1, 1, 0, 2),
   },
-  root: {
-    pointerEvents: 'none',
-    position: 'fixed',
-    zIndex: 6,
-    left: '50%',
-    top: '20%',
-    transform: 'translateX(-50%)',
-  },
+
   button: {
     width: '80%',
     paddingBottom: '10pt',
@@ -134,8 +135,8 @@ export const Adduav = ({ SetAddUAVOpen }) => {
     <div className={classes.root}>
       <Card elevation={3} className={classes.card}>
         <div className={classes.closeBtn}>
-          <IconButton size='small' onClick={closeAddUav} onTouchStart={closeAddUav}>
-            <CloseIcon fontSize='small' className={classes.mediaButton} />
+          <IconButton size="small" onClick={closeAddUav} onTouchStart={closeAddUav}>
+            <CloseIcon fontSize="small" className={classes.mediaButton} />
           </IconButton>
         </div>
 
@@ -145,14 +146,14 @@ export const Adduav = ({ SetAddUAVOpen }) => {
 
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant='subtitle1'>Datos UAV</Typography>
+            <Typography variant="subtitle1">Datos UAV</Typography>
           </AccordionSummary>
           <AccordionDetails className={classes.details}>
             <FormGroup style={{ margin: '20px' }}>
               <TextField
                 required
-                label='UAV ID'
-                name='uavid'
+                label="UAV ID"
+                name="uavid"
                 value={item.name}
                 onChange={(event) => setItem({ ...item, name: event.target.value })}
                 className={classes.inputtext}
@@ -162,14 +163,14 @@ export const Adduav = ({ SetAddUAVOpen }) => {
                 emptyValue={null}
                 value={item.category ? item.category : ''}
                 onChange={(e) => setItem({ ...item, category: e.target.value })}
-                endpoint='/api/category'
+                endpoint="/api/category"
                 keyGetter={(it) => it}
                 titleGetter={(it) => it}
                 label={'Type UAV '}
               />
               <TextField
                 style={{ marginTop: '20px' }}
-                label='ip'
+                label="ip"
                 value={item.ip}
                 onChange={(event) => setItem({ ...item, ip: event.target.value })}
               />
@@ -179,23 +180,23 @@ export const Adduav = ({ SetAddUAVOpen }) => {
         {item && (
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant='subtitle1'>Camera</Typography>
+              <Typography variant="subtitle1">Camera</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
               {item.camera &&
                 item.camera.map((action_key, index_ac, list_ac) => (
                   <Fragment key={'fragment-action-' + index_ac}>
-                    <Typography variant='subtitle1' className={classes.attributeName}>
+                    <Typography variant="subtitle1" className={classes.attributeName}>
                       {'Camera ' + index_ac}
                     </Typography>
                     <div>
-                      <FormControl variant='outlined'>
-                        <InputLabel id='demo-simple-select-outlined-label'>CameraType</InputLabel>
+                      <FormControl variant="outlined">
+                        <InputLabel id="demo-simple-select-outlined-label">CameraType</InputLabel>
                         <Select
-                          labelId='demo-simple-select-outlined-label'
-                          id='demo-simple-select-outlined'
+                          labelId="demo-simple-select-outlined-label"
+                          id="demo-simple-select-outlined"
                           value={action_key['type']}
-                          label='type'
+                          label="type"
                           onChange={(e) =>
                             setItem({
                               ...item,
@@ -207,9 +208,9 @@ export const Adduav = ({ SetAddUAVOpen }) => {
                             })
                           }
                         >
-                          <MenuItem value='WebRTC'>WebRTC</MenuItem>
-                          <MenuItem value='WebRTC_env'>WebRTCenv</MenuItem>
-                          <MenuItem value='Websocket'>Websocket</MenuItem>
+                          <MenuItem value="WebRTC">WebRTC</MenuItem>
+                          <MenuItem value="WebRTC_env">WebRTCenv</MenuItem>
+                          <MenuItem value="Websocket">Websocket</MenuItem>
                         </Select>
                       </FormControl>
                       <div className={classes.actionValue}>
@@ -246,8 +247,8 @@ export const Adduav = ({ SetAddUAVOpen }) => {
                 ))}
 
               <Button
-                variant='contained'
-                size='large'
+                variant="contained"
+                size="large"
                 sx={{ width: '80%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
                 onClick={addNewcamera}
@@ -266,7 +267,7 @@ export const Adduav = ({ SetAddUAVOpen }) => {
             justifyContent: 'center',
           }}
         >
-          <Button className={classes.button} variant='contained' onClick={AddnewUAV}>
+          <Button className={classes.button} variant="contained" onClick={AddnewUAV}>
             ADD
           </Button>
         </div>

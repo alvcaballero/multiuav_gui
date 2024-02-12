@@ -371,7 +371,7 @@ const MapMarkersCreate = ({
       type: 'FeatureCollection',
       features: markers.elements.map((element, index) => markerstolines(element, index)),
     });
-  }, [markers]);
+  }, [markers, showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
 
   useEffect(() => {
     let selectPoints = selectToPoints(selectMarkers);
@@ -386,7 +386,7 @@ const MapMarkersCreate = ({
         properties: { ...point },
       })),
     });
-  }, [selectMarkers]);
+  }, [selectMarkers, showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
 
   return null;
 };

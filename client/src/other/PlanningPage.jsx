@@ -84,7 +84,7 @@ const useStyles = makeStyles((theme) => ({
     borderBottom: '3px solid rgb(212, 212, 212)',
   },
   list: {
-    maxHeight: `calc(100vh - 152px)`,
+    maxHeight: 'calc(100vh - 152px)',
     overflowY: 'auto',
   },
   title: {
@@ -101,7 +101,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 const showToast = (type, description) => {
-  setList([...list, toastProperties]);
+  console.log(type + description);
 };
 
 const PlanningPage = () => {
@@ -113,6 +113,7 @@ const PlanningPage = () => {
   const [moveMarkers, SetMoveMarkers] = useState(false);
   const [SelectMarkers, SetSelectMarkers] = useState(false);
   const [CreateMarkers, SetCreateMarkers] = useState(false);
+  const [requestPlanning, SetRequestPlanning] = useState(100);
 
   const sessionmarkers = useSelector((state) => state.session.markers);
   const sessionplanning = useSelector((state) => state.session.planning);
@@ -180,40 +181,24 @@ const PlanningPage = () => {
 
     console.log(auxsendtask);
 
-    if (true) {
-      //const response = await fetch('/api/planning/setDefault', {
-      const response = await fetch('http://192.168.1.180:8004/input_json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(auxsendtask),
-      });
-      if (response.ok) {
-        console.log('planning OK');
-      } else {
-        console.log('error');
-      }
-    }
-    if (false) {
-      const response1 = await fetch('http://192.168.1.180:8004/mission_request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(auxsendtask),
-      });
-      if (response1.ok) {
-        let response2 = await response1.json();
-        console.log(response2);
-        console.log('real planning OK');
-      } else {
-        console.log('real planning OK');
-      }
+    const response1 = await fetch('http://192.168.1.180:8004/mission_request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(auxsendtask),
+    });
+    if (response1.ok) {
+      const response2 = await response1.json();
+      console.log(response2);
+      console.log('real planning OK');
+      SetRequestPlanning(0);
+    } else {
+      console.log('real planning OK');
     }
   });
   const DeleteMission = () => {
     console.log('uno');
   };
-  const SaveMission = (value) => {
-    // let auxvalue = JSON.parse(JSON.stringify(value));
-
+  const SavePlanning = (value) => {
     console.log('save mission');
     let fileData = YAML.stringify(value);
     const blob = new Blob([fileData], { type: 'text/plain' });
@@ -246,6 +231,21 @@ const PlanningPage = () => {
     };
   };
 
+  const setDefaultPlanning = async (value) => {
+    const response1 = await fetch('api/planning/setDefault', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(value),
+    });
+    if (response1.ok) {
+      const response2 = await response1.json();
+      console.log(response2);
+      console.log('real planning OK');
+      SetRequestPlanning(0);
+    } else {
+      console.log('real planning OK');
+    }
+  };
   const setBaseSettings = (element) => {
     setSendTask({ ...SendTask, bases: element });
   };
@@ -338,13 +338,16 @@ const PlanningPage = () => {
   useEffectAsync(async () => {
     const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo.id}`);
     if (response.ok) {
-      setsettings(await response.json());
+      const jsonresponse = await response.json();
+      console.log(jsonresponse);
+      setsettings(jsonresponse);
     } else {
       throw Error(await response.text());
     }
   }, [SendTask.objetivo]);
 
   useEffect(() => {
+    console.log('effect settings');
     console.log(settings);
     if (settings.hasOwnProperty('mission')) {
       if (SendTask.bases.length == 0) {
@@ -396,6 +399,36 @@ const PlanningPage = () => {
     dispatch(sessionActions.updatePlanning(SendTask));
   }, [SendTask]);
 
+  useEffect(() => {
+    const intervalPlannig = setInterval(() => {
+      console.log('response Planning');
+      SetRequestPlanning((old) => {
+        return old + 1;
+      });
+    }, 5000);
+
+    const fetchData = async () => {
+      const response1 = await fetch(`http://192.168.1.180:8004/get_plan?IDs=${SendTask.id}`);
+      if (response1.ok) {
+        let response2 = await response1.json();
+        console.log(response2);
+        console.log('response to check planning');
+        //clearInterval(intervalPlannig);
+      } else {
+        console.log('check planning OK');
+      }
+    };
+    if (requestPlanning < 4) {
+      fetchData();
+      //setCounter(counter + 1);
+    } else {
+      // Stop further requests if the counter reaches 3
+      clearInterval(intervalPlannig);
+    }
+
+    return () => clearInterval(intervalPlannig);
+  }, [requestPlanning]);
+
   return (
     <div className={classes.root}>
       <MissionController>
@@ -441,7 +474,11 @@ const PlanningPage = () => {
 
                   <IconButton
                     onClick={() => {
-                      SaveMission({ ...SendTask, markersbase: markers.bases });
+                      SavePlanning({
+                        ...SendTask,
+                        markersbase: markers.bases,
+                        elements: markers.elements,
+                      });
                     }}
                   >
                     <SaveAltIcon />
@@ -501,6 +538,17 @@ const PlanningPage = () => {
                               />
                             </AccordionDetails>
                           </Accordion>
+                          <Box textAlign="center">
+                            <Button
+                              variant="contained"
+                              size="large"
+                              sx={{ width: '80%', flexShrink: 0 }}
+                              style={{ marginTop: '15px' }}
+                              onClick={SendPlanning}
+                            >
+                              Save Global Markers
+                            </Button>
+                          </Box>
                         </div>
                       </TabPanel>
                       <TabPanel value="2">
@@ -626,6 +674,21 @@ const PlanningPage = () => {
                               onClick={SendPlanning}
                             >
                               Plannig
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="large"
+                              sx={{ width: '80%', flexShrink: 0 }}
+                              style={{ marginTop: '15px' }}
+                              onClick={() =>
+                                setDefaultPlanning({
+                                  ...SendTask,
+                                  markersbase: markers.bases,
+                                  elements: markers.elements,
+                                })
+                              }
+                            >
+                              Save Global Settings
                             </Button>
                           </Box>
                           <Typography>{notification}</Typography>
