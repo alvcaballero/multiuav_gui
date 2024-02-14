@@ -214,9 +214,15 @@ const PlanningPage = () => {
     myTask.mission_id = SendTask.id;
     myTask.name = SendTask.name;
     myTask.objetivo = SendTask.objetivo.id;
-    myTask.loc = SendTask.loc;
     myTask.bases = markers.bases;
     myTask.meteo = SendTask.meteo;
+    myTask.loc = SendTask.loc.map((group) => {
+      let items = group.items.map((element) => ({
+        latitude: element.latitude,
+        longitude: element.longitude,
+      }));
+      return { name: group.name, items };
+    });
     console.log(myTask);
 
     const response = await fetch('/api/missions/sendTask', {
