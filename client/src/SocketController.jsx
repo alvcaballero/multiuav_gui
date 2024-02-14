@@ -96,6 +96,10 @@ const SocketController = () => {
         console.log('add markers');
         dispatch(sessionActions.updateMarker(data.markers));
       }
+      if (data.planning) {
+        console.log('add planning ');
+        dispatch(sessionActions.updatePlanning(data.planning));
+      }
     };
   };
   useEffectAsync(async () => {

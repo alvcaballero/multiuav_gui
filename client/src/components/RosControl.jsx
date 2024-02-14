@@ -76,7 +76,6 @@ export const RosControl = ({ children, notification }) => {
     } catch (error) {}
   };
   const serverRMUAV = async (uav_ns) => {
-    //event.preventDefault();
     console.log(uav_ns);
     try {
       const response = await fetch('/api/disconectdevice', {
@@ -153,12 +152,7 @@ export const RosControl = ({ children, notification }) => {
   const openMision = (name_mission, text_mission) => {
     if (name_mission.endsWith('.yaml')) {
       plan_mission = YAML.parse(text_mission);
-      dispatch(
-        missionActions.updateMission({
-          name: name_mission.slice(0, -5),
-          mission: plan_mission,
-        })
-      );
+      dispatch(missionActions.updateMission({ ...plan_mission, name: name_mission.slice(0, -5) }));
     } else if (name_mission.endsWith('.waypoints')) {
       let mission_line = text_mission.split('\n');
       let mission_array = mission_line.map((x) => x.split('\t'));
@@ -172,12 +166,7 @@ export const RosControl = ({ children, notification }) => {
       });
       mission_yaml.uav_1['wp_n'] = count_wp;
       //console.log(mission_yaml)
-      dispatch(
-        missionActions.updateMission({
-          name: name_mission.slice(0, -10),
-          mission: mission_yaml,
-        })
-      );
+      dispatch(missionActions.updateMission({ ...mission_yaml, name: name_mission.slice(0, -10) }));
     } else if (name_mission.endsWith('.kml')) {
       let xmlDocument = new DOMParser().parseFromString(text_mission, 'text/xml');
       let missionxml = xmlDocument.getElementsByTagName('coordinates');
@@ -210,12 +199,7 @@ export const RosControl = ({ children, notification }) => {
       });
 
       console.log(mission_yaml);
-      dispatch(
-        missionActions.updateMission({
-          name: name_mission.slice(0, -4),
-          mission: mission_yaml,
-        })
-      );
+      dispatch(missionActions.updateMission({ ...mission_yaml, name: name_mission.slice(0, -4) }));
     } else if (name_mission.endsWith('.plan')) {
       let jsondoc = JSON.parse(text_mission);
       let mission_yaml = { uav_n: 1, uav_1: {} };
@@ -229,13 +213,7 @@ export const RosControl = ({ children, notification }) => {
         count_wp = count_wp + 1;
       });
       mission_yaml.uav_1['wp_n'] = count_wp;
-      //console.log(mission_yaml)
-      dispatch(
-        missionActions.updateMission({
-          name: name_mission.slice(0, -5),
-          mission: mission_yaml,
-        })
-      );
+      dispatch(missionActions.updateMission({ ...mission_yaml, name: name_mission.slice(0, -5) }));
     } else {
       notification('danger', 'Formato de mission no compatible');
     }

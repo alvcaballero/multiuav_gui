@@ -16,6 +16,7 @@ import {
   Divider,
   Tab,
   Typography,
+  Switch,
 } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -26,8 +27,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 import makeStyles from '@mui/styles/makeStyles';
 import { useNavigate } from 'react-router-dom';
-
-import { sessionActions } from '../store';
+import { missionActions, sessionActions } from '../store'; // here update device action with position of uav for update in map
 
 import MapView from '../Mapview/MapView';
 import { Navbar } from '../components/Navbar';
@@ -86,6 +86,10 @@ const useStyles = makeStyles((theme) => ({
   list: {
     maxHeight: 'calc(100vh - 152px)',
     overflowY: 'auto',
+    display: 'flex',
+    gap: '10px',
+    flexDirection: 'column',
+    margin: '20px',
   },
   title: {
     flexGrow: 1,
@@ -98,6 +102,18 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     gap: theme.spacing(2),
     paddingBottom: theme.spacing(3),
+  },
+  panelButton: {
+    width: '80%',
+    flexShrink: 0,
+    marginTop: '15px',
+  },
+  mapContainer: {
+    float: 'right',
+    width: 'calc(100% - 560px)',
+    height: 'calc(70vh - 95px)',
+    right: '0px',
+    margin: 'auto',
   },
 }));
 const showToast = (type, description) => {
@@ -122,109 +138,116 @@ const PlanningPage = () => {
   const [SendTask, setSendTask] = useState(sessionplanning);
   const [tabValue, setTabValue] = useState('2');
   const [settings, setsettings] = useState('');
-  const [notification, setnotification] = useState('');
+  const [notification, setNotification] = useState('');
+  const [checked, setChecked] = useState(true);
 
   const SendPlanning = useCatch(async () => {
-    let auxsendtask = {};
-    auxsendtask.id = SendTask.id;
-    auxsendtask.name = SendTask.name;
-    //auxsendtask.settings = SendTask.bases;
-    auxsendtask.objetivo = SendTask.objetivo.id;
-    auxsendtask.bases = markers.bases;
-    auxsendtask.meteo = SendTask.meteo;
-    let auxloc = SendTask.loc.map((gruop) => {
-      let items = gruop.items.map((element) => ({
+    let myTask = {};
+    myTask.id = SendTask.id;
+    myTask.name = SendTask.name;
+    myTask.objetivo = SendTask.objetivo.id;
+    myTask.bases = markers.bases;
+    myTask.meteo = SendTask.meteo;
+    myTask.loc = SendTask.loc.map((group) => {
+      let items = group.items.map((element) => ({
         latitude: element.latitude,
         longitude: element.longitude,
       }));
-      return { name: gruop.name, items: items };
+      return { name: group.name, items };
     });
-
-    auxsendtask.loc = auxloc;
 
     let listDevices = SendTask.bases.map((setting) => setting.devices.deviceId);
-    let deviceRepeat = false;
-    listDevices.map((id, index) => {
-      listDevices.map((id1, index1) => {
-        if (index !== index1) {
-          if (id == id1) {
-            deviceRepeat = true;
-          }
-        }
-      });
-    });
+    let deviceRepeat = listDevices.some((value, index, list) => !(list.indexOf(value) === index));
+    setNotification('');
     if (deviceRepeat) {
-      setnotification('the device is repeated please change');
+      setNotification('the device is repeated please change');
       return null;
-    } else {
-      setnotification('');
+    }
+    if (SendTask.loc.length === 0) {
+      setNotification('No elements to inspection');
+      return null;
     }
 
     let devices = [];
     const response = await fetch('/api/devices');
-
     if (response.ok) {
       devices = await response.json();
     } else {
       throw Error(await response.text());
     }
-    console.log(devices);
-    console.log(SendTask.bases);
-
-    auxsendtask.settings = SendTask.bases.map((setting) => {
-      let mysetting = JSON.parse(JSON.stringify(setting));
-      let mydevice = devices.find((device) => device.id == setting.devices.deviceId);
-      console.log(mydevice);
-      mysetting.devices['category'] = mydevice.category;
-      return mysetting;
+    myTask.settings = SendTask.bases.map((setting) => {
+      let mySetting = JSON.parse(JSON.stringify(setting));
+      let myDevice = devices.find((device) => device.id == setting.devices.deviceId);
+      mySetting.devices.deviceId = myDevice.name;
+      mySetting.devices.category = myDevice.category;
+      return mySetting;
     });
-
-    console.log(auxsendtask);
-
-    const response1 = await fetch('http://192.168.1.180:8004/mission_request', {
+    console.log(myTask);
+    const response1 = await fetch('http://127.0.0.1:8004/mission_request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(auxsendtask),
+      body: JSON.stringify(myTask),
     });
     if (response1.ok) {
       const response2 = await response1.json();
       console.log(response2);
-      console.log('real planning OK');
       SetRequestPlanning(0);
     } else {
-      console.log('real planning OK');
+      throw Error(await response.text());
     }
+    return true;
   });
   const DeleteMission = () => {
     console.log('uno');
   };
   const SavePlanning = (value) => {
-    console.log('save mission');
     let fileData = YAML.stringify(value);
     const blob = new Blob([fileData], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = value.name + '.yaml';
+    link.download = `${value.name}.yaml`;
     link.href = url;
     link.click();
   };
+  const MissionTask = async () => {
+    const myTask = {};
+    myTask.mission_id = SendTask.id;
+    myTask.name = SendTask.name;
+    myTask.objetivo = SendTask.objetivo.id;
+    myTask.loc = SendTask.loc;
+    myTask.bases = markers.bases;
+    myTask.meteo = SendTask.meteo;
+    console.log(myTask);
+
+    const response = await fetch('/api/missions/sendTask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(myTask),
+    });
+    if (response.ok) {
+      const response2 = await response.json();
+      console.log(response2);
+    } else {
+      throw Error(await response.text());
+    }
+  };
+
+  /*
+   * https://www.youtube.com/watch?v=K3SshoCXC2g
+   */
   const readFile = (e) => {
-    //https://www.youtube.com/watch?v=K3SshoCXC2g
     const file = e.target.files[0];
     if (!file) return;
 
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
-      let auxsendtask = YAML.parse(fileReader.result);
-      console.log(auxsendtask);
-      console.log(file.name);
-      setMarkers((oldmarkers) => ({ ...oldmarkers, bases: auxsendtask.markersbase }));
+      let myTask = YAML.parse(fileReader.result);
+      setMarkers((oldmarkers) => ({ ...oldmarkers, bases: myTask.markersbase }));
 
-      if (auxsendtask.hasOwnProperty('markersbase')) {
-        delete auxsendtask.markersbase;
-      }
-      setSendTask(auxsendtask);
+      myTask.hasOwnProperty('markersbase') ? delete myTask.markersbase : null;
+      myTask.hasOwnProperty('elements') ? delete myTask.elements : null;
+      setSendTask(myTask);
     };
     fileReader.onerror = () => {
       console.log(fileReader.error);
@@ -232,18 +255,16 @@ const PlanningPage = () => {
   };
 
   const setDefaultPlanning = async (value) => {
-    const response1 = await fetch('api/planning/setDefault', {
+    console.log('Setdefault');
+    const response = await fetch('api/planning/setDefault', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(value),
     });
-    if (response1.ok) {
-      const response2 = await response1.json();
-      console.log(response2);
-      console.log('real planning OK');
-      SetRequestPlanning(0);
+    if (response.ok) {
+      const response2 = await response.json();
     } else {
-      console.log('real planning OK');
+      throw Error(await response.text());
     }
   };
   const setBaseSettings = (element) => {
@@ -263,14 +284,11 @@ const PlanningPage = () => {
         setSendTask((oldSendtask) => {
           let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
           let auxconfig = {};
-          Object.keys(settings).map((key) => {
+          Object.keys(settings).forEach((key) => {
             auxconfig[key] = {};
-          });
-          Object.keys(settings.devices).map((key) => {
-            auxconfig['devices'][key] = settings['devices'][key].default;
-          });
-          Object.keys(settings.mission).map((key) => {
-            auxconfig['mission'][key] = settings['mission'][key].default;
+            Object.keys(settings[key]).forEach((key1) => {
+              auxconfig[key][key1] = settings[key][key1].default;
+            });
           });
           auxbases.push(auxconfig);
           return { ...oldSendtask, bases: auxbases };
@@ -279,7 +297,8 @@ const PlanningPage = () => {
       if (meta.meth == 'del') {
         setSendTask((oldSendtask) => {
           let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
-          auxbases.split(meta.index, 1);
+          console.log(auxbases);
+          auxbases.splice(meta.index, 1);
           return { ...oldSendtask, bases: auxbases };
         });
       }
@@ -326,13 +345,16 @@ const PlanningPage = () => {
   };
   const updateObjetive = (newObjetive) => {
     setSendTask((oldSendtask) => {
-      let auxSendtask = JSON.parse(JSON.stringify(oldSendtask));
-      auxSendtask.objetivo = newObjetive;
+      let myTask = JSON.parse(JSON.stringify(oldSendtask));
+      myTask.objetivo = newObjetive;
       if (newObjetive.type !== oldSendtask.objetivo.type) {
-        auxSendtask.loc = [];
+        myTask.loc = [];
       }
-      return auxSendtask;
+      return myTask;
     });
+  };
+  const toggleChecked = () => {
+    setChecked((prev) => !prev);
   };
 
   useEffectAsync(async () => {
@@ -351,26 +373,21 @@ const PlanningPage = () => {
     console.log(settings);
     if (settings.hasOwnProperty('mission')) {
       if (SendTask.bases.length == 0) {
-        let config = [];
-        markers.bases.forEach((element) => {
+        let config = markers.bases.map(() => {
           let auxconfig = {};
-          Object.keys(settings).map((key) => {
+          Object.keys(settings).forEach((key) => {
             auxconfig[key] = {};
+            Object.keys(settings[key]).forEach((key1) => {
+              auxconfig[key][key1] = settings[key][key1].default;
+            });
           });
-          Object.keys(settings.devices).map((key) => {
-            auxconfig['devices'][key] = settings['devices'][key].default;
-          });
-          Object.keys(settings.mission).map((key) => {
-            auxconfig['mission'][key] = settings['mission'][key].default;
-          });
-
-          config.push(auxconfig);
+          return auxconfig;
         });
         setSendTask((SendTaskold) => {
-          let auxSendtask = JSON.parse(JSON.stringify(SendTaskold));
-          auxSendtask.bases = config;
-          auxSendtask.settings = settings;
-          return auxSendtask;
+          const myTask = JSON.parse(JSON.stringify(SendTaskold));
+          myTask.bases = config;
+          myTask.settings = settings;
+          return myTask;
         });
       } else {
         setSendTask({ ...SendTask, settings: settings });
@@ -402,27 +419,28 @@ const PlanningPage = () => {
   useEffect(() => {
     const intervalPlannig = setInterval(() => {
       console.log('response Planning');
-      SetRequestPlanning((old) => {
-        return old + 1;
-      });
+      SetRequestPlanning((old) => old + 1);
     }, 5000);
 
     const fetchData = async () => {
-      const response1 = await fetch(`http://192.168.1.180:8004/get_plan?IDs=${SendTask.id}`);
-      if (response1.ok) {
-        let response2 = await response1.json();
-        console.log(response2);
-        console.log('response to check planning');
-        //clearInterval(intervalPlannig);
+      const response = await fetch(`http://127.0.0.1:8004/get_plan?IDs=${SendTask.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        if (Array.isArray(data.results) && data.results.length > 0) {
+          if (data.results[0].hasOwnProperty('route')) {
+            console.log('response to check planning');
+            SetRequestPlanning(10);
+            dispatch(missionActions.updateMission({ ...data.results[0], version: '3' }));
+          }
+        }
       } else {
-        console.log('check planning OK');
+        throw Error(await response.text());
       }
     };
     if (requestPlanning < 4) {
       fetchData();
-      //setCounter(counter + 1);
     } else {
-      // Stop further requests if the counter reaches 3
       clearInterval(intervalPlannig);
     }
 
@@ -435,17 +453,9 @@ const PlanningPage = () => {
         <RosControl notification={showToast}>
           <Navbar />
           <Menu />
-          <div
-            style={{
-              float: 'right',
-              width: 'calc(100% - 560px)',
-              height: 'calc(70vh - 95px)',
-              right: '0px',
-              margin: 'auto',
-            }}
-          >
+          <div className={classes.mapContainer}>
             <MapView>
-              <MapMissions />
+              {checked && <MapMissions />}
               <MapMarkersCreate
                 markers={markers}
                 selectMarkers={SendTask.loc}
@@ -471,7 +481,13 @@ const PlanningPage = () => {
                   <Typography variant="h6" className={classes.title}>
                     Planning mission
                   </Typography>
-
+                  <Typography>Show Mission</Typography>
+                  <Switch
+                    checked={checked}
+                    onChange={toggleChecked}
+                    name="checkedA"
+                    inputProps={{ 'aria-label': 'secondary checkbox' }}
+                  />
                   <IconButton
                     onClick={() => {
                       SavePlanning({
@@ -500,202 +516,194 @@ const PlanningPage = () => {
                   </label>
                 </Toolbar>
                 <div className={classes.list}>
-                  <Box
-                    style={{
-                      display: 'flex',
-                      gap: '10px',
-                      flexDirection: 'column',
-                      margin: '20px',
-                    }}
-                  >
-                    <TabContext value={tabValue}>
-                      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
-                          <Tab label="Elements" value="1" />
-                          <Tab label="Planning" value="2" />
-                          <Tab label="Settings" value="3" />
-                        </TabList>
-                      </Box>
-                      <TabPanel value="1">
-                        <div className={classes.details}>
-                          <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography>Base elements</Typography>
-                            </AccordionSummary>
-                            <AccordionDetails className={classes.details}>
-                              <BaseList markers={markers.bases} setMarkers={setMarkersBase} />
-                            </AccordionDetails>
-                          </Accordion>
-                          <Divider />
-                          <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography>Interest Elements</Typography>
-                            </AccordionSummary>
-                            <AccordionDetails className={classes.details}>
-                              <ElementList
-                                markers={markers.elements}
-                                setMarkers={setMarkersElements}
-                              />
-                            </AccordionDetails>
-                          </Accordion>
-                          <Box textAlign="center">
-                            <Button
-                              variant="contained"
-                              size="large"
-                              sx={{ width: '80%', flexShrink: 0 }}
-                              style={{ marginTop: '15px' }}
-                              onClick={SendPlanning}
-                            >
-                              Save Global Markers
-                            </Button>
-                          </Box>
-                        </div>
-                      </TabPanel>
-                      <TabPanel value="2">
-                        <Box className={classes.details}>
-                          <TextField
-                            required
-                            fullWidth
-                            label="id"
-                            type="number"
-                            variant="standard"
-                            value={SendTask.id ? SendTask.id : 123}
-                            onChange={(event) =>
-                              setSendTask({ ...SendTask, id: event.target.value })
-                            }
-                          />
-                          <TextField
-                            required
-                            fullWidth
-                            label="Name Mission"
-                            variant="standard"
-                            value={SendTask.name ? SendTask.name : ' '}
-                            onChange={(event) =>
-                              setSendTask({ ...SendTask, name: event.target.value })
-                            }
-                          />
-                          <SelectField
-                            emptyValue={null}
-                            fullWidth={true}
-                            label={'objetive'}
-                            value={SendTask.objetivo.id}
-                            endpoint={'/api/planning/missionstype'}
-                            keyGetter={(it) => it.id}
-                            titleGetter={(it) => it.name}
-                            onChange={(e, items) => {
-                              updateObjetive(items[e.target.value]);
-                            }}
-                            getItems={(it) => {
-                              console.log(it);
-
-                              setSendTask({ ...SendTask, objetivo: it });
-                            }}
-                          />
-
-                          <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography>Points to inspect </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails className={classes.details}>
-                              <div className={classes.details}>
-                                {SendTask.objetivo.hasOwnProperty('description') ? (
-                                  <Typography>{SendTask.objetivo.description}</Typography>
-                                ) : (
-                                  <Typography>select doing click in the map</Typography>
-                                )}
-                                <SelectList Data={SendTask.loc} setData={setLocations} />
-                              </div>
-                            </AccordionDetails>
-                          </Accordion>
-                          <Divider />
-                          <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography>Meteo</Typography>
-                            </AccordionSummary>
-                            <AccordionDetails className={classes.details}>
-                              <TextField
-                                required
-                                fullWidth
-                                label="wind speed"
-                                type="number"
-                                variant="standard"
-                                value={12}
-                              />
-                              <TextField
-                                required
-                                fullWidth
-                                label="Wind direction"
-                                type="number"
-                                variant="standard"
-                                value={12}
-                              />
-                              <TextField
-                                required
-                                fullWidth
-                                label="Temperature"
-                                type="number"
-                                variant="standard"
-                                value={12}
-                              />
-                              <TextField
-                                required
-                                fullWidth
-                                label="Humidity"
-                                type="number"
-                                variant="standard"
-                                value={12}
-                              />
-                              <TextField
-                                required
-                                fullWidth
-                                label="Pressure"
-                                type="number"
-                                variant="standard"
-                                value={12}
-                              />
-                            </AccordionDetails>
-                          </Accordion>
+                  <TabContext value={tabValue}>
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                      <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
+                        <Tab label="Elements" value="1" />
+                        <Tab label="Planning" value="2" />
+                        <Tab label="Settings" value="3" />
+                      </TabList>
+                    </Box>
+                    <TabPanel value="1">
+                      <div className={classes.details}>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Base elements</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <BaseList markers={markers.bases} setMarkers={setMarkersBase} />
+                          </AccordionDetails>
+                        </Accordion>
+                        <Divider />
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Interest Elements</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <ElementList
+                              markers={markers.elements}
+                              setMarkers={setMarkersElements}
+                            />
+                          </AccordionDetails>
+                        </Accordion>
+                        <Box textAlign="center">
+                          <Button
+                            variant="contained"
+                            size="large"
+                            className={classes.panelButton}
+                            onClick={SendPlanning}
+                          >
+                            Save Global Markers
+                          </Button>
                         </Box>
-                      </TabPanel>
-                      <TabPanel value="3">
-                        <div className={classes.details}>
-                          <BaseSettings
-                            data={SendTask.bases}
-                            param={SendTask.settings}
-                            setData={setBaseSettings}
-                          />
+                      </div>
+                    </TabPanel>
+                    <TabPanel value="2">
+                      <Box className={classes.details}>
+                        <TextField
+                          required
+                          fullWidth
+                          label="id"
+                          type="number"
+                          variant="standard"
+                          value={SendTask.id ? SendTask.id : 123}
+                          onChange={(event) => setSendTask({ ...SendTask, id: event.target.value })}
+                        />
+                        <TextField
+                          required
+                          fullWidth
+                          label="Name Mission"
+                          variant="standard"
+                          value={SendTask.name ? SendTask.name : ' '}
+                          onChange={(event) =>
+                            setSendTask({ ...SendTask, name: event.target.value })
+                          }
+                        />
+                        <SelectField
+                          emptyValue={null}
+                          fullWidth
+                          label="objetive"
+                          value={SendTask.objetivo.id}
+                          endpoint="/api/planning/missionstype"
+                          keyGetter={(it) => it.id}
+                          titleGetter={(it) => it.name}
+                          onChange={(e, items) => {
+                            updateObjetive(items[e.target.value]);
+                          }}
+                          getItems={(it) => {
+                            setSendTask({ ...SendTask, objetivo: it });
+                          }}
+                        />
 
-                          <Box textAlign="center">
-                            <Button
-                              variant="contained"
-                              size="large"
-                              sx={{ width: '80%', flexShrink: 0 }}
-                              style={{ marginTop: '15px' }}
-                              onClick={SendPlanning}
-                            >
-                              Plannig
-                            </Button>
-                            <Button
-                              variant="contained"
-                              size="large"
-                              sx={{ width: '80%', flexShrink: 0 }}
-                              style={{ marginTop: '15px' }}
-                              onClick={() =>
-                                setDefaultPlanning({
-                                  ...SendTask,
-                                  markersbase: markers.bases,
-                                  elements: markers.elements,
-                                })
-                              }
-                            >
-                              Save Global Settings
-                            </Button>
-                          </Box>
-                          <Typography>{notification}</Typography>
-                        </div>
-                      </TabPanel>
-                    </TabContext>
-                  </Box>
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Points to inspect </Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <div className={classes.details}>
+                              {SendTask.objetivo.hasOwnProperty('description') ? (
+                                <Typography>{SendTask.objetivo.description}</Typography>
+                              ) : (
+                                <Typography>select doing click in the map</Typography>
+                              )}
+                              <SelectList Data={SendTask.loc} setData={setLocations} />
+                            </div>
+                          </AccordionDetails>
+                        </Accordion>
+                        <Divider />
+                        <Accordion>
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Typography>Meteo</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            <TextField
+                              required
+                              fullWidth
+                              label="wind speed"
+                              type="number"
+                              variant="standard"
+                              value={12}
+                            />
+                            <TextField
+                              required
+                              fullWidth
+                              label="Wind direction"
+                              type="number"
+                              variant="standard"
+                              value={12}
+                            />
+                            <TextField
+                              required
+                              fullWidth
+                              label="Temperature"
+                              type="number"
+                              variant="standard"
+                              value={12}
+                            />
+                            <TextField
+                              required
+                              fullWidth
+                              label="Humidity"
+                              type="number"
+                              variant="standard"
+                              value={12}
+                            />
+                            <TextField
+                              required
+                              fullWidth
+                              label="Pressure"
+                              type="number"
+                              variant="standard"
+                              value={12}
+                            />
+                          </AccordionDetails>
+                        </Accordion>
+                      </Box>
+                    </TabPanel>
+                    <TabPanel value="3">
+                      <div className={classes.details}>
+                        <BaseSettings
+                          data={SendTask.bases}
+                          param={SendTask.settings}
+                          setData={setBaseSettings}
+                        />
+
+                        <Box textAlign="center">
+                          <Button
+                            variant="contained"
+                            size="large"
+                            className={classes.panelButton}
+                            onClick={SendPlanning}
+                          >
+                            Plannig
+                          </Button>
+                          <Button
+                            variant="contained"
+                            size="large"
+                            className={classes.panelButton}
+                            onClick={MissionTask}
+                          >
+                            Planing with Global Setting
+                          </Button>
+                          <Button
+                            variant="contained"
+                            size="large"
+                            className={classes.panelButton}
+                            onClick={() =>
+                              setDefaultPlanning({
+                                ...SendTask,
+                                markersbase: markers.bases,
+                                elements: markers.elements,
+                              })
+                            }
+                          >
+                            Save Global Settings
+                          </Button>
+                        </Box>
+                        <Typography>{notification}</Typography>
+                      </div>
+                    </TabPanel>
+                  </TabContext>
                 </div>
               </Paper>
             </div>

@@ -34,7 +34,7 @@ const MissionPanel = ({ SetOpenSave }) => {
   const navigate = useNavigate();
   const rosContex = useContext(RosContext);
   const scroolRef = useRef(null);
-  const [checked, setChecked] = React.useState(false);
+  const [checked, setChecked] = useState(false);
   const missionContext = useContext(MissionContext);
 
   const toggleChecked = () => {
@@ -116,10 +116,10 @@ const MissionPanel = ({ SetOpenSave }) => {
   return (
     <Fragment>
       <Toolbar className={classes.toolbar}>
-        <IconButton edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
+        <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant='h6' className={classes.title}>
+        <Typography variant="h6" className={classes.title}>
           Mission Task
         </Typography>
 
@@ -127,7 +127,7 @@ const MissionPanel = ({ SetOpenSave }) => {
         <Switch
           checked={checked}
           onChange={toggleChecked}
-          name='checkedA'
+          name="checkedA"
           inputProps={{ 'aria-label': 'secondary checkbox' }}
         />
         <IconButton onClick={SaveMission}>
@@ -136,15 +136,15 @@ const MissionPanel = ({ SetOpenSave }) => {
         <IconButton onClick={DeleteMission}>
           <DeleteIcon />
         </IconButton>
-        <label htmlFor='upload-gpx'>
+        <label htmlFor="upload-gpx">
           <input
-            accept='.yaml, .plan, .waypoint, .kml'
-            id='upload-gpx'
-            type='file'
+            accept=".yaml, .plan, .waypoint, .kml"
+            id="upload-gpx"
+            type="file"
             className={classes.fileInput}
             onChange={readFile}
           />
-          <IconButton edge='end' component='span' onClick={() => {}}>
+          <IconButton edge="end" component="span" onClick={() => {}}>
             <UploadFileIcon />
           </IconButton>
         </label>

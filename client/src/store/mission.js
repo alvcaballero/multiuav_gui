@@ -35,14 +35,14 @@ const { reducer, actions } = createSlice({
       state.name = action.payload.name;
       //state.attributes = {};
 
-      if (action.payload.mission.version == '3') {
+      if (action.payload.version == '3') {
         let n_uav = 0;
-        state.home = action.payload.mission.route[n_uav]['wp'][0].pos;
-        state.route = RuteConvert(action.payload.mission.route);
+        state.home = action.payload.route[n_uav]['wp'][0].pos;
+        state.route = RuteConvert(action.payload.route);
       } else {
         let n_uav = 1;
-        state.home = action.payload.mission['uav_' + n_uav]['wp_0'];
-        state.route = RuteConvertlegacy(action.payload.mission);
+        state.home = action.payload['uav_' + n_uav]['wp_0'];
+        state.route = RuteConvertlegacy(action.payload);
       }
     },
     clearMission(state, action) {
