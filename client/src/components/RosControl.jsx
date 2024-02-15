@@ -124,7 +124,9 @@ export const RosControl = ({ children, notification }) => {
     } catch (error) {}
   };
   const servercommandmission = async () => {
-    //event.preventDefault();
+    // event.preventDefault();
+    let listUAV = missions['route'].map((element) => element.uav);
+    console.log(listUAV);
     console.log('command mission ');
     try {
       const response = await fetch('/api/commands/send', {
