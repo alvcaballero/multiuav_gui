@@ -177,7 +177,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
               style={{ marginTop: '15px' }}
               onClick={AddNewElement}
             >
-              Create new Base
+              Create new {type}
             </Button>
           </Box>
         </div>

@@ -5,61 +5,115 @@ import * as fs from 'fs';
 import { exec } from 'child_process';
 import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
+import { planningModel } from './planning.js';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
-const Mission = { id: -1, uav: [], status: 'init', route: [], initTime: null }; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
+const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
+const requestPlanning = {};
 const sftconections = {}; // manage connection to drone
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
 
 export class missionModel {
-  static getmission() {
-    console.log('Get mission');
-    return Mission;
+  static getmission(id) {
+    console.log('Get mission' + id);
+    if (id) {
+      return Mission[id].mission;
+    }
+    return Mission[id].mission;
   }
+
   static sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  static async sendTask({ mission_id, objectivo, loc, meteo }) {
+
+  static async sendTask({ mission_id, objetivo, loc, meteo }) {
     console.log('command-sendtask');
-    // plainig
-    let mission = this.planning({ mission_id, objectivo, loc, meteo });
-    // remplase planing with mission default
-    console.log(mission.route[0]['wp'][0]['pos']);
-    if (mission_id >= 1400) {
-      mission = readYAML(`../config/mission/mission_${mission_id}.yaml`);
-    } else {
-      mission = readYAML('../config/mission.yaml');
-    }
 
-    var ws = new WebsocketManager(null, '/api/socket');
-    ws.broadcast(JSON.stringify({ mission: { name: 'name', mission: mission } }));
-
-    Mission['id'] = mission_id;
-    Mission['uav'].push({ uav: 'uav_15', status: 'init' });
-    Mission['route'] = mission.route;
-    Mission['status'] = 'command';
-    Mission['initTime'] = new Date();
-
-    missionSMModel.createActorMission(mission_id); // create actor
-    // init actor
-    // poner uno de load plaing, for waiting the planer is load
-    // send planing
-
-    // generate response
-    let response = { uav: mission.route[0].uav, points: [], status: 'OK' };
-    response.points = mission.route[0].wp.map((wp) => {
-      return [wp.pos[0], wp.pos[1], wp.pos[2]];
+    let myTask = {};
+    myTask.id = mission_id;
+    myTask.name = 'automatic';
+    myTask.loc = loc;
+    myTask.objetivo = objetivo;
+    myTask.bases = planningModel.getBases();
+    myTask.meteo = meteo;
+    let devices = await DevicesModel.getAll();
+    console.log(devices);
+    let basesettings = planningModel.getBasesSettings();
+    console.log(basesettings);
+    myTask.settings = basesettings.map((setting) => {
+      let mySetting = JSON.parse(JSON.stringify(setting));
+      let myDevice = Object.values(devices).find((device) => device.id == setting.devices.deviceId);
+      mySetting.devices.deviceId = myDevice.name;
+      mySetting.devices.category = myDevice.category;
+      return mySetting;
     });
+    console.log(myTask.settings);
 
-    //let myresponse = { response };
-    return { response: mission, status: 'OK' };
+    console.log(myTask);
+    const response1 = await fetch('http://127.0.0.1:8004/mission_request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(myTask),
+    });
+    if (response1.ok) {
+      const response2 = await response1.json();
+      console.log(response2);
+
+      requestPlanning[mission_id] = {};
+      requestPlanning[mission_id]['count'] = 0;
+      requestPlanning[mission_id]['interval'] = setInterval(() => {
+        console.log('response Planning' + mission_id);
+        this.fetchPlanning(mission_id);
+      }, 5000);
+    } else {
+      throw Error(await response.text());
+    }
+    return { response: myTask, status: 'OK' };
+  }
+
+  static async fetchPlanning(mission_id) {
+    console.log('Fetch planning ' + mission_id);
+    const response = await fetch(`http://127.0.0.1:8004/get_plan?IDs=${mission_id}`);
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+      console.log('response to check planning');
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        if (data.results[0].hasOwnProperty('route')) {
+          clearInterval(requestPlanning[mission_id]['interval']);
+          requestPlanning[mission_id]['count'] = 10;
+          this.setMission(data.results[0]);
+          this.initMission(mission_id, data.results[0]);
+        }
+      }
+    } else {
+      throw Error(await response.text());
+    }
+    requestPlanning[mission_id]['count'] = requestPlanning[mission_id]['count'] + 1;
+    if (requestPlanning[mission_id]['count'] > 3) {
+      clearInterval(requestPlanning[mission_id]['interval']);
+    }
+  }
+
+  static async initMission(missionId, mission) {
+    const listUAV = mission.route.map((route) => DevicesModel.getByName(route.uav).id);
+    Mission[missionId] = {
+      id: missionId,
+      uav: listUAV,
+      status: 'init',
+      initTime: null,
+      mission: mission,
+    };
+    listUAV.forEach((uavId) => {
+      missionSMModel.createActorMission(uavId, missionId);
+    });
   }
 
   static async setMission(mission) {
     console.log('send mission');
 
     var ws = new WebsocketManager(null, '/api/socket');
-    ws.broadcast(JSON.stringify({ mission: { name: 'name', id: '12', mission: mission } }));
+    ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
 
     return { response: mission, status: 'OK' };
   }
@@ -96,16 +150,15 @@ export class missionModel {
     return mission;
   }
 
-  //En lista archivos y directorios, los directorios no se pueden descargar da error, se uede probar errores
-  // crear funcion que solo enliste los archivos
-  // hacer que las funciones devuelvan errores  para poder manejarlos
-  // when in gcs are a file with the same name of file to download
-
+  /*En lista archivos y directorios, los directorios no se pueden descargar da error, se uede probar errores
+   / crear funcion que solo enliste los archivos
+   / hacer que las funciones devuelvan errores  para poder manejarlos
+   / when in gcs are a file with the same name of file to download
+   */
   static async updateFiles({ id_uav, id_mission }) {
     console.log('update files ' + id_uav + '-' + id_mission);
     let listimages = [];
-    let uav_name = DevicesModel.get_device_ns(id_uav);
-    let mydevice = devices_init.init.find(({ name }) => name === uav_name);
+    let mydevice = DevicesModel.getById(id_uav);
     const client = new SFTPClient();
 
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
@@ -132,8 +185,8 @@ export class missionModel {
       }
     }
     if (namefolder) {
-      let dir = `/home/grvc/GCS_media/mission_${Mission['id']}/${uav_name}`;
-      let dir2 = `mission_${Mission['id']}/${uav_name}`;
+      let dir = `/home/grvc/GCS_media/mission_${Mission['id']}/${mydevice.name}`;
+      let dir2 = `mission_${Mission['id']}/${mydevice.name}`;
 
       if (!fs.existsSync(dir)) {
         console.log('no exist ' + dir);
@@ -242,8 +295,7 @@ export class missionModel {
   // this is importan when use database for get mission diferent
   static async showFiles({ id_uav, id_mission }) {
     console.log('show files ' + id_uav + '-' + id_mission);
-    let uav_name = DevicesModel.get_device_ns(id_uav);
-    let mydevice = devices_init.init.find(({ name }) => name === uav_name);
+    let mydevice = DevicesModel.getById(id_uav);
     const client = new SFTPClient();
 
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
@@ -251,7 +303,6 @@ export class missionModel {
     const port = parsedURL.port || 22;
     const { host, username, password } = parsedURL;
     await client.connect({ host, port, username, password });
-    //let listfiles = await client.listFiles('./uav_media/',"^mission_");// ^mission_2\d{3}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])_([0-2][0-9]):([0-5][0-9])
     let listfiles = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
     let namefolder = null;
     for (const myfiles of listfiles) {

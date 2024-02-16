@@ -11,6 +11,7 @@ yarn.lock
 .vs/
 .vscode/
 *.log
+*.env
 *.pyc
 *.sln
 *.swp

@@ -2,18 +2,27 @@ import { DevicesModel } from '../models/devices.js';
 import { rosModel } from '../models/ros.js';
 import { positionsModel } from '../models/positions.js';
 import { eventsModel } from '../models/events.js';
-import { readYAML } from '../common/utils.js';
-const init_mission_elements = readYAML('../config/elements/config.yaml');
+import { planningModel } from '../models/planning.js';
+
 export class websocketController {
   static async init() {
     const devices = await DevicesModel.getAll();
     const positions = await positionsModel.getAll();
     const server = await rosModel.serverStatus();
+    const planning = planningModel.getDefault();
     let response = JSON.stringify({
       positions: Object.values(positions),
       server: { rosState: server.state },
       devices: Object.values(devices),
-      markers: { bases: init_mission_elements.bases, elements: init_mission_elements.markers },
+      markers: { bases: planning.markersbase, elements: planning.elements },
+      planning: {
+        id: planning.id,
+        objetivo: planning.objetivo,
+        loc: [],
+        meteo: [],
+        bases: planning.bases,
+        settings: planning.settings,
+      },
     });
     return response;
   }

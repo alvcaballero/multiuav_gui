@@ -2,7 +2,7 @@ import * as turf from '@turf/turf';
 
 export class mapModel {
   static async ApiElevation(LocationList) {
-    console.log(LocationList);
+    //console.log(LocationList);
     let myresponse = {};
     let divLocationList = [];
     let maxAPIlocation = 99;
@@ -15,12 +15,12 @@ export class mapModel {
       }
       divLocationList.push(LocationList.slice(i, i + maxAPIlocation));
     }
-    divLocationList.map((element) => console.log(element.length));
+    //divLocationList.map((element) => console.log(element.length));
 
     let stringLocationList = divLocationList.map((list) =>
       list.map((waypoint) => waypoint.join(',')).join('|')
     );
-    divLocationList.map((element) => console.log(element));
+    //divLocationList.map((element) => console.log(element));
     //`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList}`
     console.log('response elevation----');
     for (let i = 0; i < stringLocationList.length; i = i + 1) {
@@ -31,7 +31,7 @@ export class mapModel {
           return myresponse;
         })
         .then((body) => {
-          console.log(body);
+          //console.log(body);
           if (myresponse.hasOwnProperty('results')) {
             body.results.map((element) => {
               myresponse.results.push(element);
@@ -48,7 +48,7 @@ export class mapModel {
   static async calcElevation(routes) {
     console.log('using ---- elevation');
     let listpoint = routes;
-    console.log(listpoint);
+    //console.log(listpoint);
     let wpaltitude = [];
     let listwaypoint = [];
     let status = true;
@@ -68,9 +68,9 @@ export class mapModel {
             //medir que distancia sea mayor
             let otherline = turf.lineString([wp, array[lastindex]]);
             let distbetweenwp = turf.length(otherline, { units: 'meters' });
-            console.log('distancia puntos ' + distbetweenwp);
+            //console.log('distancia puntos ' + distbetweenwp);
             if (distbetweenwp > 200) {
-              console.log('mayor a 200 metros');
+              //console.log('mayor a 200 metros');
               //funcion de slice and add to  //altitud = -1;
               let steps = Math.floor(distbetweenwp / 200) + 1;
               let newpoints = this.divideLineIntoPoints(
@@ -81,7 +81,7 @@ export class mapModel {
               newpoints.map((nwp) => {
                 listwaypoint.push([nwp.lat, nwp.lon]);
                 let nwpdist = +lastdist.toFixed(1) + +nwp.dist.toFixed(1);
-                console.log('lastdist ' + lastdist + ' caldist ' + nwp.dist.toFixed(1));
+                //console.log('lastdist ' + lastdist + ' caldist ' + nwp.dist.toFixed(1));
 
                 wpaltitude[index_rt].push({
                   length: nwpdist,
@@ -99,12 +99,12 @@ export class mapModel {
           lastdist = Number(lineLength.toFixed(1));
         });
       });
-      console.log(wpaltitude);
-      console.log(listwaypoint);
+      //console.log(wpaltitude);
+      //console.log(listwaypoint);
 
       let elevationprofile = await this.ApiElevation(listwaypoint);
       //anadir elevacion profile
-      console.log(elevationprofile);
+      //console.log(elevationprofile);
       let auxcount = 0;
       let initElevationIndex = 0;
 
@@ -137,7 +137,7 @@ export class mapModel {
         status = false;
       }
     }
-    console.log(wpaltitude);
+    //console.log(wpaltitude);
     if (status) {
       return { elevation: wpaltitude, status: true };
     } else {
@@ -146,8 +146,8 @@ export class mapModel {
   }
 
   static divideLineIntoPoints(line, steps, dist) {
-    console.log('line');
-    console.log(line);
+    //console.log('line');
+    //console.log(line);
     let dividedLine = []; // Start with the first point
     let accumulatedDistance = 0;
     let prevPoint = line[0];
@@ -163,8 +163,8 @@ export class mapModel {
     }
 
     //dividedLine.push(line[line.length - 1]); // Add the last point
-    console.log('dividedLine------------');
-    console.log(dividedLine);
+    //console.log('dividedLine------------');
+    //console.log(dividedLine);
     return dividedLine;
   }
 }

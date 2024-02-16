@@ -384,12 +384,10 @@ export class DevicesModel {
   }
 
   static async getById({ id }) {
-    const device = Object.values(devices).find((device) => device.id === id);
-    return device;
+    return Object.values(devices).find((device) => device.id === id);
   }
-  static getByname(name) {
-    const device = Object.values(devices).find((device) => device.name === name);
-    return device;
+  static getByName(name) {
+    return Object.values(devices).find((device) => device.name === name);
   }
 
   static async delete({ id }) {

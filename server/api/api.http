@@ -109,6 +109,7 @@ Content-Type: application/json
 
 < ./json/mission.json
 
+
 ### varibles 
 
 
@@ -205,10 +206,4 @@ Content-Type: application/json
 }
 
 ###
-GET http://192.168.1.180:8004/output
-Content-Type: application/json
-
-{
-    "deviceId": 5, 
-    "type": "threat"
-}
+GET http://192.168.1.180:8004/get_plan?IDs=1234

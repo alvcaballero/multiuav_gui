@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-import { readFileSync } from 'fs';
-import { parse } from 'yaml';
+import { writeFile, readFileSync } from 'fs';
+import { parse, stringify } from 'yaml';
 import { URL } from 'url';
 import { resolve } from 'path';
 
@@ -23,6 +23,22 @@ export const readYAML = (path) => {
 };
 
 export const getDatetime = () => {
-  var datetime = new Date();
-  return datetime.toISOString();
+  var dateTime = new Date();
+  return dateTime.toISOString();
+};
+export const getRandomInt = (max) => {
+  return Math.floor(Math.random() * max);
+};
+
+export const writeYAML = (path, content) => {
+  const saveContent = stringify(content);
+  writeFile(__dirname + path, saveContent, (err) => {
+    if (err) {
+      console.error(err);
+      return false;
+    } else {
+      // file written successfully
+      return true;
+    }
+  });
 };

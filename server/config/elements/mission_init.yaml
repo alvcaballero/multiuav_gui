@@ -1,211 +1,79 @@
+id: 54058136
+objetivo:
+  id: 0
+  name: Inspeccion de linea
+  type: path-object
+  description: select towers to create a path
+loc:
+  - type: powerTower
+    name: Elements
+    linea: true
+    items:
+      - latitude: 37.4112363705797
+        longitude: -6.0026036724433425
+        type: object
+        groupId: 0
+        id: 1
+        image: powerTower
+        title: 0-1
+      - latitude: 37.41078257894792
+        longitude: -6.0023205281240735
+        type: object
+        groupId: 0
+        id: 0
+        image: powerTower
+        title: 0-0
+meteo: []
 bases:
-  - latitude: 38.1385113182596
-    longitude: -3.176305522392061
-    device:
-      device_id: 0
-      device_category: 'dji_M300'
+  - devices:
+      deviceId: 4
       speed_mission: 7
       speed_navegation: 15
-      landing_mode: 0
     mission:
       height: 10
-      offset: 7
+      offset: 10
       tower: 10
-
-  - latitude: 38.1384386169842
-    longitude: -3.176704744391102
-    device:
-      device_id: 1
-      device_category: 'dji_M300'
-      speed_mission: 7
-      speed_navegation: 15
-      landing_mode: 0
-    mission:
-      height: 10
-      offset: 7
-      tower: 10
-
 settings:
-  type: 0
-  loc:
-    - name: 'lineas1'
-      items:
-        - latitude: 38.13584764267765
-          longitude: -3.181036564547416
-        - latitude: 38.13561006397526
-          longitude: -3.182479552175073
-        - latitude: 38.13537374967324
-          longitude: -3.183772905702419
-    - name: 'lineas2'
-      items:
-        - latitude: 38.13307452738974
-          longitude: -3.195587887930005
-        - latitude: 38.13283223965048
-          longitude: -3.196579076533189
-        - latitude: 38.13218223715189
-          longitude: -3.198785434613106
-        - latitude: 38.13234494254377
-          longitude: -3.199576034561804
   devices:
-    - device_id: 0
-      device_category: 'dji_M300'
-      speed_mission: 7
-      speed_navegation: 15
-      landing_mode: 0
-    - device_id: 1
-      device_category: 'dji_M300'
-      speed_mission: 7
-      speed_navegation: 15
-      landing_mode: 0
+    deviceId:
+      type: number
+      name: Device
+      default: 0
+    speed_mission:
+      type: number
+      name: Speed Mission
+      default: 7
+    speed_navegation:
+      type: number
+      name: Speed Navegation
+      default: 15
   mission:
-    - height: 10
-      offset: 7
-      tower: 10
-    - height: 10
-      offset: 7
-      tower: 10
-  meteo:
-    - lat: 37.01455061559604
-      lon: -6.5625427378086485
-      wind_vel: 12
-      wind_dir: 360
-      temp: 38
-      humidity: 90
-      pres_atm: 5
-    - lat: 37.01455061559604
-      lon: -6.5625427378086485
-      wind_vel: 12
-      wind_dir: 360
-      temp: 38
-      humidity: 90
-      pres_atm: 5
-
-markers:
-  - type: 'powerTower'
-    name: 'lineas1'
+    height:
+      type: number
+      name: Height
+      default: 10
+    offset:
+      type: number
+      name: offset
+      default: 10
+    tower:
+      type: number
+      name: height tower
+      default: 10
+name: " asd"
+markersbase:
+  - latitude: 37.41030526724133
+    longitude: -6.0022899377420345
+elements:
+  - type: powerTower
+    name: Elements
     linea: true
     items:
-      - latitude: 38.13584764267765
-        longitude: -3.181036564547416
-      - latitude: 38.13561006397526
-        longitude: -3.182479552175073
-      - latitude: 38.13537374967324
-        longitude: -3.183772905702419
-      - latitude: 38.13511361524852
-        longitude: -3.18525006214874
-      - latitude: 38.1349134874646
-        longitude: -3.186449862202998
-      - latitude: 38.13468955670605
-        longitude: -3.187733432276827
-      - latitude: 38.13447468894019
-        longitude: -3.188955643158139
-      - latitude: 38.1342817255935
-        longitude: -3.190141501342378
-      - latitude: 38.13402984407393
-        longitude: -3.191252839090356
-      - latitude: 38.13366008095436
-        longitude: -3.192782221247183
-      - latitude: 38.13338978723277
-        longitude: -3.193915496128591
-  - type: 'powerTower'
-    name: 'lineas2'
-    linea: true
-    items:
-      - latitude: 38.13307452738974
-        longitude: -3.195587887930005
-      - latitude: 38.13283223965048
-        longitude: -3.196579076533189
-      - latitude: 38.13218223715189
-        longitude: -3.198785434613106
-      - latitude: 38.13234494254377
-        longitude: -3.199576034561804
-      - latitude: 38.13242969715814
-        longitude: -3.20076640991886
-      - latitude: 38.1324899417158
-        longitude: -3.201701559710602
-      - latitude: 38.13251236479456
-        longitude: -3.20245811317264
-      - latitude: 38.13263056461347
-        longitude: -3.204085266525607
-      - latitude: 38.13272376486689
-        longitude: -3.204951217094358
-      - latitude: 38.13274497709731
-        longitude: -3.206139097187528
-      - latitude: 38.13276707604029
-        longitude: -3.207405453329147
-      - latitude: 38.13277062805258
-        longitude: -3.208767047060411
-      - latitude: 38.13276648047653
-        longitude: -3.210036784167748
-      - latitude: 38.13816281076535
-        longitude: -3.174148534617356
-      - latitude: 38.13784929096166
-        longitude: -3.175185869195292
-      - latitude: 38.13754283970064
-        longitude: -3.176203540750567
-      - latitude: 38.13721937037617
-        longitude: -3.17725996595821
-      - latitude: 38.13689577165727
-        longitude: -3.17830006743034
-      - latitude: 38.13655957884517
-        longitude: -3.17943898571735
-      - latitude: 38.13601387107713
-        longitude: -3.17853735196563
-      - latitude: 38.13611084052413
-        longitude: -3.176610125243361
-      - latitude: 38.13624534697013
-        longitude: -3.174186980324723
-      - latitude: 38.13527642840854
-        longitude: -3.172451298169662
-      - latitude: 38.13427642828108
-        longitude: -3.170700435199874
-      - latitude: 38.13309043226418
-        longitude: -3.168501417046394
-      - latitude: 38.13181635087724
-        longitude: -3.166686175186618
-      - latitude: 38.13966793639006
-        longitude: -3.168728594889372
-      - latitude: 38.13996830736248
-        longitude: -3.16762589340327
-      - latitude: 38.1402766196862
-        longitude: -3.166505577905428
-      - latitude: 38.14062040853257
-        longitude: -3.165611516354345
-      - latitude: 38.14139776072915
-        longitude: -3.163632877709587
-      - latitude: 38.1413918323023
-        longitude: -3.163348607339583
-      - latitude: 38.14178605228661
-        longitude: -3.162651845395652
-      - latitude: 38.14219836827627
-        longitude: -3.16162665982043
-      - latitude: 38.1425050648533
-        longitude: -3.160865502418143
-      - latitude: 38.14294594620466
-        longitude: -3.159594432674575
-      - latitude: 38.14330714953413
-        longitude: -3.158490475073441
-      - latitude: 38.1427600538339
-        longitude: -3.158281653370452
-      - latitude: 38.14128873966182
-        longitude: -3.157646677732892
-      - latitude: 38.14006186480042
-        longitude: -3.157116628103713
-      - latitude: 38.14855188735553
-        longitude: -3.177494754883083
-      - latitude: 38.14744151321911
-        longitude: -3.177673179989032
-      - latitude: 38.14626009398908
-        longitude: -3.177866948146242
-      - latitude: 38.14518513054985
-        longitude: -3.178069629175222
-      - latitude: 38.14394445582635
-        longitude: -3.178290063707949
-      - latitude: 38.14278785627732
-        longitude: -3.178497859172894
-      - latitude: 38.14122850810327
-        longitude: -3.178725609247413
-      - latitude: 38.1397197371798
-        longitude: -3.178982481059505
-      - latitude: 38.13837133831328
-        longitude: -3.179157634025676
+      - latitude: 37.41078257894792
+        longitude: -6.0023205281240735
+      - latitude: 37.4112363705797
+        longitude: -6.0026036724433425
+      - latitude: 37.41138857596408
+        longitude: -6.0028579671484295
+      - latitude: 37.411511417090594
+        longitude: -6.003139659515227

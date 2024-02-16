@@ -249,7 +249,11 @@ const PlanningPage = () => {
     fileReader.readAsText(file);
     fileReader.onload = () => {
       let myTask = YAML.parse(fileReader.result);
-      setMarkers((oldmarkers) => ({ ...oldmarkers, bases: myTask.markersbase }));
+      setMarkers((oldmarkers) => ({
+        ...oldmarkers,
+        bases: myTask.markersbase,
+        elements: myTask.elements,
+      }));
 
       myTask.hasOwnProperty('markersbase') ? delete myTask.markersbase : null;
       myTask.hasOwnProperty('elements') ? delete myTask.elements : null;

@@ -1,159 +1,206 @@
 //https://stately.ai/docs/editor-states-and-transitions
 // https://dev.to/davidkpiano/you-don-t-need-a-library-for-state-machines-k7h
-import { createMachine, createActor } from 'xstate';
+import { createMachine, createActor, fromPromise, assign } from 'xstate';
+import { commandsModel } from '../models/commands.js';
+import { missionModel } from '../models/mission.js';
+
 const listSM = {}; // lista de acots maquinas de estados por id de UAV
 
+const LoadMissionSM = async (context) => {
+  console.log('service load mission');
+  try {
+    let mission = missionModel.getmission(context.missionId);
+    //console.log(mission);
+    let response = await commandsModel.loadmissionDevice(context.uavId, mission.route);
+    console.log('-----response in SM');
+    console.log(response);
+    if (response.state == 'success') {
+      console.log('----- success in SM');
+      return response; // Resolve with the response
+    } else {
+      throw new Error('Problem send Mission');
+    }
+  } catch (error) {
+    throw error; // Reject with the error
+  }
+};
+
+const CommandMissionSM = async (context) => {
+  console.log('service command mission');
+  try {
+    //console.log(mission);
+    let response = await commandsModel.commandMissionDevice(context.uavId);
+    console.log('-----response in SM');
+    console.log(response);
+    if (response.state == 'success') {
+      console.log('----- success in SM');
+      return response; // Resolve with the response
+    } else {
+      throw new Error('Problem send Command ');
+    }
+  } catch (error) {
+    throw error; // Reject with the error
+  }
+};
+
+const LoadMissionSMPromise = (context) =>
+  new Promise((resolve, reject) => {
+    LoadMissionSM(context)
+      .then((response) => resolve(response))
+      .catch((error) => reject(error));
+  });
+
+const CommandMissionSMPromise = (context) =>
+  new Promise((resolve, reject) => {
+    CommandMissionSM(context)
+      .then((response) => resolve(response))
+      .catch((error) => reject(error));
+  });
+
+// https://stately.ai/docs/invoke
 const machine = createMachine(
   {
     id: 'GCS-UAV',
-    context: { uav_id: 1 },
+    context: { uavId: 1, missionId: 1 },
     initial: 'Initial state',
     states: {
       'Initial state': {
         on: {
-          'recibe sendtaks': {
-            target: 'Planing',
+          ChangeId: {
+            target: 'LoadMission',
+            actions: assign(({ event }) => event.value),
           },
+          loadMission: { target: 'LoadMission' },
         },
       },
-      Planing: {
-        entry: {
-          type: 'fetch_planing',
+      LoadMission: {
+        invoke: {
+          src: fromPromise(({ input }) => LoadMissionSMPromise(input)),
+          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
+          onDone: [{ target: 'Commadmission' }],
+          onError: [{ target: 'resetUAV' }],
         },
         on: {
-          'recibe planing': {
-            target: 'Loadmission',
-          },
-        },
-      },
-      Loadmission: {
-        entry: {
-          type: 'load_mission',
-        },
-        on: {
-          'response ok': {
-            target: 'Commadmission',
-          },
-          'response fail': {
-            target: 'resetUAV',
-          },
+          commandMission: { target: 'Commadmission' },
+          'response fail': { target: 'resetUAV' },
         },
       },
       Commadmission: {
+        invoke: {
+          src: fromPromise(({ input }) => CommandMissionSMPromise(input)),
+          input: ({ context: { uavId } }) => ({ uavId }),
+          onDone: [{ target: 'RuningMission' }],
+          onError: [{ target: 'resetUAV' }],
+        },
         on: {
-          'response ok': {
-            target: 'Runingmission',
-          },
-          'response fail': {
-            target: 'resetUAV',
-          },
+          'response ok': { target: 'RuningMission' },
+          'response fail': { target: 'resetUAV' },
         },
       },
       resetUAV: {
         on: {
-          'confime reset': {
-            target: 'UAVready',
-          },
+          'confirm reset': { target: 'UAVready' },
         },
       },
-      Runingmission: {
+      RuningMission: {
         on: {
-          finishmission: {
-            target: 'DownloadFiles',
-          },
-          cancel: {
-            target: 'return2home',
-          },
-          stop: {
-            target: 'stopmission',
-          },
+          finishMission: { target: 'DownloadFiles' },
+          cancelMission: { target: 'return2home' },
+          stopMission: { target: 'stopMission' },
         },
       },
       UAVready: {
         on: {
-          timer: {
-            target: 'Loadmission',
-          },
+          timer: { target: 'LoadMission' },
         },
       },
       DownloadFiles: {
         on: {
-          downloadFiles: {
-            target: 'DonwloadFilesGCS',
-          },
+          downloadFiles: { target: 'DownloadFilesGCS' },
         },
       },
       return2home: {
         on: {
-          landing: {
-            target: 'DownloadFiles',
-          },
+          landing: { target: 'DownloadFiles' },
         },
       },
-      stopmission: {
+      stopMission: {
         on: {
-          'resume mission response ok': {
-            target: 'Runingmission',
-          },
-          'Event 2': {
-            target: 'return2home',
-          },
+          'resume mission response ok': { target: 'RuningMission' },
+          'Event 2': { target: 'return2home' },
         },
       },
-      DonwloadFilesGCS: {
+      DownloadFilesGCS: {
         on: {
-          'Event name': {
-            target: 'END',
-          },
+          'Event name': { target: 'END' },
         },
       },
-      END: {
-        type: 'final',
-      },
+      END: { type: 'final' },
     },
   },
   {
     actions: {
-      load_mission: ({ context, event }) => {
-        console.log(event.data);
+      updateUAV: assign(({ event }) => {
+        console.log('action Assing');
+        console.log(event);
+        return {
+          uavId: event.value.uavId,
+          missionId: event.value.missionId,
+        };
+      }),
+      fetch_planning: ({ context, event }) => {
+        console.log(event.value);
       },
-      fetch_planing: ({ context, event }) => {},
     },
-    actors: {},
+    actors: {
+      load_mission: async (context) => {
+        console.log('service load mission');
+        let mission = missionModel.getmission(context.missionId);
+        let response = await commandsModel.loadmissionDevice(context.uavId, mission);
+        if (response.success == 'success') {
+          return response;
+        }
+        return null;
+      },
+      Command_mission: async ({ context }) => {
+        console.log('service command mission');
+        let response = await commandsModel.commandMissionDevice(context.uavId);
+        if (response.success == 'success') {
+          return response;
+        }
+        return null;
+      },
+    },
     guards: {},
     delays: {},
   }
 );
 
 export class missionSMModel {
-  static createActorMission(id) {
-    //--- poner un estado anterior donde se asigne el id
-
-    //const myMachine = machine.withContext({
-    //  uav_id: id,
-    //});
-
-    //listSM[id] = createActor(myMachine);
-    listSM[id] = createActor(machine);
-    listSM[id].subscribe((snapshot) => {
-      console.log('Value:', snapshot.value);
+  static createActorMission(uavId = 0, missionId = 0) {
+    listSM[uavId] = createActor(machine).start();
+    listSM[uavId].subscribe((state) => {
+      console.log('state machine');
+      console.log('Value:', state.context);
     });
-    listSM[id].start();
+    listSM[uavId].send({ type: 'ChangeId', value: { uavId, missionId } });
     return true;
   }
 
-  static get_status() {
+  static get_status(id) {
     return listSM[id].states;
   }
 
-  static load_mission() {
-    // get  the  mission plan with id of  uav
-    //  load sendCommand of command model
-    // configure for get the answer and the andwer of this change the actor of the state machine,
+  static load_mission(id) {
+    listSM[id].send({ type: 'loadMission' });
   }
-  static command_mission() {
-    // get  the  mission plan with id of  uav
-    //  load sendCommand of command model
-    // configure for get the answer and the andwer of this change the actor of the state machine,
+  static command_mission(id) {
+    listSM[id].send({ type: 'commandMission' });
+  }
+  static finishMission(id) {
+    listSM[id].send({ type: 'DownloadFiles' });
+  }
+  static DonwloadFiles(id) {
+    listSM[id].send({ type: 'DownloadFilesGCS' });
   }
 }

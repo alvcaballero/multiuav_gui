@@ -95,15 +95,15 @@ const ElementList = ({ markers, setMarkers }) => {
   return (
     <Fragment>
       {BasesExist ? (
-        <Box textAlign='center'>
+        <Box textAlign="center">
           <Button
-            variant='contained'
-            size='large'
+            variant="contained"
+            size="large"
             sx={{ width: '80%', flexShrink: 0 }}
             style={{ marginTop: '15px' }}
             onClick={AddList}
           >
-            Create New Base
+            Create New Group
           </Button>
         </Box>
       ) : (
@@ -128,8 +128,8 @@ const ElementList = ({ markers, setMarkers }) => {
                     <Fragment>
                       <TextField
                         required
-                        label='Name'
-                        variant='standard'
+                        label="Name"
+                        variant="standard"
                         value={base.name ? base.name : ''}
                       />
                       <SelectField
@@ -140,13 +140,13 @@ const ElementList = ({ markers, setMarkers }) => {
                           { id: 1, name: 'wind turbine' },
                           { id: 2, name: 'Solar Panel' },
                         ]}
-                        label='Type'
+                        label="Type"
                         style={{ display: 'inline', width: '200px' }}
                       />
                       <BaseList
                         markers={base.items}
                         setMarkers={(value) => setElement(index, value)}
-                        type='Element'
+                        type="Element"
                       />
                     </Fragment>
                   )}
@@ -154,10 +154,10 @@ const ElementList = ({ markers, setMarkers }) => {
               </Accordion>
             ))
           )}
-          <Box textAlign='center'>
+          <Box textAlign="center">
             <Button
-              variant='contained'
-              size='large'
+              variant="contained"
+              size="large"
               sx={{ width: '80%', flexShrink: 0 }}
               style={{ marginTop: '15px' }}
               onClick={AddList}

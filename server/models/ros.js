@@ -33,7 +33,7 @@ export class rosModel {
         console.log('ROS Connected to websocket server.');
         rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
         DevicesModel.connectAllUAV();
-        rosModel.ServiceMission();
+        rosModel.GCSServicesMission();
       });
       ros.on('error', function (error) {
         console.log('ROS Error connecting to websocket server: ', error);
@@ -64,12 +64,16 @@ export class rosModel {
     });
   }
   static getTopics2() {}
-  static ServiceMission() {
-    console.log('service mission finish');
 
+  /*
+   / Create Ros services that UAV can consume for 
+   / Check if UAV finish mission
+   / Check if UAV finish Download
+  */
+  static GCSServicesMission() {
     let cur_uav_idx = String(service_list.length);
-    service_list.push({ name: 'service mission' });
 
+    service_list.push({ name: 'service mission' });
     service_list[cur_uav_idx]['ServiceMission'] = new ROSLIB.Service({
       ros: ros,
       name: '/GCS/FinishMission',
@@ -77,6 +81,7 @@ export class rosModel {
     });
 
     service_list[cur_uav_idx]['ServiceMission'].advertise(function (request, response) {
+      // Call state machine
       console.log('callback Sevice finish mission');
       console.log(request);
 
@@ -98,7 +103,7 @@ export class rosModel {
     service_list[cur_uav_idx]['ServiceDownload'].advertise(function (request, response) {
       console.log('callback Service finish donwload files');
       console.log(request);
-      let mydevice = DevicesModel.getByname(request.uav_id);
+      let mydevice = DevicesModel.getByName(request.uav_id);
       console.log('device' + mydevice.id);
       missionModel.updateFiles({ id_uav: mydevice.id, id_mission: 1 });
 

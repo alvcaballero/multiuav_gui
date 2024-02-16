@@ -63,7 +63,7 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
   };
   const modifyData = (index = 0, type = 'mission', key, value) => {
     let auxData = JSON.parse(JSON.stringify(data));
-    auxData[index][type][key] = value;
+    auxData[index][type][key] = Number(value);
     setData(auxData);
   };
 
