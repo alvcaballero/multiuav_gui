@@ -1,0 +1,79 @@
+id: 54058136
+objetivo:
+  id: 0
+  name: Inspeccion de linea
+  type: path-object
+  description: select towers to create a path
+loc:
+  - type: powerTower
+    name: Elements
+    linea: true
+    items:
+      - latitude: 37.4112363705797
+        longitude: -6.0026036724433425
+        type: object
+        groupId: 0
+        id: 1
+        image: powerTower
+        title: 0-1
+      - latitude: 37.41078257894792
+        longitude: -6.0023205281240735
+        type: object
+        groupId: 0
+        id: 0
+        image: powerTower
+        title: 0-0
+meteo: []
+bases:
+  - devices:
+      deviceId: 4
+      speed_mission: 7
+      speed_navegation: 15
+    mission:
+      height: 10
+      offset: 10
+      tower: 10
+settings:
+  devices:
+    deviceId:
+      type: number
+      name: Device
+      default: 0
+    speed_mission:
+      type: number
+      name: Speed Mission
+      default: 7
+    speed_navegation:
+      type: number
+      name: Speed Navegation
+      default: 15
+  mission:
+    height:
+      type: number
+      name: Height
+      default: 10
+    offset:
+      type: number
+      name: offset
+      default: 10
+    tower:
+      type: number
+      name: height tower
+      default: 10
+name: " asd"
+markersbase:
+  - latitude: 37.41030526724133
+    longitude: -6.0022899377420345
+elements:
+  - type: powerTower
+    name: Elements
+    linea: true
+    items:
+      - latitude: 37.41078257894792
+        longitude: -6.0023205281240735
+      - latitude: 37.4112363705797
+        longitude: -6.0026036724433425
+      - latitude: 37.41138857596408
+        longitude: -6.0028579671484295
+      - latitude: 37.411511417090594
+        longitude: -6.003139659515227

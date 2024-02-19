@@ -1,18 +1,22 @@
 //example that a men manage databases
 import * as fs from 'fs';
-const filespath = '/home/grvc/GCS_media/';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const filesPath = process.env.Files_PATH ?? '/home/grvc/work/GCS_media/';
+
 export class filesModel {
   static getfiles() {
     let response = [];
-    let firstFiles = fs.readdirSync(filespath, { withFileTypes: true });
+    let firstFiles = fs.readdirSync(filesPath, { withFileTypes: true });
     let missionFolder = firstFiles.filter((myroute) => myroute.isDirectory());
     for (let mymission of missionFolder) {
-      var stats = fs.statSync(filespath + mymission.name + '/');
+      var stats = fs.statSync(filesPath + mymission.name + '/');
       console.log('last time create in secons' + stats.mtime);
-      let secondFiles = fs.readdirSync(filespath + mymission.name + '/', { withFileTypes: true });
+      let secondFiles = fs.readdirSync(filesPath + mymission.name + '/', { withFileTypes: true });
       let uavfolder = secondFiles.filter((myroute) => myroute.isDirectory());
       for (let myuav of uavfolder) {
-        let thirdFiles = fs.readdirSync(filespath + mymission.name + '/' + myuav.name + '/', {
+        let thirdFiles = fs.readdirSync(filesPath + mymission.name + '/' + myuav.name + '/', {
           withFileTypes: true,
         });
         let uavfiles = thirdFiles.filter((myroute) => myroute.isFile());
@@ -24,7 +28,7 @@ export class filesModel {
     return response;
   }
   static donwload(path) {
-    let dir = filespath + path.replaceAll('-', '/');
+    let dir = filesPath + path.replaceAll('-', '/');
     console.log(dir);
     if (!fs.existsSync(dir)) {
       console.log('no exist ' + dir);

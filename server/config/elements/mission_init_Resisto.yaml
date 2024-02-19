@@ -15,6 +15,22 @@ bases:
       height: 10
       offset: 10
       tower: 10
+  - devices:
+      deviceId: 4
+      speed_mission: 7
+      speed_navegation: 15
+    mission:
+      height: 10
+      offset: 10
+      tower: 10
+  - devices:
+      deviceId: 0
+      speed_mission: 7
+      speed_navegation: 15
+    mission:
+      height: 10
+      offset: 10
+      tower: 10
 settings:
   devices:
     deviceId:
@@ -42,12 +58,17 @@ settings:
       type: number
       name: height tower
       default: 10
-name: ' Doñana'
+name: " Doñana"
 markersbase:
   - latitude: 37.19384768456065
     longitude: -6.7029656624597465
     image: base
-
+  - latitude: 37.04392450222122
+    longitude: -6.568677029462045
+    image: base
+  - latitude: 37.1340964847625
+    longitude: -6.472237657544976
+    image: base
 elements:
   - type: powerTower
     items:

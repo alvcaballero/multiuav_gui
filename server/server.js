@@ -6,6 +6,7 @@ import { URL } from 'url';
 const __filename = new URL('', import.meta.url).pathname;
 const __dirname = new URL('.', import.meta.url).pathname;
 
+import dotenv from 'dotenv';
 import express, { json } from 'express';
 import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
@@ -22,8 +23,11 @@ import { filesRouter } from './routes/files.js';
 import { planningRouter } from './routes/planning.js';
 import { WebsocketManager } from './WebsocketManager.js';
 
+dotenv.config();
+
+const port = process.env.PORT ?? 4000;
+
 const app = express();
-const port = 4000;
 app.set('port', port);
 app.use(corsMiddleware());
 app.use(json());

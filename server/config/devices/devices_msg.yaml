@@ -534,6 +534,12 @@ dji_M300:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
+    CameraFileDownload:
+      name: '/camera_download_files'
+      serviceType: 'dji_osdk_ros/DownloadMedia'
+    CameraFileList:
+      name: '/camera_download_filelist'
+      serviceType: 'dji_osdk_ros/FileList'
   attributes:
     mission_action:
       stay: #action_stay

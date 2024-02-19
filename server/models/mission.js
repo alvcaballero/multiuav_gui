@@ -1,8 +1,10 @@
+import dotenv from 'dotenv';
+import * as fs from 'fs';
+import { exec } from 'child_process';
+
 import { DevicesModel } from '../models/devices.js';
 import { readYAML, getDatetime } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
-import * as fs from 'fs';
-import { exec } from 'child_process';
 import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
 import { planningModel } from './planning.js';
@@ -12,6 +14,14 @@ const Mission = {}; // current mission // id , status (init, planing, doing, fin
 const requestPlanning = {};
 const sftconections = {}; // manage connection to drone
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
+
+dotenv.config();
+
+const filesPath = process.env.Files_PATH ?? '/home/grvc/work/GCS_media/';
+const planningServer = process.env.PLANNING_SERVER ?? 'http://127.0.0.1:8004/';
+const extUrl = process.env.EXT_APP_url ?? 'http://127.0.0.1:8004';
+const extUser = process.env.EXT_APP_user ?? 'user';
+const extPwd = process.env.EXT_APP_pwd ?? 'password';
 
 export class missionModel {
   static getmission(id) {
@@ -50,7 +60,7 @@ export class missionModel {
     console.log(myTask.settings);
 
     console.log(myTask);
-    const response1 = await fetch('http://127.0.0.1:8004/mission_request', {
+    const response1 = await fetch(`${planningServer}/mission_request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(myTask),
@@ -73,7 +83,7 @@ export class missionModel {
 
   static async fetchPlanning(mission_id) {
     console.log('Fetch planning ' + mission_id);
-    const response = await fetch(`http://127.0.0.1:8004/get_plan?IDs=${mission_id}`);
+    const response = await fetch(`${planningServer}/get_plan?IDs=${mission_id}`);
     if (response.ok) {
       const data = await response.json();
       console.log(data);
@@ -111,6 +121,7 @@ export class missionModel {
 
   static async setMission(mission) {
     console.log('send mission');
+    console.log(mission);
 
     var ws = new WebsocketManager(null, '/api/socket');
     ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
@@ -185,7 +196,7 @@ export class missionModel {
       }
     }
     if (namefolder) {
-      let dir = `/home/grvc/GCS_media/mission_${Mission['id']}/${mydevice.name}`;
+      let dir = `${filesPath}mission_${Mission['id']}/${mydevice.name}`;
       let dir2 = `mission_${Mission['id']}/${mydevice.name}`;
 
       if (!fs.existsSync(dir)) {
@@ -247,24 +258,24 @@ export class missionModel {
         await this.sleep(5000);
 
         let access_token = null;
-        let response = await fetch('http://localhost:1234/token/provide/RESISTO-API', {
+        console.log(extUrl + '---' + extUser + '---' + extPwd + '--');
+        let response = await fetch(`${extUrl}/token`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            username: 'username',
-            password: 'password',
-          }),
+          body: `username=${extUser}&password=${extPwd}`,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
         if (response.ok) {
           let myresponse = await response.json();
+          console.log('ok test ok');
+          console.log(myresponse);
           if (myresponse.access_token) {
             access_token = myresponse.access_token;
           }
+        } else {
+          throw new Error(`${response.status} ${response.statusText}`);
         }
         if (access_token) {
-          let sendresponse = await fetch('http://localhost:1234/resultado_mision', {
+          let sendresponse = await fetch(`${extUrl}/resultado_mision`, {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${access_token}`,
@@ -287,6 +298,29 @@ export class missionModel {
     }
 
     return listimages;
+  }
+
+  static async testAPP() {
+    console.log('test external app');
+    let access_token = null;
+    console.log(extUrl + '---' + extUser + '---' + extPwd + '--');
+    let response = await fetch(`${extUrl}/token`, {
+      method: 'POST',
+      body: `username=${extUser}&password=${extPwd}`,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    if (response.ok) {
+      let myresponse = await response.json();
+      console.log('ok test ok');
+      console.log(myresponse);
+
+      if (myresponse.access_token) {
+        access_token = myresponse.access_token;
+      }
+    } else {
+      console.log(`${response.status} ${response.statusText}`);
+    }
+    return { status: true };
   }
 
   // de momento lee la fecha mayour

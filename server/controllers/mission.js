@@ -32,4 +32,10 @@ export class missionController {
     let response = await missionModel.listFiles(req.params);
     res.json(response);
   }
+
+  static async test(req, res) {
+    console.log('list files');
+    let response = await missionModel.testAPP();
+    res.json(response);
+  }
 }
