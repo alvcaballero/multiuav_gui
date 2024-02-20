@@ -7,6 +7,13 @@ GET http://localhost:4000/api/positions
 ### Get position
 GET http://localhost:4000/api/positions?id=1
 
+### Get position - no working
+GET http://localhost:4000/api/positions?id=[1,2]
+
+
+### Get position
+GET http://localhost:4000/api/positions?id=1&id=2&id=3
+
 ### Add Devices
 POST http://localhost:4000/api/devices
 Content-Type: application/json

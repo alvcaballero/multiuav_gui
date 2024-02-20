@@ -43,6 +43,31 @@ const CommandMissionSM = async (context) => {
   }
 };
 
+const CommandDownload = async (context) => {
+  console.log('service load mission');
+  let mymission = missionModel.getmissionValue(context.missionId);
+  let myinitTime = mymission['initTime'].toISOString().slice(0, -8).replace('T', ' ');
+  let myfinishTime = new Date().toISOString().slice(0, -8).replace('T', ' ');
+  console.log(myinitTime + '---' + myfinishTime);
+  try {
+    let response = await commandsModel.sendCommand(context.uavId, 'CameraFileDownload', {
+      downloadCnt: 0,
+      initDate: myinitTime,
+      FinishDate: myfinishTime,
+    });
+    console.log('-----response in Download');
+    console.log(response);
+    if (response.state == 'success') {
+      console.log('----- success in download');
+      return response; // Resolve with the response
+    } else {
+      throw new Error('Problem send Mission');
+    }
+  } catch (error) {
+    throw error; // Reject with the error
+  }
+};
+
 const LoadMissionSMPromise = (context) =>
   new Promise((resolve, reject) => {
     LoadMissionSM(context)
@@ -53,6 +78,12 @@ const LoadMissionSMPromise = (context) =>
 const CommandMissionSMPromise = (context) =>
   new Promise((resolve, reject) => {
     CommandMissionSM(context)
+      .then((response) => resolve(response))
+      .catch((error) => reject(error));
+  });
+const CommandDownloadPromise = (context) =>
+  new Promise((resolve, reject) => {
+    CommandDownload(context)
       .then((response) => resolve(response))
       .catch((error) => reject(error));
   });
@@ -115,6 +146,12 @@ const machine = createMachine(
         },
       },
       DownloadFiles: {
+        invoke: {
+          src: fromPromise(({ input }) => CommandDownloadPromise(input)),
+          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
+          onDone: [{}],
+          onError: [{}],
+        },
         on: {
           downloadFiles: { target: 'DownloadFilesGCS' },
         },
@@ -200,7 +237,7 @@ export class missionSMModel {
   static finishMission(id) {
     listSM[id].send({ type: 'DownloadFiles' });
   }
-  static DonwloadFiles(id) {
+  static DownloadFiles(id) {
     listSM[id].send({ type: 'DownloadFilesGCS' });
   }
 }

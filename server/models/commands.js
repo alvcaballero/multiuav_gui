@@ -78,6 +78,9 @@ export class commandsModel {
       if (type == 'setupcamera') {
         response = await this.standarCommand(deviceId, 'setupcamera', attributes);
       }
+      if (type == 'CameraFileDownload') {
+        response = await this.standarCommand(deviceId, 'CameraFileDownload', attributes);
+      }
       if (type == 'custom') {
         response = await this.standarCommand(deviceId, undefined, attributes);
       }

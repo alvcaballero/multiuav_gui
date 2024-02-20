@@ -1,6 +1,7 @@
 import ROSLIB from 'roslib';
 import { DevicesModel } from '../models/devices.js';
 import { missionModel } from './mission.js';
+import { missionSMModel } from './missionSM.js';
 
 var ros = '';
 export { ros };
@@ -84,6 +85,11 @@ export class rosModel {
       // Call state machine
       console.log('callback Sevice finish mission');
       console.log(request);
+      if (request.hasOwnProperty('uav_id')) {
+        let mydevice = DevicesModel.getByName(request.uav_id);
+        console.log('mydevice in finish mission' + mydevice.id);
+        missionSMModel.finishMission(mydevice.id);
+      }
 
       response['success'] = true;
       response['msg'] = 'Set successfully';

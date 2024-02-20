@@ -8,6 +8,7 @@ import { SFTPClient } from '../common/SFTPClient.js';
 import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
 import { planningModel } from './planning.js';
+import { get } from 'https';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
@@ -30,6 +31,13 @@ export class missionModel {
       return Mission[id].mission;
     }
     return Mission[id].mission;
+  }
+  static getmissionValue(id) {
+    console.log('Get mission' + id);
+    if (id) {
+      return Mission[id].mission;
+    }
+    return Mission[id];
   }
 
   static sleep(ms) {
@@ -111,7 +119,7 @@ export class missionModel {
       id: missionId,
       uav: listUAV,
       status: 'init',
-      initTime: null,
+      initTime: new Date(),
       mission: mission,
     };
     listUAV.forEach((uavId) => {
@@ -187,17 +195,21 @@ export class missionModel {
         let folderdate = myfiles.slice(8).replace('_', 'T') + ':00';
         let currentdate = new Date(folderdate);
         console.log(
-          folderdate + ' date  ' + currentdate.toJSON() + ' gcs=' + Mission['initTime'].toJSON()
+          folderdate +
+            ' date  ' +
+            currentdate.toJSON() +
+            ' gcs=' +
+            Mission[id_mission]['initTime'].toJSON()
         );
-        if (Mission['initTime'] && currentdate > Mission['initTime']) {
+        if (Mission[id_mission]['initTime'] && currentdate > Mission[id_mission]['initTime']) {
           console.log('folder mayor');
         }
         break;
       }
     }
     if (namefolder) {
-      let dir = `${filesPath}mission_${Mission['id']}/${mydevice.name}`;
-      let dir2 = `mission_${Mission['id']}/${mydevice.name}`;
+      let dir = `${filesPath}mission_${id_mission}/${mydevice.name}`;
+      let dir2 = `mission_${id_mission}/${mydevice.name}`;
 
       if (!fs.existsSync(dir)) {
         console.log('no exist ' + dir);

@@ -1,12 +1,25 @@
+import { map } from 'zod';
 import { DevicesModel } from '../models/devices.js';
 const positions = {};
 const history = {};
 const camera = {};
 
 export class positionsModel {
-  static async getAll() {
+  static async getAll(query) {
+    if (query) {
+      if (Array.isArray(query)) {
+        const asArray = Object.entries(positions);
+        const filtered = asArray.filter(([key, value]) => query.some((element) => key == element));
+        return Object.fromEntries(filtered);
+      }
+      if (!isNaN(query)) {
+        console.log('is number' + Number(query));
+        return positions[query] ? { id: positions[query] } : {};
+      }
+    }
     return positions;
   }
+
   static async getDevice(deviceId) {
     return positions[deviceId];
   }
