@@ -5,12 +5,8 @@ export const GetMissionHome = () => {
 };
 
 export const RuteConvert = (route) => {
-  console.log(route);
   let rt = [];
-  console.log('version 3');
-  console.log('longitud' + route.length);
   for (let uavN = 0; uavN < route.length; uavN++) {
-    console.log('uav - ' + uavN);
     rt[uavN] = {};
     if (route[uavN].hasOwnProperty('uav')) {
       rt[uavN]['uav'] = route[uavN].uav;
@@ -36,7 +32,6 @@ export const RuteConvert = (route) => {
       }
     }
     if (route[uavN].hasOwnProperty('attributes')) {
-      console.log('have atribute');
       if (route[uavN]['attributes'].hasOwnProperty('mode_landing')) {
         console.log('have modelanding' + uavN);
         rt[uavN]['attributes']['mode_landing'] = route[uavN]['attributes']['mode_landing'];
@@ -58,7 +53,6 @@ export const RuteConvert = (route) => {
       }
     } else {
       if (route[uavN].hasOwnProperty('mode_landing')) {
-        console.log('have modelanding' + uavN);
         rt[uavN]['attributes']['mode_landing'] = route[uavN]['mode_landing'];
       }
       if (route[uavN].hasOwnProperty('mode_yaw')) {
@@ -78,8 +72,6 @@ export const RuteConvert = (route) => {
       }
     }
   }
-  console.log('-------------------');
-  console.log(rt);
   return rt;
 };
 

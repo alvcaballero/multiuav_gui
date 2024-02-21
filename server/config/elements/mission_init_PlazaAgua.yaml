@@ -4,25 +4,7 @@ objetivo:
   name: Inspeccion de linea
   type: path-object
   description: select towers to create a path
-loc:
-  - type: powerTower
-    name: Elements
-    linea: true
-    items:
-      - latitude: 37.4112363705797
-        longitude: -6.0026036724433425
-        type: object
-        groupId: 0
-        id: 1
-        image: powerTower
-        title: 0-1
-      - latitude: 37.41078257894792
-        longitude: -6.0023205281240735
-        type: object
-        groupId: 0
-        id: 0
-        image: powerTower
-        title: 0-0
+loc: []
 meteo: []
 bases:
   - devices:
@@ -60,7 +42,7 @@ settings:
       type: number
       name: height tower
       default: 10
-name: " asd"
+name: ' asd'
 markersbase:
   - latitude: 37.41030526724133
     longitude: -6.0022899377420345

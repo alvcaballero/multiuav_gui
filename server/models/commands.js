@@ -111,7 +111,7 @@ export class commandsModel {
     return statuscommand;
   }
   static standarCommand(uav_id, type, attributes) {
-    console.log(type + ' uav_id' + uav_id);
+    console.log('StandarCommand - ' + type + '- uav_id - ' + uav_id);
     let uavName = DevicesModel.get_device_ns(uav_id);
     let uavCategory = DevicesModel.get_device_category(uav_id);
     console.log(type + ' --' + uavName + '--' + uavCategory);
@@ -194,6 +194,7 @@ export class commandsModel {
         });
       }
     }
+    console.log('finish load mission');
     return response;
   }
 

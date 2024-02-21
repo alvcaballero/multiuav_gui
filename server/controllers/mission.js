@@ -1,5 +1,5 @@
 import { missionModel } from '../models/mission.js';
-
+import { ExtApp } from '../models/ExtApp.js';
 export class missionController {
   static async getmission(req, res) {
     console.log('get missions');
@@ -35,7 +35,7 @@ export class missionController {
 
   static async test(req, res) {
     console.log('list files');
-    let response = await missionModel.testAPP();
+    let response = await ExtApp.UpdateToken();
     res.json(response);
   }
 }

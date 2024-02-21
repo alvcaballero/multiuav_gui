@@ -44,7 +44,8 @@ const CommandMissionSM = async (context) => {
 };
 
 const CommandDownload = async (context) => {
-  console.log('service load mission');
+  console.log('service download files from Autopilot ');
+  let resp = await missionModel.UAVFinish(context.missionId, context.uavId);
   let mymission = missionModel.getmissionValue(context.missionId);
   let myinitTime = mymission['initTime'].toISOString().slice(0, -8).replace('T', ' ');
   let myfinishTime = new Date().toISOString().slice(0, -8).replace('T', ' ');
@@ -68,6 +69,12 @@ const CommandDownload = async (context) => {
   }
 };
 
+const DownloadGCS = async (context) => {
+  console.log('Download files from UAV');
+  await missionModel.updateFiles(context.missionId, context.uavId);
+  console.log('Download files from UAV2');
+};
+
 const LoadMissionSMPromise = (context) =>
   new Promise((resolve, reject) => {
     LoadMissionSM(context)
@@ -84,6 +91,13 @@ const CommandMissionSMPromise = (context) =>
 const CommandDownloadPromise = (context) =>
   new Promise((resolve, reject) => {
     CommandDownload(context)
+      .then((response) => resolve(response))
+      .catch((error) => reject(error));
+  });
+
+const DownloadGCSPromise = (context) =>
+  new Promise((resolve, reject) => {
+    DownloadGCS(context)
       .then((response) => resolve(response))
       .catch((error) => reject(error));
   });
@@ -120,11 +134,11 @@ const machine = createMachine(
         invoke: {
           src: fromPromise(({ input }) => CommandMissionSMPromise(input)),
           input: ({ context: { uavId } }) => ({ uavId }),
-          onDone: [{ target: 'RuningMission' }],
+          onDone: [{ target: 'RunningMission' }],
           onError: [{ target: 'resetUAV' }],
         },
         on: {
-          'response ok': { target: 'RuningMission' },
+          'response ok': { target: 'RunningMission' },
           'response fail': { target: 'resetUAV' },
         },
       },
@@ -133,9 +147,9 @@ const machine = createMachine(
           'confirm reset': { target: 'UAVready' },
         },
       },
-      RuningMission: {
+      RunningMission: {
         on: {
-          finishMission: { target: 'DownloadFiles' },
+          downloadFilesUAV: { target: 'UAVDownloadFiles' },
           cancelMission: { target: 'return2home' },
           stopMission: { target: 'stopMission' },
         },
@@ -145,31 +159,33 @@ const machine = createMachine(
           timer: { target: 'LoadMission' },
         },
       },
-      DownloadFiles: {
+      UAVDownloadFiles: {
         invoke: {
           src: fromPromise(({ input }) => CommandDownloadPromise(input)),
           input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
-          onDone: [{}],
-          onError: [{}],
         },
         on: {
-          downloadFiles: { target: 'DownloadFilesGCS' },
+          downloadFilesGCS: { target: 'DownloadFilesGCS' },
         },
       },
       return2home: {
         on: {
-          landing: { target: 'DownloadFiles' },
+          landing: { target: 'UAVDownloadFiles' },
         },
       },
       stopMission: {
         on: {
-          'resume mission response ok': { target: 'RuningMission' },
+          'resume mission response ok': { target: 'RunningMission' },
           'Event 2': { target: 'return2home' },
         },
       },
       DownloadFilesGCS: {
+        invoke: {
+          src: fromPromise(({ input }) => DownloadGCSPromise(input)),
+          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
+        },
         on: {
-          'Event name': { target: 'END' },
+          FinishMission: { target: 'END' },
         },
       },
       END: { type: 'final' },
@@ -191,7 +207,7 @@ const machine = createMachine(
     },
     actors: {
       load_mission: async (context) => {
-        console.log('service load mission');
+        console.log('NO service load mission');
         let mission = missionModel.getmission(context.missionId);
         let response = await commandsModel.loadmissionDevice(context.uavId, mission);
         if (response.success == 'success') {
@@ -200,7 +216,7 @@ const machine = createMachine(
         return null;
       },
       Command_mission: async ({ context }) => {
-        console.log('service command mission');
+        console.log('NO service command mission');
         let response = await commandsModel.commandMissionDevice(context.uavId);
         if (response.success == 'success') {
           return response;
@@ -217,7 +233,7 @@ export class missionSMModel {
   static createActorMission(uavId = 0, missionId = 0) {
     listSM[uavId] = createActor(machine).start();
     listSM[uavId].subscribe((state) => {
-      console.log('state machine');
+      console.log('state machine' + state.value);
       console.log('Value:', state.context);
     });
     listSM[uavId].send({ type: 'ChangeId', value: { uavId, missionId } });
@@ -225,19 +241,47 @@ export class missionSMModel {
   }
 
   static get_status(id) {
-    return listSM[id].states;
+    if (listSM.hasOwnProperty(id)) {
+      return listSM[id].states;
+    } else {
+      console.log('no exist estate machine for this UAV = ' + id);
+    }
+    return null;
   }
 
   static load_mission(id) {
-    listSM[id].send({ type: 'loadMission' });
+    if (listSM.hasOwnProperty(id)) {
+      listSM[id].send({ type: 'loadMission' });
+    } else {
+      console.log('no exist estate machine for this UAV = ' + id);
+    }
   }
   static command_mission(id) {
-    listSM[id].send({ type: 'commandMission' });
+    if (listSM.hasOwnProperty(id)) {
+      listSM[id].send({ type: 'commandMission' });
+    } else {
+      console.log('no exist estate machine for this UAV = ' + id);
+    }
   }
-  static finishMission(id) {
-    listSM[id].send({ type: 'DownloadFiles' });
+  static UAVFinishMission(id) {
+    if (listSM.hasOwnProperty(id)) {
+      listSM[id].send({ type: 'downloadFilesUAV' });
+    } else {
+      console.log('no exist estate machine for this UAV = ' + id);
+    }
   }
   static DownloadFiles(id) {
-    listSM[id].send({ type: 'DownloadFilesGCS' });
+    if (listSM.hasOwnProperty(id)) {
+      listSM[id].send({ type: 'downloadFilesGCS' });
+    } else {
+      console.log('no exist estate machine for this UAV = ' + id);
+    }
+  }
+  static FinishMission(id) {
+    if (listSM.hasOwnProperty(id)) {
+      listSM[id].send({ type: 'FinishMission' });
+    } else {
+      console.log('no exist estate machine for this UAV = ' + id);
+    }
   }
 }

@@ -86,9 +86,10 @@ export class rosModel {
       console.log('callback Sevice finish mission');
       console.log(request);
       if (request.hasOwnProperty('uav_id')) {
-        let mydevice = DevicesModel.getByName(request.uav_id);
-        console.log('mydevice in finish mission' + mydevice.id);
-        missionSMModel.finishMission(mydevice.id);
+        let mydevice = DevicesModel.getByName(`uav_${request.uav_id}`);
+        console.log(mydevice);
+        console.log('mydevice in finish mission ' + mydevice.id);
+        missionSMModel.UAVFinishMission(mydevice.id);
       }
 
       response['success'] = true;
@@ -107,12 +108,14 @@ export class rosModel {
     });
 
     service_list[cur_uav_idx]['ServiceDownload'].advertise(function (request, response) {
-      console.log('callback Service finish donwload files');
+      console.log('callback Service finish download files');
       console.log(request);
-      let mydevice = DevicesModel.getByName(request.uav_id);
-      console.log('device' + mydevice.id);
-      missionModel.updateFiles({ id_uav: mydevice.id, id_mission: 1 });
-
+      if (request.hasOwnProperty('uav_id')) {
+        let mydevice = DevicesModel.getByName(request.uav_id);
+        console.log(mydevice);
+        console.log('mydevice finish download files' + mydevice.id);
+        missionSMModel.DownloadFiles(mydevice.id);
+      }
       response['success'] = true;
       response['msg'] = 'Set successfully';
       return true;
