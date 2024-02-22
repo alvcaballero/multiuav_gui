@@ -26,7 +26,7 @@ export class missionModel {
   static getmissionValue(id) {
     console.log('Get mission' + id);
     if (id) {
-      return Mission[id].mission;
+      return Mission[id];
     }
     return Mission[id];
   }

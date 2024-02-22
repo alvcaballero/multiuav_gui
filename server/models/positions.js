@@ -7,13 +7,13 @@ const camera = {};
 export class positionsModel {
   static async getAll(query) {
     if (query) {
+      console.log(query);
       if (Array.isArray(query)) {
         const asArray = Object.entries(positions);
         const filtered = asArray.filter(([key, value]) => query.some((element) => key == element));
         return Object.fromEntries(filtered);
       }
       if (!isNaN(query)) {
-        console.log('is number' + Number(query));
         return positions[query] ? { id: positions[query] } : {};
       }
     }

@@ -3,7 +3,7 @@ import { validateDevice, validatePartialDevice } from '../schemas/devices.js';
 export class devicesController {
   static async getAll(req, res) {
     console.log('controller get all');
-    const devices = await DevicesModel.getAll();
+    const devices = await DevicesModel.getAll(req.query.id);
     res.json(Object.values(devices));
   }
 

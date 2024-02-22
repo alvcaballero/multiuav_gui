@@ -47,14 +47,20 @@ const CommandDownload = async (context) => {
   console.log('service download files from Autopilot ');
   let resp = await missionModel.UAVFinish(context.missionId, context.uavId);
   let mymission = missionModel.getmissionValue(context.missionId);
-  let myinitTime = mymission['initTime'].toISOString().slice(0, -8).replace('T', ' ');
-  let myfinishTime = new Date().toISOString().slice(0, -8).replace('T', ' ');
-  console.log(myinitTime + '---' + myfinishTime);
+  console.log('mission command download');
+  console.log(mymission);
+  let myInitTime = mymission['initTime'].toISOString().slice(0, -8).replace('T', ' ');
+  let myFinishTime = new Date().toISOString().slice(0, -8).replace('T', ' ');
+  console.log(myInitTime + '---' + myFinishTime);
   try {
-    let response = await commandsModel.sendCommand(context.uavId, 'CameraFileDownload', {
-      downloadCnt: 0,
-      initDate: myinitTime,
-      FinishDate: myfinishTime,
+    let response = await commandsModel.sendCommand({
+      deviceId: context.uavId,
+      type: 'CameraFileDownload',
+      attributes: {
+        downloadCnt: 0,
+        initDate: myInitTime,
+        FinishDate: myFinishTime,
+      },
     });
     console.log('-----response in Download');
     console.log(response);

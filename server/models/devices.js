@@ -28,7 +28,19 @@ export class DevicesModel {
     console.log('constructor device model');
   }
 
-  static async getAll() {
+  static async getAll(query) {
+    if (query) {
+      console.log(query);
+      if (Array.isArray(query)) {
+        const asArray = Object.entries(devices);
+        const filtered = asArray.filter(([key, value]) => query.some((element) => key == element));
+        return Object.fromEntries(filtered);
+      }
+      if (!isNaN(query)) {
+        return devices[query] ? { id: devices[query] } : {};
+      }
+    }
+
     return devices;
   }
 

@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { DevicesModel } from './devices';
 
 const accessToken = { token: null, date: '' };
 
@@ -44,7 +45,8 @@ export class ExtApp {
         longitude: wp.pos[0],
         altitude: wp.pos[2],
       }));
-      return { uav: route.uav, wp: myWP };
+      deviceId = DevicesModel.get_device_ns(route.uav);
+      return { deviceId: deviceId, wp: myWP };
     });
 
     let sendResponse = await fetch(`${extUrl}/drones/mission/start`, {
@@ -88,7 +90,6 @@ export class ExtApp {
     if (sendResponse.ok) {
       let command = await sendResponse.json();
       console.log(command);
-
       return command;
     } else {
       throw new Error(sendResponse.status);
