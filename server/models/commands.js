@@ -137,7 +137,7 @@ export class commandsModel {
       standarMessage.callService(
         request,
         function (result) {
-          console.log('send command  ');
+          console.log('send command  ' + type + 'to uav_id' + uav_id);
           console.log(result);
           if (result.success || result.result) {
             resolve({

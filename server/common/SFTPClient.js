@@ -27,7 +27,9 @@ export class SFTPClient {
       await this.client.connect(options);
     } catch (err) {
       console.log('Failed to connect:', err);
+      return false;
     }
+    return true;
   }
 
   async disconnect() {

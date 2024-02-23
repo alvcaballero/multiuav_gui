@@ -128,7 +128,7 @@ export class missionModel {
   }
 
   static async updateFiles(missionId, uavId) {
-    const listMedia = await filesModel.updateFiles(uavId, missionId, initTime);
+    const listMedia = await filesModel.updateFiles(uavId, missionId, Mission[missionId].initTime);
     await this.sleep(5000);
     let resultCode = 0;
 

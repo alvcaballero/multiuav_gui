@@ -2,7 +2,8 @@
 import * as fs from 'fs';
 import { exec } from 'child_process';
 
-import { readYAML, getDatetime } from '../common/utils.js';
+import { dateString, addTime, GetLocalTime } from '../common/utils.js';
+
 import { SFTPClient } from '../common/SFTPClient.js';
 import { DevicesModel } from '../models/devices.js';
 
@@ -57,8 +58,8 @@ export class filesModel {
   */
   static async showFiles({ uavId, missionId, initTime }) {
     console.log('show files ' + uavId + '-' + missionId);
-    let mydevice = DevicesModel.getById(uavId);
-
+    let mydevice = DevicesModel.getAccess(uavId);
+    console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
     const parsedURL = new URL(myurl);
     const port = parsedURL.port || 22;
@@ -97,31 +98,50 @@ export class filesModel {
    */
   static async updateFiles(uavId, missionId, initTime) {
     console.log('update files ' + uavId + '-' + missionId);
-    let listimages = [];
-    let mydevice = DevicesModel.getById(uavId);
+    let listImages = [];
+    let mydevice = DevicesModel.getAccess(uavId);
+    console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
+    if (!mydevice.hasOwnProperty('user')) {
+      console.log('no have ftp ');
+      return false;
+    }
     const client = new SFTPClient();
     const parsedURL = new URL(myurl);
     const port = parsedURL.port || 22;
     const { host, username, password } = parsedURL;
 
-    await client.connect({ host, port, username, password });
+    let isConnected = await client.connect({ host, port, username, password });
+    if (!isConnected) {
+      console.log('cant connect to device ');
+      return listImages;
+    }
     let listFolders = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
     let nameFolder = null;
+    console.log('select folder');
+    let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
+
     for (const myfiles of listFolders) {
-      var matches = myfiles.match(/^mission_(\d{4})-(\d{2})-(\d{2})_(\d{2}):(\d{2})$/);
+      /* var matches = myfiles.match(/^mission_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})$/);
+     * console.log(matches);
       if (matches) {
-        console.log(matches[0]);
+        console.log('matches');
         nameFolder = myfiles;
         let folderdate = myfiles.slice(8).replace('_', 'T') + ':00';
         let currentdate = new Date(folderdate);
         console.log(folderdate + ' date  ' + currentdate.toJSON() + ' gcs=' + initTime.toJSON());
         if (initTime && currentdate > initTime) {
           console.log('folder mayor');
+          break;
         }
-        break;
+      }
+      */
+      console.log([myfiles] + '' + 'mission_' + myInitTime);
+      if (myfiles === 'mission_' + myInitTime) {
+        nameFolder = myfiles;
       }
     }
+    console.log('name folder ' + nameFolder);
     if (nameFolder) {
       let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
       let dir2 = `mission_${missionId}/${mydevice.name}`;
@@ -156,27 +176,27 @@ export class filesModel {
       console.log(filestodownload);
 
       if (downloadOk) {
-        listimages = filestodownload.map((image) => image.ref);
-        console.log(listimages);
-        let listimagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
-        if (ProcessImg && listimagestoprocess.length > 0) {
-          let listThermal = this.ProcessThermalImages(listimagestoprocess);
-          return listimages.concat(listThermal);
+        listImages = filestodownload.map((image) => image.ref);
+        console.log(listImages);
+        let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
+        if (ProcessImg && listImagestoprocess.length > 0) {
+          let listThermal = this.ProcessThermalImages(listImagestoprocess);
+          return listImages.concat(listThermal);
         }
       }
     }
 
-    return listimages;
+    return listImages;
   }
 
   static async ProcessThermalImages(Images2process) {
     console.log('last images process');
     console.log(Images2process);
-    const listimages = [];
+    const listImages = [];
     for (let image of Images2process) {
-      listimages.push(image.ref.slice(0, -4) + '_process.jpg');
+      listImages.push(image.ref.slice(0, -4) + '_process.jpg');
       exec(
-        `${ProcessSRC} "${image.dist}" "${image.dist.slice(
+        `conda activate DJIThermal && ${ProcessSRC} "${image.dist}" "${image.dist.slice(
           0,
           -4
         )}_process.jpg"  && conda deactivate`,
@@ -193,7 +213,7 @@ export class filesModel {
         }
       );
     }
-    return listimages;
+    return listImages;
   }
 
   static async listFiles({ uavId, missionId }) {

@@ -42,3 +42,13 @@ export const writeYAML = (path, content) => {
     }
   });
 };
+
+export const GetLocalTime = (date) => {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+};
+export const addTime = (date, minute) => {
+  return new Date(date.getTime() + minute * 60000);
+};
+export const dateString = (date) => {
+  return date.toISOString().slice(0, -8).replace('T', ' ');
+};

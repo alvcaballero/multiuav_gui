@@ -6,6 +6,7 @@ import { ros, rosModel } from '../models/ros.js';
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const devices = {};
+const devicesAccess = {};
 const uav_list = [];
 
 const CheckDeviceOnline = setInterval(() => {
@@ -43,7 +44,9 @@ export class DevicesModel {
 
     return devices;
   }
-
+  static getAccess(id) {
+    return Object.values(devicesAccess).find((device) => device.id === id);
+  }
   static async create(device) {
     console.log(device);
     let serverState = rosModel.serverStatus();
@@ -94,6 +97,15 @@ export class DevicesModel {
         status: 'online',
         lastUpdate: null,
       });
+      if (device.hasOwnProperty('user') && device.hasOwnProperty('pwd')) {
+        this.updateDeviceAccess({
+          id: cur_uav_idx,
+          name: device.name,
+          user: device.user,
+          pwd: device.pwd,
+          ip: device.ip,
+        });
+      }
 
       for (let i = 0; i < device.camera.length; i = i + 1) {
         if (device.camera[i]['type'] == 'WebRTC') {
@@ -469,6 +481,9 @@ export class DevicesModel {
   static updatedevice(payload) {
     devices[payload.id] = payload;
   }
+  static updateDeviceAccess(payload) {
+    devicesAccess[payload.id] = payload;
+  }
   static updatedeviceIP(payload) {
     devices[payload.id]['ip'] = payload.ip;
   }
@@ -492,6 +507,7 @@ export class DevicesModel {
     for (let device of devices_init.init) {
       console.log(device);
       let uno = await this.create(device);
+
       console.log('finish to add ------------');
     }
   }

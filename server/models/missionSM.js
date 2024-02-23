@@ -3,7 +3,7 @@
 import { createMachine, createActor, fromPromise, assign } from 'xstate';
 import { commandsModel } from '../models/commands.js';
 import { missionModel } from '../models/mission.js';
-
+import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 const listSM = {}; // lista de acots maquinas de estados por id de UAV
 
 const LoadMissionSM = async (context) => {
@@ -49,8 +49,8 @@ const CommandDownload = async (context) => {
   let mymission = missionModel.getmissionValue(context.missionId);
   console.log('mission command download');
   console.log(mymission);
-  let myInitTime = mymission['initTime'].toISOString().slice(0, -8).replace('T', ' ');
-  let myFinishTime = new Date().toISOString().slice(0, -8).replace('T', ' ');
+  let myInitTime = dateString(GetLocalTime(mymission['initTime']));
+  let myFinishTime = dateString(addTime(GetLocalTime(new Date()), 10));
   console.log(myInitTime + '---' + myFinishTime);
   try {
     let response = await commandsModel.sendCommand({
@@ -68,7 +68,8 @@ const CommandDownload = async (context) => {
       console.log('----- success in download');
       return response; // Resolve with the response
     } else {
-      throw new Error('Problem send Mission');
+      console.log('Problem download Mission');
+      //throw new Error('Problem download Mission');
     }
   } catch (error) {
     throw error; // Reject with the error
