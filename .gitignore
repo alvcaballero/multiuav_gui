@@ -6,6 +6,7 @@ server/config/devices/devices_init.yaml
 .DS_Store
 Thumbs.db
 node_modules
+dji_executables
 bag
 yarn.lock
 .vs/

@@ -47,3 +47,11 @@ windows:
             - docker run --rm -it --network=host -v $PWD/../server/config/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
         - gtreamer:
             - cd ~/work/px4/
+        - planning:
+            - cd ~/work/planner-server
+            - source env/bin/activate
+            - ./server_linux.sh
+        - ExtAPP:
+            - cd ~/work/RESISTO/api/test
+            - nvm use 18
+            - npm run test

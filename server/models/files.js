@@ -196,10 +196,10 @@ export class filesModel {
     for (let image of Images2process) {
       listImages.push(image.ref.slice(0, -4) + '_process.jpg');
       exec(
-        `conda activate DJIThermal && ${ProcessSRC} "${image.dist}" "${image.dist.slice(
+        `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(
           0,
           -4
-        )}_process.jpg"  && conda deactivate`,
+        )}_process.jpg" `,
         (error, stdout, stderr) => {
           if (error) {
             console.log(`error: ${error.message}`);

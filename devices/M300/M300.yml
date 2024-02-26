@@ -28,8 +28,8 @@ windows:
         - config:
             - <%= Config_cmd %>
         - mission:
-            - sleep 10; 
+            - sleep 15; 
             - roslaunch onboard_dji resisto.launch uav_id:=<%= uav_ns %>
         - multimaster:
-            - sleep 15; 
+            - sleep 2; 
             - roslaunch onboard_dji multimaster-noetic.launch
