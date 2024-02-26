@@ -122,20 +122,6 @@ export class filesModel {
     let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
 
     for (const myfiles of listFolders) {
-      /* var matches = myfiles.match(/^mission_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})$/);
-     * console.log(matches);
-      if (matches) {
-        console.log('matches');
-        nameFolder = myfiles;
-        let folderdate = myfiles.slice(8).replace('_', 'T') + ':00';
-        let currentdate = new Date(folderdate);
-        console.log(folderdate + ' date  ' + currentdate.toJSON() + ' gcs=' + initTime.toJSON());
-        if (initTime && currentdate > initTime) {
-          console.log('folder mayor');
-          break;
-        }
-      }
-      */
       console.log([myfiles] + '' + 'mission_' + myInitTime);
       if (myfiles === 'mission_' + myInitTime) {
         nameFolder = myfiles;
@@ -176,16 +162,20 @@ export class filesModel {
       console.log(filestodownload);
 
       if (downloadOk) {
+        console.log('download OK');
         listImages = filestodownload.map((image) => image.ref);
-        console.log(listImages);
         let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
         if (ProcessImg && listImagestoprocess.length > 0) {
-          let listThermal = this.ProcessThermalImages(listImagestoprocess);
-          return listImages.concat(listThermal);
+          let listThermal = await this.ProcessThermalImages(listImagestoprocess);
+          console.log('listThermal');
+          console.log(listThermal);
+          for (const srcImage of listThermal) {
+            listImages.push(srcImage);
+          }
         }
       }
     }
-
+    console.log(listImages);
     return listImages;
   }
 
@@ -193,7 +183,7 @@ export class filesModel {
     console.log('last images process');
     console.log(Images2process);
     const listImages = [];
-    for (let image of Images2process) {
+    for (const image of Images2process) {
       listImages.push(image.ref.slice(0, -4) + '_process.jpg');
       exec(
         `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(

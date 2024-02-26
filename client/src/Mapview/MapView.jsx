@@ -81,7 +81,10 @@ const MapView = ({ children }) => {
 
   const mapStyles = useMapStyles();
   const activeMapStyles = 'osm,locationIqStreets,carto,custom';
-  const [defaultMapStyle] = 'osm';
+  const [defaultMapStyle] = usePersistedState(
+    'selectedMapStyle',
+    usePreference('map', 'locationIqStreets')
+  );
   const mapboxAccessToken = 'my tocken';
   const maxZoom = 21;
   //let btn_class = maxsize ? classes.card_max: classes.card;

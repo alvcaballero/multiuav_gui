@@ -6,8 +6,15 @@ import { missionSMModel } from './missionSM.js';
 import { planningModel } from './planning.js';
 import { ExtApp } from './ExtApp.js';
 import { filesModel } from './files.js';
-import { targetType } from 'ssh2-sftp-client/src/constants.js';
 
+/* mission is object that have the current mission running and have the next object
+ / id
+ / initTime
+ / FinishTime
+ / status: init planning, running, finish, ,
+ / uav: {uavId, status:  load, commmand , running , resumen cancel,Get Data, Download Data, InitTime,FinishTime}
+ / mission: mission format yaml
+*/
 const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
 const requestPlanning = {};
 
