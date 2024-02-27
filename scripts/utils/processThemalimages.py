@@ -16,6 +16,13 @@ from thermal_base import ThermalImageAnnotation
 # Manipulation of the image
 from thermal_base import utils
 
+import json
+
+from PIL import Image
+from PIL.ExifTags import TAGS
+import piexif
+import piexif.helper
+
 ## Functions
 # to the temperature in a single point over the image given the coordinates of the point
 def show_temp(x,y,thermal_np,temp_image):
@@ -103,7 +110,22 @@ def main(argv):
     # Saving the image
     cv2.imwrite(outputfile, concat)
     
-            
+    # insert custom data in usercomment field
+    user_data = {
+        # One decimal only
+        "MaxTemp": str(thermal_np.max().round(1)),
+        "MaxTempPos": str(np.argwhere(thermal_np == thermal_np.max())[0])
+    }
+    exif_out = piexif.load(inputfile)
+    exif_out["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+        json.dumps(user_data),
+        encoding="unicode"
+    )
+    # insert mutated data (serialised into JSON) into image
+    piexif.insert(
+        piexif.dump(exif_out),
+        outputfile
+    )        
 
 
 

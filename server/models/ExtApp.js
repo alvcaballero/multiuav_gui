@@ -95,7 +95,7 @@ export class ExtApp {
       throw new Error(sendResponse.status);
     }
   }
-  static async missionMedia(missionId, resultCode, listMedia) {
+  static async missionMedia(missionId, results) {
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
@@ -112,8 +112,9 @@ export class ExtApp {
       },
       body: JSON.stringify({
         mission_id: missionId,
-        resolution_code: resultCode,
-        resultados: listMedia,
+        resolution_code: results.code,
+        resultados: results.listMedia,
+        data: results.data,
       }),
     });
     if (sendResponse.ok) {

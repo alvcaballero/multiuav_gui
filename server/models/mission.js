@@ -64,6 +64,12 @@ export class missionModel {
       return mySetting;
     });
     console.log(myTask.settings);
+    const isPlanning = false;
+    if (isPlanning) {
+      let mission = readYAML(`../config/mission/mission_1.yaml`);
+      this.initMission(mission_id, mission);
+      return { response: myTask, status: 'OK' };
+    }
 
     console.log(myTask);
     const response1 = await fetch(`${planningServer}/mission_request`, {
@@ -135,11 +141,11 @@ export class missionModel {
   }
 
   static async updateFiles(missionId, uavId) {
-    const listMedia = await filesModel.updateFiles(uavId, missionId, Mission[missionId].initTime);
+    const results = await filesModel.updateFiles(uavId, missionId, Mission[missionId].initTime);
     await this.sleep(5000);
-    let resultCode = 0;
+    let code = 0;
 
-    ExtApp.missionMedia(missionId, resultCode, listMedia);
+    ExtApp.missionMedia(missionId, { code, listMedia: results.listMedia, data: results.data });
     return true;
   }
 

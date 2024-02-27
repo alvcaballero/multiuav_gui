@@ -1,7 +1,8 @@
 //example that a men manage databases
 import * as fs from 'fs';
 import { exec } from 'child_process';
-
+import sharp from 'sharp';
+import exif from 'exif-reader';
 import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 
 import { SFTPClient } from '../common/SFTPClient.js';
@@ -99,6 +100,7 @@ export class filesModel {
   static async updateFiles(uavId, missionId, initTime) {
     console.log('update files ' + uavId + '-' + missionId);
     let listImages = [];
+    let MissionResponse = {};
     let mydevice = DevicesModel.getAccess(uavId);
     console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
@@ -167,6 +169,23 @@ export class filesModel {
         let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
         if (ProcessImg && listImagestoprocess.length > 0) {
           let listThermal = await this.ProcessThermalImages(listImagestoprocess);
+          for (const srcImage of listThermal) {
+            metadata = await sharp(srcImage).metadata();
+            let dataexitf = exif(metadata.exif);
+            let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
+            let userdata = JSON.parse(mystring.slice(7).trim());
+            if (Object.keys(MissionResponse).length == 0) {
+              MissionResponse.latitude = dataexitf.GPSInfo.GPSLatitude[2];
+              MissionResponse.longitude = dataexitf.GPSInfo.GPSLatitude[2];
+              MissionResponse.MaxTemp = userdata.MaxTemp;
+            } else {
+              if (Number(userdata.MaxTemp) > Number(MissionResponse.MaxTemp)) {
+                MissionResponse.latitude = dataexitf.GPSInfo.GPSLatitude[2];
+                MissionResponse.longitude = dataexitf.GPSInfo.GPSLatitude[2];
+                MissionResponse.MaxTemp = userdata.MaxTemp;
+              }
+            }
+          }
           console.log('listThermal');
           console.log(listThermal);
           for (const srcImage of listThermal) {
@@ -176,7 +195,24 @@ export class filesModel {
       }
     }
     console.log(listImages);
-    return listImages;
+    return { result: listImages, data: MissionResponse };
+  }
+  static async testMetadata(srcImage) {
+    console.log(' test image');
+    let metadata = await sharp(srcImage).metadata();
+    let response1 = exif(metadata.exif);
+    console.log(response1.GPSInfo.GPSLatitude[2] + '+' + response1.GPSInfo.GPSLongitude[2]);
+    let mystring = response1.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
+    let response = JSON.parse(mystring.slice(7).trim());
+    console.log(response);
+    console.log(mystring);
+
+    console.log(response);
+
+    return response;
+  }
+  static getNormalSize({ width, height, orientation }) {
+    return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
   }
 
   static async ProcessThermalImages(Images2process) {

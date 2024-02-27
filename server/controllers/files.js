@@ -6,6 +6,10 @@ export class filesController {
     let response = await filesModel.getfiles();
     res.json(response);
   }
+  static async testfile(req, res) {
+    let response = await filesModel.testMetadata(req.body.src);
+    res.json(response);
+  }
 
   static async donwload(req, res) {
     //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
