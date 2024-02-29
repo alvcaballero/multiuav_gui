@@ -42,32 +42,45 @@ export class missionModel {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  static async sendTask({ mission_id, objetivo, loc, meteo }) {
+  static async sendTask({ id, name, objetivo, locations, meteo }) {
     console.log('command-sendtask');
 
     let myTask = {};
-    myTask.id = mission_id;
-    myTask.name = 'automatic';
-    myTask.loc = loc;
-    myTask.objetivo = objetivo;
-    myTask.bases = planningModel.getBases();
+    myTask.id = id;
+    myTask.name = name ? name : 'automatic';
+
+    myTask.locations = locations;
+    myTask.case = planningModel.getTypes()[objetivo].case;
     myTask.meteo = meteo;
+
+    let bases = planningModel.getBases();
     let devices = await DevicesModel.getAll();
+    let param = planningModel.getParam(objetivo);
     console.log(devices);
+    let auxconfig = {};
+    Object.keys(param['settings']).forEach((key1) => {
+      auxconfig[key1] = param['settings'][key1].default;
+    });
+
     let basesettings = planningModel.getBasesSettings();
     console.log(basesettings);
-    myTask.settings = basesettings.map((setting) => {
+    myTask.devices = basesettings.map((setting, index) => {
       let mySetting = JSON.parse(JSON.stringify(setting));
-      let myDevice = Object.values(devices).find((device) => device.id == setting.devices.deviceId);
-      mySetting.devices.deviceId = myDevice.name;
-      mySetting.devices.category = myDevice.category;
+      let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
+      delete mySetting.devices;
+      mySetting.settings = auxconfig;
+      mySetting.settings.base = Object.values(bases[index]);
+      mySetting.settings.landing_mode = 2;
+      mySetting.id = myDevice.name;
+      mySetting.category = myDevice.category;
       return mySetting;
     });
-    console.log(myTask.settings);
+    console.log(myTask);
+    console.log(myTask.devices);
     const isPlanning = false;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
-      this.initMission(mission_id, mission);
+      this.initMission(id, mission);
       return { response: myTask, status: 'OK' };
     }
 
@@ -81,11 +94,11 @@ export class missionModel {
       const response2 = await response1.json();
       console.log(response2);
 
-      requestPlanning[mission_id] = {};
-      requestPlanning[mission_id]['count'] = 0;
-      requestPlanning[mission_id]['interval'] = setInterval(() => {
-        console.log('response Planning' + mission_id);
-        this.fetchPlanning(mission_id);
+      requestPlanning[id] = {};
+      requestPlanning[id]['count'] = 0;
+      requestPlanning[id]['interval'] = setInterval(() => {
+        console.log('response Planning' + id);
+        this.fetchPlanning(id);
       }, 5000);
     } else {
       throw Error(await response.text());

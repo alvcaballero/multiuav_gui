@@ -147,7 +147,6 @@ const PlanningPage = () => {
     myTask.id = SendTask.id;
     myTask.name = SendTask.name;
     myTask.case = SendTask.objetivo.case;
-    //myTask.bases = markers.bases;
     myTask.meteo = SendTask.meteo;
     myTask.locations = SendTask.loc.map((group) => {
       let items = group.items.map((element) => ({
@@ -215,12 +214,11 @@ const PlanningPage = () => {
   };
   const MissionTask = async () => {
     const myTask = {};
-    myTask.mission_id = SendTask.id;
+    myTask.id = SendTask.id;
     myTask.name = SendTask.name;
-    myTask.case = SendTask.objetivo.case;
-    myTask.bases = markers.bases;
+    myTask.objetivo = SendTask.objetivo.id;
     myTask.meteo = SendTask.meteo;
-    myTask.loc = SendTask.loc.map((group) => {
+    myTask.locations = SendTask.loc.map((group) => {
       let items = group.items.map((element) => ({
         latitude: element.latitude,
         longitude: element.longitude,
@@ -411,8 +409,7 @@ const PlanningPage = () => {
             // setSendTask({ ...SendTask, settings: paramsResponse });
             setSendTask((SendTaskold) => {
               const myTask = JSON.parse(JSON.stringify(SendTaskold));
-              const config = myTask.bases.map((value) => ({ ...value, settings: auxconfig }));
-              myTask.bases = config;
+              myTask.bases = myTask.bases.map((value) => ({ ...value, settings: auxconfig }));
               myTask.settings = paramsResponse;
               console.log(myTask);
               return myTask;

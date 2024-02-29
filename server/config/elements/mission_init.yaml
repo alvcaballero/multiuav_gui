@@ -1,15 +1,79 @@
-id: 24117670
+id: 22550538
 objetivo:
   id: 0
   name: Inspeccion de linea
   type: path-object
+  case: 0
   description: select towers to create a path
-name: 'Doñana'
-
 loc: []
 meteo: []
-bases: []
-settings: {}
+bases:
+  - devices:
+      id: 2
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 10
+      horizontal_offset: 10
+      tower_height: 10
+      security_height: 10
+  - devices:
+      id: 0
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 10
+      horizontal_offset: 10
+      tower_height: 10
+      security_height: 10
+  - devices:
+      id: 3
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 10
+      horizontal_offset: 10
+      tower_height: 10
+      security_height: 10
+settings:
+  devices:
+    id:
+      type: number
+      name: Device
+      default: 0
+    category:
+      type: ''
+  settings:
+    base:
+      type: array
+      default: []
+    inspection_speed:
+      type: number
+      name: Inspection Speed
+      default: 7
+    navigation_speed:
+      type: number
+      name: Navigation speed
+      default: 15
+    vertical_offset:
+      type: number
+      name: Vertical offset
+      default: 10
+    horizontal_offset:
+      type: number
+      name: Horizontal offset
+      default: 10
+    tower_height:
+      type: number
+      name: Tower height
+      default: 10
+    security_height:
+      type: number
+      name: Segurity height
+      default: 10
 markersbase:
   - latitude: 37.19384768456065
     longitude: -6.7029656624597465
