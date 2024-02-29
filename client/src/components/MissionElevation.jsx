@@ -1,6 +1,5 @@
 import React, { useState, useEffect, Fragment, createRef } from 'react';
 import { useSelector } from 'react-redux';
-import * as turf from '@turf/turf';
 import {
   CartesianGrid,
   Line,
@@ -266,12 +265,12 @@ const MissionElevation = () => {
       <Box style={{ display: 'flex', margin: '10px', alignItems: 'center' }}>
         <a style={{ marginInline: '20px' }}>Elevation Profile</a>
         <FormControl>
-          <InputLabel id='demo-simple-select-label'>Route</InputLabel>
+          <InputLabel id="demo-simple-select-label">Route</InputLabel>
           <Select
-            labelId='demo-simple-select-label'
-            id='demo-simple-select'
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
             value={SelectRT}
-            label='Elevation Profile'
+            label="Elevation Profile"
             onChange={(event) => setSelectRT(event.target.value)}
           >
             <MenuItem value={-1}>All Routes</MenuItem>
@@ -284,7 +283,7 @@ const MissionElevation = () => {
 
       {items.length > 0 && (
         <div className={classes.chart}>
-          <ResponsiveContainer width='100%' height='100%'>
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={items}
               margin={{
@@ -294,20 +293,20 @@ const MissionElevation = () => {
                 bottom: 10,
               }}
             >
-              <XAxis dataKey='length' type='number' domain={['dataMin', 'dataMax']} />
+              <XAxis dataKey="length" type="number" domain={['dataMin', 'dataMax']} />
               <YAxis
-                type='number'
+                type="number"
                 tickFormatter={(value) => value.toFixed(2)}
                 domain={[minValue - valueRange / 5, maxValue + valueRange / 5]}
               />
-              <CartesianGrid strokeDasharray='3 3' />
+              <CartesianGrid strokeDasharray="3 3" />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               {items.map((s, s_index, s_array) => (
                 <Fragment key={'s-' + s_index}>
                   <Line
-                    type='monotone'
-                    dataKey='elevation'
+                    type="monotone"
+                    dataKey="elevation"
                     data={s.data}
                     name={s.name}
                     key={s.name}
@@ -323,12 +322,12 @@ const MissionElevation = () => {
                   />
                   <Line
                     connectNulls
-                    dataKey='uavheight'
+                    dataKey="uavheight"
                     data={s.data}
                     name={s.name + '-v'}
                     key={s.name + '-v'}
                     stroke={s.color}
-                    strokeDasharray='5 5'
+                    strokeDasharray="5 5"
                     activeDot={{
                       onClick: (event, payload) => {
                         console.log(payload);

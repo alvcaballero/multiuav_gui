@@ -5,24 +5,25 @@ var initPlanning = readYAML('../config/elements/mission_init.yaml');
 
 export class planningModel {
   static getTypes() {
-    console.log('Mission types');
+    console.log('Mission types map');
     return configPlanning.missionTypes.map((mission) => ({
       id: mission.id,
       name: mission.name,
       type: mission.type,
+      case: mission.case,
       description: mission.description,
     }));
   }
   static getParam(type) {
-    console.log('Mission types');
-    return configPlanning.missionTypes[type]['setting'];
+    console.log('Mission params' + type);
+    return configPlanning.missionTypes[type]['data'];
   }
   static getBasesSettings() {
     console.log('Get bases settingd');
     return initPlanning.bases;
   }
   static getMissionTypes() {
-    console.log('Mission types');
+    console.log('Mission types all');
     return configPlanning.missionTypes;
   }
   static getDefault() {

@@ -154,7 +154,7 @@ export const machine = createMachine(
           'confirm reset': { target: 'UAVready' },
         },
         after: {
-          10000: { target: 'UAVready' },
+          10000: { target: 'END' },
         },
       },
       RunningMission: {

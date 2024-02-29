@@ -2,7 +2,6 @@ import React, { Fragment, useEffect, useState } from 'react';
 import makeStyles from '@mui/styles/makeStyles';
 import {
   Box,
-  Button,
   IconButton,
   TextField,
   Accordion,
@@ -12,10 +11,7 @@ import {
 } from '@mui/material';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
-import palette from '../common/palette';
-import { map } from '../Mapview/MapView';
 import SelectField from '../common/components/SelectField';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
@@ -71,6 +67,8 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
     if (data) {
       data.length > 0 ? setDataExist(false) : setDataExist(true);
     }
+    console.log(data);
+    console.log(param);
   }, [data]);
 
   return (
@@ -114,7 +112,7 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
                           React.Children.toArray(
                             Object.keys(param.devices).map((actionKey, index_ac, list_ac) => (
                               <div>
-                                {actionKey == 'deviceId' ? (
+                                {actionKey == 'id' && (
                                   <SelectField
                                     emptyValue={null}
                                     fullWidth
@@ -127,30 +125,6 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
                                       modifyData(index, 'devices', actionKey, e.target.value);
                                     }}
                                   />
-                                ) : (
-                                  <>
-                                    <Typography
-                                      variant="subtitle1"
-                                      className={classes.attributeName}
-                                    >
-                                      {param.devices[actionKey].name}
-                                    </Typography>
-                                    <div className={classes.actionValue}>
-                                      <TextField
-                                        required
-                                        fullWidth
-                                        type="number"
-                                        value={
-                                          base.devices[actionKey]
-                                            ? base.devices[actionKey]
-                                            : param.devices[actionKey].default
-                                        }
-                                        onChange={(e) => {
-                                          modifyData(index, 'devices', actionKey, e.target.value);
-                                        }}
-                                      />
-                                    </div>
-                                  </>
                                 )}
                               </div>
                             ))
@@ -158,32 +132,39 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
                       </div>
                       <div>
                         <Typography variant="subtitle1" style={{ display: 'inline' }}>
-                          Mission Params
+                          Settings
                         </Typography>
                       </div>
                       <div>
-                        {param.mission &&
+                        {param.settings &&
                           React.Children.toArray(
-                            Object.keys(param.mission).map((actionKey) => (
+                            Object.keys(param.settings).map((actionKey) => (
                               <div>
-                                <Typography variant="subtitle1" className={classes.attributeName}>
-                                  {actionKey}
-                                </Typography>
-                                <div className={classes.actionValue}>
-                                  <TextField
-                                    required
-                                    fullWidth
-                                    type="number"
-                                    value={
-                                      base.mission[actionKey]
-                                        ? base.mission[actionKey]
-                                        : param.devices[actionKey].default
-                                    }
-                                    onChange={(e) => {
-                                      modifyData(index, 'mission', actionKey, e.target.value);
-                                    }}
-                                  />
-                                </div>
+                                {param.settings[actionKey].name && (
+                                  <Fragment>
+                                    <Typography
+                                      variant="subtitle1"
+                                      className={classes.attributeName}
+                                    >
+                                      {param.settings[actionKey].name}
+                                    </Typography>
+                                    <div className={classes.actionValue}>
+                                      <TextField
+                                        required
+                                        fullWidth
+                                        type="number"
+                                        value={
+                                          base.settings[actionKey]
+                                            ? base.settings[actionKey]
+                                            : param.settings[actionKey].default
+                                        }
+                                        onChange={(e) => {
+                                          modifyData(index, 'settings', actionKey, e.target.value);
+                                        }}
+                                      />
+                                    </div>
+                                  </Fragment>
+                                )}
                               </div>
                             ))
                           )}

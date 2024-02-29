@@ -136,19 +136,20 @@ const PlanningPage = () => {
 
   const [markers, setMarkers] = useState(sessionmarkers);
   const [SendTask, setSendTask] = useState(sessionplanning);
+  const [auxobjetive, setauxobjetive] = useState(-1);
   const [tabValue, setTabValue] = useState('2');
-  const [settings, setsettings] = useState('');
   const [notification, setNotification] = useState('');
   const [checked, setChecked] = useState(true);
 
   const SendPlanning = useCatch(async () => {
+    console.log('send planning');
     let myTask = {};
     myTask.id = SendTask.id;
     myTask.name = SendTask.name;
-    myTask.objetivo = SendTask.objetivo.id;
-    myTask.bases = markers.bases;
+    myTask.case = SendTask.objetivo.case;
+    //myTask.bases = markers.bases;
     myTask.meteo = SendTask.meteo;
-    myTask.loc = SendTask.loc.map((group) => {
+    myTask.locations = SendTask.loc.map((group) => {
       let items = group.items.map((element) => ({
         latitude: element.latitude,
         longitude: element.longitude,
@@ -156,7 +157,7 @@ const PlanningPage = () => {
       return { name: group.name, items };
     });
 
-    let listDevices = SendTask.bases.map((setting) => setting.devices.deviceId);
+    let listDevices = SendTask.bases.map((setting) => setting.devices.id);
     let deviceRepeat = listDevices.some((value, index, list) => !(list.indexOf(value) === index));
     setNotification('');
     if (deviceRepeat) {
@@ -175,11 +176,14 @@ const PlanningPage = () => {
     } else {
       throw Error(await response.text());
     }
-    myTask.settings = SendTask.bases.map((setting) => {
+    myTask.devices = SendTask.bases.map((setting, index) => {
       let mySetting = JSON.parse(JSON.stringify(setting));
-      let myDevice = devices.find((device) => device.id == setting.devices.deviceId);
-      mySetting.devices.deviceId = myDevice.name;
-      mySetting.devices.category = myDevice.category;
+      let myDevice = devices.find((device) => device.id == setting.devices.id);
+      delete mySetting.devices;
+      mySetting.id = myDevice.name;
+      mySetting.category = myDevice.category;
+      mySetting.settings.base = Object.values(markers.bases[index]);
+      mySetting.settings.landing_mode = 2;
       return mySetting;
     });
     console.log(myTask);
@@ -213,7 +217,7 @@ const PlanningPage = () => {
     const myTask = {};
     myTask.mission_id = SendTask.id;
     myTask.name = SendTask.name;
-    myTask.objetivo = SendTask.objetivo.id;
+    myTask.case = SendTask.objetivo.case;
     myTask.bases = markers.bases;
     myTask.meteo = SendTask.meteo;
     myTask.loc = SendTask.loc.map((group) => {
@@ -294,10 +298,10 @@ const PlanningPage = () => {
         setSendTask((oldSendtask) => {
           let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
           let auxconfig = {};
-          Object.keys(settings).forEach((key) => {
+          Object.keys(oldSendtask.settings).forEach((key) => {
             auxconfig[key] = {};
-            Object.keys(settings[key]).forEach((key1) => {
-              auxconfig[key][key1] = settings[key][key1].default;
+            Object.keys(oldSendtask.settings[key]).forEach((key1) => {
+              auxconfig[key][key1] = oldSendtask.settings[key][key1].default;
             });
           });
           auxbases.push(auxconfig);
@@ -354,6 +358,7 @@ const PlanningPage = () => {
     });
   };
   const updateObjetive = (newObjetive) => {
+    console.log('update objetivo');
     setSendTask((oldSendtask) => {
       let myTask = JSON.parse(JSON.stringify(oldSendtask));
       myTask.objetivo = newObjetive;
@@ -368,42 +373,59 @@ const PlanningPage = () => {
   };
 
   useEffectAsync(async () => {
-    const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo.id}`);
-    if (response.ok) {
-      const jsonresponse = await response.json();
-      console.log(jsonresponse);
-      setsettings(jsonresponse);
-    } else {
-      throw Error(await response.text());
-    }
-  }, [SendTask.objetivo]);
-
-  useEffect(() => {
-    console.log('effect settings');
-    console.log(settings);
-    if (settings.hasOwnProperty('mission')) {
-      if (SendTask.bases.length == 0) {
-        let config = markers.bases.map(() => {
-          let auxconfig = {};
-          Object.keys(settings).forEach((key) => {
-            auxconfig[key] = {};
-            Object.keys(settings[key]).forEach((key1) => {
-              auxconfig[key][key1] = settings[key][key1].default;
+    console.log('change objetivo');
+    if (auxobjetive !== SendTask.objetivo.id) {
+      console.log('are different');
+      setauxobjetive(SendTask.objetivo.id);
+      const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo.id}`);
+      if (response.ok) {
+        console.log('response ok');
+        const paramsResponse = await response.json();
+        console.log(paramsResponse);
+        if (paramsResponse.hasOwnProperty('settings')) {
+          if (SendTask.bases.length == 0) {
+            console.log('settings base lenght  zero');
+            let config = markers.bases.map(() => {
+              let auxconfig = {};
+              Object.keys(paramsResponse).forEach((key) => {
+                auxconfig[key] = {};
+                Object.keys(paramsResponse[key]).forEach((key1) => {
+                  auxconfig[key][key1] = paramsResponse[key][key1].default;
+                });
+              });
+              return auxconfig;
             });
-          });
-          return auxconfig;
-        });
-        setSendTask((SendTaskold) => {
-          const myTask = JSON.parse(JSON.stringify(SendTaskold));
-          myTask.bases = config;
-          myTask.settings = settings;
-          return myTask;
-        });
+            setSendTask((SendTaskold) => {
+              const myTask = JSON.parse(JSON.stringify(SendTaskold));
+              myTask.bases = config;
+              myTask.settings = paramsResponse;
+              return myTask;
+            });
+          } else {
+            console.log('change basesss');
+            let auxconfig = {};
+            Object.keys(paramsResponse['settings']).forEach((key1) => {
+              auxconfig[key1] = paramsResponse['settings'][key1].default;
+            });
+            console.log(auxconfig);
+            // setSendTask({ ...SendTask, settings: paramsResponse });
+            setSendTask((SendTaskold) => {
+              const myTask = JSON.parse(JSON.stringify(SendTaskold));
+              const config = myTask.bases.map((value) => ({ ...value, settings: auxconfig }));
+              myTask.bases = config;
+              myTask.settings = paramsResponse;
+              console.log(myTask);
+              return myTask;
+            });
+          }
+        }
       } else {
-        setSendTask({ ...SendTask, settings: settings });
+        throw Error(await response.text());
       }
+    } else {
+      console.log('are equal');
     }
-  }, [settings]);
+  }, [SendTask.objetivo, auxobjetive]);
 
   useEffect(() => {
     tabValue == 2 && SendTask.objetivo.id != 3 ? SetSelectMarkers(true) : SetSelectMarkers(false);
@@ -601,6 +623,7 @@ const PlanningPage = () => {
                             updateObjetive(items[e.target.value]);
                           }}
                           getItems={(it) => {
+                            console.log(it);
                             setSendTask({ ...SendTask, objetivo: it });
                           }}
                         />

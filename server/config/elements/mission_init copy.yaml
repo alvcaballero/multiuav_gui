@@ -4,12 +4,61 @@ objetivo:
   name: Inspeccion de linea
   type: path-object
   description: select towers to create a path
-name: 'Doñana'
-
 loc: []
 meteo: []
-bases: []
-settings: {}
+bases:
+  - devices:
+      deviceId: 3
+      speed_mission: 7
+      speed_navegation: 15
+    mission:
+      height: 10
+      offset: 10
+      tower: 10
+  - devices:
+      deviceId: 4
+      speed_mission: 7
+      speed_navegation: 15
+    mission:
+      height: 10
+      offset: 10
+      tower: 10
+  - devices:
+      deviceId: 0
+      speed_mission: 7
+      speed_navegation: 15
+    mission:
+      height: 10
+      offset: 10
+      tower: 10
+settings:
+  devices:
+    deviceId:
+      type: number
+      name: Device
+      default: 0
+    speed_mission:
+      type: number
+      name: Speed Mission
+      default: 7
+    speed_navegation:
+      type: number
+      name: Speed Navegation
+      default: 15
+  mission:
+    height:
+      type: number
+      name: Height
+      default: 10
+    offset:
+      type: number
+      name: offset
+      default: 10
+    tower:
+      type: number
+      name: height tower
+      default: 10
+name: ' Doñana'
 markersbase:
   - latitude: 37.19384768456065
     longitude: -6.7029656624597465
