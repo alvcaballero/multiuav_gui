@@ -44,11 +44,6 @@ const initMap = async () => {
         pixelRatio: window.devicePixelRatio,
       });
     });
-    map.easeTo({
-      center: [-6.0025, 37.412],
-      zoom: Math.max(map.getZoom(), 5),
-      offset: [0, -1 / 2],
-    });
   }
   updateReadyValue(true);
 };

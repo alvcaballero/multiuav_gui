@@ -4,7 +4,7 @@ const { reducer, actions } = createSlice({
   name: 'session',
   initialState: {
     server: {},
-    user: {},
+    user: { latitude: 37.19384768456065, longitude: -6.7029656624597465, zoom: 10 },
     socket: null,
     positions: {},
     history: {},

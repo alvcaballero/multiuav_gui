@@ -228,3 +228,130 @@ GET http://192.168.1.180:8004/get_plan?IDs=1234
 
 ###
 GET  http://localhost:4000/api/missions/test
+###
+GET http://127.0.0.1:8004/get_plan?IDs=76327900
+
+### 
+POST http://127.0.0.1:8004/mission_request
+Content-Type: application/json
+
+{
+  "id": "76327903",
+  "locations": [
+    {
+      "name": "Elements",
+      "items": [
+        {"latitude": 37.19384681403371, "longitude": -6.702598762315071},
+        {"latitude": 37.19280537019709, "longitude": -6.701476542699256}
+      ]
+    }
+  ],
+  "case": 0,
+  "meteo": [],
+  "devices": [
+    {
+      "settings": {
+        "base": [37.1340964847625, -6.472237657544976, "base"],
+        "inspection_speed": 7,
+        "navigation_speed": 15,
+        "vertical_offset": 10,
+        "horizontal_offset": 10,
+        "tower_height": 10,
+        "security_height": 10,
+        "landing_mode": 2
+      },
+      "id": "uav_3",
+      "category": "px4"
+    },
+    {
+      "settings": {
+        "base": [37.1340964847625, -6.472237657544976, "base"],
+        "inspection_speed": 7,
+        "navigation_speed": 15,
+        "vertical_offset": 10,
+        "horizontal_offset": 10,
+        "tower_height": 10,
+        "security_height": 10,
+        "landing_mode": 2
+      },
+      "id": "uav_1",
+      "category": "dji_M210_melodic"
+    },
+    {
+      "settings": {
+        "base": [37.1340964847625, -6.472237657544976, "base"],
+        "inspection_speed": 7,
+        "navigation_speed": 15,
+        "vertical_offset": 10,
+        "horizontal_offset": 10,
+        "tower_height": 10,
+        "security_height": 10,
+        "landing_mode": 2
+      },
+      "id": "uav_14",
+      "category": "dji_M300"
+    }
+  ]
+}
+###
+POST http://127.0.0.1:8004/mission_request
+Content-Type: application/json
+
+{
+  "id": "76327900",
+  "case": 0,
+  "meteo": [],
+  "locations": [
+    {
+      "name": "Elements",
+      "items": [
+        {"latitude": 37.19384681403371, "longitude": -6.702598762315071},
+        {"latitude": 37.19280537019709, "longitude": -6.701476542699256}
+      ]
+    }
+  ],
+  "devices": [
+    {
+      "settings": {
+        "base": [37.19384768456065, -6.7029665624597465, "base"],
+        "inspection_speed": 7,
+        "navigation_speed": 15,
+        "vertical_offset": 10,
+        "horizontal_offset": 10,
+        "tower_height": 10,
+        "security_height": 10,
+        "landing_mode": 2
+      },
+      "id": "uav_3",
+      "category": "px4"
+    },
+    {
+      "settings": {
+        "base": [37.04392450222122, -6.568677029462045, "base"],
+        "inspection_speed": 7,
+        "navigation_speed": 15,
+        "vertical_offset": 10,
+        "horizontal_offset": 10,
+        "tower_height": 10,
+        "security_height": 10,
+        "landing_mode": 2
+      },
+      "id": "uav_1",
+      "category": "dji_M210_melodic"
+    },
+    {
+      "settings": {
+        "base": [37.1340964847625, -6.472237657544976, "base"],
+        "inspection_speed": 7,
+        "navigation_speed": 15,
+        "vertical_offset": 10,
+        "horizontal_offset": 10,
+        "tower_height": 10,
+        "security_height": 10,
+        "landing_mode": 2
+      },
+      "id": "uav_14",
+      "category": "dji_M300"
+    }
+  ]
+}

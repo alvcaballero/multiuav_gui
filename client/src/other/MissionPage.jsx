@@ -15,6 +15,7 @@ import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
 import MapScale from '../Mapview/MapScale';
+import MapDefaultCamera from '../Mapview/MapDefaultCamera';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -80,6 +81,7 @@ const MissionPage = () => {
             }}
           >
             <MapView>
+              <MapDefaultCamera />
               <MapMissionsCreate />
               <MapPositions
                 positions={filteredPositions}

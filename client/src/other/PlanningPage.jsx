@@ -45,6 +45,7 @@ import MapScale from '../Mapview/MapScale';
 import ElementList from '../components/ElementList';
 import { useEffectAsync, useCatch } from '../reactHelper';
 import SelectList from '../components/SelectList';
+import MapDefaultCamera from '../Mapview/MapDefaultCamera';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -484,6 +485,7 @@ const PlanningPage = () => {
           <Menu />
           <div className={classes.mapContainer}>
             <MapView>
+              <MapDefaultCamera />
               {checked && <MapMissions />}
               <MapMarkersCreate
                 markers={markers}

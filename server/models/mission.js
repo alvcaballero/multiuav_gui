@@ -6,6 +6,7 @@ import { missionSMModel } from './missionSM.js';
 import { planningModel } from './planning.js';
 import { ExtApp } from './ExtApp.js';
 import { filesModel } from './files.js';
+import { readYAML } from '../common/utils.js';
 
 /* mission is object that have the current mission running and have the next object
  / id
@@ -48,7 +49,6 @@ export class missionModel {
     let myTask = {};
     myTask.id = id;
     myTask.name = name ? name : 'automatic';
-
     myTask.locations = locations;
     myTask.case = planningModel.getTypes()[objetivo].case;
     myTask.meteo = meteo;
@@ -56,35 +56,33 @@ export class missionModel {
     let bases = planningModel.getBases();
     let devices = await DevicesModel.getAll();
     let param = planningModel.getParam(objetivo);
-    console.log(devices);
     let auxconfig = {};
     Object.keys(param['settings']).forEach((key1) => {
       auxconfig[key1] = param['settings'][key1].default;
     });
 
     let basesettings = planningModel.getBasesSettings();
-    console.log(basesettings);
     myTask.devices = basesettings.map((setting, index) => {
-      let mySetting = JSON.parse(JSON.stringify(setting));
+      let config = { settings: {} };
       let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
-      delete mySetting.devices;
-      mySetting.settings = auxconfig;
-      mySetting.settings.base = Object.values(bases[index]);
-      mySetting.settings.landing_mode = 2;
-      mySetting.id = myDevice.name;
-      mySetting.category = myDevice.category;
-      return mySetting;
+      for (const value of Object.keys(auxconfig)) {
+        value !== 'base' ? (config.settings[value] = auxconfig[value]) : null;
+      }
+      config.settings.base = Object.values(bases[index]);
+      config.settings.landing_mode = 2;
+      config.id = myDevice.name;
+      config.category = myDevice.category;
+      return config;
     });
     console.log(myTask);
     console.log(myTask.devices);
-    const isPlanning = false;
+
+    const isPlanning = true;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
-      this.initMission(id, mission);
+      this.initMission(id, { ...mission, id: id });
       return { response: myTask, status: 'OK' };
     }
-
-    console.log(myTask);
     const response1 = await fetch(`${planningServer}/mission_request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

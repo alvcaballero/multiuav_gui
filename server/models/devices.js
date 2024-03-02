@@ -511,7 +511,6 @@ export class DevicesModel {
 
   static async connectAllUAV() {
     for (let device of Object.values(devices)) {
-      console.log(device);
       await this.subscribeDevice({
         id: device.id,
         name: device.name,
@@ -520,16 +519,14 @@ export class DevicesModel {
         watch_bound: true,
         bag: false,
       });
-      console.log('finish to add ------------');
     }
+    console.log('finish to connect all devices ------------');
   }
   static async addAllUAV() {
     for (let device of devices_init.init) {
-      console.log(device);
       let uno = await this.create(device);
-
-      console.log('finish to add ------------');
     }
+    console.log('finish to add all devices  ------------');
   }
 }
 DevicesModel.addAllUAV();

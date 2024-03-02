@@ -112,7 +112,6 @@ export class ExtApp {
       },
       body: JSON.stringify({
         mission_id: missionId,
-        resolution_code: results.code,
         resultados: results.listMedia,
         data: results.data,
       }),
