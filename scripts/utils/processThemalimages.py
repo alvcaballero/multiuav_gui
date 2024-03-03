@@ -42,9 +42,8 @@ def find_max_temp(thermal_np,temp_image):
     # Find the maximum value indexes
     max_idx = np.argwhere(thermal_np == max_temp)
 
-    print("Maximum temperature:", max_temp)
-    print("Indexes:", max_idx[0])
-    print(type(max_idx[0]))
+    print("{data:{MaximumTemperature:"+ str(max_temp) + ", TemperatureIndexes:["+ str(max_idx[0][0])+","+ str(max_idx[0][1])+"] } }" )
+    #print(type(max_idx[0]))
     #show_temp(max_idx[0][1],max_idx[0][0],temp_image)
     cv2.circle(temp_image, (max_idx[0][1], max_idx[0][0]), 2, (0, 0, 0), -1)
     cv2.putText(temp_image,"Max: {:.2f} C".format(thermal_np[max_idx[0][0],max_idx[0][1]]),(max_idx[0][1] - 80, max_idx[0][0] - 15), cv2.FONT_HERSHEY_PLAIN, 1,(255,255,255),2)

@@ -112,8 +112,8 @@ export class ExtApp {
       },
       body: JSON.stringify({
         mission_id: missionId,
-        resultados: results.listMedia,
-        data: results.data,
+        files: results.files,
+        result: results.data,
       }),
     });
     if (sendResponse.ok) {

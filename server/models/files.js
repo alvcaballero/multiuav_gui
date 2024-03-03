@@ -101,6 +101,7 @@ export class filesModel {
     console.log('update files ' + uavId + '-' + missionId);
     let listImages = [];
     let MissionResponse = {};
+
     let mydevice = DevicesModel.getAccess(uavId);
     console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
@@ -169,39 +170,25 @@ export class filesModel {
         let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
         if (ProcessImg && listImagestoprocess.length > 0) {
           let listThermal = await this.ProcessThermalImages(listImagestoprocess);
-          for (const srcImage of listThermal) {
-            metadata = await sharp(srcImage).metadata();
-            let dataexitf = exif(metadata.exif);
-            let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
-            let userdata = JSON.parse(mystring.slice(7).trim());
-            if (Object.keys(MissionResponse).length == 0) {
-              MissionResponse.latitude = dataexitf.GPSInfo.GPSLatitude[2];
-              MissionResponse.longitude = dataexitf.GPSInfo.GPSLatitude[2];
-              MissionResponse.MaxTemp = userdata.MaxTemp;
-            } else {
-              if (Number(userdata.MaxTemp) > Number(MissionResponse.MaxTemp)) {
-                MissionResponse.latitude = dataexitf.GPSInfo.GPSLatitude[2];
-                MissionResponse.longitude = dataexitf.GPSInfo.GPSLatitude[2];
-                MissionResponse.MaxTemp = userdata.MaxTemp;
-              }
-            }
-          }
+          MissionResponse = await this.MetadataTempImage(listThermal.dist);
           console.log('listThermal');
           console.log(listThermal);
-          for (const srcImage of listThermal) {
+          for (const srcImage of listThermal.ref) {
             listImages.push(srcImage);
           }
         }
       }
     }
     console.log(listImages);
-    return { result: listImages, data: MissionResponse };
+    return { files: listImages, data: MissionResponse };
   }
   static async testMetadata(srcImage) {
     console.log(' test image');
     let metadata = await sharp(srcImage).metadata();
     let response1 = exif(metadata.exif);
     console.log(response1.GPSInfo.GPSLatitude[2] + '+' + response1.GPSInfo.GPSLongitude[2]);
+    console.log(response1.GPSInfo);
+
     let mystring = response1.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
     let response = JSON.parse(mystring.slice(7).trim());
     console.log(response);
@@ -211,16 +198,64 @@ export class filesModel {
 
     return response;
   }
+  static async MetadataTempImage(listThermal) {
+    console.log(listThermal);
+    console.log('metadata imagen');
+    let MissionResponse = {};
+    let GPSPosition = {};
+    for (const srcImage of listThermal) {
+      let metadata = await sharp(srcImage).metadata();
+      let dataexitf = exif(metadata.exif);
+      let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
+      let userdata = JSON.parse(mystring.slice(7).trim());
+
+      if (Object.keys(MissionResponse).length == 0) {
+        GPSPosition = dataexitf.GPSInfo;
+        MissionResponse.MaxTemp = userdata.MaxTemp;
+      } else {
+        if (Number(userdata.MaxTemp) > Number(MissionResponse.MaxTemp)) {
+          GPSPosition = dataexitf.GPSInfo;
+          MissionResponse.MaxTemp = userdata.MaxTemp;
+        }
+      }
+    }
+    MissionResponse.latitude = this.convertDMSToDD(
+      GPSPosition.GPSLatitude[0],
+      GPSPosition.GPSLatitude[1],
+      GPSPosition.GPSLatitude[2],
+      GPSPosition.GPSLatitudeRef
+    );
+    MissionResponse.longitude = this.convertDMSToDD(
+      GPSPosition.GPSLongitude[0],
+      GPSPosition.GPSLongitude[1],
+      GPSPosition.GPSLongitude[2],
+      GPSPosition.GPSLongitudeRef
+    );
+    console.log(MissionResponse);
+    return MissionResponse;
+  }
   static getNormalSize({ width, height, orientation }) {
     return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
+  }
+
+  static convertDMSToDD(degrees, minutes, seconds, direction) {
+    var dd = degrees + minutes / 60 + seconds / (60 * 60);
+
+    if (direction == 'S' || direction == 'W') {
+      dd = dd * -1; // Convert to negative if south or west
+    }
+
+    return dd;
   }
 
   static async ProcessThermalImages(Images2process) {
     console.log('last images process');
     console.log(Images2process);
     const listImages = [];
+    const listImagesdist = [];
     for (const image of Images2process) {
       listImages.push(image.ref.slice(0, -4) + '_process.jpg');
+      listImagesdist.push(image.dist.slice(0, -4) + '_process.jpg');
       exec(
         `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(
           0,
@@ -239,7 +274,7 @@ export class filesModel {
         }
       );
     }
-    return listImages;
+    return { ref: listImages, dist: listImagesdist };
   }
 
   static async listFiles({ uavId, missionId }) {

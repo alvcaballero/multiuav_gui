@@ -77,7 +77,7 @@ export class missionModel {
     console.log(myTask);
     console.log(myTask.devices);
 
-    const isPlanning = true;
+    const isPlanning = false;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
       this.initMission(id, { ...mission, id: id });
@@ -156,7 +156,7 @@ export class missionModel {
     await this.sleep(5000);
     let code = 0;
 
-    ExtApp.missionMedia(missionId, { code, listMedia: results.listMedia, data: results.data });
+    ExtApp.missionMedia(missionId, { code, files: results.files, data: results.data });
     return true;
   }
 

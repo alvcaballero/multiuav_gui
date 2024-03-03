@@ -148,13 +148,44 @@ GET http://localhost:4000/api/files/download/mission_1243/uav_15/DJI_20231124131
 ### list files
 GET http://localhost:4000/api/files/routes
 
-### list files
+### Get metadata
 POST  http://localhost:4000/api/files/test
 Content-Type: application/json
 
 {
-    "src":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174110_0013_THRM10.jpg"
+    "src":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240226142604_0003_THRM_process.jpg"
 }
+
+### list get temp max of metadata
+POST  http://localhost:4000/api/files/TempResult
+Content-Type: application/json
+
+{
+    "src":[
+      "/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174110_0013_THRM_process.jpg",
+      "/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174112_0014_THRM_process.jpg",
+      "/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174116_0015_THRM_process.jpg",
+      "/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0016_THRM_process.jpg",
+      "/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240226142604_0003_THRM_process.jpg",
+      "/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0016_THRM_process.jpg"
+    ]
+}
+
+### list get temp max of metadata
+POST  http://localhost:4000/api/files/ProcessImage
+Content-Type: application/json
+
+{
+    "src":[
+      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174110_0013_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174110_0013_THRM.jpg"},
+      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174112_0014_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174112_0014_THRM.jpg"},
+      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174116_0015_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174116_0015_THRM.jpg"},
+      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0016_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0016_THRM.jpg"},
+      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240226142604_0003_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240226142604_0003_THRM.jpg"},
+      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0017_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0017_THRM.jpg"}
+    ]
+}
+
 
 
 ### planning

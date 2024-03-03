@@ -10,6 +10,14 @@ export class filesController {
     let response = await filesModel.testMetadata(req.body.src);
     res.json(response);
   }
+  static async MetadataTempImage(req, res) {
+    let response = await filesModel.MetadataTempImage(req.body.src);
+    res.json(response);
+  }
+  static async ProcessThermalImages(req, res) {
+    let response = await filesModel.ProcessThermalImages(req.body.src);
+    res.json(response);
+  }
 
   static async donwload(req, res) {
     //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
