@@ -1,64 +1,79 @@
-id: 24117670
+id: 22550538
 objetivo:
   id: 0
   name: Inspeccion de linea
   type: path-object
+  case: 0
   description: select towers to create a path
 loc: []
 meteo: []
 bases:
   - devices:
-      deviceId: 3
-      speed_mission: 7
-      speed_navegation: 15
-    mission:
-      height: 10
-      offset: 10
-      tower: 10
+      id: 3
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 10
+      horizontal_offset: 10
+      tower_height: 10
+      security_height: 10
   - devices:
-      deviceId: 4
-      speed_mission: 7
-      speed_navegation: 15
-    mission:
-      height: 10
-      offset: 10
-      tower: 10
+      id: 0
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 10
+      horizontal_offset: 10
+      tower_height: 10
+      security_height: 10
   - devices:
-      deviceId: 0
-      speed_mission: 7
-      speed_navegation: 15
-    mission:
-      height: 10
-      offset: 10
-      tower: 10
+      id: 4
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 10
+      horizontal_offset: 10
+      tower_height: 10
+      security_height: 10
 settings:
   devices:
-    deviceId:
+    id:
       type: number
       name: Device
       default: 0
-    speed_mission:
+    category:
+      type: ''
+  settings:
+    base:
+      type: array
+      default: []
+    inspection_speed:
       type: number
-      name: Speed Mission
+      name: Inspection Speed
       default: 7
-    speed_navegation:
+    navigation_speed:
       type: number
-      name: Speed Navegation
+      name: Navigation speed
       default: 15
-  mission:
-    height:
+    vertical_offset:
       type: number
-      name: Height
+      name: Vertical offset
       default: 10
-    offset:
+    horizontal_offset:
       type: number
-      name: offset
+      name: Horizontal offset
       default: 10
-    tower:
+    tower_height:
       type: number
-      name: height tower
+      name: Tower height
       default: 10
-name: " Doñana"
+    security_height:
+      type: number
+      name: Segurity height
+      default: 10
 markersbase:
   - latitude: 37.19384768456065
     longitude: -6.7029656624597465

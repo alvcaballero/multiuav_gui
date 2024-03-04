@@ -553,12 +553,12 @@ dji_M300:
         param: false
         description: 'simple_shot'
       video_start:
-        name: 'video_start'
+        #name: 'video_start'
         id: 2
         param: false
         description: 'video_start'
       video_stop:
-        name: 'video_stop'
+        #name: 'video_stop'
         id: 3
         param: false
         description: 'video_stop'

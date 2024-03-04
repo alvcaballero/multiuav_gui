@@ -203,9 +203,12 @@ export const machine = createMachine(
         },
       },
       END: {
-        type: 'final',
         after: {
-          60000: { actions: ['DeleteSM'] },
+          6000: {
+            actions: ({ context }) => {
+              missionSMModel.DeleteActor(context.uavId);
+            },
+          },
         },
       },
     },
@@ -220,8 +223,9 @@ export const machine = createMachine(
           missionId: event.value.missionId,
         };
       }),
-      DeleteSM: (ctx, event, meta) => {
-        missionSMModel.DeleteActor(ctx.uavId);
+      DeleteSM: ({ context, event }, params) => {
+        console.log('delete state machine');
+        missionSMModel.DeleteActor(context.uavId);
       },
     },
     actors: {},

@@ -1,10 +1,14 @@
 //example that a men manage databases
 import * as fs from 'fs';
-import { exec } from 'child_process';
+//import { exec } from 'child_process';
+import child_process from 'child_process';
+import util from 'util';
 import sharp from 'sharp';
 import exif from 'exif-reader';
-import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 
+const exec = util.promisify(child_process.exec);
+
+import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { DevicesModel } from '../models/devices.js';
 
@@ -180,7 +184,7 @@ export class filesModel {
       }
     }
     console.log(listImages);
-    return { files: listImages, data: MissionResponse };
+    return { files: listImages, data: [MissionResponse] };
   }
   static async testMetadata(srcImage) {
     console.log(' test image');
@@ -201,7 +205,7 @@ export class filesModel {
   static async MetadataTempImage(listThermal) {
     console.log(listThermal);
     console.log('metadata imagen');
-    let MissionResponse = {};
+    let MissionResponse = { measures: [{ name: 'TempMax', value: 0 }] };
     let GPSPosition = {};
     for (const srcImage of listThermal) {
       let metadata = await sharp(srcImage).metadata();
@@ -211,11 +215,11 @@ export class filesModel {
 
       if (Object.keys(MissionResponse).length == 0) {
         GPSPosition = dataexitf.GPSInfo;
-        MissionResponse.MaxTemp = userdata.MaxTemp;
+        MissionResponse.measures[0].value = userdata.MaxTemp;
       } else {
-        if (Number(userdata.MaxTemp) > Number(MissionResponse.MaxTemp)) {
+        if (Number(userdata.MaxTemp) > Number(MissionResponse.measures[0].value)) {
           GPSPosition = dataexitf.GPSInfo;
-          MissionResponse.MaxTemp = userdata.MaxTemp;
+          MissionResponse.measures[0].value = userdata.MaxTemp;
         }
       }
     }
@@ -254,26 +258,40 @@ export class filesModel {
     const listImages = [];
     const listImagesdist = [];
     for (const image of Images2process) {
+      console.log('process img' + image.ref);
       listImages.push(image.ref.slice(0, -4) + '_process.jpg');
       listImagesdist.push(image.dist.slice(0, -4) + '_process.jpg');
-      exec(
-        `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(
-          0,
-          -4
-        )}_process.jpg" `,
-        (error, stdout, stderr) => {
-          if (error) {
-            console.log(`error: ${error.message}`);
-            return;
-          }
-          if (stderr) {
-            console.log(`stderr: ${stderr}`);
-            return;
-          }
-          console.log(`stdout: ${stdout}`);
-        }
-      );
+      try {
+        const { stdout, stderr } = await exec(
+          `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(
+            0,
+            -4
+          )}_process.jpg" `
+        );
+        console.log('stdout:', stdout);
+        console.log('stderr:', stderr);
+      } catch (e) {
+        console.error(e); // should contain code (exit code) and signal (that caused the termination).
+      }
+      //exec(
+      //  `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(
+      //    0,
+      //    -4
+      //  )}_process.jpg" `,
+      //  (error, stdout, stderr) => {
+      //    if (error) {
+      //      console.log(`error: ${error.message}`);
+      //      return;
+      //    }
+      //    if (stderr) {
+      //      console.log(`stderr: ${stderr}`);
+      //      return;
+      //    }
+      //    console.log(`stdout: ${stdout}`);
+      //  }
+      //);
     }
+    console.log('finish process');
     return { ref: listImages, dist: listImagesdist };
   }
 

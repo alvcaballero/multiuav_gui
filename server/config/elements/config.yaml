@@ -26,27 +26,27 @@ missionTypes:
         inspection_speed:
           type: 'number'
           name: 'Inspection Speed'
-          default: 7
+          default: 3
         navigation_speed:
           type: 'number'
           name: 'Navigation speed'
-          default: 15
+          default: 3
         vertical_offset:
           type: 'number'
           name: 'Vertical offset'
-          default: 10
+          default: 1
         horizontal_offset:
           type: 'number'
           name: 'Horizontal offset'
-          default: 10
+          default: 1
         tower_height:
           type: 'number'
           name: 'Tower height'
-          default: 10
+          default: 1
         security_height:
           type: 'number'
           name: 'Segurity height'
-          default: 10
+          default: 2
   - id: 1
     name: 'inspeccion de torre'
     type: 'object'
@@ -67,27 +67,27 @@ missionTypes:
         inspection_speed:
           type: 'number'
           name: 'Inspection Speed'
-          default: 7
+          default: 3
         navigation_speed:
           type: 'number'
           name: 'Navigation speed'
-          default: 15
+          default: 3
         vertical_offset:
           type: 'number'
           name: 'Vertical offset'
-          default: 10
+          default: 1
         horizontal_offset:
           type: 'number'
           name: 'Horizontal offset'
-          default: 10
+          default: 1
         tower_height:
           type: 'number'
           name: 'Tower height'
-          default: 10
+          default: 1
         security_height:
           type: 'number'
           name: 'Segurity height'
-          default: 10
+          default: 2
         orbital_points:
           type: 'number'
           name: 'Points in circle'
@@ -113,27 +113,27 @@ missionTypes:
         inspection_speed:
           type: 'number'
           name: 'Inspection Speed'
-          default: 7
+          default: 3
         navigation_speed:
           type: 'number'
           name: 'Navigation speed'
-          default: 15
+          default: 3
         vertical_offset:
           type: 'number'
           name: 'Vertical offset'
-          default: 10
+          default: 1
         horizontal_offset:
           type: 'number'
           name: 'Horizontal offset'
-          default: 10
+          default: 1
         tower_height:
           type: 'number'
           name: 'Tower height'
-          default: 10
+          default: 1
         security_height:
           type: 'number'
           name: 'Segurity height'
-          default: 10
+          default: 2
 
   - id: 3
     name: 'inspeccion de vegetacion'
@@ -156,25 +156,25 @@ missionTypes:
         inspection_speed:
           type: 'number'
           name: 'Inspection Speed'
-          default: 7
+          default: 3
         navigation_speed:
           type: 'number'
           name: 'Navigation speed'
-          default: 15
+          default: 3
         vertical_offset:
           type: 'number'
           name: 'Vertical offset'
-          default: 10
+          default: 1
         horizontal_offset:
           type: 'number'
           name: 'Horizontal offset'
-          default: 10
+          default: 1
         tower_height:
           default: 0
         security_height:
           type: 'number'
           name: 'Segurity height'
-          default: 10
+          default: 2
         orbital_points:
           type: 'number'
           name: 'points in circle'

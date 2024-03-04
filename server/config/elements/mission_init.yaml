@@ -1,4 +1,4 @@
-id: 22550538
+id: 69535407
 objetivo:
   id: 0
   name: Inspeccion de linea
@@ -8,26 +8,6 @@ objetivo:
 loc: []
 meteo: []
 bases:
-  - devices:
-      id: 2
-    settings:
-      base: []
-      inspection_speed: 7
-      navigation_speed: 15
-      vertical_offset: 10
-      horizontal_offset: 10
-      tower_height: 10
-      security_height: 10
-  - devices:
-      id: 0
-    settings:
-      base: []
-      inspection_speed: 7
-      navigation_speed: 15
-      vertical_offset: 10
-      horizontal_offset: 10
-      tower_height: 10
-      security_height: 10
   - devices:
       id: 3
     settings:
@@ -45,7 +25,7 @@ settings:
       name: Device
       default: 0
     category:
-      type: ''
+      type: ""
   settings:
     base:
       type: array
@@ -75,91 +55,16 @@ settings:
       name: Segurity height
       default: 10
 markersbase:
-  - latitude: 37.19384768456065
-    longitude: -6.7029656624597465
-    image: base
-  - latitude: 37.04392450222122
-    longitude: -6.568677029462045
-    image: base
-  - latitude: 37.1340964847625
-    longitude: -6.472237657544976
-    image: base
+  - latitude: 37.41019548120744
+    longitude: -6.002340287800763
 elements:
   - type: powerTower
+    name: Elements
+    linea: true
     items:
-      - latitude: 37.14132799500761
-        longitude: -6.454514430446006
-      - latitude: 37.14163123246583
-        longitude: -6.456867004483156
-      - latitude: 37.14191622873606
-        longitude: -6.459141156573338
-      - latitude: 37.14220105474247
-        longitude: -6.461367806003335
-      - latitude: 37.14249465570466
-        longitude: -6.46368361778925
-      - latitude: 37.14280659694354
-        longitude: -6.466046539531733
-      - latitude: 37.14309124523393
-        longitude: -6.468324257893623
-      - latitude: 37.14325695171608
-        longitude: -6.468841412318317
-  - type: powerTower
-    items:
-      - latitude: 37.04564188592028
-        longitude: -6.548027018196062
-      - latitude: 37.04479741216765
-        longitude: -6.548617485514012
-      - latitude: 37.04394349286268
-        longitude: -6.549213289803497
-      - latitude: 37.04302049732619
-        longitude: -6.54986147698038
-      - latitude: 37.04226588692188
-        longitude: -6.550385739006042
-      - latitude: 37.04129485047001
-        longitude: -6.55105954512734
-      - latitude: 37.03933949903497
-        longitude: -6.552427931112473
-      - latitude: 37.03844556680605
-        longitude: -6.553056706094055
-      - latitude: 37.03744225866858
-        longitude: -6.553477298042583
-      - latitude: 37.03662369871321
-        longitude: -6.554016612708859
-      - latitude: 37.03549391090718
-        longitude: -6.554434477544433
-      - latitude: 37.03441076761128
-        longitude: -6.554837933605083
-      - latitude: 37.03343880860853
-        longitude: -6.555199959262885
-      - latitude: 37.03293131407644
-        longitude: -6.555407848253427
-      - latitude: 37.03228523001149
-        longitude: -6.555630194648742
-      - latitude: 37.03123162617082
-        longitude: -6.556019364510998
-      - latitude: 37.03015303957152
-        longitude: -6.556420178393333
-  - type: powerTower
-    items:
-      - latitude: 37.19384681403371
-        longitude: -6.702598762315071
-      - latitude: 37.19280537019709
-        longitude: -6.701476542699256
-      - latitude: 37.19180205683976
-        longitude: -6.700406884589779
-      - latitude: 37.19081728890979
-        longitude: -6.699351377246051
-      - latitude: 37.1902109849165
-        longitude: -6.697038132129983
-      - latitude: 37.18885913037757
-        longitude: -6.691927682393742
-      - latitude: 37.18856460482592
-        longitude: -6.690783628112483
-      - latitude: 37.18783174444962
-        longitude: -6.689078467764072
-      - latitude: 37.18708715290754
-        longitude: -6.687400977589006
-      - latitude: 37.18619649009624
-        longitude: -6.685393884602394
-      - latitude: 37.18554295519503
-        longitude: -6.683914791180863
+      - latitude: 37.410240824022154
+        longitude: -6.00228464818602
+      - latitude: 37.41028846264658
+        longitude: -6.002229008572243
+      - latitude: 37.410316012679914
+        longitude: -6.0021748141426485

@@ -77,7 +77,7 @@ export class missionModel {
     console.log(myTask);
     console.log(myTask.devices);
 
-    const isPlanning = false;
+    const isPlanning = true;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
       this.initMission(id, { ...mission, id: id });
