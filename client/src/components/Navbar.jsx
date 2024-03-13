@@ -141,8 +141,8 @@ export const Navbar = ({ SetAddUAVOpen }) => {
   }
 
   return (
-    <AppBar position='static' style={{ backgroundColor: '#333', height: '52px' }}>
-      <Container maxWidth='x'>
+    <AppBar position="static" style={{ backgroundColor: '#333', height: '52px' }}>
+      <Container maxWidth="x">
         <Toolbar disableGutters>
           <Button
             onClick={() => {
@@ -151,9 +151,9 @@ export const Navbar = ({ SetAddUAVOpen }) => {
             }}
           >
             <Typography
-              variant='h6'
+              variant="h6"
               noWrap
-              component='a'
+              component="a"
               sx={{
                 mr: 2,
                 display: { xs: 'none', md: 'flex' },
@@ -167,11 +167,11 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               Management Tool
             </Typography>
           </Button>
-          <div className='dropdown'>
-            <button className='dropbtn'>ROS </button>
-            <div name='otrotest' className='dropdown-content'>
+          <div className="dropdown">
+            <button className="dropbtn">ROS </button>
+            <div name="otrotest" className="dropdown-content">
               <a
-                id='rosConnectNavbar'
+                id="rosConnectNavbar"
                 onClick={() => {
                   rosContex.rosConnect();
                   handleClick();
@@ -180,7 +180,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
                 Connect Ros
               </a>
               <a
-                id='rosConnectNavbar'
+                id="rosConnectNavbar"
                 onClick={() => {
                   navigate('/topics');
                   handleClick();
@@ -189,7 +189,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
                 Show Topics
               </a>
               <a
-                id='rosConnectNavbar'
+                id="rosConnectNavbar"
                 onClick={() => {
                   rosContex.rosConnect();
                   handleClick();
@@ -199,14 +199,14 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               </a>
             </div>
           </div>
-          <div className='dropdown'>
-            <button className='dropbtn'>
+          <div className="dropdown">
+            <button className="dropbtn">
               UAV
-              <i className='fa fa-caret-down'></i>
+              <i className="fa fa-caret-down"></i>
             </button>
-            <div name='otrotest' className='dropdown-content'>
+            <div name="otrotest" className="dropdown-content">
               <a
-                id='openAddUavNavbar'
+                id="openAddUavNavbar"
                 onClick={() => {
                   openAddUav();
                   handleClick();
@@ -215,7 +215,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
                 Connect UAV
               </a>
               <a
-                id='loadMissionNavbar'
+                id="loadMissionNavbar"
                 onClick={() => {
                   rosContex.loadMission();
                   handleClick();
@@ -224,7 +224,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
                 Load Mission UAV's
               </a>
               <a
-                id='commandMissionNavbar'
+                id="commandMissionNavbar"
                 onClick={() => {
                   rosContex.setconfirmMission(true);
                   handleClick();
@@ -234,25 +234,25 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               </a>
             </div>
           </div>
-          <div className='dropdown'>
-            <button className='dropbtn'>
+          <div className="dropdown">
+            <button className="dropbtn">
               Mission
-              <i className='fa fa-caret-down'></i>
+              <i className="fa fa-caret-down"></i>
             </button>
-            <div name='otrotest' className='dropdown-content'>
-              <label id='menuopenmission' htmlFor='openMissionNavbar'>
+            <div name="otrotest" className="dropdown-content">
+              <label id="menuopenmission" htmlFor="openMissionNavbar">
                 Open Mision
               </label>
               <input
-                accept='.yaml, .plan, .waypoint, .kml'
-                type='file'
+                accept=".yaml, .plan, .waypoint, .kml"
+                type="file"
                 multiple={false}
                 style={{ display: 'none' }}
-                id='openMissionNavbar'
+                id="openMissionNavbar"
                 onChange={readFile}
               />
               <a
-                id='Clear mission'
+                id="Clear mission"
                 onClick={() => {
                   clearmission();
                   handleClick();
@@ -261,7 +261,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
                 Clear Mission
               </a>
               <a
-                id='editmission'
+                id="editmission"
                 onClick={() => {
                   navigate('/mission');
                   handleClick();
@@ -270,7 +270,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
                 Edit mission
               </a>
               <a
-                id='planning'
+                id="planning"
                 onClick={() => {
                   navigate('/planning');
                   handleClick();
@@ -280,28 +280,28 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               </a>
             </div>
           </div>
-          <div className='dropdown'>
-            <button className='dropbtn'>
+          <div className="dropdown">
+            <button className="dropbtn">
               View
-              <i className='fa fa-caret-down'></i>
+              <i className="fa fa-caret-down"></i>
             </button>
-            <div name='otrotest' className='dropdown-content'>
-              <a id='hideRosterNavbar' onClick={handleClick}>
+            <div name="otrotest" className="dropdown-content">
+              <a id="hideRosterNavbar" onClick={handleClick}>
                 Enviroment Features
               </a>
-              <label id='menuopenelements' htmlFor='openElementsNavbar'>
+              <label id="menuopenelements" htmlFor="openElementsNavbar">
                 add elements
               </label>
               <input
-                accept='.kml'
-                type='file'
+                accept=".kml"
+                type="file"
                 multiple={false}
                 style={{ display: 'none' }}
-                id='openElementsNavbar'
+                id="openElementsNavbar"
                 onChange={loadElements}
               />
               <a
-                id='cameraView'
+                id="cameraView"
                 onClick={() => {
                   navigate('/camera');
                   handleClick();
@@ -311,15 +311,26 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               </a>
             </div>
           </div>
-          <div className='dropdown'>
+          <div className="dropdown">
             <button
-              className='dropbtn'
+              className="dropbtn"
               onClick={() => {
                 navigate('/events');
               }}
             >
               Report
-              <i className='fa fa-caret-down'></i>
+              <i className="fa fa-caret-down"></i>
+            </button>
+          </div>
+          <div className="dropdown">
+            <button
+              className="dropbtn"
+              onClick={() => {
+                navigate('/3Dmission');
+              }}
+            >
+              3d mission
+              <i className="fa fa-caret-down"></i>
             </button>
           </div>
         </Toolbar>

@@ -1,7 +1,7 @@
 import { ros } from '../models/ros.js';
 import { DevicesModel } from '../models/devices.js';
 import { eventsModel } from '../models/events.js';
-import { readYAML, getDatetime } from '../common/utils.js';
+import { readYAML, getDatetime, writeYAML } from '../common/utils.js';
 import ROSLIB from 'roslib';
 
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
@@ -236,6 +236,7 @@ export class commandsModel {
     let mode_landing = 0;
     let response = null;
     let wp_command = [];
+    let wp_command2 = [];
     let yaw_pos = [];
     let speed_pos = [];
     let gimbal_pos = [];
@@ -266,6 +267,11 @@ export class commandsModel {
         let yaw, gimbal, speed;
         let action_array = Array(10).fill(0);
         let param_array = Array(10).fill(0);
+        let pos2 = {
+          latitude: item.pos[0],
+          longitude: item.pos[1],
+          altitude: item.pos[2],
+        };
         let pos = new ROSLIB.Message({
           latitude: item.pos[0],
           longitude: item.pos[1],
@@ -285,6 +291,7 @@ export class commandsModel {
             }
           });
         }
+        wp_command2.push(pos2);
         wp_command.push(pos);
         gimbal_pos.push(gimbal);
         yaw_pos.push(yaw);
@@ -302,6 +309,38 @@ export class commandsModel {
       let param_matrix_msg = new ROSLIB.Message({
         data: param_matrix.flat(),
       });
+      //writeYAML('../config/uno.yaml', {
+      //  type: 'waypoint',
+      //  waypoint: wp_command2,
+      //  radius: 0,
+      //  maxVel: max_vel,
+      //  idleVel: idle_vel,
+      //  yaw: yaw_pos,
+      //  speed: speed_pos,
+      //  gimbalPitch: gimbal_pos,
+      //  yawMode: mode_yaw,
+      //  traceMode: mode_trace,
+      //  gimbalPitchMode: mode_gimbal,
+      //  finishAction: mode_landing,
+      //  commandList: action_matrix.flat(),
+      //  commandParameter: param_matrix.flat(),
+      //});
+      //writeYAML('../config/dos.yaml', {
+      //  type: 'waypoint',
+      //  waypoint: wp_command,
+      //  radius: 0,
+      //  maxVel: max_vel,
+      //  idleVel: idle_vel,
+      //  yaw: yaw_pos_msg,
+      //  speed: speed_pos_msg,
+      //  gimbalPitch: gimbal_pos_msg,
+      //  yawMode: mode_yaw,
+      //  traceMode: mode_trace,
+      //  gimbalPitchMode: mode_gimbal,
+      //  finishAction: mode_landing,
+      //  commandList: action_matrix_msg,
+      //  commandParameter: param_matrix_msg,
+      //});
 
       response = {
         type: 'waypoint',

@@ -1,107 +1,41 @@
 version: '3'
-name: ' test_plazaAgua'
+frame_id: /gps
+
+description: ''
 route:
-  - uav: uav_14
-    id: 0
-    name: Inspection_uav_14_B0
+  - name: 'fuego  Base 1'
+    uav: 'uav_14'
     wp:
-      - pos:
-          - 37.41034545642354
-          - -6.0023658496117775
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          video_start: 0
-          yaw: 56.751262683161684
-      - pos:
-          - 37.41034839679108
-          - -6.002370224480728
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: 56.751262683161684
-      - pos:
-          - 37.4103821107854
-          - -6.002312957513226
-          - 2.23351383
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: 56.751262683161684
-      - pos:
-          - 37.4103821107854
-          - -6.002312957513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: 20.751262695592352
-      - pos:
-          - 37.4103780407854
-          - -6.002300697513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: -51.248737339988715
-      - pos:
-          - 37.4103860807854
-          - -6.002292067513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: -123.24873731879386
-      - pos:
-          - 37.4103951207854
-          - -6.0022989875132255
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: 164.75126268156816
-      - pos:
-          - 37.410392660785405
-          - -6.002311897513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: 92.75126268485171
-      - pos:
-          - 37.410392660785405
-          - -6.002311897513226
-          - 2.23351383
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: -127.29420637653463
-      - pos:
-          - 37.41035534675052
-          - -6.0023789742186295
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: -127.29420637653463
-      - pos:
-          - 37.410348664097285
-          - -6.002376955047907
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          video_start: 0
-          yaw: -127.29420637653463
+      - {
+          pos: [37.19359808, -6.70251217, 5.000000],
+          action: { video_start: 0, gimbal: -31, yaw: 117.7 },
+        }
+      - { pos: [37.19359808, -6.70251217, 46.443790], action: { gimbal: -31, yaw: 117.7 } }
+      - { pos: [37.19018894, -6.69483472, 46.443790], action: { gimbal: -31, yaw: 117.7 } }
+      - {
+          pos: [37.19018894, -6.69483472, 26.443790],
+          action: { gimbal: -31, yaw: 117.7, photo: true },
+        }
+      - {
+          pos: [37.19036283, -6.69406888, 26.443790],
+          action: { gimbal: -31, yaw: -152.3, photo: true },
+        }
+      - {
+          pos: [37.18975196, -6.69385076, 26.443790],
+          action: { gimbal: -31, yaw: -62.3, photo: true },
+        }
+      - {
+          pos: [37.18957807, -6.69461659, 26.443790],
+          action: { gimbal: -31, yaw: 27.7, photo: true },
+        }
+      - { pos: [37.18957807, -6.69461659, 46.443790], action: { gimbal: -31, yaw: -58.8 } }
+      - { pos: [37.19359808, -6.70251217, 46.443790], action: { gimbal: -31, yaw: -58.8 } }
+      - { pos: [37.19359808, -6.70251217, 5.000000], action: { video_stop: 0 } }
     attributes:
       mode_landing: 2
+
       mode_yaw: 2
+
       mode_gimbal: 0
-      idle_vel: 3
+
+      idle_vel: 7.0

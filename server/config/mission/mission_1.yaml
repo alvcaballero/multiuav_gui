@@ -1,107 +1,41 @@
 version: '3'
-name: ' test_plazaAgua'
+frame_id: /gps
+
+description: ''
 route:
-  - uav: uav_14
-    id: 0
-    name: Inspection_uav_14_B0
+  - name: 'fuego  Base 1'
+    uav: 'uav_14'
     wp:
-      - pos:
-          - 37.41034545642354
-          - -6.0023658496117775
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          video_start: 0
-          yaw: 56.751262683161684
-      - pos:
-          - 37.41034839679108
-          - -6.002370224480728
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: 56.751262683161684
-      - pos:
-          - 37.4103821107854
-          - -6.002312957513226
-          - 2.23351383
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: 56.751262683161684
-      - pos:
-          - 37.4103821107854
-          - -6.002312957513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: 20.751262695592352
-      - pos:
-          - 37.4103780407854
-          - -6.002300697513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: -51.248737339988715
-      - pos:
-          - 37.4103860807854
-          - -6.002292067513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: -123.24873731879386
-      - pos:
-          - 37.4103951207854
-          - -6.0022989875132255
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: 164.75126268156816
-      - pos:
-          - 37.410392660785405
-          - -6.002311897513226
-          - 3.23351383
-        action:
-          gimbal: -45
-          mode: 1
-          photo: true
-          yaw: 92.75126268485171
-      - pos:
-          - 37.410392660785405
-          - -6.002311897513226
-          - 2.23351383
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: -127.29420637653463
-      - pos:
-          - 37.41035534675052
-          - -6.0023789742186295
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          yaw: -127.29420637653463
-      - pos:
-          - 37.410348664097285
-          - -6.002376955047907
-          - 2
-        action:
-          gimbal: -45
-          mode: 0
-          video_start: 0
-          yaw: -127.29420637653463
+      - {
+          pos: [37.19356001, -6.70251500, 5.000000],
+          action: { video_start: 0, gimbal: -33.7, yaw: 117 },
+        }
+      - { pos: [37.19356001, -6.70251500, 80.69], action: { gimbal: -33.7, yaw: 117 } }
+      - { pos: [37.19039028, -6.69515528, 80.69], action: { gimbal: -33.7, yaw: 117 } }
+      - { pos: [37.19039028, -6.69515528, 60.69], action: { gimbal: -33.7, yaw: 117, photo: true } }
+      - { pos: [37.19073500, -6.69470193, 60.69], action: { gimbal: -33.7, yaw: 153, photo: true } }
+      - {
+          pos: [37.19080131, -6.69408110, 60.69],
+          action: { gimbal: -33.7, yaw: -171, photo: true },
+        }
+      - {
+          pos: [37.19056389, -6.69352991, 60.69],
+          action: { gimbal: -33.7, yaw: -135, photo: true },
+        }
+      - { pos: [37.19011342, -6.69325891, 60.69], action: { gimbal: -33.7, yaw: -99, photo: true } }
+      - { pos: [37.18962197, -6.69337161, 60.69], action: { gimbal: -33.7, yaw: -63, photo: true } }
+      - { pos: [37.18927726, -6.69382495, 60.69], action: { gimbal: -33.7, yaw: -27, photo: true } }
+      - { pos: [37.18921095, -6.69444577, 60.69], action: { gimbal: -33.7, yaw: 9, photo: true } }
+      - { pos: [37.18944837, -6.69499695, 60.69], action: { gimbal: -33.7, yaw: 45, photo: true } }
+      - { pos: [37.18989883, -6.69526796, 60.69], action: { gimbal: -33.7, yaw: 81, photo: true } }
+      - { pos: [37.18989883, -6.69526796, 80.69], action: { gimbal: -33.7, yaw: -59 } }
+      - { pos: [37.19356001, -6.70251500, 80.69], action: { gimbal: -33.7, yaw: -59 } }
+      - { pos: [37.19356001, -6.70251500, 5.000000], action: { video_stop: 0 } }
     attributes:
       mode_landing: 2
+
       mode_yaw: 2
+
       mode_gimbal: 0
-      idle_vel: 3
+
+      idle_vel: 7.0

@@ -1,61 +1,70 @@
-id: 54058136
+id: 69535407
 objetivo:
   id: 0
   name: Inspeccion de linea
   type: path-object
+  case: 0
   description: select towers to create a path
 loc: []
 meteo: []
 bases:
   - devices:
-      deviceId: 4
-      speed_mission: 7
-      speed_navegation: 15
-    mission:
-      height: 10
-      offset: 10
-      tower: 10
+      id: 3
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 10
+      horizontal_offset: 10
+      tower_height: 10
+      security_height: 10
 settings:
   devices:
-    deviceId:
+    id:
       type: number
       name: Device
       default: 0
-    speed_mission:
+    category:
+      type: ''
+  settings:
+    base:
+      type: array
+      default: []
+    inspection_speed:
       type: number
-      name: Speed Mission
+      name: Inspection Speed
       default: 7
-    speed_navegation:
+    navigation_speed:
       type: number
-      name: Speed Navegation
+      name: Navigation speed
       default: 15
-  mission:
-    height:
+    vertical_offset:
       type: number
-      name: Height
+      name: Vertical offset
       default: 10
-    offset:
+    horizontal_offset:
       type: number
-      name: offset
+      name: Horizontal offset
       default: 10
-    tower:
+    tower_height:
       type: number
-      name: height tower
+      name: Tower height
       default: 10
-name: ' asd'
+    security_height:
+      type: number
+      name: Segurity height
+      default: 10
 markersbase:
-  - latitude: 37.41030526724133
-    longitude: -6.0022899377420345
+  - latitude: 37.41019548120744
+    longitude: -6.002340287800763
 elements:
   - type: powerTower
     name: Elements
     linea: true
     items:
-      - latitude: 37.41078257894792
-        longitude: -6.0023205281240735
-      - latitude: 37.4112363705797
-        longitude: -6.0026036724433425
-      - latitude: 37.41138857596408
-        longitude: -6.0028579671484295
-      - latitude: 37.411511417090594
-        longitude: -6.003139659515227
+      - latitude: 37.410240824022154
+        longitude: -6.00228464818602
+      - latitude: 37.41028846264658
+        longitude: -6.002229008572243
+      - latitude: 37.410316012679914
+        longitude: -6.0021748141426485
