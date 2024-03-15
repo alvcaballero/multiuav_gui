@@ -11,4 +11,15 @@ export class rosController {
     let response = await rosModel.getListMaster();
     res.json(response);
   }
+  static async subscribeDevice(uavAdded) {
+    await rosModel.subscribeDevice(uavAdded);
+  }
+  static async unsubscribeDevice(id) {
+    console.log('unsuscribe controller');
+    let response = await rosModel.unsubscribeDevice(id);
+    return response;
+  }
+  static getServerStatus() {
+    return rosModel.serverStatus();
+  }
 }

@@ -6,6 +6,14 @@ export class devicesController {
     const devices = await DevicesModel.getAll(req.query.id);
     res.json(Object.values(devices));
   }
+  static async getAllDevices() {
+    const devices = await DevicesModel.getAll();
+    return devices;
+  }
+  static getbyName(name) {
+    const device = DevicesModel.getByName(name);
+    return device;
+  }
 
   static async getById(req, res) {
     const { id } = req.params;
@@ -21,7 +29,7 @@ export class devicesController {
 
     if (!result.success) {
       // 422 Unprocessable Entity
-      return res.status(400).json({ error: JSON.parse(result.error.message) });
+      res.status(400).json({ error: JSON.parse(result.error.message) });
     }
 
     const newDevice = await DevicesModel.create(result.data);
@@ -31,28 +39,29 @@ export class devicesController {
 
   static async delete(req, res) {
     const { id } = req.params;
-    console.log(req.params);
+    console.log('delete device ' + id);
+    //console.log(req.params);
 
     const result = await DevicesModel.delete({ id });
 
     if (result === false) {
-      return res.status(404).json({ message: 'device not found' });
+      res.status(404).json({ message: 'device not found' });
     }
 
-    return res.json({ message: 'device deleted' });
+    res.json({ message: 'device deleted' });
   }
 
   static async update(req, res) {
     const result = validatePartialDevice(req.body);
 
     if (!result.success) {
-      return res.status(400).json({ error: JSON.parse(result.error.message) });
+      res.status(400).json({ error: JSON.parse(result.error.message) });
     }
 
     const { id } = req.params;
 
     const updatedDevice = await DevicesModel.update({ id, input: result.data });
 
-    return res.json(updatedDevice);
+    res.json(updatedDevice);
   }
 }

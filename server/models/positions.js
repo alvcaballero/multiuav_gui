@@ -29,6 +29,10 @@ export class positionsModel {
   static updateCamera(payload) {
     camera[payload.deviceId] = payload;
   }
+  static removePosition({ id }) {
+    delete positions[id];
+    console.log(positions);
+  }
   static async updatePosition(payload) {
     //positions[payload.deviceId] = payload;
     DevicesModel.updatedevicetime(payload.deviceId);

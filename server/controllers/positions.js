@@ -11,4 +11,7 @@ export class positionsController {
     position = [];
     res.json(position);
   }
+  static updatePosition(payload) {
+    positionsModel.updatePosition(payload);
+  }
 }

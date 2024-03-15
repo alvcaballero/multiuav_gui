@@ -45,7 +45,7 @@ Content-Type: application/json
 
 ### delete a device
 
-DELETE http://localhost:4000/api/devices/7
+DELETE http://localhost:4000/api/devices/1
 
 ### update  a device 
 PATCH http://localhost:4000/api/device/2
