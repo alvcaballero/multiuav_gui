@@ -6,7 +6,7 @@ import { URL } from 'url';
 const __filename = new URL('', import.meta.url).pathname;
 const __dirname = new URL('.', import.meta.url).pathname;
 
-import dotenv from 'dotenv';
+import { port } from './config/config.js';
 import express, { json } from 'express';
 import logger from 'morgan';
 import { createServer } from 'http';
@@ -24,10 +24,6 @@ import { filesRouter } from './routes/files.js';
 import { ExtAppRouter } from './routes/ExtApp.js';
 import { planningRouter } from './routes/planning.js';
 import { WebsocketManager } from './WebsocketManager.js';
-
-dotenv.config();
-
-const port = process.env.PORT ?? 4000;
 
 const app = express();
 app.set('port', port);

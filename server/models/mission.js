@@ -1,5 +1,3 @@
-import dotenv from 'dotenv';
-
 import { DevicesModel } from '../models/devices.js';
 import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
@@ -7,6 +5,7 @@ import { planningModel } from './planning.js';
 import { ExtApp } from './ExtApp.js';
 import { filesModel } from './files.js';
 import { readYAML } from '../common/utils.js';
+import { planningServer, planningHost } from '../config/config.js';
 
 /* mission is object that have the current mission running and have the next object
  / id
@@ -18,10 +17,6 @@ import { readYAML } from '../common/utils.js';
 */
 const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
 const requestPlanning = {};
-
-dotenv.config();
-
-const planningServer = process.env.PLANNING_SERVER ?? 'http://127.0.0.1:8004/';
 
 export class missionModel {
   static getmission(id) {
@@ -83,7 +78,7 @@ export class missionModel {
       this.initMission(id, { ...mission, id: id });
       return { response: myTask, status: 'OK' };
     }
-    const response1 = await fetch(`${planningServer}/mission_request`, {
+    const response1 = await fetch(`${planningHost}/mission_request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(myTask),
@@ -106,7 +101,7 @@ export class missionModel {
 
   static async fetchPlanning(mission_id) {
     console.log('Fetch planning ' + mission_id);
-    const response = await fetch(`${planningServer}/get_plan?IDs=${mission_id}`);
+    const response = await fetch(`${planningHost}/get_plan?IDs=${mission_id}`);
     if (response.ok) {
       const data = await response.json();
       console.log(data);

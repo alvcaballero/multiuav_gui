@@ -1,20 +1,14 @@
-import dotenv from 'dotenv';
 import { DevicesModel } from './devices.js';
+import { extApp, extAppUrl, extAppUser, extAppPWD } from '../config/config.js';
 
 const accessToken = { token: null, date: '' };
 
-dotenv.config();
-
-const extUrl = process.env.EXT_APP_url ?? 'http://127.0.0.1:1234';
-const extUser = process.env.EXT_APP_user ?? 'user';
-const extPwd = process.env.EXT_APP_pwd ?? 'password';
-
 export class ExtApp {
   static async UpdateToken() {
-    console.log(extUrl + '---' + extUser + '---' + extPwd + '--');
-    let response = await fetch(`${extUrl}/token`, {
+    console.log(extAppUrl + '---' + extAppUser + '---' + extAppPWD + '--');
+    let response = await fetch(`${extAppUrl}/token`, {
       method: 'POST',
-      body: `username=${extUser}&password=${extPwd}`,
+      body: `username=${extAppUser}&password=${extAppPWD}`,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     if (response.ok) {
@@ -55,7 +49,7 @@ export class ExtApp {
 
     console.log(myMission);
 
-    let sendResponse = await fetch(`${extUrl}/drones/mission/start`, {
+    let sendResponse = await fetch(`${extAppUrl}/drones/mission/start`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken.token}`,
@@ -88,7 +82,7 @@ export class ExtApp {
       resolution_code: resultCode,
     };
     console.log(request);
-    let sendResponse = await fetch(`${extUrl}/drones/mission/result`, {
+    let sendResponse = await fetch(`${extAppUrl}/drones/mission/result`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken.token}`,
@@ -120,7 +114,7 @@ export class ExtApp {
     };
     console.log(request);
 
-    let sendResponse = await fetch(`${extUrl}/drones/mission/media`, {
+    let sendResponse = await fetch(`${extAppUrl}/drones/mission/media`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken.token}`,

@@ -11,17 +11,10 @@ const exec = util.promisify(child_process.exec);
 import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { DevicesModel } from '../models/devices.js';
-
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { filesPath, processThermalImg, processThermalsSrc } from '../config/config.js';
 
 const sftconections = {}; // manage connection to drone
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
-
-const filesPath = process.env.Files_PATH ?? '/home/grvc/work/GCS_media/';
-const ProcessImg = process.env.Preprocess_Img ?? false;
-const ProcessSRC = process.env.Preprocess_src ?? '';
 
 export class filesModel {
   static getfiles() {
@@ -172,7 +165,7 @@ export class filesModel {
         console.log('download OK');
         listImages = filestodownload.map((image) => image.ref);
         let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
-        if (ProcessImg && listImagestoprocess.length > 0) {
+        if (processThermalImg && listImagestoprocess.length > 0) {
           let listThermal = await this.ProcessThermalImages(listImagestoprocess);
           MissionResponse = await this.MetadataTempImage(listThermal.dist);
           console.log('listThermal');
@@ -263,7 +256,7 @@ export class filesModel {
       listImagesdist.push(image.dist.slice(0, -4) + '_process.jpg');
       try {
         const { stdout, stderr } = await exec(
-          `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(
+          `conda run -n DJIThermal ${processThermalsSrc} -i "${image.dist}" -o "${image.dist.slice(
             0,
             -4
           )}_process.jpg" `
