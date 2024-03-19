@@ -10,7 +10,7 @@ export class devicesController {
     const devices = await DevicesModel.getAll();
     return devices;
   }
-  static getbyName(name) {
+  static getByName(name) {
     const device = DevicesModel.getByName(name);
     return device;
   }

@@ -19,6 +19,9 @@ export class rosController {
     let response = await rosModel.unsubscribeDevice(id);
     return response;
   }
+  static async serviceCall(mesage) {
+    await rosModel.serviceCall(mesage);
+  }
   static getServerStatus() {
     return rosModel.serverStatus();
   }

@@ -209,7 +209,16 @@ export class commandsModel {
       }
       if (deviceId < 0 || deviceId == device_id || finding) {
         console.log('command mission to ' + device_id);
-        response = await this.standarCommand(device_id, 'commandMission', { data: true });
+        let uavCategory = DevicesModel.get_device_category(device_id);
+        if (
+          devices_msg[uavCategory]['services']['commandMission']['serviceType'] ==
+          'std_srvs/TriggerRequest'
+        ) {
+          response = await this.standarCommand(device_id, 'commandMission');
+        } else {
+          response = await this.standarCommand(device_id, 'commandMission', { data: true });
+        }
+
         callback(response);
         if (deviceId < 0) {
           eventsModel.addEvent({

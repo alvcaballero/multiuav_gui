@@ -310,6 +310,40 @@ export class rosModel {
     }
   }
 
+  static async serviceCall({ name, type, request }) {
+    let Message = new ROSLIB.Service({ ros, name, serviceType: type });
+    let MsgRequest;
+    if (request) {
+      MsgRequest = new ROSLIB.ServiceRequest(request);
+    } else {
+      MsgRequest = new ROSLIB.ServiceRequest({});
+    }
+    return new Promise((resolve, rejects) => {
+      Message.callService(
+        MsgRequest,
+        function (result) {
+          console.log('send command  ' + name);
+          console.log(result);
+          if (result.success || result.result) {
+            resolve({
+              state: 'success',
+              msg: name + ' ok',
+            });
+          } else {
+            resolve({
+              state: 'error',
+              msg: name + ' ok',
+            });
+          }
+        },
+        function (result) {
+          console.log('Error:' + result);
+          resolve({ state: 'error', msg: 'Error:' + result });
+        }
+      );
+    });
+  }
+
   static getTopics() {
     var topicsClient = new ROSLIB.Service({
       ros: ros,
