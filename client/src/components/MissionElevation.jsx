@@ -42,12 +42,25 @@ const MissionElevation = () => {
   ElevProfileRef.current = ElevProfile;
   const [SelectRT, setSelectRT] = useState(-1);
   const Mission_route = useSelector((state) => state.mission.route); //cambiar esto por  state.mission.route
+  const [minValue, setMinValue] = useState(0);
+  const [maxValue, setMaxValue] = useState(0);
+  const [valueRange, setValueRange] = useState(0);
 
-  const values = items.map((it) => it['elevation']);
-  const values1 = items.map((it) => it['uavheight']);
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values1);
-  const valueRange = maxValue - minValue;
+  useEffect(() => {
+    console.log(items);
+    const routes = items.map((it) => it.data);
+    console.log(routes.flat());
+    const values = routes.flat().map((it) => it['elevation']);
+    const values1 = routes.flat().map((it) => (it['uavheight'] ? Number(it['uavheight']) : 0));
+    console.log(values);
+    console.log(values1);
+    const minValueAux = Math.min(...values);
+    const maxValueAux = Math.max(...values1);
+    console.log('value' + minValueAux + 'max' + maxValueAux);
+    setMinValue(minValueAux);
+    setMaxValue(maxValueAux);
+    setValueRange(maxValueAux - minValueAux);
+  }, [items]);
 
   const GetWplist = (auxroute) => {
     let listwp = [];

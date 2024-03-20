@@ -90,7 +90,7 @@ export const RuteConvertlegacy = (mission) => {
       rt[uavNx]['attributes'] = {};
 
       //waipoints
-      for (let wpN = 0; wpN < mission['uav_' + uavN]['wpN']; wpN++) {
+      for (let wpN = 0; wpN < mission['uav_' + uavN]['wp_n']; wpN++) {
         rt[uavNx]['wp'][wpN] = {};
         if (mission['uav_' + uavN]['wp_' + wpN].length == 3) {
           rt[uavNx]['wp'][wpN]['yaw'] = 0;
