@@ -15,6 +15,7 @@ export class commandsModel {
     let response = [
       { type: 'custom' },
       { type: 'ResumeMission' },
+      { type: 'Pausemission' },
       { type: 'StopMission' },
       { type: 'Gimbal' },
       { type: 'GimbalPitch' },
