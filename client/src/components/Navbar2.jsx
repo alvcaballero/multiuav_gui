@@ -1,4 +1,4 @@
-import React, { useContext, useState, Fragment } from 'react';
+import React, { useContext, useState, Fragment, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -23,6 +23,12 @@ const useStyles = makeStyles((theme) => ({
   toolbar: {
     backgroundColor: theme.palette.background.paper,
   },
+  dropdown: {
+    display: 'block',
+    position: 'absolute',
+    left: '100%',
+    top: '-7px',
+  },
   image: {
     alignSelf: 'center',
     maxWidth: '240px',
@@ -33,21 +39,58 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const MenuItems = ({ items, depthLevel }) => {
+  const [dropdown, setDropdown] = useState(false);
+  let ref = useRef();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
+  const classes = useStyles();
+
+  useEffect(() => {
+    const handler = (event) => {
+      if (dropdown && ref.current && !ref.current.contains(event.target)) {
+        setDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      // Cleanup the event listener
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [dropdown]);
+
   const handleClick = (event) => {
+    //console.log(event.currentTarget);
     setAnchorEl(event.currentTarget);
+    setDropdown((prev) => !prev);
   };
   const handleClose = () => {
     setAnchorEl(null);
+  };
+  const onMouseEnter = () => {
+    setDropdown(true);
+  };
+
+  const onMouseLeave = () => {
+    setDropdown(false);
+  };
+
+  const toggleDropdown = () => {
+    setDropdown((prev) => !prev);
+  };
+
+  const closeDropdown = () => {
+    dropdown && setDropdown(false);
   };
   return (
     <div>
       <Button
         id="fade-button"
-        aria-controls={open ? 'fade-menu' : undefined}
+        aria-controls={dropdown ? 'fade-menu' : undefined}
         aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
+        aria-expanded={dropdown ? 'true' : undefined}
+        onMouseEnter={handleClick}
         onClick={handleClick}
       >
         {items.title}
@@ -59,13 +102,13 @@ const MenuItems = ({ items, depthLevel }) => {
             'aria-labelledby': 'fade-button',
           }}
           anchorEl={anchorEl}
-          open={open}
+          open={dropdown}
           onClose={handleClose}
           TransitionComponent={Fade}
         >
-          {items.submenu.map((element, index) => (
-            <Fragment>
-              {element.input ? (
+          {React.Children.toArray(
+            items.submenu.map((element, index) => {
+              return element.input ? (
                 <UploadButtons
                   title={element.title}
                   readFile={(e) => {
@@ -81,11 +124,44 @@ const MenuItems = ({ items, depthLevel }) => {
                 >
                   {element.title}
                 </MenuItem>
-              )}
-            </Fragment>
-          ))}
+              );
+            })
+          )}
         </Menu>
       )}
+      <li className="menus">
+        <Button
+          ref={ref}
+          id="fade-button"
+          aria-controls={dropdown ? 'fade-menu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={dropdown ? 'true' : undefined}
+          onMouseEnter={handleClick}
+          onClick={handleClick}
+        >
+          {items.title}
+        </Button>
+        <ul className={classes.dropdown}>
+          <Button
+            id="fade-button"
+            aria-controls={dropdown ? 'fade-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={dropdown ? 'true' : undefined}
+            onClick={handleClick}
+          >
+            dos
+          </Button>
+          <Button
+            id="fade-button"
+            aria-controls={dropdown ? 'fade-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={dropdown ? 'true' : undefined}
+            onClick={handleClick}
+          >
+            uno
+          </Button>
+        </ul>
+      </li>
     </div>
   );
 };

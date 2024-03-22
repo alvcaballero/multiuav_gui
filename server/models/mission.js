@@ -16,6 +16,8 @@ import { planningServer, planningHost } from '../config/config.js';
  / mission: mission format yaml
 */
 const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
+const Routes = {}; // id, missionId,uav,status, init time, end time
+// const  files// id , route ,name, uav, date, attributes
 const requestPlanning = {};
 
 export class missionModel {
