@@ -23,12 +23,6 @@ const useStyles = makeStyles((theme) => ({
   toolbar: {
     backgroundColor: theme.palette.background.paper,
   },
-  dropdown: {
-    display: 'block',
-    position: 'absolute',
-    left: '100%',
-    top: '-7px',
-  },
   image: {
     alignSelf: 'center',
     maxWidth: '240px',
@@ -43,55 +37,29 @@ const MenuItems = ({ items, depthLevel }) => {
   let ref = useRef();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
-  const classes = useStyles();
-
-  useEffect(() => {
-    const handler = (event) => {
-      if (dropdown && ref.current && !ref.current.contains(event.target)) {
-        setDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
-    return () => {
-      // Cleanup the event listener
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
-    };
-  }, [dropdown]);
 
   const handleClick = (event) => {
-    //console.log(event.currentTarget);
     setAnchorEl(event.currentTarget);
-    setDropdown((prev) => !prev);
   };
   const handleClose = () => {
     setAnchorEl(null);
   };
-  const onMouseEnter = () => {
-    setDropdown(true);
+
+  const handleHover = (event) => {
+    if (items.submenu) {
+      setAnchorEl(event.currentTarget);
+    }
   };
 
-  const onMouseLeave = () => {
-    setDropdown(false);
-  };
-
-  const toggleDropdown = () => {
-    setDropdown((prev) => !prev);
-  };
-
-  const closeDropdown = () => {
-    dropdown && setDropdown(false);
-  };
   return (
-    <div>
+    <div onMouseEnter={handleHover}>
       <Button
+        ref={ref}
         id="fade-button"
-        aria-controls={dropdown ? 'fade-menu' : undefined}
+        aria-controls={open ? 'fade-menu' : undefined}
         aria-haspopup="true"
-        aria-expanded={dropdown ? 'true' : undefined}
-        onMouseEnter={handleClick}
-        onClick={handleClick}
+        aria-expanded={open ? 'true' : undefined}
+        onClick={handleClose}
       >
         {items.title}
       </Button>
@@ -102,13 +70,13 @@ const MenuItems = ({ items, depthLevel }) => {
             'aria-labelledby': 'fade-button',
           }}
           anchorEl={anchorEl}
-          open={dropdown}
+          open={open}
           onClose={handleClose}
           TransitionComponent={Fade}
         >
-          {React.Children.toArray(
-            items.submenu.map((element, index) => {
-              return element.input ? (
+          {items.submenu.map((element, index) => (
+            <Fragment>
+              {element.input ? (
                 <UploadButtons
                   title={element.title}
                   readFile={(e) => {
@@ -124,44 +92,11 @@ const MenuItems = ({ items, depthLevel }) => {
                 >
                   {element.title}
                 </MenuItem>
-              );
-            })
-          )}
+              )}
+            </Fragment>
+          ))}
         </Menu>
       )}
-      <li className="menus">
-        <Button
-          ref={ref}
-          id="fade-button"
-          aria-controls={dropdown ? 'fade-menu' : undefined}
-          aria-haspopup="true"
-          aria-expanded={dropdown ? 'true' : undefined}
-          onMouseEnter={handleClick}
-          onClick={handleClick}
-        >
-          {items.title}
-        </Button>
-        <ul className={classes.dropdown}>
-          <Button
-            id="fade-button"
-            aria-controls={dropdown ? 'fade-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={dropdown ? 'true' : undefined}
-            onClick={handleClick}
-          >
-            dos
-          </Button>
-          <Button
-            id="fade-button"
-            aria-controls={dropdown ? 'fade-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={dropdown ? 'true' : undefined}
-            onClick={handleClick}
-          >
-            uno
-          </Button>
-        </ul>
-      </li>
     </div>
   );
 };

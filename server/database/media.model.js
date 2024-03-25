@@ -1,49 +1,54 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 import { Device } from './device.model.js';
-import { Mission } from './mission.model.js';
-const Route_TABLE = 'Route';
+import { Route } from './routes.model.js';
+const Media_TABLE = 'Media';
 
-const RouteSchema = {
+const MediaSchema = {
   id: {
     allowNull: false,
     autoIncrement: true,
     primaryKey: true,
     type: DataTypes.INTEGER,
   },
-  missionId: {
+  name: {
+    allowNull: false,
+    type: DataTypes.STRING,
+  },
+  RouteId: {
     type: DataTypes.INTEGER,
     references: {
-      model: Mission, // 'Actors' would also work
+      model: Route, // 'Actors' would also work
       key: 'id',
     },
   },
   deviceId: {
     type: DataTypes.INTEGER,
     references: {
-      model: Device, // 'Actors' would also work
+      model: Device, // 'Device' would also work
       key: 'id',
     },
   },
   status: {
     allowNull: false,
     type: DataTypes.STRING,
-    defaultValue: 'init',
+    defaultValue: 'init', //init, doing //done //error
   },
-
-  initTime: {
+  FileDate: {
     allowNull: false,
     type: DataTypes.DATE,
-    defaultValue: Sequelize.NOW,
   },
-  FinishTime: {
-    type: DataTypes.DATE,
+  type: {
+    type: DataTypes.STRING, //video, image, rosbag, lidar
   },
-  result: {
+  path: {
+    type: DataTypes.STRING, // where is save in server
+  },
+  attributes: {
     type: DataTypes.STRING,
   },
 };
 
-class Route extends Model {
+class Media extends Model {
   static associate() {
     // associate
   }
@@ -51,11 +56,11 @@ class Route extends Model {
   static config(sequelize) {
     return {
       sequelize,
-      tableName: Route_TABLE,
-      modelName: 'Route',
+      tableName: Media_TABLE,
+      modelName: 'Media',
       timestamps: false,
     };
   }
 }
 
-export { Route_TABLE, RouteSchema, Route };
+export { Media_TABLE, MediaSchema, Media };

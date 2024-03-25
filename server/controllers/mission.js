@@ -38,4 +38,7 @@ export class missionController {
     let response = await ExtApp.UpdateToken();
     res.json(response);
   }
+  static initMission(mission_id, data) {
+    missionModel.initMission(mission_id, data);
+  }
 }

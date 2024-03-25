@@ -39,4 +39,13 @@ export class planningController {
     let response = await planningModel.getElements(req.params);
     res.json(response);
   }
+  static async PlanningRequest(req) {
+    return await planningModel.PlanningRequest(req);
+  }
+  static async fetchPlanning(req) {
+    return await planningModel.fetchPlanning(req);
+  }
+  static async localPlanning(req) {
+    return await planningModel.localPlanning(req);
+  }
 }

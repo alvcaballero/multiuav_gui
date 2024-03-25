@@ -1,21 +1,30 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
-const USER_TABLE = 'users';
+const Device_TABLE = 'Devices';
 
-const UserSchema = {
+const DeviceSchema = {
   id: {
     allowNull: false,
     autoIncrement: true,
     primaryKey: true,
     type: DataTypes.INTEGER,
   },
-  email: {
+  name: {
     allowNull: false,
     type: DataTypes.STRING,
     unique: true,
   },
-  password: {
+  category: {
     allowNull: false,
+    type: DataTypes.STRING,
+  },
+  user: {
+    type: DataTypes.STRING,
+  },
+  pwd: {
+    type: DataTypes.STRING,
+  },
+  camera: {
     type: DataTypes.STRING,
   },
   createdAt: {
@@ -26,7 +35,7 @@ const UserSchema = {
   },
 };
 
-class User extends Model {
+class Device extends Model {
   static associate() {
     // associate
   }
@@ -34,11 +43,11 @@ class User extends Model {
   static config(sequelize) {
     return {
       sequelize,
-      tableName: USER_TABLE,
-      modelName: 'User',
+      tableName: Device_TABLE,
+      modelName: 'Device',
       timestamps: false,
     };
   }
 }
 
-module.exports = { USER_TABLE, UserSchema, User };
+export { Device_TABLE, DeviceSchema, Device };

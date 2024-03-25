@@ -6,6 +6,7 @@ import { ExtApp } from './ExtApp.js';
 import { filesModel } from './files.js';
 import { readYAML } from '../common/utils.js';
 import { planningController } from '../controllers/planning.js';
+import Sequelize from '../common/sequelize.js';
 /* mission is object that have the current mission running and have the next object
  / id
  / initTime
