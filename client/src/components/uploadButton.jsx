@@ -8,13 +8,19 @@ const useStyles = makeStyles((theme) => ({
   input: {
     display: 'none',
   },
+
+  parent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '6px 16px',
+  },
 }));
 
 const UploadButtons = ({ title, readFile, typefiles = '.yaml, .plan, .waypoint, .kml' }) => {
   const classes = useStyles();
 
   return (
-    <div>
+    <div className={classes.parent}>
       <label htmlFor="upload-gpx">
         <input
           accept={typefiles}

@@ -12,7 +12,6 @@ const MissionSchema = {
   name: {
     allowNull: false,
     type: DataTypes.STRING,
-    unique: true,
   },
   status: {
     allowNull: false,

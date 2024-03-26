@@ -1,17 +1,25 @@
 //https://stately.ai/docs/editor-states-and-transitions
 // https://dev.to/davidkpiano/you-don-t-need-a-library-for-state-machines-k7h
 import { createMachine, createActor, fromPromise, assign } from 'xstate';
-import { commandsModel } from './commands.js';
-import { missionModel } from './mission.js';
+import { commandsController } from '../controllers/commands.js';
+//import { missionModel } from './mission.js';
 import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 import { missionSMModel } from './missionSM.js';
+import { missionController } from '../controllers/mission.js';
 
 const LoadMissionSM = async (context) => {
   console.log('service load mission');
   try {
-    let mission = missionModel.getmission(context.missionId);
+    //let mission = missionModel.getmission(context.missionId);
+    let mission = missionController.getCurrentMission(context.missionId);
     //console.log(mission);
-    let response = await commandsModel.loadmissionDevice(context.uavId, mission.route);
+    let response = await commandsController.sendCommandDevice({
+      deviceId: context.uavId,
+      type: 'loadMission',
+      attributes: mission.route,
+    });
+
+    //let response = await commandsModel.loadmissionDevice(context.uavId, mission.route);
     console.log('-----response in SM');
     console.log(response);
     if (response.state == 'success') {
@@ -29,7 +37,12 @@ const CommandMissionSM = async (context) => {
   console.log('service command mission');
   try {
     //console.log(mission);
-    let response = await commandsModel.commandMissionDevice(context.uavId);
+    let response = await commandsController.sendCommandDevice({
+      deviceId: context.uavId,
+      type: 'commandMission',
+    });
+
+    //let response = await commandsModel.commandMissionDevice(context.uavId);
     console.log('-----response in SM');
     console.log(response);
     if (response.state == 'success') {
@@ -45,15 +58,18 @@ const CommandMissionSM = async (context) => {
 
 const CommandDownload = async (context) => {
   console.log('service download files from Autopilot ');
-  let resp = await missionModel.UAVFinish(context.missionId, context.uavId);
-  let mymission = missionModel.getmissionValue(context.missionId);
+  let resp = await missionController.finishMission(context.missionId, context.uavId);
+  //let resp = await missionModel.UAVFinish(context.missionId, context.uavId);
+  //let mymission = missionModel.getmissionValue(context.missionId);
+  let mymission = missionController.getMissionRoute(context.missionId);
+
   console.log('mission command download');
   console.log(mymission);
   let myInitTime = dateString(GetLocalTime(mymission['initTime']));
   let myFinishTime = dateString(addTime(GetLocalTime(new Date()), 10));
   console.log(myInitTime + '---' + myFinishTime);
   try {
-    let response = await commandsModel.sendCommand({
+    let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
       type: 'CameraFileDownload',
       attributes: {
@@ -78,7 +94,8 @@ const CommandDownload = async (context) => {
 
 const DownloadGCS = async (context) => {
   console.log('Download files from UAV');
-  await missionModel.updateFiles(context.missionId, context.uavId);
+  await missionController.updateFiles(context.missionId, context.uavId);
+  //await missionModel.updateFiles(context.missionId, context.uavId);
   console.log('Download files from UAV2');
 };
 

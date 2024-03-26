@@ -1,4 +1,5 @@
-import { missionModel } from '../models/mission.js';
+//import { missionModel } from '../models/mission.js';
+import { missionModel } from '../models/mission-sql.js';
 import { ExtApp } from '../models/ExtApp.js';
 export class missionController {
   static async getmission(req, res) {
@@ -40,5 +41,17 @@ export class missionController {
   }
   static initMission(mission_id, data) {
     missionModel.initMission(mission_id, data);
+  }
+  static finishMission(missionId, deviceId) {
+    return missionModel.UAVFinish(missionId, deviceId);
+  }
+  static getMissionRoute(missionId) {
+    return missionModel.getmissionValue(missionId);
+  }
+  static getCurrentMission(mission_id) {
+    return missionModel.getmission(mission_id);
+  }
+  static updateFiles(missionId, deviceId) {
+    return missionModel.updateFiles(missionId, deviceId);
   }
 }

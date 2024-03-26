@@ -1,5 +1,5 @@
-import { filesModel } from '../models/files.js';
-
+//import { filesModel } from '../models/files.js';
+import { filesModel } from '../models/files-sql.js';
 export class filesController {
   static async getfiles(req, res) {
     console.log('controller get foles');

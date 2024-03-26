@@ -15,7 +15,7 @@ const MapDefaultCamera = () => {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    console.log('default' + defaultLatitude + 'kk' + defaultLongitude);
+    console.log('default' + defaultLatitude + 'kk' + defaultLongitude + initialized);
     if (selectedDeviceId) {
       setInitialized(true);
     } else if (!initialized) {

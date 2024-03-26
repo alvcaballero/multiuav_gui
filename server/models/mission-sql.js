@@ -6,18 +6,27 @@ import { ExtApp } from './ExtApp.js';
 import { filesModel } from './files.js';
 import { readYAML } from '../common/utils.js';
 import { planningController } from '../controllers/planning.js';
-import Sequelize from '../common/sequelize.js';
+import sequelize from '../common/sequelize.js';
 /* mission is object that have the current mission running and have the next object
  / id
  / initTime
  / FinishTime
- / status: init planning, running, finish, ,
+ / status: init, planning, running, finish, cancel, fail,
  / uav: {uavId, status:  load, commmand , running , resumen cancel,Get Data, Download Data, InitTime,FinishTime}
  / mission: mission format yaml
 */
+// de once at time and after  multiple like devices
+// this have to init  before sent to plannig
 const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
-const Routes = {}; // id, missionId,uav,status, init time, end time
-// const  files// id , route ,name, uav, date, attributes
+/* Route is  object  that have a 
+ / id
+ / missionId
+ / deviceId
+ / initTime
+ / endTime
+*/
+
+const Routes = {};
 
 export class missionModel {
   static getmission(id) {
@@ -38,8 +47,7 @@ export class missionModel {
   static sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-
-  static async sendTask({ id, name, objetivo, locations, meteo }) {
+  static async decodeTask({ id, name, objetivo, locations, meteo }) {
     console.log('command-sendtask');
 
     let myTask = {};
@@ -72,8 +80,15 @@ export class missionModel {
     });
     console.log(myTask);
     console.log(myTask.devices);
+    return myTask;
+  }
 
-    const isPlanning = true;
+  static async sendTask({ id, name, objetivo, locations, meteo }) {
+    console.log('command-sendtask');
+
+    let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
+
+    const isPlanning = false;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
       this.initMission(id, { ...mission, id: id });
@@ -85,6 +100,11 @@ export class missionModel {
 
   static async initMission(missionId, mission) {
     const listUAV = mission.route.map((route) => DevicesModel.getByName(route.uav).id);
+    const myMission = sequelize.models.Mission.create({
+      name: listUAV.toString(),
+      mission: JSON.stringify(mission),
+    });
+    console.log('creation of mission' + myMission.id);
     Mission[missionId] = {
       id: missionId,
       uav: listUAV,
@@ -93,6 +113,12 @@ export class missionModel {
       mission: mission,
     };
     listUAV.forEach((uavId) => {
+      let myRoute = sequelize.models.Route.create({
+        missionId: myMission.id,
+        deviceId: uavId,
+        mission: JSON.stringify(mission),
+      });
+      console.log(myRoute);
       missionSMModel.createActorMission(uavId, missionId);
     });
     ExtApp.missionStart(missionId, mission);

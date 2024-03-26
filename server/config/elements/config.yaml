@@ -75,7 +75,7 @@ missionTypes:
         vertical_offset:
           type: 'number'
           name: 'Vertical offset'
-          default: 10
+          default: 15
         horizontal_offset:
           type: 'number'
           name: 'Horizontal offset'
@@ -83,7 +83,7 @@ missionTypes:
         tower_height:
           type: 'number'
           name: 'Tower height'
-          default: 10
+          default: 12
         security_height:
           type: 'number'
           name: 'Segurity height'

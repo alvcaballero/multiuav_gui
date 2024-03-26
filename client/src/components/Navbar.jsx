@@ -1,54 +1,199 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, Fragment } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import './Navbar.css';
-import { map } from '../Mapview/MapView';
-import { RosContext } from './RosControl';
-import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Container,
+  Typography,
+  Button,
+  Menu,
+  MenuItem,
+  Fade,
+} from '@mui/material';
 
 import { missionActions, sessionActions } from '../store';
+import UploadButtons from './uploadButton';
+import { map } from '../Mapview/MapView';
+import { RosContext } from './RosControl';
 
+const MenuItems = ({ items, depthLevel }) => {
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleHover = (event) => {
+    if (items.submenu) {
+      setAnchorEl(event.currentTarget);
+    }
+  };
+
+  return (
+    <div>
+      <Button
+        id="fade-button"
+        aria-controls={open ? 'fade-menu' : undefined}
+        aria-haspopup="true"
+        aria-expanded={open ? 'true' : undefined}
+        onClick={handleClick}
+        sx={{ color: '#FFFFFF', fontSize: 16 }}
+        style={{ textTransform: 'none' }}
+      >
+        {items.title}
+      </Button>
+      {items.submenu && (
+        <Menu
+          id="fade-menu"
+          MenuListProps={{
+            'aria-labelledby': 'fade-button',
+          }}
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          TransitionComponent={Fade}
+        >
+          {items.submenu.map((element, index) => {
+            if (element.input) {
+              return (
+                <UploadButtons
+                  key={'men' + index}
+                  title={element.title}
+                  readFile={(e) => {
+                    element.input(e);
+                  }}
+                  typefiles={element.type}
+                />
+              );
+            }
+            return (
+              <MenuItem
+                key={'men' + index}
+                onClick={() => {
+                  handleClose();
+                  if (element.action) element.action();
+                }}
+              >
+                {element.title}
+              </MenuItem>
+            );
+          })}
+        </Menu>
+      )}
+    </div>
+  );
+};
 export const Navbar = ({ SetAddUAVOpen }) => {
-  const [isActive, setIsActive] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const rosContex = useContext(RosContext);
+
+  const menuItemsData = [
+    {
+      title: 'ROS',
+      submenu: [
+        {
+          title: 'Connect ROS',
+          action: () => rosContex.rosConnect(),
+        },
+        {
+          title: 'Show Topics',
+          action: () => navigate('/topics'),
+        },
+        {
+          title: 'Show Services',
+        },
+      ],
+    },
+    {
+      title: 'Devices',
+      submenu: [
+        {
+          title: 'Connect Devices',
+          action: () => openAddUav(),
+        },
+        {
+          title: 'Load Mission all',
+          action: () => rosContex.loadMission(),
+        },
+        {
+          title: 'Command Mission All',
+          action: () => rosContex.setconfirmMission(true),
+        },
+      ],
+    },
+    {
+      title: 'Mission',
+      submenu: [
+        {
+          title: ' Open Mission',
+          input: (e) => readFile(e),
+          type: '.yaml, .plan, .waypoint, .kml',
+        },
+        {
+          title: 'Clear mission',
+          action: () => clearmission(),
+        },
+        {
+          title: 'Edit mission',
+          action: () => navigate('/mission'),
+        },
+        {
+          title: 'Planning',
+          action: () => navigate('/planning'),
+        },
+      ],
+    },
+    {
+      title: 'View',
+      submenu: [
+        {
+          title: 'Enviroment Features',
+        },
+        {
+          title: 'add elements',
+          input: (e) => loadElements(e),
+          type: '.kml',
+        },
+        {
+          title: 'Camera view',
+          action: () => navigate('/camera'),
+        },
+        {
+          title: 'Camera view',
+          action: () => navigate('/3Dmission'),
+        },
+      ],
+    },
+    {
+      title: 'Report',
+      submenu: [
+        {
+          title: 'Missions',
+        },
+        {
+          title: 'events',
+        },
+      ],
+    },
+  ];
 
   const clearmission = () => {
     dispatch(missionActions.clearMission({}));
   };
 
-  const handleClick = () => {
-    // 👇️ toggle
-    const element = document.getElementsByName('otrotest');
-    //console.log(element);
-    for (let i = 0; i < element.length; i++) {
-      element[i].setAttribute('class', 'mytest');
-    }
-
-    setTimeout(() => {
-      console.log('1 Segundo esperado');
-      for (let i = 0; i < element.length; i++) {
-        element[i].setAttribute('class', 'dropdown-content');
-      }
-    }, 500);
-    setIsActive((current) => !current);
-
-    // 👇️ or set to true
-    // setIsActive(true);
-  };
-  const rosContex = useContext(RosContext);
-
   const readFile = (e) => {
     //https://www.youtube.com/watch?v=K3SshoCXC2g
     const file = e.target.files[0];
     if (!file) return;
-
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
-      //console.log(fileReader.result);
-      //console.log(file.name);
-
       rosContex.openMision(file.name, fileReader.result);
     };
     fileReader.onerror = () => {
@@ -119,8 +264,6 @@ export const Navbar = ({ SetAddUAVOpen }) => {
         console.log(markers);
         dispatch(sessionActions.addMarkerElement(markers));
       }
-
-      // rosContex.openMision(file.name, fileReader.result);
     };
     fileReader.onerror = () => {
       console.log('error');
@@ -167,172 +310,13 @@ export const Navbar = ({ SetAddUAVOpen }) => {
               Management Tool
             </Typography>
           </Button>
-          <div className="dropdown">
-            <button className="dropbtn">ROS </button>
-            <div name="otrotest" className="dropdown-content">
-              <a
-                id="rosConnectNavbar"
-                onClick={() => {
-                  rosContex.rosConnect();
-                  handleClick();
-                }}
-              >
-                Connect Ros
-              </a>
-              <a
-                id="rosConnectNavbar"
-                onClick={() => {
-                  navigate('/topics');
-                  handleClick();
-                }}
-              >
-                Show Topics
-              </a>
-              <a
-                id="rosConnectNavbar"
-                onClick={() => {
-                  rosContex.rosConnect();
-                  handleClick();
-                }}
-              >
-                Show servies
-              </a>
-            </div>
-          </div>
-          <div className="dropdown">
-            <button className="dropbtn">
-              UAV
-              <i className="fa fa-caret-down"></i>
-            </button>
-            <div name="otrotest" className="dropdown-content">
-              <a
-                id="openAddUavNavbar"
-                onClick={() => {
-                  openAddUav();
-                  handleClick();
-                }}
-              >
-                Connect UAV
-              </a>
-              <a
-                id="loadMissionNavbar"
-                onClick={() => {
-                  rosContex.loadMission();
-                  handleClick();
-                }}
-              >
-                Load Mission UAV's
-              </a>
-              <a
-                id="commandMissionNavbar"
-                onClick={() => {
-                  rosContex.setconfirmMission(true);
-                  handleClick();
-                }}
-              >
-                Command Mission All
-              </a>
-            </div>
-          </div>
-          <div className="dropdown">
-            <button className="dropbtn">
-              Mission
-              <i className="fa fa-caret-down"></i>
-            </button>
-            <div name="otrotest" className="dropdown-content">
-              <label id="menuopenmission" htmlFor="openMissionNavbar">
-                Open Mision
-              </label>
-              <input
-                accept=".yaml, .plan, .waypoint, .kml"
-                type="file"
-                multiple={false}
-                style={{ display: 'none' }}
-                id="openMissionNavbar"
-                onChange={readFile}
-              />
-              <a
-                id="Clear mission"
-                onClick={() => {
-                  clearmission();
-                  handleClick();
-                }}
-              >
-                Clear Mission
-              </a>
-              <a
-                id="editmission"
-                onClick={() => {
-                  navigate('/mission');
-                  handleClick();
-                }}
-              >
-                Edit mission
-              </a>
-              <a
-                id="planning"
-                onClick={() => {
-                  navigate('/planning');
-                  handleClick();
-                }}
-              >
-                Planning
-              </a>
-            </div>
-          </div>
-          <div className="dropdown">
-            <button className="dropbtn">
-              View
-              <i className="fa fa-caret-down"></i>
-            </button>
-            <div name="otrotest" className="dropdown-content">
-              <a id="hideRosterNavbar" onClick={handleClick}>
-                Enviroment Features
-              </a>
-              <label id="menuopenelements" htmlFor="openElementsNavbar">
-                add elements
-              </label>
-              <input
-                accept=".kml"
-                type="file"
-                multiple={false}
-                style={{ display: 'none' }}
-                id="openElementsNavbar"
-                onChange={loadElements}
-              />
-              <a
-                id="cameraView"
-                onClick={() => {
-                  navigate('/camera');
-                  handleClick();
-                }}
-              >
-                Camera view
-              </a>
-            </div>
-          </div>
-          <div className="dropdown">
-            <button
-              className="dropbtn"
-              onClick={() => {
-                navigate('/events');
-              }}
-            >
-              Report
-              <i className="fa fa-caret-down"></i>
-            </button>
-          </div>
-          <div className="dropdown">
-            <button
-              className="dropbtn"
-              onClick={() => {
-                navigate('/3Dmission');
-              }}
-            >
-              3d mission
-              <i className="fa fa-caret-down"></i>
-            </button>
-          </div>
+          {React.Children.toArray(
+            menuItemsData.map((menu, index) => (
+              <Fragment key={'s-' + index}>
+                <MenuItems items={menu} depthLevel={0} />
+              </Fragment>
+            ))
+          )}
         </Toolbar>
       </Container>
     </AppBar>

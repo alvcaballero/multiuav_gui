@@ -1,4 +1,5 @@
-import { DevicesModel } from '../models/devices.js';
+//import { DevicesModel } from '../models/devices.js';
+import { DevicesModel } from '../models/devices-sql.js';
 import { validateDevice, validatePartialDevice } from '../schemas/devices.js';
 export class devicesController {
   static async getAll(req, res) {
@@ -17,6 +18,10 @@ export class devicesController {
   static getByName(name) {
     const device = DevicesModel.getByName(name);
     return device;
+  }
+
+  static getAccess(id) {
+    return DevicesModel.getAccess(id);
   }
 
   static async getById(req, res) {

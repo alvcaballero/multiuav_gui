@@ -18,6 +18,9 @@ const DeviceSchema = {
     allowNull: false,
     type: DataTypes.STRING,
   },
+  ip: {
+    type: DataTypes.STRING,
+  },
   user: {
     type: DataTypes.STRING,
   },

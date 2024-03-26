@@ -37,8 +37,7 @@ export class missionModel {
   static sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-
-  static async sendTask({ id, name, objetivo, locations, meteo }) {
+  static async decodeTask({ id, name, objetivo, locations, meteo }) {
     console.log('command-sendtask');
 
     let myTask = {};
@@ -71,8 +70,15 @@ export class missionModel {
     });
     console.log(myTask);
     console.log(myTask.devices);
+    return myTask;
+  }
 
-    const isPlanning = true;
+  static async sendTask({ id, name, objetivo, locations, meteo }) {
+    console.log('command-sendtask');
+
+    let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
+
+    const isPlanning = false;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
       this.initMission(id, { ...mission, id: id });

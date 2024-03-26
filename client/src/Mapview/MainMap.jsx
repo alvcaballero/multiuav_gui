@@ -27,7 +27,6 @@ const MainMap = ({
   return (
     <>
       <MapView>
-        <MapDefaultCamera />
         <MapMarkers markers={markers} />
         <MapMissions filtereddeviceid={filteredMissiondeviceid} />
 
@@ -38,6 +37,7 @@ const MainMap = ({
           showStatus
         />
         <MapSelectedDevice />
+        <MapDefaultCamera />
       </MapView>
       <MapScale />
     </>

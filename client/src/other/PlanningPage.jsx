@@ -485,7 +485,6 @@ const PlanningPage = () => {
           <Menu />
           <div className={classes.mapContainer}>
             <MapView>
-              <MapDefaultCamera />
               {checked && <MapMissions />}
               <MapMarkersCreate
                 markers={markers}
@@ -498,6 +497,7 @@ const PlanningPage = () => {
                 CreateItems={CreateMarkers}
                 setLocations={addLocations}
               />
+              <MapDefaultCamera />
             </MapView>
             <MapScale />
           </div>

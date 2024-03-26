@@ -15,4 +15,8 @@ export class commandsController {
     let response = await commandsModel.sendCommand(req.body);
     res.json(response);
   }
+  static async sendCommandDevice({ deviceId, type, attributes }) {
+    let response = await commandsModel.sendCommand({ deviceId, type, attributes });
+    return response;
+  }
 }

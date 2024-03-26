@@ -33,8 +33,6 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const MenuItems = ({ items, depthLevel }) => {
-  const [dropdown, setDropdown] = useState(false);
-  let ref = useRef();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
 
@@ -54,12 +52,11 @@ const MenuItems = ({ items, depthLevel }) => {
   return (
     <div onMouseEnter={handleHover}>
       <Button
-        ref={ref}
         id="fade-button"
         aria-controls={open ? 'fade-menu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
-        onClick={handleClose}
+        onClick={handleClick}
       >
         {items.title}
       </Button>

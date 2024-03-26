@@ -52,3 +52,6 @@ export const addTime = (date, minute) => {
 export const dateString = (date) => {
   return date.toISOString().slice(0, -8).replace('T', ' ');
 };
+export const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
