@@ -46,6 +46,7 @@ import ElementList from '../components/ElementList';
 import { useEffectAsync, useCatch } from '../reactHelper';
 import SelectList from '../components/SelectList';
 import MapDefaultCamera from '../Mapview/MapDefaultCamera';
+import UploadButtons from '../components/uploadButton';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -510,7 +511,7 @@ const PlanningPage = () => {
                     <ArrowBackIcon />
                   </IconButton>
                   <Typography variant="h6" className={classes.title}>
-                    Planning mission
+                    Planning
                   </Typography>
                   <Typography>Show Mission</Typography>
                   <Switch
@@ -533,18 +534,12 @@ const PlanningPage = () => {
                   <IconButton onClick={DeleteMission}>
                     <DeleteIcon />
                   </IconButton>
-                  <label htmlFor="upload-gpx">
-                    <input
-                      accept=".yaml, .plan, .waypoint, .kml"
-                      id="upload-gpx"
-                      type="file"
-                      className={classes.fileInput}
-                      onChange={readFile}
-                    />
-                    <IconButton edge="end" component="span" onClick={() => {}}>
-                      <UploadFileIcon />
-                    </IconButton>
-                  </label>
+                  <UploadButtons
+                    readFile={(e) => {
+                      readFile(e);
+                    }}
+                    typefiles=".yaml, .plan, .waypoint, .kml"
+                  />
                 </Toolbar>
                 <div className={classes.list}>
                   <TabContext value={tabValue}>

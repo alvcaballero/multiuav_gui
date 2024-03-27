@@ -18,7 +18,8 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import { WbIncandescent, WbIncandescentOutlined, Wifi, WifiOff } from '@mui/icons-material';
 import Logo from '../resources/images/grvc.svg?react';
-import UploadButtons from './uploadButton';
+import { MenuItems } from './MenuItems';
+
 const useStyles = makeStyles((theme) => ({
   toolbar: {
     backgroundColor: theme.palette.background.paper,
@@ -32,71 +33,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const MenuItems = ({ items, depthLevel }) => {
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
-
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleHover = (event) => {
-    if (items.submenu) {
-      setAnchorEl(event.currentTarget);
-    }
-  };
-
-  return (
-    <div onMouseEnter={handleHover}>
-      <Button
-        id="fade-button"
-        aria-controls={open ? 'fade-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={handleClick}
-      >
-        {items.title}
-      </Button>
-      {items.submenu && (
-        <Menu
-          id="fade-menu"
-          MenuListProps={{
-            'aria-labelledby': 'fade-button',
-          }}
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          TransitionComponent={Fade}
-        >
-          {items.submenu.map((element, index) => (
-            <Fragment>
-              {element.input ? (
-                <UploadButtons
-                  title={element.title}
-                  readFile={(e) => {
-                    console.log(e);
-                  }}
-                />
-              ) : (
-                <MenuItem
-                  onClick={() => {
-                    handleClose();
-                    if (element.action) element.action();
-                  }}
-                >
-                  {element.title}
-                </MenuItem>
-              )}
-            </Fragment>
-          ))}
-        </Menu>
-      )}
-    </div>
-  );
-};
 export const Navbar2 = ({ title, navIcon, tabs }) => {
   // const ws = useContext(WebSocketContext);
   // const appContext = useContext(AppContext);
@@ -180,7 +116,7 @@ export const Navbar2 = ({ title, navIcon, tabs }) => {
 
           {React.Children.toArray(
             menuItemsData.map((menu, index) => (
-              <Fragment key={'s-' + index}>
+              <Fragment key={'s1-' + index}>
                 <MenuItems items={menu} depthLevel={0} />
               </Fragment>
             ))

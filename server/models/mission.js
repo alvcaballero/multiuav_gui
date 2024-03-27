@@ -120,4 +120,7 @@ export class missionModel {
     ExtApp.missionMedia(missionId, { code, files: results.files, data: results.data });
     return true;
   }
+  static async updateMission({ device, mission, state }) {
+    return true;
+  }
 }

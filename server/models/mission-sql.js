@@ -7,6 +7,7 @@ import { filesModel } from './files.js';
 import { readYAML } from '../common/utils.js';
 import { planningController } from '../controllers/planning.js';
 import sequelize from '../common/sequelize.js';
+
 /* mission is object that have the current mission running and have the next object
  / id
  / initTime
@@ -18,15 +19,16 @@ import sequelize from '../common/sequelize.js';
 // de once at time and after  multiple like devices
 // this have to init  before sent to plannig
 const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
+
 /* Route is  object  that have a 
  / id
  / missionId
  / deviceId
+ / status // state machine status 
  / initTime
  / endTime
 */
-
-const Routes = {};
+const Route = {};
 
 export class missionModel {
   static getmission(id) {
@@ -119,6 +121,13 @@ export class missionModel {
         mission: JSON.stringify(mission),
       });
       console.log(myRoute);
+      Route[`${missionId}-${uavId}`] = {
+        id: `${missionId}-${uavId}`,
+        missionId: missionId,
+        deviceId: uavId,
+        status: 'init',
+        result: 'uno',
+      };
       missionSMModel.createActorMission(uavId, missionId);
     });
     ExtApp.missionStart(missionId, mission);
@@ -139,6 +148,22 @@ export class missionModel {
     let code = 0;
 
     ExtApp.missionMedia(missionId, { code, files: results.files, data: results.data });
+    return true;
+  }
+  static async updateMission({ device, mission, state }) {
+    if (Route.hasOwnProperty(`${mission}-${device}`)) {
+      Route[`${mission}-${device}`]['status'] = state;
+      await sequelize.models.Route.update(
+        { status: state },
+        {
+          where: {
+            missionId: mission,
+            deviceId: device,
+          },
+        }
+      );
+    }
+    //Mission[missionId]['finishTime'] = 'sadf'
     return true;
   }
 }

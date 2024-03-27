@@ -54,4 +54,8 @@ export class missionController {
   static updateFiles(missionId, deviceId) {
     return missionModel.updateFiles(missionId, deviceId);
   }
+  static updateMission({ device, mission, state }) {
+    missionModel.updateMission({ device, mission, state });
+    return true;
+  }
 }
