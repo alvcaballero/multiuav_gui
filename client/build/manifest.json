@@ -1,6 +1,6 @@
 {
-  "short_name": "${title}",
-  "name": "${description}",
+  "short_name": "GCS",
+  "name": "MUAV-GUI",
   "icons": [
     {
       "src": "favicon.ico",
