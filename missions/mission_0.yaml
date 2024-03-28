@@ -1,0 +1,41 @@
+version: '3'
+frame_id: /gps
+
+description: ''
+route:
+  - name: 'fuego  Base 1'
+    uav: 'uav_14'
+    wp:
+      - {
+          pos: [37.19359808, -6.70251217, 5.000000],
+          action: { video_start: 0, gimbal: -31, yaw: 117.7 },
+        }
+      - { pos: [37.19359808, -6.70251217, 46.443790], action: { gimbal: -31, yaw: 117.7 } }
+      - { pos: [37.19018894, -6.69483472, 46.443790], action: { gimbal: -31, yaw: 117.7 } }
+      - {
+          pos: [37.19018894, -6.69483472, 26.443790],
+          action: { gimbal: -31, yaw: 117.7, photo: true },
+        }
+      - {
+          pos: [37.19036283, -6.69406888, 26.443790],
+          action: { gimbal: -31, yaw: -152.3, photo: true },
+        }
+      - {
+          pos: [37.18975196, -6.69385076, 26.443790],
+          action: { gimbal: -31, yaw: -62.3, photo: true },
+        }
+      - {
+          pos: [37.18957807, -6.69461659, 26.443790],
+          action: { gimbal: -31, yaw: 27.7, photo: true },
+        }
+      - { pos: [37.18957807, -6.69461659, 46.443790], action: { gimbal: -31, yaw: -58.8 } }
+      - { pos: [37.19359808, -6.70251217, 46.443790], action: { gimbal: -31, yaw: -58.8 } }
+      - { pos: [37.19359808, -6.70251217, 5.000000], action: { video_stop: 0 } }
+    attributes:
+      mode_landing: 2
+
+      mode_yaw: 2
+
+      mode_gimbal: 0
+
+      idle_vel: 7.0

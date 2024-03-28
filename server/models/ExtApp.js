@@ -3,10 +3,23 @@ import { extApp, extAppUrl, extAppUser, extAppPWD } from '../config/config.js';
 
 const accessToken = { token: null, date: '' };
 
+const AppFetch = async (url, attributes) => {
+  if (extApp) {
+    console.log('no thrid party application');
+    const obj = { access_token: 'world' };
+    const myBlob = new Blob([JSON.stringify(obj, null, 2)], {
+      type: 'application/json',
+    });
+    const myOptions = { status: 200, statusText: 'SuperSmashingGreat!' };
+    return new Response(myBlob, myOptions);
+  }
+  return await fetch(url, attributes);
+};
+
 export class ExtApp {
   static async UpdateToken() {
     console.log(extAppUrl + '---' + extAppUser + '---' + extAppPWD + '--');
-    let response = await fetch(`${extAppUrl}/token`, {
+    let response = await AppFetch(`${extAppUrl}/token`, {
       method: 'POST',
       body: `username=${extAppUser}&password=${extAppPWD}`,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -49,7 +62,7 @@ export class ExtApp {
 
     console.log(myMission);
 
-    let sendResponse = await fetch(`${extAppUrl}/drones/mission/start`, {
+    let sendResponse = await AppFetch(`${extAppUrl}/drones/mission/start`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken.token}`,
@@ -82,7 +95,7 @@ export class ExtApp {
       resolution_code: resultCode,
     };
     console.log(request);
-    let sendResponse = await fetch(`${extAppUrl}/drones/mission/result`, {
+    let sendResponse = await AppFetch(`${extAppUrl}/drones/mission/result`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken.token}`,
@@ -114,7 +127,7 @@ export class ExtApp {
     };
     console.log(request);
 
-    let sendResponse = await fetch(`${extAppUrl}/drones/mission/media`, {
+    let sendResponse = await AppFetch(`${extAppUrl}/drones/mission/media`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken.token}`,

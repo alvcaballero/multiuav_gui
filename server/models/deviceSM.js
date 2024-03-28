@@ -5,13 +5,13 @@ import { commandsController } from '../controllers/commands.js';
 //import { missionModel } from './mission.js';
 import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 import { missionSMModel } from './missionSM.js';
-import { missionController } from '../controllers/mission.js';
+import { MissionController } from '../controllers/mission.js';
 
 const LoadMissionSM = async (context) => {
   console.log('service load mission');
   try {
     //let mission = missionModel.getmission(context.missionId);
-    let mission = missionController.getCurrentMission(context.missionId);
+    let mission = MissionController.getCurrentMission(context.missionId);
     //console.log(mission);
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
@@ -58,10 +58,10 @@ const CommandMissionSM = async (context) => {
 
 const CommandDownload = async (context) => {
   console.log('service download files from Autopilot ');
-  let resp = await missionController.finishMission(context.missionId, context.uavId);
+  let resp = await MissionController.finishMission(context.missionId, context.uavId);
   //let resp = await missionModel.UAVFinish(context.missionId, context.uavId);
   //let mymission = missionModel.getmissionValue(context.missionId);
-  let mymission = missionController.getMissionRoute(context.missionId);
+  let mymission = MissionController.getMissionRoute(context.missionId);
 
   console.log('mission command download');
   console.log(mymission);
@@ -94,7 +94,7 @@ const CommandDownload = async (context) => {
 
 const DownloadGCS = async (context) => {
   console.log('Download files from UAV');
-  await missionController.updateFiles(context.missionId, context.uavId);
+  await MissionController.updateFiles(context.missionId, context.uavId);
   //await missionModel.updateFiles(context.missionId, context.uavId);
   console.log('Download files from UAV2');
 };

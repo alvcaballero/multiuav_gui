@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-import { writeFile, readFileSync } from 'fs';
+import { writeFile, readFileSync, existsSync } from 'fs';
 import { parse, stringify } from 'yaml';
 import { URL } from 'url';
 import { resolve } from 'path';
@@ -10,16 +10,25 @@ const __dirname = new URL('.', import.meta.url).pathname;
 
 export const readJSON = (path) => require(path);
 
-export const readYAML = (path) => {
-  let devices_msg = {};
+export const readYAML = (filepath) => {
+  let path = filepath;
+  if (existsSync(resolve(__dirname, filepath))) {
+    console.log(`The file or directory at '${filepath}' exists.`);
+  } else {
+    console.log(`The file or directory at '${filepath}' does not exist.`);
+    if (filepath == '../config/devices/devices_init.yaml') {
+      path = '../config/devices/.devices_init.yaml';
+    }
+  }
+  let content = {};
   try {
     let fileContents = readFileSync(resolve(__dirname, path), 'utf8');
-    devices_msg = parse(fileContents);
+    content = parse(fileContents);
     console.log('load ' + path);
   } catch (e) {
     console.log(e);
   }
-  return devices_msg;
+  return content;
 };
 
 export const getDatetime = () => {

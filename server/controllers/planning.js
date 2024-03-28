@@ -39,6 +39,18 @@ export class planningController {
     let response = await planningModel.getElements(req.params);
     res.json(response);
   }
+  static getBasesSettings() {
+    return planningModel.getBasesSettings();
+  }
+  static getConfigParam(obj) {
+    return planningModel.getParam(obj);
+  }
+  static getConfigBases() {
+    return planningModel.getBases();
+  }
+  static getCaseTypes() {
+    return planningModel.getTypes();
+  }
   static async PlanningRequest(req) {
     return await planningModel.PlanningRequest(req);
   }

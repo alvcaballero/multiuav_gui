@@ -1,6 +1,6 @@
 import { machine } from './deviceSM.js';
 import { createActor } from 'xstate';
-import { missionController } from '../controllers/mission.js';
+import { MissionController } from '../controllers/mission.js';
 
 const listSM = {}; // lista de acots maquinas de estados por id de UAV
 
@@ -10,7 +10,7 @@ export class missionSMModel {
     listSM[uavId].subscribe((state) => {
       console.log('state machine' + state.value);
       console.log('Value:', state.context);
-      missionController.updateMission({
+      MissionController.updateMission({
         device: state.context.uavId,
         mission: state.context.missionId,
         state: state.value,

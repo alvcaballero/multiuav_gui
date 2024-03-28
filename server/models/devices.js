@@ -1,4 +1,5 @@
 import { readJSON, readYAML, getDatetime } from '../common/utils.js';
+import { StreamServer } from '../config/config.js';
 import { eventsModel } from '../models/events.js';
 import { rosController } from '../controllers/ros.js';
 const devices_init = readYAML('../config/devices/devices_init.yaml');
@@ -91,7 +92,9 @@ export class DevicesModel {
         ip: device.ip,
       });
     }
-    await this.addCameraWebRTC(device);
+    if (StreamServer) {
+      this.addCameraWebRTC(device);
+    }
 
     if (serverState.state === 'connect') {
       console.log('suscribe devices ');

@@ -10,7 +10,7 @@ const exec = util.promisify(child_process.exec);
 
 import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
-import { devicesController } from '../controllers/devices.js';
+import { DevicesController } from '../controllers/devices.js';
 import { filesPath, processThermalImg, processThermalsSrc } from '../config/config.js';
 
 // const  files// id , route ,name, uav, date, attributes
@@ -58,7 +58,7 @@ export class filesModel {
   */
   static async showFiles({ uavId, missionId, initTime }) {
     console.log('show files ' + uavId + '-' + missionId);
-    let mydevice = devicesController.getAccess(uavId);
+    let mydevice = DevicesController.getAccess(uavId);
     console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
     const parsedURL = new URL(myurl);
@@ -101,7 +101,7 @@ export class filesModel {
     let listImages = [];
     let MissionResponse = {};
 
-    let mydevice = devicesController.getAccess(uavId);
+    let mydevice = DevicesController.getAccess(uavId);
     console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
     if (!mydevice.hasOwnProperty('user')) {

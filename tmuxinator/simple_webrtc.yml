@@ -1,0 +1,24 @@
+name: muav-gui
+root: ~/
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: tiled
+      panes:
+        - backend:
+            - cd ~/work/px4/multiuav_gui/server
+            - nvm use 18
+            - npm run server
+        - server:
+            - cd ~/work/px4/multiuav_gui/tmuxinator
+            - docker run --rm -it --network=host -v $PWD/../server/config/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
+        - multimaster:
+            - cd ~/work/px4/
+            - ./px4-noetic.sh
+            - roslaunch aerialcore_gui connect_uas.launch
+        - aux:
+            - cd ~/work/px4/
+            - ./px4-noetic.sh
+            - cd /home/user/catkin_ws
+            - sleep 2;rostopic list

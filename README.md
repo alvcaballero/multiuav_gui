@@ -1,119 +1,120 @@
 # GCS for multiple UAV
 
+This repository porvides an GCS software that allow command and monitoring multiple UAVs for a heterogeneous fleet of unmannned Aerial Vehicles (UAVs).
+
+This project is part of [Multi Project](https://github.com/alvcaballero/multiUAV_system)
+
+<img src="docs/Rosbag.gif" alt="Example of the GCS interface">
+
+## 📋 Features
+
+- [x] **Multi-robot**: Allow monitoring and control multiple robot at same time or individual.
+
+- [x] **Heterogeneity**: Each vehicle can possess distinct capabilities, including various velocities and battery requirements (maximum time of flight).
+
+- [x] **Multi-User**: Interact with the web application to monitoring and control de robot fleet or a single robot can be access athrough internet or in local network.
+
+- [x] **Third-party sotfware**: Interact with other software thought API like abstraction layer for big proyects.
+
+- [x] **ROS easy integration**: Easy integration with diferents robot using ROS
+
+- [x] **Mission Planning**: Allow create waypoint mission in the web interface and export in diferets formats.
+
+- [x] **Mission Planning**: Allow create waypoint mission in the web interface and export in diferets formats.
+
+- [x] **Video Straming from robot**: Actually allow integration to mavlink through ros packages mavros, in future use directly mavlink.
+
+- [ ] **Mavlink integration**: Actually allow integration to mavlink through ros packages mavros, in future use directly mavlink.
+
+<img src="docs/RealMission.png" alt="Screenshot in real Mission">
+
+## ⚙️ Installation
+
+1. To install MultiUAV-GUI need node 18 and npm and docker, I remend use nvm for use npm .
+
+2. Clone the repository.
+
+```ssh
+git clone https://github.com/alvcaballero/multiuav_gui.git
+cd multiuav_gui
+```
+
+3. Install the requirements.
+
+```ssh
+cd server
+nvm use 18
+npm install
+```
+
+3. Install Docker services.
+
+```ssh
+docker build -t multiuav_gui/docker .
+```
+
+## 🖥️ Usage
+
+The web interface use [openStreatMaps](https://tile.openstreetmap.org/) and for elevation profile use [OpentopoData](https://www.opentopodata.org/)
+
+1. Configure the server to modifi and edit .env and devices_init.yaml
+
+```ssh
+cp multiuav_gui/server/.env.example multiuav_gui/server/.env
+cp /multiuav_gui/server/config/devices/.devices_init.yaml' /multiuav_gui/server/config/devices/devices_init.yaml'
+
+```
+
+2. Run server
+
+```ssh
+cd multiuav_gui/server
+npm run server
+```
+
+2. Open the interfaz in browser http://localhost:4000/
+
 Interface for control and monitoring of multiple UAV in mision
-
-you can see the documentacion for integration in https://arpoma16.github.io/multiuav_gui_doc/
-
-you can use
 
 ```
 tmuxinator start -p muav-gui.yml
 ```
 
-for create a new tmux file.
-
-```
-EDITOR=nano tmuxinator edit my_project
-```
-
-this work is divide in two parts, multiauv_gui and mauv-lc.
-
-solo esta disponible para navegadores Web basados en Chromiun
-
-you have to install dependencies
-for run the project:
-
-```
-nvm use 18
-cd server
-npm install
-```
-
-for run the project you can access to http://localhost:4000/
-
-```
-nvm use 18 // this is onli for change the version of npm, if you hav installed npm 18 dont need this line
-cd server
-npm run server
-```
-
 for development of MUAV-GUI can access to http://localhost:3000/
 
 ```
+cd multiuav_gui/client
 nvm use 18
 npm install
 npm run start
 ```
 
-# multiuav_gui
+## Documentation
 
-GRVC repository including the Graphical User Interface developed for the operation of a team of heterogeneous UAVs.
+you can see the documentacion for integration in https://arpoma16.github.io/multiuav_gui_doc/
 
-# Descripcions
+additional docs
 
-By install the GUI its necesary install node 10 you can use nvm [like this tutorial for multiple](https://www.baeldung.com/linux/multiple-node-js-versions)
+1. [Dependencias e instalacion de GCS](docs/HOWRUN.md)
+1. [simulation PX4 Vtool](docs/Simulation-PX4.md)
+1. [simulation PX4 Vtool](docs/Simulation-Ardupilot.md)
+1. [UAV camera Stream](docs/CameraStream.md)
 
-and after to clone npm install to download all dependencies of the proyect.
+## Future Work
 
-```
-        npm install
+- Implement option to exchange ROS messages over the network,s messages using Flatbuffers without Ros on server like robofleet
+- access control
+- Data Bases model for maintain the information.
 
-```
+## Releases
 
-# Setting up the project
+### Last
 
-1. [Dependencias e instalacion de GCS](guides/HOWRUN.md)
-1. [PX4 autopilot](guides/Autopilot-Px4.md)
-1. [Actividades](guides/Activities.md)
-1. [gcs guide](guides/gcs_guide.md)
-1. [dji guide](guides/gcs_guide.md)
+- integration with external plannig
 
-# How run the GCS
+### Tag V1.4 (Download images form UAV)
 
-Para ejecutar la GSC es nenecesario tener ros bridge corriendo y ejercutar el archivo npm.
-
-## Run the rosbridge
-
-```
-    $ roslaunch rosbridge_server rosbridge_websocket.launch
-
-```
-
-## Run the Aerial-Core GUI
-
-```
-    $ npm run dev
-```
-
-# Install GSC
-
-First, install nodejs (v10) and npm (v6):
-
-```
-$ cd ~
-$ curl -sL https://deb.nodesource.com/setup_10.x -o nodesource_setup.sh
-$ sudo bash nodesource_setup.sh
-$ sudo apt install nodejs
-```
-
-Then, install the rosbridge-server package
-
-```
-$ sudo apt x ros-melodic-rosbridge-server
-```
-
-Finally, install dependencies with npm:
-
-```
-$ roscd aerialcore_gcs/aerialcore_gui
-$ npm i
-```
-
-# Releases
-
-## Tag V1.4 (Download images form UAV)
-
-## Tag V1.3
+### Tag V1.3
 
 Test and Setup for Muav on Proyect Omicron Demo in Plaza de Agua
 
@@ -121,20 +122,30 @@ Test and Setup for Muav on Proyect Omicron Demo in Plaza de Agua
 - streaming of video using Websockets in MVS Architecture
 - Donwload mission in diferentes file format
 
-# Tag V1.2
+### Tag V1.2
 
 - Calcule middle point for create a new mission
 
-# Tag V1.1
+### Tag V1.1
 
 - Creation mission page for eddit mission
 
-# References
+## References and interesting project to help in develop
 
-- (inspector software_UAV)[https://github.com/AlejandroCastillejo/inspector_software_uav] en este proyecto se optiene archivos de la camara mediante ftp y se almacenas en la mochila del dron para luego ser enviados a la gcs mediante sshpass usando y scp, esto se ejeucta directamente en el drone
+- [inspector software_UAV](https://github.com/AlejandroCastillejo/inspector_software_uav) in this project files from the camera are held via ftp and stored in the drone's backpack and then sent to the gcs via sshpass using and scp, this is done directly on the drone.
 
-- (autonomus landing)[https://github.com/MikeS96/autonomous_landing_uav/blob/master/Usage.md]
+- [autonomus landing](https://github.com/MikeS96/autonomous_landing_uav/blob/master/Usage.md)
 
-- (altitude sensor)[https://github.com/AlejandroCastillejo/sf11_altitude_sensor]
+- [Robot Fleet](https://github.com/ut-amrl/robofleet) Open Source Communication and Management for Fleets of Autonomous Robots To exchange ROS messages over the network,s messages using Flatbuffers.
 
-\*(inspector software_UAV)[https://github.com/AlejandroCastillejo/inspector_software_uav]
+- [DJI ROS OSDK](https://github.com/miggilcas/Onboard-SDK-ROS) custom DJI ROS SDK package with all sensors avoidance and download camera images.
+
+- [UAL](https://github.com/grvcTeam/grvc-ual) ROS UAV abstraction layer
+
+- [altitude sensor](https://github.com/AlejandroCastillejo/sf11_altitude_sensor)
+
+- [ROS_RTSP](https://github.com/CircusMonkey/ros_rtsp) publish video for robot to server
+
+- [Mediamtx](https://github.com/bluenviron/mediamtx) Server multimedia for streaming video in server part
+
+- [traccar-web](https://github.com/traccar/traccar-web) fleet management

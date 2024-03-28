@@ -1,61 +1,63 @@
-//import { missionModel } from '../models/mission.js';
-import { missionModel } from '../models/mission-sql.js';
-import { ExtApp } from '../models/ExtApp.js';
-export class missionController {
-  static async getmission(req, res) {
+var MissionController;
+class missionController {
+  constructor({ model }) {
+    this.missionModel = model;
+  }
+  getmission = async (req, res) => {
     console.log('get missions');
-    const response = await missionModel.getmission();
+    const response = await this.missionModel.getmission();
     res.json(response);
-  }
-  static async sendTask(req, res) {
-    let response = await missionModel.sendTask(req.body);
+  };
+  sendTask = async (req, res) => {
+    let response = await this.missionModel.sendTask(req.body);
     res.json(response);
-  }
-  static async setMission(req, res) {
-    let response = await missionModel.setMission(req.body);
+  };
+  setMission = async (req, res) => {
+    let response = await this.missionModel.setMission(req.body);
     res.json(response);
-  }
+  };
 
-  static async updateFiles(req, res) {
+  updateFiles = async (req, res) => {
     console.log('updates Files');
-    let response = await missionModel.updateFiles(req.params);
+    let response = await this.missionModel.updateFiles(req.params);
     res.json(response);
-  }
+  };
 
-  static async showFiles(req, res) {
+  showFiles = async (req, res) => {
     console.log('show files');
-    let response = await missionModel.showFiles(req.params);
+    let response = await this.missionModel.showFiles(req.params);
     res.json(response);
-  }
+  };
 
-  static async listFiles(req, res) {
+  listFiles = async (req, res) => {
     console.log('list files');
-    let response = await missionModel.listFiles(req.params);
+    let response = await this.missionModel.listFiles(req.params);
     res.json(response);
-  }
+  };
 
-  static async test(req, res) {
-    console.log('list files');
-    let response = await ExtApp.UpdateToken();
-    res.json(response);
-  }
-  static initMission(mission_id, data) {
-    missionModel.initMission(mission_id, data);
-  }
-  static finishMission(missionId, deviceId) {
-    return missionModel.UAVFinish(missionId, deviceId);
-  }
-  static getMissionRoute(missionId) {
-    return missionModel.getmissionValue(missionId);
-  }
-  static getCurrentMission(mission_id) {
-    return missionModel.getmission(mission_id);
-  }
-  static updateFiles(missionId, deviceId) {
-    return missionModel.updateFiles(missionId, deviceId);
-  }
-  static updateMission({ device, mission, state }) {
-    missionModel.updateMission({ device, mission, state });
+  initMission = (mission_id, data) => {
+    this.missionModel.initMission(mission_id, data);
+  };
+  finishMission = (missionId, deviceId) => {
+    return this.missionModel.UAVFinish(missionId, deviceId);
+  };
+  getMissionRoute = (missionId) => {
+    return this.missionModel.getmissionValue(missionId);
+  };
+  getCurrentMission = (mission_id) => {
+    return this.missionModel.getmission(mission_id);
+  };
+  updateFiles = (missionId, deviceId) => {
+    return this.missionModel.updateFiles(missionId, deviceId);
+  };
+  updateMission = ({ device, mission, state }) => {
+    this.missionModel.updateMission({ device, mission, state });
     return true;
-  }
+  };
 }
+
+function CreateController({ model }) {
+  MissionController = new missionController({ model });
+  return MissionController;
+}
+export { MissionController, missionController, CreateController };

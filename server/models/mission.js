@@ -1,11 +1,11 @@
-import { DevicesModel } from '../models/devices.js';
+import { DevicesController } from '../controllers/devices.js';
 import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
-import { planningModel } from './planning.js';
-import { ExtApp } from './ExtApp.js';
-import { filesModel } from './files.js';
-import { readYAML } from '../common/utils.js';
+import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
+import { FilesController } from '../controllers/files.js';
+import { readYAML } from '../common/utils.js';
+
 /* mission is object that have the current mission running and have the next object
  / id
  / initTime
@@ -44,18 +44,18 @@ export class missionModel {
     myTask.id = id;
     myTask.name = name ? name : 'automatic';
     myTask.locations = locations;
-    myTask.case = planningModel.getTypes()[objetivo].case;
+    myTask.case = planningController.getCaseTypes()[objetivo].case;
     myTask.meteo = meteo;
 
-    let bases = planningModel.getBases();
-    let devices = await DevicesModel.getAll();
-    let param = planningModel.getParam(objetivo);
+    let bases = planningController.getConfigBases();
+    let devices = await DevicesController.getAllDevices();
+    let param = planningController.getConfigParam(objetivo);
     let auxconfig = {};
     Object.keys(param['settings']).forEach((key1) => {
       auxconfig[key1] = param['settings'][key1].default;
     });
 
-    let basesettings = planningModel.getBasesSettings();
+    let basesettings = planningController.getBasesSettings();
     myTask.devices = basesettings.map((setting, index) => {
       let config = { settings: {} };
       let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
@@ -89,7 +89,7 @@ export class missionModel {
   }
 
   static async initMission(missionId, mission) {
-    const listUAV = mission.route.map((route) => DevicesModel.getByName(route.uav).id);
+    const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
     Mission[missionId] = {
       id: missionId,
       uav: listUAV,
@@ -100,7 +100,7 @@ export class missionModel {
     listUAV.forEach((uavId) => {
       missionSMModel.createActorMission(uavId, missionId);
     });
-    ExtApp.missionStart(missionId, mission);
+    ExtAppController.missionReqStart(missionId, mission);
 
     var ws = new WebsocketManager(null, '/api/socket');
     ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
@@ -108,16 +108,20 @@ export class missionModel {
   }
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
-    await ExtApp.missionResult(missionId, resultCode);
+    await ExtAppController.missionReqResult(missionId, resultCode);
     return true;
   }
 
   static async updateFiles(missionId, uavId) {
-    const results = await filesModel.updateFiles(uavId, missionId, Mission[missionId].initTime);
+    const results = await FilesController.updateFiles(
+      uavId,
+      missionId,
+      Mission[missionId].initTime
+    );
     await this.sleep(5000);
     let code = 0;
 
-    ExtApp.missionMedia(missionId, { code, files: results.files, data: results.data });
+    ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
     return true;
   }
   static async updateMission({ device, mission, state }) {

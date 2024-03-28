@@ -1,5 +1,5 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
-
+import { Device } from './device.model.js';
 const Event_TABLE = 'event';
 
 const EventSchema = {

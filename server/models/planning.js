@@ -3,7 +3,7 @@ import { writeYAML, readYAML, getRandomInt } from '../common/utils.js';
 const configPlanning = readYAML('../config/elements/config.yaml');
 var initPlanning = readYAML('../config/elements/mission_init.yaml');
 import { planningServer, planningHost } from '../config/config.js';
-import { missionController } from '../controllers/mission.js';
+import { MissionController } from '../controllers/mission.js';
 
 const requestPlanning = {};
 
@@ -109,7 +109,7 @@ export class planningModel {
         if (data.results[0].hasOwnProperty('route')) {
           clearInterval(requestPlanning[mission_id]['interval']);
           requestPlanning[mission_id]['count'] = 10;
-          missionController.initMission(mission_id, data.results[0]);
+          MissionController.initMission(mission_id, data.results[0]);
         }
       }
     } else {

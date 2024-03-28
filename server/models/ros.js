@@ -1,6 +1,6 @@
 import ROSLIB from 'roslib';
 import { readYAML, getDatetime } from '../common/utils.js';
-import { devicesController } from '../controllers/devices.js';
+import { DevicesController } from '../controllers/devices.js';
 import { missionSMModel } from './missionSM.js';
 import { positionsController } from '../controllers/positions.js';
 import { categoryModel } from './category.js';
@@ -31,7 +31,7 @@ export class rosModel {
   }
 
   static async connectAllUAV() {
-    const devices = await devicesController.getAllDevices();
+    const devices = await DevicesController.getAllDevices();
     console.log(devices_msg);
     for (let device of Object.values(devices)) {
       await rosModel.subscribeDevice({
@@ -217,7 +217,7 @@ export class rosModel {
   }
 
   static async decodeMissionMsg({ uav_id, route }) {
-    let device = await devicesController.getDevice(uav_id);
+    let device = await DevicesController.getDevice(uav_id);
     let uavname = device.name;
     let uavcategory = device.category;
     console.log(device);
@@ -415,7 +415,7 @@ export class rosModel {
   }
 
   static async callService({ uav_id, type, request }) {
-    let device = await devicesController.getDevice(uav_id);
+    let device = await DevicesController.getDevice(uav_id);
     let uavName = device.name;
     let uavCategory = device.category;
     console.log(device);
@@ -505,7 +505,7 @@ export class rosModel {
       console.log('callback Sevice finish mission');
       console.log(request);
       if (request.hasOwnProperty('uav_id')) {
-        let mydevice = devicesController.getByName(`uav_${request.uav_id}`);
+        let mydevice = DevicesController.getByName(`uav_${request.uav_id}`);
         console.log(mydevice);
         console.log('mydevice in finish mission ' + mydevice.id);
         missionSMModel.UAVFinishMission(mydevice.id);
@@ -530,7 +530,7 @@ export class rosModel {
       console.log('callback Service finish download files');
       console.log(request);
       if (request.hasOwnProperty('uav_id')) {
-        let mydevice = devicesController.getByName(request.uav_id);
+        let mydevice = DevicesController.getByName(request.uav_id);
         console.log(mydevice);
         console.log('mydevice finish download files' + mydevice.id);
         missionSMModel.DownloadFiles(mydevice.id);

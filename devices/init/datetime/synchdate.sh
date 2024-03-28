@@ -10,7 +10,7 @@ var=0
 
 while  [ "$var" -eq 0 ];do
     sleep 2
-    myvar=$(curl -s http://10.42.0.2:4000/api/utils/datetime)
+    myvar=$(curl -s http://10.42.0.2:4000/api/server/datetime)
     echo -e  $myvar
         if [[ "$myvar" == *'datetime'* ]]; then
         echo "It's there."

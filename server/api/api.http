@@ -1,3 +1,6 @@
+### Get server 
+GET http://localhost:4000/api/server
+
 ### Get devices 
 GET http://localhost:4000/api/devices
 
@@ -246,7 +249,7 @@ GET http://localhost:4000/api/media/:deviceid
 GET http://localhost:4000/api/media1/:deviceid
 
 ### datetime
-GET http://localhost:4000/api/utils/datetime
+GET http://localhost:4000/api/server/datetime
 
 
 ### Test external application request  Token

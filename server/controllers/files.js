@@ -1,29 +1,34 @@
-//import { filesModel } from '../models/files.js';
-import { filesModel } from '../models/files-sql.js';
-export class filesController {
-  static async getfiles(req, res) {
+var FilesController;
+class filesController {
+  constructor({ model }) {
+    this.filesModel = model;
+  }
+  getfiles = async (req, res) => {
     console.log('controller get foles');
-    let response = await filesModel.getfiles();
+    let response = await this.filesModel.getfiles();
     res.json(response);
-  }
-  static async testfile(req, res) {
-    let response = await filesModel.testMetadata(req.body.src);
+  };
+  testfile = async (req, res) => {
+    let response = await this.filesModel.testMetadata(req.body.src);
     res.json(response);
-  }
-  static async MetadataTempImage(req, res) {
-    let response = await filesModel.MetadataTempImage(req.body.src);
+  };
+  MetadataTempImage = async (req, res) => {
+    let response = await this.filesModel.MetadataTempImage(req.body.src);
     res.json(response);
-  }
-  static async ProcessThermalImages(req, res) {
-    let response = await filesModel.ProcessThermalImages(req.body.src);
+  };
+  ProcessThermalImages = async (req, res) => {
+    let response = await this.filesModel.ProcessThermalImages(req.body.src);
     res.json(response);
-  }
+  };
+  updateFiles = async (uavid, missionid, initTime) => {
+    return await this.filesModel.updateFiles(uavid, missionid, initTime);
+  };
 
-  static async donwload(req, res) {
+  donwload = async (req, res) => {
     //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
     //https://medium.com/@imajeet5/how-to-serve-files-using-node-js-d99de4653a3
     console.log('controller donwload');
-    let response = await filesModel.donwload(req.params.filename);
+    let response = await this.filesModel.donwload(req.params.filename);
     console.log(response);
     if (response) {
       res.download(response, function (err) {
@@ -39,5 +44,11 @@ export class filesController {
       res.statusMessage = 'Path no match';
       res.status(400).end();
     }
-  }
+  };
 }
+
+function CreateController({ model }) {
+  FilesController = new filesController({ model });
+  return FilesController;
+}
+export { FilesController, filesController, CreateController };

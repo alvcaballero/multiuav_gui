@@ -17,4 +17,13 @@ export class ExtAppController {
     let response = await ExtApp.missionMedia(req.body.mission_id, req.body.results);
     res.json(response);
   }
+  static missionReqStart(missionId, mission) {
+    ExtApp.missionStart(missionId, mission);
+  }
+  static async missionReqResult(missionId, resultCode) {
+    return await ExtApp.missionResult(missionId, resultCode);
+  }
+  static missionReqMedia(missionId, attributes) {
+    ExtApp.missionMedia(missionId, attributes);
+  }
 }
