@@ -10,7 +10,7 @@ var plan_mission = '';
 export const RosControl = ({ children, notification }) => {
   const devices = useSelector((state) => state.devices.items);
   const missions = useSelector((state) => state.mission);
-  const serverState = useSelector((state) => state.session.server);
+  const serverState = useSelector((state) => state.session.server.rosState);
   const dispatch = useDispatch();
 
   const [rosState, setrosState] = useState(false);

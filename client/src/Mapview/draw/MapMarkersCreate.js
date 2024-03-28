@@ -1,5 +1,4 @@
 import { useId, useEffect, useState } from 'react';
-import { useTheme } from '@mui/styles';
 import { map } from '../MapView';
 import { findFonts } from '../mapUtil';
 import palette from '../../common/palette';
@@ -46,7 +45,6 @@ const MapMarkersCreate = ({
   const linesMarkers = `${id}-lines`;
   const idselectMarkers = `${id}-select`;
 
-  const theme = useTheme();
   const iconScale = 0.4;
   const [testkeepValue, settestkeepValue] = useState(new keepMarkers());
 

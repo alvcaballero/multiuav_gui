@@ -76,8 +76,8 @@ const SocketController = () => {
       }
       if (data.server) {
         data.server.rosState === 'connect'
-          ? dispatch(sessionActions.updateServer(true))
-          : dispatch(sessionActions.updateServer(false));
+          ? dispatch(sessionActions.updateServerROS(true))
+          : dispatch(sessionActions.updateServerROS(false));
       }
       if (data.mission) {
         console.log('data mission');

@@ -1,13 +1,14 @@
-import React from "react";
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
-import store from "./store";
-import preloadImages from "./Mapview/preloadImages";
-import { CssBaseline, StyledEngineProvider } from "@mui/material";
-import Navigation from "./Navigation";
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from './store';
+import preloadImages from './Mapview/preloadImages';
+import { CssBaseline, StyledEngineProvider } from '@mui/material';
+import Navigation from './Navigation';
 
-import AppThemeProvider from "./AppThemeProvider";
+import AppThemeProvider from './AppThemeProvider';
+import ServerProvider from './ServerProvider';
 
 preloadImages();
 
@@ -17,9 +18,11 @@ root.render(
     <StyledEngineProvider injectFirst>
       <AppThemeProvider>
         <CssBaseline />
-        <BrowserRouter>
-          <Navigation />
-        </BrowserRouter>
+        <ServerProvider>
+          <BrowserRouter>
+            <Navigation />
+          </BrowserRouter>
+        </ServerProvider>
       </AppThemeProvider>
     </StyledEngineProvider>
   </Provider>

@@ -3,8 +3,8 @@ import { createSlice } from '@reduxjs/toolkit';
 const { reducer, actions } = createSlice({
   name: 'session',
   initialState: {
-    server: {},
-    user: { latitude: 37.19384768456065, longitude: -6.7029656624597465, zoom: 10 },
+    server: null,
+    user: { latitude: 37.19384768456065, longitude: -6.7029656624597465, zoom: 10, attributes: {} },
     socket: null,
     positions: {},
     history: {},
@@ -22,6 +22,9 @@ const { reducer, actions } = createSlice({
   reducers: {
     updateServer(state, action) {
       state.server = action.payload;
+    },
+    updateServerROS(state, action) {
+      state.server.rosState = action.payload;
     },
     updateUser(state, action) {
       state.user = action.payload;
