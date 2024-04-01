@@ -19,7 +19,7 @@ const sftconections = {}; // manage connection to drone
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
 
 export class filesModel {
-  static getfiles() {
+  static readGCSFiles() {
     let response = [];
     let firstFiles = fs.readdirSync(filesPath, { withFileTypes: true });
     let missionFolder = firstFiles.filter((myroute) => myroute.isDirectory());

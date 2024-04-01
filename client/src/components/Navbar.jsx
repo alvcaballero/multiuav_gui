@@ -8,65 +8,35 @@ import { map } from '../Mapview/MapView';
 import { RosContext } from './RosControl';
 import { MenuItems } from './MenuItems';
 
-export const Navbar = ({ SetAddUAVOpen }) => {
+const Navbar = ({ SetAddUAVOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const rosContex = useContext(RosContext);
+  const rosContext = useContext(RosContext);
 
   const menuItemsData = [
     {
       title: 'ROS',
       submenu: [
-        {
-          title: 'Connect ROS',
-          action: () => rosContex.rosConnect(),
-        },
-        {
-          title: 'Show Topics',
-          action: () => navigate('/topics'),
-        },
-        {
-          title: 'Show Services',
-        },
+        { title: 'Connect ROS', action: () => rosContext.rosConnect() },
+        { title: 'Show Topics', action: () => navigate('/topics') },
+        { title: 'Show Services' },
       ],
     },
     {
       title: 'Devices',
       submenu: [
-        {
-          title: 'Connect Devices',
-          action: () => openAddUav(),
-        },
-        {
-          title: 'Load Mission all',
-          action: () => rosContex.loadMission(),
-        },
-        {
-          title: 'Command Mission All',
-          action: () => rosContex.setconfirmMission(true),
-        },
+        { title: 'Connect Devices', action: () => openAddUav() },
+        { title: 'Load Mission all', action: () => rosContext.loadMission() },
+        { title: 'Command Mission All', action: () => rosContext.setconfirmMission(true) },
       ],
     },
     {
       title: 'Mission',
       submenu: [
-        {
-          title: ' Open Mission',
-          input: (e) => readFile(e),
-          type: '.yaml, .plan, .waypoint, .kml',
-        },
-        {
-          title: 'Clear mission',
-          action: () => clearmission(),
-        },
-        {
-          title: 'Edit mission',
-          action: () => navigate('/mission'),
-        },
-        {
-          title: 'Planning',
-          action: () => navigate('/planning'),
-        },
+        { title: ' Open Mission', input: (e) => readFile(e) },
+        { title: 'Clear mission', action: () => clearmission() },
+        { title: 'Edit mission', action: () => navigate('/mission') },
+        { title: 'Planning', action: () => navigate('/planning') },
       ],
     },
     {
@@ -75,30 +45,16 @@ export const Navbar = ({ SetAddUAVOpen }) => {
         {
           title: 'Enviroment Features',
         },
-        {
-          title: 'add elements',
-          input: (e) => loadElements(e),
-          type: '.kml',
-        },
-        {
-          title: 'Camera view',
-          action: () => navigate('/camera'),
-        },
-        {
-          title: '3D view',
-          action: () => navigate('/3Dmission'),
-        },
+        { title: 'add elements', input: (e) => loadElements(e), type: '.kml' },
+        { title: 'Camera view', action: () => navigate('/camera') },
+        { title: '3D view', action: () => navigate('/3Dmission') },
       ],
     },
     {
       title: 'Report',
       submenu: [
-        {
-          title: 'Missions',
-        },
-        {
-          title: 'events',
-        },
+        { title: 'Missions', action: () => navigate('reports/mission') },
+        { title: 'events', action: () => navigate('reports/events') },
       ],
     },
   ];
@@ -114,7 +70,7 @@ export const Navbar = ({ SetAddUAVOpen }) => {
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
-      rosContex.openMision(file.name, fileReader.result);
+      rosContext.openMision(file.name, fileReader.result);
     };
     fileReader.onerror = () => {
       console.log('error');
@@ -242,3 +198,4 @@ export const Navbar = ({ SetAddUAVOpen }) => {
     </AppBar>
   );
 };
+export default Navbar;

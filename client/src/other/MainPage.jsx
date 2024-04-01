@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
-import { Navbar } from '../components/Navbar';
+import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import Toast from '../components/Toast';
 import { Adduav } from '../components/Adduav';
@@ -217,7 +217,7 @@ const MainPage = () => {
           />
         )}
 
-        <Toast toastlist={list} position='buttom-right' setList={setList} />
+        <Toast toastlist={list} position="buttom-right" setList={setList} />
       </RosControl>
     </div>
   );

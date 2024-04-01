@@ -4,7 +4,7 @@ import { Paper } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 
 import MapView from '../Mapview/MapView';
-import { Navbar } from '../components/Navbar';
+import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
 import MapPositions from '../Mapview/MapPositions';

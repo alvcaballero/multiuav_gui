@@ -129,9 +129,17 @@ Content-Type: application/json
 
 @uav_id = 4
 @mission_id = 1
-### get mission
 
+### get mission
 GET  http://localhost:4000/api/missions
+### get mission
+GET  http://localhost:4000/api/missions?id=72510181
+
+### get mission
+GET  http://localhost:4000/api/missions/routes
+
+### get mission route
+GET  http://localhost:4000/api/missions/routes?missionId=72510181
 
 ### show files
 GET  http://localhost:4000/api/missions/showFiles/{{uav_id}}/{{mission_id}}
@@ -148,8 +156,15 @@ GET  http://localhost:4000/api/missions/listFiles/{{mission_id}}/{{uav_id}}
 ### curl http://localhost:4000/api/files/download/mission_1/uav_15/DJI_20231124131954_0001_THRM.jpg --output some.jpg  
 GET http://localhost:4000/api/files/download/mission_1243/uav_15/DJI_20231124131954_0001_THRM.jpg
 
-### list files
-GET http://localhost:4000/api/files/routes
+### list files GCS
+GET http://localhost:4000/api/files/get
+
+### list files GCS
+GET http://localhost:4000/api/files/get?missionId=72510181
+
+
+### list files GCS
+GET http://localhost:4000/api/files/listFiles
 
 ### Get metadata
 POST  http://localhost:4000/api/files/test

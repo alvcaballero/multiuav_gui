@@ -5,8 +5,14 @@ class missionController {
   }
   getmission = async (req, res) => {
     console.log('get missions');
-    const response = await this.missionModel.getmission();
-    res.json(response);
+    const response = await this.missionModel.getmissionValue(req.query.id);
+    res.json(Object.values(response));
+  };
+  getRoutes = async (req, res) => {
+    console.log('get routes');
+    console.log(req.query);
+    const response = await this.missionModel.getRoutes(req.query);
+    res.json(Object.values(response));
   };
   sendTask = async (req, res) => {
     let response = await this.missionModel.sendTask(req.body);

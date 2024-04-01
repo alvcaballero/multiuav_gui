@@ -5,7 +5,7 @@ import App from './App';
 import useQuery from './common/useQuery';
 import MainPage from './other/MainPage';
 import MissionPage from './other/MissionPage';
-import EventPage from './other/EventPage';
+import MissionReportPage from './other/MissionReportPage';
 import ReplayPage from './other/ReplayPage';
 import DevicePage from './other/DevicePage';
 import CameraPage from './other/CameraPage';
@@ -13,6 +13,7 @@ import EventsPage from './other/EventsPage';
 import TopicsPage from './other/TopicsPage';
 import PlanningPage from './other/PlanningPage';
 import MissionPage3D from './other/MissionPage3D';
+import MissionDetailReportPage from './other/MissionDetailReportPage';
 
 const padding = {
   padding: 5,
@@ -37,11 +38,17 @@ const Navigation = () => {
         <Route path="planning" element={<PlanningPage />} />
         <Route path="camera" element={<CameraPage />} />
         <Route path="device/:id" element={<DevicePage />} />
-        <Route path="event/:id" element={<EventPage />} />
-        <Route path="events" element={<EventsPage />} />
 
         <Route path="replay" element={<ReplayPage />} />
         <Route path="topics" element={<TopicsPage />} />
+
+        <Route path="event/:id" element={<EventsPage />} />
+
+        <Route path="reports">
+          <Route path="events" element={<EventsPage />} />
+          <Route path="mission" element={<MissionReportPage />} />
+          <Route path="mission/:id" element={<MissionDetailReportPage />} />
+        </Route>
       </Route>
     </Routes>
   );

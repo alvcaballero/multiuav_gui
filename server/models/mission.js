@@ -14,9 +14,49 @@ import { readYAML } from '../common/utils.js';
  / uav: {uavId, status:  load, commmand , running , resumen cancel,Get Data, Download Data, InitTime,FinishTime}
  / mission: mission format yaml
 */
-const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
-const Routes = {}; // id, missionId,uav,status, init time, end time
-// const  files// id , route ,name, uav, date, attributes
+const Mission = {
+  72510181: {
+    id: 72510181,
+    initTime: '2024-03-05T12:20:46',
+    endTime: '2024-03-05T12:45:46',
+    status: 'finish',
+    mission: 'mission.yaml',
+    results: [
+      {
+        latitude: 37.09241,
+        longitude: -5.232,
+        measures: [
+          {
+            name: 'minDistance',
+            value: 25.34,
+          },
+        ],
+      },
+    ],
+  },
+};
+/*// current mission // id , status (init, planing, doing, finish,time inti, time_end))
+ */
+const Routes = {
+  1: {
+    id: 1,
+    status: 'finish',
+    missionId: 72510181,
+    deviceId: '14',
+    initTime: '2024-03-05T12:20:46',
+    endTime: '2024-03-05T12:45:46',
+    result: {
+      latitude: 37.09241,
+      longitude: -5.232,
+      measures: [
+        {
+          name: 'minDistance',
+          value: 25.34,
+        },
+      ],
+    },
+  },
+};
 
 export class missionModel {
   static getmission(id) {
@@ -27,11 +67,21 @@ export class missionModel {
     return Mission[id].mission;
   }
   static getmissionValue(id) {
-    console.log('Get mission' + id);
     if (id) {
+      console.log('Get mission' + id);
       return Mission[id];
     }
-    return Mission[id];
+    console.log('Get all mission');
+    return Mission;
+  }
+  static getRoutes({ deviceId, missionId }) {
+    if (deviceId) {
+      return Object.values(Routes).filter((word) => word.deviceId == deviceId);
+    }
+    if (missionId) {
+      return Object.values(Routes).filter((word) => word.missionId == missionId);
+    }
+    return Routes;
   }
 
   static sleep(ms) {

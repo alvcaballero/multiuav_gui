@@ -47,6 +47,8 @@ windows:
             - docker run --rm -it --network=host -v $PWD/../server/config/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
         - gtreamer:
             - cd ~/work/px4/
+            - docker start db_postgres_1
+            - docker start db_pgadmin_1
         - planning:
             - cd ~/work/planner-server
             - source env/bin/activate

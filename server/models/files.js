@@ -14,12 +14,77 @@ import { DevicesController } from '../controllers/devices.js';
 import { filesPath, processThermalImg, processThermalsSrc } from '../config/config.js';
 
 // const  files// id , route ,name, uav, date, attributes
-
+const files = {
+  1: {
+    id: 1,
+    routeId: 1,
+    missionId: 72510181,
+    deviceId: '14',
+    name: 'DJI_20240305122904_0010_WIDE.jpg',
+    route: '/mission_72510181/uav_14/',
+    date: '2024-03-05T12:29:04',
+    attributes: {
+      latitude: 37.09241,
+      longitude: -5.232,
+      measures: [],
+    },
+  },
+  2: {
+    id: 2,
+    routeId: 1,
+    missionId: 72510181,
+    deviceId: '14',
+    name: 'DJI_20240305122904_0010_THRM_process.jpg',
+    route: 'mission_72510181/uav_14/',
+    date: '2024-03-05T12:29:04',
+    attributes: {
+      latitude: 37.09241,
+      longitude: -5.232,
+      measures: [
+        {
+          name: 'MaxTemp',
+          value: 83.7,
+        },
+      ],
+    },
+  },
+  3: {
+    id: 3,
+    routeId: 1,
+    missionId: 72510181,
+    deviceId: '14',
+    name: 'distances.pcd',
+    route: 'mission_72510181/uav_14/',
+    date: '2024-03-05T12:29:04',
+    attributes: {
+      latitude: 37.09241,
+      longitude: -5.232,
+      measures: [
+        {
+          name: 'minDist',
+          value: 10,
+        },
+      ],
+    },
+  },
+};
 const sftconections = {}; // manage connection to drone
 const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
 
 export class filesModel {
-  static getfiles() {
+  static getFiles({ deviceId, missionId, routeId }) {
+    if (deviceId) {
+      return Object.values(files).filter((word) => word.deviceId == deviceId);
+    }
+    if (missionId) {
+      return Object.values(files).filter((word) => word.missionId == missionId);
+    }
+    if (routeId) {
+      return Object.values(files).filter((word) => word.routeId == routeId);
+    }
+    return Object.values(files);
+  }
+  static readGCSFiles() {
     let response = [];
     let firstFiles = fs.readdirSync(filesPath, { withFileTypes: true });
     let missionFolder = firstFiles.filter((myroute) => myroute.isDirectory());

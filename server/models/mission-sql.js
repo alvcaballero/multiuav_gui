@@ -27,7 +27,7 @@ const Mission = {}; // current mission // id , status (init, planing, doing, fin
  / initTime
  / endTime
 */
-const Route = {};
+const Routes = {};
 
 export class missionModel {
   static getmission(id) {
@@ -44,7 +44,9 @@ export class missionModel {
     }
     return Mission[id];
   }
-
+  static getRoutes() {
+    return Routes;
+  }
   static sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }

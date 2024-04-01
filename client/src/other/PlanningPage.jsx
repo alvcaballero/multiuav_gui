@@ -23,18 +23,16 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { TabPanel, TabList, TabContext } from '@mui/lab';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 import makeStyles from '@mui/styles/makeStyles';
 import { useNavigate } from 'react-router-dom';
 import { missionActions, sessionActions } from '../store'; // here update device action with position of uav for update in map
 
 import MapView from '../Mapview/MapView';
-import { Navbar } from '../components/Navbar';
+import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import MapMissions from '../Mapview/MapMissions';
 import SelectField from '../common/components/SelectField';
-import palette from '../common/palette';
 import BaseList from '../components/BaseList';
 import BaseSettings from '../components/BaseSettings';
 import { RosControl } from '../components/RosControl';

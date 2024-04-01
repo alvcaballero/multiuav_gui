@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from 'react';
-import { Navbar } from '../components/Navbar';
+import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import MainToolbar from '../components/MainToolbar';
 import makeStyles from '@mui/styles/makeStyles';
@@ -9,8 +9,7 @@ import { Paper, Grid, Box } from '@mui/material';
 import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
 import { CameraV1 } from '../components/CameraV1';
 
-import { useDispatch, useSelector } from 'react-redux';
-import { experimentalStyled as styled } from '@mui/material/styles';
+import { useSelector } from 'react-redux';
 const useStyles = makeStyles(() => ({
   root: {
     height: '100%',
@@ -97,7 +96,7 @@ const CameraPage = () => {
           }}
         >
           <Box
-            component='div'
+            component="div"
             sx={{ overflow: 'auto' }}
             style={{
               backgroundColor: '#000000',
@@ -107,7 +106,7 @@ const CameraPage = () => {
               float: 'right',
             }}
           >
-            <Grid container spacing={2} justifyContent='space-around'>
+            <Grid container spacing={2} justifyContent="space-around">
               {React.Children.toArray(
                 Object.values(devices).map((device) => (
                   <Fragment key={'dev' + device.id}>

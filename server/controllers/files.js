@@ -3,9 +3,14 @@ class filesController {
   constructor({ model }) {
     this.filesModel = model;
   }
-  getfiles = async (req, res) => {
-    console.log('controller get foles');
-    let response = await this.filesModel.getfiles();
+  getFiles = async (req, res) => {
+    console.log('controller get files');
+    let response = await this.filesModel.getFiles(req.query);
+    res.json(response);
+  };
+  listFiles = async (req, res) => {
+    console.log('controller get list files');
+    let response = await this.filesModel.readGCSFiles();
     res.json(response);
   };
   testfile = async (req, res) => {
