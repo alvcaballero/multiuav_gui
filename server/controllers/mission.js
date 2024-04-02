@@ -48,7 +48,7 @@ class missionController {
     return this.missionModel.UAVFinish(missionId, deviceId);
   };
   getMissionRoute = (missionId) => {
-    return this.missionModel.getmissionValue(missionId);
+    return Object.values(this.missionModel.getmissionValue(missionId));
   };
   getCurrentMission = (mission_id) => {
     return this.missionModel.getmission(mission_id);

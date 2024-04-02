@@ -189,12 +189,13 @@ export class filesModel {
     let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
 
     for (const myfiles of listFolders) {
-      console.log([myfiles] + '' + 'mission_' + myInitTime);
+      //console.log([myfiles] + '' + 'mission_' + myInitTime);
       if (myfiles === 'mission_' + myInitTime) {
         nameFolder = myfiles;
+        console.log('find folder 1');
       }
     }
-    console.log('name folder ' + nameFolder);
+    console.log('find folder ' + nameFolder);
     if (nameFolder) {
       let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
       let dir2 = `mission_${missionId}/${mydevice.name}`;
@@ -205,6 +206,7 @@ export class filesModel {
       }
 
       let listFiles = await client.listFiles('./uav_media/' + nameFolder + '/', '.jpg$', '-', true);
+      console.log('list files in uav');
       console.log(listFiles);
       let downloadOk = true;
       for (let myfile of listFiles) {
@@ -214,7 +216,19 @@ export class filesModel {
           `${dir}/${myfile}`
         );
         console.log(response);
+        let fileId = Math.max(Object.keys(files).map((key) => parseInt(key))) + 1;
+        files[fileId] = {
+          id: fileId,
+          routeId: 1,
+          missionId: missionId,
+          deviceId: uavId,
+          name: myfile,
+          route: `${dir2}/`,
+          date: new Date(),
+          attributes: {},
+        };
         filestodownload.push({
+          name: myfile,
           source: `./uav_media/${nameFolder}/${myfile}`,
           dist: `${dir}/${myfile}`,
           ref: `${dir2}/${myfile}`,
@@ -224,6 +238,7 @@ export class filesModel {
           downloadOk = false;
         }
       }
+
       //* Close the connection
       await client.disconnect();
       console.log(filestodownload);
@@ -234,17 +249,34 @@ export class filesModel {
         let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
         if (processThermalImg && listImagestoprocess.length > 0) {
           let listThermal = await this.ProcessThermalImages(listImagestoprocess);
-          MissionResponse = await this.MetadataTempImage(listThermal.dist);
+          for (const themalFile of listThermal) {
+            let fileId = Math.max(Object.keys(files).map((key) => parseInt(key))) + 1;
+            files[fileId] = {
+              id: fileId,
+              routeId: 1,
+              missionId: missionId,
+              deviceId: uavId,
+              name: themalFile.name,
+              route: `${dir2}/`,
+              date: new Date(),
+              attributes: {},
+            };
+          }
+          MissionResponse = await this.MetadataTempImage(listThermal);
+          MissionResponse.imageMetadata.map((image) => {
+            let myfile = Object.values(files).find((item) => item.name == image.name);
+            files[myfile.id].attributes = image.attributes;
+          });
           console.log('listThermal');
           console.log(listThermal);
-          for (const srcImage of listThermal.ref) {
-            listImages.push(srcImage);
+          for (const srcImage of listThermal) {
+            listImages.push(srcImage.ref);
           }
         }
       }
     }
     console.log(listImages);
-    return { files: listImages, data: [MissionResponse] };
+    return { files: listImages, data: [MissionResponse.MissionResponse] };
   }
   static async testMetadata(srcImage) {
     console.log(' test image');
@@ -252,6 +284,7 @@ export class filesModel {
     let response1 = exif(metadata.exif);
     console.log(response1.GPSInfo.GPSLatitude[2] + '+' + response1.GPSInfo.GPSLongitude[2]);
     console.log(response1.GPSInfo);
+    console.log(response1.Image.DateTime);
 
     let mystring = response1.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
     let response = JSON.parse(mystring.slice(7).trim());
@@ -266,37 +299,51 @@ export class filesModel {
     console.log(listThermal);
     console.log('metadata imagen');
     let MissionResponse = { measures: [{ name: 'TempMax', value: 0 }] };
-    let GPSPosition = {};
+    let latitude;
+    let longitude;
+    imageMetadata = [];
     for (const srcImage of listThermal) {
-      let metadata = await sharp(srcImage).metadata();
+      let metadata = await sharp(srcImage.dist).metadata();
       let dataexitf = exif(metadata.exif);
       let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
       let userdata = JSON.parse(mystring.slice(7).trim());
+      let GPSPosition = dataexitf.GPSInfo;
 
+      latitude = this.convertDMSToDD(
+        GPSPosition.GPSLatitude[0],
+        GPSPosition.GPSLatitude[1],
+        GPSPosition.GPSLatitude[2],
+        GPSPosition.GPSLatitudeRef
+      );
+      longitude = this.convertDMSToDD(
+        GPSPosition.GPSLongitude[0],
+        GPSPosition.GPSLongitude[1],
+        GPSPosition.GPSLongitude[2],
+        GPSPosition.GPSLongitudeRef
+      );
+      imageMetadata.push({
+        name: srcImage.name,
+        attributes: {
+          latitude,
+          longitude,
+          measures: [{ name: 'TempMax', value: userdata.MaxTemp }],
+        },
+      });
       if (Object.keys(MissionResponse).length == 0) {
-        GPSPosition = dataexitf.GPSInfo;
+        MissionResponse.latitude = latitude;
+        MissionResponse.longitude = longitude;
         MissionResponse.measures[0].value = userdata.MaxTemp;
       } else {
         if (Number(userdata.MaxTemp) > Number(MissionResponse.measures[0].value)) {
-          GPSPosition = dataexitf.GPSInfo;
+          MissionResponse.latitude = latitude;
+          MissionResponse.longitude = longitude;
           MissionResponse.measures[0].value = userdata.MaxTemp;
         }
       }
     }
-    MissionResponse.latitude = this.convertDMSToDD(
-      GPSPosition.GPSLatitude[0],
-      GPSPosition.GPSLatitude[1],
-      GPSPosition.GPSLatitude[2],
-      GPSPosition.GPSLatitudeRef
-    );
-    MissionResponse.longitude = this.convertDMSToDD(
-      GPSPosition.GPSLongitude[0],
-      GPSPosition.GPSLongitude[1],
-      GPSPosition.GPSLongitude[2],
-      GPSPosition.GPSLongitudeRef
-    );
+
     console.log(MissionResponse);
-    return MissionResponse;
+    return { MissionResponse, imageMetadata };
   }
   static getNormalSize({ width, height, orientation }) {
     return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
@@ -316,11 +363,15 @@ export class filesModel {
     console.log('last images process');
     console.log(Images2process);
     const listImages = [];
-    const listImagesdist = [];
+    //const listImagesdist = [];
     for (const image of Images2process) {
       console.log('process img' + image.ref);
-      listImages.push(image.ref.slice(0, -4) + '_process.jpg');
-      listImagesdist.push(image.dist.slice(0, -4) + '_process.jpg');
+      listImages.push({
+        name: image.name,
+        ref: image.ref.slice(0, -4) + '_process.jpg',
+        dist: image.dist.slice(0, -4) + '_process.jpg',
+      });
+      //listImagesdist.push(image.dist.slice(0, -4) + '_process.jpg');
       try {
         const { stdout, stderr } = await exec(
           `conda run -n DJIThermal ${processThermalsSrc} -i "${image.dist}" -o "${image.dist.slice(
@@ -352,7 +403,7 @@ export class filesModel {
       //);
     }
     console.log('finish process');
-    return { ref: listImages, dist: listImagesdist };
+    return listImages; //{ ref: listImages, dist: listImagesdist };
   }
 
   static async listFiles({ uavId, missionId }) {

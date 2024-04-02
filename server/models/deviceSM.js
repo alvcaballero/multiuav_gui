@@ -56,7 +56,7 @@ const CommandMissionSM = async (context) => {
 const CommandDownload = async (context) => {
   console.log('service download files from Autopilot ');
   let resp = await MissionController.finishMission(context.missionId, context.uavId);
-  let mymission = MissionController.getMissionRoute(context.missionId);
+  let mymission = MissionController.getMissionRoute(context.missionId)[0];
 
   console.log('mission command download');
   console.log(mymission);

@@ -12,6 +12,11 @@ import {
   ImageList,
   ImageListItem,
   Card,
+  CardMedia,
+  CardHeader,
+  Divider,
+  CardContent,
+  Grid,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import makeStyles from '@mui/styles/makeStyles';
@@ -92,30 +97,62 @@ const useStyles = makeStyles((theme) => ({
     pointerEvents: 'none',
     position: 'fixed',
     zIndex: 6,
-    left: '51%',
-    top: '5%',
+    left: '50%',
+    top: '8vh',
     transform: 'translateX(-50%)',
   },
 }));
 const ImageFull = ({ file, closecard }) => {
   const classes = useStyles();
+  return (
+    <div className={classes.root_max}>
+      {file && (
+        <Card elevation={3} className={classes.card}>
+          <CardHeader
+            action={
+              <IconButton aria-label="close" onClick={() => closecard()}>
+                <CloseIcon />
+              </IconButton>
+            }
+            title={file.name}
+            subheader="date:September 14, 2016"
+          />
+          <CardMedia
+            component="img"
+            alt={file.name}
+            image={`/api/files/download/${file.route}${file.name}`}
+          />
+          <CardContent>
+            <Typography variant="body2" color="text.secondary">
+              Result:{JSON.stringify(file.attributes)}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+const ImageFull2 = ({ file, closecard }) => {
+  const classes = useStyles();
 
   return (
     <div className={classes.root_max}>
-      <Card elevation={3} className={classes.card}>
-        <div className={classes.gruopBtn}>
-          <IconButton size="small" onClick={closecard}>
-            <CloseIcon fontSize="small" className={classes.mediaButton} />
-          </IconButton>
-        </div>
-        <div className={classes.tittle}>{file.name}</div>
-        <img
-          src={`/api/files/download/${file.route}${file.name}`}
-          alt={file.name}
-          loading="lazy"
-          className={classes.media1}
-        />
-      </Card>
+      {file && (
+        <Card elevation={3} className={classes.card}>
+          <div className={classes.gruopBtn}>
+            <IconButton size="small" onClick={closecard}>
+              <CloseIcon fontSize="small" className={classes.mediaButton} />
+            </IconButton>
+          </div>
+          <div className={classes.tittle}>{file.name}</div>
+          <img
+            src={`/api/files/download/${file.route}${file.name}`}
+            alt={file.name}
+            loading="lazy"
+            className={classes.media1}
+          />
+        </Card>
+      )}
     </div>
   );
 };
@@ -129,12 +166,14 @@ const MissionDetailReportPage = () => {
   const [routes, setRoutes] = useState(null);
   const [files, setFiles] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
+  const missionItems = 'id,initTime,endTime,status';
 
   useEffectAsync(async () => {
     const response = await fetch(`/api/missions?id=${id}`);
     if (response.ok) {
       const myMissions = await response.json();
       setMissions(myMissions[0]);
+      console.log(myMissions);
     } else {
       throw Error(await response.text());
     }
@@ -163,32 +202,75 @@ const MissionDetailReportPage = () => {
           <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6">Mission - {id}</Typography>
+          <Typography variant="h6" component="div">
+            {`Mission Reports- ${id}`}
+          </Typography>
         </Toolbar>
       </AppBar>
       <div className={classes.content}>
-        <Container maxWidth="sm">
-          <Paper>
+        <Container maxWidth="xl">
+          <Paper style={{ padding: 30 }}>
             {missions && (
-              <>
-                <div>InitTime: {missions.initTime}</div>
-                <div>EndTime: {missions.endTime}</div>
-                <div>result: {JSON.stringify(missions.results)}</div>
-              </>
+              <div>
+                <Typography variant="h4" gutterBottom>
+                  Resultado de la Misión
+                </Typography>
+                <Grid container spacing={2}>
+                  {missionItems
+                    .split(',')
+                    .filter((key) => missions.hasOwnProperty(key))
+                    .map((key) => (
+                      <Grid item xs={6} key={key}>
+                        <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
+                          {key}
+                        </Typography>
+                        <Typography variant="body1">{missions[key]}</Typography>
+                      </Grid>
+                    ))}
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
+                      Result
+                    </Typography>
+                    <Typography variant="body1">{JSON.stringify(missions.results)}</Typography>
+                  </Grid>
+                </Grid>
+              </div>
             )}
-            <div>space</div>
             {routes &&
-              routes.map((route) => (
-                <>
-                  <div>InitTime: {route.initTime}</div>
-                  <div>EndTime: {route.endTime}</div>
-                  <div>device: {route.deviceId}</div>
-                  <div>result: {JSON.stringify(route.results)}</div>
-                  <ImageList sx={{ width: 500, height: 450 }} cols={3} rowHeight={164}>
-                    {files &&
-                      files.map((item) => {
-                        if (item.routeId == route.id && item.name.includes('.jpg')) {
-                          return (
+              routes.map((route, routeIndex) => (
+                <div key={routeIndex}>
+                  <Divider style={{ margin: '40px 0' }} />
+                  <Typography variant="h5" gutterBottom>
+                    {`Ruta-${routeIndex}`}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {missionItems
+                      .split(',')
+                      .filter((key) => route.hasOwnProperty(key))
+                      .map((key) => (
+                        <Grid item xs={6} key={key}>
+                          <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
+                            {key}
+                          </Typography>
+                          <Typography variant="body1">{route[key]}</Typography>
+                        </Grid>
+                      ))}
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
+                        Result
+                      </Typography>
+                      <Typography variant="body1">{JSON.stringify(route.result)}</Typography>
+                    </Grid>
+                  </Grid>
+                  {files && files.find((item) => item && item.routeId == route.id) && (
+                    <>
+                      <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
+                        Archivos de la Ruta
+                      </Typography>
+                      <ImageList sx={{ width: '100%', height: 500 }} cols={3} rowHeight={164}>
+                        {files
+                          .filter((item) => item.routeId == route.id && item.name.endsWith('.jpg'))
+                          .map((item) => (
                             <ImageListItem key={item.id}>
                               <img
                                 src={`/api/files/download/${item.route}${item.name}`}
@@ -197,18 +279,16 @@ const MissionDetailReportPage = () => {
                                 onClick={() => setSelectFile(item)}
                               />
                             </ImageListItem>
-                          );
-                        }
-                        return <></>;
-                      })}
-                  </ImageList>
-                </>
+                          ))}
+                      </ImageList>
+                    </>
+                  )}
+                </div>
               ))}
-            <div>space</div>
           </Paper>
         </Container>
       </div>
-      {selectFile && <ImageFull file={selectFile} closecard={() => setSelectFile(null)} />}
+      <ImageFull file={selectFile} closecard={() => setSelectFile(null)} />
     </div>
   );
 };

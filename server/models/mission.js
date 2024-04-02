@@ -69,7 +69,7 @@ export class missionModel {
   static getmissionValue(id) {
     if (id) {
       console.log('Get mission' + id);
-      return Mission[id];
+      return { id: Mission[id] };
     }
     console.log('Get all mission');
     return Mission;
@@ -145,9 +145,21 @@ export class missionModel {
       uav: listUAV,
       status: 'init',
       initTime: new Date(),
+      endTime: null,
       mission: mission,
+      results: [],
     };
     listUAV.forEach((uavId) => {
+      let routeId = Math.max(Object.keys(Routes).map((key) => parseInt(key))) + 1;
+      Routes[routeId] = {
+        id: routeId,
+        status: 'init',
+        missionId: missionId,
+        deviceId: uavId,
+        initTime: new Date(),
+        endTime: null,
+        result: [],
+      };
       missionSMModel.createActorMission(uavId, missionId);
     });
     ExtAppController.missionReqStart(missionId, mission);
@@ -158,6 +170,16 @@ export class missionModel {
   }
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
+    Routes[
+      Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id
+    ].status = 'finish';
+    let listRoutes = Object.values(Routes).filter((item) => item.missionId == missionId);
+    if (listRoutes.every((route) => route.status == 'finish')) {
+      Mission[missionId].status = 'finish';
+      Mission[missionId].endTime = new Date();
+      //resultCode = 1;
+    }
+
     await ExtAppController.missionReqResult(missionId, resultCode);
     return true;
   }

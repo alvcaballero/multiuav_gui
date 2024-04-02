@@ -4,7 +4,7 @@ import { extApp, extAppUrl, extAppUser, extAppPWD } from '../config/config.js';
 const accessToken = { token: null, date: '' };
 
 const AppFetch = async (url, attributes) => {
-  if (extApp) {
+  if (!extApp) {
     console.log('no thrid party application');
     const obj = { access_token: 'world' };
     const myBlob = new Blob([JSON.stringify(obj, null, 2)], {
