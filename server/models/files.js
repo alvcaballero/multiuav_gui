@@ -161,10 +161,10 @@ export class filesModel {
    / hacer que las funciones devuelvan errores  para poder manejarlos
    / when in gcs are a file with the same name of file to download
    */
-  static async updateFiles(uavId, missionId, initTime) {
+  static async updateFiles(uavId, missionId, routeId, initTime) {
     console.log('update files ' + uavId + '-' + missionId);
     let listImages = [];
-    let MissionResponse = {};
+    let metadataResponse = { value: {}, imageMetaData: [] };
 
     let mydevice = DevicesController.getAccess(uavId);
     console.log(mydevice);
@@ -216,10 +216,10 @@ export class filesModel {
           `${dir}/${myfile}`
         );
         console.log(response);
-        let fileId = Math.max(Object.keys(files).map((key) => parseInt(key))) + 1;
+        let fileId = Math.max(...Object.keys(files).map((key) => Number(key))) + 1;
         files[fileId] = {
           id: fileId,
-          routeId: 1,
+          routeId: routeId,
           missionId: missionId,
           deviceId: uavId,
           name: myfile,
@@ -245,15 +245,16 @@ export class filesModel {
 
       if (downloadOk) {
         console.log('download OK');
-        listImages = filestodownload.map((image) => image.ref);
         let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
         if (processThermalImg && listImagestoprocess.length > 0) {
           let listThermal = await this.ProcessThermalImages(listImagestoprocess);
+          console.log('listThermal');
+          console.log(listThermal);
           for (const themalFile of listThermal) {
-            let fileId = Math.max(Object.keys(files).map((key) => parseInt(key))) + 1;
+            let fileId = Math.max(...Object.keys(files).map((key) => Number(key))) + 1;
             files[fileId] = {
               id: fileId,
-              routeId: 1,
+              routeId: routeId,
               missionId: missionId,
               deviceId: uavId,
               name: themalFile.name,
@@ -262,13 +263,20 @@ export class filesModel {
               attributes: {},
             };
           }
-          MissionResponse = await this.MetadataTempImage(listThermal);
-          MissionResponse.imageMetadata.map((image) => {
+          console.log(files);
+          metadataResponse = await this.MetadataTempImage(listThermal);
+          console.log('metadata response');
+          console.log(metadataResponse);
+          console.log('add attributes to files');
+          metadataResponse.imageMetaData.map((image) => {
             let myfile = Object.values(files).find((item) => item.name == image.name);
-            files[myfile.id].attributes = image.attributes;
+            if (myfile) {
+              files[myfile.id].attributes = image.attributes;
+            }
+            console.log(myfile);
           });
-          console.log('listThermal');
-          console.log(listThermal);
+
+          listImages = filestodownload.map((image) => image.ref);
           for (const srcImage of listThermal) {
             listImages.push(srcImage.ref);
           }
@@ -276,7 +284,7 @@ export class filesModel {
       }
     }
     console.log(listImages);
-    return { files: listImages, data: [MissionResponse.MissionResponse] };
+    return { files: listImages, data: [metadataResponse.value] };
   }
   static async testMetadata(srcImage) {
     console.log(' test image');
@@ -301,7 +309,7 @@ export class filesModel {
     let MissionResponse = { measures: [{ name: 'TempMax', value: 0 }] };
     let latitude;
     let longitude;
-    imageMetadata = [];
+    let imageMetaData = [];
     for (const srcImage of listThermal) {
       let metadata = await sharp(srcImage.dist).metadata();
       let dataexitf = exif(metadata.exif);
@@ -321,7 +329,7 @@ export class filesModel {
         GPSPosition.GPSLongitude[2],
         GPSPosition.GPSLongitudeRef
       );
-      imageMetadata.push({
+      imageMetaData.push({
         name: srcImage.name,
         attributes: {
           latitude,
@@ -341,9 +349,7 @@ export class filesModel {
         }
       }
     }
-
-    console.log(MissionResponse);
-    return { MissionResponse, imageMetadata };
+    return { value: MissionResponse, imageMetaData: imageMetaData };
   }
   static getNormalSize({ width, height, orientation }) {
     return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
@@ -367,7 +373,7 @@ export class filesModel {
     for (const image of Images2process) {
       console.log('process img' + image.ref);
       listImages.push({
-        name: image.name,
+        name: image.name.slice(0, -4) + '_process.jpg',
         ref: image.ref.slice(0, -4) + '_process.jpg',
         dist: image.dist.slice(0, -4) + '_process.jpg',
       });

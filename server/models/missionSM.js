@@ -5,7 +5,7 @@ import { MissionController } from '../controllers/mission.js';
 const listSM = {}; // lista de acots maquinas de estados por id de UAV
 
 export class missionSMModel {
-  static createActorMission(uavId = 0, missionId = 0) {
+  static createActorMission(uavId = 0, missionId = 0, routeId = 1) {
     listSM[uavId] = createActor(machine).start();
     listSM[uavId].subscribe((state) => {
       console.log('state machine' + state.value);
@@ -16,7 +16,7 @@ export class missionSMModel {
         state: state.value,
       });
     });
-    listSM[uavId].send({ type: 'ChangeId', value: { uavId, missionId } });
+    listSM[uavId].send({ type: 'ChangeId', value: { uavId, missionId, routeId } });
     return true;
   }
 

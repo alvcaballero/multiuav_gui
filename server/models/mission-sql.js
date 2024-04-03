@@ -144,9 +144,11 @@ export class missionModel {
   }
 
   static async updateFiles(missionId, uavId) {
+    routeId = 1;
     const results = await FilesController.updateFiles(
       uavId,
       missionId,
+      routeId,
       Mission[missionId].initTime
     );
     await this.sleep(5000);

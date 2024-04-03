@@ -15,7 +15,33 @@ class missionController {
     res.json(Object.values(response));
   };
   sendTask = async (req, res) => {
-    let response = await this.missionModel.sendTask(req.body);
+    console.log('======== send task ========');
+    console.log(req.body);
+    let id = req.body.id || req.body.mission_id;
+    let name = req.body.name;
+    let objetivo = req.body.objetivo;
+    let locations = req.body.locations || req.body.loc;
+
+    let meteo = req.body.meteo;
+    for (let i = 0; i < locations.length; i++) {
+      locations[i].hasOwnProperty('geo_points')
+        ? (locations[i]['items'] = locations[i].geo_points)
+        : null;
+      locations[i].hasOwnProperty('geopoints')
+        ? (locations[i]['items'] = locations[i].geo_points)
+        : null;
+
+      for (let j = 0; j < locations[i].items.length; j++) {
+        locations[i].items[j].hasOwnProperty('lat')
+          ? (locations[i].items[j].latitude = locations[i].items[j].lat)
+          : null;
+        locations[i].items[j].hasOwnProperty('lon')
+          ? (locations[i].items[j].longitude = locations[i].items[j].lon)
+          : null;
+      }
+    }
+    let response = await this.missionModel.sendTask({ id, name, objetivo, locations, meteo });
+
     res.json(response);
   };
   setMission = async (req, res) => {

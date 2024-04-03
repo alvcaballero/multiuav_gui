@@ -115,6 +115,13 @@ Content-Type: application/json
 
 < ./json/task_Centro1.json
 
+### Sendtask
+POST http://localhost:4000/api/missions/sendTask
+Content-Type: application/json
+
+< ./json/gw-sendtasks.json
+
+
 ### setMission
 POST http://localhost:4000/api/missions/setMission
 Content-Type: application/json
@@ -163,6 +170,9 @@ GET http://localhost:4000/api/files/get
 ### list files GCS
 GET http://localhost:4000/api/files/get?missionId=72510181
 
+
+### list files GCS
+GET http://localhost:4000/api/files/get?missionId=57641431  
 
 ### list files GCS
 GET http://localhost:4000/api/files/listFiles

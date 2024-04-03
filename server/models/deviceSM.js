@@ -89,7 +89,7 @@ const CommandDownload = async (context) => {
 
 const DownloadGCS = async (context) => {
   console.log('Download files from UAV');
-  await MissionController.updateFiles(context.missionId, context.uavId);
+  await MissionController.updateFiles(context.missionId, context.uavId, context.routeId);
   console.log('Download files from UAV2');
 };
 
@@ -124,7 +124,7 @@ const DownloadGCSPromise = (context) =>
 export const machine = createMachine(
   {
     id: 'GCS-UAV',
-    context: { uavId: 1, missionId: 1 },
+    context: { uavId: 1, missionId: 1, routeId: 1 },
     initial: 'Initial state',
     states: {
       'Initial state': {
@@ -203,7 +203,7 @@ export const machine = createMachine(
       DownloadFilesGCS: {
         invoke: {
           src: fromPromise(({ input }) => DownloadGCSPromise(input)),
-          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
+          input: ({ context: { uavId, missionId, routeId } }) => ({ uavId, missionId, routeId }),
           onDone: [{ target: 'END' }],
         },
         after: {

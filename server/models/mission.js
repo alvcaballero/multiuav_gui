@@ -88,8 +88,6 @@ export class missionModel {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
   static async decodeTask({ id, name, objetivo, locations, meteo }) {
-    console.log('command-sendtask');
-
     let myTask = {};
     myTask.id = id;
     myTask.name = name ? name : 'automatic';
@@ -128,10 +126,11 @@ export class missionModel {
 
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
 
-    const isPlanning = false;
+    const isPlanning = true;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
-      this.initMission(id, { ...mission, id: id });
+      let mission1 = readYAML(`../config/mission/lineaTorre.yaml`);
+      this.initMission(id, { ...mission1, id: id });
       return { response: myTask, status: 'OK' };
     }
     planningController.PlanningRequest({ id, myTask });
@@ -150,7 +149,7 @@ export class missionModel {
       results: [],
     };
     listUAV.forEach((uavId) => {
-      let routeId = Math.max(Object.keys(Routes).map((key) => parseInt(key))) + 1;
+      let routeId = Math.max(...Object.keys(Routes).map((key) => Number(key))) + 1;
       Routes[routeId] = {
         id: routeId,
         status: 'init',
@@ -158,9 +157,9 @@ export class missionModel {
         deviceId: uavId,
         initTime: new Date(),
         endTime: null,
-        result: [],
+        result: {},
       };
-      missionSMModel.createActorMission(uavId, missionId);
+      missionSMModel.createActorMission(uavId, missionId, routeId);
     });
     ExtAppController.missionReqStart(missionId, mission);
 
@@ -170,9 +169,10 @@ export class missionModel {
   }
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
-    Routes[
-      Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id
-    ].status = 'finish';
+    let routeId = Object.values(Routes).find(
+      (item) => item.deviceId == uavId && item.missionId == missionId
+    ).id;
+    Routes[routeId].status = 'finish';
     let listRoutes = Object.values(Routes).filter((item) => item.missionId == missionId);
     if (listRoutes.every((route) => route.status == 'finish')) {
       Mission[missionId].status = 'finish';
@@ -185,13 +185,20 @@ export class missionModel {
   }
 
   static async updateFiles(missionId, uavId) {
+    let routeId = Object.values(Routes).find(
+      (item) => item.deviceId == uavId && item.missionId == missionId
+    ).id;
     const results = await FilesController.updateFiles(
       uavId,
       missionId,
+      routeId,
       Mission[missionId].initTime
     );
     await this.sleep(5000);
     let code = 0;
+
+    Routes[routeId].result = results.data;
+    Mission[missionId].results.push(results.data);
 
     ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
     return true;

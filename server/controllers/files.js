@@ -25,8 +25,8 @@ class filesController {
     let response = await this.filesModel.ProcessThermalImages(req.body.src);
     res.json(response);
   };
-  updateFiles = async (uavid, missionid, initTime) => {
-    return await this.filesModel.updateFiles(uavid, missionid, initTime);
+  updateFiles = async (uavId, missionId, routeId, initTime) => {
+    return await this.filesModel.updateFiles(uavId, missionId, routeId, initTime);
   };
 
   donwload = async (req, res) => {

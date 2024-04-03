@@ -91,7 +91,7 @@ export class planningModel {
       requestPlanning[id]['interval'] = setInterval(() => {
         console.log('response Planning' + id);
         this.fetchPlanning(id);
-      }, 5000);
+      }, 10000);
     } else {
       throw Error(await response.text());
     }

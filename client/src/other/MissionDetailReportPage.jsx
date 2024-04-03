@@ -267,7 +267,7 @@ const MissionDetailReportPage = () => {
                       <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
                         Archivos de la Ruta
                       </Typography>
-                      <ImageList sx={{ width: '100%', height: 500 }} cols={3} rowHeight={164}>
+                      <ImageList sx={{ width: '100%', height: 500 }} cols={3}>
                         {files
                           .filter((item) => item.routeId == route.id && item.name.endsWith('.jpg'))
                           .map((item) => (
