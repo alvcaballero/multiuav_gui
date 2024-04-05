@@ -4,7 +4,7 @@ dotenv.config();
 
 export const env = process.env.NODE_ENV || 'dev',
   port = process.env.PORT || 4000,
-  StreamServer = process.env.STEAM_SERVER === 'true' ? true : false, //if use mediamtx server in local host
+  StreamServer = process.env.STREAM_SERVER === 'true' ? true : false, //if use mediamtx server in local host
   LocalGlyphs = process.env.LOCAL_GLYPHS === 'true' ? true : false, // if local server have a glyphs server
   db = process.env.DB === 'true' ? true : false,
   dbUser = process.env.DB_USER,

@@ -1,0 +1,156 @@
+version: "3"
+name: mission_complete_v3
+route:
+  - uav: uav_14
+    id: 0
+    name: segments  base_aprox_demo
+    wp:
+      - pos:
+          - 37.19034749459546
+          - -6.699116590793636
+          - 5
+        action:
+          video_start: 0
+          gimbal: -64.8
+          yaw: 103.8
+      - pos:
+          - 37.19034363465697
+          - -6.699109322807971
+          - 66.226788
+        action:
+          gimbal: -64.8
+          yaw: 103.8
+      - pos:
+          - 37.18875103
+          - -6.69196168
+          - 46.226788
+        action:
+          gimbal: -64.8
+          yaw: 17.1
+      - pos:
+          - 37.18875103
+          - -6.69196168
+          - 66.226788
+        action:
+          gimbal: -64.8
+          yaw: 17.1
+      - pos:
+          - 37.18875103
+          - -6.69196168
+          - 46.226788
+        action:
+          gimbal: -64.8
+          yaw: 17.1
+      - pos:
+          - 37.18941628
+          - -6.69446181
+          - 42.370605
+        action:
+          gimbal: -64.8
+          yaw: 16.8
+          photo: true
+      - pos:
+          - 37.19009192
+          - -6.69707196
+          - 40.125122
+        action:
+          gimbal: -64.8
+          yaw: 16.7
+          photo: true
+      - pos:
+          - 37.19069671
+          - -6.69937633
+          - 44.454582
+        action:
+          gimbal: -64.8
+          yaw: 122.7
+          photo: true
+      - pos:
+          - 37.19069671
+          - -6.69937633
+          - 64.454582
+        action:
+          gimbal: -64.8
+          yaw: 122.7
+          photo: true
+      - pos:
+          - 37.19066625
+          - -6.69904683
+          - 64.454582
+        action:
+          gimbal: -25.2
+          yaw: -57.3
+          photo: true
+      - pos:
+          - 37.19066625
+          - -6.69904683
+          - 28.596718
+        action:
+          gimbal: -25.2
+          yaw: -57.3
+          photo: true
+      - pos:
+          - 37.1905486
+          - -6.69935075
+          - 28.596718
+        action:
+          gimbal: -25.2
+          yaw: 2.7
+          photo: true
+      - pos:
+          - 37.19069972
+          - -6.69963049
+          - 28.596718
+        action:
+          gimbal: -25.2
+          yaw: 62.7
+          photo: true
+      - pos:
+          - 37.19096849
+          - -6.69960632
+          - 28.596718
+        action:
+          gimbal: -25.2
+          yaw: 122.7
+          photo: true
+      - pos:
+          - 37.19108615
+          - -6.6993024
+          - 28.596718
+        action:
+          gimbal: -25.2
+          yaw: -177.3
+          photo: true
+      - pos:
+          - 37.19093502
+          - -6.69902266
+          - 28.596718
+        action:
+          gimbal: -25.2
+          yaw: -117.3
+          photo: true
+      - pos:
+          - 37.19093502
+          - -6.69902266
+          - 48.596718
+        action:
+          gimbal: -25.2
+          yaw: 133.1
+      - pos:
+          - 37.190351354534414
+          - -6.699111745469594
+          - 48.596718
+        action:
+          gimbal: -25.2
+          yaw: 133.1
+      - pos:
+          - 37.19034749459546
+          - -6.69909963216071
+          - 5
+        action:
+          video_stop: 0
+    attributes:
+      mode_landing: 2
+      mode_yaw: 2
+      mode_gimbal: 0
+      idle_vel: 7

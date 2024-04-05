@@ -1,4 +1,5 @@
 import { LocalGlyphs } from '../config/config.js';
+import * as ServerSetting from '../config/config.js';
 
 export class serverModel {
   static DateTime() {
@@ -8,6 +9,8 @@ export class serverModel {
     return { datetime: stringdate };
   }
   static Serverconfig() {
+    console.log('Get server config');
+    console.log(ServerSetting);
     return {
       id: 1,
       attributes: {

@@ -126,10 +126,10 @@ export class missionModel {
 
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
 
-    const isPlanning = true;
+    const isPlanning = falso;
     if (isPlanning) {
-      let mission = readYAML(`../config/mission/mission_1.yaml`);
-      let mission1 = readYAML(`../config/mission/lineaTorre.yaml`);
+      let mission = readYAML(`../config/mission/mission_11.yaml`);
+      let mission1 = readYAML(`../config/mission/mission_complete_v3.yaml`);
       this.initMission(id, { ...mission1, id: id });
       return { response: myTask, status: 'OK' };
     }

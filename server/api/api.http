@@ -278,6 +278,10 @@ GET http://localhost:4000/api/media1/:deviceid
 GET http://localhost:4000/api/server/datetime
 
 
+### server config
+GET http://localhost:4000/api/server
+
+
 ### Test external application request  Token
 GET http://localhost:4000/api/ExtApp/updateToken
 

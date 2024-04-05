@@ -1,0 +1,134 @@
+version: "3"
+name: mission_11
+route:
+  - uav: uav_14
+    id: 0
+    name: fuego  Base 1
+    wp:
+      - pos:
+          - 37.19032726160418
+          - -6.699095819115911
+          - 5
+        action:
+          video_start: 0
+          gimbal: -33.7
+          yaw: 117
+      - pos:
+          - 37.190329131246386
+          - -6.69909313690718
+          - 80.69
+        action:
+          gimbal: -33.7
+          yaw: 117
+      - pos:
+          - 37.19039028
+          - -6.69515528
+          - 80.69
+        action:
+          gimbal: -33.7
+          yaw: 117
+      - pos:
+          - 37.19039028
+          - -6.69515528
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: 117
+          photo: true
+      - pos:
+          - 37.190735
+          - -6.69470193
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: 153
+          photo: true
+      - pos:
+          - 37.19080131
+          - -6.6940811
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: -171
+          photo: true
+      - pos:
+          - 37.19056389
+          - -6.69352991
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: -135
+          photo: true
+      - pos:
+          - 37.19011342
+          - -6.69325891
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: -99
+          photo: true
+      - pos:
+          - 37.18962197
+          - -6.69337161
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: -63
+          photo: true
+      - pos:
+          - 37.18927726
+          - -6.69382495
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: -27
+          photo: true
+      - pos:
+          - 37.18921095
+          - -6.69444577
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: 9
+          photo: true
+      - pos:
+          - 37.18944837
+          - -6.69499695
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: 45
+          photo: true
+      - pos:
+          - 37.18989883
+          - -6.69526796
+          - 60.69
+        action:
+          gimbal: -33.7
+          yaw: 81
+          photo: true
+      - pos:
+          - 37.18989883
+          - -6.69526796
+          - 80.69
+        action:
+          gimbal: -33.7
+          yaw: -59
+      - pos:
+          - 37.190327528695946
+          - -6.699095483839727
+          - 80.69
+        action:
+          gimbal: -33.7
+          yaw: -59
+      - pos:
+          - 37.19032886415465
+          - -6.699094142734879
+          - 5
+        action:
+          video_stop: 0
+    attributes:
+      mode_landing: 2
+      mode_yaw: 2
+      mode_gimbal: 0
+      idle_vel: 7

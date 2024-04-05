@@ -47,16 +47,16 @@ const MissionElevation = () => {
   const [valueRange, setValueRange] = useState(0);
 
   useEffect(() => {
-    console.log(items);
+    //console.log(items);
     const routes = items.map((it) => it.data);
-    console.log(routes.flat());
+    //console.log(routes.flat());
     const values = routes.flat().map((it) => it['elevation']);
     const values1 = routes.flat().map((it) => (it['uavheight'] ? Number(it['uavheight']) : 0));
-    console.log(values);
-    console.log(values1);
+    //console.log(values);
+    //console.log(values1);
     const minValueAux = Math.min(...values);
     const maxValueAux = Math.max(...values1);
-    console.log('value' + minValueAux + 'max' + maxValueAux);
+    //console.log('value' + minValueAux + 'max' + maxValueAux);
     setMinValue(minValueAux);
     setMaxValue(maxValueAux);
     setValueRange(maxValueAux - minValueAux);
@@ -102,6 +102,7 @@ const MissionElevation = () => {
           throw new Error(response.status);
         }
       } catch (error) {
+        console.log('error to call server /api/map/elevation');
         console.log(error);
       }
       if (command.status) {
@@ -125,13 +126,15 @@ const MissionElevation = () => {
     console.log('mission Elevation');
     //elevation();
   }, []);
+
+  // el el caso de que haya cambiado la altura del uav  suamarla
   useEffect(() => {
-    // el el caso de que haya cambiado la altura del uav  suamarla
     let change = false;
     let curentlocation = GetWplist(Mission_route);
     console.log('update elevation');
-    //console.log(curentlocation);
-    //console.log(location);
+    console.log(curentlocation);
+    console.log(location);
+    //if (ElevProfileRef.current.length > 0) {
     if (curentlocation.length > location.length) {
       // se ha creado una ruta
       console.log('ruta mayour');
@@ -206,9 +209,12 @@ const MissionElevation = () => {
         }
       }
     }
-    //ejecutar elevacion solo si ha habido cambios de de latitud y longitud y creacion de puntos
-    change ? elevation() : null;
+    change ? elevation() : null; //run elevarion only if get latitud, longitud changes and create points
+    //} else {
+    //  console.log('no data in elevation profile');
+    //}
   }, [Mission_route]);
+
   useEffect(() => {
     if (SelectRT == -1) {
       setItems(ElevProfile);
