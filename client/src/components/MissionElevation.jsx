@@ -42,35 +42,26 @@ const MissionElevation = () => {
   ElevProfileRef.current = ElevProfile;
   const [SelectRT, setSelectRT] = useState(-1);
   const Mission_route = useSelector((state) => state.mission.route); //cambiar esto por  state.mission.route
-  const [minValue, setMinValue] = useState(0);
-  const [maxValue, setMaxValue] = useState(0);
-  const [valueRange, setValueRange] = useState(0);
+  const [chartValue, setChartValue] = useState({ min: 0, max: 0, range: 10 });
 
   useEffect(() => {
-    //console.log(items);
     const routes = items.map((it) => it.data);
-    //console.log(routes.flat());
     const values = routes.flat().map((it) => it['elevation']);
     const values1 = routes.flat().map((it) => (it['uavheight'] ? Number(it['uavheight']) : 0));
-    //console.log(values);
-    //console.log(values1);
     const minValueAux = Math.min(...values);
     const maxValueAux = Math.max(...values1);
-    //console.log('value' + minValueAux + 'max' + maxValueAux);
-    setMinValue(minValueAux);
-    setMaxValue(maxValueAux);
-    setValueRange(maxValueAux - minValueAux);
+    setChartValue({ min: minValueAux, max: maxValueAux, range: maxValueAux - minValueAux });
   }, [items]);
 
   const GetWplist = (auxroute) => {
-    let listwp = [];
+    const listwp = [];
     if (auxroute.length > 0) {
       auxroute.forEach((route) => {
-        let listwp_aux = [];
+        const listwpAux = [];
         route.wp.forEach((wp) => {
-          listwp_aux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
+          listwpAux.push([wp.pos[0], wp.pos[1], wp.pos[2]]);
         });
-        listwp.push(listwp_aux);
+        listwp.push(listwpAux);
       });
     }
     return listwp;
@@ -117,7 +108,7 @@ const MissionElevation = () => {
         setSelectRT(-1);
         setElevProfile(elevationRoute);
       } else {
-        console.log('no get elevation of point');
+        console.log('no get elevation of point error to connect to API of  elevation');
       }
     }
   }
@@ -132,12 +123,11 @@ const MissionElevation = () => {
     let change = false;
     let curentlocation = GetWplist(Mission_route);
     console.log('update elevation');
-    console.log(curentlocation);
-    console.log(location);
-    //if (ElevProfileRef.current.length > 0) {
+    //console.log(curentlocation);
+    //console.log(location);
     if (curentlocation.length > location.length) {
       // se ha creado una ruta
-      console.log('ruta mayour');
+      console.log('ruta mayor');
       if (curentlocation[+curentlocation.length + -1].length > 0) {
         change = true;
       } else {
@@ -210,9 +200,6 @@ const MissionElevation = () => {
       }
     }
     change ? elevation() : null; //run elevarion only if get latitud, longitud changes and create points
-    //} else {
-    //  console.log('no data in elevation profile');
-    //}
   }, [Mission_route]);
 
   useEffect(() => {
@@ -316,7 +303,10 @@ const MissionElevation = () => {
               <YAxis
                 type="number"
                 tickFormatter={(value) => value.toFixed(2)}
-                domain={[minValue - valueRange / 5, maxValue + valueRange / 5]}
+                domain={[
+                  chartValue.min - chartValue.range / 5,
+                  chartValue.max + chartValue.range / 5,
+                ]}
               />
               <CartesianGrid strokeDasharray="3 3" />
               <Tooltip content={<CustomTooltip />} />

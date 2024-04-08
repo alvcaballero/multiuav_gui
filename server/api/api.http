@@ -249,12 +249,13 @@ GET http://localhost:4000/api/test.png
 
 
 ### Elevation 
-
 GET http://localhost:4000/api/map/elevation?locations=[[44.074221911574284,11.221895356523419]]
 
 
 ### Elevation 
+GET https://api.opentopodata.org/v1/eudem25m?locations=37.410266,-6.002490|37.410572,-6.002949|37.411010,-6.003243
 
+### Elevation 
 POST http://localhost:4000/api/map/elevation
 Content-Type: application/json
 

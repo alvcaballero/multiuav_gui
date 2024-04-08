@@ -1,8 +1,9 @@
 import * as turf from '@turf/turf';
+import { NoElevation } from '../config/config.js';
+import { now } from 'sequelize/lib/utils';
 
 export class mapModel {
   static async ApiElevation(LocationList) {
-    //console.log(LocationList);
     let myresponse = {};
     let divLocationList = [];
     let maxAPIlocation = 99;
@@ -15,23 +16,44 @@ export class mapModel {
       }
       divLocationList.push(LocationList.slice(i, i + maxAPIlocation));
     }
-    //divLocationList.map((element) => console.log(element.length));
 
     let stringLocationList = divLocationList.map((list) =>
       list.map((waypoint) => waypoint.join(',')).join('|')
     );
-    //divLocationList.map((element) => console.log(element));
-    //`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList}`
+    if (NoElevation) {
+      if (!myresponse.hasOwnProperty('results')) {
+        myresponse = { status: 'warning', results: [] };
+      }
+      console.log('Disable Elevation API');
+      for (let i = 0; i < stringLocationList.length; i = i + 1) {
+        divLocationList[i].map((element) => {
+          myresponse.results.push({
+            location: { lat: element[0], lng: element[1] },
+            elevation: 0,
+          });
+        });
+        return myresponse;
+      }
+    }
     console.log('response elevation----');
     for (let i = 0; i < stringLocationList.length; i = i + 1) {
       await fetch(`https://api.opentopodata.org/v1/eudem25m?locations=${stringLocationList[i]}`)
         .then((response) => response.json())
         .catch(function (error) {
           console.log('Problem in  Fetch:' + error.message);
+          if (!myresponse.hasOwnProperty('results')) {
+            myresponse = { status: 'warning', results: [] };
+          }
+          divLocationList[i].map((element) => {
+            myresponse.results.push({
+              location: { lat: element[0], lng: element[1] },
+              elevation: 0,
+            });
+          });
           return myresponse;
         })
         .then((body) => {
-          //console.log(body);
+          console.log(body);
           if (myresponse.hasOwnProperty('results')) {
             body.results.map((element) => {
               myresponse.results.push(element);
