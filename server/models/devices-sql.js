@@ -196,7 +196,7 @@ export class DevicesModel {
   static updatedeviceIP(payload) {
     devices[payload.id]['ip'] = payload.ip;
   }
-  static updatedevicetime(id) {
+  static updateDeviceTime(id) {
     let currentTime = new Date();
     if (devices[id]) {
       devices[id]['lastUpdate'] = currentTime;

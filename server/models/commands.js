@@ -1,12 +1,11 @@
-import { DevicesModel } from '../models/devices.js';
-import { eventsModel } from '../models/events.js';
+import { DevicesController } from '../controllers/devices.js';
+import { eventsController } from '../controllers/events.js';
 import { getDatetime, writeYAML } from '../common/utils.js';
 import { rosController } from '../controllers/ros.js';
 
 export class commandsModel {
   static getSaveCommands(deviceId) {
     let deviceid = deviceId;
-
     console.log('devices acction ' + deviceid);
     return [];
   }
@@ -38,7 +37,7 @@ export class commandsModel {
     if (deviceId >= 0) {
       response = {
         state: 'error',
-        msg: 'Command to:' + DevicesModel.get_device_ns(deviceId) + ' no exist',
+        msg: 'Command to:' + DevicesController.getDevice(deviceId).name + ' no exist',
       };
     }
 
@@ -83,7 +82,7 @@ export class commandsModel {
         response = await this.standarCommand(deviceId, undefined, attributes);
       }
 
-      eventsModel.addEvent({
+      eventsController.addEvent({
         type: response.state,
         eventTime: getDatetime(),
         deviceId: deviceId,
@@ -131,7 +130,7 @@ export class commandsModel {
       return response;
     }
     for (const route of routes) {
-      let myDevice = DevicesModel.getByName(route.uav);
+      let myDevice = DevicesController.getByName(route.uav);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
         console.log('load mission to ' + myDevice.id);
         let attributes = await rosController.decodeMissionMsg({ uav_id: myDevice.id, route });
@@ -145,7 +144,7 @@ export class commandsModel {
         response = { state: 'warning', msg: 'device not found' };
       }
       if (deviceId < 0) {
-        eventsModel.addEvent({
+        eventsController.addEvent({
           type: response.state,
           eventTime: getDatetime(),
           deviceId: myDevice.id,
@@ -159,12 +158,12 @@ export class commandsModel {
 
   static async commandMissionDevice(deviceId, callback = (x) => x) {
     let r = true;
-    let alldevices = await DevicesModel.getAll();
+    let alldevices = await DevicesController.getAllDevices();
     let response = { state: 'error', msg: 'Mission canceled' };
     for (const device_id of Object.keys(alldevices)) {
       let finding = false;
       if (Array.isArray(deviceId)) {
-        finding = deviceId.some((device) => device == DevicesModel.get_device_ns(device_id));
+        finding = deviceId.some((mydeviceId) => mydeviceId == device_id);
       }
       if (deviceId < 0 || deviceId == device_id || finding) {
         console.log('command mission to ' + device_id);
@@ -173,7 +172,7 @@ export class commandsModel {
 
         callback(response);
         if (deviceId < 0) {
-          eventsModel.addEvent({
+          eventsController.addEvent({
             type: response.state,
             eventTime: getDatetime(),
             deviceId: device_id,

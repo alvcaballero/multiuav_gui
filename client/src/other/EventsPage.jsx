@@ -66,6 +66,7 @@ const EventsPage = () => {
     //console.log('my devices');
     //console.log({ ...devices, '-1': { name: 'GCS' } });
   }, [devices]);
+
   const deviceName = useSelector((state) => {
     if (item) {
       const device = state.devices.items[item.deviceId];
@@ -78,16 +79,16 @@ const EventsPage = () => {
 
   return (
     <div className={classes.root}>
-      <AppBar position='sticky' color='inherit'>
+      <AppBar position="sticky" color="inherit">
         <Toolbar>
-          <IconButton color='inherit' edge='start' sx={{ mr: 2 }} onClick={() => navigate(-1)}>
+          <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant='h6'>Events</Typography>
+          <Typography variant="h6">Events</Typography>
         </Toolbar>
       </AppBar>
       <div className={classes.content}>
-        <Container maxWidth='sm'>
+        <Container maxWidth="sm">
           <Paper>
             <Table>
               <TableHead>

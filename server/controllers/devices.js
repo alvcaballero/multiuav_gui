@@ -1,5 +1,3 @@
-//import { DevicesModel } from '../models/devices.js';
-//import { DevicesModel } from '../models/devices-sql.js';
 import { validateDevice, validatePartialDevice } from '../schemas/devices.js';
 
 var DevicesController;
@@ -12,8 +10,8 @@ class devicesController {
     res.json(Object.values(devices));
   };
   getAllDevices = async () => {
+    //console.log('get all devices controller');
     const devices = await this.DevicesModel.getAll();
-    console.log(devices);
     return devices;
   };
   getDevice = async (id) => {
@@ -23,6 +21,9 @@ class devicesController {
   getByName = (name) => {
     const device = this.DevicesModel.getByName(name);
     return device;
+  };
+  updateDeviceTime = (id) => {
+    this.DevicesModel.updateDeviceTime(id);
   };
 
   getAccess = (id) => {

@@ -7,9 +7,18 @@ export class eventsController {
     res.json(positions);
   }
 
-  static async getByDeviceId(req, res) {
-    position = {}
-    res.json(position);
+  static async getAllEvent() {
+    return await eventsModel.getAll();
   }
 
+  static async addEvent(value) {
+    const { type, eventTime, deviceId, attributes } = value;
+    const position = await eventsModel.addEvent({ type, eventTime, deviceId, attributes });
+    return position;
+  }
+
+  static async getByDeviceId(req, res) {
+    position = {};
+    res.json(position);
+  }
 }

@@ -6,21 +6,19 @@ import { positionsController } from '../controllers/positions.js';
 import { categoryModel } from './category.js';
 
 var ros = '';
-export { ros };
 const rosState = { state: 'disconnect', msg: 'init msg' };
-console.log('out of  device model');
 const service_list = [];
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 const uav_list = [];
 
-const autoconectRos = setInterval(() => {
+var autoconectRos = setInterval(() => {
+  console.log('autoconectRos');
   if (rosState.state != 'connect') {
-    console.log('try to connect ros');
     rosModel.rosConnect();
   }
 }, 30000);
 
-console.log('model ROS');
+console.log('Load model ROS');
 export class rosModel {
   static setrosState({ state, msg }) {
     rosState['state'] = state;
@@ -32,7 +30,6 @@ export class rosModel {
 
   static async connectAllUAV() {
     const devices = await DevicesController.getAllDevices();
-    console.log(devices_msg);
     for (let device of Object.values(devices)) {
       await rosModel.subscribeDevice({
         id: device.id,
@@ -55,14 +52,25 @@ export class rosModel {
         rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
         rosModel.connectAllUAV();
         rosModel.GCSServicesMission();
+        clearInterval(autoconectRos);
       });
       ros.on('error', function (error) {
         console.log('ROS Error connecting to websocket server: ', error);
         rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
+        autoconectRos = setInterval(() => {
+          if (rosState.state != 'connect') {
+            rosModel.rosConnect();
+          }
+        }, 30000);
       });
       ros.on('close', function () {
         console.log('ROS Connection to websocket server closed.');
         rosModel.setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
+        autoconectRos = setInterval(() => {
+          if (rosState.state != 'connect') {
+            rosModel.rosConnect();
+          }
+        }, 30000);
       });
     } else {
       rosModel.unsubscribe(-1);
@@ -97,7 +105,6 @@ export class rosModel {
     }
     if (type == 'vo_position' && msgType == 'dji_osdk_ros/VOPosition') {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
-        //console.log(msg)
         //dispatch(dataActions.updatePosition({id:msg.header.seq,deviceId:uav_id,latitude:msg.x,longitude:msg.y,altitude:msg.z,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"}));
       });
     }
@@ -182,7 +189,7 @@ export class rosModel {
           deviceId: uav_id,
           protocol: 'dji',
           landed_state: msg.data,
-        }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+        });
       });
     }
     if (type == 'threat' && msgType == 'std_msgs/Bool') {
@@ -199,7 +206,7 @@ export class rosModel {
           wp_reached: '0',
           uav_state: 'ok',
           landed_state: msg.data,
-        }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+        });
       });
     }
     if (type == 'state_machine' && msgType == 'muav_state_machine/UAVState') {
@@ -211,16 +218,16 @@ export class rosModel {
           wp_reached: msg.wp_reached,
           uav_state: msg.uav_state,
           landed_state: msg.landed_state,
-        }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+        });
       });
     }
   }
 
   static async decodeMissionMsg({ uav_id, route }) {
     let device = await DevicesController.getDevice(uav_id);
+    //console.log(device);
     let uavname = device.name;
     let uavcategory = device.category;
-    console.log(device);
     let mode_yaw = 0;
     let mode_gimbal = 0;
     let mode_trace = 0;
@@ -229,7 +236,6 @@ export class rosModel {
     let mode_landing = 0;
     let response = null;
     let wp_command = [];
-    //let wp_command2 = [];
     let yaw_pos = [];
     let speed_pos = [];
     let gimbal_pos = [];
@@ -254,13 +260,12 @@ export class rosModel {
         ? route.attributes['mode_landing']
         : mode_landing;
 
-      let categoriaModel = categoryModel.getActions({ type: uavcategory });
+      let categoryModel = categoryModel.getActions({ type: uavcategory });
 
       Object.values(route['wp']).forEach((item) => {
         let yaw, gimbal, speed;
         let action_array = Array(10).fill(0);
         let param_array = Array(10).fill(0);
-        //let pos2 = {latitude: item.pos[0],longitude: item.pos[1], altitude: item.pos[2]};
         let pos = new ROSLIB.Message({
           latitude: item.pos[0],
           longitude: item.pos[1],
@@ -271,14 +276,13 @@ export class rosModel {
         gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
         if (item.hasOwnProperty('action')) {
           Object.keys(item.action).forEach((action_val, index, arr) => {
-            let found = Object.values(categoriaModel).find((element) => element.name == action_val);
+            let found = Object.values(categoryModel).find((element) => element.name == action_val);
             if (found) {
               action_array[index] = Number(found.id);
               param_array[index] = found.param ? Number(item.action[action_val]) : 0;
             }
           });
         }
-        //wp_command2.push(pos2);
         wp_command.push(pos);
         gimbal_pos.push(gimbal);
         yaw_pos.push(yaw);
@@ -313,21 +317,21 @@ export class rosModel {
         commandList: action_matrix_msg,
         commandParameter: param_matrix_msg,
       };
-      //writeYAML('../config/uno.yaml', response);
     }
 
     return response;
   }
 
+  // Subscribing
+  // create subcribin mesage
   static async subscribeDevice(uavAdded) {
     uav_list.push(uavAdded);
-    console.log(uavAdded);
+    //console.log(uavAdded);
     let uav_type = uavAdded.type;
     let cur_uav_idx = uavAdded.id;
     let uav_ns = uavAdded.name;
     let uav_camera = uavAdded.camera;
-    // Subscribing
-    // create subcribin mesage
+
     Object.keys(devices_msg[uav_type]['topics']).forEach((element) => {
       uav_list[cur_uav_idx]['listener_' + element] = new ROSLIB.Topic({
         ros: ros,
@@ -415,6 +419,9 @@ export class rosModel {
   }
 
   static async callService({ uav_id, type, request }) {
+    if (rosState.state != 'connect') {
+      return { state: 'error', msg: 'ROS no conectado' };
+    }
     let device = await DevicesController.getDevice(uav_id);
     let uavName = device.name;
     let uavCategory = device.category;

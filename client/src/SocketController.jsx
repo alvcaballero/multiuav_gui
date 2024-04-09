@@ -12,7 +12,6 @@ const snackBarDurationLongMs = 1000;
 
 const SocketController = () => {
   const dispatch = useDispatch();
-  //const { enqueueSnackbar } = useSnackbar();
 
   const devices = useSelector((state) => state.devices.items);
 
@@ -102,17 +101,17 @@ const SocketController = () => {
       }
     };
   };
+
   useEffectAsync(async () => {
     if (socketState) {
       setsocketState(false);
-
       const response = await fetch('/api/devices', { method: 'GET' });
       if (response.ok) {
         dispatch(devicesActions.refresh(await response.json()));
       } else {
         throw Error(await response.text());
       }
-      console.log('primera conexion --s');
+      console.log('Socket first connection');
       connectSocket();
       return () => {
         const socket = socketRef.current;
@@ -120,9 +119,8 @@ const SocketController = () => {
           socket.close(logoutCode);
         }
       };
-    } else {
-      return null;
     }
+    return null;
   }, []);
 
   useEffect(() => {

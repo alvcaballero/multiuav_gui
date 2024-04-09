@@ -21,14 +21,14 @@ class missionController {
     let name = req.body.name;
     let objetivo = req.body.objetivo;
     let locations = req.body.locations || req.body.loc;
-
+    console.log(locations);
     let meteo = req.body.meteo;
     for (let i = 0; i < locations.length; i++) {
       locations[i].hasOwnProperty('geo_points')
         ? (locations[i]['items'] = locations[i].geo_points)
         : null;
       locations[i].hasOwnProperty('geopoints')
-        ? (locations[i]['items'] = locations[i].geo_points)
+        ? (locations[i]['items'] = locations[i].geopoints)
         : null;
 
       for (let j = 0; j < locations[i].items.length; j++) {

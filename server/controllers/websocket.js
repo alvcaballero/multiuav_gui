@@ -1,17 +1,16 @@
-import { DevicesModel } from '../models/devices.js';
-import { rosModel } from '../models/ros.js';
-import { positionsModel } from '../models/positions.js';
-import { eventsModel } from '../models/events.js';
-import { planningModel } from '../models/planning.js';
-
+import { DevicesController } from './devices.js';
+import { rosController } from './ros.js';
+import { positionsController } from './positions.js';
+//import { eventsController } from './events.js';
+import { planningController } from './planning.js';
 export class websocketController {
   static async init() {
-    const devices = await DevicesModel.getAll();
-    const positions = await positionsModel.getAll();
-    const server = await rosModel.serverStatus();
-    const planning = planningModel.getDefault();
+    const devices = await DevicesController.getAllDevices();
+    const positions = await positionsController.getLastPositions();
+    const server = await rosController.getServerStatus();
+    const planning = planningController.getDefaultPlanning();
     let response = JSON.stringify({
-      positions: Object.values(positions),
+      positions: positions,
       server: { rosState: server.state },
       devices: Object.values(devices),
       markers: { bases: planning.markersbase, elements: planning.elements },
@@ -29,29 +28,29 @@ export class websocketController {
 
   static async update() {
     let currentsocket = {};
-    const positions = await positionsModel.getAll();
-    const camera = await positionsModel.getCamera();
-    const currentevent = await eventsModel.getall();
+    const positions = await positionsController.getLastPositions();
+    const camera = await positionsController.getCamera();
+    //const currentevent = await eventsController.getAllEvent();
     if (Object.values(positions).length) {
-      currentsocket['positions'] = Object.values(positions);
+      currentsocket['positions'] = positions;
     }
     if (Object.values(camera).length) {
       currentsocket['camera'] = Object.values(camera);
     }
 
-    if (Object.values(currentevent).length) {
-      //console.log(currentevent);
-      currentsocket['events'] = Object.values(currentevent);
-      eventsModel.clearEvents({ eventId: Object.keys(currentevent) });
-    }
+    //if (Object.values(getLastPositions).length) {
+    //console.log(currentevent);
+    //currentsocket['events'] = Object.values(currentevent);
+    //eventsController.clearEvents({ eventId: Object.keys(currentevent) });
+    //}
     //console.log('update');
     //console.log(currentsocket);
     return JSON.stringify(currentsocket);
   }
 
   static async updateserver() {
-    const devices = await DevicesModel.getAll();
-    const server = await rosModel.serverStatus();
+    const devices = await DevicesController.getAllDevices();
+    const server = await rosController.getServerStatus();
 
     //console.log('devices');
     //console.log(devices);

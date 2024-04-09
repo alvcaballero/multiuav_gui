@@ -7,11 +7,17 @@ export class positionsController {
     res.json(Object.values(positions));
   }
 
-  static async getByDeviceId(req, res) {
-    position = [];
-    res.json(position);
+  static async getLastPositions() {
+    const positions = await positionsModel.getAll();
+    return Object.values(positions);
+  }
+  static getByDeviceId(deviceId) {
+    return positionsModel.getByDeviceId(deviceId);
   }
   static updatePosition(payload) {
     positionsModel.updatePosition(payload);
+  }
+  static async getCamera() {
+    return await positionsModel.getCamera();
   }
 }

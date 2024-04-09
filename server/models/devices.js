@@ -46,15 +46,13 @@ export class DevicesModel {
   }
 
   static async create(device) {
-    console.log(device);
     let serverState = rosController.getServerStatus();
 
     let uav_ns = device.name;
     let uav_type = device.category;
     let cur_uav_idx = String(Object.values(devices).length);
 
-    console.log('create UAV');
-    console.log('name' + uav_ns + '  type' + uav_type);
+    console.log('create UAV ' + uav_ns + '  type' + uav_type);
 
     let repeat_device = false;
     if (Object.values(devices).length > 0) {
@@ -107,11 +105,13 @@ export class DevicesModel {
         bag: false,
       });
 
-      console.log(devices);
-      console.log('success', device.name + ' added. Type: ' + device.category);
+      console.log('success create', device.name + ' Type: ' + device.category);
       return { state: 'success', msg: 'conectado Correctamente' };
     } else {
-      console.log('\nRos no está conectado.\n\n Por favor conéctelo primero.');
+      console.log(
+        'success create',
+        device.name + ' Type: ' + device.category + ' -Ros dont connect '
+      );
       return { state: 'error', msg: 'Ros no está conectado' };
     }
   }
@@ -188,7 +188,7 @@ export class DevicesModel {
   static updatedeviceIP(payload) {
     devices[payload.id]['ip'] = payload.ip;
   }
-  static updatedevicetime(id) {
+  static updateDeviceTime(id) {
     let currentTime = new Date();
     if (devices[id]) {
       devices[id]['lastUpdate'] = currentTime;
@@ -205,14 +205,14 @@ export class DevicesModel {
 
   static removedevice({ id }) {
     delete devices[id];
-    console.log(devices);
+    //console.log(devices);
   }
 
   static async addAllUAV() {
     for (let device of devices_init.init) {
-      let uno = await this.create(device);
+      await this.create(device);
     }
-    console.log('finish to add all devices  ------------');
+    console.log('------  finish to add all devices  ------------');
   }
 }
 DevicesModel.addAllUAV();

@@ -21,6 +21,9 @@ export class planningController {
     let response = await planningModel.getDefault();
     res.json(response);
   }
+  static getDefaultPlanning() {
+    return planningModel.getDefault();
+  }
 
   static async setDefault(req, res) {
     let response = await planningModel.setDefault(req.body);

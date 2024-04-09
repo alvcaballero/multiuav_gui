@@ -1,5 +1,5 @@
 import { map } from 'zod';
-import { DevicesModel } from '../models/devices.js';
+import { DevicesController } from '../controllers/devices.js';
 const positions = {};
 const history = {};
 const camera = {};
@@ -20,7 +20,7 @@ export class positionsModel {
     return positions;
   }
 
-  static async getDevice(deviceId) {
+  static async getByDeviceId(deviceId) {
     return positions[deviceId];
   }
   static async getCamera() {
@@ -34,8 +34,7 @@ export class positionsModel {
     console.log(positions);
   }
   static async updatePosition(payload) {
-    //positions[payload.deviceId] = payload;
-    DevicesModel.updatedevicetime(payload.deviceId);
+    DevicesController.updateDeviceTime(payload.deviceId);
 
     if (positions[payload.deviceId] === undefined) {
       positions[payload.deviceId] = {

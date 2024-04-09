@@ -4,6 +4,7 @@ import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
 import { FilesController } from '../controllers/files.js';
+import { eventsController } from '../controllers/events.js';
 import { readYAML } from '../common/utils.js';
 
 /* mission is object that have the current mission running and have the next object
@@ -126,7 +127,7 @@ export class missionModel {
 
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
 
-    const isPlanning = falso;
+    const isPlanning = false;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_11.yaml`);
       let mission1 = readYAML(`../config/mission/mission_complete_v3.yaml`);
@@ -134,6 +135,13 @@ export class missionModel {
       return { response: myTask, status: 'OK' };
     }
     planningController.PlanningRequest({ id, myTask });
+
+    eventsController.addEvent({
+      type: 'info',
+      eventTime: new Date(),
+      deviceId: -1,
+      attributes: { message: 'Ext APP send task' },
+    });
     return { response: myTask, status: 'OK' };
   }
 

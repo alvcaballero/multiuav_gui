@@ -1,4 +1,4 @@
-id: 37279880
+id: 23628311
 objetivo:
   id: 0
   name: Inspeccion de linea
@@ -75,8 +75,8 @@ settings:
       name: Segurity height
       default: 10
 markersbase:
-  - latitude: 37.190410057074615
-    longitude: -6.6982503068820165
+  - latitude: 37.1938071382897
+    longitude: -6.702911873416099
     image: base
   - latitude: 37.04392450222122
     longitude: -6.568677029462045
