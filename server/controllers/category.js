@@ -23,4 +23,8 @@ export class categoryController {
     let response = await categoryModel.getActions(req.params);
     res.json(response);
   }
+  static async getActionsParam(params) {
+    console.log('device Category');
+    return await categoryModel.getActions(params);
+  }
 }

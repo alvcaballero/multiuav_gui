@@ -27,7 +27,7 @@ const Navbar = ({ SetAddUAVOpen }) => {
       submenu: [
         { title: 'Connect Devices', action: () => openAddUav() },
         { title: 'Load Mission all', action: () => rosContext.loadMission() },
-        { title: 'Command Mission All', action: () => rosContext.setconfirmMission(true) },
+        { title: 'Command Mission All', action: () => rosContext.commandMission() },
       ],
     },
     {

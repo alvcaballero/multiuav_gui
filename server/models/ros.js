@@ -3,12 +3,12 @@ import { readYAML, getDatetime } from '../common/utils.js';
 import { DevicesController } from '../controllers/devices.js';
 import { missionSMModel } from './missionSM.js';
 import { positionsController } from '../controllers/positions.js';
-import { categoryModel } from './category.js';
+import { categoryController } from '../controllers/category.js';
 
 var ros = '';
 const rosState = { state: 'disconnect', msg: 'init msg' };
-const service_list = [];
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
+const service_list = [];
 const uav_list = [];
 
 var autoconectRos = setInterval(() => {
@@ -260,7 +260,7 @@ export class rosModel {
         ? route.attributes['mode_landing']
         : mode_landing;
 
-      let categoryModel = categoryModel.getActions({ type: uavcategory });
+      let categoryModel = categoryController.getActionsParam({ type: uavcategory });
 
       Object.values(route['wp']).forEach((item) => {
         let yaw, gimbal, speed;

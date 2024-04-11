@@ -97,7 +97,9 @@ export const RosControl = ({ children, notification }) => {
       } else {
         throw Error(await response.text());
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const serverloadmission = async () => {
@@ -121,23 +123,39 @@ export const RosControl = ({ children, notification }) => {
       } else {
         throw Error(await response.text());
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
   const servercommandmission = async () => {
     // event.preventDefault();
+    let commandDevice = null;
     let listUAV = missions['route'].map((element) => element.uav);
-    console.log(listUAV);
+
+    let listDeviceId = listUAV.map(
+      (name) => Object.values(devices).find((mydevice) => mydevice.name == name).id
+    );
     console.log('command mission ');
+    // console.log(listUAV);
+    // console.log(listDeviceId);
+    // find uav in mission loaded if not found send mission to all uav
+    if (listDeviceId && listDeviceId.length > 0) {
+      commandDevice = listDeviceId;
+    }
+
     try {
       const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({ deviceId: -1, type: 'commandMission' }),
+        body: JSON.stringify({
+          deviceId: commandDevice ? commandDevice : -1,
+          type: 'commandMission',
+        }),
         headers: {
           'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
-        let myresponse = await response.json();
+        const myresponse = await response.json();
         if (myresponse.state === 'connect') {
           notification('success', myresponse.msg);
         }
@@ -148,7 +166,9 @@ export const RosControl = ({ children, notification }) => {
       } else {
         throw Error(await response.text());
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const openMision = (name_mission, text_mission) => {
@@ -220,22 +240,6 @@ export const RosControl = ({ children, notification }) => {
       notification('danger', 'Formato de mission no compatible');
     }
   };
-
-  function updateInfoCell(uav_ns, info) {
-    var showData = document.getElementById(uav_ns).cells;
-    showData[5].innerHTML = info;
-  }
-
-  function changeReady(uav_ns) {
-    var button = document.getElementById('Ready' + uav_ns);
-    if (button.innerHTML === 'Ready') {
-      button.innerHTML = 'Not Ready';
-    } else {
-      button.innerHTML = 'Ready';
-      var info = 'Mission requested';
-      updateInfoCell(uav_ns, info);
-    }
-  }
 
   const rosConnect = () => {
     serverConecRos();
