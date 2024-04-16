@@ -1,8 +1,9 @@
 //https://github.com/lukas8219/nodejs-design-patterns/blob/4a1d3cd4333a290e9461880ff2b060add40a1b45/13-messaging-and-integration-patterns/utils/websocket-manager.mjs#L4
+//https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
+
 import WebSocket, { WebSocketServer } from 'ws';
 import { websocketController } from './controllers/websocket.js';
 
-//https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
 function heartbeat() {
   this.isAlive = true;
 }

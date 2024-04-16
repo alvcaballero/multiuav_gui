@@ -1,4 +1,4 @@
-import { DevicesModel } from './devices.js';
+import { DevicesController } from '../controllers/devices.js';
 import { extApp, extAppUrl, extAppUser, extAppPWD } from '../config/config.js';
 
 const accessToken = { token: null, date: '' };
@@ -53,7 +53,7 @@ export class ExtApp {
         longitude: wp.pos[0],
         altitude: wp.pos[2],
       }));
-      let myDevice = DevicesModel.getByName(route.uav);
+      let myDevice = DevicesController.getByName(route.uav);
       return { deviceId: myDevice.id, wp: myWP };
     });
 

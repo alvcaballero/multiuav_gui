@@ -7,6 +7,8 @@ const devices_init = readYAML('../config/devices/devices_init.yaml');
 const devices = {};
 const devicesAccess = {};
 
+console.log('load model devices SQL');
+
 const CheckDeviceOnline = setInterval(() => {
   let currentTime = new Date();
   let checkdevices = Object.keys(devices);
@@ -42,8 +44,10 @@ export class DevicesModel {
 
     return devices;
   }
-  static getAccess(id) {
-    return Object.values(devicesAccess).find((device) => device.id === id);
+  static async getAccess(id) {
+    return await sequelize.models.DeviceAccess.findAll({
+      attributes: ['id', 'name', 'user', 'pwd', 'ip'],
+    });
   }
 
   static async create(device) {
@@ -54,8 +58,7 @@ export class DevicesModel {
     let uav_type = device.category;
     let cur_uav_idx = String(Object.values(devices).length);
 
-    console.log('create UAV');
-    console.log('name' + uav_ns + '  type' + uav_type);
+    console.log('create UAV ' + uav_ns + '  type' + uav_type);
 
     let repeat_device = false;
     if (Object.values(devices).length > 0) {
@@ -217,11 +220,21 @@ export class DevicesModel {
   }
 
   static async addAllUAV() {
-    await sleep(5000);
-    for (let device of devices_init.init) {
-      let uno = await this.create(device);
+    console.log('---- start init devices ------------');
+    let NumDevices = 0;
+    try {
+      NumDevices = await sequelize.models.Device.count();
+    } catch (error) {
+      console.error('Error fetching devices:', error);
+      throw error;
     }
-    console.log('finish to add all devices  ------------');
+    if (NumDevices <= 0) {
+      console.log('---- Dont have devices in data base add new from file ------------');
+      for (let device of devices_init.init) {
+        await this.create(device);
+      }
+    }
+    console.log('------  finish init devices ------------');
   }
 }
 

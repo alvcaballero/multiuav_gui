@@ -123,7 +123,7 @@ export class filesModel {
   */
   static async showFiles({ uavId, missionId, initTime }) {
     console.log('show files ' + uavId + '-' + missionId);
-    let mydevice = DevicesController.getAccess(uavId);
+    let mydevice = await DevicesController.getAccess(uavId);
     console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
     const parsedURL = new URL(myurl);
@@ -166,7 +166,7 @@ export class filesModel {
     let listImages = [];
     let metadataResponse = { value: {}, imageMetaData: [] };
 
-    let mydevice = DevicesController.getAccess(uavId);
+    let mydevice = await DevicesController.getAccess(uavId);
     console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
     if (!mydevice.hasOwnProperty('user')) {

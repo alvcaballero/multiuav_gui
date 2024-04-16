@@ -26,8 +26,8 @@ class devicesController {
     this.DevicesModel.updateDeviceTime(id);
   };
 
-  getAccess = (id) => {
-    return this.DevicesModel.getAccess(id);
+  getAccess = async (id) => {
+    return await this.DevicesModel.getAccess(id);
   };
 
   getById = async (req, res) => {

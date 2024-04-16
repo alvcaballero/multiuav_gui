@@ -1,7 +1,6 @@
 import { DevicesController } from './devices.js';
 import { rosController } from './ros.js';
 import { positionsController } from './positions.js';
-//import { eventsController } from './events.js';
 import { planningController } from './planning.js';
 export class websocketController {
   static async init() {
@@ -30,21 +29,12 @@ export class websocketController {
     let currentsocket = {};
     const positions = await positionsController.getLastPositions();
     const camera = await positionsController.getCamera();
-    //const currentevent = await eventsController.getAllEvent();
     if (Object.values(positions).length) {
       currentsocket['positions'] = positions;
     }
     if (Object.values(camera).length) {
       currentsocket['camera'] = Object.values(camera);
     }
-
-    //if (Object.values(getLastPositions).length) {
-    //console.log(currentevent);
-    //currentsocket['events'] = Object.values(currentevent);
-    //eventsController.clearEvents({ eventId: Object.keys(currentevent) });
-    //}
-    //console.log('update');
-    //console.log(currentsocket);
     return JSON.stringify(currentsocket);
   }
 
@@ -52,14 +42,10 @@ export class websocketController {
     const devices = await DevicesController.getAllDevices();
     const server = await rosController.getServerStatus();
 
-    //console.log('devices');
-    //console.log(devices);
     let response = JSON.stringify({
       server: { rosState: server.state },
       devices: Object.values(devices),
     });
-    //console.log('updateserver');
-    //console.log(response);
     return response;
   }
 }

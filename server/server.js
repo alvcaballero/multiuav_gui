@@ -12,6 +12,8 @@ import logger from 'morgan';
 import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
 
+console.log('use db is ' + db);
+
 //ws
 import { WebsocketManager } from './WebsocketManager.js';
 // rutas
@@ -29,6 +31,7 @@ import { serverRouter } from './routes/server.js';
 import { planningRouter } from './routes/planning.js';
 
 //model
+
 let DevicesModel = db
   ? await import('./models/devices-sql.js').then((module) => module.DevicesModel)
   : await import('./models/devices.js').then((module) => module.DevicesModel);

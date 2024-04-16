@@ -4,10 +4,10 @@ set -e
 
 # Ros build
 source "/opt/ros/noetic/setup.bash"
-source "/home/user/catkin_ws/devel/setup.bash"
+source "/root/catkin_ws/devel/setup.bash"
 
 echo "============== Server ROS Noetic Docker Env Ready================"
 
-cd /home/user/
+cd /root/catkin_ws
 
 exec "$@"

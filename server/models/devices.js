@@ -1,10 +1,11 @@
 import { readJSON, readYAML, getDatetime } from '../common/utils.js';
 import { StreamServer } from '../config/config.js';
-import { eventsModel } from '../models/events.js';
 import { rosController } from '../controllers/ros.js';
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const devices = {};
 const devicesAccess = {};
+
+console.log('load model devices No SQL');
 
 const CheckDeviceOnline = setInterval(() => {
   let currentTime = new Date();
@@ -41,7 +42,7 @@ export class DevicesModel {
 
     return devices;
   }
-  static getAccess(id) {
+  static async getAccess(id) {
     return Object.values(devicesAccess).find((device) => device.id === id);
   }
 
@@ -209,10 +210,11 @@ export class DevicesModel {
   }
 
   static async addAllUAV() {
+    console.log('---- start init devices ------------');
     for (let device of devices_init.init) {
       await this.create(device);
     }
-    console.log('------  finish to add all devices  ------------');
+    console.log('------  finish init devices ------------');
   }
 }
 DevicesModel.addAllUAV();

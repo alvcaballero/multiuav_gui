@@ -21,6 +21,7 @@ docker run -it \
 -p 14550:14550/udp  \
 -p 14570:14570/udp  \
 -p 14560:14560  \
+-p 8080:8080  \
 px4io/px4-dev-ros-noetic:latest bash\
 ;
 else
