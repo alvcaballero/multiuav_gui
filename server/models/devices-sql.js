@@ -1,24 +1,39 @@
-import { readJSON, readYAML, getDatetime, sleep } from '../common/utils.js';
-import { eventsModel } from '../models/events.js';
+import { readJSON, readYAML, getDatetime } from '../common/utils.js';
+import { StreamServer } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import sequelize from '../common/sequelize.js';
+import { object } from 'zod';
 
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const devices = {};
 const devicesAccess = {};
+const listUpdateTime = {};
 
 console.log('load model devices SQL');
 
-const CheckDeviceOnline = setInterval(() => {
+const CheckDeviceOnline = setInterval(async () => {
   let currentTime = new Date();
   let checkdevices = Object.keys(devices);
-  checkdevices.forEach((element) => {
-    //console.log(data.state.devices[element])
-    //console.log(currentTime)
-    if (currentTime - devices[element]['lastUpdate'] < 5000) {
-      devices[element]['status'] = 'online';
-    } else {
-      devices[element]['status'] = 'offline';
+  let mydevices = await sequelize.models.Device.findAll({
+    attributes: ['id', 'status', 'lastUpdate'],
+  });
+
+  Object.values(listUpdateTime).forEach((element) => {
+    if (element.flag) {
+      sequelize.models.Device.update(
+        { lastUpdate: element.time },
+        { where: { id: element.deviceId } }
+      );
+      listUpdateTime[element.deviceId].flag = false;
+    }
+  });
+
+  mydevices.forEach((element) => {
+    if (element['status'] == 'online' && currentTime - element['lastUpdate'] > 30000) {
+      sequelize.models.Device.update({ status: 'offline' }, { where: { id: element.id } });
+    }
+    if (element['status'] == 'offline' && currentTime - element['lastUpdate'] < 30000) {
+      sequelize.models.Device.update({ status: 'online' }, { where: { id: element.id } });
     }
   });
 }, 5000);
@@ -30,22 +45,26 @@ export class DevicesModel {
   }
 
   static async getAll(query) {
+    let mydevices = await sequelize.models.Device.findAll({
+      attributes: ['id', 'name', 'category', 'ip', 'camera', 'status', 'lastUpdate'],
+    });
     if (query) {
       console.log(query);
       if (Array.isArray(query)) {
-        const asArray = Object.entries(devices);
-        const filtered = asArray.filter(([key, value]) => query.some((element) => key == element));
+        const filtered = mydevices.filter((device) =>
+          query.some((element) => device.id == element)
+        );
         return Object.fromEntries(filtered);
       }
       if (!isNaN(query)) {
-        return devices[query] ? { id: devices[query] } : {};
+        const filtered = mydevices.filter((device) => device.id == query);
+        return filtered ? { id: filtered } : {};
       }
     }
-
-    return devices;
+    return mydevices;
   }
   static async getAccess(id) {
-    return await sequelize.models.DeviceAccess.findAll({
+    return await sequelize.models.Device.findAll({
       attributes: ['id', 'name', 'user', 'pwd', 'ip'],
     });
   }
@@ -76,41 +95,24 @@ export class DevicesModel {
         msg: `Dispositivo ya se encuentra registrado ${uav_ns}`,
       };
     }
-    const myDevice = sequelize.models.Device.create({
+    const myDevice = await sequelize.models.Device.create({
       name: device.name,
       category: device.category,
       ip: device.ip,
+      status: 'offline',
       camera: JSON.stringify(device.camera),
       user: device.user,
       pwd: device.pwd,
       ip: device.ip,
     });
-    console.log(myDevice);
-    this.updatedevice({
-      id: cur_uav_idx,
-      name: device.name,
-      category: device.category,
-      ip: device.ip,
-      camera: device.camera,
-      status: 'online',
-      lastUpdate: null,
-    });
-
-    if (device.hasOwnProperty('user') && device.hasOwnProperty('pwd')) {
-      this.updateDeviceAccess({
-        id: cur_uav_idx,
-        name: device.name,
-        user: device.user,
-        pwd: device.pwd,
-        ip: device.ip,
-      });
+    if (StreamServer) {
+      this.addCameraWebRTC(device);
     }
-    await this.addCameraWebRTC(device);
 
     if (serverState.state === 'connect') {
       console.log('suscribe devices ');
       await rosController.subscribeDevice({
-        id: cur_uav_idx,
+        id: myDevice.id,
         name: uav_ns,
         type: uav_type,
         camera: device.camera,
@@ -147,10 +149,10 @@ export class DevicesModel {
   }
 
   static async getById({ id }) {
-    return Object.values(devices).find((device) => device.id === id);
+    return await sequelize.models.Device.findOne({ where: { id: id } });
   }
-  static getByName(name) {
-    return Object.values(devices).find((device) => device.name === name);
+  static async getByName(name) {
+    return await sequelize.models.Device.findOne({ where: { name: name } });
   }
 
   static async delete({ id }) {
@@ -201,11 +203,7 @@ export class DevicesModel {
   }
   static updateDeviceTime(id) {
     let currentTime = new Date();
-    if (devices[id]) {
-      devices[id]['lastUpdate'] = currentTime;
-    } else {
-      console.log('update delete device');
-    }
+    listUpdateTime[id] = { deviceId: id, time: currentTime, flag: true };
   }
   static get_device_ns(uav_id) {
     return devices[uav_id].name;
@@ -232,6 +230,13 @@ export class DevicesModel {
       console.log('---- Dont have devices in data base add new from file ------------');
       for (let device of devices_init.init) {
         await this.create(device);
+      }
+    } else {
+      let mydevices = await this.getAll();
+      if (StreamServer) {
+        for (let device of mydevices) {
+          await this.addCameraWebRTC(device);
+        }
       }
     }
     console.log('------  finish init devices ------------');

@@ -14,7 +14,7 @@ const MediaSchema = {
     allowNull: false,
     type: DataTypes.STRING,
   },
-  RouteId: {
+  routeId: {
     type: DataTypes.INTEGER,
     references: {
       model: Route, // 'Actors' would also work
@@ -41,6 +41,9 @@ const MediaSchema = {
     type: DataTypes.STRING, //video, image, rosbag, lidar
   },
   path: {
+    type: DataTypes.STRING, // where is save in server
+  },
+  pathDevice: {
     type: DataTypes.STRING, // where is save in server
   },
   attributes: {

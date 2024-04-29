@@ -1,43 +1,57 @@
-id: 23628311
+id: 18804049
 objetivo:
-  id: 0
-  name: Inspeccion de linea
-  type: path-object
-  case: 0
-  description: select towers to create a path
-loc: []
+  id: 1
+  name: inspeccion de torre
+  type: object
+  case: 1
+  description: "select towers "
+loc:
+  - type: powerTower
+    name: Elements
+    linea: true
+    items:
+      - latitude: 37.19384681403371
+        longitude: -6.702598762315071
+        type: object
+        groupId: 2
+        id: 0
+        image: powerTower
+        title: 2-0
 meteo: []
 bases:
-  - devices:
-      id: 3
-    settings:
-      base: []
-      inspection_speed: 7
-      navigation_speed: 15
-      vertical_offset: 10
-      horizontal_offset: 10
-      tower_height: 10
-      security_height: 10
-  - devices:
-      id: 0
-    settings:
-      base: []
-      inspection_speed: 7
-      navigation_speed: 15
-      vertical_offset: 10
-      horizontal_offset: 10
-      tower_height: 10
-      security_height: 10
   - devices:
       id: 4
     settings:
       base: []
       inspection_speed: 7
       navigation_speed: 15
-      vertical_offset: 10
+      vertical_offset: 15
       horizontal_offset: 10
-      tower_height: 10
+      tower_height: 12
       security_height: 10
+      orbital_points: 5
+  - devices:
+      id: 5
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 15
+      horizontal_offset: 10
+      tower_height: 12
+      security_height: 10
+      orbital_points: 5
+  - devices:
+      id: 3
+    settings:
+      base: []
+      inspection_speed: 7
+      navigation_speed: 15
+      vertical_offset: 15
+      horizontal_offset: 10
+      tower_height: 12
+      security_height: 10
+      orbital_points: 5
 settings:
   devices:
     id:
@@ -61,7 +75,7 @@ settings:
     vertical_offset:
       type: number
       name: Vertical offset
-      default: 10
+      default: 15
     horizontal_offset:
       type: number
       name: Horizontal offset
@@ -69,11 +83,15 @@ settings:
     tower_height:
       type: number
       name: Tower height
-      default: 10
+      default: 12
     security_height:
       type: number
       name: Segurity height
       default: 10
+    orbital_points:
+      type: number
+      name: Points in circle
+      default: 5
 markersbase:
   - latitude: 37.1938071382897
     longitude: -6.702911873416099

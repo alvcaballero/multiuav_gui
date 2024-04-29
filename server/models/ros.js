@@ -9,7 +9,7 @@ var ros = '';
 const rosState = { state: 'disconnect', msg: 'init msg' };
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 const service_list = [];
-const uav_list = [];
+const uav_list = {};
 
 var autoconectRos = setInterval(() => {
   console.log('autoconectRos');
@@ -325,8 +325,8 @@ export class rosModel {
   // Subscribing
   // create subcribin mesage
   static async subscribeDevice(uavAdded) {
-    uav_list.push(uavAdded);
-    //console.log(uavAdded);
+    uav_list[uavAdded.id] = uavAdded;
+    console.log(uavAdded);
     let uav_type = uavAdded.type;
     let cur_uav_idx = uavAdded.id;
     let uav_ns = uavAdded.name;
@@ -367,48 +367,44 @@ export class rosModel {
     console.log('unsuscribe model');
     let cur_uav_idx;
     let Key_listener;
-    if (uav_list.length != 0) {
+    if (Object.keys(uav_list).length != 0) {
       if (id < 0) {
         console.log('unsuscribe all');
-        for (let i = 0; i < uav_list.length; i++) {
+        for (let i = 0; i < Object.keys(uav_list).length; i++) {
           //uav_list[i].listener.unsubscribe();
-          cur_uav_idx = uav_list.findIndex((element) => element.id == id);
+          cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
           if (cur_uav_idx) {
-            Key_listener = Object.keys(uav_list[i]).filter((element) =>
-              element.includes('listener')
-            );
+            Key_listener = cur_uav_idx.filter((element) => element.includes('listener'));
             Key_listener.forEach((element) => {
-              uav_list[i][element].unsubscribe();
+              uav_list[cur_uav_idx.id][element].unsubscribe();
             });
           }
         }
         uav_list = [];
       } else {
         console.log('unsuscribe ' + id);
-        cur_uav_idx = uav_list.findIndex((element) => element.id == id);
+        cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
 
-        Key_listener = Object.keys(uav_list[cur_uav_idx]).filter((element) =>
-          element.includes('listener')
-        );
+        Key_listener = Object.keys(cur_uav_idx).filter((element) => element.includes('listener'));
 
         console.log(Key_listener);
-        if (uav_list.length != 0) {
+        if (Object.keys(uav_list).length != 0) {
           Key_listener.forEach((element) => {
             console.log(element);
-            uav_list[cur_uav_idx][element].unsubscribe();
+            uav_list[cur_uav_idx.id][element].unsubscribe();
           });
-          delete uav_list[cur_uav_idx];
+          delete uav_list[cur_uav_idx.id];
 
           //uav_list.slice(cur_uav_idx,1)
           console.log('Último dron eliminado de la lista');
-          if (uav_list.length > 0) {
+          if (Object.keys(uav_list).length > 0) {
             console.log('\nLa Lista de uav actualizada es: ');
-            uav_list.forEach(function (elemento, indice, array) {
+            Object.values(uav_list).forEach(function (elemento, indice, array) {
               console.log(elemento, indice);
             });
           } else {
             console.log('No quedan drones en la lista');
-            uav_list = [];
+            uav_list = {};
           }
           return { state: 'success', msg: 'Se ha eliminado el ' + cur_uav_idx }; //notification('success',"Commanding mission to: " + cur_roster);
         }

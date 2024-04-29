@@ -19,7 +19,7 @@ const MissionSchema = {
     defaultValue: 'init',
   },
   mission: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT('long'),
   },
   initTime: {
     allowNull: false,
@@ -28,6 +28,9 @@ const MissionSchema = {
   },
   FinishTime: {
     type: DataTypes.DATE,
+  },
+  attributes: {
+    type: DataTypes.STRING,
   },
 };
 

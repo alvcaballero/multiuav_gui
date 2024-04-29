@@ -6,7 +6,7 @@ export const createMissionRouter = ({ model }) => {
   const missionRouter = Router();
   const missionController = CreateController({ model });
 
-  missionRouter.get('/', missionController.getmission); //get current mission//missionState
+  missionRouter.get('/', missionController.getMission); //get current mission//missionState
   missionRouter.get('/routes', missionController.getRoutes); //get current mission//missionState
   missionRouter.post('/sendTask', missionController.sendTask);
   missionRouter.get('/updateFiles/:id_uav/:id_mission', missionController.updateFiles); //Download files form UAV

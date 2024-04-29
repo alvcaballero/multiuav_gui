@@ -4,6 +4,7 @@ import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
 import { FilesController } from '../controllers/files.js';
+import { eventsController } from '../controllers/events.js';
 import { readYAML } from '../common/utils.js';
 import sequelize from '../common/sequelize.js';
 
@@ -27,26 +28,29 @@ const Mission = {}; // current mission // id , status (init, planing, doing, fin
  / initTime
  / endTime
 */
-const Routes = {};
 
 export class missionModel {
-  static getmission(id) {
+  static async getmissionValue(id) {
     console.log('Get mission' + id);
     if (id) {
-      return Mission[id].mission;
+      return await sequelize.models.Mission.findOne({ where: { id: id } });
     }
-    return Mission[id].mission;
+    return await sequelize.models.Mission.findAll();
   }
-  static getmissionValue(id) {
-    console.log('Get mission' + id);
-    if (id) {
-      return Mission[id];
+
+  static async getRoutes({ deviceId, missionId }) {
+    if (deviceId && missionId) {
+      return await sequelize.models.Route.findOne({ where: { deviceId: deviceId, missionId: missionId } });
     }
-    return Mission[id];
+    if (deviceId) {
+      return await sequelize.models.Route.findOne({ where: { deviceId: deviceId } });
+    }
+    if (missionId) {
+      return await sequelize.models.Route.findOne({ where: { missionId: missionId } });
+    }
+    return await sequelize.models.Route.findAll();
   }
-  static getRoutes() {
-    return Routes;
-  }
+
   static sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -62,6 +66,9 @@ export class missionModel {
 
     let bases = planningController.getConfigBases();
     let devices = await DevicesController.getAllDevices();
+    console.log('devices in decodeTask');
+    console.log(Object.values(devices));
+
     let param = planningController.getConfigParam(objetivo);
     let auxconfig = {};
     Object.keys(param['settings']).forEach((key1) => {
@@ -69,9 +76,12 @@ export class missionModel {
     });
 
     let basesettings = planningController.getBasesSettings();
+
     myTask.devices = basesettings.map((setting, index) => {
       let config = { settings: {} };
       let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
+      console.log('myDevice');
+      console.log(myDevice);
       for (const value of Object.keys(auxconfig)) {
         value !== 'base' ? (config.settings[value] = auxconfig[value]) : null;
       }
@@ -98,79 +108,98 @@ export class missionModel {
       return { response: myTask, status: 'OK' };
     }
     planningController.PlanningRequest({ id, myTask });
+    eventsController.addEvent({
+      type: 'info',
+      eventTime: new Date(),
+      deviceId: -1,
+      attributes: { message: 'Ext APP send task' },
+    });
     return { response: myTask, status: 'OK' };
   }
 
   static async initMission(missionId, mission) {
-    const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
-    const myMission = sequelize.models.Mission.create({
+    let listUAV = [];
+    console.log('init mission---------------FindDevice');
+    for (const route of mission.route) {
+      let findDevice = await DevicesController.getByName(route.uav);
+      console.log(findDevice);
+      listUAV.push(findDevice.id);
+    }
+    console.log(listUAV);
+    const myMission = await sequelize.models.Mission.create({
       name: listUAV.toString(),
+      status: 'init',
+      initTime: new Date(),
       mission: JSON.stringify(mission),
     });
     console.log('creation of mission' + myMission.id);
-    Mission[missionId] = {
-      id: missionId,
-      uav: listUAV,
-      status: 'init',
-      initTime: new Date(),
-      mission: mission,
-    };
-    listUAV.forEach((uavId) => {
-      let myRoute = sequelize.models.Route.create({
+
+    for (const uavId of listUAV) {
+      const myRoute = await sequelize.models.Route.create({
+        status: 'init',
         missionId: myMission.id,
         deviceId: uavId,
         mission: JSON.stringify(mission),
       });
+      console.log('creation of route' + myRoute.id);
       console.log(myRoute);
-      Route[`${missionId}-${uavId}`] = {
-        id: `${missionId}-${uavId}`,
-        missionId: missionId,
-        deviceId: uavId,
-        status: 'init',
-        result: 'uno',
-      };
       missionSMModel.createActorMission(uavId, missionId);
-    });
+    }
+
     ExtAppController.missionReqStart(missionId, mission);
 
     var ws = new WebsocketManager(null, '/api/socket');
     ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
     return { response: mission, status: 'OK' };
   }
+
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
+
+    await sequelize.models.Route.update(
+      { status: 'finish' },
+      {
+        where: {
+          missionId: mission,
+          deviceId: uavId,
+        },
+      }
+    );
+    sequelize.models.Route.findAll({ where: { missionId: missionId } }).then((routes) => {
+      let allFinish = routes.every((route) => route.status == 'finish');
+      if (allFinish) {
+        sequelize.models.Mission.update({ status: 'finish', endTime: new Date() }, { where: { id: missionId } });
+        resultCode = 1;
+      }
+    });
     await ExtAppController.missionReqResult(missionId, resultCode);
+
     return true;
   }
 
   static async updateFiles(missionId, uavId) {
     routeId = 1;
-    const results = await FilesController.updateFiles(
-      uavId,
-      missionId,
-      routeId,
-      Mission[missionId].initTime
-    );
+    const results = await FilesController.updateFiles(uavId, missionId, routeId, Mission[missionId].initTime);
     await this.sleep(5000);
-    let code = 0;
-
     ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
     return true;
   }
+  static async FinishProcessFiles(missionId, deviceId, results) {
+    let code = 0;
+    ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
+    return true;
+  }
+
   static async updateMission({ device, mission, state }) {
-    if (Route.hasOwnProperty(`${mission}-${device}`)) {
-      Route[`${mission}-${device}`]['status'] = state;
-      await sequelize.models.Route.update(
-        { status: state },
-        {
-          where: {
-            missionId: mission,
-            deviceId: device,
-          },
-        }
-      );
-    }
-    //Mission[missionId]['finishTime'] = 'sadf'
+    await sequelize.models.Route.update(
+      { status: state },
+      {
+        where: {
+          missionId: mission,
+          deviceId: device,
+        },
+      }
+    );
     return true;
   }
 }

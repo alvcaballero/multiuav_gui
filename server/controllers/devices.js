@@ -18,8 +18,8 @@ class devicesController {
     const devices = await this.DevicesModel.getAll(id);
     return devices['id'];
   };
-  getByName = (name) => {
-    const device = this.DevicesModel.getByName(name);
+  getByName = async (name) => {
+    const device = await this.DevicesModel.getByName(name);
     return device;
   };
   updateDeviceTime = (id) => {

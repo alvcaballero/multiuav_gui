@@ -1,6 +1,8 @@
 import { readJSON, readYAML, getDatetime } from '../common/utils.js';
 import { StreamServer } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
+import { object } from 'zod';
+
 const devices_init = readYAML('../config/devices/devices_init.yaml');
 const devices = {};
 const devicesAccess = {};

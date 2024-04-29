@@ -11,7 +11,7 @@ console.log(URI);
 
 const sequelize = new Sequelize(URI, {
   dialect: 'postgres',
-  logging: true,
+  logging: false,
 });
 
 try {

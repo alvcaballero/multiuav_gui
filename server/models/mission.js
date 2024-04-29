@@ -60,22 +60,15 @@ const Routes = {
 };
 
 export class missionModel {
-  static getmission(id) {
-    console.log('Get mission' + id);
-    if (id) {
-      return Mission[id].mission;
-    }
-    return Mission[id].mission;
-  }
   static getmissionValue(id) {
     if (id) {
       console.log('Get mission' + id);
-      return { id: Mission[id] };
+      return Mission[id];
     }
     console.log('Get all mission');
-    return Mission;
+    return Object.values(Mission);
   }
-  static getRoutes({ deviceId, missionId }) {
+  static async getRoutes({ deviceId, missionId }) {
     if (deviceId) {
       return Object.values(Routes).filter((word) => word.deviceId == deviceId);
     }
@@ -177,9 +170,7 @@ export class missionModel {
   }
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
-    let routeId = Object.values(Routes).find(
-      (item) => item.deviceId == uavId && item.missionId == missionId
-    ).id;
+    let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
     Routes[routeId].status = 'finish';
     let listRoutes = Object.values(Routes).filter((item) => item.missionId == missionId);
     if (listRoutes.every((route) => route.status == 'finish')) {
@@ -193,21 +184,17 @@ export class missionModel {
   }
 
   static async updateFiles(missionId, uavId) {
-    let routeId = Object.values(Routes).find(
-      (item) => item.deviceId == uavId && item.missionId == missionId
-    ).id;
-    const results = await FilesController.updateFiles(
-      uavId,
-      missionId,
-      routeId,
-      Mission[missionId].initTime
-    );
+    let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
+    const results = await FilesController.updateFiles(uavId, missionId, routeId, Mission[missionId].initTime);
     await this.sleep(5000);
-    let code = 0;
 
     Routes[routeId].result = results.data;
     Mission[missionId].results.push(results.data);
 
+    return true;
+  }
+  static async FinishProcessFiles(missionId, deviceId, results) {
+    let code = 0;
     ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
     return true;
   }

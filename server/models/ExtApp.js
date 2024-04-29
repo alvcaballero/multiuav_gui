@@ -47,15 +47,17 @@ export class ExtApp {
     } else {
       await this.UpdateToken();
     }
-    const myMission = mission.route.map((route) => {
+    let myMission = [];
+    for (let route of mission.route) {
       let myWP = route.wp.map((wp) => ({
         latitude: wp.pos[1],
         longitude: wp.pos[0],
         altitude: wp.pos[2],
       }));
-      let myDevice = DevicesController.getByName(route.uav);
-      return { deviceId: myDevice.id, wp: myWP };
-    });
+
+      let myDevice = await DevicesController.getByName(route.uav);
+      myMission.push({ deviceId: myDevice.id, wp: myWP });
+    }
 
     console.log('mission_id: ' + missionId);
     console.log('routes');

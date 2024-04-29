@@ -18,6 +18,9 @@ const DeviceSchema = {
     allowNull: false,
     type: DataTypes.STRING,
   },
+  model: {
+    type: DataTypes.STRING,
+  },
   ip: {
     type: DataTypes.STRING,
   },
@@ -30,10 +33,15 @@ const DeviceSchema = {
   camera: {
     type: DataTypes.STRING,
   },
-  createdAt: {
+  status: {
+    type: DataTypes.STRING,
+  },
+  lastUpdate: {
+    type: DataTypes.DATE,
+  },
+  createAt: {
     allowNull: false,
     type: DataTypes.DATE,
-    field: 'create_at',
     defaultValue: Sequelize.NOW,
   },
 };

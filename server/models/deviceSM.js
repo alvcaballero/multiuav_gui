@@ -10,12 +10,13 @@ import { MissionController } from '../controllers/mission.js';
 const LoadMissionSM = async (context) => {
   console.log('service load mission');
   try {
-    let mission = MissionController.getCurrentMission(context.missionId);
+    let mission = MissionController.getMission(context.missionId);
+    let missionPlan = mission.mission;
     //console.log(mission);
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
       type: 'loadMission',
-      attributes: mission.route,
+      attributes: missionPlan.route,
     });
 
     console.log('-----response in SM');
@@ -56,7 +57,7 @@ const CommandMissionSM = async (context) => {
 const CommandDownload = async (context) => {
   console.log('service download files from Autopilot ');
   let resp = await MissionController.finishMission(context.missionId, context.uavId);
-  let mymission = MissionController.getMissionRoute(context.missionId)[0];
+  let mymission = await MissionController.getMissionRoute(context.missionId)[0];
 
   console.log('mission command download');
   console.log(mymission);

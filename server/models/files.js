@@ -84,6 +84,11 @@ export class filesModel {
     }
     return Object.values(files);
   }
+
+  /*
+  / read all files in the gcs in folder GCS_MEDIA , and return a list of files
+  */
+
   static readGCSFiles() {
     let response = [];
     let firstFiles = fs.readdirSync(filesPath, { withFileTypes: true });
@@ -105,6 +110,11 @@ export class filesModel {
     }
     return response;
   }
+
+  /*
+  / donwload a file from gcs, if the file exist return the path, if not return null
+  */
+
   static donwload(path) {
     let dir = filesPath + path.replaceAll('-', '/');
     console.log(dir);
@@ -112,15 +122,13 @@ export class filesModel {
       console.log('no exist ' + dir);
       return null;
     }
-    // check if file exist
     return dir;
   }
 
-  /* de momento lee la fecha mayour
-  / puede hacer para que la lista de archivos se ordene de menor a mayour,
-  / el primero que supere la fecha sera la carpeta, de la mission
-  / this is importan when use database for get mission diferent
+  /* 
+  / Show list of files in the drone, from folder uav_media,
   */
+
   static async showFiles({ uavId, missionId, initTime }) {
     console.log('show files ' + uavId + '-' + missionId);
     let mydevice = await DevicesController.getAccess(uavId);
@@ -150,16 +158,14 @@ export class filesModel {
     if (nameFolder) {
       listFiles = await client.listFiles('./uav_media/' + nameFolder + '/', '.jpg$', '-', true);
     }
-    //* Close the connection
     await client.disconnect();
     return listFiles;
   }
 
   /*
-   / list files and directories, directory can't donwload make Error, 
-   / crear funcion que solo enliste los archivos
-   / hacer que las funciones devuelvan errores  para poder manejarlos
-   / when in gcs are a file with the same name of file to download
+   / Update files in the drone, from folder uav_media, and download to the server (GCS)
+   / if the file is a thermal image, process the image and return the metadata
+   / return a list of files, and a list of metadata 
    */
   static async updateFiles(uavId, missionId, routeId, initTime) {
     console.log('update files ' + uavId + '-' + missionId);
@@ -211,10 +217,7 @@ export class filesModel {
       let downloadOk = true;
       for (let myfile of listFiles) {
         console.log('download file' + myfile);
-        let response = await client.downloadFile(
-          `./uav_media/${nameFolder}/${myfile}`,
-          `${dir}/${myfile}`
-        );
+        let response = await client.downloadFile(`./uav_media/${nameFolder}/${myfile}`, `${dir}/${myfile}`);
         console.log(response);
         let fileId = Math.max(...Object.keys(files).map((key) => Number(key))) + 1;
         files[fileId] = {
@@ -286,6 +289,10 @@ export class filesModel {
     console.log(listImages);
     return { files: listImages, data: [metadataResponse.value] };
   }
+
+  /*
+  / return the metadata from a image
+  */
   static async testMetadata(srcImage) {
     console.log(' test image');
     let metadata = await sharp(srcImage).metadata();
@@ -303,6 +310,10 @@ export class filesModel {
 
     return response;
   }
+
+  /*
+  / return metadata from a list of images thermal images
+  */
   static async MetadataTempImage(listThermal) {
     console.log(listThermal);
     console.log('metadata imagen');
@@ -351,17 +362,20 @@ export class filesModel {
     }
     return { value: MissionResponse, imageMetaData: imageMetaData };
   }
+
   static getNormalSize({ width, height, orientation }) {
     return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
   }
 
+  /*
+  / convert from DMS to DD
+  */
+
   static convertDMSToDD(degrees, minutes, seconds, direction) {
     var dd = degrees + minutes / 60 + seconds / (60 * 60);
-
     if (direction == 'S' || direction == 'W') {
       dd = dd * -1; // Convert to negative if south or west
     }
-
     return dd;
   }
 

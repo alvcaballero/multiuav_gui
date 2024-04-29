@@ -3,10 +3,11 @@ class missionController {
   constructor({ model }) {
     this.missionModel = model;
   }
-  getmission = async (req, res) => {
+  getMission = async (req, res) => {
     console.log('get missions');
-    const response = await this.missionModel.getmissionValue(req.query.id);
-    res.json(Object.values(response));
+    const response = await this.missionModel.getMissionValue(req.query.id);
+    console.log(response);
+    res.json(response);
   };
   getRoutes = async (req, res) => {
     console.log('get routes');
@@ -24,12 +25,8 @@ class missionController {
     console.log(locations);
     let meteo = req.body.meteo;
     for (let i = 0; i < locations.length; i++) {
-      locations[i].hasOwnProperty('geo_points')
-        ? (locations[i]['items'] = locations[i].geo_points)
-        : null;
-      locations[i].hasOwnProperty('geopoints')
-        ? (locations[i]['items'] = locations[i].geopoints)
-        : null;
+      locations[i].hasOwnProperty('geo_points') ? (locations[i]['items'] = locations[i].geo_points) : null;
+      locations[i].hasOwnProperty('geopoints') ? (locations[i]['items'] = locations[i].geopoints) : null;
 
       for (let j = 0; j < locations[i].items.length; j++) {
         locations[i].items[j].hasOwnProperty('lat')
@@ -73,11 +70,11 @@ class missionController {
   finishMission = (missionId, deviceId) => {
     return this.missionModel.UAVFinish(missionId, deviceId);
   };
-  getMissionRoute = (missionId) => {
-    return Object.values(this.missionModel.getmissionValue(missionId));
+  finishMissionProcessFiles = (missionId, deviceId, results) => {
+    return this.missionModel.FinishProcessFiles((missionId, deviceId, results));
   };
-  getCurrentMission = (mission_id) => {
-    return this.missionModel.getmission(mission_id);
+  getMissionRoute = async (missionId) => {
+    return await this.missionModel.getMissionValue(missionId);
   };
   updateFiles = (missionId, deviceId) => {
     return this.missionModel.updateFiles(missionId, deviceId);
