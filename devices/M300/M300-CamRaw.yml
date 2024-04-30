@@ -28,18 +28,18 @@ windows:
       panes:
         - config:
             - <%= Config_cmd %>
-            - sleep 30
+            - sleep 25
             - 'rosservice call /uav_<%= uav_ns %>/setup_camera_stream "{cameraType: 1, start: 1}"'
         - mission:
             - sleep 15
             - rosbag play ~/bags/uav_2_2023_10_26_10_02.bag #roslaunch onboard_dji resisto.launch uav_id:=<%= uav_ns %>
         - multimaster:
-            - sleep 10
+            - sleep 5
             - roslaunch onboard_dji multimaster-noetic.launch
         - resize:
-            - sleep 22;
+            - sleep 32;
             - roslaunch simple_vs video_resize.launch uav_id:=<%= uav_ns %>
         - rtsp:
-            - sleep 20;
+            - sleep 30;
             - roslaunch ros_rtsp rtsp_streams.launch
 
