@@ -42,22 +42,6 @@ const config = readYAML('./config.yaml');
  * M300_sim_on:
  */
 
-try {
-  console.log('---------- set out  device  M300-real...');
-  console.log(`bash -c "${config[config['mode']]}"`);
-  //const { stdout, stderr } = await exec(`bash -c "${config[config['mode']]}"`);
-  const { stdout, stderr } = await exec(
-    `bash -c "/home/nvidia/programming/Onboard-SDK/utility/bin/armv8/64-bit/./MatriceSeries_ConfigTool --usb-port /dev/ttyACM0 --config-file /home/nvidia/programming/Onboard-SDK/build/bin/UserConfig.txt --power-supply on"`
-  );
-  console.log('stdout:', stdout);
-  console.log('stderr:', stderr);
-  if (stdout.includes('ERROR')) {
-    console.error('Error detected in logs. Restarting script...');
-  }
-} catch (e) {
-  console.error(e); // should contain code (exit code) and signal (that caused the termination).
-}
-
 await sleep(5000);
 async function mainProcess() {
   try {
@@ -145,6 +129,22 @@ ls.on('close', (code) => {
 });
 
 // ==================  main process ==================
+
+try {
+  console.log('---------- set out  device  M300-real...');
+  console.log(`bash -c "${config[config['mode']]}"`);
+  //const { stdout, stderr } = await exec(`bash -c "${config[config['mode']]}"`);
+  const { stdout, stderr } = await exec(
+    `bash -c "/home/nvidia/programming/Onboard-SDK/utility/bin/armv8/64-bit/./MatriceSeries_ConfigTool --usb-port /dev/ttyACM0 --config-file /home/nvidia/programming/Onboard-SDK/build/bin/UserConfig.txt --power-supply on"`
+  );
+  console.log('stdout:', stdout);
+  console.log('stderr:', stderr);
+  if (stdout.includes('ERROR')) {
+    console.error('Error detected in logs. Restarting script...');
+  }
+} catch (e) {
+  console.error(e); // should contain code (exit code) and signal (that caused the termination).
+}
 
 await mainProcess();
 await sleep(5000);

@@ -74,7 +74,7 @@ rtsp: yes
 protocols: [udp, multicast, tcp]
 # Encrypt handshakes and TCP streams with TLS (RTSPS).
 # Available values are "no", "strict", "optional".
-encryption: "no"
+encryption: 'no'
 # Address of the TCP/RTSP listener. This is needed only when encryption is "no" or "optional".
 rtspAddress: :8554
 # Address of the TCP/TLS/RTSPS listener. This is needed only when encryption is "strict" or "optional".
@@ -109,7 +109,7 @@ rtmp: yes
 rtmpAddress: :1935
 # Encrypt connections with TLS (RTMPS).
 # Available values are "no", "strict", "optional".
-rtmpEncryption: "no"
+rtmpEncryption: 'no'
 # Address of the RTMPS listener. This is needed only when encryption is "strict" or "optional".
 rtmpsAddress: :1936
 # Path to the server key. This is needed only when encryption is "strict" or "optional".
@@ -166,7 +166,7 @@ hlsPartDuration: 200ms
 hlsSegmentMaxSize: 50M
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 # This allows to play the HLS stream from an external website.
-hlsAllowOrigin: "*"
+hlsAllowOrigin: '*'
 # List of IPs or CIDRs of proxies placed before the HLS server.
 # If the server receives a request from one of these entries, IP in logs
 # will be taken from the X-Forwarded-For header.
@@ -174,7 +174,7 @@ hlsTrustedProxies: []
 # Directory in which to save segments, instead of keeping them in the RAM.
 # This decreases performance, since reading from disk is less performant than
 # reading from RAM, but allows to save RAM.
-hlsDirectory: ""
+hlsDirectory: ''
 
 ###############################################
 # WebRTC settings
@@ -194,7 +194,7 @@ webrtcServerKey: server.key
 webrtcServerCert: server.crt
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 # This allows to play the WebRTC stream from an external website.
-webrtcAllowOrigin: "*"
+webrtcAllowOrigin: '*'
 # List of IPs or CIDRs of proxies placed before the WebRTC server.
 # If the server receives a request from one of these entries, IP in logs
 # will be taken from the X-Forwarded-For header.
@@ -209,8 +209,8 @@ webrtcICEServers2:
   - url: stun:stun.l.google.com:19302
     # if user is "AUTH_SECRET", then authentication is secret based.
     # the secret must be inserted into the password field.
-    username: ""
-    password: ""
+    username: ''
+    password: ''
 # List of public IP addresses that are to be used as a host.
 # This is used typically for servers that are behind 1:1 D-NAT.
 webrtcICEHostNAT1To1IPs: []
@@ -371,7 +371,7 @@ paths:
     rpiCameraAWB: auto
     # denoise operating mode.
     # values: off, cdn_off, cdn_fast, cdn_hq
-    rpiCameraDenoise: "off"
+    rpiCameraDenoise: 'off'
     # fixed shutter speed, in microseconds.
     rpiCameraShutter: 0
     # metering mode of the AEC/AGC algorithm.
@@ -399,7 +399,7 @@ paths:
     # H264 profile
     rpiCameraProfile: main
     # H264 level
-    rpiCameraLevel: "4.1"
+    rpiCameraLevel: '4.1'
     # Autofocus mode
     # values: auto, manual, continuous
     rpiCameraAfMode: auto
@@ -422,7 +422,7 @@ paths:
     rpiCameraTextOverlayEnable: false
     # text that is printed on each frame.
     # format is the one of the strftime() function.
-    rpiCameraTextOverlay: "%Y-%m-%d %H:%M:%S - MediaMTX"
+    rpiCameraTextOverlay: '%Y-%m-%d %H:%M:%S - MediaMTX'
 
     ###############################################
     # External commands path settings

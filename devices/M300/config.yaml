@@ -1,0 +1,4 @@
+M300-real: '/home/nvidia/programming/Onboard-SDK/utility/bin/armv8/64-bit/./MatriceSeries_ConfigTool --usb-port /dev/ttyACM0 --config-file /home/nvidia/programming/Onboard-SDK/build/bin/UserConfig.txt --power-supply on'
+M300-sim-on: '/home/nvidia/programming/Onboard-SDK/utility/bin/armv8/64-bit/./MatriceSeries_ConfigTool --usb-port /dev/ttyACM0 --config-file /home/nvidia/programming/Onboard-SDK/build/bin/UserConfig.txt --power-supply on --usb-connected-flight on --simulation on --latitude 37.1939871 --longitude -6.7032891'
+uav_id: 14
+mode: 'M300-sim-on'
