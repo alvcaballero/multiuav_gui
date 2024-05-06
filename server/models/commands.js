@@ -130,7 +130,10 @@ export class commandsModel {
       return response;
     }
     for (const route of routes) {
-      let myDevice = DevicesController.getByName(route.uav);
+      console.log('load route');
+      console.log(route);
+      console.log(route.uav);
+      let myDevice = await DevicesController.getByName(route.uav);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
         console.log('load mission to ' + myDevice.id);
         let attributes = await rosController.decodeMissionMsg({ uav_id: myDevice.id, route });

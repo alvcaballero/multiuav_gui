@@ -122,11 +122,7 @@ export class rosModel {
       });
     }
 
-    if (
-      type == 'speed' &&
-      msgType == 'geometry_msgs/Vector3Stamped' &&
-      uav_type.includes('dji_M300')
-    ) {
+    if (type == 'speed' && msgType == 'geometry_msgs/Vector3Stamped' && uav_type.includes('dji_M300')) {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
         positionsController.updatePosition({
           deviceId: uav_id,
@@ -148,9 +144,7 @@ export class rosModel {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
         positionsController.updatePosition({
           deviceId: uav_id,
-          speed: Math.sqrt(
-            Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)
-          ).toFixed(2),
+          speed: Math.sqrt(Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)).toFixed(2),
         }); // showData[2].innerHTML = Math.sqrt(Math.pow(message.twist.linear.x,2) + Math.pow(message.twist.linear.y,2)).toFixed(2);
       });
     }
@@ -225,7 +219,7 @@ export class rosModel {
 
   static async decodeMissionMsg({ uav_id, route }) {
     let device = await DevicesController.getDevice(uav_id);
-    //console.log(device);
+    console.log(device);
     let uavname = device.name;
     let uavcategory = device.category;
     let mode_yaw = 0;
@@ -243,22 +237,12 @@ export class rosModel {
     let param_matrix = [];
     if (route['uav'] == uavname) {
       //console.log('route'); //console.log(route);
-      idle_vel = route.attributes.hasOwnProperty('idle_vel')
-        ? route.attributes['idle_vel']
-        : idle_vel;
+      idle_vel = route.attributes.hasOwnProperty('idle_vel') ? route.attributes['idle_vel'] : idle_vel;
       max_vel = route.attributes.hasOwnProperty('max_vel') ? route.attributes['max_vel'] : max_vel;
-      mode_yaw = route.attributes.hasOwnProperty('mode_yaw')
-        ? route.attributes['mode_yaw']
-        : mode_yaw;
-      mode_gimbal = route.attributes.hasOwnProperty('mode_gimbal')
-        ? route.attributes['mode_gimbal']
-        : mode_gimbal;
-      mode_trace = route.attributes.hasOwnProperty('mode_trace')
-        ? route.attributes['mode_trace']
-        : mode_trace;
-      mode_landing = route.attributes.hasOwnProperty('mode_landing')
-        ? route.attributes['mode_landing']
-        : mode_landing;
+      mode_yaw = route.attributes.hasOwnProperty('mode_yaw') ? route.attributes['mode_yaw'] : mode_yaw;
+      mode_gimbal = route.attributes.hasOwnProperty('mode_gimbal') ? route.attributes['mode_gimbal'] : mode_gimbal;
+      mode_trace = route.attributes.hasOwnProperty('mode_trace') ? route.attributes['mode_trace'] : mode_trace;
+      mode_landing = route.attributes.hasOwnProperty('mode_landing') ? route.attributes['mode_landing'] : mode_landing;
 
       let categoryModel = categoryController.getActionsParam({ type: uavcategory });
 
@@ -342,23 +326,13 @@ export class rosModel {
 
     Object.keys(devices_msg[uav_type]['topics']).forEach((element) => {
       if (element !== 'camera') {
-        this.decodeMsg(
-          cur_uav_idx,
-          uav_type,
-          element,
-          devices_msg[uav_type]['topics'][element]['messageType']
-        );
+        this.decodeMsg(cur_uav_idx, uav_type, element, devices_msg[uav_type]['topics'][element]['messageType']);
       }
     });
 
     for (let i = 0; i < uav_camera.length; i = i + 1) {
       if (uav_camera[i]['type'] == 'Websocket') {
-        this.decodeMsg(
-          cur_uav_idx,
-          uav_type,
-          'camera',
-          devices_msg[uav_type]['topics']['camera']['messageType']
-        );
+        this.decodeMsg(cur_uav_idx, uav_type, 'camera', devices_msg[uav_type]['topics']['camera']['messageType']);
       }
     }
   }

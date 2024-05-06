@@ -30,7 +30,7 @@ const Mission = {}; // current mission // id , status (init, planing, doing, fin
 */
 
 export class missionModel {
-  static async getmissionValue(id) {
+  static async getMissionValue(id) {
     console.log('Get mission' + id);
     if (id) {
       return await sequelize.models.Mission.findOne({ where: { id: id } });
