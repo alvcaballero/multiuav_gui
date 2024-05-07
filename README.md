@@ -39,7 +39,7 @@ git clone https://github.com/alvcaballero/multiuav_gui.git
 cd multiuav_gui
 ```
 
-3. Install the requirements.
+3. Install the requirements of server.
 
 ```ssh
 cd server
@@ -47,10 +47,42 @@ nvm use 18
 npm install
 ```
 
-3. Install Docker services.
+3. Install Docker container and prepare the container 
 
 ```ssh
-docker build -t multiuav_gui/docker .
+cd docker
+docker build -t muavgcs:noetic .
+```
+4. modify the docker/container_run.sh and change the PROJECT_DIR value   and run 
+```
+cd docker
+./container_run.sh
+```
+
+
+5. put repos and  in catkin 
+```
+https://github.com/dji-sdk/Onboard-SDK-ROS.git
+mkdir build
+$cd build
+$cmake..
+$sudo make -j7 install
+cd ..
+
+mkdir catkin_ws && cd carkin_ws
+mkdir src && cd src
+// git clone --recurse-submodules -j8 https://github.com/alvcaballero/multiUAV_system.git
+git clone https://github.com/alvcaballero/multiUAV_system.git
+git clone https://github.com/alvcaballero/multiuav_gui.git
+git clone https://github.com/dji-sdk/Onboard-SDK-ROS
+// git clone https://github.com/grvcTeam/grvc-utils.git
+// git clone https://github.com/CircusMonkey/ros_rtsp.git
+// git clone https://github.com/miggilcas/simple_vs.git 
+
+cd ..
+catkin_make
+roslaunch aerialcore_gui connect_uas.launch
+
 ```
 
 ## 🖥️ Usage
@@ -72,13 +104,23 @@ cd multiuav_gui/server
 npm run server
 ```
 
-2. Open the interfaz in browser http://localhost:4000/
+3. Run rosbridge in docker
+```
+./container_run.sh
+roslaunch aerialcore_gui connect_uas.launch
+
+```
+
+3. Open the interfaz in browser http://localhost:4000/
+
+### optional use tmuxinator 
 
 Interface for control and monitoring of multiple UAV in mision
 
 ```
 tmuxinator start -p muav-gui.yml
 ```
+### optional develop web interface
 
 for development of MUAV-GUI can access to http://localhost:3000/
 
