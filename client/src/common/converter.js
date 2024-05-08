@@ -18,7 +18,7 @@ export const speedUnitString = (unit) => {
       return 'sharedMph';
     case 'kn':
     default:
-      return 'Km/h';
+      return 'm/s';
   }
 };
 

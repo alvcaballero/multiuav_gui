@@ -18,3 +18,7 @@ POST http://localhost:9997/v3/config/paths/remove/uav_5
 ### REMOVE 
 
 POST http://localhost:9997/v3/config/paths/remove/uav_5
+
+### show path
+
+GET http://localhost:9997/v3/config/paths/get/uav_3_visible

@@ -121,18 +121,16 @@ export class rosModel {
         positionsController.updatePosition({ deviceId: uav_id, course: msg.data }); //uav_list[uav_id].marker.setRotationAngle(message.data)
       });
     }
-
-    if (type == 'speed' && msgType == 'geometry_msgs/Vector3Stamped' && uav_type.includes('dji_M300')) {
+    if (type == 'mission_state' && msgType == 'dji_osdk_ros/WaypointV2MissionStatePush') {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
         positionsController.updatePosition({
           deviceId: uav_id,
           speed: msg.velocity * 0.01,
         });
       });
-      return null;
     }
 
-    if (type == 'speed' && msgType == 'geometry_msgs/Vector3Stamped') {
+    if (type == 'speed' && msgType == 'geometry_msgs/Vector3Stamped' && !uav_type.includes('dji_M300')) {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
         positionsController.updatePosition({
           deviceId: uav_id,

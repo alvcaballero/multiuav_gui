@@ -24,7 +24,7 @@ const PositionValue = ({ position, property, attribute }) => {
 
   const distanceUnit = 'm';
   const altitudeUnit = 'm';
-  const speedUnit = 'km/s';
+  const speedUnit = 'm/s';
   const coordinateFormat = 'ddm';
   const hours12 = false;
 
@@ -75,7 +75,7 @@ const PositionValue = ({ position, property, attribute }) => {
     case 'video':
     case 'audio':
       return (
-        <Link href={`/api/media/${device.uniqueId}/${value}`} target='_blank'>
+        <Link href={`/api/media/${device.uniqueId}/${value}`} target="_blank">
           {value}
         </Link>
       );
