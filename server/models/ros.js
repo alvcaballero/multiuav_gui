@@ -1,14 +1,14 @@
 import ROSLIB from 'roslib';
 import { readYAML, getDatetime } from '../common/utils.js';
 import { DevicesController } from '../controllers/devices.js';
-import { missionSMModel } from './missionSM.js';
+import { MissionController } from '../controllers/mission.js';
 import { positionsController } from '../controllers/positions.js';
 import { categoryController } from '../controllers/category.js';
 
 var ros = '';
 const rosState = { state: 'disconnect', msg: 'init msg' };
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
-const service_list = [];
+const service_list = {};
 const uav_list = {};
 
 var autoconectRos = setInterval(() => {
@@ -74,6 +74,7 @@ export class rosModel {
       });
     } else {
       rosModel.unsubscribe(-1);
+      rosModel.GCSunServicesMission();
       ros.close();
     }
   }
@@ -466,55 +467,52 @@ export class rosModel {
    / Check if UAV finish Download
   */
   static GCSServicesMission() {
-    let cur_uav_idx = String(service_list.length);
-
-    service_list.push({ name: 'service mission' });
-    service_list[cur_uav_idx]['ServiceMission'] = new ROSLIB.Service({
+    service_list['ServiceMission'] = new ROSLIB.Service({
       ros: ros,
       name: '/GCS/FinishMission',
       serviceType: 'aerialcore_common/finishMission',
     });
 
-    service_list[cur_uav_idx]['ServiceMission'].advertise(function (request, response) {
+    service_list['ServiceMission'].advertise(function (request, response) {
       // Call state machine
       console.log('callback Sevice finish mission');
       console.log(request);
       if (request.hasOwnProperty('uav_id')) {
-        let mydevice = DevicesController.getByName(`uav_${request.uav_id}`);
-        console.log(mydevice);
-        console.log('mydevice in finish mission ' + mydevice.id);
-        missionSMModel.UAVFinishMission(mydevice.id);
+        MissionController.deviceFinishMission({ name: `uav_${request.uav_id}` });
       }
-
       response['success'] = true;
       response['msg'] = 'Set successfully';
       return true;
     });
     console.log('ServiceDownload');
 
-    cur_uav_idx = String(service_list.length);
-    service_list.push({ name: 'ServiceDownload' });
-
-    service_list[cur_uav_idx]['ServiceDownload'] = new ROSLIB.Service({
+    service_list['ServiceDownload'] = new ROSLIB.Service({
       ros: ros,
       name: '/GCS/FinishDownload',
       serviceType: 'aerialcore_common/finishGetFiles',
     });
 
-    service_list[cur_uav_idx]['ServiceDownload'].advertise(function (request, response) {
+    service_list['ServiceDownload'].advertise(function (request, response) {
       console.log('callback Service finish download files');
       console.log(request);
       if (request.hasOwnProperty('uav_id')) {
-        let mydevice = DevicesController.getByName(request.uav_id);
-        console.log(mydevice);
-        console.log('mydevice finish download files' + mydevice.id);
-        missionSMModel.DownloadFiles(mydevice.id);
+        MissionController.deviceFinishSyncFiles({ name: request.uav_id });
       }
       response['success'] = true;
       response['msg'] = 'Set successfully';
       return true;
     });
   }
+  static GCSunServicesMission() {
+    console.log('Unadvertise services');
+    if (service_list['ServiceMission']) {
+      service_list['ServiceMission'].unadvertise();
+      service_list['ServiceDownload'].unadvertise();
+      delete service_list['ServiceMission'];
+      delete service_list['ServiceDownload'];
+    }
+  }
+
   static getServices() {
     const servicesPromise = new Promise((resolve, reject) => {
       ros.ROS.getServices(
@@ -574,3 +572,29 @@ export class rosModel {
     });
   }
 }
+
+// Function to execute when the program is about to exit
+const onExit = () => {
+  console.log('Exiting program...');
+  // Execute any cleanup tasks or final actions here
+  rosModel.GCSunServicesMission();
+};
+const onUncaughtException = (err) => {
+  console.error('Uncaught Exception:', err);
+  // Execute any error handling logic here
+  rosModel.GCSunServicesMission();
+  // Optionally, you can gracefully shut down the program
+  process.exit(1);
+};
+// Handling the SIGINT signal (Ctrl + C)
+process.on('SIGINT', () => {
+  console.log('Ctrl + C pressed. Exiting...');
+  // Execute the exit function before terminating
+  onExit();
+  // Terminate the process
+  process.exit(0);
+});
+
+// Registering the event handlers
+process.on('exit', onExit);
+process.on('uncaughtException', onUncaughtException);

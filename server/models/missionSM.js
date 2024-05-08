@@ -49,6 +49,7 @@ export class missionSMModel {
     } else {
       console.log('no exist estate machine for this UAV = ' + id);
     }
+    return true;
   }
   static DownloadFiles(id) {
     if (listSM.hasOwnProperty(id)) {
@@ -56,6 +57,7 @@ export class missionSMModel {
     } else {
       console.log('no exist estate machine for this UAV = ' + id);
     }
+    return true;
   }
   static FinishMission(id) {
     if (listSM.hasOwnProperty(id)) {

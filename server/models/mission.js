@@ -168,6 +168,23 @@ export class missionModel {
     ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
     return { response: mission, status: 'OK' };
   }
+
+  static async deviceFinishSyncFiles({ name, id }) {
+    let mydevice = await DevicesController.getByName(name);
+    console.log(mydevice);
+    console.log('mydevice finish download files' + mydevice.id);
+    missionSMModel.DownloadFiles(mydevice.id);
+    return true;
+  }
+
+  static async deviceFinishMission({ name, id }) {
+    console.log(name);
+    let mydevice = await DevicesController.getByName(name);
+    console.log(mydevice);
+    console.log('mydevice in finish mission ' + mydevice.id);
+    missionSMModel.UAVFinishMission(mydevice.id);
+    return true;
+  }
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
     let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;

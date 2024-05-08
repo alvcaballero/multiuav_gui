@@ -70,6 +70,12 @@ class missionController {
   finishMission = (missionId, deviceId) => {
     return this.missionModel.UAVFinish(missionId, deviceId);
   };
+  deviceFinishMission = ({ name, id }) => {
+    return this.missionModel.deviceFinishMission({ name, id });
+  };
+  deviceFinishSyncFiles = ({ name, id }) => {
+    return this.missionModel.deviceFinishSyncFiles({ name, id });
+  };
   finishMissionProcessFiles = (missionId, deviceId, results) => {
     return this.missionModel.FinishProcessFiles((missionId, deviceId, results));
   };

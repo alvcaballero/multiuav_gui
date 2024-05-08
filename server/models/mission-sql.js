@@ -153,6 +153,21 @@ export class missionModel {
     return { response: mission, status: 'OK' };
   }
 
+  static async deviceFinishSyncFiles({ name, id }) {
+    let mydevice = DevicesController.getByName(name);
+    console.log(mydevice);
+    console.log('mydevice finish download files' + mydevice.id);
+    missionSMModel.DownloadFiles(mydevice.id);
+  }
+
+  static async deviceFinishMission({ name, id }) {
+    let mydevice = DevicesController.getByName(name);
+    console.log(mydevice);
+    console.log('mydevice in finish mission ' + mydevice.id);
+    missionSMModel.UAVFinishMission(mydevice.id);
+    return true;
+  }
+
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
 
