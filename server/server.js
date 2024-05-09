@@ -16,6 +16,7 @@ console.log('use db is ' + db);
 
 //ws
 import { WebsocketManager } from './WebsocketManager.js';
+import { WebsocketDevices } from './WebsocketDevices.js';
 // rutas
 import { createDevicesRouter } from './routes/devices.js';
 import { categoryRouter } from './routes/category.js';
@@ -65,10 +66,12 @@ app.use('/api/server', serverRouter);
 
 const server = createServer(app);
 var ws = new WebsocketManager(server, '/api/socket');
-
+var ws2 = new WebsocketDevices(8080);
 //
 // Start the server.
 //
 server.listen(app.get('port'), () => {
   console.log('Servidor iniciado en el puerto: ' + app.get('port'));
 });
+//
+//
