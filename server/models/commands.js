@@ -20,7 +20,8 @@ export class commandsModel {
       { type: 'GimbalPitch' },
       { type: 'ResetGimbal' },
       { type: 'SincroniseFiles' },
-      { type: 'threat' },
+      { type: 'threat_confirmation' },
+      { type: 'threat_defuse' },
       { type: 'setupcamera' },
       { type: 'configureMission' },
       { type: 'commandMission' },
@@ -48,8 +49,11 @@ export class commandsModel {
       response = await this.commandMissionDevice(deviceId);
     }
     if (deviceId >= 0) {
-      if (type == 'threat') {
-        response = await this.standarCommand(deviceId, 'threat'); //threatUAV(deviceId);
+      if (type == 'threat_confirmation') {
+        response = await this.standarCommand(deviceId, 'threat_confirmation'); //threatUAV(deviceId);
+      }
+      if (type == 'threat_defuse') {
+        response = await this.standarCommand(deviceId, 'threat_defuse'); //threatUAV(deviceId);
       }
       if (type == 'SincroniseFiles') {
         response = await this.standarCommand(deviceId, 'sincronize');

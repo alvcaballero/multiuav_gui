@@ -10,13 +10,13 @@ function heartbeat() {
 
 export class WebsocketDevices {
   constructor(port) {
-    console.log('init websocket manager' + WebsocketManager._instance);
-    if (WebsocketManager._instance) {
+    console.log('init websocket manager' + WebsocketDevices._instance);
+    if (WebsocketDevices._instance) {
       console.log('return last instance singleton');
-      return WebsocketManager._instance;
+      return WebsocketDevices._instance;
     }
     console.log('new instance create');
-    WebsocketManager._instance = this;
+    WebsocketDevices._instance = this;
 
     this.ws = new WebSocket.Server({ port: port });
 

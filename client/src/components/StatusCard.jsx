@@ -98,10 +98,10 @@ const StatusRow = ({ name, content }) => {
   return (
     <TableRow>
       <TableCell className={classes.card}>
-        <Typography variant='body2'>{name}</Typography>
+        <Typography variant="body2">{name}</Typography>
       </TableCell>
       <TableCell className={classes.cell}>
-        <Typography variant='body2' color='textSecondary'>
+        <Typography variant="body2" color="textSecondary">
           {content}
         </Typography>
       </TableCell>
@@ -168,47 +168,35 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
         {device && (
           <Card elevation={3} className={classes.card}>
             {deviceImage ? (
-              <CardMedia
-                className={classes.media}
-                image={`/api/media/${device.uniqueId}/${deviceImage}`}
-              >
-                <IconButton size='small' onClick={onClose} onTouchStart={onClose}>
-                  <CloseIcon fontSize='small' className={classes.mediaButton} />
+              <CardMedia className={classes.media} image={`/api/media/${device.uniqueId}/${deviceImage}`}>
+                <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
+                  <CloseIcon fontSize="small" className={classes.mediaButton} />
                 </IconButton>
               </CardMedia>
             ) : (
               <div className={classes.header}>
-                <Typography variant='body2' color='textSecondary'>
+                <Typography variant="body2" color="textSecondary">
                   {device.name}
                 </Typography>
-                <IconButton size='small' onClick={onClose} onTouchStart={onClose}>
-                  <CloseIcon fontSize='small' />
+                <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
+                  <CloseIcon fontSize="small" />
                 </IconButton>
               </div>
             )}
             {position && (
               <CardContent className={classes.content}>
-                <Table size='small' classes={{ root: classes.table }}>
+                <Table size="small" classes={{ root: classes.table }}>
                   <TableBody>
                     {position.hasOwnProperty('latitude') && (
                       <StatusRow
-                        key='latitude'
+                        key="latitude"
                         name={'Position'}
                         content={
                           <a
-                            href={
-                              'https://www.google.com/maps?q=' +
-                              position.latitude +
-                              ',' +
-                              position.longitude
-                            }
-                            target='_blank'
+                            href={'https://www.google.com/maps?q=' + position.latitude + ',' + position.longitude}
+                            target="_blank"
                           >
-                            {'[' +
-                              position.latitude.toFixed(6) +
-                              ',' +
-                              position.longitude.toFixed(6) +
-                              ']'}
+                            {'[' + position.latitude.toFixed(6) + ',' + position.longitude.toFixed(6) + ']'}
                           </a>
                         }
                       />
@@ -216,10 +204,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
                     {positionItems
                       .split(',')
-                      .filter(
-                        (key) =>
-                          position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key)
-                      )
+                      .filter((key) => position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key))
                       .map((key) => (
                         <StatusRow
                           key={key}
@@ -234,45 +219,40 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         />
                       ))}
 
-                    {position.attributes.hasOwnProperty('alarm') &&
-                      position.attributes.alarm == 'threat' && (
-                        <StatusRow
-                          key='alarm1'
-                          name={'Alarm ' + position.attributes.alarm}
-                          content={
-                            <div style={{ width: '100%' }}>
-                              <Button
-                                variant='contained'
-                                size='small'
-                                color='primary'
-                                style={{ margin: '1px', display: 'inline-block' }}
-                                onClick={() => serverCommand(device.id, 'threat', { data: true })}
-                              >
-                                Validate
-                              </Button>
-                              <Button
-                                variant='contained'
-                                size='small'
-                                color='secondary'
-                                style={{ margin: '1px', display: 'inline-block' }}
-                                onClick={() => serverCommand(device.id, 'threat', { data: false })}
-                              >
-                                Dismiss
-                              </Button>
-                            </div>
-                          }
-                        />
-                      )}
+                    {position.attributes.hasOwnProperty('alarm') && position.attributes.alarm == 'threat' && (
+                      <StatusRow
+                        key="alarm1"
+                        name={'Alarm ' + position.attributes.alarm}
+                        content={
+                          <div style={{ width: '100%' }}>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              style={{ margin: '1px', display: 'inline-block' }}
+                              onClick={() => serverCommand(device.id, 'threat_confirmation')}
+                            >
+                              Validate
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="secondary"
+                              style={{ margin: '1px', display: 'inline-block' }}
+                              onClick={() => serverCommand(device.id, 'threat_defuse')}
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
+                        }
+                      />
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
             )}
             <CardActions classes={{ root: classes.actions }} disableSpacing>
-              <IconButton
-                color='secondary'
-                onClick={(e) => setAnchorEl(e.currentTarget)}
-                disabled={!position}
-              >
+              <IconButton color="secondary" onClick={(e) => setAnchorEl(e.currentTarget)} disabled={!position}>
                 <PendingIcon />
               </IconButton>
               <IconButton
@@ -281,10 +261,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
               >
                 <ReplayIcon />
               </IconButton>
-              <IconButton
-                onClick={() => serverCommand(device.id, 'commandMission')}
-                disabled={disableActions}
-              >
+              <IconButton onClick={() => serverCommand(device.id, 'commandMission')} disabled={disableActions}>
                 <PublishIcon />
               </IconButton>
               <IconButton
@@ -307,25 +284,25 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
       {position && (
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
           <MenuItem onClick={() => navigate(`/device/${deviceId}`)}>
-            <Typography color='secondary'>Detalle Dispositivo</Typography>
+            <Typography color="secondary">Detalle Dispositivo</Typography>
           </MenuItem>
           <MenuItem
-            component='a'
-            target='_blank'
+            component="a"
+            target="_blank"
             href={`https://www.google.com/maps/search/?api=1&query=${position.latitude}%2C${position.longitude}`}
           >
             {'linkGoogleMaps'}
           </MenuItem>
           <MenuItem
-            component='a'
-            target='_blank'
+            component="a"
+            target="_blank"
             href={`http://maps.apple.com/?ll=${position.latitude},${position.longitude}`}
           >
             {'linkAppleMaps'}
           </MenuItem>
           <MenuItem
-            component='a'
-            target='_blank'
+            component="a"
+            target="_blank"
             href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${position.latitude}%2C${position.longitude}&heading=${position.course}`}
           >
             {'linkStreetView'}
@@ -335,7 +312,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
       <RemoveDialog
         open={removing}
-        endpoint='devices'
+        endpoint="devices"
         itemId={deviceId}
         onResult={(removed) => handleRemove(removed)}
       />

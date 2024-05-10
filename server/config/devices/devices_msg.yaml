@@ -975,8 +975,11 @@ catec:
       messageType: 'std_msgs/String'
     threat:
       name: '/threat'
-      messageType: 'std_msgs/Bool'
+      messageType: 'std_msgs/UInt8'
   services:
-    threat:
+    threat_confirmation:
       name: '/threat_confirmation'
-      serviceType: 'std_srvs/SetBool'
+      serviceType: 'std_srvs/Trigger'
+    threat_defuse:
+      name: '/threat_defuse'
+      serviceType: 'std_srvs/Trigger'

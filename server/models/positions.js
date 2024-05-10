@@ -1,5 +1,6 @@
 import { map } from 'zod';
 import { DevicesController } from '../controllers/devices.js';
+import { eventsController } from '../controllers/events.js';
 const positions = {};
 const history = {};
 const camera = {};
@@ -114,10 +115,36 @@ export class positionsModel {
 
     if (payload.hasOwnProperty('threat')) {
       //positions[payload.deviceId]['attributes']['threat'] = payload.threat;
-      if (payload.threat == true) {
+      if (payload.threat == 2) {
+        if (positions[payload.deviceId]['attributes']['alarm'] != 'threat') {
+          eventsController.addEvent({
+            type: 'warning',
+            eventTime: new Date().toISOString(),
+            deviceId: payload.deviceId,
+            attributes: {
+              message: 'Threat detected',
+              positions: { latitude: payload.latitude, longitude: payload.longitude, altitude: payload.altitude },
+            },
+          });
+        }
         positions[payload.deviceId]['attributes']['alarm'] = 'threat';
       } else {
-        positions[payload.deviceId]['attributes']['alarm'] = undefined;
+        if (payload.threat == 3) {
+          if (positions[payload.deviceId]['attributes']['alarm'] != 'confirm') {
+            eventsController.addEvent({
+              type: 'warning',
+              eventTime: new Date().toISOString(),
+              deviceId: payload.deviceId,
+              attributes: {
+                message: 'Threat confirmed',
+                positions: { latitude: payload.latitude, longitude: payload.longitude, altitude: payload.altitude },
+              },
+            });
+          }
+          positions[payload.deviceId]['attributes']['alarm'] = 'confirm';
+        } else {
+          positions[payload.deviceId]['attributes']['alarm'] = undefined;
+        }
       }
     }
   }

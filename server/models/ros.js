@@ -185,7 +185,7 @@ export class rosModel {
         });
       });
     }
-    if (type == 'threat' && msgType == 'std_msgs/Bool') {
+    if (type == 'threat') {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
         positionsController.updatePosition({ deviceId: uav_id, threat: msg.data });
       });
