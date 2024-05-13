@@ -1,8 +1,24 @@
 //https://github.com/lukas8219/nodejs-design-patterns/blob/4a1d3cd4333a290e9461880ff2b060add40a1b45/13-messaging-and-integration-patterns/utils/websocket-manager.mjs#L4
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
-
+import * as fb from './dist/schema_generated.cjs';
+import * as flatbuffers from 'flatbuffers'; // do not remove; needed by generated code
 import WebSocket, { WebSocketServer } from 'ws';
 import { websocketController } from './controllers/websocket.js';
+
+function getRobofleetMetadata(buf) {
+  const msg = fb.fb.MsgWithMetadata.getRootAsMsgWithMetadata(buf);
+  return msg._metadata();
+}
+
+export function getByteBuffer(data) {
+  if (data instanceof Buffer) {
+    return new flatbuffers.ByteBuffer(data);
+  }
+  if (data instanceof ArrayBuffer) {
+    return new flatbuffers.ByteBuffer(new Uint8Array(data));
+  }
+  return null;
+}
 
 function heartbeat() {
   this.isAlive = true;
@@ -23,6 +39,19 @@ export class WebsocketDevices {
     this.onConnect(async (client) => {
       client.onMessage(async (message) => {
         console.log('received: %s', message.toString());
+        const buf = getByteBuffer(message);
+        if (buf === null) {
+          console.log("received message that wasn't a flatbuffer. ignoring.");
+          return;
+        }
+        const topic = getRobofleetMetadata(buf)?.topic() ?? null;
+        const metadata = getRobofleetMetadata(buf) ?? null;
+        console.log('received message on topic: %s', topic);
+        if ((metadata === null || metadata === void 0 ? void 0 : metadata.type()) === 'sensor_msgs/NavSatFix') {
+          console.log('received navsatfix message');
+          const msg = fb.fb.sensor_msgs.NavSatFix.getRootAsNavSatFix(buf);
+          console.log('latitude: %f, longitude: %f', msg.latitude(), msg.longitude());
+        }
       });
       let init_msg = 'hi from server';
       client.notify(init_msg);

@@ -66,7 +66,7 @@ app.use('/api/server', serverRouter);
 
 const server = createServer(app);
 var ws = new WebsocketManager(server, '/api/socket');
-var ws2 = new WebsocketDevices(8082);
+var ws2 = new WebsocketDevices(8080);
 //
 // Start the server.
 //

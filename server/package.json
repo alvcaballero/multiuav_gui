@@ -11,6 +11,7 @@
     "exif-reader": "^2.0.1",
     "express": "^4.19.2",
     "express-ws": "^5.0.2",
+    "flatbuffers": "^24.3.25",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
@@ -19,6 +20,7 @@
     "sequelize": "^6.37.1",
     "sharp": "^0.33.2",
     "ssh2-sftp-client": "^8.1.0",
+    "typescript": "^5.4.5",
     "util": "^0.12.5",
     "websocket": "^1.0.34",
     "ws": "^8.13.0",
@@ -28,6 +30,7 @@
   },
   "scripts": {
     "server": "node ./server.js",
-    "testirec": "node ./test/API-IREC.js"
+    "testirec": "node ./test/API-IREC.js",
+    "build": "tsc"
   }
 }

@@ -39,6 +39,8 @@ RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer-plugins-goo
 
 # libqt5websockets5
 # sudo apt install libqt5websockets5-dev
+# sudo ln -s /usr/bin/python3 /usr/bin/python
+
 
 # RUN /bin/bash -c 'echo -e "/opt/ros/noetic/setup.bash \n" >> ~/.bashrc ;'
 # RUN /bin/bash -c 'echo -e "source /home/user/catkin_ws/devel/setup.bash \n" >> ~/.bashrc ;'
