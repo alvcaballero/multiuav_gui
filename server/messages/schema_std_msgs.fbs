@@ -1,0 +1,15 @@
+include "schema_common.fbs";
+
+namespace fb.std_msgs;
+
+table Header {
+  __metadata:fb.MsgMetadata;
+  seq:uint32;
+  stamp:fb.RosTime (required);
+  frame_id:string (required);
+}
+
+table String {
+  __metadata:fb.MsgMetadata;
+  data:string (required);
+}

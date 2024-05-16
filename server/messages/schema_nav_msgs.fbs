@@ -1,0 +1,14 @@
+include "schema_common.fbs";
+include "schema_geometry_msgs.fbs";
+include "schema_std_msgs.fbs";
+
+
+namespace fb.nav_msgs;
+
+table Odometry {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  child_frame_id:string (required);
+  pose:fb.geometry_msgs.PoseWithCovariance (required);
+  twist:fb.geometry_msgs.TwistWithCovariance (required);
+}

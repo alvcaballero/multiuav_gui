@@ -415,7 +415,7 @@ export class rosModel {
       if (request) {
         MsgRequest = new ROSLIB.ServiceRequest(request);
       } else {
-        MsgRequest = new ROSLIB.ServiceRequest({});
+        MsgRequest = {};
       }
     }
 

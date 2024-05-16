@@ -1,0 +1,57 @@
+
+include "schema_common.fbs";
+include "schema_std_msgs.fbs";
+
+
+namespace fb.geometry_msgs;
+
+table Point {
+  __metadata:fb.MsgMetadata;
+  x:float64;
+  y:float64;
+  z:float64;
+}
+table Quaternion {
+  __metadata:fb.MsgMetadata;
+  x:float64;
+  y:float64;
+  z:float64;
+  w:float64;
+}
+table Pose {
+  __metadata:fb.MsgMetadata;
+  position:Point (required);
+  orientation:Quaternion (required);
+}
+table PoseStamped {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  pose:Pose (required);
+}
+table PoseWithCovariance {
+  __metadata:fb.MsgMetadata;
+  pose:Pose (required);
+  covariance:[float64] (required);
+}
+table PoseWithCovarianceStamped {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  pose:PoseWithCovariance (required);
+}
+
+table Vector3 {
+  __metadata:fb.MsgMetadata;
+  x:float64;
+  y:float64;
+  z:float64;
+}
+table Twist {
+  __metadata:fb.MsgMetadata;
+  linear:Vector3 (required);
+  angular:Vector3 (required);
+}
+table TwistWithCovariance {
+  __metadata:fb.MsgMetadata;
+  twist:Twist (required);
+  covariance:[float64] (required);
+}

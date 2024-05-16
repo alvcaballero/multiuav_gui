@@ -1,0 +1,94 @@
+include "schema_common.fbs";
+include "schema_std_msgs.fbs";
+
+
+namespace fb.amrl_msgs;
+
+table RobofleetStatus {
+  __metadata:fb.MsgMetadata;
+  status:string (required);
+  is_ok:bool;
+  battery_level:float32;
+  location:string (required);
+}
+table RobofleetSubscription {
+  __metadata:fb.MsgMetadata;
+  topic_regex:string (required);
+  action:uint8;
+}
+
+table ElevatorStatus {
+  __metadata:fb.MsgMetadata;
+  floor:uint8;
+  door:uint8;
+}
+table ElevatorCommand {
+  __metadata:fb.MsgMetadata;
+  floor_cmd:uint8;
+  hold_door:bool;
+}
+
+table ErrorReport {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  laser_header:fb.std_msgs.Header (required);
+  severity_level:uint8;
+  failed_subsystem:uint8;
+  detailed_error_msg:string (required);
+}
+
+
+table Pose2Df {
+  __metadata:fb.MsgMetadata;
+  x:float32;
+  y:float32;
+  theta:float32;
+}
+
+table Localization2DMsg {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  pose:Pose2Df (required);
+  map:string (required);
+}
+
+
+//
+//namespace fb.amrl_msgs.RobofleetSubscriptionConstants;
+//enum action_unsubscribe : uint8 { value = 0 }
+//enum action_subscribe : uint8 { value = 1 }
+//
+//namespace fb.amrl_msgs.ElevatorStatusConstants;
+//enum door_open : uint8 { value = 1 }
+//enum door_closed : uint8 { value = 0 }
+//enum door_transition : uint8 { value = 2 }
+//enum floor_transition : uint8 { value = 0 }
+//
+//namespace fb.amrl_msgs.ErrorReportConstants;
+//enum info : uint8 { value = 0 }
+//enum suboptimal : uint8 { value = 1 }
+//enum risky : uint8 { value = 2 }
+//enum catastrophic : uint8 { value = 3 }
+//enum other : uint8 { value = 0 }
+//enum localization : uint8 { value = 1 }
+//enum navigation_perception : uint8 { value = 2 }
+//enum navigation_local_planning : uint8 { value = 3 }
+//enum navigation_global_planning : uint8 { value = 4 }
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

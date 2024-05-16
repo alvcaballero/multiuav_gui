@@ -1,0 +1,37 @@
+include "schema_common.fbs";
+include "schema_sensor_msgs.fbs";
+
+namespace fb.mission_msgs;
+
+table MissionRequest
+{
+    uav_id:string;
+    mission_id:string;
+    mission_type:int;
+    waypoint:[fb.sensor_msgs.NavSatFix];
+    radius:double;
+    maxVel:double;
+    idleVel:double;
+    yaw:[float];
+    gimbalPitch:[float];
+    speed:[float];
+    yawMode:int;
+    traceMode:int;
+    gimbalPitchMode:int;
+    finishAction:int;
+    commandList:[float];
+    commandParameter:[float];
+}
+
+
+table eventRequest
+{
+     uav_id:string;
+     data:string;
+}
+
+table eventResponse
+{
+    success:bool;
+    msg:string;
+}

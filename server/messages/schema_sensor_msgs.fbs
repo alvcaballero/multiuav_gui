@@ -1,0 +1,93 @@
+include "schema_common.fbs";
+include "schema_std_msgs.fbs";
+
+
+
+namespace fb.sensor_msgs;
+
+
+table NavSatStatus {
+  __metadata:fb.MsgMetadata;
+  status:int8;
+  service:uint16;
+}
+
+table NavSatFix {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  status:NavSatStatus (required);
+  latitude:float64;
+  longitude:float64;
+  altitude:float64;
+  position_covariance:[float64] (required);
+  position_covariance_type:uint8;
+}
+
+table LaserScan {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  angle_min:float32;
+  angle_max:float32;
+  angle_increment:float32;
+  time_increment:float32;
+  scan_time:float32;
+  range_min:float32;
+  range_max:float32;
+  ranges:[float32] (required);
+  intensities:[float32] (required);
+}
+
+table CompressedImage {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  format:string (required);
+  data:[uint8] (required);
+}
+
+table PointField {
+  __metadata:fb.MsgMetadata;
+  name:string (required);
+  offset:uint32;
+  datatype:uint8;
+  count:uint32;
+}
+
+table PointCloud2 {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  height:uint32;
+  width:uint32;
+  fields:[PointField] (required);
+  is_bigendian:bool;
+  point_step:uint32;
+  row_step:uint32;
+  data:[uint8] (required);
+  is_dense:bool;
+}
+ 
+// namespace fb.sensor_msgs.NavSatFixConstants;
+// enum covariance_type_unknown : uint8 { value = 0 }
+// enum covariance_type_approximated : uint8 { value = 1 }
+// enum covariance_type_diagonal_known : uint8 { value = 2 }
+// enum covariance_type_known : uint8 { value = 3 }
+// 
+// namespace fb.sensor_msgs.PointFieldConstants;
+// enum int8 : uint8 { value = 1 }
+// enum uint8 : uint8 { value = 2 }
+// enum int16 : uint8 { value = 3 }
+// enum uint16 : uint8 { value = 4 }
+// enum int32 : uint8 { value = 5 }
+// enum uint32 : uint8 { value = 6 }
+// enum float32 : uint8 { value = 7 }
+// enum float64 : uint8 { value = 8 }
+// 
+// 
+// namespace fb.sensor_msgs.NavSatStatusConstants;
+// enum status_no_fix : int8 { value = -1 }
+// enum status_fix : int8 { value = 0 }
+// enum status_sbas_fix : int8 { value = 1 }
+// enum status_gbas_fix : int8 { value = 2 }
+// enum service_gps : uint16 { value = 1 }
+// enum service_glonass : uint16 { value = 2 }
+// enum service_compass : uint16 { value = 4 }
+// enum service_galileo : uint16 { value = 8 }

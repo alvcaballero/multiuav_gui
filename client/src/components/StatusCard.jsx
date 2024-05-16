@@ -126,20 +126,20 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const [removing, setRemoving] = useState(false);
 
-  const serverCommand = async (uav_id, command, attributes) => {
+  const serverCommand = async (deviceId, command, attributes) => {
     //event.preventDefault();
-    console.log('send command uavud: ' + uav_id + command);
+    console.log('send command uavud: ' + deviceId + command);
     try {
       const response = await fetch('/api/commands/send', {
         method: 'POST',
-        body: JSON.stringify({ deviceId: uav_id, type: command, attributes: attributes }),
+        body: JSON.stringify({ deviceId, type: command, attributes }),
         headers: {
           'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
-        let myresponse = await response.json();
-        console.log(myresponse);
+        const myResponse = await response.json();
+        console.log(myResponse);
       } else {
         console.log('Error1:' + response);
         throw Error(await response.text());
@@ -219,7 +219,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         />
                       ))}
 
-                    {position.attributes.hasOwnProperty('alarm') && position.attributes.alarm == 'threat' && (
+                    {position.attributes.hasOwnProperty('alarm') && (
                       <StatusRow
                         key="alarm1"
                         name={'Alarm ' + position.attributes.alarm}

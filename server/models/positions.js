@@ -143,7 +143,7 @@ export class positionsModel {
           }
           positions[payload.deviceId]['attributes']['alarm'] = 'confirm';
         } else {
-          positions[payload.deviceId]['attributes']['alarm'] = undefined;
+          positions[payload.deviceId]['attributes']['alarm'] = 'None';
         }
       }
     }
