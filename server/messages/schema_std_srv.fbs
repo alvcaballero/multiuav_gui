@@ -1,0 +1,23 @@
+include "schema_common.fbs";
+
+namespace fb.std_msgs;
+
+table Empty {
+  __metadata:fb.MsgMetadata;
+}
+
+table SetBool {
+  __metadata:fb.MsgMetadata;
+  data:bool (required);
+}
+
+table SetBoolresponse {
+  __metadata:fb.MsgMetadata;
+  success:bool (required);
+  message:string;
+}
+
+table Float64 {
+  __metadata:fb.MsgMetadata;
+  data:float64;
+}

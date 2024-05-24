@@ -7,7 +7,7 @@
   "scripts": {
     "server": "node ./server.js",
     "testirec": "node ./test/API-IREC.js",
-    "build": "tsc src/fb-generate/schema.ts"
+    "build": "tsc --module 'commonjs'  --target 'es5' --outDir dist src/schema_main.ts "
   },
   "dependencies": {
     "@turf/turf": "^6.5.0",

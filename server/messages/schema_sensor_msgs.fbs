@@ -22,6 +22,33 @@ table NavSatFix {
   position_covariance:[float64] (required);
   position_covariance_type:uint8;
 }
+table BatteryState {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  voltage:float32;
+  current:float32;
+  charge:float32;
+  capacity:float32;
+  design_capacity:float32;
+  percentage:float32;
+  power_supply_status:int8;
+  power_supply_health:int8;
+  power_supply_technology:int8;
+  present:bool;
+  cell_voltage:[float32] (required);
+  cell_temperature:[float32] (required);
+}
+// vector 3 stamped  roll pitch and yaw
+//table Imu {
+//  __metadata:fb.MsgMetadata;
+//  header:fb.std_msgs.Header (required);
+//  orientation:[float64] (required);
+//  orientation_covariance:[float64] (required);
+//  angular_velocity:[float64] (required);
+//  angular_velocity_covariance:[float64] (required);
+//  linear_acceleration:[float64] (required);
+//  linear_acceleration_covariance:[float64] (required);
+//}
 
 table LaserScan {
   __metadata:fb.MsgMetadata;

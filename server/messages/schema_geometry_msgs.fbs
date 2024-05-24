@@ -45,6 +45,14 @@ table Vector3 {
   y:float64;
   z:float64;
 }
+
+
+table Vector3Stamped {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  vector:Vector3 (required);
+}
+
 table Twist {
   __metadata:fb.MsgMetadata;
   linear:Vector3 (required);

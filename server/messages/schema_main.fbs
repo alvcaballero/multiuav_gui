@@ -5,4 +5,6 @@ include "schema_mission.fbs";
 include "schema_sensor_msgs.fbs";
 include "schema_std_msgs.fbs";
 include "schema_amrl_msgs.fbs";
+include "schema_nav_msgs.fbs";
+
 

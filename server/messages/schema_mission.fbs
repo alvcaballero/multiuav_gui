@@ -5,6 +5,7 @@ namespace fb.mission_msgs;
 
 table MissionRequest
 {
+    __metadata:fb.MsgMetadata;
     uav_id:string;
     mission_id:string;
     mission_type:int;
@@ -26,12 +27,14 @@ table MissionRequest
 
 table eventRequest
 {
-     uav_id:string;
-     data:string;
+    __metadata:fb.MsgMetadata;
+    uav_id:string;
+    data:string;
 }
 
 table eventResponse
 {
+    __metadata:fb.MsgMetadata;
     success:bool;
     msg:string;
 }

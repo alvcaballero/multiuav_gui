@@ -9,6 +9,7 @@ init:
         source: 'main'
 
   - name: 'uav_2'
+    protocol: 'robofleet'
     category: 'dji_M210_noetic'
     ip: '10.42.0.43'
     user: 'user'

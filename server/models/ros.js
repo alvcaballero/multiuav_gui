@@ -12,7 +12,7 @@ const service_list = {};
 const uav_list = {};
 
 var autoconectRos = setInterval(() => {
-  console.log('autoconectRos');
+  console.log('autoconectRos, ros status is: ' + rosState.state);
   if (rosState.state != 'connect') {
     rosModel.rosConnect();
   }
@@ -31,14 +31,16 @@ export class rosModel {
   static async connectAllUAV() {
     const devices = await DevicesController.getAllDevices();
     for (let device of Object.values(devices)) {
-      await rosModel.subscribeDevice({
-        id: device.id,
-        name: device.name,
-        type: device.category,
-        camera: device.camera,
-        watch_bound: true,
-        bag: false,
-      });
+      if (device.protocol == 'ros') {
+        await rosModel.subscribeDevice({
+          id: device.id,
+          name: device.name,
+          type: device.category,
+          camera: device.camera,
+          watch_bound: true,
+          bag: false,
+        });
+      }
     }
     console.log('finish to connect all devices ------------');
   }
@@ -112,8 +114,11 @@ export class rosModel {
     if (type == 'IMU' && msgType == 'sensor_msgs/Imu') {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
         //https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
+        // float yaw   = atan2(2.0 * (q.q3 * q.q0 + q.q1 * q.q2) , - 1.0 + 2.0 * (q.q0 * q.q0 + q.q1 * q.q1));
+        //  q0, q1, q2, q3 corresponds to w,x,y,z
         let q = msg.orientation;
-        let yaw = Math.atan2(2.0 * (q.x * q.y + q.w * q.z), -1 + 2 * (q.w * q.w + q.x * q.x)) * -1;
+        let yaw = Math.atan2(2.0 * (q.z * q.w + q.x * q.y), -1 + +2 * (q.w * q.w + q.x * q.x)) * -1;
+
         positionsController.updatePosition({ deviceId: uav_id, course: 90 + yaw * 57.295 });
       });
     }
@@ -216,93 +221,50 @@ export class rosModel {
     }
   }
 
-  static async decodeMissionMsg({ uav_id, route }) {
-    let device = await DevicesController.getDevice(uav_id);
-    console.log(device);
-    let uavname = device.name;
-    let uavcategory = device.category;
-    let mode_yaw = 0;
-    let mode_gimbal = 0;
-    let mode_trace = 0;
-    let idle_vel = 1.8;
-    let max_vel = 10;
-    let mode_landing = 0;
-    let response = null;
-    let wp_command = [];
-    let yaw_pos = [];
-    let speed_pos = [];
-    let gimbal_pos = [];
-    let action_matrix = [];
-    let param_matrix = [];
-    if (route['uav'] == uavname) {
-      //console.log('route'); //console.log(route);
-      idle_vel = route.attributes.hasOwnProperty('idle_vel') ? route.attributes['idle_vel'] : idle_vel;
-      max_vel = route.attributes.hasOwnProperty('max_vel') ? route.attributes['max_vel'] : max_vel;
-      mode_yaw = route.attributes.hasOwnProperty('mode_yaw') ? route.attributes['mode_yaw'] : mode_yaw;
-      mode_gimbal = route.attributes.hasOwnProperty('mode_gimbal') ? route.attributes['mode_gimbal'] : mode_gimbal;
-      mode_trace = route.attributes.hasOwnProperty('mode_trace') ? route.attributes['mode_trace'] : mode_trace;
-      mode_landing = route.attributes.hasOwnProperty('mode_landing') ? route.attributes['mode_landing'] : mode_landing;
+  static MissionToRos({
+    yawMode = 0,
+    gimbalPitchMode = 0,
+    traceMode = 0,
+    idleVel = 1.8,
+    maxVel = 10,
+    finishAction = 0,
+    waypoint = [],
+    yaw = [],
+    speed = [],
+    gimbalPitch = [],
+    commandList = [],
+    commandParameter = [],
+  }) {
+    let wp_command_msg = waypoint.map((pos) => {
+      return new ROSLIB.Message(pos);
+    });
 
-      let categoryModel = categoryController.getActionsParam({ type: uavcategory });
+    let yaw_pos_msg = new ROSLIB.Message({ data: yaw });
+    let speed_pos_msg = new ROSLIB.Message({ data: speed });
+    let gimbal_pos_msg = new ROSLIB.Message({ data: gimbalPitch });
+    let action_matrix_msg = new ROSLIB.Message({
+      data: commandList.flat(),
+    });
+    let param_matrix_msg = new ROSLIB.Message({
+      data: commandParameter.flat(),
+    });
 
-      Object.values(route['wp']).forEach((item) => {
-        let yaw, gimbal, speed;
-        let action_array = Array(10).fill(0);
-        let param_array = Array(10).fill(0);
-        let pos = new ROSLIB.Message({
-          latitude: item.pos[0],
-          longitude: item.pos[1],
-          altitude: item.pos[2],
-        });
-        yaw = item.hasOwnProperty('yaw') ? item.yaw : 0;
-        speed = item.hasOwnProperty('speed') ? item.speed : idle_vel;
-        gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
-        if (item.hasOwnProperty('action')) {
-          Object.keys(item.action).forEach((action_val, index, arr) => {
-            let found = Object.values(categoryModel).find((element) => element.name == action_val);
-            if (found) {
-              action_array[index] = Number(found.id);
-              param_array[index] = found.param ? Number(item.action[action_val]) : 0;
-            }
-          });
-        }
-        wp_command.push(pos);
-        gimbal_pos.push(gimbal);
-        yaw_pos.push(yaw);
-        speed_pos.push(speed);
-        action_matrix.push(action_array);
-        param_matrix.push(param_array);
-      });
-
-      let yaw_pos_msg = new ROSLIB.Message({ data: yaw_pos });
-      let speed_pos_msg = new ROSLIB.Message({ data: speed_pos });
-      let gimbal_pos_msg = new ROSLIB.Message({ data: gimbal_pos });
-      let action_matrix_msg = new ROSLIB.Message({
-        data: action_matrix.flat(),
-      });
-      let param_matrix_msg = new ROSLIB.Message({
-        data: param_matrix.flat(),
-      });
-
-      response = {
-        type: 'waypoint',
-        waypoint: wp_command,
-        radius: 0,
-        maxVel: max_vel,
-        idleVel: idle_vel,
-        yaw: yaw_pos_msg,
-        speed: speed_pos_msg,
-        gimbalPitch: gimbal_pos_msg,
-        yawMode: mode_yaw,
-        traceMode: mode_trace,
-        gimbalPitchMode: mode_gimbal,
-        finishAction: mode_landing,
-        commandList: action_matrix_msg,
-        commandParameter: param_matrix_msg,
-      };
-    }
-
-    return response;
+    return {
+      type: 'waypoint',
+      waypoint: wp_command_msg,
+      radius: 0,
+      maxVel: maxVel,
+      idleVel: idleVel,
+      yaw: yaw_pos_msg,
+      speed: speed_pos_msg,
+      gimbalPitch: gimbal_pos_msg,
+      yawMode: yawMode,
+      traceMode: traceMode,
+      gimbalPitchMode: gimbalPitchMode,
+      finishAction: finishAction,
+      commandList: action_matrix_msg,
+      commandParameter: param_matrix_msg,
+    };
   }
 
   // Subscribing
@@ -401,6 +363,8 @@ export class rosModel {
       return { state: 'warning', msg: type + ' to:' + uavName + ' dont have this service' };
     }
 
+    let myRequest = type == 'configureMission' ? this.MissionToRos(request) : request;
+
     let Message = new ROSLIB.Service({
       ros: ros,
       name: uavName + devices_msg[uavCategory]['services'][type]['name'],
@@ -413,7 +377,7 @@ export class rosModel {
       MsgRequest = new ROSLIB.ServiceRequest({});
     } else {
       if (request) {
-        MsgRequest = new ROSLIB.ServiceRequest(request);
+        MsgRequest = new ROSLIB.ServiceRequest(myRequest);
       } else {
         MsgRequest = {};
       }

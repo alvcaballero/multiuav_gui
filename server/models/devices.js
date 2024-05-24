@@ -54,7 +54,7 @@ export class DevicesModel {
     let uav_ns = device.name;
     let uav_type = device.category;
     let cur_uav_idx = String(Object.values(devices).length);
-
+    let protocol = device.protocol ? device.protocol : 'ros';
     console.log('create UAV ' + uav_ns + '  type' + uav_type);
 
     let repeat_device = false;
@@ -81,6 +81,7 @@ export class DevicesModel {
       ip: device.ip,
       camera: device.camera,
       status: 'online',
+      protocol: protocol,
       lastUpdate: null,
     });
 
@@ -98,23 +99,22 @@ export class DevicesModel {
     }
 
     if (serverState.state === 'connect') {
-      console.log('suscribe devices ');
-      await rosController.subscribeDevice({
-        id: cur_uav_idx,
-        name: uav_ns,
-        type: uav_type,
-        camera: device.camera,
-        watch_bound: true,
-        bag: false,
-      });
+      if (device.protocol == 'ros') {
+        console.log('suscribe devices ');
+        await rosController.subscribeDevice({
+          id: cur_uav_idx,
+          name: uav_ns,
+          type: uav_type,
+          camera: device.camera,
+          watch_bound: true,
+          bag: false,
+        });
+      }
 
       console.log('success create', device.name + ' Type: ' + device.category);
       return { state: 'success', msg: 'conectado Correctamente' };
     } else {
-      console.log(
-        'success create',
-        device.name + ' Type: ' + device.category + ' -Ros dont connect '
-      );
+      console.log('success create', device.name + ' Type: ' + device.category + ' -Ros dont connect ');
       return { state: 'error', msg: 'Ros no está conectado' };
     }
   }
@@ -122,18 +122,15 @@ export class DevicesModel {
   static async addCameraWebRTC(device) {
     for (let i = 0; i < device.camera.length; i = i + 1) {
       if (device.camera[i]['type'] == 'WebRTC') {
-        await fetch(
-          `http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`,
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        await fetch(`http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
       }
     }
   }

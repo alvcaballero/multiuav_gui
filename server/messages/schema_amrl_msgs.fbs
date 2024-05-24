@@ -38,6 +38,7 @@ table ErrorReport {
 }
 
 
+
 table Pose2Df {
   __metadata:fb.MsgMetadata;
   x:float32;
@@ -48,9 +49,53 @@ table Pose2Df {
 table Localization2DMsg {
   __metadata:fb.MsgMetadata;
   header:fb.std_msgs.Header (required);
-  pose:Pose2Df (required);
+  pose:fb.amrl_msgs.Pose2Df (required);
   map:string (required);
 }
+table PathVisualization {
+  __metadata:fb.MsgMetadata;
+  curvature:float32;
+  distance:float32;
+  clearance:float32;
+}
+
+table Point2D {
+  __metadata:fb.MsgMetadata;
+  x:float32;
+  y:float32;
+}
+
+table ColoredPoint2D {
+  __metadata:fb.MsgMetadata;
+  point:fb.amrl_msgs.Point2D (required);
+  color:uint32;
+}
+table ColoredLine2D {
+  __metadata:fb.MsgMetadata;
+  p0:fb.amrl_msgs.Point2D (required);
+  p1:fb.amrl_msgs.Point2D (required);
+  color:uint32;
+}
+table ColoredArc2D {
+  __metadata:fb.MsgMetadata;
+  center:fb.amrl_msgs.Point2D (required);
+  radius:float32;
+  start_angle:float32;
+  end_angle:float32;
+  color:uint32;
+}
+table VisualizationMsg {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  ns:string (required);
+  particles:[fb.amrl_msgs.Pose2Df] (required);
+  path_options:[fb.amrl_msgs.PathVisualization] (required);
+  points:[fb.amrl_msgs.ColoredPoint2D] (required);
+  lines:[fb.amrl_msgs.ColoredLine2D] (required);
+  arcs:[fb.amrl_msgs.ColoredArc2D] (required);
+}
+
+
 
 
 //

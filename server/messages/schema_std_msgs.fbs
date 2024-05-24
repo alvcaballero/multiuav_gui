@@ -13,3 +13,8 @@ table String {
   __metadata:fb.MsgMetadata;
   data:string (required);
 }
+
+table Float64 {
+  __metadata:fb.MsgMetadata;
+  data:float64;
+}
