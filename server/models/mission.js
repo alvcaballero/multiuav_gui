@@ -60,7 +60,7 @@ const Routes = {
 };
 
 export class missionModel {
-  static getmissionValue(id) {
+  static getMissionValue(id) {
     if (id) {
       console.log('Get mission' + id);
       return Mission[id];

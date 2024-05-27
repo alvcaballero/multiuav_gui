@@ -159,14 +159,15 @@ const SocketController = () => {
 
   useEffect(() => {
     console.log('notifications');
-    notifications.map((notification) => {
-      enqueueSnackbar(notification.message, {
-        variant: notification.type,
+    console.log(notifications);
+    for (let i = 0; i < notifications.length; i += 1) {
+      enqueueSnackbar(notifications[i].message, {
+        variant: notifications[i].type,
         autoHideDuration: 3000,
         persist: false,
-        onClose: () => setEvents(events.filter((e) => e.id !== notification.id)),
+        onClose: () => setEvents(events.filter((e) => e.id !== notifications[i].id)),
       });
-    });
+    }
     //
   }, [notifications]);
 
