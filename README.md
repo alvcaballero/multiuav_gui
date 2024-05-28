@@ -47,20 +47,22 @@ nvm use 18
 npm install
 ```
 
-3. Install Docker container and prepare the container 
+3. Install Docker container and prepare the container
 
 ```ssh
 cd docker
 docker build -t muavgcs:noetic .
 ```
-4. modify the docker/container_run.sh and change the PROJECT_DIR value   and run 
+
+4. modify the docker/container_run.sh and change the PROJECT_DIR value and run
+
 ```
 cd docker
 ./container_run.sh
 ```
 
+5. put repos and in catkin
 
-5. put repos and  in catkin 
 ```
 https://github.com/dji-sdk/Onboard-SDK-ROS.git
 mkdir build
@@ -77,7 +79,7 @@ git clone https://github.com/alvcaballero/multiuav_gui.git
 git clone https://github.com/dji-sdk/Onboard-SDK-ROS
 // git clone https://github.com/grvcTeam/grvc-utils.git
 // git clone https://github.com/CircusMonkey/ros_rtsp.git
-// git clone https://github.com/miggilcas/simple_vs.git 
+// git clone https://github.com/miggilcas/simple_vs.git
 
 cd ..
 catkin_make
@@ -105,6 +107,7 @@ npm run server
 ```
 
 3. Run rosbridge in docker
+
 ```
 ./container_run.sh
 roslaunch aerialcore_gui connect_uas.launch
@@ -113,13 +116,14 @@ roslaunch aerialcore_gui connect_uas.launch
 
 3. Open the interfaz in browser http://localhost:4000/
 
-### optional use tmuxinator 
+### optional use tmuxinator
 
 Interface for control and monitoring of multiple UAV in mision
 
 ```
 tmuxinator start -p muav-gui.yml
 ```
+
 ### optional develop web interface
 
 for development of MUAV-GUI can access to http://localhost:3000/

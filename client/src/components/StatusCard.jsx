@@ -219,7 +219,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         />
                       ))}
 
-                    {position.attributes.hasOwnProperty('alarm') && (
+                    {position.attributes.hasOwnProperty('alarm') && device.category.includes('catec') && (
                       <StatusRow
                         key="alarm1"
                         name={'Alarm ' + position.attributes.alarm}

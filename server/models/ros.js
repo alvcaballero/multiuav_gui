@@ -11,12 +11,18 @@ const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 const service_list = {};
 const uav_list = {};
 
-var autoconectRos = setInterval(() => {
+var autoconectRos = null;
+function connectRos() {
   console.log('autoconectRos, ros status is: ' + rosState.state);
   if (rosState.state != 'connect') {
     rosModel.rosConnect();
+  } else {
+    console.log('clearInterval');
+    clearInterval(autoconectRos);
   }
-}, 30000);
+}
+
+var autoconectRos = setInterval(connectRos, 30000);
 
 console.log('Load model ROS');
 export class rosModel {
@@ -45,6 +51,13 @@ export class rosModel {
     console.log('finish to connect all devices ------------');
   }
 
+  static disconectRos() {
+    rosModel.unsubscribe(-1);
+    rosModel.GCSunServicesMission();
+    ros.close();
+    autoconectRos = setInterval(connectRos, 30000);
+  }
+
   static async rosConnect() {
     console.log('try to connect to ros');
     if (rosState.state != 'connect') {
@@ -54,30 +67,17 @@ export class rosModel {
         rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
         rosModel.connectAllUAV();
         rosModel.GCSServicesMission();
-        clearInterval(autoconectRos);
       });
       ros.on('error', function (error) {
         console.log('ROS Error connecting to websocket server: ', error);
         rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
-        autoconectRos = setInterval(() => {
-          if (rosState.state != 'connect') {
-            rosModel.rosConnect();
-          }
-        }, 30000);
+        rosModel.disconectRos();
       });
       ros.on('close', function () {
         console.log('ROS Connection to websocket server closed.');
         rosModel.setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
-        autoconectRos = setInterval(() => {
-          if (rosState.state != 'connect') {
-            rosModel.rosConnect();
-          }
-        }, 30000);
+        rosModel.disconectRos();
       });
-    } else {
-      rosModel.unsubscribe(-1);
-      rosModel.GCSunServicesMission();
-      ros.close();
     }
   }
 
