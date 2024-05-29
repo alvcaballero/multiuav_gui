@@ -128,15 +128,23 @@ export class filesModel {
   /* 
   / Show list of files in the drone, from folder uav_media,
   */
-
-  static async showFiles({ uavId, missionId, initTime }) {
-    console.log('show files ' + uavId + '-' + missionId);
-    let mydevice = await DevicesController.getAccess(uavId);
+  static async paramsConnection({ mydevice }) {
     console.log(mydevice);
     let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
     const parsedURL = new URL(myurl);
-    const port = parsedURL.port || 22;
+    let port = parsedURL.port || 22;
+    if (!mydevice.ip.includes('10.42.')) {
+      console.log('port 21');
+      port = 21;
+    }
     const { host, username, password } = parsedURL;
+    return { host, port, username, password };
+  }
+
+  static async showFiles({ uavId, missionId, initTime }) {
+    let mydevice = await DevicesController.getAccess(uavId);
+    const { host, port, username, password } = await this.paramsConnection({ mydevice });
+    console.log('host ' + host + ' port ' + port + ' user ' + username + ' pass ' + password);
     const client = new SFTPClient();
     await client.connect({ host, port, username, password });
     let listFiles = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
@@ -174,21 +182,19 @@ export class filesModel {
 
     let mydevice = await DevicesController.getAccess(uavId);
     console.log(mydevice);
-    let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
     if (!mydevice.hasOwnProperty('user')) {
       console.log('no have ftp ');
       return false;
     }
+    const { host, port, username, password } = await this.paramsConnection({ mydevice });
+    console.log('host' + host + ' port ' + port + ' user ' + username + ' pass ' + password);
     const client = new SFTPClient();
-    const parsedURL = new URL(myurl);
-    const port = parsedURL.port || 22;
-    const { host, username, password } = parsedURL;
-
     let isConnected = await client.connect({ host, port, username, password });
     if (!isConnected) {
       console.log('cant connect to device ');
       return listImages;
     }
+
     let listFolders = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
     let nameFolder = null;
     console.log('select folder');

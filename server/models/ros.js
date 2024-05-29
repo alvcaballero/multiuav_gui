@@ -52,7 +52,7 @@ export class rosModel {
   }
 
   static disconectRos() {
-    rosModel.unsubscribe(-1);
+    rosModel.unsubscribeDevice(-1);
     rosModel.GCSunServicesMission();
     ros.close();
     autoconectRos = setInterval(connectRos, 30000);
@@ -299,12 +299,12 @@ export class rosModel {
   }
 
   static async unsubscribeDevice(id) {
-    console.log('unsuscribe model');
+    console.log('unsubscribe model');
     let cur_uav_idx;
     let Key_listener;
     if (Object.keys(uav_list).length != 0) {
       if (id < 0) {
-        console.log('unsuscribe all');
+        console.log('unsubscribe all');
         for (let i = 0; i < Object.keys(uav_list).length; i++) {
           //uav_list[i].listener.unsubscribe();
           cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
@@ -317,7 +317,7 @@ export class rosModel {
         }
         uav_list = [];
       } else {
-        console.log('unsuscribe ' + id);
+        console.log('unsubscribe ' + id);
         cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
 
         Key_listener = Object.keys(cur_uav_idx).filter((element) => element.includes('listener'));

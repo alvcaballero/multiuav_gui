@@ -122,15 +122,29 @@ export class DevicesModel {
   static async addCameraWebRTC(device) {
     for (let i = 0; i < device.camera.length; i = i + 1) {
       if (device.camera[i]['type'] == 'WebRTC') {
-        await fetch(`http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`, {
-          method: 'POST',
-          body: JSON.stringify({
-            source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        try {
+          let response = await fetch(
+            `http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`,
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
+              }),
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          if (response.status == 200) {
+            console.log('camera added ' + device.camera[i].source);
+          } else {
+            console.log('Error adding camera ' + device.camera[i].source);
+            return false;
+          }
+        } catch (e) {
+          console.log('\x1b[31m%s\x1b[0m', 'Error adding camera ' + device.camera[i].source);
+          return false;
+        }
       }
     }
   }

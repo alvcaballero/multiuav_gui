@@ -14,6 +14,12 @@ The server ftp is mounted on port 22 and only allow the access to file where sav
 ftp localhost 22
 ```
 
-# simulate device FTP
+# simulate device FTP and sftp no are same no compatible
 
-docker run -i --rm --mount type=bind,source=/home/grvc/work/px4,destination=/home/one/ -p 21:21 -p 21000-21010:21000-21010 -e USERS="one|1234" delfer/alpine-ftp-server
+docker run -i --rm --mount type=bind,source=/home/grvc/work/px4,destination=/ftp/one/ -p 21:21 -p 21000-21010:21000-21010 -e USERS="one|1234" delfer/alpine-ftp-server
+
+# use this
+
+sftp -oPort=custom_port sammy@your_server_ip_or_remote_hostname
+
+docker run --rm -it --mount type=bind,source=/home/grvc/work/px4,destination=/home/one -p 21:22 atmoz/sftp foo:pass:::upload

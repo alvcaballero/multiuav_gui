@@ -139,7 +139,13 @@ export class missionModel {
   }
 
   static async initMission(missionId, mission) {
-    const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
+    const listUAV = [];
+    for (const route of mission.route) {
+      let findDevice = await DevicesController.getByName(route.uav);
+      console.log(findDevice);
+      listUAV.push(findDevice.id);
+    }
+    //const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
     Mission[missionId] = {
       id: missionId,
       uav: listUAV,

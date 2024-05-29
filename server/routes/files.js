@@ -11,5 +11,6 @@ export const createFilesRouter = ({ model }) => {
   filesRouter.post('/test', filesController.testfile);
   filesRouter.post('/TempResult', filesController.MetadataTempImage);
   filesRouter.post('/ProcessImage', filesController.ProcessThermalImages);
+  filesRouter.get('/showFiles/:uavId/:missionId', filesController.showFiles);
   return filesRouter;
 };

@@ -159,6 +159,10 @@ GET  http://localhost:4000/api/missions/updateFiles/{{uav_id}}/{{mission_id}}
 GET  http://localhost:4000/api/missions/listFiles/{{mission_id}}/{{uav_id}}
 
 
+
+### show files
+GET  http://localhost:4000/api/files/showFiles/{{uav_id}}/{{mission_id}}
+
 ### download files
 ### curl http://localhost:4000/api/files/download/mission_1/uav_15/DJI_20231124131954_0001_THRM.jpg --output some.jpg  
 GET http://localhost:4000/api/files/download/mission_1243/uav_15/DJI_20231124131954_0001_THRM.jpg

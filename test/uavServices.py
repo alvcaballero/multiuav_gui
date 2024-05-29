@@ -22,15 +22,17 @@ def Finish_Download(value):
     time.sleep(30)
     rospy.wait_for_service('/GCS/FinishDownload')
     print("Finish download")
-    print(value)
+    valuex = value.replace(" ", "_").replace("-", "_").replace(":", "_")
+
+    print(valuex)
 
     os.system(
-        "cp /home/user/uav_media/mission/* /home/user/uav_media/mission_"+str(value)+"/")
+        " mkdir -p /home/user/uav_media/mission_"+str(valuex)+" && cp /home/user/uav_media/mission/* /home/user/uav_media/mission_"+str(valuex)+"/")
 
     try:
         print("call GCS finish donwload files service")
         callservice = rospy.ServiceProxy(
-            '/GCS/FinishMission', finishGetFiles)
+            '/GCS/FinishDownload', finishGetFiles)
         resp1 = callservice('uav_14', True)
     except Exception as e:
         print("Service call failed: %s" % e)
@@ -59,8 +61,8 @@ def SetBool_Response(request):
     Callback function used by the service server to process
     requests from clients. It returns a TriggerResponse
     '''
-    thr = threading.Thread(target=finish_Mission, args=(), kwargs={})
-    thr.start()
+    thr1 = threading.Thread(target=finish_Mission, args=(), kwargs={})
+    thr1.start()
 
     print("Starting mission")
     return SetBoolResponse(
@@ -85,18 +87,24 @@ def DownloadMedia_Response(request):
     Callback function used by the service server to process
     requests from clients. It returns a TriggerResponse
     '''
-
+    myInitDate = '2024-10-32 10:22'  # request.initDate
+    mystr = ""
     print("Downloading media")
     print(request.downloadCnt)
     print(request.initDate)
     print(request.FinishDate)
+    # myInitDate = request.initDate
+    # for x in request.initDate:
+    #    print(x)
+    #    mystr += str(x)
+    #    print('value' + mystr)
 
     thr = threading.Thread(target=Finish_Download,
-                           args=(request.initdate), kwargs={})
+                           args=(request.initDate,), kwargs={})
     thr.start()
 
     return DownloadMediaResponse(
-        success=True,
+        result=True,
     )
 
 
@@ -113,7 +121,7 @@ srvCommmandMission = rospy.Service(                        # create a service, s
 
 srvDownloadMedia = rospy.Service(                        # create a service, specifying its name,
     # type, and callback
-    '/uav_14/CameraFileDownload', DownloadMedia, DownloadMedia_Response
+    '/uav_14/camera_download_files', DownloadMedia, DownloadMedia_Response
 )
 
 rospy.spin()

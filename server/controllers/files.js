@@ -28,6 +28,11 @@ class filesController {
   updateFiles = async (uavId, missionId, routeId, initTime) => {
     return await this.filesModel.updateFiles(uavId, missionId, routeId, initTime);
   };
+  showFiles = async (req, res) => {
+    console.log('show files');
+    let response = await this.filesModel.showFiles(req.params);
+    res.json(response);
+  };
 
   donwload = async (req, res) => {
     //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
