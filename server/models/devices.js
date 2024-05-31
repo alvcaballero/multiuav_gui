@@ -51,26 +51,24 @@ export class DevicesModel {
   static async create(device) {
     let serverState = rosController.getServerStatus();
 
-    let uav_ns = device.name;
-    let uav_type = device.category;
     let cur_uav_idx = String(Object.values(devices).length);
     let protocol = device.protocol ? device.protocol : 'ros';
-    console.log('create UAV ' + uav_ns + '  type' + uav_type);
+    console.log(`create UAV  ${device.name} type: ${device.category} protocol ${protocol} server ${serverState.state}`);
 
     let repeat_device = false;
     if (Object.values(devices).length > 0) {
       Object.values(devices).forEach((element) => {
         if (element) {
-          repeat_device = element.name == uav_ns ? true : false;
+          repeat_device = element.name == device.name ? true : false;
         }
       });
     }
 
     if (repeat_device == true) {
-      console.log('Dispositivo ya se encuentra registrado ' + uav_ns);
+      console.log('Dispositivo ya se encuentra registrado ' + device.name);
       return {
         state: 'error',
-        msg: `Dispositivo ya se encuentra registrado ${uav_ns}`,
+        msg: `Dispositivo ya se encuentra registrado ${device.name}`,
       };
     }
 
@@ -99,12 +97,12 @@ export class DevicesModel {
     }
 
     if (serverState.state === 'connect') {
-      if (device.protocol == 'ros') {
+      if (protocol == 'ros') {
         console.log('suscribe devices ');
         await rosController.subscribeDevice({
           id: cur_uav_idx,
-          name: uav_ns,
-          type: uav_type,
+          name: device.name,
+          type: device.category,
           camera: device.camera,
           watch_bound: true,
           bag: false,
