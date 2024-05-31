@@ -236,7 +236,6 @@ export class filesModel {
           { status: 'finish', attributes: maxAttributes },
           { where: { missionId: missionId, deviceId: deviceId } }
         );
-        MissionController.finishMissionProcessFiles(uavId, missionId, maxAttributes);
       }
     });
   }

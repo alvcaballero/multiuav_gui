@@ -1,0 +1,86 @@
+@host1 = http://10.10.2.5:8000
+@host1 = http://127.0.0.1:1234
+@host2 = http://127.0.0.1:1234
+
+@host = http://10.10.2.5:8000
+
+
+# @name login
+POST {{host}}/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=drone&password=F1PpE9V!E#Pwz8k53b7b
+
+###
+
+@authToken = {{login.response.body.access_token}}
+
+# send task
+### ---------- Test aplication-----------
+### Sendtask
+POST {{host2}}/sendTask
+Content-Type: application/json
+
+< ./json/task_Centro1.json
+
+
+### send test
+GET  {{host2}}/test
+
+
+### send test
+POST {{host2}}/test
+Content-Type: application/json
+
+{
+  "id": "{{authToken}}"
+}
+
+
+### Mission Start
+POST {{host}}/drones/mission/start HTTP/1.1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+< ./json/missionresponse.json
+
+### Mission Result 
+POST {{host}}/drones/mission/result HTTP/1.1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+
+{
+  "mission_id": 1234,
+  "resolution_code": 0
+}
+
+
+
+### Mission Result 2
+POST {{host}}/drones/mission/media
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
+
+
+{
+  "mission_id": 0,
+  "result": [
+    {
+      "latitude": 37.09241,
+      "longitude": -5.232,
+      "measures": [
+        {
+          "name": "minDistance",
+          "value": 25.34
+          }
+          ]
+    }
+    ],
+    "files": [
+      "mission_1243/uav_15/DJI_20231124131954_0001_THRM.jpg",
+      "mission_1243/uav_15/captura.jpg"
+      ]
+}
+
+

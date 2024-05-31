@@ -38,8 +38,9 @@ class missionController {
       }
     }
     let response = await this.missionModel.sendTask({ id, name, objetivo, locations, meteo });
+    res.status(200).json('all ok');
 
-    res.json(response);
+    //res.json(response);
   };
   setMission = async (req, res) => {
     let response = await this.missionModel.setMission(req.body);

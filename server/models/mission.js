@@ -201,7 +201,6 @@ export class missionModel {
       Mission[missionId].endTime = new Date();
       //resultCode = 1;
     }
-
     await ExtAppController.missionReqResult(missionId, resultCode);
     return true;
   }
@@ -210,6 +209,8 @@ export class missionModel {
     let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
     const results = await FilesController.updateFiles(uavId, missionId, routeId, Mission[missionId].initTime);
     await this.sleep(5000);
+    let code = 0;
+    await ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
 
     Routes[routeId].result = results.data;
     Mission[missionId].results.push(results.data);

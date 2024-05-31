@@ -54,6 +54,6 @@ windows:
             - source env/bin/activate
             - ./server_linux.sh
         - ExtAPP:
-            - cd ~/work/RESISTO/api/test
+            - cd ~/work/px4/multiuav_gui/test/externalAPP
             - nvm use 18
             - npm run test

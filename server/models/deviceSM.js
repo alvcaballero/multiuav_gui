@@ -91,8 +91,9 @@ const CommandDownload = async (context) => {
 
 const DownloadGCS = async (context) => {
   console.log('Download files from UAV');
-  await MissionController.updateFiles(context.missionId, context.uavId, context.routeId);
-  console.log('Download files from UAV2');
+  let result = await MissionController.updateFiles(context.missionId, context.uavId, context.routeId);
+  console.log(`Download files from UAV id ${context.uavId}`);
+  return { state: 'success' };
 };
 
 const LoadMissionSMPromise = (context) =>

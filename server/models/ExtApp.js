@@ -84,7 +84,7 @@ export class ExtApp {
     }
   }
   static async missionResult(missionId, resultCode) {
-    console.log('Mission Result');
+    console.log('======= send mission  Result to ext app ==================');
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
