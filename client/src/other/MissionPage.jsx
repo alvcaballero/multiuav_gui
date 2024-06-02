@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import MapMissionsCreate from '../Mapview/draw/MapMissionsCreate';
 import MapPositions from '../Mapview/MapPositions';
+import MapMarkers from '../Mapview/MapMarkers';
 
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
@@ -58,12 +59,17 @@ const MissionPage = () => {
   const [Opensave, setOpenSave] = useState(false);
 
   const positions = useSelector((state) => state.data.positions);
+  const sessionmarkers = useSelector((state) => state.session.markers);
 
   const [filteredPositions, setFilteredPositions] = useState([]);
+  const [markers, setmarkers] = useState([]);
 
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
+  useEffect(() => {
+    setmarkers(sessionmarkers);
+  }, [sessionmarkers]);
 
   return (
     <div className={classes.root}>
@@ -81,14 +87,10 @@ const MissionPage = () => {
             }}
           >
             <MapView>
+              <MapMarkers markers={markers} />
               <MapDefaultCamera />
               <MapMissionsCreate />
-              <MapPositions
-                positions={filteredPositions}
-                onClick={null}
-                selectedPosition={null}
-                showStatus
-              />
+              <MapPositions positions={filteredPositions} onClick={null} selectedPosition={null} showStatus />
             </MapView>
             <MapScale />
           </div>

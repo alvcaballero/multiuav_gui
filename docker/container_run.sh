@@ -22,6 +22,8 @@ docker run -it \
 -p 14570:14570/udp  \
 -p 14560:14560  \
 -p 8080:8080  \
+-p 8553:8553  \
+
 muavgcs:noetic bash\
 ;
 else
