@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import { Canvas } from '@react-three/fiber';
+import maplibregl from 'maplibre-gl';
 
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -62,6 +63,9 @@ const MissionPage3D = () => {
   const [Opensave, setOpenSave] = useState(false);
 
   const positions = useSelector((state) => state.data.positions);
+  const routes = useSelector((state) => state.mission.route);
+  const [routeLines, setRouteLines] = useState([]);
+  const [routeWp, setRouteWp] = useState();
 
   const [filteredPositions, setFilteredPositions] = useState([]);
 
@@ -71,17 +75,69 @@ const MissionPage3D = () => {
     new THREE.DodecahedronGeometry(0.785398),
   ];
 
+  const latLonToXYZ = (lat, lon, alt) => {
+    const radius = 6371; // Earth radius in kilometers
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lon + 180) * (Math.PI / 180);
+
+    const x = -(radius + alt) * Math.sin(phi) * Math.cos(theta);
+    const y = (radius + alt) * Math.cos(phi);
+    const z = (radius + alt) * Math.sin(phi) * Math.sin(theta);
+
+    return [x, y, z];
+  };
+
+  function calculateDistanceMercatorToMeters(from, to) {
+    const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
+    // mercator x: 0=west, 1=east
+    const dEast = to.x - from.x;
+    const dEastMeter = dEast / mercatorPerMeter;
+    // mercator y: 0=north, 1=south
+    const dNorth = from.y - to.y;
+    const dNorthMeter = dNorth / mercatorPerMeter;
+    return { dEastMeter, dNorthMeter };
+  }
+
+  useEffect(() => {
+    let line = [];
+    let origen = null;
+    let origen2 = null;
+    let lineVector3 = [];
+
+    routes.map((rt, index_rt) => {
+      rt.wp.map((wp, index_wp) => {
+        if (origen == null) {
+          //origen = latLonToXYZ(wp['pos'][1], wp['pos'][0], 0);
+          origen = [wp['pos'][1], wp['pos'][0], 0];
+          origen2 = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, 0);
+          let test2 = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, wp['pos'][2]);
+          let test3 = calculateDistanceMercatorToMeters(origen2, test2);
+          console.log(origen2);
+          console.log(test2);
+          console.log(test3);
+        }
+        let destino = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, wp['pos'][2]);
+        let distance = calculateDistanceMercatorToMeters(origen2, destino);
+
+        //let destino = latLonToXYZ(wp['pos'][1], wp['pos'][0], wp['pos'][2]);
+        //line.push([destino[0] - origen[0], destino[1] - origen[1], destino[2] - origen[2]]);
+        line.push([distance.dEastMeter, distance.dNorthMeter, wp['pos'][2] - origen[2]]);
+      });
+    });
+    console.log(line);
+    line.map((point) => {
+      lineVector3.push(new THREE.Vector3(point[0], point[2], point[1]));
+    });
+    setRouteLines(new THREE.BufferGeometry().setFromPoints(lineVector3));
+  }, [routes]);
+
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
 
   const tabs = (
     <>
-      <Tabs
-        value={tabIndex}
-        onChange={(_, index) => navigate(`/robot/${id}/${index}`)}
-        style={{ flexGrow: 1 }}
-      >
+      <Tabs value={tabIndex} onChange={(_, index) => navigate(`/robot/${id}/${index}`)} style={{ flexGrow: 1 }}>
         <Tab label="Viz" />
         <Tab label="Imagery" />
         <Tab label="Stats" />
@@ -89,12 +145,6 @@ const MissionPage3D = () => {
       </Tabs>
     </>
   );
-  const points = [];
-  points.push(new THREE.Vector3(-10, 0, 0));
-  points.push(new THREE.Vector3(0, 10, 0));
-  points.push(new THREE.Vector3(10, 0, 0));
-
-  const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
 
   return (
     <div className={classes.root}>
@@ -113,7 +163,7 @@ const MissionPage3D = () => {
           >
             <Canvas camera={{ position: [1, 2, 3] }}>
               <Polyhedron position={[2, 2, 0]} polyhedron={polyhedron} />
-              <line geometry={lineGeometry}>
+              <line geometry={routeLines}>
                 <lineBasicMaterial
                   attach="material"
                   color={'#9c88ff'}
@@ -128,11 +178,7 @@ const MissionPage3D = () => {
               </mesh>
               <mesh rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[5, 5, 64, 64]}></planeGeometry>
-                <meshBasicMaterial
-                  attach="material"
-                  transparent
-                  side={THREE.DoubleSide}
-                ></meshBasicMaterial>
+                <meshBasicMaterial attach="material" transparent side={THREE.DoubleSide}></meshBasicMaterial>
               </mesh>
               <Pose
                 x={0}

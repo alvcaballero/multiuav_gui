@@ -32,7 +32,6 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
       myyaw = myroute[point.routeid]['wp'][point.id]['action'].yaw;
     }
     myyaw = Number(myyaw) ? myyaw : 0;
-    console.log(myyaw);
     let mycategory = myyaw == 0 ? 'background' : 'backgroundDirection';
     return {
       id: point.id,

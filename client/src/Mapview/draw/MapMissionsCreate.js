@@ -132,19 +132,29 @@ export const MapMissionsCreate = () => {
   };
 
   const createFeature = (myroute, point) => {
+    let myyaw = 0;
+    if (myroute[point.routeid]['wp'][point.id].hasOwnProperty('yaw')) {
+      myyaw = myroute[point.routeid]['wp'][point.id]['yaw'];
+    }
+    if (myroute[point.routeid]['wp'][point.id]['action'].hasOwnProperty('yaw')) {
+      myyaw = myroute[point.routeid]['wp'][point.id]['action'].yaw;
+    }
+    myyaw = Number(myyaw) ? myyaw : 0;
+    let mycategory = myyaw == 0 ? 'background' : 'backgroundDirection';
     return {
       id: point.id,
-      route_id: point.routeid,
       name: myroute[point.routeid]['name'],
       uav: myroute[point.routeid]['uav'],
       latitude: myroute[point.routeid]['wp'][point.id]['pos'][0],
       longitude: myroute[point.routeid]['wp'][point.id]['pos'][1],
       altitud: myroute[point.routeid]['wp'][point.id]['pos'][2],
       yaw: myroute[point.routeid]['wp'][point.id]['yaw'],
+      speed: myroute[point.routeid]['wp'][point.id]['speed'],
       gimbal: myroute[point.routeid]['wp'][point.id]['gimbal'],
       actions: myroute[point.routeid]['wp'][point.id]['action'],
       attributes: myroute[point.routeid]['attributes'],
-      category: 'default',
+      category: mycategory,
+      rotation: myyaw,
       color: myroute[point.routeid]['id'],
     };
   };
@@ -199,13 +209,14 @@ export const MapMissionsCreate = () => {
         source: routePoints,
         filter: ['!has', 'point_count'],
         layout: {
-          'icon-image': 'background-{color}',
+          'icon-image': '{category}-{color}',
           'icon-size': iconScale,
           'icon-allow-overlap': true,
           'text-allow-overlap': true,
           'text-field': '{id}',
           'text-font': findFonts(map),
           'text-size': 14,
+          'icon-rotate': ['get', 'rotation'],
         },
         paint: {
           'text-color': 'white',
