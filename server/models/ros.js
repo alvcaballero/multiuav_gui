@@ -22,7 +22,7 @@ function connectRos() {
   }
 }
 
-var autoconectRos = setInterval(connectRos, 30000);
+autoconectRos = setInterval(connectRos, 30000);
 
 console.log('Load model ROS');
 export class rosModel {
@@ -315,7 +315,12 @@ export class rosModel {
             });
           }
         }
-        uav_list = [];
+
+        // uav_list = [];
+        var props = Object.getOwnPropertyNames(uav_list);
+        for (var i = 0; i < props.length; i++) {
+          delete uav_list[props[i]];
+        }
       } else {
         console.log('unsubscribe ' + id);
         cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);

@@ -4,6 +4,7 @@ import { loadImage, prepareIcon } from './mapUtil';
 import backgroundSvg from '../resources/images/background.svg';
 import directionSvg from '../resources/images/direction.svg';
 import backgroundBorderSvg from '../resources/images/background_border.svg';
+import backgroundDirectionSvg from '../resources/images/background_direction.svg';
 
 import planeSvg from '../resources/images/icon/plane.svg';
 import helicopterSvg from '../resources/images/icon/helicopter.svg';
@@ -68,6 +69,8 @@ export const mapImages = {};
 export default async () => {
   const background = await loadImage(backgroundSvg);
   const backgroundBorder = await loadImage(backgroundBorderSvg);
+  const backgroundDirection = await loadImage(backgroundDirectionSvg);
+
   mapImages.background = await prepareIcon(background);
   mapImages.item = await prepareIcon(await loadImage(triangleSvg));
   mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
@@ -76,6 +79,7 @@ export default async () => {
   Object.keys(palette.colors_devices).forEach(async (color) => {
     mapImages[`background-${color}`] = await prepareIcon(background, null, colors[color]);
     mapImages[`mission-${color}`] = await prepareIcon(backgroundBorder, null, colors[color]);
+    mapImages[`backgroundDirection-${color}`] = await prepareIcon(backgroundDirection, null, colors[color]);
   });
   await Promise.all(
     Object.keys(mapIcons).map(async (category) => {
@@ -83,11 +87,7 @@ export default async () => {
       ['primary', 'positive', 'negative', 'neutral'].forEach((color) => {
         results.push(
           loadImage(mapIcons[category]).then((icon) => {
-            mapImages[`${category}-${color}`] = prepareIcon(
-              background,
-              icon,
-              palette.colors[color]
-            );
+            mapImages[`${category}-${color}`] = prepareIcon(background, icon, palette.colors[color]);
           })
         );
       });

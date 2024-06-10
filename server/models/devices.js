@@ -118,6 +118,7 @@ export class DevicesModel {
   }
 
   static async addCameraWebRTC(device) {
+    const devicePort = device.port === '127.0.0.1' ? 8553 : 8554;
     for (let i = 0; i < device.camera.length; i = i + 1) {
       if (device.camera[i]['type'] == 'WebRTC') {
         try {
@@ -126,7 +127,7 @@ export class DevicesModel {
             {
               method: 'POST',
               body: JSON.stringify({
-                source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
+                source: `rtsp://${device.ip}:${devicePort}/${device.camera[i].source}`,
               }),
               headers: {
                 'Content-Type': 'application/json',

@@ -24,6 +24,16 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
   const createFeature = (myroute, point) => {
+    let myyaw = 0;
+    if (myroute[point.routeid]['wp'][point.id].hasOwnProperty('yaw')) {
+      myyaw = myroute[point.routeid]['wp'][point.id]['yaw'];
+    }
+    if (myroute[point.routeid]['wp'][point.id]['action'].hasOwnProperty('yaw')) {
+      myyaw = myroute[point.routeid]['wp'][point.id]['action'].yaw;
+    }
+    myyaw = Number(myyaw) ? myyaw : 0;
+    console.log(myyaw);
+    let mycategory = myyaw == 0 ? 'background' : 'backgroundDirection';
     return {
       id: point.id,
       name: myroute[point.routeid]['name'],
@@ -36,7 +46,8 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
       gimbal: myroute[point.routeid]['wp'][point.id]['gimbal'],
       actions: myroute[point.routeid]['wp'][point.id]['action'],
       attributes: myroute[point.routeid]['attributes'],
-      category: 'default',
+      category: mycategory,
+      rotation: myyaw,
       color: myroute[point.routeid]['id'],
     };
   };
@@ -44,9 +55,7 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
   const WaypointDetail = (e) => {
     console.log('target');
     console.log(e);
-    let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${
-      e.features[0].properties.uav
-    }</b>
+    let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${e.features[0].properties.uav}</b>
       <span><a href="https://www.google.com/maps?q=${e.features[0].properties.latitude},${
       e.features[0].properties.longitude
     }" target="_blank">
@@ -60,8 +69,7 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
         `<div style="display:inline"><span>Speed: </span><span>${e.features[0].properties.speed} m/s </span></div>`
       : html;
     html = e.features[0].properties.hasOwnProperty('yaw')
-      ? html +
-        `<div style="display:inline"><span>Yaw: </span><span>${e.features[0].properties.yaw}° </span></div>`
+      ? html + `<div style="display:inline"><span>Yaw: </span><span>${e.features[0].properties.yaw}° </span></div>`
       : html;
     html = e.features[0].properties.hasOwnProperty('gimbal')
       ? html +
@@ -144,18 +152,20 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
         source: route_points,
         filter: ['!has', 'point_count'],
         layout: {
-          'icon-image': 'background-{color}',
+          'icon-image': '{category}-{color}',
           'icon-size': iconScale,
           'icon-allow-overlap': true,
           'text-allow-overlap': true,
           'text-field': '{id}',
           'text-font': findFonts(map),
           'text-size': 14,
+          'icon-rotate': ['get', 'rotation'],
         },
         paint: {
           'text-color': 'white',
         },
       });
+
       map.addLayer({
         id: clusters,
         type: 'symbol',
@@ -185,6 +195,9 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
         }
         if (map.getLayer('mission-points')) {
           map.removeLayer('mission-points');
+        }
+        if (map.getLayer('mission-direction')) {
+          map.removeLayer('mission-direction');
         }
         if (map.getLayer(clusters)) {
           map.removeLayer(clusters);
@@ -233,9 +246,7 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
   }
 
   useEffect(() => {
-    let routerfiltered = routes.filter(
-      (route) => filtereddeviceid < 0 || route.uav == devices[filtereddeviceid].name
-    );
+    let routerfiltered = routes.filter((route) => filtereddeviceid < 0 || route.uav == devices[filtereddeviceid].name);
     console.log('mission filtered');
     console.log(routerfiltered);
     let waypointPosition = routeTowaypoints(routerfiltered);
