@@ -118,7 +118,7 @@ export class DevicesModel {
   }
 
   static async addCameraWebRTC(device) {
-    const devicePort = device.port === '127.0.0.1' ? 8553 : 8554;
+    const devicePort = device.ip === '127.0.0.1' ? 8553 : 8554;
     for (let i = 0; i < device.camera.length; i = i + 1) {
       if (device.camera[i]['type'] == 'WebRTC') {
         try {

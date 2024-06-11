@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
@@ -10,6 +10,7 @@ import * as THREE from 'three';
 
 import { Navbar2 } from '../components/Navbar2';
 import { Menu } from '../components/Menu';
+import palette from '../common/palette';
 
 import { RosControl } from '../components/RosControl';
 import { MissionController } from '../components/MissionController';
@@ -103,8 +104,11 @@ const MissionPage3D = () => {
     let origen = null;
     let origen2 = null;
     let lineVector3 = [];
+    let routeline = [];
+    let routelineVector3 = [];
 
     routes.map((rt, index_rt) => {
+      line = [];
       rt.wp.map((wp, index_wp) => {
         if (origen == null) {
           //origen = latLonToXYZ(wp['pos'][1], wp['pos'][0], 0);
@@ -123,12 +127,21 @@ const MissionPage3D = () => {
         //line.push([destino[0] - origen[0], destino[1] - origen[1], destino[2] - origen[2]]);
         line.push([distance.dEastMeter, distance.dNorthMeter, wp['pos'][2] - origen[2]]);
       });
+      routeline.push(line);
     });
     console.log(line);
+    routeline.map((line) => {
+      let mylineVector3 = [];
+      line.map((point) => {
+        mylineVector3.push(new THREE.Vector3(point[0], point[2], point[1]));
+      });
+      routelineVector3.push(new THREE.BufferGeometry().setFromPoints(mylineVector3));
+    });
     line.map((point) => {
       lineVector3.push(new THREE.Vector3(point[0], point[2], point[1]));
     });
-    setRouteLines(new THREE.BufferGeometry().setFromPoints(lineVector3));
+    //setRouteLines(new THREE.BufferGeometry().setFromPoints(lineVector3));
+    setRouteLines(routelineVector3);
   }, [routes]);
 
   useEffect(() => {
@@ -163,15 +176,22 @@ const MissionPage3D = () => {
           >
             <Canvas camera={{ position: [1, 2, 3] }}>
               <Polyhedron position={[2, 2, 0]} polyhedron={polyhedron} />
-              <line geometry={routeLines}>
-                <lineBasicMaterial
-                  attach="material"
-                  color={'#9c88ff'}
-                  linewidth={10}
-                  linecap={'round'}
-                  linejoin={'round'}
-                />
-              </line>
+              {React.Children.toArray(
+                routeLines.map((line, index) => (
+                  <Fragment key={'line' + index}>
+                    <line geometry={line}>
+                      <lineBasicMaterial
+                        attach="material"
+                        color={palette.colors_devices[index]}
+                        linewidth={10}
+                        linecap={'round'}
+                        linejoin={'round'}
+                      />
+                    </line>
+                  </Fragment>
+                ))
+              )}
+
               <mesh rotation-y={2}>
                 <boxGeometry />
                 <meshBasicMaterial color="orange" />

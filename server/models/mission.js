@@ -195,11 +195,12 @@ export class missionModel {
     let resultCode = 0;
     let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
     Routes[routeId].status = 'finish';
+    Routes[routeId].endTime = new Date();
+
     let listRoutes = Object.values(Routes).filter((item) => item.missionId == missionId);
     if (listRoutes.every((route) => route.status == 'finish')) {
       Mission[missionId].status = 'finish';
       Mission[missionId].endTime = new Date();
-      //resultCode = 1;
     }
     await ExtAppController.missionReqResult(missionId, resultCode);
     return true;

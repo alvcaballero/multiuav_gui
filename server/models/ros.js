@@ -12,17 +12,25 @@ const service_list = {};
 const uav_list = {};
 
 var autoconectRos = null;
+var noTimerflag = true;
+
 function connectRos() {
-  console.log('autoconectRos, ros status is: ' + rosState.state);
+  console.log('autoconectRos,' + noTimerflag + ' ros status is: ' + rosState.state);
   if (rosState.state != 'connect') {
     rosModel.rosConnect();
   } else {
     console.log('clearInterval');
     clearInterval(autoconectRos);
+    noTimerflag = true;
   }
 }
-
-autoconectRos = setInterval(connectRos, 30000);
+function autoConectRos() {
+  console.log('notimerflag,' + noTimerflag);
+  if (noTimerflag) {
+    noTimerflag = false;
+    autoconectRos = setInterval(connectRos, 10000);
+  }
+}
 
 console.log('Load model ROS');
 export class rosModel {
@@ -55,7 +63,7 @@ export class rosModel {
     rosModel.unsubscribeDevice(-1);
     rosModel.GCSunServicesMission();
     ros.close();
-    autoconectRos = setInterval(connectRos, 30000);
+    autoConectRos();
   }
 
   static async rosConnect() {
@@ -565,5 +573,6 @@ process.on('SIGINT', () => {
 });
 
 // Registering the event handlers
+autoConectRos();
 process.on('exit', onExit);
 process.on('uncaughtException', onUncaughtException);
