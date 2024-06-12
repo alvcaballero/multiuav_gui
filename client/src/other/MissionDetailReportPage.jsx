@@ -117,11 +117,7 @@ const ImageFull = ({ file, closecard }) => {
             title={file.name}
             subheader="date:September 14, 2016"
           />
-          <CardMedia
-            component="img"
-            alt={file.name}
-            image={`/api/files/download/${file.route}${file.name}`}
-          />
+          <CardMedia component="img" alt={file.name} image={`/api/files/download/${file.route}${file.name}`} />
           <CardContent>
             <Typography variant="body2" color="text.secondary">
               Result:{JSON.stringify(file.attributes)}
@@ -172,7 +168,7 @@ const MissionDetailReportPage = () => {
     const response = await fetch(`/api/missions?id=${id}`);
     if (response.ok) {
       const myMissions = await response.json();
-      setMissions(myMissions[0]);
+      setMissions(myMissions);
       console.log(myMissions);
     } else {
       throw Error(await response.text());
