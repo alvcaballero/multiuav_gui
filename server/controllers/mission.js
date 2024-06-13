@@ -47,11 +47,11 @@ class missionController {
     res.json(response);
   };
 
-  updateFiles = async (req, res) => {
-    console.log('updates Files');
-    let response = await this.missionModel.updateFiles(req.params);
-    res.json(response);
-  };
+  //updateFiles = async (req, res) => {
+  //  console.log('updates Files');
+  //  let response = await this.missionModel.updateFiles(req.params);
+  //  res.json(response);
+  //};
 
   showFiles = async (req, res) => {
     console.log('show files');

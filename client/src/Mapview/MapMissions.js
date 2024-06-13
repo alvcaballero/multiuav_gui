@@ -28,7 +28,10 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
     if (myroute[point.routeid]['wp'][point.id].hasOwnProperty('yaw')) {
       myyaw = myroute[point.routeid]['wp'][point.id]['yaw'];
     }
-    if (myroute[point.routeid]['wp'][point.id]['action'].hasOwnProperty('yaw')) {
+    if (
+      myroute[point.routeid]['wp'][point.id].hasOwnProperty('action') &&
+      myroute[point.routeid]['wp'][point.id]['action'].hasOwnProperty('yaw')
+    ) {
       myyaw = myroute[point.routeid]['wp'][point.id]['action'].yaw;
     }
     myyaw = Number(myyaw) ? myyaw : 0;
@@ -159,6 +162,7 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
           'text-font': findFonts(map),
           'text-size': 14,
           'icon-rotate': ['get', 'rotation'],
+          'icon-rotation-alignment': 'map',
         },
         paint: {
           'text-color': 'white',

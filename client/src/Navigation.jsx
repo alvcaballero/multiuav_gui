@@ -5,6 +5,7 @@ import App from './App';
 import useQuery from './common/useQuery';
 import MainPage from './other/MainPage';
 import MissionPage from './other/MissionPage';
+import MissionPageTest from './other/MissionPageTest';
 import MissionReportPage from './other/MissionReportPage';
 import ReplayPage from './other/ReplayPage';
 import DevicePage from './other/DevicePage';
@@ -34,6 +35,7 @@ const Navigation = () => {
         <Route index element={<MainPage />} />
 
         <Route path="mission" element={<MissionPage />} />
+        <Route path="missiontest" element={<MissionPageTest />} />
         <Route path="3Dmission" element={<MissionPage3D />} />
         <Route path="planning" element={<PlanningPage />} />
         <Route path="camera" element={<CameraPage />} />

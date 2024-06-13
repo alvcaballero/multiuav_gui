@@ -48,6 +48,7 @@ const Navbar = ({ SetAddUAVOpen }) => {
         { title: 'add elements', input: (e) => loadElements(e), type: '.kml' },
         { title: 'Camera view', action: () => navigate('/camera') },
         { title: '3D view', action: () => navigate('/3Dmission') },
+        { title: 'Mission test', action: () => navigate('/missiontest') },
       ],
     },
     {
