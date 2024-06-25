@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg width="10.550469mm" height="11.099902mm" viewBox="0 0 10.550469 11.099902" version="1.1" id="svg5"
+   sodipodi:docname="PowerTower.svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+   <sodipodi:namedview id="namedview29" pagecolor="#ffffff" bordercolor="#000000" borderopacity="0.25"
+      inkscape:showpageshadow="2" inkscape:pageopacity="0.0" inkscape:pagecheckerboard="0" inkscape:deskcolor="#d1d1d1"
+      inkscape:document-units="mm" showgrid="false" />
+   <defs id="defs2" />
+   <g id="layer1" transform="matrix(1.2914054,0,0,1.2914054,-44.349104,-250.92541)"
+      inkscape:export-filename="../8bf6bfef/g329812.svg" inkscape:export-xdpi="96" inkscape:export-ydpi="96">
+      <g id="g1611" transform="matrix(0.1732213,0,0,0.1732213,28.393016,160.64652)">
+
+         <circle style="fill:yellow;stroke:#000000;stroke-width:0.495712;stroke-dasharray:none;stroke-dashoffset:0"
+            id="path3174" cx="58" cy="212" r="10" />
+
+         <path style="fill:#87decd;stroke:#000000;stroke-width:0.51;stroke-dasharray:none;stroke-dashoffset:0"
+            d="m 58,210  L84.5 210 L58 205 Z" id="path368-6-9" />
+         <path
+            style="fill:#87decd;stroke:#000000;stroke-width:0.5;stroke-dasharray:none;stroke-dashoffset:0;stroke-linejoin:round"
+            d="m 58,210  L32.5 210 L58 205 Z" id="path368-6-9" />
+         <rect width="5" height="10" x="55.5" y="210"
+            style="fill:#b3b3b3;stroke:#000000;stroke-width:1;stroke-dasharray:none;stroke-dashoffset:0" />
+         <path style="fill:#b3b3b3;stroke:#000000;stroke-width:1;stroke-dasharray:none;stroke-dashoffset:0"
+            d="m 53,210  q 5 -10 10 0 Z" id="path368-6-9" />
+
+
+
+      </g>
+   </g>
+</svg>
