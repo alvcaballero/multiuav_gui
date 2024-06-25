@@ -35,3 +35,12 @@ publis a download video from youtube
 cd ~/work/px4
 gst-launch-1.0 filesrc location=test.mp4 ! decodebin ! x264enc tune=zerolatency ! h264parse ! rtspclientsink location=rtsp://0.0.0.0:8554/test rtpjpegpay
 ```
+
+```
+gst-launch-1.0 rtspsrc location=rtsp://10.42.0.230:8554/visible latency=100 ! rtph264depay ! avdec_h264 ! videoscale ! video/x-raw,width=640,height=480 ! x264enc tune=zerolatency ! h264parse  ! rtspclientsink location=rtsp://0.0.0.0:8554/visible2 rtpjpegpay name=pj
+
+gst-launch-1.0 rtspsrc location=rtsp://10.42.0.230:8554/visible latency=100 ! rtph264depay ! avdec_h264 ! x264enc tune=zerolatency ! h264parse  ! rtspclientsink location=rtsp://0.0.0.0:8554/visible2 rtpjpegpay name=pj
+
+gst-launch-1.0 rtspsrc location=rtsp://10.42.0.230:8554/thermal latency=100 ! rtph264depay! avdec_h264 ! autovideosink
+
+```

@@ -7,9 +7,42 @@ POST http://localhost:9997/v3/config/paths/add/uav_6
 Content-Type: application/json
 
 {
-      "source": "rtsp://127.0.0.1:8553/back1"
+      "source": "rtsp://127.0.0.1:8554/test"
 }
 
+
+
+
+### add  other 
+POST http://localhost:9997/v3/config/paths/add/uav_2
+Content-Type: application/json
+
+{
+      "source": "rtsp://10.42.0.230:8554/visible",
+      "rtspTransport": "tcp"
+}
+
+### add run 
+
+### add  other 
+POST http://localhost:9997/v3/config/paths/add/uav_1
+Content-Type: application/json
+
+{
+      "source": "rpiCamera",
+      "runOnReady": " gst-launch-1.0 rtspsrc location=rtsp://10.42.0.230:8554/visible latency=100 ! rtph264depay ! avdec_h264 ! x264enc tune=zerolatency ! h264parse  ! rtspclientsink location=rtsp://localhost:$RTSP_PORT/cam_with_audio rtpjpegpay name=pj"
+}
+
+###
+
+  cam:
+    source: rpiCamera
+    runOnReady: >
+      gst-launch-1.0
+      rtspclientsink name=s location=rtsp://localhost:$RTSP_PORT/cam_with_audio
+      rtspsrc location=rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH latency=0 ! rtph264depay ! s.
+      alsasrc device=default:CARD=U0x46d0x809 ! opusenc bitrate=16000 ! s.
+    runOnReadyRestart: yes
 ### REMOVE 
 
 POST http://localhost:9997/v3/config/paths/remove/uav_5

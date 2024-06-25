@@ -97,7 +97,7 @@ missionTypes:
     name: 'inspeccion de lidar'
     description: 'select towers to create a path'
     type: 'path-object'
-    case: 0
+    case: 2
     data:
       devices:
         id:

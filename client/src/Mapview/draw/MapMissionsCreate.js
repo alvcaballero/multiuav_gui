@@ -146,6 +146,7 @@ export const MapMissionsCreate = () => {
     let mycategory = myyaw == 0 ? 'background' : 'backgroundDirection';
     return {
       id: point.id,
+      route_id: point.routeid,
       name: myroute[point.routeid]['name'],
       uav: myroute[point.routeid]['uav'],
       latitude: myroute[point.routeid]['wp'][point.id]['pos'][0],
