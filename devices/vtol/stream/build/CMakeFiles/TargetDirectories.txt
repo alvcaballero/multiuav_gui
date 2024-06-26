@@ -1,3 +1,0 @@
-/home/grvc/work/px4/multiuav_gui/devices/vtol/stream/build/CMakeFiles/solid.dir
-/home/grvc/work/px4/multiuav_gui/devices/vtol/stream/build/CMakeFiles/edit_cache.dir
-/home/grvc/work/px4/multiuav_gui/devices/vtol/stream/build/CMakeFiles/rebuild_cache.dir
