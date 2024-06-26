@@ -446,7 +446,7 @@ const PlanningPage = () => {
   }, [SendTask]);
 
   useEffect(() => {
-    const intervalPlannig = setInterval(() => {
+    const intervalPlanning = setInterval(() => {
       console.log('response Planning');
       SetRequestPlanning((old) => old + 1);
     }, 5000);
@@ -470,10 +470,10 @@ const PlanningPage = () => {
     if (requestPlanning < 4) {
       fetchData();
     } else {
-      clearInterval(intervalPlannig);
+      clearInterval(intervalPlanning);
     }
 
-    return () => clearInterval(intervalPlannig);
+    return () => clearInterval(intervalPlanning);
   }, [requestPlanning]);
 
   return (
@@ -564,10 +564,7 @@ const PlanningPage = () => {
                             <Typography>Interest Elements</Typography>
                           </AccordionSummary>
                           <AccordionDetails className={classes.details}>
-                            <ElementList
-                              markers={markers.elements}
-                              setMarkers={setMarkersElements}
-                            />
+                            <ElementList markers={markers.elements} setMarkers={setMarkersElements} />
                           </AccordionDetails>
                         </Accordion>
                         <Box textAlign="center">
@@ -599,9 +596,7 @@ const PlanningPage = () => {
                           label="Name Mission"
                           variant="standard"
                           value={SendTask.name ? SendTask.name : ' '}
-                          onChange={(event) =>
-                            setSendTask({ ...SendTask, name: event.target.value })
-                          }
+                          onChange={(event) => setSendTask({ ...SendTask, name: event.target.value })}
                         />
                         <SelectField
                           emptyValue={null}
@@ -687,11 +682,7 @@ const PlanningPage = () => {
                     </TabPanel>
                     <TabPanel value="3">
                       <div className={classes.details}>
-                        <BaseSettings
-                          data={SendTask.bases}
-                          param={SendTask.settings}
-                          setData={setBaseSettings}
-                        />
+                        <BaseSettings data={SendTask.bases} param={SendTask.settings} setData={setBaseSettings} />
 
                         <Box textAlign="center">
                           <Button
@@ -700,7 +691,7 @@ const PlanningPage = () => {
                             className={classes.panelButton}
                             onClick={SendPlanning}
                           >
-                            Plannig
+                            Planning
                           </Button>
                           <Button
                             variant="contained"

@@ -26,6 +26,7 @@ The self computer, we add the next uav in devices init, and with gstreamer coman
 publish the camera
 
 ```
+
 gst-launch-1.0 v4l2src device=/dev/main ! video/x-raw,width=640,height=480 ! videoconvert ! x264enc bframes=0 tune=zerolatency bitrate=500 speed-preset=superfast ! h264parse  ! rtspclientsink location=rtsp://0.0.0.0:8554/video0 rtpjpegpay name=pj
 ```
 

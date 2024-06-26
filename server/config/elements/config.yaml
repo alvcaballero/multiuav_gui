@@ -18,7 +18,17 @@ missionTypes:
           name: 'Device'
           default: 0
         category:
-          type: ''
+          type:
+            [
+              'dji_M210_noetic',
+              'dji_M210_melodic',
+              'dji_M210_noetic_rtk',
+              'dji_M21_melodic_rtk',
+              'dji_M210_noetic_rtk',
+              'dji_M300',
+              'dji_M300_rtk',
+              'px4',
+            ]
       settings:
         base:
           type: 'array'
@@ -59,7 +69,16 @@ missionTypes:
           name: 'Device'
           default: 0
         category:
-          type: ''
+          type:
+            [
+              'dji_M210_noetic',
+              'dji_M210_melodic',
+              'dji_M210_noetic_rtk',
+              'dji_M21_melodic_rtk',
+              'dji_M210_noetic_rtk',
+              'dji_M300',
+              'dji_M300_rtk',
+            ]
       settings:
         base:
           type: 'array'
@@ -105,7 +124,7 @@ missionTypes:
           name: 'Device'
           default: 0
         category:
-          type: ''
+          type: ['dji_M600']
       settings:
         base:
           type: 'array'
@@ -147,7 +166,16 @@ missionTypes:
           name: 'Device'
           default: 0
         category:
-          type: ''
+          type:
+            [
+              'dji_M210_noetic',
+              'dji_M210_melodic',
+              'dji_M210_noetic_rtk',
+              'dji_M21_melodic_rtk',
+              'dji_M210_noetic_rtk',
+              'dji_M300',
+              'dji_M300_rtk',
+            ]
           default: ''
       settings:
         base:
