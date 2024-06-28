@@ -14,7 +14,7 @@ GET http://localhost:4000/api/devices?id=1&id=2&id=3
 GET http://localhost:4000/api/positions
 
 ### Get position
-GET http://localhost:4000/api/positions?deviceId=1
+GET http://localhost:4000/api/positions?deviceId=4
 
 ### Get position
 GET http://localhost:4000/api/positions?deviceId=1&deviceId=2&deviceId=3

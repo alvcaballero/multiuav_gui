@@ -48,7 +48,6 @@ const PositionValue = ({ position, property, attribute }) => {
         return formatPercentage(value);
       case 'alarm':
         return formatAlarm(value);
-
       case 'gimbal':
         return value.toString();
       case 'obstacle_info':

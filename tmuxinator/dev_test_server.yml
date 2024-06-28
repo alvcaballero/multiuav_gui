@@ -1,0 +1,48 @@
+name: muav-gui
+root: ~/
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: main-vertical
+      panes:
+        - backend:
+            - cd ~/work/px4/multiuav_gui/server
+            - nvm use 18
+            - sleep 3
+            - npm run server
+        - glyphserver:
+            - cd ~/work/px4/glyphserver
+            - nvm use 12
+            - sleep 3
+            - npm start
+
+  - Docker:
+      layout: tiled
+      panes:
+        - multimaster:
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+            - cd /home/user
+            - roslaunch aerialcore_gui connect_uas.launch
+        - bag:
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+            - cd /home/user/bags
+            - sleep 10;
+            - rosbag play -l uav_14_2023_12_12_14_30.bag #roslaunch simple_vs mavlink.launch
+        - aux:
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+            - cd /home/user/catkin_ws
+            - roslaunch ros_rtsp rtsp_streams.launch
+  - webrtc:
+      layout: tiled
+      panes:
+        - server:
+            - cd ~/work/px4/multiuav_gui/tmuxinator
+            - docker run --rm -it --network=host -v $PWD/../server/config/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
+        - planning:
+            - cd ~/work/planner-server
+            - source env/bin/activate
+            - ./server_linux.sh

@@ -9,10 +9,12 @@ import backgroundDirectionSvg from '../resources/images/background_direction.svg
 import planeSvg from '../resources/images/icon/plane.svg';
 import helicopterSvg from '../resources/images/icon/helicopter.svg';
 import droneSvg from '../resources/images/icon/drone1.svg';
+import birdSvg from '../resources/images/icon/bird.svg';
 import dronedjiSvg from '../resources/images/icon/drone2.svg';
 import dronePx4Svg from '../resources/images/icon/drone3.svg';
 import triangleSvg from '../resources/images/icon/triangle.svg';
 import powerTowerSvg from '../resources/images/icon/PowerTower1.svg';
+import windTurbineSvg from '../resources/images/icon/WindTurbine.svg';
 import RectangleSvg from '../resources/images/icon/Rectangle.svg';
 
 import FrontDroneSvg from '../resources/images/icon/drone-svgrepo.svg';
@@ -42,6 +44,7 @@ export const mapIcons = {
   px4: planeSvg,
   catec: dronePx4Svg,
   fuvex: planeSvg,
+  griffin: birdSvg,
   default: planeSvg,
 };
 
@@ -74,6 +77,8 @@ export default async () => {
   mapImages.background = await prepareIcon(background);
   mapImages.item = await prepareIcon(await loadImage(triangleSvg));
   mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
+  mapImages.windTurbine = await prepareIcon(await loadImage(windTurbineSvg));
+
   mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
   mapImages.direction = await prepareIcon(await loadImage(directionSvg));
   Object.keys(palette.colors_devices).forEach(async (color) => {

@@ -112,6 +112,26 @@ export class positionsModel {
         );
       }
     }
+    if (payload.hasOwnProperty('sensors_humidity')) {
+      if (payload.sensors_humidity[0]) {
+        positions[payload.deviceId]['attributes']['MIC_1'] = payload.sensors_humidity[0];
+      }
+      if (payload.sensors_humidity[1]) {
+        positions[payload.deviceId]['attributes']['MIC_2'] = payload.sensors_humidity[1];
+      }
+      if (payload.sensors_humidity[2]) {
+        positions[payload.deviceId]['attributes']['MIC_3'] = payload.sensors_humidity[2];
+      }
+      if (payload.sensors_humidity[3]) {
+        positions[payload.deviceId]['attributes']['Metano'] = payload.sensors_humidity[3];
+      }
+      if (payload.sensors_humidity[4]) {
+        positions[payload.deviceId]['attributes']['Alcohol'] = payload.sensors_humidity[4];
+      }
+      if (payload.sensors_humidity[5]) {
+        positions[payload.deviceId]['attributes']['CO'] = payload.sensors_humidity[5];
+      }
+    }
 
     if (payload.hasOwnProperty('threat')) {
       //positions[payload.deviceId]['attributes']['threat'] = payload.threat;

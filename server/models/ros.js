@@ -198,6 +198,11 @@ export class rosModel {
         });
       });
     }
+    if (type == 'sensors_humidity') {
+      uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
+        positionsController.updatePosition({ deviceId: uav_id, sensors_humidity: msg.data });
+      });
+    }
     if (type == 'threat') {
       uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
         positionsController.updatePosition({ deviceId: uav_id, threat: msg.data });

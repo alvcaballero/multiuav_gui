@@ -983,3 +983,25 @@ catec:
     threat_defuse:
       name: '/threat_defuse'
       serviceType: 'std_srvs/Trigger'
+
+griffin:
+  topics:
+    position:
+      name: '/mavros/global_position/global'
+      messageType: 'sensor_msgs/NavSatFix'
+    sensor_height:
+      name: '/mavros/altitude'
+      messageType: 'mavros_msgs/Altitude'
+    hdg:
+      name: '/mavros/global_position/compass_hdg'
+      messageType: 'std_msgs/Float64'
+    speed:
+      name: '/mavros/local_position/velocity_local'
+      messageType: 'geometry_msgs/TwistStamped'
+    battery:
+      name: '/mavros/battery'
+      messageType: 'aerialcore_common/BatteryState'
+    sensors_humidity:
+      name: '/serial2ros/result'
+      messageType: 'std_msgs/Int32MultiArray'
+  services:

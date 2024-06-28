@@ -9,7 +9,13 @@ from time import sleep, time
 class RTSPVideoWriterObject(object):
     def __init__(self, src=0):
         # Create a VideoCapture object
-        self.capture = cv2.VideoCapture(src)
+        # self.capture = cv2.VideoCapture(src)
+        # self.capture = cv2.VideoCapture(
+        #    "rtspsrc location=" + src + " latency=300 caps = \"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! appsink")
+
+        self.capture = cv2.VideoCapture(
+            "rtspsrc location=" + src + " latency=100 ! rtph264depay ! avdec_h264 ! videoconvert ! appsink")
+
         self.status, self.frame = None, None
 
         # Default resolutions of the frame are obtained (system dependent)
@@ -36,6 +42,7 @@ class RTSPVideoWriterObject(object):
         while True:
             if self.capture.isOpened():
                 (self.status, self.frame) = self.capture.read()
+                print("Frame is read")
             else:
                 print("Camera is disconnected")
 
@@ -64,7 +71,7 @@ class RTSPVideoWriterObject(object):
 
 class RTSPVideoPublishObject(object):
     def __init__(self, src="rtsp://0.0.0.0:8554/visible2"):
-        self.fps = 15
+        self.fps = 10
         self.width = 640
         self.height = 480
 
@@ -105,7 +112,9 @@ class RTSPVideoPublishObject(object):
 
 
 if __name__ == '__main__':
-    rtsp_link = "rtsp://127.0.0.1:8554/test"
+    # rtsp_link = "rtsp://127.0.0.1:8554/test"
+    rtsp_link = "rtsp://10.42.0.230:8554/visible"
+
     rtsp_link_output = "rtsp://0.0.0.0:8554/visible2"
     video_stream_widget = RTSPVideoWriterObject(rtsp_link)
 
