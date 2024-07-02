@@ -130,6 +130,7 @@ const PlanningPage = () => {
   const [SelectMarkers, SetSelectMarkers] = useState(false);
   const [CreateMarkers, SetCreateMarkers] = useState(false);
   const [requestPlanning, SetRequestPlanning] = useState(100);
+  const myhostname = `${window.location.hostname}`;
 
   const sessionmarkers = useSelector((state) => state.session.markers);
   const sessionplanning = useSelector((state) => state.session.planning);
@@ -186,7 +187,7 @@ const PlanningPage = () => {
       return mySetting;
     });
     console.log(myTask);
-    const response1 = await fetch('http://127.0.0.1:8004/mission_request', {
+    const response1 = await fetch(`http://${myhostname}:8004/mission_request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(myTask),
@@ -452,7 +453,7 @@ const PlanningPage = () => {
     }, 5000);
 
     const fetchData = async () => {
-      const response = await fetch(`http://127.0.0.1:8004/get_plan?IDs=${SendTask.id}`);
+      const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${SendTask.id}`);
       if (response.ok) {
         const data = await response.json();
         console.log(data);
