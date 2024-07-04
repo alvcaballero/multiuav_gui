@@ -11,11 +11,6 @@ windows:
             - nvm use 18
             - sleep 3
             - npm run server
-        - glyphserver:
-            - cd ~/work/px4/glyphserver
-            - nvm use 12
-            - sleep 3
-            - npm start
 
   - Docker:
       layout: tiled
@@ -36,6 +31,11 @@ windows:
             - ./container_run.sh
             - cd /home/user/catkin_ws
             - roslaunch ros_rtsp rtsp_streams.launch
+        - services:
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+            - cd /home/user/multiuav_gui/test
+            - python3 uavServices.py
   - webrtc:
       layout: tiled
       panes:

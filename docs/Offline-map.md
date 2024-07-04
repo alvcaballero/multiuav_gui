@@ -2,10 +2,15 @@ https://download.geofabrik.de/europe/spain.html
 
 https://switch2osm.org/serving-tiles/using-a-docker-container/
 
+```
+docker run  -v /home/user/work/map/spain-latest.osm.pbf:/data/region.osm.pbf  -v osm-data:/data/database/  overv/openstreetmap-tile-server  import
+
+```
+
 For create the container with no cors
 
 ```
-docker run -p 8080:80 -v osm-data:/data/database -e ALLOW_CORS=1 -d overv/openstreetmap-tile-server run
+docker run -p 8080:80 --name offline_map -v osm-data-andalucia:/data/database -e ALLOW_CORS=1 -d overv/openstreetmap-tile-server  run
 ```
 
 For run the container

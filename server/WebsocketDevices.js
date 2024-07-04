@@ -180,8 +180,14 @@ async function encode({ uav_id, type, attributes }) {
   }
 }
 
-async function decoder(metadata, buf) {
-  let deviceName = getNameFromTopic(metadata.topic());
+async function decoder(metadata, buf, name) {
+  let deviceName = name;
+  console.log('name of device:' + name);
+  if (name == null) {
+    deviceName = getNameFromTopic(metadata.topic());
+    console.log('name space of device:' + name);
+  }
+
   let device = await DevicesController.getByName(deviceName);
   if (!device) {
     console.log('device not found');
@@ -195,20 +201,36 @@ async function decoder(metadata, buf) {
       deviceId,
       latitude: msg.latitude(),
       longitude: msg.longitude(),
-      altitude: msg.altitude,
+      altitude: msg.altitude(),
     });
   }
   if (metadata.type() === 'sensor_msgs/Imu') {
-    //console.log('received imu  message');
     const msg = fb.fb.geometry_msgs.Vector3.getRootAsVector3(buf);
     positionsController.updatePosition({ deviceId, course: 90 + msg.z() * 57.295 });
   }
   if (metadata.type() === 'sensor_msgs/BatteryState') {
-    //console.log('received battery message');
     const msg = fb.fb.sensor_msgs.BatteryState.getRootAsBatteryState(buf);
     positionsController.updatePosition({
       deviceId,
       batteryLevel: (msg.percentage() * 100).toFixed(0),
+    }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+  }
+  if (metadata.type() === 'geometry_msgs/Vector3Stamped' && metadata.topic().includes('gimbal')) {
+    const msg = fb.fb.geometry_msgs.Vector3Stamped.getRootAsVector3Stamped(buf);
+    positionsController.updatePosition({
+      deviceId,
+      gimbal: { x: msg.vector().x(), y: msg.vector().y(), z: msg.vector().z() },
+    }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
+  }
+  if (
+    metadata.type() === 'geometry_msgs/Vector3Stamped' &&
+    metadata.topic().includes('speed') &&
+    !device.category.includes('dji_M300')
+  ) {
+    const msg = fb.fb.geometry_msgs.Vector3Stamped.getRootAsVector3Stamped(buf);
+    positionsController.updatePosition({
+      deviceId,
+      speed: Math.sqrt(Math.pow(msg.vector().x(), 2) + Math.pow(msg.vector().y(), 2)).toFixed(2),
     }); //  showData[3].innerHTML = (message.percentage*100).toFixed(0) + "%";
   }
 }
@@ -241,7 +263,7 @@ export class WebsocketDevices {
       let init_msg = 'Wellcome new device';
       client.notify(init_msg);
 
-      client.onMessage(async (message) => {
+      client.onMessage(async (message, name) => {
         const buf = getByteBuffer(message);
         if (buf === null) {
           console.log("received message that wasn't a flatbuffer. ignoring.");
@@ -255,7 +277,7 @@ export class WebsocketDevices {
         }
         //console.log('received message on topic: %s', metadata.topic());
         //console.log('received message type    : %s', metadata.type());
-        decoder(metadata, buf);
+        decoder(metadata, buf, name);
       });
     });
 
@@ -348,6 +370,8 @@ export class WebsocketClient {
   }
 
   onMessage(cb) {
-    this.client.on('message', cb);
+    this.client.on('message', (message) => {
+      cb(message, this.name);
+    });
   }
 }

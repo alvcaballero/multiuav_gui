@@ -1,0 +1,37 @@
+include "schema_common.fbs";
+include "schema_std_msgs.fbs";
+
+
+
+namespace fb.dji_osdk_ros;
+
+table ObstacleInfo {
+  __metadata:fb.MsgMetadata;
+  down:float32;
+  front:float32;
+  right:float32;
+  back:float32;
+  left:float32;
+  up:float32;
+
+  HEALT_NOT_WORKING: uint8 = 0;
+  HEALT_WORKING: uint8 =1;
+  
+  down_health: uint8;
+  front_health: uint8;
+  right_health: uint8;
+  back_health: uint8;
+  left_health: uint8;
+  up_health: uint8;
+}
+
+
+table WaypointV2MissionStatePush {
+  __metadata:fb.MsgMetadata;
+  commonDataVersion: uint8;
+  commonDataLen: uint16;
+  curWaypointIndex: uint16;
+  state: uint8;
+  velocity: uint16;
+}
+

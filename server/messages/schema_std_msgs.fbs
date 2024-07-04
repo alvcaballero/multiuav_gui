@@ -18,3 +18,11 @@ table Float64 {
   __metadata:fb.MsgMetadata;
   data:float64;
 }
+table Float32 {
+  __metadata:fb.MsgMetadata;
+  data: float32;
+}
+table UInt8 {
+  __metadata:fb.MsgMetadata;
+  data: uint8;
+}

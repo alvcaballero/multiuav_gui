@@ -42,8 +42,9 @@ class RTSPVideoWriterObject(object):
         while True:
             if self.capture.isOpened():
                 (self.status, self.frame) = self.capture.read()
-                print("Frame is read")
+                print("Frame is read"+str(self.frame[10, 10]))
             else:
+                sleep(0.1)
                 print("Camera is disconnected")
 
     def show_frame(self):
@@ -71,7 +72,7 @@ class RTSPVideoWriterObject(object):
 
 class RTSPVideoPublishObject(object):
     def __init__(self, src="rtsp://0.0.0.0:8554/visible2"):
-        self.fps = 10
+        self.fps = 1
         self.width = 640
         self.height = 480
 

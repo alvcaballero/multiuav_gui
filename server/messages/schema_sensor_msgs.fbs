@@ -39,16 +39,17 @@ table BatteryState {
   cell_temperature:[float32] (required);
 }
 // vector 3 stamped  roll pitch and yaw
-//table Imu {
-//  __metadata:fb.MsgMetadata;
-//  header:fb.std_msgs.Header (required);
-//  orientation:[float64] (required);
-//  orientation_covariance:[float64] (required);
-//  angular_velocity:[float64] (required);
-//  angular_velocity_covariance:[float64] (required);
-//  linear_acceleration:[float64] (required);
-//  linear_acceleration_covariance:[float64] (required);
-//}
+table Imu {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  orientation: fb.geometry_msgs.Quaternion (required);
+  orientation_covariance:[float64] (required);
+  angular_velocity:fb.geometry_msgs.Vector3 (required);
+  angular_velocity_covariance:[float64] (required);
+  linear_acceleration: fb.geometry_msgs.Vector3 (required);
+  linear_acceleration_covariance:[float64] (required);
+}
+
 
 table LaserScan {
   __metadata:fb.MsgMetadata;

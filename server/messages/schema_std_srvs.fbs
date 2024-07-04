@@ -1,6 +1,6 @@
 include "schema_common.fbs";
 
-namespace fb.std_msgs;
+namespace fb.std_srvs;
 
 table Empty {
   __metadata:fb.MsgMetadata;
@@ -17,7 +17,3 @@ table SetBoolresponse {
   message:string;
 }
 
-table Float64 {
-  __metadata:fb.MsgMetadata;
-  data:float64;
-}
