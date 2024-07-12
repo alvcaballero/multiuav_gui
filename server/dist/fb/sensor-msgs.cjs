@@ -6,6 +6,7 @@ exports.PointField =
   exports.NavSatStatus =
   exports.NavSatFix =
   exports.LaserScan =
+  exports.Imu =
   exports.CompressedImage =
   exports.BatteryState =
     void 0;
@@ -22,6 +23,13 @@ Object.defineProperty(exports, 'CompressedImage', {
   enumerable: true,
   get: function () {
     return compressed_image_js_1.CompressedImage;
+  },
+});
+var imu_js_1 = require('./sensor-msgs/imu.cjs');
+Object.defineProperty(exports, 'Imu', {
+  enumerable: true,
+  get: function () {
+    return imu_js_1.Imu;
   },
 });
 var laser_scan_js_1 = require('./sensor-msgs/laser-scan.cjs');

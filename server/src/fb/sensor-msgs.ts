@@ -4,6 +4,7 @@
 
 export { BatteryState } from './sensor-msgs/battery-state.js';
 export { CompressedImage } from './sensor-msgs/compressed-image.js';
+export { Imu } from './sensor-msgs/imu.js';
 export { LaserScan } from './sensor-msgs/laser-scan.js';
 export { NavSatFix } from './sensor-msgs/nav-sat-fix.js';
 export { NavSatStatus } from './sensor-msgs/nav-sat-status.js';

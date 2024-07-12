@@ -10,6 +10,7 @@ const exec = util.promisify(child_process.exec);
 
 import { dateString, addTime, GetLocalTime } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
+import { FTPClient } from '../common/FTPClient.js';
 import { DevicesController } from '../controllers/devices.js';
 import { filesPath, processThermalImg, processThermalsSrc } from '../config/config.js';
 

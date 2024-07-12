@@ -4,194 +4,184 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { MsgMetadata } from '../../fb/msg-metadata.js';
 import { NavSatFix } from '../../fb/sensor-msgs/nav-sat-fix.js';
 
 
-export class MissionRequest {
+export class ConfigMissionRequest {
   bb: flatbuffers.ByteBuffer|null = null;
   bb_pos = 0;
-  __init(i:number, bb:flatbuffers.ByteBuffer):MissionRequest {
+  __init(i:number, bb:flatbuffers.ByteBuffer):ConfigMissionRequest {
   this.bb_pos = i;
   this.bb = bb;
   return this;
 }
 
-static getRootAsMissionRequest(bb:flatbuffers.ByteBuffer, obj?:MissionRequest):MissionRequest {
-  return (obj || new MissionRequest()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
+static getRootAsConfigMissionRequest(bb:flatbuffers.ByteBuffer, obj?:ConfigMissionRequest):ConfigMissionRequest {
+  return (obj || new ConfigMissionRequest()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-static getSizePrefixedRootAsMissionRequest(bb:flatbuffers.ByteBuffer, obj?:MissionRequest):MissionRequest {
+static getSizePrefixedRootAsConfigMissionRequest(bb:flatbuffers.ByteBuffer, obj?:ConfigMissionRequest):ConfigMissionRequest {
   bb.setPosition(bb.position() + flatbuffers.SIZE_PREFIX_LENGTH);
-  return (obj || new MissionRequest()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
-}
-
-_Metadata(obj?:MsgMetadata):MsgMetadata|null {
-  const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? (obj || new MsgMetadata()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+  return (obj || new ConfigMissionRequest()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
 uavId():string|null
 uavId(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
 uavId(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 6);
+  const offset = this.bb!.__offset(this.bb_pos, 4);
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
 missionId():string|null
 missionId(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
 missionId(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 8);
+  const offset = this.bb!.__offset(this.bb_pos, 6);
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
 missionType():number {
-  const offset = this.bb!.__offset(this.bb_pos, 10);
-  return offset ? this.bb!.readInt32(this.bb_pos + offset) : 0;
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? this.bb!.readUint8(this.bb_pos + offset) : 0;
 }
 
 waypoint(index: number, obj?:NavSatFix):NavSatFix|null {
-  const offset = this.bb!.__offset(this.bb_pos, 12);
+  const offset = this.bb!.__offset(this.bb_pos, 10);
   return offset ? (obj || new NavSatFix()).__init(this.bb!.__indirect(this.bb!.__vector(this.bb_pos + offset) + index * 4), this.bb!) : null;
 }
 
 waypointLength():number {
-  const offset = this.bb!.__offset(this.bb_pos, 12);
+  const offset = this.bb!.__offset(this.bb_pos, 10);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
 radius():number {
-  const offset = this.bb!.__offset(this.bb_pos, 14);
+  const offset = this.bb!.__offset(this.bb_pos, 12);
   return offset ? this.bb!.readFloat64(this.bb_pos + offset) : 0.0;
 }
 
 maxVel():number {
-  const offset = this.bb!.__offset(this.bb_pos, 16);
+  const offset = this.bb!.__offset(this.bb_pos, 14);
   return offset ? this.bb!.readFloat64(this.bb_pos + offset) : 0.0;
 }
 
 idleVel():number {
-  const offset = this.bb!.__offset(this.bb_pos, 18);
+  const offset = this.bb!.__offset(this.bb_pos, 16);
   return offset ? this.bb!.readFloat64(this.bb_pos + offset) : 0.0;
 }
 
 yaw(index: number):number|null {
-  const offset = this.bb!.__offset(this.bb_pos, 20);
+  const offset = this.bb!.__offset(this.bb_pos, 18);
   return offset ? this.bb!.readFloat32(this.bb!.__vector(this.bb_pos + offset) + index * 4) : 0;
 }
 
 yawLength():number {
-  const offset = this.bb!.__offset(this.bb_pos, 20);
+  const offset = this.bb!.__offset(this.bb_pos, 18);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
 yawArray():Float32Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 20);
+  const offset = this.bb!.__offset(this.bb_pos, 18);
   return offset ? new Float32Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
 }
 
 gimbalPitch(index: number):number|null {
-  const offset = this.bb!.__offset(this.bb_pos, 22);
+  const offset = this.bb!.__offset(this.bb_pos, 20);
   return offset ? this.bb!.readFloat32(this.bb!.__vector(this.bb_pos + offset) + index * 4) : 0;
 }
 
 gimbalPitchLength():number {
-  const offset = this.bb!.__offset(this.bb_pos, 22);
+  const offset = this.bb!.__offset(this.bb_pos, 20);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
 gimbalPitchArray():Float32Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 22);
+  const offset = this.bb!.__offset(this.bb_pos, 20);
   return offset ? new Float32Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
 }
 
 speed(index: number):number|null {
-  const offset = this.bb!.__offset(this.bb_pos, 24);
+  const offset = this.bb!.__offset(this.bb_pos, 22);
   return offset ? this.bb!.readFloat32(this.bb!.__vector(this.bb_pos + offset) + index * 4) : 0;
 }
 
 speedLength():number {
-  const offset = this.bb!.__offset(this.bb_pos, 24);
+  const offset = this.bb!.__offset(this.bb_pos, 22);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
 speedArray():Float32Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 24);
+  const offset = this.bb!.__offset(this.bb_pos, 22);
   return offset ? new Float32Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
 }
 
 yawMode():number {
-  const offset = this.bb!.__offset(this.bb_pos, 26);
-  return offset ? this.bb!.readInt32(this.bb_pos + offset) : 0;
+  const offset = this.bb!.__offset(this.bb_pos, 24);
+  return offset ? this.bb!.readUint8(this.bb_pos + offset) : 0;
 }
 
 traceMode():number {
-  const offset = this.bb!.__offset(this.bb_pos, 28);
-  return offset ? this.bb!.readInt32(this.bb_pos + offset) : 0;
+  const offset = this.bb!.__offset(this.bb_pos, 26);
+  return offset ? this.bb!.readUint8(this.bb_pos + offset) : 0;
 }
 
 gimbalPitchMode():number {
-  const offset = this.bb!.__offset(this.bb_pos, 30);
-  return offset ? this.bb!.readInt32(this.bb_pos + offset) : 0;
+  const offset = this.bb!.__offset(this.bb_pos, 28);
+  return offset ? this.bb!.readUint8(this.bb_pos + offset) : 0;
 }
 
 finishAction():number {
-  const offset = this.bb!.__offset(this.bb_pos, 32);
-  return offset ? this.bb!.readInt32(this.bb_pos + offset) : 0;
+  const offset = this.bb!.__offset(this.bb_pos, 30);
+  return offset ? this.bb!.readUint8(this.bb_pos + offset) : 0;
 }
 
 commandList(index: number):number|null {
-  const offset = this.bb!.__offset(this.bb_pos, 34);
+  const offset = this.bb!.__offset(this.bb_pos, 32);
   return offset ? this.bb!.readFloat32(this.bb!.__vector(this.bb_pos + offset) + index * 4) : 0;
 }
 
 commandListLength():number {
-  const offset = this.bb!.__offset(this.bb_pos, 34);
+  const offset = this.bb!.__offset(this.bb_pos, 32);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
 commandListArray():Float32Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 34);
+  const offset = this.bb!.__offset(this.bb_pos, 32);
   return offset ? new Float32Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
 }
 
 commandParameter(index: number):number|null {
-  const offset = this.bb!.__offset(this.bb_pos, 36);
+  const offset = this.bb!.__offset(this.bb_pos, 34);
   return offset ? this.bb!.readFloat32(this.bb!.__vector(this.bb_pos + offset) + index * 4) : 0;
 }
 
 commandParameterLength():number {
-  const offset = this.bb!.__offset(this.bb_pos, 36);
+  const offset = this.bb!.__offset(this.bb_pos, 34);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
 commandParameterArray():Float32Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 36);
+  const offset = this.bb!.__offset(this.bb_pos, 34);
   return offset ? new Float32Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
 }
 
-static startMissionRequest(builder:flatbuffers.Builder) {
-  builder.startObject(17);
-}
-
-static add_Metadata(builder:flatbuffers.Builder, _MetadataOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, _MetadataOffset, 0);
+static startConfigMissionRequest(builder:flatbuffers.Builder) {
+  builder.startObject(16);
 }
 
 static addUavId(builder:flatbuffers.Builder, uavIdOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(1, uavIdOffset, 0);
+  builder.addFieldOffset(0, uavIdOffset, 0);
 }
 
 static addMissionId(builder:flatbuffers.Builder, missionIdOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(2, missionIdOffset, 0);
+  builder.addFieldOffset(1, missionIdOffset, 0);
 }
 
 static addMissionType(builder:flatbuffers.Builder, missionType:number) {
-  builder.addFieldInt32(3, missionType, 0);
+  builder.addFieldInt8(2, missionType, 0);
 }
 
 static addWaypoint(builder:flatbuffers.Builder, waypointOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(4, waypointOffset, 0);
+  builder.addFieldOffset(3, waypointOffset, 0);
 }
 
 static createWaypointVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
@@ -207,19 +197,19 @@ static startWaypointVector(builder:flatbuffers.Builder, numElems:number) {
 }
 
 static addRadius(builder:flatbuffers.Builder, radius:number) {
-  builder.addFieldFloat64(5, radius, 0.0);
+  builder.addFieldFloat64(4, radius, 0.0);
 }
 
 static addMaxVel(builder:flatbuffers.Builder, maxVel:number) {
-  builder.addFieldFloat64(6, maxVel, 0.0);
+  builder.addFieldFloat64(5, maxVel, 0.0);
 }
 
 static addIdleVel(builder:flatbuffers.Builder, idleVel:number) {
-  builder.addFieldFloat64(7, idleVel, 0.0);
+  builder.addFieldFloat64(6, idleVel, 0.0);
 }
 
 static addYaw(builder:flatbuffers.Builder, yawOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(8, yawOffset, 0);
+  builder.addFieldOffset(7, yawOffset, 0);
 }
 
 static createYawVector(builder:flatbuffers.Builder, data:number[]|Float32Array):flatbuffers.Offset;
@@ -240,7 +230,7 @@ static startYawVector(builder:flatbuffers.Builder, numElems:number) {
 }
 
 static addGimbalPitch(builder:flatbuffers.Builder, gimbalPitchOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(9, gimbalPitchOffset, 0);
+  builder.addFieldOffset(8, gimbalPitchOffset, 0);
 }
 
 static createGimbalPitchVector(builder:flatbuffers.Builder, data:number[]|Float32Array):flatbuffers.Offset;
@@ -261,7 +251,7 @@ static startGimbalPitchVector(builder:flatbuffers.Builder, numElems:number) {
 }
 
 static addSpeed(builder:flatbuffers.Builder, speedOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(10, speedOffset, 0);
+  builder.addFieldOffset(9, speedOffset, 0);
 }
 
 static createSpeedVector(builder:flatbuffers.Builder, data:number[]|Float32Array):flatbuffers.Offset;
@@ -282,23 +272,23 @@ static startSpeedVector(builder:flatbuffers.Builder, numElems:number) {
 }
 
 static addYawMode(builder:flatbuffers.Builder, yawMode:number) {
-  builder.addFieldInt32(11, yawMode, 0);
+  builder.addFieldInt8(10, yawMode, 0);
 }
 
 static addTraceMode(builder:flatbuffers.Builder, traceMode:number) {
-  builder.addFieldInt32(12, traceMode, 0);
+  builder.addFieldInt8(11, traceMode, 0);
 }
 
 static addGimbalPitchMode(builder:flatbuffers.Builder, gimbalPitchMode:number) {
-  builder.addFieldInt32(13, gimbalPitchMode, 0);
+  builder.addFieldInt8(12, gimbalPitchMode, 0);
 }
 
 static addFinishAction(builder:flatbuffers.Builder, finishAction:number) {
-  builder.addFieldInt32(14, finishAction, 0);
+  builder.addFieldInt8(13, finishAction, 0);
 }
 
 static addCommandList(builder:flatbuffers.Builder, commandListOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(15, commandListOffset, 0);
+  builder.addFieldOffset(14, commandListOffset, 0);
 }
 
 static createCommandListVector(builder:flatbuffers.Builder, data:number[]|Float32Array):flatbuffers.Offset;
@@ -319,7 +309,7 @@ static startCommandListVector(builder:flatbuffers.Builder, numElems:number) {
 }
 
 static addCommandParameter(builder:flatbuffers.Builder, commandParameterOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(16, commandParameterOffset, 0);
+  builder.addFieldOffset(15, commandParameterOffset, 0);
 }
 
 static createCommandParameterVector(builder:flatbuffers.Builder, data:number[]|Float32Array):flatbuffers.Offset;
@@ -339,30 +329,29 @@ static startCommandParameterVector(builder:flatbuffers.Builder, numElems:number)
   builder.startVector(4, numElems, 4);
 }
 
-static endMissionRequest(builder:flatbuffers.Builder):flatbuffers.Offset {
+static endConfigMissionRequest(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createMissionRequest(builder:flatbuffers.Builder, _MetadataOffset:flatbuffers.Offset, uavIdOffset:flatbuffers.Offset, missionIdOffset:flatbuffers.Offset, missionType:number, waypointOffset:flatbuffers.Offset, radius:number, maxVel:number, idleVel:number, yawOffset:flatbuffers.Offset, gimbalPitchOffset:flatbuffers.Offset, speedOffset:flatbuffers.Offset, yawMode:number, traceMode:number, gimbalPitchMode:number, finishAction:number, commandListOffset:flatbuffers.Offset, commandParameterOffset:flatbuffers.Offset):flatbuffers.Offset {
-  MissionRequest.startMissionRequest(builder);
-  MissionRequest.add_Metadata(builder, _MetadataOffset);
-  MissionRequest.addUavId(builder, uavIdOffset);
-  MissionRequest.addMissionId(builder, missionIdOffset);
-  MissionRequest.addMissionType(builder, missionType);
-  MissionRequest.addWaypoint(builder, waypointOffset);
-  MissionRequest.addRadius(builder, radius);
-  MissionRequest.addMaxVel(builder, maxVel);
-  MissionRequest.addIdleVel(builder, idleVel);
-  MissionRequest.addYaw(builder, yawOffset);
-  MissionRequest.addGimbalPitch(builder, gimbalPitchOffset);
-  MissionRequest.addSpeed(builder, speedOffset);
-  MissionRequest.addYawMode(builder, yawMode);
-  MissionRequest.addTraceMode(builder, traceMode);
-  MissionRequest.addGimbalPitchMode(builder, gimbalPitchMode);
-  MissionRequest.addFinishAction(builder, finishAction);
-  MissionRequest.addCommandList(builder, commandListOffset);
-  MissionRequest.addCommandParameter(builder, commandParameterOffset);
-  return MissionRequest.endMissionRequest(builder);
+static createConfigMissionRequest(builder:flatbuffers.Builder, uavIdOffset:flatbuffers.Offset, missionIdOffset:flatbuffers.Offset, missionType:number, waypointOffset:flatbuffers.Offset, radius:number, maxVel:number, idleVel:number, yawOffset:flatbuffers.Offset, gimbalPitchOffset:flatbuffers.Offset, speedOffset:flatbuffers.Offset, yawMode:number, traceMode:number, gimbalPitchMode:number, finishAction:number, commandListOffset:flatbuffers.Offset, commandParameterOffset:flatbuffers.Offset):flatbuffers.Offset {
+  ConfigMissionRequest.startConfigMissionRequest(builder);
+  ConfigMissionRequest.addUavId(builder, uavIdOffset);
+  ConfigMissionRequest.addMissionId(builder, missionIdOffset);
+  ConfigMissionRequest.addMissionType(builder, missionType);
+  ConfigMissionRequest.addWaypoint(builder, waypointOffset);
+  ConfigMissionRequest.addRadius(builder, radius);
+  ConfigMissionRequest.addMaxVel(builder, maxVel);
+  ConfigMissionRequest.addIdleVel(builder, idleVel);
+  ConfigMissionRequest.addYaw(builder, yawOffset);
+  ConfigMissionRequest.addGimbalPitch(builder, gimbalPitchOffset);
+  ConfigMissionRequest.addSpeed(builder, speedOffset);
+  ConfigMissionRequest.addYawMode(builder, yawMode);
+  ConfigMissionRequest.addTraceMode(builder, traceMode);
+  ConfigMissionRequest.addGimbalPitchMode(builder, gimbalPitchMode);
+  ConfigMissionRequest.addFinishAction(builder, finishAction);
+  ConfigMissionRequest.addCommandList(builder, commandListOffset);
+  ConfigMissionRequest.addCommandParameter(builder, commandParameterOffset);
+  return ConfigMissionRequest.endConfigMissionRequest(builder);
 }
 }

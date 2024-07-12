@@ -214,10 +214,12 @@ export class commandsModel {
       } else {
         response = await sendCommandToClient({ uav_id, type });
       }
-      response = {
-        state: 'success',
-        msg: type + ' to websocket ok',
-      };
+      if (response == {}) {
+        response = {
+          state: 'success',
+          msg: type + ' to websocket ok',
+        };
+      }
     }
     //mavlink
     // other

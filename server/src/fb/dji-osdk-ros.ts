@@ -2,6 +2,5 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
-export { MissionRequest } from './mission-msgs/mission-request.js';
-export { eventRequest } from './mission-msgs/event-request.js';
-export { eventResponse } from './mission-msgs/event-response.js';
+export { ObstacleInfo } from './dji-osdk-ros/obstacle-info.js';
+export { WaypointV2MissionStatePush } from './dji-osdk-ros/waypoint-v2-mission-state-push.js';

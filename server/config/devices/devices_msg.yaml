@@ -1007,4 +1007,4 @@ griffin:
     sensors_humidity:
       name: '/serial2ros/result'
       messageType: 'std_msgs/Int32MultiArray'
-  services:
+  services: {}

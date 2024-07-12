@@ -18,8 +18,15 @@ POST http://localhost:9997/v3/config/paths/add/uav_2
 Content-Type: application/json
 
 {
-      "source": "rtsp://10.42.0.230:8554/visible",
-      "rtspTransport": "tcp"
+      "source": "rtsp://192.168.144.10:8554/H264Video"
+}
+
+### add  other 
+POST http://localhost:9997/v3/config/paths/add/uav_2
+Content-Type: application/json
+
+{
+      "source": "rtsp://10.42.0.161:8554/cam2"
 }
 
 ### add run 
