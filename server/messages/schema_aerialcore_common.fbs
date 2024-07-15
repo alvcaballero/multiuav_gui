@@ -1,0 +1,49 @@
+include "schema_common.fbs";
+include "schema_sensor_msgs.fbs";
+
+namespace fb.aerialcore_common;
+
+table ConfigMission
+{
+    __metadata:fb.MsgMetadata;
+    request:ConfigMissionRequest;
+    response:ConfigMissionResponse;
+}
+
+table ConfigMissionRequest
+{
+    uav_id:string;
+    mission_id:string;
+    mission_type:uint8;
+    waypoint:[fb.sensor_msgs.NavSatFix];
+    radius:float64;
+    maxVel:float64;
+    idleVel:float64;
+    yaw:[float32];
+    gimbalPitch:[float32];
+    speed:[float32];
+    yawMode:uint8;
+    traceMode:uint8;
+    gimbalPitchMode:uint8;
+    finishAction:uint8;
+    commandList:[float32];
+    commandParameter:[float32];
+}
+table ConfigMissionResponse
+{
+    success:bool;
+}
+
+table eventRequest
+{
+    __metadata:fb.MsgMetadata;
+    uav_id:string;
+    data:string;
+}
+
+table eventResponse
+{
+    __metadata:fb.MsgMetadata;
+    success:bool;
+    msg:string;
+}

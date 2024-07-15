@@ -4,16 +4,40 @@ namespace fb.std_srvs;
 
 table Empty {
   __metadata:fb.MsgMetadata;
+  request:EmptyRequest;
+  response:EmptyResponse;
+}
+
+table EmptyRequest {
+}
+
+table EmptyResponse {
+}
+
+table Trigger {
+  __metadata:fb.MsgMetadata;
+  request:TriggerRequest;
+  response:TriggerResponse;
+}
+table TriggerRequest {
+}
+table TriggerResponse {
+  success:bool;
+  message:string;
 }
 
 table SetBool {
   __metadata:fb.MsgMetadata;
-  data:bool (required);
+  request:SetBoolRequest;         
+  response:SetBoolResponse;
 }
 
-table SetBoolresponse {
-  __metadata:fb.MsgMetadata;
-  success:bool (required);
+table SetBoolRequest {
+  data:bool;
+}
+
+table SetBoolResponse {
+  success:bool;
   message:string;
 }
 

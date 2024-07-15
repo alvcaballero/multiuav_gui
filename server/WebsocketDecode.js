@@ -118,5 +118,24 @@ export async function decoder(metadata, buf, name) {
     });
     return null;
   }
+  if (metadata.type() === 'aerialcore_common/ConfigMission' && metadata.topic().includes('configureMission')) {
+    const msg = fb.fb.aerialcore_common.ConfigMission.getRootAsConfigMission(buf);
+    let success = msg.response().success();
+    console.log('response Config mission: %s ', success);
+    let response = {};
+    if (success) {
+      response = { state: 'success', msg: 'Config mission' + ' to' + deviceName + ' ok' };
+    } else {
+      response = { state: 'error', msg: 'Config mission' + ' to' + deviceName + ' fail' };
+    }
+    ServiceResponse({
+      uav_id: deviceId,
+      name: deviceName,
+      type: 'configureMission',
+      response: response,
+    });
+    return null;
+  }
+
   console.log('can not decode msg: %s type: %s', metadata.topic(), metadata.type());
 }

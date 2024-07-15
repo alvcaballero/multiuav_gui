@@ -7,6 +7,7 @@ namespace fb.dji_osdk_ros;
 
 table ObstacleInfo {
   __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header;
   down:float32;
   front:float32;
   right:float32;
