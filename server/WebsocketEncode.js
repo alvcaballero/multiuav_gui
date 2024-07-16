@@ -83,11 +83,11 @@ function encodeMission({ topic, type, attributes }) {
   const speedOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createSpeedVector(fbb, attributes.speed);
   const commandListOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createCommandListVector(
     fbb,
-    attributes.commandList
+    attributes.commandList.flat()
   );
   const commandParameterOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createCommandParameterVector(
     fbb,
-    attributes.commandParameter
+    attributes.commandParameter.flat()
   );
 
   fb.fb.aerialcore_common.ConfigMissionRequest.startConfigMissionRequest(fbb);

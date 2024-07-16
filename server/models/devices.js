@@ -90,6 +90,7 @@ export class DevicesModel {
         user: device.user,
         pwd: device.pwd,
         ip: device.ip,
+        files: device.files,
       });
     }
     if (StreamServer) {

@@ -390,7 +390,6 @@ export class filesModel {
     console.log('last images process');
     console.log(Images2process);
     const listImages = [];
-    //const listImagesdist = [];
     for (const image of Images2process) {
       console.log('process img' + image.ref);
       listImages.push({
@@ -398,7 +397,6 @@ export class filesModel {
         ref: image.ref.slice(0, -4) + '_process.jpg',
         dist: image.dist.slice(0, -4) + '_process.jpg',
       });
-      //listImagesdist.push(image.dist.slice(0, -4) + '_process.jpg');
       try {
         const { stdout, stderr } = await exec(
           `conda run -n DJIThermal ${processThermalsSrc} -i "${image.dist}" -o "${image.dist.slice(
@@ -409,25 +407,8 @@ export class filesModel {
         console.log('stdout:', stdout);
         console.log('stderr:', stderr);
       } catch (e) {
-        console.error(e); // should contain code (exit code) and signal (that caused the termination).
+        console.error(e);
       }
-      //exec(
-      //  `conda run -n DJIThermal ${ProcessSRC} -i "${image.dist}" -o "${image.dist.slice(
-      //    0,
-      //    -4
-      //  )}_process.jpg" `,
-      //  (error, stdout, stderr) => {
-      //    if (error) {
-      //      console.log(`error: ${error.message}`);
-      //      return;
-      //    }
-      //    if (stderr) {
-      //      console.log(`stderr: ${stderr}`);
-      //      return;
-      //    }
-      //    console.log(`stdout: ${stdout}`);
-      //  }
-      //);
     }
     console.log('finish process');
     return listImages; //{ ref: listImages, dist: listImagesdist };
