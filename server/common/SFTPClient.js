@@ -18,6 +18,7 @@ import sftp from 'ssh2-sftp-client';
 
 export class SFTPClient {
   constructor() {
+    console.log('SFTPClient constructor');
     this.client = new sftp();
   }
 

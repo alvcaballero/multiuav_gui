@@ -20,15 +20,15 @@ function filterList(fileList, pattern = /.*/) {
   let newList = [];
   newList = fileList.map((item) => {
     return {
-      type: item.type,
+      type: item.type === 2 ? 'd' : item.type === 1 ? '-' : 'l',
       name: item.name,
       size: item.size,
-      modifyTime: item.modifiedAt,
-      accessTime: item.modifiedAt,
+      modifyTime: item.rawModifiedAt,
+      accessTime: item.rawModifiedAt,
       rights: {
-        user: item.UnixPermissions.user,
-        group: item.UnixPermissions.group,
-        other: item.UnixPermissions.world,
+        user: item.permissions.user ?? 0,
+        group: item.permissions.group ?? 0,
+        other: item.permissions.world ?? 0,
       },
       owner: item.user,
       group: item.group,
@@ -43,12 +43,12 @@ function filterList(fileList, pattern = /.*/) {
     regex = new RegExp(newPattern);
   }
   let filteredList = newList.filter((item) => regex.test(item.name));
-  this.debugMsg('list: result: ', filteredList);
   return filteredList;
 }
 
 export class FTPClient {
   constructor() {
+    console.log('FTPClient constructor');
     this.client = new ftp.Client();
   }
   /**
@@ -61,7 +61,8 @@ export class FTPClient {
 
   async connect(options) {
     console.log(`Connecting to ${options.host}:${options.port}`);
-    this.client.ftp.verbose = true;
+    this.client.ftp.verbose = false;
+    options.user = options.username;
     try {
       await this.client.access(options);
     } catch (err) {
@@ -93,6 +94,7 @@ export class FTPClient {
       fileObjects = filterList(list, fileGlob);
     } catch (err) {
       console.log('Listing failed:', err);
+      return [];
     }
 
     if (order) {
@@ -106,11 +108,11 @@ export class FTPClient {
 
     for (const file of fileObjects) {
       if (file.type === 'd') {
-        console.log(`${new Date(file.modifyTime).toISOString()} PRE ${file.name}`);
+        console.log(`${file.modifyTime} PRE ${file.name}`);
       } else if (file.type === '-') {
-        console.log(`${new Date(file.modifyTime).toISOString()} - ${file.size} ${file.name}`);
+        console.log(`${file.modifyTime} - ${file.size} ${file.name}`);
       } else {
-        console.log(`${new Date(file.modifyTime).toISOString()} l ${file.size} ${file.name}`);
+        console.log(`${file.modifyTime} l ${file.size} ${file.name}`);
       }
       if (file.type === typefile || typefile === 'all') {
         fileNames.push(file.name);

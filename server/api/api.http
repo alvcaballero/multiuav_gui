@@ -148,9 +148,6 @@ GET  http://localhost:4000/api/missions/routes
 ### get mission route
 GET  http://localhost:4000/api/missions/routes?missionId=72510181
 
-### show files
-GET  http://localhost:4000/api/missions/showFiles/{{uav_id}}/{{mission_id}}
-
 ### update files
 
 GET  http://localhost:4000/api/missions/updateFiles/{{uav_id}}/{{mission_id}}

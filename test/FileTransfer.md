@@ -22,4 +22,4 @@ docker run -i --rm --mount type=bind,source=/home/grvc/work/px4,destination=/ftp
 
 sftp -oPort=custom_port sammy@your_server_ip_or_remote_hostname
 
-docker run --rm -it --mount type=bind,source=/home/grvc/work/px4,destination=/home/one -p 21:22 atmoz/sftp one:1234:::upload
+docker run --rm -it --mount type=bind,source=/home/grvc/work/px4,destination=/home/one -p 4021:22 atmoz/sftp one:1234:::upload

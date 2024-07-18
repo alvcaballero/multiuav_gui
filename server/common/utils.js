@@ -8,7 +8,17 @@ import { resolve } from 'path';
 const __filename = new URL('', import.meta.url).pathname;
 const __dirname = new URL('.', import.meta.url).pathname;
 
-export const readJSON = (path) => require(path);
+export const readJSON = (filepath) => {
+  if (existsSync(resolve(__dirname, filepath))) {
+    //console.log(`The file or directory at '${filepath}' exists.`);
+  } else {
+    console.log(`File '${filepath}' does not exist.`);
+    return {};
+  }
+  console.log('load ' + filepath);
+  let fileContents = readFileSync(resolve(__dirname, filepath), 'utf8');
+  return JSON.parse(fileContents);
+};
 
 export const readYAML = (filepath) => {
   let path = filepath;
@@ -41,6 +51,18 @@ export const getRandomInt = (max) => {
 
 export const writeYAML = (path, content) => {
   const saveContent = stringify(content);
+  writeFile(__dirname + path, saveContent, (err) => {
+    if (err) {
+      console.error(err);
+      return false;
+    } else {
+      // file written successfully
+      return true;
+    }
+  });
+};
+export const writeJSON = (path, content) => {
+  const saveContent = JSON.stringify(content, null, 2);
   writeFile(__dirname + path, saveContent, (err) => {
     if (err) {
       console.error(err);

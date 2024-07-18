@@ -1,7 +1,7 @@
 guides/Activities.md
 devices/init/vpn/login.text
 server/config/devices/devices_init.yaml
-
+server/data/*.json
 **/package-lock.json
 .DS_Store
 Thumbs.db

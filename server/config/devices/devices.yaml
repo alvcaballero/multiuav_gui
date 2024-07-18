@@ -169,8 +169,34 @@ catec:
   speed_mission: 7
   speed_navegation: 15
 
-Camera:
+camera:
   fpv_M210: [509, 480]
   fpv_M300: [509, 480]
   flir_duo: [509, 480]
   laptop: [509, 480]
+
+#  Files:
+#   path: path to the files
+#   type:
+#    - lastfolder -> get the last folder
+#    - all -> get all files
+#    - 'specific' -> get specific files mission_xxxx
+#   del: delete the files after download
+#   external: download from
+#   srvDownload: donwload files form autopilot to OnboardComputer
+files:
+  default:
+    path: './'
+    type: 'all'
+    delete: true
+    srvDownload: false
+  wiris_pro:
+    path: 'src'
+    type: 'lastfolder'
+    delete: true
+    srvDownload: false
+  onboard_computer:
+    path: './uav_media/'
+    type: 'specific'
+    delete: false
+    srvDownload: false

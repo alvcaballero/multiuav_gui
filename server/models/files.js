@@ -1,79 +1,26 @@
 //example that a men manage databases
 import * as fs from 'fs';
 //import { exec } from 'child_process';
-import child_process from 'child_process';
-import util from 'util';
-import sharp from 'sharp';
-import exif from 'exif-reader';
 
-const exec = util.promisify(child_process.exec);
-
-import { dateString, addTime, GetLocalTime } from '../common/utils.js';
+import { dateString, addTime, GetLocalTime, readJSON, readYAML } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
 import { DevicesController } from '../controllers/devices.js';
-import { filesPath, processThermalImg, processThermalsSrc } from '../config/config.js';
+import { filesPath } from '../config/config.js';
+import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 
-// const  files// id , route ,name, uav, date, attributes
-const files = {
-  1: {
-    id: 1,
-    routeId: 1,
-    missionId: 72510181,
-    deviceId: '14',
-    name: 'DJI_20240305122904_0010_WIDE.jpg',
-    route: '/mission_72510181/uav_14/',
-    date: '2024-03-05T12:29:04',
-    attributes: {
-      latitude: 37.09241,
-      longitude: -5.232,
-      measures: [],
-    },
-  },
-  2: {
-    id: 2,
-    routeId: 1,
-    missionId: 72510181,
-    deviceId: '14',
-    name: 'DJI_20240305122904_0010_THRM_process.jpg',
-    route: 'mission_72510181/uav_14/',
-    date: '2024-03-05T12:29:04',
-    attributes: {
-      latitude: 37.09241,
-      longitude: -5.232,
-      measures: [
-        {
-          name: 'MaxTemp',
-          value: 83.7,
-        },
-      ],
-    },
-  },
-  3: {
-    id: 3,
-    routeId: 1,
-    missionId: 72510181,
-    deviceId: '14',
-    name: 'distances.pcd',
-    route: 'mission_72510181/uav_14/',
-    date: '2024-03-05T12:29:04',
-    attributes: {
-      latitude: 37.09241,
-      longitude: -5.232,
-      measures: [
-        {
-          name: 'minDist',
-          value: 10,
-        },
-      ],
-    },
-  },
-};
-const sftconections = {}; // manage connection to drone
-const filestodownload = []; //manage files that fail download// list of objects,with name, and fileroute, number of try.
+/* files:
+/     
+/    status: 0: no download, 1: download, 2: process, 3: fail download , 4: error, 5: ok, 
+*/
+
+const files = readJSON('../data/files.json');
+const filesSetup = readYAML('../config/devices/devices.yaml');
+const downloadQueue = []; // manage files to download
+const processQueue = []; // manage files to process
 
 export class filesModel {
-  static getFiles({ deviceId, missionId, routeId }) {
+  static getFiles({ id, deviceId, missionId, routeId }) {
     if (deviceId) {
       return Object.values(files).filter((word) => word.deviceId == deviceId);
     }
@@ -83,9 +30,49 @@ export class filesModel {
     if (routeId) {
       return Object.values(files).filter((word) => word.routeId == routeId);
     }
+    if (id) {
+      return files[id];
+    }
     return Object.values(files);
   }
 
+  static addFile({
+    routeId,
+    missionId,
+    deviceId,
+    name,
+    route,
+    source,
+    path2,
+    status = 0,
+    date = new Date(),
+    attributes = {},
+  }) {
+    let id = Math.max(...Object.keys(files).map((key) => Number(key))) + 1;
+    files[id] = {
+      id,
+      routeId,
+      missionId,
+      deviceId,
+      name,
+      route,
+      source,
+      path2,
+      status,
+      date,
+      attributes,
+    };
+    return files[id];
+  }
+
+  static editFile({ id, status, attributes }) {
+    if (!files[id]) {
+      return null;
+    }
+    if (status) files[id].status = status;
+    if (attributes) files[id].attributes = attributes;
+    return files[id];
+  }
   /*
   / read all files in the gcs in folder GCS_MEDIA , and return a list of files
   */
@@ -127,47 +114,79 @@ export class filesModel {
   }
 
   /* 
-  / Show list of files in the drone, from folder uav_media,
+  / Manage params to connect to the drone, and return the params to connect to the drone
   */
-  static async paramsConnection({ mydevice }) {
+
+  static paramsConnection({ mydevice }) {
     console.log(mydevice);
-    let myurl = 'sftp://' + mydevice.user + ':' + mydevice.pwd + '@' + mydevice.ip; //sftp://user:password@host
+    let myurl = '';
+    myurl = mydevice.url;
     const parsedURL = new URL(myurl);
-    let port = parsedURL.port || 22;
-    if (!mydevice.ip.includes('10.42.')) {
-      console.log('port 21');
-      port = 21;
-    }
-    const { host, username, password } = parsedURL;
-    return { host, port, username, password };
+    let port = parsedURL.port || 21;
+    const { hostname, username, password, protocol } = parsedURL;
+    console.log(`host: ${hostname}:${port}, user: ${username}, pwd: ${password}, protocol: ${protocol}`);
+    return { host: hostname, port, username, password, protocol };
   }
 
-  static async showFiles({ uavId, missionId, initTime }) {
-    let mydevice = await DevicesController.getAccess(uavId);
-    const { host, port, username, password } = await this.paramsConnection({ mydevice });
-    console.log('host ' + host + ' port ' + port + ' user ' + username + ' pass ' + password);
-    const client = new SFTPClient();
-    await client.connect({ host, port, username, password });
-    let listFiles = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
-    let nameFolder = null;
-    for (const myfiles of listFiles) {
-      var matches = myfiles.match(/^mission_(\d{4})-(\d{2})-(\d{2})_(\d{2}):(\d{2})$/);
-      if (matches) {
-        console.log(matches[0]);
-        nameFolder = myfiles;
-        let folderdate = myfiles.slice(8).replace('_', 'T') + ':00';
-        let currentdate = new Date(folderdate);
-        console.log(folderdate + ' date  ' + currentdate.toJSON() + ' gcs=' + initTime.toJSON());
-        if (initTime && currentdate > initTime) {
-          console.log('folder mayor');
-        }
-        break;
+  // filter file '^mission_'
+  // filter file '.jpg$'
+
+  static async mylistFiles(client, path, lastFolder = false, filterFolder = '', filterFile = '') {
+    let listFolder = [];
+    let myfiles = [];
+    let myfolders = await client.listFiles(path, filterFolder, 'd', true);
+    if (lastFolder == true) {
+      listFolder = myfolders;
+    } else {
+      if (myfolders.length > 0) {
+        listFolder.push(myfolders[0]);
       }
+      myfiles = await client.listFiles(path, filterFile, '-', true);
     }
-    if (nameFolder) {
-      listFiles = await client.listFiles('./uav_media/' + nameFolder + '/', '.jpg$', '-', true);
+    let listFiles = myfiles.map((file) => `${path}${file}`);
+    for (const myfolder of listFolder) {
+      let Filesfolder = await this.mylistFiles(client, `${path}${myfolder}/`, false, '', filterFile);
+      listFiles = listFiles.concat(Filesfolder);
     }
+    return listFiles;
+  }
+
+  static async showFiles({ uavId, missionId, initTime, index = 0 }) {
+    let mydevice = await DevicesController.getAccess(uavId);
+    let myconfig = filesSetup.files.default;
+    let listFiles = [];
+    console.log(`show files api call ${uavId} ${missionId} ${initTime} ${index}`);
+    if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
+      console.log('UAV no have files setup ');
+      return [];
+    }
+    console.log(mydevice.files[index]);
+
+    if (mydevice.files[index].hasOwnProperty('type')) {
+      myconfig = filesSetup.files.hasOwnProperty(mydevice.files[index].type)
+        ? filesSetup.files[mydevice.files[index].type]
+        : filesSetup.files.default;
+    }
+    let params = this.paramsConnection({ mydevice: mydevice.files[index] });
+    const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
+    let status = await client.connect(params);
+    if (!status) {
+      console.log('cant connect to device ');
+      return [];
+    }
+    console.log(`config files ${myconfig.path} ${myconfig.type}`);
+    listFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder');
+
     await client.disconnect();
+
+    if (+index + 1 < mydevice.files.length) {
+      let otherFiles = await this.showFiles({ uavId, missionId, initTime, index: index + 1 });
+      console.log('other files' + otherFiles.length);
+      otherFiles.forEach((file) => {
+        listFiles.push(file);
+      });
+    }
+
     return listFiles;
   }
 
@@ -176,242 +195,176 @@ export class filesModel {
    / if the file is a thermal image, process the image and return the metadata
    / return a list of files, and a list of metadata 
    */
-  static async updateFiles(uavId, missionId, routeId, initTime) {
-    console.log('update files ' + uavId + '-' + missionId);
-    let listImages = [];
-    let metadataResponse = { value: {}, imageMetaData: [] };
-
+  static async updateFiles(uavId, missionId, routeId, initTime, index = 0) {
     let mydevice = await DevicesController.getAccess(uavId);
-    console.log(mydevice);
-    if (!mydevice.hasOwnProperty('user')) {
-      console.log('no have ftp ');
-      return false;
+    let myconfig = filesSetup.files.default;
+    let listFiles = [];
+
+    console.log(`update files api call ${uavId} ${missionId} ${initTime} ${index}`);
+    if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
+      console.log('UAV no have files setup ');
+      return [];
     }
-    const { host, port, username, password } = await this.paramsConnection({ mydevice });
-    console.log('host' + host + ' port ' + port + ' user ' + username + ' pass ' + password);
-    const client = new SFTPClient();
-    let isConnected = await client.connect({ host, port, username, password });
-    if (!isConnected) {
+    console.log(mydevice.files[index]);
+
+    if (mydevice.files[index].hasOwnProperty('type')) {
+      myconfig = filesSetup.files.hasOwnProperty(mydevice.files[index].type)
+        ? filesSetup.files[mydevice.files[index].type]
+        : filesSetup.files.default;
+    }
+
+    let params = this.paramsConnection({ mydevice: mydevice.files[index] });
+    const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
+
+    let status = await client.connect(params);
+    if (!status) {
       console.log('cant connect to device ');
-      return listImages;
+      return [];
     }
 
-    let listFolders = await client.listFiles('./uav_media/', '^mission_', 'd', true); // que devuelva un  lista de objetos con la fecha de creacion
-    let nameFolder = null;
-    console.log('select folder');
+    console.log(`config files ${myconfig.path} ${myconfig.type}`);
+
     let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
+    let nameFolder = 'mission_' + myInitTime;
 
-    for (const myfiles of listFolders) {
-      //console.log([myfiles] + '' + 'mission_' + myInitTime);
-      if (myfiles === 'mission_' + myInitTime) {
-        nameFolder = myfiles;
-        console.log('find folder 1');
-      }
+    listFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder');
+
+    await client.disconnect();
+
+    if (listFiles.length == 0) {
+      console.log('no files to download');
+      return [];
     }
-    console.log('find folder ' + nameFolder);
+
+    if (!fs.existsSync(dir)) {
+      console.log('no exist ' + dir);
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
+    let dir2 = `mission_${missionId}/${mydevice.name}`;
+
     if (nameFolder) {
-      let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
-      let dir2 = `mission_${missionId}/${mydevice.name}`;
-
-      if (!fs.existsSync(dir)) {
-        console.log('no exist ' + dir);
-        fs.mkdirSync(dir, { recursive: true });
-      }
-
-      let listFiles = await client.listFiles('./uav_media/' + nameFolder + '/', '.jpg$', '-', true);
-      console.log('list files in uav');
-      console.log(listFiles);
-      let downloadOk = true;
       for (let myfile of listFiles) {
-        console.log('download file' + myfile);
-        let response = await client.downloadFile(`./uav_media/${nameFolder}/${myfile}`, `${dir}/${myfile}`);
-        console.log(response);
-        let fileId = Math.max(...Object.keys(files).map((key) => Number(key))) + 1;
-        files[fileId] = {
-          id: fileId,
+        let createFile = this.addFile({
           routeId: routeId,
           missionId: missionId,
           deviceId: uavId,
-          name: myfile,
+          name: `${myfile.split('/').at(-1)}`,
           route: `${dir2}/`,
-          date: new Date(),
-          attributes: {},
-        };
-        filestodownload.push({
-          name: myfile,
-          source: `./uav_media/${nameFolder}/${myfile}`,
-          dist: `${dir}/${myfile}`,
-          ref: `${dir2}/${myfile}`,
-          status: response.status,
+          source: mydevice.files[index],
+          path2: myfile,
         });
-        if (!response.status) {
-          downloadOk = false;
-        }
-      }
-
-      //* Close the connection
-      await client.disconnect();
-      console.log(filestodownload);
-
-      if (downloadOk) {
-        console.log('download OK');
-        let listImagestoprocess = filestodownload.filter((image) => image.dist.includes('THRM'));
-        if (processThermalImg && listImagestoprocess.length > 0) {
-          let listThermal = await this.ProcessThermalImages(listImagestoprocess);
-          console.log('listThermal');
-          console.log(listThermal);
-          for (const themalFile of listThermal) {
-            let fileId = Math.max(...Object.keys(files).map((key) => Number(key))) + 1;
-            files[fileId] = {
-              id: fileId,
-              routeId: routeId,
-              missionId: missionId,
-              deviceId: uavId,
-              name: themalFile.name,
-              route: `${dir2}/`,
-              date: new Date(),
-              attributes: {},
-            };
-          }
-          console.log(files);
-          metadataResponse = await this.MetadataTempImage(listThermal);
-          console.log('metadata response');
-          console.log(metadataResponse);
-          console.log('add attributes to files');
-          metadataResponse.imageMetaData.map((image) => {
-            let myfile = Object.values(files).find((item) => item.name == image.name);
-            if (myfile) {
-              files[myfile.id].attributes = image.attributes;
-            }
-            console.log(myfile);
-          });
-
-          listImages = filestodownload.map((image) => image.ref);
-          for (const srcImage of listThermal) {
-            listImages.push(srcImage.ref);
-          }
-        }
+        downloadQueue.push(createFile.id);
       }
     }
-    console.log(listImages);
-    return { files: listImages, data: [metadataResponse.value] };
+    this.downloadFiles();
+
+    if (+index + 1 < mydevice.files.length) {
+      this.updateFiles({ uavId, missionId, initTime, index: index + 1 });
+    }
+
+    return true;
   }
 
-  /*
-  / return the metadata from a image
-  */
-  static async testMetadata(srcImage) {
-    console.log(' test image');
-    let metadata = await sharp(srcImage).metadata();
-    let response1 = exif(metadata.exif);
-    console.log(response1.GPSInfo.GPSLatitude[2] + '+' + response1.GPSInfo.GPSLongitude[2]);
-    console.log(response1.GPSInfo);
-    console.log(response1.Image.DateTime);
+  static async downloadFiles2(client, url, fileId, remove = false) {
+    let myfile = files[fileId];
 
-    let mystring = response1.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
-    let response = JSON.parse(mystring.slice(7).trim());
-    console.log(response);
-    console.log(mystring);
+    let response = await client.downloadFile(myfile.path2, `${myfile.route}${myfile.name}`);
+    if (response) {
+      this.editFile({ id: fileId, status: 1 });
+      processQueue.push(fileId);
+      if (remove) {
+        await client.deleteFile(myfile.path2);
+      }
+    } else {
+      this.editFile({ id: fileId, status: 3 });
+    }
 
-    console.log(response);
-
-    return response;
+    if (downloadQueue.length > 0 && files[downloadQueue[0]].source === url) {
+      await downloadFiles2(client, url, downloadQueue.shift(), remove);
+    }
   }
 
-  /*
-  / return metadata from a list of images thermal images
-  */
-  static async MetadataTempImage(listThermal) {
-    console.log(listThermal);
-    console.log('metadata imagen');
-    let MissionResponse = { measures: [{ name: 'TempMax', value: 0 }] };
-    let latitude;
-    let longitude;
-    let imageMetaData = [];
-    for (const srcImage of listThermal) {
-      let metadata = await sharp(srcImage.dist).metadata();
-      let dataexitf = exif(metadata.exif);
-      let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
-      let userdata = JSON.parse(mystring.slice(7).trim());
-      let GPSPosition = dataexitf.GPSInfo;
+  static async downloadFiles() {
+    console.log('download files');
+    if (downloadQueue.length == 0) {
+      return;
+    }
+    let myFileId = downloadQueue.shift();
+    let myfile = files[myFileId];
 
-      latitude = this.convertDMSToDD(
-        GPSPosition.GPSLatitude[0],
-        GPSPosition.GPSLatitude[1],
-        GPSPosition.GPSLatitude[2],
-        GPSPosition.GPSLatitudeRef
+    let mydevice = await DevicesController.getAccess(myfile.deviceId);
+    let myconfig = filesSetup.files.default;
+
+    if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
+      console.log('UAV no have files setup ');
+      return [];
+    }
+
+    if (mydevice.files[index].hasOwnProperty('type')) {
+      myconfig = filesSetup.files.hasOwnProperty(myfile.source.type)
+        ? filesSetup.files[myfile.source.type]
+        : filesSetup.files.default;
+    }
+
+    let params = this.paramsConnection({ mydevice: myfile.source.url });
+    const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
+
+    let status = await client.connect(params);
+    if (!status) {
+      console.log('cant connect to device ');
+      return [];
+    }
+
+    await downloadFiles2(client, myfile.source.url, myfile.id, myconfig.delete);
+
+    client.disconnect();
+
+    if (downloadQueue.length > 0) {
+      this.downloadFiles();
+    }
+
+    this.processFiles();
+    return;
+  }
+
+  static async processFiles() {
+    console.log('process images');
+    if (processQueue.length == 0) {
+      return;
+    }
+    let myFileId = processQueue.shift();
+    let myfile = files[myFileId];
+    if (myfile.name.includes('THRM') == 'thermal' && !myfile.name.includes('process')) {
+      let response = await ProcessThermalImage(
+        `${myfile.route}${myfile.name}`,
+        `${myfile.route}${myfile.name.slice(0, -4)}_process.jpg`
       );
-      longitude = this.convertDMSToDD(
-        GPSPosition.GPSLongitude[0],
-        GPSPosition.GPSLongitude[1],
-        GPSPosition.GPSLongitude[2],
-        GPSPosition.GPSLongitudeRef
-      );
-      imageMetaData.push({
-        name: srcImage.name,
-        attributes: {
-          latitude,
-          longitude,
-          measures: [{ name: 'TempMax', value: userdata.MaxTemp }],
-        },
-      });
-      if (Object.keys(MissionResponse).length == 0) {
-        MissionResponse.latitude = latitude;
-        MissionResponse.longitude = longitude;
-        MissionResponse.measures[0].value = userdata.MaxTemp;
+      if (response) {
+        let createFile = this.addFile({
+          routeId: myfile.routeId,
+          missionId: myfile.missionId,
+          deviceId: myfile.deviceId,
+          name: `${myfile.name.slice(0, -4)}_process.jpg`,
+          route: myfile.route,
+          source: 'GCS',
+          path2: `${myfile.route}${myfile.name}`,
+          status: 5,
+          date: myFile.date,
+        });
+        processQueue.push(createFile.id);
+        this.editFile({ id: myFileId, status: 5 });
       } else {
-        if (Number(userdata.MaxTemp) > Number(MissionResponse.measures[0].value)) {
-          MissionResponse.latitude = latitude;
-          MissionResponse.longitude = longitude;
-          MissionResponse.measures[0].value = userdata.MaxTemp;
-        }
+        this.editFile({ id: myFileId, status: 4 });
       }
     }
-    return { value: MissionResponse, imageMetaData: imageMetaData };
-  }
-
-  static getNormalSize({ width, height, orientation }) {
-    return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
-  }
-
-  /*
-  / convert from DMS to DD
-  */
-
-  static convertDMSToDD(degrees, minutes, seconds, direction) {
-    var dd = degrees + minutes / 60 + seconds / (60 * 60);
-    if (direction == 'S' || direction == 'W') {
-      dd = dd * -1; // Convert to negative if south or west
+    let attributes = await getMetadata(`${myfile.route}${myfile.name}`);
+    this.editFile({ id: myFileId, status: 5, attributes });
+    if (processQueue.length > 0) {
+      this.processFiles();
     }
-    return dd;
-  }
-
-  static async ProcessThermalImages(Images2process) {
-    console.log('last images process');
-    console.log(Images2process);
-    const listImages = [];
-    for (const image of Images2process) {
-      console.log('process img' + image.ref);
-      listImages.push({
-        name: image.name.slice(0, -4) + '_process.jpg',
-        ref: image.ref.slice(0, -4) + '_process.jpg',
-        dist: image.dist.slice(0, -4) + '_process.jpg',
-      });
-      try {
-        const { stdout, stderr } = await exec(
-          `conda run -n DJIThermal ${processThermalsSrc} -i "${image.dist}" -o "${image.dist.slice(
-            0,
-            -4
-          )}_process.jpg" `
-        );
-        console.log('stdout:', stdout);
-        console.log('stderr:', stderr);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    console.log('finish process');
-    return listImages; //{ ref: listImages, dist: listImagesdist };
+    // end process call other function for continuos the process of state machine
   }
 
   static async listFiles({ uavId, missionId }) {
