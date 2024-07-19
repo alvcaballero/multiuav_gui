@@ -134,7 +134,7 @@ Content-Type: application/json
 
 ### varibles 
 
-@uav_id = 4
+@uav_id = 3
 @mission_id = 1
 
 ### get mission

@@ -2,11 +2,11 @@
 import * as fs from 'fs';
 //import { exec } from 'child_process';
 
-import { dateString, addTime, GetLocalTime, readJSON, readYAML } from '../common/utils.js';
+import { dateString, addTime, GetLocalTime, readJSON, writeJSON, readYAML } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
 import { DevicesController } from '../controllers/devices.js';
-import { filesPath } from '../config/config.js';
+import { filesPath, filesData } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 
 /* files:
@@ -14,7 +14,7 @@ import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 /    status: 0: no download, 1: download, 2: process, 3: fail download , 4: error, 5: ok, 
 */
 
-const files = readJSON('../data/files.json');
+const files = readJSON(filesData);
 const filesSetup = readYAML('../config/devices/devices.yaml');
 const downloadQueue = []; // manage files to download
 const processQueue = []; // manage files to process
@@ -62,6 +62,7 @@ export class filesModel {
       date,
       attributes,
     };
+    writeJSON(filesData, files);
     return files[id];
   }
 
@@ -71,6 +72,7 @@ export class filesModel {
     }
     if (status) files[id].status = status;
     if (attributes) files[id].attributes = attributes;
+    writeJSON(filesData, files);
     return files[id];
   }
   /*
@@ -353,7 +355,7 @@ export class filesModel {
           route: myfile.route,
           source: 'GCS',
           path2: `${myfile.route}${myfile.name}`,
-          status: 5,
+          status: 1,
           date: myfile.date,
         });
         processQueue.push(createFile.id);
@@ -367,7 +369,7 @@ export class filesModel {
       this.editFile({ id: myFileId, status: 5, attributes });
     } catch (e) {
       console.log('error metadata');
-      return;
+      this.editFile({ id: myFileId, status: 5, attributes: {} });
     }
     if (processQueue.length > 0) {
       this.processFiles();

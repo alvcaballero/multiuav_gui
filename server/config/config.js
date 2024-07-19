@@ -22,3 +22,5 @@ export const env = process.env.NODE_ENV || 'dev',
   extAppUrl = process.env.EXT_APP_url || '',
   extAppUser = process.env.EXT_APP_user || '',
   extAppPWD = process.env.EXT_APP_pwd || '';
+
+export const filesData = '../data/files.json';
