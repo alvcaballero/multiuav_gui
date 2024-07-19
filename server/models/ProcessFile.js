@@ -34,8 +34,7 @@ export async function getMetadata(path) {
 
   let metadata = await sharp(path).metadata();
   let dataexitf = exif(metadata.exif);
-  let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
-  let userdata = JSON.parse(mystring.slice(7).trim());
+
   let GPSPosition = dataexitf.GPSInfo;
 
   latitude = convertDMSToDD(
@@ -50,10 +49,15 @@ export async function getMetadata(path) {
     GPSPosition.GPSLongitude[2],
     GPSPosition.GPSLongitudeRef
   );
-  if (userdata.MinTemp) measures.push({ name: 'TempMin', value: userdata.MinTemp });
-  if (userdata.MaxTemp) measures.push({ name: 'TempMax', value: userdata.MaxTemp });
-  if (userdata.DistVeg) measures.push({ name: 'DistVeg', value: userdata.DistVeg });
-  if (userdata.DistFle) measures.push({ name: 'DistFle', value: userdata.DistFle });
+  if (dataexitf.Photo.hasOwnProperty('UserComment')) {
+    let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
+    let userdata = JSON.parse(mystring.slice(7).trim());
+
+    if (userdata.hasOwnProperty('MinTemp')) measures.push({ name: 'TempMin', value: userdata.MinTemp });
+    if (userdata.hasOwnProperty('MaxTemp')) measures.push({ name: 'TempMax', value: userdata.MaxTemp });
+    if (userdata.hasOwnProperty('DistVeg')) measures.push({ name: 'DistVeg', value: userdata.DistVeg });
+    if (userdata.hasOwnProperty('DistFle')) measures.push({ name: 'DistFle', value: userdata.DistFle });
+  }
 
   return { latitude, longitude, measures };
 }

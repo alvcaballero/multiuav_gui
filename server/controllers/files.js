@@ -13,10 +13,7 @@ class filesController {
     let response = await this.filesModel.readGCSFiles();
     res.json(response);
   };
-  testfile = async (req, res) => {
-    let response = await this.filesModel.testMetadata(req.body.src);
-    res.json(response);
-  };
+
   MetadataTempImage = async (req, res) => {
     let response = await this.filesModel.MetadataTempImage(req.body.src);
     res.json(response);
@@ -27,6 +24,12 @@ class filesController {
   };
   updateFiles = async (uavId, missionId, routeId, initTime) => {
     return await this.filesModel.updateFiles(uavId, missionId, routeId, initTime);
+  };
+  updateFilesAPI = async (req, res) => {
+    console.log(' update files');
+    const { uavId, missionId, routeId, initTime } = req.params;
+    let response = await this.filesModel.updateFiles(uavId, missionId, routeId, initTime);
+    res.json(response);
   };
   showFiles = async (req, res) => {
     console.log('show files');

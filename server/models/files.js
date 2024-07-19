@@ -132,15 +132,16 @@ export class filesModel {
   // filter file '.jpg$'
 
   static async mylistFiles(client, path, lastFolder = false, filterFolder = '', filterFile = '') {
+    console.log(`list files ${path} ${lastFolder} ${filterFolder} ${filterFile}`);
     let listFolder = [];
     let myfiles = [];
     let myfolders = await client.listFiles(path, filterFolder, 'd', true);
     if (lastFolder == true) {
-      listFolder = myfolders;
-    } else {
       if (myfolders.length > 0) {
         listFolder.push(myfolders[0]);
       }
+    } else {
+      listFolder = myfolders;
       myfiles = await client.listFiles(path, filterFile, '-', true);
     }
     let listFiles = myfiles.map((file) => `${path}${file}`);
@@ -167,6 +168,7 @@ export class filesModel {
         ? filesSetup.files[mydevice.files[index].type]
         : filesSetup.files.default;
     }
+    console.log(myconfig);
     let params = this.paramsConnection({ mydevice: mydevice.files[index] });
     const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
     let status = await client.connect(params);
@@ -175,7 +177,7 @@ export class filesModel {
       return [];
     }
     console.log(`config files ${myconfig.path} ${myconfig.type}`);
-    listFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder');
+    listFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder' ? true : false);
 
     await client.disconnect();
 
@@ -200,7 +202,7 @@ export class filesModel {
     let myconfig = filesSetup.files.default;
     let listFiles = [];
 
-    console.log(`update files api call ${uavId} ${missionId} ${initTime} ${index}`);
+    console.log(`update files api call ${uavId} ${routeId} ${missionId} ${initTime} ${index}`);
     if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
       console.log('UAV no have files setup ');
       return [];
@@ -224,10 +226,13 @@ export class filesModel {
 
     console.log(`config files ${myconfig.path} ${myconfig.type}`);
 
-    let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
-    let nameFolder = 'mission_' + myInitTime;
+    let pathFolder = myconfig.path;
+    if (myconfig.type == 'specific') {
+      let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
+      pathFolder = `${myconfig.path}'mission_'${myInitTime}`;
+    }
 
-    listFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder');
+    listFiles = await this.mylistFiles(client, pathFolder, myconfig.type == 'lastFolder');
 
     await client.disconnect();
 
@@ -236,28 +241,25 @@ export class filesModel {
       return [];
     }
 
+    let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
     if (!fs.existsSync(dir)) {
       console.log('no exist ' + dir);
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
-    let dir2 = `mission_${missionId}/${mydevice.name}`;
-
-    if (nameFolder) {
-      for (let myfile of listFiles) {
-        let createFile = this.addFile({
-          routeId: routeId,
-          missionId: missionId,
-          deviceId: uavId,
-          name: `${myfile.split('/').at(-1)}`,
-          route: `${dir2}/`,
-          source: mydevice.files[index],
-          path2: myfile,
-        });
-        downloadQueue.push(createFile.id);
-      }
+    for (let myfile of listFiles) {
+      let createFile = this.addFile({
+        routeId: routeId,
+        missionId: missionId,
+        deviceId: uavId,
+        name: `${myfile.split('/').at(-1)}`,
+        route: `mission_${missionId}/${mydevice.name}/`,
+        source: mydevice.files[index],
+        path2: myfile,
+      });
+      downloadQueue.push(createFile.id);
     }
+
     this.downloadFiles();
 
     if (+index + 1 < mydevice.files.length) {
@@ -270,7 +272,7 @@ export class filesModel {
   static async downloadFiles2(client, url, fileId, remove = false) {
     let myfile = files[fileId];
 
-    let response = await client.downloadFile(myfile.path2, `${myfile.route}${myfile.name}`);
+    let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.route}${myfile.name}`);
     if (response) {
       this.editFile({ id: fileId, status: 1 });
       processQueue.push(fileId);
@@ -281,8 +283,8 @@ export class filesModel {
       this.editFile({ id: fileId, status: 3 });
     }
 
-    if (downloadQueue.length > 0 && files[downloadQueue[0]].source === url) {
-      await downloadFiles2(client, url, downloadQueue.shift(), remove);
+    if (downloadQueue.length > 0 && files[downloadQueue[0]].source.url === url) {
+      await this.downloadFiles2(client, url, downloadQueue.shift(), remove);
     }
   }
 
@@ -302,13 +304,13 @@ export class filesModel {
       return [];
     }
 
-    if (mydevice.files[index].hasOwnProperty('type')) {
+    if (myfile.source.hasOwnProperty('type')) {
       myconfig = filesSetup.files.hasOwnProperty(myfile.source.type)
         ? filesSetup.files[myfile.source.type]
         : filesSetup.files.default;
     }
 
-    let params = this.paramsConnection({ mydevice: myfile.source.url });
+    let params = this.paramsConnection({ mydevice: { url: myfile.source.url } });
     const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
 
     let status = await client.connect(params);
@@ -317,29 +319,30 @@ export class filesModel {
       return [];
     }
 
-    await downloadFiles2(client, myfile.source.url, myfile.id, myconfig.delete);
+    await this.downloadFiles2(client, myfile.source.url, myfile.id, myconfig.delete);
 
     client.disconnect();
+
+    this.processFiles();
 
     if (downloadQueue.length > 0) {
       this.downloadFiles();
     }
 
-    this.processFiles();
     return;
   }
 
   static async processFiles() {
-    console.log('process images');
+    console.log('process file');
     if (processQueue.length == 0) {
       return;
     }
     let myFileId = processQueue.shift();
     let myfile = files[myFileId];
-    if (myfile.name.includes('THRM') == 'thermal' && !myfile.name.includes('process')) {
+    if (myfile.name.includes('THRM') && !myfile.name.includes('process')) {
       let response = await ProcessThermalImage(
-        `${myfile.route}${myfile.name}`,
-        `${myfile.route}${myfile.name.slice(0, -4)}_process.jpg`
+        `${filesPath}${myfile.route}${myfile.name}`,
+        `${filesPath}${myfile.route}${myfile.name.slice(0, -4)}_process.jpg`
       );
       if (response) {
         let createFile = this.addFile({
@@ -351,7 +354,7 @@ export class filesModel {
           source: 'GCS',
           path2: `${myfile.route}${myfile.name}`,
           status: 5,
-          date: myFile.date,
+          date: myfile.date,
         });
         processQueue.push(createFile.id);
         this.editFile({ id: myFileId, status: 5 });
@@ -359,7 +362,7 @@ export class filesModel {
         this.editFile({ id: myFileId, status: 4 });
       }
     }
-    let attributes = await getMetadata(`${myfile.route}${myfile.name}`);
+    let attributes = await getMetadata(`${filesPath}${myfile.route}${myfile.name}`);
     this.editFile({ id: myFileId, status: 5, attributes });
     if (processQueue.length > 0) {
       this.processFiles();
