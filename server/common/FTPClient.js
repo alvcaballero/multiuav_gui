@@ -135,7 +135,7 @@ export class FTPClient {
   async downloadFile(remoteFile, localFile) {
     console.log(`Downloading ${remoteFile} to ${localFile} ...`);
     try {
-      let data = await this.client.downloadTo(remoteFile, localFile);
+      let data = await this.client.downloadTo(localFile, remoteFile);
       return { status: true, data: data };
     } catch (err) {
       console.error('Downloading failed:', err);

@@ -191,12 +191,12 @@ files:
     delete: true
     srvDownload: false
   wiris_pro:
-    path: 'src'
-    type: 'lastFolder'
-    delete: true
+    path: './sdcard/' #'./ssd/'
+    type: 'all'
+    delete: false
     srvDownload: false
   onboard_computer:
     path: './uav_media/'
-    type: 'lastFolder' #'specific'
+    type: 'specific'
     delete: false
     srvDownload: false

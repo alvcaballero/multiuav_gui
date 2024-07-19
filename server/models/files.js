@@ -273,7 +273,7 @@ export class filesModel {
     let myfile = files[fileId];
 
     let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.route}${myfile.name}`);
-    if (response) {
+    if (response.status) {
       this.editFile({ id: fileId, status: 1 });
       processQueue.push(fileId);
       if (remove) {
@@ -362,8 +362,13 @@ export class filesModel {
         this.editFile({ id: myFileId, status: 4 });
       }
     }
-    let attributes = await getMetadata(`${filesPath}${myfile.route}${myfile.name}`);
-    this.editFile({ id: myFileId, status: 5, attributes });
+    try {
+      let attributes = await getMetadata(`${filesPath}${myfile.route}${myfile.name}`);
+      this.editFile({ id: myFileId, status: 5, attributes });
+    } catch (e) {
+      console.log('error metadata');
+      return;
+    }
     if (processQueue.length > 0) {
       this.processFiles();
     }
