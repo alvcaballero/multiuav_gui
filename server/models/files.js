@@ -1,7 +1,5 @@
 //example that a men manage databases
 import * as fs from 'fs';
-//import { exec } from 'child_process';
-
 import { dateString, addTime, GetLocalTime, readJSON, writeJSON, readYAML } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
@@ -10,8 +8,17 @@ import { filesPath, filesData } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 
 /* files:
-/     
+/    id
+/    routeId
+/    missionId
+/    deviceId
+/    name
+/    route : path in server /mission_id/uav_name/
+/    source : {url, type}
+/    path2 : path in the drone or gcs 
 /    status: 0: no download, 1: download, 2: process, 3: fail download , 4: error, 5: ok, 
+/    date:
+/    attributes: metadata of the file 
 */
 
 const files = readJSON(filesData);

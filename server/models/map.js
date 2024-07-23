@@ -17,9 +17,7 @@ export class mapModel {
       divLocationList.push(LocationList.slice(i, i + maxAPIlocation));
     }
 
-    let stringLocationList = divLocationList.map((list) =>
-      list.map((waypoint) => waypoint.join(',')).join('|')
-    );
+    let stringLocationList = divLocationList.map((list) => list.map((waypoint) => waypoint.join(',')).join('|'));
     if (NoElevation) {
       if (!myresponse.hasOwnProperty('results')) {
         myresponse = { status: 'warning', results: [] };
@@ -53,7 +51,7 @@ export class mapModel {
           return myresponse;
         })
         .then((body) => {
-          console.log(body);
+          //console.log(body);
           if (myresponse.hasOwnProperty('results')) {
             body.results.map((element) => {
               myresponse.results.push(element);
@@ -95,11 +93,7 @@ export class mapModel {
               //console.log('mayor a 200 metros');
               //funcion de slice and add to  //altitud = -1;
               let steps = Math.floor(distbetweenwp / 200) + 1;
-              let newpoints = this.divideLineIntoPoints(
-                [array[lastindex], wp],
-                steps,
-                distbetweenwp
-              );
+              let newpoints = this.divideLineIntoPoints([array[lastindex], wp], steps, distbetweenwp);
               newpoints.map((nwp) => {
                 listwaypoint.push([nwp.lat, nwp.lon]);
                 let nwpdist = +lastdist.toFixed(1) + +nwp.dist.toFixed(1);
@@ -134,8 +128,7 @@ export class mapModel {
         for (let index_rt = 0; index_rt < wpaltitude.length; index_rt++) {
           let wp_count = 0;
           for (let index = 0; index < wpaltitude[index_rt].length; index++) {
-            wpaltitude[index_rt][index]['elevation'] =
-              +elevationprofile.results[auxcount].elevation.toFixed(1);
+            wpaltitude[index_rt][index]['elevation'] = +elevationprofile.results[auxcount].elevation.toFixed(1);
             wpaltitude[index_rt][index]['lat'] = +elevationprofile.results[auxcount].location.lat;
             wpaltitude[index_rt][index]['lng'] = +elevationprofile.results[auxcount].location.lng;
 
@@ -147,8 +140,7 @@ export class mapModel {
             if (wpaltitude[index_rt][index]['uav'] !== null) {
               wpaltitude[index_rt][index]['wp'] = wp_count;
               wpaltitude[index_rt][index]['uavheight'] = (
-                +wpaltitude[index_rt][index]['uav'] +
-                +elevationprofile.results[initElevationIndex].elevation
+                +wpaltitude[index_rt][index]['uav'] + +elevationprofile.results[initElevationIndex].elevation
               ).toFixed(1);
               wp_count = wp_count + 1;
             }

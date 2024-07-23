@@ -3,7 +3,7 @@
 import { createMachine, createActor, fromPromise, assign } from 'xstate';
 import { commandsController } from '../controllers/commands.js';
 //import { missionModel } from './mission.js';
-import { dateString, addTime, GetLocalTime } from '../common/utils.js';
+import { dateString, addTime, GetLocalTime, sleep } from '../common/utils.js';
 import { missionSMModel } from './missionSM.js';
 import { MissionController } from '../controllers/mission.js';
 
@@ -35,6 +35,7 @@ const LoadMissionSM = async (context) => {
 const CommandMissionSM = async (context) => {
   console.log('service command mission');
   try {
+    sleep(2000);
     //console.log(mission);
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,

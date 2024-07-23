@@ -574,21 +574,21 @@ dji_M300:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
-      name: '/dji_osdk_ros/height_above_takeoff'
-      messageType: 'std_msgs/Float32'
-    vo_position:
-      name: '/dji_osdk_ros/vo_position'
-      messageType: 'dji_osdk_ros/VOPosition'
+      # sensor_height:
+      #   name: '/dji_osdk_ros/height_above_takeoff'
+      #   messageType: 'std_msgs/Float32'
+      #vo_position:
+      #  name: '/dji_osdk_ros/vo_position'
+      #  messageType: 'dji_osdk_ros/VOPosition'
     IMU: #hdg
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     hdg: #hdg
       name: '/dji_osdk_ros/compass_heading'
       messageType: 'std_msgs/Float32'
-    speed:
-      name: '/dji_osdk_ros/velocity'
-      messageType: 'geometry_msgs/Vector3Stamped'
+      # speed:
+      #  name: '/dji_osdk_ros/velocity'
+      #  messageType: 'geometry_msgs/Vector3Stamped'
     mission_state:
       name: '/dji_osdk_ros/waypointV2_mission_state'
       messageType: 'dji_osdk_ros/WaypointV2MissionStatePush'

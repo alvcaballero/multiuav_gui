@@ -9,15 +9,20 @@ const __filename = new URL('', import.meta.url).pathname;
 const __dirname = new URL('.', import.meta.url).pathname;
 
 export const readJSON = (filepath) => {
-  if (existsSync(resolve(__dirname, filepath))) {
-    //console.log(`The file or directory at '${filepath}' exists.`);
-  } else {
+  console.log('load ' + filepath);
+  let jsonfile = {};
+  if (!existsSync(resolve(__dirname, filepath))) {
     console.log(`File '${filepath}' does not exist.`);
     return {};
   }
-  console.log('load ' + filepath);
-  let fileContents = readFileSync(resolve(__dirname, filepath), 'utf8');
-  return JSON.parse(fileContents);
+  try {
+    let fileContents = readFileSync(resolve(__dirname, filepath), 'utf8');
+    jsonfile = JSON.parse(fileContents);
+  } catch (e) {
+    console.log(`file is not a json file ${filepath}`);
+    return {};
+  }
+  return jsonfile;
 };
 
 export const readYAML = (filepath) => {
@@ -62,6 +67,7 @@ export const writeYAML = (path, content) => {
   });
 };
 export const writeJSON = (path, content) => {
+  console.log('write Json' + path);
   const saveContent = JSON.stringify(content, null, 2);
   writeFile(__dirname + path, saveContent, (err) => {
     if (err) {

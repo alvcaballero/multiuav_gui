@@ -48,6 +48,7 @@ export async function sendCommandToClient({ uav_id, type, attributes }) {
   let nameClient = await DevicesController.getDevice(uav_id);
   console.log('send command to ' + nameClient.name + ' type:' + type);
   let msg = await encode({ uav_id, type, attributes });
+  if (msg === null) return { state: 'error', msg: 'command not found to websocket' };
   WebsocketDevices._instance.sentToClient(nameClient.name, msg);
   servicesTimeout[`${nameClient.name}_${type}`] = setTimeout(
     ServiceResponse.bind(null, {

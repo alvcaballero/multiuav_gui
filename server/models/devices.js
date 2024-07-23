@@ -1,20 +1,44 @@
-import { readJSON, readYAML, getDatetime } from '../common/utils.js';
+import { readJSON, readYAML, getDatetime, writeJSON } from '../common/utils.js';
 import { StreamServer } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import { object } from 'zod';
+import { devicesData } from '../config/config.js';
 
-const devices_init = readYAML('../config/devices/devices_init.yaml');
-const devices = {};
-const devicesAccess = {};
+/* devices:
+/   id
+/   name  : name of uav
+/   category : model of uav registered
+/   ip 
+/   protocol: ros, robofleet
+/   camera : array of camera devices 
+/       type: WebRTC, RTSP
+/       source: source of camera
+/   files: array of files access
+/        url: ftp://user:pwd@ip:port
+/        type: ftp
+/   lastUpdate:
+/   status:
+*/
+const devices = readJSON(devicesData);
 
 console.log('load model devices No SQL');
+const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
+const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
+
+function filterDevice(obj, fields) {
+  let nuevoObjeto = {};
+  for (let field of fields) {
+    if (obj.hasOwnProperty(field)) {
+      nuevoObjeto[field] = obj[field] ?? null;
+    }
+  }
+  return nuevoObjeto;
+}
 
 const CheckDeviceOnline = setInterval(() => {
   let currentTime = new Date();
   let checkdevices = Object.keys(devices);
   checkdevices.forEach((element) => {
-    //console.log(data.state.devices[element])
-    //console.log(currentTime)
     if (currentTime - devices[element]['lastUpdate'] < 5000) {
       devices[element]['status'] = 'online';
     } else {
@@ -25,7 +49,6 @@ const CheckDeviceOnline = setInterval(() => {
 
 export class DevicesModel {
   constructor() {
-    // conect with ros and other things
     console.log('constructor device model');
   }
 
@@ -35,17 +58,28 @@ export class DevicesModel {
       if (Array.isArray(query)) {
         const asArray = Object.entries(devices);
         const filtered = asArray.filter(([key, value]) => query.some((element) => key == element));
-        return Object.fromEntries(filtered);
+        let result = {};
+        for (let [key, value] of filtered) {
+          result[key] = filterDevice(value, publicFields);
+        }
+        return result;
       }
       if (!isNaN(query)) {
-        return devices[query] ? { id: devices[query] } : {};
+        return devices[query] ? { id: filterDevice(devices[query], publicFields) } : {};
       }
     }
-
-    return devices;
+    let listDevices = Object.entries(devices);
+    let result = {};
+    for (let [key, value] of listDevices) {
+      result[key] = filterDevice(value, publicFields);
+    }
+    return result;
   }
   static async getAccess(id) {
-    return Object.values(devicesAccess).find((device) => device.id === id);
+    return filterDevice(
+      Object.values(devices).find((device) => device.id === id),
+      privateFields
+    );
   }
 
   static async create(device) {
@@ -72,27 +106,13 @@ export class DevicesModel {
       };
     }
 
+    let otherFields = { status: 'offline', lastUpdate: null, protocol: protocol };
+
     this.updatedevice({
-      id: cur_uav_idx,
-      name: device.name,
-      category: device.category,
-      ip: device.ip,
-      camera: device.camera,
-      status: 'online',
-      protocol: protocol,
-      lastUpdate: null,
+      ...device,
+      ...otherFields,
     });
 
-    if (device.hasOwnProperty('user') && device.hasOwnProperty('pwd')) {
-      this.updateDeviceAccess({
-        id: cur_uav_idx,
-        name: device.name,
-        user: device.user,
-        pwd: device.pwd,
-        ip: device.ip,
-        files: device.files,
-      });
-    }
     if (StreamServer) {
       this.addCameraWebRTC(device);
     }
@@ -103,13 +123,12 @@ export class DevicesModel {
         await rosController.subscribeDevice({
           id: cur_uav_idx,
           name: device.name,
-          type: device.category,
+          category: device.category,
           camera: device.camera,
           watch_bound: true,
           bag: false,
         });
       }
-
       console.log('success create', device.name + ' Type: ' + device.category);
       return { state: 'success', msg: 'conectado Correctamente' };
     } else {
@@ -195,10 +214,9 @@ export class DevicesModel {
 
   static updatedevice(payload) {
     devices[payload.id] = payload;
+    writeJSON(devicesData, devices);
   }
-  static updateDeviceAccess(payload) {
-    devicesAccess[payload.id] = payload;
-  }
+
   static updatedeviceIP(payload) {
     devices[payload.id]['ip'] = payload.ip;
   }
@@ -221,13 +239,14 @@ export class DevicesModel {
     delete devices[id];
     //console.log(devices);
   }
-
   static async addAllUAV() {
-    console.log('---- start init devices ------------');
-    for (let device of devices_init.init) {
-      await this.create(device);
+    console.log('---- init cameras of devices ------------');
+    for (let device of Object.values(devices)) {
+      if (StreamServer) {
+        await this.addCameraWebRTC(device);
+      }
     }
-    console.log('------  finish init devices ------------');
   }
 }
+
 DevicesModel.addAllUAV();

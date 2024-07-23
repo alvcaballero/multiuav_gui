@@ -24,3 +24,6 @@ export const env = process.env.NODE_ENV || 'dev',
   extAppPWD = process.env.EXT_APP_pwd || '';
 
 export const filesData = '../data/files.json';
+export const devicesData = '../data/devices.json';
+export const routesData = '../data/routes.json';
+export const missionsData = '../data/missions.json';

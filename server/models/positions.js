@@ -35,6 +35,10 @@ export class positionsModel {
     console.log(positions);
   }
   static async updatePosition(payload) {
+    if (payload === null) {
+      console.log('payload null');
+      return null;
+    }
     DevicesController.updateDeviceTime(payload.deviceId);
 
     if (positions[payload.deviceId] === undefined) {

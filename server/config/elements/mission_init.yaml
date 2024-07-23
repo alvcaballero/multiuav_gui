@@ -1,4 +1,4 @@
-id: 18804049
+id: 36470847
 objetivo:
   id: 1
   name: inspeccion de torre
@@ -10,17 +10,17 @@ loc:
     name: Elements
     linea: true
     items:
-      - latitude: 37.19384681403371
-        longitude: -6.702598762315071
+      - latitude: 37.19280537019709
+        longitude: -6.701476542699256
         type: object
         groupId: 2
-        id: 0
+        id: 1
         image: powerTower
-        title: 2-0
+        title: 2-1
 meteo: []
 bases:
   - devices:
-      id: 4
+      id: 5
     settings:
       base: []
       inspection_speed: 7
@@ -31,7 +31,7 @@ bases:
       security_height: 10
       orbital_points: 5
   - devices:
-      id: 5
+      id: 4
     settings:
       base: []
       inspection_speed: 7
@@ -59,7 +59,14 @@ settings:
       name: Device
       default: 0
     category:
-      type: ""
+      type:
+        - dji_M210_noetic
+        - dji_M210_melodic
+        - dji_M210_noetic_rtk
+        - dji_M21_melodic_rtk
+        - dji_M210_noetic_rtk
+        - dji_M300
+        - dji_M300_rtk
   settings:
     base:
       type: array

@@ -20,10 +20,7 @@ const CheckDeviceOnline = setInterval(async () => {
 
   Object.values(listUpdateTime).forEach((element) => {
     if (element.flag) {
-      sequelize.models.Device.update(
-        { lastUpdate: element.time },
-        { where: { id: element.deviceId } }
-      );
+      sequelize.models.Device.update({ lastUpdate: element.time }, { where: { id: element.deviceId } });
       listUpdateTime[element.deviceId].flag = false;
     }
   });
@@ -51,9 +48,7 @@ export class DevicesModel {
     if (query) {
       console.log(query);
       if (Array.isArray(query)) {
-        const filtered = mydevices.filter((device) =>
-          query.some((element) => device.id == element)
-        );
+        const filtered = mydevices.filter((device) => query.some((element) => device.id == element));
         return Object.fromEntries(filtered);
       }
       if (!isNaN(query)) {
@@ -114,7 +109,7 @@ export class DevicesModel {
       await rosController.subscribeDevice({
         id: myDevice.id,
         name: uav_ns,
-        type: uav_type,
+        category: uav_type,
         camera: device.camera,
         watch_bound: true,
         bag: false,
@@ -132,18 +127,15 @@ export class DevicesModel {
   static async addCameraWebRTC(device) {
     for (let i = 0; i < device.camera.length; i = i + 1) {
       if (device.camera[i]['type'] == 'WebRTC') {
-        await fetch(
-          `http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`,
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        await fetch(`http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
       }
     }
   }

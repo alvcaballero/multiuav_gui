@@ -34,6 +34,12 @@ table ConfigMissionResponse
     success:bool;
 }
 
+table eventService
+{
+    __metadata:fb.MsgMetadata;
+    request:eventRequest;
+    response:eventResponse;
+}
 table eventRequest
 {
     __metadata:fb.MsgMetadata;

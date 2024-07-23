@@ -5,7 +5,8 @@ import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
 import { FilesController } from '../controllers/files.js';
 import { eventsController } from '../controllers/events.js';
-import { readYAML } from '../common/utils.js';
+import { readJSON, readYAML, writeJSON } from '../common/utils.js';
+import { missionsData, routesData } from '../config/config.js';
 
 /* mission is object that have the current mission running and have the next object
  / id
@@ -15,49 +16,10 @@ import { readYAML } from '../common/utils.js';
  / uav: {uavId, status:  load, commmand , running , resumen cancel,Get Data, Download Data, InitTime,FinishTime}
  / mission: mission format yaml
 */
-const Mission = {
-  72510181: {
-    id: 72510181,
-    initTime: '2024-03-05T12:20:46',
-    endTime: '2024-03-05T12:45:46',
-    status: 'finish',
-    mission: 'mission.yaml',
-    results: [
-      {
-        latitude: 37.09241,
-        longitude: -5.232,
-        measures: [
-          {
-            name: 'minDistance',
-            value: 25.34,
-          },
-        ],
-      },
-    ],
-  },
-};
+const Mission = readJSON(missionsData);
 /*// current mission // id , status (init, planing, doing, finish,time inti, time_end))
  */
-const Routes = {
-  1: {
-    id: 1,
-    status: 'finish',
-    missionId: 72510181,
-    deviceId: '14',
-    initTime: '2024-03-05T12:20:46',
-    endTime: '2024-03-05T12:45:46',
-    result: {
-      latitude: 37.09241,
-      longitude: -5.232,
-      measures: [
-        {
-          name: 'minDistance',
-          value: 25.34,
-        },
-      ],
-    },
-  },
-};
+const Routes = readJSON(routesData);
 
 export class missionModel {
   static getMissionValue(id) {
@@ -76,6 +38,35 @@ export class missionModel {
       return Object.values(Routes).filter((word) => word.missionId == missionId);
     }
     return Routes;
+  }
+
+  static async createMission(payload) {
+    Mission[payload.id] = payload;
+    writeJSON(missionsData, Mission);
+  }
+  static async createRoute(payload) {
+    let id = Math.max(...Object.keys(Routes).map((key) => Number(key))) + 1;
+    Routes[id] = { ...payload, id };
+    writeJSON(routesData, Routes);
+    return Routes[id];
+  }
+  static async editMission(payload) {
+    Mission[payload.id] = { ...Mission[payload.id], ...payload };
+    writeJSON(missionsData, Mission);
+  }
+  static async editRoute(payload) {
+    Routes[payload.id] = { ...Routes[payload.id], ...payload };
+    writeJSON(routesData, Routes);
+    if (payload.status == 'finish' && payload.hasOwnProperty('missionId')) {
+      let listRoutes = Object.values(Routes).filter((item) => item.missionId == payload.missionId);
+      if (listRoutes.every((route) => route.status == 'finish')) {
+        this.editMission({ id: payload.missionId, status: 'finish', endTime: new Date() });
+      }
+    }
+    if (payload.hasOwnProperty('result') && payload.hasOwnProperty('missionId')) {
+      Mission[payload.missionId].results.push(payload.result);
+      writeJSON(missionsData, Mission);
+    }
   }
 
   static sleep(ms) {
@@ -110,8 +101,7 @@ export class missionModel {
       config.category = myDevice.category;
       return config;
     });
-    console.log(myTask);
-    console.log(myTask.devices);
+    console.log(`Task ${myTask.id} ${myTask.name} ${myTask.case} ${myTask.devices.map((item) => item.id).flat()}`);
     return myTask;
   }
 
@@ -146,7 +136,7 @@ export class missionModel {
       listUAV.push(findDevice.id);
     }
     //const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
-    Mission[missionId] = {
+    this.createMission({
       id: missionId,
       uav: listUAV,
       status: 'init',
@@ -154,20 +144,19 @@ export class missionModel {
       endTime: null,
       mission: mission,
       results: [],
-    };
+    });
     listUAV.forEach((uavId) => {
-      let routeId = Math.max(...Object.keys(Routes).map((key) => Number(key))) + 1;
-      Routes[routeId] = {
-        id: routeId,
+      let myroute = this.createRoute({
         status: 'init',
         missionId: missionId,
         deviceId: uavId,
         initTime: new Date(),
         endTime: null,
         result: {},
-      };
-      missionSMModel.createActorMission(uavId, missionId, routeId);
+      });
+      missionSMModel.createActorMission(uavId, missionId, myroute.id);
     });
+
     ExtAppController.missionReqStart(missionId, mission);
 
     var ws = new WebsocketManager(null, '/api/socket');
@@ -194,14 +183,8 @@ export class missionModel {
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
     let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
-    Routes[routeId].status = 'finish';
-    Routes[routeId].endTime = new Date();
+    this.editRoute({ id: routeId, status: 'finish', endTime: new Date() });
 
-    let listRoutes = Object.values(Routes).filter((item) => item.missionId == missionId);
-    if (listRoutes.every((route) => route.status == 'finish')) {
-      Mission[missionId].status = 'finish';
-      Mission[missionId].endTime = new Date();
-    }
     await ExtAppController.missionReqResult(missionId, resultCode);
     return true;
   }
@@ -212,9 +195,7 @@ export class missionModel {
     await this.sleep(5000);
     let code = 0;
     await ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
-
-    Routes[routeId].result = results.data;
-    Mission[missionId].results.push(results.data);
+    this.editRoute({ id: routeId, results: results.data });
 
     return true;
   }

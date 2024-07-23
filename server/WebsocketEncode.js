@@ -173,4 +173,6 @@ export async function encode({ uav_id, type, attributes }) {
   if (type === 'commandMission') {
     return encodeCommandMission({ topic: `/${uavName}/commandMission`, type: `${serviceType}`, attributes });
   }
+  console.log(`type ${type} not found for uav ${uavName}`);
+  return null;
 }
