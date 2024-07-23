@@ -211,14 +211,9 @@ Content-Type: application/json
 
 {
     "src":[
-      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174110_0013_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174110_0013_THRM.jpg"},
-      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174112_0014_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174112_0014_THRM.jpg"},
-      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174116_0015_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174116_0015_THRM.jpg"},
-      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0016_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174122_0016_THRM.jpg"},
-      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240226142604_0003_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240226142604_0003_THRM.jpg"},
-      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174128_0017_THRM.jpg","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240223174128_0017_THRM.jpg"},
-      {"dist":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240305104808_0006_THRM.JPG","ref":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240305104808_0006_THRM.JPG"}
-    
+      "/home/grvc/work/px4/uav_media/test/10-08-14-488-radiometric.jpg",
+      "/home/grvc/work/px4/uav_media/test/10-08-14-488-radiometric.tiff",
+      "/home/grvc/work/px4/uav_media/test/DJI_20240305122546_0001_THRM.jpg"
     ]
 }
 

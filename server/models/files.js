@@ -384,8 +384,20 @@ export class filesModel {
     // end process call other function for continuos the process of state machine
   }
 
+  static async ProcessThermalImages(src) {
+    if (src.length == 0) return false;
+    console.log('process thermal images');
+    console.log(src);
+    for (const file of src) {
+      if (file.includes('THRM') || file.includes('.tiff')) {
+        let response = await ProcessThermalImage(`${file}`, `${file.split('.')[0]}_process.jpg`);
+      }
+    }
+    return true;
+  }
+
   static async listFiles({ uavId, missionId }) {
-    console.log('devices acction ' + uavId);
+    console.log('devices action ' + uavId);
     return [];
   }
 }
