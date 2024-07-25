@@ -4,6 +4,8 @@ dotenv.config();
 
 export const env = process.env.NODE_ENV || 'dev',
   port = process.env.PORT || 4000,
+  RosEnable = process.env.ROS_CONNECTION ? (process.env.ROS_CONNECTION === 'false' ? false : true) : true,
+  FbEnable = process.env.FB_CONNECTION ? (process.env.FB_CONNECTION === 'false' ? false : true) : true,
   StreamServer = process.env.STREAM_SERVER === 'true' ? true : false, //if use mediamtx server in local host
   LocalGlyphs = process.env.LOCAL_GLYPHS === 'true' ? true : false, // if local server have a glyphs server
   NoElevation = process.env.NO_ELEVATION === 'true' ? true : false, // if local server have a glyphs server

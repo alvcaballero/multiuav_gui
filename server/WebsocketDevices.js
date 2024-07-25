@@ -9,6 +9,7 @@ import { parse } from 'url';
 import { decoder } from './WebsocketDecode.js';
 import { encode } from './WebsocketEncode.js';
 import { getDatetime } from './common/utils.js';
+import { FbEnable } from './config/config.js';
 
 let servicesTimeout = {};
 
@@ -45,6 +46,8 @@ export function ServiceResponse({ uav_id, name, type, response }) {
 }
 
 export async function sendCommandToClient({ uav_id, type, attributes }) {
+  if (!FbEnable) return { state: 'error', msg: 'flatbuffer connection is disabled' };
+
   let nameClient = await DevicesController.getDevice(uav_id);
   console.log('send command to ' + nameClient.name + ' type:' + type);
   let msg = await encode({ uav_id, type, attributes });

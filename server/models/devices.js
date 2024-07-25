@@ -157,7 +157,7 @@ export class DevicesModel {
           if (response.status == 200) {
             console.log('camera added ' + device.camera[i].source);
           } else {
-            console.log('Error adding camera ' + device.camera[i].source);
+            console.log(`Error adding camera  ${response.status} ${device.camera[i].source}`);
             return false;
           }
         } catch (e) {

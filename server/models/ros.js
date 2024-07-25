@@ -105,7 +105,7 @@ export class rosModel {
   }
   // Proccess Ros for all devices
   static async subscribeDevice(uavAdded) {
-    console.log(`subscribe ROS Device ${uavAdded.id} ${uavAdded.name} ${uavAdded.type}`);
+    console.log(`subscribe ROS Device ${uavAdded.id} ${uavAdded.name} ${uavAdded.category}`);
 
     const { id, name, category, camera } = uavAdded;
     uav_list[id] = uavAdded;
@@ -398,6 +398,6 @@ process.on('SIGINT', () => {
 });
 
 // Registering the event handlers
-autoConectRos();
+//autoConectRos();
 process.on('exit', onExit);
 process.on('uncaughtException', onUncaughtException);

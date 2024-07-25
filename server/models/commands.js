@@ -1,9 +1,9 @@
 import { DevicesController } from '../controllers/devices.js';
 import { eventsController } from '../controllers/events.js';
-import { getDatetime, writeYAML } from '../common/utils.js';
+import { getDatetime } from '../common/utils.js';
 import { rosController } from '../controllers/ros.js';
 import { categoryController } from '../controllers/category.js';
-import { WebsocketDevices, sendCommandToClient } from '../WebsocketDevices.js';
+import { sendCommandToClient } from '../WebsocketDevices.js';
 
 async function decodeMissionMsg({ uav_id, route }) {
   let device = await DevicesController.getDevice(uav_id);

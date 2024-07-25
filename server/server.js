@@ -6,7 +6,7 @@ import { URL } from 'url';
 const __filename = new URL('', import.meta.url).pathname;
 const __dirname = new URL('.', import.meta.url).pathname;
 
-import { port, db } from './config/config.js';
+import { port, db, RosEnable, FbEnable } from './config/config.js';
 import express, { json } from 'express';
 import logger from 'morgan';
 import { createServer } from 'http';
@@ -14,22 +14,26 @@ import { corsMiddleware } from './middlewares/cors.js';
 
 console.log('use db is ' + db);
 
-//ws
+//ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
-import { WebsocketDevices } from './WebsocketDevices.js';
-// rutas
+// express routes
 import { createDevicesRouter } from './routes/devices.js';
 import { categoryRouter } from './routes/category.js';
 import { positionsRouter } from './routes/positions.js';
 import { eventsRouter } from './routes/events.js';
 import { commandsRouter } from './routes/commands.js';
-import { rosRouter } from './routes/ros.js';
 import { mapRouter } from './routes/map.js';
 import { createMissionRouter } from './routes/mission.js';
 import { createFilesRouter } from './routes/files.js';
 import { ExtAppRouter } from './routes/ExtApp.js';
 import { serverRouter } from './routes/server.js';
 import { planningRouter } from './routes/planning.js';
+
+// comunication with devices
+console.log(` !!!!=== RosEnable is ${RosEnable} FbEnable is ${FbEnable}`);
+
+import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
+import { rosModel } from './models/ros.js'; // ros model
 
 //model
 
@@ -56,7 +60,7 @@ app.use('/api/category', categoryRouter);
 app.use('/api/positions', positionsRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/commands', commandsRouter);
-app.use('/api/ros', rosRouter);
+//app.use('/api/ros', rosRouter);
 app.use('/api/map', mapRouter);
 app.use('/api/missions', createMissionRouter({ model: MissionModel }));
 app.use('/api/files', createFilesRouter({ model: filesModel }));
@@ -66,7 +70,17 @@ app.use('/api/server', serverRouter);
 
 const server = createServer(app);
 var ws = new WebsocketManager(server, '/api/socket');
-var ws2 = new WebsocketDevices(8082);
+
+// connect to  devices
+if (RosEnable) {
+  console.log('init RosEnable');
+  rosModel.rosConnect();
+}
+if (FbEnable) {
+  console.log('init FbEnable');
+  var ws2 = new WebsocketDevices(8082);
+}
+
 //
 // Start the server.
 //

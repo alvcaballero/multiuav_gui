@@ -1,5 +1,5 @@
 import { rosModel } from '../models/ros.js';
-
+import { RosEnable } from '../config/config.js';
 export class rosController {
   static async getTopics(req, res) {
     console.log('controller get all');
@@ -12,21 +12,18 @@ export class rosController {
     res.json(response);
   }
   static async subscribeDevice(uavAdded) {
-    await rosModel.subscribeDevice(uavAdded);
+    return RosEnable ? await rosModel.subscribeDevice(uavAdded) : null;
   }
   static async unsubscribeDevice(id) {
     console.log('unsuscribe controller');
-    let response = await rosModel.unsubscribeDevice(id);
-    return response;
+    return RosEnable ? await rosModel.unsubscribeDevice(id) : null;
   }
   static async callService(message) {
+    if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
     let response = await rosModel.callService(message);
     return response;
   }
-  static async decodeMissionMsg(message) {
-    let response = await rosModel.decodeMissionMsg(message);
-    return response;
-  }
+
   static getServerStatus() {
     return rosModel.serverStatus();
   }
