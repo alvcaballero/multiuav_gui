@@ -22,7 +22,7 @@ export class categoryModel {
   }
 
   static getActions({ type }) {
-    console.log('devices acction ' + type);
+    console.log('devices acction in category ' + type);
     return Object.values(devices_msg[type]['attributes']['mission_action']);
   }
 }

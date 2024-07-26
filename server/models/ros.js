@@ -192,34 +192,24 @@ export class rosModel {
       return { state: 'error', msg: 'ROS no conectado' };
     }
     let device = await DevicesController.getDevice(uav_id);
-    let uavName = device.name;
-    let uavCategory = device.category;
+    const { name, category } = device;
     console.log(device);
 
-    if (!devices_msg[uavCategory]['services'].hasOwnProperty(type)) {
-      console.log(type + ' to:' + uavName + ' dont have this service');
-      return { state: 'warning', msg: type + ' to:' + uavName + ' dont have this service' };
+    if (!devices_msg[category]['services'].hasOwnProperty(type)) {
+      console.log(type + ' to:' + name + ' dont have this service');
+      return { state: 'warning', msg: type + ' to:' + name + ' dont have this service' };
     }
 
-    let myRequest = encodeRosSrv({ type, msg: request }); //type == 'configureMission' ? this.MissionToRos(request) : request;
+    let msgType = devices_msg[category]['services'][type]['serviceType'];
+    let myRequest = encodeRosSrv({ type, msg: request, msgType: msgType });
 
     let Message = new ROSLIB.Service({
       ros: ros,
-      name: uavName + devices_msg[uavCategory]['services'][type]['name'],
-      serviceType: devices_msg[uavCategory]['services'][type]['serviceType'],
+      name: name + devices_msg[category]['services'][type]['name'],
+      serviceType: msgType,
     });
 
-    let MsgRequest;
-    // &&;
-    if (devices_msg[uavCategory]['services'][type]['serviceType'] == 'std_srvs/TriggerRequest') {
-      MsgRequest = new ROSLIB.ServiceRequest({});
-    } else {
-      if (request) {
-        MsgRequest = new ROSLIB.ServiceRequest(myRequest);
-      } else {
-        MsgRequest = {};
-      }
-    }
+    let MsgRequest = request ? new ROSLIB.ServiceRequest(myRequest) : {};
 
     return new Promise((resolve, rejects) => {
       Message.callService(
@@ -230,12 +220,12 @@ export class rosModel {
           if (result.success || result.result) {
             resolve({
               state: 'success',
-              msg: type + ' to' + uavName + ' ok',
+              msg: type + ' to' + name + ' ok',
             });
           } else {
             resolve({
               state: 'error',
-              msg: type + ' to:' + uavName + ' error',
+              msg: type + ' to:' + name + ' error',
             });
           }
         },

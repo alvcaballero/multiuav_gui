@@ -46,8 +46,13 @@ function MissionToRos({
   };
 }
 
-export function encodeRosSrv({ type, msg }) {
-  let myRequest = type == 'configureMission' ? MissionToRos(msg) : msg;
+export function encodeRosSrv({ type, msg, msgType }) {
+  if (type == 'configureMission') {
+    return MissionToRos(msg);
+  }
+  if (msgType == 'std_srvs/TriggerRequest') {
+    return {};
+  }
 
-  return myRequest;
+  return msg;
 }

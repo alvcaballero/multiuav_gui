@@ -36,7 +36,7 @@ export class positionsModel {
   }
   static async updatePosition(payload) {
     if (payload === null) {
-      console.log('payload null');
+      // console.log('payload null');
       return null;
     }
     DevicesController.updateDeviceTime(payload.deviceId);

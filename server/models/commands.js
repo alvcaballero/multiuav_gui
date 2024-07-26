@@ -32,7 +32,7 @@ async function decodeMissionMsg({ uav_id, route }) {
     mode_trace = route.attributes.hasOwnProperty('mode_trace') ? route.attributes['mode_trace'] : mode_trace;
     mode_landing = route.attributes.hasOwnProperty('mode_landing') ? route.attributes['mode_landing'] : mode_landing;
 
-    let categoryModel = categoryController.getActionsParam({ type: uavcategory });
+    let categoryModel = await categoryController.getActionsParam({ type: uavcategory });
 
     Object.values(route['wp']).forEach((item) => {
       let yaw, gimbal, speed;
@@ -46,6 +46,9 @@ async function decodeMissionMsg({ uav_id, route }) {
       yaw = item.hasOwnProperty('yaw') ? item.yaw : 0;
       speed = item.hasOwnProperty('speed') ? item.speed : idle_vel;
       gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
+
+      console.log(item.action ?? 'no action');
+
       if (item.hasOwnProperty('action')) {
         Object.keys(item.action).forEach((action_val, index, arr) => {
           let found = Object.values(categoryModel).find((element) => element.name == action_val);
@@ -86,7 +89,7 @@ async function decodeMissionMsg({ uav_id, route }) {
 export class commandsModel {
   static getSaveCommands(deviceId) {
     let deviceid = deviceId;
-    console.log('devices acction ' + deviceid);
+    console.log('devices acction  save commands' + deviceid);
     return [];
   }
 
@@ -106,7 +109,7 @@ export class commandsModel {
       { type: 'configureMission' },
       { type: 'commandMission' },
     ];
-    console.log('devices acction ' + deviceid);
+    console.log('devices acction get types ' + deviceid);
     return response;
   }
 
