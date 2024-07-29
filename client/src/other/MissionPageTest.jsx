@@ -18,6 +18,7 @@ import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
 import MapScale from '../Mapview/MapScale';
 import MapDefaultCamera from '../Mapview/MapDefaultCamera';
+import MapMarkers3D from '../Mapview/MapMarkers3D';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -92,6 +93,7 @@ const MissionPageTest = () => {
               <MapDefaultCamera />
               <MapMissionsCreate />
               <MapMissions3D />
+              <MapMarkers3D />
               <MapPositions positions={filteredPositions} onClick={null} selectedPosition={null} showStatus />
             </MapView>
             <MapScale />

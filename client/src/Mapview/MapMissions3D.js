@@ -45,6 +45,9 @@ export const MapMissions3D = () => {
         }
       });
     });
+    if (origen == null) {
+      origen = modelOrigin;
+    }
     return origen;
   }
 
@@ -72,8 +75,8 @@ export const MapMissions3D = () => {
         let destino = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, wp['pos'][2]);
         let distance = calculateDistanceMercatorToMeters(origen2, destino);
 
-        //let destino = latLonToXYZ(wp['pos'][1], wp['pos'][0], wp['pos'][2]);
-        //line.push([destino[0] - origen[0], destino[1] - origen[1], destino[2] - origen[2]]);
+        // let destino = latLonToXYZ(wp['pos'][1], wp['pos'][0], wp['pos'][2]);
+        // line.push([destino[0] - origen[0], destino[1] - origen[1], destino[2] - origen[2]]);
         line.push([distance.dEastMeter, distance.dNorthMeter, wp['pos'][2] - origen[2]]);
       });
       routeline.push(line);

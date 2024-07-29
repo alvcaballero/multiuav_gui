@@ -14,10 +14,8 @@ const { reducer, actions } = createSlice({
   reducers: {
     updateWpPos(state, action) {
       if (action.payload.route_id >= 0) {
-        state.route[action.payload.route_id]['wp'][action.payload.wp_id]['pos'][0] =
-          action.payload.lat;
-        state.route[action.payload.route_id]['wp'][action.payload.wp_id]['pos'][1] =
-          action.payload.lng;
+        state.route[action.payload.route_id]['wp'][action.payload.wp_id]['pos'][0] = action.payload.lat;
+        state.route[action.payload.route_id]['wp'][action.payload.wp_id]['pos'][1] = action.payload.lng;
       }
     },
     selectpoint(state, action) {
@@ -36,13 +34,13 @@ const { reducer, actions } = createSlice({
       //state.attributes = {};
 
       if (action.payload.version == '3') {
-        let n_uav = 0;
-        state.home = action.payload.route[n_uav]['wp'][0].pos;
         state.route = RuteConvert(action.payload.route);
       } else {
-        let n_uav = 1;
-        state.home = action.payload['uav_' + n_uav]['wp_0'];
         state.route = RuteConvertlegacy(action.payload);
+      }
+      if (state.route.length > 0) {
+        console.log('update home');
+        state.home = state.route[0].wp[0].pos;
       }
     },
     clearMission(state, action) {

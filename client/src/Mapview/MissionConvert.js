@@ -6,6 +6,7 @@ export const GetMissionHome = () => {
 
 export const RuteConvert = (route) => {
   let rt = [];
+  let latlongError = false;
   for (let uavN = 0; uavN < route.length; uavN++) {
     rt[uavN] = {};
     if (route[uavN].hasOwnProperty('uav')) {
@@ -21,6 +22,12 @@ export const RuteConvert = (route) => {
       for (let wpN = 0; wpN < route[uavN]['wp'].length; wpN++) {
         rt[uavN]['wp'][wpN] = {};
         rt[uavN]['wp'][wpN]['pos'] = route[uavN]['wp'][wpN].pos;
+        if (
+          Math.abs(Number(route[uavN]['wp'][wpN].pos[1])) > 90 ||
+          Math.abs(Number(route[uavN]['wp'][wpN].pos[2])) > 90
+        ) {
+          latlongError = true;
+        }
         rt[uavN]['wp'][wpN]['yaw'] = route[uavN]['wp'][wpN].yaw;
         rt[uavN]['wp'][wpN]['gimbal'] = route[uavN]['wp'][wpN].gimbal;
         if (route[uavN]['wp'][wpN].hasOwnProperty('speed')) {
@@ -72,6 +79,10 @@ export const RuteConvert = (route) => {
       }
     }
   }
+  if (latlongError) {
+    alert('Error en coordenadas latitud y longitud valores entre -90 y 90');
+    return [];
+  }
   return rt;
 };
 
@@ -113,8 +124,7 @@ export const RuteConvertlegacy = (mission) => {
       if (mission['uav_' + uavN].hasOwnProperty('attributes')) {
         if (mission['uav_' + uavN]['attributes'].hasOwnProperty('mode_landing')) {
           console.log('have modelanding' + uavN);
-          rt[uavNx]['attributes']['mode_landing'] =
-            mission['uav_' + uavN]['attributes']['mode_landing'];
+          rt[uavNx]['attributes']['mode_landing'] = mission['uav_' + uavN]['attributes']['mode_landing'];
         }
         if (mission['uav_' + uavN]['attributes'].hasOwnProperty('mode_yaw')) {
           rt[uavNx]['attributes']['mode_yaw'] = mission['uav_' + uavN]['attributes']['mode_yaw'];
