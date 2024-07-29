@@ -99,8 +99,7 @@ export class WebsocketDevices {
           console.log('received message without topic. ignoring.');
           return;
         }
-        //console.log('received message on topic: %s - %s', metadata.topic(), metadata.type());
-        //console.log('received message type    : %s', metadata.type());
+        console.log('received message on topic: %s - %s', metadata.topic(), metadata.type());
         decoder(metadata, buf, name);
       });
     });

@@ -240,7 +240,6 @@ export class commandsModel {
     }
     for (const route of routes) {
       console.log('load route' + route.uav);
-      //console.log(route);
       let myDevice = await DevicesController.getByName(route.uav);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
         console.log('load mission to ' + myDevice.id);
@@ -252,13 +251,13 @@ export class commandsModel {
           response = { state: 'warning', msg: 'UAV no asing mission' };
         }
       } else {
-        response = { state: 'warning', msg: 'device not found' };
+        response = { state: 'warning', msg: `device ${route.uav} not found` };
       }
       if (deviceId < 0) {
         eventsController.addEvent({
           type: response.state,
           eventTime: getDatetime(),
-          deviceId: myDevice.id,
+          deviceId: myDevice ? myDevice.id : -1,
           attributes: { message: response.msg },
         });
       }
