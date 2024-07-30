@@ -5,8 +5,9 @@ import * as flatbuffers from 'flatbuffers'; // do not remove; needed by generate
 import WebSocket, { WebSocketServer } from 'ws';
 import { DevicesController } from './controllers/devices.js';
 import { eventsController } from './controllers/events.js';
+import { positionsController } from './controllers/positions.js';
 import { parse } from 'url';
-import { decoder } from './WebsocketDecode.js';
+import { decoder, getNameFromTopic } from './WebsocketDecode.js';
 import { encode } from './WebsocketEncode.js';
 import { getDatetime } from './common/utils.js';
 import { FbEnable } from './config/config.js';
@@ -99,8 +100,19 @@ export class WebsocketDevices {
           console.log('received message without topic. ignoring.');
           return;
         }
-        console.log('received message on topic: %s - %s', metadata.topic(), metadata.type());
-        decoder(metadata, buf, name);
+        // get device
+        let deviceName = name;
+        if (name == null) {
+          deviceName = getNameFromTopic(metadata.topic());
+          console.log('name space of device:' + name);
+        }
+        //console.log('received message device %s on topic: %s - %s', deviceName, metadata.topic(), metadata.type());
+        let device = await DevicesController.getByName(deviceName);
+        if (!device) {
+          console.log('device not found');
+          return;
+        }
+        positionsController.updatePosition(decoder(metadata, buf, device.id, device.category, device.name));
       });
     });
 
