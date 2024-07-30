@@ -127,7 +127,7 @@ export class rosModel {
     // subscribe camera
     for (let i = 0; i < camera.length; i = i + 1) {
       if (camera[i]['type'] == 'Websocket') {
-        this.RosSubscribeCamera(id, category, element, msgType[element]['messageType'], decodeRosMsg);
+        this.RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], decodeRosMsg);
       }
     }
   }

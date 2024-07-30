@@ -17,6 +17,9 @@ export class positionsController {
   static updatePosition(payload) {
     positionsModel.updatePosition(payload);
   }
+  static updateCamera(payload) {
+    positionsModel.updateCamera(payload);
+  }
   static async getCamera() {
     return await positionsModel.getCamera();
   }

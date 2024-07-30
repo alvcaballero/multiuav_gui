@@ -17,4 +17,4 @@ windows:
         - config:
             - sleep 20
             - 'rosservice call /uav_2/setup_camera_stream "{cameraType: 1, start: 1}"'
-            - rosrun simple_vs gstreamer-ros.py #roslaunch simple_vs resize.launch #roslaunch ros_rtsp rtsp_streams.launch
+            - roslaunch simple_vs video_stream_dji.launch
