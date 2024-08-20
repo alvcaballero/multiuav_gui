@@ -1,12 +1,9 @@
-import { createRequire } from 'node:module';
-const require = createRequire(import.meta.url);
 import { writeFile, readFileSync, existsSync } from 'fs';
 import { parse, stringify } from 'yaml';
-import { URL } from 'url';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname ,resolve ,normalize} from 'path';
 
-const __filename = new URL('', import.meta.url).pathname;
-const __dirname = new URL('.', import.meta.url).pathname;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export const readJSON = (filepath) => {
   console.log('load ' + filepath);
