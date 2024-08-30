@@ -105,8 +105,15 @@ export class DevicesModel {
         msg: `Dispositivo ya se encuentra registrado ${device.name}`,
       };
     }
+    let repeatId = false;
+    do {
+      repeatId = devices.hasOwnProperty(cur_uav_idx) ? true : false;
+      if (repeatId) {
+        cur_uav_idx = String(Number(cur_uav_idx) + 1);
+      }
+    } while (repeatId);
 
-    let otherFields = { status: 'offline', lastUpdate: null, protocol: protocol };
+    let otherFields = { id: cur_uav_idx, status: 'offline', lastUpdate: null, protocol: protocol };
 
     this.updatedevice({
       ...device,
@@ -213,6 +220,8 @@ export class DevicesModel {
   }
 
   static updatedevice(payload) {
+    console.log('update device');
+    console.log(payload);
     devices[payload.id] = payload;
     writeJSON(devicesData, devices);
   }

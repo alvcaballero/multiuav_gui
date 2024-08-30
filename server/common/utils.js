@@ -1,7 +1,7 @@
 import { writeFile, readFileSync, existsSync } from 'fs';
 import { parse, stringify } from 'yaml';
 import { fileURLToPath } from 'url';
-import { dirname ,resolve ,normalize} from 'path';
+import { dirname, resolve, normalize } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -53,7 +53,7 @@ export const getRandomInt = (max) => {
 
 export const writeYAML = (path, content) => {
   const saveContent = stringify(content);
-  writeFile(__dirname + path, saveContent, (err) => {
+  writeFile(resolve(__dirname, path), saveContent, (err) => {
     if (err) {
       console.error(err);
       return false;
@@ -66,7 +66,8 @@ export const writeYAML = (path, content) => {
 export const writeJSON = (path, content) => {
   console.log('write Json' + path);
   const saveContent = JSON.stringify(content, null, 2);
-  writeFile(__dirname + path, saveContent, (err) => {
+
+  writeFile(resolve(__dirname, path), saveContent, (err) => {
     if (err) {
       console.error(err);
       return false;
