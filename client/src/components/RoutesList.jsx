@@ -113,6 +113,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
     AddnewRoute();
     console.log('add new mission');
   };
+
   const AddnewRoute = () => {
     let auxroute = [...mission.route];
     let myid = auxroute.length > 0 ? +auxroute.slice(-1)[0].id + +1 : 0;
@@ -132,46 +133,6 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
       wp: [],
     });
     setmission({ ...mission, route: auxroute });
-  };
-  const AddnewWp = (index_route, index_wp) => {
-    console.log('add new wp' + index_route);
-    let auxroute = JSON.parse(JSON.stringify(mission.route));
-    let center = map.getCenter(); // cuando index es 0 o -1
-    if (index_wp > 0) {
-      center.lat =
-        (auxroute[index_route]['wp'][index_wp]['pos'][0] + auxroute[index_route]['wp'][index_wp - 1]['pos'][0]) / 2;
-      center.lng =
-        (auxroute[index_route]['wp'][index_wp]['pos'][1] + auxroute[index_route]['wp'][index_wp - 1]['pos'][1]) / 2;
-    } //console.log(center);
-
-    if (index_wp < 0) {
-      auxroute[index_route].wp.push({
-        pos: [center.lat, center.lng, 5],
-        action: {},
-      });
-    } else {
-      auxroute[index_route].wp.splice(index_wp, 0, {
-        pos: [center.lat, center.lng, 5],
-        action: {},
-      });
-    }
-
-    setmission({ ...mission, route: auxroute });
-  };
-
-  const Removing_route = (index_route) => {
-    console.log('remove route' + index_route);
-    let auxroute = JSON.parse(JSON.stringify(mission.route));
-    auxroute.splice(index_route, 1);
-    //console.log(auxroute);
-    setmission({ ...mission, route: auxroute });
-  };
-
-  const handleChange_route = (panel) => (event, isExpanded) => {
-    setExpanded_route(isExpanded ? panel : false);
-  };
-  const handleChange_wp = (panel) => (event, isExpanded) => {
-    setExpanded_wp(isExpanded ? panel : false);
   };
 
   return (
@@ -214,15 +175,19 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
             />
             {React.Children.toArray(
               Object.values(mission.route).map((item_route, index, list) => (
-                <RouteRoutesList
-                  mission={mission}
-                  setmission={setmission}
-                  index={index}
-                  route={item_route}
-                  AddnewWp={AddnewWp}
-                  expanded_route={expanded_route}
-                  expand_wp={expanded_wp}
-                />
+                <Fragment key={'fragment-route-' + index}>
+                  <RouteRoutesList
+                    mission={mission}
+                    setmission={setmission}
+                    index={index}
+                    route={item_route}
+                    expanded_route={expanded_route}
+                    setExpanded_route={setExpanded_route}
+                    setScrool={setScrool}
+                    expand_wp={expanded_wp}
+                  />
+                  {index < list.length - 1 ? <Divider /> : null}
+                </Fragment>
               ))
             )}
             <Box textAlign="center">

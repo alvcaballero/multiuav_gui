@@ -56,6 +56,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) => {
+  const classes = useStyles();
   return (
     <Accordion expanded={expand} onChange={setExpand(true)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
@@ -248,47 +249,12 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
   );
 };
 
-const RouteRoutesList = ({ mission, setmission, index, route, AddnewWp, expanded_route }) => {
+const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, setExpanded_route, setScrool }) => {
   const classes = useStyles();
-  const Mission_route = useSelector((state) => state.mission);
   const selectwp = useSelector((state) => state.mission.selectpoint);
-  const dispatch = useDispatch();
-  const [init, setinit] = useState(false);
   //const [open_routes, setOpen_routes] = useState(true);
   const [expandedRouteOptions, setExpandedRouteOptions] = useState(false);
   const [expanded_wp, setExpanded_wp] = useState(false);
-  const [add_mission, setaddMission] = useState(true);
-
-  useEffect(() => {
-    console.log('render Router list');
-  }, []);
-
-  useEffect(() => {
-    setmission(Mission_route);
-    //console.log("otro use effect");
-    Mission_route.route.length > 0 ? setaddMission(false) : setaddMission(true);
-    setinit(true);
-  }, [Mission_route]);
-
-  useEffect(() => {
-    if (init) {
-      console.log('update mission');
-      //console.log(mission);
-      dispatch(missionActions.reloadMission(mission.route));
-    }
-    mission.route.length > 0 ? setaddMission(false) : setaddMission(true);
-  }, [mission.route]);
-
-  useEffect(() => {
-    if (init) {
-      dispatch(
-        missionActions.reloadName({
-          name: mission.name,
-          description: mission.description,
-        })
-      );
-    }
-  }, [mission.name, mission.description]);
 
   useEffect(() => {
     //console.log(expanded_route);
@@ -297,35 +263,31 @@ const RouteRoutesList = ({ mission, setmission, index, route, AddnewWp, expanded
     setScrool(500 + selectwp.route_id * 50 + selectwp.id * 50);
   }, [selectwp]);
 
-  const AddnewMission = () => {
-    let auxmission = { name: 'new Mission', description: '', route: [] };
-    //auxmission.route.push({ name: "", uav: "", id: 0, attributes: {}, wp: [] });
-    setmission(auxmission);
-    setaddMission(false);
-    AddnewRoute();
-    console.log('add new mission');
-  };
-  const AddnewRoute = () => {
-    let auxroute = [...mission.route];
-    let myid = auxroute.length > 0 ? +auxroute.slice(-1)[0].id + +1 : 0;
-    let initAtributes = {
-      max_vel: 12,
-      idle_vel: 3,
-      mode_yaw: 2,
-      mode_gimbal: 0,
-      mode_trace: 0,
-      mode_landing: 2,
-    };
-    auxroute.push({
-      name: '',
-      uav: '',
-      id: myid,
-      attributes: initAtributes,
-      wp: [],
-    });
+  const AddnewWp = (index_route, index_wp) => {
+    console.log('add new wp' + index_route);
+    let auxroute = JSON.parse(JSON.stringify(mission.route));
+    let center = map.getCenter(); // cuando index es 0 o -1
+    if (index_wp > 0) {
+      center.lat =
+        (auxroute[index_route]['wp'][index_wp]['pos'][0] + auxroute[index_route]['wp'][index_wp - 1]['pos'][0]) / 2;
+      center.lng =
+        (auxroute[index_route]['wp'][index_wp]['pos'][1] + auxroute[index_route]['wp'][index_wp - 1]['pos'][1]) / 2;
+    } //console.log(center);
+
+    if (index_wp < 0) {
+      auxroute[index_route].wp.push({
+        pos: [center.lat, center.lng, 5],
+        action: {},
+      });
+    } else {
+      auxroute[index_route].wp.splice(index_wp, 0, {
+        pos: [center.lat, center.lng, 5],
+        action: {},
+      });
+    }
+
     setmission({ ...mission, route: auxroute });
   };
-
   const Removing_route = (index_route) => {
     console.log('remove route' + index_route);
     let auxroute = JSON.parse(JSON.stringify(mission.route));
@@ -346,114 +308,111 @@ const RouteRoutesList = ({ mission, setmission, index, route, AddnewWp, expanded
   };
 
   return (
-    <Fragment key={'fragment-route-' + index}>
-      <Accordion expanded={expanded_route === 'Rute ' + index} onChange={handleChange_route('Rute ' + index)}>
-        <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography
-            sx={{
-              width: '33%',
-              flexShrink: 0,
-              color: palette.colors_devices[route.id],
-            }}
-          >
-            {'Rute ' + index}
-          </Typography>
-          <Typography sx={{ color: 'text.secondary' }}>{route.name + '- ' + route.uav}</Typography>
-          <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => Removing_route(index)}>
-            <DeleteIcon />
-          </IconButton>
-        </AccordionSummary>
-        <AccordionDetails className={classes.details}>
-          {expanded_route === 'Rute ' + index && (
-            <Fragment>
-              <TextField
-                required
-                label="Route Name"
-                variant="standard"
-                value={route.name ? route.name : ''}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) =>
-                      rt == mission.route[index] ? { ...route, name: e.target.value } : rt
-                    ),
-                  })
-                }
-              />
+    <Accordion expanded={expanded_route === 'Rute ' + index} onChange={handleChange_route('Rute ' + index)}>
+      <AccordionSummary expandIcon={<ExpandMore />}>
+        <Typography
+          sx={{
+            width: '33%',
+            flexShrink: 0,
+            color: palette.colors_devices[route.id],
+          }}
+        >
+          {'Rute ' + index}
+        </Typography>
+        <Typography sx={{ color: 'text.secondary' }}>{route.name + '- ' + route.uav}</Typography>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => Removing_route(index)}>
+          <DeleteIcon />
+        </IconButton>
+      </AccordionSummary>
+      <AccordionDetails className={classes.details}>
+        {expanded_route === 'Rute ' + index && (
+          <Fragment>
+            <TextField
+              required
+              label="Route Name"
+              variant="standard"
+              value={route.name ? route.name : ''}
+              onChange={(e) =>
+                setmission({
+                  ...mission,
+                  route: mission.route.map((rt) =>
+                    rt == mission.route[index] ? { ...route, name: e.target.value } : rt
+                  ),
+                })
+              }
+            />
 
-              <TextField
-                required
-                label="UAV id"
-                variant="standard"
-                value={route.uav ? route.uav : 'uav_'}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) =>
-                      rt == mission.route[index] ? { ...route, uav: e.target.value } : rt
-                    ),
-                  })
-                }
-              />
+            <TextField
+              required
+              label="UAV id"
+              variant="standard"
+              value={route.uav ? route.uav : 'uav_'}
+              onChange={(e) =>
+                setmission({
+                  ...mission,
+                  route: mission.route.map((rt) =>
+                    rt == mission.route[index] ? { ...route, uav: e.target.value } : rt
+                  ),
+                })
+              }
+            />
 
-              <SelectField
-                emptyValue={null}
-                value={route.uav_type ? route.uav_type : ''}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) =>
-                      rt == mission.route[index] ? { ...route, uav_type: e.target.value } : rt
-                    ),
-                  })
-                }
-                endpoint="/api/category"
-                keyGetter={(it) => it}
-                titleGetter={(it) => it}
-                label={'Type UAV mission'}
-                style={{ display: 'inline', width: '200px' }}
-              />
-              <RouteOptions
-                mission={mission}
-                setmission={setmission}
-                route={route}
-                expand={ExpandedRouteOptions}
-                setExpand={handleChange_routeOptions}
-              />
+            <SelectField
+              emptyValue={null}
+              value={route.uav_type ? route.uav_type : ''}
+              onChange={(e) =>
+                setmission({
+                  ...mission,
+                  route: mission.route.map((rt) =>
+                    rt == mission.route[index] ? { ...route, uav_type: e.target.value } : rt
+                  ),
+                })
+              }
+              endpoint="/api/category"
+              keyGetter={(it) => it}
+              titleGetter={(it) => it}
+              label={'Type UAV mission'}
+              style={{ display: 'inline', width: '200px' }}
+            />
+            <RouteOptions
+              mission={mission}
+              setmission={setmission}
+              route={route}
+              expand={expandedRouteOptions}
+              setExpand={handleChange_routeOptions}
+            />
 
-              <Typography variant="subtitle1">Waypoints</Typography>
-              {React.Children.toArray(
-                Object.values(route.wp).map((waypoint, index_wp, list_wp) => (
-                  <WaypointRouteList
-                    mission={mission}
-                    setmission={setmission}
-                    index_wp={index_wp}
-                    index={index}
-                    waypoint={waypoint}
-                    AddnewWp={AddnewWp}
-                    expand_wp={expanded_wp}
-                  />
-                ))
-              )}
+            <Typography variant="subtitle1">Waypoints</Typography>
+            {React.Children.toArray(
+              Object.values(route.wp).map((waypoint, index_wp, list_wp) => (
+                <WaypointRouteList
+                  mission={mission}
+                  setmission={setmission}
+                  index_wp={index_wp}
+                  index={index}
+                  waypoint={waypoint}
+                  AddnewWp={AddnewWp}
+                  expand_wp={expanded_wp}
+                />
+              ))
+            )}
 
-              <Box textAlign="center">
-                <Button
-                  value={index}
-                  variant="contained"
-                  size="large"
-                  sx={{ width: '80%', flexShrink: 0 }}
-                  style={{ marginTop: '15px' }}
-                  onClick={(e) => AddnewWp(e.target.value, -1)}
-                >
-                  Add new Waypoint
-                </Button>
-              </Box>
-            </Fragment>
-          )}
-        </AccordionDetails>
-      </Accordion>
-      {index < list.length - 1 ? <Divider /> : null}
-    </Fragment>
+            <Box textAlign="center">
+              <Button
+                value={index}
+                variant="contained"
+                size="large"
+                sx={{ width: '80%', flexShrink: 0 }}
+                style={{ marginTop: '15px' }}
+                onClick={(e) => AddnewWp(e.target.value, -1)}
+              >
+                Add new Waypoint
+              </Button>
+            </Box>
+          </Fragment>
+        )}
+      </AccordionDetails>
+    </Accordion>
   );
 };
 
