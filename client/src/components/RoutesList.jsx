@@ -138,13 +138,9 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
     let center = map.getCenter(); // cuando index es 0 o -1
     if (index_wp > 0) {
       center.lat =
-        (auxroute[index_route]['wp'][index_wp]['pos'][0] +
-          auxroute[index_route]['wp'][index_wp - 1]['pos'][0]) /
-        2;
+        (auxroute[index_route]['wp'][index_wp]['pos'][0] + auxroute[index_route]['wp'][index_wp - 1]['pos'][0]) / 2;
       center.lng =
-        (auxroute[index_route]['wp'][index_wp]['pos'][1] +
-          auxroute[index_route]['wp'][index_wp - 1]['pos'][1]) /
-        2;
+        (auxroute[index_route]['wp'][index_wp]['pos'][1] + auxroute[index_route]['wp'][index_wp - 1]['pos'][1]) / 2;
     } //console.log(center);
 
     if (index_wp < 0) {
@@ -180,10 +176,10 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
   return (
     <Fragment>
       {add_mission ? (
-        <Box textAlign='center'>
+        <Box textAlign="center">
           <Button
-            variant='contained'
-            size='large'
+            variant="contained"
+            size="large"
             sx={{ width: '80%', flexShrink: 0 }}
             style={{ marginTop: '15px' }}
             onClick={AddnewMission}
@@ -203,15 +199,15 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
           >
             <TextField
               required
-              label='Name Mission'
-              variant='standard'
+              label="Name Mission"
+              variant="standard"
               value={mission.name ? mission.name : ' '}
               onChange={(event) => setmission({ ...mission, name: event.target.value })}
             />
             <TextField
               required
-              label='Description of mission'
-              variant='standard'
+              label="Description of mission"
+              variant="standard"
               value={mission.description ? mission.description : ' '}
               onChange={(event) => setmission({ ...mission, description: event.target.value })}
             />
@@ -235,10 +231,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                       <Typography sx={{ color: 'text.secondary' }}>
                         {item_route.name + '- ' + item_route.uav}
                       </Typography>
-                      <IconButton
-                        sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                        onClick={() => Removing_route(index)}
-                      >
+                      <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => Removing_route(index)}>
                         <DeleteIcon />
                       </IconButton>
                     </AccordionSummary>
@@ -247,16 +240,14 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                         <Fragment>
                           <TextField
                             required
-                            label='Route Name'
-                            variant='standard'
+                            label="Route Name"
+                            variant="standard"
                             value={item_route.name ? item_route.name : ''}
                             onChange={(e) =>
                               setmission({
                                 ...mission,
                                 route: mission.route.map((rt) =>
-                                  rt == mission.route[index]
-                                    ? { ...item_route, name: e.target.value }
-                                    : rt
+                                  rt == mission.route[index] ? { ...item_route, name: e.target.value } : rt
                                 ),
                               })
                             }
@@ -264,16 +255,14 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
 
                           <TextField
                             required
-                            label='UAV id'
-                            variant='standard'
+                            label="UAV id"
+                            variant="standard"
                             value={item_route.uav ? item_route.uav : 'uav_'}
                             onChange={(e) =>
                               setmission({
                                 ...mission,
                                 route: mission.route.map((rt) =>
-                                  rt == mission.route[index]
-                                    ? { ...item_route, uav: e.target.value }
-                                    : rt
+                                  rt == mission.route[index] ? { ...item_route, uav: e.target.value } : rt
                                 ),
                               })
                             }
@@ -286,13 +275,11 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                               setmission({
                                 ...mission,
                                 route: mission.route.map((rt) =>
-                                  rt == mission.route[index]
-                                    ? { ...item_route, uav_type: e.target.value }
-                                    : rt
+                                  rt == mission.route[index] ? { ...item_route, uav_type: e.target.value } : rt
                                 ),
                               })
                             }
-                            endpoint='/api/category'
+                            endpoint="/api/category"
                             keyGetter={(it) => it}
                             titleGetter={(it) => it}
                             label={'Type UAV mission'}
@@ -304,26 +291,20 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                             onChange={handleChange_wp('wp -' + index)}
                           >
                             <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography sx={{ width: '53%', flexShrink: 0 }}>
-                                Route Attributes
-                              </Typography>
+                              <Typography sx={{ width: '53%', flexShrink: 0 }}>Route Attributes</Typography>
                             </AccordionSummary>
                             <AccordionDetails className={classes.details}>
                               {item_route.attributes && (
                                 <Fragment key={'fragment-route-atri-' + item_route.id}>
                                   <div>
-                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                    <Typography variant="subtitle1" className={classes.attribute}>
                                       Speed Mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
                                       <SelectField
                                         emptyValue={null}
                                         fullWidth={true}
-                                        value={
-                                          item_route.attributes.mode_speed
-                                            ? item_route.attributes.mode_speed
-                                            : 0
-                                        }
+                                        value={item_route.attributes.mode_speed ? item_route.attributes.mode_speed : 0}
                                         onChange={(e) =>
                                           setmission({
                                             ...mission,
@@ -336,28 +317,22 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                             }),
                                           })
                                         }
-                                        endpoint={
-                                          '/api/category/atributesparam/dji_M300/mode_speed'
-                                        }
+                                        endpoint={'/api/category/atributesparam/dji_M300/mode_speed'}
                                         keyGetter={(it) => it.id}
                                         titleGetter={(it) => it.name}
                                       />
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                    <Typography variant="subtitle1" className={classes.attribute}>
                                       Speed idle (m/s):
                                     </Typography>
                                     <TextField
                                       fullWidth
                                       required
-                                      type='number'
+                                      type="number"
                                       className={classes.attributeValue}
-                                      value={
-                                        item_route.attributes.idle_vel
-                                          ? item_route.attributes.idle_vel
-                                          : 1.85
-                                      }
+                                      value={item_route.attributes.idle_vel ? item_route.attributes.idle_vel : 1.85}
                                       onChange={(e) =>
                                         setmission({
                                           ...mission,
@@ -373,19 +348,15 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     />
                                   </div>
                                   <div>
-                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                    <Typography variant="subtitle1" className={classes.attribute}>
                                       Speed MAX (m/s):
                                     </Typography>
                                     <TextField
                                       fullWidth
                                       required
-                                      type='number'
+                                      type="number"
                                       className={classes.attributeValue}
-                                      value={
-                                        item_route.attributes.max_vel
-                                          ? item_route.attributes.max_vel
-                                          : 12
-                                      }
+                                      value={item_route.attributes.max_vel ? item_route.attributes.max_vel : 12}
                                       onChange={(e) =>
                                         setmission({
                                           ...mission,
@@ -401,7 +372,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     />
                                   </div>
                                   <div>
-                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                    <Typography variant="subtitle1" className={classes.attribute}>
                                       landing mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
@@ -409,9 +380,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         emptyValue={null}
                                         fullWidth={true}
                                         value={
-                                          item_route.attributes.mode_landing
-                                            ? item_route.attributes.mode_landing
-                                            : 0
+                                          item_route.attributes.mode_landing ? item_route.attributes.mode_landing : 0
                                         }
                                         onChange={(e) =>
                                           setmission({
@@ -419,34 +388,27 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                             route: mission.route.map((rt) => {
                                               let copiedrt = JSON.parse(JSON.stringify(rt));
                                               rt === mission.route[index]
-                                                ? (copiedrt.attributes.mode_landing =
-                                                    e.target.value)
+                                                ? (copiedrt.attributes.mode_landing = e.target.value)
                                                 : (copiedrt = rt);
                                               return copiedrt;
                                             }),
                                           })
                                         }
-                                        endpoint={
-                                          '/api/category/atributesparam/dji_M300/mode_landing'
-                                        }
+                                        endpoint={'/api/category/atributesparam/dji_M300/mode_landing'}
                                         keyGetter={(it) => it.id}
                                         titleGetter={(it) => it.name}
                                       />
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                    <Typography variant="subtitle1" className={classes.attribute}>
                                       Yaw mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
                                       <SelectField
                                         emptyValue={null}
                                         fullWidth={true}
-                                        value={
-                                          item_route.attributes.mode_yaw
-                                            ? item_route.attributes.mode_yaw
-                                            : 0
-                                        }
+                                        value={item_route.attributes.mode_yaw ? item_route.attributes.mode_yaw : 0}
                                         onChange={(e) =>
                                           setmission({
                                             ...mission,
@@ -466,7 +428,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                    <Typography variant="subtitle1" className={classes.attribute}>
                                       Gimbal mode
                                     </Typography>
                                     <div className={classes.attributeValue}>
@@ -474,9 +436,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                         emptyValue={null}
                                         fullWidth={true}
                                         value={
-                                          item_route.attributes.mode_gimbal
-                                            ? item_route.attributes.mode_gimbal
-                                            : 0
+                                          item_route.attributes.mode_gimbal ? item_route.attributes.mode_gimbal : 0
                                         }
                                         onChange={(e) =>
                                           setmission({
@@ -490,27 +450,21 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                             }),
                                           })
                                         }
-                                        endpoint={
-                                          '/api/category/atributesparam/dji_M300/mode_gimbal'
-                                        }
+                                        endpoint={'/api/category/atributesparam/dji_M300/mode_gimbal'}
                                         keyGetter={(it) => it.id}
                                         titleGetter={(it) => it.name}
                                       />
                                     </div>
                                   </div>
                                   <div>
-                                    <Typography variant='subtitle1' className={classes.attribute}>
+                                    <Typography variant="subtitle1" className={classes.attribute}>
                                       Trace mode:
                                     </Typography>
                                     <div className={classes.attributeValue}>
                                       <SelectField
                                         emptyValue={null}
                                         fullWidth={true}
-                                        value={
-                                          item_route.attributes.mode_trace
-                                            ? item_route.attributes.mode_trace
-                                            : 0
-                                        }
+                                        value={item_route.attributes.mode_trace ? item_route.attributes.mode_trace : 0}
                                         onChange={(e) =>
                                           setmission({
                                             ...mission,
@@ -523,9 +477,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                                             }),
                                           })
                                         }
-                                        endpoint={
-                                          '/api/category/atributesparam/dji_M300/mode_trace'
-                                        }
+                                        endpoint={'/api/category/atributesparam/dji_M300/mode_trace'}
                                         keyGetter={(it) => it.id}
                                         titleGetter={(it) => it.name}
                                       />
@@ -536,7 +488,7 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                             </AccordionDetails>
                           </Accordion>
 
-                          <Typography variant='subtitle1'>Waypoints</Typography>
+                          <Typography variant="subtitle1">Waypoints</Typography>
                           {React.Children.toArray(
                             Object.values(item_route.wp).map((waypoint, index_wp, list_wp) => (
                               <WaypointRouteList
@@ -551,11 +503,11 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                             ))
                           )}
 
-                          <Box textAlign='center'>
+                          <Box textAlign="center">
                             <Button
                               value={index}
-                              variant='contained'
-                              size='large'
+                              variant="contained"
+                              size="large"
                               sx={{ width: '80%', flexShrink: 0 }}
                               style={{ marginTop: '15px' }}
                               onClick={(e) => AddnewWp(e.target.value, -1)}
@@ -571,10 +523,10 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                 </Fragment>
               ))
             )}
-            <Box textAlign='center'>
+            <Box textAlign="center">
               <Button
-                variant='contained'
-                size='large'
+                variant="contained"
+                size="large"
                 sx={{ width: '80%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
                 onClick={AddnewRoute}

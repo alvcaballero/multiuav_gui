@@ -49,7 +49,7 @@ windows:
             - cd ~/work/px4/
         - planning:
             - cd ~/work/planner-server
-            - source env/bin/activate
+            - source activate planner
             - ./server_linux.sh
         - ExtAPP:
             - cd ~/work/px4/multiuav_gui/test/externalAPP
