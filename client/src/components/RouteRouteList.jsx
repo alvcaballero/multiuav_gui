@@ -252,9 +252,21 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
 const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, setExpanded_route, setScrool }) => {
   const classes = useStyles();
   const selectwp = useSelector((state) => state.mission.selectpoint);
+  const devices = useSelector((state) => state.devices.items);
+  const positions = useSelector((state) => state.data.positions);
   //const [open_routes, setOpen_routes] = useState(true);
   const [expandedRouteOptions, setExpandedRouteOptions] = useState(false);
   const [expanded_wp, setExpanded_wp] = useState(false);
+  const [routeUAV, setRouteUAV] = useState(null);
+
+  useEffect(() => {
+    let mydevice = Object.values(devices).find((device) => device.name == route.uav);
+    if (mydevice) {
+      setRouteUAV(mydevice.id);
+    } else {
+      setRouteUAV(null);
+    }
+  }, [route.uav, devices]);
 
   useEffect(() => {
     //console.log(expanded_route);
@@ -272,21 +284,29 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
         (auxroute[index_route]['wp'][index_wp]['pos'][0] + auxroute[index_route]['wp'][index_wp - 1]['pos'][0]) / 2;
       center.lng =
         (auxroute[index_route]['wp'][index_wp]['pos'][1] + auxroute[index_route]['wp'][index_wp - 1]['pos'][1]) / 2;
-    } //console.log(center);
-
-    if (index_wp < 0) {
-      auxroute[index_route].wp.push({
-        pos: [center.lat, center.lng, 5],
-        action: {},
-      });
-    } else {
-      auxroute[index_route].wp.splice(index_wp, 0, {
-        pos: [center.lat, center.lng, 5],
-        action: {},
-      });
     }
 
+    let mywp = { pos: [center.lat, center.lng, 5], action: {} };
+    index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp, 0, mywp);
+
     setmission({ ...mission, route: auxroute });
+  };
+
+  const recordWp = (index_route, index_wp) => {
+    console.log('Record wp' + index_route);
+    let auxroute = JSON.parse(JSON.stringify(mission.route));
+
+    console.log(positions[routeUAV]);
+
+    if (positions[routeUAV]) {
+      let mywp = {
+        pos: [positions[routeUAV].latitude, positions[routeUAV].longitude, positions[routeUAV].altitude],
+        action: { yaw: 0, gimbal: 0 },
+      };
+
+      index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp, 0, mywp);
+      setmission({ ...mission, route: auxroute });
+    }
   };
   const Removing_route = (index_route) => {
     console.log('remove route' + index_route);
@@ -402,11 +422,22 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
                 value={index}
                 variant="contained"
                 size="large"
-                sx={{ width: '80%', flexShrink: 0 }}
+                sx={{ width: '60%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
                 onClick={(e) => AddnewWp(e.target.value, -1)}
               >
-                Add new Waypoint
+                Add Waypoint
+              </Button>
+              <Button
+                value={index}
+                variant="contained"
+                size="large"
+                disabled={routeUAV == null}
+                sx={{ width: '30%', flexShrink: 0 }}
+                style={{ marginTop: '15px' }}
+                onClick={(e) => recordWp(e.target.value, -1)}
+              >
+                Record
               </Button>
             </Box>
           </Fragment>
