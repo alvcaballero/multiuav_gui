@@ -299,11 +299,17 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
     console.log(positions[routeUAV]);
 
     if (positions[routeUAV]) {
+      let altitude = positions[routeUAV].altitude;
+      if (positions[routeUAV].attributes.hasOwnProperty('home')) {
+        altitude = altitude - positions[routeUAV].attributes.home[2];
+        console.log('home');
+        console.log(positions[routeUAV].attributes.home[2]);
+      }
+      console.log(altitude);
       let mywp = {
-        pos: [positions[routeUAV].latitude, positions[routeUAV].longitude, positions[routeUAV].altitude],
+        pos: [positions[routeUAV].latitude, positions[routeUAV].longitude, altitude],
         action: { yaw: 0, gimbal: 0 },
       };
-
       index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp, 0, mywp);
       setmission({ ...mission, route: auxroute });
     }

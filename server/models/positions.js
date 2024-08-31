@@ -95,6 +95,14 @@ export class positionsModel {
         payload.obstacle_info.up.toFixed(),
       ];
     }
+    if (payload.hasOwnProperty('setHome')) {
+      positions[payload.deviceId]['attributes']['home'] = [
+        positions[payload.deviceId].latitude,
+        positions[payload.deviceId].longitude,
+        positions[payload.deviceId].altitude,
+      ];
+    }
+
     if (payload.hasOwnProperty('uav_state')) {
       //positions[payload.deviceId]['attributes']['protocol'] = payload.protocol;
       positions[payload.deviceId]['attributes']['mission_state'] = payload.mission_state;

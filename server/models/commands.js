@@ -4,6 +4,8 @@ import { getDatetime } from '../common/utils.js';
 import { rosController } from '../controllers/ros.js';
 import { categoryController } from '../controllers/category.js';
 import { sendCommandToClient } from '../WebsocketDevices.js';
+import { positionsController } from '../controllers/positions.js';
+import { set } from 'zod';
 
 async function decodeMissionMsg({ uav_id, route }) {
   let device = await DevicesController.getDevice(uav_id);
@@ -96,6 +98,7 @@ export class commandsModel {
   static getCommandTypes(deviceid) {
     let response = [
       { type: 'custom' },
+      { type: 'saveHome' },
       { type: 'ResumeMission' },
       { type: 'Pausemission' },
       { type: 'StopMission' },
@@ -132,6 +135,10 @@ export class commandsModel {
       response = await this.commandMissionDevice(deviceId);
     }
     if (deviceId >= 0) {
+      if (type == 'saveHome') {
+        positionsController.updatePosition({ deviceId, setHome: true });
+        response = { state: 'success', msg: 'Home saved' };
+      }
       if (type == 'threat_confirmation') {
         response = await this.standarCommand(deviceId, 'threat_confirmation'); //threatUAV(deviceId);
       }
