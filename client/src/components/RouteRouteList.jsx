@@ -260,9 +260,13 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
   const [routeUAV, setRouteUAV] = useState(null);
 
   useEffect(() => {
-    let mydevice = Object.values(devices).find((device) => device.name == route.uav);
-    if (mydevice) {
-      setRouteUAV(mydevice.id);
+    const myDevice = Object.values(devices).find((device) => device.name === route.uav);
+    if (myDevice) {
+      setRouteUAV(myDevice.id);
+      setmission({
+        ...mission,
+        route: mission.route.map((rt, rtIndex) => (rtIndex == index ? { ...route, uav_type: myDevice.category } : rt)),
+      });
     } else {
       setRouteUAV(null);
     }
@@ -310,6 +314,15 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
         pos: [positions[routeUAV].latitude, positions[routeUAV].longitude, altitude],
         action: { yaw: 0, gimbal: 0 },
       };
+      if ([positions[routeUAV].hasOwnProperty('course')]) {
+        mywp.action.yaw =
+          +Number(positions[routeUAV].course).toFixed(2) <= 180
+            ? +Number(positions[routeUAV].course).toFixed(2)
+            : -360 + +Number(positions[routeUAV].course).toFixed(2);
+      }
+      if ([positions[routeUAV].attributes.hasOwnProperty('gimbal')]) {
+        mywp.action.gimbal = Number(positions[routeUAV].attributes.gimbal[0]);
+      }
       index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp, 0, mywp);
       setmission({ ...mission, route: auxroute });
     }
@@ -437,6 +450,7 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
               <Button
                 value={index}
                 variant="contained"
+                color="secondary"
                 size="large"
                 disabled={routeUAV == null}
                 sx={{ width: '30%', flexShrink: 0 }}
