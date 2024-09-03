@@ -58,6 +58,11 @@ table Twist {
   linear:Vector3 (required);
   angular:Vector3 (required);
 }
+table TwistStamped {
+  __metadata:fb.MsgMetadata;
+  header:fb.std_msgs.Header (required);
+  twist:Twist (required);
+}
 table TwistWithCovariance {
   __metadata:fb.MsgMetadata;
   twist:Twist (required);

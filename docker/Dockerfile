@@ -39,7 +39,7 @@ RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer-plugins-goo
 
 
 
-# libqt5websockets5
+# libqt5websockets5 --- for flatbuffers
 # sudo apt install libqt5websockets5-dev
 # sudo ln -s /usr/bin/python3 /usr/bin/python
 
