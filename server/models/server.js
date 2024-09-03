@@ -48,4 +48,10 @@ export class serverModel {
       openIdForce: false,
     };
   }
+  static Protocol() {
+    let protocol = [];
+    ServerSetting.RosEnable ? protocol.push('ros') : null;
+    ServerSetting.FbEnable ? protocol.push('robofleet') : null;
+    return protocol;
+  }
 }

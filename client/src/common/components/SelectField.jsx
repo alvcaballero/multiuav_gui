@@ -30,28 +30,33 @@ const SelectField = ({
   }, []);
 
   useEffect(() => {
-    if (typeof items !== 'undefined') {
+    console.log(items);
+    console.log(value);
+    if (typeof items !== 'undefined' && value !== null) {
       getItems(items[value]);
     }
-  }, [items]);
+    if (typeof items !== 'undefined' && emptyValue == null && (value === null || value === undefined)) {
+      if (items && items.length && items.length > 0) {
+        console.log('items 0', items[0]);
+        onChange({ target: { value: items[0] } });
+      }
+    }
+  }, [items, value]);
 
   if (items) {
     return (
       <FormControl fullWidth={fullWidth}>
         <InputLabel>{label}</InputLabel>
-        <Select
-          label={label}
-          multiple={multiple}
-          value={value}
-          onChange={(e) => onChange(e, items)}
-        >
-          {!multiple && emptyValue !== null && <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>}
-          {items.map((item) => (
-            <MenuItem key={keyGetter(item)} value={keyGetter(item)}>
-              {titleGetter(item)}
-            </MenuItem>
-          ))}
-        </Select>
+        {value && (
+          <Select label={label} multiple={multiple} value={value} onChange={(e) => onChange(e, items)}>
+            {!multiple && emptyValue !== null && <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>}
+            {items.map((item) => (
+              <MenuItem key={keyGetter(item)} value={keyGetter(item)}>
+                {titleGetter(item)}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
       </FormControl>
     );
   }

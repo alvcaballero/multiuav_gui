@@ -68,8 +68,8 @@ const useStyles = makeStyles((theme) => ({
   details: {
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(2),
-    paddingBottom: theme.spacing(3),
+    gap: '10pt',
+    paddingBottom: '20pt',
   },
   title: {
     display: 'block',
@@ -106,7 +106,6 @@ export const Adduav = ({ SetAddUAVOpen }) => {
   const rosContex = useContext(RosContext);
   const [item, setItem] = useState({
     name: 'uav_',
-    category: 'dji_M210_noetic',
     ip: '10.42.0.42',
     camera: [],
   });
@@ -149,32 +148,34 @@ export const Adduav = ({ SetAddUAVOpen }) => {
             <Typography variant="subtitle1">Datos UAV</Typography>
           </AccordionSummary>
           <AccordionDetails className={classes.details}>
-            <FormGroup style={{ margin: '20px' }}>
-              <TextField
-                required
-                label="UAV ID"
-                name="uavid"
-                value={item.name}
-                onChange={(event) => setItem({ ...item, name: event.target.value })}
-                className={classes.inputtext}
-              />
-
+            <TextField
+              required
+              label="UAV ID"
+              name="uavid"
+              value={item.name}
+              onChange={(event) => setItem({ ...item, name: event.target.value })}
+            />
+            <SelectField
+              emptyValue={null}
+              value={item.category ? item.category : null}
+              onChange={(e) => setItem({ ...item, category: e.target.value })}
+              endpoint="/api/category"
+              keyGetter={(it) => it}
+              titleGetter={(it) => it}
+              label={'Type UAV '}
+            />
+            {item.category && (
               <SelectField
                 emptyValue={null}
-                value={item.category ? item.category : ''}
-                onChange={(e) => setItem({ ...item, category: e.target.value })}
-                endpoint="/api/category"
+                value={item.protocol ? item.protocol : null}
+                onChange={(e) => setItem({ ...item, protocol: e.target.value })}
+                endpoint="/api/server/protocol"
                 keyGetter={(it) => it}
                 titleGetter={(it) => it}
-                label={'Type UAV '}
+                label={'Protocol '}
               />
-              <TextField
-                style={{ marginTop: '20px' }}
-                label="ip"
-                value={item.ip}
-                onChange={(event) => setItem({ ...item, ip: event.target.value })}
-              />
-            </FormGroup>
+            )}
+            <TextField label="ip" value={item.ip} onChange={(event) => setItem({ ...item, ip: event.target.value })} />
           </AccordionDetails>
         </Accordion>
         {item && (
