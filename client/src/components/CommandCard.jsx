@@ -94,6 +94,7 @@ const CommandCard = ({ id, onClose }) => {
     } else {
       throw Error(await response.text());
     }
+    onClose();
   });
 
   const validate = () => savedId || (item && item.type);
@@ -115,22 +116,14 @@ const CommandCard = ({ id, onClose }) => {
               <Typography variant="subtitle1">{'Command'}</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
-              {!limitCommands && !savedId && (
-                <BaseCommandView deviceId={id} item={item} setItem={setItem} />
-              )}
+              {!limitCommands && !savedId && <BaseCommandView deviceId={id} item={item} setItem={setItem} />}
             </AccordionDetails>
           </Accordion>
           <div className={classes.buttons}>
             <Button type="button" color="primary" variant="outlined" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              color="primary"
-              variant="contained"
-              onClick={handleSend}
-              disabled={!validate()}
-            >
+            <Button type="button" color="primary" variant="contained" onClick={handleSend} disabled={!validate()}>
               Send
             </Button>
           </div>

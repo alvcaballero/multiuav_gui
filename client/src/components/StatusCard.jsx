@@ -29,6 +29,7 @@ import RemoveDialog from './RemoveDialog';
 import makeStyles from '@mui/styles/makeStyles';
 import { devicesActions } from '../store';
 import { Alarm } from '@mui/icons-material';
+import CommandCard from '../components/CommandCard';
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -114,17 +115,13 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  //const deviceReadonly = useDeviceReadonly();
-
   const device = useSelector((state) => state.devices.items[deviceId]);
-
   const deviceImage = device?.attributes?.deviceImage;
-
   const positionItems = 'speed,course,batteryLevel,gimbal,MIC_1,MIC_2,MIC_3,Metano,Alcohol,CO';
 
   const [anchorEl, setAnchorEl] = useState(null);
-
   const [removing, setRemoving] = useState(false);
+  const [openSendCommand, setOpenSendCommand] = useState(false);
 
   const serverCommand = async (deviceId, command, attributes) => {
     //event.preventDefault();
@@ -261,7 +258,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
               >
                 <ReplayIcon />
               </IconButton>
-              <IconButton onClick={() => serverCommand(device.id, 'commandMission')} disabled={disableActions}>
+              <IconButton onClick={() => setOpenSendCommand(true)} disabled={disableActions}>
                 <PublishIcon />
               </IconButton>
               <IconButton
@@ -309,6 +306,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           </MenuItem>
         </Menu>
       )}
+      {openSendCommand && <CommandCard id={deviceId} onClose={() => setOpenSendCommand(false)} />}
 
       <RemoveDialog
         open={removing}

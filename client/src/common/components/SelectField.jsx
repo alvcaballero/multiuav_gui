@@ -44,7 +44,7 @@ const SelectField = ({
     return (
       <FormControl fullWidth={fullWidth}>
         <InputLabel>{label}</InputLabel>
-        {value && (
+        {value !== null && (
           <Select label={label} multiple={multiple} value={value} onChange={(e) => onChange(e, items)}>
             {!multiple && emptyValue !== null && <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>}
             {items.map((item) => (

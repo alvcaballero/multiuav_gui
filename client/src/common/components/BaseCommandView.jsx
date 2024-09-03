@@ -33,7 +33,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
             : '/api/commands/types'
         }
         keyGetter={(it) => it.type}
-        titleGetter={(it) => prefixString('command_', it.type)}
+        titleGetter={(it) => it.type}
         label={'Command type'}
         getItems={(items) => console.log(items)}
       />
@@ -67,8 +67,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
                 ...item,
                 attributes: { ...item.attributes },
               };
-              updateItem.attributes[key] =
-                type === 'number' ? Number(e.target.value) : e.target.value;
+              updateItem.attributes[key] = type === 'number' ? Number(e.target.value) : e.target.value;
               setItem(updateItem);
             }}
             label={name}
