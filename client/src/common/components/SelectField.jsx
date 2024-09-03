@@ -30,14 +30,11 @@ const SelectField = ({
   }, []);
 
   useEffect(() => {
-    console.log(items);
-    console.log(value);
     if (typeof items !== 'undefined' && value !== null) {
       getItems(items[value]);
     }
     if (typeof items !== 'undefined' && emptyValue == null && (value === null || value === undefined)) {
       if (items && items.length && items.length > 0) {
-        console.log('items 0', items[0]);
         onChange({ target: { value: items[0] } });
       }
     }
