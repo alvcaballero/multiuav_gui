@@ -249,14 +249,20 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
   );
 };
 
-const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, setExpanded_route, setScrool }) => {
+const RouteRoutesList = ({
+  mission,
+  setmission,
+  index,
+  route,
+  expanded_route,
+  setExpanded_route,
+  expand_wp,
+  setExpand_wp,
+}) => {
   const classes = useStyles();
-  const selectwp = useSelector((state) => state.mission.selectpoint);
   const devices = useSelector((state) => state.devices.items);
   const positions = useSelector((state) => state.data.positions);
-  //const [open_routes, setOpen_routes] = useState(true);
   const [expandedRouteOptions, setExpandedRouteOptions] = useState(false);
-  const [expanded_wp, setExpanded_wp] = useState(false);
   const [routeUAV, setRouteUAV] = useState(null);
 
   useEffect(() => {
@@ -271,13 +277,6 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
       setRouteUAV(null);
     }
   }, [route.uav, devices]);
-
-  useEffect(() => {
-    //console.log(expanded_route);
-    setExpanded_route('Rute ' + selectwp.route_id);
-    setExpanded_wp('wp ' + selectwp.id);
-    setScrool(500 + selectwp.route_id * 50 + selectwp.id * 50);
-  }, [selectwp]);
 
   const AddnewWp = (index_route, index_wp) => {
     console.log('add new wp' + index_route);
@@ -341,9 +340,6 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
   };
   const handleChange_routeOptions = (panel) => (event, isExpanded) => {
     setExpandedRouteOptions(isExpanded ? panel : false);
-  };
-  const handleChange_wp = (panel) => (event, isExpanded) => {
-    setExpanded_wp(isExpanded ? panel : false);
   };
 
   return (
@@ -431,7 +427,8 @@ const RouteRoutesList = ({ mission, setmission, index, route, expanded_route, se
                   index={index}
                   waypoint={waypoint}
                   AddnewWp={AddnewWp}
-                  expand_wp={expanded_wp}
+                  expand_wp={expand_wp}
+                  setExpand_wp={setExpand_wp}
                 />
               ))
             )}

@@ -184,8 +184,8 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                     route={item_route}
                     expanded_route={expanded_route}
                     setExpanded_route={setExpanded_route}
-                    setScrool={setScrool}
                     expand_wp={expanded_wp}
+                    setExpand_wp={setExpanded_wp}
                   />
                   {index < list.length - 1 ? <Divider /> : null}
                 </Fragment>

@@ -48,31 +48,17 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const WaypointRouteList = ({
-  mission,
-  setmission,
-  index,
-  index_wp,
-  waypoint,
-  expand_wp,
-  AddnewWp,
-}) => {
+const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, expand_wp, AddnewWp, setExpand_wp }) => {
   const classes = useStyles();
   const [expanded_ac, setExpanded_ac] = useState(false);
   const [newactionmenu, setnewactionmenu] = useState(true);
   const [newactionid, setnewactionid] = useState(0);
-  const [expanded_wp, setExpanded_wp] = useState(false);
-  //const waypoint = mission.route[index]["wp"][index_wp];
   useEffect(() => {
     console.log('render waypoint' + index + '-' + index_wp);
   }, []);
 
-  useEffect(() => {
-    setExpanded_wp(expand_wp);
-  }, [expand_wp]);
-
   const handleChange_wp = (panel) => (event, isExpanded) => {
-    setExpanded_wp(isExpanded ? panel : false);
+    setExpand_wp(isExpanded ? panel : false);
   };
 
   async function setnewaction(index_route, index_wp) {
@@ -123,39 +109,33 @@ const WaypointRouteList = ({
   };
 
   return (
-    <Accordion
-      expanded={expanded_wp === 'wp ' + index_wp}
-      onChange={handleChange_wp('wp ' + index_wp)}
-    >
+    <Accordion expanded={expand_wp === 'wp ' + index_wp} onChange={handleChange_wp('wp ' + index_wp)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{'WP ' + index_wp}</Typography>
-        <IconButton
-          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={() => Removing_wp(index, index_wp)}
-        >
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => Removing_wp(index, index_wp)}>
           <DeleteIcon />
         </IconButton>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        {expanded_wp === 'wp ' + index_wp && (
+        {expand_wp === 'wp ' + index_wp && (
           <Fragment>
             <Box
-              component='form'
+              component="form"
               sx={{
                 '& .MuiTextField-root': { m: 1 },
               }}
             >
               <div>
-                <Typography variant='subtitle1' style={{ display: 'inline' }}>
+                <Typography variant="subtitle1" style={{ display: 'inline' }}>
                   Position
                 </Typography>
               </div>
               <TextField
                 required
-                label='Latitud '
-                type='number'
+                label="Latitud "
+                type="number"
                 sx={{ width: '15ch' }}
-                variant='standard'
+                variant="standard"
                 inputProps={{
                   maxLength: 16,
                   step: 0.0001,
@@ -176,9 +156,9 @@ const WaypointRouteList = ({
               />
               <TextField
                 required
-                label='Longitud '
-                type='number'
-                variant='standard'
+                label="Longitud "
+                type="number"
+                variant="standard"
                 sx={{ width: '15ch' }}
                 inputProps={{
                   maxLength: 16,
@@ -200,9 +180,9 @@ const WaypointRouteList = ({
               />
               <TextField
                 required
-                label='altura '
-                type='number'
-                variant='standard'
+                label="altura "
+                type="number"
+                variant="standard"
                 sx={{ width: '7ch' }}
                 value={waypoint.pos ? waypoint.pos[2] : 0}
                 onChange={(e) =>
@@ -222,18 +202,16 @@ const WaypointRouteList = ({
 
             <TextField
               required
-              label='Speed '
-              type='number'
-              variant='standard'
+              label="Speed "
+              type="number"
+              variant="standard"
               value={waypoint.speed ? waypoint.speed : mission.route[index].attributes.idle_vel}
               onChange={(e) =>
                 setmission({
                   ...mission,
                   route: mission.route.map((rt) => {
                     let copiedrt = JSON.parse(JSON.stringify(rt));
-                    mission.route[index]
-                      ? (copiedrt.wp[index_wp]['speed'] = +e.target.value)
-                      : (copiedrt = rt);
+                    mission.route[index] ? (copiedrt.wp[index_wp]['speed'] = +e.target.value) : (copiedrt = rt);
                     return copiedrt;
                   }),
                 })
@@ -242,18 +220,16 @@ const WaypointRouteList = ({
 
             <TextField
               required
-              label='YAW '
-              type='number'
-              variant='standard'
+              label="YAW "
+              type="number"
+              variant="standard"
               value={waypoint.yaw ? waypoint.yaw : 0}
               onChange={(e) =>
                 setmission({
                   ...mission,
                   route: mission.route.map((rt) => {
                     let copiedrt = JSON.parse(JSON.stringify(rt));
-                    rt == mission.route[index]
-                      ? (copiedrt.wp[index_wp]['yaw'] = +e.target.value)
-                      : (copiedrt = rt);
+                    rt == mission.route[index] ? (copiedrt.wp[index_wp]['yaw'] = +e.target.value) : (copiedrt = rt);
                     return copiedrt;
                   }),
                 })
@@ -262,28 +238,23 @@ const WaypointRouteList = ({
 
             <TextField
               required
-              label='Gimbal '
-              type='number'
-              variant='standard'
+              label="Gimbal "
+              type="number"
+              variant="standard"
               value={waypoint.gimbal ? waypoint.gimbal : 0}
               onChange={(e) =>
                 setmission({
                   ...mission,
                   route: mission.route.map((rt) => {
                     let copiedrt = JSON.parse(JSON.stringify(rt));
-                    rt == mission.route[index]
-                      ? (copiedrt.wp[index_wp]['gimbal'] = +e.target.value)
-                      : (copiedrt = rt);
+                    rt == mission.route[index] ? (copiedrt.wp[index_wp]['gimbal'] = +e.target.value) : (copiedrt = rt);
                     return copiedrt;
                   }),
                 })
               }
             />
 
-            <Accordion
-              expanded={expanded_ac === 'wp ' + index_wp}
-              onChange={handleChange_ac('wp ' + index_wp)}
-            >
+            <Accordion expanded={expanded_ac === 'wp ' + index_wp} onChange={handleChange_ac('wp ' + index_wp)}>
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Typography sx={{ width: '33%', flexShrink: 0 }}>Actions</Typography>
               </AccordionSummary>
@@ -293,7 +264,7 @@ const WaypointRouteList = ({
                     Object.keys(waypoint.action).map((action_key, index_ac, list_ac) => (
                       <Fragment key={'fragment-action-' + index_ac}>
                         <div>
-                          <Typography variant='subtitle1' className={classes.attributeName}>
+                          <Typography variant="subtitle1" className={classes.attributeName}>
                             {action_key}
                           </Typography>
                           <div className={classes.actionValue}>
@@ -307,8 +278,7 @@ const WaypointRouteList = ({
                                   route: mission.route.map((rt) => {
                                     let copiedrt = JSON.parse(JSON.stringify(rt));
                                     rt == mission.route[index]
-                                      ? (copiedrt.wp[index_wp]['action'][action_key] =
-                                          e.target.value)
+                                      ? (copiedrt.wp[index_wp]['action'][action_key] = e.target.value)
                                       : (copiedrt = rt);
                                     return copiedrt;
                                   }),
@@ -332,11 +302,11 @@ const WaypointRouteList = ({
                       </Fragment>
                     ))
                   )}
-                <Box textAlign='center'>
+                <Box textAlign="center">
                   {newactionmenu ? (
                     <Button
-                      variant='contained'
-                      size='large'
+                      variant="contained"
+                      size="large"
                       sx={{ width: '80%', flexShrink: 0 }}
                       style={{ marginTop: '15px' }}
                       onClick={handleChange_acnew('wp ' + index_wp)}
@@ -345,7 +315,7 @@ const WaypointRouteList = ({
                     </Button>
                   ) : (
                     <div>
-                      <Typography variant='subtitle1'>Tipo de acccion a añadir</Typography>
+                      <Typography variant="subtitle1">Tipo de acccion a añadir</Typography>
                       <SelectField
                         emptyValue={null}
                         fullWidth={true}
@@ -364,10 +334,10 @@ const WaypointRouteList = ({
                 </Box>
               </AccordionDetails>
             </Accordion>
-            <Box textAlign='center'>
+            <Box textAlign="center">
               <Button
-                variant='contained'
-                size='large'
+                variant="contained"
+                size="large"
                 sx={{ width: '80%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
                 onClick={() => AddnewWp(index, index_wp)}
