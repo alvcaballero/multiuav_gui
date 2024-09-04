@@ -7,3 +7,4 @@ export { ConfigMissionRequest } from './aerialcore-common/config-mission-request
 export { ConfigMissionResponse } from './aerialcore-common/config-mission-response.js';
 export { eventRequest } from './aerialcore-common/event-request.js';
 export { eventResponse } from './aerialcore-common/event-response.js';
+export { eventService } from './aerialcore-common/event-service.js';

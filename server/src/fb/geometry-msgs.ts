@@ -9,6 +9,7 @@ export { PoseWithCovariance } from './geometry-msgs/pose-with-covariance.js';
 export { PoseWithCovarianceStamped } from './geometry-msgs/pose-with-covariance-stamped.js';
 export { Quaternion } from './geometry-msgs/quaternion.js';
 export { Twist } from './geometry-msgs/twist.js';
+export { TwistStamped } from './geometry-msgs/twist-stamped.js';
 export { TwistWithCovariance } from './geometry-msgs/twist-with-covariance.js';
 export { Vector3 } from './geometry-msgs/vector3.js';
 export { Vector3Stamped } from './geometry-msgs/vector3-stamped.js';

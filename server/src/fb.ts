@@ -10,6 +10,7 @@ export * as aerialcore_common from './fb/aerialcore-common.js';
 export * as amrl_msgs from './fb/amrl-msgs.js';
 export * as dji_osdk_ros from './fb/dji-osdk-ros.js';
 export * as geometry_msgs from './fb/geometry-msgs.js';
+export * as mavros_msgs from './fb/mavros-msgs.js';
 export * as nav_msgs from './fb/nav-msgs.js';
 export * as sensor_msgs from './fb/sensor-msgs.js';
 export * as std_msgs from './fb/std-msgs.js';

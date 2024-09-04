@@ -4,6 +4,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 exports.Vector3Stamped =
   exports.Vector3 =
   exports.TwistWithCovariance =
+  exports.TwistStamped =
   exports.Twist =
   exports.Quaternion =
   exports.PoseWithCovarianceStamped =
@@ -60,6 +61,13 @@ Object.defineProperty(exports, 'Twist', {
   enumerable: true,
   get: function () {
     return twist_js_1.Twist;
+  },
+});
+var twist_stamped_js_1 = require('./geometry-msgs/twist-stamped.cjs');
+Object.defineProperty(exports, 'TwistStamped', {
+  enumerable: true,
+  get: function () {
+    return twist_stamped_js_1.TwistStamped;
   },
 });
 var twist_with_covariance_js_1 = require('./geometry-msgs/twist-with-covariance.cjs');
