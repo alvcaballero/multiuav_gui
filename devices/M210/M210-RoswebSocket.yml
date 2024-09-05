@@ -1,0 +1,66 @@
+# ./.tmuxinator.yml
+# args:
+# 
+
+
+#https://github.com/paulfioravanti/dotfiles/blob/062005ecf6c98675949fa8b5ce8866d918e2f040/tmuxinator/exercism.yml#L88
+# example tmuxinator start M210-real-CamH264 15 real
+# Set var "uav_ns" and 'Config_cmd' to workdir
+
+<% default_ns = 'uav_2' %>
+
+<% if @settings["ns"] 
+    uav_ns=@settings["ns"] 
+  else 
+   uav_ns=default_ns 
+end %>
+
+<% 
+  Config_cmd='M210-sim-on'
+  if @settings["mode"]
+      if @settings["mode"] == 'real' 
+          Config_cmd ='M210-real' 
+      end 
+  end %>
+
+
+name: dji_missions
+root: ~/
+
+on_project_first_start:
+  - echo " initializing M210-CamRaw"
+  - echo "<%= @settings["ns"] %>"
+  - echo "@args[0] = <%= @args[0]  %>"
+  - sleep 5
+  <% if @args[0]  == "-h" %>
+  - echo "Usage keys values "
+  - echo "mode=real or sim   -default sim"
+  - echo "ns=15              -default uav_2"
+  - sleep 5
+  - exit
+  <% end %>
+
+
+windows:
+  - M210-sim:
+      layout: tiled
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - config:
+            - <%= Config_cmd %>
+            - sleep 20
+            - 'rosservice call /<%= uav_ns %>/setup_camera_stream "{cameraType: 1, start: 1}"'
+        - mission:
+            - sleep 10
+            - roslaunch onboard_dji atlas.launch
+        - multimaster:
+            - sleep 2
+            - roslaunch onboard_dji multimaster-noetic.launch
+        - RTSPserver:
+          - docker run --rm -it --network=host bluenviron/mediamtx:latest
+        - config:
+            - sleep 20
+            - roslaunch simple_vs video_stream_dji.launch uav_id:=<%= uav_ns %>
+

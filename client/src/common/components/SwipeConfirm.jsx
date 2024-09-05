@@ -2,13 +2,7 @@ import ReactSwipeButton from 'react-swipe-button';
 import React, { useState } from 'react';
 import makeStyles from '@mui/styles/makeStyles';
 
-import {
-  Card,
-  CardContent,
-  Typography,
-  IconButton,
-
-} from '@mui/material';
+import { Card, CardContent, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 const useStyles = makeStyles((theme) => ({
@@ -70,36 +64,34 @@ const SwipeConfirm = ({ enable, onClose, onSucces }) => {
   const classes = useStyles();
 
   return (
-    <>
-      <div className={classes.root}>
-        {enable && (
-          <Card elevation={5} className={classes.card}>
-            <div className={classes.header}>
-              <Typography variant='body2' color='textSecondary'>
-                Confirm mission
-              </Typography>
-              <IconButton size='small' onClick={onClose} onTouchStart={onClose}>
-                <CloseIcon fontSize='small' />
-              </IconButton>
-            </div>
+    <div className={classes.root}>
+      {enable && (
+        <Card elevation={5} className={classes.card}>
+          <div className={classes.header}>
+            <Typography variant="body2" color="textSecondary">
+              Confirm mission
+            </Typography>
+            <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </div>
 
-            <CardContent className={classes.content}>
-              <Typography variant='body1' color='textSecondary'>
-                Send all devices to command the mission load
-              </Typography>
-              <div style={{marginTop:'10px',height:'50px'}}>
+          <CardContent className={classes.content}>
+            <Typography variant="body1" color="textSecondary">
+              Send all devices to command the mission load
+            </Typography>
+            <div style={{ marginTop: '10px', height: '50px' }}>
               <ReactSwipeButton
-                text='Slide to Command Mission'
-                color='#7393B3'
-                text_unlocked='Commanded'
+                text="Slide to Command Mission"
+                color="#7393B3"
+                text_unlocked="Commanded"
                 onSuccess={onSucces}
               />
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

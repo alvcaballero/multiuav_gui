@@ -100,14 +100,13 @@ const MainPage = () => {
   const selectedPosition = filteredPositions.find(
     (position) => selectedDeviceId && position.deviceId === selectedDeviceId
   );
-  const selectedImage = filteredImages.find(
-    (camera) => selectedDeviceId && camera.deviceId == selectedDeviceId
-  );
+  const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
 
   let listdevices = Object.values(devices);
   const rosContex = useContext(RosContext);
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
+  const [confirmMission, setconfirmMission] = useState(false);
 
   const [list, setList] = useState([]);
   let toastProperties = null;
@@ -149,7 +148,7 @@ const MainPage = () => {
   return (
     <div className={classes.root}>
       <RosControl notification={showToast}>
-        <Navbar SetAddUAVOpen={SetAddUAVOpen} />
+        <Navbar SetAddUAVOpen={SetAddUAVOpen} setconfirmMission={setconfirmMission} />
         <Menu SetAddUAVOpen={SetAddUAVOpen} />
         <div
           style={{
@@ -159,11 +158,7 @@ const MainPage = () => {
             height: 'calc(100vh - 88px)',
           }}
         >
-          <MainMap
-            filteredPositions={filteredPositions}
-            markers={markers}
-            selectedPosition={selectedPosition}
-          />
+          <MainMap filteredPositions={filteredPositions} markers={markers} selectedPosition={selectedPosition} />
         </div>
 
         <div className={classes.sidebarStyle}>
@@ -183,8 +178,9 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
+
         <RosContext.Consumer>
-          {({ confirmMission, setconfirmMission, commandMission }) => (
+          {({ commandMission }) => (
             <SwipeConfirm
               enable={confirmMission}
               onClose={() => setconfirmMission(false)}

@@ -8,7 +8,7 @@ import { map } from '../Mapview/MapView';
 import { RosContext } from './RosControl';
 import { MenuItems } from './MenuItems';
 
-const Navbar = ({ SetAddUAVOpen }) => {
+const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const rosContext = useContext(RosContext);
@@ -27,7 +27,7 @@ const Navbar = ({ SetAddUAVOpen }) => {
       submenu: [
         { title: 'Connect Devices', action: () => openAddUav() },
         { title: 'Load Mission all', action: () => rosContext.loadMission() },
-        { title: 'Command Mission All', action: () => rosContext.commandMission() },
+        { title: 'Command Mission All', action: () => setconfirmMission(true) },
       ],
     },
     {
