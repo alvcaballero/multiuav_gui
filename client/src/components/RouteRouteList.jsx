@@ -107,7 +107,7 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                     ...mission,
                     route: mission.route.map((rt) => {
                       let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index] ? (copiedrt.attributes.idle_vel = +e.target.value) : (copiedrt = rt);
+                      rt === mission.route[index] ? (copiedrt.attributes.idle_vel = +e.target.value) : (copiedrt = rt);
                       return copiedrt;
                     }),
                   })
@@ -411,7 +411,8 @@ const RouteRoutesList = ({
             />
             <RouteOptions
               mission={mission}
-              setmission={setmission}
+              setmission={(e) => setmission(e)}
+              index={index}
               route={route}
               expand={expandedRouteOptions}
               setExpand={handleChange_routeOptions}
