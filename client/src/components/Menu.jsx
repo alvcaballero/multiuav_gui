@@ -70,7 +70,7 @@ export const Menu = ({ SetAddUAVOpen }) => {
 
   function HomeMap() {
     map.easeTo({
-      center: [-6.0025, 37.412],
+      center: [11.222, 44.074],
       zoom: Math.max(map.getZoom(), 5),
       offset: [0, -1 / 2],
     });
@@ -110,56 +110,43 @@ export const Menu = ({ SetAddUAVOpen }) => {
           }}
         >
           <Button onClick={HomeMap} className={classes.mediaButton} style={{ margin: '0px 0px' }}>
-            <HomeIcon fontSize='small' className={classes.mediaicon} />
+            <HomeIcon fontSize="small" className={classes.mediaicon} />
           </Button>
-          <Button id='openMission' className={classes.mediaButton} style={{ margin: '0px 0px' }}>
-            <label htmlFor='openMissionNavbar' style={{ padding: 0 }}>
-              <FolderIcon
-                fontSize='small'
-                className={classes.mediaicon}
-                style={{ position: 'relative', top: '3px' }}
-              />
+          <Button id="openMission" className={classes.mediaButton} style={{ margin: '0px 0px' }}>
+            <label htmlFor="openMissionNavbar" style={{ padding: 0 }}>
+              <FolderIcon fontSize="small" className={classes.mediaicon} style={{ position: 'relative', top: '3px' }} />
             </label>
             <input
-              type='file'
+              type="file"
               multiple={false}
               style={{ display: 'none' }}
-              id='openMissionNavbar'
+              id="openMissionNavbar"
               onChange={readFile}
             />
           </Button>
-          <Button
-            id='openAddUav'
-            onClick={openAddUav}
-            className={classes.mediaButton}
-            style={{ margin: '0px 0px' }}
-          >
-            <FlightIcon
-              fontSize='small'
-              className={classes.mediaicon}
-              style={{ transform: 'rotate(90deg)' }}
-            />
+          <Button id="openAddUav" onClick={openAddUav} className={classes.mediaButton} style={{ margin: '0px 0px' }}>
+            <FlightIcon fontSize="small" className={classes.mediaicon} style={{ transform: 'rotate(90deg)' }} />
           </Button>
         </ButtonGroup>
 
         <RosContext.Consumer>
           {({ rosState }) => (
-            <Button id='rosConnect' onClick={rosContex.rosConnect} className={classes.mediaButton}>
+            <Button id="rosConnect" onClick={rosContex.rosConnect} className={classes.mediaButton}>
               {rosState && 'conectado'} {!rosState && 'desconectado'}{' '}
             </Button>
           )}
         </RosContext.Consumer>
 
-        <Button id='loadMission' size='small' onClick={openAddUav} className={classes.mediaButton}>
-          <FileUploadIcon fontSize='small' className={classes.mediaicon} />
+        <Button id="loadMission" size="small" onClick={openAddUav} className={classes.mediaButton}>
+          <FileUploadIcon fontSize="small" className={classes.mediaicon} />
         </Button>
 
-        <Button id='commandMission' onClick={openAddUav} className={classes.mediaButton}>
+        <Button id="commandMission" onClick={openAddUav} className={classes.mediaButton}>
           Fly!
         </Button>
 
         <Button
-          id='openedmission'
+          id="openedmission"
           onClick={MissionMap}
           className={classes.mediaButton}
           style={{ margin: '0px 100px', width: '500px' }}
@@ -167,35 +154,27 @@ export const Menu = ({ SetAddUAVOpen }) => {
           {' '}
           {MissionName}
         </Button>
-        <Button
-          variant='filledTonal'
-          onClick={(e) => hideStatusWindow()}
-          className={classes.mediaButton}
-        >
+        <Button variant="filledTonal" onClick={(e) => hideStatusWindow()} className={classes.mediaButton}>
           Status
         </Button>
 
-        <Button id='openTerminal' style={{ visibility: true }} className={classes.mediaButton}>
-          <TabIcon fontSize='small' className={classes.mediaicon} />
+        <Button id="openTerminal" style={{ visibility: true }} className={classes.mediaButton}>
+          <TabIcon fontSize="small" className={classes.mediaicon} />
         </Button>
-        <Button id='UndoMission' style={{ visibility: true }} className={classes.mediaButton}>
-          <ReplyIcon fontSize='small' className={classes.mediaicon} />
-        </Button>
-
-        <Button id='reset' className={classes.mediaButton}>
-          <CallMadeIcon fontSize='small' className={classes.mediaicon} />
+        <Button id="UndoMission" style={{ visibility: true }} className={classes.mediaButton}>
+          <ReplyIcon fontSize="small" className={classes.mediaicon} />
         </Button>
 
-        <Button id='showManualMode' className={classes.mediaButton}>
-          <ModeEditIcon fontSize='small' className={classes.mediaicon} />
+        <Button id="reset" className={classes.mediaButton}>
+          <CallMadeIcon fontSize="small" className={classes.mediaicon} />
         </Button>
 
-        <Button
-          id='commandManualMission'
-          style={{ visibility: true }}
-          className={classes.mediaButton}
-        >
-          <CachedIcon fontSize='small' className={classes.mediaicon} />
+        <Button id="showManualMode" className={classes.mediaButton}>
+          <ModeEditIcon fontSize="small" className={classes.mediaicon} />
+        </Button>
+
+        <Button id="commandManualMission" style={{ visibility: true }} className={classes.mediaButton}>
+          <CachedIcon fontSize="small" className={classes.mediaicon} />
         </Button>
       </div>
     </header>

@@ -43,6 +43,7 @@ export default () => {
   let glyphs = useAttributePreference('glyphs', false)
     ? `${domain}:${port}/map/fonts/{fontstack}/{range}.pbf`
     : 'https://cdn.traccar.com/map/fonts/{fontstack}/{range}.pbf';
+  const myhostname = `${window.location.hostname}`;
 
   return [
     {
@@ -97,9 +98,7 @@ export default () => {
       id: 'googleRoad',
       title: 'mapGoogleRoad',
       style: styleCustom({
-        tiles: [0, 1, 2, 3].map(
-          (i) => `https://mt${i}.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga`
-        ),
+        tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga`),
         maxZoom: 20,
         attribution: '© Google',
         glyphs: glyphs,
@@ -110,9 +109,7 @@ export default () => {
       id: 'googleSatellite',
       title: 'mapGoogleSatellite',
       style: styleCustom({
-        tiles: [0, 1, 2, 3].map(
-          (i) => `https://mt${i}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga`
-        ),
+        tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga`),
         maxZoom: 20,
         attribution: '© Google',
         glyphs: glyphs,
@@ -123,9 +120,7 @@ export default () => {
       id: 'googleHybrid',
       title: 'mapGoogleHybrid',
       style: styleCustom({
-        tiles: [0, 1, 2, 3].map(
-          (i) => `https://mt${i}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga`
-        ),
+        tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga`),
         maxZoom: 20,
         attribution: '© Google',
         glyphs: glyphs,
@@ -164,9 +159,7 @@ export default () => {
       id: 'bingAerial',
       title: 'mapBingAerial',
       style: styleCustom({
-        tiles: [0, 1, 2, 3].map(
-          (i) => `https://ecn.t${i}.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=12327`
-        ),
+        tiles: [0, 1, 2, 3].map((i) => `https://ecn.t${i}.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=12327`),
         maxZoom: 19,
         glyphs: glyphs,
       }),
@@ -178,8 +171,7 @@ export default () => {
       title: 'mapBingHybrid',
       style: styleCustom({
         tiles: [0, 1, 2, 3].map(
-          (i) =>
-            `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=A,G,L&og=1885&n=z`
+          (i) => `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=A,G,L&og=1885&n=z`
         ),
         maxZoom: 19,
         glyphs: glyphs,
@@ -234,8 +226,7 @@ export default () => {
       title: 'mapAutoNavi',
       style: styleCustom({
         tiles: [1, 2, 3, 4].map(
-          (i) =>
-            `https://webrd0${i}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}`
+          (i) => `https://webrd0${i}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}`
         ),
         minZoom: 3,
         maxZoom: 18,
@@ -246,8 +237,7 @@ export default () => {
     {
       id: 'ordnanceSurvey',
       title: 'mapOrdnanceSurvey',
-      style:
-        'https://api.os.uk/maps/vector/v1/vts/resources/styles?key=EAZ8p83u72FTGiLjLC2MsTAl1ko6XQHC',
+      style: 'https://api.os.uk/maps/vector/v1/vts/resources/styles?key=EAZ8p83u72FTGiLjLC2MsTAl1ko6XQHC',
       transformRequest: (url) => ({
         url: `${url}&srs=3857`,
       }),
@@ -296,7 +286,7 @@ export default () => {
       id: 'custom',
       title: 'mapCustom',
       style: styleCustom({
-        tiles: ['http://localhost:8080/tile/{z}/{x}/{y}.png'],
+        tiles: [`http://${myhostname}:8080/tile/{z}/{x}/{y}.png`],
         maxZoom: 19,
         glyphs: glyphs,
       }),

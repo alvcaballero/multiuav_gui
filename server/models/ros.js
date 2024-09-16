@@ -99,7 +99,9 @@ export class rosModel {
     });
   }
   static RosSubscribeCamera(uav_id, uav_type, type, msgType, callback) {
+    console.log('camera' + type);
     uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
+      console.log('camera suscribe');
       positionsController.updateCamera(callback({ msg, deviceId: uav_id, uav_type, type, msgType }));
     });
   }
@@ -126,7 +128,9 @@ export class rosModel {
     });
     // subscribe camera
     for (let i = 0; i < camera.length; i = i + 1) {
+      console.log(camera[i]['type']);
       if (camera[i]['type'] == 'Websocket') {
+        console.log('camera websocket');
         this.RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], decodeRosMsg);
       }
     }

@@ -700,7 +700,7 @@ const PlanningPage = () => {
                             className={classes.panelButton}
                             onClick={MissionTask}
                           >
-                            Planing with Global Setting
+                            Planinng with Global Setting
                           </Button>
                           <Button
                             variant="contained"

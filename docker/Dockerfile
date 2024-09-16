@@ -36,6 +36,8 @@ RUN apt-get install -y ros-noetic-teleop-twist-keyboard
 
 # install Gstreamer
 RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev libgstrtspserver-1.0-dev gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-rtsp
+RUN apt install gstreamer1.0-rtsp
+
 
 
 

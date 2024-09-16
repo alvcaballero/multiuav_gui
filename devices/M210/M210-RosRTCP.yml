@@ -27,9 +27,8 @@ name: dji_missions
 root: ~/
 
 on_project_first_start:
-  - echo " initializing M210-CamRaw"
-  - echo "<%= @settings["ns"] %>"
-  - echo "@args[0] = <%= @args[0]  %>"
+  - echo " initializing M210"
+  - echo " name_space:<%= uav_ns %  mode:Config_cmd>"
   - sleep 5
   <% if @args[0]  == "-h" %>
   - echo "Usage keys values "
@@ -56,7 +55,10 @@ windows:
             - roslaunch onboard_dji atlas.launch
         - multimaster:
             - sleep 2
-            - roslaunch onboard_dji multimaster-noetic.launch
+            - myrosversion=$(rosversion -d)
+            - [ "$myrosversion" == "noetic" ] && roslaunch onboard_dji multimaster-noetic.launch 
+            - [ "$myrosversion" == "melodic" ] &&  roslaunch onboard_dji multimaster.launch 
+
         - resize:
             - sleep 32
             - roslaunch simple_vs video_resize.launch uav_id:=<%= uav_ns %>
