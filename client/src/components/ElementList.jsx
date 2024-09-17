@@ -16,10 +16,6 @@ import {
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { missionActions } from '../store'; // here update device action with position of uav for update in map
-import palette from '../common/palette';
-import { map } from '../Mapview/MapView';
-import WaypointRouteList from './WaypointRouteList';
 import BaseList from './BaseList';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
@@ -110,28 +106,17 @@ const ElementList = ({ markers, setMarkers }) => {
         <div className={classes.details}>
           {React.Children.toArray(
             Object.values(markers).map((base, index, list) => (
-              <Accordion
-                expanded={expanded === 'Elements ' + index}
-                onChange={handleChange('Elements ' + index)}
-              >
+              <Accordion expanded={expanded === 'Elements ' + index} onChange={handleChange('Elements ' + index)}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Typography sx={{ width: '33%', flexShrink: 0 }}>{'Group ' + index}</Typography>
-                  <IconButton
-                    sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                    onClick={() => DeleteList(index)}
-                  >
+                  <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => DeleteList(index)}>
                     <DeleteIcon />
                   </IconButton>
                 </AccordionSummary>
                 <AccordionDetails className={classes.details}>
                   {expanded === 'Elements ' + index && (
                     <Fragment>
-                      <TextField
-                        required
-                        label="Name"
-                        variant="standard"
-                        value={base.name ? base.name : ''}
-                      />
+                      <TextField required label="Name" variant="standard" value={base.name ? base.name : ''} />
                       <SelectField
                         emptyValue={null}
                         value={0}
@@ -143,11 +128,7 @@ const ElementList = ({ markers, setMarkers }) => {
                         label="Type"
                         style={{ display: 'inline', width: '200px' }}
                       />
-                      <BaseList
-                        markers={base.items}
-                        setMarkers={(value) => setElement(index, value)}
-                        type="Element"
-                      />
+                      <BaseList markers={base.items} setMarkers={(value) => setElement(index, value)} type="Element" />
                     </Fragment>
                   )}
                 </AccordionDetails>

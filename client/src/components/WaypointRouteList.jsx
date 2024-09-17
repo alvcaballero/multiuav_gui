@@ -14,6 +14,8 @@ import makeStyles from '@mui/styles/makeStyles';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 
 const useStyles = makeStyles((theme) => ({
@@ -48,20 +50,17 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, expand_wp, AddnewWp, setExpand_wp }) => {
+const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expandWp, AddnewWp, setExpandWp }) => {
   const classes = useStyles();
   const [expanded_ac, setExpanded_ac] = useState(false);
   const [newactionmenu, setnewactionmenu] = useState(true);
   const [newactionid, setnewactionid] = useState(0);
-  useEffect(() => {
-    console.log('render waypoint' + index + '-' + index_wp);
-  }, []);
 
   const handleChange_wp = (panel) => (event, isExpanded) => {
-    setExpand_wp(isExpanded ? panel : false);
+    setExpandWp(isExpanded ? panel : false);
   };
 
-  async function setnewaction(index_route, index_wp) {
+  async function setnewaction(indexRoute, indexWp) {
     let command;
 
     const response = await fetch('/api/category/actions/dji_M210_noetic');
@@ -74,31 +73,48 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
     let selectcmd = command.find((element) => element.id == newactionid);
 
     let auxroute = JSON.parse(JSON.stringify(mission.route));
-    if (!auxroute[index_route]['wp'][index_wp].hasOwnProperty('action')) {
-      auxroute[index_route]['wp'][index_wp]['action'] = {};
+    if (!auxroute[indexRoute]['wp'][indexWp].hasOwnProperty('action')) {
+      auxroute[indexRoute]['wp'][indexWp]['action'] = {};
     }
     if (selectcmd.param) {
-      auxroute[index_route]['wp'][index_wp]['action'][selectcmd.name] = 0;
+      auxroute[indexRoute]['wp'][indexWp]['action'][selectcmd.name] = 0;
     } else {
-      auxroute[index_route]['wp'][index_wp]['action'][selectcmd.name] = true;
+      auxroute[indexRoute]['wp'][indexWp]['action'][selectcmd.name] = true;
     }
     setmission({ ...mission, route: auxroute });
     setnewactionmenu(true);
   }
+  const CopyWp = (index, indexWp) => {
+    const auxRoute = JSON.parse(JSON.stringify(mission.route));
+    const auxWaypoint = auxRoute[index].wp[indexWp];
+    auxRoute[index].wp.splice(indexWp + 1, 0, auxWaypoint);
+    setmission({ ...mission, route: auxRoute });
+  };
+  const MoveWp = (index, indexWp, direction) => {
+    const auxRoute = JSON.parse(JSON.stringify(mission.route));
+    const auxWaypoint = auxRoute[index].wp[indexWp];
+    auxRoute[index].wp.splice(indexWp, 1);
+    if (indexWp + direction < 0) {
+      auxRoute[index].wp.push(auxWaypoint);
+    } else {
+      auxRoute[index].wp.splice(indexWp + direction, 0, auxWaypoint);
+    }
+    setmission({ ...mission, route: auxRoute });
+  };
 
-  const Removing_wp = (index_route, index_wp) => {
-    console.log('remove wp' + index_route + '-' + index_wp);
+  const RemoveWp = (indexRoute, indexWp) => {
+    console.log('remove wp' + indexRoute + '-' + indexWp);
     let auxroute = [...mission.route];
-    let auxwaypoint = [...mission.route[index_route]['wp']];
-    auxwaypoint.splice(index_wp, 1);
-    let aux = { ...auxroute[index_route], wp: auxwaypoint };
-    auxroute[index_route] = aux;
+    let auxwaypoint = [...mission.route[indexRoute]['wp']];
+    auxwaypoint.splice(indexWp, 1);
+    let aux = { ...auxroute[indexRoute], wp: auxwaypoint };
+    auxroute[indexRoute] = aux;
     setmission({ ...mission, route: auxroute });
   };
-  const Removing_action = (index_route, index_wp, action) => {
-    console.log('remove action' + index_route + '-' + index_wp + '-' + action);
+  const Removing_action = (indexRoute, indexWp, action) => {
+    console.log('remove action' + indexRoute + '-' + indexWp + '-' + action);
     let auxroute = JSON.parse(JSON.stringify(mission.route));
-    delete auxroute[index_route]['wp'][index_wp]['action'][action];
+    delete auxroute[indexRoute]['wp'][indexWp]['action'][action];
     setmission({ ...mission, route: auxroute });
   };
   const handleChange_ac = (panel) => (event, isExpanded) => {
@@ -109,16 +125,22 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
   };
 
   return (
-    <Accordion expanded={expand_wp === 'wp ' + index_wp} onChange={handleChange_wp('wp ' + index_wp)}>
+    <Accordion expanded={expandWp === `WP${indexWp}`} onChange={handleChange_wp(`WP${indexWp}`)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
-        <Typography sx={{ width: '33%', flexShrink: 0 }}>{'WP ' + index_wp}</Typography>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => Removing_wp(index, index_wp)}>
+        <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => MoveWp(index, indexWp, 1)}>
+          <ArrowDownwardIcon />
+        </IconButton>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => MoveWp(index, indexWp, -1)}>
+          <ArrowUpwardIcon />
+        </IconButton>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => RemoveWp(index, indexWp)}>
           <DeleteIcon />
         </IconButton>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        {expand_wp === 'wp ' + index_wp && (
-          <Fragment>
+        {expandWp === `WP${indexWp}` && (
+          <>
             <Box
               component="form"
               sx={{
@@ -146,9 +168,7 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
                     ...mission,
                     route: mission.route.map((rt) => {
                       let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index]
-                        ? (copiedrt.wp[index_wp]['pos'][0] = +e.target.value)
-                        : (copiedrt = rt);
+                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['pos'][0] = +e.target.value) : (copiedrt = rt);
                       return copiedrt;
                     }),
                   })
@@ -170,9 +190,7 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
                     ...mission,
                     route: mission.route.map((rt) => {
                       let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index]
-                        ? (copiedrt.wp[index_wp]['pos'][1] = +e.target.value)
-                        : (copiedrt = rt);
+                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['pos'][1] = +e.target.value) : (copiedrt = rt);
                       return copiedrt;
                     }),
                   })
@@ -190,71 +208,77 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
                     ...mission,
                     route: mission.route.map((rt) => {
                       let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index]
-                        ? (copiedrt.wp[index_wp]['pos'][2] = +e.target.value)
-                        : (copiedrt = rt);
+                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['pos'][2] = +e.target.value) : (copiedrt = rt);
                       return copiedrt;
                     }),
                   })
                 }
               />
             </Box>
+            <Box
+              component="form"
+              sx={{
+                '& .MuiTextField-root': { m: 1 },
+              }}
+            >
+              <TextField
+                required
+                label="Speed "
+                type="number"
+                variant="standard"
+                sx={{ width: '15ch' }}
+                value={waypoint.speed ? waypoint.speed : mission.route[index].attributes.idle_vel}
+                onChange={(e) =>
+                  setmission({
+                    ...mission,
+                    route: mission.route.map((rt) => {
+                      let copiedrt = JSON.parse(JSON.stringify(rt));
+                      mission.route[index] ? (copiedrt.wp[indexWp]['speed'] = +e.target.value) : (copiedrt = rt);
+                      return copiedrt;
+                    }),
+                  })
+                }
+              />
 
-            <TextField
-              required
-              label="Speed "
-              type="number"
-              variant="standard"
-              value={waypoint.speed ? waypoint.speed : mission.route[index].attributes.idle_vel}
-              onChange={(e) =>
-                setmission({
-                  ...mission,
-                  route: mission.route.map((rt) => {
-                    let copiedrt = JSON.parse(JSON.stringify(rt));
-                    mission.route[index] ? (copiedrt.wp[index_wp]['speed'] = +e.target.value) : (copiedrt = rt);
-                    return copiedrt;
-                  }),
-                })
-              }
-            />
+              <TextField
+                required
+                label="YAW "
+                type="number"
+                variant="standard"
+                sx={{ width: '15ch' }}
+                value={waypoint.yaw ? waypoint.yaw : 0}
+                onChange={(e) =>
+                  setmission({
+                    ...mission,
+                    route: mission.route.map((rt) => {
+                      let copiedrt = JSON.parse(JSON.stringify(rt));
+                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['yaw'] = +e.target.value) : (copiedrt = rt);
+                      return copiedrt;
+                    }),
+                  })
+                }
+              />
 
-            <TextField
-              required
-              label="YAW "
-              type="number"
-              variant="standard"
-              value={waypoint.yaw ? waypoint.yaw : 0}
-              onChange={(e) =>
-                setmission({
-                  ...mission,
-                  route: mission.route.map((rt) => {
-                    let copiedrt = JSON.parse(JSON.stringify(rt));
-                    rt == mission.route[index] ? (copiedrt.wp[index_wp]['yaw'] = +e.target.value) : (copiedrt = rt);
-                    return copiedrt;
-                  }),
-                })
-              }
-            />
-
-            <TextField
-              required
-              label="Gimbal "
-              type="number"
-              variant="standard"
-              value={waypoint.gimbal ? waypoint.gimbal : 0}
-              onChange={(e) =>
-                setmission({
-                  ...mission,
-                  route: mission.route.map((rt) => {
-                    let copiedrt = JSON.parse(JSON.stringify(rt));
-                    rt == mission.route[index] ? (copiedrt.wp[index_wp]['gimbal'] = +e.target.value) : (copiedrt = rt);
-                    return copiedrt;
-                  }),
-                })
-              }
-            />
-
-            <Accordion expanded={expanded_ac === 'wp ' + index_wp} onChange={handleChange_ac('wp ' + index_wp)}>
+              <TextField
+                required
+                label="Gimbal "
+                type="number"
+                variant="standard"
+                sx={{ width: '15ch' }}
+                value={waypoint.gimbal ? waypoint.gimbal : 0}
+                onChange={(e) =>
+                  setmission({
+                    ...mission,
+                    route: mission.route.map((rt) => {
+                      let copiedrt = JSON.parse(JSON.stringify(rt));
+                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['gimbal'] = +e.target.value) : (copiedrt = rt);
+                      return copiedrt;
+                    }),
+                  })
+                }
+              />
+            </Box>
+            <Accordion expanded={expanded_ac === 'wp ' + indexWp} onChange={handleChange_ac('wp ' + indexWp)}>
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Typography sx={{ width: '33%', flexShrink: 0 }}>Actions</Typography>
               </AccordionSummary>
@@ -278,7 +302,7 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
                                   route: mission.route.map((rt) => {
                                     let copiedrt = JSON.parse(JSON.stringify(rt));
                                     rt == mission.route[index]
-                                      ? (copiedrt.wp[index_wp]['action'][action_key] = e.target.value)
+                                      ? (copiedrt.wp[indexWp]['action'][action_key] = e.target.value)
                                       : (copiedrt = rt);
                                     return copiedrt;
                                   }),
@@ -292,7 +316,7 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
                               pr: 2,
                               marginLeft: 'auto',
                             }}
-                            onClick={() => Removing_action(index, index_wp, action_key)}
+                            onClick={() => Removing_action(index, indexWp, action_key)}
                             className={classes.negative}
                           >
                             <DeleteIcon />
@@ -309,7 +333,7 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
                       size="large"
                       sx={{ width: '80%', flexShrink: 0 }}
                       style={{ marginTop: '15px' }}
-                      onClick={handleChange_acnew('wp ' + index_wp)}
+                      onClick={handleChange_acnew('wp ' + indexWp)}
                     >
                       Add new action
                     </Button>
@@ -327,7 +351,7 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
                       />
                       <div>
                         <Button onClick={() => setnewactionmenu(true)}>Cancel</Button>
-                        <Button onClick={() => setnewaction(index, index_wp)}>Add</Button>
+                        <Button onClick={() => setnewaction(index, indexWp)}>Add</Button>
                       </div>
                     </div>
                   )}
@@ -338,14 +362,24 @@ const WaypointRouteList = ({ mission, setmission, index, index_wp, waypoint, exp
               <Button
                 variant="contained"
                 size="large"
-                sx={{ width: '80%', flexShrink: 0 }}
+                sx={{ width: '60%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
-                onClick={() => AddnewWp(index, index_wp)}
+                onClick={() => AddnewWp(index, indexWp)}
               >
                 Add new Waypoint
               </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="large"
+                sx={{ width: '30%', flexShrink: 0 }}
+                style={{ marginTop: '15px' }}
+                onClick={() => CopyWp(index, indexWp)}
+              >
+                Copy
+              </Button>
             </Box>
-          </Fragment>
+          </>
         )}
       </AccordionDetails>
     </Accordion>

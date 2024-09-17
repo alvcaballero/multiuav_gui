@@ -16,7 +16,6 @@ import {
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { missionActions } from '../store'; // here update device action with position of uav for update in map
 import palette from '../common/palette';
 import { map } from '../Mapview/MapView';
 import WaypointRouteList from './WaypointRouteList';
@@ -282,15 +281,15 @@ const RouteRoutesList = ({
     console.log('add new wp' + index_route);
     let auxroute = JSON.parse(JSON.stringify(mission.route));
     let center = map.getCenter(); // cuando index es 0 o -1
-    if (index_wp > 0) {
+    if (index_wp > 0 && index_wp < auxroute[index_route]['wp'].length) {
       center.lat =
-        (auxroute[index_route]['wp'][index_wp]['pos'][0] + auxroute[index_route]['wp'][index_wp - 1]['pos'][0]) / 2;
+        (auxroute[index_route]['wp'][index_wp]['pos'][0] + auxroute[index_route]['wp'][index_wp + 1]['pos'][0]) / 2;
       center.lng =
-        (auxroute[index_route]['wp'][index_wp]['pos'][1] + auxroute[index_route]['wp'][index_wp - 1]['pos'][1]) / 2;
+        (auxroute[index_route]['wp'][index_wp]['pos'][1] + auxroute[index_route]['wp'][index_wp + 1]['pos'][1]) / 2;
     }
 
     let mywp = { pos: [center.lat, center.lng, 5], action: {} };
-    index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp, 0, mywp);
+    index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp + 1, 0, mywp);
 
     setmission({ ...mission, route: auxroute });
   };
@@ -424,12 +423,12 @@ const RouteRoutesList = ({
                 <WaypointRouteList
                   mission={mission}
                   setmission={setmission}
-                  index_wp={index_wp}
+                  indexWp={index_wp}
                   index={index}
                   waypoint={waypoint}
                   AddnewWp={AddnewWp}
-                  expand_wp={expand_wp}
-                  setExpand_wp={setExpand_wp}
+                  expandWp={expand_wp}
+                  setExpandWp={setExpand_wp}
                 />
               ))
             )}

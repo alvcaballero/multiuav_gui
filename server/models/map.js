@@ -52,7 +52,7 @@ export class mapModel {
         })
         .then((body) => {
           //console.log(body);
-          if (myresponse.hasOwnProperty('results')) {
+          if (myresponse.hasOwnProperty('results') && myresponse.results.length > 0) {
             body.results.map((element) => {
               myresponse.results.push(element);
             });
