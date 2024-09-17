@@ -226,7 +226,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 label="Speed "
                 type="number"
                 variant="standard"
-                sx={{ width: '15ch' }}
+                sx={{ width: '13ch' }}
                 value={waypoint.speed ? waypoint.speed : mission.route[index].attributes.idle_vel}
                 onChange={(e) =>
                   setmission({
@@ -245,7 +245,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 label="YAW "
                 type="number"
                 variant="standard"
-                sx={{ width: '15ch' }}
+                sx={{ width: '13ch' }}
                 value={waypoint.yaw ? waypoint.yaw : 0}
                 onChange={(e) =>
                   setmission({
@@ -264,7 +264,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 label="Gimbal "
                 type="number"
                 variant="standard"
-                sx={{ width: '15ch' }}
+                sx={{ width: '13ch' }}
                 value={waypoint.gimbal ? waypoint.gimbal : 0}
                 onChange={(e) =>
                   setmission({
