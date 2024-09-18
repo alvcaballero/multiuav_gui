@@ -3,6 +3,7 @@ devices/init/vpn/login.text
 server/config/devices/devices_init.yaml
 server/data/*.json
 server/data/*.yaml
+server/data/*.kml
 **/package-lock.json
 .DS_Store
 Thumbs.db
