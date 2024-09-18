@@ -34,6 +34,7 @@ export class ExtApp {
       }
       return data.accessToken;
     } else {
+      console.log('Error in getting token');
       throw new Error(`${response.status} ${response.statusText}`);
     }
   }
@@ -111,7 +112,8 @@ export class ExtApp {
       //let command = await sendResponse.json();
       //console.log(command);
     } else {
-      throw new Error(sendResponse.status);
+      console.log('Error in sending mission result to external application');
+      //throw new Error(sendResponse.status);
     }
   }
   static async missionMedia(missionId, results) {
