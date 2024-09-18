@@ -238,7 +238,7 @@ export class filesModel {
     let pathFolder = myconfig.path;
     if (myconfig.type == 'specific') {
       let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
-      pathFolder = `${myconfig.path}mission_${myInitTime}`;
+      pathFolder = `${myconfig.path}mission_${myInitTime}/`;
     }
 
     listFiles = await this.mylistFiles(client, pathFolder, myconfig.type == 'lastFolder');
