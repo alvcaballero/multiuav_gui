@@ -52,7 +52,7 @@ export class ExtApp {
       let myWP = route.wp.map((wp) => ({
         latitude: wp.pos[1],
         longitude: wp.pos[0],
-        altitude: wp.pos[2],
+        altitude: Number(wp.pos[2]).toFixed(),
       }));
 
       let myDevice = await DevicesController.getByName(route.uav);
@@ -71,7 +71,7 @@ export class ExtApp {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        mission_id: missionId,
+        mission_id: Number(missionId),
         routes: myMission,
       }),
     });
@@ -80,7 +80,8 @@ export class ExtApp {
       //let command = await sendResponse.json();
       //console.log(command);
     } else {
-      throw new Error(sendResponse.status);
+      console.log('error in sending mission start to external application');
+      //throw new Error(sendResponse.status);
     }
   }
   static async missionResult(missionId, resultCode) {
@@ -140,9 +141,9 @@ export class ExtApp {
     if (sendResponse.ok) {
       console.log('Response ok to send media of mission -----');
       //let command = await sendResponse.json();
-      //console.log(command);
     } else {
-      throw new Error(sendResponse.status);
+      console.log("Error in sending mission's media to external application");
+      //throw new Error(sendResponse.status);
     }
   }
 }

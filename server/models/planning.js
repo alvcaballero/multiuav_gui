@@ -1,7 +1,8 @@
-import { writeYAML, readYAML, getRandomInt } from '../common/utils.js';
+import { readDataFile, writeDataFile,readYAML getRandomInt } from '../common/utils.js';
+import { missionsConfigData } from '../config/config.js';
 
-const configPlanning = readYAML('../config/elements/config.yaml');
-var initPlanning = readYAML('../config/elements/mission_init.yaml');
+const configPlanning = readDataFile('../config/elements/config.yaml');
+var initPlanning = readYAML(missionsConfigData);
 import { planningServer, planningHost } from '../config/config.js';
 import { MissionController } from '../controllers/mission.js';
 
@@ -49,7 +50,7 @@ export class planningModel {
     console.log('Set default mission');
     console.log(value);
     initPlanning = value;
-    let response = writeYAML('../config/elements/mission_init.yaml', value);
+    let response = writeDataFile(missionsConfigData, value);
     return { result: response };
     // modify the mission init
   }
@@ -59,7 +60,7 @@ export class planningModel {
     console.log('Set markers');
     auxinitPlanning = { ...initPlanning, markersbase: value.markersbase, elements: value.elements };
     initPlanning = auxinitPlanning;
-    let response = writeYAML('../config/elements/mission_init.yaml', auxinitPlanning);
+    let response = writeDataFile(missionsConfigData, auxinitPlanning);
     return { result: response };
   }
   static getMarkers() {

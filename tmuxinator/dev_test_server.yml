@@ -46,3 +46,5 @@ windows:
             - cd ~/work/planner-server
             - source env/bin/activate
             - ./server_linux.sh
+        - ftp:
+            - docker run --rm -it --mount type=bind,source=/home/server/work/px4,destination=/home/one -p 4021:22 atmoz/sftp one:1234:::upload

@@ -105,7 +105,7 @@ export class missionModel {
     return myTask;
   }
 
-  static async sendTask({ id, name, objetivo, locations, meteo }) {
+  static async sendTask({ id, name = 'no name', objetivo, locations, meteo }) {
     console.log('command-sendtask');
 
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });

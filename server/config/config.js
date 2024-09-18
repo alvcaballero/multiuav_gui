@@ -4,6 +4,7 @@ dotenv.config();
 
 export const env = process.env.NODE_ENV || 'dev',
   port = process.env.PORT || 4000,
+  CorsEnable = process.env.CORS_ENABLE === 'true' ? true : false,
   RosEnable = process.env.ROS_CONNECTION ? (process.env.ROS_CONNECTION === 'false' ? false : true) : true,
   FbEnable = process.env.FB_CONNECTION ? (process.env.FB_CONNECTION === 'false' ? false : true) : true,
   StreamServer = process.env.STREAM_SERVER === 'true' ? true : false, //if use mediamtx server in local host
@@ -29,3 +30,4 @@ export const filesData = '../data/files.json';
 export const devicesData = '../data/devices.json';
 export const routesData = '../data/routes.json';
 export const missionsData = '../data/missions.json';
+export const missionsConfigData = '../data/missionConfig.yaml';

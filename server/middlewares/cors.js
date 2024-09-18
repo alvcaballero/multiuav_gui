@@ -1,4 +1,5 @@
 import cors from 'cors';
+import { CorsEnable } from '../config/config';
 
 const ACCEPTED_ORIGINS = [
   'http://localhost:3000',
@@ -13,17 +14,15 @@ export const corsMiddleware = ({ acceptedOrigins = ACCEPTED_ORIGINS } = {}) =>
       if (acceptedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
       if (origin) {
-        console.log(origin);
-        if (origin.includes('http://192.168.')) {
-          return callback(null, true);
-        }
         if (origin.includes('http://10.42.0.')) {
           return callback(null, true);
         }
-        if (origin.includes('http://10.10.2.')) {
-          return callback(null, true);
-        }
+      }
+
+      if (!CorsEnable) {
+        return callback(null, true);
       }
 
       if (!origin) {

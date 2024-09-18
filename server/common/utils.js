@@ -5,6 +5,23 @@ import { dirname, resolve, normalize } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+export const readDataFile = (filepath) => {
+  if (filepath.includes('.json')) {
+    return readJSON(filepath);
+  }
+  if (filepath.includes('.yaml')) {
+    return readYAML(filepath);
+  }
+};
+export const writeDataFile = (filepath, content) => {
+  if (filepath.includes('.json')) {
+    return writeJSON(filepath, content);
+  }
+  if (filepath.includes('.yaml')) {
+    return writeYAML(filepath, content);
+  }
+};
+
 export const readJSON = (filepath) => {
   console.log('load ' + filepath);
   let jsonfile = {};
