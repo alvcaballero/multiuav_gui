@@ -1,4 +1,4 @@
-import { readDataFile, writeDataFile,readYAML getRandomInt } from '../common/utils.js';
+import { readDataFile, writeDataFile, readYAML, getRandomInt } from '../common/utils.js';
 import { missionsConfigData } from '../config/config.js';
 
 const configPlanning = readDataFile('../config/elements/config.yaml');
