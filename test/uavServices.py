@@ -31,6 +31,7 @@ def Finish_Download(value):
 
     try:
         print("call GCS finish donwload files service")
+        time.sleep(30)
         callservice = rospy.ServiceProxy(
             '/GCS/FinishDownload', finishGetFiles)
         resp1 = callservice('uav_14', True)
