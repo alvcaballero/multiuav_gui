@@ -1,5 +1,5 @@
 import cors from 'cors';
-import { CorsEnable } from '../config/config';
+import { CorsEnable } from '../config/config.js';
 
 const ACCEPTED_ORIGINS = [
   'http://localhost:3000',
