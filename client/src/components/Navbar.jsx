@@ -54,8 +54,8 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
     {
       title: 'Report',
       submenu: [
-        { title: 'Missions', action: () => navigate('reports/mission') },
-        { title: 'events', action: () => navigate('reports/events') },
+        { title: 'Missions', action: () => navigate('/reports/mission') },
+        { title: 'events', action: () => navigate('/reports/events') },
       ],
     },
   ];

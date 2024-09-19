@@ -22,5 +22,6 @@ conda activate DJIThermal
 python3 -m pip install git+https://github.com/detecttechnologies/thermal_base.git@main
 python3 -m pip install PyExifTool
 python3 -m pip install requests
+python3 -m pip install piexif
 
 ```
