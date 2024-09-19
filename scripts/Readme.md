@@ -14,11 +14,13 @@ rm -rf ~/miniconda3/miniconda.sh
 // install libreria
 
 ```
-sudo apt-get install exiftool
 // in conda use
-python3 -m pip install git+https://github.com/detecttechnologies/thermal_base.git@main
-
 conda create --name DJIThermal python=3.9
 conda activate DJIThermal
+
+
+python3 -m pip install git+https://github.com/detecttechnologies/thermal_base.git@main
+python3 -m pip install PyExifTool
+python3 -m pip install requests
 
 ```

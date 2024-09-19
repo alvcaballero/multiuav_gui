@@ -181,7 +181,7 @@ def main(argv):
     if inputfile.split(".")[1] == "tiff":
         print('Processing a wirispro tiff image')
         outputfile, thermal_np = process_wirispro_img(inputfile, outputfile)
-    elif inputfile.split(".")[1] == "JPG":
+    elif inputfile.split(".")[1] == "JPG" or inputfile.split(".")[1] == "jpg":
         print('Processing a DJI JPG image')
         outputfile, thermal_np = process_dji_img(inputfile, outputfile)
     else:
