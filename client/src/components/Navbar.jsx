@@ -8,10 +8,17 @@ import { map } from '../Mapview/MapView';
 import { RosContext } from './RosControl';
 import { MenuItems } from './MenuItems';
 
+import { usePreference } from '../common/preferences';
+
 const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const rosContext = useContext(RosContext);
+
+  const defaultLatitude = usePreference('latitude');
+  const defaultLongitude = usePreference('longitude');
+  const defaultZoom = usePreference('zoom', 10);
+
 
   const menuItemsData = [
     {
@@ -150,8 +157,8 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
 
   function sethome() {
     map.easeTo({
-      center: [11.222, 44.074],
-      zoom: Math.max(map.getZoom(), 5),
+      center: [defaultLongitude, defaultLatitude],
+      zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
   }

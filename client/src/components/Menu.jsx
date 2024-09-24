@@ -14,6 +14,8 @@ import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CachedIcon from '@mui/icons-material/Cached';
 import { grey } from '@mui/material/colors';
 import makeStyles from '@mui/styles/makeStyles';
+import { usePreference } from '../common/preferences';
+
 import { Card, IconButton, Button, ButtonGroup, CardMedia } from '@mui/material';
 
 const useStyles = makeStyles((theme) => ({
@@ -52,6 +54,10 @@ export const Menu = ({ SetAddUAVOpen }) => {
   const Mission_Home = useSelector((state) => state.mission.home);
   const [hidestatus, sethidestatus] = useState(true);
 
+  const defaultLatitude = usePreference('latitude');
+  const defaultLongitude = usePreference('longitude');
+  const defaultZoom = usePreference('zoom', 10);
+
   const readFile = (e) => {
     //https://www.youtube.com/watch?v=K3SshoCXC2g
     const file = e.target.files[0];
@@ -70,8 +76,8 @@ export const Menu = ({ SetAddUAVOpen }) => {
 
   function HomeMap() {
     map.easeTo({
-      center: [11.222, 44.074],
-      zoom: Math.max(map.getZoom(), 5),
+      center: [defaultLongitude, defaultLatitude],
+      zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
   }
@@ -79,7 +85,7 @@ export const Menu = ({ SetAddUAVOpen }) => {
   function MissionMap() {
     map.easeTo({
       center: [Mission_Home[1], Mission_Home[0]],
-      zoom: Math.max(map.getZoom(), 15),
+      zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
   }
