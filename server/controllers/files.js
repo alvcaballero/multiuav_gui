@@ -8,6 +8,11 @@ class filesController {
     let response = await this.filesModel.getFiles(req.query);
     res.json(response);
   };
+  getFilesInfo = async (request) => {
+    console.log('controller get files');
+    let response = await this.filesModel.getFiles(request);
+    res.json(response);
+  };
   listFiles = async (req, res) => {
     console.log('controller get list files');
     let response = await this.filesModel.readGCSFiles();

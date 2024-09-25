@@ -74,6 +74,9 @@ class missionController {
   deviceFinishSyncFiles = ({ name, id }) => {
     return this.missionModel.deviceFinishSyncFiles({ name, id });
   };
+  endRouteUAV = (missionId, uavId) => {
+    return this.missionModel.UAVEnd(missionId, uavId);
+  };
   finishMissionProcessFiles = (missionId, deviceId, results) => {
     return this.missionModel.FinishProcessFiles((missionId, deviceId, results));
   };

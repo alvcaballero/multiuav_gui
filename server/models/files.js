@@ -6,6 +6,7 @@ import { FTPClient } from '../common/FTPClient.js';
 import { DevicesController } from '../controllers/devices.js';
 import { filesPath, filesData } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
+import { endRouteUAV } from '../controllers/mission.js';
 
 /* files:
 /    id
@@ -16,10 +17,18 @@ import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 /    route : path in server /mission_id/uav_name/
 /    source : {url, type}
 /    path2 : path in the drone or gcs 
-/    status: 0: no download, 1: download, 2: process, 3: fail download , 4: error, 5: ok, 
+/    status: FILE_STATUS
 /    date:
 /    attributes: metadata of the file 
 */
+export const FILE_STATUS = Object.freeze({
+  NO_DOWNLOAD: 0,
+  DOWNLOAD: 1,
+  PROCESS: 2,
+  FAIL: 3,
+  ERROR: 4,
+  OK: 5,
+});
 
 const files = readJSON(filesData);
 const filesSetup = readYAML('../config/devices/devices.yaml');
@@ -51,7 +60,7 @@ export class filesModel {
     route,
     source,
     path2,
-    status = 0,
+    status = FILE_STATUS.NO_DOWNLOAD,
     date = new Date(),
     attributes = {},
   }) {
@@ -79,6 +88,12 @@ export class filesModel {
     }
     if (status) files[id].status = status;
     if (attributes) files[id].attributes = attributes;
+    if (status == FILE_STATUS.OK) {
+      let flat = this.getFiles({ routeId: files[id].routeId }).every(
+        (file) => file.status == FILE_STATUS.OK || file.status == FILE_STATUS.ERROR
+      );
+      if (flat) endRouteUAV(files[id].missionId, files[id].deviceId);
+    }
     writeJSON(filesData, files);
     return files[id];
   }
@@ -283,13 +298,13 @@ export class filesModel {
 
     let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.route}${myfile.name}`);
     if (response.status) {
-      this.editFile({ id: fileId, status: 1 });
+      this.editFile({ id: fileId, status: FILE_STATUS.DOWNLOAD });
       processQueue.push(fileId);
       if (remove) {
         await client.deleteFile(myfile.path2);
       }
     } else {
-      this.editFile({ id: fileId, status: 3 });
+      this.editFile({ id: fileId, status: FILE_STATUS.FAIL });
     }
 
     if (downloadQueue.length > 0 && files[downloadQueue[0]].source.url === url) {
@@ -358,30 +373,28 @@ export class filesModel {
           routeId: myfile.routeId,
           missionId: myfile.missionId,
           deviceId: myfile.deviceId,
-          name: `${myfile.name.slice(0, -4)}_process.jpg`,
+          name: `${myfile.name.split('.')[0]}_process.jpg`,
           route: myfile.route,
           source: 'GCS',
           path2: `${myfile.route}${myfile.name}`,
-          status: 1,
+          status: FILE_STATUS.DOWNLOAD,
           date: myfile.date,
         });
         processQueue.push(createFile.id);
-        this.editFile({ id: myFileId, status: 5 });
+        this.editFile({ id: myFileId, status: FILE_STATUS.OK });
       } else {
-        this.editFile({ id: myFileId, status: 4 });
+        this.editFile({ id: myFileId, status: FILE_STATUS.ERROR });
       }
     }
     try {
       let attributes = await getMetadata(`${filesPath}${myfile.route}${myfile.name}`);
-      this.editFile({ id: myFileId, status: 5, attributes });
+      this.editFile({ id: myFileId, status: FILE_STATUS.OK, attributes });
     } catch (e) {
       console.log('error metadata');
-      this.editFile({ id: myFileId, status: 5, attributes: {} });
-    }
-    if (processQueue.length > 0) {
-      this.processFiles();
+      this.editFile({ id: myFileId, status: FILE_STATUS.ERROR, attributes: {} });
     }
     // end process call other function for continuos the process of state machine
+    if (processQueue.length > 0) this.processFiles();
   }
 
   static async ProcessThermalImages(src) {
