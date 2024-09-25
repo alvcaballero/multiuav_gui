@@ -1,43 +1,35 @@
-# ./.tmuxinator.yml
-# args:
-# 
-
-
 #https://github.com/paulfioravanti/dotfiles/blob/062005ecf6c98675949fa8b5ce8866d918e2f040/tmuxinator/exercism.yml#L88
-# example tmuxinator start M210-real-CamH264 15 real
-# Set var "uav_ns" and 'Config_cmd' to workdir
-
-<% default_ns = 'uav_2' %>
-
-<% if @settings["ns"] 
-    uav_ns=@settings["ns"] 
-  else 
-   uav_ns=default_ns 
-end %>
+# Set var "ns" and 'mode' to workdir
 
 <% 
-  Config_cmd='M210-sim-on'
-  if @settings["mode"]
-      if @settings["mode"] == 'real' 
-          Config_cmd ='M210-real' 
-      end 
-  end %>
+default_ns = 'uav_14'
+Config_cmd = 'M300-sim-on'
+
+if @settings["ns"] 
+  uav_ns = @settings["ns"] 
+else 
+  uav_ns = default_ns 
+end 
+if @settings["mode"]
+  if @settings["mode"] == 'real' 
+     Config_cmd = 'M300-real' 
+  end 
+end %>
 
 name: dji_missions
 root: ~/
 
-    on_project_first_start:
-  - echo " initializing M210"
+on_project_first_start:
+  - echo " initializing M300"
   - 'echo  "name_space: <%=uav_ns%>" mode: <%= Config_cmd %> '
   - sleep 5
   <% if @args[0]  == "-h" %>
   - echo "Usage keys values "
   - echo "mode=real or sim   -default sim"
-  - 'echo "ns=uav_2             -default  <%= default_ns %>"'
+  - 'echo "ns=15              -default  <%= default_ns %>"'
   - sleep 5
   - exit
   <% end %>
-
 
 windows:
   - M210-sim:
@@ -52,12 +44,11 @@ windows:
             - 'rosservice call /<%= uav_ns %>/setup_camera_stream "{cameraType: 1, start: 1}"'
         - mission:
             - sleep 10
-            - roslaunch onboard_dji atlas.launch
+            - roslaunch onboard_dji resisto.launch uav_id:=<%= uav_ns %>
         - multimaster:
             - sleep 2
             - myrosversion=$(rosversion -d)
-            - [ "$myrosversion" == "noetic" ] && roslaunch onboard_dji multimaster-noetic.launch 
-            - [ "$myrosversion" == "melodic" ] &&  roslaunch onboard_dji multimaster.launch 
+            - roslaunch onboard_dji multimaster-noetic.launch 
 
         - resize:
             - sleep 32

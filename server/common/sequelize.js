@@ -9,10 +9,23 @@ const URI = `postgres://${USER}:${PASSWORD}@${dbHost}:${dbPort}/${dbName}`;
 console.log('my uri');
 console.log(URI);
 
-const sequelize = new Sequelize(URI, {
-  dialect: 'postgres',
+let sequelizeConfig = {
+  dialect: 'sqlite3',
+  storage: 'sequelize.sqlite',
   logging: false,
-});
+};
+
+sequelizeConfig = {
+  dialect: 'postgres',
+  database: dbName,
+  user: dbUser,
+  password: dbPassword,
+  host: dbHost,
+  port: dbPort,
+  logging: false,
+};
+
+const sequelize = new Sequelize(sequelizeConfig);
 
 try {
   await sequelize.authenticate();

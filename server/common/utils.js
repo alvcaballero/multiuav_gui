@@ -41,15 +41,11 @@ export const readJSON = (filepath) => {
 
 export const readYAML = (filepath) => {
   let path = filepath;
-  if (existsSync(resolve(__dirname, filepath))) {
-    //console.log(`The file or directory at '${filepath}' exists.`);
-  } else {
-    console.log(`File '${filepath}' does not exist.`);
-    if (filepath == '../config/devices/devices_init.yaml') {
-      path = '../config/devices/.devices_init.yaml';
-    }
-  }
   let content = {};
+  if (!existsSync(resolve(__dirname, filepath))) {
+    console.log(`File '${filepath}' does not exist.`);
+    return {};
+  }
   try {
     let fileContents = readFileSync(resolve(__dirname, path), 'utf8');
     content = parse(fileContents);

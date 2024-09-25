@@ -59,7 +59,7 @@ export async function sendCommandToClient({ uav_id, type, attributes }) {
       uav_id,
       name: nameClient.name,
       type,
-      response: { state: 'error', msg: 'timeout no device confimation' },
+      response: { state: 'error', msg: 'timeout no device confirmation' },
     }),
     5000
   );
@@ -106,7 +106,7 @@ export class WebsocketDevices {
           deviceName = getNameFromTopic(metadata.topic());
           console.log('name space of device:' + name);
         }
-        //console.log('received message device %s on topic: %s - %s', deviceName, metadata.topic(), metadata.type());
+        console.log('received message device %s on topic: %s - %s', deviceName, metadata.topic(), metadata.type());
         let device = await DevicesController.getByName(deviceName);
         if (!device) {
           console.log('device not found');
