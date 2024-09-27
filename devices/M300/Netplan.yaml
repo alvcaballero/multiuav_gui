@@ -1,0 +1,45 @@
+## network: {config: disabled}
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: no
+      optional: true
+      addresses:
+        - 10.20.0.51/24
+      nameservers:
+        addresses: [8.8.8.8] #2]
+      routes:
+        - to: 0.0.0.0/0
+          via: 10.20.0.1 #2
+          metric: 100 # Mayor prioridad para Ethernet
+    usb0:
+      dhcp4: no
+      optional: true
+      addresses:
+        - 192.168.42.3/24
+  wifis:
+    wlan0:
+      optional: true
+      access-points:
+        'GRVC_5G-tplink-aux':
+          password: 'Grvc1234'
+        UAV-NET1:
+          hidden: true
+          password: '**********'
+      # <<<<< uncomment this part for  dhcp
+      #dhcp4: true
+      #dhcp4-overrides:
+      #  route-metric: 200
+      # ==== uncomment this part for ip static
+      dhcp4: no
+      dhcp6: no
+      addresses: [10.20.0.51/24]
+      nameservers:
+        addresses: [8.8.8.8]
+      routes:
+        - to: 0.0.0.0/0
+          via: 10.20.0.1
+          metric: 200 # Menor prioridad para Wi-Fi
+      # ==== END

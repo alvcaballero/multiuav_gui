@@ -12,9 +12,12 @@ network:
       optional: true
       addresses:
         - 10.42.0.43/24
-      gateway4: 10.42.0.1
+      routes:
+        - to: 0.0.0.0/0
+          via: 10.42.0.1 #2
+          metric: 100 # Mayor prioridad para Ethernet
       nameservers:
-        addresses: [10.42.0.1]
+        addresses: [8.8.8.8]
     usb0:
       dhcp4: no
       optional: true
@@ -26,5 +29,7 @@ network:
       optional: true
       access-points:
         'SALA-GRIFFIN-5G':
-          password: 'TRAGABANTRIGOENUNTRIGAL'
+          password: '**********'
       dhcp4: true
+      dhcp4-overrides:
+        route-metric: 200
