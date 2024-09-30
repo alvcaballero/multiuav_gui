@@ -6,7 +6,7 @@ import { FTPClient } from '../common/FTPClient.js';
 import { DevicesController } from '../controllers/devices.js';
 import { filesPath, filesData } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
-import { endRouteUAV } from '../controllers/mission.js';
+import { MissionController } from '../controllers/mission.js';
 
 /* files:
 /    id
@@ -92,7 +92,7 @@ export class filesModel {
       let flat = this.getFiles({ routeId: files[id].routeId }).every(
         (file) => file.status == FILE_STATUS.OK || file.status == FILE_STATUS.ERROR
       );
-      if (flat) endRouteUAV(files[id].missionId, files[id].deviceId);
+      if (flat) MissionController.endRouteUAV(files[id].missionId, files[id].deviceId);
     }
     writeJSON(filesData, files);
     return files[id];
