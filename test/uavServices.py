@@ -6,6 +6,7 @@ import threading
 import os
 import argparse
 from enum import Enum
+import math
 # ros services
 from std_srvs.srv import Trigger, TriggerResponse, SetBool, SetBoolResponse
 from aerialcore_common.srv import ConfigMission, ConfigMissionResponse, finishMission, finishMissionResponse, finishGetFiles, finishGetFilesResponse
@@ -19,7 +20,7 @@ from geometry_msgs.msg import Vector3Stamped
 class Status(Enum):
     READY = 1
     LOAD_MISSION = 2
-    DO_MISSION = 3
+    RUNNING_MISSION = 3
     FINISH_MISSION = 4
     DONE_MISSION = 5
 
@@ -30,11 +31,17 @@ class SimpleDevice:
         self.name = name
         self.status = Status.READY
         self.mission = {}
-        self.position = [0, 0, 0]
+        # latitude in degrees, longitude in degrees, altitude in meters take zero as home point
+        self.homePoint = [37.410292, -6.002355, 0]
+        self.position = self.homePoint
         self.yaw = 0
         self.gimbal = 0
         self.battery = 100
-        self.speed = 0
+        self.speed = 1  # m/s
+        self.currentWp = -1
+        self.currentAction = 0
+        self.rateTime = 2  # 1 Hz
+        self.typeMission = "GPS"
 
         rospy.init_node('SS_'+ns)
 
@@ -51,23 +58,125 @@ class SimpleDevice:
 
         # init publishers
         self.pubPosition = rospy.Publisher(
-            'user_position', NavSatFix, queue_size=10)
-        self.pubYaw = rospy.Publisher('user_yaw', Float32, queue_size=10)
+            '/'+ns+'/dji_osdk_ros/gps_position', NavSatFix, queue_size=10)
+        self.pubYaw = rospy.Publisher(
+            '/'+ns+'/dji_osdk_ros/compass_heading', Float32, queue_size=10)
         self.pubGimbal = rospy.Publisher(
-            'user_gimbal', Vector3Stamped, queue_size=10)
+            '/'+ns+'/dji_osdk_ros/gimbal_angle', Vector3Stamped, queue_size=10)
         self.pubBattery = rospy.Publisher(
-            'user_battery', BatteryState, queue_size=10)
-        self.rate = rospy.Rate(10)  # 1 Hz
+            '/'+ns+'/dji_osdk_ros/battery_state', BatteryState, queue_size=10)
+        self.rate = rospy.Rate(self.rateTime)  # 1 Hz
         self.lock = threading.Lock()
 
     # change device variables
+    def moveScalar(self, x1, x2, speed):
+        dstX = (x2 - x1)
+        print("dstx:", dstX, "x1:", x1, "x2:", x2)
+        direction = 1 if dstX > 0 else -1
+        newDstX = speed * (1/self.rateTime) * direction
+        if abs(newDstX) > abs(dstX) or dstX == 0:
+            print("Arrived scalr")
+            return {'state': True, 'value': x2}
+        return {'state': False, 'value': x1 + newDstX}
+
+    def moveToPoint(self, pos1, pos2, speed):
+        dstX = (pos2[0] - pos1[0])
+        dstY = (pos2[1] - pos1[1])
+        if self.typeMission == "GPS":
+            dstX = dstX*(6378137/180)*math.pi
+            dstY = dstY*(6378137/180)*math.pi
+        dstZ = (pos2[2] - pos1[2])
+        dstXY = 0 if dstX == 0 and dstY == 0 else math.sqrt(
+            math.pow(dstX, 2) + math.pow(dstY, 2))
+        dstXYZ = math.sqrt(math.pow(dstXY, 2) + math.pow(dstZ, 2))
+        print("dstx:", dstX, dstY, dstZ, "dstXY:", dstXY, "dstXYZ:", dstXYZ)
+
+        if dstXYZ == 0:
+            print("Arrived wp")
+            return {'state': True, 'pos': pos2}
+
+        velZ = (speed * dstZ) / dstXYZ
+        velXY = (speed * dstXY) / dstXYZ
+
+        # if self.typeMission == "GPS":
+        #    velXY = (velXY/math.pi)*(180/6378137)
+
+        velX = 0 if dstXY == 0 else (velXY * dstX) / dstXY
+        velY = 0 if dstXY == 0 else (velXY * dstY) / dstXY
+        print("vel:", velX, velY, velZ)
+
+        newDstX = velX * (1/self.rateTime)
+        newDstY = velY * (1/self.rateTime)
+        newDstZ = velZ * (1/self.rateTime)
+
+        newPosX = pos1[0] + newDstX
+        newPosY = pos1[1] + newDstY
+        newPosZ = pos1[2] + newDstZ
+        if self.typeMission == "GPS":
+            newPosX = pos1[0]+(newDstX*(180/6378137))/math.pi
+            newPosY = pos1[1]+(newDstY*(180/6378137))/math.pi
+
+        print("newDst:", newDstX, newDstY, newDstZ)
+        if abs(newDstX) > abs(dstX) or abs(newDstY) > abs(dstY) or abs(newDstZ) > abs(dstZ):
+            print("Arrived wp")
+            return {'state': True, 'pos': pos2}
+        return {'state': False, 'pos': [newPosX, newPosY, newPosZ]}
 
     def simulation(self):
-        self.position = [self.position[0]+1,
-                         self.position[1]+1, self.position[2]+1]
-        self.yaw = self.yaw + 1
-        self.gimbal = self.gimbal + 1
-        self.battery = self.battery - 1
+        if self.status == Status.RUNNING_MISSION:
+            if self.currentWp < 0:
+                calculate = self.moveToPoint(self.position, [
+                    self.homePoint[0], self.homePoint[1], self.homePoint[2]+5], self.speed)
+                self.position = calculate['pos']
+                if calculate['state']:
+                    self.currentWp = 0
+            elif self.currentWp < len(self.mission.waypoint):
+                calculate = self.moveToPoint(self.position, [
+                    self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speed)
+                self.position = calculate['pos']
+
+                if calculate['state']:
+
+                    if self.mission.commandList.data[self.currentWp*10+self.currentAction] == 4:
+                        print(
+                            "action yaw", self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
+                        actionCalculate = self.moveScalar(
+                            self.yaw, self.mission.commandParameter.data[self.currentWp*10+self.currentAction], 10)
+                        self.yaw = actionCalculate['value']
+                        if actionCalculate['state']:
+                            self.currentAction = self.currentAction + 1
+                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] == 5:
+                        print(
+                            "action gimbal", self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
+                        actionCalculate = self.moveScalar(
+                            self.gimbal, self.mission.commandParameter.data[self.currentWp*10+self.currentAction], 10)
+                        self.gimbal = actionCalculate['value']
+                        if actionCalculate['state']:
+                            self.currentAction = self.currentAction + 1
+                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] != 0:
+                        print("action photo or video")
+                        self.currentAction = self.currentAction + 1
+                    else:
+                        print("action zero")
+                        self.currentAction = 10
+
+                    if self.currentAction == 10:
+                        self.currentAction = 0
+                        self.currentWp = self.currentWp + 1
+
+            else:
+                calculate = self.moveToPoint(self.position, [
+                    self.position[0], self.position[1], self.homePoint[2]], self.speed)
+                self.position = calculate['pos']
+                if calculate['state']:
+                    self.currentWp = -1
+                    self.status = Status.FINISH_MISSION
+                    time.sleep(2)
+                    self.finish_Mission()
+
+            self.battery = self.battery - 0.5
+            if self.battery < 5:
+                self.battery = 100
 
     def publish(self):
         while not rospy.is_shutdown():
@@ -83,18 +192,19 @@ class SimpleDevice:
 
                 self.pubYaw.publish(self.yaw)
 
-                gimbal = Vector3Stamped()
-                gimbal.vector.x = 0
-                gimbal.vector.y = 0
-                gimbal.vector.z = self.gimbal
-                self.pubGimbal.publish(self.gimbal)
+                gimbalmsg = Vector3Stamped()
+                gimbalmsg.header.stamp = rospy.Time.now()
+                gimbalmsg.vector.x = 0
+                gimbalmsg.vector.y = 0
+                gimbalmsg.vector.z = self.gimbal
+                self.pubGimbal.publish(gimbalmsg)
 
                 statusBattery = BatteryState()
                 statusBattery.voltage = 24
                 statusBattery.current = 1
                 statusBattery.capacity = 100
                 statusBattery.percentage = self.battery
-                self.pubBattery.publish(self.battery)
+                self.pubBattery.publish(statusBattery)
 
                 self.rate.sleep()
 
@@ -121,14 +231,14 @@ class SimpleDevice:
             callservice = rospy.ServiceProxy(
                 '/GCS/FinishDownload', finishGetFiles)
             resp1 = callservice(self.name, True)
+            self.status = Status.READY
         except Exception as e:
             print("Service call failed: %s" % e)
 
     def finish_Mission(self):
-        time.sleep(30)
+        # time.sleep(30)
         rospy.wait_for_service('/GCS/FinishMission')
         try:
-
             print("call GCS finish mission service")
             callservice = rospy.ServiceProxy(
                 '/GCS/FinishMission', finishMission)
@@ -137,22 +247,29 @@ class SimpleDevice:
             print("Service call failed: %s" % e)
 
     def startMission(self, request):
-        thr1 = threading.Thread(target=self.finish_Mission, args=(), kwargs={})
-        thr1.start()
-
         print("Starting mission")
+        rspSuccess = False
+        rspmMessage = "Hey, roger that; we'll be right there!"
+
+        if self.status == Status.LOAD_MISSION:
+            self.status = Status.RUNNING_MISSION
+            rspSuccess = True
+
         return SetBoolResponse(
-            success=True,
-            message="Hey, roger that; we'll be right there!"
+            success=rspSuccess,
+            message=rspmMessage
         )
 
     def loadMission(self, request):
-        print("Configuring mission")
-        print(request.waypoint)
-        print(request.yaw)
-        print(request.idleVel)
+        print("load mission")
+        rspSuccess = False
+        if self.status == Status.READY or self.status == Status.LOAD_MISSION:
+            self.status = Status.LOAD_MISSION
+            self.homePoint = self.position
+            self.mission = request
+            rspSuccess = True
         return ConfigMissionResponse(
-            success=True,
+            success=rspSuccess,
         )
 
     def DownloadMedia(self, request):
@@ -177,7 +294,7 @@ if __name__ == "__main__":
     parser.add_argument('-ns', metavar='Ros NameSpace',
                         help='namespace of the topic  Example: uav_2')
     args, unknown = parser.parse_known_args()
-    default_ns = "uav_2"
+    default_ns = "uav_14"
     if args.ns:
         ns = args.ns
     else:
