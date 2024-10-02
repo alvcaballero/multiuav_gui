@@ -11,7 +11,7 @@ class filesController {
   getFilesInfo = async (request) => {
     console.log('controller get files');
     let response = await this.filesModel.getFiles(request);
-    res.json(response);
+    return response;
   };
   listFiles = async (req, res) => {
     console.log('controller get list files');

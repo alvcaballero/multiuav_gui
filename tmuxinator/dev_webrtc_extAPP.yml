@@ -25,6 +25,7 @@ windows:
       layout: tiled
       panes:
         - multimaster:
+            - docker stop px4_noetic
             - cd ~/work/px4/multiuav_gui/docker
             - ./container_run.sh
             - cd /home/user

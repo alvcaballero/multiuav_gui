@@ -7,7 +7,6 @@ import { FilesController } from '../controllers/files.js';
 import { eventsController } from '../controllers/events.js';
 import { readJSON, readYAML, writeJSON } from '../common/utils.js';
 import { missionsData, routesData } from '../config/config.js';
-import { CANCELLED } from 'dns';
 
 /* mission is object that have the current mission running and have the next object
  / id
@@ -16,10 +15,12 @@ import { CANCELLED } from 'dns';
  / status: init planning, running, finish, ,
  / uav: {uavId, status:  load, commmand , running , resumen cancel,Get Data, Download Data, InitTime,FinishTime}
  / mission: mission format yaml
-*/
+ / results:  [ reoutes results]
+ */
 const Mission = readJSON(missionsData);
 /*// current mission // id , status (init, planing, doing, finish,time inti, time_end))
  */
+
 const Routes = readJSON(routesData);
 export const MISSION_STATUS = Object.freeze({
   INIT: 'init',
@@ -31,14 +32,14 @@ export const MISSION_STATUS = Object.freeze({
   ERROR: 'error',
 });
 export const ROUTE_STATUS = Object.freeze({
-  INIT: 'init',
-  LOADED: 'loaded',
-  COMMANDED: 'commanded',
-  RUNNING: 'running',
-  COMPLETED: 'finish', //uav finish but no complete, need to download files
-  END: 'done', //uav finish and complete
-  CANCELLED: 'cancelled',
-  ERROR: 'error',
+  INIT: 1,
+  LOADED: 2,
+  COMMANDED: 3,
+  RUNNING: 4,
+  COMPLETED: 5, //uav finish but no complete, need to download files
+  END: 6, //uav finish and complete
+  CANCELLED: 7,
+  ERROR: 8,
 });
 
 export class missionModel {
@@ -57,7 +58,7 @@ export class missionModel {
     if (missionId) {
       return Object.values(Routes).filter((word) => word.missionId == missionId);
     }
-    return Routes;
+    return Object.values(Routes);
   }
 
   static async createMission(payload) {
@@ -65,7 +66,7 @@ export class missionModel {
     writeJSON(missionsData, Mission);
   }
   static async createRoute(payload) {
-    let id = Math.max(...Object.keys(Routes).map((key) => Number(key))) + 1;
+    let id = Math.max(0, ...Object.keys(Routes).map((value) => Number(value))) + 1;
     Routes[id] = { ...payload, id };
     writeJSON(routesData, Routes);
     return Routes[id];
@@ -75,24 +76,27 @@ export class missionModel {
     writeJSON(missionsData, Mission);
   }
   static async editRoute(payload) {
-    Routes[payload.id] = { ...Routes[payload.id], ...payload };
+    let myRoute = { ...Routes[payload.id], ...payload };
+    Routes[myRoute.id] = myRoute;
     writeJSON(routesData, Routes);
-    if (payload.status == ROUTE_STATUS.COMPLETED && payload.hasOwnProperty('missionId')) {
-      let listRoutes = Object.values(Routes).filter((item) => item.missionId == payload.missionId);
+
+    if (myRoute.status == ROUTE_STATUS.COMPLETED && myRoute.hasOwnProperty('missionId')) {
+      let listRoutes = await this.getRoutes({ missionId: myRoute.missionId });
       if (listRoutes.every((route) => route.status == ROUTE_STATUS.COMPLETED)) {
-        this.editMission({ id: payload.missionId, status: MISSION_STATUS.COMPLETED, endTime: new Date() });
+        this.editMission({ id: myRoute.missionId, status: MISSION_STATUS.COMPLETED, endTime: new Date() });
       }
     }
-    if (payload.status == ROUTE_STATUS.END && payload.hasOwnProperty('missionId')) {
-      let listRoutes = Object.values(Routes).filter((item) => item.missionId == payload.missionId);
+    if (myRoute.status == ROUTE_STATUS.END && myRoute.hasOwnProperty('missionId')) {
+      console.log('route end');
+      let listRoutes = await this.getRoutes({ missionId: myRoute.missionId });
+      console.log(listRoutes);
+      console.log(listRoutes.every((route) => route.status == ROUTE_STATUS.END));
       if (listRoutes.every((route) => route.status == ROUTE_STATUS.END)) {
-        this.editMission({ id: payload.missionId, status: MISSION_STATUS.END, endTime: new Date() });
-        this.FinishProcessFiles(payload.missionId);
+        console.log('all routes end');
+        const results = listRoutes.map((route) => route.result);
+        this.editMission({ id: myRoute.missionId, results, status: MISSION_STATUS.END, endTime: new Date() });
+        this.FinishProcessFiles(myRoute.missionId);
       }
-    }
-    if (payload.hasOwnProperty('result') && payload.hasOwnProperty('missionId')) {
-      Mission[payload.missionId].results.push(payload.result);
-      writeJSON(missionsData, Mission);
     }
   }
 
@@ -129,6 +133,8 @@ export class missionModel {
       return config;
     });
     console.log(`Task ${myTask.id} ${myTask.name} ${myTask.case} ${myTask.devices.map((item) => item.id).flat()}`);
+    console.log(myTask);
+    console.log(myTask.locations);
     return myTask;
   }
 
@@ -226,18 +232,45 @@ export class missionModel {
     return true;
   }
   static async UAVEnd(missionId, uavId) {
-    let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
-    this.editRoute({ id: routeId, status: ROUTE_STATUS.END, endTime: new Date() });
+    console.log('===== UAVEnd whole mission =====');
+    const routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
+    const listfiles = await FilesController.getFilesInfo({ routeId });
+    console.log('listfiles');
+    console.log(listfiles);
+    const results = {};
+    let attributes = {};
+    for (const file of listfiles) {
+      if (file.attributes && file.attributes.hasOwnProperty('measures') && file.attributes.measures.length > 0) {
+        for (const measure of file.attributes.measures) {
+          if (measure.name && measure.value) {
+            if (!results.hasOwnProperty(measure.name)) {
+              results[measure.name] = measure.value;
+              attributes = file.attributes;
+            } else if (results[measure.name] < measure.value) {
+              results[measure.name] = measure.value;
+              attributes = file.attributes;
+            }
+          }
+        }
+      }
+    }
+    console.log('results');
+    console.log(attributes);
+    console.log(results);
+    this.editRoute({ id: routeId, status: ROUTE_STATUS.END, result: attributes, endTime: new Date() });
     return true;
   }
 
   static async FinishProcessFiles(missionId) {
+    console.log('===== FinishProcessFiles whole mission =====');
     let code = 0;
     let result = { files: [], data: {} };
     let myfiles = await FilesController.getFilesInfo({ missionId });
     result.files = myfiles.map((file) => `${file.route}${file.name}`);
+    console.log('missiion');
+    console.log(this.getMissionValue(missionId));
     result.data = this.getMissionValue(missionId).results;
-    ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
+    ExtAppController.missionReqMedia(missionId, { code, files: result.files, data: result.data });
     return true;
   }
   static async updateMission({ device, mission, state }) {

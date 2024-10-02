@@ -21,10 +21,11 @@ class missionController {
     let objetivo = req.body.objetivo;
     let locations = req.body.locations || req.body.loc;
     console.log(locations);
-    let meteo = req.body.meteo;
+    let meteo = []; // req.body.meteo;
     for (let i = 0; i < locations.length; i++) {
-      locations[i].hasOwnProperty('geo_points') ? (locations[i]['items'] = locations[i].geo_points) : null;
-      locations[i].hasOwnProperty('geopoints') ? (locations[i]['items'] = locations[i].geopoints) : null;
+      locations[i].hasOwnProperty('items') ? null : (locations[i].items = []);
+      locations[i].hasOwnProperty('geo_points') ? (locations[i].items = locations[i].geo_points) : null;
+      locations[i].hasOwnProperty('geopoints') ? (locations[i].items = locations[i].geopoints) : null;
 
       for (let j = 0; j < locations[i].items.length; j++) {
         locations[i].items[j].hasOwnProperty('lat')
@@ -33,32 +34,16 @@ class missionController {
         locations[i].items[j].hasOwnProperty('lon')
           ? (locations[i].items[j].longitude = locations[i].items[j].lon)
           : null;
+        console.log(locations[i].items[j]);
       }
     }
+    console.log('id: ', id);
     let response = await this.missionModel.sendTask({ id, name, objetivo, locations, meteo });
     res.status(200).json('all ok');
   };
 
   setMission = async (req, res) => {
     let response = await this.missionModel.setMission(req.body);
-    res.json(response);
-  };
-
-  //updateFiles = async (req, res) => {
-  //  console.log('updates Files');
-  //  let response = await this.missionModel.updateFiles(req.params);
-  //  res.json(response);
-  //};
-
-  showFiles = async (req, res) => {
-    console.log('show files');
-    let response = await this.missionModel.showFiles(req.params);
-    res.json(response);
-  };
-
-  listFiles = async (req, res) => {
-    console.log('list files');
-    let response = await this.missionModel.listFiles(req.params);
     res.json(response);
   };
 

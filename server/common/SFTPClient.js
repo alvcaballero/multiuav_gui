@@ -27,7 +27,7 @@ export class SFTPClient {
     try {
       await this.client.connect(options);
     } catch (err) {
-      console.log('Failed to connect:', err);
+      console.log('Failed to connect: device  ===== !!!'); //, err);
       return false;
     }
     return true;

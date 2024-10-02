@@ -64,8 +64,8 @@ export class filesModel {
     date = new Date(),
     attributes = {},
   }) {
-    let id = Math.max(...Object.keys(files).map((key) => Number(key))) + 1;
-    files[id] = {
+    const id = Math.max(0, ...Object.keys(files).map((value) => Number(value))) + 1;
+    const newFile = {
       id,
       routeId,
       missionId,
@@ -78,6 +78,7 @@ export class filesModel {
       date,
       attributes,
     };
+    files[id] = newFile;
     writeJSON(filesData, files);
     return files[id];
   }

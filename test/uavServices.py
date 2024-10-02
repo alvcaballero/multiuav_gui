@@ -32,12 +32,12 @@ class SimpleDevice:
         self.status = Status.READY
         self.mission = {}
         # latitude in degrees, longitude in degrees, altitude in meters take zero as home point
-        self.homePoint = [37.410292, -6.002355, 0]
+        self.homePoint = [37.193646, -6.702930, 0]
         self.position = self.homePoint
         self.yaw = 0
         self.gimbal = 0
         self.battery = 100
-        self.speed = 1  # m/s
+        self.speed = 5  # m/s
         self.currentWp = -1
         self.currentAction = 0
         self.rateTime = 2  # 1 Hz
@@ -71,7 +71,7 @@ class SimpleDevice:
     # change device variables
     def moveScalar(self, x1, x2, speed):
         dstX = (x2 - x1)
-        print("dstx:", dstX, "x1:", x1, "x2:", x2)
+        # print("dstx:", dstX, "x1:", x1, "x2:", x2)
         direction = 1 if dstX > 0 else -1
         newDstX = speed * (1/self.rateTime) * direction
         if abs(newDstX) > abs(dstX) or dstX == 0:
@@ -89,7 +89,7 @@ class SimpleDevice:
         dstXY = 0 if dstX == 0 and dstY == 0 else math.sqrt(
             math.pow(dstX, 2) + math.pow(dstY, 2))
         dstXYZ = math.sqrt(math.pow(dstXY, 2) + math.pow(dstZ, 2))
-        print("dstx:", dstX, dstY, dstZ, "dstXY:", dstXY, "dstXYZ:", dstXYZ)
+        # print("dstx:", dstX, dstY, dstZ, "dstXY:", dstXY, "dstXYZ:", dstXYZ)
 
         if dstXYZ == 0:
             print("Arrived wp")
@@ -98,12 +98,9 @@ class SimpleDevice:
         velZ = (speed * dstZ) / dstXYZ
         velXY = (speed * dstXY) / dstXYZ
 
-        # if self.typeMission == "GPS":
-        #    velXY = (velXY/math.pi)*(180/6378137)
-
         velX = 0 if dstXY == 0 else (velXY * dstX) / dstXY
         velY = 0 if dstXY == 0 else (velXY * dstY) / dstXY
-        print("vel:", velX, velY, velZ)
+        # print("vel:", velX, velY, velZ)
 
         newDstX = velX * (1/self.rateTime)
         newDstY = velY * (1/self.rateTime)
@@ -116,7 +113,7 @@ class SimpleDevice:
             newPosX = pos1[0]+(newDstX*(180/6378137))/math.pi
             newPosY = pos1[1]+(newDstY*(180/6378137))/math.pi
 
-        print("newDst:", newDstX, newDstY, newDstZ)
+        # print("newDst:", newDstX, newDstY, newDstZ)
         if abs(newDstX) > abs(dstX) or abs(newDstY) > abs(dstY) or abs(newDstZ) > abs(dstZ):
             print("Arrived wp")
             return {'state': True, 'pos': pos2}
@@ -137,6 +134,9 @@ class SimpleDevice:
 
                 if calculate['state']:
 
+                    print("action", self.currentAction, self.mission.commandList.data[self.currentWp*10 +
+                          self.currentAction], self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
+
                     if self.mission.commandList.data[self.currentWp*10+self.currentAction] == 4:
                         print(
                             "action yaw", self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
@@ -153,12 +153,23 @@ class SimpleDevice:
                         self.gimbal = actionCalculate['value']
                         if actionCalculate['state']:
                             self.currentAction = self.currentAction + 1
-                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] != 0:
+                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] == 1 or self.mission.commandList.data[self.currentWp*10+self.currentAction] == 2 or self.mission.commandList.data[self.currentWp*10+self.currentAction] == 3:
                         print("action photo or video")
                         self.currentAction = self.currentAction + 1
+                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] > 0:
+                        print("action other command")
+                        self.currentAction = self.currentAction + 1
                     else:
-                        print("action zero")
-                        self.currentAction = 10
+                        for i in range(self.currentAction, 10):
+                            print("action-bucle", i, self.mission.commandList.data[self.currentWp*10 +
+                                                                                   i], self.mission.commandParameter.data[self.currentWp*10+i])
+
+                            if self.mission.commandList.data[self.currentWp*10+i] != 0:
+                                self.currentAction = i
+                                break
+                            if i == 9:
+                                self.currentAction = 10
+                            print("action zero")
 
                     if self.currentAction == 10:
                         self.currentAction = 0
@@ -215,7 +226,7 @@ class SimpleDevice:
         rospy.spin()
 
     def Finish_Download(self, value):
-        time.sleep(30)
+        time.sleep(10)
         rospy.wait_for_service('/GCS/FinishDownload')
         print("Finish download")
         valuex = value.replace(" ", "_").replace("-", "_").replace(":", "_")
@@ -227,7 +238,7 @@ class SimpleDevice:
 
         try:
             print("call GCS finish donwload files service")
-            time.sleep(30)
+            time.sleep(15)
             callservice = rospy.ServiceProxy(
                 '/GCS/FinishDownload', finishGetFiles)
             resp1 = callservice(self.name, True)

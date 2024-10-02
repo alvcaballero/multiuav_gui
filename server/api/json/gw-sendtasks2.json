@@ -1,0 +1,30 @@
+{
+  "loc": [
+    {
+      "geo_points": [
+        {
+          "lat": 37.185582,
+          "lon": -6.700204
+        },
+        {
+          "lat": 37.191793,
+          "lon": -6.697894
+        }
+      ],
+      "name": "prueba1"
+    }
+  ],
+  "meteo": [
+    {
+      "humidity": 24.2,
+      "lat": 37.1417181974,
+      "lon": -6.4568362063,
+      "pressure": 101860.0,
+      "temp": 24.2,
+      "wind_dir": 0.0,
+      "wind_vel": 0.0
+    }
+  ],
+  "mission_id": 97,
+  "objetivo": 0
+}
