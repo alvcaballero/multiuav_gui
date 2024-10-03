@@ -10,7 +10,7 @@ import { map } from './MapView';
 import { findFonts } from './mapUtil';
 import palette from '../common/palette';
 
-export const MapMissions = ({ filtereddeviceid = -1 }) => {
+export const MapMissions = ({ filteredDeviceId = -1 }) => {
   const id = useId();
   const route_points = `${id}-points`;
   const clusters = `${id}-points-clusters`;
@@ -24,84 +24,81 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
   const createFeature = (myroute, point) => {
-    let myyaw = 0;
-    if (myroute[point.routeid]['wp'][point.id].hasOwnProperty('yaw')) {
-      myyaw = myroute[point.routeid]['wp'][point.id]['yaw'];
-    }
+    let myYaw = 0;
+    let mySpeed = 0;
     if (
-      myroute[point.routeid]['wp'][point.id].hasOwnProperty('action') &&
-      myroute[point.routeid]['wp'][point.id]['action'].hasOwnProperty('yaw')
+      myroute[point.routeid].wp[point.id].hasOwnProperty('action') &&
+      myroute[point.routeid].wp[point.id].action.hasOwnProperty('yaw')
     ) {
-      myyaw = myroute[point.routeid]['wp'][point.id]['action'].yaw;
+      myYaw = myroute[point.routeid].wp[point.id].action.yaw;
+    } else if (myroute[point.routeid].wp[point.id].hasOwnProperty('yaw')) {
+      myYaw = myroute[point.routeid].wp[point.id].yaw;
     }
-    myyaw = Number(myyaw) ? myyaw : 0;
-    let mycategory = myyaw == 0 ? 'background' : 'backgroundDirection';
+    if (myroute[point.routeid].wp[point.id].hasOwnProperty('speed')) {
+      mySpeed = myroute[point.routeid].wp[point.id].speed;
+    } else if (myroute[point.routeid].attributes && myroute[point.routeid].attributes.hasOwnProperty('idle_vel')) {
+      mySpeed = myroute[point.routeid].attributes.idle_vel;
+    }
+
+    myYaw = Number(myYaw) ? Number(myYaw) : 0;
+    mySpeed = Number(mySpeed) ? Number(mySpeed) : 0;
+    const myCategory = myYaw === 0 ? 'background' : 'backgroundDirection';
     return {
       id: point.id,
-      name: myroute[point.routeid]['name'],
-      uav: myroute[point.routeid]['uav'],
-      latitude: myroute[point.routeid]['wp'][point.id]['pos'][0],
-      longitude: myroute[point.routeid]['wp'][point.id]['pos'][1],
-      altitud: myroute[point.routeid]['wp'][point.id]['pos'][2],
-      yaw: myroute[point.routeid]['wp'][point.id]['yaw'],
-      speed: myroute[point.routeid]['wp'][point.id]['speed'],
-      gimbal: myroute[point.routeid]['wp'][point.id]['gimbal'],
-      actions: myroute[point.routeid]['wp'][point.id]['action'],
-      attributes: myroute[point.routeid]['attributes'],
-      category: mycategory,
-      rotation: myyaw,
-      color: myroute[point.routeid]['id'],
+      name: myroute[point.routeid].name,
+      uav: myroute[point.routeid].uav,
+      latitude: myroute[point.routeid].wp[point.id].pos[0],
+      longitude: myroute[point.routeid].wp[point.id].pos[1],
+      altitude: myroute[point.routeid].wp[point.id].pos[2],
+      yaw: myroute[point.routeid].wp[point.id].yaw,
+      speed: mySpeed,
+      gimbal: myroute[point.routeid].wp[point.id].gimbal,
+      actions: myroute[point.routeid].wp[point.id].action,
+      attributes: myroute[point.routeid].attributes,
+      category: myCategory,
+      rotation: myYaw,
+      color: myroute[point.routeid].id,
     };
   };
 
   const WaypointDetail = (e) => {
-    console.log('target');
-    console.log(e);
-    let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${e.features[0].properties.uav}</b>
-      <span><a href="https://www.google.com/maps?q=${e.features[0].properties.latitude},${
-      e.features[0].properties.longitude
-    }" target="_blank">
-      Point_${e.features[0].properties.id}</a></span></div>
-          <div><span>Route: ${e.features[0].properties.name}</span></div>
-          <div style="display:inline"><span> Height: </span><span>${e.features[0].properties.altitud.toFixed(
-            1
-          )}m </span></div>`;
-    html = e.features[0].properties.hasOwnProperty('speed')
-      ? html +
-        `<div style="display:inline"><span>Speed: </span><span>${e.features[0].properties.speed} m/s </span></div>`
+    const properties = JSON.parse(JSON.stringify(e.features[0].properties));
+    const attribute = properties.attributes ? JSON.parse(properties.attributes) : null;
+    const action = properties.actions ? JSON.parse(properties.actions) : null;
+
+    let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${properties.uav}</b>
+      <span><a href="https://www.google.com/maps?q=${properties.latitude},${properties.longitude}" target="_blank">
+      Point_${properties.id}</a></span></div>
+          <div><span>Route: ${properties.name}</span></div>
+          <div style="display:inline"><span> Height: </span><span>${properties.altitude.toFixed(1)}m </span></div>`;
+    html = properties.hasOwnProperty('speed')
+      ? `${html} <div style="display:inline"><span>Speed: </span><span>${properties.speed} m/s </span></div>`
       : html;
-    html = e.features[0].properties.hasOwnProperty('yaw')
-      ? html + `<div style="display:inline"><span>Yaw: </span><span>${e.features[0].properties.yaw}° </span></div>`
+    html = properties.hasOwnProperty('yaw')
+      ? `${html} <div style="display:inline"><span>Yaw: </span><span>${properties.yaw}° </span></div>`
       : html;
-    html = e.features[0].properties.hasOwnProperty('gimbal')
-      ? html +
-        `<div style="display:inline"><span>Gimbal: </span><span>${e.features[0].properties.gimbal}° </span></div>`
+    html = properties.hasOwnProperty('gimbal')
+      ? `${html} <div style="display:inline"><span>Gimbal: </span><span>${properties.gimbal}° </span></div>`
       : html;
-    let html_action = '<div><b> Waypoint actions: </b></div>';
-    if (e.features[0].properties.actions) {
-      let action = JSON.parse(e.features[0].properties.actions);
-      html_action =
-        html_action +
-        Object.keys(action)
-          .map((key) => {
-            let unit = key == 'idle_vel' ? 'm/s' : '';
-            return `<div style="display:inline"><span>${key}: </span><span>${action[key]} ${unit} </span></div>`;
-          })
-          .join('');
-    }
-    let html_atributes = '<div><b> Attributes_mission: </b></div>';
-    let attribute = JSON.parse(e.features[0].properties.attributes);
-    html_atributes =
-      html_atributes +
-      Object.keys(attribute)
+    let htmlAction = '<div><b> Waypoint actions: </b></div>';
+    if (action) {
+      htmlAction += Object.keys(action)
         .map((key) => {
-          let unit = key == 'idle_vel' || key == 'max_vel' ? 'm/s' : '';
-          return `<div style="display:inline"><span>${key}: </span><span>${attribute[key]} ${unit} </span></div>`;
+          const unit = key === 'idle_vel' ? 'm/s' : '';
+          return `<div style="display:inline"><span>${key}: </span><span>${action[key]} ${unit} </span></div>`;
         })
         .join('');
+    }
+    let htmlAttributes = '<div><b> Attributes_mission: </b></div>';
+    htmlAttributes += Object.keys(attribute)
+      .map((key) => {
+        const unit = key === 'idle_vel' || key === 'max_vel' ? 'm/s' : '';
+        return `<div style="display:inline"><span>${key}: </span><span>${attribute[key]} ${unit} </span></div>`;
+      })
+      .join('');
     new maplibregl.Popup()
       .setLngLat(e.lngLat)
-      .setHTML(html + html_action + html_atributes)
+      .setHTML(html + htmlAction + htmlAttributes)
       .addTo(map);
   };
 
@@ -234,14 +231,14 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
     };
   }
   function routeTowaypoints(myroute) {
-    let waypoint = [];
-    myroute.forEach((rt, index_rt) => {
-      rt.wp.forEach((wp, index_wp) => {
+    const waypoint = [];
+    myroute.forEach((rt, indexRt) => {
+      rt.wp.forEach((wp, indexWp) => {
         waypoint.push({
-          longitude: wp['pos'][1],
-          latitude: wp['pos'][0],
-          id: index_wp,
-          routeid: index_rt,
+          longitude: wp.pos[1],
+          latitude: wp.pos[0],
+          id: indexWp,
+          routeid: indexRt,
         });
       });
     });
@@ -249,10 +246,12 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
   }
 
   useEffect(() => {
-    let routerfiltered = routes.filter((route) => filtereddeviceid < 0 || route.uav == devices[filtereddeviceid].name);
+    const routerFiltered = routes.filter(
+      (route) => filteredDeviceId < 0 || route.uav === devices[filteredDeviceId].name
+    );
     console.log('mission filtered');
-    console.log(routerfiltered);
-    let waypointPosition = routeTowaypoints(routerfiltered);
+    console.log(routerFiltered);
+    const waypointPosition = routeTowaypoints(routerFiltered);
 
     map.getSource(route_points).setData({
       type: 'FeatureCollection',
@@ -262,13 +261,13 @@ export const MapMissions = ({ filtereddeviceid = -1 }) => {
           type: 'Point',
           coordinates: [position.longitude, position.latitude],
         },
-        properties: createFeature(routerfiltered, position),
+        properties: createFeature(routerFiltered, position),
       })),
     });
 
     map.getSource(id).setData({
       type: 'FeatureCollection',
-      features: routerfiltered.map((route) => routesToFeature(route)),
+      features: routerFiltered.map((route) => routesToFeature(route)),
     });
   }, [routes]);
 

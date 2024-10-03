@@ -119,8 +119,8 @@ export class missionModel {
       auxconfig[key1] = param['settings'][key1].default;
     });
 
-    let basesettings = planningController.getBasesSettings();
-    myTask.devices = basesettings.map((setting, index) => {
+    let baseSettings = planningController.getBasesSettings();
+    myTask.devices = baseSettings.map((setting, index) => {
       let config = { settings: {} };
       let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
       for (const value of Object.keys(auxconfig)) {
