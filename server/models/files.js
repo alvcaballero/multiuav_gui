@@ -128,9 +128,8 @@ export class filesModel {
   / donwload a file from gcs, if the file exist return the path, if not return null
   */
 
-  static donwload(path) {
+  static checkFileRoute(path) {
     let dir = filesPath + path.replaceAll('-', '/');
-    console.log(dir);
     if (!fs.existsSync(dir)) {
       console.log('no exist ' + dir);
       return null;
