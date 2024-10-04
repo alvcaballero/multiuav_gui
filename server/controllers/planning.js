@@ -34,6 +34,14 @@ export class planningController {
     let response = await planningModel.setMarkers(req.body);
     res.json(response);
   }
+  static async getMarkers(req, res) {
+    let response = await planningModel.getMarkers();
+    res.json(response);
+  }
+  static async getMarkersTypes(req, res) {
+    let response = await planningModel.getMarkersTypes();
+    res.json(response);
+  }
   static async getBases(req, res) {
     let response = await planningModel.getBases(req.params);
     res.json(response);
