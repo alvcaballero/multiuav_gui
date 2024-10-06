@@ -67,6 +67,16 @@ const ElementList = ({ markers, setMarkers }) => {
     auxMarkers[index].items = value;
     setMarkers(auxMarkers);
   };
+  const setElementName = (index, value) => {
+    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    auxMarkers[index].name = value;
+    setMarkers(auxMarkers);
+  }
+  const setElementType = (index, value) => {
+    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    auxMarkers[index].type = value;
+    setMarkers(auxMarkers);
+  }
   const DeleteList = (index) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers.splice(index, 1);
@@ -116,16 +126,19 @@ const ElementList = ({ markers, setMarkers }) => {
                 <AccordionDetails className={classes.details}>
                   {expanded === 'Elements ' + index && (
                     <Fragment>
-                      <TextField required label="Name" variant="standard" value={base.name ? base.name : ''} />
+                      <TextField required label="Name" variant="standard" value={base.name ? base.name : ''} onChange={(e)=> setElementName(e.target.value)} />
                       <SelectField
                         emptyValue={null}
-                        value={0}
-                        data={[
-                          { id: 0, name: 'Power Tower' },
-                          { id: 1, name: 'wind turbine' },
-                          { id: 2, name: 'Solar Panel' },
-                        ]}
                         label="Type"
+                        value={base.type}
+                        data={[
+                          { id: 0, name: 'Power Tower', type: 'powerTower' },
+                          { id: 1, name: 'wind turbine', type: 'windTurbine' },
+                          { id: 2, name: 'Solar Panel' , type: 'solarPanel' },
+                        ]}
+                        onChange={(e) => setElementType(index, e.target.value)}
+                        keyGetter={(item) => item.type}
+                        titleGetter={(item) => item.name}
                         style={{ display: 'inline', width: '200px' }}
                       />
                       <BaseList markers={base.items} setMarkers={(value) => setElement(index, value)} type="Element" />

@@ -2,6 +2,8 @@ import { useId, useEffect } from 'react';
 import { useTheme } from '@mui/styles';
 import { map } from './MapView';
 import { findFonts } from './mapUtil';
+//import gruaPng from '../resources/lastimages/bridge_crane_small.png';
+
 
 const MapMarkers = ({ markers, showTitles }) => {
   const id = useId();
@@ -18,6 +20,21 @@ const MapMarkers = ({ markers, showTitles }) => {
         features: [],
       },
     });
+    map.addSource('radar', {
+      type: 'image',
+      url: 'src/resources/lastimages/bridge_crane_small.png',
+      coordinates: [
+          [-6.245118621908688,  36.51849451653334],
+          [-6.244222267288677, 36.518611967857595],
+          [-6.243810777829111,36.516684113529166],
+          [ -6.244628037686255, 36.51660684074257]
+      ]
+  });
+  map.addLayer({
+    id: 'radar-layer',
+    'type': 'raster',
+    'source': 'radar',
+  });
 
     if (showTitles) {
       map.addLayer({
@@ -60,6 +77,12 @@ const MapMarkers = ({ markers, showTitles }) => {
       }
       if (map.getSource(id)) {
         map.removeSource(id);
+      }
+      if (map.getLayer('radar-layer')) {
+        map.removeLayer('radar-layer');
+      }
+      if (map.getSource('radar')) {
+        map.removeSource('radar');
       }
     };
   }, [showTitles]);

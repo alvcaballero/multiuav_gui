@@ -148,6 +148,7 @@ export class mapModel {
           }
         }
       } catch (error) {
+        console.log('Error in elevation profile'+ error);
         status = false;
       }
     }
