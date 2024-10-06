@@ -27,7 +27,6 @@ function MissionToRos({
   let param_matrix_msg = new ROSLIB.Message({
     data: commandParameter.flat(),
   });
-
   return {
     type: 'waypoint',
     waypoint: wp_command_msg,

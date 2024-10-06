@@ -29,7 +29,7 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
 
     return { deviceId, course: 90 + yaw * 57.295 };
   }
-  if (type == 'hdg' && msgType == 'std_msgs/Float64') {
+  if (type == 'hdg' && (msgType == 'std_msgs/Float64' || msgType == 'std_msgs/Float32')) {
     return { deviceId, course: msg.data };
   }
   if (type == 'mission_state' && msgType == 'dji_osdk_ros/WaypointV2MissionStatePush') {

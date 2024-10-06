@@ -122,14 +122,17 @@ Content-Type: application/json
 < ./json/gw-sendtasks.json
 
 
+### Sendtask
+POST http://localhost:4000/api/missions/sendTask
+Content-Type: application/json
+
+< ./json/gw-sendtasks2.json
+
 ### setMission
 POST http://localhost:4000/api/missions/setMission
 Content-Type: application/json
 
 < ./json/mission.json
-
-
-### varibles 
 
 
 ### varibles 
