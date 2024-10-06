@@ -12,3 +12,4 @@ planningRouter.post('/setDefault', planningController.setDefault);
 planningRouter.post('/setMarkers', planningController.setMarkers);
 planningRouter.get('/getBases', planningController.getBases);
 planningRouter.get('/getMarkers', planningController.getElements);
+planningRouter.get('/getMarkersTypes', planningController.getMarkersTypes);

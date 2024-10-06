@@ -67,7 +67,7 @@ export class planningModel {
     console.log('get markers');
     return { markersbase: initPlanning.markersbase, elements: initPlanning.elements };
   }
-  getMarkersTypes() {
+  static getMarkersTypes() {
     console.log('get markers type');
     return configPlanning.markers;
   }
