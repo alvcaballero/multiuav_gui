@@ -20,6 +20,7 @@ import { devicesData } from '../config/config.js';
 /   status:
 */
 const devices = readJSON(devicesData);
+const CHECK_INTERVAL = 5000;
 
 console.log('load model devices No SQL');
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
@@ -35,17 +36,20 @@ function filterDevice(obj, fields) {
   return nuevoObjeto;
 }
 
-const CheckDeviceOnline = setInterval(() => {
-  let currentTime = new Date();
-  let checkdevices = Object.keys(devices);
-  checkdevices.forEach((element) => {
-    if (currentTime - devices[element]['lastUpdate'] < 5000) {
-      devices[element]['status'] = 'online';
-    } else {
-      devices[element]['status'] = 'offline';
-    }
+
+const checkDeviceOnline = () => {
+  const currentTime = new Date();
+  const checkDevices = Object.keys(devices);
+
+  checkDevices.forEach((element) => {
+    const { lastUpdate } = devices[element];
+    devices[element].status = (currentTime - lastUpdate < CHECK_INTERVAL) ? 'online' : 'offline';
   });
-}, 5000);
+
+  setTimeout(checkDeviceOnline, CHECK_INTERVAL);
+};
+
+setTimeout(checkDeviceOnline, CHECK_INTERVAL);
 
 export class DevicesModel {
   constructor() {
@@ -124,7 +128,7 @@ export class DevicesModel {
 
     if (StreamServer) {
       this.addCameraWebRTC(device);
-    }
+    }     
 
     if (serverState.state === 'connect') {
       if (protocol == 'ros') {
