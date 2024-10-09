@@ -36,14 +36,13 @@ function filterDevice(obj, fields) {
   return nuevoObjeto;
 }
 
-
 const checkDeviceOnline = () => {
   const currentTime = new Date();
   const checkDevices = Object.keys(devices);
 
   checkDevices.forEach((element) => {
     const { lastUpdate } = devices[element];
-    devices[element].status = (currentTime - lastUpdate < CHECK_INTERVAL) ? 'online' : 'offline';
+    devices[element].status = currentTime - lastUpdate < CHECK_INTERVAL ? 'online' : 'offline';
   });
 
   setTimeout(checkDeviceOnline, CHECK_INTERVAL);
@@ -128,7 +127,7 @@ export class DevicesModel {
 
     if (StreamServer) {
       this.addCameraWebRTC(device);
-    }     
+    }
 
     if (serverState.state === 'connect') {
       if (protocol == 'ros') {

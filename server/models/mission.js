@@ -208,7 +208,10 @@ export class missionModel {
   static async deviceFinishMission({ name, id }) {
     console.log(name);
     let mydevice = await DevicesController.getByName(name);
-    console.log(mydevice);
+    if (mydevice == null) {
+      console.log('mydevice name ' + name + ' not found');
+      return false;
+    }
     console.log('mydevice in finish mission ' + mydevice.id);
     missionSMModel.UAVFinishMission(mydevice.id);
     return true;
