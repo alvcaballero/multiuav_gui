@@ -5,6 +5,15 @@ import { dirname, resolve, normalize } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+export const checkFile = (filepath) => {
+  const dir = resolve(__dirname, filepath);
+  if (!existsSync(dir)) {
+    console.log(`File '${filepath}' does not exist.`);
+    return null;
+  }
+  return dir;
+};
+
 export const readDataFile = (filepath) => {
   if (filepath.includes('.json')) {
     return readJSON(filepath);

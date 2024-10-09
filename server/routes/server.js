@@ -7,3 +7,4 @@ export const serverRouter = Router();
 serverRouter.get('/', serverController.server);
 serverRouter.get('/datetime', serverController.getDateTime);
 serverRouter.get('/protocol', serverController.getServerProtocol);
+serverRouter.get('/resources/:filename(*)', serverController.donwload);

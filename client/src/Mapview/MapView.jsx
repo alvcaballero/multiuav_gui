@@ -79,7 +79,6 @@ const MapView = ({ children }) => {
   const [defaultMapStyle] = usePersistedState('selectedMapStyle', usePreference('map', 'osm'));
   const mapboxAccessToken = 'my tocken';
   const maxZoom = 21;
-  //let btn_class = maxsize ? classes.card_max: classes.card;
 
   useEffect(() => {
     if (maxZoom) {
