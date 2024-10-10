@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import MapView from './MapView';
 import MapMissions from './MapMissions';
 import MapMarkers from './MapMarkers';
+import MapElements from './MapElements';
 import MapPositions from './MapPositions';
 import MapSelectedDevice from './MapSelectedDevice';
 import MapScale from './MapScale';
@@ -29,7 +30,7 @@ const MainMap = ({
       <MapView>
         <MapMarkers markers={markers} />
         <MapMissions filtereddeviceid={filteredMissiondeviceid} />
-
+        <MapElements />
         <MapPositions
           positions={filteredPositions}
           onClick={onMarkerClick}

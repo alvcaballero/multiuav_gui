@@ -15,7 +15,9 @@ import dronePx4Svg from '../resources/images/icon/drone3.svg';
 import triangleSvg from '../resources/images/icon/triangle.svg';
 import powerTowerSvg from '../resources/images/icon/PowerTower1.svg';
 import windTurbineSvg from '../resources/images/icon/WindTurbine.svg';
+import solarPanelSvg from '../resources/images/icon/wind_turbine.svg';
 import RectangleSvg from '../resources/images/icon/Rectangle.svg';
+import gruaPng from '../resources/lastimages/bridge_crane_small.png';
 
 import FrontDroneSvg from '../resources/images/icon/drone-svgrepo.svg';
 
@@ -78,6 +80,9 @@ export default async () => {
   mapImages.item = await prepareIcon(await loadImage(triangleSvg));
   mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
   mapImages.windTurbine = await prepareIcon(await loadImage(windTurbineSvg));
+  mapImages.solarPanel = await prepareIcon(await loadImage(solarPanelSvg));
+  mapImages.grua = await prepareIcon(await loadImage(gruaPng));
+
 
   mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
   mapImages.direction = await prepareIcon(await loadImage(directionSvg));

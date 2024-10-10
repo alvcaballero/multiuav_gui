@@ -4,7 +4,7 @@ const { reducer, actions } = createSlice({
   name: 'session',
   initialState: {
     server: null,
-    user: { latitude: 37.19384768456065, longitude: -6.7029656624597465, zoom: 10, attributes: {} },
+    user: { latitude: 36.473284, longitude:  -6.207770, zoom: 12, attributes: {} },
     socket: null,
     positions: {},
     history: {},
@@ -12,7 +12,7 @@ const { reducer, actions } = createSlice({
     planning: {
       id: 1234,
       name: 'no mission',
-      objetivo: { id: 0 },
+      objetivo: { id: 1 },
       loc: [],
       meteo: [],
       bases: [],
@@ -56,7 +56,9 @@ const { reducer, actions } = createSlice({
       });
     },
     updateMarker(state, action) {
-      state.markers = action.payload;
+      if (action.payload && action.payload.elements) {
+        state.markers = action.payload;
+      }
     },
     addMarkerElement(state, action) {
       state.markers.elements.push(...action.payload);
@@ -65,7 +67,9 @@ const { reducer, actions } = createSlice({
       state.markers.bases.push(...action.payload);
     },
     updatePlanning(state, action) {
-      state.planning = action.payload;
+      if (action.payload.objetivo) {
+        state.planning = action.payload;
+            }
     },
   },
 });

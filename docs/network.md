@@ -15,3 +15,5 @@ nmcli device wifi list # list wifi ssid avaliable
 
 sudo wpa_cli -i wlan0 list_networks # list networks
 sudo wpa_cli -i wlan0 select_network network_id
+
+iwconfig # ver la ssid and signal level

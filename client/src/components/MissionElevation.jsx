@@ -108,6 +108,8 @@ const MissionElevation = () => {
         setSelectRT(-1);
         setElevProfile(elevationRoute);
       } else {
+        console.log("command")
+        console.log(command)
         console.log('no get elevation of point error to connect to API of  elevation');
       }
     }

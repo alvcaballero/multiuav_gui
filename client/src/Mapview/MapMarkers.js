@@ -3,7 +3,7 @@ import { useTheme } from '@mui/styles';
 import { map } from './MapView';
 import { findFonts } from './mapUtil';
 
-const MapMarkers = ({ markers, showTitles }) => {
+const MapElements = ({ markers, showTitles }) => {
   const id = useId();
 
   const theme = useTheme();
@@ -64,7 +64,7 @@ const MapMarkers = ({ markers, showTitles }) => {
     };
   }, [showTitles]);
 
-  function listtoPoints(mylist) {
+  function list2Points(mylist) {
     const waypoints = [];
     if (mylist.elements) {
       mylist.elements.forEach((conjunto, index_cj) => {
@@ -83,7 +83,7 @@ const MapMarkers = ({ markers, showTitles }) => {
   }
 
   useEffect(() => {
-    let markersIcons = listtoPoints(markers);
+    const markersIcons = list2Points(markers);
     map.getSource(id)?.setData({
       type: 'FeatureCollection',
       features: markersIcons.map(({ latitude, longitude, image, title }) => ({
@@ -103,4 +103,4 @@ const MapMarkers = ({ markers, showTitles }) => {
   return null;
 };
 
-export default MapMarkers;
+export default MapElements;

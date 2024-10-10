@@ -1,6 +1,6 @@
 import { LocalGlyphs } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
-
+import { checkFile } from '../common/utils.js';
 export class serverModel {
   static DateTime() {
     const dateObject = new Date();
@@ -53,5 +53,9 @@ export class serverModel {
     ServerSetting.RosEnable ? protocol.push('ros') : null;
     ServerSetting.FbEnable ? protocol.push('robofleet') : null;
     return protocol;
+  }
+
+  static checkFileRoute(path) {
+    return checkFile('../resources/' + path.replaceAll('-', '/'));
   }
 }

@@ -318,6 +318,7 @@ const PlanningPage = () => {
     }
   };
   const setMarkersElements = (value) => {
+    console.log(value);
     setMarkers({ ...markers, elements: value });
   };
   const SetMapMarkers = (value) => {
@@ -603,7 +604,7 @@ const PlanningPage = () => {
                           emptyValue={null}
                           fullWidth
                           label="objetive"
-                          value={SendTask.objetivo.id}
+                          value={SendTask.objetivo.id ? SendTask.objetivo.id : 1}
                           endpoint="/api/planning/missionstype"
                           keyGetter={(it) => it.id}
                           titleGetter={(it) => it.name}

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
-<svg width="10.550469mm" height="11.099902mm" viewBox="0 0 10.550469 11.099902" version="1.1" id="svg5"
+<svg width="80" height="80" viewBox="0 0 11 10" version="1.1" id="svg5"
    sodipodi:docname="PowerTower.svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
@@ -14,7 +14,7 @@
       <g id="g1611" transform="matrix(0.1732213,0,0,0.1732213,28.393016,160.64652)">
 
          <circle style="fill:yellow;stroke:#000000;stroke-width:0.495712;stroke-dasharray:none;stroke-dashoffset:0"
-            id="path3174" cx="58" cy="212" r="10" />
+            id="path3174" cx="58" cy="213" r="10" />
 
          <path style="fill:#87decd;stroke:#000000;stroke-width:0.51;stroke-dasharray:none;stroke-dashoffset:0"
             d="m 58,210  L84.5 210 L58 205 Z" id="path368-6-9" />
