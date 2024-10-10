@@ -68,48 +68,50 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const CameraWebRTCV3 = ({ deviceId, deviceIp, camera_src, onClose }) => {
+const CameraWebRTCV3 = ({ deviceId, deviceIp, camera_src, onClose }) => {
   const classes = useStyles();
-  const camera_stream = useSelector((state) => state.data.camera[deviceId]);
+  // const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const deviceip = 'http://' + deviceIp + ':8889/' + camera_src; //device?.ip;
-  const [maxsize, setmaxsize] = useState(false);
-  let btn_class = classes.card;
-  let rootclass = maxsize ? classes.root_max : classes.root;
-  let frameclass = maxsize ? classes.media1 : classes.media;
-  function Changemaxsize() {
-    setmaxsize(!maxsize);
-  }
-  const restartPause = 2000;
-  const localVideoRef = useRef();
+  const videoUrl = `http://${deviceIp}:8889/${camera_src}`; //device?.ip;
+  const [maxsize, setMaxSize] = useState(false);
 
-  function closecard() {
+  const btnClass = classes.card;
+  const rootClass = maxsize ? classes.root_max : classes.root;
+  const frameClass = maxsize ? classes.media1 : classes.media;
+
+  const ChangeMaxSize = () => {
+    setMaxSize(!maxsize);
+  };
+
+  const closeCard = () => {
     onClose();
-    setmaxsize(false);
-  }
+    setMaxSize(false);
+  };
 
   useEffect(() => {
     if (deviceId) {
-      console.log('device in camera-' + device.name + '-' + deviceIp + '+' + camera_src);
+      console.log(`device in camera ${device.name} - ${deviceIp}  - ${camera_src}`);
     }
   }, [deviceId]);
 
   return (
-    <div className={rootclass}>
+    <div className={rootClass}>
       {device && (
-        <Card elevation={3} className={btn_class}>
+        <Card elevation={3} className={btnClass}>
           <div className={classes.gruopBtn}>
-            <IconButton size='small' onClick={Changemaxsize} onTouchStart={Changemaxsize}>
-              <ZoomOutMapIcon fontSize='small' className={classes.mediaButton} />
+            <IconButton size="small" onClick={ChangeMaxSize} onTouchStart={ChangeMaxSize}>
+              <ZoomOutMapIcon fontSize="small" className={classes.mediaButton} />
             </IconButton>
-            <IconButton size='small' onClick={closecard}>
-              <CloseIcon fontSize='small' className={classes.mediaButton} />
+            <IconButton size="small" onClick={closeCard}>
+              <CloseIcon fontSize="small" className={classes.mediaButton} />
             </IconButton>
           </div>
-          <div className={classes.tittle}>{'Image ' + device.name}</div>
-          <iframe src={deviceip} className={frameclass} />
+          <div className={classes.tittle}>{`Image${device.name}`}</div>
+          <iframe src={videoUrl} className={frameClass} title={`Image${device.name}`} />
         </Card>
       )}
     </div>
   );
 };
+
+export default CameraWebRTCV3;
