@@ -32,6 +32,9 @@ network:
       #dhcp4: true
       #dhcp4-overrides:
       #  route-metric: 200
+      #  use-dns: false
+      #nameservers:
+      #  addresses: [8.8.8.8, 8.8.4.4]
       # ==== uncomment this part for ip static
       dhcp4: no
       dhcp6: no

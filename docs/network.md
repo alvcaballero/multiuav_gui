@@ -17,3 +17,6 @@ sudo wpa_cli -i wlan0 list_networks # list networks
 sudo wpa_cli -i wlan0 select_network network_id
 
 iwconfig # ver la ssid and signal level
+
+error internet apt
+https://askubuntu.com/questions/91543/apt-get-update-fails-to-fetch-files-temporary-failure-resolving-error
