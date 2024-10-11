@@ -13,7 +13,7 @@ import DeviceList from '../components/DeviceList';
 import StatusCard from '../components/StatusCard';
 import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/MainToolbar';
-import { CameraWebRTCV3 } from '../components/CameraWebRTCV3';
+import CameraWebRTCV3 from '../components/CameraWebRTCV3';
 import MainMap from '../Mapview/MainMap';
 
 import { devicesActions } from '../store';

@@ -72,7 +72,7 @@ const CameraWebRTCV3 = ({ deviceId, deviceIp, camera_src, onClose }) => {
   const classes = useStyles();
   // const camera_stream = useSelector((state) => state.data.camera[deviceId]);
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const videoUrl = `http://${deviceIp}:8889/${camera_src}`; //device?.ip;
+  const videoUrl = `http://${deviceIp}:8889/${camera_src}`;
   const [maxsize, setMaxSize] = useState(false);
 
   const btnClass = classes.card;
