@@ -7,14 +7,13 @@ import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import Toast from '../components/Toast';
 import { Adduav } from '../components/Adduav';
-import { Camera } from '../components/Camera';
 import { RosControl, RosContext } from '../components/RosControl';
 import DeviceList from '../components/DeviceList';
-import StatusCard from '../components/StatusCard';
 import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/MainToolbar';
-import CameraWebRTCV3 from '../components/CameraWebRTCV3';
 import MainMap from '../Mapview/MainMap';
+import StatusCard from '../components/StatusCard';
+import CameraDevice from '../components/CameraDevice';
 
 import { devicesActions } from '../store';
 
@@ -95,7 +94,7 @@ const MainPage = () => {
   const [selectedDeviceIp, setselectedDeviceIp] = useState();
   const [selectedDeviceCam, setselectedDeviceCam] = useState();
   const [selectedDeviceCamsrc, setselectedDeviceCamsrc] = useState();
-  const [selectedDeviceName, setlectedDeviceName] = useState();
+  const [selectedDeviceName, setselectedDeviceName] = useState();
   const myhostname = `${window.location.hostname}`;
   const selectedPosition = filteredPositions.find(
     (position) => selectedDeviceId && position.deviceId === selectedDeviceId
@@ -103,23 +102,15 @@ const MainPage = () => {
   const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
 
   let listdevices = Object.values(devices);
-  const rosContex = useContext(RosContext);
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
   const [confirmMission, setconfirmMission] = useState(false);
 
   const [list, setList] = useState([]);
-  let toastProperties = null;
   const showToast = (type, description) => {
     console.log(`${type} - ${description}`);
   };
 
-  const onMarkerClick = useCallback(
-    (_, deviceId) => {
-      dispatch(devicesActions.selectId(deviceId));
-    },
-    [dispatch]
-  );
   useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
@@ -138,7 +129,7 @@ const MainPage = () => {
       } else {
         setselectedDeviceCam(null);
       }
-      setlectedDeviceName(devices[selectedDeviceId].name);
+      setselectedDeviceName(devices[selectedDeviceId].name);
     } else {
       setselectedDeviceIp(null);
       setselectedDeviceCam(null);
@@ -160,7 +151,6 @@ const MainPage = () => {
         >
           <MainMap filteredPositions={filteredPositions} markers={markers} selectedPosition={selectedPosition} />
         </div>
-
         <div className={classes.sidebarStyle}>
           <Paper square elevation={3} className={classes.header}>
             <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
@@ -178,7 +168,6 @@ const MainPage = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
-
         <RosContext.Consumer>
           {({ commandMission }) => (
             <SwipeConfirm
@@ -188,30 +177,16 @@ const MainPage = () => {
             />
           )}
         </RosContext.Consumer>
-
-        {selectedDeviceCam === 'WebRTC' && (
-          <CameraWebRTCV3
-            deviceId={selectedDeviceId}
-            deviceIp={myhostname}
-            camera_src={selectedDeviceName + '_' + selectedDeviceCamsrc}
-            onClose={() => dispatch(devicesActions.selectId(null))}
-          />
-        )}
-        {selectedDeviceCam === 'WebRTC_env' && (
-          <CameraWebRTCV3
-            deviceId={selectedDeviceId}
-            deviceIp={selectedDeviceIp}
-            camera_src={selectedDeviceCamsrc}
-            onClose={() => dispatch(devicesActions.selectId(null))}
-          />
-        )}
-        {selectedDeviceCam === 'Websocket' && (
-          <Camera
-            deviceId={selectedDeviceId}
-            datacamera={selectedImage}
-            onClose={() => dispatch(devicesActions.selectId(null))}
-          />
-        )}
+        <CameraDevice
+          deviceId={selectedDeviceId}
+          deviceIp={myhostname}
+          camera_src={
+            selectedDeviceCam === 'WebRTC' ? `${selectedDeviceName}_${selectedDeviceCamsrc}` : selectedDeviceCamsrc
+          }
+          datacamera={selectedImage}
+          type={selectedDeviceCam}
+          onClose={() => dispatch(devicesActions.selectId(null))}
+        />
 
         <Toast toastlist={list} position="buttom-right" setList={setList} />
       </RosControl>

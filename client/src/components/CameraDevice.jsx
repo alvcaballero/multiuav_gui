@@ -1,24 +1,36 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Card, IconButton, CardMedia, ButtonGroup } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Card, IconButton } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+
 import CloseIcon from '@mui/icons-material/Close';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
-import makeStyles from '@mui/styles/makeStyles';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+import MaximizeIcon from '@mui/icons-material/Maximize';
+import MinimizeIcon from '@mui/icons-material/Minimize';
+
+import novideo from '../resources/images/placeholder.jpg';
 
 const useStyles = makeStyles((theme) => ({
   card: {
     pointerEvents: 'auto',
   },
   media: {
-    //height: theme.dimensions.popupImageHeight,
     width: theme.dimensions.popupMaxWidth,
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
     background: 'black',
   },
-  media1: {
-    //height: theme.dimensions.popupImageHeight
+  mediaMed: {
+    width: '45vw',
+    height: '40vh',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
+    background: 'black',
+  },
+  mediaMax: {
     width: '95vw',
     height: '90vh',
     display: 'flex',
@@ -68,50 +80,109 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const CameraWebRTCV3 = ({ deviceId, deviceIp, camera_src, onClose }) => {
-  const classes = useStyles();
-  // const camera_stream = useSelector((state) => state.data.camera[deviceId]);
-  const device = useSelector((state) => state.devices.items[deviceId]);
-  const videoUrl = `http://${deviceIp}:8889/${camera_src}`;
-  const [maxsize, setMaxSize] = useState(false);
+const size = { min: 0, med: 2, max: 1 };
 
-  const btnClass = classes.card;
-  const rootClass = maxsize ? classes.root_max : classes.root;
-  const frameClass = maxsize ? classes.media1 : classes.media;
+const RenderImages = ({ datacamera }) => {
+  const [camera_image, setcamera_image] = useState(novideo);
+
+  useEffect(() => {
+    if (datacamera != null) {
+      setcamera_image('data:image/bgr8;base64,' + datacamera.camera);
+    } else {
+      setcamera_image(novideo);
+    }
+  }, [datacamera]);
+  return <img src={novideo} style={{ width: '100%' }} />;
+};
+
+/**
+ * CameraWebRTCV3 component displays a video stream from a specified device using WebRTC.
+ *
+ * @param {Object} props - The properties object.
+ * @param {string} props.device - The device for get de streaming of video.
+ * @param {function} props.onClose - The function to call when the close button is clicked.
+ * @param {string} [props.datacamera] - for  Websocket image '.
+ *
+ * @returns {JSX.Element} The CameraWebRTCV3 component.
+ */
+
+const CameraDevice = ({ deviceId, onClose, datacamera }) => {
+  const classes = useStyles();
+  const device = useSelector((state) => state.devices.items[deviceId]);
+  const [cardSize, setCardSize] = useState(size.min);
+  const [type, setType] = useState('Websocket');
+  const [cameraSrc, setCameraSrc] = useState('');
+
+  const rootClass = cardSize === size.min ? classes.root : cardSize === size.med ? classes.root : classes.root_max;
+  const frameClass =
+    cardSize === size.min ? classes.media : cardSize === size.med ? classes.mediaMed : classes.mediaMax;
 
   const ChangeMaxSize = () => {
-    setMaxSize(!maxsize);
+    setCardSize(cardSize === size.max ? size.min : size.max);
+  };
+  const ChangeMedSize = () => {
+    setCardSize(cardSize === size.med ? size.min : size.med);
   };
 
   const closeCard = () => {
     onClose();
-    setMaxSize(false);
+    setCardSize(size.min);
   };
 
   useEffect(() => {
-    if (deviceId) {
-      console.log(`device in camera ${device.name} - ${deviceIp}  - ${camera_src}`);
+    if (device) {
+      console.log(`device in camera ${device.name}`);
+      if (device.camera.length > 0) {
+        console.log(`device in camera ${device.camera[0].type} - ${device.camera[0].source}`);
+        setType(device.camera[0].type);
+        if (device.camera[0].type === 'WebRTC') {
+          setCameraSrc(`${device.name}_${device.camera[0].source}`);
+        } else {
+          setCameraSrc(device.camera[0].source);
+        }
+      }
     }
   }, [deviceId]);
 
   return (
     <div className={rootClass}>
       {device && (
-        <Card elevation={3} className={btnClass}>
+        <Card elevation={3} className={classes.card}>
           <div className={classes.gruopBtn}>
-            <IconButton size="small" onClick={ChangeMaxSize} onTouchStart={ChangeMaxSize}>
-              <ZoomOutMapIcon fontSize="small" className={classes.mediaButton} />
+            <IconButton size="small" onClick={ChangeMedSize}>
+              {cardSize === size.med ? (
+                <MinimizeIcon fontSize="small" className={classes.mediaButton} />
+              ) : (
+                <MaximizeIcon fontSize="small" className={classes.mediaButton} />
+              )}
+            </IconButton>
+            <IconButton size="small" onClick={ChangeMaxSize}>
+              {cardSize === size.max ? (
+                <FullscreenExitIcon fontSize="small" className={classes.mediaButton} />
+              ) : (
+                <ZoomOutMapIcon fontSize="small" className={classes.mediaButton} />
+              )}
             </IconButton>
             <IconButton size="small" onClick={closeCard}>
               <CloseIcon fontSize="small" className={classes.mediaButton} />
             </IconButton>
           </div>
-          <div className={classes.tittle}>{`Image${device.name}`}</div>
-          <iframe src={videoUrl} className={frameClass} title={`Image${device.name}`} />
+          <div className={classes.tittle}>{` ${device.name}`}</div>
+          {type === 'Websocket' ? (
+            <div className={frameClass}>
+              <RenderImages datacamera={datacamera} Myclass={frameClass} />
+            </div>
+          ) : (
+            <iframe
+              src={`http://${device.ip}:8889/${cameraSrc}`}
+              className={frameClass}
+              title={`Image ${device.name}`}
+            />
+          )}
         </Card>
       )}
     </div>
   );
 };
 
-export default CameraWebRTCV3;
+export default CameraDevice;

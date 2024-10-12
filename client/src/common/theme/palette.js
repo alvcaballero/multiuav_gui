@@ -1,6 +1,4 @@
-import {
-  amber, grey, green, indigo, red, common,
-} from '@mui/material/colors';
+import { amber, grey, green, indigo, red, common } from '@mui/material/colors';
 
 export default () => {
   const colors = {
@@ -25,6 +23,12 @@ export default () => {
     secondary: {
       main: colors.secondary,
       contrastText: colors.white,
+    },
+    neutral: {
+      main: colors.neutral,
+    },
+    geometry: {
+      main: colors.geometry,
     },
     colors,
   };
