@@ -1,0 +1,22 @@
+services:
+    server:
+        build: 
+            context: ../../server
+            dockerfile: Dockerfile
+        command: npm run server
+        ports:
+            - "4000:4000"
+    bridge:
+        build: 
+            context: ./ros1
+            dockerfile: Dockerfile
+        depends_on: 
+            - server
+        volumes: 
+           - ~/work/px4:/home/user
+        command: roslaunch aerialcore_gui connect_uas.launch
+        network_mode: "host"
+        stdin_open: true
+        
+        
+    
