@@ -96,7 +96,7 @@ const RenderImages = ({ datacamera }) => {
 };
 
 /**
- * CameraWebRTCV3 component displays a video stream from a specified device using WebRTC.
+ * CameraDevice component displays a video stream from a specified device using WebRTC WebRTC_env or Websocket.
  *
  * @param {Object} props - The properties object.
  * @param {string} props.device - The device for get de streaming of video.

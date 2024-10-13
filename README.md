@@ -1,12 +1,189 @@
 # GCS for multiple UAV
 
 This repository porvides an GCS software that allow command and monitoring multiple UAVs for a heterogeneous fleet of unmannned Aerial Vehicles (UAVs).
-
 This project is part of [Multi Project](https://github.com/alvcaballero/multiUAV_system)
 
-The documentation of this project is [Documentation HERE](https://arpoma16.github.io/multiuav_gui_doc/)
-
 <img src="docs/Rosbag.gif" alt="Example of the GCS interface">
+
+#### Table of Contents
+
+- [Documentation](#documentation)
+- [Features](#-features)
+- [Development Setup](#development-setup)
+  - [Local setup (Linux & Windows)](#local-setup-linux--windows)
+  - [Run locally](#run-locally)
+    - [Backend](#backend)
+    - [Frontend](#frontend)
+  - [Docker (Linux)](#docker-linux)
+  - [Run on Docker containers](#run-on-docker-containers)
+- [Production Setup](#production-setup)
+  - [Local (Linux & Windows)](#local-linux--windows)
+    - [Backend](#backend-1)
+    - [Frontend](#frontend-1)
+  - [Docker (Linux)](#docker-linux-1)
+
+## Development Setup
+
+First, clone the repo and cd into the project:
+
+```bash
+git clone https://github.com/alvcaballero/multiuav_gui.git
+cd multiuav_gui
+```
+
+### Local setup (Linux & Windows)
+
+Install dependencies:
+
+```bash
+cd server
+npm i
+cd ..
+```
+
+For case you comunicate through ros do you have to setup a docker container
+
+1. Install Docker container and prepare the container
+
+```bash
+cd docker
+docker build -t muavgcs:noetic .
+```
+
+2. modify the docker/container_run.sh and change the PROJECT_DIR value and run
+
+```bash
+cd docker
+nano ./container_run.sh
+```
+
+3. put repos and in catkin
+
+```
+https://github.com/dji-sdk/Onboard-SDK.git
+mkdir build
+cd build
+cmake..
+sudo make -j7 install
+cd ..
+
+mkdir catkin_ws && cd carkin_ws
+mkdir src && cd src
+catkin_init_workspace
+
+git clone --recurse-submodules --branch GimbalPitch -j8 https://github.com/alvcaballero/multiUAV_system.git
+git clone https://github.com/miggilcas/Onboard-SDK-ROS
+// git clone https://github.com/alvcaballero/multiUAV_system.git
+// git clone https://github.com/alvcaballero/multiuav_gui.git
+// git clone https://github.com/dji-sdk/Onboard-SDK-ROS
+// git clone https://github.com/grvcTeam/grvc-utils.git
+// git clone https://github.com/CircusMonkey/ros_rtsp.git
+// git clone https://github.com/miggilcas/simple_vs.git
+
+cd ..
+catkin_make
+
+```
+
+### Run locally
+
+#### Backend
+
+Move to the server directory:
+
+```bash
+cd server
+```
+
+Open **.env.example** and copy its content into a new file named **.env**,
+then set the correct value for all things. Now start the server:
+
+```bash
+npm run server
+```
+
+#### Frontend
+
+Move to the client directory and run :
+
+```bash
+cd client
+npm run start
+```
+
+Backend will be running on port **5000** and frontend on port **3000** (if not
+already in use).
+
+### RosBridge
+
+Mode to the docker directory and run:
+
+```bash
+cd docker
+./container_run.sh
+```
+
+In the container run for enable the rosbridge and GCS can connect with de UAVs
+
+```bash
+roslaunch aerialcore_gui connect_uas.launch
+```
+
+### Docker (Linux)
+
+Open **.env.example** and copy its content into a new file named **.env**,
+then set the correct value for all things.
+Install dependencies:
+
+```bash
+docker-compose run server npm i
+docker-compose run bridge roslaunch aerialcore_gui connect_uas.launch
+```
+
+### Run on Docker containers
+
+```bash
+docker-compose up
+```
+
+## Production Setup
+
+### Local (Linux & Windows)
+
+#### Frontend
+
+Move to **./client/**
+
+```bash
+npm i -g serve
+```
+
+Build the app:
+
+```bash
+npm run build # Or yarn build
+```
+
+#### Backend
+
+Move to **./server/** and open **.env.example** and copy its content into a new file named **.env**,
+then set the correct value for all things. Now start the server:
+
+```bash
+npm run server
+```
+
+### Docker (Linux)
+
+Build images and run containers:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+```
+
+## Documentation
+
+The documentation of this project is [Documentation HERE](https://arpoma16.github.io/multiuav_gui_doc/)
 
 ## 📋 Features
 
@@ -36,57 +213,16 @@ The documentation of this project is [Documentation HERE](https://arpoma16.githu
 
 2. Clone the repository.
 
-```ssh
+```bash
 git clone https://github.com/alvcaballero/multiuav_gui.git
 cd multiuav_gui
 ```
 
 3. Install the requirements of server.
 
-```ssh
+```bash
 cd server
-nvm use 18
 npm install
-```
-
-3. Install Docker container and prepare the container
-
-```ssh
-cd docker
-docker build -t muavgcs:noetic .
-```
-
-4. modify the docker/container_run.sh and change the PROJECT_DIR value and run
-
-```
-cd docker
-./container_run.sh
-```
-
-5. put repos and in catkin
-
-```
-https://github.com/dji-sdk/Onboard-SDK-ROS.git
-mkdir build
-$cd build
-$cmake..
-$sudo make -j7 install
-cd ..
-
-mkdir catkin_ws && cd carkin_ws
-mkdir src && cd src
-// git clone --recurse-submodules -j8 https://github.com/alvcaballero/multiUAV_system.git
-git clone https://github.com/alvcaballero/multiUAV_system.git
-git clone https://github.com/alvcaballero/multiuav_gui.git
-git clone https://github.com/dji-sdk/Onboard-SDK-ROS
-// git clone https://github.com/grvcTeam/grvc-utils.git
-// git clone https://github.com/CircusMonkey/ros_rtsp.git
-// git clone https://github.com/miggilcas/simple_vs.git
-
-cd ..
-catkin_make
-roslaunch aerialcore_gui connect_uas.launch
-
 ```
 
 ## 🖥️ Usage
@@ -95,7 +231,7 @@ The web interface use [openStreatMaps](https://tile.openstreetmap.org/) and for 
 
 1. Configure the server to modifi and edit .env and devices_init.yaml
 
-```ssh
+```bash
 cp multiuav_gui/server/.env.example multiuav_gui/server/.env
 cp /multiuav_gui/server/config/devices/.devices_init.yaml' /multiuav_gui/server/config/devices/devices_init.yaml'
 
@@ -103,7 +239,7 @@ cp /multiuav_gui/server/config/devices/.devices_init.yaml' /multiuav_gui/server/
 
 2. Run server
 
-```ssh
+```bash
 cd multiuav_gui/server
 npm run server
 ```
@@ -139,7 +275,7 @@ npm run start
 
 ## Documentation
 
-you can see the documentacion for integration in https://arpoma16.github.io/multiuav_gui_doc/
+you can see the documentacion for integration in [Documentation HERE](https://arpoma16.github.io/multiuav_gui_doc/)
 
 additional docs
 
@@ -180,7 +316,7 @@ Test and Setup for Muav on Proyect Omicron Demo in Plaza de Agua
 
 ## References and interesting project to help in develop
 
-- [inspector software_UAV](https://github.com/AlejandroCastillejo/inspector_software_uav) in this project files from the camera are held via ftp and stored in the drone's backpack and then sent to the gcs via sshpass using and scp, this is done directly on the drone.
+- [inspector software_UAV](https://github.com/AlejandroCastillejo/inspector_software_uav) in this project files from the camera are held via ftp and stored in the drone's backpack and then sent to the gcs via bashpass using and scp, this is done directly on the drone.
 
 - [autonomus landing](https://github.com/MikeS96/autonomous_landing_uav/blob/master/Usage.md)
 
