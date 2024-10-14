@@ -69,7 +69,7 @@ export async function sendCommandToClient({ uav_id, type, attributes }) {
 export class WebsocketDevices {
   constructor(port) {
     this.clients = new Map();
-    console.log('init websocket manager' + WebsocketDevices._instance);
+    console.log('init websocket devices ' + WebsocketDevices._instance);
     if (WebsocketDevices._instance) {
       console.log('return last instance singleton');
       return WebsocketDevices._instance;

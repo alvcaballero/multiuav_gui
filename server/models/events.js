@@ -1,5 +1,5 @@
 import { positionsController } from '../controllers/positions.js';
-import wsManager from '../WebsocketManager.js';
+import { WebsocketManager } from '../WebsocketManager.js';
 
 const events = {}; // list all events
 var eventsCount = 0;
@@ -9,7 +9,7 @@ export class eventsModel {
     return events;
   }
   static addEvent({ type, eventTime, deviceId, attributes }) {
-    let eventPosition = positionsController.getByDeviceId(payload.deviceId);
+    let eventPosition = positionsController.getByDeviceId(deviceId);
     let eventPosition2 = [0, 0, 0];
     if (eventPosition) {
       eventPosition2 = [eventPosition.latitude, eventPosition.longitude, eventPosition.altitude];
@@ -23,7 +23,8 @@ export class eventsModel {
       positionid: eventPosition2,
       attributes: attributes,
     };
-    wsManager.broadcast(JSON.stringify({ events: [events[eventsCount]] }));
+    var ws = new WebsocketManager(null, '/api/socket');
+    ws.broadcast(JSON.stringify({ events: [events[eventsCount]] }));
     eventsCount = eventsCount + 1;
   }
 

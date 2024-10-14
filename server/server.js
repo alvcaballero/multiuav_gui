@@ -14,7 +14,7 @@ import { corsMiddleware } from './middlewares/cors.js';
 console.log('use db is ' + db);
 
 //ws - for client
-import { createWebsocketManager } from './WebsocketManager.js';
+import { WebsocketManager } from './WebsocketManager.js';
 // express routes
 import { createDevicesRouter } from './routes/devices.js';
 import { categoryRouter } from './routes/category.js';
@@ -68,7 +68,7 @@ app.use('/api/ExtApp', ExtAppRouter);
 app.use('/api/server', serverRouter);
 
 const server = createServer(app);
-const ws = createWebsocketManager(server, '/api/socket');
+const ws = new WebsocketManager(server, '/api/socket');
 
 // connect to  devices
 if (RosEnable) {

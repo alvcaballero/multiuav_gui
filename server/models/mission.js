@@ -1,5 +1,5 @@
 import { DevicesController } from '../controllers/devices.js';
-import wsManager, { WebsocketManager } from '../WebsocketManager.js';
+import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
@@ -196,8 +196,8 @@ export class missionModel {
       deviceId: -1,
       attributes: { message: `Init mission ${missionId}` },
     });
-    // var ws = new WebsocketManager(null, '/api/socket');
-    wsManager.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
+    var ws = new WebsocketManager(null, '/api/socket');
+    ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
     return { response: mission, status: 'OK' };
   }
 
@@ -243,8 +243,8 @@ export class missionModel {
 
     eventsController.addEvent({
       type: 'info',
-      deviceId: mydevice.id,
-      attributes: { message: `Device ${mydevice.name} end` },
+      deviceId: uavId,
+      attributes: { message: `Device end` },
     });
 
     await ExtAppController.missionReqResult(missionId, resultCode);
@@ -275,7 +275,7 @@ export class missionModel {
             if (!results.hasOwnProperty(measure.name)) {
               results[measure.name] = measure.value;
               attributes = file.attributes;
-            } else if (results[measure.name] < measure.value) {
+            } else if (Number(results[measure.name]) < Number(measure.value)) {
               results[measure.name] = measure.value;
               attributes = file.attributes;
             }
@@ -286,6 +286,11 @@ export class missionModel {
     console.log('results');
     console.log(attributes);
     console.log(results);
+    eventsController.addEvent({
+      type: 'info',
+      deviceId: uavId,
+      attributes: { message: `device end ` },
+    });
     this.editRoute({ id: routeId, status: ROUTE_STATUS.END, result: attributes, endTime: new Date() });
     return true;
   }
@@ -299,6 +304,11 @@ export class missionModel {
     console.log('missiion');
     console.log(this.getMissionValue(missionId));
     result.data = this.getMissionValue(missionId).results;
+    eventsController.addEvent({
+      type: 'info',
+      deviceId: -1,
+      attributes: { message: `Finish mission ${missionId}` },
+    });
     ExtAppController.missionReqMedia(missionId, { code, files: result.files, data: result.data });
     return true;
   }
