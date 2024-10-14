@@ -1,6 +1,7 @@
 guides/Activities.md
 devices/init/vpn/login.text
 server/config/devices/devices_init.yaml
+server/data/*
 server/data/*.json
 server/data/*.yaml
 server/data/*.kml

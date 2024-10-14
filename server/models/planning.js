@@ -1,7 +1,7 @@
 import { readDataFile, writeDataFile, getRandomInt } from '../common/utils.js';
 import { missionsConfigData } from '../config/config.js';
 
-const configPlanning = readDataFile('../config/elements/config.yaml');
+const configPlanning = readDataFile('../config/planning/config.yaml');
 var initPlanning = readDataFile(missionsConfigData);
 import { planningServer, planningHost } from '../config/config.js';
 import { MissionController } from '../controllers/mission.js';
