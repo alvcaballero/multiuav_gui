@@ -121,3 +121,12 @@ export class WebsocketClient {
     this.client.on('message', cb);
   }
 }
+
+var wsManager = null;
+
+export function createWebsocketManager(server, path) {
+  wsManager = new WebsocketManager(server, path);
+  return wsManager;
+}
+
+export default wsManager;

@@ -1,6 +1,6 @@
 //https://www.youtube.com/watch?v=gnM3Ld6_upE-- REVISAR
 //https://medium.com/agora-io/how-does-webrtc-work-996748603141
-import { dirname ,resolve } from 'path';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -14,7 +14,7 @@ import { corsMiddleware } from './middlewares/cors.js';
 console.log('use db is ' + db);
 
 //ws - for client
-import { WebsocketManager } from './WebsocketManager.js';
+import { createWebsocketManager } from './WebsocketManager.js';
 // express routes
 import { createDevicesRouter } from './routes/devices.js';
 import { categoryRouter } from './routes/category.js';
@@ -68,7 +68,7 @@ app.use('/api/ExtApp', ExtAppRouter);
 app.use('/api/server', serverRouter);
 
 const server = createServer(app);
-var ws = new WebsocketManager(server, '/api/socket');
+const ws = createWebsocketManager(server, '/api/socket');
 
 // connect to  devices
 if (RosEnable) {

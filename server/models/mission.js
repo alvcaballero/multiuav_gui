@@ -1,5 +1,5 @@
 import { DevicesController } from '../controllers/devices.js';
-import { WebsocketManager } from '../WebsocketManager.js';
+import wsManager, { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
@@ -154,7 +154,6 @@ export class missionModel {
 
     eventsController.addEvent({
       type: 'info',
-      eventTime: new Date(),
       deviceId: -1,
       attributes: { message: 'Ext APP send task' },
     });
@@ -192,15 +191,31 @@ export class missionModel {
 
     ExtAppController.missionReqStart(missionId, mission);
 
-    var ws = new WebsocketManager(null, '/api/socket');
-    ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
+    eventsController.addEvent({
+      type: 'info',
+      deviceId: -1,
+      attributes: { message: `Init mission ${missionId}` },
+    });
+    // var ws = new WebsocketManager(null, '/api/socket');
+    wsManager.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
     return { response: mission, status: 'OK' };
   }
 
   static async deviceFinishSyncFiles({ name, id }) {
     let mydevice = await DevicesController.getByName(name);
+    if (mydevice == null) {
+      console.log('mydevice name ' + name + ' not found');
+      return false;
+    }
+
     console.log(mydevice);
     console.log('mydevice finish download files' + mydevice.id);
+
+    eventsController.addEvent({
+      type: 'info',
+      deviceId: mydevice.id,
+      attributes: { message: `Finish mission ${mydevice.name}` },
+    });
     missionSMModel.DownloadFiles(mydevice.id);
     return true;
   }
@@ -213,6 +228,11 @@ export class missionModel {
       return false;
     }
     console.log('mydevice in finish mission ' + mydevice.id);
+    eventsController.addEvent({
+      type: 'info',
+      deviceId: mydevice.id,
+      attributes: { message: `Finish mission ${mydevice.name}` },
+    });
     missionSMModel.UAVFinishMission(mydevice.id);
     return true;
   }
@@ -220,6 +240,12 @@ export class missionModel {
     let resultCode = 0;
     let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
     this.editRoute({ id: routeId, status: ROUTE_STATUS.COMPLETED, endTime: new Date() });
+
+    eventsController.addEvent({
+      type: 'info',
+      deviceId: mydevice.id,
+      attributes: { message: `Device ${mydevice.name} end` },
+    });
 
     await ExtAppController.missionReqResult(missionId, resultCode);
     return true;

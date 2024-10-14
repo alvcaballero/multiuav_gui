@@ -1,5 +1,5 @@
 import { positionsController } from '../controllers/positions.js';
-import { WebsocketManager } from '../WebsocketManager.js';
+import wsManager from '../WebsocketManager.js';
 
 const events = {}; // list all events
 var eventsCount = 0;
@@ -8,7 +8,7 @@ export class eventsModel {
   static getall() {
     return events;
   }
-  static addEvent(payload) {
+  static addEvent({ type, eventTime, deviceId, attributes }) {
     let eventPosition = positionsController.getByDeviceId(payload.deviceId);
     let eventPosition2 = [0, 0, 0];
     if (eventPosition) {
@@ -17,14 +17,13 @@ export class eventsModel {
 
     events[eventsCount] = {
       id: eventsCount,
-      type: payload.type,
-      eventTime: payload.eventTime,
-      deviceId: payload.deviceId,
+      type: type,
+      eventTime: eventTime || new Date().toISOString(),
+      deviceId: deviceId || -1,
       positionid: eventPosition2,
-      attributes: payload.attributes,
+      attributes: attributes,
     };
-    var ws = new WebsocketManager(null, '/api/socket');
-    ws.broadcast(JSON.stringify({ events: [events[eventsCount]] }));
+    wsManager.broadcast(JSON.stringify({ events: [events[eventsCount]] }));
     eventsCount = eventsCount + 1;
   }
 
