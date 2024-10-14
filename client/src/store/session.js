@@ -4,7 +4,7 @@ const { reducer, actions } = createSlice({
   name: 'session',
   initialState: {
     server: null,
-    user: { latitude: 36.473284, longitude:  -6.207770, zoom: 12, attributes: {} },
+    user: { latitude: 37.19374, longitude: -6.702911, zoom: 12, attributes: {} },
     socket: null,
     positions: {},
     history: {},
@@ -33,12 +33,9 @@ const { reducer, actions } = createSlice({
       state.socket = action.payload;
     },
     updatePositions(state, action) {
-      const liveRoutes =
-        state.user.attributes.mapLiveRoutes || state.server.attributes.mapLiveRoutes || 'none';
+      const liveRoutes = state.user.attributes.mapLiveRoutes || state.server.attributes.mapLiveRoutes || 'none';
       const liveRoutesLimit =
-        state.user.attributes['web.liveRouteLength'] ||
-        state.user.attributes['web.liveRouteLength'] ||
-        10;
+        state.user.attributes['web.liveRouteLength'] || state.user.attributes['web.liveRouteLength'] || 10;
       action.payload.forEach((position) => {
         state.positions[position.deviceId] = position;
         if (liveRoutes !== 'none') {
@@ -69,7 +66,7 @@ const { reducer, actions } = createSlice({
     updatePlanning(state, action) {
       if (action.payload.objetivo) {
         state.planning = action.payload;
-            }
+      }
     },
   },
 });
