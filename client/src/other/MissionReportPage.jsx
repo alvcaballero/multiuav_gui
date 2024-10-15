@@ -18,7 +18,9 @@ import {
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { formatDistance, formatSpeed, formatTime, formatVolume, formatNumericHours } from '../common/formatter.js';
+import { combineReducers } from 'redux';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -53,6 +55,27 @@ const MissionReportPage = () => {
   const navigate = useNavigate();
 
   const [missions, setMissions] = useState(null);
+  const devices = useSelector((state) => state.devices.items);
+
+  const columnsArray = ['id', 'initTime', 'endTime', 'uav', 'status'];
+
+  const formatValue = (item, key) => {
+    const value = item[key];
+    switch (key) {
+      case 'deviceId':
+        return devices[value].name;
+      case 'uav': {
+        const uavsName = value.map((uav) => devices[uav].name);
+        return uavsName.join(', ');
+      }
+      case 'startTime':
+        return formatTime(value, 'minutes');
+      case 'endTime':
+        return formatTime(value, 'minutes');
+      default:
+        return value;
+    }
+  };
 
   useEffectAsync(async () => {
     const response = await fetch('/api/missions');
@@ -80,25 +103,20 @@ const MissionReportPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>id</TableCell>
-                  <TableCell>initTime</TableCell>
-                  <TableCell>endTime</TableCell>
-                  <TableCell>status</TableCell>
+                  {columnsArray.map((key) => (
+                    <TableCell key={key}>{key}</TableCell>
+                  ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {missions &&
-                  missions.map((mission) => (
-                    <TableRow key={mission.id}>
-                      <TableCell>{mission.id}</TableCell>
-                      <TableCell>{mission.initTime}</TableCell>
-                      <TableCell>{mission.endTime}</TableCell>
-                      <TableCell>{mission.status}</TableCell>
+                  missions.map((item) => (
+                    <TableRow key={`${item.id}_`}>
+                      {columnsArray.map((key) => (
+                        <TableCell key={key}>{formatValue(item, key)}</TableCell>
+                      ))}
                       <TableCell>
-                        <IconButton
-                          size="small"
-                          onClick={() => navigate(`/reports/mission/${mission.id}`)}
-                        >
+                        <IconButton size="small" onClick={() => navigate(`/reports/mission/${mission.id}`)}>
                           <OpenInNewIcon fontSize="small" />
                         </IconButton>
                       </TableCell>
