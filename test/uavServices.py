@@ -38,7 +38,13 @@ dictCategory = {
                     "yaw": "/dji_sdk/compass_heading",
                     "battery": "/dji_sdk/battery_state",
                     "speed": "/dji_sdk/velocity",
-    }
+    },
+    "px4": {
+        "position": "/mavros/global_position/global",
+                    "yaw": "/mavros/global_position/compass_hdg",
+                    "battery": "/mavros/battery",
+                    "speed": "'/mavros/local_position/velocity_local",
+    },
 }
 
 
@@ -89,15 +95,21 @@ class SimpleDevice:
         self.lock = threading.Lock()
 
     # change device variables
-    def moveScalar(self, x1, x2, speed):
+    def moveAngle(self, x1, x2, speed):
         dstX = (x2 - x1)
         # print("dstx:", dstX, "x1:", x1, "x2:", x2)
         direction = 1 if dstX > 0 else -1
+        direction = direction if abs(dstX) < 180 else -direction
         newDstX = speed * (1/self.rateTime) * direction
+        angle = x1 + newDstX
+        if angle > 180:
+            angle = angle - 360
+        if angle < -180:
+            angle = angle + 360
         if abs(newDstX) > abs(dstX) or dstX == 0:
             print("Arrived scalr")
             return {'state': True, 'value': x2}
-        return {'state': False, 'value': x1 + newDstX}
+        return {'state': False, 'value': angle}
 
     def moveToPoint(self, pos1, pos2, speed):
         dstX = (pos2[0] - pos1[0])
@@ -138,7 +150,27 @@ class SimpleDevice:
             print("Arrived wp")
             return {'state': True, 'pos': pos2}
         return {'state': False, 'pos': [newPosX, newPosY, newPosZ]}
+    def calAngle(self, x1, y1, x2, y2):
+        xdiff = x2 - x1
+        ydiff = y2 - y1
+        angle = 0
+        if xdiff == 0:
+            if ydiff > 0:
+                angle = 0
+            else:
+                angle = math.pi
+        else:
+            angle = math.atan2(y2-y1, x2-x1)
+            if xdiff > 0 and ydiff > 0:
+                angle = -angle + math.pi/2
+            if xdiff < 0 and ydiff > 0:
+                angle = angle - math.pi/2
+            if xdiff < 0 and ydiff < 0:
+                angle = -angle -math.pi/2
+            if xdiff > 0 and ydiff < 0:
+                angle = angle + math.pi/2
 
+        return angle * 180 / math.pi
     def simulation(self):
         if self.status == Status.RUNNING_MISSION:
             if self.currentWp < 0:
@@ -150,7 +182,14 @@ class SimpleDevice:
             elif self.currentWp < len(self.mission.waypoint):
                 calculate = self.moveToPoint(self.position, [
                     self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speed)
+                if category == "px4":
+                    self.yaw = self.moveAngle(
+                        self.yaw, self.calAngle(self.position[1],self.position[0],self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude)
+                        , 10)['value']
+ 
+                
                 self.position = calculate['pos']
+
 
                 if calculate['state']:
 
@@ -160,7 +199,7 @@ class SimpleDevice:
                     if self.mission.commandList.data[self.currentWp*10+self.currentAction] == 4:
                         print(
                             "action yaw", self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
-                        actionCalculate = self.moveScalar(
+                        actionCalculate = self.moveAngle(
                             self.yaw, self.mission.commandParameter.data[self.currentWp*10+self.currentAction], 10)
                         self.yaw = actionCalculate['value']
                         if actionCalculate['state']:
@@ -168,7 +207,7 @@ class SimpleDevice:
                     elif self.mission.commandList.data[self.currentWp*10+self.currentAction] == 5:
                         print(
                             "action gimbal", self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
-                        actionCalculate = self.moveScalar(
+                        actionCalculate = self.moveAngle(
                             self.gimbal, self.mission.commandParameter.data[self.currentWp*10+self.currentAction], 10)
                         self.gimbal = actionCalculate['value']
                         if actionCalculate['state']:
