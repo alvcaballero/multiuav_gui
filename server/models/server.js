@@ -1,6 +1,9 @@
 import { LocalGlyphs } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile } from '../common/utils.js';
+import { readDataFile } from '../common/utils.js';
+
+const buildingImages = readDataFile('../data/elements.json');
 export class serverModel {
   static DateTime() {
     const dateObject = new Date();
@@ -19,6 +22,7 @@ export class serverModel {
         timezone: 'Spain/Madrid',
         distanceUnit: 'km',
         glyphs: LocalGlyphs,
+        customElements: buildingImages.hasOwnProperty('elements') ? buildingImages.elements : [],
       },
       rosState: false,
       registration: true,

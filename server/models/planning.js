@@ -118,11 +118,13 @@ export class planningModel {
         }
       }
     } else {
+      console.log('!! --- error en el fetch planning');
       throw Error(await response.text());
     }
     requestPlanning[mission_id]['count'] = requestPlanning[mission_id]['count'] + 1;
     if (requestPlanning[mission_id]['count'] > 3) {
       clearInterval(requestPlanning[mission_id]['interval']);
+      MissionController.initMission(mission_id, null); // error
     }
   }
 

@@ -25,14 +25,32 @@ class Status(Enum):
     DONE_MISSION = 5
 
 
+dictCategory = {
+    "dji_M300": {
+        "position": "/dji_osdk_ros/gps_position",
+                    "yaw": "/dji_osdk_ros/compass_heading",
+                    "gimbal": "/dji_osdk_ros/gimbal_angle",
+                    "battery": "/dji_osdk_ros/battery_state",
+                    "speed": "/dji_osdk_ros/velocity",
+    },
+    "dji_M600": {
+        "position": "/dji_sdk/gps_position",
+                    "yaw": "/dji_sdk/compass_heading",
+                    "battery": "/dji_sdk/battery_state",
+                    "speed": "/dji_sdk/velocity",
+    }
+}
+
+
 class SimpleDevice:
-    def __init__(self, name):
+    def __init__(self, name, homePoint=[37.193646, -6.702930, 0], category="dji_M300"):
+        print("init-----"+name+'------'+str(homePoint)+"----"+category)
         # device Variables
         self.name = name
         self.status = Status.READY
         self.mission = {}
         # latitude in degrees, longitude in degrees, altitude in meters take zero as home point
-        self.homePoint = [37.193646, -6.702930, 0]
+        self.homePoint = homePoint
         self.position = self.homePoint
         self.yaw = 0
         self.gimbal = 0
@@ -42,6 +60,7 @@ class SimpleDevice:
         self.currentAction = 0
         self.rateTime = 2  # 1 Hz
         self.typeMission = "GPS"
+        self.category = category
 
         rospy.init_node('SS_'+ns)
 
@@ -58,13 +77,14 @@ class SimpleDevice:
 
         # init publishers
         self.pubPosition = rospy.Publisher(
-            '/'+ns+'/dji_osdk_ros/gps_position', NavSatFix, queue_size=10)
+            '/'+ns+dictCategory[self.category]["position"], NavSatFix, queue_size=10)
         self.pubYaw = rospy.Publisher(
-            '/'+ns+'/dji_osdk_ros/compass_heading', Float32, queue_size=10)
-        self.pubGimbal = rospy.Publisher(
-            '/'+ns+'/dji_osdk_ros/gimbal_angle', Vector3Stamped, queue_size=10)
+            '/'+ns+dictCategory[self.category]["yaw"], Float32, queue_size=10)
+        if dictCategory[self.category].get("gimbal"):
+            self.pubGimbal = rospy.Publisher(
+                '/'+ns+dictCategory[self.category]["gimbal"], Vector3Stamped, queue_size=10)
         self.pubBattery = rospy.Publisher(
-            '/'+ns+'/dji_osdk_ros/battery_state', BatteryState, queue_size=10)
+            '/'+ns+dictCategory[self.category]["battery"], BatteryState, queue_size=10)
         self.rate = rospy.Rate(self.rateTime)  # 1 Hz
         self.lock = threading.Lock()
 
@@ -203,12 +223,13 @@ class SimpleDevice:
 
                 self.pubYaw.publish(self.yaw)
 
-                gimbalmsg = Vector3Stamped()
-                gimbalmsg.header.stamp = rospy.Time.now()
-                gimbalmsg.vector.x = 0
-                gimbalmsg.vector.y = 0
-                gimbalmsg.vector.z = self.gimbal
-                self.pubGimbal.publish(gimbalmsg)
+                if dictCategory[self.category].get("gimbal"):
+                    gimbalmsg = Vector3Stamped()
+                    gimbalmsg.header.stamp = rospy.Time.now()
+                    gimbalmsg.vector.x = 0
+                    gimbalmsg.vector.y = 0
+                    gimbalmsg.vector.z = self.gimbal
+                    self.pubGimbal.publish(gimbalmsg)
 
                 statusBattery = BatteryState()
                 statusBattery.voltage = 24
@@ -304,15 +325,27 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='simple device simulator')
     parser.add_argument('-ns', metavar='Ros NameSpace',
                         help='namespace of the topic  Example: uav_2')
+    parser.add_argument('-lat', metavar='Latitude',
+                        help='home point latitude in degrees')
+    parser.add_argument('-lon', metavar='Longitude',
+                        help='home point longitude in degrees')
+    parser.add_argument('-category', metavar='category',
+                        help='category of the device example: dji_M300 dji_M600')
     args, unknown = parser.parse_known_args()
     default_ns = "uav_14"
+    homePoint = [37.193646, -6.702930, 0]
+    category = "dji_M300"
     if args.ns:
         ns = args.ns
     else:
         ns = default_ns
+    if args.lat and args.lon:
+        homepoint = [float(args.lat), float(args.lon), 0]
+    if args.category:
+        category = args.category
 
     try:
-        device = SimpleDevice(ns)
+        device = SimpleDevice(ns, homePoint, category)
         device.run()
     except rospy.ROSInterruptException:
         pass

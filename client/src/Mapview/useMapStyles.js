@@ -1,5 +1,3 @@
-//import { useSelector } from 'react-redux';
-//import { useTranslation } from '../../common/components/LocalizationProvider';
 import { useAttributePreference } from '../common/preferences';
 
 const styleCustom = ({ tiles, minZoom, maxZoom, attribution, glyphs }) => {
@@ -18,7 +16,7 @@ const styleCustom = ({ tiles, minZoom, maxZoom, attribution, glyphs }) => {
     sources: {
       custom: source,
     },
-    glyphs: glyphs,
+    glyphs,
     layers: [
       {
         id: 'custom',
@@ -30,20 +28,17 @@ const styleCustom = ({ tiles, minZoom, maxZoom, attribution, glyphs }) => {
 };
 
 export default () => {
-  //const t = useTranslation();
-
-  const mapTilerKey = 'mykey'; //useAttributePreference('mapTilerKey');
-  const locationIqKey = 'pk.0f147952a41c555a5b70614039fd148b'; //useAttributePreference('locationIqKey');
-  const bingMapsKey = 'mykey'; //useAttributePreference('bingMapsKey');
-  const tomTomKey = 'mykey'; //useAttributePreference('tomTomKey');
-  const hereKey = 'mykey'; //useAttributePreference('hereKey');
-  const mapboxAccessToken = 'mykey'; //useAttributePreference('mapboxAccessToken');
-  let domain = window.location.origin.slice(0, -5);
-  let port = 8484;
-  let glyphs = useAttributePreference('glyphs', false)
-    ? `${domain}:${port}/map/fonts/{fontstack}/{range}.pbf`
-    : 'https://cdn.traccar.com/map/fonts/{fontstack}/{range}.pbf';
+  const mapTilerKey = 'myKey';
+  const locationIqKey = 'pk.0f147952a41c555a5b70614039fd148b';
+  const bingMapsKey = 'myKey';
+  const tomTomKey = 'myKey';
+  const hereKey = 'myKey';
+  const mapboxAccessToken = 'myKey';
   const myhostname = `${window.location.hostname}`;
+  const port = 8484;
+  const glyphs = useAttributePreference('glyphs', false)
+    ? `http://${myhostname}:${port}/map/fonts/{fontstack}/{range}.pbf`
+    : 'https://cdn.traccar.com/map/fonts/{fontstack}/{range}.pbf';
 
   return [
     {
@@ -54,7 +49,7 @@ export default () => {
         maxZoom: 19,
         attribution:
           '© <a target="_top" rel="noopener" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },
@@ -76,7 +71,7 @@ export default () => {
       style: styleCustom({
         tiles: ['a', 'b', 'c'].map((i) => `https://${i}.tile.opentopomap.org/{z}/{x}/{y}.png`),
         maxZoom: 17,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },
@@ -90,7 +85,7 @@ export default () => {
         maxZoom: 22,
         attribution:
           '© <a target="_top" rel="noopener" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © <a target="_top" rel="noopener" href="https://carto.com/attribution">CARTO</a>',
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },
@@ -101,7 +96,7 @@ export default () => {
         tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga`),
         maxZoom: 20,
         attribution: '© Google',
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },
@@ -112,7 +107,7 @@ export default () => {
         tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga`),
         maxZoom: 20,
         attribution: '© Google',
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },
@@ -123,7 +118,7 @@ export default () => {
         tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga`),
         maxZoom: 20,
         attribution: '© Google',
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },
@@ -150,7 +145,7 @@ export default () => {
             `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=G,L&shading=hill&og=1885&n=z`
         ),
         maxZoom: 21,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!bingMapsKey,
       attribute: 'bingMapsKey',
@@ -161,7 +156,7 @@ export default () => {
       style: styleCustom({
         tiles: [0, 1, 2, 3].map((i) => `https://ecn.t${i}.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=12327`),
         maxZoom: 19,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!bingMapsKey,
       attribute: 'bingMapsKey',
@@ -174,7 +169,7 @@ export default () => {
           (i) => `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=A,G,L&og=1885&n=z`
         ),
         maxZoom: 19,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!bingMapsKey,
       attribute: 'bingMapsKey',
@@ -202,7 +197,7 @@ export default () => {
             `https://${i}.aerial.maps.ls.hereapi.com/maptile/2.1/maptile/newest/hybrid.day/{z}/{x}/{y}/256/png8?apiKey=${hereKey}`
         ),
         maxZoom: 20,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!hereKey,
       attribute: 'hereKey',
@@ -216,7 +211,7 @@ export default () => {
             `https://${i}.aerial.maps.ls.hereapi.com/maptile/2.1/maptile/newest/satellite.day/{z}/{x}/{y}/256/png8?apiKey=${hereKey}`
         ),
         maxZoom: 19,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!hereKey,
       attribute: 'hereKey',
@@ -230,7 +225,7 @@ export default () => {
         ),
         minZoom: 3,
         maxZoom: 18,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },
@@ -251,7 +246,7 @@ export default () => {
           `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${mapboxAccessToken}`,
         ],
         maxZoom: 22,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!mapboxAccessToken,
       attribute: 'mapboxAccessToken',
@@ -264,7 +259,7 @@ export default () => {
           `https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${mapboxAccessToken}`,
         ],
         maxZoom: 22,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!mapboxAccessToken,
       attribute: 'mapboxAccessToken',
@@ -277,7 +272,7 @@ export default () => {
           `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=${mapboxAccessToken}`,
         ],
         maxZoom: 22,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: !!mapboxAccessToken,
       attribute: 'mapboxAccessToken',
@@ -288,7 +283,7 @@ export default () => {
       style: styleCustom({
         tiles: [`http://${myhostname}:8080/tile/{z}/{x}/{y}.png`],
         maxZoom: 19,
-        glyphs: glyphs,
+        glyphs,
       }),
       available: true,
     },

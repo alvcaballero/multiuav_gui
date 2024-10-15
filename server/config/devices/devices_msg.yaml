@@ -481,6 +481,9 @@ dji_M600:
     IMU: #hdg
       name: '/dji_sdk/imu'
       messageType: 'sensor_msgs/Imu'
+    hdg: # este lo he puesto para simulacion, en realidad ese no existe
+      name: '/dji_sdk/compass_heading'
+      messageType: 'std_msgs/Float32'
     speed:
       name: '/dji_sdk/velocity'
       messageType: 'geometry_msgs/Vector3Stamped'
@@ -497,6 +500,12 @@ dji_M600:
     commandMission:
       name: '/dji_control/start_mission'
       serviceType: 'std_srvs/TriggerRequest'
+    CameraFileDownload:
+      name: '/camera_download_files'
+      serviceType: 'dji_osdk_ros/DownloadMedia'
+    CameraFileList:
+      name: '/camera_download_filelist'
+      serviceType: 'dji_osdk_ros/FileList'
 
   attributes:
     mission_action:

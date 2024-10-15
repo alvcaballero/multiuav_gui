@@ -26,14 +26,19 @@ console.log('load model devices No SQL');
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
+const devicesStatus = {
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+};
+
 function filterDevice(obj, fields) {
-  let nuevoObjeto = {};
+  let newObj = {};
   for (let field of fields) {
     if (obj.hasOwnProperty(field)) {
-      nuevoObjeto[field] = obj[field] ?? null;
+      newObj[field] = obj[field] ?? null;
     }
   }
-  return nuevoObjeto;
+  return newObj;
 }
 
 const checkDeviceOnline = () => {
@@ -42,7 +47,7 @@ const checkDeviceOnline = () => {
 
   checkDevices.forEach((element) => {
     const { lastUpdate } = devices[element];
-    devices[element].status = currentTime - lastUpdate < CHECK_INTERVAL ? 'online' : 'offline';
+    devices[element].status = currentTime - lastUpdate < CHECK_INTERVAL ? devicesStatus.ONLINE : devicesStatus.OFFLINE;
   });
 
   setTimeout(checkDeviceOnline, CHECK_INTERVAL);

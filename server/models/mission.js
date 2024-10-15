@@ -7,6 +7,7 @@ import { FilesController } from '../controllers/files.js';
 import { eventsController } from '../controllers/events.js';
 import { readJSON, readYAML, writeJSON } from '../common/utils.js';
 import { missionsData, routesData } from '../config/config.js';
+import { object } from 'zod';
 
 /* mission is object that have the current mission running and have the next object
  / id
@@ -18,10 +19,8 @@ import { missionsData, routesData } from '../config/config.js';
  / results:  [ reoutes results]
  */
 const Mission = readJSON(missionsData);
-/*// current mission // id , status (init, planing, doing, finish,time inti, time_end))
- */
-
 const Routes = readJSON(routesData);
+
 export const MISSION_STATUS = Object.freeze({
   INIT: 'init',
   PLANNING: 'planning',
@@ -61,8 +60,17 @@ export class missionModel {
     return Object.values(Routes);
   }
 
-  static async createMission(payload) {
-    Mission[payload.id] = payload;
+  static async createMission({
+    id,
+    uav = [],
+    status = MISSION_STATUS.INIT,
+    initTime = new Date(),
+    endTime = null,
+    task = {},
+    mission = {},
+    results = [],
+  }) {
+    Mission[id] = { id, uav, status, initTime, endTime, task, mission, results };
     writeJSON(missionsData, Mission);
   }
   static async createRoute(payload) {
@@ -113,27 +121,64 @@ export class missionModel {
 
     let bases = planningController.getConfigBases();
     let devices = await DevicesController.getAllDevices();
+    // get setting of the task
     let param = planningController.getConfigParam(objetivo);
     let auxconfig = {};
     Object.keys(param['settings']).forEach((key1) => {
       auxconfig[key1] = param['settings'][key1].default;
     });
+    console.log('-----param-------');
+    console.log(param['devices']);
 
     let baseSettings = planningController.getBasesSettings();
-    myTask.devices = baseSettings.map((setting, index) => {
+    let devicesSettings = [];
+    for (const [index, setting] of baseSettings.entries()) {
+      console.log('bases setting');
+      console.log(setting);
       let config = { settings: {} };
       let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
       for (const value of Object.keys(auxconfig)) {
         value !== 'base' ? (config.settings[value] = auxconfig[value]) : null;
       }
+      // verify if the device is allow to do the mission
+      if (param.devices && param.devices['category']) {
+        const auvAllow = param.devices['category'].type.some((item) => item == myDevice.category);
+        console.log(`device ${myDevice.name} auvAllow ${auvAllow}`);
+        if (!auvAllow) {
+          continue;
+        }
+      }
+      // filter devices are online
+      if (myDevice == null || myDevice.status == 'offline') {
+        console.log(`device offline ${myDevice.name}`);
+        continue;
+      }
+      // filter devices are free
+      let getRoutes = await this.getRoutes({ deviceId: myDevice.id });
+      if (
+        getRoutes.some(
+          (route) =>
+            route.status == ROUTE_STATUS.RUNNING ||
+            route.status == ROUTE_STATUS.COMMANDED ||
+            route.status == ROUTE_STATUS.LOADED ||
+            route.status == ROUTE_STATUS.INIT ||
+            route.status == ROUTE_STATUS.COMPLETED
+        )
+      ) {
+        console.log(`device ${myDevice.name} is busy`);
+        continue;
+      }
+
       config.settings.base = Object.values(bases[index]);
       config.settings.landing_mode = 2;
       config.id = myDevice.name;
       config.category = myDevice.category;
-      return config;
-    });
+      devicesSettings.push(config);
+    }
+    myTask.devices = devicesSettings.filter((item) => item != null);
     console.log(`Task ${myTask.id} ${myTask.name} ${myTask.case} ${myTask.devices.map((item) => item.id).flat()}`);
     console.log(myTask);
+    console.log(myTask.devices);
     console.log(myTask.locations);
     return myTask;
   }
@@ -145,22 +190,28 @@ export class missionModel {
 
     const isPlanning = false;
     if (isPlanning) {
-      let mission = readYAML(`../config/mission/mission_11.yaml`);
-      let mission1 = readYAML(`../config/mission/mission_complete_v3.yaml`);
-      this.initMission(id, { ...mission1, id: id });
+      let mission = readYAML(`../data/mission/mission_11.yaml`);
+      this.initMission(id, { ...mission, id: id });
       return { response: myTask, status: 'OK' };
     }
     planningController.PlanningRequest({ id, myTask });
 
+    this.createMission({ id, task: myTask });
+
     eventsController.addEvent({
       type: 'info',
       deviceId: -1,
-      attributes: { message: 'Ext APP send task' },
+      attributes: { message: `Init mission ${id}` },
     });
     return { response: myTask, status: 'OK' };
   }
 
   static async initMission(missionId, mission) {
+    if (mission == null) {
+      this.editMission({ id: missionId, status: MISSION_STATUS.ERROR });
+      console.log('Mission ' + missionId + ' cant planning');
+      return false;
+    }
     const listUAV = [];
     for (const route of mission.route) {
       let findDevice = await DevicesController.getByName(route.uav);
@@ -168,14 +219,11 @@ export class missionModel {
       listUAV.push(findDevice.id);
     }
     //const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
-    this.createMission({
+    this.editMission({
       id: missionId,
       uav: listUAV,
-      status: MISSION_STATUS.INIT,
-      initTime: new Date(),
-      endTime: null,
+      status: MISSION_STATUS.PLANNING,
       mission: mission,
-      results: [],
     });
     listUAV.forEach((uavId) => {
       let myroute = this.createRoute({
@@ -315,4 +363,29 @@ export class missionModel {
   static async updateMission({ device, mission, state }) {
     return true;
   }
+
+  static CheckLastMissionRoute() {
+    Object.values(Mission).forEach((mission) => {
+      if (
+        mission.status == MISSION_STATUS.RUNNING ||
+        mission.status == MISSION_STATUS.PLANNING ||
+        mission.status == MISSION_STATUS.INIT
+      ) {
+        let listRoutes = Object.values(Routes).filter(
+          (route) =>
+            route.missionId == mission.id &&
+            (route.status == ROUTE_STATUS.RUNNING ||
+              route.status == ROUTE_STATUS.COMMANDED ||
+              route.status == ROUTE_STATUS.LOADED ||
+              route.status == ROUTE_STATUS.INIT ||
+              route.status == ROUTE_STATUS.COMPLETED)
+        );
+        for (const route of listRoutes) {
+          this.editRoute({ id: route.id, status: ROUTE_STATUS.ERROR });
+        }
+        this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR });
+      }
+    });
+  }
 }
+missionModel.CheckLastMissionRoute();
