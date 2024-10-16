@@ -12,7 +12,7 @@ from std_srvs.srv import Trigger, TriggerResponse, SetBool, SetBoolResponse
 from aerialcore_common.srv import ConfigMission, ConfigMissionResponse, finishMission, finishMissionResponse, finishGetFiles, finishGetFilesResponse
 from dji_osdk_ros.srv import DownloadMedia, DownloadMediaResponse
 # ros messages
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float64
 from sensor_msgs.msg import NavSatFix, NavSatStatus, Imu, BatteryState
 from geometry_msgs.msg import Vector3Stamped
 
@@ -62,6 +62,8 @@ class SimpleDevice:
         self.gimbal = 0
         self.battery = 100
         self.speed = 5  # m/s
+        if category == "px4":
+            self.speed = 10  # m/s
         self.currentWp = -1
         self.currentAction = 0
         self.rateTime = 2  # 1 Hz
@@ -84,8 +86,13 @@ class SimpleDevice:
         # init publishers
         self.pubPosition = rospy.Publisher(
             '/'+ns+dictCategory[self.category]["position"], NavSatFix, queue_size=10)
-        self.pubYaw = rospy.Publisher(
-            '/'+ns+dictCategory[self.category]["yaw"], Float32, queue_size=10)
+        if self.category == "px4":
+            self.pubYaw = rospy.Publisher(
+                '/'+ns+dictCategory[self.category]["yaw"], Float64, queue_size=10)
+        else:
+            self.pubYaw = rospy.Publisher(
+                '/'+ns+dictCategory[self.category]["yaw"], Float32, queue_size=10)
+
         if dictCategory[self.category].get("gimbal"):
             self.pubGimbal = rospy.Publisher(
                 '/'+ns+dictCategory[self.category]["gimbal"], Vector3Stamped, queue_size=10)
@@ -150,6 +157,7 @@ class SimpleDevice:
             print("Arrived wp")
             return {'state': True, 'pos': pos2}
         return {'state': False, 'pos': [newPosX, newPosY, newPosZ]}
+
     def calAngle(self, x1, y1, x2, y2):
         xdiff = x2 - x1
         ydiff = y2 - y1
@@ -166,11 +174,12 @@ class SimpleDevice:
             if xdiff < 0 and ydiff > 0:
                 angle = angle - math.pi/2
             if xdiff < 0 and ydiff < 0:
-                angle = -angle -math.pi/2
+                angle = -angle - math.pi/2
             if xdiff > 0 and ydiff < 0:
                 angle = angle + math.pi/2
 
         return angle * 180 / math.pi
+
     def simulation(self):
         if self.status == Status.RUNNING_MISSION:
             if self.currentWp < 0:
@@ -184,12 +193,9 @@ class SimpleDevice:
                     self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speed)
                 if category == "px4":
                     self.yaw = self.moveAngle(
-                        self.yaw, self.calAngle(self.position[1],self.position[0],self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude)
-                        , 10)['value']
- 
-                
-                self.position = calculate['pos']
+                        self.yaw, self.calAngle(self.position[1], self.position[0], self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude), 10)['value']
 
+                self.position = calculate['pos']
 
                 if calculate['state']:
 
@@ -369,7 +375,7 @@ if __name__ == "__main__":
     parser.add_argument('-lon', metavar='Longitude',
                         help='home point longitude in degrees')
     parser.add_argument('-category', metavar='category',
-                        help='category of the device example: dji_M300 dji_M600')
+                        help='category of the device example: dji_M300 dji_M600 px4')
     args, unknown = parser.parse_known_args()
     default_ns = "uav_14"
     homePoint = [37.193646, -6.702930, 0]
@@ -379,7 +385,7 @@ if __name__ == "__main__":
     else:
         ns = default_ns
     if args.lat and args.lon:
-        homepoint = [float(args.lat), float(args.lon), 0]
+        homePoint = [float(args.lat), float(args.lon), 0]
     if args.category:
         category = args.category
 
