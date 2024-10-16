@@ -4,7 +4,6 @@ import rospy
 import time
 import threading
 import os
-import argparse
 from enum import Enum
 import math
 # ros services
@@ -14,7 +13,7 @@ from dji_osdk_ros.srv import DownloadMedia, DownloadMediaResponse
 # ros messages
 from std_msgs.msg import Float32, Float64
 from sensor_msgs.msg import NavSatFix, NavSatStatus, Imu, BatteryState
-from geometry_msgs.msg import Vector3Stamped
+from geometry_msgs.msg import Vector3Stamped, TwistStamped
 
 
 class Status(Enum):
@@ -43,7 +42,7 @@ dictCategory = {
         "position": "/mavros/global_position/global",
                     "yaw": "/mavros/global_position/compass_hdg",
                     "battery": "/mavros/battery",
-                    "speed": "'/mavros/local_position/velocity_local",
+                    "speed": "/mavros/local_position/velocity_local",
     },
 }
 
@@ -61,19 +60,19 @@ class SimpleDevice:
         self.yaw = 0
         self.gimbal = 0
         self.battery = 100
-        self.speed = 5  # m/s
+        self.speedIdle = 5  # m/s
+        self.speedX = 0
+        self.speedY = 0
+        self.speedZ = 0
         if category == "px4":
-            self.speed = 10  # m/s
+            self.speedIdle = 10  # m/s
         self.currentWp = -1
         self.currentAction = 0
         self.rateTime = 2  # 1 Hz
         self.typeMission = "GPS"
         self.category = category
 
-        rospy.init_node('SS_'+ns)
-
         # init services
-
         self.srvStartMission = rospy.Service(
             '/'+ns+'/dji_control/start_mission', SetBool, self.startMission)
 
@@ -89,10 +88,13 @@ class SimpleDevice:
         if self.category == "px4":
             self.pubYaw = rospy.Publisher(
                 '/'+ns+dictCategory[self.category]["yaw"], Float64, queue_size=10)
+            self.pubSpeed = rospy.Publisher(
+                '/'+ns+dictCategory[self.category]["speed"], TwistStamped, queue_size=10)
         else:
             self.pubYaw = rospy.Publisher(
                 '/'+ns+dictCategory[self.category]["yaw"], Float32, queue_size=10)
-
+            self.pubSpeed = rospy.Publisher(
+                '/'+ns+dictCategory[self.category]["speed"],  Vector3Stamped, queue_size=10)
         if dictCategory[self.category].get("gimbal"):
             self.pubGimbal = rospy.Publisher(
                 '/'+ns+dictCategory[self.category]["gimbal"], Vector3Stamped, queue_size=10)
@@ -140,6 +142,9 @@ class SimpleDevice:
         velX = 0 if dstXY == 0 else (velXY * dstX) / dstXY
         velY = 0 if dstXY == 0 else (velXY * dstY) / dstXY
         # print("vel:", velX, velY, velZ)
+        self.speedX = velX
+        self.speedY = velY
+        self.speedZ = velZ
 
         newDstX = velX * (1/self.rateTime)
         newDstY = velY * (1/self.rateTime)
@@ -184,13 +189,13 @@ class SimpleDevice:
         if self.status == Status.RUNNING_MISSION:
             if self.currentWp < 0:
                 calculate = self.moveToPoint(self.position, [
-                    self.homePoint[0], self.homePoint[1], self.homePoint[2]+5], self.speed)
+                    self.homePoint[0], self.homePoint[1], self.homePoint[2]+5], self.speedIdle)
                 self.position = calculate['pos']
                 if calculate['state']:
                     self.currentWp = 0
             elif self.currentWp < len(self.mission.waypoint):
                 calculate = self.moveToPoint(self.position, [
-                    self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speed)
+                    self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speedIdle)
                 if category == "px4":
                     self.yaw = self.moveAngle(
                         self.yaw, self.calAngle(self.position[1], self.position[0], self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude), 10)['value']
@@ -242,7 +247,7 @@ class SimpleDevice:
 
             else:
                 calculate = self.moveToPoint(self.position, [
-                    self.position[0], self.position[1], self.homePoint[2]], self.speed)
+                    self.position[0], self.position[1], self.homePoint[2]], self.speedIdle)
                 self.position = calculate['pos']
                 if calculate['state']:
                     self.currentWp = -1
@@ -275,6 +280,21 @@ class SimpleDevice:
                     gimbalmsg.vector.y = 0
                     gimbalmsg.vector.z = self.gimbal
                     self.pubGimbal.publish(gimbalmsg)
+
+                if self.category == "px4":
+                    speedmsg = TwistStamped()
+                    speedmsg.header.stamp = rospy.Time.now()
+                    speedmsg.twist.linear.x = self.speedX
+                    speedmsg.twist.linear.y = self.speedY
+                    speedmsg.twist.linear.z = self.speedZ
+                    self.pubSpeed.publish(speedmsg)
+                else:
+                    speedmsg = Vector3Stamped()
+                    speedmsg.header.stamp = rospy.Time.now()
+                    speedmsg.vector.x = self.speedX
+                    speedmsg.vector.y = self.speedY
+                    speedmsg.vector.z = self.speedZ
+                    self.pubSpeed.publish(speedmsg)
 
                 statusBattery = BatteryState()
                 statusBattery.voltage = 24
@@ -367,27 +387,20 @@ class SimpleDevice:
 if __name__ == "__main__":
 
     # manage the command line arguments
-    parser = argparse.ArgumentParser(description='simple device simulator')
-    parser.add_argument('-ns', metavar='Ros NameSpace',
-                        help='namespace of the topic  Example: uav_2')
-    parser.add_argument('-lat', metavar='Latitude',
-                        help='home point latitude in degrees')
-    parser.add_argument('-lon', metavar='Longitude',
-                        help='home point longitude in degrees')
-    parser.add_argument('-category', metavar='category',
-                        help='category of the device example: dji_M300 dji_M600 px4')
-    args, unknown = parser.parse_known_args()
-    default_ns = "uav_14"
+
+    ns = "uav_14"
     homePoint = [37.193646, -6.702930, 0]
     category = "dji_M300"
-    if args.ns:
-        ns = args.ns
-    else:
-        ns = default_ns
-    if args.lat and args.lon:
-        homePoint = [float(args.lat), float(args.lon), 0]
-    if args.category:
-        category = args.category
+
+    rospy.init_node('simulateDevice')
+
+    if rospy.has_param('~ns'):
+        ns = rospy.get_param('~ns')
+    if rospy.has_param('~lat') and rospy.has_param('~lon'):
+        homePoint = [float(rospy.get_param('~lat')),
+                     float(rospy.get_param('~lon')), 0]
+    if rospy.has_param('~category'):
+        category = rospy.get_param('~category')
 
     try:
         device = SimpleDevice(ns, homePoint, category)

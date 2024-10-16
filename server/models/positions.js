@@ -45,7 +45,10 @@ export class positionsModel {
       positions[payload.deviceId] = {
         deviceId: payload.deviceId,
         accuracy: 0.0,
+        speed: 0.0,
+        course: 0.0,
         attributes: {
+          batteryLevel: 0,
           gimbal: [0, 0, 0],
           obstacle_info: [0, 0, 0, 0, 0, 0],
           takeoff_height: 400,
