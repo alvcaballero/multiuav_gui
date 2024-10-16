@@ -153,6 +153,13 @@ const ImageFull2 = ({ file, closecard }) => {
   );
 };
 
+const FormatResult = ({ result }) => {
+  if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
+    return result.measures.map((item) => <div>{`${item.name}: ${item.value}`}</div>);
+  }
+  return null;
+};
+
 const MissionDetailReportPage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
@@ -225,9 +232,11 @@ const MissionDetailReportPage = () => {
                     ))}
                   <Grid item xs={6}>
                     <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                      Result
+                      Results
                     </Typography>
-                    <Typography variant="body1">{JSON.stringify(missions.results)}</Typography>
+                    {missions.results.map((item) => (
+                      <FormatResult result={item} />
+                    ))}
                   </Grid>
                 </Grid>
               </div>
@@ -255,7 +264,7 @@ const MissionDetailReportPage = () => {
                       <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                         Result
                       </Typography>
-                      <Typography variant="body1">{JSON.stringify(route.result)}</Typography>
+                      <FormatResult result={route.result} />
                     </Grid>
                   </Grid>
                   {files && files.find((item) => item && item.routeId == route.id) && (

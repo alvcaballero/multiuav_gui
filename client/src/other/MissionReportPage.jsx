@@ -68,7 +68,7 @@ const MissionReportPage = () => {
         const uavsName = value.map((uav) => devices[uav].name);
         return uavsName.join(', ');
       }
-      case 'startTime':
+      case 'initTime':
         return formatTime(value, 'minutes');
       case 'endTime':
         return formatTime(value, 'minutes');
@@ -116,7 +116,7 @@ const MissionReportPage = () => {
                         <TableCell key={key}>{formatValue(item, key)}</TableCell>
                       ))}
                       <TableCell>
-                        <IconButton size="small" onClick={() => navigate(`/reports/mission/${mission.id}`)}>
+                        <IconButton size="small" onClick={() => navigate(`/reports/mission/${item.id}`)}>
                           <OpenInNewIcon fontSize="small" />
                         </IconButton>
                       </TableCell>

@@ -38,16 +38,7 @@ export const formatStatus = (value) => prefixString('deviceStatus', value);
 export const formatAlarm = (value) => (value ? prefixString('alarm_', value) : '');
 
 export const formatCourse = (value) => {
-  const courseValues = [
-    '\u2191',
-    '\u2197',
-    '\u2192',
-    '\u2198',
-    '\u2193',
-    '\u2199',
-    '\u2190',
-    '\u2196',
-  ];
+  const courseValues = ['\u2191', '\u2197', '\u2192', '\u2198', '\u2193', '\u2199', '\u2190', '\u2196'];
   let normalizedValue = (value + 45 / 2) % 360;
   if (normalizedValue < 0) {
     normalizedValue += 360;
@@ -61,8 +52,7 @@ export const formatDistance = (value, unit, t) =>
 export const formatAltitude = (value, unit, t) =>
   `${altitudeFromMeters(value, unit).toFixed(2)} ${altitudeUnitString(unit, t)}`;
 
-export const formatSpeed = (value, unit, t) =>
-  `${speedFromKnots(value, unit).toFixed(2)} ${speedUnitString(unit, t)}`;
+export const formatSpeed = (value, unit, t) => `${speedFromKnots(value, unit).toFixed(2)} ${speedUnitString(unit, t)}`;
 
 export const formatVolume = (value, unit, t) =>
   `${volumeFromLiters(value, unit).toFixed(2)} ${volumeUnitString(unit, t)}`;
