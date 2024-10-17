@@ -5,8 +5,8 @@
     <arg name="category" default="dji_M300"/>
     <node name="$(arg ns)_sim" type="uavServices.py" pkg="aerialcore_gui" output="screen">
         <param name="ns" type="string" value="$(arg ns)"/>
-        <param name="latitude" value="$(arg latitude)"/>
-        <param name="longitude" value="$(arg longitude)"/>
+        <param name="lat" value="$(arg latitude)"/>
+        <param name="lon" value="$(arg longitude)"/>
         <param name="category" value="$(arg category)"/>
     </node>
 </launch>

@@ -1,29 +1,29 @@
 <launch>
     <node name="uavServices_uav_14" type="uavServices.py" pkg="aerialcore_gui" output="screen">
         <param name="ns" value="uav_14"/>
-        <param name="latitude" value="37.193646 "/>
-        <param name="longitude" value="-6.70293"/>
+        <param name="lat" value="37.193646 "/>
+        <param name="lon" value="-6.70293"/>
         <param name="category" value="dji_M300"/>
     </node>
 
     <node name="uavServices_uav_17" type="uavServices.py" pkg="aerialcore_gui" output="screen">
         <param name="ns" value="uav_17"/>
-        <param name="latitude" value="37.13420794229263"/>
-        <param name="longitude" value="-6.472052460750604"/>
+        <param name="lat" value="37.13420794229263"/>
+        <param name="lon" value="-6.472052460750604"/>
         <param name="category" value="dji_M600"/>
     </node>
 
     <node name="uavServices_uav_15" type="uavServices.py" pkg="aerialcore_gui" output="screen">
         <param name="ns" value="uav_15"/>
-        <param name="latitude" value="37.134207942 "/>
-        <param name="longitude" value="-6.472052460750604"/>
+        <param name="lat" value="37.134207942 "/>
+        <param name="lon" value="-6.472052460750604"/>
         <param name="category" value="dji_M300"/>
     </node>
 
     <node name="uavServices_uav_3" type="uavServices.py" pkg="aerialcore_gui" output="screen">
         <param name="ns" value="uav_3"/>
-        <param name="latitude" value="37.0440984668203 "/>
-        <param name="longitude" value="-6.568915045462035"/>
+        <param name="lat" value="37.0440984668203 "/>
+        <param name="lon" value="-6.568915045462035"/>
         <param name="category" value="px4"/>
     </node>
 </launch>
