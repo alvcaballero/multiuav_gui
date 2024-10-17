@@ -17,11 +17,17 @@ import {
   Divider,
   CardContent,
   Grid,
+  Chip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
+import MapView from '../Mapview/MapView';
+import MapMissions from '../Mapview/MapMissions';
+import MapMarkers from '../Mapview/MapMarkers';
 import { useNavigate, useParams } from 'react-router-dom';
+import { formatTime } from '../common/formatter';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -169,7 +175,37 @@ const MissionDetailReportPage = () => {
   const [routes, setRoutes] = useState(null);
   const [files, setFiles] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
+  const devices = useSelector((state) => state.devices.items);
+
   const missionItems = 'id,initTime,endTime,status';
+  const routeItems = 'id,initTime,endTime,status,deviceId,result';
+
+  const formatValue = (item, key) => {
+    const value = item[key];
+    switch (key) {
+      case 'deviceId':
+        return devices[value].name;
+      case 'uav': {
+        const uavsName = value.map((uav) => devices[uav].name);
+        return uavsName.join(', ');
+      }
+      case 'initTime':
+        return formatTime(value, 'minutes');
+      case 'endTime':
+        return formatTime(value, 'minutes');
+
+      case 'status': {
+        let typeColor = 'primary';
+        typeColor = value === 'done' ? 'success' : typeColor;
+        typeColor = value === 'cancel' ? 'warning' : typeColor;
+        typeColor = value === 'error' ? 'error' : typeColor;
+        typeColor = value === 'init' ? 'neutral' : typeColor;
+        return <Chip color={typeColor} label={value} />;
+      }
+      default:
+        return value;
+    }
+  };
 
   useEffectAsync(async () => {
     const response = await fetch(`/api/missions?id=${id}`);
@@ -227,7 +263,7 @@ const MissionDetailReportPage = () => {
                         <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                           {key}
                         </Typography>
-                        <Typography variant="body1">{missions[key]}</Typography>
+                        <Typography variant="body1">{formatValue(missions, key)}</Typography>
                       </Grid>
                     ))}
                   <Grid item xs={6}>
@@ -249,7 +285,7 @@ const MissionDetailReportPage = () => {
                     {`Ruta-${routeIndex}`}
                   </Typography>
                   <Grid container spacing={2}>
-                    {missionItems
+                    {routeItems
                       .split(',')
                       .filter((key) => route.hasOwnProperty(key))
                       .map((key) => (
@@ -257,15 +293,13 @@ const MissionDetailReportPage = () => {
                           <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                             {key}
                           </Typography>
-                          <Typography variant="body1">{route[key]}</Typography>
+                          {key === 'result' ? (
+                            <FormatResult result={route.result} />
+                          ) : (
+                            <Typography variant="body1">{formatValue(route, key)}</Typography>
+                          )}
                         </Grid>
                       ))}
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                        Result
-                      </Typography>
-                      <FormatResult result={route.result} />
-                    </Grid>
                   </Grid>
                   {files && files.find((item) => item && item.routeId == route.id) && (
                     <>
@@ -288,6 +322,15 @@ const MissionDetailReportPage = () => {
                       </ImageList>
                     </>
                   )}
+                  <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
+                    Mapa de mission
+                  </Typography>
+                  <div style={{ width: '100%', height: '500px' }}>
+                    <MapView>
+                      <MapMissions filtereddeviceid={-1} />
+                      <MapMarkers markers={[]} />
+                    </MapView>
+                  </div>
                 </div>
               ))}
           </Paper>

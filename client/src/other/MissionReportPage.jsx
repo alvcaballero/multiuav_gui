@@ -14,13 +14,14 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Chip,
 } from '@mui/material';
+
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import { formatDistance, formatSpeed, formatTime, formatVolume, formatNumericHours } from '../common/formatter.js';
-import { combineReducers } from 'redux';
+import { formatTime } from '../common/formatter';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -28,6 +29,7 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
   },
+
   content: {
     overflow: 'auto',
     paddingTop: theme.spacing(2),
@@ -47,6 +49,18 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     gap: theme.spacing(2),
     paddingBottom: theme.spacing(3),
+  },
+  success: {
+    color: theme.palette.success.main,
+  },
+  warning: {
+    color: theme.palette.warning.main,
+  },
+  error: {
+    color: theme.palette.error.main,
+  },
+  neutral: {
+    color: theme.palette.neutral.main,
   },
 }));
 
@@ -72,6 +86,15 @@ const MissionReportPage = () => {
         return formatTime(value, 'minutes');
       case 'endTime':
         return formatTime(value, 'minutes');
+
+      case 'status': {
+        let typeColor = 'primary';
+        typeColor = value === 'done' ? 'success' : typeColor;
+        typeColor = value === 'cancel' ? 'warning' : typeColor;
+        typeColor = value === 'error' ? 'error' : typeColor;
+        typeColor = value === 'init' ? 'neutral' : typeColor;
+        return <Chip color={typeColor} label={value.toUpperCase()} />;
+      }
       default:
         return value;
     }
@@ -98,14 +121,16 @@ const MissionReportPage = () => {
         </Toolbar>
       </AppBar>
       <div className={classes.content}>
-        <Container maxWidth="sm">
+        <Container fixed>
           <Paper>
             <Table>
               <TableHead>
                 <TableRow>
                   {columnsArray.map((key) => (
-                    <TableCell key={key}>{key}</TableCell>
+                    <TableCell key={`${key}x`}>{key.toUpperCase()}</TableCell>
                   ))}
+
+                  <TableCell key="keyx">Details</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
