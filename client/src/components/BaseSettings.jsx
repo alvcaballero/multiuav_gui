@@ -1,14 +1,6 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import makeStyles from '@mui/styles/makeStyles';
-import {
-  Box,
-  IconButton,
-  TextField,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
-} from '@mui/material';
+import { Box, IconButton, TextField, Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -48,7 +40,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
+const BaseSettings = ({ data, param, setData, type = 'Base', goToBase = () => null }) => {
   const classes = useStyles();
 
   const [expanded, setExpanded] = useState(false);
@@ -57,9 +49,10 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
   };
-  const modifyData = (index = 0, type = 'mission', key, value) => {
-    let auxData = JSON.parse(JSON.stringify(data));
-    auxData[index][type][key] = Number(value);
+  const modifyData = (index = 0, type = 'mission', objvalue) => {
+    const auxData = JSON.parse(JSON.stringify(data));
+    console.log(auxData);
+    auxData[index][type] = { ...auxData[index][type], ...objvalue };
     setData(auxData);
   };
 
@@ -67,8 +60,6 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
     if (data) {
       data.length > 0 ? setDataExist(false) : setDataExist(true);
     }
-    console.log(data);
-    console.log(param);
   }, [data]);
 
   return (
@@ -81,16 +72,12 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
         <div className={classes.details}>
           {React.Children.toArray(
             Object.values(data).map((base, index, list) => (
-              <Accordion
-                expanded={expanded === `wp ${index}`}
-                onChange={handleChange(`wp ${index}`)}
-              >
+              <Accordion expanded={expanded === `wp ${index}`} onChange={handleChange(`wp ${index}`)}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{`${type} ${index}`}</Typography>
-                  <IconButton
-                    sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                    onClick={() => console.log('button')}
-                  >
+                  <Typography
+                    sx={{ width: '33%', flexShrink: 0 }}
+                  >{`${type} ${index} - ${base.devices.name} `}</Typography>
+                  <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => goToBase(index)}>
                     <MyLocationIcon />
                   </IconButton>
                 </AccordionSummary>
@@ -121,8 +108,13 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
                                     endpoint="/api/devices"
                                     keyGetter={(it) => it.id}
                                     titleGetter={(it) => `${it.name} - ${it.category}`}
-                                    onChange={(e) => {
-                                      modifyData(index, 'devices', actionKey, e.target.value);
+                                    onChange={(e, items) => {
+                                      console.log(items);
+                                      console.log(e.target.value);
+                                      modifyData(index, 'devices', {
+                                        id: e.target.value,
+                                        name: items.find((item) => +item.id == +e.target.value).name,
+                                      });
                                     }}
                                   />
                                 )}
@@ -141,11 +133,8 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
                             Object.keys(param.settings).map((actionKey) => (
                               <div>
                                 {param.settings[actionKey].name && (
-                                  <Fragment>
-                                    <Typography
-                                      variant="subtitle1"
-                                      className={classes.attributeName}
-                                    >
+                                  <>
+                                    <Typography variant="subtitle1" className={classes.attributeName}>
                                       {param.settings[actionKey].name}
                                     </Typography>
                                     <div className={classes.actionValue}>
@@ -159,11 +148,11 @@ const BaseSettings = ({ data, param, setData, type = 'Base' }) => {
                                             : param.settings[actionKey].default
                                         }
                                         onChange={(e) => {
-                                          modifyData(index, 'settings', actionKey, e.target.value);
+                                          modifyData(index, 'settings', { [actionKey]: +e.target.value });
                                         }}
                                       />
                                     </div>
-                                  </Fragment>
+                                  </>
                                 )}
                               </div>
                             ))

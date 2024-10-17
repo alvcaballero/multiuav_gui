@@ -128,6 +128,32 @@ Content-Type: application/json
 
 < ./json/gw-sendtasks2.json
 
+
+### Sendtask
+POST http://localhost:4000/api/missions/sendTask
+Content-Type: application/json
+
+{
+  "objetivo": 3,
+  "loc": [
+    {
+      "name": "alarma_meteo_apoyo",
+      "geo_points": [
+        {
+          "lat": 37.136565344467,
+          "lon": -6.47123160018281
+        }
+      ]
+    }
+  ],
+  "meteo": [
+    {
+      "lat": 37.136565344467,
+      "lon": -6.47123160018281
+    }
+  ],
+  "mission_id":104
+}
 ### setMission
 POST http://localhost:4000/api/missions/setMission
 Content-Type: application/json

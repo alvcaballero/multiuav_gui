@@ -28,7 +28,7 @@ import makeStyles from '@mui/styles/makeStyles';
 import { useNavigate } from 'react-router-dom';
 import { missionActions, sessionActions } from '../store'; // here update device action with position of uav for update in map
 
-import MapView from '../Mapview/MapView';
+import MapView, { map } from '../Mapview/MapView';
 import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import MapMissions from '../Mapview/MapMissions';
@@ -240,6 +240,12 @@ const PlanningPage = () => {
       throw Error(await response.text());
     }
   };
+  const goToBase = (index) => {
+    map.flyTo({
+      center: [markers.bases[index].longitude, markers.bases[index].latitude],
+      zoom: 16,
+    });
+  };
 
   /*
    * https://www.youtube.com/watch?v=K3SshoCXC2g
@@ -285,7 +291,7 @@ const PlanningPage = () => {
   };
   const TabHandleChange = (event, newTabValue) => {
     setTabValue(newTabValue);
-    newTabValue == 2 || newTabValue == 1 ? setShowTitles(true) : setShowTitles(false);
+    newTabValue == 2 || newTabValue == 1 || newTabValue == 3 ? setShowTitles(true) : setShowTitles(false);
     newTabValue == 1 ? setShowLines(true) : setShowLines(false);
     newTabValue == 1 ? SetMoveMarkers(true) : SetMoveMarkers(false);
   };
@@ -684,7 +690,12 @@ const PlanningPage = () => {
                     </TabPanel>
                     <TabPanel value="3">
                       <div className={classes.details}>
-                        <BaseSettings data={SendTask.bases} param={SendTask.settings} setData={setBaseSettings} />
+                        <BaseSettings
+                          data={SendTask.bases}
+                          param={SendTask.settings}
+                          setData={setBaseSettings}
+                          goToBase={goToBase}
+                        />
 
                         <Box textAlign="center">
                           <Button
