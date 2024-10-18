@@ -274,7 +274,11 @@ export class rosModel {
       console.log('callback Sevice finish mission');
       console.log(request);
       if (request.hasOwnProperty('uav_id')) {
-        MissionController.deviceFinishMission({ name: `uav_${request.uav_id}` });
+        if (Number.isNaN(Number.parseInt(request.uav_id))) {
+          MissionController.deviceFinishMission({ name: request.uav_id });
+        } else {
+          MissionController.deviceFinishMission({ name: `uav_${request.uav_id}` });
+        }
       }
       response['success'] = true;
       response['msg'] = 'Set successfully';

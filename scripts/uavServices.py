@@ -74,32 +74,32 @@ class SimpleDevice:
 
         # init services
         self.srvStartMission = rospy.Service(
-            '/'+ns+'/dji_control/start_mission', SetBool, self.startMission)
+            '/'+self.name+'/dji_control/start_mission', SetBool, self.startMission)
 
         self.srvSetMission = rospy.Service(
-            '/'+ns+'/dji_control/configure_mission', ConfigMission, self.loadMission)
+            '/'+self.name+'/dji_control/configure_mission', ConfigMission, self.loadMission)
 
         self.srvDownloadMedia = rospy.Service(
-            '/'+ns+'/camera_download_files', DownloadMedia, self.DownloadMedia)
+            '/'+self.name+'/camera_download_files', DownloadMedia, self.DownloadMedia)
 
         # init publishers
         self.pubPosition = rospy.Publisher(
-            '/'+ns+dictCategory[self.category]["position"], NavSatFix, queue_size=10)
+            '/'+self.name+dictCategory[self.category]["position"], NavSatFix, queue_size=10)
         if self.category == "px4":
             self.pubYaw = rospy.Publisher(
-                '/'+ns+dictCategory[self.category]["yaw"], Float64, queue_size=10)
+                '/'+self.name+dictCategory[self.category]["yaw"], Float64, queue_size=10)
             self.pubSpeed = rospy.Publisher(
-                '/'+ns+dictCategory[self.category]["speed"], TwistStamped, queue_size=10)
+                '/'+self.name+dictCategory[self.category]["speed"], TwistStamped, queue_size=10)
         else:
             self.pubYaw = rospy.Publisher(
-                '/'+ns+dictCategory[self.category]["yaw"], Float32, queue_size=10)
+                '/'+self.name+dictCategory[self.category]["yaw"], Float32, queue_size=10)
             self.pubSpeed = rospy.Publisher(
-                '/'+ns+dictCategory[self.category]["speed"],  Vector3Stamped, queue_size=10)
+                '/'+self.name+dictCategory[self.category]["speed"],  Vector3Stamped, queue_size=10)
         if dictCategory[self.category].get("gimbal"):
             self.pubGimbal = rospy.Publisher(
-                '/'+ns+dictCategory[self.category]["gimbal"], Vector3Stamped, queue_size=10)
+                '/'+self.name+dictCategory[self.category]["gimbal"], Vector3Stamped, queue_size=10)
         self.pubBattery = rospy.Publisher(
-            '/'+ns+dictCategory[self.category]["battery"], BatteryState, queue_size=10)
+            '/'+self.name+dictCategory[self.category]["battery"], BatteryState, queue_size=10)
         self.rate = rospy.Rate(self.rateTime)  # 1 Hz
         self.lock = threading.Lock()
 
@@ -339,7 +339,7 @@ class SimpleDevice:
             print("call GCS finish mission service")
             callservice = rospy.ServiceProxy(
                 '/GCS/FinishMission', finishMission)
-            resp1 = callservice('14', True)
+            resp1 = callservice(self.name, True)
         except Exception as e:
             print("Service call failed: %s" % e)
 
@@ -364,6 +364,8 @@ class SimpleDevice:
             self.status = Status.LOAD_MISSION
             self.homePoint = self.position
             self.mission = request
+            self.speedIdle = self.mission.idleVel
+
             rspSuccess = True
         return ConfigMissionResponse(
             success=rspSuccess,
