@@ -88,6 +88,7 @@ const MainPage = () => {
   const cameradata = useSelector((state) => state.data.camera);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const sessionmarkers = useSelector((state) => state.session.markers);
+  const routes = useSelector((state) => state.mission.route);
   const [filteredPositions, setFilteredPositions] = useState([]);
   const [markers, setmarkers] = useState([]);
   const [filteredImages, setFilteredImages] = useState([]);
@@ -149,7 +150,12 @@ const MainPage = () => {
             height: 'calc(100vh - 88px)',
           }}
         >
-          <MainMap filteredPositions={filteredPositions} markers={markers} selectedPosition={selectedPosition} />
+          <MainMap
+            filteredPositions={filteredPositions}
+            markers={markers}
+            routes={routes}
+            selectedPosition={selectedPosition}
+          />
         </div>
         <div className={classes.sidebarStyle}>
           <Paper square elevation={3} className={classes.header}>

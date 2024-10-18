@@ -108,6 +108,7 @@ const DevicePage = () => {
   const positions = useSelector((state) => state.data.positions);
   const devicelist = useSelector((state) => state.devices.items);
   const sessionmarkers = useSelector((state) => state.session.markers);
+  const routes = useSelector((state) => state.mission.route);
 
   const [savedId, setSavedId] = useState(0);
   const limitCommands = 0;
@@ -124,15 +125,7 @@ const DevicePage = () => {
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
   const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
-  useFilter(
-    keyword,
-    filter,
-    filterSort,
-    filterMap,
-    positions,
-    setFilteredDevices,
-    setFilteredPositions
-  );
+  useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
 
   const onMarkerClick = () => {};
   useEffect(() => {
@@ -175,14 +168,13 @@ const DevicePage = () => {
             <MainMap
               filteredPositions={filteredPositions}
               markers={markers}
+              routes={routes}
               selectedPosition={id}
               filteredMissiondeviceid={id}
             />
           </div>
           <div>
-            {Object.keys(thisDevice).length > 0 && (
-              <RenderCamera device={thisDevice} myhostname={myhostname} />
-            )}
+            {Object.keys(thisDevice).length > 0 && <RenderCamera device={thisDevice} myhostname={myhostname} />}
           </div>
         </div>
         <div

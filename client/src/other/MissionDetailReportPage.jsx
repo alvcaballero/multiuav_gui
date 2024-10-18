@@ -159,13 +159,6 @@ const ImageFull2 = ({ file, closecard }) => {
   );
 };
 
-const FormatResult = ({ result }) => {
-  if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
-    return result.measures.map((item) => <div>{`${item.name}: ${item.value}`}</div>);
-  }
-  return null;
-};
-
 const MissionDetailReportPage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
@@ -174,6 +167,7 @@ const MissionDetailReportPage = () => {
   const [missions, setMissions] = useState(null);
   const [routes, setRoutes] = useState(null);
   const [files, setFiles] = useState(null);
+  const [routePath, setRoutePath] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
   const devices = useSelector((state) => state.devices.items);
 
@@ -206,6 +200,19 @@ const MissionDetailReportPage = () => {
         return value;
     }
   };
+
+  const FormatResult = ({ result }) => {
+    if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
+      return result.measures.map((item) => <Typography>{`${item.name}: ${item.value}`}</Typography>);
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    if (missions && missions.hasOwnProperty('mission') && missions.mission.hasOwnProperty('route')) {
+      setRoutePath(missions.mission.route);
+    }
+  }, [missions]);
 
   useEffectAsync(async () => {
     const response = await fetch(`/api/missions?id=${id}`);
@@ -327,7 +334,7 @@ const MissionDetailReportPage = () => {
                   </Typography>
                   <div style={{ width: '100%', height: '500px' }}>
                     <MapView>
-                      <MapMissions filtereddeviceid={-1} />
+                      <MapMissions filtereddeviceid={-1} routes={routePath} />
                       <MapMarkers markers={[]} />
                     </MapView>
                   </div>

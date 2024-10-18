@@ -16,6 +16,7 @@ const MainMap = ({
   markers = [],
   selectedPosition,
   filteredMissiondeviceid = -1,
+  routes = [],
   onEventsClick,
 }) => {
   const dispatch = useDispatch();
@@ -29,7 +30,7 @@ const MainMap = ({
     <>
       <MapView>
         <MapMarkers markers={markers} />
-        <MapMissions filtereddeviceid={filteredMissiondeviceid} />
+        <MapMissions filtereddeviceid={filteredMissiondeviceid} routes={routes} />
         <MapElements />
         <MapPositions
           positions={filteredPositions}

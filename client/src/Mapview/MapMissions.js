@@ -2,7 +2,7 @@
 // https://stackoverflow.com/questions/53257291/how-to-make-a-custom-line-layer-in-mapbox-gl
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
-import { useId, useCallback, useEffect } from 'react';
+import { useId, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import maplibregl from 'maplibre-gl';
 
@@ -10,11 +10,11 @@ import { map } from './MapView';
 import { findFonts } from './mapUtil';
 import palette from '../common/palette';
 
-export const MapMissions = ({ filteredDeviceId = -1 }) => {
+export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
   const id = useId();
-  const route_points = `${id}-points`;
+  const routePoints = `${id}-points`;
   const clusters = `${id}-points-clusters`;
-  const routes = useSelector((state) => state.mission.route);
+  //const routes = useSelector((state) => state.mission.route);
   const devices = useSelector((state) => state.devices.items);
 
   const mapCluster = true;
@@ -57,7 +57,7 @@ export const MapMissions = ({ filteredDeviceId = -1 }) => {
       attributes: myroute[point.routeid].attributes,
       category: myCategory,
       rotation: myYaw,
-      color: myroute[point.routeid].id,
+      color: point.routeid,
     };
   };
 
@@ -104,7 +104,7 @@ export const MapMissions = ({ filteredDeviceId = -1 }) => {
 
   useEffect(() => {
     if (true) {
-      map.addSource(route_points, {
+      map.addSource(routePoints, {
         type: 'geojson',
         data: {
           type: 'FeatureCollection',
@@ -148,7 +148,7 @@ export const MapMissions = ({ filteredDeviceId = -1 }) => {
       map.addLayer({
         id: 'mission-points',
         type: 'symbol',
-        source: route_points,
+        source: routePoints,
         filter: ['!has', 'point_count'],
         layout: {
           'icon-image': '{category}-{color}',
@@ -169,7 +169,7 @@ export const MapMissions = ({ filteredDeviceId = -1 }) => {
       map.addLayer({
         id: clusters,
         type: 'symbol',
-        source: route_points,
+        source: routePoints,
         filter: ['has', 'point_count'],
         layout: {
           'icon-image': 'background',
@@ -205,8 +205,8 @@ export const MapMissions = ({ filteredDeviceId = -1 }) => {
         if (map.getSource(id)) {
           map.removeSource(id);
         }
-        if (map.getSource(route_points)) {
-          map.removeSource(route_points);
+        if (map.getSource(routePoints)) {
+          map.removeSource(routePoints);
         }
       };
     }
@@ -214,19 +214,18 @@ export const MapMissions = ({ filteredDeviceId = -1 }) => {
   }, []);
 
   function routesToFeature(item) {
-    let waypoint_pos = item.wp.map(function (it) {
-      return [it['pos'][1], it['pos'][0]];
-    });
+    const waypointPos = item.wp.map((it) => [it.pos[1], it.pos[0]]);
+
     return {
       id: item.id,
       type: 'Feature',
       geometry: {
         type: 'LineString',
-        coordinates: waypoint_pos,
+        coordinates: waypointPos,
       },
       properties: {
         name: item.uav, //name,
-        color: palette.colors_devices[item.id],
+        color: palette.colors_devices[+item.id % Object.keys(palette.colors_devices).length],
       },
     };
   }
@@ -246,14 +245,20 @@ export const MapMissions = ({ filteredDeviceId = -1 }) => {
   }
 
   useEffect(() => {
-    const routerFiltered = routes.filter(
+    const myRoutes = JSON.parse(JSON.stringify(routes));
+    for (let i = 0; i < routes.length; i += 1) {
+      if (!routes[i].hasOwnProperty('id')) {
+        myRoutes[i].id = i;
+      }
+    }
+    const routerFiltered = myRoutes.filter(
       (route) => filteredDeviceId < 0 || route.uav === devices[filteredDeviceId].name
     );
     console.log('mission filtered');
     console.log(routerFiltered);
     const waypointPosition = routeTowaypoints(routerFiltered);
 
-    map.getSource(route_points).setData({
+    map.getSource(routePoints).setData({
       type: 'FeatureCollection',
       features: waypointPosition.map((position) => ({
         type: 'Feature',
