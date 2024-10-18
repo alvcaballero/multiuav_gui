@@ -85,6 +85,7 @@ class SimpleDevice:
         # init publishers
         self.pubPosition = rospy.Publisher(
             '/'+self.name+dictCategory[self.category]["position"], NavSatFix, queue_size=10)
+
         if self.category == "px4":
             self.pubYaw = rospy.Publisher(
                 '/'+self.name+dictCategory[self.category]["yaw"], Float64, queue_size=10)
@@ -95,9 +96,11 @@ class SimpleDevice:
                 '/'+self.name+dictCategory[self.category]["yaw"], Float32, queue_size=10)
             self.pubSpeed = rospy.Publisher(
                 '/'+self.name+dictCategory[self.category]["speed"],  Vector3Stamped, queue_size=10)
+
         if dictCategory[self.category].get("gimbal"):
             self.pubGimbal = rospy.Publisher(
                 '/'+self.name+dictCategory[self.category]["gimbal"], Vector3Stamped, queue_size=10)
+
         self.pubBattery = rospy.Publisher(
             '/'+self.name+dictCategory[self.category]["battery"], BatteryState, queue_size=10)
         self.rate = rospy.Rate(self.rateTime)  # 1 Hz
@@ -255,7 +258,7 @@ class SimpleDevice:
                     time.sleep(2)
                     self.finish_Mission()
 
-            self.battery = self.battery - 0.5
+            self.battery = self.battery - 0.05
             if self.battery < 5:
                 self.battery = 100
 
