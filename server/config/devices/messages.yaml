@@ -1,0 +1,122 @@
+topics:
+    position:
+        - "sensor_msgs/NavSatFix"
+    sensor_height:
+        - "sensor_msgs/Float32"
+        - "mavros_msgs/Altitude"
+
+    vo_position:
+        - "geometry_msgs/PointStamped"
+        - "dji_osdk_ros/VOPosition"
+    IMU:
+        - "sensor_msgs/Imu"
+    hdg:
+        - "std_msgs/Float32"
+        - "std_msgs/Float64"
+    speed:
+        - "geometry_msgs/TwistStamped"
+        - "geometry_msgs/Vector3Stamped"
+    battery:
+        - "sensor_msgs/BatteryState"
+        - "aerialcore_common/BatteryState_melodic"
+    camera:
+        - "sensor_msgs/CompressedImage"
+    gimbal:
+        - "geometry_msgs/Vector3Stamped"
+    obstacle_info:
+        - "dji_osdk_ros/ObstacleInfo"
+    state_machine:
+        - "muav_state_machine/UAVState"
+    flight_status:
+        - "std_msgs/UInt8"
+    mission_state:
+        - "dji_osdk_ros/WaypointV2MissionStatePush"
+    threat:
+        - "std_msgs/Bool"
+    sensors_humidity:
+        - "std_msgs/Int32MultiArray"
+
+services:
+    configureMission:
+        - "aerialcore_common/ConfigMission"
+    commandMission:
+        - "std_srvs/SetBool"
+    sincronize:
+        - "std_srvs/Bool"
+    setupcamera:
+        - "dji_osdk_ros/SetupCameraStream"
+    Gimbal:
+        - "dji_osdk_ros/GimbalAction"
+    threat_confirmation:
+        - "std_srvs/Trigger"
+    threat_defuse:
+        - "std_srvs/Trigger"
+mission_action:
+    stay: #action_stay
+        name: "stay"
+        id: 0
+        param: true
+        description: "action_stay"
+    photo: #simple_shot
+        name: "photo"
+        id: 1
+        param: false
+        description: "simple_shot"
+    video_start:
+        name: "video_start"
+        id: 2
+        param: false
+        description: "video_start"
+    video_stop:
+        name: "video_stop"
+        id: 3
+        param: false
+        description: "video_stop"
+    yaw: # craft_yaw
+        name: "yaw"
+        id: 4
+        param: true
+        description: "craft_yaw"
+    gimbal: #gimbal_pitch
+        name: "gimbal"
+        id: 5
+        param: true
+        description: "gimbal_pitch"
+mission_param:
+    mode_yaw:
+        Name: "mode yaw"
+        id: "mode_yaw"
+        param:
+            - { id: 0, name: "Auto" } # auto mode (point to next waypoint)
+            - { id: 1, name: "Lock" } # lock as an initial value
+            - { id: 2, name: "RC" } # controlled by RC
+            - { id: 3, name: "Waypoint" } # use waypoint's yaw(tgt_yaw)
+    mode_trace:
+        Name: "trace_mode"
+        id: "mode_trace"
+        param:
+            - { id: 0, name: "point to point" } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
+            - { id: 1, name: "smooth" } #Coordinated turn mode, smooth transition between waypts, no waypts task
+    mode_landing:
+        Name: "finish action"
+        id: "mode_landing"
+        param:
+            - { id: 0, name: "no action" } # no action
+            - { id: 1, name: "return to home" } # return to home
+            - { id: 2, name: "auto landing" } # auto landing
+            - { id: 3, name: "return to point 0" } # return to point 0
+            - { id: 4, name: "infinite mode" } # infinite mode， no exit
+    mode_gimbal:
+        Name: "trace_mode"
+        id: "mode_trace"
+        param:
+            - { id: 0, name: "Gimbal free" } # free mode, no control on gimbal
+            - { id: 1, name: "Waypoint" } # auto mode, Smooth transition between waypoints on gimbal
+    idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "Cruising Speed"
+        id: "idle_speed"
+        param: true
+    max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
+        Name: "Max Speed"
+        id: "max_speed"
+        param: true
