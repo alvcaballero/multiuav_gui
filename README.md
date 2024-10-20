@@ -1,6 +1,9 @@
-# GCS for multiple UAV
+# MultiUAV-GUI 
+[![Releases](https://img.shields.io/github/release/alvcaballero/multiuav_gui.svg)](https://github.com/alvcaballero/multiuav_gui/releases) [![DOI](https://img.shields.io/badge/DOI-10.1109%2FICUAS60882.2024.10556987-blue)](https://doi.org/10.1109/ICUAS60882.2024.10556987)
 
-This repository porvides an GCS software that allow command and monitoring multiple UAVs for a heterogeneous fleet of unmannned Aerial Vehicles (UAVs).
+A GCS for multi UAV  & long range inspection
+
+This repository prvides an GCS software that allow command and monitoring multiple UAVs for a heterogeneous fleet of unmannned Aerial Vehicles (UAVs).
 This project is part of [Multi Project](https://github.com/alvcaballero/multiUAV_system)
 
 <img src="docs/Rosbag.gif" alt="Example of the GCS interface">
@@ -333,3 +336,19 @@ Test and Setup for Muav on Proyect Omicron Demo in Plaza de Agua
 - [Mediamtx](https://github.com/bluenviron/mediamtx) Server multimedia for streaming video in server part
 
 - [traccar-web](https://github.com/traccar/traccar-web) fleet management
+
+
+## Citation
+If you find UAL useful in your research, please consider citing:
+
+```
+@inproceedings{poma2024Icuas,
+  title={Open-Source Web-Based Ground Control Station for Long-Range Inspection with Multiple UAV s},
+  author={Poma, Alvaro Ramiro and Caballero, Alvaro and Maza, Ivan and Ollero, Anibal},
+  booktitle={2024 International Conference on Unmanned Aircraft Systems (ICUAS)},
+  pages={1385--1392},
+  year={2024},
+  organization={IEEE}
+}
+
+```
