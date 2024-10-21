@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useEffectAsync } from '../reactHelper';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import {
   Typography,
@@ -18,16 +18,27 @@ import {
   CardContent,
   Grid,
   Chip,
+  Tab,
+  Box,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
+import { TabPanel, TabList, TabContext } from '@mui/lab';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
+import { formatTime } from '../common/formatter';
+
+import { useEffectAsync } from '../reactHelper';
 import MapView from '../Mapview/MapView';
 import MapMissions from '../Mapview/MapMissions';
 import MapMarkers from '../Mapview/MapMarkers';
-import { useNavigate, useParams } from 'react-router-dom';
-import { formatTime } from '../common/formatter';
+import RoutesList from '../components/RoutesList';
+import SelectField from '../common/components/SelectField';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -170,7 +181,10 @@ const MissionDetailReportPage = () => {
   const [routePath, setRoutePath] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
   const devices = useSelector((state) => state.devices.items);
-
+  const [tabValue, setTabValue] = useState('1');
+  const TabHandleChange = (event, newTabValue) => {
+    setTabValue(newTabValue);
+  };
   const missionItems = 'id,initTime,endTime,status';
   const routeItems = 'id,initTime,endTime,status,deviceId,result';
 
@@ -203,7 +217,9 @@ const MissionDetailReportPage = () => {
 
   const FormatResult = ({ result }) => {
     if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
-      return result.measures.map((item) => <Typography>{`${item.name}: ${item.value}`}</Typography>);
+      return result.measures.map((item, itemIndex) => (
+        <Typography key={`m-${item.name}${itemIndex}`}>{`${item.name}: ${item.value}`}</Typography>
+      ));
     }
     return null;
   };
@@ -266,19 +282,19 @@ const MissionDetailReportPage = () => {
                     .split(',')
                     .filter((key) => missions.hasOwnProperty(key))
                     .map((key) => (
-                      <Grid item xs={6} key={key}>
+                      <Grid item xs={6} key={`ms${key}`}>
                         <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                           {key}
                         </Typography>
                         <Typography variant="body1">{formatValue(missions, key)}</Typography>
                       </Grid>
                     ))}
-                  <Grid item xs={6}>
+                  <Grid item xs={6} key={`msresult`}>
                     <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                       Results
                     </Typography>
-                    {missions.results.map((item) => (
-                      <FormatResult result={item} />
+                    {missions.results.map((item, itemIndex) => (
+                      <FormatResult result={item} key={`msrs_${itemIndex}`} />
                     ))}
                   </Grid>
                 </Grid>
@@ -286,7 +302,7 @@ const MissionDetailReportPage = () => {
             )}
             {routes &&
               routes.map((route, routeIndex) => (
-                <div key={routeIndex}>
+                <div key={`rt${routeIndex}`}>
                   <Divider style={{ margin: '40px 0' }} />
                   <Typography variant="h5" gutterBottom>
                     {`Ruta-${routeIndex}`}
@@ -296,7 +312,7 @@ const MissionDetailReportPage = () => {
                       .split(',')
                       .filter((key) => route.hasOwnProperty(key))
                       .map((key) => (
-                        <Grid item xs={6} key={key}>
+                        <Grid item xs={6} key={`rt${routeIndex}_${key}`}>
                           <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                             {key}
                           </Typography>
@@ -332,11 +348,76 @@ const MissionDetailReportPage = () => {
                   <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
                     Mapa de mission
                   </Typography>
-                  <div style={{ width: '100%', height: '500px' }}>
+                  <div style={{ width: '100%', height: '500px', position: 'relative' }}>
                     <MapView>
                       <MapMissions filtereddeviceid={-1} routes={routePath} />
                       <MapMarkers markers={[]} />
                     </MapView>
+                    <Paper
+                      square
+                      elevation={3}
+                      style={{
+                        width: '500px',
+                        height: '480px',
+                        position: 'absolute',
+                        top: '10px',
+                        left: '10px',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      <TabContext value={tabValue}>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                          <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
+                            <Tab label="mission" value="1" />
+                            <Tab label="Planning" value="2" />
+                          </TabList>
+                        </Box>
+                        <TabPanel value="1">
+                          {routePath && (
+                            <RoutesList
+                              mission={missions.mission}
+                              setmission={() => null}
+                              setScrool={() => null}
+                              NoEdit={true}
+                            />
+                          )}
+                        </TabPanel>
+                        <TabPanel value="2">
+                          {missions.task && (
+                            <>
+                              <SelectField
+                                emptyValue={null}
+                                fullWidth
+                                label="objetive"
+                                value={missions.task.case}
+                                endpoint="/api/planning/missionstype"
+                                keyGetter={(it) => it.id}
+                                titleGetter={(it) => it.name}
+                              />
+                              <Accordion>
+                                <AccordionSummary expandIcon={<ExpandMore />}>
+                                  <Typography>Base elements</Typography>
+                                </AccordionSummary>
+                                <AccordionDetails className={classes.details}>
+                                  <Typography>Base elements</Typography>
+                                </AccordionDetails>
+                              </Accordion>
+                              <Divider />
+                              <Accordion>
+                                <AccordionSummary expandIcon={<ExpandMore />}>
+                                  <Typography>Interest Elements</Typography>
+                                </AccordionSummary>
+                                <AccordionDetails className={classes.details}>
+                                  <Typography>Base elements</Typography>
+                                </AccordionDetails>
+                              </Accordion>
+                            </>
+                          )}
+                        </TabPanel>
+                      </TabContext>
+                    </Paper>
                   </div>
                 </div>
               ))}

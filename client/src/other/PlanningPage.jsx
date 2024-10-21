@@ -550,7 +550,7 @@ const PlanningPage = () => {
                 <div className={classes.list}>
                   <TabContext value={tabValue}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                      <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
+                      <TabList onChange={TabHandleChange} aria-label="Planning tabs">
                         <Tab label="Elements" value="1" />
                         <Tab label="Planning" value="2" />
                         <Tab label="Settings" value="3" />

@@ -31,14 +31,14 @@ export const MISSION_STATUS = Object.freeze({
   ERROR: 'error',
 });
 export const ROUTE_STATUS = Object.freeze({
-  INIT: 1,
-  LOADED: 2,
-  COMMANDED: 3,
-  RUNNING: 4,
-  COMPLETED: 5, //uav finish but no complete, need to download files
-  END: 6, //uav finish and complete
-  CANCELLED: 7,
-  ERROR: 8,
+  INIT: 'init',
+  LOADED: 'loaded',
+  COMMANDED: 'commanded',
+  RUNNING: 'running',
+  COMPLETED: 'complete', //uav finish but no complete, need to download files
+  END: 'end', //uav finish and complete
+  CANCELLED: 'cancelled',
+  ERROR: 'error',
 });
 
 export class missionModel {

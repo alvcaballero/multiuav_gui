@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-  <!-- Tubo del aerogenerador (más corto y con base más ancha) -->
-  <path d="M11.5,7 L10.8,23 L13.5,23 L12.2,7 Z" fill="darkgray" stroke="black" stroke-width="0.2" />
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
 
   <!-- Base del aerogenerador (rectángulo en la parte inferior) -->
-  <rect x="8" y="22" width="8" height="1" fill="#666666" stroke="black" stroke-width="0.2" />
+  <rect x="5" y="45" width="40" height="3" fill="black" />
 
+  <!-- Tubo del aerogenerador (más corto y con base más ancha) -->
+  <path d="M24.5,16 L21.5,47 L28.5,47 L25.5,16 Z" fill="white" stroke="black" stroke-width="1.5" />
 
   <!-- Base del motor -->
-  <rect x="10.5" y="7.5" width="3" height="3" fill="gray" stroke="black" stroke-width="0.15"  rx="0.4" ry="0.4" />
+  <rect x="20" y="16" width="9" height="9" fill="white" stroke="black" stroke-width="1" rx="1" ry="1" />
 
- <!-- Aspa 1 - Apuntando hacia arriba (más ancha) -->
-  <path id="aspa1" d="M11.8,8 h0.6 v-8 h-0.4 l-1.2,6 Z" fill="lightgray" stroke="black" stroke-width="0.2" />
-  <path id="aspa1-sing" d="M12.4,3  v-3 h-0.4 l-0.6,3 " fill="yellow" stroke="black" stroke-width="0.2" />
-  
+  <!-- Aspa 1 - Apuntando hacia arriba (más ancha) -->
+  <path id="aspa1" d="M26.5,19 v-22 h-2 l-9,15 L24.5,19 Z" fill="white" stroke="black" stroke-width="1" />
+  <path id="aspa1-sing" d="M26.5,7 v-10 h-2 l-5.5,9" fill="red" stroke="black" stroke-width="1" />
+
   <!-- Aspa 2 - Rotada 120 grados -->
-  <use href="#aspa1" transform="rotate(120 12 9)" />
-  <use href="#aspa1-sing" transform="rotate(120 12 9)" />
-  <!-- Aspa 3 - Rotada 240 grados -->
-  <use href="#aspa1" transform="rotate(240 12 9)" />
-  <use href="#aspa1-sing" transform="rotate(240 12 9)" />
+  <use href="#aspa1" transform="rotate(120 25 20)" />
+  <use href="#aspa1-sing" transform="rotate(120 25 20)" />
 
+  <!-- Aspa 3 - Rotada 240 grados -->
+  <use href="#aspa1" transform="rotate(240 25 20)" />
+  <use href="#aspa1-sing" transform="rotate(240 25 20)" />
 
   <!-- Círculo en el centro de las aspas -->
-  <circle cx="12" cy="9" r="1.1" fill="darkgray" stroke="black" stroke-width="0.15" />
+  <circle cx="25" cy="20" r="3" fill="lightgrey" stroke="black" stroke-width="0.6" />
 </svg>

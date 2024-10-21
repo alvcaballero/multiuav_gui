@@ -8,10 +8,12 @@
   <!-- structure1 -->
 
   <!-- panel -->
-  <path id="Fondo" d="M6,16  L24,16 L18,0 L0,0 Z" fill="darkblue" stroke="lightgrey" stroke-width="0.8"  />
+  <path id="Fondo" d="M6,16  L23,16 L18,1 L1,1 Z" fill="darkblue" stroke="black" stroke-width="1.5"  />
+  
+  <path id="Fondo" d="M6,16  L23,16 L18,1 L1,1 Z" fill="darkblue" stroke="lightgrey" stroke-width="0.4"  />
   <!-- linea de panel -->
-  <line x1="6" y1="0" x2="12" y2="16" stroke="lightgrey" stroke-width="0.8" />
-  <line x1="12" y1="0" x2="18" y2="16" stroke="lightgrey" stroke-width="0.8" />
-  <line x1="2" y1="5" x2="20" y2="5" stroke="lightgrey" stroke-width="0.8" />
-  <line x1="4" y1="10" x2="22" y2="10" stroke="lightgrey" stroke-width="0.8" />
+  <line x1="6" y1="1" x2="12" y2="16" stroke="lightgrey" stroke-width="0.4" />
+  <line x1="12" y1="1" x2="18" y2="16" stroke="lightgrey" stroke-width="0.4" />
+  <line x1="2.2" y1="5" x2="19.2" y2="5" stroke="lightgrey" stroke-width="0.4" />
+  <line x1="4" y1="10" x2="21" y2="10" stroke="lightgrey" stroke-width="0.4" />
 </svg>
