@@ -18,7 +18,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import { WbIncandescent, WbIncandescentOutlined, Wifi, WifiOff } from '@mui/icons-material';
 import Logo from '../resources/images/grvc.svg?react';
-import { MenuItems } from './MenuItems';
+import MenuItems from './MenuItems';
 
 const useStyles = makeStyles((theme) => ({
   toolbar: {

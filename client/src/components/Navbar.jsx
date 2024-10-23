@@ -6,7 +6,7 @@ import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
 import { missionActions, sessionActions } from '../store';
 import { map } from '../Mapview/MapView';
 import { RosContext } from './RosControl';
-import { MenuItems } from './MenuItems';
+import MenuItems from './MenuItems';
 
 import { usePreference } from '../common/preferences';
 
@@ -18,7 +18,6 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
   const defaultLatitude = usePreference('latitude');
   const defaultLongitude = usePreference('longitude');
   const defaultZoom = usePreference('zoom', 10);
-
 
   const menuItemsData = [
     {
@@ -62,8 +61,13 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
       title: 'Report',
       submenu: [
         { title: 'Missions', action: () => navigate('/reports/mission') },
+        { title: 'Routes', action: () => navigate('/reports/route') },
         { title: 'events', action: () => navigate('/reports/events') },
       ],
+    },
+    {
+      title: 'Settings',
+      action: () => navigate('/settings/devices'),
     },
   ];
 

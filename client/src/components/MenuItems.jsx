@@ -3,11 +3,14 @@ import React, { useState } from 'react';
 import { Button, Menu, MenuItem, Fade } from '@mui/material';
 import UploadButtons from './uploadButton';
 
-export const MenuItems = ({ items, depthLevel }) => {
+const MenuItems = ({ items, depthLevel }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
   const handleClick = (event) => {
+    if (!items.submenu && items.action) {
+      items.action();
+    }
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => {
@@ -74,3 +77,5 @@ export const MenuItems = ({ items, depthLevel }) => {
     </div>
   );
 };
+
+export default MenuItems;
