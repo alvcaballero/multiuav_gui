@@ -207,7 +207,7 @@ export class missionModel {
   }
 
   static async initMission(missionId, mission) {
-    if (mission == null && mission.hasOwnProperty('route') && mission.route.length == 0) {
+    if (mission == null || !mission.hasOwnProperty('route') || mission.route.length == 0) {
       this.editMission({ id: missionId, status: MISSION_STATUS.ERROR });
       console.log('Mission ' + missionId + ' cant planning');
       return false;

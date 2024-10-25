@@ -111,7 +111,9 @@ export class planningModel {
       console.log(data);
       console.log('response to check planning');
       if (data.results && Object.keys(data.results) > 0) {
+        console.log('response to check planning1');
         if (data.results.hasOwnProperty(mission_id) && data.results[mission_id].hasOwnProperty('route')) {
+          console.log('response to check planning2');
           clearInterval(requestPlanning[mission_id]['interval']);
           requestPlanning[mission_id]['count'] = 10;
           MissionController.initMission(mission_id, data.results[mission_id]);
