@@ -134,6 +134,7 @@ const PlanningPage = () => {
 
   const sessionmarkers = useSelector((state) => state.session.markers);
   const sessionplanning = useSelector((state) => state.session.planning);
+  const routeMission = useSelector((state) => state.mission.route);
 
   const [markers, setMarkers] = useState(sessionmarkers);
   const [SendTask, setSendTask] = useState(sessionplanning);
@@ -464,11 +465,11 @@ const PlanningPage = () => {
       if (response.ok) {
         const data = await response.json();
         console.log(data);
-        if (Array.isArray(data.results) && data.results.length > 0) {
-          if (data.results[0].hasOwnProperty('route')) {
+        if (data.results && Object.keys(data.results) > 0) {
+          if (data.results.hasOwnProperty(SendTask.id) && data.results[SendTask.id].hasOwnProperty('route')) {
             console.log('response to check planning');
             SetRequestPlanning(10);
-            dispatch(missionActions.updateMission({ ...data.results[0], version: '3' }));
+            dispatch(missionActions.updateMission({ ...data.results[SendTask.id], version: '3' }));
           }
         }
       } else {
@@ -492,7 +493,7 @@ const PlanningPage = () => {
           <Menu />
           <div className={classes.mapContainer}>
             <MapView>
-              {checked && <MapMissions />}
+              {checked && <MapMissions routes={routeMission} />}
               <MapMarkersCreate
                 markers={markers}
                 selectMarkers={SendTask.loc}
@@ -610,7 +611,7 @@ const PlanningPage = () => {
                           emptyValue={null}
                           fullWidth
                           label="objetive"
-                          value={SendTask.objetivo.id ? SendTask.objetivo.id : 1}
+                          value={SendTask.objetivo.hasOwnProperty('id') ? SendTask.objetivo.id : 1}
                           endpoint="/api/planning/missionstype"
                           keyGetter={(it) => it.id}
                           titleGetter={(it) => it.name}

@@ -276,6 +276,10 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
     });
   }, [routes]);
 
+  useEffect(() => {
+    console.log('render');
+  }, []);
+
   return null;
 };
 export default MapMissions;

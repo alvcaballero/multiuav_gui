@@ -46,6 +46,8 @@ const MapMarkersCreate = ({
   const idselectMarkers = `${id}-select`;
 
   const iconScale = 0.8;
+  const iconPointScale = 0.6;
+
   const [testkeepValue, settestkeepValue] = useState(new keepMarkers());
 
   const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
@@ -175,7 +177,7 @@ const MapMarkersCreate = ({
       filter: ['!has', 'point_count'],
       layout: {
         'icon-image': 'background-{groupId}',
-        'icon-size': iconScale * 1.2,
+        'icon-size': iconPointScale,
         'icon-allow-overlap': true,
         'text-allow-overlap': true,
         'text-field': '{title}',
