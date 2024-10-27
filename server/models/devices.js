@@ -97,6 +97,8 @@ export class DevicesModel {
 
     let protocol = device.protocol ? device.protocol : 'ros';
 
+    console.log(device);
+
     console.log(`create UAV  ${device.name} type: ${device.category} protocol ${protocol} server ${serverState.state}`);
 
     let repeat_device = false;
