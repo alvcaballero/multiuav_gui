@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import SelectField from '../common/components/SelectField';
 import {
-  Table,
-  TableRow,
-  TableCell,
-  TableHead,
-  TableBody,
+  Divider,
+  Card,
+  IconButton,
+  MenuItem,
   Button,
-  TableFooter,
+  Select,
+  TextField,
+  FormControl,
+  InputLabel,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+  FormGroup,
   FormControlLabel,
-  Switch,
+  Checkbox,
 } from '@mui/material';
 import { IconButton, Menu, MenuItem, useMediaQuery, useTheme } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
@@ -25,12 +33,18 @@ import TableShimmer from '../common/components/TableShimmer';
 import SearchHeader, { filterByKeyword } from './components/SearchHeader';
 import { formatTime } from '../common/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
-import  RemoveDialog  from '../components/RemoveDialog';
+import RemoveDialog  from '../components/RemoveDialog';
+import useQuery from './common/useQuery';
 
-const SettingsCategoryPage = () => {
 
+const SettingsCategoryPageEdit = () => {
   const classes = useSettingsStyles();
   const navigate = useNavigate();
+  
+  const query = useQuery();
+  const uniqueId = query.get('uniqueId');
+
+  const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
 
   const [timestamp, setTimestamp] = useState(Date.now());
   const [items, setItems] = useState([]);
@@ -72,7 +86,14 @@ const SettingsCategoryPage = () => {
   
 
   return (
-    <>
+    <EditItemView
+    endpoint="devices"
+    item={item}
+    setItem={setItem}
+    validate={validate}
+    menu={<SettingsMenu />}
+    breadcrumbs={['settingsTitle', 'sharedDevice']}
+  >
     <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>
       <SearchHeader keyword={searchKeyword} setKeyword={setSearchKeyword} />
       <Table className={classes.table}>
@@ -92,12 +113,12 @@ const SettingsCategoryPage = () => {
                 <TableCell className={classes.columnAction} padding="none">
                   <div className={classes.row}>
                     <Tooltip title={'Edit'}>
-                      <IconButton size="small" onClick={() => handleEdit(item)}>
+                      <IconButton size="small" onClick={handleEdit(item)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title={'Remove'}>
-                      <IconButton size="small" onClick={() => handleRemove(item)}>
+                      <IconButton size="small" onClick={handleRemove(item)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -112,8 +133,8 @@ const SettingsCategoryPage = () => {
       </Table>
     </PageLayout>
     {myCategory && <RemoveDialog open={removing} endpoint="category" ItemId={myCategory} onResult={hamdleRemoveResult} />}
-    </>
+    </EditItemView>
   );
 };
 
-export default SettingsCategoryPage;
+export default SettingsCategoryPageEdit;
