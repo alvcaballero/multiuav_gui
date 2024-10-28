@@ -39,6 +39,8 @@ import MapMissions from '../Mapview/MapMissions';
 import MapMarkers from '../Mapview/MapMarkers';
 import RoutesList from '../components/RoutesList';
 import SelectField from '../common/components/SelectField';
+import SelectList from '../components/SelectList';
+import BaseSettings from '../components/BaseSettings';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -176,6 +178,7 @@ const MissionDetailReportPage = () => {
   const { id } = useParams();
 
   const [missions, setMissions] = useState(null);
+  const [dataMission, setDataMission] = useState(null);
   const [routes, setRoutes] = useState(null);
   const [files, setFiles] = useState(null);
   const [routePath, setRoutePath] = useState(null);
@@ -227,6 +230,19 @@ const MissionDetailReportPage = () => {
   useEffect(() => {
     if (missions && missions.hasOwnProperty('mission') && missions.mission.hasOwnProperty('route')) {
       setRoutePath(missions.mission.route);
+    }
+    if (
+      missions &&
+      missions.hasOwnProperty('task') &&
+      missions.task.hasOwnProperty('devices') &&
+      missions.task.devices
+    ) {
+      const data = { data: [], param: [] };
+      Object.keys(missions.task.devices).forEach((key) => {
+        const mydata = {};
+        data.data[key] = missions.task.devices[key].id;
+        data.param[key] = missions.task.devices[key];
+      });
     }
   }, [missions]);
 
@@ -398,19 +414,26 @@ const MissionDetailReportPage = () => {
                               />
                               <Accordion>
                                 <AccordionSummary expandIcon={<ExpandMore />}>
-                                  <Typography>Base elements</Typography>
+                                  <Typography>Interest elements</Typography>
                                 </AccordionSummary>
                                 <AccordionDetails className={classes.details}>
-                                  <Typography>Base elements</Typography>
+                                  {missions.task.locations && <SelectList Data={missions.task.locations} />}
                                 </AccordionDetails>
                               </Accordion>
                               <Divider />
                               <Accordion>
                                 <AccordionSummary expandIcon={<ExpandMore />}>
-                                  <Typography>Interest Elements</Typography>
+                                  <Typography>Devices</Typography>
                                 </AccordionSummary>
                                 <AccordionDetails className={classes.details}>
-                                  <Typography>Base elements</Typography>
+                                  {missions.task.devices && (
+                                    <BaseSettings
+                                      data={missions.task.devices}
+                                      param={missions.task.devices}
+                                      setData={() => null}
+                                      goToBase={() => null}
+                                    />
+                                  )}
                                 </AccordionDetails>
                               </Accordion>
                             </>
