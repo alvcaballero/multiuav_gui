@@ -26,8 +26,12 @@ export const env = process.env.NODE_ENV || 'dev',
   extAppUser = process.env.EXT_APP_user || '',
   extAppPWD = process.env.EXT_APP_pwd || '';
 
+// data files
 export const filesData = '../data/files.json';
 export const devicesData = '../data/devices.json';
 export const routesData = '../data/routes.json';
 export const missionsData = '../data/missions.json';
 export const missionsConfigData = '../data/missionConfig.yaml';
+// config files
+export const devicesMsg = '../config/devices/devices_msg.yaml';
+export const messagesTypes = '../config/devices/messages.yaml';

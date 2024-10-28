@@ -6,7 +6,7 @@ import makeStyles from '@mui/styles/makeStyles';
 import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import Toast from '../components/Toast';
-import { Adduav } from '../components/Adduav';
+import Adduav from '../components/Adduav';
 import { RosControl, RosContext } from '../components/RosControl';
 import DeviceList from '../components/DeviceList';
 import SwipeConfirm from '../common/components/SwipeConfirm';

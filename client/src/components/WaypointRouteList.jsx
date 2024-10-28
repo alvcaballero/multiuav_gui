@@ -322,7 +322,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                             <DeleteIcon />
                           </IconButton>
                         </div>
-                        <Divider></Divider>
+                        <Divider />
                       </Fragment>
                     ))
                   )}
@@ -333,7 +333,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                       size="large"
                       sx={{ width: '80%', flexShrink: 0 }}
                       style={{ marginTop: '15px' }}
-                      onClick={handleChange_acnew('wp ' + indexWp)}
+                      onClick={() => handleChange_acnew('wp ' + indexWp)}
                     >
                       Add new action
                     </Button>

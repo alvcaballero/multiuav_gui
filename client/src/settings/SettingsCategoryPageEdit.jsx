@@ -19,13 +19,21 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
+  useMediaQuery,
+  useTheme,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Box,
 } from '@mui/material';
-import { IconButton, Menu, MenuItem, useMediaQuery, useTheme } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useEffectAsync } from '../reactHelper';
 import PageLayout from '../common/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
@@ -33,8 +41,8 @@ import TableShimmer from '../common/components/TableShimmer';
 import SearchHeader, { filterByKeyword } from './components/SearchHeader';
 import { formatTime } from '../common/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
-import RemoveDialog from '../components/RemoveDialog';
-import useQuery from './common/useQuery';
+import useQuery from '../common/useQuery';
+import EditItemView from './components/EditItemView';
 
 const SettingsCategoryPageEdit = () => {
   const classes = useSettingsStyles();
@@ -44,247 +52,215 @@ const SettingsCategoryPageEdit = () => {
   const uniqueId = query.get('uniqueId');
 
   const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
-
-  const [timestamp, setTimestamp] = useState(Date.now());
-  const [items, setItems] = useState([]);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [showAll, setShowAll] = useState(false);
+  const [itemMsg, setItemMsg] = useState(uniqueId ? { uniqueId } : null);
   const [loading, setLoading] = useState(false);
-  const [removing, setRemoving] = useState(false);
-  const [myCategory, setMyCategory] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+  const [typeMsgMenu, setTypeMsgMenu] = useState(true);
+  const [selectTypeMsgMenu, setSelectTypeMsgMenu] = useState(true);
 
   useEffectAsync(async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({ all: showAll });
-      const response = await fetch(`/api/category`);
-      if (response.ok) {
-        setItems(await response.json());
+      const response2 = await fetch('/api/category/messages');
+      if (response2.ok) {
+        const data1 = await response2.json();
+        console.log(data1);
+        setItemMsg(data1);
       } else {
-        throw Error(await response.text());
+        throw Error(await response2.text());
       }
     } finally {
       setLoading(false);
     }
-  }, [timestamp, showAll]);
+  }, [showAll]);
 
-  const handleEdit = (item) => {
-    navigate(`/settings/category/${item}`);
+  const addnewTopic = () => {
+    const newItem = JSON.parse(JSON.stringify(item));
+    if (!newItem.topics) {
+      newItem.topics = {};
+    }
+    if (!newItem.topics[selectTypeMsgMenu]) {
+      newItem.topics[selectTypeMsgMenu] = { name: '', messageType: itemMsg.topics[selectTypeMsgMenu][0] };
+    }
+    setItem(newItem);
+    setSelectTypeMsgMenu(null);
+    setTypeMsgMenu(!typeMsgMenu);
   };
 
-  const handleRemove = (item) => {
-    setMyCategory(item);
-    setRemoving(true);
+  const addnewService = () => {
+    const newItem = JSON.parse(JSON.stringify(item));
+    if (!newItem.services) {
+      newItem.services = {};
+    }
+    if (!newItem.services[selectTypeMsgMenu]) {
+      newItem.services[selectTypeMsgMenu] = { name: '', messageType: itemMsg.services[selectTypeMsgMenu][0] };
+    }
+    setItem(newItem);
+    setSelectTypeMsgMenu(null);
+    setTypeMsgMenu(!typeMsgMenu);
   };
 
-  const hamdleRemoveResult = (result) => {
-    setMyCategory(null);
-    setRemoving(false);
+  const changeMsgType = (value, key, type) => {
+    const newItem = JSON.parse(JSON.stringify(item));
+    newItem[type][key].messageType = value;
+    setItem(newItem);
   };
+
+  const removeElement = (key, type) => {
+    const newItem = JSON.parse(JSON.stringify(item));
+    delete newItem[type][key];
+    setItem(newItem);
+  };
+
+  const validate = () => item && item.topics && item.services;
 
   return (
     <EditItemView
-      endpoint="devices"
+      endpoint="category"
       item={item}
       setItem={setItem}
       validate={validate}
       menu={<SettingsMenu />}
-      breadcrumbs={['settingsTitle', 'sharedDevice']}
+      breadcrumbs={['Category', 'M300']}
     >
-      {item && (
+      {!loading && item && (
         <>
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">telemetry - topics</Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.details}>
-              <TextField
-                required
-                label="Name"
-                name="uavid"
-                value={item.name}
-                onChange={(event) => setItem({ ...item, name: event.target.value })}
-                helperText="The name must be unique, it will be used to identify the device, must to be the same of that device's name_space or device's identificator ,it is recommended to use the format uav_XXXX in case of using a UAV"
-              />
-              <SelectField
-                emptyValue={null}
-                value={item.category ? item.category : null}
-                onChange={(e) => setItem({ ...item, category: e.target.value })}
-                endpoint="/api/category"
-                keyGetter={(it) => it}
-                titleGetter={(it) => it}
-                label={'Type '}
-              />
-              {item.category && (
-                <SelectField
-                  emptyValue={null}
-                  value={item.protocol ? item.protocol : null}
-                  onChange={(e) => setItem({ ...item, protocol: e.target.value })}
-                  endpoint="/api/server/protocol"
-                  keyGetter={(it) => it}
-                  titleGetter={(it) => it}
-                  label={'Protocol '}
-                />
-              )}
-              <TextField
-                label="ip"
-                value={item.ip}
-                onChange={(event) => setItem({ ...item, ip: event.target.value })}
-                helperText="IP for camera stream"
-              />
-            </AccordionDetails>
-          </Accordion>
-
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Camera Stream</Typography>
+              <Typography variant="subtitle1">Telemetry - topics</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
-              <Typography variant="caption">Source example:main</Typography>
-              {item.camera &&
-                item.camera.map((action_key, index_ac, list_ac) => (
-                  <Fragment key={'fragment-action-' + index_ac}>
-                    <Typography variant="subtitle1" className={classes.attributeName}>
-                      {'Camera ' + index_ac}
-                    </Typography>
-                    <div>
-                      <FormControl variant="outlined">
-                        <InputLabel id="demo-simple-select-outlined-label">CameraType</InputLabel>
-                        <Select
-                          labelId="demo-simple-select-outlined-label"
-                          id="demo-simple-select-outlined"
-                          value={action_key['type']}
-                          label="type"
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              camera: item.camera.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
-                        >
-                          <MenuItem value="WebRTC">WebRTC</MenuItem>
-                          <MenuItem value="WebRTC_env">WebRTCenv</MenuItem>
-                          <MenuItem value="Websocket">Websocket</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <div className={classes.actionValue}>
-                        <TextField
-                          required
-                          fullWidth={true}
-                          label="Source"
-                          value={action_key['source']}
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              camera: item.camera.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['source'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
+              <Table className={classes.table}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{'Topic'}</TableCell>
+                    <TableCell>{'Name'}</TableCell>
+                    <TableCell>{'Message'}</TableCell>
+                    <TableCell className={classes.columnAction} />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {Object.keys(item.topics).map((key) => (
+                    <TableRow key={key}>
+                      <TableCell>{key}</TableCell>
+                      <TableCell>
+                        <TextField value={item.topics[key].name} />
+                      </TableCell>
+                      <TableCell>
+                        <SelectField
+                          data={itemMsg.topics[key]}
+                          value={item.topics[key].messageType}
+                          keyGetter={(e) => e}
+                          titleGetter={(e) => e}
+                          onChange={(e) => changeMsgType(e.target.value, key, 'topics')}
+                          emptyValue={null}
                         />
-                      </div>
-                      <IconButton
-                        sx={{
-                          py: 0,
-                          pr: 2,
-                          marginLeft: 'auto',
-                        }}
-                        onClick={() => Remove_camera(index_ac)}
-                        className={classes.negative}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </div>
-                    <Divider></Divider>
-                  </Fragment>
-                ))}
+                      </TableCell>
+                      <TableCell className={classes.columnAction} padding="none">
+                        <Tooltip title="Remove">
+                          <IconButton size="small" onClick={() => removeElement(key, 'topics')}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-              <Button variant="contained" onClick={addNewcamera}>
-                Add camera source
-              </Button>
+              <Box textAlign="center">
+                {typeMsgMenu ? (
+                  <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
+                    add a telemetry
+                  </Button>
+                ) : (
+                  <div>
+                    <Typography variant="subtitle1">Add Telemetry</Typography>
+                    <SelectField
+                      fullWidth={true}
+                      data={Object.keys(itemMsg.topics)}
+                      emptyValue={null}
+                      value={selectTypeMsgMenu}
+                      onChange={(e) => setSelectTypeMsgMenu(e.target.value)}
+                      keyGetter={(e) => e}
+                      titleGetter={(e) => e}
+                    />
+                    <div>
+                      <Button onClick={() => setTypeMsgMenu(!typeMsgMenu)}>Cancel</Button>
+                      <Button onClick={() => addnewTopic()}>Add</Button>
+                    </div>
+                  </div>
+                )}
+              </Box>
             </AccordionDetails>
           </Accordion>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Device Files Resurces</Typography>
+              <Typography variant="subtitle1">Commands - Services</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
-              <Typography variant="caption">
-                The url format sftp://user:password@Ip:port It can be compatible for sftp or ftp protovol
-              </Typography>
-              {item.files &&
-                item.files.map((action_key, index_ac, list_ac) => (
-                  <Fragment key={'fragment-action-file' + index_ac}>
-                    <Typography variant="subtitle1" className={classes.attributeName}>
-                      {'File ' + index_ac}
-                    </Typography>
-                    <div>
-                      <FormControl variant="outlined">
-                        <InputLabel id="demo-simple-select-outlined-label">CameraType</InputLabel>
-                        <Select
-                          labelId="demo-simple-select-outlined-label"
-                          id="demo-simple-select-outlined"
-                          value={action_key['type']}
-                          label="type"
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              files: item.files.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
-                        >
-                          <MenuItem value="onboard_computer">Onboard computer</MenuItem>
-                          <MenuItem value="wiris_pro">Wiris_pro</MenuItem>
-                          <MenuItem value="default">default</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <div className={classes.actionValue}>
-                        <TextField
-                          required
-                          fullWidth={true}
-                          label="URL"
-                          value={action_key['url']}
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              files: item.files.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['url'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
+              <Table className={classes.table}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{'Services'}</TableCell>
+                    <TableCell>{'Name'}</TableCell>
+                    <TableCell>{'Message'}</TableCell>
+                    <TableCell className={classes.columnAction} />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {Object.keys(item.services).map((key) => (
+                    <TableRow key={key}>
+                      <TableCell>{key}</TableCell>
+                      <TableCell>
+                        <TextField value={item.services[key].name} />
+                      </TableCell>
+                      <TableCell>
+                        <SelectField
+                          data={itemMsg.services[key]}
+                          value={item.services[key].serviceType}
+                          keyGetter={(e) => e}
+                          titleGetter={(e) => e}
+                          onChange={(e) => changeMsgType(e.target.value, key, 'services')}
+                          emptyValue={null}
                         />
-                      </div>
-                      <IconButton
-                        sx={{
-                          py: 0,
-                          pr: 2,
-                          marginLeft: 'auto',
-                        }}
-                        onClick={() => Remove_file(index_ac)}
-                        className={classes.negative}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </div>
-                    <Divider></Divider>
-                  </Fragment>
-                ))}
+                      </TableCell>
+                      <TableCell className={classes.columnAction} padding="none">
+                        <Tooltip title="Remove">
+                          <IconButton size="small" onClick={() => removeElement(key, 'services')}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-              <Button variant="contained" onClick={addNewFile}>
-                Add files source
-              </Button>
+              <Box textAlign="center">
+                {typeMsgMenu ? (
+                  <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
+                    add a telemetry
+                  </Button>
+                ) : (
+                  <div>
+                    <Typography variant="subtitle1">Add command</Typography>
+                    <SelectField
+                      fullWidth={true}
+                      data={Object.keys(itemMsg.services)}
+                      emptyValue={null}
+                      value={selectTypeMsgMenu}
+                      onChange={(e) => setSelectTypeMsgMenu(e.target.value)}
+                      keyGetter={(e) => e}
+                      titleGetter={(e) => e}
+                    />
+                    <div>
+                      <Button onClick={() => setTypeMsgMenu(!typeMsgMenu)}>Cancel</Button>
+                      <Button onClick={() => addnewService()}>Add</Button>
+                    </div>
+                  </div>
+                )}
+              </Box>
             </AccordionDetails>
           </Accordion>
         </>

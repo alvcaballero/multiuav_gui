@@ -58,8 +58,15 @@ Content-Type: application/json
   "ip": "10.42.0.44"
 }
 
-### Devices type
+### Get list of category
 GET http://localhost:4000/api/category
+
+
+### Get category info
+GET http://localhost:4000/api/category/dji_M300
+
+### Get message info
+GET http://localhost:4000/api/category/messages/
 
 ### Atributes 
 GET http://localhost:4000/api/category/atributes/dji_M210_noetic

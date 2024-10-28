@@ -2,7 +2,7 @@ import { makeStyles } from '@mui/styles';
 
 export default makeStyles((theme) => ({
   table: {
-    marginBottom: theme.spacing(10),
+    marginBottom: theme.spacing(1),
   },
   columnAction: {
     width: '1%',
