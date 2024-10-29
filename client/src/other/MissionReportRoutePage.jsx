@@ -64,24 +64,20 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const MissionReportPage = () => {
+const MissionReportRoutePage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
 
   const [missions, setMissions] = useState(null);
   const devices = useSelector((state) => state.devices.items);
 
-  const columnsArray = ['id', 'initTime', 'endTime', 'uav', 'status'];
+  const columnsArray = ['id', 'initTime', 'endTime', 'deviceId', 'status'];
 
   const formatValue = (item, key) => {
     const value = item[key];
     switch (key) {
       case 'deviceId':
         return devices[value].name;
-      case 'uav': {
-        const uavsName = value.map((uav) => devices[uav].name);
-        return uavsName.join(', ');
-      }
       case 'initTime':
         return formatTime(value, 'minutes');
       case 'endTime':
@@ -101,7 +97,7 @@ const MissionReportPage = () => {
   };
 
   useEffectAsync(async () => {
-    const response = await fetch('/api/missions');
+    const response = await fetch('/api/missions/routes');
     if (response.ok) {
       const myMissions = await response.json();
       setMissions(myMissions);
@@ -117,7 +113,7 @@ const MissionReportPage = () => {
           <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6">Missions</Typography>
+          <Typography variant="h6">Routes</Typography>
         </Toolbar>
       </AppBar>
       <div className={classes.content}>
@@ -156,4 +152,4 @@ const MissionReportPage = () => {
   );
 };
 
-export default MissionReportPage;
+export default MissionReportRoutePage;

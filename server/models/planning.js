@@ -110,11 +110,13 @@ export class planningModel {
       const data = await response.json();
       console.log(data);
       console.log('response to check planning');
-      if (Array.isArray(data.results) && data.results.length > 0) {
-        if (data.results[0].hasOwnProperty('route')) {
+      if (data.results && Object.keys(data.results) > 0) {
+        console.log('response to check planning1');
+        if (data.results.hasOwnProperty(mission_id) && data.results[mission_id].hasOwnProperty('route')) {
+          console.log('response to check planning2');
           clearInterval(requestPlanning[mission_id]['interval']);
           requestPlanning[mission_id]['count'] = 10;
-          MissionController.initMission(mission_id, data.results[0]);
+          MissionController.initMission(mission_id, data.results[mission_id]);
         }
       }
     } else {

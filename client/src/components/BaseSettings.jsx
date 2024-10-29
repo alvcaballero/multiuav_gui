@@ -118,6 +118,20 @@ const BaseSettings = ({ data, param, setData, type = 'Base', goToBase = () => nu
                                     }}
                                   />
                                 )}
+                                {actionKey == 'name' && (
+                                  <>
+                                    <Typography variant="subtitle1" className={classes.attributeName}>
+                                      {param.devices[actionKey].name}
+                                    </Typography>
+                                    <div className={classes.attribute}>
+                                      <TextField
+                                        required
+                                        fullWidth
+                                        value={`${base.devices.name} - ${base.devices.category}`}
+                                      />
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             ))
                           )}

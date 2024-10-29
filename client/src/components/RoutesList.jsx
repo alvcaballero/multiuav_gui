@@ -56,7 +56,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const RoutesList = ({ mission, setmission, setScrool }) => {
+const RoutesList = ({ mission, setmission, setScrool, NoEdit = false }) => {
   const classes = useStyles();
   const Mission_route = useSelector((state) => state.mission);
   const selectwp = useSelector((state) => state.mission.selectpoint);
@@ -111,11 +111,11 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
     //auxmission.route.push({ name: "", uav: "", id: 0, attributes: {}, wp: [] });
     setmission(auxmission);
     setaddMission(false);
-    AddnewRoute();
+    AddNewRoute();
     console.log('add new mission');
   };
 
-  const AddnewRoute = () => {
+  const AddNewRoute = () => {
     let auxroute = [...mission.route];
     let myid = auxroute.length > 0 ? +auxroute.slice(-1)[0].id + +1 : 0;
     let initAtributes = {
@@ -191,17 +191,19 @@ const RoutesList = ({ mission, setmission, setScrool }) => {
                 </Fragment>
               ))
             )}
-            <Box textAlign="center">
-              <Button
-                variant="contained"
-                size="large"
-                sx={{ width: '80%', flexShrink: 0 }}
-                style={{ marginTop: '15px' }}
-                onClick={AddnewRoute}
-              >
-                Add new Route
-              </Button>
-            </Box>
+            {!NoEdit && (
+              <Box textAlign="center">
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{ width: '80%', flexShrink: 0 }}
+                  style={{ marginTop: '15px' }}
+                  onClick={AddNewRoute}
+                >
+                  Add new Route
+                </Button>
+              </Box>
+            )}
           </Box>
         </Fragment>
       )}

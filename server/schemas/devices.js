@@ -14,6 +14,7 @@ const deviceSchema = z.object({
   ),
   ip: z.string().ip({ version: 'v4', message: 'Invalid IP address' }),
   camera: z.array(z.object({ type: z.string(), source: z.string() })),
+  files: z.array(z.object({ url: z.string(), type: z.string() })),
 });
 
 export function validateDevice(input) {

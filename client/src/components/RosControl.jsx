@@ -52,6 +52,7 @@ export const RosControl = ({ children, notification }) => {
   };
   const serverAddUAV = async (device) => {
     //event.preventDefault();
+    console.log(device);
     console.log(device.name + '-' + device.category);
     try {
       const response = await fetch('/api/devices', {
@@ -246,11 +247,7 @@ export const RosControl = ({ children, notification }) => {
   };
 
   async function connectAddUav(device) {
-    if (rosState) {
       serverAddUAV(device);
-    } else {
-      alert('\nRos no está conectado.\n\n Por favor conéctelo primero.');
-    }
   }
 
   function loadMission() {

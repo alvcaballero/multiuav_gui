@@ -13,11 +13,11 @@ import birdSvg from '../resources/images/icon/bird.svg';
 import dronedjiSvg from '../resources/images/icon/drone2.svg';
 import dronePx4Svg from '../resources/images/icon/drone3.svg';
 import triangleSvg from '../resources/images/icon/triangle.svg';
+import locationPointSvg from '../resources/images/icon/locationPoint.svg';
 import powerTowerSvg from '../resources/images/icon/PowerTower1.svg';
-import windTurbineSvg from '../resources/images/icon/WindTurbine.svg';
-import solarPanelSvg from '../resources/images/icon/wind_turbine.svg';
+import windTurbineSvg from '../resources/images/icon/windTurbine.svg';
+import solarPanelSvg from '../resources/images/icon/SolarPanel.svg';
 import RectangleSvg from '../resources/images/icon/Rectangle.svg';
-import gruaPng from '../resources/lastimages/bridge_crane_small.png';
 
 import FrontDroneSvg from '../resources/images/icon/drone-svgrepo.svg';
 
@@ -77,15 +77,15 @@ export default async () => {
   const backgroundDirection = await loadImage(backgroundDirectionSvg);
 
   mapImages.background = await prepareIcon(background);
+  mapImages.direction = await prepareIcon(await loadImage(directionSvg));
+
+  mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
   mapImages.item = await prepareIcon(await loadImage(triangleSvg));
   mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
   mapImages.windTurbine = await prepareIcon(await loadImage(windTurbineSvg));
   mapImages.solarPanel = await prepareIcon(await loadImage(solarPanelSvg));
-  mapImages.grua = await prepareIcon(await loadImage(gruaPng));
+  mapImages.locPoint = await prepareIcon(await loadImage(locationPointSvg));
 
-
-  mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
-  mapImages.direction = await prepareIcon(await loadImage(directionSvg));
   Object.keys(palette.colors_devices).forEach(async (color) => {
     mapImages[`background-${color}`] = await prepareIcon(background, null, colors[color]);
     mapImages[`mission-${color}`] = await prepareIcon(backgroundBorder, null, colors[color]);
@@ -104,6 +104,6 @@ export default async () => {
       await Promise.all(results);
     })
   );
-  //console.log('preload icon');
-  //console.log(mapImages);
+  console.log('preload icon');
+  console.log(mapImages);
 };

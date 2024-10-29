@@ -45,7 +45,9 @@ const MapMarkersCreate = ({
   const linesMarkers = `${id}-lines`;
   const idselectMarkers = `${id}-select`;
 
-  const iconScale = 0.4;
+  const iconScale = 0.8;
+  const iconPointScale = 0.6;
+
   const [testkeepValue, settestkeepValue] = useState(new keepMarkers());
 
   const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
@@ -83,10 +85,8 @@ const MapMarkersCreate = ({
         auxMarkers.bases[auxselectpoint.id]['longitude'] = e.lngLat.lng;
       }
       if (auxselectpoint.type == 'element') {
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['latitude'] =
-          e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['longitude'] =
-          e.lngLat.lng;
+        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['latitude'] = e.lngLat.lat;
+        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['longitude'] = e.lngLat.lng;
       }
     }
     let markersIcons = listtoPoints(auxMarkers);
@@ -116,10 +116,8 @@ const MapMarkersCreate = ({
         auxMarkers.bases[auxselectpoint.id]['longitude'] = e.lngLat.lng;
       }
       if (auxselectpoint.type == 'element') {
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['latitude'] =
-          e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['longitude'] =
-          e.lngLat.lng;
+        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['latitude'] = e.lngLat.lat;
+        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['longitude'] = e.lngLat.lng;
       }
     }
     testkeepValue.getSelect({ id: -1 });
@@ -179,7 +177,7 @@ const MapMarkersCreate = ({
       filter: ['!has', 'point_count'],
       layout: {
         'icon-image': 'background-{groupId}',
-        'icon-size': iconScale * 1.2,
+        'icon-size': iconPointScale,
         'icon-allow-overlap': true,
         'text-allow-overlap': true,
         'text-field': '{title}',

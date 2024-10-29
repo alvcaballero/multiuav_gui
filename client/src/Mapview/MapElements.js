@@ -2,7 +2,7 @@ import { useId, useEffect } from 'react';
 import { map } from './MapView';
 import { useAttributePreference } from '../common/preferences';
 
-const MapMarkers = () => {
+const MapElements = () => {
   const id = useId();
   const buildingImages = useAttributePreference('customElements', []);
 
@@ -40,4 +40,4 @@ const MapMarkers = () => {
   return null;
 };
 
-export default MapMarkers;
+export default MapElements;

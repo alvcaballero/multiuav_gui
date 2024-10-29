@@ -20,6 +20,11 @@ export const corsMiddleware = ({ acceptedOrigins = ACCEPTED_ORIGINS } = {}) =>
           return callback(null, true);
         }
       }
+      if (origin) {
+        if (origin.includes('http://192.168.1.')) {
+          return callback(null, true);
+        }
+      }
 
       if (!CorsEnable) {
         return callback(null, true);

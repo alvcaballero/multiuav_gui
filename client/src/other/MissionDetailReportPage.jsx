@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useEffectAsync } from '../reactHelper';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import {
   Typography,
@@ -17,11 +17,30 @@ import {
   Divider,
   CardContent,
   Grid,
+  Chip,
+  Tab,
+  Box,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
+import { TabPanel, TabList, TabContext } from '@mui/lab';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useNavigate, useParams } from 'react-router-dom';
+
+import { formatTime } from '../common/formatter';
+
+import { useEffectAsync } from '../reactHelper';
+import MapView from '../Mapview/MapView';
+import MapMissions from '../Mapview/MapMissions';
+import MapMarkers from '../Mapview/MapMarkers';
+import RoutesList from '../components/RoutesList';
+import SelectField from '../common/components/SelectField';
+import SelectList from '../components/SelectList';
+import BaseSettings from '../components/BaseSettings';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -153,23 +172,94 @@ const ImageFull2 = ({ file, closecard }) => {
   );
 };
 
-const FormatResult = ({ result }) => {
-  if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
-    return result.measures.map((item) => <div>{`${item.name}: ${item.value}`}</div>);
-  }
-  return null;
-};
-
 const MissionDetailReportPage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
   const { id } = useParams();
 
   const [missions, setMissions] = useState(null);
+  const [dataMission, setDataMission] = useState(null);
+  const [dataParam, setDataParam] = useState(null);
+  const [missionMarkers, setMissionMarkers] = useState({ elements: [], bases: [] });
   const [routes, setRoutes] = useState(null);
+
   const [files, setFiles] = useState(null);
+  const [routePath, setRoutePath] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
+
+  const devices = useSelector((state) => state.devices.items);
+
+  const [tabValue, setTabValue] = useState('1');
+
+  const TabHandleChange = (event, newTabValue) => {
+    setTabValue(newTabValue);
+  };
   const missionItems = 'id,initTime,endTime,status';
+  const routeItems = 'id,initTime,endTime,status,deviceId,result';
+
+  const formatValue = (item, key) => {
+    const value = item[key];
+    switch (key) {
+      case 'deviceId':
+        return devices[value].name;
+      case 'uav': {
+        const uavsName = value.map((uav) => devices[uav].name);
+        return uavsName.join(', ');
+      }
+      case 'initTime':
+        return formatTime(value, 'minutes');
+      case 'endTime':
+        return formatTime(value, 'minutes');
+
+      case 'status': {
+        let typeColor = 'primary';
+        typeColor = value === 'done' ? 'success' : typeColor;
+        typeColor = value === 'cancel' ? 'warning' : typeColor;
+        typeColor = value === 'error' ? 'error' : typeColor;
+        typeColor = value === 'init' ? 'neutral' : typeColor;
+        return <Chip color={typeColor} label={value} />;
+      }
+      default:
+        return value;
+    }
+  };
+
+  const FormatResult = ({ result }) => {
+    if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
+      return result.measures.map((item, itemIndex) => (
+        <Typography key={`m-${item.name}${itemIndex}`}>{`${item.name}: ${item.value}`}</Typography>
+      ));
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const myBases = [];
+    let myElements = [];
+    if (missions?.mission?.route) {
+      setRoutePath(missions.mission.route);
+    }
+    if (missions?.task?.devices) {
+      const data = [];
+      Object.values(missions.task.devices).forEach((deviceValue) => {
+        const myData = { devices: {} };
+        myData.devices.name = deviceValue.id;
+        myData.devices.category = deviceValue.category;
+        if (deviceValue.hasOwnProperty('settings')) {
+          myData.settings = deviceValue.settings;
+          myBases.push({ latitude: deviceValue.settings.base[0], longitude: deviceValue.settings.base[1] });
+        }
+        data.push(myData);
+      });
+      setDataMission(data);
+    }
+    if (missions?.task?.locations) {
+      myElements = missions.task.locations.map((item) => ({ ...item, type: 'locPoint' }));
+    }
+    console.log(myBases);
+    console.log(myElements);
+    setMissionMarkers({ bases: myBases, elements: myElements });
+  }, [missions]);
 
   useEffectAsync(async () => {
     const response = await fetch(`/api/missions?id=${id}`);
@@ -198,6 +288,24 @@ const MissionDetailReportPage = () => {
     }
   }, []);
 
+  useEffectAsync(async () => {
+    if (missions && missions.hasOwnProperty('task') && missions.task && missions.task.hasOwnProperty('case')) {
+      const response = await fetch(`/api/planning/missionparam/${missions.task.case}`);
+      if (response.ok) {
+        const myParamSettings = await response.json();
+        console.log(myParamSettings);
+        if (myParamSettings && myParamSettings.hasOwnProperty('settings')) {
+          myParamSettings.devices.name = { name: 'Device', type: 'string', default: 'uav_0' };
+          delete myParamSettings.devices.id;
+          console.log(myParamSettings);
+          setDataParam(myParamSettings);
+        }
+      } else {
+        throw Error(await response.text());
+      }
+    }
+  }, [missions]);
+
   return (
     <div className={classes.root}>
       <AppBar position="sticky" color="inherit">
@@ -223,19 +331,19 @@ const MissionDetailReportPage = () => {
                     .split(',')
                     .filter((key) => missions.hasOwnProperty(key))
                     .map((key) => (
-                      <Grid item xs={6} key={key}>
+                      <Grid item xs={6} key={`ms${key}`}>
                         <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                           {key}
                         </Typography>
-                        <Typography variant="body1">{missions[key]}</Typography>
+                        <Typography variant="body1">{formatValue(missions, key)}</Typography>
                       </Grid>
                     ))}
-                  <Grid item xs={6}>
+                  <Grid item xs={6} key={`msresult`}>
                     <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                       Results
                     </Typography>
-                    {missions.results.map((item) => (
-                      <FormatResult result={item} />
+                    {missions.results.map((item, itemIndex) => (
+                      <FormatResult result={item} key={`msrs_${itemIndex}`} />
                     ))}
                   </Grid>
                 </Grid>
@@ -243,29 +351,27 @@ const MissionDetailReportPage = () => {
             )}
             {routes &&
               routes.map((route, routeIndex) => (
-                <div key={routeIndex}>
+                <div key={`rt${routeIndex}`}>
                   <Divider style={{ margin: '40px 0' }} />
                   <Typography variant="h5" gutterBottom>
                     {`Ruta-${routeIndex}`}
                   </Typography>
                   <Grid container spacing={2}>
-                    {missionItems
+                    {routeItems
                       .split(',')
                       .filter((key) => route.hasOwnProperty(key))
                       .map((key) => (
-                        <Grid item xs={6} key={key}>
+                        <Grid item xs={6} key={`rt${routeIndex}_${key}`}>
                           <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                             {key}
                           </Typography>
-                          <Typography variant="body1">{route[key]}</Typography>
+                          {key === 'result' ? (
+                            <FormatResult result={route.result} />
+                          ) : (
+                            <Typography variant="body1">{formatValue(route, key)}</Typography>
+                          )}
                         </Grid>
                       ))}
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                        Result
-                      </Typography>
-                      <FormatResult result={route.result} />
-                    </Grid>
                   </Grid>
                   {files && files.find((item) => item && item.routeId == route.id) && (
                     <>
@@ -288,6 +394,87 @@ const MissionDetailReportPage = () => {
                       </ImageList>
                     </>
                   )}
+                  <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
+                    Mapa de mission
+                  </Typography>
+                  <div style={{ width: '100%', height: '500px', position: 'relative' }}>
+                    <MapView>
+                      <MapMissions filtereddeviceid={-1} routes={routePath} />
+                      <MapMarkers markers={missionMarkers} />
+                    </MapView>
+                    <Paper
+                      square
+                      elevation={3}
+                      style={{
+                        width: '500px',
+                        height: '480px',
+                        position: 'absolute',
+                        top: '10px',
+                        left: '10px',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      <TabContext value={tabValue}>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                          <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
+                            <Tab label="mission" value="1" />
+                            <Tab label="Planning" value="2" />
+                          </TabList>
+                        </Box>
+                        <TabPanel value="1">
+                          {routePath && (
+                            <RoutesList
+                              mission={missions.mission}
+                              setmission={() => null}
+                              setScrool={() => null}
+                              NoEdit={true}
+                            />
+                          )}
+                        </TabPanel>
+                        <TabPanel value="2">
+                          {missions.task && (
+                            <>
+                              <SelectField
+                                emptyValue={null}
+                                fullWidth
+                                label="objetive"
+                                value={missions.task.case}
+                                endpoint="/api/planning/missionstype"
+                                keyGetter={(it) => it.id}
+                                titleGetter={(it) => it.name}
+                              />
+                              <Accordion>
+                                <AccordionSummary expandIcon={<ExpandMore />}>
+                                  <Typography>Interest elements</Typography>
+                                </AccordionSummary>
+                                <AccordionDetails className={classes.details}>
+                                  {missions.task.locations && <SelectList Data={missions.task.locations} />}
+                                </AccordionDetails>
+                              </Accordion>
+                              <Divider />
+                              <Accordion>
+                                <AccordionSummary expandIcon={<ExpandMore />}>
+                                  <Typography>Devices</Typography>
+                                </AccordionSummary>
+                                <AccordionDetails className={classes.details}>
+                                  {dataMission && dataParam && (
+                                    <BaseSettings
+                                      data={dataMission}
+                                      param={dataParam}
+                                      setData={() => null}
+                                      goToBase={() => null}
+                                    />
+                                  )}
+                                </AccordionDetails>
+                              </Accordion>
+                            </>
+                          )}
+                        </TabPanel>
+                      </TabContext>
+                    </Paper>
+                  </div>
                 </div>
               ))}
           </Paper>

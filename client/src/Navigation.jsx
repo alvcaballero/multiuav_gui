@@ -6,15 +6,19 @@ import useQuery from './common/useQuery';
 import MainPage from './other/MainPage';
 import MissionPage from './other/MissionPage';
 import MissionPageTest from './other/MissionPageTest';
-import MissionReportPage from './other/MissionReportPage';
+import MissionPage3D from './other/MissionPage3D';
 import ReplayPage from './other/ReplayPage';
 import DevicePage from './other/DevicePage';
 import CameraPage from './other/CameraPage';
 import EventsPage from './other/EventsPage';
 import TopicsPage from './other/TopicsPage';
 import PlanningPage from './other/PlanningPage';
-import MissionPage3D from './other/MissionPage3D';
+import MissionReportPage from './other/MissionReportPage';
+import MissionReportRoutePage from './other/MissionReportRoutePage';
 import MissionDetailReportPage from './other/MissionDetailReportPage';
+import SettingsCategoryPage from './settings/SettingsCategoryPage';
+import SettingsCategoryPageEdit from './settings/SettingsCategoryPageEdit';
+import SettingsDevicesPage from './settings/SettingsDevicesPage';
 
 const padding = {
   padding: 5,
@@ -46,10 +50,17 @@ const Navigation = () => {
 
         <Route path="event/:id" element={<EventsPage />} />
 
+        <Route path="settings">
+          <Route path="devices" element={<SettingsDevicesPage />} />
+          <Route path="category" element={<SettingsCategoryPage />} />
+          <Route path="category/:id" element={<SettingsCategoryPageEdit />} />
+        </Route>
+
         <Route path="reports">
           <Route path="events" element={<EventsPage />} />
           <Route path="mission" element={<MissionReportPage />} />
           <Route path="mission/:id" element={<MissionDetailReportPage />} />
+          <Route path="route" element={<MissionReportRoutePage />} />
         </Route>
       </Route>
     </Routes>
