@@ -92,7 +92,7 @@ const MissionReportPage = () => {
         typeColor = value === 'done' ? 'success' : typeColor;
         typeColor = value === 'cancel' ? 'warning' : typeColor;
         typeColor = value === 'error' ? 'error' : typeColor;
-        typeColor = value === 'init' ? 'neutral' : typeColor;
+        typeColor = value === 'init' ? 'info' : typeColor;
         return <Chip color={typeColor} label={value.toUpperCase()} />;
       }
       default:

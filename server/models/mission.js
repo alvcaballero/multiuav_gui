@@ -161,8 +161,7 @@ export class missionModel {
             route.status == ROUTE_STATUS.RUNNING ||
             route.status == ROUTE_STATUS.COMMANDED ||
             route.status == ROUTE_STATUS.LOADED ||
-            route.status == ROUTE_STATUS.INIT ||
-            route.status == ROUTE_STATUS.COMPLETED
+            route.status == ROUTE_STATUS.INIT
         )
       ) {
         console.log(`device ${myDevice.name} is busy`);
@@ -377,8 +376,7 @@ export class missionModel {
             (route.status == ROUTE_STATUS.RUNNING ||
               route.status == ROUTE_STATUS.COMMANDED ||
               route.status == ROUTE_STATUS.LOADED ||
-              route.status == ROUTE_STATUS.INIT ||
-              route.status == ROUTE_STATUS.COMPLETED)
+              route.status == ROUTE_STATUS.INIT)
         );
         for (const route of listRoutes) {
           this.editRoute({ id: route.id, status: ROUTE_STATUS.ERROR });
