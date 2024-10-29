@@ -245,6 +245,9 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
   }
 
   useEffect(() => {
+    if (!routes) {
+      return;
+    }
     const myRoutes = JSON.parse(JSON.stringify(routes));
     for (let i = 0; i < routes.length; i += 1) {
       if (!routes[i].hasOwnProperty('id')) {
