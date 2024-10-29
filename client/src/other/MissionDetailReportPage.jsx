@@ -179,12 +179,18 @@ const MissionDetailReportPage = () => {
 
   const [missions, setMissions] = useState(null);
   const [dataMission, setDataMission] = useState(null);
+  const [dataParam, setDataParam] = useState(null);
+  const [missionMarkers, setMissionMarkers] = useState({ elements: [], bases: [] });
   const [routes, setRoutes] = useState(null);
+
   const [files, setFiles] = useState(null);
   const [routePath, setRoutePath] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
+
   const devices = useSelector((state) => state.devices.items);
+
   const [tabValue, setTabValue] = useState('1');
+
   const TabHandleChange = (event, newTabValue) => {
     setTabValue(newTabValue);
   };
@@ -228,22 +234,31 @@ const MissionDetailReportPage = () => {
   };
 
   useEffect(() => {
-    if (missions && missions.hasOwnProperty('mission') && missions.mission.hasOwnProperty('route')) {
+    const myBases = [];
+    let myElements = [];
+    if (missions?.mission?.route) {
       setRoutePath(missions.mission.route);
     }
-    if (
-      missions &&
-      missions.hasOwnProperty('task') &&
-      missions.task.hasOwnProperty('devices') &&
-      missions.task.devices
-    ) {
-      const data = { data: [], param: [] };
-      Object.keys(missions.task.devices).forEach((key) => {
-        const mydata = {};
-        data.data[key] = missions.task.devices[key].id;
-        data.param[key] = missions.task.devices[key];
+    if (missions?.task?.devices) {
+      const data = [];
+      Object.values(missions.task.devices).forEach((deviceValue) => {
+        const myData = { devices: {} };
+        myData.devices.name = deviceValue.id;
+        myData.devices.category = deviceValue.category;
+        if (deviceValue.hasOwnProperty('settings')) {
+          myData.settings = deviceValue.settings;
+          myBases.push({ latitude: deviceValue.settings.base[0], longitude: deviceValue.settings.base[1] });
+        }
+        data.push(myData);
       });
+      setDataMission(data);
     }
+    if (missions?.task?.locations) {
+      myElements = missions.task.locations.map((item) => ({ ...item, type: 'locPoint' }));
+    }
+    console.log(myBases);
+    console.log(myElements);
+    setMissionMarkers({ bases: myBases, elements: myElements });
   }, [missions]);
 
   useEffectAsync(async () => {
@@ -272,6 +287,24 @@ const MissionDetailReportPage = () => {
       throw Error(await response.text());
     }
   }, []);
+
+  useEffectAsync(async () => {
+    if (missions && missions.hasOwnProperty('task') && missions.task && missions.task.hasOwnProperty('case')) {
+      const response = await fetch(`/api/planning/missionparam/${missions.task.case}`);
+      if (response.ok) {
+        const myParamSettings = await response.json();
+        console.log(myParamSettings);
+        if (myParamSettings && myParamSettings.hasOwnProperty('settings')) {
+          myParamSettings.devices.name = { name: 'Device', type: 'string', default: 'uav_0' };
+          delete myParamSettings.devices.id;
+          console.log(myParamSettings);
+          setDataParam(myParamSettings);
+        }
+      } else {
+        throw Error(await response.text());
+      }
+    }
+  }, [missions]);
 
   return (
     <div className={classes.root}>
@@ -367,7 +400,7 @@ const MissionDetailReportPage = () => {
                   <div style={{ width: '100%', height: '500px', position: 'relative' }}>
                     <MapView>
                       <MapMissions filtereddeviceid={-1} routes={routePath} />
-                      <MapMarkers markers={[]} />
+                      <MapMarkers markers={missionMarkers} />
                     </MapView>
                     <Paper
                       square
@@ -426,10 +459,10 @@ const MissionDetailReportPage = () => {
                                   <Typography>Devices</Typography>
                                 </AccordionSummary>
                                 <AccordionDetails className={classes.details}>
-                                  {missions.task.devices && (
+                                  {dataMission && dataParam && (
                                     <BaseSettings
-                                      data={missions.task.devices}
-                                      param={missions.task.devices}
+                                      data={dataMission}
+                                      param={dataParam}
                                       setData={() => null}
                                       goToBase={() => null}
                                     />
