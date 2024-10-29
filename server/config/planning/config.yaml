@@ -210,17 +210,17 @@ missionTypes:
         vertical_offset:
           type: 'number'
           name: 'Vertical offset'
-          default: 20
+          default: 25
         horizontal_offset:
           type: 'number'
           name: 'Horizontal offset'
-          default: 15
+          default: 50
         tower_height:
           default: 0
         security_height:
           type: 'number'
           name: 'Segurity height'
-          default: 10
+          default: 20
         orbital_points:
           type: 'number'
           name: 'points in circle'

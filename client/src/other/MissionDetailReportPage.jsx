@@ -197,8 +197,20 @@ const MissionDetailReportPage = () => {
   const missionItems = 'id,initTime,endTime,status';
   const routeItems = 'id,initTime,endTime,status,deviceId,result';
 
+  const FormatResult = ({ result }) => {
+    if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
+      return result.measures.map((item, itemIndex) => (
+        <Typography key={`m-${item.name}${itemIndex}`}>{`${item.name}: ${item.value}`}</Typography>
+      ));
+    }
+    return null;
+  };
+
   const formatValue = (item, key) => {
     const value = item[key];
+    if (value === null || value === undefined) {
+      return '';
+    }
     switch (key) {
       case 'deviceId':
         return devices[value].name;
@@ -216,21 +228,14 @@ const MissionDetailReportPage = () => {
         typeColor = value === 'done' ? 'success' : typeColor;
         typeColor = value === 'cancel' ? 'warning' : typeColor;
         typeColor = value === 'error' ? 'error' : typeColor;
-        typeColor = value === 'init' ? 'neutral' : typeColor;
+        typeColor = value === 'init' ? 'info' : typeColor;
         return <Chip color={typeColor} label={value} />;
       }
+      case 'result':
+        return FormatResult({ result: value });
       default:
         return value;
     }
-  };
-
-  const FormatResult = ({ result }) => {
-    if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
-      return result.measures.map((item, itemIndex) => (
-        <Typography key={`m-${item.name}${itemIndex}`}>{`${item.name}: ${item.value}`}</Typography>
-      ));
-    }
-    return null;
   };
 
   useEffect(() => {
@@ -245,9 +250,11 @@ const MissionDetailReportPage = () => {
         const myData = { devices: {} };
         myData.devices.name = deviceValue.id;
         myData.devices.category = deviceValue.category;
-        if (deviceValue.hasOwnProperty('settings')) {
+        if (deviceValue?.settings) {
           myData.settings = deviceValue.settings;
-          myBases.push({ latitude: deviceValue.settings.base[0], longitude: deviceValue.settings.base[1] });
+          if (deviceValue?.settings?.base) {
+            myBases.push({ latitude: deviceValue.settings.base[0], longitude: deviceValue.settings.base[1] });
+          }
         }
         data.push(myData);
       });
@@ -335,7 +342,11 @@ const MissionDetailReportPage = () => {
                         <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                           {key}
                         </Typography>
-                        <Typography variant="body1">{formatValue(missions, key)}</Typography>
+                        {key === 'status' ? (
+                          formatValue(missions, key)
+                        ) : (
+                          <Typography variant="body1">{formatValue(missions, key)}</Typography>
+                        )}
                       </Grid>
                     ))}
                   <Grid item xs={6} key={`msresult`}>
@@ -365,8 +376,8 @@ const MissionDetailReportPage = () => {
                           <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                             {key}
                           </Typography>
-                          {key === 'result' ? (
-                            <FormatResult result={route.result} />
+                          {key === 'status' ? (
+                            formatValue(missions, key)
                           ) : (
                             <Typography variant="body1">{formatValue(route, key)}</Typography>
                           )}
@@ -376,7 +387,7 @@ const MissionDetailReportPage = () => {
                   {files && files.find((item) => item && item.routeId == route.id) && (
                     <>
                       <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
-                        Archivos de la Ruta
+                        Route files
                       </Typography>
                       <ImageList sx={{ width: '100%', height: 500 }} cols={3}>
                         {files

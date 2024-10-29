@@ -34,6 +34,9 @@ export default {
     main: colors.secondary,
     contrastText: colors.white,
   },
+  neutral: {
+    main: grey[500],
+  },
   colors,
   colors_devices,
 };
