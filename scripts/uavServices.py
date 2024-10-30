@@ -73,11 +73,17 @@ class SimpleDevice:
         self.category = category
 
         # init services
-        self.srvStartMission = rospy.Service(
-            '/'+self.name+'/dji_control/start_mission', SetBool, self.startMission)
+        if self.category == "px4":
+            self.srvStartMission = rospy.Service(
+                '/'+self.name+'/mission/new', ConfigMission, self.startMission)
+            self.srvSetMission = rospy.Service(
+                '/'+self.name+'/mission/start_stop', SetBool, self.loadMission)
+        else:
+            self.srvStartMission = rospy.Service(
+                '/'+self.name+'/dji_control/start_mission', SetBool, self.startMission)
 
-        self.srvSetMission = rospy.Service(
-            '/'+self.name+'/dji_control/configure_mission', ConfigMission, self.loadMission)
+            self.srvSetMission = rospy.Service(
+                '/'+self.name+'/dji_control/configure_mission', ConfigMission, self.loadMission)
 
         self.srvDownloadMedia = rospy.Service(
             '/'+self.name+'/camera_download_files', DownloadMedia, self.DownloadMedia)

@@ -911,6 +911,9 @@ px4:
     sincronize:
       name: '/px4_mission_node/send_bags'
       serviceType: 'std_srvs/Bool'
+    CameraFileDownload:
+      name: '/camera_download_files'
+      serviceType: 'dji_osdk_ros/DownloadMedia'
   attributes:
     mission_action:
       stay: #action_stay
