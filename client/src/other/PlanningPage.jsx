@@ -17,12 +17,14 @@ import {
   Tab,
   Typography,
   Switch,
+  Icon,
 } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { TabPanel, TabList, TabContext } from '@mui/lab';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ReplayIcon from '@mui/icons-material/Replay';
 
 import makeStyles from '@mui/styles/makeStyles';
 import { useNavigate } from 'react-router-dom';
@@ -699,14 +701,20 @@ const PlanningPage = () => {
                         />
 
                         <Box textAlign="center">
-                          <Button
-                            variant="contained"
-                            size="large"
-                            className={classes.panelButton}
-                            onClick={SendPlanning}
-                          >
-                            Planning
-                          </Button>
+                          <div className={classes.panelButton} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <Button variant="contained" sx={{ width: '80%' }} onClick={SendPlanning}>
+                              Planning
+                            </Button>
+                            <Button
+                              variant="contained"
+                              color="secondary"
+                              size="large"
+                              sx={{ width: '20%' }}
+                              endIcon={<ReplayIcon />}
+                              onClick={() => SetRequestPlanning(3)}
+                            />
+                          </div>
+
                           <Button
                             variant="contained"
                             size="large"
