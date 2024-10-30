@@ -136,6 +136,80 @@ Content-Type: application/json
 < ./json/gw-sendtasks2.json
 
 
+
+
+
+### Sendtask
+POST http://localhost:4000/api/missions/sendTask
+Content-Type: application/json
+
+{
+  "id": 118,
+  "name": "Prueba tramo largo drone",
+  "objetivo": 0,
+  "loc":[
+    {
+      "name": "Centro1",
+      "geo_points": [
+        {
+          "lon": 37.0706021117295,
+          "lat": -6.6254878174821
+        },
+        {
+          "lon": 37.1060530670846,
+          "lat": -6.69479130605354
+        }
+      ]
+    }
+  ],
+  "meteo": [                                                                                                                                                                               
+    {                                                                                                                                                                                    
+      "lat": 37.164528,                                                                                                                                                                    
+      "lon": -5.611474,                                                                                                                                                                    
+      "wind_vel": 21.24,                                                                                                                                                                   
+      "wind_dir": 92,                                                                                                                                                                      
+      "temp": 13.4,                                                                                                                                                                        
+      "humidity": 13.4,                                                                                                                                                                    
+      "pressure": 0                                                                                                                                                                        
+    }                                                                                                                                                                                    
+  ]      
+}
+
+### Sendtask
+POST http://localhost:4000/api/missions/sendTask
+Content-Type: application/json
+
+{
+  "id": 119,
+  "name": "Prueba tramo largo drone",
+  "objetivo": 0,
+  "loc":[
+    {
+      "name": "Centro1",
+      "geo_points": [
+        {
+          "lat": 37.0706021117295,
+          "lon": -6.6254878174821
+        },
+        {
+          "lat": 37.1060530670846,
+          "lon": -6.69479130605354
+        }
+      ]
+    }
+  ],
+  "meteo": [                                                                                                                                                                               
+    {                                                                                                                                                                                    
+      "lat": 37.164528,                                                                                                                                                                    
+      "lon": -5.611474,                                                                                                                                                                    
+      "wind_vel": 21.24,                                                                                                                                                                   
+      "wind_dir": 92,                                                                                                                                                                      
+      "temp": 13.4,                                                                                                                                                                        
+      "humidity": 13.4,                                                                                                                                                                    
+      "pressure": 0                                                                                                                                                                        
+    }                                                                                                                                                                                    
+  ]      
+}
 ### Sendtask
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json

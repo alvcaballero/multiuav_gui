@@ -405,89 +405,93 @@ const MissionDetailReportPage = () => {
                       </ImageList>
                     </>
                   )}
-                  <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
-                    Mapa de mission
-                  </Typography>
-                  <div style={{ width: '100%', height: '500px', position: 'relative' }}>
-                    <MapView>
-                      <MapMissions filtereddeviceid={-1} routes={routePath} />
-                      <MapMarkers markers={missionMarkers} />
-                    </MapView>
-                    <Paper
-                      square
-                      elevation={3}
-                      style={{
-                        width: '500px',
-                        height: '480px',
-                        position: 'absolute',
-                        top: '10px',
-                        left: '10px',
-                        flexDirection: 'column',
-                        display: 'flex',
-                        overflowY: 'auto',
-                      }}
-                    >
-                      <TabContext value={tabValue}>
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                          <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
-                            <Tab label="mission" value="1" />
-                            <Tab label="Planning" value="2" />
-                          </TabList>
-                        </Box>
-                        <TabPanel value="1">
-                          {routePath && (
-                            <RoutesList
-                              mission={missions.mission}
-                              setmission={() => null}
-                              setScrool={() => null}
-                              NoEdit={true}
-                            />
-                          )}
-                        </TabPanel>
-                        <TabPanel value="2">
-                          {missions.task && (
-                            <>
-                              <SelectField
-                                emptyValue={null}
-                                fullWidth
-                                label="objetive"
-                                value={missions.task.case}
-                                endpoint="/api/planning/missionstype"
-                                keyGetter={(it) => it.id}
-                                titleGetter={(it) => it.name}
-                              />
-                              <Accordion>
-                                <AccordionSummary expandIcon={<ExpandMore />}>
-                                  <Typography>Interest elements</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails className={classes.details}>
-                                  {missions.task.locations && <SelectList Data={missions.task.locations} />}
-                                </AccordionDetails>
-                              </Accordion>
-                              <Divider />
-                              <Accordion>
-                                <AccordionSummary expandIcon={<ExpandMore />}>
-                                  <Typography>Devices</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails className={classes.details}>
-                                  {dataMission && dataParam && (
-                                    <BaseSettings
-                                      data={dataMission}
-                                      param={dataParam}
-                                      setData={() => null}
-                                      goToBase={() => null}
-                                    />
-                                  )}
-                                </AccordionDetails>
-                              </Accordion>
-                            </>
-                          )}
-                        </TabPanel>
-                      </TabContext>
-                    </Paper>
-                  </div>
                 </div>
               ))}
+            {dataMission && (
+              <div>
+                <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
+                  Mapa de mission
+                </Typography>
+                <div style={{ width: '100%', height: '500px', position: 'relative' }}>
+                  <MapView>
+                    <MapMissions filtereddeviceid={-1} routes={routePath} />
+                    <MapMarkers markers={missionMarkers} />
+                  </MapView>
+                  <Paper
+                    square
+                    elevation={3}
+                    style={{
+                      width: '500px',
+                      height: '480px',
+                      position: 'absolute',
+                      top: '10px',
+                      left: '10px',
+                      flexDirection: 'column',
+                      display: 'flex',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    <TabContext value={tabValue}>
+                      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                        <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
+                          <Tab label="mission" value="1" />
+                          <Tab label="Planning" value="2" />
+                        </TabList>
+                      </Box>
+                      <TabPanel value="1">
+                        {routePath && (
+                          <RoutesList
+                            mission={missions.mission}
+                            setmission={() => null}
+                            setScrool={() => null}
+                            NoEdit={true}
+                          />
+                        )}
+                      </TabPanel>
+                      <TabPanel value="2">
+                        {missions.task && (
+                          <>
+                            <SelectField
+                              emptyValue={null}
+                              fullWidth
+                              label="objetive"
+                              value={missions.task.case}
+                              endpoint="/api/planning/missionstype"
+                              keyGetter={(it) => it.id}
+                              titleGetter={(it) => it.name}
+                            />
+                            <Accordion>
+                              <AccordionSummary expandIcon={<ExpandMore />}>
+                                <Typography>Interest elements</Typography>
+                              </AccordionSummary>
+                              <AccordionDetails className={classes.details}>
+                                {missions.task.locations && <SelectList Data={missions.task.locations} />}
+                              </AccordionDetails>
+                            </Accordion>
+                            <Divider />
+                            <Accordion>
+                              <AccordionSummary expandIcon={<ExpandMore />}>
+                                <Typography>Devices</Typography>
+                              </AccordionSummary>
+                              <AccordionDetails className={classes.details}>
+                                {dataMission && dataParam && (
+                                  <BaseSettings
+                                    data={dataMission}
+                                    param={dataParam}
+                                    setData={() => null}
+                                    goToBase={() => null}
+                                  />
+                                )}
+                              </AccordionDetails>
+                            </Accordion>
+                          </>
+                        )}
+                      </TabPanel>
+                    </TabContext>
+                  </Paper>
+                </div>
+              </div>
+            )}
           </Paper>
         </Container>
       </div>
