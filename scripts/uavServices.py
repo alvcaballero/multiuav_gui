@@ -207,7 +207,7 @@ class SimpleDevice:
                     self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speedIdle)
                 if category == "px4":
                     self.yaw = self.moveAngle(
-                        self.yaw, self.calAngle(self.position[1], self.position[0], self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude), 10)['value']
+                        self.yaw, self.calAngle(self.position[0], self.position[1], self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].latitude), 10)['value']
 
                 self.position = calculate['pos']
 
