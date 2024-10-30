@@ -75,9 +75,9 @@ class SimpleDevice:
         # init services
         if self.category == "px4":
             self.srvStartMission = rospy.Service(
-                '/'+self.name+'/mission/new', ConfigMission, self.startMission)
+                '/'+self.name+'/mission/new', ConfigMission, self.loadMission)
             self.srvSetMission = rospy.Service(
-                '/'+self.name+'/mission/start_stop', SetBool, self.loadMission)
+                '/'+self.name+'/mission/start_stop', SetBool,  self.startMission)
         else:
             self.srvStartMission = rospy.Service(
                 '/'+self.name+'/dji_control/start_mission', SetBool, self.startMission)
