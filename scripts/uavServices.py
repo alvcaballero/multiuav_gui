@@ -132,10 +132,11 @@ class SimpleDevice:
     def moveToPoint(self, pos1, pos2, speed):
         dstX = (pos2[0] - pos1[0])
         dstY = (pos2[1] - pos1[1])
+        dstZ = (pos2[2] - pos1[2])
+        print("dstx:", dstX, dstY, dstZ, "speed:", speed)
         if self.typeMission == "GPS":
             dstX = dstX*(6378137/180)*math.pi
             dstY = dstY*(6378137/180)*math.pi
-        dstZ = (pos2[2] - pos1[2])
         dstXY = 0 if dstX == 0 and dstY == 0 else math.sqrt(
             math.pow(dstX, 2) + math.pow(dstY, 2))
         dstXYZ = math.sqrt(math.pow(dstXY, 2) + math.pow(dstZ, 2))
@@ -150,7 +151,7 @@ class SimpleDevice:
 
         velX = 0 if dstXY == 0 else (velXY * dstX) / dstXY
         velY = 0 if dstXY == 0 else (velXY * dstY) / dstXY
-        # print("vel:", velX, velY, velZ)
+        print("vel:", velX, velY, velZ)
         self.speedX = velX
         self.speedY = velY
         self.speedZ = velZ
@@ -166,7 +167,7 @@ class SimpleDevice:
             newPosX = pos1[0]+(newDstX*(180/6378137))/math.pi
             newPosY = pos1[1]+(newDstY*(180/6378137))/math.pi
 
-        # print("newDst:", newDstX, newDstY, newDstZ)
+        print("newDst:", newDstX, newDstY, newDstZ)
         if abs(newDstX) > abs(dstX) or abs(newDstY) > abs(dstY) or abs(newDstZ) > abs(dstZ):
             print("Arrived wp")
             return {'state': True, 'pos': pos2}
@@ -183,19 +184,14 @@ class SimpleDevice:
                 angle = math.pi
         else:
             angle = math.atan2(y2-y1, x2-x1)
-            if xdiff > 0 and ydiff > 0:
-                angle = -angle + math.pi/2
-            if xdiff < 0 and ydiff > 0:
-                angle = angle - math.pi/2
-            if xdiff < 0 and ydiff < 0:
-                angle = -angle - math.pi/2
-            if xdiff > 0 and ydiff < 0:
-                angle = angle + math.pi/2
-
-        return angle * 180 / math.pi
+            print("angle1", math.degrees(angle))
+            angle = -angle + math.pi/2
+        print("angle", math.degrees(angle))
+        return math.degrees(angle)
 
     def simulation(self):
         if self.status == Status.RUNNING_MISSION:
+            print("waypoint", self.currentWp, "action", self.currentAction)
             if self.currentWp < 0:
                 calculate = self.moveToPoint(self.position, [
                     self.homePoint[0], self.homePoint[1], self.homePoint[2]+5], self.speedIdle)
@@ -205,11 +201,13 @@ class SimpleDevice:
             elif self.currentWp < len(self.mission.waypoint):
                 calculate = self.moveToPoint(self.position, [
                     self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speedIdle)
+                print("calculate", calculate)
                 if category == "px4":
-                    self.yaw = self.moveAngle(
+                    newyaw = self.moveAngle(
                         self.yaw, self.calAngle(self.position[0], self.position[1], self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].latitude), 10)['value']
 
-                self.position = calculate['pos']
+                    print("yaw", self.yaw, newyaw)
+                    self.yaw = newyaw
 
                 if calculate['state']:
 
@@ -264,7 +262,7 @@ class SimpleDevice:
                     time.sleep(2)
                     self.finish_Mission()
 
-            self.battery = self.battery - 0.05
+            self.battery = self.battery - 0.01
             if self.battery < 5:
                 self.battery = 100
 
