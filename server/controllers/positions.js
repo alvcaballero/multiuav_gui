@@ -7,8 +7,8 @@ export class positionsController {
     res.json(Object.values(positions));
   }
 
-  static async getLastPositions() {
-    const positions = await positionsModel.getAll();
+  static async getLastPositions(deviceId) {
+    const positions = await positionsModel.getAll(deviceId);
     return Object.values(positions);
   }
   static getByDeviceId(deviceId) {

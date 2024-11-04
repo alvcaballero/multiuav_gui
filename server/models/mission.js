@@ -1,4 +1,5 @@
 import { DevicesController } from '../controllers/devices.js';
+import { positionsController } from '../controllers/positions.js';
 import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
@@ -168,10 +169,19 @@ export class missionModel {
         continue;
       }
 
-      config.settings.base = Object.values(bases[index]);
-      config.settings.landing_mode = 2;
       config.id = myDevice.name;
       config.category = myDevice.category;
+      config.settings.base = Object.values(bases[index]);
+      config.settings.landing_mode = 2;
+      let uavData = await positionsController.getLastPositions(myDevice.id);
+      console.log('uavData');
+      console.log(uavData);
+      if (uavData && uavData[0]?.attributes?.batteryLevel) {
+        if (!Number.isNaN(Number.parseFloat(uavData[0].attributes.batteryLevel))) {
+          console.log(`device ${myDevice.name} battery ${uavData[0].attributes.batteryLevel}`);
+          config.settings.battery_level = uavData[0].attributes.batteryLevel / 100;
+        }
+      }
       devicesSettings.push(config);
     }
     myTask.devices = devicesSettings.filter((item) => item != null);

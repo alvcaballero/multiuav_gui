@@ -75,6 +75,11 @@ missionTypes:
           type: 'number'
           name: 'Segurity height'
           default: 10
+        battery_level:
+          type: 'number'
+          name: 'Battery level'
+          default: 1
+
   - id: 1
     name: 'inspeccion de torre'
     type: 'object'
@@ -129,6 +134,10 @@ missionTypes:
           type: 'number'
           name: 'Points in circle'
           default: 5
+        battery_level:
+          type: 'number'
+          name: 'Battery level'
+          default: 1
 
   - id: 2
     name: 'inspeccion de lidar'
@@ -171,7 +180,10 @@ missionTypes:
           type: 'number'
           name: 'Segurity height'
           default: 10
-
+        battery_level:
+          type: 'number'
+          name: 'Battery level'
+          default: 1
   - id: 3
     name: 'inspeccion de vegetacion'
     description: 'select empty in a map to inspection '
@@ -228,3 +240,7 @@ missionTypes:
         takeoff_height:
           type: 'number'
           default: 5
+        battery_level:
+          type: 'number'
+          name: 'Battery level'
+          default: 1
