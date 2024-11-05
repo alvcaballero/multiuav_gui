@@ -106,12 +106,13 @@ const RenderImages = ({ datacamera }) => {
  * @returns {JSX.Element} The CameraWebRTCV3 component.
  */
 
-const CameraDevice = ({ deviceId, onClose, datacamera }) => {
+const CameraDevice = ({ deviceId, deviceIp, onClose, datacamera }) => {
   const classes = useStyles();
   const device = useSelector((state) => state.devices.items[deviceId]);
   const [cardSize, setCardSize] = useState(size.min);
   const [type, setType] = useState('Websocket');
   const [cameraSrc, setCameraSrc] = useState('');
+  const [srcIp, setSrcIp] = useState('');
 
   const rootClass = cardSize === size.min ? classes.root : cardSize === size.med ? classes.root : classes.root_max;
   const frameClass =
@@ -137,8 +138,10 @@ const CameraDevice = ({ deviceId, onClose, datacamera }) => {
         setType(device.camera[0].type);
         if (device.camera[0].type === 'WebRTC') {
           setCameraSrc(`${device.name}_${device.camera[0].source}`);
+          setSrcIp(deviceIp);
         } else {
           setCameraSrc(device.camera[0].source);
+          setSrcIp(device.ip);
         }
       }
     }
@@ -173,11 +176,7 @@ const CameraDevice = ({ deviceId, onClose, datacamera }) => {
               <RenderImages datacamera={datacamera} Myclass={frameClass} />
             </div>
           ) : (
-            <iframe
-              src={`http://${device.ip}:8889/${cameraSrc}`}
-              className={frameClass}
-              title={`Image ${device.name}`}
-            />
+            <iframe src={`http://${srcIp}:8889/${cameraSrc}`} className={frameClass} title={`Image ${device.name}`} />
           )}
         </Card>
       )}
