@@ -323,7 +323,7 @@ const MapMarkersCreate = ({
       },
       properties: {
         name: item.name, // name,
-        color: palette.colors_devices[index],
+        color: palette.colors_devices[index % 7],
       },
     };
   }
@@ -336,7 +336,7 @@ const MapMarkersCreate = ({
           waypoints.push({
             ...items,
             type: 'element',
-            groupId: index_cj,
+            groupId: index_cj % 7,
             id: itemIndex,
             image: conjunto.type,
             title: `${index_cj}-${itemIndex}`,
