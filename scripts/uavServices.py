@@ -66,6 +66,7 @@ class SimpleDevice:
         self.speedZ = 0
         if category == "px4":
             self.speedIdle = 10  # m/s
+            self.battery = 100
         self.currentWp = -1
         self.currentAction = 0
         self.rateTime = 2  # 1 Hz
@@ -261,10 +262,14 @@ class SimpleDevice:
                     self.status = Status.FINISH_MISSION
                     time.sleep(2)
                     self.finish_Mission()
-
-            self.battery = self.battery - 0.01
-            if self.battery < 5:
-                self.battery = 100
+            if self.category == "px4":
+                self.battery = self.battery - 0.0001
+                if self.battery < 0.05:
+                    self.battery = 1
+            else:
+                self.battery = self.battery - 0.01
+                if self.battery < 5:
+                    self.battery = 100
 
     def publish(self):
         while not rospy.is_shutdown():
@@ -307,7 +312,7 @@ class SimpleDevice:
                 statusBattery.voltage = 24
                 statusBattery.current = 1
                 statusBattery.capacity = 100
-                statusBattery.percentage = self.battery
+                statusBattery.percentage = round(self.battery, 2)
                 self.pubBattery.publish(statusBattery)
 
                 self.rate.sleep()

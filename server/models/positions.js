@@ -79,7 +79,7 @@ export class positionsModel {
 
     //------------  Attributes -------
     if (payload.hasOwnProperty('batteryLevel')) {
-      positions[payload.deviceId]['attributes']['batteryLevel'] = payload.batteryLevel;
+      positions[payload.deviceId]['attributes']['batteryLevel'] = Number.parseFloat(payload.batteryLevel).toFixed(2);
     }
     if (payload.hasOwnProperty('gimbal')) {
       positions[payload.deviceId]['attributes']['gimbal'] = [
