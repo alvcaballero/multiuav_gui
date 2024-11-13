@@ -167,8 +167,11 @@ class SimpleDevice:
         if self.typeMission == "GPS":
             newPosX = pos1[0]+(newDstX*(180/6378137))/math.pi
             newPosY = pos1[1]+(newDstY*(180/6378137))/math.pi
+            print("newPos:", newPosX, newPosY, newPosZ)
+            print("PosDiff:", pos1[0]-newDstX, pos1[1]-newDstY, pos1[2] newDstZ)
+        else:
+            print("newDst:", newDstX, newDstY, newDstZ)
 
-        print("newDst:", newDstX, newDstY, newDstZ)
         if abs(newDstX) > abs(dstX) or abs(newDstY) > abs(dstY) or abs(newDstZ) > abs(dstZ):
             print("Arrived wp")
             return {'state': True, 'pos': pos2}
