@@ -59,14 +59,14 @@ class SimpleDevice:
         self.position = self.homePoint
         self.yaw = 0
         self.gimbal = 0
-        self.battery = 100
-        self.speedIdle = 5  # m/s
         self.speedX = 0
         self.speedY = 0
         self.speedZ = 0
+        self.speedIdle = 5  # m/s
+        self.battery = 100
         if category == "px4":
             self.speedIdle = 10  # m/s
-            self.battery = 100
+            self.battery = 1
         self.currentWp = -1
         self.currentAction = 0
         self.rateTime = 2  # 1 Hz
