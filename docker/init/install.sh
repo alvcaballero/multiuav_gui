@@ -23,8 +23,6 @@ newgrp docker
 
 
 docker pull bluenviron/mediamtx
-
-docker run hello-world
  
 sudo apt install tmux -y 
 sudo apt-get install -y tmuxinator

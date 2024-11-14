@@ -38,22 +38,41 @@ RUN apt-get install -y ros-noetic-teleop-twist-keyboard
 RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev libgstrtspserver-1.0-dev gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-rtsp
 RUN apt install gstreamer1.0-rtsp
 
-
-
-
 # libqt5websockets5 --- for flatbuffers
-# sudo apt install libqt5websockets5-dev
-# sudo ln -s /usr/bin/python3 /usr/bin/python
+RUN apt-get -y install libqt5websockets5-dev
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# permissions for user
+RUN apt-get install -y ros-noetic-rqt-graph
 
 
-# RUN /bin/bash -c 'echo -e "/opt/ros/noetic/setup.bash \n" >> ~/.bashrc ;'
-# RUN /bin/bash -c 'echo -e "source /home/user/catkin_ws/devel/setup.bash \n" >> ~/.bashrc ;'
+# Update the package list, install sudo, create a non-root user, and grant password-less sudo permissions
+ARG USER_NAME=nonroot
+ARG USER_ID=1000
+ARG GROUP_ID=1000
 
-WORKDIR /root/catkin_ws
+RUN apt update && \
+    apt install -y sudo && \
+    addgroup --gid $GROUP_ID $USER_NAME && \
+    adduser --uid $USER_ID --gid $GROUP_ID --disabled-password --gecos "" $USER_NAME && \
+    echo 'nonroot ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+
+# Opcional: Cambia los permisos de la carpeta si necesitas que sea accesible por otros usuarios
+RUN mkdir -p /home/$USER_NAME/work
+RUN chmod 755 /home/$USER_NAME/work
+RUN chown $USER_NAME:$USER_NAME /home/$USER_NAME/work
+    
+USER $USER_NAME
+RUN mkdir -p /home/$USER_NAME/test
+RUN /bin/bash -c 'echo -e "/opt/ros/noetic/setup.bash \n" >> ~/.bashrc ;'
+RUN /bin/bash -c 'echo -e "source /home/${USER_NAME}/catkin_ws/devel/setup.bash \n" >> ~/.bashrc ;'
+
+# WORKDIR /root/catkin_ws
 
 # Load ROS environment at each run
-COPY ./ros_entrypoint.sh /
-RUN chmod 755 /ros_entrypoint.sh
-ENTRYPOINT ["/ros_entrypoint.sh"]
+# COPY ./ros_entrypoint.sh /
+# RUN chmod 755 /ros_entrypoint.sh
+# ENTRYPOINT ["/ros_entrypoint.sh"]
 
 CMD ["bash"]
