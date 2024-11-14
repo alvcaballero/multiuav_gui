@@ -131,6 +131,8 @@ class SimpleDevice:
         return {'state': False, 'value': angle}
 
     def moveToPoint(self, pos1, pos2, speed):
+        print("pos1:", pos1)
+        print("pos2:", pos2)
         dstX = (pos2[0] - pos1[0])
         dstY = (pos2[1] - pos1[1])
         dstZ = (pos2[2] - pos1[2])
@@ -168,7 +170,7 @@ class SimpleDevice:
             newPosX = pos1[0]+(newDstX*(180/6378137))/math.pi
             newPosY = pos1[1]+(newDstY*(180/6378137))/math.pi
             print("newPos:", newPosX, newPosY, newPosZ)
-            print("PosDiff:", pos1[0]-newDstX, pos1[1]-newDstY, pos1[2] newDstZ)
+            print("PosDiff:", pos2[0]-newPosX, pos2[1]-newPosY, pos2[2] -newPosZ)
         else:
             print("newDst:", newDstX, newDstY, newDstZ)
 
@@ -205,6 +207,7 @@ class SimpleDevice:
             elif self.currentWp < len(self.mission.waypoint):
                 calculate = self.moveToPoint(self.position, [
                     self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speedIdle)
+                self.position = calculate['pos']
                 print("calculate", calculate)
                 if category == "px4":
                     newyaw = self.moveAngle(

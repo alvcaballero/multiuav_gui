@@ -66,7 +66,7 @@ RUN chown $USER_NAME:$USER_NAME /home/$USER_NAME/work
 USER $USER_NAME
 RUN mkdir -p /home/$USER_NAME/test
 RUN /bin/bash -c 'echo -e "/opt/ros/noetic/setup.bash \n" >> ~/.bashrc ;'
-RUN /bin/bash -c 'echo -e "source /home/${USER_NAME}/catkin_ws/devel/setup.bash \n" >> ~/.bashrc ;'
+RUN /bin/bash -c 'echo -e "source /home/${USER_NAME}/work/catkin_ws/devel/setup.bash \n" >> ~/.bashrc ;'
 
 # WORKDIR /root/catkin_ws
 
