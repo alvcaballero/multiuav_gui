@@ -1,6 +1,11 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl';
 import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
+
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { MaplibreExportControl, Size, PageOrientation, Format, DPI } from '@watergis/maplibre-gl-export';
+import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
+
 import { SwitcherControl } from './switcher';
 import { useAttributePreference, usePreference } from '../common/preferences';
 import usePersistedState, { savePersistedState } from '../common/usePersistedState';
@@ -49,6 +54,17 @@ const initMap = async () => {
 };
 
 map.addControl(new maplibregl.NavigationControl());
+map.addControl(
+  new MaplibreExportControl({
+    PageSize: Size.A3,
+    PageOrientation: PageOrientation.Portrait,
+    Format: Format.SVG,
+    Crosshair: true,
+    PrintableArea: true,
+    Local: 'en',
+  }),
+  'top-right'
+);
 
 const switcher = new SwitcherControl(
   () => updateReadyValue(false),

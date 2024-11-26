@@ -66,6 +66,7 @@
   },
   "devDependencies": {
     "@vite-pwa/assets-generator": "^0.2.6",
+    "@watergis/maplibre-gl-export": "^3.8.4",
     "eslint": "^8.57.1",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-plugin-import": "^2.31.0",

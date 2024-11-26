@@ -153,8 +153,8 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
         layout: {
           'icon-image': '{category}-{color}',
           'icon-size': iconScale,
-          'icon-allow-overlap': true,
-          'text-allow-overlap': true,
+          'icon-allow-overlap': false,
+          'text-allow-overlap': false,
           'text-field': '{id}',
           'text-font': findFonts(map),
           'text-size': 14,
