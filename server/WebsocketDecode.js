@@ -80,7 +80,7 @@ export function decoder(metadata, buf, deviceId, category, deviceName) {
   }
   if (metadata.type() === 'dji_osdk_ros/WaypointV2MissionStatePush') {
     const msg = fb.fb.dji_osdk_ros.WaypointV2MissionStatePush.getRootAsWaypointV2MissionStatePush(buf);
-    return { deviceId, speed: msg.velocity() * 0.01 };
+    return { deviceId, speed: msg.velocity() };
   }
   if (metadata.type() === 'std_msgs/UInt8' && metadata.topic().includes('alarm')) {
     const msg = fb.fb.std_msgs.UInt8.getRootAsUInt8(buf);

@@ -1,0 +1,52 @@
+services:
+  node:
+    image: 'node:18'
+    user: 'node'
+    working_dir: /home/node/app
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./server/:/home/node/app
+    command: 'npm run server'
+    network_mode: host
+
+  glyphServer:
+    image: 'node:12'
+    user: 'node'
+    working_dir: /home/node/app
+    volumes:
+      - ./glyphserver/:/home/node/app
+    ports: # use if it is necessary to expose the container to the host machine
+      - '8484:8484'
+    command: 'npm run start'
+
+  MapServer:
+    image: 'overv/openstreetmap-tile-server'
+    command: 'run'
+    volumes:
+      - osmOffline:/data/database
+    ports:
+      - '8080:80'
+    environment:
+      - ALLOW_CORS=true
+
+  VideoServer:
+    image: 'bluenviron/mediamtx'
+    volumes:
+      - ./server/config/mediamtx.yml:/mediamtx.yml
+    network_mode: host
+
+  RosBridge:
+    image: 'muavgcs:ros1'
+    command: >
+      bash -c "source /root/catkin_ws/devel/setup.bash && roslaunch aerialcore_gui connect_uas.launch"
+    network_mode: host
+
+  Planner:
+    image: 'muavgcs:planner'
+    ports:
+      - '8004:8004'
+volumes:
+  osmOffline:
+    external: true
+    name: osm-data-andalucia

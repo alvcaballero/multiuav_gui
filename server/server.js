@@ -53,7 +53,7 @@ app.use(corsMiddleware());
 app.use(json());
 app.use(logger('dev'));
 
-app.use(express.static(resolve(__dirname, '../client/build')));
+app.use(express.static(resolve(__dirname, './client/build')));
 app.use('/api/devices', createDevicesRouter({ model: DevicesModel }));
 app.use('/api/category', categoryRouter);
 app.use('/api/positions', positionsRouter);
