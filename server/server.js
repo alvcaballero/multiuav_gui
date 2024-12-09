@@ -1,15 +1,11 @@
 //https://www.youtube.com/watch?v=gnM3Ld6_upE-- REVISAR
 //https://medium.com/agora-io/how-does-webrtc-work-996748603141
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
 import { port, db, RosEnable, FbEnable } from './config/config.js';
 import express, { json } from 'express';
 import logger from 'morgan';
 import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
+import { checkFile } from './common/utils.js';
 
 console.log('use db is ' + db);
 
@@ -53,7 +49,13 @@ app.use(corsMiddleware());
 app.use(json());
 app.use(logger('dev'));
 
-app.use(express.static(resolve(__dirname, './client/build')));
+let wedAppPath = checkFile('../client/build');
+if (wedAppPath === null) {
+  wedAppPath = checkFile('../../client/build');
+}
+console.log('wedAppPath ' + wedAppPath);
+
+app.use(express.static(wedAppPath));
 app.use('/api/devices', createDevicesRouter({ model: DevicesModel }));
 app.use('/api/category', categoryRouter);
 app.use('/api/positions', positionsRouter);
