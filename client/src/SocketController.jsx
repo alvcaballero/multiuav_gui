@@ -161,7 +161,7 @@ const SocketController = () => {
     console.log('notifications');
     console.log(notifications);
     for (let i = 0; i < notifications.length; i += 1) {
-      enqueueSnackbar(notifications[i].message, {
+      enqueueSnackbar(notifications[i].message ? notifications[i].message : 'unknow error', {
         variant: notifications[i].type,
         autoHideDuration: 3000,
         persist: false,
