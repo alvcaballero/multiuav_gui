@@ -1,9 +1,7 @@
 import React, { useContext, useState, Fragment } from 'react';
-import { RosContext } from './RosControl';
 import makeStyles from '@mui/styles/makeStyles';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SelectField from '../common/components/SelectField';
 import {
   Divider,
   Card,
@@ -18,11 +16,10 @@ import {
   AccordionSummary,
   AccordionDetails,
   Typography,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SelectField from '../common/components/SelectField';
+import { RosContext } from './RosControl';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -116,7 +113,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
     SetAddUAVOpen(false);
   }
   function AddnewUAV() {
-    console.log('add uav-' + item.name + '-' + item.category);
+    console.log('add uav-' + item.name + '-' + item.category + '-' + item.protocol);
     console.log(item);
     rosContex.connectAddUav(item);
     SetAddUAVOpen(false);
