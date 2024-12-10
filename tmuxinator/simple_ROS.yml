@@ -1,0 +1,45 @@
+
+<%  directory=File.expand_path(File.dirname(__FILE__)) %>
+name: muav-gui
+root: ~/
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: tiled
+      panes:
+        - backend:
+            - cd ~/work/px4/multiuav_gui/server
+            - nvm use 18
+            - npm run server
+        - glyphserver:
+            - cd ~/work/px4/glyphserver
+            - nvm use 12
+            - sleep 3
+            - npm start
+  - ROS:
+      layout: tiled
+      panes:
+        - rosbridge:
+            - docker stop px4_noetic
+            - sleep 4
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+            - roslaunch rosbridge_server rosbridge_websocket.launch
+        - local:
+            - sleep 8
+            - echo <%= directory %>
+            - docker start offline_map
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+            - cd /home/user/catkin_ws
+            - sleep 2;rostopic list
+        - mavros:
+            - sleep 8
+            - sshpass -pkhadas ssh khadas@10.42.0.214
+            - roslaunch griffin_core autonomous_test.launch 
+        - rosbag:
+            - sleep 4
+            - cd ~/work/px4/multiuav_gui/docker
+            - ./container_run.sh
+
