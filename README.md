@@ -1,7 +1,8 @@
-# MultiUAV-GUI 
+# MultiUAV-GUI
+
 [![Releases](https://img.shields.io/github/release/alvcaballero/multiuav_gui.svg)](https://github.com/alvcaballero/multiuav_gui/releases) [![DOI](https://img.shields.io/badge/DOI-10.1109%2FICUAS60882.2024.10556987-blue)](https://doi.org/10.1109/ICUAS60882.2024.10556987)
 
-A GCS for multi UAV  & long range inspection
+A GCS for multi UAV & long range inspection
 
 This repository prvides an GCS software that allow command and monitoring multiple UAVs for a heterogeneous fleet of unmannned Aerial Vehicles (UAVs).
 This project is part of [Multi Project](https://github.com/alvcaballero/multiUAV_system)
@@ -51,6 +52,13 @@ For case you comunicate through ros do you have to setup a docker container
 ```bash
 cd docker
 docker build -t muavgcs:noetic .
+```
+
+or build with non root user
+
+```
+docker build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) -t muavgcs:noetic .
+
 ```
 
 2. modify the docker/container_run.sh and change the PROJECT_DIR value and run
@@ -337,8 +345,8 @@ Test and Setup for Muav on Proyect Omicron Demo in Plaza de Agua
 
 - [traccar-web](https://github.com/traccar/traccar-web) fleet management
 
-
 ## Citation
+
 If you find UAL useful in your research, please consider citing:
 
 ```
