@@ -72,7 +72,7 @@ export class rosModel {
   static async rosConnect() {
     console.log('try to connect to ros');
     if (rosState.state != 'connect') {
-      ros = new ROSLIB.Ros({ url: 'ws://localhost:9090' });
+      ros = new ROSLIB.Ros({ url: 'ws://127.0.0.1:9090' });
       ros.on('connection', function () {
         console.log('ROS Connected to websocket server.');
         rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
