@@ -120,9 +120,6 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
   const handleChange_ac = (panel) => (event, isExpanded) => {
     setExpanded_ac(isExpanded ? panel : false);
   };
-  const handleChange_acnew = (panel) => (event, isExpanded) => {
-    setnewactionmenu(false);
-  };
 
   return (
     <Accordion expanded={expandWp === `WP${indexWp}`} onChange={handleChange_wp(`WP${indexWp}`)}>
@@ -333,7 +330,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                       size="large"
                       sx={{ width: '80%', flexShrink: 0 }}
                       style={{ marginTop: '15px' }}
-                      onClick={() => handleChange_acnew('wp ' + indexWp)}
+                      onClick={() => setnewactionmenu(false)}
                     >
                       Add new action
                     </Button>
