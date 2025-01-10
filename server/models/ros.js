@@ -80,7 +80,14 @@ export class rosModel {
         rosModel.GCSServicesMission();
       });
       ros.on('error', function (error) {
-        console.log('ROS Error connecting to websocket server: ', error);
+        console.log('ROS Error connecting to websocket server ');
+        const symbols = Object.getOwnPropertySymbols(error); // Obtener todos los símbolos del objeto
+        const kMessageSymbol = symbols.find(symbol => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
+        if (kMessageSymbol) {
+          console.log("error:" + error[kMessageSymbol])
+        } else{
+          console.log("error:"+ error)
+        }
         rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
         rosModel.disconectRos();
       });

@@ -39,5 +39,9 @@ git clone https://github.com/alvcaballero/multiuav_gui.git
 mkdir catkin_ws/
 mkdir catkin_ws/src
 cd catkin_ws/src
-git clone --recurse-submodules -j8 https://github.com/alvcaballero/multiUAV_system.git
+git clone --recurse-submodules -j8 --branch GimbalPitch https://github.com/alvcaballero/multiUAV_system.git
 git clone https://github.com/CircusMonkey/ros_rtsp.git
+git clone https://github.com/miggilcas/simple_vs.git
+git clone --branch noetic https://github.com/grvcTeam/grvc-utils.git
+git clone https://github.com/miggilcas/Onboard-SDK-ROS.git
+catkin_make

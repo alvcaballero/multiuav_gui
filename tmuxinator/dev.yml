@@ -11,11 +11,6 @@ windows:
             - nvm use 18
             - sleep 3
             - npm run server
-        - glyphserver:
-            - cd ~/work/px4/glyphserver
-            - nvm use 12
-            - sleep 3
-            - npm start
         - frontend:
             - cd ~/work/px4/multiuav_gui/client
             - nvm use 18
@@ -40,7 +35,7 @@ windows:
             - ./container_run.sh
             - cd /home/user/bags/uav_14
             - sleep 10;
-            - rosbag play -l uav_15_2023_12_12_16_24.bag #ro
+            - rosbag play -l uav_15_2023_12_12_16_24.bag 
         - aux:
             - cd ~/work/px4/multiuav_gui/docker
             - ./container_run.sh

@@ -73,6 +73,7 @@ https://docs.px4.io/v1.12/en/simulation/multi_vehicle_simulation_gazebo.html
 
 ```
 cd Firmware_clone
+git config --global --add safe.directory "*"
 git submodule update --init --recursive
 DONT_RUN=1 make px4_sitl_default gazebo
 ```

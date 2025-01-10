@@ -2,6 +2,7 @@ xhost +local:docker;
 
 # Set the project directory (PROJECT_DIR) as the parent directory of the current working directory
 PROJECT_DIR="${HOME}/work/px4";
+PROJECT_DIST="/home/nonroot/work";
 
 # Print the current working directory to verify the change
 echo "Current working directory: $PROJECT_DIR"
@@ -12,18 +13,10 @@ echo 'Container not found, creating it ...';
 docker run -it \
 --name ros2humble \
 --privileged \
---mount type=bind,source=$PROJECT_DIR,destination=/home/user/ \
 --env DISPLAY=$DISPLAY \
 --network host \
 --volume /tmp/.X11-unix:/tmp/.X11-unix \
--p 11311:11311    \
--p 11312:11312    \
--p 9090:9090      \
--p 14550:14550/udp  \
--p 14570:14570/udp  \
--p 14560:14560  \
--p 8080:8080  \
--p 8553:8553  \
+--mount type=bind,source=$PROJECT_DIR,destination=$PROJECT_DIST \
 ros:humble-ros-base bash\
 ;
 else
