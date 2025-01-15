@@ -2,13 +2,15 @@ import { readJSON, readYAML, getDatetime } from '../common/utils.js';
 import { StreamServer } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
+import { cameraModel } from './camera.js';
 import { object, set } from 'zod';
+import { where } from 'sequelize';
 
 /* devices:
 /   id
 /   name  : name of uav
 /   category : model of uav registered
-/   ip 
+/   ip : ip of uav
 /   protocol: ros, robofleet
 /   camera : array of camera devices 
 /       type: WebRTC, RTSP
@@ -19,8 +21,8 @@ import { object, set } from 'zod';
 /   lastUpdate:
 /   status:
 */
-const CHECK_INTERVAL = 5000;
 
+const CHECK_INTERVAL = 5000;
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
@@ -29,15 +31,10 @@ const devicesStatus = Object.freeze({
   OFFLINE: 'offline',
 });
 
-function filterDevice(obj, fields) {
-  let newObj = {};
-  for (let field of fields) {
-    if (obj.hasOwnProperty(field)) {
-      newObj[field] = obj[field] ?? null;
-    }
-  }
-  return newObj;
-}
+const protocols = Object.freeze({
+  ROS: 'ros',
+  ROBOFLEET: 'robofleet',
+});
 
 console.log('load model devices SQL');
 
@@ -59,7 +56,7 @@ export class DevicesModel {
 
   static async getAll(query) {
     let mydevices = await sequelize.models.Device.findAll({
-      attributes: ['id', 'name', 'category', 'ip', 'camera', 'status', 'lastUpdate'],
+      attributes: publicFields,
     });
     if (query) {
       console.log(query);
@@ -74,62 +71,72 @@ export class DevicesModel {
     }
     return mydevices;
   }
+
+  static async getById({ id }) {
+    return await sequelize.models.Device.findOne({
+      attributes: publicFields,
+      where: { id: id }
+    });
+  }
+  static async getByName(name) {
+    return await sequelize.models.Device.findOne({
+      attributes: publicFields,
+      where: { name: name }
+    });
+  }
+
   static async getAccess(id) {
-    return await sequelize.models.Device.findAll({
-      attributes: ['id', 'name', 'user', 'pwd', 'ip'],
+    return await sequelize.models.Device.findOne({
+      attributes: privateFields,
+      where: { id: id }
     });
   }
 
   static async create(device) {
-    console.log(device);
+    let myDevice = null;
     let serverState = rosController.getServerStatus();
 
-    let uav_ns = device.name;
-    let uav_type = device.category;
+    let protocol = device.protocol ? device.protocol : protocols.ROS;
 
-    console.log('create UAV ' + uav_ns + '  type' + uav_type);
 
-    let repeat_device = false;
-    let devices = await this.getAll();
-    if (devices.length > 0) {
-      devices.forEach((element) => {
-        repeat_device = element.name == uav_ns ? true : false;
+    console.log('create UAV ' + device.name + '  type' + device.category);
+    try {
+      myDevice = await sequelize.models.Device.create({
+        name: device.name,
+        category: device.category,
+        ip: device.ip,
+        status: devicesStatus.OFFLINE,
+        user: device.user,
+        pwd: device.pwd,
+        ip: device.ip,
+        camera: device.camera,
+        files: device.files,
+        protocol: protocol,
       });
+    } catch (e) {
+      console.log("Error create device" + e.name);
+      console.log(e);
+      if (e.name === 'SequelizeUniqueConstraintError') {
+        return { state: 'error', msg: 'Device already exists' };
+      }
+      return { state: 'error', msg: 'Error create device' };
     }
 
-    if (repeat_device == true) {
-      console.log('Dispositivo ya se encuentra registrado ' + uav_ns);
-      return {
-        state: 'error',
-        msg: `Dispositivo ya se encuentra registrado ${uav_ns}`,
-      };
-    }
-    const myDevice = await sequelize.models.Device.create({
-      name: device.name,
-      category: device.category,
-      ip: device.ip,
-      status: 'offline',
-      camera: JSON.stringify(device.camera),
-      user: device.user,
-      pwd: device.pwd,
-      ip: device.ip,
-    });
     if (StreamServer) {
-      this.addCameraWebRTC(device);
+      cameraModel.addCameraWebRTC(device);
     }
 
     if (serverState.state === 'connect') {
       console.log('suscribe devices ');
       await rosController.subscribeDevice({
         id: myDevice.id,
-        name: uav_ns,
-        category: uav_type,
+        name: myDevice.name,
+        category: myDevice.category,
         camera: device.camera,
         watch_bound: true,
         bag: false,
       });
 
-      console.log(devices);
       console.log('success', device.name + ' added. Type: ' + device.category);
       return { state: 'success', msg: 'conectado Correctamente' };
     } else {
@@ -138,70 +145,54 @@ export class DevicesModel {
     }
   }
 
-  static async addCameraWebRTC(device) {
-    for (let i = 0; i < device.camera.length; i = i + 1) {
-      if (device.camera[i]['type'] == 'WebRTC') {
-        await fetch(`http://localhost:9997/v3/config/paths/add/${device.name}_${device.camera[i].source}`, {
-          method: 'POST',
-          body: JSON.stringify({
-            source: `rtsp://${device.ip}:8554/${device.camera[i].source}`,
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-      }
-    }
-  }
-
-  static async getById({ id }) {
-    return await sequelize.models.Device.findOne({ where: { id: id } });
-  }
-  static async getByName(name) {
-    return await sequelize.models.Device.findOne({ where: { name: name } });
-  }
-
   static async delete({ id }) {
+    let device = await this.getById({ id: id });
     console.log('remove id' + id);
-    await this.removeDeviceCameraWebRTC(id);
+    await cameraModel.removeCameraWebRTC(device);
     await this.removedevice({ id: id });
-
     let response = await rosController.unsubscribeDevice(id);
     return response;
   }
 
-  static async removeDeviceCameraWebRTC(id) {
-    let device_del = devices[id];
-    if (device_del.hasOwnProperty('camera')) {
-      for (let i = 0; i < device_del.camera.length; i = i + 1) {
-        if (device_del.camera[i]['type'] == 'WebRTC') {
-          await fetch(
-            `http://localhost:9997/v3/config/paths/remove/${device_del.name}_${device_del.camera[i].source}`,
-            {
-              method: 'POST',
-            }
-          );
-        }
+  static editDevice({ id, name, category, ip, user, pwd, camera, files, protocol }) {
+    let myDevice = sequelize.models.Device.findOne({ where: { id: id } });
+    if (protocol && protocol !== myDevice.protocol) {
+      console.log('change protocol');
+      myDevice.protocol = protocol;
+    }
+    if ((name && name !== myDevice.name) || (category && category !== myDevice.category)) {
+      console.log('change name');
+      myDevice.name = name ? name : myDevice.name;
+      myDevice.category = category ? category : myDevice.category;
+      if (protocol === protocols.ROBOFLEET) {
+        // unsuscribe topics
+        // subscribe new topics
+      }
+      if (protocol === protocols.ROS) {
+        // unsuscribe topics
+        // subscribe new topics
       }
     }
+    if (ip && ip !== myDevice.ip) {
+      cameraModel.removeCameraWebRTC(myDevice);
+      myDevice.ip = ip;
+      cameraModel.removeCameraWebRTC({ ...myDevice, ip: ip });
+    }
+
+    if (camera && JSON.stringify(camera) !== JSON.stringify(myDevice.camera)) {
+      console.log('change camera');
+      myDevice.camera = camera;
+      cameraModel.removeCameraWebRTC(myDevice);
+      cameraModel.addCameraWebRTC({ ...myDevice, camera: camera });
+    }
+
+    if (files) myDevice.files = files;
+    if (user) myDevice.user = user;
+    if (pwd) myDevice.pwd = pwd;
+
+    myDevice.save();
   }
 
-  static updatedevice(payload) {
-    const myDevice = sequelize.models.Device.findOne({ where: { id: payload.id } });
-    if (myDevice) {
-      myDevice = { ...myDevice, ...payload };
-    }
-  }
-
-  static updateDeviceAccess(payload) {
-    const myDevice = sequelize.models.Device.findOne({ where: { id: payload.id } });
-    if (myDevice) {
-      myDevice = { ...myDevice, ...payload };
-    }
-  }
-  static updatedeviceIP(payload) {
-    const myDevice = sequelize.models.Device.update({ ip: payload.ip }, { where: { id: payload.id } });
-  }
   static updateDeviceTime(id) {
     let currentTime = new Date();
     const myDevice = sequelize.models.Device.update({ lastUpdate: currentTime }, { where: { id: id } });
@@ -232,7 +223,7 @@ export class DevicesModel {
     const myDevices = await this.getAll();
     for (let device of myDevices) {
       if (StreamServer) {
-        await this.addCameraWebRTC(device);
+        await cameraModel.addCameraWebRTC(device);
       }
     }
   }

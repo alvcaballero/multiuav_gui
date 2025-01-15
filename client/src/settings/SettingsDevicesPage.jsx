@@ -26,7 +26,7 @@ import SearchHeader, { filterByKeyword } from './components/SearchHeader';
 import { formatTime } from '../common/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
 
-const SettingsCategoryPage = () => {
+const SettingsDevicesPage = () => {
   const classes = useSettingsStyles();
   const navigate = useNavigate();
 
@@ -90,7 +90,7 @@ const SettingsCategoryPage = () => {
                 <TableCell className={classes.columnAction} padding="none">
                   <div className={classes.row}>
                     <Tooltip title={'Edit'}>
-                      <IconButton size="small" onClick={() => null}>
+                      <IconButton size="small" onClick={() => navigate(`/settings/devices/${item.id}`)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -112,4 +112,4 @@ const SettingsCategoryPage = () => {
   );
 };
 
-export default SettingsCategoryPage;
+export default SettingsDevicesPage;

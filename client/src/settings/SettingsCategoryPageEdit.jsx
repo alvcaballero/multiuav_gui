@@ -3,24 +3,13 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import SelectField from '../common/components/SelectField';
 import {
-  Divider,
-  Card,
   IconButton,
-  MenuItem,
   Button,
-  Select,
   TextField,
-  FormControl,
-  InputLabel,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Typography,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
-  useMediaQuery,
-  useTheme,
   Table,
   TableHead,
   TableRow,
@@ -29,24 +18,16 @@ import {
   Box,
 } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import LinkIcon from '@mui/icons-material/Link';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useEffectAsync } from '../reactHelper';
-import PageLayout from '../common/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
-import TableShimmer from '../common/components/TableShimmer';
-import SearchHeader, { filterByKeyword } from './components/SearchHeader';
-import { formatTime } from '../common/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
 import useQuery from '../common/useQuery';
 import EditItemView from './components/EditItemView';
 
 const SettingsCategoryPageEdit = () => {
   const classes = useSettingsStyles();
-  const navigate = useNavigate();
 
   const query = useQuery();
   const uniqueId = query.get('uniqueId');

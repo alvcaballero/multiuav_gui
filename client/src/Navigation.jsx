@@ -19,6 +19,7 @@ import MissionDetailReportPage from './other/MissionDetailReportPage';
 import SettingsCategoryPage from './settings/SettingsCategoryPage';
 import SettingsCategoryPageEdit from './settings/SettingsCategoryPageEdit';
 import SettingsDevicesPage from './settings/SettingsDevicesPage';
+import SettingsDevicesPageEdit from './settings/SettingsDevicesPageEdit';
 
 const padding = {
   padding: 5,
@@ -52,8 +53,10 @@ const Navigation = () => {
 
         <Route path="settings">
           <Route path="devices" element={<SettingsDevicesPage />} />
+          <Route path="devices/:id" element={<SettingsDevicesPageEdit />} />
           <Route path="category" element={<SettingsCategoryPage />} />
           <Route path="category/:id" element={<SettingsCategoryPageEdit />} />
+
         </Route>
 
         <Route path="reports">

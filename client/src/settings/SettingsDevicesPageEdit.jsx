@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, Fragment } from 'react';
 import SelectField from '../common/components/SelectField';
 import {
   Divider,
-  Card,
   IconButton,
-  MenuItem,
   Button,
   Select,
   TextField,
@@ -16,70 +12,48 @@ import {
   AccordionSummary,
   AccordionDetails,
   Typography,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
+  MenuItem,
 } from '@mui/material';
-import { IconButton, Menu, MenuItem, useMediaQuery, useTheme } from '@mui/material';
-import Tooltip from '@mui/material/Tooltip';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import LinkIcon from '@mui/icons-material/Link';
-import { useEffectAsync } from '../reactHelper';
-import PageLayout from '../common/components/PageLayout';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsMenu from './components/SettingsMenu';
-import TableShimmer from '../common/components/TableShimmer';
-import SearchHeader, { filterByKeyword } from './components/SearchHeader';
-import { formatTime } from '../common/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
-import RemoveDialog from '../components/RemoveDialog';
-import useQuery from './common/useQuery';
+import useQuery from '../common/useQuery';
+import EditItemView from './components/EditItemView';
 
-const SettingsCategoryPageEdit = () => {
+
+const SettingsDevicesPageEdit = () => {
   const classes = useSettingsStyles();
-  const navigate = useNavigate();
 
   const query = useQuery();
   const uniqueId = query.get('uniqueId');
 
   const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
 
-  const [timestamp, setTimestamp] = useState(Date.now());
-  const [items, setItems] = useState([]);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [showAll, setShowAll] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [removing, setRemoving] = useState(false);
-  const [myCategory, setMyCategory] = useState(null);
+  const validate = () => item && item.name && item.category && item.protocol && item.ip;
 
-  useEffectAsync(async () => {
-    setLoading(true);
-    try {
-      const query = new URLSearchParams({ all: showAll });
-      const response = await fetch(`/api/category`);
-      if (response.ok) {
-        setItems(await response.json());
-      } else {
-        throw Error(await response.text());
-      }
-    } finally {
-      setLoading(false);
+  const Remove_camera = (index) => {
+    let auxcamera = JSON.parse(JSON.stringify(item.camera));
+    auxcamera.splice(index, 1);
+    setItem({ ...item, camera: auxcamera });
+  };
+  function addNewcamera() {
+    let auxcamera = JSON.parse(JSON.stringify(item.camera));
+    auxcamera.push({ type: 'WebRTC', source: '' });
+    setItem({ ...item, camera: auxcamera });
+  }
+  const Remove_file = (index) => {
+    let auxcamera = JSON.parse(JSON.stringify(item.files));
+    auxcamera.splice(index, 1);
+    setItem({ ...item, files: auxcamera });
+  };
+  const addNewFile = () => {
+    if (!item.files) {
+      item.files = [];
     }
-  }, [timestamp, showAll]);
-
-  const handleEdit = (item) => {
-    navigate(`/settings/category/${item}`);
-  };
-
-  const handleRemove = (item) => {
-    setMyCategory(item);
-    setRemoving(true);
-  };
-
-  const hamdleRemoveResult = (result) => {
-    setMyCategory(null);
-    setRemoving(false);
+    let auxfile = JSON.parse(JSON.stringify(item.files));
+    auxfile.push({ type: 'onboard_computer', url: '' });
+    setItem({ ...item, files: auxfile });
   };
 
   return (
@@ -293,4 +267,4 @@ const SettingsCategoryPageEdit = () => {
   );
 };
 
-export default SettingsCategoryPageEdit;
+export default SettingsDevicesPageEdit;

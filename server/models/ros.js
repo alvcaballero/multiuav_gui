@@ -85,8 +85,8 @@ export class rosModel {
         const kMessageSymbol = symbols.find(symbol => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
         if (kMessageSymbol) {
           console.log("error:" + error[kMessageSymbol])
-        } else{
-          console.log("error:"+ error)
+        } else {
+          console.log("error:" + error)
         }
         rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
         rosModel.disconectRos();
@@ -114,6 +114,9 @@ export class rosModel {
   }
   // Proccess Ros for all devices
   static async subscribeDevice(uavAdded) {
+    if (rosState.state != 'connect') {
+      return { state: 'error', msg: 'ROS no conectado' };
+    }
     console.log(`subscribe ROS Device ${uavAdded.id} ${uavAdded.name} ${uavAdded.category}`);
 
     const { id, name, category, camera } = uavAdded;
@@ -262,7 +265,7 @@ export class rosModel {
       });
     });
   }
-  static getTopics2() {}
+  static getTopics2() { }
 
   /*
    / Create Ros services that UAV can consume for 

@@ -1,4 +1,7 @@
+import { get } from 'http';
+import { type } from 'os';
 import { Model, DataTypes, Sequelize } from 'sequelize';
+import { set } from 'zod';
 
 const Device_TABLE = 'Devices';
 
@@ -18,6 +21,9 @@ const DeviceSchema = {
     allowNull: false,
     type: DataTypes.STRING,
   },
+  protocol: {
+    type: DataTypes.STRING,
+  },
   model: {
     type: DataTypes.STRING,
   },
@@ -31,10 +37,10 @@ const DeviceSchema = {
     type: DataTypes.STRING,
   },
   camera: {
-    type: DataTypes.STRING,
+    type: DataTypes.JSON,
   },
-  camera: {
-    type: DataTypes.STRING,
+  files: {
+    type: DataTypes.JSON,
   },
   status: {
     type: DataTypes.STRING,

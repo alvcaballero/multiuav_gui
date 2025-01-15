@@ -33,4 +33,18 @@ export default makeStyles((theme) => ({
   row: {
     display: 'flex',
   },
+  attributeName: {
+    display: 'inline-block',
+    width: '40%',
+    textAlign: 'left',
+    verticalAlign: 'middle',
+  },
+  attributeValue: {
+    display: 'inline-block',
+    width: '58%',
+  },
+  actionValue: {
+    display: 'inline-block',
+    width: '55%',
+  },
 }));
