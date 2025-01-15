@@ -1,39 +1,55 @@
 import { readJSON, readYAML, getDatetime } from '../common/utils.js';
 import { StreamServer } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
-import sequelize from '../common/sequelize.js';
-import { object } from 'zod';
+import sequelize, { Op } from '../common/sequelize.js';
+import { object, set } from 'zod';
 
-const devices_init = readYAML('../config/devices/devices_init.yaml');
-const devices = {};
-const devicesAccess = {};
-const listUpdateTime = {};
+/* devices:
+/   id
+/   name  : name of uav
+/   category : model of uav registered
+/   ip 
+/   protocol: ros, robofleet
+/   camera : array of camera devices 
+/       type: WebRTC, RTSP
+/       source: source of camera
+/   files: array of files access
+/        url: ftp://user:pwd@ip:port
+/        type: ftp
+/   lastUpdate:
+/   status:
+*/
+const CHECK_INTERVAL = 5000;
+
+const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
+const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
+
+const devicesStatus = Object.freeze({
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+});
+
+function filterDevice(obj, fields) {
+  let newObj = {};
+  for (let field of fields) {
+    if (obj.hasOwnProperty(field)) {
+      newObj[field] = obj[field] ?? null;
+    }
+  }
+  return newObj;
+}
 
 console.log('load model devices SQL');
 
-const CheckDeviceOnline = setInterval(async () => {
-  let currentTime = new Date();
-  let checkdevices = Object.keys(devices);
-  let mydevices = await sequelize.models.Device.findAll({
-    attributes: ['id', 'status', 'lastUpdate'],
+const CheckDeviceOnline = async () => {
+  await sequelize.models.Device.update(
+    { status: devicesStatus.OFFLINE }, {
+    where: { lastUpdate: { [Op.lte]: new Date(new Date - 30000) } },
   });
 
-  Object.values(listUpdateTime).forEach((element) => {
-    if (element.flag) {
-      sequelize.models.Device.update({ lastUpdate: element.time }, { where: { id: element.deviceId } });
-      listUpdateTime[element.deviceId].flag = false;
-    }
-  });
-
-  mydevices.forEach((element) => {
-    if (element['status'] == 'online' && currentTime - element['lastUpdate'] > 30000) {
-      sequelize.models.Device.update({ status: 'offline' }, { where: { id: element.id } });
-    }
-    if (element['status'] == 'offline' && currentTime - element['lastUpdate'] < 30000) {
-      sequelize.models.Device.update({ status: 'online' }, { where: { id: element.id } });
-    }
-  });
-}, 5000);
+  setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
+}
+setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
 
 export class DevicesModel {
   constructor() {
@@ -70,16 +86,14 @@ export class DevicesModel {
 
     let uav_ns = device.name;
     let uav_type = device.category;
-    let cur_uav_idx = String(Object.values(devices).length);
 
     console.log('create UAV ' + uav_ns + '  type' + uav_type);
 
     let repeat_device = false;
-    if (Object.values(devices).length > 0) {
-      Object.values(devices).forEach((element) => {
-        if (element) {
-          repeat_device = element.name == uav_ns ? true : false;
-        }
+    let devices = await this.getAll();
+    if (devices.length > 0) {
+      devices.forEach((element) => {
+        repeat_device = element.name == uav_ns ? true : false;
       });
     }
 
@@ -172,66 +186,55 @@ export class DevicesModel {
     }
   }
 
-  static async update({ id, input }) {
-    const movieIndex = movies.findIndex((movie) => movie.id === id);
-    if (movieIndex === -1) return false;
-
-    movies[movieIndex] = {
-      ...movies[movieIndex],
-      ...input,
-    };
-
-    return movies[movieIndex];
-  }
-
   static updatedevice(payload) {
-    devices[payload.id] = payload;
+    const myDevice = sequelize.models.Device.findOne({ where: { id: payload.id } });
+    if (myDevice) {
+      myDevice = { ...myDevice, ...payload };
+    }
   }
+
   static updateDeviceAccess(payload) {
-    devicesAccess[payload.id] = payload;
+    const myDevice = sequelize.models.Device.findOne({ where: { id: payload.id } });
+    if (myDevice) {
+      myDevice = { ...myDevice, ...payload };
+    }
   }
   static updatedeviceIP(payload) {
-    devices[payload.id]['ip'] = payload.ip;
+    const myDevice = sequelize.models.Device.update({ ip: payload.ip }, { where: { id: payload.id } });
   }
   static updateDeviceTime(id) {
     let currentTime = new Date();
-    listUpdateTime[id] = { deviceId: id, time: currentTime, flag: true };
+    const myDevice = sequelize.models.Device.update({ lastUpdate: currentTime }, { where: { id: id } });
+    if (myDevice) {
+      return myDevice;
+    } else {
+      console.log('update delete device');
+      return false;
+    }
   }
+
   static get_device_ns(uav_id) {
-    return devices[uav_id].name;
+    const myDevice = sequelize.models.Device.findOne({ where: { id: uav_id } });
+    return myDevice.name;
   }
   static get_device_category(uav_id) {
-    return devices[uav_id].category;
+    const myDevice = sequelize.models.Device.findOne({ where: { id: uav_id } });
+    return myDevice.category;
   }
 
   static removedevice({ id }) {
-    delete devices[id];
+    sequelize.models.Device.destroy({ where: { id: id } });
     console.log(devices);
   }
 
   static async addAllUAV() {
-    console.log('---- start init devices ------------');
-    let NumDevices = 0;
-    try {
-      NumDevices = await sequelize.models.Device.count();
-    } catch (error) {
-      console.error('Error fetching devices:', error);
-      throw error;
-    }
-    if (NumDevices <= 0) {
-      console.log('---- Dont have devices in data base add new from file ------------');
-      for (let device of devices_init.init) {
-        await this.create(device);
-      }
-    } else {
-      let mydevices = await this.getAll();
+    console.log('---- init cameras of devices ------------');
+    const myDevices = await this.getAll();
+    for (let device of myDevices) {
       if (StreamServer) {
-        for (let device of mydevices) {
-          await this.addCameraWebRTC(device);
-        }
+        await this.addCameraWebRTC(device);
       }
     }
-    console.log('------  finish init devices ------------');
   }
 }
 

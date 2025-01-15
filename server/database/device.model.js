@@ -33,6 +33,9 @@ const DeviceSchema = {
   camera: {
     type: DataTypes.STRING,
   },
+  camera: {
+    type: DataTypes.STRING,
+  },
   status: {
     type: DataTypes.STRING,
   },

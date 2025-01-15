@@ -26,10 +26,10 @@ console.log('load model devices No SQL');
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
-const devicesStatus = {
+const devicesStatus = Object.freeze({
   ONLINE: 'online',
   OFFLINE: 'offline',
-};
+});
 
 function filterDevice(obj, fields) {
   let newObj = {};
@@ -219,22 +219,11 @@ export class DevicesModel {
     }
   }
 
-  static async update({ id, input }) {
-    const movieIndex = movies.findIndex((movie) => movie.id === id);
-    if (movieIndex === -1) return false;
-
-    movies[movieIndex] = {
-      ...movies[movieIndex],
-      ...input,
-    };
-
-    return movies[movieIndex];
-  }
-
   static updatedevice(payload) {
-    console.log('update device');
-    console.log(payload);
-    devices[payload.id] = payload;
+    const deviceIndex = devices.findIndex((device) => device.id === payload.id);
+    if (deviceIndex === -1) return false;
+
+    devices[payload.id] = { ...devices[payload.id], ...payload };
     writeJSON(devicesData, devices);
   }
 

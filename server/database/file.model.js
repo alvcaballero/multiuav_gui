@@ -1,9 +1,10 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 import { Device } from './device.model.js';
 import { Route } from './routes.model.js';
-const Media_TABLE = 'Media';
+import { Mission } from './mission.model.js';
+const File_TABLE = 'File';
 
-const MediaSchema = {
+const FileSchema = {
   id: {
     allowNull: false,
     autoIncrement: true,
@@ -21,6 +22,13 @@ const MediaSchema = {
       key: 'id',
     },
   },
+  missionId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Mission, // 'Actors' would also work
+      key: 'id',
+    },
+  },
   deviceId: {
     type: DataTypes.INTEGER,
     references: {
@@ -30,12 +38,8 @@ const MediaSchema = {
   },
   status: {
     allowNull: false,
-    type: DataTypes.STRING,
-    defaultValue: 'init', //init, doing //done //error
-  },
-  FileDate: {
-    allowNull: false,
-    type: DataTypes.DATE,
+    type: DataTypes.INTEGER,
+    defaultValue: 0, //init, doing //done //error
   },
   type: {
     type: DataTypes.STRING, //video, image, rosbag, lidar
@@ -43,15 +47,22 @@ const MediaSchema = {
   path: {
     type: DataTypes.STRING, // where is save in server
   },
-  pathDevice: {
+  source: {
     type: DataTypes.STRING, // where is save in server
+  },
+  path2: {
+    type: DataTypes.STRING, // where is save in server
+  },
+  date: {
+    allowNull: false,
+    type: DataTypes.DATE,
   },
   attributes: {
     type: DataTypes.STRING,
   },
 };
 
-class Media extends Model {
+class File extends Model {
   static associate() {
     // associate
   }
@@ -59,11 +70,11 @@ class Media extends Model {
   static config(sequelize) {
     return {
       sequelize,
-      tableName: Media_TABLE,
-      modelName: 'Media',
+      tableName: File_TABLE,
+      modelName: 'File',
       timestamps: false,
     };
   }
 }
 
-export { Media_TABLE, MediaSchema, Media };
+export { File_TABLE, FileSchema, File };

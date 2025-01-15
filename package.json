@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@sequelize/sqlite3": "^7.0.0-alpha.43",
+    "inflight": "^1.0.6"
+  }
+}

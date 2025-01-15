@@ -1,4 +1,4 @@
-import Sequelize from 'sequelize';
+import Sequelize, { Op } from 'sequelize';
 
 import { dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
 import { setupModels } from '../database/index.js';
@@ -10,20 +10,20 @@ console.log('my uri');
 console.log(URI);
 
 let sequelizeConfig = {
-  dialect: 'sqlite3',
-  storage: 'sequelize.sqlite',
+  dialect: 'sqlite',
+  storage: 'data/sequelize.sqlite',
   logging: false,
 };
 
-sequelizeConfig = {
-  dialect: 'postgres',
-  database: dbName,
-  user: dbUser,
-  password: dbPassword,
-  host: dbHost,
-  port: dbPort,
-  logging: false,
-};
+// sequelizeConfig = {
+//   dialect: 'postgres',
+//   database: dbName,
+//   user: dbUser,
+//   password: dbPassword,
+//   host: dbHost,
+//   port: dbPort,
+//   logging: false,
+// };
 
 const sequelize = new Sequelize(sequelizeConfig);
 
@@ -44,3 +44,4 @@ try {
 }
 
 export default sequelize;
+export { Op };

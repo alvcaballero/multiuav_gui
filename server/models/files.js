@@ -1,4 +1,3 @@
-//example that a men manage databases
 import * as fs from 'fs';
 import { dateString, addTime, GetLocalTime, readJSON, writeJSON, readYAML } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
@@ -90,10 +89,10 @@ export class filesModel {
     if (status) files[id].status = status;
     if (attributes) files[id].attributes = attributes;
     if (status == FILE_STATUS.OK) {
-      let flat = this.getFiles({ routeId: files[id].routeId }).every(
+      let flag = this.getFiles({ routeId: files[id].routeId }).every(
         (file) => file.status == FILE_STATUS.OK || file.status == FILE_STATUS.ERROR
       );
-      if (flat) MissionController.endRouteUAV(files[id].missionId, files[id].deviceId);
+      if (flag) MissionController.endRouteUAV(files[id].missionId, files[id].deviceId);
     }
     writeJSON(filesData, files);
     return files[id];
@@ -176,6 +175,10 @@ export class filesModel {
     return listFiles;
   }
 
+  /* 
+  / Show list of files in the drone, from folder uav_media,
+  */
+ 
   static async showFiles({ uavId, missionId, initTime, index = 0 }) {
     let mydevice = await DevicesController.getAccess(uavId);
     let myconfig = filesSetup.files.default;

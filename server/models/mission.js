@@ -6,7 +6,7 @@ import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
 import { FilesController } from '../controllers/files.js';
 import { eventsController } from '../controllers/events.js';
-import { readJSON, readYAML, writeJSON } from '../common/utils.js';
+import { readJSON, readYAML, writeJSON, sleep } from '../common/utils.js';
 import { missionsData, routesData } from '../config/config.js';
 import { object } from 'zod';
 
@@ -109,9 +109,6 @@ export class missionModel {
     }
   }
 
-  static sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
   static async decodeTask({ id, name, objetivo, locations, meteo }) {
     let myTask = {};
     myTask.id = id;
@@ -293,6 +290,7 @@ export class missionModel {
     missionSMModel.UAVFinishMission(mydevice.id);
     return true;
   }
+
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
     let routeId = Object.values(Routes).find((item) => item.deviceId == uavId && item.missionId == missionId).id;
