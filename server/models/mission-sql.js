@@ -77,7 +77,7 @@ export class missionModel {
     mission = {},
     results = [],
   }) {
-    const myMission = sequelize.models.Mission.create({ id, uav, status, initTime, endTime, task, mission, results });
+    const myMission = await sequelize.models.Mission.create({ id, uav, status, initTime, endTime, task, mission, results });
     return myMission;
   }
 

@@ -5,6 +5,9 @@ GET http://localhost:4000/api/server
 GET http://localhost:4000/api/devices
 
 ### Get devices 
+GET http://localhost:4000/api/devices/1
+
+### Get devices 
 GET http://localhost:4000/api/devices?id=1
 
 ### Get devices 

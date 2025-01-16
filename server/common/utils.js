@@ -1,4 +1,4 @@
-import { writeFile, readFileSync, existsSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { parse, stringify } from 'yaml';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, normalize } from 'path';
@@ -86,7 +86,6 @@ export const writeJSON = async (path, content) => {
 
 const writeData = async (path, content) => {
   try {
-    const content = 'Some content!';
     await writeFileSync(resolve(__dirname, path), content);
     return true;
   } catch (err) {

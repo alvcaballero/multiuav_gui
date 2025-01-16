@@ -13,13 +13,13 @@ const MissionSchema = {
     allowNull: false,
     type: DataTypes.STRING,
   },
+  uav: {
+    type: DataTypes.JSON,
+  },
   status: {
     allowNull: false,
     type: DataTypes.STRING,
     defaultValue: 'init',
-  },
-  mission: {
-    type: DataTypes.TEXT('long'),
   },
   initTime: {
     allowNull: false,
@@ -29,8 +29,14 @@ const MissionSchema = {
   FinishTime: {
     type: DataTypes.DATE,
   },
-  attributes: {
+  task: {
+    type: DataTypes.JSON,
+  },
+  results: {
     type: DataTypes.STRING,
+  },
+  mission: {
+    type: DataTypes.JSON,
   },
 };
 

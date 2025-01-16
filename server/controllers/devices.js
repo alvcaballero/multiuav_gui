@@ -6,7 +6,7 @@ class devicesController {
     this.DevicesModel = model;
   }
   getAll = async (req, res) => {
-    const devices = await this.DevicesModel.getAll(req.query.id, req.query.admin);
+    const devices = await this.DevicesModel.getAll(req.query.id);
     res.json(Object.values(devices));
   };
   getAllDevices = async () => {

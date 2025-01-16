@@ -55,10 +55,9 @@ export class DevicesModel {
     console.log('constructor device model');
   }
 
-  static async getAll(query, admin = false) {
-    console.log(admin);
+  static async getAll(query) {
     let mydevices = await sequelize.models.Device.findAll({
-      attributes: admin ? null : publicFields,
+      attributes: publicFields,
     });
     if (query) {
       console.log(query);
@@ -74,7 +73,6 @@ export class DevicesModel {
 
   static async getById({ id }) {
     return await sequelize.models.Device.findOne({
-      attributes: publicFields,
       where: { id: id }
     });
   }
@@ -156,7 +154,6 @@ export class DevicesModel {
 
   static async editDevice({ id, name, category, ip, user, pwd, camera, files, protocol }) {
     let myDevice = await sequelize.models.Device.findOne({ where: { id: id }, raw: false });
-    console.log(myDevice);
     if (protocol && protocol !== myDevice.protocol) {
       console.log('change protocol');
       myDevice.protocol = protocol;
@@ -171,7 +168,14 @@ export class DevicesModel {
       }
       if (protocol === protocols.ROS) {
         // unsuscribe topics
+        await rosController.unsubscribeDevice(myDevice.id);
         // subscribe new topics
+        await rosController.subscribeDevice({
+          id: myDevice.id,
+          name: myDevice.name,
+          category: myDevice.category,
+          camera: myDevice.camerak
+        });
       }
     }
     if (ip && ip !== myDevice.ip) {
