@@ -6,7 +6,7 @@ class devicesController {
     this.DevicesModel = model;
   }
   getAll = async (req, res) => {
-    const devices = await this.DevicesModel.getAll(req.query.id);
+    const devices = await this.DevicesModel.getAll(req.query.id, req.query.admin);
     res.json(Object.values(devices));
   };
   getAllDevices = async () => {
@@ -74,8 +74,10 @@ class devicesController {
     }
 
     const { id } = req.params;
+    result.data.id = id;
+    console.log(result.data);
 
-    const updatedDevice = await this.DevicesModel.update({ id, input: result.data });
+    const updatedDevice = await this.DevicesModel.editDevice(result.data);
 
     res.json(updatedDevice);
   };

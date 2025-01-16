@@ -5,6 +5,7 @@ import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
 import { object, set } from 'zod';
 import { where } from 'sequelize';
+import { raw } from 'express';
 
 /* devices:
 /   id
@@ -54,19 +55,18 @@ export class DevicesModel {
     console.log('constructor device model');
   }
 
-  static async getAll(query) {
+  static async getAll(query, admin = false) {
+    console.log(admin);
     let mydevices = await sequelize.models.Device.findAll({
-      attributes: publicFields,
+      attributes: admin ? null : publicFields,
     });
     if (query) {
       console.log(query);
       if (Array.isArray(query)) {
-        const filtered = mydevices.filter((device) => query.some((element) => device.id == element));
-        return Object.fromEntries(filtered);
+        return mydevices.filter((device) => query.some((element) => device.id == element));
       }
       if (!isNaN(query)) {
-        const filtered = mydevices.filter((device) => device.id == query);
-        return filtered ? { id: filtered } : {};
+        return mydevices.filter((device) => device.id == query);
       }
     }
     return mydevices;
@@ -154,8 +154,9 @@ export class DevicesModel {
     return response;
   }
 
-  static editDevice({ id, name, category, ip, user, pwd, camera, files, protocol }) {
-    let myDevice = sequelize.models.Device.findOne({ where: { id: id } });
+  static async editDevice({ id, name, category, ip, user, pwd, camera, files, protocol }) {
+    let myDevice = await sequelize.models.Device.findOne({ where: { id: id }, raw: false });
+    console.log(myDevice);
     if (protocol && protocol !== myDevice.protocol) {
       console.log('change protocol');
       myDevice.protocol = protocol;
@@ -193,9 +194,9 @@ export class DevicesModel {
     myDevice.save();
   }
 
-  static updateDeviceTime(id) {
+  static async updateDeviceTime(id) {
     let currentTime = new Date();
-    const myDevice = sequelize.models.Device.update({ lastUpdate: currentTime }, { where: { id: id } });
+    const myDevice = await sequelize.models.Device.update({ lastUpdate: currentTime }, { where: { id: id } });
     if (myDevice) {
       return myDevice;
     } else {
@@ -204,12 +205,12 @@ export class DevicesModel {
     }
   }
 
-  static get_device_ns(uav_id) {
-    const myDevice = sequelize.models.Device.findOne({ where: { id: uav_id } });
+  static async get_device_ns(uav_id) {
+    const myDevice = await sequelize.models.Device.findOne({ where: { id: uav_id } });
     return myDevice.name;
   }
-  static get_device_category(uav_id) {
-    const myDevice = sequelize.models.Device.findOne({ where: { id: uav_id } });
+  static async get_device_category(uav_id) {
+    const myDevice = await sequelize.models.Device.findOne({ where: { id: uav_id } });
     return myDevice.category;
   }
 

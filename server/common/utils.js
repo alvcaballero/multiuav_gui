@@ -22,13 +22,14 @@ export const readDataFile = (filepath) => {
     return readYAML(filepath);
   }
 };
-export const writeDataFile = (filepath, content) => {
+export const writeDataFile = async (filepath, content) => {
   if (filepath.includes('.json')) {
-    return writeJSON(filepath, content);
+    return await writeJSON(filepath, content);
   }
   if (filepath.includes('.yaml')) {
-    return writeYAML(filepath, content);
+    return await writeYAML(filepath, content);
   }
+  return false;
 };
 
 export const readJSON = (filepath) => {
@@ -73,31 +74,25 @@ export const getRandomInt = (max) => {
   return Math.floor(Math.random() * max);
 };
 
-export const writeYAML = (path, content) => {
+export const writeYAML = async (path, content) => {
   const saveContent = stringify(content);
-  writeFile(resolve(__dirname, path), saveContent, (err) => {
-    if (err) {
-      console.error(err);
-      return false;
-    } else {
-      // file written successfully
-      return true;
-    }
-  });
+  return await writeData(path, saveContent);
 };
-export const writeJSON = (path, content) => {
+export const writeJSON = async (path, content) => {
   console.log('write Json' + path);
   const saveContent = JSON.stringify(content, null, 2);
+  return await writeData(path, saveContent);
+};
 
-  writeFile(resolve(__dirname, path), saveContent, (err) => {
-    if (err) {
-      console.error(err);
-      return false;
-    } else {
-      // file written successfully
-      return true;
-    }
-  });
+const writeData = async (path, content) => {
+  try {
+    const content = 'Some content!';
+    await writeFileSync(resolve(__dirname, path), content);
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false
+  }
 };
 
 export const GetLocalTime = (date) => {
