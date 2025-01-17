@@ -4,8 +4,6 @@ import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
 import { object, set } from 'zod';
-import { where } from 'sequelize';
-import { raw } from 'express';
 
 /* devices:
 /   id
@@ -200,7 +198,11 @@ export class DevicesModel {
 
   static async updateDeviceTime(id) {
     let currentTime = new Date();
-    const myDevice = await sequelize.models.Device.update({ lastUpdate: currentTime }, { where: { id: id } });
+    const myDevice = await sequelize.models.Device.update({
+      lastUpdate: currentTime,
+      status: devicesStatus.ONLINE
+    }, { where: { id: id } });
+
     if (myDevice) {
       return myDevice;
     } else {

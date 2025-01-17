@@ -248,6 +248,7 @@ export class commandsModel {
     for (const route of routes) {
       console.log('load route' + route.uav);
       let myDevice = await DevicesController.getByName(route.uav);
+      console.log(myDevice);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
         console.log('load mission to ' + myDevice.id);
         let attributes = await decodeMissionMsg({ uav_id: myDevice.id, route });
@@ -274,25 +275,24 @@ export class commandsModel {
   }
 
   static async commandMissionDevice(deviceId, callback = (x) => x) {
-    let r = true;
     let alldevices = await DevicesController.getAllDevices();
     let response = { state: 'error', msg: 'Mission canceled' };
-    for (const device_id of Object.keys(alldevices)) {
+    for (const device of alldevices) {
       let finding = false;
       if (Array.isArray(deviceId)) {
-        finding = deviceId.some((mydeviceId) => mydeviceId == device_id);
+        finding = deviceId.some((mydeviceId) => mydeviceId == device.id);
       }
-      if (deviceId < 0 || deviceId == device_id || finding) {
-        console.log('command mission to ' + device_id);
+      if (deviceId < 0 || deviceId == device.id || finding) {
+        console.log('command mission to ' + device.id);
 
-        response = await this.standarCommand(device_id, 'commandMission', { data: true });
+        response = await this.standarCommand(device.id, 'commandMission', { data: true });
 
         callback(response);
         if (deviceId < 0) {
           eventsController.addEvent({
             type: response.state,
             eventTime: getDatetime(),
-            deviceId: device_id,
+            deviceId: device.id,
             attributes: { message: response.msg },
           });
         }

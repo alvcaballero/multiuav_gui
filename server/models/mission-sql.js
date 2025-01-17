@@ -69,6 +69,7 @@ export class missionModel {
 
   static async createMission({
     id,
+    name,
     uav = [],
     status = MISSION_STATUS.INIT,
     initTime = new Date(),
@@ -77,8 +78,19 @@ export class missionModel {
     mission = {},
     results = [],
   }) {
-    const myMission = await sequelize.models.Mission.create({ id, uav, status, initTime, endTime, task, mission, results });
-    return myMission;
+    if (name == null) name = `automatic_${initTime.getTime()}`;
+    return await sequelize.models.Mission.create({
+      id,
+      name,
+      uav,
+      status,
+      initTime,
+      endTime,
+      task,
+      mission,
+      results
+    });
+
   }
 
   static async createRoute(payload) {
@@ -141,6 +153,10 @@ export class missionModel {
     myTask.meteo = meteo;
 
     let bases = planningController.getConfigBases();
+    if (bases == null) {
+      console.log('bases is null');
+      return null;
+    }
     let devices = await DevicesController.getAllDevices();
     // get setting of the task
     let param = planningController.getConfigParam(objetivo);
@@ -216,17 +232,21 @@ export class missionModel {
   static async sendTask({ id, name, objetivo, locations, meteo }) {
     console.log('command-sendtask');
 
-    let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
-
     const isPlanning = false;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
       this.initMission(id, { ...mission, id: id });
       return { response: myTask, status: 'OK' };
     }
+
+    let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
+    if (myTask == null) {
+      console.log('myTask is null');
+      return { response: 'no-bases', status: 'error' };
+    }
     planningController.PlanningRequest({ id, myTask });
 
-    this.createMission({ id, task: myTask });
+    this.createMission({ id, name, task: myTask });
 
     eventsController.addEvent({
       type: 'info',

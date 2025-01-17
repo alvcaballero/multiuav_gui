@@ -29,17 +29,16 @@ const RouteSchema = {
     type: DataTypes.STRING,
     defaultValue: 'init',
   },
-
   initTime: {
     allowNull: false,
     type: DataTypes.DATE,
     defaultValue: Sequelize.NOW,
   },
-  FinishTime: {
+  endTime: {
     type: DataTypes.DATE,
   },
   result: {
-    type: DataTypes.STRING,
+    type: DataTypes.JSON,
   },
 };
 

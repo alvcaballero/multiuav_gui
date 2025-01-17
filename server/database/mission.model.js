@@ -26,14 +26,14 @@ const MissionSchema = {
     type: DataTypes.DATE,
     defaultValue: Sequelize.NOW,
   },
-  FinishTime: {
+  endTime: {
     type: DataTypes.DATE,
   },
   task: {
     type: DataTypes.JSON,
   },
   results: {
-    type: DataTypes.STRING,
+    type: DataTypes.JSON,
   },
   mission: {
     type: DataTypes.JSON,

@@ -1,25 +1,16 @@
 {
-  "mission_id": 1402,
+  "id": 71041590,
   "objetivo": 1,
-  "loc": [
+  "meteo": [],
+  "locations": [
     {
-      "name": "tramo0",
-    "geopoints":[
-      {
-        "lat": 37.19280278130149,
-        "lon": -6.701474309142387
-      }
-      ]}
-    ],
-  "meteo": [
-    {
-      "lat": 37.01455061559604,
-      "lon": -6.5625427378086485,
-      "wind_vel": 12,
-      "wind_dir": 360,
-      "temp": 38,
-      "humidity": 90,
-      "pres_atm": 5
+      "name": "Elements",
+      "items": [
+        {
+          "latitude": 37.19296564920255,
+          "longitude": -6.702417485695349
+        }
+      ]
     }
   ]
 }
