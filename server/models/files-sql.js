@@ -31,7 +31,6 @@ export const FILE_STATUS = Object.freeze({
   OK: 5,
 });
 
-const files = readJSON(filesData);
 const filesSetup = readYAML('../config/devices/devices.yaml');
 const downloadQueue = []; // manage files to download
 const processQueue = []; // manage files to process
@@ -227,24 +226,26 @@ export class filesModel {
    / return a list of files, and a list of metadata 
    */
   static async updateFiles(uavId, missionId, routeId, initTime, index = 0) {
+    console.log(`update files api call ${uavId} ${routeId} ${missionId} ${initTime} ${index}`);
+
     let mydevice = await DevicesController.getAccess(uavId);
     let myconfig = filesSetup.files.default;
     let listFiles = [];
 
-    console.log(`update files api call ${uavId} ${routeId} ${missionId} ${initTime} ${index}`);
     if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
       console.log('UAV no have files setup ');
       return [];
     }
-    console.log(mydevice.files[index]);
 
-    if (mydevice.files[index].hasOwnProperty('type')) {
-      myconfig = filesSetup.files.hasOwnProperty(mydevice.files[index].type)
-        ? filesSetup.files[mydevice.files[index].type]
+    const deviceFile = JSON.parse(JSON.stringify(mydevice.files[index]))
+
+    if (deviceFile.hasOwnProperty('type')) {
+      myconfig = filesSetup.files.hasOwnProperty(deviceFile.type)
+        ? filesSetup.files[deviceFile.type]
         : filesSetup.files.default;
     }
 
-    let params = this.paramsConnection({ mydevice: mydevice.files[index] });
+    let params = this.paramsConnection({ mydevice: deviceFile });
     const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
 
     let status = await client.connect(params);
@@ -283,7 +284,7 @@ export class filesModel {
         deviceId: uavId,
         name: `${myfile.split('/').at(-1)}`,
         path: `mission_${missionId}/${mydevice.name}/`,
-        source: mydevice.files[index],
+        source: deviceFile,
         path2: myfile,
       });
       downloadQueue.push(createFile.id);
@@ -299,9 +300,9 @@ export class filesModel {
   }
 
   static async downloadFiles2(client, url, fileId, remove = false) {
-    let myfile = files[fileId];
+    let myfile = await this.getFiles({ id: fileId })
 
-    let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.route}${myfile.name}`);
+    let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.path}${myfile.name}`);
     if (response.status) {
       await this.editFile({ id: fileId, status: FILE_STATUS.DOWNLOAD });
       processQueue.push(fileId);
@@ -311,8 +312,8 @@ export class filesModel {
     } else {
       await this.editFile({ id: fileId, status: FILE_STATUS.FAIL });
     }
-
-    if (downloadQueue.length > 0 && files[downloadQueue[0]].source.url === url) {
+    const checkUrl = await this.getFiles({ id: downloadQueue[0] })
+    if (downloadQueue.length > 0 && checkUrl.source.url === url) {
       await this.downloadFiles2(client, url, downloadQueue.shift(), remove);
     }
   }
@@ -323,7 +324,7 @@ export class filesModel {
       return;
     }
     let myFileId = downloadQueue.shift();
-    let myfile = files[myFileId];
+    let myfile = await this.getFiles({ id: myFileId })
 
     let mydevice = await DevicesController.getAccess(myfile.deviceId);
     let myconfig = filesSetup.files.default;
@@ -333,7 +334,7 @@ export class filesModel {
       return [];
     }
 
-    if (myfile.source.hasOwnProperty('type')) {
+    if (myfile?.source?.hasOwnProperty('type')) {
       myconfig = filesSetup.files.hasOwnProperty(myfile.source.type)
         ? filesSetup.files[myfile.source.type]
         : filesSetup.files.default;
@@ -370,11 +371,11 @@ export class filesModel {
       return;
     }
     let myFileId = processQueue.shift();
-    let myfile = files[myFileId];
+    let myfile = await this.getFiles({ id: myFileId })
     if (myfile.name.includes('THRM') && !myfile.name.includes('process')) {
       let response = await ProcessThermalImage(
-        `${filesPath}${myfile.route}${myfile.name}`,
-        `${filesPath}${myfile.route}${myfile.name.slice(0, -4)}_process.jpg`
+        `${filesPath}${myfile.path}${myfile.name}`,
+        `${filesPath}${myfile.path}${myfile.name.slice(0, -4)}_process.jpg`
       );
       if (response) {
         let createFile = await this.addFile({
@@ -382,9 +383,9 @@ export class filesModel {
           missionId: myfile.missionId,
           deviceId: myfile.deviceId,
           name: `${myfile.name.split('.')[0]}_process.jpg`,
-          path: myfile.route,
+          path: myfile.path,
           source: 'GCS',
-          path2: `${myfile.route}${myfile.name}`,
+          path2: `${myfile.path}${myfile.name}`,
           status: FILE_STATUS.DOWNLOAD,
           date: myfile.date,
         });
@@ -395,7 +396,7 @@ export class filesModel {
       }
     }
     try {
-      let attributes = await getMetadata(`${filesPath}${myfile.route}${myfile.name}`);
+      let attributes = await getMetadata(`${filesPath}${myfile.path}${myfile.name}`);
       await this.editFile({ id: myFileId, status: FILE_STATUS.OK, attributes });
     } catch (e) {
       console.log('error metadata');

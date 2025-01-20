@@ -47,11 +47,11 @@ const FileSchema = {
   path: {
     type: DataTypes.STRING, // where is save in server
   },
-  source: {
-    type: DataTypes.STRING, // where is save in server
-  },
   path2: {
     type: DataTypes.STRING, // where is save in server
+  },
+  source: {
+    type: DataTypes.JSON, // where is save in server
   },
   date: {
     allowNull: false,
