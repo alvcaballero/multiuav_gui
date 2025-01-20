@@ -105,28 +105,27 @@ export class planningModel {
 
   static async fetchPlanning(mission_id) {
     console.log('Fetch planning ' + mission_id);
+    let planningRoute = null;
     const response = await fetch(`${planningHost}/get_plan?IDs=${mission_id}`);
     if (response.ok) {
       const data = await response.json();
       console.log(data);
       console.log('response to check planning');
       if (data.results && Object.keys(data.results) > 0) {
-        console.log('response to check planning1');
         if (data.results.hasOwnProperty(mission_id) && data.results[mission_id].hasOwnProperty('route')) {
-          console.log('response to check planning2');
-          clearInterval(requestPlanning[mission_id]['interval']);
+          console.log('get response planning');
+          planningRoute = data.results[mission_id];
           requestPlanning[mission_id]['count'] = 10;
-          MissionController.initMission(mission_id, data.results[mission_id]);
         }
       }
     } else {
-      console.log('!! --- error en el fetch planning');
+      console.log('!! --- error en el fetch planning --- !!');
       throw Error(await response.text());
     }
     requestPlanning[mission_id]['count'] = requestPlanning[mission_id]['count'] + 1;
     if (requestPlanning[mission_id]['count'] > 3) {
       clearInterval(requestPlanning[mission_id]['interval']);
-      MissionController.initMission(mission_id, null); // error
+      MissionController.initMission(mission_id, planningRoute); // error
     }
   }
 

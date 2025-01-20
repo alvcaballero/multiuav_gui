@@ -13,6 +13,7 @@ const LoadMissionSM = async (context) => {
     let mission = await MissionController.getMissionRoute(context.missionId);
     let missionPlan = mission.mission;
     console.log(mission);
+    console.log(missionPlan);
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
       type: 'loadMission',

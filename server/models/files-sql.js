@@ -6,9 +6,7 @@ import { DevicesController } from '../controllers/devices.js';
 import { filesPath, filesData } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 import { MissionController } from '../controllers/mission.js';
-
 import sequelize from '../common/sequelize.js';
-import { where } from 'sequelize';
 
 /* files:
 /    id
@@ -39,7 +37,7 @@ const downloadQueue = []; // manage files to download
 const processQueue = []; // manage files to process
 
 export class filesModel {
-  static async getFiles({id, deviceId, missionId, routeId }) {
+  static async getFiles({ id, deviceId, missionId, routeId }) {
     if (deviceId) {
       return await sequelize.models.File.findAll({ where: { deviceId: deviceId } });
     }
@@ -49,42 +47,39 @@ export class filesModel {
     if (routeId) {
       return await sequelize.models.File.findAll({ where: { routeId: routeId } });
     }
-    if (id){
-      return sequelize.models.File.findOne({where:{id:id}})
+    if (id) {
+      return sequelize.models.File.findOne({ where: { id: id } })
     }
     return await sequelize.models.File.findAll();
   }
 
-    static async addFile({
+  static async addFile({
+    routeId,
+    missionId,
+    deviceId,
+    name,
+    route,
+    path,
+    path2,
+    status = FILE_STATUS.NO_DOWNLOAD,
+    date = new Date(),
+    attributes = {},
+  }) {
+    const newFile = {
       routeId,
       missionId,
       deviceId,
       name,
       route,
-      source,
-      path2,
-      status = FILE_STATUS.NO_DOWNLOAD,
-      date = new Date(),
-      attributes = {},
-      newColumn, // new column to be added
-    }) {
-      const newFile = {
-      routeId,
-      missionId,
-      deviceId,
-      name,
-      route,
-      source,
+      path,
       path2,
       status,
       date,
       attributes,
-      newColumn, // add new column to the file object
-      };
-      
-      const myfile = await sequelize.models.File.create(newFile); // save to database
-      return myfile;
-    }
+    };
+    const myfile = await sequelize.models.File.create(newFile); // save to database
+    return myfile;
+  }
 
   static async editFile({ id, status, attributes }) {
     let file = await sequelize.models.File.findOne({ where: { id: id } });
@@ -142,7 +137,7 @@ export class filesModel {
     }
     return dir;
   }
-  
+
   /* 
   / Manage params to connect to the drone, and return the params to connect to the drone
   */
@@ -160,7 +155,7 @@ export class filesModel {
 
   // filter file '^mission_'
   // filter file '.jpg$'
-  
+
   static async mylistFiles(client, path, lastFolder = false, filterFolder = '', filterFile = '') {
     console.log(`list files ${path} ${lastFolder} ${filterFolder} ${filterFile}`);
     let listFolder = [];
@@ -282,12 +277,12 @@ export class filesModel {
     }
 
     for (let myfile of listFiles) {
-      let createFile =  await this.addFile({
+      let createFile = await this.addFile({
         routeId: routeId,
         missionId: missionId,
         deviceId: uavId,
         name: `${myfile.split('/').at(-1)}`,
-        route: `mission_${missionId}/${mydevice.name}/`,
+        path: `mission_${missionId}/${mydevice.name}/`,
         source: mydevice.files[index],
         path2: myfile,
       });
@@ -308,13 +303,13 @@ export class filesModel {
 
     let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.route}${myfile.name}`);
     if (response.status) {
-      this.editFile({ id: fileId, status: FILE_STATUS.DOWNLOAD });
+      await this.editFile({ id: fileId, status: FILE_STATUS.DOWNLOAD });
       processQueue.push(fileId);
       if (remove) {
         await client.deleteFile(myfile.path2);
       }
     } else {
-      this.editFile({ id: fileId, status: FILE_STATUS.FAIL });
+      await this.editFile({ id: fileId, status: FILE_STATUS.FAIL });
     }
 
     if (downloadQueue.length > 0 && files[downloadQueue[0]].source.url === url) {
@@ -382,29 +377,29 @@ export class filesModel {
         `${filesPath}${myfile.route}${myfile.name.slice(0, -4)}_process.jpg`
       );
       if (response) {
-        let createFile = this.addFile({
+        let createFile = await this.addFile({
           routeId: myfile.routeId,
           missionId: myfile.missionId,
           deviceId: myfile.deviceId,
           name: `${myfile.name.split('.')[0]}_process.jpg`,
-          route: myfile.route,
+          path: myfile.route,
           source: 'GCS',
           path2: `${myfile.route}${myfile.name}`,
           status: FILE_STATUS.DOWNLOAD,
           date: myfile.date,
         });
         processQueue.push(createFile.id);
-        this.editFile({ id: myFileId, status: FILE_STATUS.OK });
+        await this.editFile({ id: myFileId, status: FILE_STATUS.OK });
       } else {
-        this.editFile({ id: myFileId, status: FILE_STATUS.ERROR });
+        await this.editFile({ id: myFileId, status: FILE_STATUS.ERROR });
       }
     }
     try {
       let attributes = await getMetadata(`${filesPath}${myfile.route}${myfile.name}`);
-      this.editFile({ id: myFileId, status: FILE_STATUS.OK, attributes });
+      await this.editFile({ id: myFileId, status: FILE_STATUS.OK, attributes });
     } catch (e) {
       console.log('error metadata');
-      this.editFile({ id: myFileId, status: FILE_STATUS.ERROR, attributes: {} });
+      await this.editFile({ id: myFileId, status: FILE_STATUS.ERROR, attributes: {} });
     }
     // end process call other function for continuos the process of state machine
     if (processQueue.length > 0) this.processFiles();

@@ -16,7 +16,7 @@ class devicesController {
   };
   getDevice = async (id) => {
     const devices = await this.DevicesModel.getAll(id);
-    return devices['id'];
+    return Array.isArray(devices) ? devices.at() : devices;
   };
   getByName = async (name) => {
     const device = await this.DevicesModel.getByName(name);

@@ -40,7 +40,7 @@ Content-Type: application/json
     "files":[
         {
             "type": "onboard_computer",
-            "url": "sftp://one:1234@127.0.0.1:4021:"
+            "url": "sftp://one:1234@127.0.0.1:4021"
         }
     ]
 }

@@ -117,8 +117,8 @@ export class missionModel {
   static async editRoute({ id, deviceId, missionId, status, initTime, endTime, task, mission, results }) {
 
     let myRoute = null
-    if (id) await sequelize.models.Route.findOne({ where: { id: id } });
-    if (deviceId && missionId) await sequelize.models.Route.findOne({ where: { deviceId: deviceId, missionId: missionId } });
+    if (id) myRoute = await sequelize.models.Route.findOne({ where: { id: id } });
+    if (deviceId && missionId) myRoute = await sequelize.models.Route.findOne({ where: { deviceId: deviceId, missionId: missionId } });
     if (!myRoute) {
       return null;
     }
@@ -135,7 +135,9 @@ export class missionModel {
   }
 
   static async validateMission(missionId) {
-    let allFinish = await sequelize.models.Route.findAll({ where: { missionId: missionId } }).every((route) => route.status == ROUTE_STATUS.COMPLETED);
+    const myRoute = await this.getRoutes({ missionId: missionId })
+    const allFinish = myRoute.every((route) => route.status == ROUTE_STATUS.COMPLETED);
+
     if (allFinish) {
       let myMission = await sequelize.models.Mission.findOne({ where: { id: missionId } });
       myMission.status = MISSION_STATUS.COMPLETED;
@@ -235,18 +237,26 @@ export class missionModel {
     const isPlanning = false;
     if (isPlanning) {
       let mission = readYAML(`../config/mission/mission_1.yaml`);
-      this.initMission(id, { ...mission, id: id });
+      await this.initMission(id, { ...mission, id: id });
       return { response: myTask, status: 'OK' };
     }
 
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
     if (myTask == null) {
       console.log('myTask is null');
-      return { response: 'no-bases', status: 'error' };
+      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask });
+      return { response: myTask, status: 'ERROR' };
     }
+
+    if (myTask.devices.length == 0) {
+      console.log('no devices to do the mission');
+      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask });
+      return { response: myTask, status: 'ERROR' };
+    }
+
     planningController.PlanningRequest({ id, myTask });
 
-    this.createMission({ id, name, task: myTask });
+    await this.createMission({ id, name, task: myTask });
 
     eventsController.addEvent({
       type: 'info',
@@ -254,30 +264,33 @@ export class missionModel {
       deviceId: -1,
       attributes: { message: 'Ext APP send task' },
     });
+
     return { response: myTask, status: 'OK' };
   }
 
   static async initMission(missionId, mission) {
-    if (mission == null || !mission.hasOwnProperty('route') || mission.route.length == 0) {
-      this.editMission({ id: missionId, status: MISSION_STATUS.ERROR });
+    console.log('===== initMission =====');
+    console.log(mission);
+    if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
+      await this.editMission({ id: missionId, status: MISSION_STATUS.ERROR, mission: mission });
       console.log('Mission ' + missionId + ' cant planning');
       return false;
     }
     const listUAV = [];
     for (const route of mission.route) {
       let findDevice = await DevicesController.getByName(route.uav);
-      console.log(findDevice);
+      console.log(findDevice.dataValues);
       listUAV.push(findDevice.id);
     }
     //const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
-    this.editMission({
+    await this.editMission({
       id: missionId,
       uav: listUAV,
       status: MISSION_STATUS.PLANNING,
       mission: mission,
     });
-    listUAV.forEach((uavId) => {
-      let myroute = this.createRoute({
+    for (const uavId of listUAV) {
+      let myroute = await this.createRoute({
         status: ROUTE_STATUS.INIT,
         missionId: missionId,
         deviceId: uavId,
@@ -286,7 +299,7 @@ export class missionModel {
         result: {},
       });
       missionSMModel.createActorMission(uavId, missionId, myroute.id);
-    });
+    }
 
     ExtAppController.missionReqStart(missionId, mission);
 
@@ -339,7 +352,7 @@ export class missionModel {
 
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
-    this.editRoute({ missionId: missionId, deviceId: uavId, status: ROUTE_STATUS.COMPLETED, endTime: new Date() });
+    await this.editRoute({ missionId: missionId, deviceId: uavId, status: ROUTE_STATUS.COMPLETED, endTime: new Date() });
 
     eventsController.addEvent({
       type: 'info',
@@ -352,10 +365,10 @@ export class missionModel {
   }
 
   static async updateFiles(missionId, uavId) {
-    routeId = 1;
-    const routeId = this.getRoutes({ deviceId: uavId, missionId: missionId }).id;
-    const initTime = this.getMissionValue(missionId).initTime;
-    const results = await FilesController.updateFiles(uavId, missionId, routeId, initTime);
+    // myRoute = 1;
+    const myRoute = await this.getRoutes({ deviceId: uavId, missionId: missionId });
+    const myMission = await this.getMissionValue(missionId);
+    const results = await FilesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
     await sleep(5000);
     //ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
     return true;
@@ -363,7 +376,8 @@ export class missionModel {
 
   static async UAVEnd(missionId, uavId) {
     console.log('===== UAVEnd whole mission =====');
-    const routeId = this.getRoutes({ missionId, uavId }).id;
+    const myRoute = await this.getRoutes({ missionId, uavId }).id;
+    const routeId = myRoute.id;
     const listfiles = await FilesController.getFilesInfo({ routeId });
     console.log('listfiles');
     console.log(listfiles);
@@ -392,7 +406,7 @@ export class missionModel {
       deviceId: uavId,
       attributes: { message: `device end ` },
     });
-    this.editRoute({ id: routeId, status: ROUTE_STATUS.END, result: attributes, endTime: new Date() });
+    await this.editRoute({ id: routeId, status: ROUTE_STATUS.END, result: attributes, endTime: new Date() });
     return true;
   }
 
@@ -403,9 +417,9 @@ export class missionModel {
     let result = { files: [], data: {} };
     let myfiles = await FilesController.getFilesInfo({ missionId });
     result.files = myfiles.map((file) => `${file.route}${file.name}`);
-    console.log('missiion');
-    console.log(this.getMissionValue(missionId));
-    result.data = this.getMissionValue(missionId).results;
+    console.log('mision');
+    const myMission = await this.getMissionValue(missionId);
+    result.data = myMission.results;
     eventsController.addEvent({
       type: 'info',
       deviceId: -1,
@@ -427,14 +441,16 @@ export class missionModel {
     // );
     return true;
   }
-  static CheckLastMissionRoute() {
-    Object.values(Mission).forEach((mission) => {
+  static async CheckLastMissionRoute() {
+    let listMission = await this.getMissionValue();
+    let listRoute = await this.getRoutes({});
+    for (const mission of listMission) {
       if (
         mission.status == MISSION_STATUS.RUNNING ||
         mission.status == MISSION_STATUS.PLANNING ||
         mission.status == MISSION_STATUS.INIT
       ) {
-        let listRoutes = Object.values(Routes).filter(
+        let listRoutes = listRoute.filter(
           (route) =>
             route.missionId == mission.id &&
             (route.status == ROUTE_STATUS.RUNNING ||
@@ -443,11 +459,13 @@ export class missionModel {
               route.status == ROUTE_STATUS.INIT)
         );
         for (const route of listRoutes) {
-          this.editRoute({ id: route.id, status: ROUTE_STATUS.ERROR });
+          await this.editRoute({ id: route.id, status: ROUTE_STATUS.ERROR });
         }
-        this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR });
+        await this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR });
       }
-    });
+
+    }
   }
 }
+
 missionModel.CheckLastMissionRoute();

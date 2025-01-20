@@ -246,7 +246,7 @@ export class commandsModel {
       return response;
     }
     for (const route of routes) {
-      console.log('load route' + route.uav);
+      console.log('load route ' + route.uav);
       let myDevice = await DevicesController.getByName(route.uav);
       console.log(myDevice);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {

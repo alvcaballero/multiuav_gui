@@ -44,7 +44,7 @@ windows:
             - cd ~/work/px4/multiuav_gui/tmuxinator
             - docker run --rm -it --network=host -v $PWD/../server/config/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
         - ftpfiles:
-            - docker run --rm -it --mount type=bind,source=/home/nonroot/work/px4,destination=/home/one -p 4021:22 atmoz/sftp one:1234:::upload
+            - docker run --rm -it --mount type=bind,source=/home/grvc/work/px4,destination=/home/one -p 4021:22 atmoz/sftp one:1234:::upload
         - planning:
             - docker run --rm -it -p 8004:8080 muavgcs:planner 
         - ExtAPP:

@@ -193,13 +193,17 @@ export class missionModel {
     console.log('command-sendtask');
 
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
-
-    const isPlanning = false;
-    if (isPlanning) {
-      let mission = readYAML(`../data/mission/mission_11.yaml`);
-      this.initMission(id, { ...mission, id: id });
-      return { response: myTask, status: 'OK' };
+    if (myTask.devices.length == 0) {
+      console.log('no devices to do the mission');
+      this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask });
+      return { response: myTask, status: 'ERROR' };
     }
+    // const isPlanning = false;
+    // if (isPlanning) {
+    //   let mission = readYAML(`../data/mission/mission_11.yaml`);
+    //   this.initMission(id, { ...mission, id: id });
+    //   return { response: myTask, status: 'OK' };
+    // }
     planningController.PlanningRequest({ id, myTask });
 
     this.createMission({ id, task: myTask });

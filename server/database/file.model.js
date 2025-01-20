@@ -58,7 +58,7 @@ const FileSchema = {
     type: DataTypes.DATE,
   },
   attributes: {
-    type: DataTypes.STRING,
+    type: DataTypes.JSON,
   },
 };
 
