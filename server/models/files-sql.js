@@ -14,8 +14,8 @@ import sequelize from '../common/sequelize.js';
 /    missionId
 /    deviceId
 /    name
-/    route : path in server /mission_id/uav_name/
 /    source : {url, type}
+/    path : path in server /mission_id/uav_name/
 /    path2 : path in the drone or gcs 
 /    status: FILE_STATUS
 /    date:
@@ -53,26 +53,28 @@ export class filesModel {
   }
 
   static async addFile({
+    name,
     routeId,
     missionId,
     deviceId,
-    name,
-    route,
+    status = FILE_STATUS.NO_DOWNLOAD,
+    type,
     path,
     path2,
-    status = FILE_STATUS.NO_DOWNLOAD,
+    source,
     date = new Date(),
     attributes = {},
   }) {
     const newFile = {
+      name,
       routeId,
       missionId,
       deviceId,
-      name,
-      route,
+      status,
+      type,
       path,
       path2,
-      status,
+      source,
       date,
       attributes,
     };
@@ -238,6 +240,7 @@ export class filesModel {
     }
 
     const deviceFile = JSON.parse(JSON.stringify(mydevice.files[index]))
+    console.log(deviceFile)
 
     if (deviceFile.hasOwnProperty('type')) {
       myconfig = filesSetup.files.hasOwnProperty(deviceFile.type)
