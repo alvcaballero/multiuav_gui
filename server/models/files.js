@@ -178,7 +178,7 @@ export class filesModel {
   /* 
   / Show list of files in the drone, from folder uav_media,
   */
- 
+
   static async showFiles({ uavId, missionId, initTime, index = 0 }) {
     let mydevice = await DevicesController.getAccess(uavId);
     let myconfig = filesSetup.files.default;

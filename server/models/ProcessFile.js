@@ -66,11 +66,14 @@ export async function getMetadata(path) {
 }
 
 export async function ProcessThermalImage(input, output) {
+  console.log('process thermal image' + input);
+  if (!processThermalImg) return false;
+  //conda run -n DJIThermal
   console.log('last images process');
   console.log('process img' + input + ' ' + output);
   try {
     const { stdout, stderr } = await exec(
-      `conda run -n DJIThermal ${processThermalsSrc} -i "${input}" -o "${output}" `
+      ` ${processThermalsSrc} -i "${input}" -o "${output}" `, { shell: '/bin/bash' }
     );
     console.log('stdout:', stdout);
     console.log('stderr:', stderr);
