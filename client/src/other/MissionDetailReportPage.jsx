@@ -136,7 +136,7 @@ const ImageFull = ({ file, closecard }) => {
             title={file.name}
             subheader="date:September 14, 2016"
           />
-          <CardMedia component="img" alt={file.name} image={`/api/files/download/${file.route}${file.name}`} />
+          <CardMedia component="img" alt={file.name} image={`/api/files/download/${file.path}${file.name}`} />
           <CardContent>
             <Typography variant="body2" color="text.secondary">
               Result:{JSON.stringify(file.attributes)}
@@ -395,7 +395,7 @@ const MissionDetailReportPage = () => {
                           .map((item) => (
                             <ImageListItem key={item.id}>
                               <img
-                                src={`/api/files/download/${item.route}${item.name}`}
+                                src={`/api/files/download/${item.path}${item.name}`}
                                 alt={item.name}
                                 loading="lazy"
                                 onClick={() => setSelectFile(item)}

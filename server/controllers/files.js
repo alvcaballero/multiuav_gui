@@ -45,10 +45,9 @@ class filesController {
   donwload = async (req, res) => {
     //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
     //https://medium.com/@imajeet5/how-to-serve-files-using-node-js-d99de4653a3
-    console.log('controller donwload');
+    console.log('controller donwload file' + req.params.filename);
     try {
       let response = await this.filesModel.checkFileRoute(req.params.filename);
-      console.log(response);
       if (response) {
         res.download(response, function (err) {
           if (err) {
