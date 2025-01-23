@@ -10,14 +10,16 @@ import { readJSON, readYAML, writeJSON, sleep } from '../common/utils.js';
 import { missionsData, routesData } from '../config/config.js';
 import { object } from 'zod';
 
-/* mission is object that have the current mission running and have the next object
- / id
- / initTime
- / FinishTime
- / status: init planning, running, finish, ,
- / uav: {uavId, status:  load, commmand , running , resumen cancel,Get Data, Download Data, InitTime,FinishTime}
- / mission: mission format yaml
- / results:  [ reoutes results]
+/**
+ * @typedef Mission
+ * @property {integer} id
+ * @property {string} status - init, planning, running, finish, done, cancelled, error
+ * @property {string} initTime
+ * @property {string} FinishTime
+ * @property {Array<number>} uav
+ * @property {object} task - task planning
+ * @property {object} mission - mission planning
+ * @property {Array<object>} results
  */
 const Mission = readJSON(missionsData);
 const Routes = readJSON(routesData);

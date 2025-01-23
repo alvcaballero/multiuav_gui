@@ -1,5 +1,7 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 import { Device } from './device.model.js';
+import { Mission } from './mission.model.js';
+
 const Event_TABLE = 'event';
 
 const EventSchema = {
@@ -9,6 +11,15 @@ const EventSchema = {
     primaryKey: true,
     type: DataTypes.INTEGER,
   },
+  type: {
+    allowNull: false,
+    type: DataTypes.STRING,
+  },
+  eventTime: {
+    allowNull: false,
+    type: DataTypes.DATE,
+    defaultValue: Sequelize.NOW,
+  },
   deviceId: {
     type: DataTypes.INTEGER,
     references: {
@@ -16,18 +27,17 @@ const EventSchema = {
       key: 'id',
     },
   },
-  status: {
-    allowNull: false,
-    type: DataTypes.STRING,
-    defaultValue: 'info', //warning , info, error
+  positionId: {
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
   },
-  createdAt: {
-    allowNull: false,
-    type: DataTypes.DATE,
-    field: 'create_at',
-    defaultValue: Sequelize.NOW,
+  missionId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Mission, // 'Actors' would also work
+      key: 'id',
+    },
   },
-  description: {
+  attributes: {
     type: DataTypes.STRING,
   },
 };

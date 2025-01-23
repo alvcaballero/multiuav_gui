@@ -10,17 +10,17 @@ import { readJSON, readYAML, writeJSON, sleep } from '../common/utils.js';
 import { missionsData, routesData } from '../config/config.js';
 import sequelize from '../common/sequelize.js';
 
-/* mission is object that have the current mission running and have the next object
- / id
- / initTime
- / FinishTime
- / status: init, planning, running, finish, cancel, fail,
- / uav: {uavId, status:  load, commmand , running , resumen cancel,Get Data, Download Data, InitTime,FinishTime}
- / mission: mission format yaml
-*/
-// de once at time and after  multiple like devices
-// this have to init  before sent to plannig
-const Mission = {}; // current mission // id , status (init, planing, doing, finish,time inti, time_end))
+/**
+ * @typedef Mission
+ * @property {integer} id
+ * @property {string} status - init, planning, running, finish, done, cancelled, error
+ * @property {string} initTime
+ * @property {string} FinishTime
+ * @property {Array<number>} uav
+ * @property {object} task - task planning
+ * @property {object} mission - mission planning
+ * @property {Array<object>} results
+ */
 
 export const MISSION_STATUS = Object.freeze({
   INIT: 'init',

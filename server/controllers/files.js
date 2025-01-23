@@ -47,9 +47,9 @@ class filesController {
     //https://medium.com/@imajeet5/how-to-serve-files-using-node-js-d99de4653a3
     console.log('controller donwload file' + req.params.filename);
     try {
-      let response = await this.filesModel.checkFileRoute(req.params.filename);
-      if (response) {
-        res.download(response, function (err) {
+      let filePath = await this.filesModel.checkFileRoute(req.params.filename);
+      if (filePath) {
+        res.download(filePath, function (err) {
           if (err) {
             console.error('Error during file download:', err);
             if (!res.headersSent) {
