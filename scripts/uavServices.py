@@ -72,6 +72,8 @@ class SimpleDevice:
         self.rateTime = 2  # 1 Hz
         self.typeMission = "GPS"
         self.category = category
+        self.rate = rospy.Rate(self.rateTime)  # 1 Hz
+        self.lock = threading.Lock()
 
         # init services
         if self.category == "px4":
@@ -110,8 +112,6 @@ class SimpleDevice:
 
         self.pubBattery = rospy.Publisher(
             '/'+self.name+dictCategory[self.category]["battery"], BatteryState, queue_size=10)
-        self.rate = rospy.Rate(self.rateTime)  # 1 Hz
-        self.lock = threading.Lock()
 
     # change device variables
     def moveAngle(self, x1, x2, speed):
@@ -131,12 +131,12 @@ class SimpleDevice:
         return {'state': False, 'value': angle}
 
     def moveToPoint(self, pos1, pos2, speed):
-        print("pos1:", pos1)
-        print("pos2:", pos2)
+        # print("pos1:", pos1)
+        # print("pos2:", pos2)
         dstX = (pos2[0] - pos1[0])
         dstY = (pos2[1] - pos1[1])
         dstZ = (pos2[2] - pos1[2])
-        print("dstx:", dstX, dstY, dstZ, "speed:", speed)
+        # print("dstx:", dstX, dstY, dstZ, "speed:", speed)
         if self.typeMission == "GPS":
             dstX = dstX*(6378137/180)*math.pi
             dstY = dstY*(6378137/180)*math.pi
@@ -154,7 +154,7 @@ class SimpleDevice:
 
         velX = 0 if dstXY == 0 else (velXY * dstX) / dstXY
         velY = 0 if dstXY == 0 else (velXY * dstY) / dstXY
-        print("vel:", velX, velY, velZ)
+        # print("vel:", velX, velY, velZ)
         self.speedX = velX
         self.speedY = velY
         self.speedZ = velZ
@@ -169,10 +169,10 @@ class SimpleDevice:
         if self.typeMission == "GPS":
             newPosX = pos1[0]+(newDstX*(180/6378137))/math.pi
             newPosY = pos1[1]+(newDstY*(180/6378137))/math.pi
-            print("newPos:", newPosX, newPosY, newPosZ)
-            print("PosDiff:", pos2[0]-newPosX, pos2[1]-newPosY, pos2[2] -newPosZ)
-        else:
-            print("newDst:", newDstX, newDstY, newDstZ)
+            # print("newPos:", newPosX, newPosY, newPosZ)
+            # print("PosDiff:", pos2[0]-newPosX, pos2[1]-newPosY, pos2[2] -newPosZ)
+        # else:
+        #      print("newDst:", newDstX, newDstY, newDstZ)
 
         if abs(newDstX) > abs(dstX) or abs(newDstY) > abs(dstY) or abs(newDstZ) > abs(dstZ):
             print("Arrived wp")
@@ -196,132 +196,149 @@ class SimpleDevice:
         return math.degrees(angle)
 
     def simulation(self):
-        if self.status == Status.RUNNING_MISSION:
-            print("waypoint", self.currentWp, "action", self.currentAction)
-            if self.currentWp < 0:
-                calculate = self.moveToPoint(self.position, [
-                    self.homePoint[0], self.homePoint[1], self.homePoint[2]+5], self.speedIdle)
-                self.position = calculate['pos']
-                if calculate['state']:
-                    self.currentWp = 0
-            elif self.currentWp < len(self.mission.waypoint):
-                calculate = self.moveToPoint(self.position, [
-                    self.mission.waypoint[self.currentWp].latitude, self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].altitude], self.speedIdle)
-                self.position = calculate['pos']
-                print("calculate", calculate)
-                if category == "px4":
-                    newyaw = self.moveAngle(
-                        self.yaw, self.calAngle(self.position[0], self.position[1], self.mission.waypoint[self.currentWp].longitude, self.mission.waypoint[self.currentWp].latitude), 10)['value']
+        print("waypoint", self.currentWp, "action", self.currentAction)
 
-                    print("yaw", self.yaw, newyaw)
-                    self.yaw = newyaw
+        with self.lock:
+            position = self.position
+            yaw = self.yaw
+            gimbal = self.gimbal
+            currentWp = self.currentWp
+            currentAction = self.currentAction
+            battery = self.battery
 
-                if calculate['state']:
+        if currentWp < 0:
+            calculate = self.moveToPoint(position, [
+                self.homePoint[0], self.homePoint[1], self.homePoint[2]+5], self.speedIdle)
+            position = calculate['pos']
+            if calculate['state']:
+                currentWp = 0
+        elif currentWp < len(self.mission.waypoint):
+            calculate = self.moveToPoint(position, [
+                self.mission.waypoint[currentWp].latitude, self.mission.waypoint[currentWp].longitude, self.mission.waypoint[currentWp].altitude], self.speedIdle)
+            position = calculate['pos']
+            print("calculate", calculate)
+            if category == "px4":
+                newyaw = self.moveAngle(
+                    self.yaw, self.calAngle(position[0], position[1], self.mission.waypoint[currentWp].longitude, self.mission.waypoint[currentWp].latitude), 10)['value']
+                # print("yaw", self.yaw, newyaw)
+                self.yaw = newyaw
 
-                    print("action", self.currentAction, self.mission.commandList.data[self.currentWp*10 +
-                          self.currentAction], self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
+            if calculate['state']:
 
-                    if self.mission.commandList.data[self.currentWp*10+self.currentAction] == 4:
-                        print(
-                            "action yaw", self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
-                        actionCalculate = self.moveAngle(
-                            self.yaw, self.mission.commandParameter.data[self.currentWp*10+self.currentAction], 10)
-                        self.yaw = actionCalculate['value']
-                        if actionCalculate['state']:
-                            self.currentAction = self.currentAction + 1
-                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] == 5:
-                        print(
-                            "action gimbal", self.mission.commandParameter.data[self.currentWp*10+self.currentAction])
-                        actionCalculate = self.moveAngle(
-                            self.gimbal, self.mission.commandParameter.data[self.currentWp*10+self.currentAction], 10)
-                        self.gimbal = actionCalculate['value']
-                        if actionCalculate['state']:
-                            self.currentAction = self.currentAction + 1
-                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] == 1 or self.mission.commandList.data[self.currentWp*10+self.currentAction] == 2 or self.mission.commandList.data[self.currentWp*10+self.currentAction] == 3:
-                        print("action photo or video")
-                        self.currentAction = self.currentAction + 1
-                    elif self.mission.commandList.data[self.currentWp*10+self.currentAction] > 0:
-                        print("action other command")
-                        self.currentAction = self.currentAction + 1
-                    else:
-                        for i in range(self.currentAction, 10):
-                            print("action-bucle", i, self.mission.commandList.data[self.currentWp*10 +
-                                                                                   i], self.mission.commandParameter.data[self.currentWp*10+i])
+                print("action", currentAction, self.mission.commandList.data[currentWp*10 +
+                      currentAction], self.mission.commandParameter.data[currentWp*10+currentAction])
 
-                            if self.mission.commandList.data[self.currentWp*10+i] != 0:
-                                self.currentAction = i
-                                break
-                            if i == 9:
-                                self.currentAction = 10
-                            print("action zero")
+                if self.mission.commandList.data[currentWp*10+currentAction] == 4:
+                    print(
+                        "action yaw", self.mission.commandParameter.data[currentWp*10+currentAction])
+                    actionCalculate = self.moveAngle(
+                        self.yaw, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
+                    self.yaw = actionCalculate['value']
+                    if actionCalculate['state']:
+                        currentAction = currentAction + 1
+                elif self.mission.commandList.data[currentWp*10+currentAction] == 5:
+                    print(
+                        "action gimbal", self.mission.commandParameter.data[currentWp*10+currentAction])
+                    actionCalculate = self.moveAngle(
+                        self.gimbal, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
+                    self.gimbal = actionCalculate['value']
+                    if actionCalculate['state']:
+                        currentAction = currentAction + 1
+                elif self.mission.commandList.data[currentWp*10+currentAction] == 1 or self.mission.commandList.data[currentWp*10+currentAction] == 2 or self.mission.commandList.data[currentWp*10+currentAction] == 3:
+                    print("action photo or video")
+                    currentAction = currentAction + 1
+                elif self.mission.commandList.data[currentWp*10+currentAction] > 0:
+                    print("action other command")
+                    currentAction = currentAction + 1
+                else:
+                    for i in range(currentAction, 10):
+                        print("action-bucle", i, self.mission.commandList.data[currentWp*10 +
+                                                                               i], self.mission.commandParameter.data[currentWp*10+i])
 
-                    if self.currentAction == 10:
-                        self.currentAction = 0
-                        self.currentWp = self.currentWp + 1
+                        if self.mission.commandList.data[currentWp*10+i] != 0:
+                            currentAction = i
+                            break
+                        if i == 9:
+                            currentAction = 10
+                        print("action zero")
 
-            else:
-                calculate = self.moveToPoint(self.position, [
-                    self.position[0], self.position[1], self.homePoint[2]], self.speedIdle)
-                self.position = calculate['pos']
-                if calculate['state']:
-                    self.currentWp = -1
-                    self.status = Status.FINISH_MISSION
-                    time.sleep(2)
-                    self.finish_Mission()
-            if self.category == "px4":
-                self.battery = self.battery - 0.0001
-                if self.battery < 0.05:
-                    self.battery = 1
-            else:
-                self.battery = self.battery - 0.01
-                if self.battery < 5:
-                    self.battery = 100
+                if currentAction == 10:
+                    currentAction = 0
+                    currentWp = currentWp + 1
+
+        else:
+            calculate = self.moveToPoint(position, [
+                position[0], position[1], self.homePoint[2]], self.speedIdle)
+            position = calculate['pos']
+            if calculate['state']:
+                self.finish_Mission()
+                time.sleep(2)
+        if self.category == "px4":
+            self.battery = self.battery - 0.0001
+            if self.battery < 0.05:
+                self.battery = 1
+        else:
+            self.battery = self.battery - 0.01
+            if self.battery < 5:
+                self.battery = 100
+
+        with self.lock:
+            self.position = position
+            self.yaw = yaw
+            self.gimbal = gimbal
+            self.currentWp = currentWp
+            self.currentAction = currentAction
+            self.battery = battery
 
     def publish(self):
         while not rospy.is_shutdown():
-            self.simulation()
-            with self.lock:
-                navsat = NavSatFix()
-                navsat.header.stamp = rospy.Time.now()
-                navsat.status.service = NavSatStatus.SERVICE_GPS
-                navsat.latitude = self.position[0]
-                navsat.longitude = self.position[1]
-                navsat.altitude = 400 + self.position[2]
-                self.pubPosition.publish(navsat)
+            print("- ", self.name, " status ", self.status,
+                  "self.currentWp", self.currentWp)
 
-                self.pubYaw.publish(self.yaw)
+            if self.status == Status.RUNNING_MISSION:
+                self.simulation()
 
-                if dictCategory[self.category].get("gimbal"):
-                    gimbalmsg = Vector3Stamped()
-                    gimbalmsg.header.stamp = rospy.Time.now()
-                    gimbalmsg.vector.x = 0
-                    gimbalmsg.vector.y = 0
-                    gimbalmsg.vector.z = self.gimbal
-                    self.pubGimbal.publish(gimbalmsg)
+            navsat = NavSatFix()
+            navsat.header.stamp = rospy.Time.now()
+            navsat.status.service = NavSatStatus.SERVICE_GPS
+            navsat.latitude = self.position[0]
+            navsat.longitude = self.position[1]
+            navsat.altitude = 400 + self.position[2]
+            self.pubPosition.publish(navsat)
 
-                if self.category == "px4":
-                    speedmsg = TwistStamped()
-                    speedmsg.header.stamp = rospy.Time.now()
-                    speedmsg.twist.linear.x = self.speedX
-                    speedmsg.twist.linear.y = self.speedY
-                    speedmsg.twist.linear.z = self.speedZ
-                    self.pubSpeed.publish(speedmsg)
-                else:
-                    speedmsg = Vector3Stamped()
-                    speedmsg.header.stamp = rospy.Time.now()
-                    speedmsg.vector.x = self.speedX
-                    speedmsg.vector.y = self.speedY
-                    speedmsg.vector.z = self.speedZ
-                    self.pubSpeed.publish(speedmsg)
+            self.pubYaw.publish(self.yaw)
 
-                statusBattery = BatteryState()
-                statusBattery.voltage = 24
-                statusBattery.current = 1
-                statusBattery.capacity = 100
-                statusBattery.percentage = round(self.battery, 2)
-                self.pubBattery.publish(statusBattery)
+            if dictCategory[self.category].get("gimbal"):
+                gimbalmsg = Vector3Stamped()
+                gimbalmsg.header.stamp = rospy.Time.now()
+                gimbalmsg.vector.x = 0
+                gimbalmsg.vector.y = 0
+                gimbalmsg.vector.z = self.gimbal
+                self.pubGimbal.publish(gimbalmsg)
 
-                self.rate.sleep()
+            if self.category == "px4":
+                speedmsg = TwistStamped()
+                speedmsg.header.stamp = rospy.Time.now()
+                speedmsg.twist.linear.x = self.speedX
+                speedmsg.twist.linear.y = self.speedY
+                speedmsg.twist.linear.z = self.speedZ
+                self.pubSpeed.publish(speedmsg)
+            else:
+                speedmsg = Vector3Stamped()
+                speedmsg.header.stamp = rospy.Time.now()
+                speedmsg.vector.x = self.speedX
+                speedmsg.vector.y = self.speedY
+                speedmsg.vector.z = self.speedZ
+                self.pubSpeed.publish(speedmsg)
+
+            statusBattery = BatteryState()
+            statusBattery.voltage = 24
+            statusBattery.current = 1
+            statusBattery.capacity = 100
+            statusBattery.percentage = round(self.battery, 2)
+            self.pubBattery.publish(statusBattery)
+
+            self.rate.sleep()
 
     def run(self):
         input_thread = threading.Thread(target=self.publish)
@@ -330,9 +347,9 @@ class SimpleDevice:
         rospy.spin()
 
     def Finish_Download(self, value):
+        print("Finish download")
         time.sleep(10)
         rospy.wait_for_service('/GCS/FinishDownload')
-        print("Finish download")
         valuex = value.replace(" ", "_").replace("-", "_").replace(":", "_")
 
         print(valuex)
@@ -346,11 +363,17 @@ class SimpleDevice:
             callservice = rospy.ServiceProxy(
                 '/GCS/FinishDownload', finishGetFiles)
             resp1 = callservice(self.name, True)
-            self.status = Status.READY
         except Exception as e:
-            print("Service call failed: %s" % e)
+            print("Service call finish download failed: %s" % e)
+
+        with self.lock:
+            self.status = Status.READY
 
     def finish_Mission(self):
+        with self.lock:
+            self.currentWp = -1
+            self.currentAction = 0
+            self.status = Status.FINISH_MISSION
         # time.sleep(30)
         rospy.wait_for_service('/GCS/FinishMission')
         try:
@@ -359,49 +382,38 @@ class SimpleDevice:
                 '/GCS/FinishMission', finishMission)
             resp1 = callservice(self.name, True)
         except Exception as e:
-            print("Service call failed: %s" % e)
+            print("Service call finish mission failed: %s" % e)
 
     def startMission(self, request):
         print("Starting mission")
         rspSuccess = False
-        rspmMessage = "Hey, roger that; we'll be right there!"
-
         if self.status == Status.LOAD_MISSION:
             self.status = Status.RUNNING_MISSION
             rspSuccess = True
 
         return SetBoolResponse(
             success=rspSuccess,
-            message=rspmMessage
+            message="Hey, lisent that; we'll be right there!"
         )
 
     def loadMission(self, request):
         print("load mission")
         rspSuccess = False
-        if self.status == Status.READY or self.status == Status.LOAD_MISSION:
+        if self.status == Status.READY or self.status == Status.LOAD_MISSION or self.status == Status.FINISH_MISSION:
             self.status = Status.LOAD_MISSION
             self.homePoint = self.position
             self.mission = request
             self.speedIdle = self.mission.idleVel
-
             rspSuccess = True
-        return ConfigMissionResponse(
-            success=rspSuccess,
-        )
+        return ConfigMissionResponse(success=rspSuccess)
 
     def DownloadMedia(self, request):
-        print("Downloading media")
-        print(request.downloadCnt)
-        print(request.initDate)
-        print(request.FinishDate)
-
+        print("Downloading media" + str(request.downloadCnt) +
+              str(request.initDate) + str(request.FinishDate))
         thr = threading.Thread(target=self.Finish_Download,
                                args=(request.initDate,), kwargs={})
         thr.start()
-
-        return DownloadMediaResponse(
-            result=True,
-        )
+        return DownloadMediaResponse(result=True)
 
 
 if __name__ == "__main__":
