@@ -25,6 +25,12 @@ export class eventsModel {
   }
 
   static async addEvent({ type="no", eventTime, deviceId, missionId, positionId, attributes={} }) {
+    console.log('type:', type);
+    console.log('eventTime:', eventTime);
+    console.log('deviceId:', deviceId);
+    console.log('missionId:', missionId);
+    console.log('positionId:', positionId);
+    console.log('attributes:', attributes);
 
     let eventPosition2 = [0, 0, 0];
     if (deviceId) {
