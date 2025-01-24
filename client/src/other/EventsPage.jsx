@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useEffectAsync } from '../reactHelper';
 
 import {
   Typography,
@@ -58,14 +59,27 @@ const EventsPage = () => {
   const [itemdevice, setItemdevice] = useState();
   const events = useSelector((state) => state.events.items);
   const devices = useSelector((state) => state.devices.items);
+  // useEffect(() => {
+  //   setItem(events);
+  // }, [events]);
   useEffect(() => {
-    setItem(events);
-  }, [events]);
+    console.log(item);
+  }, [item]);
   useEffect(() => {
     setItemdevice({ ...devices, '-1': { name: 'GCS' } });
     //console.log('my devices');
     //console.log({ ...devices, '-1': { name: 'GCS' } });
   }, [devices]);
+
+  useEffectAsync(async () => {
+    const response = await fetch('/api/events');
+    if (response.ok) {
+      setItem(await response.json());
+    } else {
+      throw Error(await response.text());
+    }
+  }, []);
+
 
   const deviceName = useSelector((state) => {
     if (item) {
@@ -94,6 +108,7 @@ const EventsPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>UAV</TableCell>
+                  <TableCell>Type</TableCell>
                   <TableCell>Fecha</TableCell>
                   <TableCell>Valor</TableCell>
                 </TableRow>
@@ -103,6 +118,7 @@ const EventsPage = () => {
                   item.map((event) => (
                     <TableRow key={event.id}>
                       <TableCell>{itemdevice[event.deviceId].name}</TableCell>
+                      <TableCell>{event.type}</TableCell>
                       <TableCell>{event.eventTime}</TableCell>
                       <TableCell>{event.attributes.message}</TableCell>
                     </TableRow>

@@ -38,7 +38,7 @@ const EventSchema = {
     },
   },
   attributes: {
-    type: DataTypes.STRING,
+    type: DataTypes.JSON,
   },
 };
 

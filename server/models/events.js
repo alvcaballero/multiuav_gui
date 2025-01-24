@@ -14,16 +14,17 @@ import sequelize from '../common/sequelize.js';
  */
 
 export class eventsModel {
-  static getall({ id, missionId, deviceId, type, createdAt }) {
+  static async get({ id, missionId, deviceId, type, createdAt }) {
     if (deviceId) {
-      return sequelize.models.events.findAll({ where: { deviceId: deviceId } });
+      return await sequelize.models.Event.findAll({ where: { deviceId: deviceId } });
     }
     if (id) {
-      return sequelize.models.events.findByPk(id);
+      return await sequelize.models.Event.findByPk(id);
     }
-    return sequelize.models.events.findAll();
+    return await sequelize.models.Event.findAll();
   }
-  static async addEvent({ type, eventTime, deviceId, attributes }) {
+
+  static async addEvent({ type, eventTime, deviceId, missionId, positionId, attributes }) {
 
     let eventPosition = positionsController.getByDeviceId(deviceId);
 
@@ -31,21 +32,16 @@ export class eventsModel {
     if (eventPosition) {
       eventPosition2 = [eventPosition.latitude, eventPosition.longitude, eventPosition.altitude];
     }
-    let myEvent = await sequelize.models.events.create({
+    let myEvent = await sequelize.models.Event.create({
       type: type,
       eventTime: eventTime || null,
-      deviceId: deviceId || -1,
-      positionid: eventPosition2,
-      missionId: missionId || -1,
+      deviceId: deviceId || null,
+      positionId: eventPosition2,
+      missionId: missionId || null,
       attributes: attributes,
     });
     var ws = new WebsocketManager(null, '/api/socket');
     ws.broadcast(JSON.stringify({ events: [myEvent] }));
   }
 
-  static clearEvents(payload) {
-    payload.eventId.forEach((element) => {
-      delete events[element];
-    });
-  }
 }

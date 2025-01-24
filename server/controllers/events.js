@@ -3,12 +3,12 @@ import { eventsModel } from '../models/events.js';
 export class eventsController {
   static async getAll(req, res) {
     console.log('controller get all');
-    const positions = await eventsModel.getAll();
+    const positions = await eventsModel.get({});
     res.json(positions);
   }
 
   static async getAllEvent() {
-    return await eventsModel.getAll();
+    return await eventsModel.get({});
   }
 
   static async addEvent(value) {
