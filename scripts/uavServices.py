@@ -355,7 +355,7 @@ class SimpleDevice:
         print(valuex)
 
         os.system(
-            " mkdir -p ~/work/uav_media/mission_"+str(valuex)+" && cp  ~/work/uav_media/mission/* ~/work/uav_media/mission_"+str(valuex)+"/")
+            " mkdir -p ~/work/uav_media/mission_"+str(valuex)+" && cp ~/work/uav_media/mission/* ~/work/uav_media/mission_"+str(valuex)+"/")
 
         try:
             print("call GCS finish donwload files service")

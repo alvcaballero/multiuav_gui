@@ -265,7 +265,7 @@ export class commandsModel {
         eventsController.addEvent({
           type: response.state,
           eventTime: getDatetime(),
-          deviceId: myDevice ? myDevice.id : -1,
+          deviceId: myDevice ? myDevice.id : null,
           attributes: { message: response.msg },
         });
       }

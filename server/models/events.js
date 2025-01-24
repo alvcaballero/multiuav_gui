@@ -24,13 +24,14 @@ export class eventsModel {
     return await sequelize.models.Event.findAll();
   }
 
-  static async addEvent({ type, eventTime, deviceId, missionId, positionId, attributes }) {
-
-    let eventPosition = positionsController.getByDeviceId(deviceId);
+  static async addEvent({ type="no", eventTime, deviceId, missionId, positionId, attributes={} }) {
 
     let eventPosition2 = [0, 0, 0];
-    if (eventPosition) {
-      eventPosition2 = [eventPosition.latitude, eventPosition.longitude, eventPosition.altitude];
+    if (deviceId) {
+      let eventPosition = positionsController.getByDeviceId(deviceId);
+      if (eventPosition) {
+        eventPosition2 = [eventPosition.latitude, eventPosition.longitude, eventPosition.altitude];
+      }
     }
     let myEvent = await sequelize.models.Event.create({
       type: type,
