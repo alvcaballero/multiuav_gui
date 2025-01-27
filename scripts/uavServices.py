@@ -213,45 +213,48 @@ class SimpleDevice:
             if calculate['state']:
                 currentWp = 0
         elif currentWp < len(self.mission.waypoint):
+            goal = self.mission.waypoint[currentWp]
+
             calculate = self.moveToPoint(position, [
-                self.mission.waypoint[currentWp].latitude, self.mission.waypoint[currentWp].longitude, self.mission.waypoint[currentWp].altitude], self.speedIdle)
+                goal.latitude, goal.longitude, goal.altitude], self.speedIdle)
             position = calculate['pos']
             print("calculate", calculate)
             if category == "px4":
-                newyaw = self.moveAngle(
-                    yaw, self.calAngle(position[0], position[1], self.mission.waypoint[currentWp].longitude, self.mission.waypoint[currentWp].latitude), 10)['value']
+                calDirection = self.calAngle(
+                    position[0], position[1], goal.longitude, goal.latitude)
+                newyaw = self.moveAngle(yaw, calDirection, 10)
                 yaw = newyaw['value']
 
             if calculate['state']:
-                # print("action", currentAction, self.mission.commandList.data[currentWp*10 +
-                #       currentAction], self.mission.commandParameter.data[currentWp*10+currentAction])
+                goalActionCmd = self.mission.commandList.data[currentWp *
+                                                              10+currentAction]
+                goalActionPrm = self.mission.commandParameter.data[currentWp*10+currentAction]
+                # print("action", currentAction, goalActionCmd, goalActionPrm)
 
-                if self.mission.commandList.data[currentWp*10+currentAction] == 4:
-                    print(
-                        "action yaw", self.mission.commandParameter.data[currentWp*10+currentAction])
-                    actionCalculate = self.moveAngle(
-                        yaw, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
+                if goalActionCmd == 4:
+                    print("action yaw", yaw, goalActionPrm)
+                    actionCalculate = self.moveAngle(yaw, goalActionPrm, 10)
                     yaw = actionCalculate['value']
                     if actionCalculate['state']:
                         currentAction = currentAction + 1
-                elif self.mission.commandList.data[currentWp*10+currentAction] == 5:
+                elif goalActionCmd == 5:
                     print(
-                        "action gimbal", self.mission.commandParameter.data[currentWp*10+currentAction])
-                    actionCalculate = self.moveAngle(
-                        gimbal, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
+                        "action gimbal", gimbal, goalActionPrm)
+                    actionCalculate = self.moveAngle(gimbal, goalActionPrm, 10)
                     gimbal = actionCalculate['value']
                     if actionCalculate['state']:
                         currentAction = currentAction + 1
-                elif self.mission.commandList.data[currentWp*10+currentAction] == 1 or self.mission.commandList.data[currentWp*10+currentAction] == 2 or self.mission.commandList.data[currentWp*10+currentAction] == 3:
+                elif goalActionCmd == 1 or goalActionCmd == 2 or goalActionCmd == 3:
                     print("action photo or video")
                     currentAction = currentAction + 1
-                elif self.mission.commandList.data[currentWp*10+currentAction] > 0:
+                elif goalActionCmd > 0:
                     print("action other command")
                     currentAction = currentAction + 1
                 else:
                     for i in range(currentAction, 10):
-                        print("action-bucle", i, self.mission.commandList.data[currentWp*10 +
-                                                                               i], self.mission.commandParameter.data[currentWp*10+i])
+                        print("action-bucle", i,
+                              self.mission.commandList.data[currentWp*10 + i],
+                              self.mission.commandParameter.data[currentWp*10+i])
 
                         if self.mission.commandList.data[currentWp*10+i] != 0:
                             currentAction = i
