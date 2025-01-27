@@ -219,29 +219,27 @@ class SimpleDevice:
             print("calculate", calculate)
             if category == "px4":
                 newyaw = self.moveAngle(
-                    self.yaw, self.calAngle(position[0], position[1], self.mission.waypoint[currentWp].longitude, self.mission.waypoint[currentWp].latitude), 10)['value']
-                # print("yaw", self.yaw, newyaw)
-                self.yaw = newyaw
+                    yaw, self.calAngle(position[0], position[1], self.mission.waypoint[currentWp].longitude, self.mission.waypoint[currentWp].latitude), 10)['value']
+                yaw = newyaw['value']
 
             if calculate['state']:
-
-                print("action", currentAction, self.mission.commandList.data[currentWp*10 +
-                      currentAction], self.mission.commandParameter.data[currentWp*10+currentAction])
+                # print("action", currentAction, self.mission.commandList.data[currentWp*10 +
+                #       currentAction], self.mission.commandParameter.data[currentWp*10+currentAction])
 
                 if self.mission.commandList.data[currentWp*10+currentAction] == 4:
                     print(
                         "action yaw", self.mission.commandParameter.data[currentWp*10+currentAction])
                     actionCalculate = self.moveAngle(
-                        self.yaw, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
-                    self.yaw = actionCalculate['value']
+                        yaw, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
+                    yaw = actionCalculate['value']
                     if actionCalculate['state']:
                         currentAction = currentAction + 1
                 elif self.mission.commandList.data[currentWp*10+currentAction] == 5:
                     print(
                         "action gimbal", self.mission.commandParameter.data[currentWp*10+currentAction])
                     actionCalculate = self.moveAngle(
-                        self.gimbal, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
-                    self.gimbal = actionCalculate['value']
+                        gimbal, self.mission.commandParameter.data[currentWp*10+currentAction], 10)
+                    gimbal = actionCalculate['value']
                     if actionCalculate['state']:
                         currentAction = currentAction + 1
                 elif self.mission.commandList.data[currentWp*10+currentAction] == 1 or self.mission.commandList.data[currentWp*10+currentAction] == 2 or self.mission.commandList.data[currentWp*10+currentAction] == 3:
