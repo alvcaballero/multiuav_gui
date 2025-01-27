@@ -55,21 +55,8 @@ const EventsPage = () => {
   const classes = useStyles();
   const navigate = useNavigate();
 
-  const [item, setItem] = useState([]);
-  const [itemdevice, setItemdevice] = useState();
-  const events = useSelector((state) => state.events.items);
+  const [item, setItem] = useState();
   const devices = useSelector((state) => state.devices.items);
-  // useEffect(() => {
-  //   setItem(events);
-  // }, [events]);
-  useEffect(() => {
-    console.log(item);
-  }, [item]);
-  useEffect(() => {
-    setItemdevice({ ...devices, '-1': { name: 'GCS' } });
-    //console.log('my devices');
-    //console.log({ ...devices, '-1': { name: 'GCS' } });
-  }, [devices]);
 
   useEffectAsync(async () => {
     const response = await fetch('/api/events');
@@ -81,15 +68,6 @@ const EventsPage = () => {
   }, []);
 
 
-  const deviceName = useSelector((state) => {
-    if (item) {
-      const device = state.devices.items[item.deviceId];
-      if (device) {
-        return device.name;
-      }
-    }
-    return null;
-  });
 
   return (
     <div className={classes.root}>
@@ -117,7 +95,7 @@ const EventsPage = () => {
                 {item &&
                   item.map((event) => (
                     <TableRow key={event.id}>
-                      <TableCell>{itemdevice[event.deviceId].name}</TableCell>
+                      <TableCell>{event.deviceId ?  devices[event.deviceId].name :"GCS" }</TableCell>
                       <TableCell>{event.type}</TableCell>
                       <TableCell>{event.eventTime}</TableCell>
                       <TableCell>{event.attributes.message}</TableCell>

@@ -454,6 +454,9 @@ Content-Type: application/json
       }
 }
 
+### 
+GET http://localhost:4000/api/events HTTP/1.1
+
 ###
 POST http://192.168.1.180:8004/input_test
 Content-Type: application/json
@@ -482,3 +485,4 @@ POST http://127.0.0.1:8004/mission_request
 Content-Type: application/json
 
 < ./json/missionRequest2.json
+
