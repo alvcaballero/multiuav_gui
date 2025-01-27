@@ -212,7 +212,7 @@ export class missionModel {
 
     eventsController.addEvent({
       type: 'info',
-      deviceId: -1,
+      deviceId: null,
       attributes: { message: `Init mission ${id}` },
     });
     return { response: myTask, status: 'OK' };
@@ -253,7 +253,7 @@ export class missionModel {
 
     eventsController.addEvent({
       type: 'info',
-      deviceId: -1,
+      deviceId: null,
       attributes: { message: `Init mission ${missionId}` },
     });
     var ws = new WebsocketManager(null, '/api/socket');
@@ -367,7 +367,7 @@ export class missionModel {
     result.data = this.getMissionValue(missionId).results;
     eventsController.addEvent({
       type: 'info',
-      deviceId: -1,
+      deviceId: null,
       attributes: { message: `Finish mission ${missionId}` },
     });
     ExtAppController.missionReqMedia(missionId, { code, files: result.files, data: result.data });

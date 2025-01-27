@@ -41,7 +41,7 @@ export class eventsModel {
     }
     let myEvent = await sequelize.models.Event.create({
       type: type,
-      eventTime: eventTime || null,
+      eventTime: eventTime || undefined,
       deviceId: deviceId || null,
       positionId: eventPosition2,
       missionId: missionId || null,

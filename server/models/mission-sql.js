@@ -261,7 +261,7 @@ export class missionModel {
     eventsController.addEvent({
       type: 'info',
       eventTime: new Date(),
-      deviceId: -1,
+      deviceId: null,
       attributes: { message: 'Ext APP send task' },
     });
 
@@ -305,7 +305,7 @@ export class missionModel {
 
     eventsController.addEvent({
       type: 'info',
-      deviceId: -1,
+      deviceId: null,
       attributes: { message: `Init mission ${missionId}` },
     });
     var ws = new WebsocketManager(null, '/api/socket');
@@ -422,7 +422,7 @@ export class missionModel {
     result.data = myMission.results;
     eventsController.addEvent({
       type: 'info',
-      deviceId: -1,
+      deviceId: null,
       attributes: { message: `Finish mission ${missionId}` },
     });
     ExtAppController.missionReqMedia(missionId, { code, files: result.files, data: result.data });
