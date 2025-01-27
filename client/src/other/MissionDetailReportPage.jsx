@@ -161,7 +161,7 @@ const ImageFull2 = ({ file, closecard }) => {
           </div>
           <div className={classes.tittle}>{file.name}</div>
           <img
-            src={`/api/files/download/${file.route}${file.name}`}
+            src={`/api/files/download/${file.path}${file.name}`}
             alt={file.name}
             loading="lazy"
             className={classes.media1}

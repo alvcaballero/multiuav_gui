@@ -293,11 +293,17 @@ class SimpleDevice:
 
     def publish(self):
         while not rospy.is_shutdown():
-            print("- ", self.name, " status ", self.status,
-                  "self.currentWp", self.currentWp)
+            with self.lock:
+                status = self.status
 
-            if self.status == Status.RUNNING_MISSION:
+            print("- ", self.name, " status ", self.status,
+                  "self.currentWp", self.currentWp, "self.currentAction", self.currentAction)
+
+            if status == Status.RUNNING_MISSION:
                 self.simulation()
+            else:
+                self.currentWp = -1
+                self.currentAction = 0
 
             navsat = NavSatFix()
             navsat.header.stamp = rospy.Time.now()
@@ -372,8 +378,6 @@ class SimpleDevice:
 
     def finish_Mission(self):
         with self.lock:
-            self.currentWp = -1
-            self.currentAction = 0
             self.status = Status.FINISH_MISSION
         # time.sleep(30)
         rospy.wait_for_service('/GCS/FinishMission')
@@ -389,7 +393,8 @@ class SimpleDevice:
         print("Starting mission")
         rspSuccess = False
         if self.status == Status.LOAD_MISSION:
-            self.status = Status.RUNNING_MISSION
+            with self.lock:
+                self.status = Status.RUNNING_MISSION
             rspSuccess = True
 
         return SetBoolResponse(
