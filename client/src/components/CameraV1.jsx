@@ -53,7 +53,7 @@ export const CameraV1 = ({ deviceId, datacamera, onClose }) => {
   const [maxsize, setmaxsize] = useState(false);
   let btn_class = classes.card;
   let rootclass = classes.root_max;
-  const cameradata = useSelector((state) => state.data.camera[deviceId]);
+  const cameradata = useSelector((state) => state.session.camera[deviceId]);
 
   function Changemaxsize() {
     setmaxsize(!maxsize);

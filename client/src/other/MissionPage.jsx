@@ -58,7 +58,7 @@ const MissionPage = () => {
   const classes = useStyles();
   const [Opensave, setOpenSave] = useState(false);
 
-  const positions = useSelector((state) => state.data.positions);
+  const positions = useSelector((state) => state.session.positions);
   const sessionmarkers = useSelector((state) => state.session.markers);
 
   const [filteredPositions, setFilteredPositions] = useState([]);

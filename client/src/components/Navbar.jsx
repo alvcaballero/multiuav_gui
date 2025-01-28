@@ -1,4 +1,4 @@
-import React, { useContext, Fragment } from 'react';
+import React, { useContext, Fragment,useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
@@ -15,9 +15,12 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
   const navigate = useNavigate();
   const rosContext = useContext(RosContext);
 
-  const defaultLatitude = usePreference('latitude');
-  const defaultLongitude = usePreference('longitude');
+  const defaultLatitude = usePreference('latitude', 0);
+  const defaultLongitude = usePreference('longitude',0);
   const defaultZoom = usePreference('zoom', 10);
+    useEffect(() => {
+      console.log('render navbar');
+    }, []);
 
   const menuItemsData = [
     {

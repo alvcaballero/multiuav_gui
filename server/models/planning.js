@@ -8,6 +8,21 @@ import { MissionController } from '../controllers/mission.js';
 
 const requestPlanning = {};
 
+const firstplanning = {
+  id: 1234,
+  name: 'no mission',
+  objetivo: { id: 1 },
+  loc: [],
+  meteo: [],
+  bases: [],
+  settings: {},
+};
+
+if (Object.keys(initPlanning).length === 0) {
+  console.log('init planning is empty');
+  initPlanning = firstplanning;
+}
+
 export class planningModel {
   static getTypes() {
     console.log('Mission types map');

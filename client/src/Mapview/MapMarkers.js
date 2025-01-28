@@ -66,14 +66,14 @@ const MapElements = ({ markers, showTitles }) => {
 
   function list2Points(mylist) {
     const waypoints = [];
-    if (mylist.elements) {
+    if (mylist?.elements) {
       mylist.elements.forEach((conjunto, index_cj) => {
         conjunto.items.forEach((items, item_index) => {
           waypoints.push({ ...items, image: conjunto.type, title: `${index_cj}-${item_index}` });
         });
       });
     }
-    if (mylist.bases) {
+    if (mylist?.bases) {
       mylist.bases.forEach((items, item_index) => {
         waypoints.push({ ...items, image: 'base', title: item_index });
       });

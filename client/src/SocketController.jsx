@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
-import { dataActions, devicesActions, missionActions, sessionActions } from './store'; // here update device action with position of uav for update in map
+import {  devicesActions, missionActions, sessionActions } from './store'; // here update device action with position of uav for update in map
 import { eventsActions } from './store/events';
 import { Snackbar } from '@mui/material';
 import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
@@ -45,7 +45,7 @@ const SocketController = () => {
           }
           const positionsResponse = await fetch('/api/positions');
           if (positionsResponse.ok) {
-            dispatch(dataActions.updatePositions(await positionsResponse.json()));
+            dispatch(sessionActions.updatePositions(await positionsResponse.json()));
           }
           if (devicesResponse.status === 401 || positionsResponse.status === 401) {
             //navigate('/login');
@@ -67,11 +67,11 @@ const SocketController = () => {
         }
       }
       if (data.positions) {
-        dispatch(dataActions.updatePositions(data.positions));
+        dispatch(sessionActions.updatePositions(data.positions));
       }
       if (data.camera) {
         //console.log(data.camera)
-        dispatch(dataActions.updateCamera(data.camera));
+        dispatch(sessionActions.updateCamera(data.camera));
       }
       if (data.server) {
         data.server.rosState === 'connect'

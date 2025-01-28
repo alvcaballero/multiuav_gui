@@ -85,7 +85,7 @@ const DeviceRow = ({ data, index, style }) => {
   const dispatch = useDispatch();
 
   const item = data[index];
-  const position = useSelector((state) => state.data.positions[item.id]);
+  const position = useSelector((state) => state.session.positions[item.id]);
 
   const devicePrimary = item['name']; //'name';//useAttributePreference('devicePrimary', 'name');
   const deviceSecondary = 'test';

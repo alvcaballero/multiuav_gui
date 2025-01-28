@@ -18,7 +18,7 @@ const MapSelectedDevice = () => {
   const selectZoom = 10;
   const mapFollow = false;
 
-  const position = useSelector((state) => state.data.positions[selectedDeviceId]);
+  const position = useSelector((state) => state.session.positions[selectedDeviceId]);
 
   useEffect(() => {
     if ((selectedDeviceId !== previousDeviceId || mapFollow) && position) {

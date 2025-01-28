@@ -105,7 +105,7 @@ const DevicePage = () => {
 
   const [item, setItem] = useState();
   const [thisDevice, setthisdevice] = useState({});
-  const positions = useSelector((state) => state.data.positions);
+  const positions = useSelector((state) => state.session.positions);
   const devicelist = useSelector((state) => state.devices.items);
   const sessionmarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);

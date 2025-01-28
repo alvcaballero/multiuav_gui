@@ -84,8 +84,8 @@ const MainPage = () => {
   const theme = useTheme();
 
   const devices = useSelector((state) => state.devices.items);
-  const positions = useSelector((state) => state.data.positions);
-  const cameradata = useSelector((state) => state.data.camera);
+  const positions = useSelector((state) => state.session.positions);
+  const cameradata = useSelector((state) => state.session.camera);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const sessionmarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);

@@ -63,7 +63,7 @@ const MissionPage3D = () => {
 
   const [Opensave, setOpenSave] = useState(false);
 
-  const positions = useSelector((state) => state.data.positions);
+  const positions = useSelector((state) => state.session.positions);
   const routes = useSelector((state) => state.mission.route);
   const [routeLines, setRouteLines] = useState([]);
   const [routeWp, setRouteWp] = useState();

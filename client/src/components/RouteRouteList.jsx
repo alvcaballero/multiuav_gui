@@ -260,7 +260,7 @@ const RouteRoutesList = ({
 }) => {
   const classes = useStyles();
   const devices = useSelector((state) => state.devices.items);
-  const positions = useSelector((state) => state.data.positions);
+  const positions = useSelector((state) => state.session.positions);
   const [expandedRouteOptions, setExpandedRouteOptions] = useState(false);
   const [routeUAV, setRouteUAV] = useState(null);
 

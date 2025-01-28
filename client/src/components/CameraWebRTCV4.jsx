@@ -63,7 +63,7 @@ export const CameraWebRTCV4 = ({
   onClose,
 }) => {
   const classes = useStyles();
-  //const camera_stream ="20"// useSelector((state) => state.data.camera[deviceId]);
+  //const camera_stream ="20"// useSelector((state) => state.session.camera[deviceId]);
   const device = deviceId
     ? useSelector((state) => state.devices.items[deviceId])
     : { name: 'test' };

@@ -10,6 +10,7 @@ import MapSelectedDevice from './MapSelectedDevice';
 import MapScale from './MapScale';
 import { devicesActions } from '../store';
 import MapDefaultCamera from './MapDefaultCamera';
+import MapLiveRoutes from './MapLiveRoutes';
 
 const MainMap = ({
   filteredPositions,
@@ -32,6 +33,7 @@ const MainMap = ({
         <MapMarkers markers={markers} />
         <MapMissions filtereddeviceid={filteredMissiondeviceid} routes={routes} />
         <MapElements />
+        <MapLiveRoutes/>
         <MapPositions
           positions={filteredPositions}
           onClick={onMarkerClick}
