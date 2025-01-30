@@ -92,7 +92,7 @@ const RenderImages = ({ datacamera }) => {
       setcamera_image(novideo);
     }
   }, [datacamera]);
-  return <img src={novideo} style={{ width: '100%' }} />;
+  return <img src={camera_image} style={{ width: '100%' }} />;
 };
 
 /**

@@ -82,11 +82,11 @@ export class rosModel {
       ros.on('error', function (error) {
         console.log('ROS Error connecting to websocket server ');
         const symbols = Object.getOwnPropertySymbols(error); // Obtener todos los símbolos del objeto
-        const kMessageSymbol = symbols.find(symbol => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
+        const kMessageSymbol = symbols.find((symbol) => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
         if (kMessageSymbol) {
-          console.log("error:" + error[kMessageSymbol])
+          console.log('error:' + error[kMessageSymbol]);
         } else {
-          console.log("error:" + error)
+          console.log('error:' + error);
         }
         rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
         rosModel.disconectRos();
@@ -108,7 +108,7 @@ export class rosModel {
   static RosSubscribeCamera(uav_id, uav_type, type, msgType, callback) {
     console.log('camera' + type);
     uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
-      console.log('camera suscribe');
+      //console.log('camera suscribe');
       positionsController.updateCamera(callback({ msg, deviceId: uav_id, uav_type, type, msgType }));
     });
   }
@@ -265,7 +265,7 @@ export class rosModel {
       });
     });
   }
-  static getTopics2() { }
+  static getTopics2() {}
 
   /*
    / Create Ros services that UAV can consume for 
