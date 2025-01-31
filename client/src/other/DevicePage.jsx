@@ -15,6 +15,7 @@ import {
   TableBody,
   BottomNavigation,
   BottomNavigationAction,
+  Button,
 } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -22,6 +23,10 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import PublishIcon from '@mui/icons-material/Publish';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import HomeIcon from '@mui/icons-material/Home';
+import StopCircleIcon from '@mui/icons-material/StopCircle';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../components/PositionValue';
@@ -159,11 +164,12 @@ const DevicePage = () => {
         </Toolbar>
       </AppBar>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, justifyContent: 'space-between', display: 'flex', flexDirection: 'column' }}>
           <div
             style={{
               height: '50vh',
             }}
+            className={classes.content}
           >
             <MainMap
               filteredPositions={filteredPositions}
@@ -173,8 +179,22 @@ const DevicePage = () => {
               filteredMissiondeviceid={id}
             />
           </div>
-          <div>
+          <div style={{ padding: '15px', margin: '5px' }}>
             {Object.keys(thisDevice).length > 0 && <RenderCamera device={thisDevice} myhostname={myhostname} />}
+          </div>
+          <div style={{ padding: '15px', marginTop: 'auto' }}>
+            <Paper>
+              <BottomNavigation showLabels>
+                <BottomNavigationAction label="Stop Mission" icon={<StopCircleIcon />} />
+                <BottomNavigationAction label="Resume Mission" icon={<ArrowBackIcon />} />
+                <BottomNavigationAction
+                  label="Go to Home"
+                  icon={<HomeIcon />}
+                  onClick={() => setOpenSendCommand(true)}
+                />
+                <BottomNavigationAction label="Take Photo" icon={<CameraAltIcon />} />
+              </BottomNavigation>
+            </Paper>
           </div>
         </div>
         <div
