@@ -1,0 +1,2 @@
+docker build -t muavgcs:processImage .
+docker run --rm -it -v /home/grvc/work/px4/uav_media/mission/DJI_20240305122546_0001_THRM.jpg:/input.jpg -v /home/grvc/work/px4/uav_media/mission/salida.jpg:/output.jpg muavgcs:processImage -i /input.jpg -o /output.jpg

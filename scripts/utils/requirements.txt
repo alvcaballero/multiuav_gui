@@ -1,0 +1,7 @@
+opencv-python-headless
+numpy
+Pillow
+piexif
+PyExifTool
+requests
+git+https://github.com/detecttechnologies/thermal_base.git@main

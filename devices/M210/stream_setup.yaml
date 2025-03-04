@@ -1,0 +1,10 @@
+# Set up your streams to rtsp here.
+port: "8554"
+streams: # Cannot rename - must leave this as is.
+  stream-xt2:
+    type: topic
+    source: /uav_2/dji_osdk_ros/main_camera_images
+    mountpoint: /main
+    caps: video/x-raw,framerate=10/1,width=608,height=448
+    bitrate: 500
+
