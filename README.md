@@ -95,6 +95,12 @@ cd ..
 catkin_make
 
 ```
+if use wsl  you need maping the ports [like](https://learn.microsoft.com/en-us/windows/wsl/networking)
+```
+netsh interface portproxy add v4tov4 listenport=4000 listenaddress=0.0.0.0 connectport=4000 connectaddress=(wsl ho
+stname -I)
+ netsh interface portproxy add v4tov4 listenport=4000 listenaddress=0.0.0.0 connectport=8 connectaddress=172.21.74.249
+```
 
 ### Run locally
 

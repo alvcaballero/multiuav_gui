@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "server": "node ./server.js",
-    "testirec": "node ./test/API-IREC.js",
+    "test": "node --test test/*.js",
     "build": "tsc --module 'commonjs'  --target 'es5' --outDir dist src/schema_main.ts "
   },
   "dependencies": {

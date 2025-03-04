@@ -31,16 +31,9 @@ import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
 import { rosModel } from './models/ros.js'; // ros model
 
 //model
-
-let DevicesModel = db
-  ? await import('./models/devices-sql.js').then((module) => module.DevicesModel)
-  : await import('./models/devices.js').then((module) => module.DevicesModel);
-let MissionModel = db
-  ? await import('./models/mission-sql.js').then((module) => module.missionModel)
-  : await import('./models/mission.js').then((module) => module.missionModel);
-let filesModel = db
-  ? await import('./models/files-sql.js').then((module) => module.filesModel)
-  : await import('./models/files.js').then((module) => module.filesModel);
+import { DevicesModel } from './models/devices.js';
+import { MissionModel } from './models/mission.js';
+import { FilesModel } from './models/files.js';
 
 // setting APP
 const app = express();
@@ -64,7 +57,7 @@ app.use('/api/commands', commandsRouter);
 //app.use('/api/ros', rosRouter);
 app.use('/api/map', mapRouter);
 app.use('/api/missions', createMissionRouter({ model: MissionModel }));
-app.use('/api/files', createFilesRouter({ model: filesModel }));
+app.use('/api/files', createFilesRouter({ model: FilesModel }));
 app.use('/api/planning', planningRouter);
 app.use('/api/ExtApp', ExtAppRouter);
 app.use('/api/server', serverRouter);
