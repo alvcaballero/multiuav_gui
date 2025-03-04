@@ -1,4 +1,4 @@
-import { DevicesController } from '../controllers/devices.js';
+import { devicesController } from '../controllers/devices.js';
 import { eventsController } from '../controllers/events.js';
 import { getDatetime } from '../common/utils.js';
 import { rosController } from '../controllers/ros.js';
@@ -8,7 +8,7 @@ import { positionsController } from '../controllers/positions.js';
 import { set } from 'zod';
 
 async function decodeMissionMsg({ uav_id, route }) {
-  let device = await DevicesController.getDevice(uav_id);
+  let device = await devicesController.getDevice(uav_id);
   console.log(device);
   let response = null;
   let uavname = device.name;
@@ -124,7 +124,7 @@ export class commandsModel {
     if (deviceId >= 0) {
       response = {
         state: 'error',
-        msg: 'Command to:' + DevicesController.getDevice(deviceId).name + ' no exist',
+        msg: 'Command to:' + devicesController.getDevice(deviceId).name + ' no exist',
       };
     }
 
@@ -205,7 +205,7 @@ export class commandsModel {
     console.log('standar comand ' + uav_id);
     let response = {};
     //ros
-    let myDevice = await DevicesController.getDevice(uav_id);
+    let myDevice = await devicesController.getDevice(uav_id);
     console.log(myDevice);
     if (myDevice.protocol == 'ros') {
       console.log('ros device ros');
@@ -247,7 +247,7 @@ export class commandsModel {
     }
     for (const route of routes) {
       console.log('load route ' + route.uav);
-      let myDevice = await DevicesController.getByName(route.uav);
+      let myDevice = await devicesController.getByName(route.uav);
       console.log(myDevice);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
         console.log('load mission to ' + myDevice.id);
@@ -275,7 +275,7 @@ export class commandsModel {
   }
 
   static async commandMissionDevice(deviceId, callback = (x) => x) {
-    let alldevices = await DevicesController.getAllDevices();
+    let alldevices = await devicesController.getAllDevices();
     let response = { state: 'error', msg: 'Mission canceled' };
     for (const device of alldevices) {
       let finding = false;

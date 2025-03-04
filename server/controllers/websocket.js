@@ -1,10 +1,10 @@
-import { DevicesController } from './devices.js';
+import { devicesController } from './devices.js';
 import { rosController } from './ros.js';
 import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
 export class websocketController {
   static async init() {
-    const devices = await DevicesController.getAllDevices();
+    const devices = await devicesController.getAllDevices();
     const positions = await positionsController.getLastPositions();
     const server = await rosController.getServerStatus();
     const planning = planningController.getDefaultPlanning();
@@ -39,7 +39,7 @@ export class websocketController {
   }
 
   static async updateserver() {
-    const devices = await DevicesController.getAllDevices();
+    const devices = await devicesController.getAllDevices();
     const server = await rosController.getServerStatus();
 
     let response = JSON.stringify({

@@ -1,5 +1,5 @@
 import { map } from 'zod';
-import { DevicesController } from '../controllers/devices.js';
+import { devicesController } from '../controllers/devices.js';
 import { eventsController } from '../controllers/events.js';
 const positions = {};
 const history = {};
@@ -39,7 +39,7 @@ export class positionsModel {
       // console.log('payload null');
       return null;
     }
-    DevicesController.updateDeviceTime(payload.deviceId);
+    devicesController.updateDeviceTime(payload.deviceId);
 
     if (positions[payload.deviceId] === undefined) {
       positions[payload.deviceId] = {

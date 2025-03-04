@@ -5,7 +5,7 @@ import { commandsController } from '../controllers/commands.js';
 //import { missionModel } from './mission.js';
 import { dateString, addTime, GetLocalTime, sleep } from '../common/utils.js';
 import { missionSMModel } from './missionSM.js';
-import { MissionController } from '../controllers/mission.js';
+import { missionController } from '../controllers/mission.js';
 
 const LoadMissionSM = async (context) => {
   console.log('service load mission');

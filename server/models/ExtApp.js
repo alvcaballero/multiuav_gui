@@ -1,4 +1,4 @@
-import { DevicesController } from '../controllers/devices.js';
+import { devicesController } from '../controllers/devices.js';
 import { extApp, extAppUrl, extAppUser, extAppPWD } from '../config/config.js';
 
 const accessToken = { token: null, date: '' };
@@ -56,7 +56,7 @@ export class ExtApp {
         altitude: Number(wp.pos[2]).toFixed(),
       }));
 
-      let myDevice = await DevicesController.getByName(route.uav);
+      let myDevice = await devicesController.getByName(route.uav);
       myMission.push({ deviceId: myDevice.id, wp: myWP });
     }
 

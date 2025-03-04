@@ -1,6 +1,6 @@
 import * as fb from './dist/schema_main.cjs';
 import * as flatbuffers from 'flatbuffers'; // do not remove; needed by generated code
-import { DevicesController } from './controllers/devices.js';
+import { devicesController } from './controllers/devices.js';
 import { readYAML } from './common/utils.js';
 const devices_msg = readYAML('../config/devices/devices_msg.yaml');
 
@@ -142,7 +142,7 @@ export async function encode({ uav_id, type, attributes }) {
   console.log('encode' + uav_id);
   console.log('encode' + type);
   console.log(attributes);
-  let device = await DevicesController.getDevice(uav_id);
+  let device = await devicesController.getDevice(uav_id);
   let uavName = device.name;
   let uavCategory = device.category;
 

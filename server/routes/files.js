@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { CreateController } from '../controllers/files.js';
+import { filesController } from '../controllers/files.js';
 
-export const createFilesRouter = ({ model }) => {
+export const createFilesRouter = () => {
   const filesRouter = Router();
-  const filesController = CreateController({ model });
 
   filesRouter.get('/get', filesController.getFiles);
   filesRouter.get('/listFiles', filesController.listFiles);

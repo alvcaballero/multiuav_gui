@@ -2,10 +2,10 @@ import * as fs from 'fs';
 import { dateString, addTime, GetLocalTime, readJSON, writeJSON, readYAML } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
-import { DevicesController } from '../controllers/devices.js';
+import { devicesController } from '../controllers/devices.js';
 import { filesPath, filesData } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
-import { MissionController } from '../controllers/mission.js';
+import { missionController } from '../controllers/mission.js';
 import sequelize from '../common/sequelize.js';
 
 /* files:
@@ -47,7 +47,7 @@ export class filesModel {
       return await sequelize.models.File.findAll({ where: { routeId: routeId } });
     }
     if (id) {
-      return sequelize.models.File.findOne({ where: { id: id } })
+      return sequelize.models.File.findOne({ where: { id: id } });
     }
     return await sequelize.models.File.findAll();
   }
@@ -183,7 +183,7 @@ export class filesModel {
   */
 
   static async showFiles({ uavId, missionId, initTime, index = 0 }) {
-    let mydevice = await DevicesController.getAccess(uavId);
+    let mydevice = await devicesController.getAccess(uavId);
     let myconfig = filesSetup.files.default;
     let listFiles = [];
     console.log(`show files api call ${uavId} ${missionId} ${initTime} ${index}`);
@@ -230,7 +230,7 @@ export class filesModel {
   static async updateFiles(uavId, missionId, routeId, initTime, index = 0) {
     console.log(`update files api call ${uavId} ${routeId} ${missionId} ${initTime} ${index}`);
 
-    let mydevice = await DevicesController.getAccess(uavId);
+    let mydevice = await devicesController.getAccess(uavId);
     let myconfig = filesSetup.files.default;
     let listFiles = [];
 
@@ -239,8 +239,8 @@ export class filesModel {
       return [];
     }
 
-    const deviceFile = JSON.parse(JSON.stringify(mydevice.files[index]))
-    console.log(deviceFile)
+    const deviceFile = JSON.parse(JSON.stringify(mydevice.files[index]));
+    console.log(deviceFile);
 
     if (deviceFile.hasOwnProperty('type')) {
       myconfig = filesSetup.files.hasOwnProperty(deviceFile.type)
@@ -303,7 +303,7 @@ export class filesModel {
   }
 
   static async downloadFiles2(client, url, fileId, remove = false) {
-    let myfile = await this.getFiles({ id: fileId })
+    let myfile = await this.getFiles({ id: fileId });
 
     let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.path}${myfile.name}`);
     if (response.status) {
@@ -315,7 +315,7 @@ export class filesModel {
     } else {
       await this.editFile({ id: fileId, status: FILE_STATUS.FAIL });
     }
-    const checkUrl = await this.getFiles({ id: downloadQueue[0] })
+    const checkUrl = await this.getFiles({ id: downloadQueue[0] });
     if (downloadQueue.length > 0 && checkUrl.source.url === url) {
       await this.downloadFiles2(client, url, downloadQueue.shift(), remove);
     }
@@ -327,9 +327,9 @@ export class filesModel {
       return;
     }
     let myFileId = downloadQueue.shift();
-    let myfile = await this.getFiles({ id: myFileId })
+    let myfile = await this.getFiles({ id: myFileId });
 
-    let mydevice = await DevicesController.getAccess(myfile.deviceId);
+    let mydevice = await devicesController.getAccess(myfile.deviceId);
     let myconfig = filesSetup.files.default;
 
     if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
@@ -374,7 +374,7 @@ export class filesModel {
       return;
     }
     let myFileId = processQueue.shift();
-    let myfile = await this.getFiles({ id: myFileId })
+    let myfile = await this.getFiles({ id: myFileId });
     if (myfile.name.includes('THRM') && !myfile.name.includes('process')) {
       let response = await ProcessThermalImage(
         `${filesPath}${myfile.path}${myfile.name}`,

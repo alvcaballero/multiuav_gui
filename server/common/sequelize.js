@@ -1,13 +1,9 @@
 import Sequelize, { Op } from 'sequelize';
 
-import { dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
+import { db, dbType, dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
 import { setupModels } from '../database/index.js';
 
-const USER = encodeURIComponent(dbUser);
-const PASSWORD = encodeURIComponent(dbPassword);
-const URI = `postgres://${USER}:${PASSWORD}@${dbHost}:${dbPort}/${dbName}`;
-console.log('my uri');
-console.log(URI);
+console.log('use db is ' + db);
 
 let sequelizeConfig = {
   dialect: 'sqlite',
@@ -15,15 +11,36 @@ let sequelizeConfig = {
   logging: false,
 };
 
-// sequelizeConfig = {
-//   dialect: 'postgres',
-//   database: dbName,
-//   user: dbUser,
-//   password: dbPassword,
-//   host: dbHost,
-//   port: dbPort,
-//   logging: false,
-// };
+if (db === 'true') {
+  console.log('use db');
+
+  if (dbType === 'postgres') {
+    console.log('use postgres');
+
+    sequelizeConfig = {
+      dialect: 'postgres',
+      database: dbName,
+      user: dbUser,
+      password: dbPassword,
+      host: dbHost,
+      port: dbPort,
+      logging: false,
+    };
+  }
+  if (dbType === 'mysql') {
+    console.log('use mysql');
+
+    sequelizeConfig = {
+      dialect: 'mysql',
+      database: dbName,
+      user: dbUser,
+      password: dbPassword,
+      host: dbHost,
+      port: dbPort,
+      logging: false,
+    };
+  }
+}
 
 const sequelize = new Sequelize(sequelizeConfig);
 

@@ -1,53 +1,50 @@
-var FilesController;
+import { filesModel } from '../models/files.js';
 class filesController {
-  constructor({ model }) {
-    this.filesModel = model;
-  }
-  getFiles = async (req, res) => {
+  static getFiles = async (req, res) => {
     console.log('controller get files');
-    let response = await this.filesModel.getFiles(req.query);
+    let response = await filesModel.getFiles(req.query);
     res.json(response);
   };
-  getFilesInfo = async (request) => {
+  static getFilesInfo = async (request) => {
     console.log('controller get files');
-    let response = await this.filesModel.getFiles(request);
+    let response = await filesModel.getFiles(request);
     return response;
   };
-  listFiles = async (req, res) => {
+  static listFiles = async (req, res) => {
     console.log('controller get list files');
-    let response = await this.filesModel.readGCSFiles();
+    let response = await filesModel.readGCSFiles();
     res.json(response);
   };
 
-  MetadataTempImage = async (req, res) => {
-    let response = await this.filesModel.MetadataTempImage(req.body.src);
+  static MetadataTempImage = async (req, res) => {
+    let response = await filesModel.MetadataTempImage(req.body.src);
     res.json(response);
   };
-  ProcessThermalImages = async (req, res) => {
-    let response = await this.filesModel.ProcessThermalImages(req.body.src);
+  static ProcessThermalImages = async (req, res) => {
+    let response = await filesModel.ProcessThermalImages(req.body.src);
     res.json(response);
   };
-  updateFiles = async (uavId, missionId, routeId, initTime) => {
-    return await this.filesModel.updateFiles(uavId, missionId, routeId, initTime);
+  static updateFiles = async (uavId, missionId, routeId, initTime) => {
+    return await filesModel.updateFiles(uavId, missionId, routeId, initTime);
   };
-  updateFilesAPI = async (req, res) => {
+  static updateFilesAPI = async (req, res) => {
     console.log(' update files');
     const { uavId, missionId, routeId, initTime } = req.params;
-    let response = await this.filesModel.updateFiles(uavId, missionId, routeId, initTime);
+    let response = await filesModel.updateFiles(uavId, missionId, routeId, initTime);
     res.json(response);
   };
-  showFiles = async (req, res) => {
+  static showFiles = async (req, res) => {
     console.log('show files');
-    let response = await this.filesModel.showFiles(req.params);
+    let response = await filesModel.showFiles(req.params);
     res.json(response);
   };
 
-  donwload = async (req, res) => {
+  static donwload = async (req, res) => {
     //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
     //https://medium.com/@imajeet5/how-to-serve-files-using-node-js-d99de4653a3
     console.log('controller donwload file' + req.params.filename);
     try {
-      let filePath = await this.filesModel.checkFileRoute(req.params.filename);
+      let filePath = await filesModel.checkFileRoute(req.params.filename);
       if (filePath) {
         res.download(filePath, function (err) {
           if (err) {
@@ -78,8 +75,4 @@ class filesController {
   };
 }
 
-function CreateController({ model }) {
-  FilesController = new filesController({ model });
-  return FilesController;
-}
-export { FilesController, filesController, CreateController };
+export { filesController };

@@ -38,7 +38,7 @@ import SelectField from '../common/components/SelectField';
 import BaseList from '../components/BaseList';
 import BaseSettings from '../components/BaseSettings';
 import { RosControl } from '../components/RosControl';
-import { MissionController } from '../components/MissionController';
+import { missionController } from '../components/MissionController';
 import MissionElevation from '../components/MissionElevation';
 import MapMarkersCreate from '../Mapview/draw/MapMarkersCreate';
 import MapScale from '../Mapview/MapScale';

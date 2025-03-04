@@ -1,7 +1,7 @@
 import ROSLIB from 'roslib';
 import { readYAML, getDatetime } from '../common/utils.js';
-import { DevicesController } from '../controllers/devices.js';
-import { MissionController } from '../controllers/mission.js';
+import { devicesController } from '../controllers/devices.js';
+import { missionController } from '../controllers/mission.js';
 import { positionsController } from '../controllers/positions.js';
 import { decodeRosMsg } from '../models/rosDecode.js';
 import { encodeRosSrv } from '../models/rosEncode.js';
@@ -45,7 +45,7 @@ export class rosModel {
   }
 
   static async connectAllUAV() {
-    const devices = await DevicesController.getAllDevices();
+    const devices = await devicesController.getAllDevices();
     console.log('begin to conncet all devices ------------');
     for (let device of Object.values(devices)) {
       if (device.protocol == 'ros') {
@@ -205,7 +205,7 @@ export class rosModel {
     if (rosState.state != 'connect') {
       return { state: 'error', msg: 'ROS no conectado' };
     }
-    let device = await DevicesController.getDevice(uav_id);
+    let device = await devicesController.getDevice(uav_id);
     const { name, category } = device;
     console.log(device);
 

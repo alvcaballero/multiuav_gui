@@ -3,7 +3,7 @@
 import * as fb from './dist/schema_main.cjs';
 import * as flatbuffers from 'flatbuffers'; // do not remove; needed by generated code
 import WebSocket, { WebSocketServer } from 'ws';
-import { DevicesController } from './controllers/devices.js';
+import { devicesController } from './controllers/devices.js';
 import { eventsController } from './controllers/events.js';
 import { positionsController } from './controllers/positions.js';
 import { parse } from 'url';
@@ -49,7 +49,7 @@ export function ServiceResponse({ uav_id, name, type, response }) {
 export async function sendCommandToClient({ uav_id, type, attributes }) {
   if (!FbEnable) return { state: 'error', msg: 'flatbuffer connection is disabled' };
 
-  let nameClient = await DevicesController.getDevice(uav_id);
+  let nameClient = await devicesController.getDevice(uav_id);
   console.log('send command to ' + nameClient.name + ' type:' + type);
   let msg = await encode({ uav_id, type, attributes });
   if (msg === null) return { state: 'error', msg: 'command not found to websocket' };
@@ -107,7 +107,7 @@ export class WebsocketDevices {
           console.log('name space of device:' + name);
         }
         console.log('received message device %s on topic: %s - %s', deviceName, metadata.topic(), metadata.type());
-        let device = await DevicesController.getByName(deviceName);
+        let device = await devicesController.getByName(deviceName);
         if (!device) {
           console.log('device not found');
           return;

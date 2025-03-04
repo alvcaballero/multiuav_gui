@@ -1,13 +1,9 @@
-//https://www.youtube.com/watch?v=gnM3Ld6_upE-- REVISAR
-//https://medium.com/agora-io/how-does-webrtc-work-996748603141
-import { port, db, RosEnable, FbEnable } from './config/config.js';
+import { port, RosEnable, FbEnable } from './config/config.js';
 import express, { json } from 'express';
 import logger from 'morgan';
 import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
 import { checkFile } from './common/utils.js';
-
-console.log('use db is ' + db);
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
@@ -23,17 +19,12 @@ import { createFilesRouter } from './routes/files.js';
 import { ExtAppRouter } from './routes/ExtApp.js';
 import { serverRouter } from './routes/server.js';
 import { planningRouter } from './routes/planning.js';
-
-// comunication with devices
-console.log(` !!!!=== RosEnable is ${RosEnable} FbEnable is ${FbEnable}`);
-
+// comunications with devices
 import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
 import { rosModel } from './models/ros.js'; // ros model
 
-//model
-import { DevicesModel } from './models/devices.js';
-import { MissionModel } from './models/mission.js';
-import { FilesModel } from './models/files.js';
+// comunication with devices
+console.log(` !!!!=== RosEnable is ${RosEnable} FbEnable is ${FbEnable}`);
 
 // setting APP
 const app = express();
@@ -49,18 +40,18 @@ if (wedAppPath === null) {
 console.log('wedAppPath ' + wedAppPath);
 
 app.use(express.static(wedAppPath));
-app.use('/api/devices', createDevicesRouter({ model: DevicesModel }));
+app.use('/api/devices', createDevicesRouter());
 app.use('/api/category', categoryRouter);
 app.use('/api/positions', positionsRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/commands', commandsRouter);
-//app.use('/api/ros', rosRouter);
 app.use('/api/map', mapRouter);
-app.use('/api/missions', createMissionRouter({ model: MissionModel }));
-app.use('/api/files', createFilesRouter({ model: FilesModel }));
+app.use('/api/missions', createMissionRouter());
+app.use('/api/files', createFilesRouter());
 app.use('/api/planning', planningRouter);
 app.use('/api/ExtApp', ExtAppRouter);
 app.use('/api/server', serverRouter);
+//app.use('/api/ros', rosRouter);
 
 const server = createServer(app);
 const ws = new WebsocketManager(server, '/api/socket');

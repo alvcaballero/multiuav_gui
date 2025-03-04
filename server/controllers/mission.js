@@ -1,19 +1,16 @@
-var MissionController;
+import { missionModel } from '../models/mission.js';
 class missionController {
-  constructor({ model }) {
-    this.missionModel = model;
-  }
-  getMission = async (req, res) => {
+  static getMission = async (req, res) => {
     console.log('get missions');
-    const response = await this.missionModel.getMissionValue(req.query.id);
+    const response = await missionModel.getMissionValue(req.query.id);
     res.json(response);
   };
-  getRoutes = async (req, res) => {
+  static getRoutes = async (req, res) => {
     console.log('get routes');
-    const response = await this.missionModel.getRoutes(req.query);
+    const response = await missionModel.getRoutes(req.query);
     res.json(Object.values(response));
   };
-  sendTask = async (req, res) => {
+  static sendTask = async (req, res) => {
     console.log('======== send task ========');
     console.log(req.body);
     let id = req.body.id || req.body.mission_id;
@@ -38,47 +35,43 @@ class missionController {
       }
     }
     console.log('id: ', id);
-    let response = await this.missionModel.sendTask({ id, name, objetivo, locations, meteo });
+    let response = await missionModel.sendTask({ id, name, objetivo, locations, meteo });
     res.status(200).json('all ok');
   };
 
-  setMission = async (req, res) => {
-    let response = await this.missionModel.setMission(req.body);
+  static setMission = async (req, res) => {
+    let response = await missionModel.setMission(req.body);
     res.json(response);
   };
 
-  initMission = (mission_id, data) => {
-    this.missionModel.initMission(mission_id, data);
+  static initMission = (mission_id, data) => {
+    missionModel.initMission(mission_id, data);
   };
-  finishMission = (missionId, deviceId) => {
-    return this.missionModel.UAVFinish(missionId, deviceId);
+  static finishMission = (missionId, deviceId) => {
+    return missionModel.UAVFinish(missionId, deviceId);
   };
-  deviceFinishMission = ({ name, id }) => {
-    return this.missionModel.deviceFinishMission({ name, id });
+  static deviceFinishMission = ({ name, id }) => {
+    return missionModel.deviceFinishMission({ name, id });
   };
-  deviceFinishSyncFiles = ({ name, id }) => {
-    return this.missionModel.deviceFinishSyncFiles({ name, id });
+  static deviceFinishSyncFiles = ({ name, id }) => {
+    return missionModel.deviceFinishSyncFiles({ name, id });
   };
-  endRouteUAV = (missionId, uavId) => {
-    return this.missionModel.UAVEnd(missionId, uavId);
+  static endRouteUAV = (missionId, uavId) => {
+    return missionModel.UAVEnd(missionId, uavId);
   };
-  finishMissionProcessFiles = (missionId, deviceId, results) => {
-    return this.missionModel.FinishProcessFiles((missionId, deviceId, results));
+  static finishMissionProcessFiles = (missionId, deviceId, results) => {
+    return missionModel.FinishProcessFiles((missionId, deviceId, results));
   };
-  getMissionRoute = async (missionId) => {
-    return await this.missionModel.getMissionValue(missionId);
+  static getMissionRoute = async (missionId) => {
+    return await missionModel.getMissionValue(missionId);
   };
-  updateFiles = (missionId, deviceId) => {
-    return this.missionModel.updateFiles(missionId, deviceId);
+  static updateFiles = (missionId, deviceId) => {
+    return missionModel.updateFiles(missionId, deviceId);
   };
-  updateMission = ({ device, mission, state }) => {
-    this.missionModel.updateMission({ device, mission, state });
+  static updateMission = ({ device, mission, state }) => {
+    missionModel.updateMission({ device, mission, state });
     return true;
   };
 }
 
-function CreateController({ model }) {
-  MissionController = new missionController({ model });
-  return MissionController;
-}
-export { MissionController, missionController, CreateController };
+export { missionController };

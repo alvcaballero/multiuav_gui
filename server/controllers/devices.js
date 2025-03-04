@@ -1,43 +1,40 @@
 import { validateDevice, validatePartialDevice } from '../schemas/devices.js';
+import { DevicesModel } from '../models/devices.js';
 
-var DevicesController;
 class devicesController {
-  constructor({ model }) {
-    this.DevicesModel = model;
-  }
-  getAll = async (req, res) => {
-    const devices = await this.DevicesModel.getAll(req.query.id);
+  static getAll = async (req, res) => {
+    const devices = await DevicesModel.getAll(req.query.id);
     res.json(Object.values(devices));
   };
-  getAllDevices = async () => {
+  static getAllDevices = async () => {
     //console.log('get all devices controller');
-    const devices = await this.DevicesModel.getAll();
+    const devices = await DevicesModel.getAll();
     return devices;
   };
-  getDevice = async (id) => {
-    const devices = await this.DevicesModel.getAll(id);
+  static getDevice = async (id) => {
+    const devices = await DevicesModel.getAll(id);
     return Array.isArray(devices) ? devices.at() : devices;
   };
-  getByName = async (name) => {
-    const device = await this.DevicesModel.getByName(name);
+  static getByName = async (name) => {
+    const device = await DevicesModel.getByName(name);
     return device;
   };
-  updateDeviceTime = (id) => {
-    this.DevicesModel.updateDeviceTime(id);
+  static updateDeviceTime = (id) => {
+    DevicesModel.updateDeviceTime(id);
   };
 
-  getAccess = async (id) => {
-    return await this.DevicesModel.getAccess(id);
+  static getAccess = async (id) => {
+    return await DevicesModel.getAccess(id);
   };
 
-  getById = async (req, res) => {
+  static getById = async (req, res) => {
     const { id } = req.params;
-    const device = await this.DevicesModel.getById({ id });
+    const device = await DevicesModel.getById({ id });
     if (device) return res.json(device);
     res.status(404).json({ message: 'device not found' });
   };
 
-  create = async (req, res) => {
+  static create = async (req, res) => {
     console.log('create new device');
     console.log(req.body);
     const result = validateDevice(req.body);
@@ -47,17 +44,17 @@ class devicesController {
       res.status(400).json({ error: JSON.parse(result.error.message) });
     }
 
-    const newDevice = await this.DevicesModel.create(result.data);
+    const newDevice = await DevicesModel.create(result.data);
 
     res.status(201).json(newDevice);
   };
 
-  delete = async (req, res) => {
+  static delete = async (req, res) => {
     const { id } = req.params;
     console.log('delete device ' + id);
     //console.log(req.params);
 
-    const result = await this.DevicesModel.delete({ id });
+    const result = await DevicesModel.delete({ id });
 
     if (result === false) {
       res.status(404).json({ message: 'device not found' });
@@ -66,7 +63,7 @@ class devicesController {
     res.json({ message: 'device deleted' });
   };
 
-  update = async (req, res) => {
+  static update = async (req, res) => {
     const result = validatePartialDevice(req.body);
 
     if (!result.success) {
@@ -77,16 +74,10 @@ class devicesController {
     result.data.id = id;
     console.log(result.data);
 
-    const updatedDevice = await this.DevicesModel.editDevice(result.data);
+    const updatedDevice = await DevicesModel.editDevice(result.data);
 
     res.json(updatedDevice);
   };
 }
 
-function CreateController({ model }) {
-  DevicesController = new devicesController({ model });
-  return DevicesController;
-}
-
-export { DevicesController, devicesController, CreateController };
-//export const DevicesController = new devicesController()
+export { devicesController };

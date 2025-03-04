@@ -11,7 +11,7 @@ import MapPositions from '../Mapview/MapPositions';
 import MapMarkers from '../Mapview/MapMarkers';
 
 import { RosControl } from '../components/RosControl';
-import { MissionController } from '../components/MissionController';
+import { missionController } from '../components/MissionController';
 import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';

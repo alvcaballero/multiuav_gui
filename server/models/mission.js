@@ -1,10 +1,10 @@
-import { DevicesController } from '../controllers/devices.js';
+import { devicesController } from '../controllers/devices.js';
 import { positionsController } from '../controllers/positions.js';
 import { WebsocketManager } from '../WebsocketManager.js';
 import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
-import { FilesController } from '../controllers/files.js';
+import { filesController } from '../controllers/files.js';
 import { eventsController } from '../controllers/events.js';
 import { readJSON, readYAML, writeJSON, sleep } from '../common/utils.js';
 import { missionsData, routesData } from '../config/config.js';
@@ -41,7 +41,6 @@ export const ROUTE_STATUS = Object.freeze({
   CANCELLED: 'cancelled',
   ERROR: 'error',
 });
-
 
 export class missionModel {
   static async getMissionValue(id) {
@@ -88,9 +87,8 @@ export class missionModel {
       endTime,
       task,
       mission,
-      results
+      results,
     });
-
   }
 
   static async createRoute(payload) {
@@ -115,10 +113,10 @@ export class missionModel {
   }
 
   static async editRoute({ id, deviceId, missionId, status, initTime, endTime, task, mission, results }) {
-
-    let myRoute = null
+    let myRoute = null;
     if (id) myRoute = await sequelize.models.Route.findOne({ where: { id: id } });
-    if (deviceId && missionId) myRoute = await sequelize.models.Route.findOne({ where: { deviceId: deviceId, missionId: missionId } });
+    if (deviceId && missionId)
+      myRoute = await sequelize.models.Route.findOne({ where: { deviceId: deviceId, missionId: missionId } });
     if (!myRoute) {
       return null;
     }
@@ -135,7 +133,7 @@ export class missionModel {
   }
 
   static async validateMission(missionId) {
-    const myRoute = await this.getRoutes({ missionId: missionId })
+    const myRoute = await this.getRoutes({ missionId: missionId });
     const allFinish = myRoute.every((route) => route.status == ROUTE_STATUS.COMPLETED);
 
     if (allFinish) {
@@ -159,7 +157,7 @@ export class missionModel {
       console.log('bases is null');
       return null;
     }
-    let devices = await DevicesController.getAllDevices();
+    let devices = await devicesController.getAllDevices();
     // get setting of the task
     let param = planningController.getConfigParam(objetivo);
     let auxconfig = {};
@@ -230,7 +228,6 @@ export class missionModel {
     return myTask;
   }
 
-
   static async sendTask({ id, name, objetivo, locations, meteo }) {
     console.log('command-sendtask');
 
@@ -278,11 +275,11 @@ export class missionModel {
     }
     const listUAV = [];
     for (const route of mission.route) {
-      let findDevice = await DevicesController.getByName(route.uav);
+      let findDevice = await devicesController.getByName(route.uav);
       console.log(findDevice.dataValues);
       listUAV.push(findDevice.id);
     }
-    //const listUAV = mission.route.map((route) => DevicesController.getByName(route.uav).id);
+    //const listUAV = mission.route.map((route) => devicesController.getByName(route.uav).id);
     await this.editMission({
       id: missionId,
       uav: listUAV,
@@ -313,9 +310,8 @@ export class missionModel {
     return { response: mission, status: 'OK' };
   }
 
-
   static async deviceFinishSyncFiles({ name, id }) {
-    let mydevice = await DevicesController.getByName(name);
+    let mydevice = await devicesController.getByName(name);
     if (mydevice == null) {
       console.log('mydevice name ' + name + ' not found');
       return false;
@@ -335,7 +331,7 @@ export class missionModel {
 
   static async deviceFinishMission({ name, id }) {
     console.log(name);
-    let mydevice = await DevicesController.getByName(name);
+    let mydevice = await devicesController.getByName(name);
     if (mydevice == null) {
       console.log('mydevice name ' + name + ' not found');
       return false;
@@ -352,7 +348,12 @@ export class missionModel {
 
   static async UAVFinish(missionId, uavId) {
     let resultCode = 0;
-    await this.editRoute({ missionId: missionId, deviceId: uavId, status: ROUTE_STATUS.COMPLETED, endTime: new Date() });
+    await this.editRoute({
+      missionId: missionId,
+      deviceId: uavId,
+      status: ROUTE_STATUS.COMPLETED,
+      endTime: new Date(),
+    });
 
     eventsController.addEvent({
       type: 'info',
@@ -368,7 +369,7 @@ export class missionModel {
     // myRoute = 1;
     const myRoute = await this.getRoutes({ deviceId: uavId, missionId: missionId });
     const myMission = await this.getMissionValue(missionId);
-    const results = await FilesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
+    const results = await filesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
     await sleep(5000);
     //ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
     return true;
@@ -378,7 +379,7 @@ export class missionModel {
     console.log('===== UAVEnd whole mission =====');
     const myRoute = await this.getRoutes({ missionId, uavId }).id;
     const routeId = myRoute.id;
-    const listfiles = await FilesController.getFilesInfo({ routeId });
+    const listfiles = await filesController.getFilesInfo({ routeId });
     console.log('listfiles');
     console.log(listfiles);
     const results = {};
@@ -410,12 +411,11 @@ export class missionModel {
     return true;
   }
 
-
   static async FinishProcessFiles(missionId) {
     console.log('===== FinishProcessFiles whole mission =====');
     let code = 0;
     let result = { files: [], data: {} };
-    let myfiles = await FilesController.getFilesInfo({ missionId });
+    let myfiles = await filesController.getFilesInfo({ missionId });
     result.files = myfiles.map((file) => `${file.route}${file.name}`);
     console.log('mision');
     const myMission = await this.getMissionValue(missionId);
@@ -463,7 +463,6 @@ export class missionModel {
         }
         await this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR });
       }
-
     }
   }
 }

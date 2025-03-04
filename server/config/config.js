@@ -11,6 +11,7 @@ export const env = process.env.NODE_ENV || 'dev',
   LocalGlyphs = process.env.LOCAL_GLYPHS === 'true' ? true : false, // if local server have a glyphs server
   NoElevation = process.env.NO_ELEVATION === 'true' ? true : false, // if local server have a glyphs server
   db = process.env.DB === 'true' ? true : false,
+  dbType = process.env.DB_TYPE,
   dbUser = process.env.DB_USER,
   dbPassword = process.env.DB_PASSWORD,
   dbHost = process.env.DB_HOST,
