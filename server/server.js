@@ -66,11 +66,7 @@ if (FbEnable) {
   var ws2 = new WebsocketDevices(8082);
 }
 
-//
 // Start the server.
-//
 server.listen(app.get('port'), () => {
   console.log('Servidor iniciado en el puerto: ' + app.get('port'));
 });
-//
-//

@@ -17,7 +17,7 @@ RUN apt-get install -y ros-noetic-rviz
 RUN apt-get install -y ros-noetic-rosbridge-server
 
 # multimaster
-RUN apt-get install -y ros-noetic-fkie-master-sync 
+RUN apt-get install -y ros-noetic-fkie-master-sync  
 RUN apt-get install -y ros-noetic-fkie-master-discovery
 # ROS SDK DJI
 RUN apt-get install -y ros-noetic-nmea-comms
