@@ -13,13 +13,21 @@ import { Menu } from '../components/Menu';
 import palette from '../common/palette';
 
 import { RosControl } from '../components/RosControl';
-import { missionController } from '../components/MissionController';
+import { MissionController } from '../components/MissionController';
 import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
 import CameraControls from '../ThreeD/CameraControls';
 import Pose from '../ThreeD/Pose';
 import Polyhedron from '../ThreeD/Polyhedron';
+import Drone from '../ThreeD/Drone';
+
+// Crear textura del suelo
+const groundTexture = new THREE.TextureLoader().load(
+  'https://threejs.org/examples/textures/terrain/grasslight-big.jpg'
+);
+groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+groundTexture.repeat.set(25, 25);
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -175,6 +183,22 @@ const MissionPage3D = () => {
             }}
           >
             <Canvas camera={{ position: [1, 2, 3] }}>
+              {/* Suelo infinito */}
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+                <planeGeometry args={[1000, 1000]} />
+                <meshStandardMaterial 
+                  map={groundTexture}
+                  side={THREE.DoubleSide}
+                  roughness={0.8}
+                  metalness={0.2}
+                />
+              </mesh>
+
+              {/* Iluminación */}
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1} />
+
+              <Drone position={[3, 0, 0]} scale={0.5} />
               <Polyhedron position={[2, 2, 0]} polyhedron={polyhedron} />
               {React.Children.toArray(
                 routeLines.map((line, index) => (
@@ -210,7 +234,7 @@ const MissionPage3D = () => {
                 }}
               />
 
-              <OrbitControls />
+              <CameraControls />
               <axesHelper args={[5]} />
               <gridHelper />
             </Canvas>

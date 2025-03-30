@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 export const MissionContext = React.createContext();
 
-export const missionController = ({ children }) => {
+export const MissionController = ({ children }) => {
   const [changeWp, setChangeWp] = useState({ route_id: -1, wp_id: -1 });
 
   return (
