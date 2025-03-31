@@ -8,16 +8,16 @@ FROM px4io/px4-dev-ros-noetic
 # source /home/user/catkin_ws/devel/setup.bash
 
 # Install PCL & Eigen & essential libraries
-RUN apt-get update 
+RUN apt-get update
 
-RUN apt-get install -y nano 
+RUN apt-get install -y nano
 RUN apt-get install -y ros-noetic-rviz
 
 
 RUN apt-get install -y ros-noetic-rosbridge-server
 
 # multimaster
-RUN apt-get install -y ros-noetic-fkie-master-sync  
+RUN apt-get install -y ros-noetic-fkie-master-sync
 RUN apt-get install -y ros-noetic-fkie-master-discovery
 # ROS SDK DJI
 RUN apt-get install -y ros-noetic-nmea-comms
@@ -27,7 +27,7 @@ RUN apt-get install -y libsdl2-dev
 
 
 # dependencies simple VS
-RUN apt-get install -y ros-noetic-cv-bridge ros-noetic-image-transport ros-noetic-theora-image-transport 
+RUN apt-get install -y ros-noetic-cv-bridge ros-noetic-image-transport ros-noetic-theora-image-transport
 RUN apt-get install -y ros-noetic-tf2-kdl
 RUN apt-get install -y ros-noetic-geodesy
 RUN apt-get install -y ros-noetic-tf2-geometry-msgs
