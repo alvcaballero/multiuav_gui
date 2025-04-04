@@ -5,7 +5,6 @@ import makeStyles from '@mui/styles/makeStyles';
 import { Canvas } from '@react-three/fiber';
 import maplibregl from 'maplibre-gl';
 
-import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { Navbar2 } from '../components/Navbar2';
@@ -21,6 +20,7 @@ import CameraControls from '../ThreeD/CameraControls';
 import Pose from '../ThreeD/Pose';
 import Polyhedron from '../ThreeD/Polyhedron';
 import Drone from '../ThreeD/Drone';
+import NumberedSphere from '../ThreeD/NumberedSphere';
 
 // Crear textura del suelo
 const groundTexture = new THREE.TextureLoader().load(
@@ -198,8 +198,11 @@ const MissionPage3D = () => {
               <ambientLight intensity={0.5} />
               <directionalLight position={[10, 10, 5]} intensity={1} />
 
-              <Drone position={[3, 0, 0]} scale={0.5} />
+              <Drone position={[3, 1, 0]} scale={0.5} />
               <Polyhedron position={[2, 2, 0]} polyhedron={polyhedron} />
+              <NumberedSphere position={[0, 2, 0]} number={1} />
+              <NumberedSphere position={[2, 2, 0]} number={2} />
+              <NumberedSphere position={[-2, 2, 0]} number={3} />
               {React.Children.toArray(
                 routeLines.map((line, index) => (
                   <Fragment key={'line' + index}>
