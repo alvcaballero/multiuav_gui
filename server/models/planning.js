@@ -16,6 +16,8 @@ const firstplanning = {
   meteo: [],
   bases: [],
   settings: {},
+  markersbase: [],
+  elements: [],
 };
 
 if (Object.keys(initPlanning).length === 0) {
