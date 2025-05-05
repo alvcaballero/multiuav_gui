@@ -10,6 +10,7 @@ import { findFonts } from '../mapUtil';
 import { missionActions } from '../../store'; // here update device action with position of uav for update in map
 import palette from '../../common/palette';
 import { MissionContext } from '../../components/MissionController';
+import { createFeature, routesToFeature, routeTowaypoints } from '../transform/mission';
 
 class keepValue {
   constructor() {
@@ -131,37 +132,7 @@ export const MapMissionsCreate = () => {
     map.once('touchend', onUp);
   };
 
-  const createFeature = (myroute, point) => {
-    let myyaw = 0;
-    if (myroute[point.routeid]['wp'][point.id].hasOwnProperty('yaw')) {
-      myyaw = myroute[point.routeid]['wp'][point.id]['yaw'];
-    }
-    if (
-      myroute[point.routeid]['wp'][point.id].hasOwnProperty('action') &&
-      myroute[point.routeid]['wp'][point.id]['action'].hasOwnProperty('yaw')
-    ) {
-      myyaw = myroute[point.routeid]['wp'][point.id]['action'].yaw;
-    }
-    myyaw = Number(myyaw) ? myyaw : 0;
-    let mycategory = myyaw == 0 ? 'background' : 'backgroundDirection';
-    return {
-      id: point.id,
-      route_id: point.routeid,
-      name: myroute[point.routeid]['name'],
-      uav: myroute[point.routeid]['uav'],
-      latitude: myroute[point.routeid]['wp'][point.id]['pos'][0],
-      longitude: myroute[point.routeid]['wp'][point.id]['pos'][1],
-      altitud: myroute[point.routeid]['wp'][point.id]['pos'][2],
-      yaw: myroute[point.routeid]['wp'][point.id]['yaw'],
-      speed: myroute[point.routeid]['wp'][point.id]['speed'],
-      gimbal: myroute[point.routeid]['wp'][point.id]['gimbal'],
-      actions: myroute[point.routeid]['wp'][point.id]['action'],
-      attributes: myroute[point.routeid]['attributes'],
-      category: mycategory,
-      rotation: myyaw,
-      color: myroute[point.routeid]['id'],
-    };
-  };
+ 
 
   useEffect(() => {
     console.log('render');
@@ -273,40 +244,7 @@ export const MapMissionsCreate = () => {
         }
       };
     }
-    return () => {};
   }, []);
-
-  function routesToFeature(item) {
-    let waypoint_pos = Object.values(item.wp).map(function (it) {
-      return [it['pos'][1], it['pos'][0]];
-    });
-    return {
-      id: item.id,
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: waypoint_pos,
-      },
-      properties: {
-        name: item.uav, //name,
-        color: palette.colors_devices[item.id],
-      },
-    };
-  }
-  function routeTowaypoints(myroute) {
-    let waypoint = [];
-    myroute.map((rt, index_rt) => {
-      rt.wp.map((wp, index_wp) => {
-        waypoint.push({
-          longitude: wp['pos'][1],
-          latitude: wp['pos'][0],
-          id: index_wp,
-          routeid: index_rt,
-        });
-      });
-    });
-    return waypoint;
-  }
 
   useEffect(() => {
     console.log('Mapmission upload mission');
