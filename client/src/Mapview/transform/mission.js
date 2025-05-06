@@ -23,6 +23,7 @@ const createFeature = (myroute, point) => {
     const myCategory = myYaw === 0 ? 'background' : 'backgroundDirection';
     return {
       id: point.id,
+      route_id: point.routeid,
       name: myroute[point.routeid].name,
       uav: myroute[point.routeid].uav,
       latitude: myroute[point.routeid].wp[point.id].pos[0],
@@ -35,7 +36,7 @@ const createFeature = (myroute, point) => {
       attributes: myroute[point.routeid].attributes,
       category: myCategory,
       rotation: myYaw,
-      color: point.routeid,
+      color: point.routeid,//myroute[point.routeid]['id'],
     };
   };
 

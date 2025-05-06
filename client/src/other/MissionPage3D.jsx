@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 
-import * as THREE from 'three';
 
 import { Navbar2 } from '../components/Navbar2';
 import { Menu } from '../components/Menu';
@@ -14,12 +13,10 @@ import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
 
-import Pose from '../ThreeD/Pose';
-import Polyhedron from '../ThreeD/Polyhedron';
-import Drone from '../ThreeD/Drone';
 
 import MapView from '../ThreeD/MapView';
 import Mission from '../ThreeD/Mission';
+import SceneObjects from '../ThreeD/SceneObjects';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -69,11 +66,11 @@ const MissionPage3D = () => {
 
   const [filteredPositions, setFilteredPositions] = useState([]);
 
-  const polyhedron = [
-    new THREE.BoxGeometry(),
-    new THREE.SphereGeometry(0.785398),
-    new THREE.DodecahedronGeometry(0.785398),
-  ];
+  const elements = [
+    { type: "windturbine", pos: [10, 10, 0] },
+    { type: "base", pos: [0, 0, 0] }
+
+  ]
 
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
@@ -106,27 +103,9 @@ const MissionPage3D = () => {
             }}
           >
             <MapView>
-              <Drone position={[3, 1, 0]} scale={0.5} />
-              <Polyhedron position={[2, 2, 0]} polyhedron={polyhedron} />
               <Mission routes={routes} />
+              <SceneObjects elements={elements} />
 
-              <mesh rotation-y={2}>
-                <boxGeometry />
-                <meshBasicMaterial color="orange" />
-              </mesh>
-              <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[5, 5, 64, 64]}></planeGeometry>
-                <meshBasicMaterial attach="material" transparent side={THREE.DoubleSide}></meshBasicMaterial>
-              </mesh>
-              <Pose
-                x={0}
-                y={0}
-                theta={0}
-                materialProps={{
-                  color: new THREE.Color(0x3287a8),
-                  wireframe: true,
-                }}
-              />
             </MapView>
 
           </div>
