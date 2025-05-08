@@ -1,0 +1,66 @@
+.drone-visualizer-container {
+    display: flex;
+    justify-content: space-around; /* Separa las dos vistas */
+    padding: 20px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap; /* Permite que se apilen en pantallas pequeñas */
+  }
+  
+  .view-container {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 10px;
+    text-align: center;
+    flex: 1; /* Permite que cada vista ocupe espacio */
+    min-width: 300px; /* Ancho mínimo para cada vista */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .visualization-area {
+    position: relative; /* Contenedor para posicionar los sensores absolutamente */
+    width: 250px; /* Área definida para la visualización */
+    height: 250px; /* Área definida para la visualización */
+    margin: 20px auto; /* Centra el área de visualización */
+    border: 1px dashed #eee; /* Contorno visual del área de visualización */
+    display: flex;
+    justify-content: center; /* Centra el dron */
+    align-items: center; /* Centra el dron */
+  }
+  
+  /* Estilo básico para la forma del dron */
+  .drone-shape {
+    position: absolute; /* Posiciona el dron en el centro del área */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centra el dron */
+    z-index: 10; /* Asegura que el dron esté por encima de los sensores */
+  }
+  
+  /* Posicionamiento absoluto de los sensores */
+  .sensor-pos {
+    position: absolute;
+    /* Los estilos de top, left, right, bottom y transform se definen inline
+       en el componente JSX para calcular dinámicamente */
+    z-index: 5; /* Los sensores están por debajo del dron */
+    /* transform-origin: 50% 50%; /* Rotar alrededor del centro del sensor */
+     /* El transform-origin por defecto (50% 50%) funciona bien con translate */
+  }
+  
+  .sensor-values {
+    margin-top: 15px;
+    text-align: left;
+    width: 100%;
+    max-width: 200px; /* Ancho máximo para la lista de valores */
+  }
+  
+  .sensor-values p {
+    margin: 5px 0;
+    font-size: 1em;
+    color: #333;
+  }

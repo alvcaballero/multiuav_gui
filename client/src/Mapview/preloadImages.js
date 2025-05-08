@@ -18,6 +18,8 @@ import powerTowerSvg from '../resources/images/icon/PowerTower1.svg';
 import windTurbineSvg from '../resources/images/icon/windTurbine.svg';
 import solarPanelSvg from '../resources/images/icon/SolarPanel.svg';
 import RectangleSvg from '../resources/images/icon/Rectangle.svg';
+import ArrowMapSvg from '../resources/images/icon/ArrowMap.svg'
+import ArrowMapFronSvg from '../resources/images/icon/ArrowMap2.svg'
 
 import FrontDroneSvg from '../resources/images/icon/drone-svgrepo.svg';
 
@@ -47,6 +49,7 @@ export const mapIcons = {
   catec: dronePx4Svg,
   fuvex: planeSvg,
   griffin: birdSvg,
+  ArrowMap: ArrowMapSvg,
   default: planeSvg,
 };
 
@@ -64,6 +67,7 @@ export const frontIcons = {
   px4: FrontDroneSvg,
   catec: FrontDroneSvg,
   fuvex: FrontDroneSvg,
+  ArrowMap: ArrowMapFronSvg,
   default: FrontDroneSvg,
 };
 

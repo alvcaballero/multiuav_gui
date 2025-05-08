@@ -97,9 +97,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const SquareMove = ({
+const SquareMove1 = ({
   device,
-  data = [10, 15, 11, 0, 12, 20],
+  data = [10, 5, 6, 0, 12, 20],
   sensors = {
     down: [0, 15],
     front: [0, 15],
@@ -146,43 +146,54 @@ const SquareMove = ({
   };
 
   return (
-    <div style={{ flex: 1, margin: '10px' }}>
-      <div className={classes.root}>
-        <div className={classes.box_left} style={{ left: `${left}%` }}></div>
-        <div className={classes.box_right} style={{ right: `${right}%` }}></div>
-        <div className={classes.box_up} style={{ top: `${up}%` }}></div>
-        <div className={classes.box_down} style={{ bottom: `${down}%` }}></div>
+    <div style={{ display: 'flex', flex: 1 }}>
+      <div style={{ flex: 1, margin: '10px' }}>
+        <div className={classes.root}>
+          <div className={classes.box_left} style={{ left: `${left}%` }}></div>
+          <div className={classes.box_right} style={{ right: `${right}%` }}></div>
+          <div className={classes.box_up} style={{ top: `${up}%` }}></div>
+          <div className={classes.box_down} style={{ bottom: `${down}%` }}></div>
 
-        {!front_view && (
-          <>
-            {left < 50 && <div className={classes.text_left}> {`${data[2]}m`}</div>}
-            {right < 50 && <div className={classes.text_right}> {`${data[4]}m`}</div>}
-            {up < 50 && <div className={classes.text_up}> {`${data[1]}m`}</div>}
-            {down < 50 && <div className={classes.text_down}> {`${data[3]}m`}</div>}
-            <img className={classes.icon} src={mapIcons[mapIconKey('ArrowMap')]} alt='' />
-          </>
-        )}
-        {front_view && (
-          <>
-            {left < 50 && <div className={classes.text_left}> {`${data[4]}m`}</div>}
-            {right < 50 && <div className={classes.text_right}> {`${data[2]}m`}</div>}
-            {up < 50 && <div className={classes.text_up}> {`${data[5]}m`}</div>}
-            {down < 50 && <div className={classes.text_down}> {`${data[0]}m`}</div>}
-            <img className={classes.icon} src={frontIcons[mapIconKey('ArrowMap')]} alt='' />
-          </>
+          {!front_view && (
+            <>
+              {left < 50 && <div className={classes.text_left}> {`${data[2]}m`}</div>}
+              {right < 50 && <div className={classes.text_right}> {`${data[4]}m`}</div>}
+              {up < 50 && <div className={classes.text_up}> {`${data[1]}m`}</div>}
+              {down < 50 && <div className={classes.text_down}> {`${data[3]}m`}</div>}
+              <img className={classes.icon} src={mapIcons[mapIconKey('ArrowMap')]} alt='' />
+            </>
+          )}
+          {front_view && (
+            <>
+              {left < 50 && <div className={classes.text_left}> {`${data[4]}m`}</div>}
+              {right < 50 && <div className={classes.text_right}> {`${data[2]}m`}</div>}
+              {up < 50 && <div className={classes.text_up}> {`${data[5]}m`}</div>}
+              {down < 50 && <div className={classes.text_down}> {`${data[0]}m`}</div>}
+              <img className={classes.icon} src={frontIcons[mapIconKey('ArrowMap')]} alt='' />
+            </>
+          )}
+        </div>
+
+
+        {test && (
+          <div>
+            <button onClick={handleMoveLeft}>Move Left</button>
+            <button onClick={handleMoveRight}>Move Right</button>
+          </div>
         )}
       </div>
-      {!front_view && <Typography align='center'>Top view</Typography>}
-      {front_view && <Typography align='center'>Front view</Typography>}
 
-      {test && (
-        <div>
-          <button onClick={handleMoveLeft}>Move Left</button>
-          <button onClick={handleMoveRight}>Move Right</button>
+      <div style={{ flex: 1, margin: '10px' }}>
+        <div className={classes.root}>
+          <div className={classes.box_up} style={{ top: `${up}%` }}></div>
+          <div className={classes.box_down} style={{ bottom: `${down}%` }}></div>
+          {up < 50 && <div className={classes.text_up}> {`${data[5]}m`}</div>}
+          {down < 50 && <div className={classes.text_down}> {`${data[0]}m`}</div>}
+          <img className={classes.icon} src={frontIcons[mapIconKey('ArrowMap')]} alt='' />
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
-export default SquareMove;
+export default SquareMove1;

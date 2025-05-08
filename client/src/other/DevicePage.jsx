@@ -32,12 +32,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../components/PositionValue';
 import usePersistedState from '../common/usePersistedState';
 import SquareMove from './SquareMove';
+import SquareMove1 from './SquareMove1';
+import DroneSensorVisualizer from './DroneSensorVisualizer'
 import useFilter from '../common/useFilter';
 import MainMap from '../Mapview/MainMap';
 import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
 import { CameraV1 } from '../components/CameraV1';
 import SendCommand from '../components/SendCommand';
 import CommandCard from '../components/CommandCard';
+import DistanceSensor from './DistanceSensor';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -127,6 +130,15 @@ const DevicePage = () => {
     statuses: [],
     groups: [],
   });
+  const [currentSensorData, setCurrentSensorData] = useState({
+    front: 5,
+    back: 3,
+    left: 8,
+    right: 2,
+    up: 6,
+    down: 9,
+  });
+
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
   const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
@@ -254,6 +266,9 @@ const DevicePage = () => {
                   <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
                 </div>
               )}
+              <SquareMove1 />
+              <DroneSensorVisualizer distances={[10, 15, 11, 5, 12, 20]} sensorData={currentSensorData} />
+              <DistanceSensor distance={2}/>
             </Paper>
           </div>
 
