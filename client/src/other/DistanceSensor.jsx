@@ -35,15 +35,11 @@ const DistanceSensor = ({ distance, width = 100, height = 100 }) => { // Default
   }
 
   // Definimos los puntos del polígono que actuará como máscara.
-  // Este polígono es un triángulo que va desde la punta (50,0) hasta una base
-  // en la coordenada Y calculada (fillY), con ancho proporcional.
-  // Los puntos son: Punta(50,0), Esquina Inferior Izquierda((50-fillY/2), fillY), Esquina Inferior Derecha((50+fillY/2), fillY)
-  //const maskPoints = `50,0 ${50 - fillY / 2},${fillY} ${50 + fillY / 2},${fillY}`;
-  const maskPoints = `0,100 ${50 - fillY / 2},${fillY} ${50 + fillY / 2},${fillY} 100,100`;
-
+  const maskPoints = `0,${height} 0,${fillY} ${width},${fillY} ${width},${height}`;
+  const PolygonPoints = `${width / 2},0 0,${height} ${width},${height}`
 
   return (
-    <svg width={width} height={height} viewBox="0 0 100 100">
+    <svg width={width} height={height} >
       <defs>
         {/* Definimos la máscara SVG. Las áreas blancas en la máscara revelan el contenido */}
         {/* Usamos el ID único */}
@@ -55,7 +51,7 @@ const DistanceSensor = ({ distance, width = 100, height = 100 }) => { // Default
 
       {/* El polígono base del triángulo (el contorno) */}
       <polygon
-        points="50,0 0,100 100,100"
+        points={PolygonPoints}
         stroke="none" // Color del contorno
         fill="lightgray"
         strokeWidth="5" // Grosor del contorno aumentado un poco
@@ -65,7 +61,7 @@ const DistanceSensor = ({ distance, width = 100, height = 100 }) => { // Default
       {/* Es un triángulo completo que cubre toda el área */}
       {/* La máscara con ID único determinará qué parte de este polígono es visible */}
       <polygon
-        points="50,0 0,100 100,100"
+        points={PolygonPoints}
         fill={fillColor} // El color determinado por la distancia
         mask={`url(#${maskId})`} // Aplicamos la máscara usando el ID único
       />

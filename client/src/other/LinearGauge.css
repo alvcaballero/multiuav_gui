@@ -1,0 +1,72 @@
+.linear-gauge-container {
+    position: relative;
+    overflow: hidden; /* Oculta elementos que se salgan del contenedor */
+    box-sizing: border-box;
+    border-radius: 4px;
+  }
+  
+  .gauge-zero-bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    transform: translateY(-50%); /* Centra la barra verticalmente */
+    z-index: 1; /* Asegura que esté por encima de los ticks */
+  }
+  
+  .gauge-ticks-labels-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .gauge-ticks-container {
+    position: relative;
+    width: 100%; /* Ocupa todo el ancho para que los ticks se posicionen dentro */
+    height: 100%;
+    z-index: 2;
+
+  }
+  
+  .gauge-tick {
+    position: absolute;
+    left: 0; /* Alinea los ticks a la derecha del track del medidor */
+    height: 2px;
+    transform: translateY(-50%); /* Centra el tick verticalmente */
+  }
+  
+  .gauge-tick.major {
+    /* Estilos para las marcas principales (definidos inline en JS) */
+    height: 4px;
+  }
+  
+  .gauge-labels-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+
+  }
+  
+  .gauge-label {
+    position: absolute;
+    left: 20px; /* Posición a la derecha de los ticks */
+    font-size: 18px;
+    white-space: nowrap; /* Evita que el texto se divida en líneas */
+  }
+  
+
+  
+  .gauge-value-display {
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 4;
+  }

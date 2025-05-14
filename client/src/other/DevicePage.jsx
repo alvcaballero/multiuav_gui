@@ -40,7 +40,6 @@ import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
 import { CameraV1 } from '../components/CameraV1';
 import SendCommand from '../components/SendCommand';
 import CommandCard from '../components/CommandCard';
-import DistanceSensor from './DistanceSensor';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -131,12 +130,12 @@ const DevicePage = () => {
     groups: [],
   });
   const [currentSensorData, setCurrentSensorData] = useState({
-    front: 5,
+    front: 1,
     back: 3,
-    left: 8,
-    right: 2,
-    up: 6,
-    down: 9,
+    left: 5,
+    right: 9,
+    up: 2,
+    down: 8,
   });
 
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
@@ -144,7 +143,7 @@ const DevicePage = () => {
   const [openSendCommand, setOpenSendCommand] = useState(false);
   useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
 
-  const onMarkerClick = () => {};
+  const onMarkerClick = () => { };
   useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
@@ -266,9 +265,8 @@ const DevicePage = () => {
                   <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
                 </div>
               )}
-              <SquareMove1 />
+
               <DroneSensorVisualizer distances={[10, 15, 11, 5, 12, 20]} sensorData={currentSensorData} />
-              <DistanceSensor distance={2}/>
             </Paper>
           </div>
 
