@@ -193,6 +193,9 @@ const MainPage = () => {
           type={selectedDeviceCam}
           onClose={() => dispatch(devicesActions.selectId(null))}
         />
+        <Paper>
+
+        </Paper>
 
         <Toast toastlist={list} position="buttom-right" setList={setList} />
       </RosControl>

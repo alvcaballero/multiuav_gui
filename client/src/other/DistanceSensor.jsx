@@ -11,24 +11,27 @@ import PropTypes from 'prop-types';
  * @param {number} distance - El valor de la distancia (entero entre 1 y 10).
  * @param {number} [width=150] - Ancho del SVG.
  * @param {number} [height=150] - Alto del SVG.
- */
-const DistanceSensor = ({ distance, width = 100, height = 100 }) => { // Default size adjusted for easier positioning
+ * @param {Array} [limits=[0,10]] - Valores max - min del sensor . 
+*/
+const DistanceSensor = ({ distance, width = 100, height = 100, limits = [0, 10] }) => { // Default size adjusted for easier positioning
   const uniqueId = useId(); // Genera un ID único y estable para la máscara
   const maskId = `distanceMask-${uniqueId}`;
 
   // Aseguramos que la distancia esté dentro del rango 1-10
-  const clampedDistance = Math.max(1, Math.min(10, distance));
+  const clampedDistance = Math.max(limits[0], Math.min(limits[1], distance));
 
   // Calculamos el nivel de relleno vertical (0-100) basado en la distancia (1-10)
   // Una distancia de 10 llena completamente (fillY = 100)
   // Una distancia de 1 llena una pequeña parte desde la punta (fillY = 10)
-  const fillY = clampedDistance * 10;
+  const fillY = clampedDistance * height / (limits[1] - limits[0]);
+  const limitcolor1 = limits[0] + 0.75 * (limits[1] - limits[0])
+  const limitcolor2 = limits[0] + 0.3 * (limits[1] - limits[0])
 
   // Determinamos el color de relleno basado en rangos de distancia
   let fillColor;
-  if (clampedDistance >= 1 && clampedDistance <= 4) {
+  if (clampedDistance >= limits[0] && clampedDistance <= limitcolor2) {
     fillColor = 'red'; // Distancia baja, seguro
-  } else if (clampedDistance >= 5 && clampedDistance <= 7) {
+  } else if (clampedDistance >= limitcolor2 && clampedDistance <= limitcolor1) {
     fillColor = 'yellow'; // Distancia media, precaución
   } else { // clampedDistance >= 8 && clampedDistance <= 10
     fillColor = 'green'; // Distancia alta, cerca

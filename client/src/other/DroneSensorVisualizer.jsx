@@ -6,10 +6,8 @@ import LinearGauge from './LinearGauge';
 
 
 
-const getSensorStyle = (direction, sensorSize, containerSize, droneSize) => {
+const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize, droneSize) => {
 
-  const sensorWidth = sensorSize
-  const sensorheight = sensorSize
   const center = containerSize / 2;
   const halfDrone = droneSize / 2;
   const halfConeSize = sensorWidth / 2;
@@ -29,7 +27,7 @@ const getSensorStyle = (direction, sensorSize, containerSize, droneSize) => {
 
   switch (direction) {
     case 'front':
-      style.top = sensorSize * 0.2
+      style.top = 0
       style.left = center
       style.transform = 'translate(-50%, 0) rotate(180deg)'
       textLabelStyle.top = style.top;
@@ -37,7 +35,7 @@ const getSensorStyle = (direction, sensorSize, containerSize, droneSize) => {
       break;
 
     case 'back':
-      style.bottom = sensorSize * 0.2
+      style.bottom = 0
       style.left = center
       textLabelStyle.bottom = style.bottom;
       textLabelStyle.left = style.left - 20;
@@ -45,20 +43,20 @@ const getSensorStyle = (direction, sensorSize, containerSize, droneSize) => {
 
     case 'left':
       style.top = center
-      style.left = sensorSize * 0.1
-      style.transform = 'translate(0, -50%) rotate(90deg)'
+      style.transform = 'translate(0, -50%) rotateZ(90deg)'
+      style.left = 0
 
       textLabelStyle.top = style.top - 10;
-      textLabelStyle.left = style.left;
+      textLabelStyle.left = style.left + 40;
       break;
 
     case 'right':
       style.top = center
-      style.right = sensorSize * 0.1
-      style.transform = 'translate(0, -50%) rotate(-90deg)'
+      style.right = 0
+      style.transform = 'translate(0, -50%) rotateZ(-90deg)'
 
       textLabelStyle.top = style.top - 10;
-      textLabelStyle.right = style.right;
+      textLabelStyle.right = style.right + 40;
       break;
     default:
       break;
@@ -76,7 +74,24 @@ const getSensorStyle = (direction, sensorSize, containerSize, droneSize) => {
  * Muestra un dron simple y utiliza el componente DistanceSensor para graficar
  * las lecturas de distancia en diferentes direcciones.
  */
-const DroneSensorVisualizer = ({ sensorData }) => {
+const DroneSensorVisualizer = ({
+  sensorData = {
+    down: 10,
+    front: 10,
+    left: 10,
+    back: 10,
+    right: 10,
+    up: 10,
+  },
+  sensorConfig = {
+    down: [0, 15],
+    front: [0, 15],
+    left: [0, 12],
+    back: [0, 12],
+    right: [0, 12],
+    up: [0, 20],
+  }
+}) => {
   const [currentAltitude, setCurrentAltitude] = useState(10.0);
   const [currentS1, setCurrents1] = useState(10.0);
   const [currentS2, setCurrents2] = useState(10.0);
@@ -90,15 +105,15 @@ const DroneSensorVisualizer = ({ sensorData }) => {
   const sensorSize = 120; // Ancho y alto de los componentes DistanceSensor
   const droneSizeTop = 80; // Tamaño del cuadrado del dron en vista superior
   const CONTAINER_SIZE = 350; // Tamaño del contenedor en píxeles
-  const sensorWidth = sensorSize
-  const sensorHeight = sensorSize * 1.5
+  const sensorWidth = sensorSize * 1.5
+  const sensorHeight = sensorSize
 
 
   //GET STYLES FOR SENSOR 
-  const { coneStyle: styleFrontCone, textStyle: styleFrontText } = getSensorStyle("front", sensorSize, CONTAINER_SIZE, droneSizeTop)
-  const { coneStyle: styleBackCone, textStyle: styleBackText } = getSensorStyle("back", sensorSize, CONTAINER_SIZE, droneSizeTop)
-  const { coneStyle: styleLeftCone, textStyle: styleLeftText } = getSensorStyle("left", sensorSize, CONTAINER_SIZE, droneSizeTop)
-  const { coneStyle: styleRightCone, textStyle: styleRightText } = getSensorStyle("right", sensorSize, CONTAINER_SIZE, droneSizeTop)
+  const { coneStyle: styleFrontCone, textStyle: styleFrontText } = getSensorStyle("front", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
+  const { coneStyle: styleBackCone, textStyle: styleBackText } = getSensorStyle("back", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
+  const { coneStyle: styleLeftCone, textStyle: styleLeftText } = getSensorStyle("left", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
+  const { coneStyle: styleRightCone, textStyle: styleRightText } = getSensorStyle("right", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
   //margin: '20px auto', // Centrar el contenedor
   //overflow: 'hidden', // Ocultar cualquier cosa posicionada fuera
   //borderRadius: '8px', // Bordes redondeados
@@ -109,8 +124,8 @@ const DroneSensorVisualizer = ({ sensorData }) => {
     <>
       <div style={{
         display: "flex",
-        width: CONTAINER_SIZE * 2.5,
-        height: CONTAINER_SIZE * 1,
+        width: CONTAINER_SIZE + 240,
+        height: CONTAINER_SIZE,
         border: '1px solid #ccc',
         backgroundColor: '#f9f9f9', // Fondo muy claro
         boxShadow: '2px 2px 8px rgba(0,0,0,0.1)', // Sombra suave
@@ -136,24 +151,24 @@ const DroneSensorVisualizer = ({ sensorData }) => {
               zIndex: 2
             }} />
 
-          <div style={styleFrontText}>{sensorData.front.toFixed(1)}m</div>
+          <div style={styleFrontText}>{sensorData.front.toFixed(0)}m</div>
           <div style={styleFrontCone}>
-            <DistanceSensor distance={sensorData.front} width={sensorHeight} height={sensorSize} />
+            <DistanceSensor distance={sensorData.front} width={sensorWidth} height={sensorHeight} />
           </div>
 
-          <div style={styleBackText}>{sensorData.back.toFixed(1)}m</div>
+          <div style={styleBackText}>{sensorData.back.toFixed(0)}m</div>
           <div style={styleBackCone} >
-            <DistanceSensor distance={sensorData.back} width={sensorHeight} height={sensorSize} />
+            <DistanceSensor distance={sensorData.back} width={sensorWidth} height={sensorHeight} />
           </div>
 
-          <div style={styleLeftText}>{sensorData.left.toFixed(1)}m</div>
+          <div style={styleLeftText}>{sensorData.left.toFixed(0)}m</div>
           <div style={styleLeftCone} >
-            <DistanceSensor distance={sensorData.left} width={sensorHeight} height={sensorSize} style={styleLeftCone} />
+            <DistanceSensor distance={sensorData.left} width={sensorWidth} height={sensorHeight} />
           </div>
 
-          <div style={styleRightText}>{sensorData.right.toFixed(1)}m</div>
+          <div style={styleRightText}>{sensorData.right.toFixed(0)}m</div>
           <div style={styleRightCone} >
-            <DistanceSensor distance={sensorData.right} width={sensorHeight} height={sensorSize} />
+            <DistanceSensor distance={sensorData.right} width={sensorWidth} height={sensorHeight} />
           </div>
 
         </div>
@@ -169,40 +184,14 @@ const DroneSensorVisualizer = ({ sensorData }) => {
         }}>
           <LinearGauge
             value={currentAltitude}
-            sensorValue={[currentS1, currentS2]}
+            sensorValue={[sensorData.up, sensorData.down]}
+            height={CONTAINER_SIZE}
           />
         </div>
 
       </div >
 
-      <input
-        type="range"
-        min="0"
-        max="10"
-        step="0.1"
-        value={currentAltitude}
-        onChange={handleSliderChange}
-        style={{ width: '300px', marginTop: '20px' }}
-      />
-      <input
-        type="range"
-        min="0"
-        max="10"
-        step="0.1"
-        value={currentS1}
-        onChange={(event) => { setCurrents1(parseFloat(event.target.value)) }}
 
-        style={{ width: '300px', marginTop: '20px' }}
-      />
-      <input
-        type="range"
-        min="0"
-        max="10"
-        step="0.1"
-        value={currentS2}
-        onChange={(event) => { setCurrents2(parseFloat(event.target.value)) }}
-        style={{ width: '300px', marginTop: '20px' }}
-      />
     </>
   );
 };

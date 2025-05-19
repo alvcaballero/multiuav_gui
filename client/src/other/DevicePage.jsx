@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useSelector } from 'react-redux';
 
 import {
@@ -153,9 +153,18 @@ const DevicePage = () => {
       setItem(positions[id]);
     }
   }, [id, positions]);
-  //  useEffect(() => {
-  //    console.log(filteredPositions);
-  //  }, [filteredPositions]);
+  useEffect(() => {
+    if (item?.attributes?.obstacle_info) {
+      setCurrentSensorData({
+        front: item.attributes.obstacle_info[1],
+        back: item.attributes.obstacle_info[3],
+        left: item.attributes.obstacle_info[4],
+        right: item.attributes.obstacle_info[2],
+        up: item.attributes.obstacle_info[5],
+        down: item.attributes.obstacle_info[0],
+      })
+    }
+  }, [id, positions])
 
   useEffect(() => {
     if (id) {
@@ -255,18 +264,17 @@ const DevicePage = () => {
           </div>
           <div style={{ padding: '15px', margin: '10px' }}>
             <Paper>
-              <Typography align="center" variant="h5" component="div" style={{ padding: '15px' }}>
-                Avoidance sensor
-              </Typography>
-              {item && item.attributes && (
-                <div style={{ display: 'flex', flex: 1 }}>
-                  <SquareMove front_view={true} data={item.attributes.obstacle_info}></SquareMove>
+              {item?.attributes?.obstacle_info && (
+                <>
+                  <Typography align="center" variant="h5" component="div" style={{ padding: '15px' }}>
+                    Avoidance sensor
+                  </Typography>
 
-                  <SquareMove front_view={false} data={item.attributes.obstacle_info}></SquareMove>
-                </div>
+                  <DroneSensorVisualizer sensorData={currentSensorData} />
+
+                </>
               )}
 
-              <DroneSensorVisualizer distances={[10, 15, 11, 5, 12, 20]} sensorData={currentSensorData} />
             </Paper>
           </div>
 

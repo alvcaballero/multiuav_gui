@@ -9,7 +9,7 @@ const LinearGauge = ({
     zeroValue = 0,         // Valor que representa la barra azul (ej: 0)
     range = 50,            // Rango total de valores visibles en el medidor (ej: 50 para -15 a 35 si 'value' es 10)
     height = 300,          // Altura del medidor en píxeles
-    width = 200,            // Ancho del cuerpo del medidor en píxeles
+    width = 230,            // Ancho del cuerpo del medidor en píxeles
     tickInterval = 5,      // Intervalo entre las marcas pequeñas (ej: 5 unidades)
     majorTickInterval = 25, // Intervalo entre las marcas grandes con etiquetas (ej: 25 unidades)
     unit = 'ALT (m)',      // Unidad a mostrar junto al valor (ej: "ALT (m)")
@@ -41,7 +41,7 @@ const LinearGauge = ({
 
     const zeroPos = getValuePosition(zeroValue);
     const indicatorPos = getValuePosition(value);
-    const zeroPosX = 20;
+    const zeroPosX = 30;
     const halfdrone = 30;
 
     // Generamos las marcas (ticks) y etiquetas
@@ -68,45 +68,35 @@ const LinearGauge = ({
         const myticks = [];
         const mylabels = [];
 
-        let style = {
-            position: "absolute",
-            left: 0, /* Alinea los ticks a la derecha del track del medidor */
-            height: "1px",
-            transform: "translateY(-50%)"
-        }
+
 
         for (let i = startValueForTicks; i <= endValueForTicks; i += tickInterval) {
+
+            let mystyle = {
+                position: "absolute",
+                left: 0, /* Alinea los ticks a la derecha del track del medidor */
+                height: "2px",
+                transform: "translateY(-50%)"
+            }
+
             const pos = getValuePosition(i);
             if (pos >= -10 && pos <= height + 10) { // Renderiza solo si está cerca o dentro de la vista
                 const isMajorTick = Math.abs(i % majorTickInterval) < tickInterval / 2; // Comprueba si es una marca principal (con tolerancia)
-
-                myticks.push(
-                    <div
-                        key={`tick-${i}`}
-                        className={`gauge-tick ${isMajorTick ? 'major' : ''}`}
-                        style={{
-                            left: 0,
-                            top: pos,
-                            backgroundColor: tickColor,
-                            width: isMajorTick ? '15px' : '10px',
-                        }}
-                    />
-                );
+                mystyle.width = isMajorTick ? '15px' : '10px'
+                mystyle.top = pos
+                mystyle.backgroundColor = tickColor
+                myticks.push(<div key={`tick-${i}`} style={mystyle} />);
 
                 if (isMajorTick) {
-                    mylabels.push(
-                        <div
-                            key={`label-${i}`}
-                            className="gauge-label"
-                            style={{
-                                left: 30,
-                                top: pos - 10, // Ajuste para centrar la etiqueta
-                                color: labelColor,
-                            }}
-                        >
-                            {i}
-                        </div>
-                    );
+                    let labelStyle = {
+                        position: "absolute",
+                        left: 30, /* Posición a la derecha de los ticks */
+                        fontSize: "18px",
+                        whiteSpace: "nowrap",
+                        top: pos - 10,
+                        color: labelColor
+                    }
+                    mylabels.push(<div key={`label-${i}`} style={labelStyle}>{i}</div>);
                 }
             }
         }
@@ -146,7 +136,6 @@ const LinearGauge = ({
                 borderTop: `4px solid ${tickColor}`,
                 borderBottom: `4px solid ${tickColor}`,
                 borderColor: tickColor,
-                zIndex: 2
             }}>
 
             </div>
@@ -164,7 +153,7 @@ const LinearGauge = ({
 
 
             {/* Contenedor de Ticks y Labels */}
-            <div className="gauge-ticks-labels-wrapper"
+            <div
                 style={{
                     position: "absolute",
                     left: halfdrone + zeroPosX,
@@ -209,8 +198,8 @@ const LinearGauge = ({
             <div style={{
                 position: "absolute",
                 bottom: "50%",
-                height: sensorUp - 10, // Grosor de la barra azul
-                fontSize: 15
+                height: sensorUp + 5, // Grosor de la barra azul
+                fontSize: 15,
             }} > {sensorValue[0]}</div>
 
 
@@ -242,14 +231,20 @@ const LinearGauge = ({
             </div>
             <div style={{
                 position: "absolute",
-                top: height / 2 + sensorDown - 30,
+                top: height / 2 + sensorDown - 15,
                 left: 0,
                 fontSize: 15,
             }} > {sensorValue[1]}</div>
 
+            {/* altitude level sea*/}
+            <div style={{
+                position: "absolute",
+                bottom: 10,
+                left: zeroPosX + halfdrone * 2,
+                fontSize: 15,
+            }} > 120  ASL</div>
             {/* Indicador y Valor Actual */}
             <div
-                className="gauge-indicator-wrapper"
                 style={{
                     position: "absolute",
                     color: indicatorColor,
@@ -263,7 +258,6 @@ const LinearGauge = ({
                 }}
             >
                 <div
-                    className="gauge-indicator-arrow"
                     style={{
                         borderLeftColor: indicatorColor,
                         borderRight: " 15px solid ",
@@ -272,8 +266,14 @@ const LinearGauge = ({
                     }}
                 />
                 <div
-                    className="gauge-value-display"
                     style={{
+                        backgroundColor: "white",
+                        border: "1px solid #ccc",
+                        padding: "5px 10px",
+                        borderRadius: "4px",
+                        whiteSpace: "nowrap",
+                        fontSize: "18px",
+                        fontWeight: "bold",
                         right: `${width + 5}px`,
                         color: labelColor,
                     }}

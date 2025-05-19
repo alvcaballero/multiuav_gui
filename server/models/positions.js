@@ -50,7 +50,7 @@ export class positionsModel {
         attributes: {
           batteryLevel: 0,
           gimbal: [0, 0, 0],
-          obstacle_info: [0, 0, 0, 0, 0, 0],
+          obstacle_info: [100, 100, 100, 100, 100, 100],
           takeoff_height: 400,
           mission_state: 'Ready',
           wp_reached: 0,
