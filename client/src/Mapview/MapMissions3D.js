@@ -133,7 +133,7 @@ export const MapMissions3D = () => {
 
       this.renderer.autoClear = false;
     },
-    render(gl, mercatorMatrix) {
+    render(gl, args) {
       // `queryTerrainElevation` gives us the elevation of a point on the terrain
       // **relative to the elevation of `center`**,
       // where `center` is the point on the terrain that the middle of the camera points at.
@@ -159,7 +159,7 @@ export const MapMissions3D = () => {
       const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), sceneTransform.rotateY);
       const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 0, 1), sceneTransform.rotateZ);
 
-      const m = new THREE.Matrix4().fromArray(mercatorMatrix);
+      const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
       const l = new THREE.Matrix4()
         .makeTranslation(sceneTransform.translateX, sceneTransform.translateY, sceneTransform.translateZ)
         .scale(new THREE.Vector3(sceneTransform.scale, -sceneTransform.scale, sceneTransform.scale))

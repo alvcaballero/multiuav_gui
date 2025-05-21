@@ -22,6 +22,10 @@ export const map = new maplibregl.Map({
   container: element,
   attributionControl: false,
   zoom: 14,
+  centerClampedToGround: false,
+  maxPitch: 85,
+  canvasContextAttributes: {antialias: true} // create the gl context with MSAA antialiasing, so custom layers are antialiased
+
 });
 
 let ready = false;
