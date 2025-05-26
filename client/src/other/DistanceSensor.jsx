@@ -11,7 +11,7 @@ import PropTypes from 'prop-types';
  * @param {number} distance - El valor de la distancia (entero entre 1 y 10).
  * @param {number} [width=150] - Ancho del SVG.
  * @param {number} [height=150] - Alto del SVG.
- * @param {Array} [limits=[0,10]] - Valores max - min del sensor . 
+ * @param {Array} [limits=[0,10]] - Valores min-max del sensor . 
 */
 const DistanceSensor = ({ distance, width = 100, height = 100, limits = [0, 10] }) => { // Default size adjusted for easier positioning
   const uniqueId = useId(); // Genera un ID único y estable para la máscara

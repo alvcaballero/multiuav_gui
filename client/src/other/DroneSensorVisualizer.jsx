@@ -43,7 +43,7 @@ const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize, dro
 
     case 'left':
       style.top = center
-      style.transform = 'translate(0, -50%) rotateZ(90deg)'
+      style.transform = 'translate(0, -50%) rotate(90deg)'
       style.left = 0
 
       textLabelStyle.top = style.top - 10;
@@ -53,7 +53,7 @@ const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize, dro
     case 'right':
       style.top = center
       style.right = 0
-      style.transform = 'translate(0, -50%) rotateZ(-90deg)'
+      style.transform = 'translate(0, -50%) rotate(-90deg)'
 
       textLabelStyle.top = style.top - 10;
       textLabelStyle.right = style.right + 40;
