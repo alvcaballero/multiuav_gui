@@ -27,7 +27,7 @@ import useQuery from '../common/useQuery';
 import EditItemView from './components/EditItemView';
 
 const SettingsCategoryPageEdit = () => {
-  const classes = useSettingsStyles();
+  const { classes } = useSettingsStyles();
 
   const query = useQuery();
   const uniqueId = query.get('uniqueId');

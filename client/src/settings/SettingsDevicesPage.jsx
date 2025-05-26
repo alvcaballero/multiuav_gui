@@ -27,7 +27,7 @@ import { formatTime } from '../common/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
 
 const SettingsDevicesPage = () => {
-  const classes = useSettingsStyles();
+  const { classes } = useSettingsStyles();
   const navigate = useNavigate();
 
   const [timestamp, setTimestamp] = useState(Date.now());

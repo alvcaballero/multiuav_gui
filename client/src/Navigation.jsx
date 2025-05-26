@@ -20,7 +20,8 @@ import SettingsCategoryPage from './settings/SettingsCategoryPage';
 import SettingsCategoryPageEdit from './settings/SettingsCategoryPageEdit';
 import SettingsDevicesPage from './settings/SettingsDevicesPage';
 import SettingsDevicesPageEdit from './settings/SettingsDevicesPageEdit';
-
+import GeofencesPage from './other/GeofencesPage';
+import GeofencePage from './settings/GeofencePage';
 const padding = {
   padding: 5,
 };
@@ -48,6 +49,7 @@ const Navigation = () => {
 
         <Route path="replay" element={<ReplayPage />} />
         <Route path="topics" element={<TopicsPage />} />
+        <Route path="geofences" element={<GeofencesPage />} />
 
         <Route path="event/:id" element={<EventsPage />} />
 
@@ -56,6 +58,7 @@ const Navigation = () => {
           <Route path="devices/:id" element={<SettingsDevicesPageEdit />} />
           <Route path="category" element={<SettingsCategoryPage />} />
           <Route path="category/:id" element={<SettingsCategoryPageEdit />} />
+          <Route path="geofence/:id" element={<GeofencePage />} />
 
         </Route>
 

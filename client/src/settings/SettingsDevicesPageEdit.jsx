@@ -23,7 +23,7 @@ import EditItemView from './components/EditItemView';
 
 
 const SettingsDevicesPageEdit = () => {
-  const classes = useSettingsStyles();
+  const { classes } = useSettingsStyles();
 
   const query = useQuery();
   const uniqueId = query.get('uniqueId');

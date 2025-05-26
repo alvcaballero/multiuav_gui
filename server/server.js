@@ -19,6 +19,7 @@ import { createFilesRouter } from './routes/files.js';
 import { ExtAppRouter } from './routes/ExtApp.js';
 import { serverRouter } from './routes/server.js';
 import { planningRouter } from './routes/planning.js';
+import { geofenceRouter } from './routes/geofence.js';
 // comunications with devices
 import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
 import { rosModel } from './models/ros.js'; // ros model
@@ -51,6 +52,7 @@ app.use('/api/files', createFilesRouter());
 app.use('/api/planning', planningRouter);
 app.use('/api/ExtApp', ExtAppRouter);
 app.use('/api/server', serverRouter);
+app.use('/api/geofences', geofenceRouter);
 //app.use('/api/ros', rosRouter);
 
 const server = createServer(app);

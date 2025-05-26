@@ -25,11 +25,11 @@ import TableShimmer from '../common/components/TableShimmer';
 import SearchHeader, { filterByKeyword } from './components/SearchHeader';
 import { formatTime } from '../common/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
-import  RemoveDialog  from '../components/RemoveDialog';
+import RemoveDialog from '../components/RemoveDialog';
 
 const SettingsCategoryPage = () => {
 
-  const classes = useSettingsStyles();
+  const { classes } = useSettingsStyles();
   const navigate = useNavigate();
 
   const [timestamp, setTimestamp] = useState(Date.now());
@@ -39,7 +39,7 @@ const SettingsCategoryPage = () => {
   const [loading, setLoading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [myCategory, setMyCategory] = useState(null);
-  
+
   useEffectAsync(async () => {
     setLoading(true);
     try {
@@ -58,60 +58,60 @@ const SettingsCategoryPage = () => {
   const handleEdit = (item) => {
     navigate(`/settings/category/${item}`);
   }
-  
+
   const handleRemove = (item) => {
     setMyCategory(item);
     setRemoving(true);
   }
 
   const hamdleRemoveResult = (result) => {
-   setMyCategory(null);
+    setMyCategory(null);
     setRemoving(false);
   }
 
-  
+
 
   return (
     <>
-    <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>
-      <SearchHeader keyword={searchKeyword} setKeyword={setSearchKeyword} />
-      <Table className={classes.table}>
-        <TableHead>
-          <TableRow>
-            <TableCell>{'Id'}</TableCell>
-            <TableCell>{'Name'}</TableCell>
-            <TableCell className={classes.columnAction} />
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {!loading ? (
-            items.filter(filterByKeyword(searchKeyword)).map((item,indexItem) => (
-              <TableRow key={indexItem}>
-                <TableCell>{indexItem}</TableCell>
-                <TableCell>{item}</TableCell>
-                <TableCell className={classes.columnAction} padding="none">
-                  <div className={classes.row}>
-                    <Tooltip title={'Edit'}>
-                      <IconButton size="small" onClick={() => handleEdit(item)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={'Remove'}>
-                      <IconButton size="small" onClick={() => handleRemove(item)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableShimmer columns={3} endAction />
-          )}
-        </TableBody>
-      </Table>
-    </PageLayout>
-    {myCategory && <RemoveDialog open={removing} endpoint="category" ItemId={myCategory} onResult={hamdleRemoveResult} />}
+      <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>
+        <SearchHeader keyword={searchKeyword} setKeyword={setSearchKeyword} />
+        <Table className={classes.table}>
+          <TableHead>
+            <TableRow>
+              <TableCell>{'Id'}</TableCell>
+              <TableCell>{'Name'}</TableCell>
+              <TableCell className={classes.columnAction} />
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {!loading ? (
+              items.filter(filterByKeyword(searchKeyword)).map((item, indexItem) => (
+                <TableRow key={indexItem}>
+                  <TableCell>{indexItem}</TableCell>
+                  <TableCell>{item}</TableCell>
+                  <TableCell className={classes.columnAction} padding="none">
+                    <div className={classes.row}>
+                      <Tooltip title={'Edit'}>
+                        <IconButton size="small" onClick={() => handleEdit(item)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={'Remove'}>
+                        <IconButton size="small" onClick={() => handleRemove(item)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableShimmer columns={3} endAction />
+            )}
+          </TableBody>
+        </Table>
+      </PageLayout>
+      {myCategory && <RemoveDialog open={removing} endpoint="category" ItemId={myCategory} onResult={hamdleRemoveResult} />}
     </>
   );
 };

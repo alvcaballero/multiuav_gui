@@ -4,6 +4,8 @@ import { devicesReducer as devices } from './devices';
 import { missionReducer as mission } from './mission';
 import { sessionReducer as session } from './session';
 import { eventsReducer as events } from './events';
+import { geofencesReducer as geofences } from './geofences';
+
 import throttleMiddleware from './throttleMiddleware';
 
 const reducer = combineReducers({
@@ -12,6 +14,7 @@ const reducer = combineReducers({
   events,
   mission,
   session,
+  geofences,
 });
 
 export { errorsActions } from './errors';
@@ -19,6 +22,7 @@ export { devicesActions } from './devices';
 export { eventsActions } from './events';
 export { missionActions } from './mission';
 export { sessionActions } from './session';
+export { geofencesActions } from './geofences';
 
 export default configureStore({
   reducer,

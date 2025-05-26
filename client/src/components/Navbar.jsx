@@ -1,4 +1,4 @@
-import React, { useContext, Fragment,useEffect } from 'react';
+import React, { useContext, Fragment, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
@@ -16,11 +16,11 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
   const rosContext = useContext(RosContext);
 
   const defaultLatitude = usePreference('latitude', 0);
-  const defaultLongitude = usePreference('longitude',0);
+  const defaultLongitude = usePreference('longitude', 0);
   const defaultZoom = usePreference('zoom', 10);
-    useEffect(() => {
-      console.log('render navbar');
-    }, []);
+  useEffect(() => {
+    console.log('render navbar');
+  }, []);
 
   const menuItemsData = [
     {
@@ -51,9 +51,7 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
     {
       title: 'View',
       submenu: [
-        {
-          title: 'Enviroment Features',
-        },
+        { title: 'Geofrences', action: () => navigate('/geofences') },
         { title: 'add elements', input: (e) => loadElements(e), type: '.kml' },
         { title: 'Camera view', action: () => navigate('/camera') },
         { title: '3D view', action: () => navigate('/3Dmission') },

@@ -87,11 +87,7 @@ export const geofenceToFeature = (theme, item) => {
       .trim()
       .split(/ +/);
     const options = { steps: 32, units: 'meters' };
-    const polygon = circle(
-      [Number(coordinates[1]), Number(coordinates[0])],
-      Number(coordinates[2]),
-      options
-    );
+    const polygon = circle([Number(coordinates[1]), Number(coordinates[0])], Number(coordinates[2]), options);
     geometry = polygon.geometry;
   } else {
     geometry = reverseCoordinates(parse(item.area));
@@ -102,7 +98,7 @@ export const geofenceToFeature = (theme, item) => {
     geometry,
     properties: {
       name: item.name,
-      color: item.attributes.color || theme.palette.colors.geometry,
+      color: item.attributes?.color || theme.palette.colors.geometry,
     },
   };
 };
