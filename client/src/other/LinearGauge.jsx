@@ -6,6 +6,8 @@ import { mapIconKey, mapIcons, frontIcons } from '../Mapview/preloadImages';
 const LinearGauge = ({
     value,                 // Valor actual a mostrar (ej: 10.0)
     sensorValue = [7, 5],
+    sensorData = {up:7,down:5},
+    sensorLimits = {up:[0,20],down:[0,20]},
     zeroValue = 0,         // Valor que representa la barra azul (ej: 0)
     range = 50,            // Rango total de valores visibles en el medidor (ej: 50 para -15 a 35 si 'value' es 10)
     height = 300,          // Altura del medidor en píxeles
@@ -51,17 +53,12 @@ const LinearGauge = ({
     const startValueForTicks = Math.floor(currentMin / tickInterval) * tickInterval;
     const endValueForTicks = Math.ceil(currentMax / tickInterval) * tickInterval;
 
-    const setFillColor = (clampedDistance) => {
-        let fillColor = 'gray'; // Distancia baja, seguro
-
-        if (clampedDistance >= 1 && clampedDistance <= 4) {
-            fillColor = 'red'; // Distancia baja, seguro
-        } else if (clampedDistance >= 5 && clampedDistance <= 7) {
-            fillColor = 'yellow'; // Distancia media, precaución
-        } else { // clampedDistance >= 8 && clampedDistance <= 10
-            fillColor = 'lightgray'; // Distancia alta, cerca
-        }
-        return fillColor
+    const setFillColor = (clampedDistance, limits=[0,10]) => {
+        const limitLow = limits[0] + 0.3 * (limits[1] - limits[0])
+        const limitHigh = limits[0] + 0.75 * (limits[1] - limits[0])
+        if (clampedDistance  <= limitLow) return 'red'; // Distancia baja, seguro
+        if (clampedDistance  <= limitHigh)   return 'yellow'; // Distancia media, precaución
+        return'lightgray'; // Distancia alta, cerca
     }
 
     useEffect(() => {
@@ -105,14 +102,15 @@ const LinearGauge = ({
     }, [value])
 
     useEffect(() => {
-        let s1 = Math.max(1, Math.min(10, sensorValue[0]));
+        const s1 = Math.max(sensorLimits.up[0], Math.min(sensorLimits.up[1], sensorValue[0]));
+        const ratios1 = ( sensorLimits.up[1]- s1) / (sensorLimits.up[1] - sensorLimits.up[0]);
+        setSensorUp(ratios1 *height / 2)
+        setColorSensorUp(setFillColor(s1),sensorLimits.up)
 
-        setSensorUp(s1 * (height / 2) / 10)
-        setColorSensorUp(setFillColor(s1))
-
-        let s2 = Math.max(1, Math.min(10, sensorValue[1]));
-        setSensorDown(s2 * (height / 2) / 10)
-        setColorSensorDown(setFillColor(s2))
+        const  s2 = Math.max(sensorLimits.down[0], Math.min(sensorLimits.down[1], sensorValue[1]));
+        const ratios2 = ( sensorLimits.down[1] -s2) / (sensorLimits.down[1] - sensorLimits.down[0]);
+        setSensorDown(ratios2 * (height / 2) )
+        setColorSensorDown(setFillColor(s2),sensorLimits.down)
     }, [sensorValue])
 
 
@@ -169,69 +167,70 @@ const LinearGauge = ({
                     {labels}
                 </div>
             </div>
-            {/* sensor s1 */}
+            {/* sensor up */}
             <div style={{
-                bottom: "50%",
+                top: 0,
                 position: "absolute",
                 left: zeroPosX,
                 width: 30,
-                height: sensorUp, // Grosor de la barra azul
+                height: sensorUp, 
             }} >
-
+                {/*  barra sensor*/}
                 <div style={{
                     position: "absolute",
                     bottom: 0,
                     width: 20,
                     left: 10,
-                    height: "100%", // Grosor de la barra azul
+                    height: "100%", 
                     backgroundColor: ColorSensorUp,
                 }} />
+                {/*  linea de senalar*/}    
                 <div style={{
                     position: "absolute",
-                    top: 0,
+                    bottom: 0,
                     left: 0,
                     backgroundColor: "red",
-                    height: 10, // Grosor de la barra azul
+                    height: 10, 
                     width: 40,
                 }} />
             </div>
             <div style={{
                 position: "absolute",
-                bottom: "50%",
-                height: sensorUp + 5, // Grosor de la barra azul
+                top: sensorUp -20,
                 fontSize: 15,
             }} > {sensorValue[0]}</div>
 
 
             {/* sensor s2 */}
             <div style={{
-                top: "50%",
+                bottom: 0,
                 position: "absolute",
                 left: zeroPosX,
-                height: sensorDown, // Grosor de la barra azul
+                height: sensorDown, 
                 width: 22,
             }} >
-
+                {/*  barra sensor*/}
                 <div style={{
                     position: "absolute",
                     bottom: 0,
                     width: 20,
                     left: 10,
-                    height: "100%", // Grosor de la barra azul
+                    height: "100%", 
                     backgroundColor: ColorSensorDown,
                 }} />
+                {/*  linea de senalar*/}    
                 <div style={{
                     position: "absolute",
-                    bottom: 0,
+                    top: 0,
                     left: 0,
                     backgroundColor: "red",
-                    height: 10, // Grosor de la barra azul
+                    height: 10, 
                     width: 40,
                 }} />
             </div>
             <div style={{
                 position: "absolute",
-                top: height / 2 + sensorDown - 15,
+                bottom: sensorDown - 15,
                 left: 0,
                 fontSize: 15,
             }} > {sensorValue[1]}</div>

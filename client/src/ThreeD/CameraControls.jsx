@@ -6,8 +6,8 @@ import * as THREE from 'three';
 export default function CameraControls() {
   const { camera } = useThree();
   const controlsRef = useRef();
-  const moveSpeed = 0.1;
-  const minHeight = 0.1; // Minimum height above ground
+  const moveSpeed = 1;
+  const minHeight = 1; // Minimum height above ground
   const keys = useRef({
     w: false,
     a: false,

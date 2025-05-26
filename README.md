@@ -71,14 +71,15 @@ nano ./container_run.sh
 3. put repos and in catkin
 
 ```
-https://github.com/dji-sdk/Onboard-SDK.git
+git clone https://github.com/dji-sdk/Onboard-SDK.git
+cd Onboard-SDK
 mkdir build
 cd build
-cmake..
+cmake ..
 sudo make -j7 install
-cd ..
+cd ../..
 
-mkdir catkin_ws && cd carkin_ws
+mkdir catkin_ws && cd catkin_ws
 mkdir src && cd src
 catkin_init_workspace
 
@@ -87,7 +88,7 @@ git clone https://github.com/miggilcas/Onboard-SDK-ROS
 // git clone https://github.com/alvcaballero/multiUAV_system.git
 // git clone https://github.com/alvcaballero/multiuav_gui.git
 // git clone https://github.com/dji-sdk/Onboard-SDK-ROS
-// git clone https://github.com/grvcTeam/grvc-utils.git
+git clone --branch noetic https://github.com/grvcTeam/grvc-utils.git
 // git clone https://github.com/CircusMonkey/ros_rtsp.git
 // git clone https://github.com/miggilcas/simple_vs.git
 

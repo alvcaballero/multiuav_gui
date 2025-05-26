@@ -11,6 +11,7 @@ import MapScale from './MapScale';
 import { devicesActions } from '../store';
 import MapDefaultCamera from './MapDefaultCamera';
 import MapLiveRoutes from './MapLiveRoutes';
+import MapGeocoder from './geocoder/MapGeocoder';
 
 const MainMap = ({
   filteredPositions,
@@ -44,6 +45,7 @@ const MainMap = ({
         <MapDefaultCamera />
       </MapView>
       <MapScale />
+      <MapGeocoder />
     </>
   );
 };

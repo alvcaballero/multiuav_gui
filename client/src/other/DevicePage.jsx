@@ -269,9 +269,7 @@ const DevicePage = () => {
                   <Typography align="center" variant="h5" component="div" style={{ padding: '15px' }}>
                     Avoidance sensor
                   </Typography>
-
                   <DroneSensorVisualizer sensorData={currentSensorData} />
-
                 </>
               )}
 

@@ -33,7 +33,6 @@ export const MapMarkers3D = () => {
       directionalLight2.position.set(0, 70, 100).normalize();
       this.scene.add(directionalLight2);
 
-      this.map = map;
       const loader = new GLTFLoader();
       // '../resources/3d/windturbine.glb'
       loader.load(
@@ -49,6 +48,8 @@ export const MapMarkers3D = () => {
         }
       );
 
+      this.map = map;
+
       // use the MapLibre GL JS map canvas for three.js
       this.renderer = new THREE.WebGLRenderer({
         canvas: map.getCanvas(),
@@ -58,7 +59,7 @@ export const MapMarkers3D = () => {
 
       this.renderer.autoClear = false;
     },
-    render(gl, mercatorMatrix) {
+    render(gl, args) {
       // `queryTerrainElevation` gives us the elevation of a point on the terrain
       // **relative to the elevation of `center`**,
       // where `center` is the point on the terrain that the middle of the camera points at.
@@ -84,7 +85,7 @@ export const MapMarkers3D = () => {
       const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), sceneTransform.rotateY);
       const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 0, 1), sceneTransform.rotateZ);
 
-      const m = new THREE.Matrix4().fromArray(mercatorMatrix);
+      const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
       const l = new THREE.Matrix4()
         .makeTranslation(sceneTransform.translateX, sceneTransform.translateY, sceneTransform.translateZ)
         .scale(new THREE.Vector3(sceneTransform.scale, -sceneTransform.scale, sceneTransform.scale))

@@ -63,6 +63,10 @@ const MissionPage3D = () => {
 
   const positions = useSelector((state) => state.session.positions);
   const routes = useSelector((state) => state.mission.route);
+  const sessionmarkers = useSelector((state) => state.session.markers);
+  const [markers, setmarkers] = useState([]);
+
+
 
   const [filteredPositions, setFilteredPositions] = useState([]);
 
@@ -75,6 +79,10 @@ const MissionPage3D = () => {
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
+
+  useEffect(() => {
+    setmarkers(sessionmarkers);
+  }, [sessionmarkers]);
 
   const tabs = (
     <>

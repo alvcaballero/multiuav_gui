@@ -43,7 +43,7 @@ const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize, dro
 
     case 'left':
       style.top = center
-      style.transform = 'translate(0, -50%) rotate(90deg)'
+      style.transform = 'translate(0, -50%) rotateZ(180deg)'
       style.left = 0
 
       textLabelStyle.top = style.top - 10;
@@ -53,7 +53,7 @@ const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize, dro
     case 'right':
       style.top = center
       style.right = 0
-      style.transform = 'translate(0, -50%) rotate(-90deg)'
+      style.transform = 'translate(0, -50%)'
 
       textLabelStyle.top = style.top - 10;
       textLabelStyle.right = style.right + 40;
@@ -102,8 +102,8 @@ const DroneSensorVisualizer = ({
     setCurrentAltitude(parseFloat(event.target.value));
   };
   // Tamaños para los sensores visuales
-  const sensorSize = 120; // Ancho y alto de los componentes DistanceSensor
-  const droneSizeTop = 80; // Tamaño del cuadrado del dron en vista superior
+  const sensorSize = 150; // Ancho y alto de los componentes DistanceSensor
+  const droneSizeTop = 100; // Tamaño del cuadrado del dron en vista superior
   const CONTAINER_SIZE = 350; // Tamaño del contenedor en píxeles
   const sensorWidth = sensorSize * 1.5
   const sensorHeight = sensorSize
@@ -153,22 +153,22 @@ const DroneSensorVisualizer = ({
 
           <div style={styleFrontText}>{sensorData.front.toFixed(0)}m</div>
           <div style={styleFrontCone}>
-            <DistanceSensor distance={sensorData.front} width={sensorWidth} height={sensorHeight} />
+            <DistanceSensor distance={sensorData.front} limits={sensorConfig.front} width={sensorWidth} height={sensorHeight} />
           </div>
 
           <div style={styleBackText}>{sensorData.back.toFixed(0)}m</div>
           <div style={styleBackCone} >
-            <DistanceSensor distance={sensorData.back} width={sensorWidth} height={sensorHeight} />
+            <DistanceSensor distance={sensorData.back} limits={sensorConfig.back} width={sensorWidth} height={sensorHeight} />
           </div>
 
           <div style={styleLeftText}>{sensorData.left.toFixed(0)}m</div>
           <div style={styleLeftCone} >
-            <DistanceSensor distance={sensorData.left} width={sensorWidth} height={sensorHeight} />
+            <DistanceSensor distance={sensorData.left} limits={sensorConfig.left} width={sensorHeight} height={sensorWidth} orientation={"h"} />
           </div>
 
           <div style={styleRightText}>{sensorData.right.toFixed(0)}m</div>
           <div style={styleRightCone} >
-            <DistanceSensor distance={sensorData.right} width={sensorWidth} height={sensorHeight} />
+            <DistanceSensor distance={sensorData.right} limits={sensorConfig.right} width={sensorHeight} height={sensorWidth} orientation={"h"} />
           </div>
 
         </div>
@@ -185,13 +185,11 @@ const DroneSensorVisualizer = ({
           <LinearGauge
             value={currentAltitude}
             sensorValue={[sensorData.up, sensorData.down]}
+            sensorLimits={{ up: sensorConfig.up, down: sensorConfig.down }}
             height={CONTAINER_SIZE}
           />
         </div>
-
       </div >
-
-
     </>
   );
 };
