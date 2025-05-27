@@ -12,6 +12,7 @@ import { devicesActions } from '../store';
 import MapDefaultCamera from './MapDefaultCamera';
 import MapLiveRoutes from './MapLiveRoutes';
 import MapGeocoder from './geocoder/MapGeocoder';
+import MapGeofence from './MapGeofence';
 
 const MainMap = ({
   filteredPositions,
@@ -34,6 +35,7 @@ const MainMap = ({
         <MapMarkers markers={markers} />
         <MapMissions filtereddeviceid={filteredMissiondeviceid} routes={routes} />
         <MapElements />
+        <MapGeofence/>
         <MapLiveRoutes/>
         <MapPositions
           positions={filteredPositions}
