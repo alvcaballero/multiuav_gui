@@ -16,7 +16,7 @@ rm -rf ~/miniconda3/miniconda.sh
 ```
 // in conda use
 conda create --name DJIThermal python=3.9
-conda activate DJIThermal
+    conda activate DJIThermal
 
 pip install -r requirements.txt
 
@@ -26,3 +26,9 @@ python3 -m pip install requests
 python3 -m pip install piexif
 
 ```
+
+// in conda use
+conda create --name planner python=3.11
+    conda activate planner
+
+pip install -r requirements.txt
