@@ -4,7 +4,7 @@ import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
 import { object, set } from 'zod';
-
+import { positionsController } from '../controllers/positions.js';
 /* devices:
 /   id
 /   name  : name of uav
@@ -35,7 +35,34 @@ const protocols = Object.freeze({
   ROBOFLEET: 'robofleet',
 });
 
-console.log('load model devices SQL');
+
+const updateDeviceTime = async () => {
+  const transactions = await sequelize.transaction();
+  const updates = await positionsController.getLastPositions();
+  if (updates.length > 0) {
+    try {
+      const transactions = await sequelize.transaction();
+      const promises = updates.map(update => {
+        return sequelize.models.Device.update(
+          { lastUpdate: update.serverTime,status: devicesStatus.ONLINE },
+          {
+            where: { id: update.deviceId },
+            transaction: transactions
+          }
+        );
+      });
+
+      await Promise.all(promises);
+      await transactions.commit();
+    } catch (error) {
+      if (transactions) await transactions.rollback();
+      console.error('Error al actualizar dispositivos:', error);
+    }
+  }
+  setTimeout(updateDeviceTime, 1500);
+}
+setTimeout(updateDeviceTime, 1500);
+
 
 const CheckDeviceOnline = async () => {
   await sequelize.models.Device.update(
@@ -196,20 +223,7 @@ export class DevicesModel {
     myDevice.save();
   }
 
-  static async updateDeviceTime(id) {
-    let currentTime = new Date();
-    const myDevice = await sequelize.models.Device.update({
-      lastUpdate: currentTime,
-      status: devicesStatus.ONLINE
-    }, { where: { id: id } });
 
-    if (myDevice) {
-      return myDevice;
-    } else {
-      console.log('update delete device');
-      return false;
-    }
-  }
 
   static async get_device_ns(uav_id) {
     const myDevice = await sequelize.models.Device.findOne({ where: { id: uav_id } });

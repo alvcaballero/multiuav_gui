@@ -1,5 +1,4 @@
 import { map } from 'zod';
-import { devicesController } from '../controllers/devices.js';
 import { eventsController } from '../controllers/events.js';
 const positions = {};
 const history = {};
@@ -39,14 +38,14 @@ export class positionsModel {
       // console.log('payload null');
       return null;
     }
-    devicesController.updateDeviceTime(payload.deviceId);
 
-    if (positions[payload.deviceId] === undefined) {
+    if (positions[payload.deviceId] === undefined) {``
       positions[payload.deviceId] = {
         deviceId: payload.deviceId,
         accuracy: 0.0,
         speed: 0.0,
         course: 0.0,
+        serverTime: new Date().toISOString(),
         attributes: {
           batteryLevel: 0,
           gimbal: [0, 0, 0],
@@ -60,6 +59,7 @@ export class positionsModel {
         },
       };
     }
+    positions[payload.deviceId]['serverTime'] = new Date().toISOString();
 
     if (payload.hasOwnProperty('latitude')) {
       //positions[payload.deviceId]["deviceId"] = payload.deviceId;

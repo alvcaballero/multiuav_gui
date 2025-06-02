@@ -9,6 +9,7 @@ let sequelizeConfig = {
   dialect: 'sqlite',
   storage: 'data/sequelize.sqlite',
   logging: false,
+  pool: { max: 1, idle: Infinity, maxUses: Infinity },
 };
 
 if (db === 'true') {

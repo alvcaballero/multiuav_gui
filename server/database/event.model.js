@@ -28,7 +28,7 @@ const EventSchema = {
     },
   },
   positionId: {
-    type: DataTypes.ARRAY(DataTypes.INTEGER),
+    type: DataTypes.INTEGER,
   },
   missionId: {
     type: DataTypes.INTEGER,

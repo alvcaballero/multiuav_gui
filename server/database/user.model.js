@@ -21,7 +21,7 @@ const UserSchema = {
   createdAt: {
     allowNull: false,
     type: DataTypes.DATE,
-    field: 'create_at',
+    columnName: 'create_at',
     defaultValue: Sequelize.NOW,
   },
 };

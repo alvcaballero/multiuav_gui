@@ -3,7 +3,7 @@ import { DevicesModel } from '../models/devices.js';
 
 class devicesController {
   static getAll = async (req, res) => {
-    const devices = await DevicesModel.getAll(req.query.id);
+    const devices = await DevicesModel.getAll();
     res.json(Object.values(devices));
   };
   static getAllDevices = async () => {
@@ -19,9 +19,7 @@ class devicesController {
     const device = await DevicesModel.getByName(name);
     return device;
   };
-  static updateDeviceTime = (id) => {
-    DevicesModel.updateDeviceTime(id);
-  };
+
 
   static getAccess = async (id) => {
     return await DevicesModel.getAccess(id);
