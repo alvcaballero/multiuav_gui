@@ -1,5 +1,5 @@
 import { Canvas,useThree } from '@react-three/fiber';
-import { Sky } from '@react-three/drei'
+import { Sky ,Stats } from '@react-three/drei'
 import React, { Suspense,useEffect } from 'react';
 import * as THREE from 'three';
 import CameraControls from '../ThreeD/CameraControls';
@@ -18,12 +18,13 @@ const Environment = () => {
 const MapView = ({ children }) => {
 
   return (
-    <Canvas camera={{  position: [10, 10, 5], fov: 35, near: 2, far: 800 }} >
+    <Canvas camera={{  position: [100, 100, 100], fov: 35, near: 2, far: 800 }} >
       {/* Iluminación */}
       <Sky sunPosition={[100, 100, 100]} />
       <fog attach="fog" args={['#abddff', 500, 800]} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[50, 50, 50]} intensity={3} />
+      <Stats/>
 
       <CameraControls />
       <axesHelper args={[5]} />

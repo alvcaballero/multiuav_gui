@@ -15,9 +15,9 @@ import SaveFile from '../components/SaveFile';
 
 
 import MapView from '../ThreeD/MapView';
-import Mission from '../ThreeD/Mission';
-import SceneObjects from '../ThreeD/SceneObjects';
-
+import R3FMission from '../ThreeD/R3FMission';
+import R3DMarkers from '../ThreeD/R3DMarkers';
+import R3FDevices from '../ThreeD/R3FDevices';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -64,6 +64,9 @@ const MissionPage3D = () => {
   const positions = useSelector((state) => state.session.positions);
   const routes = useSelector((state) => state.mission.route);
   const sessionmarkers = useSelector((state) => state.session.markers);
+  const origin3d = useSelector((state) => state.session.scene3d.origin);
+
+
   const [markers, setmarkers] = useState([]);
 
 
@@ -72,8 +75,8 @@ const MissionPage3D = () => {
 
   const elements = [
     { type: "windturbine", pos: [10, 10, 0] },
-    { type: "base", pos: [0, 0, 0] }
-
+    { type: "base", pos: [0, 0, 0] },
+    { type: "drone", pos: [1, 1, 1] }
   ]
 
   useEffect(() => {
@@ -111,8 +114,9 @@ const MissionPage3D = () => {
             }}
           >
             <MapView>
-              <Mission routes={routes} />
-              <SceneObjects elements={elements} />
+              <R3FMission routes={routes} />
+              <R3DMarkers elements={markers} />
+              <R3FDevices  />
 
             </MapView>
 

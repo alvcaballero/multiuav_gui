@@ -13,6 +13,10 @@ const { reducer, actions } = createSlice({
     camera: {},
     markers: {},
     planning: {},
+    scene3d:{
+      origin:{lat:37.410381,lng: -6.002094 ,alt:400},
+      range:1000,  
+      }
   },
   reducers: {
     updateServer(state, action) {

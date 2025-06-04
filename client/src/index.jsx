@@ -19,7 +19,7 @@ root.render(
       <AppThemeProvider>
         <CssBaseline />
         <ServerProvider>
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_relativeSplatPath: true }}>
             <Navigation />
           </BrowserRouter>
         </ServerProvider>

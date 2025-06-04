@@ -1,39 +1,21 @@
 import React, { useState, useEffect, Fragment } from 'react';
+import { useSelector } from 'react-redux';
+
 import * as THREE from 'three';
 import maplibregl from 'maplibre-gl';
 import palette from '../common/palette';
 import { Line } from '@react-three/drei';
 
-import Pose from '../ThreeD/Pose';
-import NumberedSphere from '../ThreeD/NumberedSphere';
+import Pose from './Pose';
+import NumberedSphere from './NumberedSphere';
+import { LatLon2XYZ } from './convertion';
 
-const Mission = ({ routes = [] }) => {
+const R3FMission = ({ routes = [] }) => {
   const [routeLines, setRouteLines] = useState([]);
   const [routeWP, setRouteWP] = useState([]);
+  const origin3d = useSelector((state) => state.session.scene3d.origin);
 
 
-  const latLonToXYZ = (lat, lon, alt) => {
-    const radius = 6371; // Earth radius in kilometers
-    const phi = (90 - lat) * (Math.PI / 180);
-    const theta = (lon + 180) * (Math.PI / 180);
-
-    const x = -(radius + alt) * Math.sin(phi) * Math.cos(theta);
-    const y = (radius + alt) * Math.cos(phi);
-    const z = (radius + alt) * Math.sin(phi) * Math.sin(theta);
-
-    return [x, y, z];
-  };
-
-  function calculateDistanceMercatorToMeters(from, to) {
-    const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
-    // mercator x: 0=west, 1=east
-    const dEast = to.x - from.x;
-    const dEastMeter = dEast / mercatorPerMeter;
-    // mercator y: 0=north, 1=south
-    const dNorth = from.y - to.y;
-    const dNorthMeter = dNorth / mercatorPerMeter;
-    return { dEastMeter, dNorthMeter };
-  }
   function routesTowaypoints(myroute) {
     const waypoint = [];
     myroute.forEach((rt, indexRt) => {
@@ -50,13 +32,6 @@ const Mission = ({ routes = [] }) => {
     return waypoint;
   }
 
-  function routesToLines2(routes) {
-    let routelineVector = routes.map((rt) => {
-      let mylineVector3 = rt.map((point) => new THREE.Vector3(point[0], point[2], point[1]))
-      return new THREE.BufferGeometry().setFromPoints(mylineVector3);
-    });
-    return routelineVector;
-  }
   function routesToLines(routes) {
     let routelineVector = routes.map((rt) => {
       let mylineVector3 = rt.map((point) => [point[0], point[2], point[1]])
@@ -65,31 +40,27 @@ const Mission = ({ routes = [] }) => {
     return routelineVector;
   }
 
-  function routesToXYZ(routes) {
-    let origen = null;
-    let routesXYZ = [];
-
-    routesXYZ = routes.map((rt, index_rt) => {
-      return rt.wp.map((wp, index_wp) => {
-        if (origen == null) {
-          origen = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, 0);
-        }
-        let destino = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, wp['pos'][2]);
-        let distance = calculateDistanceMercatorToMeters(origen, destino);
-
-        return [distance.dEastMeter, distance.dNorthMeter, wp['pos'][2]];
-      });
-    });
+  function routesToXYZ(origin,routes) {
+    let routesXYZ = routes.map((rt, index_rt) => {
+      const position = rt.wp.map((wp, index_wp) => {return { lng: wp['pos'][1], lat: wp['pos'][0], alt: wp['pos'][2]}})
+       return LatLon2XYZ(origin,position)
+    })
     return routesXYZ
   }
 
   useEffect(() => {
-    let routexyz = routesToXYZ(routes)
+    console.log(routes)
+    let origin = origin3d
+    if(routes.length >0 && routes[0].wp?.pos){
+      origin = {lat: routes[0].wp.pos[0] ,lng: routes[0].wp.pos[1],alt:0}
+    }
+    let routexyz = routesToXYZ(origin,routes)
+    console.log(routexyz)
     setRouteWP(routesTowaypoints(routexyz))
     //setRouteLines(routesToLines(routexyz));
     setRouteLines(routesToLines(routexyz));
 
-  }, [routes]);
+  }, [routes,origin3d]);
 
 
 
@@ -147,4 +118,4 @@ const Mission = ({ routes = [] }) => {
     </Fragment>
   )
 }
-export default Mission
+export default R3FMission

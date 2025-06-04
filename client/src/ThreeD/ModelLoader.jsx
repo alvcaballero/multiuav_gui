@@ -1,20 +1,23 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
-import * as THREE from 'three';
 
 // Definir la ruta base para los modelos
 const BASE_PATH = window.location.origin;
 
 const modelPaths = {
-    windturbine: `${BASE_PATH}/models/windturbine.gltf`,
+    windTurbine: `${BASE_PATH}/models/windturbine.gltf`,
     base: `${BASE_PATH}/models/Astronaut.glb`,
+    drone: `${BASE_PATH}/models/Drone.glb`,
+    drone2: `${BASE_PATH}/models/DroneLVL2A.glb`,
+    default: `${BASE_PATH}/models/Astronaut.glb`,
 };
 
 // Cache para modelos ya cargados
-const modelCache = new Map();
+const modelCache = new Map()
+
+export const modelKey = (category) => (modelPaths.hasOwnProperty(category) ? category : 'default');
+
 
 export const useModelLoader = (type) => {
     const [model, setModel] = useState(null);
@@ -51,7 +54,7 @@ export const useModelLoader = (type) => {
                 const onProgress = (event) => {
                     const progress = (event.loaded / event.total) * 100;
                     setLoadingProgress(progress);
-                    console.log(`Progreso de carga: ${progress.toFixed(2)}%`);
+                    console.log(`Progreso de carga ${type} : ${progress.toFixed(2)}%`);
                 };
 
                 // Cargar el modelo con el manejador de progreso
@@ -84,10 +87,10 @@ export const useModelLoader = (type) => {
                 modelCache.set(type, gltf);
                 setModel(gltf);
                 setLoadingProgress(100);
-                console.log('Modelo cargado exitosamente');
+                console.log('Modelo cargado exitosamente'+type);
             } catch (err) {
                 console.error('Error completo:', err);
-                setError(`Error al cargar el modelo: ${err.message}`);
+                setError(`Error al cargar el modelo:${type} ${err.message}`);
                 setLoadingProgress(0);
             }
         };
