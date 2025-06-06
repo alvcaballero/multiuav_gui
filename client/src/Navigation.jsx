@@ -7,6 +7,7 @@ import MainPage from './other/MainPage';
 import MissionPage from './other/MissionPage';
 import MissionPageTest from './other/MissionPageTest';
 import MissionPage3D from './other/MissionPage3D';
+import MainPage3D from './other/MainPage3D';
 import ReplayPage from './other/ReplayPage';
 import DevicePage from './other/DevicePage';
 import CameraPage from './other/CameraPage';
@@ -42,6 +43,7 @@ const Navigation = () => {
 
         <Route path="mission" element={<MissionPage />} />
         <Route path="missiontest" element={<MissionPageTest />} />
+        <Route path="3Dview" element={<MainPage3D />} />
         <Route path="3Dmission" element={<MissionPage3D />} />
         <Route path="planning" element={<PlanningPage />} />
         <Route path="camera" element={<CameraPage />} />

@@ -6,7 +6,6 @@ import maplibregl from 'maplibre-gl';
 import palette from '../common/palette';
 import { Line } from '@react-three/drei';
 
-import Pose from './Pose';
 import NumberedSphere from './NumberedSphere';
 import { LatLon2XYZ } from './convertion';
 
@@ -49,33 +48,26 @@ const R3FMission = ({ routes = [] }) => {
   }
 
   useEffect(() => {
-    console.log(routes)
-    let origin = origin3d
-    if(routes.length >0 && routes[0].wp?.pos){
-      origin = {lat: routes[0].wp.pos[0] ,lng: routes[0].wp.pos[1],alt:0}
-    }
-    let routexyz = routesToXYZ(origin,routes)
-    console.log(routexyz)
-    setRouteWP(routesTowaypoints(routexyz))
-    //setRouteLines(routesToLines(routexyz));
-    setRouteLines(routesToLines(routexyz));
+    if (routes.length > 0) {
+      console.log(routes)
 
+      let origin = origin3d
+      if(routes.length >0 && routes[0].wp?.pos){
+        origin = {lat: routes[0].wp.pos[0] ,lng: routes[0].wp.pos[1],alt:0}
+      }
+      let routexyz = routesToXYZ(origin,routes)
+      console.log(routexyz)
+      setRouteWP(routesTowaypoints(routexyz))
+      //setRouteLines(routesToLines(routexyz));
+      setRouteLines(routesToLines(routexyz));
+    }
   }, [routes,origin3d]);
 
 
 
   return (
     <Fragment>
-      {/*  esto es un  flecha en 3d*/}
-      <Pose
-        x={0}
-        y={0}
-        theta={0}
-        materialProps={{
-          color: new THREE.Color(0x3287a8),
-          wireframe: true,
-        }}
-      />
+
       {/* Waypoints*/}
       {React.Children.toArray(
         routeWP.map((wp, index) => (
@@ -98,23 +90,6 @@ const R3FMission = ({ routes = [] }) => {
           </Fragment>
         ))
       )}
-
-      {/* lines*/}
-      {/*React.Children.toArray(
-        routeLines.map((line, index) => (
-          <Fragment key={'line' + index}>
-            <line geometry={line}>
-              <lineBasicMaterial
-                attach="material"
-                color={palette.colors_devices[index]}
-                linewidth={10}
-                linecap={'round'}
-                linejoin={'round'}
-              />
-            </line>
-          </Fragment>
-        ))
-      )*/}
     </Fragment>
   )
 }

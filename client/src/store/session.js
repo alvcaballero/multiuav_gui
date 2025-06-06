@@ -76,6 +76,9 @@ const { reducer, actions } = createSlice({
         });
       }
     },
+    updateScene3dOrigin(state,action){
+      state.scene3d.origin= action.payload;
+    }
   },
 });
 

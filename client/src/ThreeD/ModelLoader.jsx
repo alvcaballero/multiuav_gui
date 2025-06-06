@@ -15,19 +15,85 @@ const modelPaths = {
 
 // Cache para modelos ya cargados
 const modelCache = new Map()
+const loadingQueue = new Map()
+
 
 export const modelKey = (category) => (modelPaths.hasOwnProperty(category) ? category : 'default');
 
 
+
+
+
+
+export const getModel = async (type) => {
+    if (!type || !modelPaths[type]) {
+        setError(`Modelo no encontrado para el tipo: ${type}`);
+        return;
+    }
+    if (modelCache.has(type)) {
+        return modelCache.get(type);
+    }
+    if (loadingQueue.has(type)) return await loadingQueue.get(type);
+    
+    const loader = new GLTFLoader();
+    const modelPath = modelPaths[type];
+
+    const loadPromise = new Promise((resolve, reject) => {
+        loader.load(
+            modelPath,
+            (gltf) => {
+                gltf.scene.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                modelCache.set(type, gltf);
+                loadingQueue.delete(type);
+                resolve(gltf);
+            },
+            undefined,
+            (error) => {
+                console.error(`Error cargando modelo "${type}":`, error);
+                loadingQueue.delete(type);
+                reject(error);
+            }
+        );
+    });
+    loadingQueue.set(type, loadPromise);
+    return await loadPromise;
+}
+
 export const useModelLoader = (type) => {
+    //const { getModel } = useContext(ModelContext);
+    const [model, setModel] = useState(null);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (!type) return;
+        const load = async () => {
+            try {
+                const gltf = await getModel(type);
+                setModel(gltf);
+            } catch (err) {
+                setError(err);
+            }
+        };
+        load();
+    }, [type, getModel]);
+
+    return { model, error };
+};
+
+
+
+export const useModelLoader2 = (type) => {
     const [model, setModel] = useState(null);
     const [error, setError] = useState(null);
     const [loadingProgress, setLoadingProgress] = useState(0);
 
     const loader = useMemo(() => {
         const gltfLoader = new GLTFLoader();
-
-
         return gltfLoader;
     }, []);
 

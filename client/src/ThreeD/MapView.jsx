@@ -15,6 +15,20 @@ const Environment = () => {
 }
 
 
+{/* Suelo infinito */}
+const Ground =()=>{
+  return(
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+    <planeGeometry args={[1000, 1000]} />
+    <meshStandardMaterial
+      map={groundTexture}
+      roughness={0.8}
+      metalness={0.2}
+    />
+  </mesh>    
+  )
+}
+
 const MapView = ({ children }) => {
 
   return (
@@ -30,18 +44,12 @@ const MapView = ({ children }) => {
       <axesHelper args={[5]} />
       <gridHelper />
 
+
       <Suspense fallback={null}>
+        <Ground/>
         {children}
       </Suspense>
-      {/* Suelo infinito */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-        <planeGeometry args={[1000, 1000]} />
-        <meshStandardMaterial
-          map={groundTexture}
-          roughness={0.8}
-          metalness={0.2}
-        />
-      </mesh>
+
 
 
     </Canvas>

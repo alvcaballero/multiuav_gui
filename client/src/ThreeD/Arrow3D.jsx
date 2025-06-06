@@ -11,7 +11,7 @@ import { Color } from 'three';
     scale?: [number, number, number];
     materialProps?: MaterialProps;
     */
-export default function Pose(props) {
+export default function Arrow3D(props) {
   const materialProps = props.materialProps ?? {
     wireframe: true,
     color: new Color(0x8ecc47),
