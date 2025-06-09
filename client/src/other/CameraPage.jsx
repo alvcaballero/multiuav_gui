@@ -2,7 +2,8 @@ import React, { Fragment, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
 import MainToolbar from '../components/MainToolbar';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { RosControl, RosContext } from '../components/RosControl';
 import DeviceList from '../components/DeviceList';
 import { Paper, Grid, Box } from '@mui/material';
@@ -82,7 +83,7 @@ const CameraPage = () => {
   let listdevices = Object.values(devices);
   const myhostname = `${window.location.hostname}`;
 
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <div className={classes.root}>
       <RosControl notification={showToast}>

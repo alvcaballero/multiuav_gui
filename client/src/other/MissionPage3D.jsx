@@ -1,8 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
-
+import { makeStyles } from 'tss-react/mui';
 
 import { Navbar2 } from '../components/Navbar2';
 import { Menu } from '../components/Menu';
@@ -19,7 +18,7 @@ import R3FMission from '../ThreeD/R3FMission';
 import R3DMarkers from '../ThreeD/R3DMarkers';
 import R3FDevices from '../ThreeD/R3FDevices';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     margin: '0',
     height: '100vh',
@@ -56,7 +55,7 @@ const showToast = (type, description) => {
 };
 
 const MissionPage3D = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const tabIndex = 0;
 
   const [Opensave, setOpenSave] = useState(false);

@@ -1,5 +1,6 @@
 import React, { useContext, useState, Fragment } from 'react';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
@@ -21,7 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SelectField from '../common/components/SelectField';
 import { RosContext } from './RosControl';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     pointerEvents: 'none',
     position: 'fixed',
@@ -100,7 +101,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const Adduav = ({ SetAddUAVOpen }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const rosContex = useContext(RosContext);
   const [item, setItem] = useState({
     name: 'uav_',

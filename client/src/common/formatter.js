@@ -1,4 +1,8 @@
-import moment from 'moment';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+
 import {
   altitudeFromMeters,
   altitudeUnitString,
@@ -17,23 +21,25 @@ export const formatNumber = (value, precision = 1) => Number(value.toFixed(preci
 
 export const formatPercentage = (value) => `${value}%`;
 
-export const formatTime = (value, format, hours12) => {
+export const formatTime = (value, format) => {
   if (value) {
-    const m = moment(value);
+    const d = dayjs(value).toDate();
+    const dateConfig = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    const minuteConfig = { hour: '2-digit', minute: '2-digit' };
+    const secondConfig = { ...minuteConfig, second: '2-digit' };
     switch (format) {
       case 'date':
-        return m.format('YYYY-MM-DD');
+        return d.toLocaleDateString(undefined, dateConfig);
       case 'time':
-        return m.format(hours12 ? 'hh:mm:ss A' : 'HH:mm:ss');
+        return d.toLocaleTimeString(undefined, secondConfig);
       case 'minutes':
-        return m.format(hours12 ? 'YYYY-MM-DD hh:mm A' : 'YYYY-MM-DD HH:mm');
+        return d.toLocaleString(undefined, { ...dateConfig, ...minuteConfig });
       default:
-        return m.format(hours12 ? 'YYYY-MM-DD hh:mm:ss A' : 'YYYY-MM-DD HH:mm:ss');
+        return d.toLocaleString(undefined, { ...dateConfig, ...secondConfig });
     }
   }
   return '';
 };
-
 export const formatStatus = (value) => prefixString('deviceStatus', value);
 export const formatAlarm = (value) => (value ? prefixString('alarm_', value) : '');
 
@@ -56,8 +62,6 @@ export const formatSpeed = (value, unit, t) => `${speedFromKnots(value, unit).to
 
 export const formatVolume = (value, unit, t) =>
   `${volumeFromLiters(value, unit).toFixed(2)} ${volumeUnitString(unit, t)}`;
-
-export const formatHours = (value) => moment.duration(value).humanize();
 
 export const formatNumericHours = (value, t) => {
   const hours = Math.floor(value / 3600000);
@@ -97,9 +101,9 @@ export const formatCoordinate = (key, value, unit) => {
 export const getStatusColor = (status) => {
   switch (status) {
     case 'online':
-      return 'positive';
+      return 'success';
     case 'offline':
-      return 'negative';
+      return 'error';
     case 'unknown':
     default:
       return 'neutral';
@@ -108,12 +112,12 @@ export const getStatusColor = (status) => {
 
 export const getBatteryStatus = (batteryLevel) => {
   if (batteryLevel >= 70) {
-    return 'positive';
+    return 'success';
   }
   if (batteryLevel > 30) {
-    return 'medium';
+    return 'warning';
   }
-  return 'negative';
+  return 'error';
 };
 
 export const formatNotificationTitle = (t, notification, includeId) => {

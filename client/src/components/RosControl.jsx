@@ -2,15 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector, connect } from 'react-redux';
 import { missionActions } from '../store'; // here update device action with position of uav for update in map
 import YAML from 'yaml';
+import { useStore } from 'react-redux';
 
 export const RosContext = React.createContext();
 
 var plan_mission = '';
 
 export const RosControl = ({ children, notification }) => {
-  const devices = useSelector((state) => state.devices.items);
-  const missions = useSelector((state) => state.mission);
-  const serverState = useSelector((state) => state.session.server.rosState);
+  const store = useStore();
+  //const serverState = useSelector((state) => state.session.server.rosState);
   const dispatch = useDispatch();
 
   const [rosState, setrosState] = useState(false);
@@ -18,8 +18,16 @@ export const RosControl = ({ children, notification }) => {
   const [textmission, settextmission] = useState('');
 
   useEffect(() => {
-    setrosState(serverState);
-  }, [serverState]);
+    console.log('RosControl mounted');
+
+    return () => {
+      console.log('RosControl unmounted');
+    };
+  }, []);
+
+  //useEffect(() => {
+  //  setrosState(serverState);
+  //}, [serverState]);
 
   const serverConecRos = async (event) => {
     //event.preventDefault();
@@ -34,13 +42,9 @@ export const RosControl = ({ children, notification }) => {
           notification('success', myresponse.msg);
           setrosState(true);
         }
-        if (myresponse.state === 'error') {
+        if (myresponse.state === 'error' || myresponse.state === 'disconnect') {
           setrosState(false);
           notification('danger', myresponse.msg);
-        }
-        if (myresponse.state === 'disconnect') {
-          notification('danger', myresponse.msg);
-          setrosState(false);
         }
         console.log(myresponse);
       } else {
@@ -104,6 +108,8 @@ export const RosControl = ({ children, notification }) => {
   };
 
   const serverloadmission = async () => {
+    let missions = store.getState().missions;
+
     try {
       const response = await fetch('/api/commands/send', {
         method: 'POST',
@@ -131,15 +137,12 @@ export const RosControl = ({ children, notification }) => {
   const servercommandmission = async () => {
     // event.preventDefault();
     let commandDevice = null;
+    let missions = store.getState().missions;
     let listUAV = missions['route'].map((element) => element.uav);
-
-    let listDeviceId = listUAV.map(
-      (name) => Object.values(devices).find((mydevice) => mydevice.name == name).id
-    );
+    let devices = store.getState().devices.items;
+    console.log('devices', devices);
+    let listDeviceId = listUAV.map((name) => Object.values(devices).find((mydevice) => mydevice.name == name).id);
     console.log('command mission ');
-    // console.log(listUAV);
-    // console.log(listDeviceId);
-    // find uav in mission loaded if not found send mission to all uav
     if (listDeviceId && listDeviceId.length > 0) {
       commandDevice = listDeviceId;
     }
@@ -209,11 +212,7 @@ export const RosControl = ({ children, notification }) => {
         route.forEach((element) => {
           //console.log(element);
           if (element.length == 3) {
-            mission_yaml['uav_' + count_uav]['wp_' + count_wp] = [
-              element[1],
-              element[0],
-              element[2],
-            ];
+            mission_yaml['uav_' + count_uav]['wp_' + count_wp] = [element[1], element[0], element[2]];
             count_wp = count_wp + 1;
           }
         });
@@ -228,11 +227,7 @@ export const RosControl = ({ children, notification }) => {
       let mission_yaml = { uav_n: 1, uav_1: {} };
       let count_wp = 0;
       jsondoc.mission.items.forEach((element) => {
-        mission_yaml.uav_1['wp_' + count_wp] = [
-          element.params[4],
-          element.params[5],
-          element.Altitude,
-        ];
+        mission_yaml.uav_1['wp_' + count_wp] = [element.params[4], element.params[5], element.Altitude];
         count_wp = count_wp + 1;
       });
       mission_yaml.uav_1['wp_n'] = count_wp;
@@ -247,7 +242,7 @@ export const RosControl = ({ children, notification }) => {
   };
 
   async function connectAddUav(device) {
-      serverAddUAV(device);
+    serverAddUAV(device);
   }
 
   function loadMission() {

@@ -1,15 +1,6 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  IconButton,
-  Tooltip,
-  Avatar,
-  ListItemAvatar,
-  ListItemText,
-  ListItemButton,
-  Typography,
-} from '@mui/material';
-import { amber, grey, green, indigo, red, common } from '@mui/material/colors';
+import { IconButton, Tooltip, Avatar, ListItemAvatar, ListItemText, ListItemButton, Typography } from '@mui/material';
 import BatteryFullIcon from '@mui/icons-material/BatteryFull';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import Battery60Icon from '@mui/icons-material/Battery60';
@@ -17,22 +8,17 @@ import BatteryCharging60Icon from '@mui/icons-material/BatteryCharging60';
 import Battery20Icon from '@mui/icons-material/Battery20';
 import BatteryCharging20Icon from '@mui/icons-material/BatteryCharging20';
 import ErrorIcon from '@mui/icons-material/Error';
-import moment from 'moment';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { devicesActions } from '../store';
-import {
-  formatAlarm,
-  formatBoolean,
-  formatPercentage,
-  formatStatus,
-  getStatusColor,
-} from '../common/formatter';
+import { formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusColor } from '../common/formatter';
 import { mapIconKey, mapIcons } from '../Mapview/preloadImages';
 import EngineIcon from '../resources/images/data/engine.svg';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
 
-//import { useAttributePreference } from '../common/util/preferences';
+dayjs.extend(relativeTime);
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   icon: {
     width: '25px',
     height: '25px',
@@ -43,158 +29,162 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: 'normal',
     lineHeight: '0.875rem',
   },
-  positive: {
-    color: theme.palette.colors.positive,
+  success: {
+    color: theme.palette.success.main,
   },
-  medium: {
-    color: theme.palette.colors.medium,
+  warning: {
+    color: theme.palette.warning.main,
   },
-  negative: {
-    color: theme.palette.colors.negative,
+  error: {
+    color: theme.palette.error.main,
   },
   neutral: {
-    color: theme.palette.colors.neutral,
+    color: theme.palette.neutral.main,
   },
 }));
 
-const iconStyle = {
-  width: '25px',
-  height: '25px',
-  filter: 'brightness(0) invert(1)',
-};
-const batteryTextStyle = {
-  fontSize: '0.75rem',
-  fontWeight: 'normal',
-  lineHeight: '0.875rem',
-};
-const positivecolor = {
-  color: green[500],
-};
-const mediumcolor = {
-  color: amber[700],
-};
-const negativecolor = {
-  color: red[500],
-};
-const neutralcolor = {
-  color: grey[500],
-};
+const PositionAlarm = React.memo(({ alarm, classes }) =>
+  alarm === 'threat' ? (
+    <Tooltip title={`${'eventAlarm'}: ${formatAlarm(alarm)}`}>
+      <IconButton size="small">
+        <ErrorIcon fontSize="small" className={classes.error} />
+      </IconButton>
+    </Tooltip>
+  ) : null
+);
 
-const DeviceRow = ({ data, index, style }) => {
-  const classes = useStyles();
-  const dispatch = useDispatch();
+const PositionIgnition = React.memo(({ ignition, classes }) => (
+  <Tooltip title={`${'positionIgnition'}: ${formatBoolean(ignition)}`}>
+    <IconButton size="small">
+      {ignition ? (
+        <EngineIcon width={20} height={20} style={classes.success} />
+      ) : (
+        <EngineIcon width={20} height={20} style={classes.neutral} />
+      )}
+    </IconButton>
+  </Tooltip>
+));
 
-  const item = data[index];
-  const position = useSelector((state) => state.session.positions[item.id]);
+const PositionSpeed = React.memo(({ speed }) => (
+  <Tooltip title={`${'speed'}: ${speed}`}>
+    <IconButton size="small">
+      <div style={{ fontSize: '0.9rem' }}>V {speed}m/s</div>
+    </IconButton>
+  </Tooltip>
+));
 
-  const devicePrimary = item['name']; //'name';//useAttributePreference('devicePrimary', 'name');
-  const deviceSecondary = 'test';
-  const secondaryText = () => {
-    let status;
-    if (item.status === 'online' || !item.lastUpdate) {
-      status = item.status;
-    } else {
-      status = moment(item.lastUpdate).fromNow();
+const PositionAltitude = React.memo(({ altitude }) => (
+  <Tooltip title={`${'altitude'}: ${Math.round(altitude)}`}>
+    <IconButton size="small">
+      <div style={{ fontSize: '0.9rem' }}>H {altitude.toFixed(1)}m</div>
+    </IconButton>
+  </Tooltip>
+));
+
+const PositionBattery = React.memo(({ batteryLevel, charge, classes }) => {
+  const getBatteryIcon = (level, isCharging) => {
+    if (level > 70) {
+      return isCharging ? (
+        <BatteryChargingFullIcon fontSize="small" className={classes.success} />
+      ) : (
+        <BatteryFullIcon fontSize="small" className={classes.success} />
+      );
     }
-    return (
-      <React.Fragment>
-        {position && position.attributes.hasOwnProperty('landed_state') && (
-          <Typography component='span' sx={{ display: 'block', fontSize: 10 }}>
-            {position.attributes.landed_state}
-          </Typography>
-        )}
-        <Typography
-          component='span'
-          style={{ fontSize: 12 }}
-          className={classes[getStatusColor(item.status)]}
-        >
-          {status}
-        </Typography>
-      </React.Fragment>
+    if (level > 30) {
+      return isCharging ? (
+        <BatteryCharging60Icon fontSize="small" className={classes.warning} />
+      ) : (
+        <Battery60Icon fontSize="small" className={classes.warning} />
+      );
+    }
+    return isCharging ? (
+      <BatteryCharging20Icon fontSize="small" className={classes.error} />
+    ) : (
+      <Battery20Icon fontSize="small" className={classes.error} />
     );
   };
 
   return (
+    <Tooltip title={`${'BatteryLevel'}: ${formatPercentage(batteryLevel)}`}>
+      <IconButton size="small">{getBatteryIcon(batteryLevel, charge)}</IconButton>
+    </Tooltip>
+  );
+});
+
+const customEqual = (oldValue, newValue) => {
+  return (
+    oldValue?.attributes?.landed_state === newValue?.attributes?.landed_state &&
+    oldValue?.attributes?.ignition === newValue?.attributes?.ignition &&
+    oldValue?.attributes?.batteryLevel === newValue?.attributes?.batteryLevel &&
+    oldValue?.attributes?.alarm === newValue?.attributes?.alarm &&
+    oldValue?.attributes?.charge === newValue?.attributes?.charge &&
+    oldValue?.speed === newValue?.speed &&
+    oldValue?.altitude === newValue?.altitude
+  );
+};
+
+const DeviceRow = ({ data, index, style }) => {
+  const { classes } = useStyles();
+  const dispatch = useDispatch();
+
+  const item = data[index];
+  const position = useSelector((state) => state.session.positions[item.id], customEqual);
+
+  const devicePrimary = item['name'];
+  const deviceSecondary = 'test';
+
+  const secondaryText = useCallback(() => {
+    let status;
+    if (item.status === 'online') {
+      status = item.status;
+    } else {
+      status = dayjs(item.lastUpdate).fromNow();
+    }
+    return (
+      <>
+        {position?.attributes?.landed_state && ( // Uso de optional chaining para mayor seguridad
+          <Typography component="span" sx={{ display: 'block', fontSize: 10 }}>
+            {position.attributes.landed_state}
+          </Typography>
+        )}
+        <Typography component="span" style={{ fontSize: 12 }} className={classes[getStatusColor(item.status)]}>
+          {status}
+        </Typography>
+      </>
+    );
+  }, [item.status, item.lastUpdate, position?.attributes?.landed_state, classes]); // Dependencias de useCallback
+
+  return (
     <div style={style}>
-      <ListItemButton
-        key={item.id}
-        onClick={() => dispatch(devicesActions.selectId(item.id))}
-        disabled={item.disabled}
-      >
+      <ListItemButton key={item.id} onClick={() => dispatch(devicesActions.selectId(item.id))} disabled={item.disabled}>
         <ListItemAvatar>
           <Avatar>
-            <img style={iconStyle} src={mapIcons[mapIconKey(item.category)]} alt='' />
+            <img className={classes.icon} src={mapIcons[mapIconKey(item.category)]} alt="" />
           </Avatar>
         </ListItemAvatar>
         <ListItemText
           primary={devicePrimary}
-          primaryTypographyProps={{ noWrap: true }}
           secondary={secondaryText()}
-          secondaryTypographyProps={{ noWrap: true }}
+          slotProps={{
+            primary: { noWrap: true },
+            secondary: { noWrap: true },
+          }}
         />
         {position && (
           <>
-            {position.attributes.hasOwnProperty('ignition') && (
-              <Tooltip
-                title={`${'positionIgnition'}: ${formatBoolean(position.attributes.ignition)}`}
-              >
-                <IconButton size='small'>
-                  {position.attributes.ignition ? (
-                    <EngineIcon width={20} height={20} style={positivecolor} />
-                  ) : (
-                    <EngineIcon width={20} height={20} style={neutralcolor} />
-                  )}
-                </IconButton>
-              </Tooltip>
+            {position.attributes?.alarm && <PositionAlarm alarm={position.attributes.alarm} classes={classes} />}
+            {position.attributes?.ignition !== undefined && ( // Verificar explícitamente si existe y no es undefined
+              <PositionIgnition ignition={position.attributes.ignition} classes={classes} />
             )}
-
-            {position.hasOwnProperty('speed') && (
-              <Tooltip title={`${'speed'}: ${position.speed}`}>
-                <IconButton size='small'>
-                  <div style={{ fontSize: '0.9rem' }}> V {Math.round(position.speed)}m/s</div>
-                </IconButton>
-              </Tooltip>
+            {position?.speed !== undefined && <PositionSpeed speed={position.speed} />}
+            {position?.altitude !== undefined && <PositionAltitude altitude={position.altitude} />}
+            {position.attributes?.batteryLevel !== undefined && (
+              <PositionBattery
+                batteryLevel={position.attributes.batteryLevel}
+                charge={position.attributes.charge}
+                classes={classes}
+              />
             )}
-            {position.hasOwnProperty('altitude') && (
-              <Tooltip title={`${'altitude'}: ${Math.round(position.altitude)}`}>
-                <IconButton size='small'>
-                  <div style={{ fontSize: '0.9rem' }}>H {Math.round(position.altitude)}m</div>
-                </IconButton>
-              </Tooltip>
-            )}
-            {position.attributes.hasOwnProperty('batteryLevel') && (
-              <Tooltip
-                title={`${'BatteryLevel'}: ${formatPercentage(position.attributes.batteryLevel)}`}
-              >
-                <IconButton size='small'>
-                  {position.attributes.batteryLevel > 70 ? (
-                    position.attributes.charge ? (
-                      <BatteryChargingFullIcon fontSize='small' style={positivecolor} />
-                    ) : (
-                      <BatteryFullIcon fontSize='small' style={positivecolor} />
-                    )
-                  ) : position.attributes.batteryLevel > 30 ? (
-                    position.attributes.charge ? (
-                      <BatteryCharging60Icon fontSize='small' style={mediumcolor} />
-                    ) : (
-                      <Battery60Icon fontSize='small' style={mediumcolor} />
-                    )
-                  ) : position.attributes.charge ? (
-                    <BatteryCharging20Icon fontSize='small' style={negativecolor} />
-                  ) : (
-                    <Battery20Icon fontSize='small' style={negativecolor} />
-                  )}
-                </IconButton>
-              </Tooltip>
-            )}
-            {position.attributes.hasOwnProperty('alarm') &&
-              position.attributes.alarm == 'threat' && (
-                <Tooltip title={`${'eventAlarm'}: ${formatAlarm(position.attributes.alarm)}`}>
-                  <IconButton size='small'>
-                    <ErrorIcon fontSize='small' style={negativecolor} />
-                  </IconButton>
-                </Tooltip>
-              )}
           </>
         )}
       </ListItemButton>

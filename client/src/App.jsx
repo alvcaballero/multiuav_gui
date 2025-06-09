@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import makeStyles from "@mui/styles/makeStyles";
+import { makeStyles } from 'tss-react/mui';
+
 import { LinearProgress, useMediaQuery, useTheme } from "@mui/material";
 import SocketController from "./SocketController";
 
@@ -9,10 +10,11 @@ import { useDispatch } from 'react-redux';
 import {  geofencesActions } from './store';
 import { useEffectAsync } from './reactHelper';
 
-const useStyles = makeStyles(() => ({
+
+const useStyles = makeStyles()(() => ({
   page: {
     flexGrow: 1,
-    overflow: "auto",
+    overflow: 'auto',
   },
   menu: {
     zIndex: 4,
@@ -20,7 +22,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 const App = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const theme = useTheme();
   const dispatch = useDispatch();
 

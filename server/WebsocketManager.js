@@ -3,6 +3,7 @@
 
 import WebSocket, { WebSocketServer } from 'ws';
 import { websocketController } from './controllers/websocket.js';
+import { getDatetime } from './common/utils.js';
 
 function heartbeat() {
   this.isAlive = true;
@@ -29,9 +30,9 @@ export class WebsocketManager {
       client.notify(init_msg);
     });
 
-    const interval_update = setInterval(this.updateclient.bind(this), 250);
+    const interval_update = setInterval(this.updateclient.bind(this), 2000);
 
-    const interval_server = setInterval(this.updateserver.bind(this), 5000);
+    const interval_server = setInterval(this.updateserver.bind(this), 10000);
 
     const interval = setInterval(this.ping.bind(this), 30000);
 
@@ -90,7 +91,7 @@ export class WebsocketManager {
   onConnect(cb) {
     this.ws.on('connection', (client) => {
       client.isAlive = true;
-      console.log('newclient');
+      console.log('----> Newclient CONNECTED WEBSOCKET' + getDatetime());
 
       client.on('error', console.error);
 

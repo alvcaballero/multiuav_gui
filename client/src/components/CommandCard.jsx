@@ -13,13 +13,14 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { useNavigate } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BaseCommandView from '../common/components/BaseCommandView';
 import { useCatch } from '../reactHelper';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     pointerEvents: 'none',
     position: 'fixed',
@@ -62,7 +63,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const CommandCard = ({ id, onClose }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const [item, setItem] = useState({});
   const [savedId, setSavedId] = useState(0);

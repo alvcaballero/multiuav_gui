@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 
 import MapView from '../Mapview/MapView';
 import Navbar from '../components/Navbar';
@@ -20,7 +21,7 @@ import MapScale from '../Mapview/MapScale';
 import MapDefaultCamera from '../Mapview/MapDefaultCamera';
 import MapMarkers3D from '../Mapview/MapMarkers3D';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     margin: '0',
     height: '100vh',
@@ -57,7 +58,7 @@ const showToast = (type, description) => {
 };
 
 const MissionPageTest = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [Opensave, setOpenSave] = useState(false);
 
   const positions = useSelector((state) => state.session.positions);

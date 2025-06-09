@@ -12,13 +12,13 @@ import {
 } from 'recharts';
 import { FormControl, InputLabel, Select, Box, MenuItem } from '@mui/material';
 import palette from '../common/palette';
-import { makeStyles } from '@mui/styles';
+import { makeStyles } from 'tss-react/mui';
 //https://www.opentopodata.org/
 //https://open-elevation.com/
 //https://codepen.io/tobinbradley/pen/jOeRbwr
 // https://github.com/traccar/traccar-web/blob/667d0f68daaa3916fac6653ef9994f6f2d05e177/modern/src/reports/ChartReportPage.jsx#L8
 //https://medium.com/@onthegomap/new-and-improved-elevation-profiles-cb888b9ac8c4
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   chart: {
     flexGrow: 1,
     overflow: 'hidden',
@@ -34,7 +34,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const MissionElevation = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [items, setItems] = useState([]);
   const [location, setlocation] = useState([]);
   const [ElevProfile, setElevProfile] = useState([]);

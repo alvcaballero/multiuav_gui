@@ -1,12 +1,13 @@
 import maplibregl from 'maplibre-gl';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useStore } from 'react-redux';
 import { usePreference } from '../common/preferences';
 import { map } from './MapView';
 
 const MapDefaultCamera = () => {
+  const store = useStore();
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
-  const positions = useSelector((state) => state.session.positions);
+  //const positions = useSelector((state) => state.session.positions);
 
   const defaultLatitude = usePreference('latitude');
   const defaultLongitude = usePreference('longitude');
@@ -25,6 +26,7 @@ const MapDefaultCamera = () => {
         });
         setInitialized(true);
       } else {
+        const positions = store.getState().session.positions;
         const coordinates = Object.values(positions).map((item) => [item.longitude, item.latitude]);
         if (coordinates.length > 1) {
           const bounds = coordinates.reduce(
@@ -47,7 +49,7 @@ const MapDefaultCamera = () => {
         }
       }
     }
-  }, [selectedDeviceId, initialized, defaultLatitude, defaultLongitude, defaultZoom, positions]);
+  }, [selectedDeviceId, initialized, defaultLatitude, defaultLongitude, defaultZoom]);
 
   return null;
 };

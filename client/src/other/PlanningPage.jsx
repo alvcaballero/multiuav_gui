@@ -26,7 +26,8 @@ import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ReplayIcon from '@mui/icons-material/Replay';
 
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { useNavigate } from 'react-router-dom';
 import { missionActions, sessionActions } from '../store'; // here update device action with position of uav for update in map
 
@@ -48,7 +49,7 @@ import SelectList from '../components/SelectList';
 import MapDefaultCamera from '../Mapview/MapDefaultCamera';
 import UploadButtons from '../components/uploadButton';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     margin: '0',
     height: '100vh',
@@ -123,7 +124,7 @@ const showToast = (type, description) => {
 };
 
 const PlanningPage = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showTitles, setShowTitles] = useState(true);

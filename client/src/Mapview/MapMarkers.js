@@ -1,5 +1,5 @@
 import { useId, useEffect } from 'react';
-import { useTheme } from '@mui/styles';
+import { useTheme } from '@mui/material/styles';
 import { map } from './MapView';
 import { findFonts } from './mapUtil';
 

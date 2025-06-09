@@ -14,5 +14,33 @@ export default defineConfig(() => ({
   build: {
     outDir: 'build',
   },
-  plugins: [svgr(), react(), VitePWA()],
+  plugins: [
+    svgr(), 
+    react(), 
+    VitePWA({
+    includeAssets: ['favicon.ico'],
+    workbox: {
+        navigateFallbackDenylist: [/^\/api/],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html,woff,woff2,mp3}'],
+      },
+    manifest: {
+      name: 'Drone Control Panel',
+      short_name: 'DCP',
+      description: 'A control panel for managing drone operations',
+      theme_color: '#ffffff',
+      icons: [
+        {
+          src: 'logo192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: 'logo512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+      ],
+    },
+  })],
 }));

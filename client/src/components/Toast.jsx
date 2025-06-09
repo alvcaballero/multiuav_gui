@@ -1,10 +1,11 @@
 import { forwardRef, useCallback, useEffect } from "react";
-import makeStyles from "@mui/styles/makeStyles";
+import { makeStyles } from 'tss-react/mui';
+
 
 import { Card, IconButton, CardMedia, Typography } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   title: {
     fontWeight: 700,
     fontSize: "16px",
@@ -55,7 +56,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const Toast = ({ toastlist, position, setList }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const deleteToast = useCallback(
     (id) => {

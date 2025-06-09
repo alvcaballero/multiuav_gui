@@ -11,9 +11,9 @@ import throttleMiddleware from './throttleMiddleware';
 const reducer = combineReducers({
   errors,
   devices,
-  events,
   mission,
   session,
+  events,
   geofences,
 });
 
@@ -24,7 +24,10 @@ export { missionActions } from './mission';
 export { sessionActions } from './session';
 export { geofencesActions } from './geofences';
 
-export default configureStore({
+const store = configureStore({
   reducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(throttleMiddleware),
 });
+
+export default store;
+export { store };

@@ -28,7 +28,8 @@ import { TabPanel, TabList, TabContext } from '@mui/lab';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { formatTime } from '../common/formatter';
@@ -42,7 +43,7 @@ import SelectField from '../common/components/SelectField';
 import SelectList from '../components/SelectList';
 import BaseSettings from '../components/BaseSettings';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100%',
     display: 'flex',
@@ -122,7 +123,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 const ImageFull = ({ file, closecard }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <div className={classes.root_max}>
       {file && (
@@ -148,7 +149,7 @@ const ImageFull = ({ file, closecard }) => {
   );
 };
 const ImageFull2 = ({ file, closecard }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   return (
     <div className={classes.root_max}>
@@ -173,7 +174,7 @@ const ImageFull2 = ({ file, closecard }) => {
 };
 
 const MissionDetailReportPage = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const navigate = useNavigate();
   const { id } = useParams();
 

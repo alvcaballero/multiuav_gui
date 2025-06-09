@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
-import {  devicesActions, missionActions, sessionActions } from './store'; // here update device action with position of uav for update in map
+import { devicesActions, missionActions, sessionActions } from './store'; // here update device action with position of uav for update in map
 import { eventsActions } from './store/events';
 import { Snackbar } from '@mui/material';
 import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
@@ -67,6 +67,7 @@ const SocketController = () => {
         }
       }
       if (data.positions) {
+        console.log('update positions socket');
         dispatch(sessionActions.updatePositions(data.positions));
       }
       if (data.camera) {

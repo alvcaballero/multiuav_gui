@@ -1,6 +1,7 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import {
   Divider,
   Box,
@@ -22,7 +23,7 @@ import WaypointRouteList from './WaypointRouteList';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   list: {
     maxHeight: '100%',
     overflow: 'auto',
@@ -55,7 +56,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <Accordion expanded={expand} onChange={setExpand(true)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
@@ -258,7 +259,7 @@ const RouteRoutesList = ({
   expand_wp,
   setExpand_wp,
 }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const devices = useSelector((state) => state.devices.items);
   const positions = useSelector((state) => state.session.positions);
   const [expandedRouteOptions, setExpandedRouteOptions] = useState(false);

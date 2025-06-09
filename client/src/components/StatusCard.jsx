@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import Draggable from 'react-draggable';
+import { Rnd } from 'react-rnd';
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import {
   CardMedia,
   Button,
 } from '@mui/material';
+import { makeStyles } from 'tss-react/mui';
 import CloseIcon from '@mui/icons-material/Close';
 import ReplayIcon from '@mui/icons-material/Replay';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -25,15 +26,15 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PendingIcon from '@mui/icons-material/Pending';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
+import { Alarm } from '@mui/icons-material';
 
 import PositionValue from './PositionValue';
 import RemoveDialog from './RemoveDialog';
-import makeStyles from '@mui/styles/makeStyles';
+
 import { devicesActions } from '../store';
-import { Alarm } from '@mui/icons-material';
 import CommandCard from '../components/CommandCard';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme, { desktopPadding }) => ({
   card: {
     pointerEvents: 'auto',
     width: theme.dimensions.popupMaxWidth,
@@ -78,7 +79,7 @@ const useStyles = makeStyles((theme) => ({
   actions: {
     justifyContent: 'space-between',
   },
-  root: ({ desktopPadding }) => ({
+  root: {
     pointerEvents: 'none',
     position: 'fixed',
     zIndex: 5,
@@ -92,15 +93,14 @@ const useStyles = makeStyles((theme) => ({
       bottom: `calc(${theme.spacing(3)} + ${theme.dimensions.bottomBarHeight}px)`,
     },
     transform: 'translateX(-50%)',
-  }),
+  },
 }));
 
 const StatusRow = ({ name, content }) => {
-  const classes = useStyles();
-
+  const { classes } = useStyles({ desktopPadding: 0 });
   return (
     <TableRow>
-      <TableCell className={classes.card}>
+      <TableCell className={classes.cell}>
         <Typography variant="body2">{name}</Typography>
       </TableCell>
       <TableCell className={classes.cell}>
@@ -113,22 +113,24 @@ const StatusRow = ({ name, content }) => {
 };
 
 const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPadding = 0 }) => {
-  const classes = useStyles();
+  const { classes } = useStyles({ desktopPadding });
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const mapFollow = useSelector((state)=> state.devices.follow)
+  const mapFollow = useSelector((state) => state.devices.follow);
+
   const deviceImage = device?.attributes?.deviceImage;
+
   const positionItems = 'speed,course,batteryLevel,gimbal,MIC_1,MIC_2,MIC_3,Metano,Alcohol,CO';
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [removing, setRemoving] = useState(false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
 
-  const changeMapFollow = () =>{
-    dispatch(devicesActions.updateFollow(!mapFollow))
-  }
+  const changeMapFollow = () => {
+    dispatch(devicesActions.updateFollow(!mapFollow));
+  };
 
   const serverCommand = async (deviceId, command, attributes) => {
     //event.preventDefault();
@@ -183,10 +185,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   {device.name}
                 </Typography>
                 <IconButton size="small" onClick={changeMapFollow}>
-                  {mapFollow ?(
-                  <GpsFixedIcon fontSize="small" />
-                ):(<GpsNotFixedIcon fontSize="small"/>)}
-                  </IconButton>
+                  {mapFollow ? <GpsFixedIcon fontSize="small" /> : <GpsNotFixedIcon fontSize="small" />}
+                </IconButton>
                 <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
                   <CloseIcon fontSize="small" />
                 </IconButton>
@@ -264,26 +264,16 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
               <IconButton color="secondary" onClick={(e) => setAnchorEl(e.currentTarget)} disabled={!position}>
                 <PendingIcon />
               </IconButton>
-              <IconButton
-                onClick={() => serverCommand(device.id, 'SincroniseFiles')}
-                //disabled={disableActions || !position}
-              >
+              <IconButton onClick={() => serverCommand(device.id, 'SincroniseFiles')}>
                 <ReplayIcon />
               </IconButton>
               <IconButton onClick={() => setOpenSendCommand(true)} disabled={disableActions}>
                 <PublishIcon />
               </IconButton>
-              <IconButton
-                onClick={() => navigate(`/device/${deviceId}`)}
-                //disabled={disableActions || deviceReadonly}
-              >
+              <IconButton onClick={() => navigate(`/device/${deviceId}`)}>
                 <EditIcon />
               </IconButton>
-              <IconButton
-                onClick={() => setRemoving(true)}
-                //disabled={disableActions || deviceReadonly}
-                className={classes.negative}
-              >
+              <IconButton color="error" onClick={() => setRemoving(true)}>
                 <DeleteIcon />
               </IconButton>
             </CardActions>

@@ -1,6 +1,8 @@
 import palette from '../common/palette';
+import { createTheme } from '@mui/material';
 import { loadImage, prepareIcon } from './mapUtil';
 
+import { grey } from '@mui/material/colors';
 import backgroundSvg from '../resources/images/background.svg';
 import directionSvg from '../resources/images/direction.svg';
 import backgroundBorderSvg from '../resources/images/background_border.svg';
@@ -18,8 +20,8 @@ import powerTowerSvg from '../resources/images/icon/PowerTower1.svg';
 import windTurbineSvg from '../resources/images/icon/windTurbine.svg';
 import solarPanelSvg from '../resources/images/icon/SolarPanel.svg';
 import RectangleSvg from '../resources/images/icon/Rectangle.svg';
-import ArrowMapSvg from '../resources/images/icon/ArrowMap.svg'
-import ArrowMapFronSvg from '../resources/images/icon/ArrowMap2.svg'
+import ArrowMapSvg from '../resources/images/icon/ArrowMap.svg';
+import ArrowMapFronSvg from '../resources/images/icon/ArrowMap2.svg';
 
 import FrontDroneSvg from '../resources/images/icon/drone-svgrepo.svg';
 
@@ -38,12 +40,8 @@ export const mapIcons = {
   helicopter: helicopterSvg,
   plane: planeSvg,
   drone: droneSvg,
-  dji_M210_noetic: dronedjiSvg,
-  dji_M210_melodic: dronedjiSvg,
-  dji_M210_noetic_rtk: dronedjiSvg,
-  dji_M210_melodic_rtk: dronedjiSvg,
+  dji_M210: dronedjiSvg,
   dji_M300: dronedjiSvg,
-  dji_M300_rtk: dronedjiSvg,
   dji_M600: FrontDroneSvg,
   px4: planeSvg,
   catec: dronePx4Svg,
@@ -57,12 +55,8 @@ export const frontIcons = {
   helicopter: FrontDroneSvg,
   plane: FrontDroneSvg,
   drone: FrontDroneSvg,
-  dji_M210_noetic: FrontDroneSvg,
-  dji_M210_melodic: FrontDroneSvg,
-  dji_M210_noetic_rtk: FrontDroneSvg,
-  dji_M210_melodic_rtk: FrontDroneSvg,
+  dji_M210: FrontDroneSvg,
   dji_M300: FrontDroneSvg,
-  dji_M300_rtk: dronedjiSvg,
   dji_M600: FrontDroneSvg,
   px4: FrontDroneSvg,
   catec: FrontDroneSvg,
@@ -71,9 +65,28 @@ export const frontIcons = {
   default: FrontDroneSvg,
 };
 
-export const mapIconKey = (category) => (mapIcons.hasOwnProperty(category) ? category : 'default');
+export const mapIconKey = (category) => {
+  switch (category) {
+    case 'dji_M210_noetic':
+    case 'dji_M210_melodic_rtk':
+    case 'dji_M210_melodic':
+    case 'dji_M210_noetic_rtk':
+      return 'dji_M210';
+    case 'dji_M300':
+    case 'dji_M300_rtk':
+      return 'dji_M300';
+    default:
+      return mapIcons.hasOwnProperty(category) ? category : 'default';
+  }
+};
 
 export const mapImages = {};
+
+const theme = createTheme({
+  palette: {
+    neutral: { main: grey[500] },
+  },
+});
 
 export default async () => {
   const background = await loadImage(backgroundSvg);
@@ -98,10 +111,10 @@ export default async () => {
   await Promise.all(
     Object.keys(mapIcons).map(async (category) => {
       const results = [];
-      ['primary', 'positive', 'negative', 'neutral'].forEach((color) => {
+      ['info', 'success', 'error', 'neutral'].forEach((color) => {
         results.push(
           loadImage(mapIcons[category]).then((icon) => {
-            mapImages[`${category}-${color}`] = prepareIcon(background, icon, palette.colors[color]);
+            mapImages[`${category}-${color}`] = prepareIcon(background, icon, theme.palette[color].main);
           })
         );
       });

@@ -13,12 +13,13 @@ import CallMadeIcon from '@mui/icons-material/CallMade';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CachedIcon from '@mui/icons-material/Cached';
 import { grey } from '@mui/material/colors';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { usePreference } from '../common/preferences';
 
 import { Card, IconButton, Button, ButtonGroup, CardMedia } from '@mui/material';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   toolbar: {
     height: '36px',
     //backgroundColor: grey[300],
@@ -45,9 +46,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const Menu = ({ SetAddUAVOpen }) => {
-  const classes = useStyles();
-  const rosContex = useContext(RosContext);
+export const Menu = React.memo(({ SetAddUAVOpen }) => {
+  const { classes } = useStyles();
+  //const rosContex = useContext(RosContext);
+  const rosContext =  {};
   const [MissionName, setMissionName] = useState('no load mission');
   //const [MissionHome, setMissionHome] = useState([0,0]);
   const Mission_Name = useSelector((state) => state.mission.name);
@@ -137,7 +139,7 @@ export const Menu = ({ SetAddUAVOpen }) => {
 
         <RosContext.Consumer>
           {({ rosState }) => (
-            <Button id="rosConnect" onClick={rosContex.rosConnect} className={classes.mediaButton}>
+            <Button id="rosConnect"  className={classes.mediaButton}>
               {rosState && 'conectado'} {!rosState && 'desconectado'}{' '}
             </Button>
           )}
@@ -185,4 +187,4 @@ export const Menu = ({ SetAddUAVOpen }) => {
       </div>
     </header>
   );
-};
+});

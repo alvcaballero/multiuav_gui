@@ -10,7 +10,8 @@ import {
   AccordionDetails,
   Typography,
 } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -18,7 +19,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   list: {
     maxHeight: '100%',
     overflow: 'auto',
@@ -51,7 +52,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expandWp, AddnewWp, setExpandWp }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [expanded_ac, setExpanded_ac] = useState(false);
   const [newactionmenu, setnewactionmenu] = useState(true);
   const [newactionid, setnewactionid] = useState(0);

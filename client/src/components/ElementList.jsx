@@ -1,6 +1,7 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import {
   Divider,
   Box,
@@ -20,7 +21,7 @@ import BaseList from './BaseList';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   list: {
     maxHeight: '100%',
     overflow: 'auto',
@@ -53,7 +54,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const ElementList = ({ markers, setMarkers }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const dispatch = useDispatch();
   const [init, setinit] = useState(false);

@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { FixedSizeList } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 
 import { devicesActions } from '../store';
 import DeviceRow from './DeviceRow';
 import { useEffectAsync } from '../reactHelper';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   list: {
     maxHeight: '100%',
   },
@@ -19,7 +20,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const DeviceList = ({ devices }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const dispatch = useDispatch();
   const listInnerEl = useRef(null);
 

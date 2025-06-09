@@ -9,13 +9,14 @@ import {
   AccordionDetails,
   Button,
 } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { useNavigate, useParams } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BaseCommandView from '../common/components/BaseCommandView';
 import { useCatch } from '../reactHelper';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100%',
     display: 'flex',
@@ -44,7 +45,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const SendCommand = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const navigate = useNavigate();
 
   const { id } = useParams();

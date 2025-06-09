@@ -1,11 +1,12 @@
 // SquareMove.js
 import React, { useState, useEffect } from 'react';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { mapIconKey, mapIcons, frontIcons } from '../Mapview/preloadImages';
 import { Typography } from '@mui/material';
 //import styled from 'styled-components';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     position: 'relative',
     width: '200px',
@@ -111,7 +112,7 @@ const SquareMove = ({
   front_view = false,
   test = false,
 }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [left, setLeft] = useState(0);
   const [right, setRight] = useState(0);
   const [up, setUp] = useState(0);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Card, IconButton } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
 
 import CloseIcon from '@mui/icons-material/Close';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
@@ -11,7 +11,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 
 import novideo from '../resources/images/placeholder.jpg';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   card: {
     pointerEvents: 'auto',
   },
@@ -95,6 +95,18 @@ const RenderImages = ({ datacamera }) => {
   return <img src={camera_image} style={{ width: '100%' }} />;
 };
 
+const customEqual = (oldValue, newValue) => {
+  return (
+    oldValue?.attributes?.landed_state === newValue?.attributes?.landed_state &&
+    oldValue?.attributes?.ignition === newValue?.attributes?.ignition &&
+    oldValue?.attributes?.batteryLevel === newValue?.attributes?.batteryLevel &&
+    oldValue?.attributes?.alarm === newValue?.attributes?.alarm &&
+    oldValue?.attributes?.charge === newValue?.attributes?.charge &&
+    oldValue?.speed === newValue?.speed &&
+    oldValue?.altitude === newValue?.altitude
+  );
+};
+
 /**
  * CameraDevice component displays a video stream from a specified device using WebRTC WebRTC_env or Websocket.
  *
@@ -106,9 +118,13 @@ const RenderImages = ({ datacamera }) => {
  * @returns {JSX.Element} The CameraWebRTCV3 component.
  */
 
-const CameraDevice = ({ deviceId, deviceIp, onClose, datacamera }) => {
-  const classes = useStyles();
+const CameraDevice = React.memo(({ deviceId, onClose }) => {
+  const { classes } = useStyles();
   const device = useSelector((state) => state.devices.items[deviceId]);
+  const datacamera = useSelector((state) => state.session.camera[deviceId]);
+
+  const myhostname = `${window.location.hostname}`;
+
   const [cardSize, setCardSize] = useState(size.min);
   const [type, setType] = useState('Websocket');
   const [cameraSrc, setCameraSrc] = useState('');
@@ -138,7 +154,7 @@ const CameraDevice = ({ deviceId, deviceIp, onClose, datacamera }) => {
         setType(device.camera[0].type);
         if (device.camera[0].type === 'WebRTC') {
           setCameraSrc(`${device.name}_${device.camera[0].source}`);
-          setSrcIp(deviceIp);
+          setSrcIp(myhostname);
         } else {
           setCameraSrc(device.camera[0].source);
           setSrcIp(device.ip);
@@ -182,6 +198,6 @@ const CameraDevice = ({ deviceId, deviceIp, onClose, datacamera }) => {
       )}
     </div>
   );
-};
+});
 
 export default CameraDevice;

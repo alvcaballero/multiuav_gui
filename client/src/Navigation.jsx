@@ -3,6 +3,7 @@ import { Route, Routes, useLocation, useNavigate, Link } from 'react-router-dom'
 import { useEffectAsync } from './reactHelper';
 import App from './App';
 import useQuery from './common/useQuery';
+import HelloWorld from './other/HelloWorld';
 import MainPage from './other/MainPage';
 import MissionPage from './other/MissionPage';
 import MissionPageTest from './other/MissionPageTest';
@@ -41,10 +42,14 @@ const Navigation = () => {
       <Route path="/" element={<App />}>
         <Route index element={<MainPage />} />
 
-        <Route path="mission" element={<MissionPage />} />
-        <Route path="missiontest" element={<MissionPageTest />} />
+        {/* This is a temporary route for testing purposes, can be removed later
+         */}
         <Route path="3Dview" element={<MainPage3D />} />
         <Route path="3Dmission" element={<MissionPage3D />} />
+        <Route index element={<HelloWorld />} />
+
+        <Route path="mission" element={<MissionPage />} />
+        <Route path="missiontest" element={<MissionPageTest />} />
         <Route path="planning" element={<PlanningPage />} />
         <Route path="camera" element={<CameraPage />} />
         <Route path="device/:id" element={<DevicePage />} />
@@ -61,7 +66,6 @@ const Navigation = () => {
           <Route path="category" element={<SettingsCategoryPage />} />
           <Route path="category/:id" element={<SettingsCategoryPageEdit />} />
           <Route path="geofence/:id" element={<GeofencePage />} />
-
         </Route>
 
         <Route path="reports">

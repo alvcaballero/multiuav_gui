@@ -14,12 +14,13 @@ import {
   Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import YAML from 'yaml';
 
 import palette from '../common/palette';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   card: {
     pointerEvents: 'auto',
     width: '500px',
@@ -76,7 +77,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const SaveFile = ({ SetOpenSave, OpenSave }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const mission = useSelector((state) => state.mission);
 
   const [fileType, setFileType] = useState('yaml');

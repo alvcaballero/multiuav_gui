@@ -1,5 +1,6 @@
 import { map } from 'zod';
 import { eventsController } from '../controllers/events.js';
+import { round } from '../common/utils.js';
 const positions = {};
 const history = {};
 const camera = {};
@@ -39,13 +40,13 @@ export class positionsModel {
       return null;
     }
 
-    if (positions[payload.deviceId] === undefined) {``
+    if (positions[payload.deviceId] === undefined) {
+      ``;
       positions[payload.deviceId] = {
         deviceId: payload.deviceId,
         accuracy: 0.0,
         speed: 0.0,
         course: 0.0,
-        serverTime: new Date().toISOString(),
         attributes: {
           batteryLevel: 0,
           gimbal: [0, 0, 0],
@@ -59,7 +60,7 @@ export class positionsModel {
         },
       };
     }
-    positions[payload.deviceId]['serverTime'] = new Date().toISOString();
+    //positions[payload.deviceId]['serverTime'] = new Date().toISOString();
 
     if (payload.hasOwnProperty('latitude')) {
       //positions[payload.deviceId]["deviceId"] = payload.deviceId;
@@ -79,23 +80,23 @@ export class positionsModel {
 
     //------------  Attributes -------
     if (payload.hasOwnProperty('batteryLevel')) {
-      positions[payload.deviceId]['attributes']['batteryLevel'] = Number.parseFloat(payload.batteryLevel).toFixed(2);
+      positions[payload.deviceId]['attributes']['batteryLevel'] = Math.round(Number.parseFloat(payload.batteryLevel));
     }
     if (payload.hasOwnProperty('gimbal')) {
       positions[payload.deviceId]['attributes']['gimbal'] = [
-        payload.gimbal.x.toFixed(),
-        payload.gimbal.y.toFixed(),
-        payload.gimbal.z.toFixed(),
+        round(payload.gimbal.x, 1),
+        round(payload.gimbal.y, 1),
+        round(payload.gimbal.z, 1),
       ];
     }
     if (payload.hasOwnProperty('obstacle_info')) {
       positions[payload.deviceId]['attributes']['obstacle_info'] = [
-        payload.obstacle_info.down.toFixed(),
-        payload.obstacle_info.front.toFixed(),
-        payload.obstacle_info.right.toFixed(),
-        payload.obstacle_info.back.toFixed(),
-        payload.obstacle_info.left.toFixed(),
-        payload.obstacle_info.up.toFixed(),
+        round(payload.obstacle_info.down, 1),
+        round(payload.obstacle_info.front, 1),
+        round(payload.obstacle_info.right, 1),
+        round(payload.obstacle_info.back, 1),
+        round(payload.obstacle_info.left, 1),
+        round(payload.obstacle_info.up, 1),
       ];
     }
     if (payload.hasOwnProperty('setHome')) {

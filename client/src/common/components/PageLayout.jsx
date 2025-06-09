@@ -10,12 +10,13 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   desktopRoot: {
     height: '100%',
     display: 'flex',
@@ -70,7 +71,7 @@ const PageTitle = ({ breadcrumbs }) => {
 };
 
 const PageLayout = ({ menu, breadcrumbs, children }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const theme = useTheme();
   const navigate = useNavigate();
 

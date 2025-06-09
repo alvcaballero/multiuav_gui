@@ -3,9 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Card, IconButton, CardMedia, ButtonGroup } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
 
-const useStyles = makeStyles((theme) => ({
+
+const useStyles = makeStyles()((theme) => ({
   card: {
     pointerEvents: 'auto',
   },
@@ -62,7 +63,7 @@ export const CameraWebRTCV4 = ({
   camera_src = 'video0',
   onClose,
 }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   //const camera_stream ="20"// useSelector((state) => state.session.camera[deviceId]);
   const device = deviceId
     ? useSelector((state) => state.devices.items[deviceId])

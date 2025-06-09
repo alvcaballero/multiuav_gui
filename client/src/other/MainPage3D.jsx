@@ -2,12 +2,10 @@ import React, { useState, useEffect, Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import makeStyles from '@mui/styles/makeStyles';
-
+import { makeStyles } from 'tss-react/mui';
 
 import Navbar from '../components/Navbar';
 
-import { Navbar2 } from '../components/Navbar2';
 import { Menu } from '../components/Menu';
 import Toast from '../components/Toast';
 import Adduav from '../components/Adduav';
@@ -19,10 +17,6 @@ import MainToolbar from '../components/MainToolbar';
 import StatusCard from '../components/StatusCard';
 import CameraDevice from '../components/CameraDevice';
 
-import { MissionController } from '../components/MissionController';
-import MissionPanel from '../components/MissionPanel';
-import MissionElevation from '../components/MissionElevation';
-import SaveFile from '../components/SaveFile';
 import SelectDevice3D from '../ThreeD/SelectDevice3D';
 
 import { devicesActions } from '../store';
@@ -38,7 +32,7 @@ const showToast = (type, description) => {
   setList([...list, toastProperties]);
 };
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100%',
   },
@@ -101,7 +95,7 @@ const useStyles = makeStyles((theme) => ({
 
 
 const MainPage3D = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const dispatch = useDispatch();
   const theme = useTheme();
 

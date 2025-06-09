@@ -13,10 +13,10 @@ const { reducer, actions } = createSlice({
     camera: {},
     markers: {},
     planning: {},
-    scene3d:{
-      origin:{lat:37.410381,lng: -6.002094 ,alt:400},
-      range:1000,  
-      }
+    scene3d: {
+      origin: { lat: 37.410381, lng: -6.002094, alt: 400 },
+      range: 1000,
+    },
   },
   reducers: {
     updateServer(state, action) {
@@ -32,6 +32,8 @@ const { reducer, actions } = createSlice({
       state.socket = action.payload;
     },
     updatePositions(state, action) {
+      console.log('Updating positions', action.payload);
+
       const liveRoutes = state.user?.attributes?.mapLiveRoutes || state.server.attributes.mapLiveRoutes || 'none';
       const liveRoutesLimit =
         (state.user?.attributes && state.user?.attributes['web.liveRouteLength']) ||
@@ -76,9 +78,9 @@ const { reducer, actions } = createSlice({
         });
       }
     },
-    updateScene3dOrigin(state,action){
-      state.scene3d.origin= action.payload;
-    }
+    updateScene3dOrigin(state, action) {
+      state.scene3d.origin = action.payload;
+    },
   },
 });
 

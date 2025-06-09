@@ -4,9 +4,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Card, IconButton, CardMedia } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
 
-const useStyles = makeStyles((theme) => ({
+
+const useStyles = makeStyles()((theme) => ({
   card: {
     pointerEvents: 'auto',
   },
@@ -45,7 +46,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export const CameraV1 = ({ deviceId, datacamera, onClose }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [camera_image, setcamera_image] = useState(novideo);
 
   const device = useSelector((state) => state.devices.items[deviceId]);

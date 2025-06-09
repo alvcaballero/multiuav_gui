@@ -1,10 +1,11 @@
 import React from 'react';
 import Button from '@mui/material/Button';
 import { Snackbar } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
 
 
-const useStyles = makeStyles((theme) => ({
+
+const useStyles = makeStyles()((theme) => ({
   root: {
     [theme.breakpoints.down('md')]: {
       bottom: `calc(${theme.dimensions.bottomBarHeight}px + ${theme.spacing(1)})`,
@@ -21,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
 const RemoveDialog = ({
   open, endpoint, itemId, onResult,
 }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const handleRemove = async () => {
     const response = await fetch(`/api/${endpoint}/${itemId}`, { method: 'DELETE' });

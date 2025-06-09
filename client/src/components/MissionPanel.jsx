@@ -1,7 +1,8 @@
 import React, { useState, Fragment, useRef, useContext, useEffect } from 'react';
 import RoutesList from './RoutesList';
 import { Typography, IconButton, Toolbar, Switch } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { useNavigate } from 'react-router-dom';
 import { RosContext } from './RosControl';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -10,7 +11,7 @@ import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { MissionContext } from '../components/MissionController';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   toolbar: {
     display: 'flex',
     gap: '10px 10px',
@@ -30,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const MissionPanel = ({ SetOpenSave }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const navigate = useNavigate();
   const rosContex = useContext(RosContext);
   const scroolRef = useRef(null);

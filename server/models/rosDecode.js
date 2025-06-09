@@ -1,5 +1,4 @@
-import { getDatetime } from '../common/utils.js';
-
+import { getDatetime, round } from '../common/utils.js';
 export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
   if (type == 'position' && msgType == 'sensor_msgs/NavSatFix') {
     return {
@@ -7,7 +6,7 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       deviceId,
       latitude: msg.latitude,
       longitude: msg.longitude,
-      altitude: msg.altitude,
+      altitude: round(msg.altitude, 1),
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
   }
@@ -33,19 +32,22 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     return { deviceId, course: msg.data };
   }
   if (type == 'mission_state' && msgType == 'dji_osdk_ros/WaypointV2MissionStatePush') {
-    return { deviceId, speed: msg.velocity * 0.01 };
+    return { deviceId, speed: round(msg.velocity * 0.01, 1) };
   }
 
   if (type == 'speed' && msgType == 'geometry_msgs/Vector3Stamped' && !uav_type.includes('dji_M300')) {
-    return { deviceId, speed: Math.sqrt(Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2)).toFixed(2) };
+    return { deviceId, speed: round(Math.sqrt(Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2)), 1) };
   }
   if (type == 'speed' && msgType == 'geometry_msgs/TwistStamped') {
-    return { deviceId, speed: Math.sqrt(Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)).toFixed(2) };
+    return {
+      deviceId,
+      speed: round(Math.sqrt(Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2)).toFixed(2), 1),
+    };
   }
   if (type == 'battery' && uav_type == 'px4') {
     return {
       deviceId,
-      batteryLevel: (msg.percentage * 100).toFixed(0),
+      batteryLevel: Math.round(msg.percentage * 100),
     };
   }
   if (type == 'battery') {

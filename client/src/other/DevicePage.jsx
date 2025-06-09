@@ -17,7 +17,8 @@ import {
   BottomNavigationAction,
   Button,
 } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ReplayIcon from '@mui/icons-material/Replay';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -41,7 +42,7 @@ import { CameraV1 } from '../components/CameraV1';
 import SendCommand from '../components/SendCommand';
 import CommandCard from '../components/CommandCard';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     margin: '0',
     height: '100vh',
@@ -104,7 +105,7 @@ const RenderCamera = ({ device, myhostname }) => {
 };
 
 const DevicePage = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const navigate = useNavigate();
 
   const { id } = useParams();

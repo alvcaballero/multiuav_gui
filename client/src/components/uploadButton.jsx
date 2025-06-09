@@ -1,10 +1,11 @@
 import { forwardRef, useCallback, useEffect } from 'react';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 
 import { IconButton, Typography } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   input: {
     display: 'none',
   },
@@ -17,7 +18,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const UploadButtons = ({ title, readFile, typefiles = '.yaml, .plan, .waypoint, .kml' }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   return (
     <div className={classes.parent}>

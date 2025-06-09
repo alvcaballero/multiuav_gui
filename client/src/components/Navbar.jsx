@@ -10,11 +10,11 @@ import MenuItems from './MenuItems';
 
 import { usePreference } from '../common/preferences';
 
-const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
+const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const rosContext = useContext(RosContext);
-
+  //const rosContext = useContext(RosContext);
+  const rosContext = {};
   const defaultLatitude = usePreference('latitude', 0);
   const defaultLongitude = usePreference('longitude', 0);
   const defaultZoom = usePreference('zoom', 10);
@@ -26,7 +26,7 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
     {
       title: 'ROS',
       submenu: [
-        { title: 'Connect ROS', action: () => rosContext.rosConnect() },
+        { title: 'Connect ROS', action: () => rosContext?.rosConnect() },
         { title: 'Show Topics', action: () => navigate('/topics') },
         { title: 'Show Services' },
       ],
@@ -35,7 +35,7 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
       title: 'Devices',
       submenu: [
         { title: 'Connect Devices', action: () => openAddUav() },
-        { title: 'Load Mission all', action: () => rosContext.loadMission() },
+        { title: 'Load Mission all', action: () => rosContext?.loadMission() },
         { title: 'Command Mission All', action: () => setconfirmMission(true) },
       ],
     },
@@ -84,7 +84,7 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
-      rosContext.openMision(file.name, fileReader.result);
+      rosContext?.openMision(file.name, fileReader.result);
     };
     fileReader.onerror = () => {
       console.log('error');
@@ -211,5 +211,5 @@ const Navbar = ({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
       </Container>
     </AppBar>
   );
-};
+});
 export default Navbar;

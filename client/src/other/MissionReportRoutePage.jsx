@@ -18,12 +18,13 @@ import {
 } from '@mui/material';
 
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../common/formatter';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100%',
     display: 'flex',
@@ -65,7 +66,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const MissionReportRoutePage = () => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const navigate = useNavigate();
 
   const [missions, setMissions] = useState(null);

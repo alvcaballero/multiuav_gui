@@ -13,14 +13,14 @@ import {
   MenuItem,
   Fade,
 } from '@mui/material';
-import { makeStyles } from '@mui/styles';
+import { makeStyles } from 'tss-react/mui';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import { WbIncandescent, WbIncandescentOutlined, Wifi, WifiOff } from '@mui/icons-material';
 import Logo from '../resources/images/grvc.svg?react';
 import MenuItems from './MenuItems';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   toolbar: {
     backgroundColor: theme.palette.background.paper,
   },
@@ -41,7 +41,7 @@ export const Navbar2 = ({ title, navIcon, tabs }) => {
 
   const [ws, setws] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const darkModeText = darkMode ? 'Use Light Mode' : 'Use Dark Mode';
   const darkModeButton = (

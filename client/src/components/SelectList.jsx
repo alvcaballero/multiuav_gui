@@ -1,5 +1,6 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import {
   Box,
   Button,
@@ -18,7 +19,7 @@ import { map } from '../Mapview/MapView';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   list: {
     maxHeight: '100%',
     overflow: 'auto',
@@ -51,7 +52,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const SelectList = ({ Data, setData = () => null }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const [expandedGroup, setExpandedGroup] = useState(false);
   const [expanded, setExpanded] = useState(false);

@@ -5,6 +5,11 @@ import { dirname, resolve, normalize } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+export const round = (number, decimals = 0) => {
+  const factor = Math.pow(10, decimals);
+  return Math.round(number * factor) / factor;
+};
+
 export const checkFile = (filepath) => {
   const dir = resolve(__dirname, filepath);
   if (!existsSync(dir)) {
@@ -66,8 +71,11 @@ export const readYAML = (filepath) => {
   return content;
 };
 
-export const getDatetime = () => {
-  var dateTime = new Date();
+export const getDatetime = (withMilliseconds = false) => {
+  const dateTime = new Date();
+  if (!withMilliseconds) {
+    dateTime.setMilliseconds(0);
+  }
   return dateTime.toISOString();
 };
 export const getRandomInt = (max) => {
@@ -90,7 +98,7 @@ const writeData = async (path, content) => {
     return true;
   } catch (err) {
     console.log(err);
-    return false
+    return false;
   }
 };
 

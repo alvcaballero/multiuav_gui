@@ -35,19 +35,18 @@ const protocols = Object.freeze({
   ROBOFLEET: 'robofleet',
 });
 
-
 const updateDeviceTime = async () => {
   const transactions = await sequelize.transaction();
   const updates = await positionsController.getLastPositions();
   if (updates.length > 0) {
     try {
       const transactions = await sequelize.transaction();
-      const promises = updates.map(update => {
+      const promises = updates.map((update) => {
         return sequelize.models.Device.update(
-          { lastUpdate: update.serverTime,status: devicesStatus.ONLINE },
+          { lastUpdate: update.deviceTime, status: devicesStatus.ONLINE },
           {
             where: { id: update.deviceId },
-            transaction: transactions
+            transaction: transactions,
           }
         );
       });
@@ -60,18 +59,19 @@ const updateDeviceTime = async () => {
     }
   }
   setTimeout(updateDeviceTime, 1500);
-}
+};
 setTimeout(updateDeviceTime, 1500);
-
 
 const CheckDeviceOnline = async () => {
   await sequelize.models.Device.update(
-    { status: devicesStatus.OFFLINE }, {
-    where: { lastUpdate: { [Op.lte]: new Date(new Date - 30000) } },
-  });
+    { status: devicesStatus.OFFLINE },
+    {
+      where: { lastUpdate: { [Op.lte]: new Date(new Date() - 30000) } },
+    }
+  );
 
   setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
-}
+};
 setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
 
 export class DevicesModel {
@@ -98,20 +98,20 @@ export class DevicesModel {
 
   static async getById({ id }) {
     return await sequelize.models.Device.findOne({
-      where: { id: id }
+      where: { id: id },
     });
   }
   static async getByName(name) {
     return await sequelize.models.Device.findOne({
       attributes: publicFields,
-      where: { name: name }
+      where: { name: name },
     });
   }
 
   static async getAccess(id) {
     return await sequelize.models.Device.findOne({
       attributes: privateFields,
-      where: { id: id }
+      where: { id: id },
     });
   }
 
@@ -120,7 +120,6 @@ export class DevicesModel {
     let serverState = rosController.getServerStatus();
 
     let protocol = device.protocol ? device.protocol : protocols.ROS;
-
 
     console.log('create UAV ' + device.name + '  type' + device.category);
     try {
@@ -137,7 +136,7 @@ export class DevicesModel {
         protocol: protocol,
       });
     } catch (e) {
-      console.log("Error create device" + e.name);
+      console.log('Error create device' + e.name);
       console.log(e);
       if (e.name === 'SequelizeUniqueConstraintError') {
         return { state: 'error', msg: 'Device already exists' };
@@ -199,7 +198,7 @@ export class DevicesModel {
           id: myDevice.id,
           name: myDevice.name,
           category: myDevice.category,
-          camera: myDevice.camerak
+          camera: myDevice.camerak,
         });
       }
     }
@@ -222,8 +221,6 @@ export class DevicesModel {
 
     myDevice.save();
   }
-
-
 
   static async get_device_ns(uav_id) {
     const myDevice = await sequelize.models.Device.findOne({ where: { id: uav_id } });

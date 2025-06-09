@@ -1,5 +1,6 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from 'tss-react/mui';
+
 import { Box, IconButton, TextField, Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -8,7 +9,7 @@ import SelectField from '../common/components/SelectField';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   list: {
     maxHeight: '100%',
     overflow: 'auto',
@@ -41,7 +42,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const BaseSettings = ({ data, param, setData, type = 'Base', goToBase = () => null }) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const [expanded, setExpanded] = useState(false);
   const [dataExist, setDataExist] = useState(false);
