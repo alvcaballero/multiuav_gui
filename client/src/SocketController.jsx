@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
@@ -13,13 +13,28 @@ const snackBarDurationLongMs = 1000;
 const SocketController = () => {
   const dispatch = useDispatch();
 
-  const devices = useSelector((state) => state.devices.items);
-
   const socketRef = useRef();
   const [socketState, setsocketState] = useState(true);
 
-  const [events, setEvents] = useState([]);
   const [notifications, setNotifications] = useState([]);
+
+  const handleEvents = useCallback(
+    (events) => {
+      dispatch(eventsActions.add(events));
+      if (events.some((e) => e.type === 'error')) {
+        new Audio(alarm).play();
+      }
+      setNotifications(
+        events.map((event) => ({
+          id: event.id,
+          type: event.type,
+          message: event.attributes.message,
+          show: true,
+        }))
+      );
+    },
+    [dispatch, setNotifications]
+  );
 
   const connectSocket = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -60,18 +75,12 @@ const SocketController = () => {
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.devices) {
-        if (data.devices.length > 0) {
-          dispatch(devicesActions.update(data.devices));
-        } else {
-          dispatch(devicesActions.clear());
-        }
+        dispatch(devicesActions.update(data.devices));
       }
       if (data.positions) {
-        console.log('update positions socket');
         dispatch(sessionActions.updatePositions(data.positions));
       }
       if (data.camera) {
-        //console.log(data.camera)
         dispatch(sessionActions.updateCamera(data.camera));
       }
       if (data.server) {
@@ -80,24 +89,16 @@ const SocketController = () => {
           : dispatch(sessionActions.updateServerROS(false));
       }
       if (data.mission) {
-        console.log('data mission');
         console.log(data.mission);
         dispatch(missionActions.updateMission(data.mission));
       }
       if (data.events) {
-        console.log('add data events -------');
-        if (true) {
-          dispatch(eventsActions.add(data.events));
-        }
-        setEvents(data.events);
-        console.log(data.events);
+        handleEvents(data.events);
       }
       if (data.markers) {
-        console.log('add markers');
         dispatch(sessionActions.updateMarker(data.markers));
       }
       if (data.planning) {
-        console.log('add planning ');
         dispatch(sessionActions.updatePlanning(data.planning));
       }
     };
@@ -106,7 +107,7 @@ const SocketController = () => {
   useEffectAsync(async () => {
     if (socketState) {
       setsocketState(false);
-      const response = await fetch('/api/devices', { method: 'GET' });
+      const response = await fetch('/api/devices');
       if (response.ok) {
         dispatch(devicesActions.refresh(await response.json()));
       } else {
@@ -125,40 +126,6 @@ const SocketController = () => {
   }, []);
 
   useEffect(() => {
-    console.log('set notifications');
-    console.log(events);
-    //si eventoid es diferente a notificacionid añadir
-    let auxnot = [];
-    events.map((event) => {
-      let flag = true;
-      notifications.map((notification) => {
-        if (notification.id == event.id) {
-          flag = false;
-        }
-      });
-      if (flag) {
-        auxnot.push({
-          id: event.id,
-          type: event.type,
-          message: event.attributes.message,
-          show: true,
-        });
-      }
-    });
-    console.log('aux console log');
-    console.log(auxnot);
-    if (auxnot.length > 0) {
-      setNotifications(auxnot);
-    }
-
-    auxnot.forEach((event) => {
-      if (event.type === 'error') {
-        new Audio(alarm).play();
-      }
-    });
-  }, [events]);
-
-  useEffect(() => {
     console.log('notifications');
     console.log(notifications);
     for (let i = 0; i < notifications.length; i += 1) {
@@ -169,7 +136,6 @@ const SocketController = () => {
         onClose: () => setEvents(events.filter((e) => e.id !== notifications[i].id)),
       });
     }
-    //
   }, [notifications]);
 
   return (

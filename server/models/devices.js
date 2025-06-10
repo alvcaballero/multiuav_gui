@@ -22,6 +22,7 @@ import { positionsController } from '../controllers/positions.js';
 */
 
 const CHECK_INTERVAL = 5000;
+const UPDATE_INTERVAL = 2000;
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
@@ -35,33 +36,42 @@ const protocols = Object.freeze({
   ROBOFLEET: 'robofleet',
 });
 
+// update device time every 1.5 seconds
 const updateDeviceTime = async () => {
-  const transactions = await sequelize.transaction();
-  const updates = await positionsController.getLastPositions();
-  if (updates.length > 0) {
-    try {
-      const transactions = await sequelize.transaction();
-      const promises = updates.map((update) => {
-        return sequelize.models.Device.update(
-          { lastUpdate: update.deviceTime, status: devicesStatus.ONLINE },
-          {
-            where: { id: update.deviceId },
-            transaction: transactions,
-          }
+  const limitDate = new Date(new Date() - 30000);
+  try {
+    const updates = await positionsController.getLastPositions();
+    const validUpdates = updates.filter((update) => new Date(update.deviceTime) > limitDate);
+
+    if (validUpdates.length > 0) {
+      const transaction = await sequelize.transaction();
+      try {
+        await Promise.all(
+          validUpdates.map((update) =>
+            sequelize.models.Device.update(
+              { lastUpdate: update.deviceTime, status: devicesStatus.ONLINE },
+              {
+                where: { id: update.deviceId },
+                transaction,
+              }
+            )
+          )
         );
-      });
-
-      await Promise.all(promises);
-      await transactions.commit();
-    } catch (error) {
-      if (transactions) await transactions.rollback();
-      console.error('Error al actualizar dispositivos:', error);
+        await transaction.commit();
+      } catch (error) {
+        await transaction.rollback();
+        console.error('Error al actualizar dispositivos:', error);
+      }
     }
+  } catch (error) {
+    console.error('Error en updateDeviceTime:', error);
+  } finally {
+    setTimeout(updateDeviceTime, UPDATE_INTERVAL);
   }
-  setTimeout(updateDeviceTime, 1500);
 };
-setTimeout(updateDeviceTime, 1500);
+setTimeout(updateDeviceTime, UPDATE_INTERVAL);
 
+//put device status to offline if not updated in 30 seconds
 const CheckDeviceOnline = async () => {
   await sequelize.models.Device.update(
     { status: devicesStatus.OFFLINE },

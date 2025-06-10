@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Rnd } from 'react-rnd';
@@ -112,7 +112,29 @@ const StatusRow = ({ name, content }) => {
   );
 };
 
-const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPadding = 0 }) => {
+const MemoCardActions = React.memo(
+  ({ onOpenMenu, onSyncFiles, onOpenCommand, onEdit, onRemove, disableActions, nullposition }) => (
+    <CardActions disableSpacing sx={{ justifyContent: 'space-between' }}>
+      <IconButton color="secondary" onClick={onOpenMenu} disabled={nullposition}>
+        <PendingIcon />
+      </IconButton>
+      <IconButton onClick={onSyncFiles}>
+        <ReplayIcon />
+      </IconButton>
+      <IconButton onClick={onOpenCommand} disabled={disableActions}>
+        <PublishIcon />
+      </IconButton>
+      <IconButton onClick={onEdit}>
+        <EditIcon />
+      </IconButton>
+      <IconButton color="error" onClick={onRemove}>
+        <DeleteIcon />
+      </IconButton>
+    </CardActions>
+  )
+);
+
+const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
   const { classes } = useStyles({ desktopPadding });
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -127,13 +149,23 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const [anchorEl, setAnchorEl] = useState(null);
   const [removing, setRemoving] = useState(false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
+  const [nullPosition, setNullPosition] = useState(false);
+  const [disableActions, setDisableActions] = useState(false);
+  useEffect(() => {
+    setNullPosition(!position);
+  }, [position]);
 
-  const changeMapFollow = () => {
-    dispatch(devicesActions.updateFollow(!mapFollow));
-  };
+  const handleOpenMenu = useCallback((e) => setAnchorEl(e.currentTarget), []);
+  const handleSyncFiles = useCallback(() => serverCommand(deviceId, 'SincroniseFiles'), [deviceId]);
+  const handleRemoving = useCallback(() => setRemoving(true), []);
+  const changeMapFollow = useCallback(() => dispatch(devicesActions.updateFollow(!mapFollow)), [mapFollow, dispatch]);
+
+  const openCommand = useCallback(() => setOpenSendCommand(true), []);
+  const navigateToDevice = useCallback(() => {
+    navigate(`/device/${deviceId}`);
+  }, [deviceId, navigate]);
 
   const serverCommand = async (deviceId, command, attributes) => {
-    //event.preventDefault();
     console.log('send command uavud: ' + deviceId + command);
     try {
       const response = await fetch('/api/commands/send', {
@@ -260,29 +292,21 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                 </Table>
               </CardContent>
             )}
-            <CardActions classes={{ root: classes.actions }} disableSpacing>
-              <IconButton color="secondary" onClick={(e) => setAnchorEl(e.currentTarget)} disabled={!position}>
-                <PendingIcon />
-              </IconButton>
-              <IconButton onClick={() => serverCommand(device.id, 'SincroniseFiles')}>
-                <ReplayIcon />
-              </IconButton>
-              <IconButton onClick={() => setOpenSendCommand(true)} disabled={disableActions}>
-                <PublishIcon />
-              </IconButton>
-              <IconButton onClick={() => navigate(`/device/${deviceId}`)}>
-                <EditIcon />
-              </IconButton>
-              <IconButton color="error" onClick={() => setRemoving(true)}>
-                <DeleteIcon />
-              </IconButton>
-            </CardActions>
+            <MemoCardActions
+              onOpenMenu={handleOpenMenu}
+              onSyncFiles={handleSyncFiles}
+              onOpenCommand={openCommand}
+              onEdit={navigateToDevice}
+              onRemove={handleRemoving}
+              disableActions={disableActions}
+              nullposition={nullPosition}
+            />
           </Card>
         )}
       </div>
       {position && (
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-          <MenuItem onClick={() => navigate(`/device/${deviceId}`)}>
+          <MenuItem onClick={navigateToDevice}>
             <Typography color="secondary">Detalle Dispositivo</Typography>
           </MenuItem>
           <MenuItem

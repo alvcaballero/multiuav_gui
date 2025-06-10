@@ -112,11 +112,11 @@ const MainPage = () => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
   useEffect(() => {
-    console.log('Positions updated');
+    console.log('devices updated');
     setFilteredDevices(Object.values(devices));
   }, [devices]);
   useEffect(() => {
-    console.log('Positions updated');
+    //console.log('Positions updated');
     setFilteredPositions(Object.values(positions));
   }, [positions]);
   useEffect(() => {
@@ -145,7 +145,7 @@ const MainPage = () => {
 
   const unselectDevice = useCallback(() => {
     dispatch(devicesActions.selectId(null));
-  }, []);
+  }, [dispatch]);
 
   return (
     <div className={classes.root}>
