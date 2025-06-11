@@ -20,8 +20,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SelectField from '../common/components/SelectField';
-import { RosContext } from './RosControl';
-
+import { addDevice } from '../common/fetchs';
 const useStyles = makeStyles()((theme) => ({
   root: {
     pointerEvents: 'none',
@@ -102,7 +101,6 @@ const useStyles = makeStyles()((theme) => ({
 
 const Adduav = ({ SetAddUAVOpen }) => {
   const { classes } = useStyles();
-  const rosContex = useContext(RosContext);
   const [item, setItem] = useState({
     name: 'uav_',
     ip: '10.42.0.42',
@@ -116,7 +114,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
   function AddnewUAV() {
     console.log('add uav-' + item.name + '-' + item.category + '-' + item.protocol);
     console.log(item);
-    rosContex.connectAddUav(item);
+    addDevice(item);
     SetAddUAVOpen(false);
   }
   const Remove_camera = (index) => {

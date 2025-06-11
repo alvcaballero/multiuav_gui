@@ -1,84 +1,132 @@
+import YAML from 'yaml';
+import store, { missionActions } from '../store'; // here update device action with position of uav for update in map
+import { useDispatch } from 'react-redux';
+
 var mission_home = [];
 
 export const GetMissionHome = () => {
   return mission_home;
 };
 
-export const RuteConvert = (route) => {
-  let rt = [];
-  let latlongError = false;
-  for (let uavN = 0; uavN < route.length; uavN++) {
-    rt[uavN] = {};
-    if (route[uavN].hasOwnProperty('uav')) {
-      rt[uavN]['uav'] = route[uavN].uav;
+export const FiletoMission = (item) => {
+  let plan_mission = {};
+  if (item.name.endsWith('.yaml') || item.name.endsWith('.yml')) {
+    plan_mission = YAML.parse(item.data);
+  } else if (item.name.endsWith('.waypoints')) {
+    plan_mission = filewaypoint2mission(item.data);
+  } else if (item.name.endsWith('.kml')) {
+    plan_mission = fileKml2mission(item.data);
+  } else if (item.name.endsWith('.plan')) {
+    plan_mission = filePlan2mission(item.data);
+  } else {
+    alert('Formato de archivo no soportado');
+    return;
+  }
+  store.dispatch(missionActions.updateMission({ ...plan_mission, name: item.name }));
+  return null;
+};
+const filePlan2mission = (data) => {
+  let jsondoc = JSON.parse(data);
+  let mission_yaml = { uav_n: 1, uav_1: {} };
+  let count_wp = 0;
+  jsondoc.mission.items.forEach((element) => {
+    mission_yaml.uav_1['wp_' + count_wp] = [element.params[4], element.params[5], element.Altitude];
+    count_wp = count_wp + 1;
+  });
+  mission_yaml.uav_1['wp_n'] = count_wp;
+};
+const fileKml2mission = (data) => {
+  let xmlDocument = new DOMParser().parseFromString(data, 'text/xml');
+  let missionxml = xmlDocument.getElementsByTagName('coordinates');
+  let mission_line2 = Object.values(missionxml).map((x) => {
+    let mywp = x.textContent
+      .replace('\t1', '')
+      .replace(/(\r\n|\n|\r|\t)/gm, '')
+      .split(' ');
+    return mywp.map((point) => point.split(','));
+  });
+  let mission_yaml = { uav_n: mission_line2.length };
+  let count_uav = 1;
+  mission_line2.forEach((route) => {
+    console.log(route);
+    let count_wp = 0;
+    mission_yaml['uav_' + count_uav] = {};
+    route.forEach((element) => {
+      //console.log(element);
+      if (element.length == 3) {
+        mission_yaml['uav_' + count_uav]['wp_' + count_wp] = [element[1], element[0], element[2]];
+        count_wp = count_wp + 1;
+      }
+    });
+    mission_yaml['uav_' + count_uav]['wp_n'] = count_wp;
+    count_uav = count_uav + 1;
+  });
+  return mission_yaml;
+};
+const filewaypoint2mission = (data) => {
+  let mission_line = data.split('\n');
+  let mission_array = mission_line.map((x) => x.split('\t'));
+  let mission_yaml = { uav_n: 1, uav_1: {} };
+  let count_wp = 0;
+  mission_array.forEach((element) => {
+    if (element[3] == '16') {
+      mission_yaml.uav_1['wp_' + count_wp] = [element[8], element[9], element[10]];
+      count_wp = count_wp + 1;
     }
-    rt[uavN]['id'] = uavN;
-    rt[uavN]['name'] = route[uavN].name;
-    rt[uavN]['wp'] = [];
-    rt[uavN]['attributes'] = {};
+  });
+  mission_yaml.uav_1['wp_n'] = count_wp;
+  return mission_yaml;
+};
+export const RuteConvert = (route) => {
+  const rt = [];
+  let latlongError = false;
 
-    //waipoints
-    if (Array.isArray(route[uavN]['wp'])) {
-      for (let wpN = 0; wpN < route[uavN]['wp'].length; wpN++) {
-        rt[uavN]['wp'][wpN] = {};
-        rt[uavN]['wp'][wpN]['pos'] = route[uavN]['wp'][wpN].pos;
-        if (
-          Math.abs(Number(route[uavN]['wp'][wpN].pos[1])) > 90 ||
-          Math.abs(Number(route[uavN]['wp'][wpN].pos[2])) > 90
-        ) {
+  // Lista de atributos posibles
+  const ATTRS = ['mode_landing', 'mode_yaw', 'mode_gimbal', 'mode_trace', 'idle_vel', 'max_vel'];
+
+  for (let uavN = 0; uavN < route.length; uavN++) {
+    const src = route[uavN];
+    const dst = {
+      id: uavN,
+      name: src.name,
+      wp: [],
+      attributes: {},
+    };
+    if ('uav' in src) dst.uav = src.uav;
+
+    // Waypoints
+    if (Array.isArray(src.wp)) {
+      for (let wpN = 0; wpN < src.wp.length; wpN++) {
+        const wpSrc = src.wp[wpN];
+        const wpDst = {
+          pos: wpSrc.pos,
+          yaw: wpSrc.yaw,
+          gimbal: wpSrc.gimbal,
+        };
+        // Validación de lat/lon
+        if (Math.abs(Number(wpSrc.pos[1])) > 90 || Math.abs(Number(wpSrc.pos[2])) > 90) {
           latlongError = true;
         }
-        rt[uavN]['wp'][wpN]['yaw'] = route[uavN]['wp'][wpN].yaw;
-        rt[uavN]['wp'][wpN]['gimbal'] = route[uavN]['wp'][wpN].gimbal;
-        if (route[uavN]['wp'][wpN].hasOwnProperty('speed')) {
-          rt[uavN]['wp'][wpN]['speed'] = route[uavN]['wp'][wpN].speed;
-        }
-        if (route[uavN]['wp'][wpN].hasOwnProperty('action')) {
-          rt[uavN]['wp'][wpN]['action'] = route[uavN]['wp'][wpN].action;
-        }
+        if ('speed' in wpSrc) wpDst.speed = wpSrc.speed;
+        if ('action' in wpSrc) wpDst.action = wpSrc.action;
+        dst.wp.push(wpDst);
       }
     }
-    if (route[uavN].hasOwnProperty('attributes')) {
-      if (route[uavN]['attributes'].hasOwnProperty('mode_landing')) {
-        console.log('have modelanding' + uavN);
-        rt[uavN]['attributes']['mode_landing'] = route[uavN]['attributes']['mode_landing'];
+
+    // Atributos
+    const attrSrc = src.attributes || src;
+    ATTRS.forEach((key) => {
+      if (key in attrSrc) {
+        dst.attributes[key] = attrSrc[key];
+        if (key === 'mode_landing' && src.attributes) {
+          console.log('have modelanding' + uavN);
+        }
       }
-      if (route[uavN]['attributes'].hasOwnProperty('mode_yaw')) {
-        rt[uavN]['attributes']['mode_yaw'] = route[uavN]['attributes']['mode_yaw'];
-      }
-      if (route[uavN]['attributes'].hasOwnProperty('mode_gimbal')) {
-        rt[uavN]['attributes']['mode_gimbal'] = route[uavN]['attributes']['mode_gimbal'];
-      }
-      if (route[uavN]['attributes'].hasOwnProperty('mode_trace')) {
-        rt[uavN]['attributes']['mode_trace'] = route[uavN]['attributes']['mode_trace'];
-      }
-      if (route[uavN]['attributes'].hasOwnProperty('idle_vel')) {
-        rt[uavN]['attributes']['idle_vel'] = route[uavN]['attributes']['idle_vel'];
-      }
-      if (route[uavN]['attributes'].hasOwnProperty('max_vel')) {
-        rt[uavN]['attributes']['max_vel'] = route[uavN]['attributes']['max_vel'];
-      }
-    } else {
-      if (route[uavN].hasOwnProperty('mode_landing')) {
-        rt[uavN]['attributes']['mode_landing'] = route[uavN]['mode_landing'];
-      }
-      if (route[uavN].hasOwnProperty('mode_yaw')) {
-        rt[uavN]['attributes']['mode_yaw'] = route[uavN]['mode_yaw'];
-      }
-      if (route[uavN].hasOwnProperty('mode_gimbal')) {
-        rt[uavN]['attributes']['mode_gimbal'] = route[uavN]['mode_gimbal'];
-      }
-      if (route[uavN].hasOwnProperty('mode_trace')) {
-        rt[uavN]['attributes']['mode_trace'] = route[uavN]['mode_trace'];
-      }
-      if (route[uavN].hasOwnProperty('idle_vel')) {
-        rt[uavN]['attributes']['idle_vel'] = route[uavN]['idle_vel'];
-      }
-      if (route[uavN].hasOwnProperty('max_vel')) {
-        rt[uavN]['attributes']['max_vel'] = route[uavN]['max_vel'];
-      }
-    }
+    });
+
+    rt.push(dst);
   }
+
   if (latlongError) {
     alert('Error en coordenadas latitud y longitud valores entre -90 y 90');
     return [];
@@ -87,67 +135,55 @@ export const RuteConvert = (route) => {
 };
 
 export const RuteConvertlegacy = (mission) => {
-  let rt = [];
-  console.log('mission < 3');
-  for (let uavN = 1; uavN <= mission['uav_n']; uavN++) {
-    if (mission.hasOwnProperty('uav_' + uavN)) {
-      let uavNx = uavN - 1;
-      console.log('uav - ' + uavNx);
-      rt[uavNx] = {};
-      rt[uavNx]['id'] = uavNx;
-      rt[uavNx]['uav'] = 'uav_' + uavN;
-      rt[uavNx]['name'] = 'uav_' + uavN;
-      rt[uavNx]['wp'] = [];
-      rt[uavNx]['attributes'] = {};
+  const rt = [];
+  const ATTRS = ['mode_landing', 'mode_yaw', 'idle_vel', 'max_vel'];
 
-      //waipoints
-      for (let wpN = 0; wpN < mission['uav_' + uavN]['wp_n']; wpN++) {
-        rt[uavNx]['wp'][wpN] = {};
-        if (mission['uav_' + uavN]['wp_' + wpN].length == 3) {
-          rt[uavNx]['wp'][wpN]['yaw'] = 0;
-          rt[uavNx]['wp'][wpN]['pos'] = mission['uav_' + uavN]['wp_' + wpN];
-        } else {
-          rt[uavNx]['wp'][wpN]['yaw'] = mission['uav_' + uavN]['wp_' + wpN][3];
-          rt[uavNx]['wp'][wpN]['pos'] = mission['uav_' + uavN]['wp_' + wpN].slice(0, -1);
-        }
-      }
-      // Attributes
-      if (mission.hasOwnProperty('mode_landing')) {
-        rt[uavNx]['attributes']['mode_landing'] = mission['mode_landing'];
-      }
-      if (mission.hasOwnProperty('mode_yaw')) {
-        rt[uavNx]['attributes']['mode_yaw'] = mission['mode_yaw'];
-      }
-      if (mission.hasOwnProperty('idle_vel')) {
-        rt[uavNx]['attributes']['idle_vel'] = mission['idle_vel'];
-      }
-      if (mission['uav_' + uavN].hasOwnProperty('attributes')) {
-        if (mission['uav_' + uavN]['attributes'].hasOwnProperty('mode_landing')) {
-          console.log('have modelanding' + uavN);
-          rt[uavNx]['attributes']['mode_landing'] = mission['uav_' + uavN]['attributes']['mode_landing'];
-        }
-        if (mission['uav_' + uavN]['attributes'].hasOwnProperty('mode_yaw')) {
-          rt[uavNx]['attributes']['mode_yaw'] = mission['uav_' + uavN]['attributes']['mode_yaw'];
-        }
-        if (mission['uav_' + uavN]['attributes'].hasOwnProperty('idle_vel')) {
-          rt[uavNx]['attributes']['idle_vel'] = mission['uav_' + uavN]['attributes']['idle_vel'];
-        }
-        if (mission['uav_' + uavN]['attributes'].hasOwnProperty('max_vel')) {
-          rt[uavN]['attributes']['max_vel'] = mission['uav_' + uavN]['attributes']['max_vel'];
-        }
-      } else {
-        if (mission['uav_' + uavN].hasOwnProperty('mode_landing')) {
-          rt[uavNx]['attributes']['mode_landing'] = mission['uav_' + uavN]['mode_landing'];
-        }
-        if (mission['uav_' + uavN].hasOwnProperty('mode_yaw')) {
-          rt[uavNx]['attributes']['mode_yaw'] = mission['uav_' + uavN]['mode_yaw'];
-        }
-        if (mission['uav_' + uavN].hasOwnProperty('idle_vel')) {
-          rt[uavNx]['attributes']['idle_vel'] = mission['uav_' + uavN]['idle_vel'];
-        }
-      }
+  for (let uavN = 1; uavN <= mission['uav_n']; uavN++) {
+    const uavKey = 'uav_' + uavN;
+    if (!mission.hasOwnProperty(uavKey)) continue;
+
+    const uavNx = uavN - 1;
+    const uavData = mission[uavKey];
+    const wpCount = uavData['wp_n'] || 0;
+
+    const uavObj = {
+      id: uavNx,
+      uav: uavKey,
+      name: uavKey,
+      wp: [],
+      attributes: {},
+    };
+
+    // Waypoints
+    for (let wpN = 0; wpN < wpCount; wpN++) {
+      const wp = uavData['wp_' + wpN];
+      if (!wp) continue;
+      const pos = wp.length === 3 ? wp : wp.slice(0, -1);
+      const yaw = wp.length === 3 ? 0 : wp[3];
+      uavObj.wp.push({ pos, yaw });
     }
+
+    // Global attributes
+    ATTRS.forEach((attr) => {
+      if (mission.hasOwnProperty(attr) && attr !== 'max_vel') {
+        uavObj.attributes[attr] = mission[attr];
+      }
+    });
+
+    // UAV-specific attributes
+    const attrSrc = uavData.attributes || uavData;
+    ATTRS.forEach((attr) => {
+      if (attr in attrSrc) {
+        uavObj.attributes[attr] = attrSrc[attr];
+        if (attr === 'mode_landing' && uavData.attributes) {
+          console.log('have modelanding' + uavN);
+        }
+      }
+    });
+
+    rt[uavNx] = uavObj;
   }
+
   console.log('-----------   legacy   --------');
   console.log(rt);
   return rt;

@@ -133,7 +133,6 @@ const SocketController = () => {
         variant: notifications[i].type,
         autoHideDuration: 3000,
         persist: false,
-        onClose: () => setEvents(events.filter((e) => e.id !== notifications[i].id)),
       });
     }
   }, [notifications]);

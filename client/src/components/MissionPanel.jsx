@@ -4,12 +4,12 @@ import { Typography, IconButton, Toolbar, Switch } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
 import { useNavigate } from 'react-router-dom';
-import { RosContext } from './RosControl';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { MissionContext } from '../components/MissionController';
+import { FiletoMission } from '../Mapview/MissionConvert';
 
 const useStyles = makeStyles()((theme) => ({
   toolbar: {
@@ -33,7 +33,6 @@ const useStyles = makeStyles()((theme) => ({
 const MissionPanel = ({ SetOpenSave }) => {
   const { classes } = useStyles();
   const navigate = useNavigate();
-  const rosContex = useContext(RosContext);
   const scroolRef = useRef(null);
   const [checked, setChecked] = useState(false);
   const missionContext = useContext(MissionContext);
@@ -100,7 +99,7 @@ const MissionPanel = ({ SetOpenSave }) => {
     fileReader.onload = () => {
       console.log(fileReader.result);
       console.log(file.name);
-      rosContex.openMision(file.name, fileReader.result);
+      FiletoMission({ name: file.name, data: fileReader.result });
     };
     fileReader.onerror = () => {
       console.log(fileReader.error);

@@ -8,6 +8,8 @@ import { Menu } from '../components/Menu';
 import Toast from '../components/Toast';
 import Adduav from '../components/Adduav';
 import { RosControl, RosContext } from '../components/RosControl';
+import { commandMission } from '../common/fetchs';
+
 import DeviceList from '../components/DeviceList';
 import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/MainToolbar';
@@ -57,10 +59,6 @@ const useStyles = makeStyles()((theme) => ({
     width: '360px',
     margin: '0px',
     zIndex: 3,
-  },
-  middle: {
-    flex: 1,
-    display: 'grid',
   },
 }));
 
@@ -149,19 +147,15 @@ const MainPage = () => {
 
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
+      <RosControl>
         <Navbar SetAddUAVOpen={memoSetAddUAVOpen} setconfirmMission={memoSetConfirmMission} />
         <Menu SetAddUAVOpen={memoSetAddUAVOpen} />
 
-        <RosContext.Consumer>
-          {({ commandMission }) => (
-            <SwipeConfirm
-              enable={confirmMission}
-              onClose={() => setconfirmMission(false)}
-              onSucces={() => commandMission()}
-            />
-          )}
-        </RosContext.Consumer>
+        <SwipeConfirm
+          enable={confirmMission}
+          onClose={() => setconfirmMission(false)}
+          onSucces={() => commandMission()}
+        />
       </RosControl>
       <div
         style={{

@@ -2,13 +2,13 @@ import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import store from './store';
-import preloadImages from './Mapview/preloadImages';
 import { CssBaseline, StyledEngineProvider } from '@mui/material';
+import store from './store';
+import ErrorHandler from './common/components/ErrorHandler';
 import Navigation from './Navigation';
-
-import AppThemeProvider from './AppThemeProvider';
+import preloadImages from './Mapview/preloadImages';
 import ServerProvider from './ServerProvider';
+import AppThemeProvider from './AppThemeProvider';
 
 preloadImages();
 
@@ -22,6 +22,7 @@ root.render(
           <BrowserRouter>
             <Navigation />
           </BrowserRouter>
+          <ErrorHandler />
         </ServerProvider>
       </AppThemeProvider>
     </StyledEngineProvider>

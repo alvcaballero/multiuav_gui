@@ -10,6 +10,7 @@ import { Menu } from '../components/Menu';
 import Toast from '../components/Toast';
 import Adduav from '../components/Adduav';
 import { RosControl, RosContext } from '../components/RosControl';
+import { commandMission } from '../common/fetchs';
 
 import DeviceList from '../components/DeviceList';
 import SwipeConfirm from '../common/components/SwipeConfirm';
@@ -21,12 +22,10 @@ import SelectDevice3D from '../ThreeD/SelectDevice3D';
 
 import { devicesActions } from '../store';
 
-
 import MapView from '../ThreeD/MapView';
 import R3FMission from '../ThreeD/R3FMission';
 import R3DMarkers from '../ThreeD/R3DMarkers';
 import R3FDevices from '../ThreeD/R3FDevices';
-
 
 const showToast = (type, description) => {
   setList([...list, toastProperties]);
@@ -93,7 +92,6 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-
 const MainPage3D = () => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
@@ -153,31 +151,28 @@ const MainPage3D = () => {
     }
   }, [selectedDeviceId]);
 
-  
   return (
     <div className={classes.root}>
-        <RosControl notification={showToast}>
+      <RosControl notification={showToast}>
         <Navbar SetAddUAVOpen={SetAddUAVOpen} setconfirmMission={setconfirmMission} />
         <Menu SetAddUAVOpen={SetAddUAVOpen} />
-          <div
-            style={{
-              float: 'right',
-              width: 'calc(100% - 360px)',
-              height: 'calc(100vh - 88px)',
-              right: '0px',
-            }}
-          >
-            <MapView>
-              <R3FMission routes={routes} />
-              <R3DMarkers elements={markers} />
-              <R3FDevices  />
-              <SelectDevice3D/>
+        <div
+          style={{
+            float: 'right',
+            width: 'calc(100% - 360px)',
+            height: 'calc(100vh - 88px)',
+            right: '0px',
+          }}
+        >
+          <MapView>
+            <R3FMission routes={routes} />
+            <R3DMarkers elements={markers} />
+            <R3FDevices />
+            <SelectDevice3D />
+          </MapView>
+        </div>
 
-            </MapView>
-
-          </div>
-
-          <div className={classes.sidebarStyle}>
+        <div className={classes.sidebarStyle}>
           <Paper square elevation={3} className={classes.header}>
             <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
           </Paper>
@@ -194,15 +189,11 @@ const MainPage3D = () => {
           onClose={() => dispatch(devicesActions.selectId(null))}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
-        <RosContext.Consumer>
-          {({ commandMission }) => (
-            <SwipeConfirm
-              enable={confirmMission}
-              onClose={() => setconfirmMission(false)}
-              onSucces={() => commandMission()}
-            />
-          )}
-        </RosContext.Consumer>
+        <SwipeConfirm
+          enable={confirmMission}
+          onClose={() => setconfirmMission(false)}
+          onSucces={() => commandMission()}
+        />
         <CameraDevice
           deviceId={selectedDeviceId}
           deviceIp={myhostname}
@@ -213,9 +204,7 @@ const MainPage3D = () => {
           type={selectedDeviceCam}
           onClose={() => dispatch(devicesActions.selectId(null))}
         />
-        <Paper>
-
-        </Paper>
+        <Paper></Paper>
 
         <Toast toastlist={list} position="buttom-right" setList={setList} />
       </RosControl>

@@ -4,7 +4,7 @@ import { Menu } from '../components/Menu';
 import MainToolbar from '../components/MainToolbar';
 import { makeStyles } from 'tss-react/mui';
 
-import { RosControl, RosContext } from '../components/RosControl';
+import { RosControl } from '../components/RosControl';
 import DeviceList from '../components/DeviceList';
 import { Paper, Grid, Box } from '@mui/material';
 import { CameraWebRTCV4 } from '../components/CameraWebRTCV4';
@@ -86,7 +86,7 @@ const CameraPage = () => {
   const { classes } = useStyles();
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
+      <RosControl>
         <Navbar />
         <Menu />
         <div
@@ -136,11 +136,7 @@ const CameraPage = () => {
                           />
                         )}
                         {camera.type === 'Websocket' && (
-                          <CameraV1
-                            deviceId={device.id}
-                            datacamera={null}
-                            onClose={() => console.log('cerrar ')}
-                          />
+                          <CameraV1 deviceId={device.id} datacamera={null} onClose={() => console.log('cerrar ')} />
                         )}
                       </Grid>
                     ))}

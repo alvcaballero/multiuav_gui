@@ -16,6 +16,7 @@ import { grey } from '@mui/material/colors';
 import { makeStyles } from 'tss-react/mui';
 
 import { usePreference } from '../common/preferences';
+import { FiletoMission } from '../Mapview/MissionConvert';
 
 import { Card, IconButton, Button, ButtonGroup, CardMedia } from '@mui/material';
 
@@ -48,16 +49,13 @@ const useStyles = makeStyles()((theme) => ({
 
 export const Menu = React.memo(({ SetAddUAVOpen }) => {
   const { classes } = useStyles();
-  //const rosContex = useContext(RosContext);
-  const rosContext =  {};
   const [MissionName, setMissionName] = useState('no load mission');
-  //const [MissionHome, setMissionHome] = useState([0,0]);
   const Mission_Name = useSelector((state) => state.mission.name);
   const Mission_Home = useSelector((state) => state.mission.home);
   const [hidestatus, sethidestatus] = useState(true);
 
-  const defaultLatitude = usePreference('latitude',0);
-  const defaultLongitude = usePreference('longitude',0);
+  const defaultLatitude = usePreference('latitude', 0);
+  const defaultLongitude = usePreference('longitude', 0);
   const defaultZoom = usePreference('zoom', 10);
 
   const readFile = (e) => {
@@ -69,7 +67,7 @@ export const Menu = React.memo(({ SetAddUAVOpen }) => {
     fileReader.onload = () => {
       console.log(fileReader.result);
       console.log(file.name);
-      rosContex.openMision(file.name, fileReader.result);
+      FiletoMission({ name: file.name, data: fileReader.result });
     };
     fileReader.onerror = () => {
       console.log(fileReader.error);
@@ -139,7 +137,7 @@ export const Menu = React.memo(({ SetAddUAVOpen }) => {
 
         <RosContext.Consumer>
           {({ rosState }) => (
-            <Button id="rosConnect"  className={classes.mediaButton}>
+            <Button id="rosConnect" className={classes.mediaButton}>
               {rosState && 'conectado'} {!rosState && 'desconectado'}{' '}
             </Button>
           )}
