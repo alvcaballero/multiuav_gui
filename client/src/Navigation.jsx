@@ -3,7 +3,7 @@ import { Route, Routes, useLocation, useNavigate, Link } from 'react-router-dom'
 import { useEffectAsync } from './reactHelper';
 import App from './App';
 import useQuery from './common/useQuery';
-import HelloWorld from './other/HelloWorld';
+//import HelloWorld from './other/HelloWorld';
 import MainPage from './other/MainPage';
 import MissionPage from './other/MissionPage';
 import MissionPageTest from './other/MissionPageTest';
@@ -46,7 +46,6 @@ const Navigation = () => {
          */}
         <Route path="3Dview" element={<MainPage3D />} />
         <Route path="3Dmission" element={<MissionPage3D />} />
-        <Route index element={<HelloWorld />} />
 
         <Route path="mission" element={<MissionPage />} />
         <Route path="missiontest" element={<MissionPageTest />} />

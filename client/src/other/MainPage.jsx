@@ -5,7 +5,6 @@ import { makeStyles } from 'tss-react/mui';
 import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/Navbar';
 import { Menu } from '../components/Menu';
-import Toast from '../components/Toast';
 import Adduav from '../components/Adduav';
 import { RosControl, RosContext } from '../components/RosControl';
 import { commandMission } from '../common/fetchs';
@@ -16,12 +15,8 @@ import MainToolbar from '../components/MainToolbar';
 import MainMap from '../Mapview/MainMap';
 import StatusCard from '../components/StatusCard';
 import CameraDevice from '../components/CameraDevice';
-import HelloWorld from './HelloWorld';
 
 import { devicesActions } from '../store';
-
-import CloseIcon from '@mui/icons-material/Close';
-import { IconButton } from '@mui/material';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -78,11 +73,7 @@ const MainPage = () => {
 
   const [filteredPositions, setFilteredPositions] = useState([]);
   const [markers, setmarkers] = useState([]);
-  const [filteredImages, setFilteredImages] = useState([]);
-  const [selectedDeviceIp, setselectedDeviceIp] = useState();
-  const [selectedDeviceCam, setselectedDeviceCam] = useState();
-  const [selectedDeviceCamsrc, setselectedDeviceCamsrc] = useState();
-  const [selectedDeviceName, setselectedDeviceName] = useState();
+
   const selectedPosition = filteredPositions.find(
     (position) => selectedDeviceId && position.deviceId === selectedDeviceId
   );
@@ -94,11 +85,6 @@ const MainPage = () => {
   const [confirmMission, setconfirmMission] = useState(false);
   const memoSetAddUAVOpen = useCallback(SetAddUAVOpen, []);
   const memoSetConfirmMission = useCallback(setconfirmMission, []);
-
-  const [list, setList] = useState([]);
-  const showToast = (type, description) => {
-    console.log(`${type} - ${description}`);
-  };
 
   useEffect(() => {
     console.log('MainPage mounted');
@@ -118,26 +104,6 @@ const MainPage = () => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
   useEffect(() => {
-    setFilteredImages(Object.values(cameradata));
-  }, [cameradata]);
-  useEffect(() => {
-    if (selectedDeviceId) {
-      setselectedDeviceIp(devices[selectedDeviceId].ip);
-      if (devices[selectedDeviceId].camera.length > 0) {
-        const devicename = devices[selectedDeviceId].name;
-        const camsrc = devices[selectedDeviceId].camera[0].source;
-        const deviceCam = devices[selectedDeviceId].camera[0].type;
-        const deviceCamSrc = selectedDeviceCam === 'WebRTC' ? `${devicename}_${camsrc}` : camsrc;
-        setselectedDeviceCam(deviceCam);
-        setselectedDeviceCamsrc(deviceCamSrc);
-      } else {
-        setselectedDeviceCam(null);
-      }
-      setselectedDeviceName(devices[selectedDeviceId].name);
-    } else {
-      setselectedDeviceIp(null);
-      setselectedDeviceCam(null);
-    }
     setSelecDeviceId(selectedDeviceId);
   }, [selectedDeviceId]);
 
@@ -150,13 +116,13 @@ const MainPage = () => {
       <RosControl>
         <Navbar SetAddUAVOpen={memoSetAddUAVOpen} setconfirmMission={memoSetConfirmMission} />
         <Menu SetAddUAVOpen={memoSetAddUAVOpen} />
-
-        <SwipeConfirm
-          enable={confirmMission}
-          onClose={() => setconfirmMission(false)}
-          onSucces={() => commandMission()}
-        />
       </RosControl>
+
+      <SwipeConfirm
+        enable={confirmMission}
+        onClose={() => setconfirmMission(false)}
+        onSucces={() => commandMission()}
+      />
       <div
         style={{
           position: 'absolute',
@@ -183,7 +149,6 @@ const MainPage = () => {
           </Paper>
         </div>
       </div>
-      {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
       {selectDeviceId && (
         <StatusCard
           deviceId={selectDeviceId}
@@ -194,7 +159,7 @@ const MainPage = () => {
       )}
 
       <CameraDevice deviceId={selectDeviceId} onClose={unselectDevice} />
-      <Toast toastlist={list} position="buttom-right" setList={setList} />
+      {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
     </div>
   );
 };

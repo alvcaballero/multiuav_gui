@@ -1,13 +1,10 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useContext, useState, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { makeStyles } from 'tss-react/mui';
-
+import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/Navbar';
-
 import { Menu } from '../components/Menu';
-import Toast from '../components/Toast';
 import Adduav from '../components/Adduav';
 import { RosControl, RosContext } from '../components/RosControl';
 import { commandMission } from '../common/fetchs';
@@ -26,10 +23,6 @@ import MapView from '../ThreeD/MapView';
 import R3FMission from '../ThreeD/R3FMission';
 import R3DMarkers from '../ThreeD/R3DMarkers';
 import R3FDevices from '../ThreeD/R3FDevices';
-
-const showToast = (type, description) => {
-  setList([...list, toastProperties]);
-};
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -86,10 +79,6 @@ const useStyles = makeStyles()((theme) => ({
     margin: '0px',
     zIndex: 3,
   },
-  middleStyle: {
-    flex: 1,
-    display: 'grid',
-  },
 }));
 
 const MainPage3D = () => {
@@ -103,28 +92,22 @@ const MainPage3D = () => {
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const sessionmarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);
+
+  const [selectDeviceId, setSelecDeviceId] = useState(null);
+
   const [filteredPositions, setFilteredPositions] = useState([]);
   const [markers, setmarkers] = useState([]);
-  const [filteredImages, setFilteredImages] = useState([]);
-  const [selectedDeviceIp, setselectedDeviceIp] = useState();
-  const [selectedDeviceCam, setselectedDeviceCam] = useState();
-  const [selectedDeviceCamsrc, setselectedDeviceCamsrc] = useState();
-  const [selectedDeviceName, setselectedDeviceName] = useState();
-  const myhostname = `${window.location.hostname}`;
   const selectedPosition = filteredPositions.find(
     (position) => selectedDeviceId && position.deviceId === selectedDeviceId
   );
-  const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
+  const [filteredDevices, setFilteredDevices] = useState([]);
 
-  let listdevices = Object.values(devices);
+  //const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
   const [confirmMission, setconfirmMission] = useState(false);
-
-  const [list, setList] = useState([]);
-  const showToast = (type, description) => {
-    console.log(`${type} - ${description}`);
-  };
+  const memoSetAddUAVOpen = useCallback(SetAddUAVOpen, []);
+  const memoSetConfirmMission = useCallback(setconfirmMission, []);
 
   useEffect(() => {
     setmarkers(sessionmarkers);
@@ -132,82 +115,62 @@ const MainPage3D = () => {
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
+
   useEffect(() => {
-    setFilteredImages(Object.values(cameradata));
-  }, [cameradata]);
-  useEffect(() => {
-    if (selectedDeviceId) {
-      setselectedDeviceIp(devices[selectedDeviceId].ip);
-      if (devices[selectedDeviceId].camera.length > 0) {
-        setselectedDeviceCam(devices[selectedDeviceId].camera[0].type);
-        setselectedDeviceCamsrc(devices[selectedDeviceId].camera[0].source);
-      } else {
-        setselectedDeviceCam(null);
-      }
-      setselectedDeviceName(devices[selectedDeviceId].name);
-    } else {
-      setselectedDeviceIp(null);
-      setselectedDeviceCam(null);
-    }
+    setSelecDeviceId(selectedDeviceId);
   }, [selectedDeviceId]);
+
+  const unselectDevice = useCallback(() => {
+    dispatch(devicesActions.selectId(null));
+  }, [dispatch]);
 
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
-        <Navbar SetAddUAVOpen={SetAddUAVOpen} setconfirmMission={setconfirmMission} />
-        <Menu SetAddUAVOpen={SetAddUAVOpen} />
-        <div
-          style={{
-            float: 'right',
-            width: 'calc(100% - 360px)',
-            height: 'calc(100vh - 88px)',
-            right: '0px',
-          }}
-        >
-          <MapView>
-            <R3FMission routes={routes} />
-            <R3DMarkers elements={markers} />
-            <R3FDevices />
-            <SelectDevice3D />
-          </MapView>
-        </div>
+      <RosControl>
+        <Navbar SetAddUAVOpen={memoSetAddUAVOpen} setconfirmMission={memoSetConfirmMission} />
+        <Menu SetAddUAVOpen={memoSetAddUAVOpen} />
+      </RosControl>
+      <div
+        style={{
+          float: 'right',
+          width: 'calc(100% - 360px)',
+          height: 'calc(100vh - 88px)',
+          right: '0px',
+        }}
+      >
+        <MapView>
+          <R3FMission routes={routes} />
+          <R3DMarkers elements={markers} />
+          <R3FDevices />
+          <SelectDevice3D />
+        </MapView>
+      </div>
 
-        <div className={classes.sidebarStyle}>
-          <Paper square elevation={3} className={classes.header}>
-            <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
+      <div className={classes.sidebar}>
+        <Paper square elevation={3} className={classes.header}>
+          <MainToolbar SetAddUAVOpen={memoSetAddUAVOpen} />
+        </Paper>
+        <div className={classes.middle}>
+          <Paper square className={classes.contentList}>
+            <DeviceList devices={filteredDevices} />
           </Paper>
-          <div className={classes.middleStyle}>
-            <Paper square className={classes.contentList}>
-              <DeviceList devices={listdevices} />
-            </Paper>
-          </div>
         </div>
-        {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
+      </div>
+      {selectDeviceId && (
         <StatusCard
-          deviceId={selectedDeviceId}
+          deviceId={selectDeviceId}
           position={selectedPosition}
-          onClose={() => dispatch(devicesActions.selectId(null))}
+          onClose={unselectDevice}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
-        <SwipeConfirm
-          enable={confirmMission}
-          onClose={() => setconfirmMission(false)}
-          onSucces={() => commandMission()}
-        />
-        <CameraDevice
-          deviceId={selectedDeviceId}
-          deviceIp={myhostname}
-          camera_src={
-            selectedDeviceCam === 'WebRTC' ? `${selectedDeviceName}_${selectedDeviceCamsrc}` : selectedDeviceCamsrc
-          }
-          datacamera={selectedImage}
-          type={selectedDeviceCam}
-          onClose={() => dispatch(devicesActions.selectId(null))}
-        />
-        <Paper></Paper>
-
-        <Toast toastlist={list} position="buttom-right" setList={setList} />
-      </RosControl>
+      )}
+      <SwipeConfirm
+        enable={confirmMission}
+        onClose={() => setconfirmMission(false)}
+        onSucces={() => commandMission()}
+      />
+      <CameraDevice deviceId={selectDeviceId} onClose={unselectDevice} />
+      {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
     </div>
   );
 };
