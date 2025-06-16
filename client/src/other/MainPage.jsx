@@ -100,7 +100,6 @@ const MainPage = () => {
     setFilteredDevices(Object.values(devices));
   }, [devices]);
   useEffect(() => {
-    //console.log('Positions updated');
     setFilteredPositions(Object.values(positions));
   }, [positions]);
   useEffect(() => {
@@ -113,8 +112,8 @@ const MainPage = () => {
 
   return (
     <div className={classes.root}>
+      <Navbar SetAddUAVOpen={memoSetAddUAVOpen} setconfirmMission={memoSetConfirmMission} />
       <RosControl>
-        <Navbar SetAddUAVOpen={memoSetAddUAVOpen} setconfirmMission={memoSetConfirmMission} />
         <Menu SetAddUAVOpen={memoSetAddUAVOpen} />
       </RosControl>
 

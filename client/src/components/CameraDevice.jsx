@@ -96,15 +96,7 @@ const RenderImages = ({ datacamera }) => {
 };
 
 const customEqual = (oldValue, newValue) => {
-  return (
-    oldValue?.attributes?.landed_state === newValue?.attributes?.landed_state &&
-    oldValue?.attributes?.ignition === newValue?.attributes?.ignition &&
-    oldValue?.attributes?.batteryLevel === newValue?.attributes?.batteryLevel &&
-    oldValue?.attributes?.alarm === newValue?.attributes?.alarm &&
-    oldValue?.attributes?.charge === newValue?.attributes?.charge &&
-    oldValue?.speed === newValue?.speed &&
-    oldValue?.altitude === newValue?.altitude
-  );
+  return oldValue?.camera === newValue?.camera && oldValue?.ip === newValue?.ip && oldValue?.name === newValue?.name;
 };
 
 /**
@@ -120,7 +112,7 @@ const customEqual = (oldValue, newValue) => {
 
 const CameraDevice = React.memo(({ deviceId, onClose }) => {
   const { classes } = useStyles();
-  const device = useSelector((state) => state.devices.items[deviceId]);
+  const device = useSelector((state) => state.devices.items[deviceId], customEqual);
   const datacamera = useSelector((state) => state.session.camera[deviceId]);
 
   const myhostname = `${window.location.hostname}`;

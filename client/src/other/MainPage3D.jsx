@@ -28,24 +28,6 @@ const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100%',
   },
-  sidebar: {
-    pointerEvents: 'none',
-    display: 'flex',
-    flexDirection: 'column',
-    [theme.breakpoints.up('md')]: {
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      height: `calc(100% - ${theme.spacing(3)})`,
-      width: theme.dimensions.drawerWidthDesktop,
-      margin: theme.spacing(1.5),
-      zIndex: 3,
-    },
-    [theme.breakpoints.down('md')]: {
-      height: '100%',
-      width: '100%',
-    },
-  },
   header: {
     pointerEvents: 'auto',
     zIndex: 6,
@@ -67,7 +49,7 @@ const useStyles = makeStyles()((theme) => ({
     gridArea: '1 / 1',
     zIndex: 4,
   },
-  sidebarStyle: {
+  sidebar: {
     pointerEvents: 'none',
     display: 'flex',
     flexDirection: 'column',
@@ -110,8 +92,18 @@ const MainPage3D = () => {
   const memoSetConfirmMission = useCallback(setconfirmMission, []);
 
   useEffect(() => {
+    console.log('MainPage mounted');
+    return () => {
+      console.log('MainPage unmounted');
+    };
+  }, []);
+  useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
+  useEffect(() => {
+    console.log('devices updated');
+    setFilteredDevices(Object.values(devices));
+  }, [devices]);
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
@@ -132,10 +124,11 @@ const MainPage3D = () => {
       </RosControl>
       <div
         style={{
-          float: 'right',
+          position: 'absolute',
+          top: '88px',
+          right: '0px',
           width: 'calc(100% - 360px)',
           height: 'calc(100vh - 88px)',
-          right: '0px',
         }}
       >
         <MapView>

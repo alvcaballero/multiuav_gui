@@ -1,10 +1,12 @@
-import React, { useEffect, useRef,useMemo,useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
-import { useModelLoader } from './ModelLoader.jsx';
-import  Drone from './Drone.jsx' 
-import { LatLon2XYZ , LatLon2XYZObj} from './convertion';
+import { useModelLoader, getModelPath } from './ModelLoader.jsx';
+import Drone from './Drone.jsx';
+import { LatLon2XYZ, LatLon2XYZObj } from './convertion';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { useGLTF, useAnimations } from '@react-three/drei';
 
 // Objeto para almacenar las referencias a los objetos 3D de los drones
 const droneObjects = {};
@@ -36,43 +38,39 @@ const setDroneColor = (id, color) => {
 
 // const R3FDevices = ({ positions, onClick, showStatus, selectedPosition, titleField }) => {
 
-const Device = ({ id , position}) => {
+const Device = ({ id, position }) => {
   const meshRef = useRef();
   const currentPosition = useRef(new THREE.Vector3());
   const nextPosition = useRef(new THREE.Vector3());
 
-  const { model, error } = useModelLoader("drone");
+  //const { model, error } = useModelLoader('drone');
+  //const model = useLoader(GLTFLoader, getModelPath('drone'));
+  const model = useGLTF(getModelPath('drone'));
   //const position = useSelector((state) => state.session.positions[id]);
 
   // Actualizamos la posición en cada frame (más eficiente que recrear el mesh)
   // Encuentra la posición inicial
   useEffect(() => {
-    const loc = position.find(item => item.deviceId == id);
+    const loc = position.find((item) => item.deviceId == id);
     if (loc) {
-      nextPosition.current.set(loc.pos[0], 10, loc.pos[1])
+      nextPosition.current.set(loc.pos[0], 10, loc.pos[1]);
     }
   }, [position]);
-  
+
   useEffect(() => {
-    console.log("render device")
+    console.log('render device');
   }, []);
-  
+
   useFrame(() => {
     if (meshRef.current) {
-      currentPosition.current.lerp(nextPosition.current, 0.07  ); 
+      currentPosition.current.lerp(nextPosition.current, 0.07);
       meshRef.current.position.copy(currentPosition.current);
     }
   });
-  
+
   if (!model) return null;
-  
-  return (
-    <primitive
-      ref={meshRef}
-      object={model.scene.clone()}
-      scale={[1, 1, 1]}
-    />
-  );
+
+  return <primitive ref={meshRef} object={model.scene.clone()} scale={[1, 1, 1]} />;
 };
 
 const R3FDevices = () => {
@@ -80,13 +78,10 @@ const R3FDevices = () => {
   const positions = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
-  const [positionxyz, setPositionxyz] = useState([])
+  const [positionxyz, setPositionxyz] = useState([]);
   const { gl, scene } = useThree();
 
-
-
   const objectIds = useMemo(() => Object.keys(positions), [positions]);
-
 
   const createFeature = (devices, position, selectedPositionId) => {
     const device = devices[position.deviceId];
@@ -118,15 +113,16 @@ const R3FDevices = () => {
     };
   };
 
-
   useEffect(() => {
-    const pos = Object.values(positions).map((item)=>{return {...item,lng:item.longitude,lat:item.latitude,alt:item.altitude}})
-    const posxyz = LatLon2XYZObj(origin3d,pos,1000)
-    const result= posxyz.map((item,index)=>{
-      return {...item,name: devices[item.deviceId].name}
-    })
-    setPositionxyz(result)
-  }, [origin3d,positions]);
+    const pos = Object.values(positions).map((item) => {
+      return { ...item, lng: item.longitude, lat: item.latitude, alt: item.altitude };
+    });
+    const posxyz = LatLon2XYZObj(origin3d, pos, 1000);
+    const result = posxyz.map((item, index) => {
+      return { ...item, name: devices[item.deviceId].name };
+    });
+    setPositionxyz(result);
+  }, [origin3d, positions]);
 
   useEffect(() => {
     // Crear los objetos de los drones y añadirlos a la escena
@@ -164,7 +160,7 @@ const R3FDevices = () => {
   return (
     <>
       {objectIds.map((id) => (
-        <Device key={id} id={id} position={positionxyz}/>
+        <Device key={id} id={id} position={positionxyz} />
       ))}
     </>
   );

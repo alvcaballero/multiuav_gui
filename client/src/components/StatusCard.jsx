@@ -133,6 +133,21 @@ const MemoCardActions = React.memo(
     </CardActions>
   )
 );
+const MemoCardHeader = React.memo(({ classes, deviceName, onClose, changeMapFollow, mapFollow }) => {
+  return (
+    <div className={classes.header}>
+      <Typography variant="body2" color="textSecondary">
+        {deviceName}
+      </Typography>
+      <IconButton size="small" onClick={changeMapFollow}>
+        {mapFollow ? <GpsFixedIcon fontSize="small" /> : <GpsNotFixedIcon fontSize="small" />}
+      </IconButton>
+      <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </div>
+  );
+});
 
 const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
   const { classes } = useStyles({ desktopPadding });
@@ -140,7 +155,7 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
   const dispatch = useDispatch();
 
   const device = useSelector((state) => state.devices.items[deviceId]);
-  const mapFollow = useSelector((state) => state.devices.follow);
+  const mapFollowstats = useSelector((state) => state.devices.follow);
 
   const deviceImage = device?.attributes?.deviceImage;
 
@@ -151,9 +166,18 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
   const [openSendCommand, setOpenSendCommand] = useState(false);
   const [nullPosition, setNullPosition] = useState(false);
   const [disableActions, setDisableActions] = useState(false);
+  const [mapFollow, setMapFollow] = useState(false);
+  const [deviceName, setDeviceName] = useState('');
   useEffect(() => {
     setNullPosition(!position);
   }, [position]);
+  useEffect(() => {
+    setMapFollow(mapFollowstats);
+  }, [mapFollowstats]);
+
+  useEffect(() => {
+    setDeviceName(device.name);
+  }, [device]);
 
   const handleOpenMenu = useCallback((e) => setAnchorEl(e.currentTarget), []);
   const handleSyncFiles = useCallback(() => serverCommand(deviceId, 'SincroniseFiles'), [deviceId]);
@@ -205,25 +229,13 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
       <div className={classes.root}>
         {device && (
           <Card elevation={3} className={classes.card}>
-            {deviceImage ? (
-              <CardMedia className={classes.media} image={`/api/media/${device.uniqueId}/${deviceImage}`}>
-                <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
-                  <CloseIcon fontSize="small" className={classes.mediaButton} />
-                </IconButton>
-              </CardMedia>
-            ) : (
-              <div className={classes.header}>
-                <Typography variant="body2" color="textSecondary">
-                  {device.name}
-                </Typography>
-                <IconButton size="small" onClick={changeMapFollow}>
-                  {mapFollow ? <GpsFixedIcon fontSize="small" /> : <GpsNotFixedIcon fontSize="small" />}
-                </IconButton>
-                <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </div>
-            )}
+            <MemoCardHeader
+              classes={classes}
+              deviceName={deviceName}
+              onClose={onClose}
+              changeMapFollow={changeMapFollow}
+              mapFollow={mapFollow}
+            />
             {position && (
               <CardContent className={classes.content}>
                 <Table size="small" classes={{ root: classes.table }}>
@@ -304,7 +316,7 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
           </Card>
         )}
       </div>
-      {position && (
+      {position && anchorEl && (
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
           <MenuItem onClick={navigateToDevice}>
             <Typography color="secondary">Detalle Dispositivo</Typography>
