@@ -4,14 +4,17 @@ sjtu:
       name: '/gps/nav'
       messageType: 'sensor_msgs/NavSatFix'
     speed:
-      name: '/gps/speed'
-      messageType: 'geometry_msgs/TwistStamped'
+      name: '/gps/vel'
+      messageType: 'geometry_msgs/Vector3Stamped'
     IMU:
       name: '/imu/out'
       messageType: 'sensor_msgs/Imu'
     flight_status:
       name: '/joint_states'
       messageType: 'sensor_msgs/JointState'
+    obstacle_info:
+      name: '/sonar/out'
+      messageType: 'sensor_msgs/Range'
 dji_M210_noetic:
   topics:
     position:

@@ -9,7 +9,7 @@ const BASE_PATH = window.location.origin;
 const modelPaths = {
   windTurbine: `${BASE_PATH}/models/windturbine.gltf`,
   base: `${BASE_PATH}/models/base.gltf`,
-  drone: `${BASE_PATH}/models/DroneLVL2A.glb`,
+  drone: `${BASE_PATH}/models/Drone.glb`,
   drone2: `${BASE_PATH}/models/DroneLVL2A.glb`,
   default: `${BASE_PATH}/models/Astronaut.glb`,
 };

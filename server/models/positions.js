@@ -91,12 +91,12 @@ export class positionsModel {
     }
     if (payload.hasOwnProperty('obstacle_info')) {
       positions[payload.deviceId]['attributes']['obstacle_info'] = [
-        round(payload.obstacle_info.down, 1),
-        round(payload.obstacle_info.front, 1),
-        round(payload.obstacle_info.right, 1),
-        round(payload.obstacle_info.back, 1),
-        round(payload.obstacle_info.left, 1),
-        round(payload.obstacle_info.up, 1),
+        round(payload.obstacle_info?.down, 1),
+        round(payload.obstacle_info?.front, 1),
+        round(payload.obstacle_info?.right, 1),
+        round(payload.obstacle_info?.back, 1),
+        round(payload.obstacle_info?.left, 1),
+        round(payload.obstacle_info?.up, 1),
       ];
     }
     if (payload.hasOwnProperty('setHome')) {

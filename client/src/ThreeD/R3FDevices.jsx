@@ -6,7 +6,9 @@ import { useModelLoader, getModelPath } from './ModelLoader.jsx';
 import Drone from './Drone.jsx';
 import { LatLon2XYZ, LatLon2XYZObj } from './convertion';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { useGLTF, useAnimations } from '@react-three/drei';
+import { useGLTF, PerspectiveCamera, useHelper, Helper } from '@react-three/drei';
+
+//import { useGLTF, useAnimations, PerspectiveCamera, CameraHelper, Helper } from '@react-three/drei';
 
 // Objeto para almacenar las referencias a los objetos 3D de los drones
 const droneObjects = {};
@@ -40,9 +42,12 @@ const setDroneColor = (id, color) => {
 
 const Device = ({ id, position }) => {
   const meshRef = useRef();
+  const camRef = useRef();
+
   const currentPosition = useRef(new THREE.Vector3());
   const nextPosition = useRef(new THREE.Vector3());
 
+  useHelper(camRef, THREE.CameraHelper);
   //const { model, error } = useModelLoader('drone');
   //const model = useLoader(GLTFLoader, getModelPath('drone'));
   const model = useGLTF(getModelPath('drone'));
@@ -65,12 +70,19 @@ const Device = ({ id, position }) => {
     if (meshRef.current) {
       currentPosition.current.lerp(nextPosition.current, 0.07);
       meshRef.current.position.copy(currentPosition.current);
+      meshRef.current.rotation.set(0, 10, 0); // Reset rotation if needed
+      camRef.current.rotation.set(10, 0, 0); // Reset camera rotation if needed
     }
   });
 
   if (!model) return null;
 
-  return <primitive ref={meshRef} object={model.scene.clone()} scale={[1, 1, 1]} />;
+  return (
+    <group ref={meshRef} onClick={() => console.log(`Clicked on device ${id}`)}>
+      <perspectiveCamera ref={camRef} near={1} far={4} position={[0, 0, 0]} />
+      <primitive object={model.scene.clone()} scale={[1, 1, 1]} />
+    </group>
+  );
 };
 
 const R3FDevices = () => {
