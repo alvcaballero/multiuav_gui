@@ -15,7 +15,7 @@ import MainToolbar from '../components/MainToolbar';
 import MainMap from '../Mapview/MainMap';
 import StatusCard from '../components/StatusCard';
 import CameraDevice from '../components/CameraDevice';
-
+import ChatDrawer from '../components/ChatDrawer';
 import { devicesActions } from '../store';
 
 const useStyles = makeStyles()((theme) => ({
@@ -82,9 +82,12 @@ const MainPage = () => {
   //const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+
   const [confirmMission, setconfirmMission] = useState(false);
   const memoSetAddUAVOpen = useCallback(SetAddUAVOpen, []);
   const memoSetConfirmMission = useCallback(setconfirmMission, []);
+  const memoSetChatOpen = useCallback(setChatOpen, []);
 
   useEffect(() => {
     console.log('MainPage mounted');
@@ -112,7 +115,11 @@ const MainPage = () => {
 
   return (
     <div className={classes.root}>
-      <Navbar SetAddUAVOpen={memoSetAddUAVOpen} setconfirmMission={memoSetConfirmMission} />
+      <Navbar
+        SetAddUAVOpen={memoSetAddUAVOpen}
+        setconfirmMission={memoSetConfirmMission}
+        setChatOpen={memoSetChatOpen}
+      />
       <RosControl>
         <Menu SetAddUAVOpen={memoSetAddUAVOpen} />
       </RosControl>
@@ -156,7 +163,7 @@ const MainPage = () => {
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
       )}
-
+      <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
       <CameraDevice deviceId={selectDeviceId} onClose={unselectDevice} />
       {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
     </div>

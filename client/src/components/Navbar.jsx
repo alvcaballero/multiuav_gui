@@ -10,7 +10,7 @@ import { FiletoMission } from '../Mapview/MissionConvert';
 import { connectRos, commandLoadMission, commandMission } from '../common/fetchs';
 import { usePreference } from '../common/preferences';
 
-const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item }) => {
+const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, setChatOpen = () => null }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const defaultLatitude = usePreference('latitude', 0);
@@ -68,6 +68,10 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item }
     {
       title: 'Settings',
       action: () => navigate('/settings/devices'),
+    },
+    {
+      title: 'Chat',
+      action: () => setChatOpen(true),
     },
   ];
 
