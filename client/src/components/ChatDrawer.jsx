@@ -11,6 +11,7 @@ import {
   Box,
   Divider,
   TextField,
+  Button,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -72,12 +73,23 @@ const MessageInputArea = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1),
 }));
 
+const OptionsContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+}));
+
+const initialOptions = ['¿Qué puedes hacer?', 'Cuéntame un chiste', 'Ayuda con mi cuenta', 'Soporte técnico'];
+
 const ChatDrawer = ({ open, onClose }) => {
   const { classes } = useStyles();
   const [messages, setMessages] = useState([
     { text: '¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?', sender: 'ai' },
   ]);
   const [newMessage, setNewMessage] = React.useState('');
+  const [showOptions, setShowOptions] = React.useState(true); // Nuevo estado para controlar la visibilidad de las opciones
+
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -88,13 +100,14 @@ const ChatDrawer = ({ open, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() !== '') {
-      const userMessage = { text: newMessage.trim(), sender: 'user' };
+  const handleSendMessage = (messageToSend) => {
+    if (messageToSend.trim() !== '') {
+      const userMessage = { text: messageToSend.trim(), sender: 'user' };
       setMessages((prevMessages) => [...prevMessages, userMessage]);
       setNewMessage('');
+      setShowOptions(false); // Ocultar opciones una vez que se envía el primer mensaje
 
-      // Simulate AI response
+      // Simular respuesta de la IA
       setTimeout(() => {
         const aiResponse = {
           text: `Has dicho: "${userMessage.text}". Estoy procesando tu solicitud...`,
@@ -104,13 +117,18 @@ const ChatDrawer = ({ open, onClose }) => {
       }, 1000);
     }
   };
+
   const handleKeyPress = (event) => {
     if (event.key === 'Enter') {
-      handleSendMessage();
+      handleSendMessage(newMessage);
     }
   };
   const handleDrawerClose = () => {
     onClose(false);
+  };
+  const handleOptionClick = (optionText) => {
+    console.log(`Opción seleccionada: ${optionText}`);
+    handleSendMessage(optionText); // Enviar la opción seleccionada como un mensaje del usuario
   };
 
   return (
@@ -149,6 +167,21 @@ const ChatDrawer = ({ open, onClose }) => {
           ))}
           <div ref={messagesEndRef} />
         </MessagesArea>
+        {/* Mostrar botones de opciones solo si showOptions es true y solo hay el mensaje inicial de la IA */}
+        {showOptions && messages.length === 1 && messages[0].sender === 'ai' && (
+          <OptionsContainer>
+            {initialOptions.map((option, index) => (
+              <Button
+                key={index}
+                variant="outlined"
+                onClick={() => handleOptionClick(option)}
+                sx={{ justifyContent: 'flex-start' }} // Alinea el texto del botón a la izquierda
+              >
+                {option}
+              </Button>
+            ))}
+          </OptionsContainer>
+        )}
         <MessageInputArea>
           <TextField
             fullWidth
@@ -159,7 +192,7 @@ const ChatDrawer = ({ open, onClose }) => {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
           />
-          <IconButton color="primary" onClick={handleSendMessage}>
+          <IconButton color="primary" onClick={() => handleSendMessage(newMessage)}>
             <SendIcon />
           </IconButton>
         </MessageInputArea>
