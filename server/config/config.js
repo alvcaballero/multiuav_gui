@@ -25,7 +25,10 @@ export const env = process.env.NODE_ENV || 'dev',
   extApp = process.env.EXT_APP === 'true' ? true : false,
   extAppUrl = process.env.EXT_APP_url || '',
   extAppUser = process.env.EXT_APP_user || '',
-  extAppPWD = process.env.EXT_APP_pwd || '';
+  extAppPWD = process.env.EXT_APP_pwd || '',
+  LLM = process.env.LLM === 'true' ? true : false,
+  LLMType = process.env.LLM_TYPE || 'gemini', // gemini or openai
+  LLMApiKey = process.env.LLM_API_KEY || '';
 
 // data files
 export const filesData = '../data/files.json';

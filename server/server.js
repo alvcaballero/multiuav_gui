@@ -1,9 +1,12 @@
 import { port, RosEnable, FbEnable } from './config/config.js';
+import { LLMType, LLM, LLMApiKey } from './config/config.js';
+
 import express, { json } from 'express';
 import logger from 'morgan';
 import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
 import { checkFile } from './common/utils.js';
+import { initializeLLMProvider } from './controllers/llm.js'; // LLM provider initialization
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
@@ -20,6 +23,8 @@ import { ExtAppRouter } from './routes/ExtApp.js';
 import { serverRouter } from './routes/server.js';
 import { planningRouter } from './routes/planning.js';
 import { geofenceRouter } from './routes/geofence.js';
+import { llmRouter } from './routes/llm.js';
+
 // comunications with devices
 import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
 import { rosModel } from './models/ros.js'; // ros model
@@ -53,6 +58,7 @@ app.use('/api/planning', planningRouter);
 app.use('/api/ExtApp', ExtAppRouter);
 app.use('/api/server', serverRouter);
 app.use('/api/geofences', geofenceRouter);
+app.use('/api/chat', llmRouter);
 //app.use('/api/ros', rosRouter);
 
 const server = createServer(app);
@@ -66,6 +72,19 @@ if (RosEnable) {
 if (FbEnable) {
   console.log('init FbEnable');
   var ws2 = new WebsocketDevices(8082);
+}
+
+// Initialize the LLM provider if enabled.
+// Check if LLM is enabled and if the API key is provided.
+console.log(`LLM is ${LLM}, LLMType is ${LLMType}, LLMApiKey is ${LLMApiKey}`);
+
+if (LLM) {
+  if (!LLMApiKey) {
+    throw new Error('LLM API Key is required. Please set LLM_API_KEY in your environment variables.');
+  }
+  initializeLLMProvider(LLMType, LLMApiKey);
+} else {
+  console.warn('LLM is disabled. No LLM provider will be initialized.');
 }
 
 // Start the server.

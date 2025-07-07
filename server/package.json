@@ -10,6 +10,7 @@
     "build": "tsc --module 'commonjs'  --target 'es5' --outDir dist src/schema_main.ts "
   },
   "dependencies": {
+    "@google/genai": "^1.0.0",
     "@turf/turf": "^6.5.0",
     "basic-ftp": "^5.0.5",
     "cors": "2.8.5",
