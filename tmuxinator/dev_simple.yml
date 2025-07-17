@@ -1,0 +1,18 @@
+name: muav-gui
+root: ~/
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: main-vertical
+      panes:
+        - backend:
+            - cd ~/work/px4/multiuav_gui/server
+            - nvm use 18
+            - sleep 3
+            - npm run server
+        - frontend:
+            - cd ~/work/px4/multiuav_gui/client
+            - nvm use 20
+            - open -a "Google Chrome" http://127.0.0.1:3000
+            - sleep 2;npm run start

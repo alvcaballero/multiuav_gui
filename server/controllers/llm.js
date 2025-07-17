@@ -2,11 +2,11 @@ import { getLLMProvider } from '../models/llm/provider.js';
 
 let llmProviderInstance;
 
-export function initializeLLMProvider(apiKey) {
+export function initializeLLMProvider(provider,apiKey) {
   if (!llmProviderInstance) {
     // Puedes cambiar 'gemini' por 'openai' si implementas ese proveedor.
-    llmProviderInstance = getLLMProvider('gemini', apiKey);
-    console.log('LLM Provider initialized:', 'gemini');
+    llmProviderInstance = getLLMProvider(provider, apiKey);
+    console.log('LLM Provider initialized:', provider );
   }
 }
 
