@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Rnd } from 'react-rnd';
 import {
   Drawer,
   IconButton,
@@ -12,17 +13,21 @@ import {
   Divider,
   TextField,
   Button,
+  Avatar,
+  Paper,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SendIcon from '@mui/icons-material/Send';
+import PersonIcon from '@mui/icons-material/Person';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { styled } from '@mui/material/styles';
 
 const useStyles = makeStyles()((theme) => ({
   drawer: {
-    width: theme.dimensions.eventsDrawerWidth,
+    width: theme.dimensions.chatDrawerWidth,
   },
   toolbar: {
     paddingLeft: theme.spacing(2),
@@ -32,7 +37,6 @@ const useStyles = makeStyles()((theme) => ({
     flexGrow: 1,
   },
   ChatContainer: {
-    width: 300,
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
@@ -63,6 +67,8 @@ const ChatContainer = styled(Box)(({ theme }) => ({
 const MessagesArea = styled(List)(({ theme }) => ({
   flexGrow: 1,
   overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
   marginBottom: theme.spacing(2),
   paddingRight: theme.spacing(1), // Add some padding for scrollbar
 }));
@@ -82,6 +88,52 @@ const OptionsContainer = styled(Box)(({ theme }) => ({
 
 const initialOptions = ['¿Qué puedes hacer?', 'Cuéntame un chiste', 'Ayuda con mi cuenta', 'Soporte técnico'];
 
+const MessageBubble = ({ message }) => {
+  const isAI = message.sender === 'ai';
+
+  return (
+    <ListItem
+      sx={{
+        display: 'flex',
+        justifyContent: isAI ? 'flex-start' : 'flex-end',
+        alignItems: 'flex-start',
+        gap: 1,
+        py: 1,
+      }}
+    >
+      {isAI && (
+        <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32 }}>
+          <SmartToyIcon fontSize="small" />
+        </Avatar>
+      )}
+
+      <Box sx={{ maxWidth: '70%' }}>
+        <Paper
+          elevation={1}
+          sx={{
+            p: 1.5,
+            bgcolor: isAI ? '#f5f5f5' : '#1976d2',
+            color: isAI ? '#000' : '#fff',
+            borderRadius: 2,
+            borderTopLeftRadius: isAI ? 0.5 : 2,
+            borderTopRightRadius: isAI ? 2 : 0.5,
+          }}
+        >
+          <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+            {message.text}
+          </Typography>
+        </Paper>
+      </Box>
+
+      {!isAI && (
+        <Avatar sx={{ bgcolor: '#4caf50', width: 32, height: 32 }}>
+          <PersonIcon fontSize="small" />
+        </Avatar>
+      )}
+    </ListItem>
+  );
+};
+
 const ChatDrawer = ({ open, onClose }) => {
   const { classes } = useStyles();
   const [messages, setMessages] = useState([
@@ -89,7 +141,7 @@ const ChatDrawer = ({ open, onClose }) => {
   ]);
   const [newMessage, setNewMessage] = React.useState('');
   const [showOptions, setShowOptions] = React.useState(true); // Nuevo estado para controlar la visibilidad de las opciones
-
+  const [panelWidth, setPanelWidth] = useState(300); // Estado para el ancho del chat
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -107,14 +159,35 @@ const ChatDrawer = ({ open, onClose }) => {
       setNewMessage('');
       setShowOptions(false); // Ocultar opciones una vez que se envía el primer mensaje
 
-      // Simular respuesta de la IA
-      setTimeout(() => {
-        const aiResponse = {
-          text: `Has dicho: "${userMessage.text}". Estoy procesando tu solicitud...`,
-          sender: 'ai',
-        };
-        setMessages((prevMessages) => [...prevMessages, aiResponse]);
-      }, 1000);
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ provider: 'gemini', message: userMessage.text }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const aiResponse = {
+            text: data.reply || 'No se recibió respuesta de la IA.',
+            sender: 'ai',
+          };
+          setMessages((prevMessages) => [...prevMessages, aiResponse]);
+        })
+        .catch(() => {
+          const aiResponse = {
+            text: 'Hubo un error al comunicarse con la IA.',
+            sender: 'ai',
+          };
+          setMessages((prevMessages) => [...prevMessages, aiResponse]);
+        });
+      //setTimeout(() => {
+      //  const aiResponse = {
+      //    text: `Has dicho: "${userMessage.text}". Estoy procesando tu solicitud...`,
+      //    sender: 'ai',
+      //  };
+      //  setMessages((prevMessages) => [...prevMessages, aiResponse]);
+      //}, 1000);
     }
   };
 
@@ -132,8 +205,30 @@ const ChatDrawer = ({ open, onClose }) => {
   };
 
   return (
-    <Drawer anchor="right" open={open} variant="persistent">
-      <ChatContainer>
+    <>
+      <Rnd
+        size={{ width: panelWidth, height: window.innerHeight }}
+        position={{ x: window.innerWidth - panelWidth, y: 0 }}
+        minWidth={200}
+        maxWidth={600}
+        bounds="window"
+        enableResizing={{
+          left: true, // Solo permite redimensionar desde el borde izquierdo
+        }}
+        dragAxis="none" // No se puede mover, solo redimensionar
+        onResize={(e, direction, ref, delta, position) => {
+          setPanelWidth(ref.offsetWidth); // Actualiza el ancho del panel al redimensionar
+        }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          height: '100vh',
+          background: '#f5f5f5',
+          boxShadow: '-2px 0 8px rgba(0,0,0,0.1)',
+          zIndex: 9999,
+        }}
+      >
         <Toolbar className={classes.toolbar} disableGutters>
           <Typography variant="h6" className={classes.title}>
             {'Chat AI'}
@@ -145,25 +240,7 @@ const ChatDrawer = ({ open, onClose }) => {
         <Divider />
         <MessagesArea>
           {messages.map((msg, index) => (
-            <ListItem
-              key={index}
-              sx={{
-                justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                textAlign: msg.sender === 'user' ? 'right' : 'left',
-                mb: 1,
-              }}
-            >
-              <ListItemText
-                primary={msg.text}
-                sx={{
-                  backgroundColor: msg.sender === 'user' ? 'primary.light' : 'grey.300',
-                  color: msg.sender === 'user' ? 'white' : 'text.primary',
-                  borderRadius: 2,
-                  p: 1,
-                  maxWidth: '80%',
-                }}
-              />
-            </ListItem>
+            <MessageBubble key={index} message={msg} />
           ))}
           <div ref={messagesEndRef} />
         </MessagesArea>
@@ -196,8 +273,8 @@ const ChatDrawer = ({ open, onClose }) => {
             <SendIcon />
           </IconButton>
         </MessageInputArea>
-      </ChatContainer>
-    </Drawer>
+      </Rnd>
+    </>
   );
 };
 

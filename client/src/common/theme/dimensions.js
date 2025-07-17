@@ -6,6 +6,7 @@ export default {
   drawerHeightPhone: '250px',
   filterFormWidth: '160px',
   eventsDrawerWidth: '320px',
+  chatDrawerWidth: '640px',
   bottomBarHeight: 56,
   popupMapOffset: 300,
   popupMaxWidth: 288,
