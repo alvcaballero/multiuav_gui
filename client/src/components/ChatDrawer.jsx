@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, use } from 'react';
 import { Rnd } from 'react-rnd';
 import {
   Drawer,
@@ -15,6 +15,8 @@ import {
   Button,
   Avatar,
   Paper,
+  AppBar,
+  Stack,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -23,9 +25,31 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SendIcon from '@mui/icons-material/Send';
 import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import ClearIcon from '@mui/icons-material/Clear';
+import ReplayIcon from '@mui/icons-material/Replay';
+import CircularProgressIcon from '@mui/material/CircularProgress';
 import { styled } from '@mui/material/styles';
 
 const useStyles = makeStyles()((theme) => ({
+  panel: {
+    background: '#f0f0f0',
+    borderLeft: '2px solid #ccc',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    boxSizing: 'border-box', // Asegura que el padding y borde no afecten el ancho total
+    zIndex: 9,
+  },
+  container: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    borderRadius: 2,
+    border: '1px solid #e0e0e0',
+  },
   drawer: {
     width: theme.dimensions.chatDrawerWidth,
   },
@@ -46,8 +70,17 @@ const useStyles = makeStyles()((theme) => ({
   MessagesArea: {
     flexGrow: 1,
     overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
     marginBottom: theme.spacing(2),
-    paddingRight: theme.spacing(1), // Add some padding for scrollbar
+    paddingRight: theme.spacing(1),
+  },
+  MessageBubble: {},
+  MessageOptions: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+    margin: theme.spacing(2),
   },
   MessageInputArea: {
     display: 'flex',
@@ -55,38 +88,14 @@ const useStyles = makeStyles()((theme) => ({
     gap: theme.spacing(1),
   },
 }));
-const ChatContainer = styled(Box)(({ theme }) => ({
-  width: 300,
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100%',
-  padding: theme.spacing(2),
-  boxSizing: 'border-box',
-}));
 
-const MessagesArea = styled(List)(({ theme }) => ({
-  flexGrow: 1,
-  overflowY: 'auto',
-  display: 'flex',
-  flexDirection: 'column',
-  marginBottom: theme.spacing(2),
-  paddingRight: theme.spacing(1), // Add some padding for scrollbar
-}));
-
-const MessageInputArea = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(1),
-}));
-
-const OptionsContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(1),
-  marginBottom: theme.spacing(2),
-}));
-
-const initialOptions = ['¿Qué puedes hacer?', 'Cuéntame un chiste', 'Ayuda con mi cuenta', 'Soporte técnico'];
+const initialOptions = [
+  'estas ahi?',
+  '¿Qué drones están disponibles?',
+  'Crea una misión para que un dron vuele 100m al norte y regrese.',
+  'Mueve el gimbal del dron 30 grados hacia el este.',
+  'Selecciona un dron y haz que se mantenga en vuelo estacionario a 10 metros de altura.',
+];
 
 const MessageBubble = ({ message }) => {
   const isAI = message.sender === 'ai';
@@ -94,42 +103,27 @@ const MessageBubble = ({ message }) => {
   return (
     <ListItem
       sx={{
-        display: 'flex',
         justifyContent: isAI ? 'flex-start' : 'flex-end',
-        alignItems: 'flex-start',
-        gap: 1,
-        py: 1,
+        mb: 1,
       }}
     >
-      {isAI && (
+      <Stack direction={isAI ? 'row' : 'row-reverse'} alignItems="flex-start" spacing={1} sx={{ maxWidth: '75%' }}>
         <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32 }}>
-          <SmartToyIcon fontSize="small" />
+          {isAI ? <SmartToyIcon fontSize="small" /> : <PersonIcon fontSize="small" />}
         </Avatar>
-      )}
-
-      <Box sx={{ maxWidth: '70%' }}>
-        <Paper
-          elevation={1}
+        <Box
           sx={{
-            p: 1.5,
             bgcolor: isAI ? '#f5f5f5' : '#1976d2',
             color: isAI ? '#000' : '#fff',
-            borderRadius: 2,
-            borderTopLeftRadius: isAI ? 0.5 : 2,
-            borderTopRightRadius: isAI ? 2 : 0.5,
+            borderRadius: '16px',
+            p: '8px 12px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            wordBreak: 'break-word',
           }}
         >
-          <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-            {message.text}
-          </Typography>
-        </Paper>
-      </Box>
-
-      {!isAI && (
-        <Avatar sx={{ bgcolor: '#4caf50', width: 32, height: 32 }}>
-          <PersonIcon fontSize="small" />
-        </Avatar>
-      )}
+          <ListItemText primary={message.text} />
+        </Box>
+      </Stack>
     </ListItem>
   );
 };
@@ -137,12 +131,19 @@ const MessageBubble = ({ message }) => {
 const ChatDrawer = ({ open, onClose }) => {
   const { classes } = useStyles();
   const [messages, setMessages] = useState([
-    { text: '¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?', sender: 'ai' },
+    { text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?', sender: 'ai' },
   ]);
-  const [newMessage, setNewMessage] = React.useState('');
-  const [showOptions, setShowOptions] = React.useState(true); // Nuevo estado para controlar la visibilidad de las opciones
-  const [panelWidth, setPanelWidth] = useState(300); // Estado para el ancho del chat
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showOptions, setShowOptions] = useState(true); // Nuevo estado para controlar la visibilidad de las opciones
+
   const messagesEndRef = useRef(null);
+  const [panelState, setPanelState] = useState({
+    width: 400, // Ancho inicial
+    height: '100vh', // Altura completa
+    x: window.innerWidth - 400,
+    y: 0,
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -153,127 +154,213 @@ const ChatDrawer = ({ open, onClose }) => {
   }, [messages]);
 
   const handleSendMessage = (messageToSend) => {
-    if (messageToSend.trim() !== '') {
-      const userMessage = { text: messageToSend.trim(), sender: 'user' };
-      setMessages((prevMessages) => [...prevMessages, userMessage]);
-      setNewMessage('');
-      setShowOptions(false); // Ocultar opciones una vez que se envía el primer mensaje
+    console.log('Enviando mensaje:', messageToSend);
+    if (!messageToSend.trim() || isLoading) return;
 
-      fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ provider: 'gemini', message: userMessage.text }),
+    const userMessage = {
+      id: Date.now(),
+      text: messageToSend,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+    setShowOptions(false); // Ocultar opciones una vez que se envía el primer mensaje
+
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ provider: 'gemini', message: userMessage.text }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const aiResponse = {
+          text: data.reply || 'No se recibió respuesta de la IA.',
+          sender: 'ai',
+        };
+        setMessages((prevMessages) => [...prevMessages, aiResponse]);
       })
-        .then((res) => res.json())
-        .then((data) => {
-          const aiResponse = {
-            text: data.reply || 'No se recibió respuesta de la IA.',
-            sender: 'ai',
-          };
-          setMessages((prevMessages) => [...prevMessages, aiResponse]);
-        })
-        .catch(() => {
-          const aiResponse = {
-            text: 'Hubo un error al comunicarse con la IA.',
-            sender: 'ai',
-          };
-          setMessages((prevMessages) => [...prevMessages, aiResponse]);
-        });
-      //setTimeout(() => {
-      //  const aiResponse = {
-      //    text: `Has dicho: "${userMessage.text}". Estoy procesando tu solicitud...`,
-      //    sender: 'ai',
-      //  };
-      //  setMessages((prevMessages) => [...prevMessages, aiResponse]);
-      //}, 1000);
-    }
+      .catch(() => {
+        const aiResponse = {
+          text: 'Hubo un error al comunicarse con la IA.',
+          sender: 'ai',
+        };
+        setMessages((prevMessages) => [...prevMessages, aiResponse]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const handleKeyPress = (event) => {
-    if (event.key === 'Enter') {
-      handleSendMessage(newMessage);
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendMessage(inputValue);
     }
   };
   const handleDrawerClose = () => {
     onClose(false);
   };
   const handleOptionClick = (optionText) => {
-    console.log(`Opción seleccionada: ${optionText}`);
+    console.log(` ${optionText}`);
     handleSendMessage(optionText); // Enviar la opción seleccionada como un mensaje del usuario
+  };
+
+  const clearChat = () => {
+    setShowOptions(true); // Mostrar opciones nuevamente al limpiar el chat
+    setMessages([
+      {
+        id: 1,
+        text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?',
+        sender: 'ai',
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
+  useEffect(() => {
+    const handleWindowResize = () => {
+      setPanelState((prevState) => ({
+        ...prevState,
+        x: window.innerWidth - prevState.width,
+      }));
+    };
+
+    window.addEventListener('resize', handleWindowResize);
+    return () => {
+      window.removeEventListener('resize', handleWindowResize);
+    };
+  }, []);
+
+  const handleResizeStop = (e, direction, ref, delta, position) => {
+    // Actualizamos el estado con el nuevo ancho y la nueva posición.
+    setPanelState({
+      width: parseInt(ref.style.width, 10),
+      height: '100vh',
+      ...position, // 'position' contiene los nuevos valores de {x, y}
+    });
   };
 
   return (
     <>
-      <Rnd
-        size={{ width: panelWidth, height: window.innerHeight }}
-        position={{ x: window.innerWidth - panelWidth, y: 0 }}
-        minWidth={200}
-        maxWidth={600}
-        bounds="window"
-        enableResizing={{
-          left: true, // Solo permite redimensionar desde el borde izquierdo
-        }}
-        dragAxis="none" // No se puede mover, solo redimensionar
-        onResize={(e, direction, ref, delta, position) => {
-          setPanelWidth(ref.offsetWidth); // Actualiza el ancho del panel al redimensionar
-        }}
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          height: '100vh',
-          background: '#f5f5f5',
-          boxShadow: '-2px 0 8px rgba(0,0,0,0.1)',
-          zIndex: 9999,
-        }}
-      >
-        <Toolbar className={classes.toolbar} disableGutters>
-          <Typography variant="h6" className={classes.title}>
-            {'Chat AI'}
-          </Typography>
-          <IconButton size="small" color="inherit" onClick={handleDrawerClose}>
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
-        </Toolbar>
-        <Divider />
-        <MessagesArea>
-          {messages.map((msg, index) => (
-            <MessageBubble key={index} message={msg} />
-          ))}
-          <div ref={messagesEndRef} />
-        </MessagesArea>
-        {/* Mostrar botones de opciones solo si showOptions es true y solo hay el mensaje inicial de la IA */}
-        {showOptions && messages.length === 1 && messages[0].sender === 'ai' && (
-          <OptionsContainer>
-            {initialOptions.map((option, index) => (
-              <Button
-                key={index}
-                variant="outlined"
-                onClick={() => handleOptionClick(option)}
-                sx={{ justifyContent: 'flex-start' }} // Alinea el texto del botón a la izquierda
-              >
-                {option}
-              </Button>
-            ))}
-          </OptionsContainer>
-        )}
-        <MessageInputArea>
-          <TextField
-            fullWidth
-            variant="outlined"
-            size="small"
-            placeholder="Escribe tu mensaje..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-          />
-          <IconButton color="primary" onClick={() => handleSendMessage(newMessage)}>
-            <SendIcon />
-          </IconButton>
-        </MessageInputArea>
-      </Rnd>
+      {open && (
+        <Rnd
+          className={classes.panel}
+          size={{ width: panelState.width, height: panelState.height }}
+          position={{ x: panelState.x, y: panelState.y }}
+          minWidth={300}
+          maxWidth={window.innerWidth / 2}
+          enableResizing={{ left: true, right: false }}
+          dragAxis="none"
+          onResizeStop={handleResizeStop}
+        >
+          <Paper className={classes.container}>
+            <AppBar position="static" sx={{ backgroundColor: '#673ab7' }}>
+              <Toolbar className={classes.toolbar} disableGutters>
+                <Typography variant="h6" className={classes.title}>
+                  {'Chat AI'}
+                </Typography>
+                <IconButton size="small" color="inherit" onClick={clearChat} sx={{ mr: 0.5 }}>
+                  <ReplayIcon fontSize="small" />
+                </IconButton>
+                <IconButton size="small" color="inherit" onClick={handleDrawerClose}>
+                  <ChevronRightIcon fontSize="small" />
+                </IconButton>
+              </Toolbar>
+            </AppBar>
+            {/* Messages Area */}
+            <Box className={classes.MessagesArea}>
+              {messages.map((msg, index) => (
+                <MessageBubble key={index} message={msg} />
+              ))}
+              {isLoading && (
+                <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>
+                  <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32, mr: 1 }}>
+                    <SmartToyIcon fontSize="small" />
+                  </Avatar>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgressIcon size={16} />
+                    <Typography variant="body2" color="text.secondary">
+                      Thinking...
+                    </Typography>
+                  </Box>
+                </ListItem>
+              )}
+              <div ref={messagesEndRef} />
+            </Box>
+
+            <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
+              {/* Optios messages */}
+              {showOptions && messages.length === 1 && messages[0].sender === 'ai' && (
+                <Box sx={{ mb: 2 }}>
+                  <Stack direction="row" flexWrap="wrap" spacing={1} useFlexGap>
+                    {initialOptions.map((option, index) => (
+                      <Button
+                        key={index}
+                        variant="outlined"
+                        onClick={() => handleOptionClick(option)}
+                        sx={{
+                          justifyContent: 'flex-start',
+                          textTransform: 'none',
+                          borderRadius: '20px',
+                          borderColor: '#bdbdbd',
+                          fontWeight: 600,
+                          color: '#424242',
+                          '&:hover': {
+                            borderColor: '#673ab7',
+                            backgroundColor: '#f3e5f5',
+                          },
+                        }}
+                      >
+                        {option}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+
+              {/* Input Area */}
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  fullWidth
+                  multiline
+                  maxRows={3}
+                  placeholder="Escribe tu mensaje..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyUp={handleKeyPress}
+                  disabled={isLoading}
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      bgcolor: '#f8f9fa',
+                    },
+                  }}
+                />
+                <IconButton
+                  onClick={() => handleSendMessage(inputValue)}
+                  disabled={!inputValue.trim() || isLoading}
+                  sx={{
+                    bgcolor: '#1976d2',
+                    color: 'white',
+                    '&:hover': { bgcolor: '#1565c0' },
+                    '&:disabled': { bgcolor: '#e0e0e0' },
+                    width: 40,
+                    height: 40,
+                  }}
+                >
+                  {isLoading ? <CircularProgressIcon size={20} color="inherit" /> : <SendIcon fontSize="small" />}
+                </IconButton>
+              </Stack>
+            </Box>
+          </Paper>
+        </Rnd>
+      )}
     </>
   );
 };
