@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { LLMProvider } from './interface.js';
+import { SystemPrompts } from './SystemPromps.js';
 
 class GoogleGeminiProvider extends LLMProvider {
   constructor(apiKey) {
@@ -11,8 +12,18 @@ class GoogleGeminiProvider extends LLMProvider {
   }
 
   async sendMessage(prompt) {
+    initMsg = {
+      role: 'developer',
+      content: SystemPrompts['gemini'],
+    };
     try {
-      const response = await this.genAI.models.generateContent({ model: 'gemini-2.0-flash-001', contents: prompt });
+      const response = await this.genAI.models.generateContent({
+        model: 'gemini-2.0-flash-001',
+        contents: prompt,
+        config: {
+          systemInstruction: SystemPrompts['gemini'],
+        },
+      });
       const text = response.text();
       return text;
     } catch (error) {

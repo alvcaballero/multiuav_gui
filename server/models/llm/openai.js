@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import { LLMProvider } from "./interface.js";
+import { SystemPrompts } from './SystemPromps.js';
+
 class OpenAIProvider extends LLMProvider {
     constructor(apiKey) {
         super();
@@ -10,6 +12,10 @@ class OpenAIProvider extends LLMProvider {
     }
 
     async sendMessage(prompt) {
+        initMsg = {
+            role: "developer",
+            content: SystemPrompts['openai']
+        }
         try {
             const response = await this.client.chat.completions.create({
                 model: "gpt-4.1",
