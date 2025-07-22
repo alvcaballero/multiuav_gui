@@ -11,15 +11,6 @@ class OpenAIProvider extends LLMProvider {
     this.client = new OpenAI({ apiKey });
   }
 
-  /*
-    {
-        "id": "mcpr_682d498e3bd4819196a0ce1664f8e77b04ad1e533afccbfa",
-        "type": "mcp_approval_request",
-        "arguments": "{\"repoName\":\"modelcontextprotocol/modelcontextprotocol\",\"question\":\"What transport protocols are supported in the 2025-03-26 version of the MCP spec?\"}",
-        "name": "ask_question",
-        "server_label": "deepwiki"
-    }
-    */
 
   convertToolsForMCP(tools) {
     return tools.map((tool) => {
