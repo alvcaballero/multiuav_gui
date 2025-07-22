@@ -1,3 +1,6 @@
+const Providers = { GEMINI: 'gemini', OPENAI: 'openai' };
+
+
 export const SystemPrompts = {
   [Providers.GEMINI]: `
   Actúa como el asistente de una plataforma de control y monitoreo de drones 

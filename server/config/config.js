@@ -28,8 +28,9 @@ export const env = process.env.NODE_ENV || 'dev',
   extAppPWD = process.env.EXT_APP_pwd || '',
   LLM = process.env.LLM === 'true' ? true : false,
   LLMType = process.env.LLM_TYPE || 'gemini', // gemini or openai
-  LLMApiKey = process.env.LLM_API_KEY || '';
-
+  LLMApiKey = process.env.LLM_API_KEY || '',
+  MCPenable = process.env.MCP_ENABLE === 'true' ? true : false, // Model Context Protocol
+  MCPconfig = process.env.MCP_CONFIG || ''; // MCP configuration file
 // data files
 export const filesData = '../data/files.json';
 export const devicesData = '../data/devices.json';
