@@ -1,7 +1,6 @@
 import { missionModel } from '../models/mission.js';
 class missionController {
   static getMission = async (req, res) => {
-    console.log('get missions');
     const response = await missionModel.getMissionValue(req.query.id);
     res.json(response);
   };

@@ -2,6 +2,7 @@ import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { parse, stringify } from 'yaml';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, normalize } from 'path';
+import logger from './logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -13,20 +14,29 @@ export const round = (number, decimals = 0) => {
 export const checkFile = (filepath) => {
   const dir = resolve(__dirname, filepath);
   if (!existsSync(dir)) {
-    console.log(`File '${filepath}' does not exist.`);
+    logger.warn(`File '${filepath}' does not exist.`);
     return null;
   }
   return dir;
 };
 
 export const readDataFile = (filepath) => {
-  if (filepath.includes('.json')) {
-    return readJSON(filepath);
-  }
-  if (filepath.includes('.yaml')) {
-    return readYAML(filepath);
+  let dir = checkFile(filepath);
+  if (dir === null) return {};
+  try {
+    const fileContents = readFileSync(dir, 'utf8');
+
+    if (filepath.includes('.json')) {
+      return JSON.parse(fileContents);
+    }
+    if (filepath.includes('.yaml')) {
+      return parse(fileContents);
+    }
+  } catch (e) {
+    logger.error(`Error reading file ${dir}: ${e.message}`);
   }
 };
+
 export const writeDataFile = async (filepath, content) => {
   if (filepath.includes('.json')) {
     return await writeJSON(filepath, content);
@@ -35,40 +45,6 @@ export const writeDataFile = async (filepath, content) => {
     return await writeYAML(filepath, content);
   }
   return false;
-};
-
-export const readJSON = (filepath) => {
-  console.log('load ' + filepath);
-  let jsonfile = {};
-  if (!existsSync(resolve(__dirname, filepath))) {
-    console.log(`File '${filepath}' does not exist.`);
-    return {};
-  }
-  try {
-    let fileContents = readFileSync(resolve(__dirname, filepath), 'utf8');
-    jsonfile = JSON.parse(fileContents);
-  } catch (e) {
-    console.log(`file is not a json file ${filepath}`);
-    return {};
-  }
-  return jsonfile;
-};
-
-export const readYAML = (filepath) => {
-  let path = filepath;
-  let content = {};
-  if (!existsSync(resolve(__dirname, filepath))) {
-    console.log(`File '${filepath}' does not exist.`);
-    return {};
-  }
-  try {
-    let fileContents = readFileSync(resolve(__dirname, path), 'utf8');
-    content = parse(fileContents);
-    console.log('load ' + path);
-  } catch (e) {
-    console.log(e);
-  }
-  return content;
 };
 
 export const getDatetime = (withMilliseconds = false) => {

@@ -1,4 +1,4 @@
-import { validateDevice, validatePartialDevice } from '../schemas/devices.js';
+import { validateDevice, validatePartialDevice } from '../schemas/zod/devices.js';
 import { DevicesModel } from '../models/devices.js';
 
 class devicesController {
@@ -19,7 +19,6 @@ class devicesController {
     const device = await DevicesModel.getByName(name);
     return device;
   };
-
 
   static getAccess = async (id) => {
     return await DevicesModel.getAccess(id);

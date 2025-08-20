@@ -6,13 +6,16 @@
   "type": "module",
   "scripts": {
     "server": "node ./server.js",
+    "inspect": "node --inspect ./server.js",
     "test": "node --test test/*.js",
-    "build": "tsc --module 'commonjs'  --target 'es5' --outDir dist src/schema_main.ts "
+    "test-logger": "node test-logger.js",
+    "build": "tsc --module 'commonjs'  --target 'es5' --outDir fbmsglib/dist fbmsglib/src/schema_main.ts "
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
     "@turf/turf": "^6.5.0",
     "basic-ftp": "^5.0.5",
+    "chalk": "^5.6.0",
     "cors": "2.8.5",
     "dotenv": "^16.4.5",
     "exif-reader": "^2.0.1",
@@ -31,6 +34,7 @@
     "ssh2-sftp-client": "^8.1.0",
     "util": "^0.12.5",
     "websocket": "^1.0.35",
+    "winston": "^3.17.0",
     "ws": "^8.18.0",
     "xstate": "^5.18.2",
     "yaml": "^2.5.1",

@@ -1,8 +1,8 @@
-import * as fb from './dist/schema_main.cjs';
+import * as fb from './fbmsglib/dist/schema_main.cjs';
 import * as flatbuffers from 'flatbuffers'; // do not remove; needed by generated code
 import { devicesController } from './controllers/devices.js';
-import { readYAML } from './common/utils.js';
-const devices_msg = readYAML('../config/devices/devices_msg.yaml');
+import { readDataFile } from './common/utils.js';
+const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 
 function encodePositionStanpedd({ topic, type = 'geometry_msgs/PoseStamped', frame = 'map', x, y, theta }) {
   const fbb = new flatbuffers.Builder();

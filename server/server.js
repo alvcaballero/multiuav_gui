@@ -2,76 +2,69 @@ import { port, RosEnable, FbEnable } from './config/config.js';
 import { LLMType, LLM, LLMApiKey } from './config/config.js';
 
 import express, { json } from 'express';
-import logger from 'morgan';
 import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
+import { setupLogger } from './middlewares/logger.js';
 import { checkFile } from './common/utils.js';
 import { initializeLLMProvider } from './controllers/llm.js'; // LLM provider initialization
+import logger, { logHelpers } from './common/logger.js';
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
-// express routes
-import { createDevicesRouter } from './routes/devices.js';
-import { categoryRouter } from './routes/category.js';
-import { positionsRouter } from './routes/positions.js';
-import { eventsRouter } from './routes/events.js';
-import { commandsRouter } from './routes/commands.js';
-import { mapRouter } from './routes/map.js';
-import { createMissionRouter } from './routes/mission.js';
-import { createFilesRouter } from './routes/files.js';
-import { ExtAppRouter } from './routes/ExtApp.js';
-import { serverRouter } from './routes/server.js';
-import { planningRouter } from './routes/planning.js';
-import { geofenceRouter } from './routes/geofence.js';
-import { llmRouter } from './routes/llm.js';
+import { setupRoutes } from './routes/index.js';
 
 // comunications with devices
 import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
 import { rosModel } from './models/ros.js'; // ros model
+import e from 'express';
 
 // comunication with devices
-console.log(` !!!!=== RosEnable is ${RosEnable} FbEnable is ${FbEnable}`);
+logger.info('Iniciando servidor MultiUAV GUI', {
+  nodeEnv: process.env.NODE_ENV,
+  port: port,
+  rosEnabled: RosEnable,
+  fbEnabled: FbEnable,
+  llmEnabled: LLM,
+});
 
 // setting APP
 const app = express();
 app.set('port', port);
 app.use(corsMiddleware());
+setupLogger(app);
 app.use(json());
-app.use(logger('dev'));
 
 let wedAppPath = checkFile('../client/build');
 if (wedAppPath === null) {
   wedAppPath = checkFile('../../client/build');
 }
-console.log('wedAppPath ' + wedAppPath);
 
 app.use(express.static(wedAppPath));
-app.use('/api/devices', createDevicesRouter());
-app.use('/api/category', categoryRouter);
-app.use('/api/positions', positionsRouter);
-app.use('/api/events', eventsRouter);
-app.use('/api/commands', commandsRouter);
-app.use('/api/map', mapRouter);
-app.use('/api/missions', createMissionRouter());
-app.use('/api/files', createFilesRouter());
-app.use('/api/planning', planningRouter);
-app.use('/api/ExtApp', ExtAppRouter);
-app.use('/api/server', serverRouter);
-app.use('/api/geofences', geofenceRouter);
-app.use('/api/chat', llmRouter);
-//app.use('/api/ros', rosRouter);
+setupRoutes(app);
 
 const server = createServer(app);
 const ws = new WebsocketManager(server, '/api/socket');
 
 // connect to  devices
 if (RosEnable) {
-  console.log('init RosEnable');
+  logger.info('ROS habilitado, iniciando conexión');
   rosModel.rosConnect();
+  logHelpers.ros.connect('main-server', {
+    status: 'connecting',
+    timestamp: new Date().toISOString(),
+  });
+} else {
+  logger.warn('ROS deshabilitado en configuración');
 }
 if (FbEnable) {
-  console.log('init FbEnable');
+  logger.info('FlatBuffer habilitado, iniciando WebSocket de dispositivos en puerto 8082');
   var ws2 = new WebsocketDevices(8082);
+  logHelpers.system.info('WebSocket de dispositivos iniciado correctamente', {
+    port: 8082,
+    protocol: 'flatbuffer',
+  });
+} else {
+  logger.warn('FlatBuffer deshabilitado en configuración');
 }
 
 // Initialize the LLM provider if enabled.
@@ -80,14 +73,72 @@ console.log(`LLM is ${LLM}, LLMType is ${LLMType}, LLMApiKey is ${LLMApiKey}`);
 
 if (LLM) {
   if (!LLMApiKey) {
-    throw new Error('LLM API Key is required. Please set LLM_API_KEY in your environment variables.');
+    const error = new Error('LLM API Key is required. Please set LLM_API_KEY in your environment variables.');
+    logger.error('Error de configuración LLM', {
+      error: error.message,
+      type: 'configuration',
+    });
+    throw error;
   }
   initializeLLMProvider(LLMType, LLMApiKey);
 } else {
-  console.warn('LLM is disabled. No LLM provider will be initialized.');
+  logger.warn('LLM deshabilitado, no se inicializará ningún proveedor');
 }
+
+// Configurar manejo de errores globales
+process.on('uncaughtException', (error) => {
+  //  rosModel.GCSunServicesMission();
+  logger.error('Excepción no capturada', {
+    error: error.message,
+    stack: error.stack,
+    type: 'uncaughtException',
+  });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Promise rechazada no manejada', {
+    reason: reason,
+    promise: promise.toString(),
+    type: 'unhandledRejection',
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM recibido, cerrando servidor gracefully');
+  server.close(() => {
+    logger.info('Servidor cerrado correctamente');
+    process.exit(0);
+  });
+});
+process.on('SIGINT', () => {
+  logger.info('SIGINT recibido, cerrando servidor gracefully');
+  // rosModel.GCSunServicesMission();
+  server.close(() => {
+    logger.info('Servidor cerrado correctamente');
+  });
+
+  process.exit(0);
+});
+process.on('exit', (code) => {
+  logger.info('Proceso finalizado con código:', code);
+});
 
 // Start the server.
 server.listen(app.get('port'), () => {
-  console.log('Servidor iniciado en el puerto: ' + app.get('port'));
+  logger.info('MultiUAV server ready', {
+    port: app.get('port'),
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    pid: process.pid,
+    nodeVersion: process.version,
+  });
+
+  logHelpers.system.info('WS ready', {
+    websocketEndpoint: '/api/socket',
+    devicePort: FbEnable ? 8082 : null,
+    rosEnabled: RosEnable,
+    llmEnabled: LLM,
+  });
 });

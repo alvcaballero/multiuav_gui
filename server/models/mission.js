@@ -6,8 +6,7 @@ import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
 import { filesController } from '../controllers/files.js';
 import { eventsController } from '../controllers/events.js';
-import { readJSON, readYAML, writeJSON, sleep } from '../common/utils.js';
-import { missionsData, routesData } from '../config/config.js';
+import { readDataFile, writeJSON, sleep } from '../common/utils.js';
 import sequelize from '../common/sequelize.js';
 
 /**
@@ -44,12 +43,9 @@ export const ROUTE_STATUS = Object.freeze({
 
 export class missionModel {
   static async getMissionValue(id) {
-    console.log('Get mission' + id);
     if (id) {
-      console.log('Get mission' + id);
       return await sequelize.models.Mission.findOne({ where: { id: id } });
     }
-    console.log('Get all mission');
     return await sequelize.models.Mission.findAll();
   }
 
@@ -233,7 +229,7 @@ export class missionModel {
 
     const isPlanning = false;
     if (isPlanning) {
-      let mission = readYAML(`../config/mission/mission_1.yaml`);
+      let mission = readDataFile(`../config/mission/mission_1.yaml`);
       await this.initMission(id, { ...mission, id: id });
       return { response: myTask, status: 'OK' };
     }

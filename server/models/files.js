@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { dateString, addTime, GetLocalTime, readJSON, writeJSON, readYAML } from '../common/utils.js';
+import { dateString, GetLocalTime, readDataFile } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
 import { devicesController } from '../controllers/devices.js';
@@ -31,7 +31,7 @@ export const FILE_STATUS = Object.freeze({
   OK: 5,
 });
 
-const filesSetup = readYAML('../config/devices/devices.yaml');
+const filesSetup = readDataFile('../config/devices/devices.yaml');
 const downloadQueue = []; // manage files to download
 const processQueue = []; // manage files to process
 

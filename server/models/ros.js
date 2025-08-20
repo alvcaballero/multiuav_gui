@@ -1,15 +1,16 @@
 import ROSLIB from 'roslib';
-import { readYAML, getDatetime } from '../common/utils.js';
+import { readDataFile, getDatetime } from '../common/utils.js';
 import { devicesController } from '../controllers/devices.js';
 import { missionController } from '../controllers/mission.js';
 import { positionsController } from '../controllers/positions.js';
 import { decodeRosMsg } from '../models/rosDecode.js';
 import { encodeRosSrv } from '../models/rosEncode.js';
 import { categoryController } from '../controllers/category.js';
+import logger, { logHelpers } from '../common/logger.js';
 
 var ros = '';
 const rosState = { state: 'disconnect', msg: 'init msg' };
-const devices_msg = readYAML('../config/devices/devices_msg.yaml');
+const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 const service_list = {};
 const uav_list = {};
 
@@ -17,24 +18,23 @@ var autoconectRos = null;
 var noTimerflag = true;
 
 function connectRos() {
-  console.log('autoconectRos,' + noTimerflag + ' ros status is: ' + rosState.state);
+  //console.log('autoconectRos,' + noTimerflag + ' ros status is: ' + rosState.state);
   if (rosState.state != 'connect') {
     rosModel.rosConnect();
   } else {
-    console.log('clearInterval');
+    //console.log('clearInterval');
     clearInterval(autoconectRos);
     noTimerflag = true;
   }
 }
 function autoConectRos() {
-  console.log('notimerflag,' + noTimerflag);
+  //console.log('notimerflag,' + noTimerflag);
   if (noTimerflag) {
     noTimerflag = false;
     autoconectRos = setInterval(connectRos, 10000);
   }
 }
 
-console.log('Load model ROS');
 export class rosModel {
   static setrosState({ state, msg }) {
     rosState['state'] = state;
@@ -46,7 +46,7 @@ export class rosModel {
 
   static async connectAllUAV() {
     const devices = await devicesController.getAllDevices();
-    console.log('begin to conncet all devices ------------');
+    //console.log('begin to conncet all devices ------------');
     for (let device of Object.values(devices)) {
       if (device.protocol == 'ros') {
         await rosModel.subscribeDevice({
@@ -59,7 +59,7 @@ export class rosModel {
         });
       }
     }
-    console.log('finish to connect all devices ------------');
+    //console.log('finish to connect all devices ------------');
   }
 
   static disconectRos() {
@@ -70,29 +70,28 @@ export class rosModel {
   }
 
   static async rosConnect() {
-    console.log('try to connect to ros');
     if (rosState.state != 'connect') {
       ros = new ROSLIB.Ros({ url: 'ws://127.0.0.1:9090' });
       ros.on('connection', function () {
-        console.log('ROS Connected to websocket server.');
+        logHelpers.ros.connect('server');
         rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
         rosModel.connectAllUAV();
         rosModel.GCSServicesMission();
       });
       ros.on('error', function (error) {
-        console.log('ROS Error connecting to websocket server ');
-        const symbols = Object.getOwnPropertySymbols(error); // Obtener todos los símbolos del objeto
-        const kMessageSymbol = symbols.find((symbol) => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
-        if (kMessageSymbol) {
-          console.log('error:' + error[kMessageSymbol]);
-        } else {
-          console.log('error:' + error);
-        }
+        logHelpers.ros.error('connecting to websocket server', error);
+        //const symbols = Object.getOwnPropertySymbols(error); // Obtener todos los símbolos del objeto
+        //const kMessageSymbol = symbols.find((symbol) => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
+        //if (kMessageSymbol) {
+        //  console.log('errora:' + error[kMessageSymbol]);
+        //} else {
+        //  console.log('errorb:' + error);
+        //}
         rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
         rosModel.disconectRos();
       });
       ros.on('close', function () {
-        console.log('ROS Connection to websocket server closed.');
+        logHelpers.ros.error('ROS Connection to websocket server closed.', { message: 'Connection closed' });
         rosModel.setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
         rosModel.disconectRos();
       });
@@ -147,12 +146,12 @@ export class rosModel {
   }
 
   static async unsubscribeDevice(id) {
-    console.log('unsubscribe model');
+    //console.log('unsubscribe model');
     let cur_uav_idx;
     let Key_listener;
     if (Object.keys(uav_list).length != 0) {
       if (id < 0) {
-        console.log('unsubscribe all');
+        //console.log('unsubscribe all');
         for (let i = 0; i < Object.keys(uav_list).length; i++) {
           //uav_list[i].listener.unsubscribe();
           cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
@@ -314,7 +313,7 @@ export class rosModel {
     });
   }
   static GCSunServicesMission() {
-    console.log('Unadvertise services');
+    //console.log('Unadvertise services');
     if (service_list['ServiceMission']) {
       service_list['ServiceMission'].unadvertise();
       service_list['ServiceDownload'].unadvertise();
@@ -382,30 +381,3 @@ export class rosModel {
     });
   }
 }
-
-// Function to execute when the program is about to exit
-const onExit = () => {
-  console.log('Exiting program...');
-  // Execute any cleanup tasks or final actions here
-  rosModel.GCSunServicesMission();
-};
-const onUncaughtException = (err) => {
-  console.error('Uncaught Exception:', err);
-  // Execute any error handling logic here
-  rosModel.GCSunServicesMission();
-  // Optionally, you can gracefully shut down the program
-  process.exit(1);
-};
-// Handling the SIGINT signal (Ctrl + C)
-process.on('SIGINT', () => {
-  console.log('Ctrl + C pressed. Exiting...');
-  // Execute the exit function before terminating
-  onExit();
-  // Terminate the process
-  process.exit(0);
-});
-
-// Registering the event handlers
-//autoConectRos();
-process.on('exit', onExit);
-process.on('uncaughtException', onUncaughtException);

@@ -1,30 +1,30 @@
 import { getLLMProvider } from '../models/llm/provider.js';
-import { MCPclient } from '../models/llm/mcp.js';
-import {MCPenable} from  '../config/config.js';
+import { MCPclient } from '../models/llm/mcpProvider.js';
+import { MCPenable } from '../config/config.js';
+import logger from '../common/logger.js';
 let llmProviderInstance;
 let MCPclientInstance;
-export function initializeLLMProvider(provider,apiKey) {
+
+export function initializeLLMProvider(provider, apiKey) {
   if (!llmProviderInstance) {
     // Puedes cambiar 'gemini' por 'openai' si implementas ese proveedor.
     llmProviderInstance = getLLMProvider(provider, apiKey);
-    console.log('LLM Provider initialized:', provider );
+    logger.info('LLM Provider initialized:', { provider });
   }
   if (MCPenable && !MCPclientInstance) {
     // Si MCP está habilitado, inicializamos el cliente MCP con el proveedor LLM.
     MCPclientInstance = new MCPclient(llmProviderInstance);
     MCPclientInstance.connect()
       .then(() => {
-        console.log('MCP Client connected successfully.');
+        logger.info('MCP Client connected successfully.');
       })
-      .catch(error => {
-        console.error('Error connecting MCP Client:', error);
+      .catch((error) => {
+        logger.error('Error connecting MCP Client:', error);
       });
-    console.log('MCP Client initialized with LLM Provider.');
-    } else if (!MCPenable) {
-    console.log('MCP is disabled, using direct LLM provider.');
+  } else if (!MCPenable) {
+    logger.info('MCP is disabled, using only LLM provider.');
   }
 }
-
 
 export class llmController {
   static async sendMessage(req, res) {

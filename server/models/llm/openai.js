@@ -11,7 +11,6 @@ class OpenAIProvider extends LLMProvider {
     this.client = new OpenAI({ apiKey });
   }
 
-
   convertToolsForMCP(tools) {
     return tools.map((tool) => {
       return {
@@ -25,7 +24,7 @@ class OpenAIProvider extends LLMProvider {
 
   async sendMessage(prompt, tools = []) {
     const initMsg = {
-      role: 'developer',
+      role: 'System',
       content: SystemPrompts['openai'],
     };
     let parseTools = [];
@@ -36,7 +35,7 @@ class OpenAIProvider extends LLMProvider {
     try {
       //const response = await this.client.chat.completions.create({
       const response = await this.client.responses.create({
-        model: 'gpt-4.1',
+        model: 'gpt-5',
         input: [initMsg, { role: 'user', content: prompt }],
         tools: parseTools,
       });

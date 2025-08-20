@@ -1,6 +1,6 @@
 //https://github.com/lukas8219/nodejs-design-patterns/blob/4a1d3cd4333a290e9461880ff2b060add40a1b45/13-messaging-and-integration-patterns/utils/websocket-manager.mjs#L4
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
-import * as fb from './dist/schema_main.cjs';
+import * as fb from './fbmsglib/dist/schema_main.cjs';
 import * as flatbuffers from 'flatbuffers'; // do not remove; needed by generated code
 import WebSocket, { WebSocketServer } from 'ws';
 import { devicesController } from './controllers/devices.js';
@@ -69,12 +69,9 @@ export async function sendCommandToClient({ uav_id, type, attributes }) {
 export class WebsocketDevices {
   constructor(port) {
     this.clients = new Map();
-    console.log('init websocket devices ' + WebsocketDevices._instance);
     if (WebsocketDevices._instance) {
-      console.log('return last instance singleton');
       return WebsocketDevices._instance;
     }
-    console.log('new instance create');
     WebsocketDevices._instance = this;
 
     this.ws = new WebSocket.Server({ port: port });

@@ -11,12 +11,9 @@ function heartbeat() {
 
 export class WebsocketManager {
   constructor(server, path = '/api/socket') {
-    console.log('init websocket manager' + WebsocketManager._instance);
     if (WebsocketManager._instance) {
-      console.log('return last instance singleton');
       return WebsocketManager._instance;
     }
-    console.log('new instance create');
     WebsocketManager._instance = this;
 
     this.ws = new WebSocket.Server({ path: path, server: server });

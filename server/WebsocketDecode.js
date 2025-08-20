@@ -1,4 +1,4 @@
-import * as fb from './dist/schema_main.cjs';
+import * as fb from './fbmsglib/dist/schema_main.cjs';
 import { ServiceResponse } from './WebsocketDevices.js';
 
 export function getNameFromTopic(topic) {

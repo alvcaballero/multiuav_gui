@@ -1,4 +1,3 @@
-import { readJSON, readYAML, getDatetime } from '../common/utils.js';
 import { StreamServer } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
@@ -247,7 +246,7 @@ export class DevicesModel {
   }
 
   static async addAllUAV() {
-    console.log('---- init cameras of devices ------------');
+    //console.log('---- init cameras of devices ------------');
     const myDevices = await this.getAll();
     for (let device of myDevices) {
       if (StreamServer) {
