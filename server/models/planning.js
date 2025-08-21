@@ -49,11 +49,11 @@ export class planningModel {
     return configPlanning.missionTypes;
   }
   static getDefault() {
-    console.log('Get default planning with markers');
+    //console.log('Get default planning with markers');
     return { ...initPlanning, id: getRandomInt(100000000) };
   }
   static getPlanning() {
-    console.log('Get default planing ');
+    //console.log('Get default planing ');
     return {
       name: initPlanning.name,
       objetivo: initPlanning.objetivo,
@@ -64,8 +64,8 @@ export class planningModel {
     };
   }
   static setDefault(value) {
-    console.log('Set default mission');
-    console.log(value);
+    //console.log('Set default mission');
+    //console.log(value);
     initPlanning = value;
     let response = writeDataFile(missionsConfigData, value);
     return { result: response };

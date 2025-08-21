@@ -1,6 +1,6 @@
 import { devicesController } from '../controllers/devices.js';
 import { positionsController } from '../controllers/positions.js';
-import { WebsocketManager } from '../WebsocketManager.js';
+import { getWebsocketController } from '../controllers/websocket.js';
 import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
@@ -301,8 +301,8 @@ export class missionModel {
       deviceId: null,
       attributes: { message: `Init mission ${missionId}` },
     });
-    var ws = new WebsocketManager(null, '/api/socket');
-    ws.broadcast(JSON.stringify({ mission: { ...mission, name: 'name' } }));
+    const ws = getWebsocketController();
+    ws.sendMessage(JSON.stringify({ mission: { ...mission, name: 'name' } }));
     return { response: mission, status: 'OK' };
   }
 

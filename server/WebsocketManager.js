@@ -2,8 +2,7 @@
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
 
 import WebSocket, { WebSocketServer } from 'ws';
-import { websocketController } from './controllers/websocket.js';
-import { getDatetime } from './common/utils.js';
+import { logHelpers } from './common/logger.js';
 
 function heartbeat() {
   this.isAlive = true;
@@ -11,46 +10,21 @@ function heartbeat() {
 
 export class WebsocketManager {
   constructor(server, path = '/api/socket') {
-    if (WebsocketManager._instance) {
-      return WebsocketManager._instance;
-    }
-    WebsocketManager._instance = this;
-
     this.ws = new WebSocket.Server({ path: path, server: server });
+    this.clientsToRoom = new Map();
+    this.clients = new Set();
 
     this.onConnect(async (client) => {
       client.onMessage(async (message) => {
-        console.log('received: %s', message.toString());
+        logHelpers.ws.message('client', message.toString());
       });
-
-      let init_msg = await websocketController.init();
-      client.notify(init_msg);
+      //client.notify("welcome");
     });
 
-    const interval_update = setInterval(this.updateclient.bind(this), 2000);
-
-    const interval_server = setInterval(this.updateserver.bind(this), 10000);
-
-    const interval = setInterval(this.ping.bind(this), 30000);
+    this.interval = setInterval(this.ping.bind(this), 30000);
 
     this.ws.on('close', function close() {
-      clearInterval(interval);
-      clearInterval(interval_update);
-      clearInterval(interval_server);
-    });
-  }
-
-  async updateclient() {
-    let msg = await websocketController.update();
-    this._applyToAllClients((client) => {
-      client.send(msg);
-    });
-  }
-
-  async updateserver() {
-    let msg = await websocketController.updateserver();
-    this._applyToAllClients((client) => {
-      client.send(msg);
+      this._clearIntervals();
     });
   }
 
@@ -78,6 +52,7 @@ export class WebsocketManager {
   }
 
   disconnect() {
+    this._clearIntervals();
     this.ws.close();
   }
 
@@ -85,20 +60,31 @@ export class WebsocketManager {
     this.ws.clients.forEach(cb);
   }
 
+  _clearIntervals() {
+    clearInterval(this.interval_ping);
+  }
+
   onConnect(cb) {
     this.ws.on('connection', (client) => {
       client.isAlive = true;
-      console.log('----> Newclient CONNECTED WEBSOCKET' + getDatetime());
+      logHelpers.ws.connect(this.ws.clients.size);
 
-      client.on('error', console.error);
+      client.on('error', (error) => {
+        logHelpers.ws.error('clientId', error);
+      });
 
       client.on('pong', heartbeat);
 
       client.on('close', () => {
-        console.log('Connection closed');
+        logHelpers.ws.disconnect('Client disconnected');
       });
 
-      cb(new WebsocketClient(this, { client }));
+      if (this.onClientConnect) {
+        this.onClientConnect(client);
+      }
+      if (cb) {
+        cb(new WebsocketClient(this, { client }));
+      }
     });
   }
 }

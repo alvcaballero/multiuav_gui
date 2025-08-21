@@ -11,15 +11,15 @@ import logger, { logHelpers } from './common/logger.js';
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
+import { initWebsocketController } from './controllers/websocket.js';
 import { setupRoutes } from './routes/index.js';
 
 // comunications with devices
 import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
 import { rosModel } from './models/ros.js'; // ros model
-import e from 'express';
 
 // comunication with devices
-logger.info('Iniciando servidor MultiUAV GUI', {
+logger.info('Init MultiUAV GUI', {
   nodeEnv: process.env.NODE_ENV,
   port: port,
   rosEnabled: RosEnable,
@@ -43,33 +43,28 @@ app.use(express.static(wedAppPath));
 setupRoutes(app);
 
 const server = createServer(app);
-const ws = new WebsocketManager(server, '/api/socket');
+const wsManager = new WebsocketManager(server, '/api/socket');
+const websocketController = initWebsocketController(wsManager);
 
 // connect to  devices
 if (RosEnable) {
-  logger.info('ROS habilitado, iniciando conexión');
   rosModel.rosConnect();
-  logHelpers.ros.connect('main-server', {
-    status: 'connecting',
-    timestamp: new Date().toISOString(),
-  });
 } else {
   logger.warn('ROS deshabilitado en configuración');
 }
 if (FbEnable) {
-  logger.info('FlatBuffer habilitado, iniciando WebSocket de dispositivos en puerto 8082');
   var ws2 = new WebsocketDevices(8082);
-  logHelpers.system.info('WebSocket de dispositivos iniciado correctamente', {
-    port: 8082,
-    protocol: 'flatbuffer',
-  });
 } else {
-  logger.warn('FlatBuffer deshabilitado en configuración');
+  logger.warn('FB communication disabled');
 }
 
 // Initialize the LLM provider if enabled.
 // Check if LLM is enabled and if the API key is provided.
-console.log(`LLM is ${LLM}, LLMType is ${LLMType}, LLMApiKey is ${LLMApiKey}`);
+logger.info('LLM Configuration', {
+  LLM,
+  LLMType,
+  LLMApiKey,
+});
 
 if (LLM) {
   if (!LLMApiKey) {
@@ -87,7 +82,7 @@ if (LLM) {
 
 // Configurar manejo de errores globales
 process.on('uncaughtException', (error) => {
-  //  rosModel.GCSunServicesMission();
+  rosModel.GCSunServicesMission();
   logger.error('Excepción no capturada', {
     error: error.message,
     stack: error.stack,
@@ -99,6 +94,8 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Promise rechazada no manejada', {
     reason: reason,
+    reasonString: reason && reason.toString ? reason.toString() : String(reason),
+    stack: reason && reason.stack ? reason.stack : undefined,
     promise: promise.toString(),
     type: 'unhandledRejection',
   });
@@ -114,7 +111,7 @@ process.on('SIGTERM', () => {
 });
 process.on('SIGINT', () => {
   logger.info('SIGINT recibido, cerrando servidor gracefully');
-  // rosModel.GCSunServicesMission();
+  rosModel.GCSunServicesMission();
   server.close(() => {
     logger.info('Servidor cerrado correctamente');
   });
@@ -122,7 +119,7 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 process.on('exit', (code) => {
-  logger.info('Proceso finalizado con código:', code);
+  logger.info('Proceso finalizado  código', code);
 });
 
 // Start the server.

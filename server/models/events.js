@@ -1,7 +1,7 @@
 import { positionsController } from '../controllers/positions.js';
 import { WebsocketManager } from '../WebsocketManager.js';
+import { getWebsocketController } from '../controllers/websocket.js';
 import sequelize from '../common/sequelize.js';
-
 
 /**
  * @typedef Event
@@ -24,7 +24,7 @@ export class eventsModel {
     return await sequelize.models.Event.findAll();
   }
 
-  static async addEvent({ type="no", eventTime, deviceId, missionId, positionId, attributes={} }) {
+  static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId, attributes = {} }) {
     console.log('type:', type);
     console.log('eventTime:', eventTime);
     console.log('deviceId:', deviceId);
@@ -47,8 +47,7 @@ export class eventsModel {
       missionId: missionId || null,
       attributes: attributes,
     });
-    var ws = new WebsocketManager(null, '/api/socket');
-    ws.broadcast(JSON.stringify({ events: [myEvent] }));
+    const ws = getWebsocketController();
+    ws.sendMessage(JSON.stringify({ events: [myEvent] }));
   }
-
 }

@@ -31,7 +31,7 @@ function autoConectRos() {
   //console.log('notimerflag,' + noTimerflag);
   if (noTimerflag) {
     noTimerflag = false;
-    autoconectRos = setInterval(connectRos, 10000);
+    autoconectRos = setInterval(connectRos, 30000);
   }
 }
 
@@ -71,15 +71,15 @@ export class rosModel {
 
   static async rosConnect() {
     if (rosState.state != 'connect') {
-      ros = new ROSLIB.Ros({ url: 'ws://127.0.0.1:9090' });
+      ros = new ROSLIB.Ros({ url: 'ws://127.0.0.1:9090', encoding: 'utf8' });
       ros.on('connection', function () {
-        logHelpers.ros.connect('server');
+        logHelpers.ros.connect('server', { status: 'connected' });
         rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
         rosModel.connectAllUAV();
         rosModel.GCSServicesMission();
       });
       ros.on('error', function (error) {
-        logHelpers.ros.error('connecting to websocket server', error);
+        logHelpers.ros.error('Error connect to server', error);
         //const symbols = Object.getOwnPropertySymbols(error); // Obtener todos los símbolos del objeto
         //const kMessageSymbol = symbols.find((symbol) => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
         //if (kMessageSymbol) {
@@ -87,11 +87,11 @@ export class rosModel {
         //} else {
         //  console.log('errorb:' + error);
         //}
-        rosModel.setrosState({ state: 'error', msg: 'No se ha posido conectar a ROS' });
+        rosModel.setrosState({ state: 'error', msg: 'No se ha podido conectar a ROS' });
         rosModel.disconectRos();
       });
       ros.on('close', function () {
-        logHelpers.ros.error('ROS Connection to websocket server closed.', { message: 'Connection closed' });
+        logHelpers.ros.error('Connection closed.', { message: 'Connection closed' });
         rosModel.setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
         rosModel.disconectRos();
       });
