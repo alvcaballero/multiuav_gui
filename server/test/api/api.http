@@ -357,21 +357,79 @@ GET http://localhost:4000/api/planning/getMarkers
 ### get bases
 GET http://localhost:4000/api/planning/getBases
 
-### Ros
+### --------- ROS -------------
+### get topics
+GET http://localhost:4000/api/ros/topics
 
-POST http://localhost:4000/api/rosConnect
+### get services
+GET http://localhost:4000/api/ros/services
 
-###
+### pub topic
+POST http://localhost:4000/api/ros/pub
+Content-Type: application/json
 
-GET http://localhost:4000/api/rosConnect
+{
+  "topic": "px4_3/fmu/in/trajectory_setpoint",
+  "messageType": "px4_msgs/msg/TrajectorySetpoint",
+  "message": {
+    "timestamp": 1755871255821361,
+    "position": [
+      0.0,
+      0.0,
+      -10.0
+    ],
+    "velocity": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "acceleration": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "jerk": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "yaw": 1.5707900524139404,
+    "yawspeed": 1.0
+  }
+}
 
-###
+### pub topic
+POST http://localhost:4000/api/ros/pub
+Content-Type: application/json
 
-GET http://localhost:4000/api/topics
+{
+  "topic": "gcs/test2",
+  "messageType": "geometry_msgs/Twist",
+  "message": {
+    "linear": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "angular": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0
+    }
+  }
+}
+
+### test images
+GET http://localhost:4000/api/test.png
+
+yaw: 1.5707900524139404
+yawspeed: 0.0
 
 
-###
+  }
+}
 
+### test images 
 GET http://localhost:4000/api/test.png
 
 

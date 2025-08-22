@@ -32,17 +32,13 @@ class devicesController {
   };
 
   static create = async (req, res) => {
-    console.log('create new device');
-    console.log(req.body);
     const result = validateDevice(req.body);
 
     if (!result.success) {
-      // 422 Unprocessable Entity
       res.status(400).json({ error: JSON.parse(result.error.message) });
     }
 
     const newDevice = await DevicesModel.create(result.data);
-
     res.status(201).json(newDevice);
   };
 

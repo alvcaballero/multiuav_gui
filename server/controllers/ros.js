@@ -2,9 +2,21 @@ import { rosModel } from '../models/ros.js';
 import { RosEnable } from '../config/config.js';
 export class rosController {
   static async getTopics(req, res) {
-    console.log('controller get all');
     let response = await rosModel.getTopics();
     res.json(response);
+  }
+  static async getServices(req, res) {
+    let response = await rosModel.getServices();
+    res.json(response);
+  }
+  static async pubTopic(req, res) {
+    try {
+      let response = await rosModel.PubRosMsg(req.body);
+      res.json(response);
+    } catch (error) {
+      console.error('Error publishing message:', error);
+      res.status(500).json({ error: 'Failed to publish message' });
+    }
   }
   static async getListMaster(req, res) {
     console.log('controller get all');

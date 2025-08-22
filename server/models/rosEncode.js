@@ -1,3 +1,4 @@
+import { timeStamp } from 'console';
 import ROSLIB from 'roslib';
 
 function MissionToRos({
@@ -51,6 +52,20 @@ export function encodeRosSrv({ type, msg, msgType }) {
   }
   if (msgType == 'std_srvs/TriggerRequest') {
     return {};
+  }
+  if (msgType == 'px4_msgs/msg/TrajectorySetpoint') {
+    return {
+      timestamp: msg.timestamp || 0,
+      position: msg.position || [0, 0, 0],
+      velocity: msg.velocity || [0, 0, 0],
+      acceleration: msg.acceleration || [0, 0, 0],
+      jerk: msg.jerk || [0, 0, 0],
+      yaw: msg.yaw || 0,
+      yawspeed: msg.yawspeed || 0,
+    };
+  }
+  if (msgType == 'geometry_msgs/Twist') {
+    return { linear: msg.linear || { x: 0, y: 0, z: 0 }, angular: msg.angular || { x: 0, y: 0, z: 0 } };
   }
 
   return msg;

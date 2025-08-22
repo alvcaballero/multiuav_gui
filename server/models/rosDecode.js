@@ -1,5 +1,6 @@
 import { getDatetime, round } from '../common/utils.js';
 export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
+  // console.log(`Decoding ROS message: ${type} ${msgType} for device ${deviceId}`);
   if (type == 'position' && msgType == 'sensor_msgs/NavSatFix') {
     return {
       id: msg.header.seq,
@@ -7,6 +8,27 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       latitude: msg.latitude,
       longitude: msg.longitude,
       altitude: round(msg.altitude, 1),
+      deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
+    };
+  }
+  if (type == 'position_gps' && msgType == 'px4_msgs/msg/SensorGps') {
+    return {
+      id: 0,
+      deviceId,
+      latitude: msg.latitude_deg,
+      longitude: msg.longitude_deg,
+      altitude: round(msg.altitude_msl_m, 1),
+      deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
+    };
+  }
+  if (type == 'position_local' && msgType == 'px4_msgs/msg/VehicleLocalPosition') {
+    return {
+      id: 0,
+      deviceId,
+      x: msg.x,
+      y: msg.y,
+      z: msg.z,
+      yaw: msg.heading,
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
   }

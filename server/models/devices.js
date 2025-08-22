@@ -4,6 +4,7 @@ import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
 import { object, set } from 'zod';
 import { positionsController } from '../controllers/positions.js';
+import logger from '../common/logger.js';
 /* devices:
 /   id
 /   name  : name of uav
@@ -127,10 +128,8 @@ export class DevicesModel {
   static async create(device) {
     let myDevice = null;
     let serverState = rosController.getServerStatus();
-
     let protocol = device.protocol ? device.protocol : protocols.ROS;
 
-    console.log('create UAV ' + device.name + '  type' + device.category);
     try {
       myDevice = await sequelize.models.Device.create({
         name: device.name,
@@ -144,9 +143,9 @@ export class DevicesModel {
         files: device.files,
         protocol: protocol,
       });
+      logger.info(`Device created: ${myDevice.id}, ${myDevice.name}, ${myDevice.category}`);
     } catch (e) {
-      console.log('Error create device' + e.name);
-      console.log(e);
+      logger.error('Error create device: ' + e.name);
       if (e.name === 'SequelizeUniqueConstraintError') {
         return { state: 'error', msg: 'Device already exists' };
       }
@@ -240,9 +239,8 @@ export class DevicesModel {
     return myDevice.category;
   }
 
-  static removedevice({ id }) {
-    sequelize.models.Device.destroy({ where: { id: id } });
-    console.log(devices);
+  static async removedevice({ id }) {
+    await sequelize.models.Device.destroy({ where: { id: id } });
   }
 
   static async addAllUAV() {

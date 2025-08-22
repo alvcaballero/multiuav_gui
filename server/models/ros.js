@@ -8,7 +8,7 @@ import { encodeRosSrv } from '../models/rosEncode.js';
 import { categoryController } from '../controllers/category.js';
 import logger, { logHelpers } from '../common/logger.js';
 
-var ros = '';
+var ros = null;
 const rosState = { state: 'disconnect', msg: 'init msg' };
 const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 const service_list = {};
@@ -105,7 +105,7 @@ export class rosModel {
     });
   }
   static RosSubscribeCamera(uav_id, uav_type, type, msgType, callback) {
-    console.log('camera' + type);
+    //console.log('camera' + type);
     uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
       //console.log('camera suscribe');
       positionsController.updateCamera(callback({ msg, deviceId: uav_id, uav_type, type, msgType }));
@@ -116,7 +116,7 @@ export class rosModel {
     if (rosState.state != 'connect') {
       return { state: 'error', msg: 'ROS no conectado' };
     }
-    console.log(`subscribe ROS Device ${uavAdded.id} ${uavAdded.name} ${uavAdded.category}`);
+    logHelpers.ros.subscribe(uavAdded.id, uavAdded.name, { category: uavAdded.category });
 
     const { id, name, category, camera } = uavAdded;
     uav_list[id] = uavAdded;
@@ -168,30 +168,18 @@ export class rosModel {
           delete uav_list[props[i]];
         }
       } else {
-        console.log('unsubscribe ' + id);
+        // console.log('unsubscribe ' + id);
         cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
 
         Key_listener = Object.keys(cur_uav_idx).filter((element) => element.includes('listener'));
 
-        console.log(Key_listener);
+        // console.log(Key_listener);
         if (Object.keys(uav_list).length != 0) {
           Key_listener.forEach((element) => {
-            console.log(element);
+            // console.log(element);
             uav_list[cur_uav_idx.id][element].unsubscribe();
           });
           delete uav_list[cur_uav_idx.id];
-
-          //uav_list.slice(cur_uav_idx,1)
-          console.log('Último dron eliminado de la lista');
-          if (Object.keys(uav_list).length > 0) {
-            console.log('\nLa Lista de uav actualizada es: ');
-            Object.values(uav_list).forEach(function (elemento, indice, array) {
-              console.log(elemento, indice);
-            });
-          } else {
-            console.log('No quedan drones en la lista');
-            uav_list = {};
-          }
           return { state: 'success', msg: 'Se ha eliminado el ' + cur_uav_idx }; //notification('success',"Commanding mission to: " + cur_roster);
         }
       }
@@ -250,21 +238,79 @@ export class rosModel {
     });
   }
 
-  static getTopics() {
-    var topicsClient = new ROSLIB.Service({
-      ros: ros,
-      name: '/rosapi/topics',
-      serviceType: 'rosapi/Topics',
-    });
-
-    var request = new ROSLIB.ServiceRequest();
-    return new Promise((resolve, rejects) => {
-      topicsClient.callService(request, function (result) {
-        resolve(result.topics);
-      });
+  static getTopicslist() {
+    return new Promise((resolve, reject) => {
+      if (!ros) reject('ROS not connected');
+      ros.getTopics(
+        function (topics) {
+          resolve(topics);
+        },
+        function (error) {
+          reject(error);
+        }
+      );
     });
   }
-  static getTopics2() {}
+  static getServiceslist() {
+    return new Promise((resolve, reject) => {
+      if (!ros) reject('ROS not connected');
+      ros.getServices(
+        function (services) {
+          resolve(services);
+        },
+        function (error) {
+          reject(error);
+        }
+      );
+    });
+  }
+  static PubRosMsg({ topic, messageType, message }) {
+    if (!ros) {
+      console.error('ROS not connected');
+      //return Promise.reject('ROS not connected');
+    }
+
+    const pub = new ROSLIB.Topic({
+      ros: ros,
+      name: topic,
+      messageType: messageType,
+    });
+    const msg = encodeRosSrv({ type: '', msg: message, msgType: messageType });
+    const rosMsg = new ROSLIB.Message(msg);
+
+    pub.on('warning', function (warning) {
+      console.error('Advertencia:', warning);
+    });
+
+    try {
+      if (!rosMsg) {
+        throw new Error('ROS message is empty or invalid');
+      }
+      pub.publish(rosMsg);
+      return { topic: topic, msgType: messageType, msg: 'Message published successfully' };
+    } catch (error) {
+      return { topic: topic, msgType: messageType, msg: 'Failed to publish message' };
+    }
+  }
+
+  static async getTopics() {
+    try {
+      const topics = await this.getTopicslist();
+      return topics;
+    } catch (error) {
+      console.error('Error getting topics:', error);
+      throw error;
+    }
+  }
+  static async getServices() {
+    try {
+      const services = await this.getServiceslist();
+      return services;
+    } catch (error) {
+      console.error('Error getting services:', error);
+      throw error;
+    }
+  }
 
   /*
    / Create Ros services that UAV can consume for 
@@ -293,7 +339,6 @@ export class rosModel {
       response['msg'] = 'Set successfully';
       return true;
     });
-    console.log('ServiceDownload');
 
     service_list['ServiceDownload'] = new ROSLIB.Service({
       ros: ros,
@@ -320,32 +365,6 @@ export class rosModel {
       delete service_list['ServiceMission'];
       delete service_list['ServiceDownload'];
     }
-  }
-
-  static getServices() {
-    const servicesPromise = new Promise((resolve, reject) => {
-      ros.ROS.getServices(
-        (services) => {
-          const serviceList = services.map((serviceName) => {
-            return {
-              serviceName,
-            };
-          });
-          resolve({
-            services: serviceList,
-          });
-          reject({
-            services: [],
-          });
-        },
-        (message) => {
-          console.error('Failed to get services', message);
-          ros.services = [];
-        }
-      );
-    });
-    servicesPromise.then((services) => setROS((ros) => ({ ...ros, services: services })));
-    return ros.services;
   }
 
   static Getservicehost(nameService) {

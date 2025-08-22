@@ -5,12 +5,12 @@ export const DEVICE_PROTOCOL = z.enum(['ros', 'robofleet']);
 
 export const CameraSchema = z.object({
   type: z.enum(['WebRTC', 'RTSP']),
-  source: z.string()
+  source: z.string(),
 });
 
 export const FileAccessSchema = z.object({
   url: z.string().url(),
-  type: z.literal('ftp')
+  type: z.literal('ftp'),
 });
 
 export const DeviceSchema = z.object({
@@ -22,9 +22,9 @@ export const DeviceSchema = z.object({
   camera: z.array(CameraSchema).optional(),
   files: z.array(FileAccessSchema).optional(),
   lastUpdate: z.date().optional(),
-  status: DEVICE_STATUS.default('offline'),
+  status: DEVICE_STATUS.default('offline').optional(),
   user: z.string().optional(),
-  pwd: z.string().optional()
+  pwd: z.string().optional(),
 });
 
 export const DevicePublicSchema = DeviceSchema.pick({
@@ -34,7 +34,7 @@ export const DevicePublicSchema = DeviceSchema.pick({
   camera: true,
   status: true,
   protocol: true,
-  lastUpdate: true
+  lastUpdate: true,
 });
 
 export const DevicePrivateSchema = DeviceSchema.pick({
@@ -43,12 +43,10 @@ export const DevicePrivateSchema = DeviceSchema.pick({
   user: true,
   pwd: true,
   ip: true,
-  files: true
+  files: true,
 });
 
 export function validateDevice(input) {
-  console.log('check validate device');
-  console.log(input);
   return DeviceSchema.safeParse(input);
 }
 

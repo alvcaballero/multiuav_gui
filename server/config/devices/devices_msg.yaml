@@ -892,7 +892,7 @@ dji_M300_rtk:
           - { id: 1, name: 'idle and max speed' } # two speed
           - { id: 2, name: 'Waypoint Speed' } # custon speed for each waypoint
 
-px4:
+px4_mavros:
   topics:
     position:
       name: '/mavros/global_position/global'
@@ -965,6 +965,25 @@ px4:
         description: 'gimbal_pitch'
     mission_param:
       idle_velocity: 'Cruising Speed' # Cruising Speed (without joystick input, no more than vel_cmd_range)
+
+px4_ros2:
+  topics:
+    position_gps:
+      name: '/fmu/out/vehicle_gps_position'
+      messageType: 'px4_msgs/msg/SensorGps'
+    position_local:
+      name: '/fmu/out/vehicle_local_position'
+      messageType: 'px4_msgs/msg/VehicleLocalPosition'
+    battery:
+      name: '/fmu/out/battery_status'
+      messageType: 'px4_msgs/msg/BatteryStatus'
+  services:
+    configureMission:
+      name: '/mission/new'
+      serviceType: 'aerialcore_common/ConfigMission'
+    commandMission:
+      name: '/mission/start_stop'
+      serviceType: 'std_srvs/SetBool'
 
 fuvex:
   topics:

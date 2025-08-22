@@ -11,10 +11,11 @@ import { serverRouter } from './server.js';
 import { planningRouter } from './planning.js';
 import { geofenceRouter } from './geofence.js';
 import { llmRouter } from './llm.js';
+import { rosRouter } from './ros.js';
 
 export function setupRoutes(app) {
   app.use('/api/devices', createDevicesRouter());
-  app.use('/api/categories', categoryRouter);
+  app.use('/api/category', categoryRouter);
   app.use('/api/positions', positionsRouter);
   app.use('/api/events', eventsRouter);
   app.use('/api/commands', commandsRouter);
@@ -26,5 +27,5 @@ export function setupRoutes(app) {
   app.use('/api/server', serverRouter);
   app.use('/api/geofences', geofenceRouter);
   app.use('/api/chat', llmRouter);
-  //app.use('/api/ros', rosRouter);
+  app.use('/api/ros', rosRouter);
 }
