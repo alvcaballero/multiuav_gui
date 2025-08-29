@@ -364,8 +364,21 @@ GET http://localhost:4000/api/ros/topics
 ### get services
 GET http://localhost:4000/api/ros/services
 
+### get topic type
+GET http://localhost:4000/api/ros/topics_type?topic=/px4_3/fmu/out/vehicle_local_position
+
+### get message details
+GET http://localhost:4000/api/ros/message_details?type=px4_msgs/msg/VehicleLocalPosition
+
+### get publisher
+GET http://localhost:4000/api/ros/publisher?topic=/px4_3/fmu/out/vehicle_local_position
+
+
+### get message
+GET http://localhost:4000/api/ros/subscribe_once?topic=/px4_3/fmu/out/vehicle_local_position
+
 ### pub topic
-POST http://localhost:4000/api/ros/pub
+POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
 {
@@ -399,7 +412,7 @@ Content-Type: application/json
 }
 
 ### pub topic
-POST http://localhost:4000/api/ros/pub
+POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
 {

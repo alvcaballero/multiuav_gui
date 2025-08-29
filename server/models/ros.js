@@ -238,32 +238,62 @@ export class rosModel {
     });
   }
 
-  static getTopicslist() {
+  static getTopics() {
     return new Promise((resolve, reject) => {
       if (!ros) reject('ROS not connected');
       ros.getTopics(
-        function (topics) {
-          resolve(topics);
-        },
-        function (error) {
-          reject(error);
-        }
+        (topics) => resolve(topics),
+        (error) => reject(error)
       );
     });
   }
-  static getServiceslist() {
+  static getServices() {
     return new Promise((resolve, reject) => {
       if (!ros) reject('ROS not connected');
       ros.getServices(
-        function (services) {
-          resolve(services);
-        },
-        function (error) {
-          reject(error);
-        }
+        (services) => resolve(services),
+        (error) => reject(error)
       );
     });
   }
+  static getTopicType(topic) {
+    return new Promise((resolve, reject) => {
+      if (!ros) reject('ROS not connected');
+      ros.getTopicType(
+        topic,
+        (topicType) => resolve(topicType),
+        (error) => reject(error)
+      );
+    });
+  }
+  static getMessageDetails(message) {
+    return new Promise((resolve, reject) => {
+      if (!ros) reject('ROS not connected');
+      ros.getMessageDetails(
+        message,
+        (messageDetails) => resolve(messageDetails),
+        (error) => reject(error)
+      );
+    });
+  }
+
+  static async getPublishers(topic) {
+    let servicemaster = new ROSLIB.Service({
+      ros: ros,
+      name: '/rosapi/publishers',
+      serviceType: 'rosapi/Publishers',
+    });
+
+    let request = new ROSLIB.ServiceRequest({ topic: topic });
+
+    return new Promise((resolve, rejects) => {
+      servicemaster.callService(request, function (result) {
+        console.log(result);
+        resolve(result);
+      });
+    });
+  }
+
   static PubRosMsg({ topic, messageType, message }) {
     if (!ros) {
       console.error('ROS not connected');
@@ -293,23 +323,30 @@ export class rosModel {
     }
   }
 
-  static async getTopics() {
-    try {
-      const topics = await this.getTopicslist();
-      return topics;
-    } catch (error) {
-      console.error('Error getting topics:', error);
-      throw error;
+  static async subscribeOnce({ topic, messageType, timeout = 2000 }) {
+    if (!ros) {
+      console.error('ROS not connected');
+      return Promise.reject('ROS not connected');
     }
-  }
-  static async getServices() {
-    try {
-      const services = await this.getServiceslist();
-      return services;
-    } catch (error) {
-      console.error('Error getting services:', error);
-      throw error;
-    }
+
+    const sub = new ROSLIB.Topic({
+      ros: ros,
+      name: topic,
+      messageType: messageType,
+    });
+
+    return new Promise((resolve, reject) => {
+      const handler = (message) => {
+        sub.unsubscribe();
+        resolve(message); // Devuelve el mensaje recibido
+      };
+      sub.subscribe(handler);
+
+      setTimeout(() => {
+        sub.unsubscribe();
+        reject(new Error('Timeout exceeded'));
+      }, timeout);
+    });
   }
 
   /*
