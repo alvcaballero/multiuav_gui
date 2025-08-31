@@ -416,7 +416,7 @@ POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
 {
-  "topic": "gcs/test2",
+  "topic": "/turtle1/cmd_vel",
   "messageType": "geometry_msgs/Twist",
   "message": {
     "linear": {
@@ -435,12 +435,6 @@ Content-Type: application/json
 ### test images
 GET http://localhost:4000/api/test.png
 
-yaw: 1.5707900524139404
-yawspeed: 0.0
-
-
-  }
-}
 
 ### test images 
 GET http://localhost:4000/api/test.png

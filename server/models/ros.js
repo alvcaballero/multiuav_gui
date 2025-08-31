@@ -294,12 +294,17 @@ export class rosModel {
     });
   }
 
-  static PubRosMsg({ topic, messageType, message }) {
+  static PubRosMsg(params) {
+    console.log('PubRosMsg');
+    console.log(params);
+    const { topic, messageType, message } = params;
     if (!ros) {
       console.error('ROS not connected');
-      //return Promise.reject('ROS not connected');
+      return { topic: topic, msgType: messageType, msg: 'Failed to publish message' };
     }
-
+    //console.log('Publishing to topic:', topic);
+    //console.log('Message Type:', messageType);
+    //console.log('Message Content:', message);
     const pub = new ROSLIB.Topic({
       ros: ros,
       name: topic,
