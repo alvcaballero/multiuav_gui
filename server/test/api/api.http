@@ -370,6 +370,9 @@ GET http://localhost:4000/api/ros/topics_type?topic=/px4_3/fmu/out/vehicle_local
 ### get message details
 GET http://localhost:4000/api/ros/message_details?type=px4_msgs/msg/VehicleLocalPosition
 
+### get message details turtlesim
+GET http://localhost:4000/api/ros/message_details?type=geometry_msgs/msg/Twist
+
 ### get publisher
 GET http://localhost:4000/api/ros/publisher?topic=/px4_3/fmu/out/vehicle_local_position
 
@@ -377,6 +380,9 @@ GET http://localhost:4000/api/ros/publisher?topic=/px4_3/fmu/out/vehicle_local_p
 ### get message
 GET http://localhost:4000/api/ros/subscribe_once?topic=/px4_3/fmu/out/vehicle_local_position
 
+
+### get message turtlebot
+GET http://localhost:4000/api/ros/subscribe_once?topic=/turtle1/pose
 ### pub topic
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
@@ -417,10 +423,10 @@ Content-Type: application/json
 
 {
   "topic": "/turtle1/cmd_vel",
-  "messageType": "geometry_msgs/Twist",
+  "messageType": "geometry_msgs/msg/Twist",
   "message": {
-    "linear": {
-      "x": 0.0,
+    "linear1": {
+      "x": 1.0,
       "y": 0.0,
       "z": 0.0
     },

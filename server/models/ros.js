@@ -5,6 +5,7 @@ import { missionController } from '../controllers/mission.js';
 import { positionsController } from '../controllers/positions.js';
 import { decodeRosMsg } from '../models/rosDecode.js';
 import { encodeRosSrv } from '../models/rosEncode.js';
+import { buildTypeMap, validateRosMsg } from '../models/rosValidateMSG.js';
 import { categoryController } from '../controllers/category.js';
 import logger, { logHelpers } from '../common/logger.js';
 
@@ -65,7 +66,6 @@ export class rosModel {
   static disconectRos() {
     rosModel.unsubscribeDevice(-1);
     rosModel.GCSunServicesMission();
-    ros.close();
     autoConectRos();
   }
 
@@ -239,8 +239,8 @@ export class rosModel {
   }
 
   static getTopics() {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
     return new Promise((resolve, reject) => {
-      if (!ros) reject('ROS not connected');
       ros.getTopics(
         (topics) => resolve(topics),
         (error) => reject(error)
@@ -248,8 +248,8 @@ export class rosModel {
     });
   }
   static getServices() {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
     return new Promise((resolve, reject) => {
-      if (!ros) reject('ROS not connected');
       ros.getServices(
         (services) => resolve(services),
         (error) => reject(error)
@@ -257,8 +257,8 @@ export class rosModel {
     });
   }
   static getTopicType(topic) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
     return new Promise((resolve, reject) => {
-      if (!ros) reject('ROS not connected');
       ros.getTopicType(
         topic,
         (topicType) => resolve(topicType),
@@ -267,44 +267,53 @@ export class rosModel {
     });
   }
   static getMessageDetails(message) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
     return new Promise((resolve, reject) => {
-      if (!ros) reject('ROS not connected');
       ros.getMessageDetails(
         message,
-        (messageDetails) => resolve(messageDetails),
+        (messageDetails) =>{
+          if(!messageDetails || (Array.isArray(messageDetails) && messageDetails.length === 0)) {
+            reject(new Error('message type not found'));
+          }
+          resolve(messageDetails)
+        },
         (error) => reject(error)
       );
     });
   }
 
   static async getPublishers(topic) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
     let servicemaster = new ROSLIB.Service({
       ros: ros,
       name: '/rosapi/publishers',
-      serviceType: 'rosapi/Publishers',
+      serviceType: 'rosapi_msgs/srv/Publishers',
     });
 
     let request = new ROSLIB.ServiceRequest({ topic: topic });
 
     return new Promise((resolve, rejects) => {
       servicemaster.callService(request, function (result) {
-        console.log(result);
-        resolve(result);
+        resolve(result.publishers);
+      }, function (error) {
+        console.error('Error getting publishers:', error);
+        rejects(error);
       });
     });
   }
 
-  static PubRosMsg(params) {
-    console.log('PubRosMsg');
-    console.log(params);
+  static async PubRosMsg(params) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
     const { topic, messageType, message } = params;
-    if (!ros) {
-      console.error('ROS not connected');
-      return { topic: topic, msgType: messageType, msg: 'Failed to publish message' };
-    }
-    //console.log('Publishing to topic:', topic);
-    //console.log('Message Type:', messageType);
-    //console.log('Message Content:', message);
+
+    const msgStructure = await rosModel.getMessageDetails(messageType)
+    
+    const typeMap = buildTypeMap(msgStructure)
+
+    validateRosMsg(messageType, message, typeMap)
+
     const pub = new ROSLIB.Topic({
       ros: ros,
       name: topic,
@@ -312,26 +321,26 @@ export class rosModel {
     });
     const msg = encodeRosSrv({ type: '', msg: message, msgType: messageType });
     const rosMsg = new ROSLIB.Message(msg);
-
+    if (!rosMsg) {
+      throw new Error('ROS message is empty or invalid');
+    }
+    
     pub.on('warning', function (warning) {
       console.error('Advertencia:', warning);
     });
 
-    try {
-      if (!rosMsg) {
-        throw new Error('ROS message is empty or invalid');
-      }
-      pub.publish(rosMsg);
-      return { topic: topic, msgType: messageType, msg: 'Message published successfully' };
-    } catch (error) {
-      return { topic: topic, msgType: messageType, msg: 'Failed to publish message' };
-    }
+
+    pub.publish(rosMsg);
+    return { topic: topic, msgType: messageType, msg: 'Message published successfully' };
   }
 
   static async subscribeOnce({ topic, messageType, timeout = 2000 }) {
-    if (!ros) {
-      console.error('ROS not connected');
-      return Promise.reject('ROS not connected');
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
+    const publisher = await rosModel.getPublishers(topic);
+    if (publisher.length === 0) {
+      //console.warn('No publishers found for topic:', topic);
+      return Promise.reject(new Error(`No publishers found for topic '${topic}'`));
     }
 
     const sub = new ROSLIB.Topic({

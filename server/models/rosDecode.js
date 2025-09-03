@@ -147,3 +147,5 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
   // console.log(`Unknown message type: ${type} ${msgType} for device ${deviceId}`);
   return null;
 }
+
+

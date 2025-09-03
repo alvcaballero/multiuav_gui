@@ -7,7 +7,7 @@ export class rosController {
       res.json(response);
     } catch (error) {
       console.error('Error getting topics:', error);
-      res.status(500).json({ error: 'Failed to get topics' });
+      res.status(500).json({ error:'Error getting topics:'+error });
     }
   }
   static async getTopicType(req, res) {
@@ -21,11 +21,13 @@ export class rosController {
   }
   static async getMessageDetails(req, res) {
     try {
+      //console.log('Getting message details for type:', req.query.type);
       const response = await rosModel.getMessageDetails(req.query.type);
+      //console.log('Message details response:', response);
       res.json(response);
     } catch (error) {
       console.error('Error getting message details:', error);
-      res.status(500).json({ error: 'Failed to get message details' });
+      res.status(500).json({ error: 'Failed to get message details' +error});
     }
   }
   static async getPublishers(req, res) {
@@ -34,7 +36,7 @@ export class rosController {
       res.json(response);
     } catch (error) {
       console.error('Error getting publishers:', error);
-      res.status(500).json({ error: 'Failed to get publishers' });
+      res.status(500).json({ error: 'Failed to get publishers' + error });
     }
   }
 
@@ -44,7 +46,7 @@ export class rosController {
       res.json(response);
     } catch (error) {
       console.error('Error getting services:', error);
-      res.status(500).json({ error: 'Failed to get services' });
+      res.status(500).json({ error: 'Failed to get services' + error });
     }
   }
   static async pubTopicOnce(req, res) {
@@ -53,7 +55,7 @@ export class rosController {
       res.json(response);
     } catch (error) {
       console.error('Error publishing message:', error);
-      res.status(500).json({ error: 'Failed to publish message' });
+      res.status(500).json({ error: 'Failed to publish message' + error });
     }
   }
   static async subscribeOnce(req, res) {
@@ -62,7 +64,7 @@ export class rosController {
       res.json(response);
     } catch (error) {
       console.error('Error subscribing to topic:', error);
-      res.status(500).json({ error: 'Failed to subscribe to topic' });
+      res.status(500).json({ error: 'Failed to subscribe to topic: ' + error.message });
     }
   }
 
