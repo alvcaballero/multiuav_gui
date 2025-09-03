@@ -258,6 +258,7 @@ export class rosModel {
   }
   static getTopicType(topic) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+    console.log('get topic type for ' + topic);
     return new Promise((resolve, reject) => {
       ros.getTopicType(
         topic,
@@ -273,7 +274,7 @@ export class rosModel {
         message,
         (messageDetails) =>{
           if(!messageDetails || (Array.isArray(messageDetails) && messageDetails.length === 0)) {
-            reject(new Error('message type not found'));
+            reject(new Error('Message type not found'));
           }
           resolve(messageDetails)
         },

@@ -373,6 +373,9 @@ GET http://localhost:4000/api/ros/message_details?type=px4_msgs/msg/VehicleLocal
 ### get message details turtlesim
 GET http://localhost:4000/api/ros/message_details?type=geometry_msgs/msg/Twist
 
+
+### get message details turtlesim
+GET http://localhost:4000/api/ros/message_details?type1=geometry_msgs/msg/Twist
 ### get publisher
 GET http://localhost:4000/api/ros/publisher?topic=/px4_3/fmu/out/vehicle_local_position
 

@@ -7,32 +7,42 @@ export class rosController {
       res.json(response);
     } catch (error) {
       console.error('Error getting topics:', error);
-      res.status(500).json({ error:'Error getting topics:'+error });
+      res.status(500).json({ error:'Error getting topics: ' + error });
     }
   }
   static async getTopicType(req, res) {
+    const { topic } = req.query;  
+    if (!topic || typeof topic !== 'string') {
+      return res.status(400).json({ error: 'El parámetro "topic" es obligatorio y debe ser una cadena' });
+    }
     try {
-      const response = await rosModel.getTopicType(req.query.topic);
+      const response = await rosModel.getTopicType(topic);
       res.json(response);
     } catch (error) {
       console.error('Error getting topic type:', error);
-      res.status(500).json({ error: 'Failed to get topic type' });
+      res.status(500).json({ error: 'Failed to get topic type: ' + error });
     }
   }
   static async getMessageDetails(req, res) {
+    const { type } = req.query;
+    if (!type || typeof type !== 'string') {
+      return res.status(400).json({ error: 'El parámetro "type" es obligatorio y debe ser una cadena' });
+    }
     try {
-      //console.log('Getting message details for type:', req.query.type);
-      const response = await rosModel.getMessageDetails(req.query.type);
-      //console.log('Message details response:', response);
+      const response = await rosModel.getMessageDetails(type);
       res.json(response);
     } catch (error) {
       console.error('Error getting message details:', error);
-      res.status(500).json({ error: 'Failed to get message details' +error});
+      res.status(500).json({ error: 'Failed to get message details: ' + error });
     }
   }
   static async getPublishers(req, res) {
+    const { topic } = req.query;
+    if (!topic || typeof topic !== 'string') {
+      return res.status(400).json({ error: 'El parámetro "topic" es obligatorio y debe ser una cadena' });
+    }
     try {
-      const response = await rosModel.getPublishers(req.query.topic);
+      const response = await rosModel.getPublishers(topic);
       res.json(response);
     } catch (error) {
       console.error('Error getting publishers:', error);
