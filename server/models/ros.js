@@ -188,54 +188,62 @@ export class rosModel {
     }
   }
 
-  static async callService({ uav_id, type, request }) {
-    if (rosState.state != 'connect') {
-      return { state: 'error', msg: 'ROS no conectado' };
+  static async callRosService({ service, messageType, message }) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
+    const subscribers = await rosModel.getServices();
+    if (!subscribers.includes(service)) {
+      throw new Error(`Service '${service}' not available`);
     }
+
+    const msgStructure = await rosModel.getMessageDetails(messageType)
+
+    const typeMap = buildTypeMap(msgStructure)
+    validateRosMsg(messageType, message, typeMap)
+
+    let Message = new ROSLIB.Service({
+      ros: ros,
+      name: service,
+      serviceType: messageType,
+    });
+
+    let MsgRequest = message ? new ROSLIB.ServiceRequest(message) : {};
+
+    return new Promise((resolve, rejects) => {
+      Message.callService(
+        MsgRequest,
+      (result) => resolve(result),
+      (error) => rejects(error)
+      );
+    });
+  }
+
+  static async callService({ uav_id, type, request }) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
     let device = await devicesController.getDevice(uav_id);
     const { name, category } = device;
-    console.log(device);
+    //console.log(device);
 
     if (!devices_msg[category]['services'].hasOwnProperty(type)) {
-      console.log(type + ' to:' + name + ' dont have this service');
+      //console.log(type + ' to:' + name + ' dont have this service');
       return { state: 'warning', msg: type + ' to:' + name + ' dont have this service' };
     }
 
     let msgType = devices_msg[category]['services'][type]['serviceType'];
     let myRequest = encodeRosSrv({ type, msg: request, msgType: msgType });
-
-    let Message = new ROSLIB.Service({
-      ros: ros,
-      name: name + devices_msg[category]['services'][type]['name'],
-      serviceType: msgType,
-    });
-
-    let MsgRequest = request ? new ROSLIB.ServiceRequest(myRequest) : {};
-
-    return new Promise((resolve, rejects) => {
-      Message.callService(
-        MsgRequest,
-        function (result) {
-          console.log('send command  ' + type + 'to uav_id' + uav_id);
-          console.log(result);
-          if (result.success || result.result) {
-            resolve({
-              state: 'success',
-              msg: type + ' to' + name + ' ok',
-            });
-          } else {
-            resolve({
-              state: 'error',
-              msg: type + ' to:' + name + ' error',
-            });
-          }
-        },
-        function (result) {
-          console.log('Error:' + result);
-          resolve({ state: 'error', msg: 'Error:' + result });
-        }
-      );
-    });
+    const service = name + devices_msg[category]['services'][type]['name'];
+    try {
+      const response = await rosModel.callRosService({ service, messageType:msgType, message: myRequest });
+      if (response.success || response.result) {
+          return { state: 'success', msg: type + ' to' + name + ' ok' };
+      } else {
+          return { state: 'error', msg: type + ' to:' + name + ' error' };
+      }
+    } catch (error) {
+      console.error('Error calling service:', error);
+      return { state: 'error', msg: 'Failed to call service: ' + error.message };
+    }
   }
 
   static getTopics() {
@@ -314,6 +322,11 @@ export class rosModel {
     const typeMap = buildTypeMap(msgStructure)
 
     validateRosMsg(messageType, message, typeMap)
+
+    const subscribers = await rosModel.getTopics();
+    if (!subscribers.topics.includes(topic)) {
+      throw new Error(`No subscribers found for topic '${topic}'`);
+    }
 
     const pub = new ROSLIB.Topic({
       ros: ros,

@@ -59,6 +59,16 @@ export class rosController {
       res.status(500).json({ error: 'Failed to get services' + error });
     }
   }
+
+  static async callRosService(req, res) {
+    try {
+      const response = await rosModel.callRosService(req.body);
+      res.json(response);
+    } catch (error) {
+      console.error('Error calling service:', error);
+      res.status(500).json({ error: 'Failed to call service: ' + error.message });
+    }
+  }
   static async pubTopicOnce(req, res) {
     try {
       const response = await rosModel.PubRosMsg(req.body);

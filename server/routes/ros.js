@@ -9,5 +9,6 @@ rosRouter.get('/topics_type', rosController.getTopicType);
 rosRouter.get('/message_details', rosController.getMessageDetails);
 rosRouter.get('/publisher', rosController.getPublishers);
 rosRouter.get('/services', rosController.getServices);
+rosRouter.post('/service_call', rosController.callRosService);
 rosRouter.post('/publish', rosController.pubTopicOnce);
 rosRouter.get('/subscribe_once', rosController.subscribeOnce);

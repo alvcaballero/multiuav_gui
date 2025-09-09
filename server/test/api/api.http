@@ -364,6 +364,30 @@ GET http://localhost:4000/api/ros/topics
 ### get services
 GET http://localhost:4000/api/ros/services
 
+### call service 
+POST http://localhost:4000/api/ros/service_call
+Content-Type: application/json
+
+{
+  "service": "/px4_3/fmu/in/goto_setpoint",
+  "messageType": "px4_msgs/msg/GotoSetpoint",
+  "message": {
+    "timestamp": 0,
+    "position": [
+      10,
+      10,
+      10
+    ],
+    "flag_control_heading": false,
+    "heading": 0,
+    "flag_set_max_horizontal_speed": false,
+    "max_horizontal_speed": 0,
+    "flag_set_max_vertical_speed": false,
+    "max_vertical_speed": 0,
+    "flag_set_max_heading_rate": false,
+    "max_heading_rate": 0
+  }
+}
 ### get topic type
 GET http://localhost:4000/api/ros/topics_type?topic=/px4_3/fmu/out/vehicle_local_position
 
@@ -375,7 +399,7 @@ GET http://localhost:4000/api/ros/message_details?type=geometry_msgs/msg/Twist
 
 
 ### get message details turtlesim
-GET http://localhost:4000/api/ros/message_details?type1=geometry_msgs/msg/Twist
+GET http://localhost:4000/api/ros/message_details?type=geometry_msgs/msg/Twist1
 ### get publisher
 GET http://localhost:4000/api/ros/publisher?topic=/px4_3/fmu/out/vehicle_local_position
 
@@ -428,7 +452,7 @@ Content-Type: application/json
   "topic": "/turtle1/cmd_vel",
   "messageType": "geometry_msgs/msg/Twist",
   "message": {
-    "linear1": {
+    "linear": {
       "x": 1.0,
       "y": 0.0,
       "z": 0.0

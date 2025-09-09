@@ -6,6 +6,35 @@ export function buildTypeMap(definitions) {
   return typeMap;
 }
 
+function validatePrimitiveType(val, fieldType, type) {
+
+  switch (fieldType) {
+    case "double":
+    case "float":
+      if (typeof val !== "number") {
+        throw new Error(`Field '${fieldName}' in ${type} must be a number`);
+      }
+      break;
+    case "int32":
+    case "int64":
+    case "uint32":
+      if (!Number.isInteger(val)) {
+        throw new Error(`Field '${fieldName}' in ${type} must be an integer`);
+      }
+      break;
+    case "string":
+      if (typeof val !== "string") {
+        throw new Error(`Field '${fieldName}' in ${type} must be a string`);
+      }
+      break;
+    default:
+      // otros tipos primitivos...
+      break;
+  }
+
+  //return primitiveTypes.includes(type);
+}
+
 export function validateRosMsg(typeMsg, msg, typeMap) {
   let type = typeMsg;
   if (type.includes("/msg/")) {
@@ -30,6 +59,7 @@ export function validateRosMsg(typeMsg, msg, typeMap) {
   for (let i = 0; i < def.fieldnames.length; i++) {
     const fieldName = def.fieldnames[i].replace(/^_/, ""); // quito el "_" inicial
     const fieldType = def.fieldtypes[i];
+    const fieldArrayLen = def.fieldarraylen[i];
 
     if (!(fieldName in msg)) {
       throw new Error(`Missing field '${fieldName}' in message of type ${type}`);
@@ -39,30 +69,15 @@ export function validateRosMsg(typeMsg, msg, typeMap) {
       // es otro mensaje compuesto → validar recursivamente
       validateRosMsg(fieldType, msg[fieldName], typeMap);
     } else {
-      // es tipo primitivo
       const val = msg[fieldName];
-      switch (fieldType) {
-        case "double":
-        case "float":
-          if (typeof val !== "number") {
-            throw new Error(`Field '${fieldName}' in ${type} must be a number`);
-          }
-          break;
-        case "int32":
-        case "int64":
-        case "uint32":
-          if (!Number.isInteger(val)) {
-            throw new Error(`Field '${fieldName}' in ${type} must be an integer`);
-          }
-          break;
-        case "string":
-          if (typeof val !== "string") {
-            throw new Error(`Field '${fieldName}' in ${type} must be a string`);
-          }
-          break;
-        default:
-          // otros tipos primitivos...
-          break;
+      if (fieldArrayLen > 0) {
+        for (const item of val) {
+          validatePrimitiveType(item, fieldType, type);
+        }
+      }
+      else{
+        // es tipo primitivo
+        validatePrimitiveType(val, fieldType, type);
       }
     }
   }
