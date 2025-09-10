@@ -140,13 +140,25 @@ const DeviceRow = ({ data, index, style }) => {
     } else {
       status = dayjs(item.lastUpdate).fromNow();
     }
+    let uavStatus = null;
+
+    if (position?.attributes?.navState) {
+      uavStatus = (
+        <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
+          {position.attributes.armState} - {position.attributes.navState}
+        </Typography>
+      );
+    } else if (position?.attributes?.landed_state) {
+      uavStatus = (
+        <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
+          {position.attributes.landed_state}
+        </Typography>
+      );
+    }
+
     return (
       <>
-        {position?.attributes?.landed_state && ( // Uso de optional chaining para mayor seguridad
-          <Typography component="span" sx={{ display: 'block', fontSize: 10 }}>
-            {position.attributes.landed_state}
-          </Typography>
-        )}
+        {uavStatus}
         <Typography component="span" style={{ fontSize: 12 }} className={classes[getStatusColor(item.status)]}>
           {status}
         </Typography>
@@ -171,21 +183,27 @@ const DeviceRow = ({ data, index, style }) => {
           }}
         />
         {position && (
-          <>
-            {position.attributes?.alarm && <PositionAlarm alarm={position.attributes.alarm} classes={classes} />}
-            {position.attributes?.ignition !== undefined && ( // Verificar explícitamente si existe y no es undefined
-              <PositionIgnition ignition={position.attributes.ignition} classes={classes} />
-            )}
-            {position?.speed !== undefined && <PositionSpeed speed={position.speed} />}
-            {position?.altitude !== undefined && <PositionAltitude altitude={position.altitude} />}
-            {position.attributes?.batteryLevel !== undefined && (
-              <PositionBattery
-                batteryLevel={position.attributes.batteryLevel}
-                charge={position.attributes.charge}
-                classes={classes}
-              />
-            )}
-          </>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            {/* Top row: Speed and Altitude */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {position?.speed !== undefined && <PositionSpeed speed={position.speed} />}
+              {position?.altitude !== undefined && <PositionAltitude altitude={position.altitude} />}
+            </div>
+            {/* Bottom row: Alarm, Ignition, Battery */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              {position.attributes?.alarm && <PositionAlarm alarm={position.attributes.alarm} classes={classes} />}
+              {position.attributes?.ignition !== undefined && (
+                <PositionIgnition ignition={position.attributes.ignition} classes={classes} />
+              )}
+              {position.attributes?.batteryLevel !== undefined && (
+                <PositionBattery
+                  batteryLevel={position.attributes.batteryLevel}
+                  charge={position.attributes.charge}
+                  classes={classes}
+                />
+              )}
+            </div>
+          </div>
         )}
       </ListItemButton>
     </div>

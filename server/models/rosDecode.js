@@ -1,4 +1,5 @@
 import { getDatetime, round } from '../common/utils.js';
+import { getDroneStatus, getArmingStatus, getVehicleCommand, getVehicleCmdResult } from '../config/status.js';
 export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
   // console.log(`Decoding ROS message: ${type} ${msgType} for device ${deviceId}`);
   if (type == 'position' && msgType == 'sensor_msgs/NavSatFix') {
@@ -25,12 +26,23 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     return {
       id: 0,
       deviceId,
-      x: msg.x,
-      y: msg.y,
-      z: msg.z,
+      localposition: {
+        x: msg.x,
+        y: msg.y,
+        z: msg.z  
+      },
       yaw: msg.heading,
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
+  }
+  if (type == 'battery' && msgType == 'px4_msgs/msg/BatteryStatus') {
+    return { deviceId, batteryLevel: msg.remaining * 100 };
+  }
+  if (type == 'vehicle_status' && msgType == 'px4_msgs/msg/VehicleStatus') {
+    return { deviceId, armState: getArmingStatus(msg.arming_state), navState: getDroneStatus(msg.nav_state) };
+  }
+  if (type == 'vehicle_command_ack' && msgType == 'px4_msgs/msg/VehicleCommandAck') {
+    return { deviceId, commandAck: getVehicleCommand(msg.command), resultCmdAck: getVehicleCmdResult(msg.result) };
   }
   //if (type == 'sensor_height' && msgType == 'mavros_msgs/Altitude') {
   //  return null;
@@ -90,7 +102,7 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     };
   }
 
-  if (type == 'battery' && uav_type == 'px4') {
+  if (type == 'battery' && uav_type == 'px4_mavros') {
     return {
       deviceId,
       batteryLevel: Math.round(msg.percentage * 100),

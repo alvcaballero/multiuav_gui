@@ -977,6 +977,12 @@ px4_ros2:
     battery:
       name: '/fmu/out/battery_status'
       messageType: 'px4_msgs/msg/BatteryStatus'
+    vehicle_status:
+      name: '/fmu/out/vehicle_status'
+      messageType: 'px4_msgs/msg/VehicleStatus'
+    vehicle_command_ack:
+      name: '/fmu/out/vehicle_command_ack'
+      messageType: 'px4_msgs/msg/VehicleCommandAck'
   services:
     configureMission:
       name: '/mission/new'

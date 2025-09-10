@@ -41,7 +41,6 @@ export class positionsModel {
     }
 
     if (positions[payload.deviceId] === undefined) {
-      ``;
       positions[payload.deviceId] = {
         deviceId: payload.deviceId,
         accuracy: 0.0,
@@ -106,7 +105,21 @@ export class positionsModel {
         positions[payload.deviceId].altitude,
       ];
     }
-
+    if (payload.hasOwnProperty('localposition')) {
+      positions[payload.deviceId]['attributes']['localposition'] = [
+        round(payload.localposition.x, 2),
+        round(payload.localposition.y, 2),
+        round(payload.localposition.z, 2),
+      ];
+    }
+    if (payload.hasOwnProperty('armState')) {
+      positions[payload.deviceId]['attributes']['armState'] = payload.armState;
+      positions[payload.deviceId]['attributes']['navState'] = payload.navState;
+    }
+    if (payload.hasOwnProperty('commandAck')) {
+      positions[payload.deviceId]['attributes']['commandAck'] = payload.commandAck;
+      positions[payload.deviceId]['attributes']['resultCmdAck'] = payload.resultCmdAck;
+    }
     if (payload.hasOwnProperty('uav_state')) {
       //positions[payload.deviceId]['attributes']['protocol'] = payload.protocol;
       positions[payload.deviceId]['attributes']['mission_state'] = payload.mission_state;
