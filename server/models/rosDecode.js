@@ -23,6 +23,7 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     };
   }
   if (type == 'position_local' && msgType == 'px4_msgs/msg/VehicleLocalPosition') {
+    const speed = Math.sqrt(msg.vx * msg.vx + msg.vy * msg.vy + msg.vz * msg.vz);
     return {
       id: 0,
       deviceId,
@@ -31,7 +32,8 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
         y: msg.y,
         z: msg.z  
       },
-      yaw: msg.heading,
+      course: msg.heading,
+      speed: round(speed, 1),
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
   }
