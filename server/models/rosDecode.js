@@ -41,7 +41,7 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     return { deviceId, batteryLevel: msg.remaining * 100 };
   }
   if (type == 'vehicle_status' && msgType == 'px4_msgs/msg/VehicleStatus') {
-    return { deviceId, armState: getArmingStatus(msg.arming_state), navState: getDroneStatus(msg.nav_state) };
+    return { deviceId, armState: getArmingStatus(msg.arming_state), navState: getDroneStatus(msg.nav_state),failsafe:msg.failsafe,flightCheck:msg.pre_flight_checks_pass};
   }
   if (type == 'vehicle_command_ack' && msgType == 'px4_msgs/msg/VehicleCommandAck') {
     return { deviceId, commandAck: getVehicleCommand(msg.command), resultCmdAck: getVehicleCmdResult(msg.result) };

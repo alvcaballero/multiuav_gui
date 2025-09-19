@@ -115,6 +115,8 @@ export class positionsModel {
     if (payload.hasOwnProperty('armState')) {
       positions[payload.deviceId]['attributes']['armState'] = payload.armState;
       positions[payload.deviceId]['attributes']['navState'] = payload.navState;
+      positions[payload.deviceId]['attributes']['failsafe'] = payload.failsafe;
+      positions[payload.deviceId]['attributes']['flightCheck'] = payload.flightCheck;
     }
     if (payload.hasOwnProperty('commandAck')) {
       positions[payload.deviceId]['attributes']['commandAck'] = payload.commandAck;
