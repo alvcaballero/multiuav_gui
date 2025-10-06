@@ -61,6 +61,9 @@ export class categoryModel {
 
   static getActions({ type }) {
     console.log('devices acction in category ' + type);
+    if( devices_msg[type]?.attributes?.mission_action === undefined ) {
+      return [];
+    }
     return Object.values(devices_msg[type]['attributes']['mission_action']);
   }
 }

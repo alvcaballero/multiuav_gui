@@ -985,8 +985,8 @@ px4_ros2:
       messageType: 'px4_msgs/msg/VehicleCommandAck'
   services:
     configureMission:
-      name: '/mission/new'
-      serviceType: 'aerialcore_common/ConfigMission'
+      name: '/offboard/mission_load'
+      serviceType: 'muav_gcs_interfaces/LoadMission'
     commandMission:
       name: '/mission/start_stop'
       serviceType: 'std_srvs/SetBool'

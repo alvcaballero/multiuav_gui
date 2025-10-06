@@ -191,8 +191,9 @@ export class rosModel {
   static async callRosService({ service, messageType, message }) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 
-    const subscribers = await rosModel.getServices();
-    if (!subscribers.includes(service)) {
+    const services = await rosModel.getServices();
+    if (!services.includes(service)) {
+      console.log('Available services:', services);
       throw new Error(`Service '${service}' not available`);
     }
 
@@ -232,7 +233,7 @@ export class rosModel {
 
     let msgType = devices_msg[category]['services'][type]['serviceType'];
     let myRequest = encodeRosSrv({ type, msg: request, msgType: msgType });
-    const service = name + devices_msg[category]['services'][type]['name'];
+    const service = `/${name}${devices_msg[category]['services'][type]['name']}`;
     try {
       const response = await rosModel.callRosService({ service, messageType:msgType, message: myRequest });
       if (response.success || response.result) {

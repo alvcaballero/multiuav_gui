@@ -1,4 +1,5 @@
 import { timeStamp } from 'console';
+import { request } from 'http';
 import ROSLIB from 'roslib';
 
 function MissionToRos({
@@ -45,10 +46,17 @@ function MissionToRos({
     commandParameter: param_matrix_msg,
   };
 }
+function MissionToRos2(param) {
+  let msg = MissionToRos(param);
+  return {request : new ROSLIB.Message(msg)}
+}
 
 export function encodeRosSrv({ type, msg, msgType }) {
-  if (type == 'configureMission') {
+  if (type == 'configureMission' && msgType == 'aerialcore_common/ConfigMission') {
     return MissionToRos(msg);
+  }
+  if (type == 'configureMission' && msgType == 'muav_gcs_interfaces/LoadMission') {
+    return MissionToRos2(msg);
   }
   if (msgType == 'std_srvs/TriggerRequest') {
     return {};
