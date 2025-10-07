@@ -986,7 +986,7 @@ px4_ros2:
   services:
     configureMission:
       name: '/offboard/mission_load'
-      serviceType: 'muav_gcs_interfaces/LoadMission'
+      serviceType: 'muav_gcs_interfaces/srv/LoadMission'
     commandMission:
       name: '/mission/start_stop'
       serviceType: 'std_srvs/SetBool'

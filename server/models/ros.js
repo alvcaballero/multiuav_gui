@@ -197,9 +197,20 @@ export class rosModel {
       throw new Error(`Service '${service}' not available`);
     }
 
-    const msgStructure = await rosModel.getMessageDetails(messageType)
+    const topicType = await rosModel.getServicesType(service);
+    if (topicType !== messageType) {
+      throw new Error(`Service type mismatch: expected '${topicType}', got '${messageType}'`);
+    }
 
-    const typeMap = buildTypeMap(msgStructure)
+    const responseSrvStructure = await rosModel.getServiceRequestDetails(messageType);
+    const srvStructure = responseSrvStructure.typedefs || [];
+
+    if (!srvStructure || srvStructure.length === 0) {
+      throw new Error(`No structure found for service type '${messageType}'`);
+    }
+
+    const typeMap = buildTypeMap(srvStructure)
+
     validateRosMsg(messageType, message, typeMap)
 
     let Message = new ROSLIB.Service({
@@ -261,6 +272,49 @@ export class rosModel {
     return new Promise((resolve, reject) => {
       ros.getServices(
         (services) => resolve(services),
+        (error) => reject(error)
+      );
+    });
+  }
+  static async getServicesType(service) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+    console.log('get service type for ' + service);
+    return new Promise((resolve, reject) => {
+      ros.getServiceType(
+        service,
+        (serviceType) => resolve(serviceType),
+        (error) => reject(error)
+      );
+    });
+  }
+  static async getServiceRequestDetails(type) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+    return new Promise((resolve, reject) => {
+      ros.getServiceRequestDetails(
+        type,
+        (serviceDetails) =>{
+          if(!serviceDetails || (serviceDetails.length === 0)) {
+            reject(new Error('Service type not found'));
+          }
+          resolve(serviceDetails)
+        }
+        ,
+        (error) => reject(error)
+      );
+    });
+  }
+  static async getServiceResponseDetails(type) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+    return new Promise((resolve, reject) => {
+      ros.getServiceResponseDetails(
+        type,
+        (serviceDetails) =>{
+          if(!serviceDetails || (serviceDetails.length === 0)) {
+            reject(new Error('Service type not found'));
+          }
+          resolve(serviceDetails)
+        }
+        ,
         (error) => reject(error)
       );
     });

@@ -59,6 +59,46 @@ export class rosController {
       res.status(500).json({ error: 'Failed to get services' + error });
     }
   }
+  static async getServicesType(req, res) {
+    const { service } = req.query;  
+    if (!service || typeof service !== 'string') {
+      return res.status(400).json({ error: 'El parámetro "service" es obligatorio y debe ser una cadena' });
+    }
+    try {
+      const response = await rosModel.getServicesType(service);
+      res.json(response);
+    } catch (error) {
+      console.error('Error getting services type:', error);
+      res.status(500).json({ error: 'Failed to get services type' + error });
+    }
+  }
+  static async getServiceRequestDetails(req, res) {
+    const { type } = req.query;
+    if (!type || typeof type !== 'string') {
+      return res.status(400).json({ error: 'El parámetro "type" es obligatorio y debe ser una cadena' });
+    }
+    try {
+      const response = await rosModel.getServiceRequestDetails(type);
+      res.json(response);
+    } catch (error) {
+      console.error('Error getting service details:', error);
+      res.status(500).json({ error: 'Failed to get service details: ' + error });
+    }
+  }
+  
+  static async getServiceResponseDetails(req, res) {
+        const { type } = req.query;
+    if (!type || typeof type !== 'string') {
+      return res.status(400).json({ error: 'El parámetro "type" es obligatorio y debe ser una cadena' });
+    }
+    try {
+      const response = await rosModel.getServiceRequestDetails(type);
+      res.json(response);
+    } catch (error) {
+      console.error('Error getting service details:', error);
+      res.status(500).json({ error: 'Failed to get service details: ' + error });
+    }
+  }
 
   static async callRosService(req, res) {
     try {

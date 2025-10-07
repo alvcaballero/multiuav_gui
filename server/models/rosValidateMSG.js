@@ -40,7 +40,10 @@ export function validateRosMsg(typeMsg, msg, typeMap) {
   if (type.includes("/msg/")) {
     type = typeMsg.replace("/msg/", "/");
   }
-
+  if (type.includes("/srv/")) {
+    type = typeMsg.replace("/srv/", "/");
+    type = `${type}_Request`;
+  }
   const def = typeMap[type];
   if (!def) {
     throw new Error(`No definition found for type ${type}`);
