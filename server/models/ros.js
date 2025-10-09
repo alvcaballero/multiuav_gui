@@ -198,7 +198,8 @@ export class rosModel {
     }
 
     const topicType = await rosModel.getServicesType(service);
-    if (topicType !== messageType) {
+    const auxtopicType = topicType.replace('/srv/', '/');
+    if (!(topicType == messageType || auxtopicType == messageType)) {
       throw new Error(`Service type mismatch: expected '${topicType}', got '${messageType}'`);
     }
 

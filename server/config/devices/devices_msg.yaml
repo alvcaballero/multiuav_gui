@@ -988,8 +988,8 @@ px4_ros2:
       name: '/offboard/mission_load'
       serviceType: 'muav_gcs_interfaces/srv/LoadMission'
     commandMission:
-      name: '/mission/start_stop'
-      serviceType: 'std_srvs/SetBool'
+      name: '/offboard/mission/start_stop'
+      serviceType: 'std_srvs/srv/SetBool'
 
 fuvex:
   topics:
