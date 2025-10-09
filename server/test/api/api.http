@@ -368,14 +368,14 @@ GET http://localhost:4000/api/ros/services
 GET http://localhost:4000/api/ros/service_type?service=/px4_3/land
 
 ### get service type
-GET http://localhost:4000/api/ros/service_type?service=/px4_3/takeoff
+GET http://localhost:4000/api/ros/service_type?service=/px4_3/offboard/mission_load
 
 ### check service request structure
 GET http://localhost:4000/api/ros/service_request_details?type=std_srvs/srv/Trigger
 
 
 ### check service request structure
-GET http://localhost:4000/api/ros/service_request_details?type=px4_msgs/srv/VehicleCommand
+GET http://localhost:4000/api/ros/service_request_details?type=muav_gcs_interfaces/srv/LoadMission
 
 
 ### call service 

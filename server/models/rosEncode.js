@@ -1,5 +1,6 @@
 import { timeStamp } from 'console';
 import { request } from 'http';
+import { type } from 'os';
 import ROSLIB from 'roslib';
 
 function MissionToRos({
@@ -48,7 +49,22 @@ function MissionToRos({
 }
 function MissionToRos2(param) {
   let msg = MissionToRos(param);
-  return {request : new ROSLIB.Message(msg)}
+  return {request : new ROSLIB.Message({
+    type: 'waypoint',
+    waypoint: msg.waypoint,
+    radius: msg.radius,
+    vel_max: msg.maxVel,
+    vel_idle: msg.idleVel,
+    yaw: msg.yaw,
+    gimbal_pitch: msg.gimbalPitch,
+    speed: msg.speed,
+    yaw_mode: msg.yawMode,
+    trace_mode: msg.traceMode,
+    gimbal_pitch_mode: msg.gimbalPitchMode,
+    finish_action: msg.finishAction,
+    command_list: msg.commandList,
+    command_parameter: msg.commandParameter,
+  })}
 }
 
 export function encodeRosSrv({ type, msg, msgType }) {

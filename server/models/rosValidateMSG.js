@@ -35,7 +35,7 @@ function validatePrimitiveType(val, fieldType, type) {
   //return primitiveTypes.includes(type);
 }
 
-export function validateRosMsg(typeMsg, msg, typeMap) {
+export function validateRosMsg(typeMsg, msg, typeMap, Checkallparrams = true) {
   let type = typeMsg;
   if (type.includes("/msg/")) {
     type = typeMsg.replace("/msg/", "/");
@@ -44,6 +44,8 @@ export function validateRosMsg(typeMsg, msg, typeMap) {
     type = typeMsg.replace("/srv/", "/");
     type = `${type}_Request`;
   }
+  //console.log("Validating message of type:", type);
+  //console.log("Validating message data:", msg);
   const def = typeMap[type];
   if (!def) {
     throw new Error(`No definition found for type ${type}`);
@@ -65,24 +67,39 @@ export function validateRosMsg(typeMsg, msg, typeMap) {
     const fieldArrayLen = def.fieldarraylen[i];
 
     if (!(fieldName in msg)) {
-      throw new Error(`Missing field '${fieldName}' in message of type ${type}`);
+      if (Checkallparrams) {
+        throw new Error(`Missing field '${fieldName}' in message of type ${type}`);
+      }else{
+        //console.warn(`Warning: Missing field '${fieldName}' in message of type ${type}`);
+        continue;
+      }
     }
 
-    if (fieldType.startsWith("geometry_msgs/") || fieldType.includes("/")) {
-      // es otro mensaje compuesto → validar recursivamente
-      validateRosMsg(fieldType, msg[fieldName], typeMap);
-    } else {
-      const val = msg[fieldName];
-      if (fieldArrayLen > 0) {
-        for (const item of val) {
+    const val = msg[fieldName];
+
+    if (fieldArrayLen >= 0 && Array.isArray(val) && val.length > 0) {
+      // es un array
+      //console.log(`Field '${fieldName}' is an array of type '${fieldType}' with length ${val.length}`);
+      for (const item of val) {
+        if (fieldType.includes("/")){
+          validateRosMsg(fieldType, item, typeMap,false);
+        }
+        else  {
           validatePrimitiveType(item, fieldType, type);
         }
       }
-      else{
-        // es tipo primitivo
+    }
+    else{
+      // es tipo primitivo
+      //console.log(`Field '${fieldName}' is of type '${fieldType}' with value:`, val);
+      if (fieldType.includes("/")){
+        validateRosMsg(fieldType, val, typeMap,false);
+      }
+      else  {
         validatePrimitiveType(val, fieldType, type);
       }
     }
+    
   }
 
   return true;
