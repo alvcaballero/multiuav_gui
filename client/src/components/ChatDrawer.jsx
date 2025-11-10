@@ -27,6 +27,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ClearIcon from '@mui/icons-material/Clear';
 import ReplayIcon from '@mui/icons-material/Replay';
+import MicIcon from '@mui/icons-material/Mic';
+import StopIcon from '@mui/icons-material/Stop';
 import CircularProgressIcon from '@mui/material/CircularProgress';
 import { styled } from '@mui/material/styles';
 
@@ -136,6 +138,10 @@ const ChatDrawer = ({ open, onClose }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showOptions, setShowOptions] = useState(true); // Nuevo estado para controlar la visibilidad de las opciones
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const audioChunksRef = useRef([]);
+  const audioPlayerRef = useRef(null);
 
   const messagesEndRef = useRef(null);
   const [panelState, setPanelState] = useState({
@@ -153,7 +159,7 @@ const ChatDrawer = ({ open, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (messageToSend) => {
+  const handleSendMessage = (messageToSend, fromAudio = false) => {
     console.log('Enviando mensaje:', messageToSend);
     if (!messageToSend.trim() || isLoading) return;
 
@@ -167,6 +173,10 @@ const ChatDrawer = ({ open, onClose }) => {
     setInputValue('');
     setIsLoading(true);
     setShowOptions(false); // Ocultar opciones una vez que se envía el primer mensaje
+
+    // Capturar si este mensaje fue enviado desde audio
+    const shouldPlayAudio = fromAudio;
+    console.log('shouldPlayAudio:', shouldPlayAudio);
 
     fetch('/api/chat', {
       method: 'POST',
@@ -182,6 +192,11 @@ const ChatDrawer = ({ open, onClose }) => {
           sender: 'ai',
         };
         setMessages((prevMessages) => [...prevMessages, aiResponse]);
+
+        // Si el mensaje anterior fue de audio, reproducir la respuesta
+        if (shouldPlayAudio && aiResponse.text) {
+          textToSpeech(aiResponse.text);
+        }
       })
       .catch(() => {
         const aiResponse = {
@@ -219,6 +234,119 @@ const ChatDrawer = ({ open, onClose }) => {
         timestamp: new Date(),
       },
     ]);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await sendAudioMessage(audioBlob);
+
+        // Detener todos los tracks del stream para liberar el micrófono
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error al acceder al micrófono:', error);
+      alert('No se pudo acceder al micrófono. Por favor, verifica los permisos.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  const sendAudioMessage = async (audioBlob) => {
+    setIsLoading(true);
+
+    try {
+      // Crear FormData para enviar el audio
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
+
+      // Enviar el audio al servidor para transcripción
+      const transcriptionResponse = await fetch('/api/speech-tools/stt', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!transcriptionResponse.ok) {
+        throw new Error('Error al transcribir el audio');
+      }
+
+      const { text } = await transcriptionResponse.json();
+
+      if (text && text.trim()) {
+        // Enviar el texto transcrito como mensaje, indicando que viene de audio
+        handleSendMessage(text, true);
+      } else {
+        alert('No se pudo transcribir el audio. Por favor, intenta de nuevo.');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Error al procesar el audio:', error);
+      alert('Hubo un error al procesar el audio.');
+      setIsLoading(false);
+    }
+  };
+
+  const textToSpeech = async (text) => {
+    try {
+      const response = await fetch('/api/speech-tools/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al generar audio');
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Detener cualquier audio que esté reproduciéndose
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+
+      // Crear y reproducir el nuevo audio
+      const audio = new Audio(audioUrl);
+      audioPlayerRef.current = audio;
+
+      audio.play().catch((error) => {
+        console.error('Error al reproducir audio:', error);
+      });
+
+      // Limpiar el URL cuando termine de reproducir
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        audioPlayerRef.current = null;
+      };
+    } catch (error) {
+      console.error('Error en text-to-speech:', error);
+      // No mostrar alert para no interrumpir el flujo del chat
+    }
   };
 
   useEffect(() => {
@@ -332,7 +460,7 @@ const ChatDrawer = ({ open, onClose }) => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyUp={handleKeyPress}
-                  disabled={isLoading}
+                  disabled={isLoading || isRecording}
                   variant="outlined"
                   size="small"
                   sx={{
@@ -343,8 +471,28 @@ const ChatDrawer = ({ open, onClose }) => {
                   }}
                 />
                 <IconButton
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={isLoading}
+                  sx={{
+                    bgcolor: isRecording ? '#f44336' : '#4caf50',
+                    color: 'white',
+                    '&:hover': { bgcolor: isRecording ? '#d32f2f' : '#388e3c' },
+                    '&:disabled': { bgcolor: '#e0e0e0' },
+                    width: 40,
+                    height: 40,
+                    animation: isRecording ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                    '@keyframes pulse': {
+                      '0%': { transform: 'scale(1)', opacity: 1 },
+                      '50%': { transform: 'scale(1.1)', opacity: 0.8 },
+                      '100%': { transform: 'scale(1)', opacity: 1 },
+                    },
+                  }}
+                >
+                  {isRecording ? <StopIcon fontSize="small" /> : <MicIcon fontSize="small" />}
+                </IconButton>
+                <IconButton
                   onClick={() => handleSendMessage(inputValue)}
-                  disabled={!inputValue.trim() || isLoading}
+                  disabled={!inputValue.trim() || isLoading || isRecording}
                   sx={{
                     bgcolor: '#1976d2',
                     color: 'white',

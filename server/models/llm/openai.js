@@ -22,26 +22,52 @@ class OpenAIProvider extends LLMProvider {
     });
   }
 
-  async sendMessage(prompt, tools = []) {
-    const initMsg = {
-      role: 'System',
-      content: SystemPrompts['openai'],
-    };
+  // output: [
+  //   {
+  //     id: 'rs_0a25fdebf18fe8b100691221769f9c81908fc6f07f83bf8334',
+  //     type: 'reasoning',
+  //     summary: []
+  //   },
+  //   {
+  //     id: 'fc_0a25fdebf18fe8b1006912217793808190bc7089753aaf5440',
+  //     type: 'function_call',
+  //     status: 'completed',
+  //     arguments: '{}',
+  //     call_id: 'call_twt3DXArJadNMa7H9mQwlqos',
+  //     name: 'get_devices'
+  //   }
+  // ],
+
+  async sendMessage(messages, tools = []) {
+    // Si messages es un string, convertirlo a formato de mensajes
+    if (typeof messages === 'string') {
+      const initMsg = {
+        role: 'system',
+        content: SystemPrompts['openai'],
+      };
+      messages = [initMsg, { role: 'user', content: messages }];
+    }
+
     let parseTools = [];
     if (tools && tools.length > 0) {
       parseTools = this.convertToolsForMCP(tools);
       //console.log('parseTools', parseTools);
     }
+
     try {
-      //const response = await this.client.chat.completions.create({
       const response = await this.client.responses.create({
         model: 'gpt-5',
-        input: [initMsg, { role: 'user', content: prompt }],
+        input: messages,
         tools: parseTools,
       });
-      console.log(response);
 
-      return response.output_text;
+      console.log('OpenAI Response:', JSON.stringify(response, null, 2));
+
+      // Retornar la respuesta completa para que pueda ser procesada
+      return {
+        output: response.output,
+        usage: response.usage,
+      };
     } catch (error) {
       console.error('Error communicating with OpenAI API:', error);
       throw new Error('Failed to get response from AI model.');

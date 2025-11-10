@@ -24,6 +24,7 @@
     "flatbuffers": "^24.3.25",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "openai": "^5.8.2",
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",

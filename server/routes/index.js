@@ -12,6 +12,7 @@ import { planningRouter } from './planning.js';
 import { geofenceRouter } from './geofence.js';
 import { llmRouter } from './llm.js';
 import { rosRouter } from './ros.js';
+import { speechRouter } from './speech.js';
 
 export function setupRoutes(app) {
   app.use('/api/devices', createDevicesRouter());
@@ -28,4 +29,5 @@ export function setupRoutes(app) {
   app.use('/api/geofences', geofenceRouter);
   app.use('/api/chat', llmRouter);
   app.use('/api/ros', rosRouter);
+  app.use('/api/speech-tools', speechRouter);
 }

@@ -2,35 +2,50 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const env = process.env.NODE_ENV || 'dev',
-  port = process.env.PORT || 4000,
-  CorsEnable = process.env.CORS_ENABLE === 'true' ? true : false,
-  RosEnable = process.env.ROS_CONNECTION ? (process.env.ROS_CONNECTION === 'false' ? false : true) : true,
-  FbEnable = process.env.FB_CONNECTION ? (process.env.FB_CONNECTION === 'false' ? false : true) : true,
-  StreamServer = process.env.STREAM_SERVER === 'true' ? true : false, //if use mediamtx server in local host
-  LocalGlyphs = process.env.LOCAL_GLYPHS === 'true' ? true : false, // if local server have a glyphs server
-  NoElevation = process.env.NO_ELEVATION === 'true' ? true : false, // if local server have a glyphs server
-  db = process.env.DB === 'true' ? true : false,
-  dbType = process.env.DB_TYPE,
-  dbUser = process.env.DB_USER,
-  dbPassword = process.env.DB_PASSWORD,
-  dbHost = process.env.DB_HOST,
-  dbName = process.env.DB_NAME,
-  dbPort = process.env.DB_PORT,
-  planningServer = process.env.PLANNING_SERVER === 'true' ? true : false,
-  planningHost = process.env.PLANNING_HOST,
-  filesPath = process.env.Files_PATH ? process.env.Files_PATH : './data/',
-  processThermalImg = process.env.Process_Thermal_Img === 'true' ? true : false,
-  processThermalsSrc = process.env.Process_Program_src,
-  extApp = process.env.EXT_APP === 'true' ? true : false,
-  extAppUrl = process.env.EXT_APP_url || '',
-  extAppUser = process.env.EXT_APP_user || '',
-  extAppPWD = process.env.EXT_APP_pwd || '',
-  LLM = process.env.LLM === 'true' ? true : false,
-  LLMType = process.env.LLM_TYPE || 'gemini', // gemini or openai
-  LLMApiKey = process.env.LLM_API_KEY || '',
-  MCPenable = process.env.MCP_ENABLE === 'true' ? true : false, // Model Context Protocol
-  MCPconfig = process.env.MCP_CONFIG || ''; // MCP configuration file
+export const env = process.env.NODE_ENV || 'dev';
+export const port = Number(process.env.PORT) || 4000;
+export const CorsEnable = process.env.CORS_ENABLE === 'true';
+export const RosEnable =
+  typeof process.env.ROS_CONNECTION === 'undefined' ? true : process.env.ROS_CONNECTION !== 'false';
+export const FbEnable = typeof process.env.FB_CONNECTION === 'undefined' ? true : process.env.FB_CONNECTION !== 'false';
+export const StreamServer = process.env.STREAM_SERVER === 'true'; //if use mediamtx server in local host
+export const LocalGlyphs = process.env.LOCAL_GLYPHS === 'true'; // if local server have a glyphs server
+export const NoElevation = process.env.NO_ELEVATION === 'true'; // if local server have a glyphs server
+export const db = process.env.DB === 'true';
+export const dbType = process.env.DB_TYPE;
+export const dbUser = process.env.DB_USER;
+export const dbPassword = process.env.DB_PASSWORD;
+export const dbHost = process.env.DB_HOST;
+export const dbName = process.env.DB_NAME;
+export const dbPort = process.env.DB_PORT;
+export const planningServer = process.env.PLANNING_SERVER === 'true';
+export const planningHost = process.env.PLANNING_HOST;
+export const filesPath = process.env.Files_PATH ? process.env.Files_PATH : './data/';
+export const processThermalImg = process.env.Process_Thermal_Img === 'true';
+export const processThermalsSrc = process.env.Process_Program_src;
+export const extApp = process.env.EXT_APP === 'true';
+export const extAppUrl = process.env.EXT_APP_url || '';
+export const extAppUser = process.env.EXT_APP_user || '';
+export const extAppPWD = process.env.EXT_APP_pwd || '';
+export const LLM = process.env.LLM === 'true';
+export const LLMType = process.env.LLM_TYPE || 'gemini'; // gemini or openai
+export const LLMApiKey = process.env.LLM_API_KEY || '';
+export const MCPenable = process.env.MCP_ENABLE === 'true'; // Model Context Protocol
+
+let _MCPconfig = {};
+try {
+  const raw = process.env.MCP_CONFIG;
+  _MCPconfig = raw ? JSON.parse(raw) : {};
+  console.log('_MCPconfig', _MCPconfig);
+  if (typeof _MCPconfig.transport === 'undefined') {
+    throw new Error(`Unknown transport: ${_MCPconfig.transport}`);
+  }
+} catch (err) {
+  // invalid JSON in MCP_CONFIG env var — fallback to empty object
+  console.error('Invalid MCP_CONFIG JSON:', err);
+  _MCPconfig = {};
+}
+export const MCPconfig = _MCPconfig; // MCP configuration file
 // data files
 export const filesData = '../data/files.json';
 export const devicesData = '../data/devices.json';
