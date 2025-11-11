@@ -6,7 +6,7 @@ import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
 import { setupLogger } from './middlewares/logger.js';
 import { checkFile } from './common/utils.js';
-import { initializeLLMProvider } from './controllers/llm.js'; // LLM provider initialization
+import { llmController } from './controllers/llm.js'; // LLM provider initialization
 import logger, { logHelpers } from './common/logger.js';
 
 //ws - for client
@@ -75,7 +75,7 @@ if (LLM) {
     });
     throw error;
   }
-  initializeLLMProvider(LLMType, LLMApiKey);
+  llmController.initializeLLMProvider(LLMType, LLMApiKey);
 } else {
   logger.warn('LLM deshabilitado, no se inicializará ningún proveedor');
 }

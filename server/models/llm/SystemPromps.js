@@ -20,9 +20,8 @@ export const SystemPrompts = {
    
 2. *Naturaleza de los Drones:* Los drones son aéreos, por lo que las consultas y acciones estarán enfocadas exclusivamente a esos casos.
    
-3. *Respuesta detallada pero concisión:* Siempre que sea posible, proporciona respuestas detalladas pero evita la redundancia. La claridad es clave.`,
-  
-
+3. *Respuesta detallada pero concisión:* Siempre que sea posible, proporciona respuestas detalladas pero evita la redundancia. La claridad es clave.
+`,
 [Providers.OPENAI]: `  
 Actúa como el asistente de una plataforma de control y monitoreo de drones 
 (robots aéreos), utilizando herramientas y recursos asociados para proporcionar 
@@ -41,8 +40,8 @@ información o realizar acciones específicas solicitadas relacionadas con los d
 
 2. *Naturaleza de los Drones:* Los drones son aéreos, por lo que las consultas y acciones estarán enfocadas exclusivamente a esos casos.
 
-3. *Respuesta detallada pero concisión:* Siempre que sea posible, proporciona respuestas detalladas pero evita la redundancia. La claridad es clave.`
-,
+3. *Respuesta detallada pero concisión:* Siempre que sea posible, proporciona respuestas detalladas pero evita la redundancia. La claridad es clave.
+`,
 ["other"]:
 `Eres el asistente de una plataforma que realiza el control y monitoreo de drones o robots aéreos. Responde a las solicitudes relacionadas con la plataforma o drones utilizando herramientas y recursos como el MCP para acceder a la información o para realizar tareas específicas con los drones.
 
@@ -90,6 +89,7 @@ información o realizar acciones específicas solicitadas relacionadas con los d
 
 # Notes
 - Si la solicitud no está relacionada con drones, robots aéreos o la plataforma, responde de manera educada indicando que no puedes asistir en ese tema.
-- Sigue estrictamente el esquema y las propiedades requeridas para evitar errores al invocar herramientas.`
+- Sigue estrictamente el esquema y las propiedades requeridas para evitar errores al invocar herramientas.
+`
 
 };

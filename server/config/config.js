@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import logger from '../common/logger.js';
 
 dotenv.config();
 
@@ -36,13 +37,13 @@ let _MCPconfig = {};
 try {
   const raw = process.env.MCP_CONFIG;
   _MCPconfig = raw ? JSON.parse(raw) : {};
-  console.log('_MCPconfig', _MCPconfig);
+  logger.info('_MCPconfig', _MCPconfig);
   if (typeof _MCPconfig.transport === 'undefined') {
     throw new Error(`Unknown transport: ${_MCPconfig.transport}`);
   }
 } catch (err) {
   // invalid JSON in MCP_CONFIG env var — fallback to empty object
-  console.error('Invalid MCP_CONFIG JSON:', err);
+  logger.error('Invalid MCP_CONFIG JSON:', err);
   _MCPconfig = {};
 }
 export const MCPconfig = _MCPconfig; // MCP configuration file

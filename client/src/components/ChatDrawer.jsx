@@ -100,7 +100,7 @@ const initialOptions = [
 ];
 
 const MessageBubble = ({ message }) => {
-  const isAI = message.sender === 'ai';
+  const isAI = message.role === 'assistant';
 
   return (
     <ListItem
@@ -133,7 +133,7 @@ const MessageBubble = ({ message }) => {
 const ChatDrawer = ({ open, onClose }) => {
   const { classes } = useStyles();
   const [messages, setMessages] = useState([
-    { text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?', sender: 'ai' },
+    { text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?', role: 'assistant' },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -166,7 +166,7 @@ const ChatDrawer = ({ open, onClose }) => {
     const userMessage = {
       id: Date.now(),
       text: messageToSend,
-      sender: 'user',
+      role: 'user',
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -187,10 +187,13 @@ const ChatDrawer = ({ open, onClose }) => {
     })
       .then((res) => res.json())
       .then((data) => {
+        console.log('Respuesta de la IA:', data);
         const aiResponse = {
-          text: data.reply || 'No se recibió respuesta de la IA.',
-          sender: 'ai',
+          text: '',
+          role: 'assistant',
         };
+        aiResponse.text = data.content || 'Lo siento, no tengo una respuesta en este momento.';
+        aiResponse.role = 'assistant';
         setMessages((prevMessages) => [...prevMessages, aiResponse]);
 
         // Si el mensaje anterior fue de audio, reproducir la respuesta
@@ -201,7 +204,7 @@ const ChatDrawer = ({ open, onClose }) => {
       .catch(() => {
         const aiResponse = {
           text: 'Hubo un error al comunicarse con la IA.',
-          sender: 'ai',
+          role: 'assistant',
         };
         setMessages((prevMessages) => [...prevMessages, aiResponse]);
       })
@@ -230,7 +233,7 @@ const ChatDrawer = ({ open, onClose }) => {
       {
         id: 1,
         text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?',
-        sender: 'ai',
+        role: 'assistant',
         timestamp: new Date(),
       },
     ]);
@@ -422,7 +425,7 @@ const ChatDrawer = ({ open, onClose }) => {
 
             <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
               {/* Optios messages */}
-              {showOptions && messages.length === 1 && messages[0].sender === 'ai' && (
+              {showOptions && messages.length === 1 && messages[0].role === 'assistant' && (
                 <Box sx={{ mb: 2 }}>
                   <Stack direction="row" flexWrap="wrap" spacing={1} useFlexGap>
                     {initialOptions.map((option, index) => (

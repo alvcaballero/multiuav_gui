@@ -1,10 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
-import { LLMProvider } from './interface.js';
+import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './SystemPromps.js';
 
-class GoogleGeminiProvider extends LLMProvider {
-  constructor(apiKey) {
-    super();
+export class GeminiHandler extends BaseLLMHandler {
+  constructor(apiKey, model = 'gemini-2.0-flash-001', systemPrompt = SystemPrompts.gemini) {
+    super(apiKey, model, systemPrompt);
     if (!apiKey) {
       throw new Error('Google API Key is required for GoogleGeminiProvider.');
     }
@@ -54,4 +54,3 @@ class GoogleGeminiProvider extends LLMProvider {
     }
   }
 }
-export { GoogleGeminiProvider };

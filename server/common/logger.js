@@ -191,6 +191,37 @@ const rosLogger = winston.createLogger({
   ],
 });
 
+// Logger específico para ROS
+const chatLogger = winston.createLogger({
+  level: process.env.CHAT_LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.label({ label: 'chat' }),
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.printf(({ timestamp, level, message, label, ...meta }) => {
+      const colorizedLevel = colorizeLevel[level] ? colorizeLevel[level](level.toUpperCase()) : level.toUpperCase();
+      const colorizedLabel = chalk.green.bold(`[${label}]`);
+      const colorizedTimestamp = chalk.gray(timestamp);
+
+      let logLine = `${colorizedTimestamp} ${colorizedLabel} [${colorizedLevel}]: ${message}`;
+
+      if (Object.keys(meta).length > 0) {
+        logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
+      }
+
+      return logLine;
+    })
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({
+      filename: join(__dirname, '../logs/ros.log'),
+      format: fileFormat,
+      maxsize: 5242880,
+      maxFiles: 3,
+    }),
+  ],
+});
+
 // Funciones helper para logging fácil
 const logHelpers = {
   // Helper para logs de sistema
@@ -347,7 +378,7 @@ const createCustomLogger = (label, options = {}) => {
 };
 
 // Exportar loggers y utilidades
-export { logger, wsLogger, deviceLogger, rosLogger, logHelpers, createCustomLogger, colorizeLevel, chalk };
+export { logger, wsLogger, deviceLogger, rosLogger, chatLogger, logHelpers, createCustomLogger, colorizeLevel, chalk };
 
 // Export default como el logger principal
 export default logger;
