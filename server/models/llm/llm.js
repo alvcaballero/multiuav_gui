@@ -2,6 +2,8 @@ import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './llmFactory.js';
 import logger,{chatLogger} from '../../common/logger.js';
 import { LLM, LLMType, LLMApiKey, MCPenable, MCPconfig } from '../../config/config.js';
+import { type } from 'os';
+import { OutputItems } from 'openai/resources/evals/runs/output-items.mjs';
 
 /**
  * Orquestador que maneja el flujo completo de procesamiento de mensajes
@@ -78,6 +80,10 @@ export class MessageOrchestrator {
 
       // Si el LLM quiere usar herramientas, procesarlas
       if (response.type === 'tool_calls') {
+        for (const content of response.content) {
+          //response.content
+          conversationHistory.push(content);
+        }
         response = await this.handleToolCallsLoop(response, tools);
       }
 
@@ -149,7 +155,7 @@ export class MessageOrchestrator {
 
     if (provider === 'openai') {
       // Para OpenAI: agregar el mensaje del asistente y los resultados de tools
-      conversationHistory.push(response.message);
+      //conversationHistory.push(response.message);
       conversationHistory.push(...toolResults);
 
       return await llmHandler.continueWithToolResults(conversationHistory, toolResults);
