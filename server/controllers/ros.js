@@ -87,7 +87,7 @@ export class rosController {
   }
   
   static async getServiceResponseDetails(req, res) {
-        const { type } = req.query;
+    const { type } = req.query;
     if (!type || typeof type !== 'string') {
       return res.status(400).json({ error: 'El parámetro "type" es obligatorio y debe ser una cadena' });
     }
@@ -99,6 +99,25 @@ export class rosController {
       res.status(500).json({ error: 'Failed to get service details: ' + error });
     }
   }
+  static async getActionServers(req, res) {
+    try {
+      const response = await rosModel.getActionServers();
+      res.json(response);
+    } catch (error) {
+      console.error('Error getting action servers:', error);
+      res.status(500).json({ error: 'Failed to get action servers: ' + error });
+    }
+  }
+  static async sendActionGoal(req, res) {
+    try {
+      const response = await rosModel.sendActionGoal(req.body);
+      res.json(response);
+    } catch (error) {
+      console.error('Error calling action:', error);
+      res.status(500).json({ error: 'Failed to call action: ' + error.message });
+    }
+  }
+
 
   static async callRosService(req, res) {
     try {

@@ -8,6 +8,7 @@ import { encodeRosSrv } from '../models/rosEncode.js';
 import { buildTypeMap, validateRosMsg } from '../models/rosValidateMSG.js';
 import { categoryController } from '../controllers/category.js';
 import logger, { logHelpers } from '../common/logger.js';
+import { response } from 'express';
 
 var ros = null;
 const rosState = { state: 'disconnect', msg: 'init msg' };
@@ -210,9 +211,9 @@ export class rosModel {
       throw new Error(`No structure found for service type '${messageType}'`);
     }
 
-    const typeMap = buildTypeMap(srvStructure)
+    const typeMap = buildTypeMap(srvStructure);
 
-    validateRosMsg(messageType, message, typeMap)
+    validateRosMsg(messageType, message, typeMap);
 
     let Message = new ROSLIB.Service({
       ros: ros,
@@ -225,8 +226,8 @@ export class rosModel {
     return new Promise((resolve, rejects) => {
       Message.callService(
         MsgRequest,
-      (result) => resolve(result),
-      (error) => rejects(error)
+        (result) => resolve(result),
+        (error) => rejects(error)
       );
     });
   }
@@ -247,11 +248,11 @@ export class rosModel {
     let myRequest = encodeRosSrv({ type, msg: request, msgType: msgType });
     const service = `/${name}${devices_msg[category]['services'][type]['name']}`;
     try {
-      const response = await rosModel.callRosService({ service, messageType:msgType, message: myRequest });
+      const response = await rosModel.callRosService({ service, messageType: msgType, message: myRequest });
       if (response.success || response.result) {
-          return { state: 'success', msg: type + ' to' + name + ' ok' };
+        return { state: 'success', msg: type + ' to' + name + ' ok' };
       } else {
-          return { state: 'error', msg: type + ' to:' + name + ' error' };
+        return { state: 'error', msg: type + ' to:' + name + ' error' };
       }
     } catch (error) {
       console.error('Error calling service:', error);
@@ -293,13 +294,12 @@ export class rosModel {
     return new Promise((resolve, reject) => {
       ros.getServiceRequestDetails(
         type,
-        (serviceDetails) =>{
-          if(!serviceDetails || (serviceDetails.length === 0)) {
+        (serviceDetails) => {
+          if (!serviceDetails || serviceDetails.length === 0) {
             reject(new Error('Service type not found'));
           }
-          resolve(serviceDetails)
-        }
-        ,
+          resolve(serviceDetails);
+        },
         (error) => reject(error)
       );
     });
@@ -309,13 +309,12 @@ export class rosModel {
     return new Promise((resolve, reject) => {
       ros.getServiceResponseDetails(
         type,
-        (serviceDetails) =>{
-          if(!serviceDetails || (serviceDetails.length === 0)) {
+        (serviceDetails) => {
+          if (!serviceDetails || serviceDetails.length === 0) {
             reject(new Error('Service type not found'));
           }
-          resolve(serviceDetails)
-        }
-        ,
+          resolve(serviceDetails);
+        },
         (error) => reject(error)
       );
     });
@@ -336,11 +335,11 @@ export class rosModel {
     return new Promise((resolve, reject) => {
       ros.getMessageDetails(
         message,
-        (messageDetails) =>{
-          if(!messageDetails || (Array.isArray(messageDetails) && messageDetails.length === 0)) {
+        (messageDetails) => {
+          if (!messageDetails || (Array.isArray(messageDetails) && messageDetails.length === 0)) {
             reject(new Error('Message type not found'));
           }
-          resolve(messageDetails)
+          resolve(messageDetails);
         },
         (error) => reject(error)
       );
@@ -359,12 +358,16 @@ export class rosModel {
     let request = new ROSLIB.ServiceRequest({ topic: topic });
 
     return new Promise((resolve, rejects) => {
-      servicemaster.callService(request, function (result) {
-        resolve(result.publishers);
-      }, function (error) {
-        console.error('Error getting publishers:', error);
-        rejects(error);
-      });
+      servicemaster.callService(
+        request,
+        function (result) {
+          resolve(result.publishers);
+        },
+        function (error) {
+          console.error('Error getting publishers:', error);
+          rejects(error);
+        }
+      );
     });
   }
 
@@ -373,11 +376,11 @@ export class rosModel {
 
     const { topic, messageType, message } = params;
 
-    const msgStructure = await rosModel.getMessageDetails(messageType)
-    
-    const typeMap = buildTypeMap(msgStructure)
+    const msgStructure = await rosModel.getMessageDetails(messageType);
 
-    validateRosMsg(messageType, message, typeMap)
+    const typeMap = buildTypeMap(msgStructure);
+
+    validateRosMsg(messageType, message, typeMap);
 
     const subscribers = await rosModel.getTopics();
     if (!subscribers.topics.includes(topic)) {
@@ -394,11 +397,10 @@ export class rosModel {
     if (!rosMsg) {
       throw new Error('ROS message is empty or invalid');
     }
-    
+
     pub.on('warning', function (warning) {
       console.error('Advertencia:', warning);
     });
-
 
     pub.publish(rosMsg);
     return { topic: topic, msgType: messageType, msg: 'Message published successfully' };
@@ -434,7 +436,7 @@ export class rosModel {
   }
 
   /*
-   / Create Ros services that UAV can consume for 
+   / Create Ros service server that UAV can consume for 
    / Check if UAV finish mission
    / Check if UAV finish Download
   */
@@ -486,6 +488,114 @@ export class rosModel {
       delete service_list['ServiceMission'];
       delete service_list['ServiceDownload'];
     }
+  }
+  // actions Ros
+  // https://github.com/sathak93/roslibjs/blob/ros2actionclient/examples/action.html
+  static async getActionServer() {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
+    return new Promise((resolve, reject) => {
+      ros.getActionServers(
+        (actions) => resolve(actions),
+        (error) => reject(error)
+      );
+    });
+  }
+  static async getActionGoalmsg(actionServer) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
+    let servicemaster = new ROSLIB.Service({
+      ros: ros,
+      name: '/rosapi/action_goal_details',
+      serviceType: 'rosapi_msgs/srv/ActionGoalDetails',
+    });
+
+    let request = new ROSLIB.ServiceRequest({ type: actionServer });
+
+    return new Promise((resolve, rejects) => {
+      servicemaster.callService(
+        request,
+        function (result) {
+          resolve(result.publishers);
+        },
+        function (error) {
+          console.error('Error getting publishers:', error);
+          rejects(error);
+        }
+      );
+    });
+  }
+
+  static async sendActionGoal(args) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
+    //'/bt_navigator';
+    //'navigate_to_pose';
+
+    var nav2Client = new ROSLIB.ActionClient({
+      ros: ros,
+      serverName: '/navigate_to_pose',
+      actionName: 'nav2_msgs/NavigateToPose',
+    });
+
+    // Construir el mensaje del goal sin usar ROSLIB.Message/Vector3/Quaternion
+    const rosGoalMessage = {
+      pose: {
+        header: {
+          frame_id: 'map',
+        },
+        pose: {
+          position: {
+            x: args?.x || 0.0,
+            y: args?.y || 0.0,
+            z: 0.0,
+          },
+          orientation: {
+            x: 0.0,
+            y: 0.0,
+            z: args?.z || 0.0,
+            w: args?.w || 1.0,
+          },
+        },
+      },
+      behavior_tree: '',
+    };
+
+    // Create a goal.
+    var goal = new ROSLIB.Goal({
+      actionClient: nav2Client,
+      goalMessage: rosGoalMessage,
+    });
+
+    // Print out their output into the terminal.
+    goal.on('feedback', function (feedback) {
+      console.log('Action Feedback:', feedback);
+    });
+    goal.on('result', function (result) {
+      console.log('Action Result:', result);
+    });
+    goal.on('status', function (status) {
+      console.log('Action Status:', status);
+    });
+    goal.on('timeout', function () {
+      console.log('Goal has timed out.');
+    });
+
+    // Send the goal to the action server.
+    goal.send();
+    return { state: 'success', msg: 'Action goal sent successfully' };
+  }
+
+  // utilities ROS
+  static async getActionServers() {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
+    return new Promise((resolve, reject) => {
+      ros.getActionServers(
+        (servers) => resolve(servers),
+        (error) => reject(error)
+      );
+    });
   }
 
   static Getservicehost(nameService) {

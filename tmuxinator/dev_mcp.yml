@@ -1,0 +1,21 @@
+name: muav-gui-mcp
+root: ~/
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: main-vertical
+      panes:
+        - backend:
+            - cd ~/work/px4/multiuav_gui/server
+            - nvm use 18
+            - sleep 3
+            - npm run server
+        - frontend:
+            - cd ~/work/px4/multiuav_gui/client
+            - nvm use 20
+            - sleep 2;npm run start
+        - MCP:
+            - cd ~/mcpServers/mcp_muav_gui 
+            - nvm use 20
+            - npm run dev:http

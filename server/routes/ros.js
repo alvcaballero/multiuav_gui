@@ -15,3 +15,5 @@ rosRouter.get('/service_response_details', rosController.getServiceResponseDetai
 rosRouter.post('/service_call', rosController.callRosService);
 rosRouter.post('/publish', rosController.pubTopicOnce);
 rosRouter.get('/subscribe_once', rosController.subscribeOnce);
+rosRouter.get('/action_servers', rosController.getActionServers);
+rosRouter.post('/action_send_goal', rosController.sendActionGoal);

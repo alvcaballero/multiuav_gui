@@ -439,6 +439,40 @@ GET http://localhost:4000/api/ros/subscribe_once?topic=/px4_3/fmu/out/vehicle_lo
 
 ### get message turtlebot
 GET http://localhost:4000/api/ros/subscribe_once?topic=/turtle1/pose
+
+### get action servers
+
+GET http://localhost:4000/api/ros/action_servers 
+
+# ### send action goal
+# ros2 action send_goal /bt_navigator/navigate_to_pose nav2_msgs/action/NavigateToPose "
+# pose:
+#   header:
+#     frame_id: 'map'
+#   pose:
+#     position:
+#       x: 1.0
+#       y: 2.0
+#       z: 0.0
+#     orientation:
+#       x: 0.0
+#       y: 0.0
+#       z: 0.7071068
+#       w: 0.7071068
+# behavior_tree: ''
+# " --feedback
+
+### send action goal navigate_to_pose
+POST http://localhost:4000/api/ros/action_send_goal
+Content-Type: application/json
+
+{
+  "x": 1.0,
+  "y": 2.0,
+  "z": 0.7071,
+  "w": 0.7071
+}
+
 ### pub topic
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
@@ -497,6 +531,39 @@ Content-Type: application/json
     "max_heading_rate": 0
   }
 }
+### pub a nav2 move 
+POST http://localhost:4000/api/ros/publish
+Content-Type: application/json
+
+{
+  "topic": "/goal_pose",
+  "messageType": "geometry_msgs/msg/PoseStamped",
+  "message": {
+    "header": {
+      "stamp": {
+        "sec": 0,
+        "nanosec": 0
+      },
+      "frame_id": "map"
+    },
+    "pose": {
+      "position": {
+        "x": -1.0,
+        "y": -2.0,
+        "z": 0.0
+      },
+      "orientation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.7071068,
+        "w": 0.7071068
+      }
+    }
+  }
+}
+
+
+
 ### pub topic
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
