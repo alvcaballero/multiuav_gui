@@ -10,7 +10,7 @@ function heartbeat() {
 
 export class WebsocketManager {
   constructor(server, path = '/api/socket') {
-    this.ws = new WebSocket.Server({ path: path, server: server });
+    this.ws = new WebSocketServer({ path: path, server: server });
     this.clientsToRoom = new Map();
     this.clients = new Set();
 

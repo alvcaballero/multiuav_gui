@@ -24,6 +24,7 @@ import SettingsDevicesPage from './settings/SettingsDevicesPage';
 import SettingsDevicesPageEdit from './settings/SettingsDevicesPageEdit';
 import GeofencesPage from './other/GeofencesPage';
 import GeofencePage from './settings/GeofencePage';
+import ChatPage from './other/ChatPage';
 const padding = {
   padding: 5,
 };
@@ -35,6 +36,7 @@ const Navigation = () => {
   const query = useQuery();
 
   useEffectAsync(async () => {
+    if (!query.get('redirect')) return;
     navigate('/');
   }, [query]);
   return (
@@ -44,6 +46,7 @@ const Navigation = () => {
 
         {/* This is a temporary route for testing purposes, can be removed later
          */}
+         <Route path="chat" element={<ChatPage />} />
         <Route path="3Dview" element={<MainPage3D />} />
         <Route path="3Dmission" element={<MissionPage3D />} />
 

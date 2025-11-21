@@ -436,6 +436,8 @@ GET http://localhost:4000/api/ros/publisher?topic=/px4_3/fmu/out/vehicle_local_p
 ### get message
 GET http://localhost:4000/api/ros/subscribe_once?topic=/px4_3/fmu/out/vehicle_local_position
 
+### get message
+GET http://localhost:4000/api/ros/subscribe_once?topic=/bcr_bot/odom
 
 ### get message turtlebot
 GET http://localhost:4000/api/ros/subscribe_once?topic=/turtle1/pose
@@ -444,33 +446,41 @@ GET http://localhost:4000/api/ros/subscribe_once?topic=/turtle1/pose
 
 GET http://localhost:4000/api/ros/action_servers 
 
-# ### send action goal
-# ros2 action send_goal /bt_navigator/navigate_to_pose nav2_msgs/action/NavigateToPose "
-# pose:
-#   header:
-#     frame_id: 'map'
-#   pose:
-#     position:
-#       x: 1.0
-#       y: 2.0
-#       z: 0.0
-#     orientation:
-#       x: 0.0
-#       y: 0.0
-#       z: 0.7071068
-#       w: 0.7071068
-# behavior_tree: ''
-# " --feedback
 
 ### send action goal navigate_to_pose
 POST http://localhost:4000/api/ros/action_send_goal
 Content-Type: application/json
 
 {
-  "x": 1.0,
-  "y": 2.0,
-  "z": 0.7071,
-  "w": 0.7071
+  "action": "navigate_to_pose",
+  "actionType": "nav2_msgs/action/NavigateToPose",
+  "message": {
+    "pose": {
+      "header": {
+        "frame_id": "map"
+      },
+      "pose": {
+        "position": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "orientation": {
+          "x": 0.0,   
+          "y": 0.0,
+          "z": 0.7071,
+          "w": 0.7071
+        }
+      }
+    },
+    "behavior_tree": ""
+  }
+}
+### send stop action navigate_to_pose
+POST http://localhost:4000/api/ros/action_cancel_goal
+Content-Type: application/json
+{
+  "action": "navigate_to_pose"
 }
 
 ### pub topic
@@ -536,6 +546,36 @@ POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
 {
+  "topic": "/bcr_bot/goal_pose_cmd",
+  "messageType": "geometry_msgs/msg/PoseStamped",
+  "message": {
+    "header": {
+      "stamp": {
+        "sec": 0,
+        "nanosec": 0
+      },
+      "frame_id": "map"
+    },
+    "pose": {
+      "position": {
+        "x": 20.0,
+        "y": -35.0,
+        "z": 0.0
+      },
+      "orientation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.7071068,
+        "w": 0.7071068
+      }
+    }
+  }
+}
+### pub a nav2 move 
+POST http://localhost:4000/api/ros/publish
+Content-Type: application/json
+
+{
   "topic": "/goal_pose",
   "messageType": "geometry_msgs/msg/PoseStamped",
   "message": {
@@ -548,8 +588,8 @@ Content-Type: application/json
     },
     "pose": {
       "position": {
-        "x": -1.0,
-        "y": -2.0,
+        "x": -30.0,
+        "y": -30.0,
         "z": 0.0
       },
       "orientation": {

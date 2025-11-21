@@ -1,4 +1,4 @@
-import ROSLIB from 'roslib';
+import * as ROSLIB from 'roslib';
 import { readDataFile, getDatetime } from '../common/utils.js';
 import { devicesController } from '../controllers/devices.js';
 import { missionController } from '../controllers/mission.js';
@@ -8,7 +8,7 @@ import { encodeRosSrv } from '../models/rosEncode.js';
 import { buildTypeMap, validateRosMsg } from '../models/rosValidateMSG.js';
 import { categoryController } from '../controllers/category.js';
 import logger, { logHelpers } from '../common/logger.js';
-import { response } from 'express';
+import { ROS2GoalActionClient } from './rosActionClient.js';
 
 var ros = null;
 const rosState = { state: 'disconnect', msg: 'init msg' };
@@ -18,19 +18,17 @@ const uav_list = {};
 
 var autoconectRos = null;
 var noTimerflag = true;
+logHelpers.system.info('roslib version:', ROSLIB.version || 'unknown');
 
 function connectRos() {
-  //console.log('autoconectRos,' + noTimerflag + ' ros status is: ' + rosState.state);
   if (rosState.state != 'connect') {
     rosModel.rosConnect();
   } else {
-    //console.log('clearInterval');
     clearInterval(autoconectRos);
     noTimerflag = true;
   }
 }
 function autoConectRos() {
-  //console.log('notimerflag,' + noTimerflag);
   if (noTimerflag) {
     noTimerflag = false;
     autoconectRos = setInterval(connectRos, 30000);
@@ -81,13 +79,6 @@ export class rosModel {
       });
       ros.on('error', function (error) {
         logHelpers.ros.error('Error connect to server', error);
-        //const symbols = Object.getOwnPropertySymbols(error); // Obtener todos los símbolos del objeto
-        //const kMessageSymbol = symbols.find((symbol) => symbol.toString() === 'Symbol(kMessage)'); // Buscar el símbolo específico
-        //if (kMessageSymbol) {
-        //  console.log('errora:' + error[kMessageSymbol]);
-        //} else {
-        //  console.log('errorb:' + error);
-        //}
         rosModel.setrosState({ state: 'error', msg: 'No se ha podido conectar a ROS' });
         rosModel.disconectRos();
       });
@@ -106,9 +97,7 @@ export class rosModel {
     });
   }
   static RosSubscribeCamera(uav_id, uav_type, type, msgType, callback) {
-    //console.log('camera' + type);
     uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
-      //console.log('camera suscribe');
       positionsController.updateCamera(callback({ msg, deviceId: uav_id, uav_type, type, msgType }));
     });
   }
@@ -345,6 +334,28 @@ export class rosModel {
       );
     });
   }
+  static async getRosVersion() {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+    let servicemaster = new ROSLIB.Service({
+      ros: ros,
+      name: '/rosapi/get_ros_version',
+      serviceType: 'rosapi_msgs/srv/GetRosVersion',
+    });
+
+    let request = new ROSLIB.ServiceRequest();
+    return new Promise((resolve, rejects) => {
+      servicemaster.callService(
+        request,
+        function (result) {
+          resolve(result.ros_version);
+        },
+        function (error) {
+          console.error('Error getting ros version:', error);
+          rejects(error);
+        }
+      );
+    });
+  }
 
   static async getPublishers(topic) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
@@ -361,6 +372,7 @@ export class rosModel {
       servicemaster.callService(
         request,
         function (result) {
+          console.log(result);
           resolve(result.publishers);
         },
         function (error) {
@@ -409,10 +421,19 @@ export class rosModel {
   static async subscribeOnce({ topic, messageType, timeout = 2000 }) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 
+    // Verificar que el topic exista en la lista de topics activos
+    const topics = await rosModel.getTopics();
+    if (!topics.topics.includes(topic)) {
+      return Promise.reject(new Error(`Topic '${topic}' does not exist`));
+    }
+
+    // Nota: /rosapi/publishers a menudo devuelve lista vacía incluso cuando hay publishers
+    // Por eso verificamos solo la existencia del topic
     const publisher = await rosModel.getPublishers(topic);
     if (publisher.length === 0) {
-      //console.warn('No publishers found for topic:', topic);
-      return Promise.reject(new Error(`No publishers found for topic '${topic}'`));
+      console.warn(
+        `Warning: /rosapi/publishers returned empty list for topic '${topic}', but topic exists. Proceeding anyway...`
+      );
     }
 
     const sub = new ROSLIB.Topic({
@@ -426,6 +447,7 @@ export class rosModel {
         sub.unsubscribe();
         resolve(message); // Devuelve el mensaje recibido
       };
+
       sub.subscribe(handler);
 
       setTimeout(() => {
@@ -441,59 +463,65 @@ export class rosModel {
    / Check if UAV finish Download
   */
   static GCSServicesMission() {
-    service_list['ServiceMission'] = new ROSLIB.Service({
-      ros: ros,
-      name: '/GCS/FinishMission',
-      serviceType: 'aerialcore_common/finishMission',
-    });
+    const service_list = [
+      {
+        name: 'ServiceFinishMission',
+        serviceName: '/GCS/FinishMission',
+        serviceType: 'aerialcore_common/finishMission',
+        callback: function (request, response) {
+          console.log(`callback Sevice finish mission: ${JSON.stringify(request)}`);
+          if (request.hasOwnProperty('uav_id')) {
+              missionController.deviceFinishMission({ name: request.uav_id });
+          }
+          Object.assign(response, { success: true, msg: 'Set successfully' });
+          return true;
+        },
+      },
+      { name: 'ServiceDownload',
+        serviceName: '/GCS/FinishDownload',
+        serviceType: 'aerialcore_common/finishGetFiles',
+        callback: function (request, response) {
+          console.log(`callback Service finish download files: ${JSON.stringify(request)}`);
+          if (request.hasOwnProperty('uav_id')) {
+            missionController.deviceFinishSyncFiles({ name: request.uav_id });
+          }
+          Object.assign(response, { success: true, msg: 'Set successfully' });
+          return true;
+        },
+      },
+    ];
 
-    service_list['ServiceMission'].advertise(function (request, response) {
-      // Call state machine
-      console.log('callback Sevice finish mission');
-      console.log(request);
-      if (request.hasOwnProperty('uav_id')) {
-        if (Number.isNaN(Number.parseInt(request.uav_id))) {
-          MissionController.deviceFinishMission({ name: request.uav_id });
-        } else {
-          MissionController.deviceFinishMission({ name: `uav_${request.uav_id}` });
-        }
-      }
-      response['success'] = true;
-      response['msg'] = 'Set successfully';
-      return true;
-    });
-
-    service_list['ServiceDownload'] = new ROSLIB.Service({
-      ros: ros,
-      name: '/GCS/FinishDownload',
-      serviceType: 'aerialcore_common/finishGetFiles',
-    });
-
-    service_list['ServiceDownload'].advertise(function (request, response) {
-      console.log('callback Service finish download files');
-      console.log(request);
-      if (request.hasOwnProperty('uav_id')) {
-        MissionController.deviceFinishSyncFiles({ name: request.uav_id });
-      }
-      response['success'] = true;
-      response['msg'] = 'Set successfully';
-      return true;
-    });
+    for (let srv of service_list) {
+      service_list[srv.name] = rosModel.serviceServer({
+        serviceName: srv.serviceName,
+        serviceType: srv.serviceType,
+        callback: srv.callback,
+      });  
+    }
   }
+
+  static serviceServer({ serviceName, serviceType, callback } ) {
+    const service = new ROSLIB.Service({
+      ros: ros,
+      name: serviceName,
+      serviceType: serviceType,
+    });
+    service.advertise(function (request, response) {
+      callback(request, response);
+    });
+    return service;
+  }
+
   static GCSunServicesMission() {
-    //console.log('Unadvertise services');
-    if (service_list['ServiceMission']) {
-      service_list['ServiceMission'].unadvertise();
-      service_list['ServiceDownload'].unadvertise();
-      delete service_list['ServiceMission'];
-      delete service_list['ServiceDownload'];
+    for (let srv of service_list) {
+      service_list[srv.name].unadvertise();
+      delete service_list[srv.name];
     }
   }
   // actions Ros
   // https://github.com/sathak93/roslibjs/blob/ros2actionclient/examples/action.html
   static async getActionServer() {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-
     return new Promise((resolve, reject) => {
       ros.getActionServers(
         (actions) => resolve(actions),
@@ -528,62 +556,37 @@ export class rosModel {
 
   static async sendActionGoal(args) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+    const { action, actionType, message } = args;
 
-    //'/bt_navigator';
-    //'navigate_to_pose';
-
-    var nav2Client = new ROSLIB.ActionClient({
-      ros: ros,
-      serverName: '/navigate_to_pose',
-      actionName: 'nav2_msgs/NavigateToPose',
-    });
-
-    // Construir el mensaje del goal sin usar ROSLIB.Message/Vector3/Quaternion
-    const rosGoalMessage = {
-      pose: {
-        header: {
-          frame_id: 'map',
+    const nav2Client = new ROS2GoalActionClient(ros, action, actionType, true);
+    // Enviar goal
+    const goalHandle = nav2Client.sendGoal(
+      { ...message },
+      {
+        onFeedback: (feedback) => {
+          console.log(`📍 Feedback: ${JSON.stringify(feedback)}`);
         },
-        pose: {
-          position: {
-            x: args?.x || 0.0,
-            y: args?.y || 0.0,
-            z: 0.0,
-          },
-          orientation: {
-            x: 0.0,
-            y: 0.0,
-            z: args?.z || 0.0,
-            w: args?.w || 1.0,
-          },
+        onResult: (result) => {
+          console.log(`✅ Resultado: ${JSON.stringify(result)}`);
+          if (result.result && result.status === 4) {
+            console.log('🎯 Navegación completada!');
+          }else{
+            console.log('❌ La navegación falló o fue cancelada.');
+          }
         },
-      },
-      behavior_tree: '',
-    };
+      }
+    );
+    return { state: 'success', msg: 'Action goal sent successfully' , goalId: goalHandle.id};
+  }
 
-    // Create a goal.
-    var goal = new ROSLIB.Goal({
-      actionClient: nav2Client,
-      goalMessage: rosGoalMessage,
-    });
+  static async cancelActionGoal(args) {
+    if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+    const { action, actionType, goalId } = args;
 
-    // Print out their output into the terminal.
-    goal.on('feedback', function (feedback) {
-      console.log('Action Feedback:', feedback);
-    });
-    goal.on('result', function (result) {
-      console.log('Action Result:', result);
-    });
-    goal.on('status', function (status) {
-      console.log('Action Status:', status);
-    });
-    goal.on('timeout', function () {
-      console.log('Goal has timed out.');
-    });
-
-    // Send the goal to the action server.
-    goal.send();
-    return { state: 'success', msg: 'Action goal sent successfully' };
+    const nav2Client = new ROS2GoalActionClient(ros, action, actionType, true);
+    // Cancelar goal
+    nav2Client.cancelGoal(goalId);
+    return { state: 'success', msg: 'Action goal canceled successfully' };
   }
 
   // utilities ROS

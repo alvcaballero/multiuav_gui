@@ -43,16 +43,52 @@ export class SpeechController {
           file: fs.createReadStream(audioPath),
           model: 'whisper-1',
           language: 'es', // Especificar español para mejor precisión
+          prompt: 'Este es un mensaje de voz en español para un sistema de control de drones.', // Ayuda a reducir alucinaciones
         });
 
+        // Lista de frases comunes que Whisper "alucina" cuando el audio es de baja calidad
+        const hallucinationPatterns = [
+          'subtítulos realizados por la comunidad de amara.org',
+          'subtítulos realizados por la comunidad de amara',
+          'gracias por ver',
+          'suscríbete',
+          'like y suscríbete',
+          'dale like',
+          'no olvides suscribirte',
+          'Este es un mensaje de voz',
+        ];
+
+        let text = transcription.text.trim();
+
+        // Verificar si el texto es una alucinación conocida (case insensitive)
+        const isHallucination = hallucinationPatterns.some(pattern =>
+          text.toLowerCase().includes(pattern)
+        );
+
+        // Si es una alucinación o el texto está vacío, devolver error
+        if (isHallucination || !text) {
+          logger.warn('Audio detectado como alucinación o vacío', {
+            originalText: text,
+            fileSize: req.file.size,
+          });
+
+          // Eliminar el archivo temporal
+          fs.unlinkSync(audioPath);
+
+          return res.status(400).json({
+            error: 'No se detectó voz clara en el audio. Por favor, habla más cerca del micrófono o repite tu mensaje.',
+            hallucination: true
+          });
+        }
+
         logger.info('Audio transcrito exitosamente', {
-          text: transcription.text,
+          text: text,
         });
 
         // Eliminar el archivo temporal
         fs.unlinkSync(audioPath);
 
-        res.json({ text: transcription.text });
+        res.json({ text: text });
       } catch (error) {
         // Eliminar el archivo temporal en caso de error
         if (fs.existsSync(audioPath)) {

@@ -2,8 +2,7 @@ import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './llmFactory.js';
 import logger,{chatLogger} from '../../common/logger.js';
 import { LLM, LLMType, LLMApiKey, MCPenable, MCPconfig } from '../../config/config.js';
-import { type } from 'os';
-import { OutputItems } from 'openai/resources/evals/runs/output-items.mjs';
+import { SystemPrompts } from './SystemPromps.js';
 
 /**
  * Orquestador que maneja el flujo completo de procesamiento de mensajes
@@ -64,6 +63,10 @@ export class MessageOrchestrator {
     try {
       // Obtener herramientas según el proveedor de LLM
       const tools = this.getToolsForProvider();
+
+     if (conversationHistory.length === 0 && SystemPrompts.openai) {
+       conversationHistory.push({ role: 'system', content: SystemPrompts.openai });
+     }
 
       // Agregar el mensaje del usuario al historial
       conversationHistory.push({

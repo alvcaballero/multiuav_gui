@@ -3,7 +3,6 @@ import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './SystemPromps.js';
 import { logger, chatLogger } from '../../common/logger.js';
 import { text } from 'stream/consumers';
-import { type } from 'os';
 
 
 //suported roles= 'assistant', 'system', 'developer', and 'user'
@@ -39,9 +38,9 @@ class OpenAIHandler extends BaseLLMHandler {
     if (!this.client) {
       throw new Error('Cliente OpenAI no inicializado');
     }
-    if (conversationHistory.length === 0 && this.systemPrompt) {
-      conversationHistory.push({ role: 'system', content: this.systemPrompt });
-    }
+    // if (conversationHistory.length === 0 && this.systemPrompt) {
+    //   conversationHistory.push({ role: 'system', content: this.systemPrompt });
+    // }
 
     // Construir el array de mensajes
     const messages = [...conversationHistory, { role: 'user', content: message }];

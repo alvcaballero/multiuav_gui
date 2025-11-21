@@ -241,7 +241,49 @@ const ChatDrawer = ({ open, onClose }) => {
 
   const startRecording = async () => {
     try {
+      // Verificar si el navegador soporta la API de getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Tu navegador no soporta grabación de audio. Por favor, usa un navegador moderno.');
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Verificar que el stream tiene tracks de audio activos
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        alert('No se detectó ningún micrófono. Por favor, conecta un micrófono e intenta de nuevo.');
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      // Verificar que el micrófono está habilitado
+      const audioTrack = audioTracks[0];
+      if (!audioTrack.enabled) {
+        alert('El micrófono está deshabilitado. Por favor, habilítalo en la configuración del sistema.');
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      // Verificar el nivel de audio para detectar si el micrófono está funcionando
+      const AudioContextClass = window.AudioContext || window['webkitAudioContext'];
+      const audioContext = new AudioContextClass();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+      analyser.fftSize = 256;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      // Verificar que hay señal de audio después de 500ms
+      setTimeout(() => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+        if (average < 1) {
+          console.warn('⚠️ No se detecta señal del micrófono. Puede estar desactivado o silenciado.');
+        }
+      }, 500);
+
       const recorder = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
@@ -253,10 +295,20 @@ const ChatDrawer = ({ open, onClose }) => {
 
       recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+        // Verificar que se grabó algo
+        if (audioBlob.size < 100) {
+          alert('No se grabó ningún audio. Verifica que el micrófono esté habilitado y no silenciado.');
+          stream.getTracks().forEach((track) => track.stop());
+          audioContext.close();
+          return;
+        }
+
         await sendAudioMessage(audioBlob);
 
         // Detener todos los tracks del stream para liberar el micrófono
         stream.getTracks().forEach((track) => track.stop());
+        audioContext.close();
       };
 
       recorder.start();
@@ -264,7 +316,17 @@ const ChatDrawer = ({ open, onClose }) => {
       setIsRecording(true);
     } catch (error) {
       console.error('Error al acceder al micrófono:', error);
-      alert('No se pudo acceder al micrófono. Por favor, verifica los permisos.');
+
+      // Mensajes de error más específicos según el tipo de error
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        alert('Permiso denegado. Por favor, permite el acceso al micrófono en la configuración del navegador.');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        alert('No se encontró ningún micrófono. Por favor, conecta un micrófono e intenta de nuevo.');
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        alert('El micrófono está siendo usado por otra aplicación o está deshabilitado en el sistema. Por favor, cierra otras aplicaciones que puedan estar usando el micrófono.');
+      } else {
+        alert('No se pudo acceder al micrófono: ' + error.message + '\n\nVerifica que:\n- El micrófono esté conectado\n- El micrófono esté habilitado en la configuración del sistema\n- No esté siendo usado por otra aplicación');
+      }
     }
   };
 
@@ -280,6 +342,13 @@ const ChatDrawer = ({ open, onClose }) => {
     setIsLoading(true);
 
     try {
+      // Verificar el tamaño del audio antes de enviarlo
+      if (audioBlob.size < 1000) {
+        alert('El audio es demasiado corto. Por favor, graba un mensaje más largo.');
+        setIsLoading(false);
+        return;
+      }
+
       // Crear FormData para enviar el audio
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
@@ -290,11 +359,20 @@ const ChatDrawer = ({ open, onClose }) => {
         body: formData,
       });
 
+      const responseData = await transcriptionResponse.json();
+
       if (!transcriptionResponse.ok) {
-        throw new Error('Error al transcribir el audio');
+        // Si es una alucinación detectada, mostrar mensaje específico
+        if (responseData.hallucination) {
+          alert(responseData.error || 'No se detectó voz clara en el audio. Por favor, habla más cerca del micrófono.');
+        } else {
+          throw new Error(responseData.error || 'Error al transcribir el audio');
+        }
+        setIsLoading(false);
+        return;
       }
 
-      const { text } = await transcriptionResponse.json();
+      const { text } = responseData;
 
       if (text && text.trim()) {
         // Enviar el texto transcrito como mensaje, indicando que viene de audio
@@ -305,7 +383,7 @@ const ChatDrawer = ({ open, onClose }) => {
       }
     } catch (error) {
       console.error('Error al procesar el audio:', error);
-      alert('Hubo un error al procesar el audio.');
+      alert('Hubo un error al procesar el audio. Asegúrate de hablar claramente y cerca del micrófono.');
       setIsLoading(false);
     }
   };

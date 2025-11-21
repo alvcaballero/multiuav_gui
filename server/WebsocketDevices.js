@@ -74,7 +74,7 @@ export class WebsocketDevices {
     }
     WebsocketDevices._instance = this;
 
-    this.ws = new WebSocket.Server({ port: port });
+    this.ws = new WebSocketServer({ port: port ,noServer: true });
 
     this.onConnect(async (client) => {
       let init_msg = 'Wellcome new device';

@@ -1,3 +1,17 @@
+agv: 
+  topics:
+    position:
+      name: '/odom'
+      messageType: 'sensor_msgs/NavSatFix'
+    goal_cmd:
+      name: '/goal_pose_cmd'
+      messageType: 'geometry_msgs/msg/PoseStamped'
+    goal_cancel:
+      name: '/goal_pose_cancel'
+      messageType: 'std_msgs/msg/Empty'
+    goal_status:
+      name: '/goal_pose_status'
+      messageType: 'std_msgs/msg/String'
 sjtu:
   topics:
     position:

@@ -4,6 +4,9 @@
   "description": "",
   "main": "server.js",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "server": "node ./server.js",
     "inspect": "node --inspect ./server.js",
@@ -28,7 +31,7 @@
     "openai": "^6.8.1",
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",
-    "roslib": "^1.4.1",
+    "roslib": "^2.0.0",
     "sequelize": "^6.37.7",
     "sharp": "^0.33.5",
     "sqlite3": "^5.1.7",
@@ -36,7 +39,7 @@
     "util": "^0.12.5",
     "websocket": "^1.0.35",
     "winston": "^3.17.0",
-    "ws": "^8.18.0",
+    "ws": "^8.18.3",
     "xstate": "^5.18.2",
     "yaml": "^2.5.1",
     "zod": "^3.23.8"
