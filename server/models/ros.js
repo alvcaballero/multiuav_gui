@@ -9,11 +9,12 @@ import { buildTypeMap, validateRosMsg } from '../models/rosValidateMSG.js';
 import { categoryController } from '../controllers/category.js';
 import logger, { logHelpers } from '../common/logger.js';
 import { ROS2GoalActionClient } from './rosActionClient.js';
+import { error } from 'console';
 
 var ros = null;
 const rosState = { state: 'disconnect', msg: 'init msg' };
 const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
-const service_list = {};
+const service_list = [];
 const uav_list = {};
 
 var autoconectRos = null;
@@ -557,16 +558,16 @@ export class rosModel {
   static async sendActionGoal(args) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
     const { action, actionType, message } = args;
+    console.log(`Sending goal to action server '${action}' of type '${actionType}' with message:`, message);
+    // action ros2 for roslibjs
+    let newClient = new ROSLIB.Action({
+      ros: ros,
+      name: action,
+      actionType: actionType,
+    });
 
-    const nav2Client = new ROS2GoalActionClient(ros, action, actionType, true);
-    // Enviar goal
-    const goalHandle = nav2Client.sendGoal(
-      { ...message },
-      {
-        onFeedback: (feedback) => {
-          console.log(`📍 Feedback: ${JSON.stringify(feedback)}`);
-        },
-        onResult: (result) => {
+    let goal_id = newClient.sendGoal(message,
+      (result) => {
           console.log(`✅ Resultado: ${JSON.stringify(result)}`);
           if (result.result && result.status === 4) {
             console.log('🎯 Navegación completada!');
@@ -574,8 +575,35 @@ export class rosModel {
             console.log('❌ La navegación falló o fue cancelada.');
           }
         },
+        (feedback) => {
+          console.log(`📍 Feedback: ${JSON.stringify(feedback)}`);
+        },
+      (error)=>{
+        console.error('action goal failed:', error);
       }
     );
+    console.log('Goal sent with ID:', goal_id);
+
+    const goalHandle = { id: "a" };
+
+    // const nav2Client = new ROS2GoalActionClient(ros, action, actionType, true);
+    // // Enviar goal
+    // const goalHandle = nav2Client.sendGoal(
+    //   { ...message },
+    //   {
+    //     onFeedback: (feedback) => {
+    //       console.log(`📍 Feedback: ${JSON.stringify(feedback)}`);
+    //     },
+    //     onResult: (result) => {
+    //       console.log(`✅ Resultado: ${JSON.stringify(result)}`);
+    //       if (result.result && result.status === 4) {
+    //         console.log('🎯 Navegación completada!');
+    //       }else{
+    //         console.log('❌ La navegación falló o fue cancelada.');
+    //       }
+    //     },
+    //   }
+    // );
     return { state: 'success', msg: 'Action goal sent successfully' , goalId: goalHandle.id};
   }
 
