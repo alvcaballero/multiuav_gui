@@ -202,11 +202,11 @@ export class commandsModel {
     return statuscommand;
   }
   static async standarCommand(uav_id, type, attributes) {
-    console.log('standar comand ' + uav_id);
+    console.log('sending astandarcommand uavId ' + uav_id);
     let response = {};
     //ros
     let myDevice = await devicesController.getDevice(uav_id);
-    console.log(myDevice);
+    //console.log(myDevice);
     if (myDevice.protocol == 'ros') {
       console.log('ros device ros');
       if (attributes) {

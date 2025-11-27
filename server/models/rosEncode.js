@@ -18,18 +18,15 @@ function MissionToRos({
   commandParameter = [],
 }) {
   let wp_command_msg = waypoint.map((pos) => {
-    return new ROSLIB.Message(pos);
+    // return new ROSLIB.Message(pos);
+    return {...pos};
   });
 
-  let yaw_pos_msg = new ROSLIB.Message({ data: yaw });
-  let speed_pos_msg = new ROSLIB.Message({ data: speed });
-  let gimbal_pos_msg = new ROSLIB.Message({ data: gimbalPitch });
-  let action_matrix_msg = new ROSLIB.Message({
-    data: commandList.flat(),
-  });
-  let param_matrix_msg = new ROSLIB.Message({
-    data: commandParameter.flat(),
-  });
+  let yaw_pos_msg = { data: yaw };
+  let speed_pos_msg = { data: speed };
+  let gimbal_pos_msg = { data: gimbalPitch };
+  let action_matrix_msg = { data: commandList.flat() };
+  let param_matrix_msg = { data: commandParameter.flat() };
   return {
     type: 'waypoint',
     waypoint: wp_command_msg,
@@ -49,7 +46,7 @@ function MissionToRos({
 }
 function MissionToRos2(param) {
   let msg = MissionToRos(param);
-  return {request : new ROSLIB.Message({
+  return {request : {
     type: 'waypoint',
     waypoint: msg.waypoint,
     radius: msg.radius,
@@ -64,7 +61,7 @@ function MissionToRos2(param) {
     finish_action: msg.finishAction,
     command_list: msg.commandList,
     command_parameter: msg.commandParameter,
-  })}
+  }}
 }
 
 export function encodeRosSrv({ type, msg, msgType }) {

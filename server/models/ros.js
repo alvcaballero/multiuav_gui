@@ -211,7 +211,7 @@ export class rosModel {
       serviceType: messageType,
     });
 
-    let MsgRequest = message ? new ROSLIB.ServiceRequest(message) : {};
+    let MsgRequest = message ? message : {};
 
     return new Promise((resolve, rejects) => {
       Message.callService(
@@ -343,7 +343,7 @@ export class rosModel {
       serviceType: 'rosapi_msgs/srv/GetRosVersion',
     });
 
-    let request = new ROSLIB.ServiceRequest();
+    let request = {};
     return new Promise((resolve, rejects) => {
       servicemaster.callService(
         request,
@@ -367,7 +367,7 @@ export class rosModel {
       serviceType: 'rosapi_msgs/srv/Publishers',
     });
 
-    let request = new ROSLIB.ServiceRequest({ topic: topic });
+    let request ={ topic: topic };
 
     return new Promise((resolve, rejects) => {
       servicemaster.callService(
@@ -405,8 +405,7 @@ export class rosModel {
       name: topic,
       messageType: messageType,
     });
-    const msg = encodeRosSrv({ type: '', msg: message, msgType: messageType });
-    const rosMsg = new ROSLIB.Message(msg);
+    const rosMsg = encodeRosSrv({ type: '', msg: message, msgType: messageType });
     if (!rosMsg) {
       throw new Error('ROS message is empty or invalid');
     }
@@ -539,7 +538,7 @@ export class rosModel {
       serviceType: 'rosapi_msgs/srv/ActionGoalDetails',
     });
 
-    let request = new ROSLIB.ServiceRequest({ type: actionServer });
+    let request = { type: actionServer };
 
     return new Promise((resolve, rejects) => {
       servicemaster.callService(
@@ -636,7 +635,7 @@ export class rosModel {
       serviceType: 'rosapi/ServiceHost',
     });
 
-    let request = new ROSLIB.ServiceRequest({ service: nameService });
+    let request = { service: nameService };
 
     return new Promise((resolve, rejects) => {
       servicehost.callService(request, function (result) {
@@ -652,7 +651,7 @@ export class rosModel {
       serviceType: 'multimaster_msgs_fkie/DiscoverMasters',
     });
 
-    let request = new ROSLIB.ServiceRequest();
+    let request = {};
 
     return new Promise((resolve, rejects) => {
       servicemaster.callService(request, function (result) {
