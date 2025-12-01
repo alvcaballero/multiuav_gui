@@ -5,6 +5,7 @@ export const createMissionRouter = () => {
   const missionRouter = Router();
 
   missionRouter.get('/', missionController.getMission); //get current mission//missionState
+  missionRouter.post('/', missionController.createMission); //set new mission//missionState
   missionRouter.get('/routes', missionController.getRoutes); //get current mission//missionState
   missionRouter.post('/sendTask', missionController.sendTask);
   return missionRouter;

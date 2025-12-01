@@ -62,6 +62,14 @@ export class missionModel {
     return await sequelize.models.Route.findAll();
   }
 
+  static async setMission(args) {
+    console.log('setMission args');
+    console.log(args);
+    return { success: true}
+  }
+    
+
+
   static async createMission({
     id,
     name,

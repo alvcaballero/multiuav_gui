@@ -13,5 +13,5 @@ windows:
             - npm run server
         - MCP:
             - cd ~/mcpServers/mcp_muav_gui 
-            - nvm use 20
+            - nvm use 22
             - npm run dev:http

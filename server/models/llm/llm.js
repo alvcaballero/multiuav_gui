@@ -11,7 +11,7 @@ import { SystemPrompts } from './SystemPromps.js';
 var conversationHistory = [];
 var mcpClient = null;
 var llmHandler = null;
-var maxIterations = 5; // Prevenir loops infinitos
+var maxIterations = 6; // Prevenir loops infinitos
 
 export function initializeLLMProvider(provider, apiKey) {}
 

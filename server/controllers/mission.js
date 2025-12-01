@@ -4,6 +4,12 @@ class missionController {
     const response = await missionModel.getMissionValue(req.query.id);
     res.json(response);
   };
+  
+  static createMission = async (req, res) => {
+    const response = await missionModel.setMission(req.body);
+    res.json(response);
+  };
+
   static getRoutes = async (req, res) => {
     console.log('get routes');
     const response = await missionModel.getRoutes(req.query);
