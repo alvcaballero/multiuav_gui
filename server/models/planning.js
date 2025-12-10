@@ -142,7 +142,7 @@ export class planningModel {
     requestPlanning[mission_id]['count'] = requestPlanning[mission_id]['count'] + 1;
     if (requestPlanning[mission_id]['count'] > 3) {
       clearInterval(requestPlanning[mission_id]['interval']);
-      MissionController.initMission(mission_id, planningRoute); // error
+      missionController.initMission(mission_id, planningRoute); // error
     }
   }
 

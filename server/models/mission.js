@@ -62,9 +62,16 @@ export class missionModel {
     return await sequelize.models.Route.findAll();
   }
 
-  static async setMission(args) {
-    console.log('setMission args');
-    console.log(args);
+  static async setMission(mission) {
+    console.log('setMission mission');
+    console.log(mission);
+    if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
+    return { success: false}
+    }
+
+    const ws = getWebsocketController();
+    ws.sendMessage(JSON.stringify({ mission: { ...mission, name: 'name' } }));
+    
     return { success: true}
   }
     
