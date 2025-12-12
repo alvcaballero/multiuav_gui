@@ -14,6 +14,10 @@ class MCPclient {
     this.tools = [];
     this.isConnected = false;
     this.client = null;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectDelay = 2000; // 2 segundos inicial
+    this.isReconnecting = false;
   }
 
   async connectStdio() {
@@ -34,6 +38,15 @@ class MCPclient {
     logger.info('Connecting to MCP server using', MCPconfig, 'transport...');
 
     try {
+      // Limpiar cliente anterior si existe
+      if (this.client) {
+        try {
+          await this.client.close();
+        } catch (e) {
+          // Ignorar errores al cerrar
+        }
+      }
+
       switch (MCPconfig.transport) {
         case 'stdio':
           await this.connectStdio();
@@ -67,6 +80,7 @@ class MCPclient {
       await this.client.connect(this.transport);
 
       this.isConnected = true;
+      this.reconnectAttempts = 0; // Resetear intentos al conectar exitosamente
       await this.loadTools();
 
       chatLogger.info('✓ Conectado al servidor MCP');
@@ -156,6 +170,47 @@ class MCPclient {
   }
 
   /**
+   * Intenta reconectar al servidor MCP con backoff exponencial
+   */
+  async reconnect() {
+    if (this.isReconnecting) {
+      chatLogger.info('⏳ Ya hay un intento de reconexión en curso...');
+      return;
+    }
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      chatLogger.error('❌ Se alcanzó el máximo de intentos de reconexión');
+      return false;
+    }
+
+    this.isReconnecting = true;
+    this.reconnectAttempts++;
+
+    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+
+    chatLogger.info(`🔄 Intento de reconexión ${this.reconnectAttempts}/${this.maxReconnectAttempts} en ${delay}ms...`);
+
+    await new Promise(resolve => setTimeout(resolve, delay));
+
+    try {
+      await this.connect();
+      chatLogger.info('✓ Reconexión exitosa al servidor MCP');
+      this.isReconnecting = false;
+      return true;
+    } catch (error) {
+      chatLogger.error(`❌ Intento de reconexión ${this.reconnectAttempts} falló:`, error.message);
+      this.isReconnecting = false;
+
+      // Intentar reconectar recursivamente si no se alcanzó el máximo
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        return await this.reconnect();
+      }
+
+      return false;
+    }
+  }
+
+  /**
    * Cierra la conexión con el servidor MCP
    */
   async disconnect() {
@@ -174,8 +229,13 @@ class MCPclient {
    */
   async executeTool(toolName, args = {}) {
     if (!this.client || !this.isConnected) {
-      throw new Error('Cliente MCP no conectado');
+      chatLogger.warn('⚠️  Cliente MCP no conectado, intentando reconectar...');
+      const reconnected = await this.reconnect();
+      if (!reconnected) {
+        throw new Error('Cliente MCP no conectado y no se pudo reconectar');
+      }
     }
+
     const tool = this.tools.find((t) => t.name === toolName);
     if (!tool) throw new Error(`Tool not found: ${toolName}`);
 
@@ -192,6 +252,30 @@ class MCPclient {
       return result;
     } catch (error) {
       console.error(`Error ejecutando herramienta ${toolName}:`, error);
+
+      // Detectar errores de conexión y intentar reconectar
+      const isConnectionError =
+        error.message?.includes('ECONNREFUSED') ||
+        error.message?.includes('ECONNRESET') ||
+        error.message?.includes('EPIPE') ||
+        error.message?.includes('Connection closed') ||
+        error.message?.includes('socket hang up') ||
+        error.code === 'ECONNREFUSED' ||
+        error.code === 'ECONNRESET' ||
+        error.code === 'EPIPE';
+
+      if (isConnectionError) {
+        chatLogger.warn('⚠️  Detectada desconexión del servidor MCP, intentando reconectar...');
+        this.isConnected = false;
+
+        const reconnected = await this.reconnect();
+        if (reconnected) {
+          // Reintentar la ejecución de la herramienta
+          chatLogger.info('🔄 Reintentando ejecución de herramienta después de reconexión...');
+          return await this.executeTool(toolName, args);
+        }
+      }
+
       throw error;
     }
   }
@@ -216,10 +300,38 @@ class MCPclient {
     return resource;
   }
 
+  /**
+   * Verifica la salud de la conexión intentando listar las herramientas
+   * @returns {Promise<boolean>} true si la conexión está activa
+   */
+  async checkConnection() {
+    if (!this.client || !this.isConnected) {
+      return false;
+    }
+
+    try {
+      await this.client.listTools();
+      return true;
+    } catch (error) {
+      chatLogger.warn('⚠️  Verificación de conexión falló:', error.message);
+      this.isConnected = false;
+      return false;
+    }
+  }
+
+  /**
+   * Resetea el contador de intentos de reconexión
+   * Útil cuando se quiere forzar nuevos intentos después de alcanzar el máximo
+   */
+  resetReconnectAttempts() {
+    this.reconnectAttempts = 0;
+    chatLogger.info('🔄 Contador de intentos de reconexión reseteado');
+  }
+
   formatTools() {}
 
 
-  
-  
+
+
 }
 export { MCPclient };
