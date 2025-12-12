@@ -89,6 +89,7 @@ export class MessageOrchestrator {
 
     // Get or create conversation history for this chatId
     if (!conversationHistories[chatId]) {
+      chatLogger.info(`🆕 Creando nuevo historial de conversación para chat: ${chatId}`);
       conversationHistories[chatId] = [];
     }
     const conversationHistory = conversationHistories[chatId];

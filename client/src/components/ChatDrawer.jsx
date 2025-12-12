@@ -191,20 +191,23 @@ const ChatDrawer = ({ open, onClose }) => {
     y: 0,
   });
 
-  // Initialize default chat on mount
+  // Initialize new chat on mount with unique ID
   useEffect(() => {
     if (!activeChatId) {
-      const defaultChatId = 'default';
-      dispatch(chatActions.setActiveChat(defaultChatId));
+      // Create a unique chat ID based on timestamp
+      const newChatId = `chat_${Date.now()}`;
+      dispatch(chatActions.setActiveChat(newChatId));
 
       // Add welcome message
       dispatch(chatActions.addMessage({
-        chatId: defaultChatId,
+        chatId: newChatId,
         message: {
           role: 'assistant',
           content: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?',
           timestamp: new Date().toISOString(),
-        }
+        },
+        from: 'assistant',
+        timestamp: new Date().toISOString(),
       }));
     }
   }, [activeChatId, dispatch]);
@@ -284,21 +287,23 @@ const ChatDrawer = ({ open, onClose }) => {
   };
 
   const clearChat = () => {
-    // Create a new chat
+    // Create a new chat with unique ID
     const newChatId = `chat_${Date.now()}`;
     dispatch(chatActions.createChat({
       chatId: newChatId,
-      name: `New Chat ${new Date().toLocaleString()}`,
+      name: `Chat ${new Date().toLocaleString()}`,
     }));
 
-    // Add welcome message
+    // Add welcome message with proper format
     dispatch(chatActions.addMessage({
       chatId: newChatId,
       message: {
         role: 'assistant',
         text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?',
         timestamp: new Date().toISOString(),
-      }
+      },
+      from: 'assistant',
+      timestamp: new Date().toISOString(),
     }));
 
     setShowOptions(true);
