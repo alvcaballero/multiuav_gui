@@ -2,8 +2,6 @@ import OpenAI from 'openai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './SystemPromps.js';
 import { logger, chatLogger } from '../../common/logger.js';
-import { text } from 'stream/consumers';
-
 
 //suported roles= 'assistant', 'system', 'developer', and 'user'
 class OpenAIHandler extends BaseLLMHandler {
@@ -33,17 +31,31 @@ class OpenAIHandler extends BaseLLMHandler {
     });
   }
 
+  convertMsg(message= null, conversationHistory) {
+    let lastconversation = conversationHistory.map((msg) => {
+      if (typeof msg.message.content === 'string') {
+        return {
+          role: msg.message.role,
+          content: msg.message.content,
+        };
+      } else {
+        return { ...msg.message };
+      }
+    });
+    if (message === null) {
+      return lastconversation;
+    }
+    return [...lastconversation, { role: 'user', content: message }];
+  }
 
-  async processMessage(message, tools = [], conversationHistory = []) {
+  async processMessage(message = null, tools = [], conversationHistory = []) {
     if (!this.client) {
       throw new Error('Cliente OpenAI no inicializado');
     }
-    // if (conversationHistory.length === 0 && this.systemPrompt) {
-    //   conversationHistory.push({ role: 'system', content: this.systemPrompt });
-    // }
 
     // Construir el array de mensajes
-    const messages = [...conversationHistory, { role: 'user', content: message }];
+    const messages = this.convertMsg(message, conversationHistory);
+
     console.log('Messages to send to OpenAI:', JSON.stringify(messages, null, 2));
     // Parámetros para la llamada
     const params = {
@@ -73,8 +85,10 @@ class OpenAIHandler extends BaseLLMHandler {
       };
       let toolCalls = [];
       for (const content of assistantMessage) {
+        console.log('Processing content from assistantMessage:', JSON.stringify(content, null, 2));
         if (content.type === 'reasoning') {
-          chatLogger.info('Reasoning:', JSON.stringify(content.summary, null, 2));
+
+          chatLogger.info('Reasoning:', JSON.stringify(content, null, 2));
         }
         if (content.type === 'function_call' || content.type === 'tool_call') {
           chatLogger.info(`✓ OpenAI solicita llamada a herramienta: ${content.name}`);
@@ -98,24 +112,7 @@ class OpenAIHandler extends BaseLLMHandler {
           }
         }
       }
-
-      // Verificar si hay tool calls
-      if (msgType === 'tool_calls') {
-        console.log(`✓ OpenAI solicita ${toolCalls.length} llamada(s) a herramientas`);
-        return {
-          type: 'tool_calls',
-          content: assistantMessage,
-          message: responseMsg,
-          toolCalls: toolCalls,
-        };
-      }
-
-      console.log(`✓ Respuesta recibida de OpenAI`);
-      return {
-        type: 'text',
-        content: assistantMessage,
-        message: responseMsg,
-      };
+      return assistantMessage;
     } catch (error) {
       console.error('Error en OpenAI:', error);
       throw error;
@@ -123,24 +120,25 @@ class OpenAIHandler extends BaseLLMHandler {
   }
 
   async handleToolCall(toolCall, toolExecutor) {
+    console.log('Manejando tool call:', JSON.stringify(toolCall, null, 2));
     try {
       const functionName = toolCall.name;
       const functionArgs = JSON.parse(toolCall.arguments);
 
       // Ejecutar la herramienta a través del MCP
       const result = await toolExecutor(functionName, functionArgs);
-      console.log(`✓ Herramienta ${functionName} ejecutada con éxito. Resultado:`, result);
+      console.log(`✓ Herramienta  ejecutada con éxito ${functionName}. Resultado:`, result);
 
       // Formato de respuesta para OpenAI
       return {
-        type: "function_call_output",
+        type: 'function_call_output',
         call_id: toolCall.call_id,
         output: JSON.stringify(result),
       };
     } catch (error) {
       console.error('Error manejando tool call:', error);
       return {
-        type: "function_call_output",
+        type: 'function_call_output',
         call_id: toolCall.call_id,
         output: JSON.stringify({ error: error.message }),
       };

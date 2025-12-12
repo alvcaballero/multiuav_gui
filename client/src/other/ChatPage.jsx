@@ -237,7 +237,7 @@ const ChatPage = () => {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
 
-      const transcriptionResponse = await fetch('/api/speech-tools/stt', {
+      const transcriptionResponse = await fetch('/api/chat/stt', {
         method: 'POST',
         body: formData,
       });
@@ -263,7 +263,7 @@ const ChatPage = () => {
 
   const textToSpeech = async (text) => {
     try {
-      const response = await fetch('/api/speech-tools/tts', {
+      const response = await fetch('/api/chat/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

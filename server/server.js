@@ -6,13 +6,17 @@ import { createServer } from 'http';
 import { corsMiddleware } from './middlewares/cors.js';
 import { setupLogger } from './middlewares/logger.js';
 import { checkFile } from './common/utils.js';
-import { llmController } from './controllers/llm.js'; // LLM provider initialization
+import { chatController } from './controllers/chat.js'; // LLM provider initialization
 import logger, { logHelpers } from './common/logger.js';
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
 import { initWebsocketController } from './controllers/websocket.js';
 import { setupRoutes } from './routes/index.js';
+
+// EventBus and Subscribers
+import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
+import { eventBus } from './common/eventBus.js';
 
 // comunications with devices
 import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
@@ -46,6 +50,12 @@ const server = createServer(app);
 const wsManager = new WebsocketManager(server, '/api/socket');
 const websocketController = initWebsocketController(wsManager);
 
+// Initialize EventBus subscribers
+const wsSubscriber = new WebSocketSubscriber(websocketController);
+logger.info('EventBus system initialized', {
+  subscribers: ['WebSocketSubscriber']
+});
+
 // connect to  devices
 if (RosEnable) {
   rosModel.rosConnect();
@@ -75,7 +85,7 @@ if (LLM) {
     });
     throw error;
   }
-  llmController.initializeLLMProvider(LLMType, LLMApiKey);
+  chatController.initializeLLMProvider(LLMType, LLMApiKey);
 } else {
   logger.warn('LLM deshabilitado, no se inicializará ningún proveedor');
 }
@@ -104,6 +114,12 @@ process.on('unhandledRejection', (reason, promise) => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM recibido, cerrando servidor gracefully');
+
+  // Cleanup EventBus and subscribers
+  wsSubscriber.cleanup();
+  websocketController.destroy();
+  eventBus.cleanup();
+
   server.close(() => {
     logger.info('Servidor cerrado correctamente');
     process.exit(0);
@@ -112,6 +128,12 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   logger.info('SIGINT recibido, cerrando servidor gracefully');
   rosModel.GCSunServicesMission();
+
+  // Cleanup EventBus and subscribers
+  wsSubscriber.cleanup();
+  websocketController.destroy();
+  eventBus.cleanup();
+
   server.close(() => {
     logger.info('Servidor cerrado correctamente');
   });

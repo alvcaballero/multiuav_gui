@@ -1,7 +1,6 @@
 import { positionsController } from '../controllers/positions.js';
-import { WebsocketManager } from '../WebsocketManager.js';
-import { getWebsocketController } from '../controllers/websocket.js';
 import sequelize from '../common/sequelize.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
 
 /**
  * @typedef Event
@@ -47,7 +46,8 @@ export class eventsModel {
       missionId: missionId || null,
       attributes: attributes,
     });
-    const ws = getWebsocketController();
-    ws.sendMessage(JSON.stringify({ events: [myEvent] }));
+
+    // Emitir evento al EventBus para que los subscribers lo manejen
+    eventBus.emitSafe(EVENTS.EVENT_CREATED, myEvent);
   }
 }

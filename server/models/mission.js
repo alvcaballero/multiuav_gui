@@ -1,6 +1,5 @@
 import { devicesController } from '../controllers/devices.js';
 import { positionsController } from '../controllers/positions.js';
-import { getWebsocketController } from '../controllers/websocket.js';
 import { missionSMModel } from './missionSM.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { planningController } from '../controllers/planning.js';
@@ -8,6 +7,7 @@ import { filesController } from '../controllers/files.js';
 import { eventsController } from '../controllers/events.js';
 import { readDataFile, writeJSON, sleep } from '../common/utils.js';
 import sequelize from '../common/sequelize.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
 
 /**
  * @typedef Mission
@@ -69,9 +69,9 @@ export class missionModel {
     return { success: false}
     }
 
-    const ws = getWebsocketController();
-    ws.sendMessage(JSON.stringify({ mission: { ...mission, name: 'name' } }));
-    
+    // Emitir evento al EventBus para que los subscribers lo manejen
+    eventBus.emitSafe(EVENTS.MISSION_CREATED, { ...mission, name: 'name' });
+
     return { success: true}
   }
     
@@ -316,8 +316,10 @@ export class missionModel {
       deviceId: null,
       attributes: { message: `Init mission ${missionId}` },
     });
-    const ws = getWebsocketController();
-    ws.sendMessage(JSON.stringify({ mission: { ...mission, name: 'name' } }));
+
+    // Emitir evento al EventBus para que los subscribers lo manejen
+    eventBus.emitSafe(EVENTS.MISSION_INIT, { ...mission, name: 'name' });
+
     return { response: mission, status: 'OK' };
   }
 

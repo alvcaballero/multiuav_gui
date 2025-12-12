@@ -2,6 +2,7 @@ import { devicesController } from './devices.js';
 import { rosController } from './ros.js';
 import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
+import logger from '../common/logger.js';
 
 let wsController = null;
 
@@ -15,7 +16,7 @@ export class websocketController {
     this.setupWelcomeMessage();
   }
 
-  async setupWelcomeMessage() {
+  setupWelcomeMessage() {
     this.wsManager.onClientConnect = async (client) => {
       const msg = await this.WelcomeMessage();
       this.sendMessage(msg, client);
@@ -32,13 +33,39 @@ export class websocketController {
   }
 
   async updateclient() {
-    const msg = await this.updateMessage();
-    this.sendMessage(msg, null);
+    try {
+      const msg = await this.updateMessage();
+      // Solo enviar si hay datos
+      if (Object.keys(msg).length > 0) {
+        this.sendMessage(msg, null);
+      }
+    } catch (error) {
+      logger.error('Error in updateclient', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
   }
 
   async updateserver() {
-    const msg = await this.serverUpdateMessage();
-    this.sendMessage(msg, null);
+    try {
+      const msg = await this.serverUpdateMessage();
+      this.sendMessage(msg, null);
+    } catch (error) {
+      logger.error('Error in updateserver', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  }
+
+  /**
+   * Limpia los intervals y recursos del controller
+   */
+  destroy() {
+    logger.info('websocketController cleanup');
+    clearInterval(this.interval_update);
+    clearInterval(this.interval_server);
   }
 
   async WelcomeMessage() {

@@ -15,3 +15,8 @@ windows:
             - cd ~/mcpServers/mcp_muav_gui 
             - nvm use 22
             - npm run dev:http
+        - Frontend:
+            - cd ~/work/px4/multiuav_gui/client
+            - nvm use 20
+            - sleep 3
+            - npm run start

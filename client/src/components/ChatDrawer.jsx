@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect, use } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Rnd } from 'react-rnd';
+import { chatActions } from '../store';
+import { sendChatMessage } from '../SocketController';
 import {
   Drawer,
   IconButton,
@@ -30,7 +33,6 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import CircularProgressIcon from '@mui/material/CircularProgress';
-import { styled } from '@mui/material/styles';
 
 const useStyles = makeStyles()((theme) => ({
   panel: {
@@ -99,8 +101,39 @@ const initialOptions = [
   'Selecciona un dron y haz que se mantenga en vuelo estacionario a 10 metros de altura.',
 ];
 
+const convertMsg = (msg) => {
+  if (typeof msg.message.content === 'string') {
+    return {
+          role: msg.message.role,
+          content: msg.message.content,
+          type: 'text',
+        };
+  }
+  if (msg.message.type === 'reasoning') {
+  return {role:'assistant', type: 'text', content: 'thinking...' };
+  } 
+  if (msg.message.type === 'message') {
+    let contentText = '';
+    if (typeof msg.message.content === 'string') {
+      contentText = msg.message.content
+    }
+    else{
+      contentText = msg.message.content[0]?.text || '';
+    }
+    return {role: msg.message.role, type: 'text', content: contentText };
+  }
+  if (msg.message.type === 'function_call') {
+    return {role: 'assistant', type: 'text', content: `Function call: ${msg.message.name}` };
+  }
+  if (msg.message.type === 'function_call_output') {
+    return {role: 'assistant', type: 'text', content: `Function output: ....` };
+  }
+  return {role: 'assistant', type: 'desconocido', content: 'Unsupported message type' };
+}
+
 const MessageBubble = ({ message }) => {
-  const isAI = message.role === 'assistant';
+  const {role, type, content} = convertMsg(message);
+  const isAI = role !== 'user';
 
   return (
     <ListItem
@@ -123,7 +156,7 @@ const MessageBubble = ({ message }) => {
             wordBreak: 'break-word',
           }}
         >
-          <ListItemText primary={message.text} />
+          <ListItemText primary={content} />
         </Box>
       </Stack>
     </ListItem>
@@ -132,12 +165,19 @@ const MessageBubble = ({ message }) => {
 
 const ChatDrawer = ({ open, onClose }) => {
   const { classes } = useStyles();
-  const [messages, setMessages] = useState([
-    { text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?', role: 'assistant' },
-  ]);
+  const dispatch = useDispatch();
+
+  // Get chat state from Redux
+  const activeChatId = useSelector((state) => state.chat.activeChatId);
+  const activeConversation = useSelector((state) =>
+    activeChatId ? state.chat.conversations[activeChatId] : null
+  );
+  const messages = activeConversation?.messages || [];
+  const loading = useSelector((state) => state.chat.loading);
+
+  // Local UI state
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showOptions, setShowOptions] = useState(true); // Nuevo estado para controlar la visibilidad de las opciones
+  const [showOptions, setShowOptions] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const audioChunksRef = useRef([]);
@@ -151,6 +191,24 @@ const ChatDrawer = ({ open, onClose }) => {
     y: 0,
   });
 
+  // Initialize default chat on mount
+  useEffect(() => {
+    if (!activeChatId) {
+      const defaultChatId = 'default';
+      dispatch(chatActions.setActiveChat(defaultChatId));
+
+      // Add welcome message
+      dispatch(chatActions.addMessage({
+        chatId: defaultChatId,
+        message: {
+          role: 'assistant',
+          content: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?',
+          timestamp: new Date().toISOString(),
+        }
+      }));
+    }
+  }, [activeChatId, dispatch]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -159,58 +217,56 @@ const ChatDrawer = ({ open, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (messageToSend, fromAudio = false) => {
+  const handleSendMessage = async (messageToSend, fromAudio = false) => {
     console.log('Enviando mensaje:', messageToSend);
-    if (!messageToSend.trim() || isLoading) return;
+    if (!messageToSend.trim() || loading.sendingMessage) return;
 
-    const userMessage = {
-      id: Date.now(),
-      text: messageToSend,
-      role: 'user',
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
-    setIsLoading(true);
-    setShowOptions(false); // Ocultar opciones una vez que se envía el primer mensaje
+    try {
+      // Set loading state
+      dispatch(chatActions.setLoading({ key: 'sendingMessage', value: true }));
 
-    // Capturar si este mensaje fue enviado desde audio
-    const shouldPlayAudio = fromAudio;
-    console.log('shouldPlayAudio:', shouldPlayAudio);
+      // Add user message to Redux immediately
+      const userMessage = {
+        role: 'user',
+        content: messageToSend,
+        timestamp: new Date().toISOString(),
+      };
 
-    fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ provider: 'gemini', message: userMessage.text }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log('Respuesta de la IA:', data);
-        const aiResponse = {
-          text: '',
+      dispatch(chatActions.addMessage({
+        chatId: activeChatId,
+        message: userMessage,
+      }));
+
+      // Clear input
+      setInputValue('');
+      setShowOptions(false);
+
+      // Send via WebSocket (NOT HTTP!)
+      sendChatMessage(activeChatId, messageToSend);
+
+      // Store if we should play audio response
+      if (fromAudio) {
+        window.shouldPlayAudioResponse = true;
+      }
+
+      // Note: Response will come via WebSocket and be handled by SocketController
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      dispatch(chatActions.setError(error.message));
+
+      // Show error message in chat
+      dispatch(chatActions.addMessage({
+        chatId: activeChatId,
+        message: {
           role: 'assistant',
-        };
-        aiResponse.text = data.content || 'Lo siento, no tengo una respuesta en este momento.';
-        aiResponse.role = 'assistant';
-        setMessages((prevMessages) => [...prevMessages, aiResponse]);
-
-        // Si el mensaje anterior fue de audio, reproducir la respuesta
-        if (shouldPlayAudio && aiResponse.text) {
-          textToSpeech(aiResponse.text);
+          content: 'Error: No se pudo enviar el mensaje. Por favor verifica la conexión WebSocket.',
+          timestamp: new Date().toISOString(),
         }
-      })
-      .catch(() => {
-        const aiResponse = {
-          text: 'Hubo un error al comunicarse con la IA.',
-          role: 'assistant',
-        };
-        setMessages((prevMessages) => [...prevMessages, aiResponse]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+      }));
+    } finally {
+      dispatch(chatActions.setLoading({ key: 'sendingMessage', value: false }));
+    }
   };
 
   const handleKeyPress = (event) => {
@@ -228,15 +284,24 @@ const ChatDrawer = ({ open, onClose }) => {
   };
 
   const clearChat = () => {
-    setShowOptions(true); // Mostrar opciones nuevamente al limpiar el chat
-    setMessages([
-      {
-        id: 1,
-        text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?',
+    // Create a new chat
+    const newChatId = `chat_${Date.now()}`;
+    dispatch(chatActions.createChat({
+      chatId: newChatId,
+      name: `New Chat ${new Date().toLocaleString()}`,
+    }));
+
+    // Add welcome message
+    dispatch(chatActions.addMessage({
+      chatId: newChatId,
+      message: {
         role: 'assistant',
-        timestamp: new Date(),
-      },
-    ]);
+        text: '¡Hola! Soy tu asistente. ¿En qué puedo ayudarte?',
+        timestamp: new Date().toISOString(),
+      }
+    }));
+
+    setShowOptions(true);
   };
 
   const startRecording = async () => {
@@ -354,7 +419,7 @@ const ChatDrawer = ({ open, onClose }) => {
       formData.append('audio', audioBlob, 'audio.webm');
 
       // Enviar el audio al servidor para transcripción
-      const transcriptionResponse = await fetch('/api/speech-tools/stt', {
+      const transcriptionResponse = await fetch('/api/chat/stt', {
         method: 'POST',
         body: formData,
       });
@@ -390,7 +455,7 @@ const ChatDrawer = ({ open, onClose }) => {
 
   const textToSpeech = async (text) => {
     try {
-      const response = await fetch('/api/speech-tools/tts', {
+      const response = await fetch('/api/chat/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -485,7 +550,7 @@ const ChatDrawer = ({ open, onClose }) => {
               {messages.map((msg, index) => (
                 <MessageBubble key={index} message={msg} />
               ))}
-              {isLoading && (
+              {loading.sendingMessage && (
                 <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>
                   <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32, mr: 1 }}>
                     <SmartToyIcon fontSize="small" />
@@ -503,7 +568,7 @@ const ChatDrawer = ({ open, onClose }) => {
 
             <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
               {/* Optios messages */}
-              {showOptions && messages.length === 1 && messages[0].role === 'assistant' && (
+              {showOptions && messages.length === 1  && (
                 <Box sx={{ mb: 2 }}>
                   <Stack direction="row" flexWrap="wrap" spacing={1} useFlexGap>
                     {initialOptions.map((option, index) => (
@@ -541,7 +606,7 @@ const ChatDrawer = ({ open, onClose }) => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyUp={handleKeyPress}
-                  disabled={isLoading || isRecording}
+                  disabled={loading.sendingMessage || isRecording}
                   variant="outlined"
                   size="small"
                   sx={{
@@ -553,7 +618,7 @@ const ChatDrawer = ({ open, onClose }) => {
                 />
                 <IconButton
                   onClick={isRecording ? stopRecording : startRecording}
-                  disabled={isLoading}
+                  disabled={loading.sendingMessage}
                   sx={{
                     bgcolor: isRecording ? '#f44336' : '#4caf50',
                     color: 'white',
@@ -573,7 +638,7 @@ const ChatDrawer = ({ open, onClose }) => {
                 </IconButton>
                 <IconButton
                   onClick={() => handleSendMessage(inputValue)}
-                  disabled={!inputValue.trim() || isLoading || isRecording}
+                  disabled={!inputValue.trim() || loading.sendingMessage || isRecording}
                   sx={{
                     bgcolor: '#1976d2',
                     color: 'white',
@@ -583,7 +648,7 @@ const ChatDrawer = ({ open, onClose }) => {
                     height: 40,
                   }}
                 >
-                  {isLoading ? <CircularProgressIcon size={20} color="inherit" /> : <SendIcon fontSize="small" />}
+                  {loading.sendingMessage ? <CircularProgressIcon size={20} color="inherit" /> : <SendIcon fontSize="small" />}
                 </IconButton>
               </Stack>
             </Box>

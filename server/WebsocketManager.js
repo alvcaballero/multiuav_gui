@@ -11,19 +11,38 @@ function heartbeat() {
 export class WebsocketManager {
   constructor(server, path = '/api/socket') {
     this.ws = new WebSocketServer({ path: path, server: server });
-    this.clientsToRoom = new Map();
-    this.clients = new Set();
 
     this.onConnect(async (client) => {
-      client.onMessage(async (message) => {
-        logHelpers.ws.message('client', message.toString());
+      client.onMessage(async (rawMessage) => {
+        try {
+          const messageStr = rawMessage.toString();
+          logHelpers.ws.message('client', messageStr);
+
+          // Parse JSON message
+          const message = JSON.parse(messageStr);
+
+          // Route based on message type
+          if (message.type === 'chat:user_message') {
+            // Import EventBus dynamically to avoid circular dependencies
+            const { eventBus, EVENTS } = await import('./common/eventBus.js');
+
+            // Emit to EventBus for processing
+            eventBus.emitSafe(EVENTS.CHAT_USER_MESSAGE, {
+              chatId: message.payload.chatId,
+              message: message.payload.message,
+              timestamp: message.payload.timestamp,
+              metadata: message.payload.metadata || {},
+            });
+          }
+        } catch (error) {
+          logHelpers.ws.error('Message parse error', error);
+        }
       });
-      //client.notify("welcome");
     });
 
-    this.interval = setInterval(this.ping.bind(this), 30000);
+    this.interval_ping = setInterval(this.ping.bind(this), 30000);
 
-    this.ws.on('close', function close() {
+    this.ws.on('close', () => {
       this._clearIntervals();
     });
   }
@@ -41,13 +60,6 @@ export class WebsocketManager {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
       }
-    });
-  }
-
-  broadcastToRoom(room, message) {
-    const clients = this.clientsToRoom.get(room) || [];
-    clients.forEach((client) => {
-      client.notify(message);
     });
   }
 

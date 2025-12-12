@@ -1,11 +1,7 @@
-import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { SpeechController } from '../controllers/speech.js';
-
-export const speechRouter = Router();
 
 // Crear directorio temporal si no existe
 const tmpDir = path.join(os.tmpdir(), 'multiuav-audio');
@@ -58,9 +54,4 @@ const upload = multer({
     }
   },
 });
-
-// Ruta para speech-to-text (transcripción)
-speechRouter.post('/stt', upload.single('audio'), SpeechController.speechToText);
-
-// Ruta para text-to-speech (síntesis de voz)
-speechRouter.post('/tts', SpeechController.textToSpeech);
+export { upload };

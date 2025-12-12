@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
-import { devicesActions, missionActions, sessionActions } from './store'; // here update device action with position of uav for update in map
+import { devicesActions, missionActions, sessionActions, chatActions } from './store'; // here update device action with position of uav for update in map
 import { eventsActions } from './store/events';
 import { Snackbar } from '@mui/material';
 import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
+import store from './store';
 
 const logoutCode = 4000;
 const snackBarDurationLongMs = 1000;
@@ -42,6 +43,7 @@ const SocketController = () => {
     console.log(`${protocol}//${window.location.host}/api/socket`);
     //const socket = new WebSocket(`${protocol}//${window.location.host}`);
     socketRef.current = socket;
+    window.websocket = socket; // Store socket reference globally for sendChatMessage
     console.log('funcion web socket');
 
     socket.onopen = () => {
@@ -101,6 +103,9 @@ const SocketController = () => {
       if (data.planning) {
         dispatch(sessionActions.updatePlanning(data.planning));
       }
+      if (data.chat) {
+        dispatch(chatActions.addMessage(data.chat));
+      }
     };
   };
 
@@ -150,6 +155,29 @@ const SocketController = () => {
       />
     </>
   );
+};
+
+// Helper function to send chat messages via WebSocket
+export const sendChatMessage = (chatId, message) => {
+  // Get the socket from the store or window
+  const socket = window.websocket;
+
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.error('WebSocket not connected');
+    throw new Error('WebSocket not connected');
+  }
+
+  const payload = {
+    type: 'chat:user_message',
+    payload: {
+      chatId: chatId,
+      message: message,
+      timestamp: new Date().toISOString(),
+    }
+  };
+
+  console.log('Sending chat message via WebSocket:', payload);
+  socket.send(JSON.stringify(payload));
 };
 
 export default connect()(SocketController);
