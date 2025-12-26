@@ -130,7 +130,7 @@ export class rosModel {
     for (let i = 0; i < camera.length; i = i + 1) {
       console.log(camera[i]['type']);
       if (camera[i]['type'] == 'Websocket') {
-        console.log('camera websocket');
+        console.log(`camera websocket for ${name} `);
         this.RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], decodeRosMsg);
       }
     }

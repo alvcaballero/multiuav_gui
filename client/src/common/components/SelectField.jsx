@@ -1,5 +1,5 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEffectAsync } from '../../reactHelper';
 
 const SelectField = ({
@@ -44,9 +44,9 @@ const SelectField = ({
     return (
       <FormControl fullWidth={fullWidth}>
         <InputLabel>{label}</InputLabel>
-        {value !== null && (
+        {value !== null && value !== undefined && (
           <Select label={label} multiple={multiple} value={value} onChange={(e) => onChange(e, items)}>
-            {!multiple && emptyValue !== null && <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>}
+            {!multiple && emptyValue !== null && emptyValue !== undefined && <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>}
             {items.map((item) => (
               <MenuItem key={keyGetter(item)} value={keyGetter(item)}>
                 {titleGetter(item)}

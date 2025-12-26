@@ -13,6 +13,7 @@ import MapDefaultCamera from './MapDefaultCamera';
 import MapLiveRoutes from './MapLiveRoutes';
 import MapGeocoder from './geocoder/MapGeocoder';
 import MapGeofence from './MapGeofence';
+import PegmanControl from './PegmanControl';
 
 const MainMap = ({
   filteredPositions,
@@ -35,8 +36,8 @@ const MainMap = ({
         <MapMarkers markers={markers} />
         <MapMissions filtereddeviceid={filteredMissiondeviceid} routes={routes} />
         <MapElements />
-        <MapGeofence/>
-        <MapLiveRoutes/>
+        <MapGeofence />
+        <MapLiveRoutes />
         <MapPositions
           positions={filteredPositions}
           onClick={onMarkerClick}
@@ -45,6 +46,7 @@ const MainMap = ({
         />
         <MapSelectedDevice />
         <MapDefaultCamera />
+        <PegmanControl />
       </MapView>
       <MapScale />
       <MapGeocoder />

@@ -78,7 +78,13 @@ const BaseSettings = ({ data, param, setData, type = 'Base', goToBase = () => nu
                   <Typography
                     sx={{ width: '33%', flexShrink: 0 }}
                   >{`${type} ${index} - ${base.devices.name} `}</Typography>
-                  <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => goToBase(index)}>
+                  <IconButton
+                    sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToBase(index);
+                    }}
+                  >
                     <MyLocationIcon />
                   </IconButton>
                 </AccordionSummary>
@@ -102,7 +108,7 @@ const BaseSettings = ({ data, param, setData, type = 'Base', goToBase = () => nu
                               <div>
                                 {actionKey == 'id' && (
                                   <SelectField
-                                    emptyValue={null}
+                                    emptyValue={""}
                                     fullWidth
                                     label="device"
                                     value={base.devices[actionKey]}
@@ -114,7 +120,7 @@ const BaseSettings = ({ data, param, setData, type = 'Base', goToBase = () => nu
                                       console.log(e.target.value);
                                       modifyData(index, 'devices', {
                                         id: e.target.value,
-                                        name: items.find((item) => +item.id == +e.target.value).name,
+                                        name: e.target.value == '' ? '' :items.find((item) => +item.id == +e.target.value).name ,
                                       });
                                     }}
                                   />

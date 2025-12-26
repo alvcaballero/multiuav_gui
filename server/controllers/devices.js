@@ -35,7 +35,7 @@ class devicesController {
     const result = validateDevice(req.body);
 
     if (!result.success) {
-      res.status(400).json({ error: JSON.parse(result.error.message) });
+     return res.status(400).json({ error: JSON.parse(result.error.message) });
     }
 
     const newDevice = await DevicesModel.create(result.data);
@@ -50,22 +50,22 @@ class devicesController {
     const result = await DevicesModel.delete({ id });
 
     if (result === false) {
-      res.status(404).json({ message: 'device not found' });
+      return res.status(404).json({ message: 'device not found' });
     }
 
     res.json({ message: 'device deleted' });
   };
 
   static update = async (req, res) => {
+    console.log('update device');
+
     const result = validatePartialDevice(req.body);
 
     if (!result.success) {
-      res.status(400).json({ error: JSON.parse(result.error.message) });
+      return res.status(400).json({ error: JSON.parse(result.error.message) });
     }
-
     const { id } = req.params;
     result.data.id = id;
-    console.log(result.data);
 
     const updatedDevice = await DevicesModel.editDevice(result.data);
 

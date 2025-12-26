@@ -23,6 +23,7 @@ import MapView from '../ThreeD/MapView';
 import R3FMission from '../ThreeD/R3FMission';
 import R3DMarkers from '../ThreeD/R3DMarkers';
 import R3FDevices from '../ThreeD/R3FDevices';
+import DownloadYamlButton from '../ThreeD/DownloadYamlButton';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -137,6 +138,7 @@ const MainPage3D = () => {
           <R3FDevices />
           <SelectDevice3D />
         </MapView>
+        <DownloadYamlButton />
       </div>
 
       <div className={classes.sidebar}>

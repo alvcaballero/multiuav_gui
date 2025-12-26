@@ -997,6 +997,9 @@ px4_ros2:
     vehicle_command_ack:
       name: '/fmu/out/vehicle_command_ack'
       messageType: 'px4_msgs/msg/VehicleCommandAck'
+    camera:
+      name: '/camera/image_compressed'
+      messageType: 'sensor_msgs/CompressedImage'
   services:
     configureMission:
       name: '/offboard/mission_load'
