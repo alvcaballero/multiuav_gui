@@ -46,10 +46,10 @@ const MainMap = ({
         />
         <MapSelectedDevice />
         <MapDefaultCamera />
-        <PegmanControl />
       </MapView>
       <MapScale />
       <MapGeocoder />
+      <PegmanControl />
     </>
   );
 };

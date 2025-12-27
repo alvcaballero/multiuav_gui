@@ -1,15 +1,42 @@
-import React, { useCallback, useState } from 'react';
-import { IconButton } from '@mui/material';
+// based on https://github.com/rezw4n/maplibre-google-streetview/tree/master
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import StreetviewIcon from '@mui/icons-material/Streetview';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { map } from './MapView'; // Access the global map instance
 import { sessionActions } from '../store';
 
-const PegmanControl = () => {
+// Helper class for MapLibre control
+class PegmanControlImpl {
+    constructor() {
+        this._container = document.createElement('div');
+        this._container.className = 'maplibregl-ctrl'; // Base class for controls
+        // We don't use 'maplibregl-ctrl-group' to avoid default styling that might conflict with the round button
+        // But we can add it if we want the standard look. Given the custom style, we keep it minimal.
+    }
+
+    onAdd(map) {
+        this._map = map;
+        return this._container;
+    }
+
+    onRemove() {
+        if (this._container.parentNode) {
+            this._container.parentNode.removeChild(this._container);
+        }
+        this._map = undefined;
+    }
+
+    getContainer() {
+        return this._container;
+    }
+}
+
+const PegmanButton = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [isDragon, setDragging] = useState(false);
+    const [isDragon, setDragging] = useState(false); // Preserving variable name 'isDragon' from original even if typo for 'isDragging'
 
     const handleDragStart = useCallback((e) => {
         setDragging(true);
@@ -58,10 +85,7 @@ const PegmanControl = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             style={{
-                position: 'absolute',
-                bottom: '120px', // Adjust as needed to not overlap with other controls
-                right: '10px',
-                zIndex: 10,
+                // Removed absolute positioning as the map control handles placement
                 backgroundColor: 'white',
                 borderRadius: '50%',
                 boxShadow: '0 0 0 2px rgba(0,0,0,0.1)',
@@ -70,11 +94,28 @@ const PegmanControl = () => {
                 height: 40,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                pointerEvents: 'auto', // Ensure interaction
             }}
         >
             <StreetviewIcon color="primary" />
         </div>
+    );
+};
+
+const PegmanControl = () => {
+    // Create the control instance once
+    const control = useMemo(() => new PegmanControlImpl(), []);
+
+    useEffect(() => {
+        map.addControl(control, 'bottom-right');
+        return () => { map.removeControl(control); };
+    }, [control]);
+
+    // Render the button into the control's container using a Portal
+    return createPortal(
+        <PegmanButton />,
+        control.getContainer()
     );
 };
 
