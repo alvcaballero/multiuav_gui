@@ -13,7 +13,7 @@ import MapDefaultCamera from './MapDefaultCamera';
 import MapLiveRoutes from './MapLiveRoutes';
 import MapGeocoder from './geocoder/MapGeocoder';
 import MapGeofence from './MapGeofence';
-import PegmanControl from './PegmanControl';
+import PegmanControl from './PegmanControl/PegmanControl';
 
 const MainMap = ({
   filteredPositions,

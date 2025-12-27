@@ -21,6 +21,11 @@ import { devicesActions } from '../store';
 const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100%',
+    width: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+    margin: 0,
+    padding: 0,
   },
   header: {
     pointerEvents: 'auto',
@@ -33,6 +38,7 @@ const useStyles = makeStyles()((theme) => ({
   middle: {
     flex: 1,
     display: 'grid',
+    overflow: 'hidden', // Ensure inner content doesn't force scroll of container
   },
   contentMap: {
     pointerEvents: 'auto',
@@ -42,15 +48,17 @@ const useStyles = makeStyles()((theme) => ({
     pointerEvents: 'auto',
     gridArea: '1 / 1',
     zIndex: 4,
+    height: '100%', // Take full height of 'middle'
+    overflowY: 'auto', // Allow scrolling inside the list if needed
   },
   sidebar: {
     pointerEvents: 'none',
     display: 'flex',
     flexDirection: 'column',
-    position: 'fixed',
+    position: 'absolute',
     left: 0,
     top: '88px',
-    height: 'calc(100% - 88px)',
+    bottom: 0,
     width: '360px',
     margin: '0px',
     zIndex: 3,
@@ -133,9 +141,9 @@ const MainPage = () => {
         style={{
           position: 'absolute',
           top: '88px',
+          left: '360px',
           right: '0px',
-          width: 'calc(100% - 360px)',
-          height: 'calc(100vh - 88px)',
+          bottom: '0px',
         }}
       >
         <MainMap
