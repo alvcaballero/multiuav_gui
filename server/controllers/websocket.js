@@ -85,6 +85,7 @@ export class websocketController {
         meteo: [],
         bases: planning.bases,
         settings: planning.settings,
+        assignments: planning.assignments || [],
       },
     };
   }

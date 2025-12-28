@@ -93,7 +93,13 @@ const SelectList = ({ Data, setData = () => null }) => {
               >
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Typography sx={{ width: '33%', flexShrink: 0 }}>{`Group ${indexGroup}`}</Typography>
-                  <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => DeleteGroup(indexGroup)}>
+                  <IconButton
+                    sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      DeleteGroup(indexGroup);
+                    }}
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </AccordionSummary>
@@ -119,7 +125,10 @@ const SelectList = ({ Data, setData = () => null }) => {
 
                                 <IconButton
                                   sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                                  onClick={() => DeleteElement(indexGroup, index)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    DeleteElement(indexGroup, index);
+                                  }}
                                 >
                                   <DeleteIcon />
                                 </IconButton>

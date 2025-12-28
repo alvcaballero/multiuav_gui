@@ -27,6 +27,12 @@ export { sessionActions } from './session';
 export { geofencesActions } from './geofences';
 export { chatActions } from './chat';
 
+// Export selectors
+export * as sessionSelectors from './sessionSelectors';
+
+// Export migration helpers
+export { planningToLegacy, migratePlanning, migrateMarkers } from './sessionMigration';
+
 const store = configureStore({
   reducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(throttleMiddleware),

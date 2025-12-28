@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector, connect } from 'react-redux';
 
 export const RosContext = React.createContext();
@@ -19,17 +19,14 @@ export const RosControl = ({ children }) => {
     setrosState(serverState);
   }, [serverState]);
 
-  return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <RosContext.Provider
-        value={{
-          rosState,
-          confirmMission,
-          setconfirmMission,
-        }}
-      >
-        {children}
-      </RosContext.Provider>
-    </div>
+  const contextValue = useMemo(
+    () => ({
+      rosState,
+      confirmMission,
+      setconfirmMission,
+    }),
+    [rosState, confirmMission]
   );
+
+  return <RosContext.Provider value={contextValue}>{children}</RosContext.Provider>;
 };

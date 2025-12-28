@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { migrateMarkers, migratePlanning, generateBaseId } from './sessionMigration';
 
 const { reducer, actions } = createSlice({
   name: 'session',
@@ -11,8 +12,19 @@ const { reducer, actions } = createSlice({
     positions: {},
     history: {},
     camera: {},
-    markers: {},
-    planning: {},
+    markers: {
+      bases: [],
+      elements: [],
+    },
+    planning: {
+      id: null,
+      objetivo: {},
+      loc: [],
+      meteo: [],
+      assignments: [],
+      defaultSettings: {},
+      settingsSchema: {},
+    },
     scene3d: {
       origin: { lat: 37.410381, lng: -6.002094, alt: 400 },
       range: 1000,
@@ -56,19 +68,72 @@ const { reducer, actions } = createSlice({
     },
     updateMarker(state, action) {
       if (action.payload && action.payload.elements) {
-        state.markers = action.payload;
+        // Migrar markers automáticamente si vienen sin IDs
+        const migrated = migrateMarkers(action.payload);
+        state.markers = migrated;
       }
     },
     addMarkerElement(state, action) {
       state.markers.elements.push(...action.payload);
     },
     addMarkerBase(state, action) {
-      state.markers.bases.push(...action.payload);
+      // Asegurar que las nuevas bases tengan ID
+      const newBases = action.payload.map((base) => {
+        if (base.id) return base;
+        return { ...base, id: generateBaseId() };
+      });
+      state.markers.bases.push(...newBases);
     },
     updatePlanning(state, action) {
       if (action.payload.objetivo) {
-        state.planning = action.payload;
+        // Migrar planning automáticamente si viene en formato legacy
+        const migrated = migratePlanning(action.payload, state.markers);
+        state.planning = migrated;
       }
+    },
+    // Nuevas acciones para trabajar con la estructura mejorada
+    setBaseAssignment(state, action) {
+      const { baseId, device, settings } = action.payload;
+      const existingIndex = state.planning.assignments.findIndex((a) => a.baseId === baseId);
+
+      if (existingIndex >= 0) {
+        // Actualizar asignación existente
+        state.planning.assignments[existingIndex] = {
+          baseId,
+          device,
+          settings: settings || state.planning.assignments[existingIndex].settings,
+        };
+      } else {
+        // Crear nueva asignación
+        state.planning.assignments.push({
+          baseId,
+          device,
+          settings: settings || state.planning.defaultSettings,
+        });
+      }
+    },
+    removeBaseAssignment(state, action) {
+      const baseId = action.payload;
+      state.planning.assignments = state.planning.assignments.filter((a) => a.baseId !== baseId);
+    },
+    updateBaseSettings(state, action) {
+      const { baseId, settings } = action.payload;
+      const assignment = state.planning.assignments.find((a) => a.baseId === baseId);
+      if (assignment) {
+        assignment.settings = { ...assignment.settings, ...settings };
+      }
+    },
+    updateDefaultSettings(state, action) {
+      state.planning.defaultSettings = { ...state.planning.defaultSettings, ...action.payload };
+    },
+    updatePlanningObjective(state, action) {
+      state.planning.objetivo = action.payload;
+    },
+    updatePlanningLocations(state, action) {
+      state.planning.loc = action.payload;
+    },
+    updateSettingsSchema(state, action) {
+      state.planning.settingsSchema = action.payload;
     },
     updateCamera(state, action) {
       if (Object.keys(action.payload).length > 0) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
 import YAML from 'yaml';
@@ -29,7 +29,7 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import { makeStyles } from 'tss-react/mui';
 
 import { useNavigate } from 'react-router-dom';
-import { missionActions, sessionActions } from '../store'; // here update device action with position of uav for update in map
+import { missionActions, sessionActions, sessionSelectors, planningToLegacy } from '../store'; // here update device action with position of uav for update in map
 
 import MapView, { map } from '../Mapview/MapView';
 import Navbar from '../components/Navbar';
@@ -48,11 +48,19 @@ import { useEffectAsync, useCatch } from '../reactHelper';
 import SelectList from '../components/SelectList';
 import MapDefaultCamera from '../Mapview/MapDefaultCamera';
 import UploadButtons from '../components/uploadButton';
+import { manageLocationPoints, validateUniqueDevices, transformLocationsForAPI } from '../services/planningService';
+
+// Enums para las tabs
+const TABS = {
+  ELEMENTS: '1',
+  PLANNING: '2',
+  SETTINGS: '3',
+};
 
 const useStyles = makeStyles()((theme) => ({
   root: {
-    margin: '0',
     height: '100vh',
+    margin: '0',
   },
   sidebarStyle: {
     display: 'flex',
@@ -127,6 +135,7 @@ const PlanningPage = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   const [showTitles, setShowTitles] = useState(true);
   const [showLines, setShowLines] = useState(false);
   const [moveMarkers, SetMoveMarkers] = useState(false);
@@ -135,80 +144,167 @@ const PlanningPage = () => {
   const [requestPlanning, SetRequestPlanning] = useState(100);
   const myhostname = `${window.location.hostname}`;
 
-  const sessionmarkers = useSelector((state) => state.session.markers);
-  const sessionplanning = useSelector((state) => state.session.planning);
+  // Usar Redux directamente como fuente única de verdad
+  const markers = useSelector((state) => state.session.markers);
+  const SendTask = useSelector((state) => state.session.planning);
   const routeMission = useSelector((state) => state.mission.route);
 
-  const [markers, setMarkers] = useState(sessionmarkers);
-  const [SendTask, setSendTask] = useState(sessionplanning);
+  // Estado local solo para UI (no duplica datos de negocio)
   const [auxobjetive, setauxobjetive] = useState(-1);
-  const [tabValue, setTabValue] = useState('2');
+  const [tabValue, setTabValue] = useState(TABS.PLANNING);
   const [notification, setNotification] = useState('');
   const [checked, setChecked] = useState(true);
 
-  const SendPlanning = useCatch(async () => {
-    console.log('send planning');
-    let myTask = {};
-    myTask.id = SendTask.id;
-    myTask.name = SendTask.name;
-    myTask.case = SendTask.objetivo.case;
-    myTask.meteo = SendTask.meteo;
-    myTask.locations = SendTask.loc.map((group) => {
-      let items = group.items.map((element) => ({
-        latitude: element.latitude,
-        longitude: element.longitude,
-      }));
-      return { name: group.name, items };
-    });
+  // Función auxiliar: Validar que no haya dispositivos repetidos
+  const validateAssignments = useCallback((assignments) => {
+    const validation = validateUniqueDevices(assignments);
 
-    let listDevices = SendTask.bases.map((setting) => setting.devices.id);
-    let deviceRepeat = listDevices.some((value, index, list) => !(list.indexOf(value) === index));
-    setNotification('');
-    if (deviceRepeat) {
-      setNotification('the device is repeated please change');
+    console.log('Device IDs:', assignments.map(a => a.device.id).filter(id => id !== ''));
+
+    if (!validation.isValid) {
+      console.error('❌', validation.errorMsg);
+      setNotification(validation.errorMsg);
+      return false;
+    }
+
+    console.log('✅ All devices are unique');
+    return true;
+  }, []);
+
+  // Función auxiliar: Transformar locations a formato de API (usa el servicio)
+  const transformLocations = useCallback((locations) => {
+    return transformLocationsForAPI(locations);
+  }, []);
+
+  // Función auxiliar: Obtener dispositivos desde la API
+  const fetchDevices = useCallback(async () => {
+    const response = await fetch('/api/devices');
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+    return await response.json();
+  }, []);
+
+  // Función auxiliar: Mapear una asignación a un dispositivo de tarea
+  const mapAssignmentToTaskDevice = useCallback((assignment, devices, markers) => {
+    const device = devices.find((d) => d.id === Number(assignment.device.id));
+    if (!device) {
+      console.warn(`Device ${assignment.device.id} not found`);
       return null;
     }
-    if (SendTask.loc.length === 0) {
+
+    const base = markers.bases.find((b) => b.id === assignment.baseId);
+    if (!base) {
+      console.warn(`Base ${assignment.baseId} not found`);
+      return null;
+    }
+
+    return {
+      id: device.name,
+      category: device.category,
+      settings: {
+        ...assignment.settings,
+        base: Object.values(base),
+        landing_mode: 2,
+      },
+    };
+  }, []);
+
+  // Función auxiliar: Mapear asignaciones a dispositivos de tarea
+  const mapAssignmentsToDevices = useCallback((assignments, devices, markers) => {
+    return assignments
+      .filter((assignment) => assignment.device.id !== '')
+      .map((assignment) => mapAssignmentToTaskDevice(assignment, devices, markers))
+      .filter(Boolean);
+  }, [mapAssignmentToTaskDevice]);
+
+  // Función auxiliar: Construir el objeto de tarea para enviar
+  const buildTaskPayload = useCallback((legacyPlanning, taskDevices) => {
+    return {
+      id: legacyPlanning.id,
+      name: legacyPlanning.name,
+      case: legacyPlanning.objetivo.case,
+      meteo: legacyPlanning.meteo,
+      locations: transformLocations(legacyPlanning.loc),
+      devices: taskDevices,
+    };
+  }, [transformLocations]);
+
+  // Función auxiliar: Enviar la tarea al servidor de planificación
+  const submitPlanningRequest = useCallback(async (taskPayload) => {
+    const response = await fetch(`http://${myhostname}:8004/mission_request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(taskPayload),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const result = await response.json();
+    console.log('Planning request submitted:', result);
+    return result;
+  }, [myhostname]);
+
+  // Función principal: Enviar planning
+  const SendPlanning = useCatch(async () => {
+    console.log('=== SendPlanning START ===');
+    console.log('SendTask:', SendTask);
+    console.log('markers:', markers);
+    setNotification('');
+
+    // Convertir planning a formato legacy para compatibilidad
+    const legacyPlanning = planningToLegacy(SendTask, markers);
+    console.log('legacyPlanning:', legacyPlanning);
+
+    // Validar asignaciones
+    const assignments = SendTask.assignments || [];
+    console.log('assignments:', assignments);
+
+    if (!validateAssignments(assignments)) {
+      console.log('❌ Validation failed: assignments not valid');
+      return null;
+    }
+
+    // Validar que haya elementos para inspeccionar
+    console.log('legacyPlanning.loc.length:', legacyPlanning.loc.length);
+    if (legacyPlanning.loc.length === 0) {
+      console.log('❌ No elements to inspection');
       setNotification('No elements to inspection');
       return null;
     }
 
-    let devices = [];
-    const response = await fetch('/api/devices');
-    if (response.ok) {
-      devices = await response.json();
-    } else {
-      throw Error(await response.text());
-    }
-    myTask.devices = SendTask.bases.map((setting, index) => {
-      let mySetting = JSON.parse(JSON.stringify(setting));
-      let myDevice = devices.find((device) => device.id == setting.devices.id);
-      delete mySetting.devices;
-      mySetting.id = myDevice.name;
-      mySetting.category = myDevice.category;
-      mySetting.settings.base = Object.values(markers.bases[index]);
-      mySetting.settings.landing_mode = 2;
-      return mySetting;
-    });
-    console.log(myTask);
-    const response1 = await fetch(`http://${myhostname}:8004/mission_request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(myTask),
-    });
-    if (response1.ok) {
-      const response2 = await response1.json();
-      console.log(response2);
-      SetRequestPlanning(0);
-    } else {
-      throw Error(await response.text());
-    }
+    // Obtener lista de dispositivos disponibles
+    console.log('Fetching devices...');
+    const devices = await fetchDevices();
+    console.log('devices:', devices);
+
+    // Mapear asignaciones a dispositivos de tarea
+    const taskDevices = mapAssignmentsToDevices(assignments, devices, markers);
+    console.log('taskDevices:', taskDevices);
+
+    // Construir payload de la tarea
+    const taskPayload = buildTaskPayload(legacyPlanning, taskDevices);
+    console.log('Task payload:', taskPayload);
+
+    // Enviar solicitud de planificación
+    console.log(`Sending request to: http://${myhostname}:8004/mission_request`);
+    await submitPlanningRequest(taskPayload);
+    console.log('✅ Request sent successfully');
+
+    // Iniciar polling para obtener resultados
+    SetRequestPlanning(0);
+    console.log('=== SendPlanning END ===');
+
     return true;
   });
-  const DeleteMission = () => {
+
+  const DeleteMission = useCallback(() => {
+    // future implementation
     console.log('uno');
-  };
-  const SavePlanning = (value) => {
+  }, []);
+  const SavePlanning = useCallback((value) => {
     let fileData = YAML.stringify(value);
     const blob = new Blob([fileData], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -216,8 +312,8 @@ const PlanningPage = () => {
     link.download = `${value.name}.yaml`;
     link.href = url;
     link.click();
-  };
-  const MissionTask = async () => {
+  }, []);
+  const MissionTask = useCallback(async () => {
     const myTask = {};
     myTask.id = SendTask.id;
     myTask.name = SendTask.name;
@@ -243,18 +339,22 @@ const PlanningPage = () => {
     } else {
       throw Error(await response.text());
     }
-  };
-  const goToBase = (index) => {
-    map.flyTo({
-      center: [markers.bases[index].longitude, markers.bases[index].latitude],
-      zoom: 16,
-    });
-  };
+  }, [SendTask]);
+  const goToBase = useCallback((baseId) => {
+    // Buscar la base por ID en lugar de índice
+    const base = markers.bases.find((b) => b.id === baseId);
+    if (base) {
+      map.flyTo({
+        center: [base.longitude, base.latitude],
+        zoom: 16,
+      });
+    }
+  }, [markers.bases]);
 
   /*
    * https://www.youtube.com/watch?v=K3SshoCXC2g
    */
-  const readFile = (e) => {
+  const readFile = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -262,22 +362,27 @@ const PlanningPage = () => {
     fileReader.readAsText(file);
     fileReader.onload = () => {
       let myTask = YAML.parse(fileReader.result);
-      setMarkers((oldmarkers) => ({
-        ...oldmarkers,
-        bases: myTask.markersbase,
-        elements: myTask.elements,
+
+      // Actualizar markers usando dispatch
+      dispatch(sessionActions.updateMarker({
+        ...markers,
+        bases: myTask.markersbase || markers.bases,
+        elements: myTask.elements || markers.elements,
       }));
 
+      // Limpiar propiedades que ya se guardaron en markers
       myTask.hasOwnProperty('markersbase') ? delete myTask.markersbase : null;
       myTask.hasOwnProperty('elements') ? delete myTask.elements : null;
-      setSendTask(myTask);
+
+      // Actualizar planning usando dispatch
+      dispatch(sessionActions.updatePlanning(myTask));
     };
     fileReader.onerror = () => {
-      console.log(fileReader.error);
+      console.error('Error reading file:', fileReader.error);
     };
-  };
+  }, [dispatch, markers]);
 
-  const setDefaultPlanning = async (value) => {
+  const setDefaultPlanning = useCallback(async (value) => {
     console.log('Setdefault');
     const response = await fetch('api/planning/setDefault', {
       method: 'POST',
@@ -289,98 +394,123 @@ const PlanningPage = () => {
     } else {
       throw Error(await response.text());
     }
-  };
-  const setBaseSettings = (element) => {
-    setSendTask({ ...SendTask, bases: element });
-  };
-  const TabHandleChange = (event, newTabValue) => {
+  }, []);
+  const setBaseSettings = useCallback((assignments) => {
+    dispatch(sessionActions.updatePlanning({ ...SendTask, assignments }));
+  }, [dispatch, SendTask]);
+  const TabHandleChange = useCallback((_event, newTabValue) => {
     setTabValue(newTabValue);
-    newTabValue == 2 || newTabValue == 1 || newTabValue == 3 ? setShowTitles(true) : setShowTitles(false);
-    newTabValue == 1 ? setShowLines(true) : setShowLines(false);
-    newTabValue == 1 ? SetMoveMarkers(true) : SetMoveMarkers(false);
-  };
 
-  const setMarkersBase = (value, meta = {}) => {
-    setMarkers({ ...markers, bases: value });
+    // Mostrar títulos en tabs de Elements, Planning y Settings
+    const shouldShowTitles = [TABS.ELEMENTS, TABS.PLANNING, TABS.SETTINGS].includes(newTabValue);
+    setShowTitles(shouldShowTitles);
+
+    // Mostrar líneas solo en tab de Elements
+    setShowLines(newTabValue === TABS.ELEMENTS);
+
+    // Permitir mover marcadores solo en tab de Elements
+    SetMoveMarkers(newTabValue === TABS.ELEMENTS);
+  }, []);
+
+  const setMarkersBase = useCallback((value, meta = {}) => {
+    dispatch(sessionActions.updateMarker({ ...markers, bases: value }));
+
     if (meta.hasOwnProperty('meth')) {
       if (meta.meth == 'add') {
-        setSendTask((oldSendtask) => {
-          let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
-          let auxconfig = {};
-          Object.keys(oldSendtask.settings).forEach((key) => {
-            auxconfig[key] = {};
-            Object.keys(oldSendtask.settings[key]).forEach((key1) => {
-              auxconfig[key][key1] = oldSendtask.settings[key][key1].default;
-            });
-          });
-          auxbases.push(auxconfig);
-          return { ...oldSendtask, bases: auxbases };
-        });
+        // Al agregar una nueva base, no necesitamos crear una asignación automática
+        // Solo se creará cuando el usuario asigne un dispositivo desde BaseSettings
+        console.log('Nueva base agregada, sin asignación inicial');
       }
       if (meta.meth == 'del') {
-        setSendTask((oldSendtask) => {
-          let auxbases = JSON.parse(JSON.stringify(oldSendtask.bases));
-          console.log(auxbases);
-          auxbases.splice(meta.index, 1);
-          return { ...oldSendtask, bases: auxbases };
-        });
-      }
-    }
-  };
-  const setMarkersElements = (value) => {
-    console.log(value);
-    setMarkers({ ...markers, elements: value });
-  };
-  const SetMapMarkers = (value) => {
-    setMarkers(value);
-  };
-  const setLocations = (value) => {
-    setSendTask({ ...SendTask, loc: value });
-  };
-  const managepoints = (old, point, objetivo) => {
-    if (objetivo == 'path-object') {
-      if (old.length == 0) {
-        old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
-      } else {
-        const samerute = old.find((element) => element.items[0].groupId == point.groupId);
-        if (samerute === undefined) {
-          old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
-        } else {
-          old[+old.length - +1].items.push(point);
+        // Al eliminar una base, también eliminar su asignación si existe
+        const baseIdToRemove = value[meta.index]?.id;
+        if (baseIdToRemove) {
+          const newAssignments = (SendTask.assignments || []).filter(
+            (assignment) => assignment.baseId !== baseIdToRemove
+          );
+          dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
         }
       }
     }
-    if (objetivo == 'object') {
-      old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
-    }
-    if (objetivo == 'point') {
-      old.push({ type: 'powerTower', name: 'Elements', linea: true, items: [point] });
-    }
-
-    return old;
-  };
-  const addLocations = (value) => {
+  }, [dispatch, markers, SendTask]);
+  const setMarkersElements = useCallback((value) => {
     console.log(value);
-    setSendTask((oldSendtask) => {
-      let auxloc = JSON.parse(JSON.stringify(oldSendtask.loc));
-      console.log(oldSendtask.objetivo.type);
-      return { ...oldSendtask, loc: managepoints(auxloc, value, oldSendtask.objetivo.type) };
-    });
-  };
-  const updateObjetive = (newObjetive) => {
+    dispatch(sessionActions.updateMarker({ ...markers, elements: value }));
+  }, [dispatch, markers]);
+  const SetMapMarkers = useCallback((value) => {
+    dispatch(sessionActions.updateMarker(value));
+  }, [dispatch]);
+  const setLocations = useCallback((value) => {
+    dispatch(sessionActions.updatePlanning({ ...SendTask, loc: value }));
+  }, [dispatch, SendTask]);
+  // Gestionar puntos de ubicación (usa el servicio de planning)
+  const managepoints = useCallback((locations, point, objetivoType) => {
+    return manageLocationPoints(locations, point, objetivoType);
+  }, []);
+  const addLocations = useCallback((value) => {
+    console.log(value);
+    let auxloc = JSON.parse(JSON.stringify(SendTask.loc));
+    console.log(SendTask.objetivo.type);
+    const newLoc = managepoints(auxloc, value, SendTask.objetivo.type);
+    dispatch(sessionActions.updatePlanning({ ...SendTask, loc: newLoc }));
+  }, [dispatch, SendTask, managepoints]);
+  const updateObjetive = useCallback((newObjetive) => {
     console.log('update objetivo');
-    setSendTask((oldSendtask) => {
-      let myTask = JSON.parse(JSON.stringify(oldSendtask));
-      myTask.objetivo = newObjetive;
-      if (newObjetive.type !== oldSendtask.objetivo.type) {
-        myTask.loc = [];
-      }
-      return myTask;
-    });
-  };
-  const toggleChecked = () => {
+    let myTask = JSON.parse(JSON.stringify(SendTask));
+    myTask.objetivo = newObjetive;
+    if (newObjetive.type !== SendTask.objetivo.type) {
+      myTask.loc = [];
+    }
+    dispatch(sessionActions.updatePlanning(myTask));
+  }, [dispatch, SendTask]);
+  const toggleChecked = useCallback(() => {
     setChecked((prev) => !prev);
-  };
+  }, []);
+
+  const handleNavigateBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  const handleSavePlanning = useCallback(() => {
+    SavePlanning({
+      ...SendTask,
+      markersbase: markers.bases,
+      elements: markers.elements,
+    });
+  }, [SavePlanning, SendTask, markers.bases, markers.elements]);
+
+  const handleReadFile = useCallback((e) => {
+    readFile(e);
+  }, []);
+
+  const handleSaveGlobalMarkers = useCallback(() => {
+    setDefaultPlanning({
+      ...SendTask,
+      markersbase: markers.bases,
+      elements: markers.elements,
+    });
+  }, [setDefaultPlanning, SendTask, markers.bases, markers.elements]);
+
+  const handleUpdatePlanningId = useCallback((event) => {
+    dispatch(sessionActions.updatePlanning({ ...SendTask, id: event.target.value }));
+  }, [dispatch, SendTask]);
+
+  const handleUpdatePlanningName = useCallback((event) => {
+    dispatch(sessionActions.updatePlanning({ ...SendTask, name: event.target.value }));
+  }, [dispatch, SendTask]);
+
+  const handleUpdateObjective = useCallback((e, items) => {
+    updateObjetive(items[e.target.value]);
+  }, [updateObjetive]);
+
+  const handleGetItems = useCallback((it) => {
+    console.log(it);
+    dispatch(sessionActions.updatePlanning({ ...SendTask, objetivo: it }));
+  }, [dispatch, SendTask]);
+
+  const handleResetPolling = useCallback(() => {
+    SetRequestPlanning(3);
+  }, []);
 
   useEffectAsync(async () => {
     console.log('change objetivo');
@@ -393,40 +523,33 @@ const PlanningPage = () => {
         const paramsResponse = await response.json();
         console.log(paramsResponse);
         if (paramsResponse.hasOwnProperty('settings')) {
-          if (SendTask.bases.length == 0) {
-            console.log('settings base lenght  zero');
-            let config = markers.bases.map(() => {
-              let auxconfig = {};
-              Object.keys(paramsResponse).forEach((key) => {
-                auxconfig[key] = {};
-                Object.keys(paramsResponse[key]).forEach((key1) => {
-                  auxconfig[key][key1] = paramsResponse[key][key1].default;
-                });
-              });
-              return auxconfig;
-            });
-            setSendTask((SendTaskold) => {
-              const myTask = JSON.parse(JSON.stringify(SendTaskold));
-              myTask.bases = config;
-              myTask.settings = paramsResponse;
-              return myTask;
-            });
-          } else {
-            console.log('change basesss');
-            let auxconfig = {};
-            Object.keys(paramsResponse['settings']).forEach((key1) => {
-              auxconfig[key1] = paramsResponse['settings'][key1].default;
-            });
-            console.log(auxconfig);
-            // setSendTask({ ...SendTask, settings: paramsResponse });
-            setSendTask((SendTaskold) => {
-              const myTask = JSON.parse(JSON.stringify(SendTaskold));
-              myTask.bases = myTask.bases.map((value) => ({ ...value, settings: auxconfig }));
-              myTask.settings = paramsResponse;
-              console.log(myTask);
-              return myTask;
-            });
+          // Extraer configuración por defecto
+          let defaultConfig = {};
+          Object.keys(paramsResponse['settings']).forEach((key1) => {
+            defaultConfig[key1] = paramsResponse['settings'][key1].default;
+          });
+
+          const myTask = JSON.parse(JSON.stringify(SendTask));
+
+          // Actualizar el schema de settings
+          myTask.settingsSchema = paramsResponse;
+
+          // Actualizar los defaultSettings
+          myTask.defaultSettings = defaultConfig;
+
+          // Inicializar assignments si no existe
+          if (!myTask.assignments) {
+            myTask.assignments = [];
           }
+
+          // Actualizar settings de todas las asignaciones existentes
+          myTask.assignments = myTask.assignments.map((assignment) => ({
+            ...assignment,
+            settings: { ...defaultConfig, ...assignment.settings },
+          }));
+
+          console.log(myTask);
+          dispatch(sessionActions.updatePlanning(myTask));
         }
       } else {
         throw Error(await response.text());
@@ -437,56 +560,77 @@ const PlanningPage = () => {
   }, [SendTask.objetivo, auxobjetive]);
 
   useEffect(() => {
-    tabValue == 2 && SendTask.objetivo.id != 3 ? SetSelectMarkers(true) : SetSelectMarkers(false);
-    tabValue == 2 && SendTask.objetivo.id == 3 ? SetCreateMarkers(true) : SetCreateMarkers(false);
+    // En tab Planning: permitir selección de marcadores (excepto para objetivo id=3)
+    const isInPlanningTab = tabValue === TABS.PLANNING;
+    SetSelectMarkers(isInPlanningTab && SendTask.objetivo.id !== 3);
+
+    // En tab Planning con objetivo id=3: permitir creación de marcadores
+    SetCreateMarkers(isInPlanningTab && SendTask.objetivo.id === 3);
   }, [tabValue, SendTask.objetivo]);
 
   useEffect(() => {
-    setMarkers(sessionmarkers);
-  }, [sessionmarkers]);
+    // Configuración del polling
+    const MAX_RETRIES = 12; // 12 intentos * 5 segundos = 60 segundos máximo
+    const POLLING_INTERVAL = 5000; // 5 segundos
+    const SUCCESS_CODE = 100; // Código para indicar que ya no se debe hacer polling
 
-  useEffect(() => {
-    setSendTask(sessionplanning);
-  }, [sessionplanning]);
-
-  useEffect(() => {
-    dispatch(sessionActions.updateMarker(markers));
-  }, [markers]);
-
-  useEffect(() => {
-    dispatch(sessionActions.updatePlanning(SendTask));
-  }, [SendTask]);
-
-  useEffect(() => {
-    const intervalPlanning = setInterval(() => {
-      console.log('response Planning');
-      SetRequestPlanning((old) => old + 1);
-    }, 5000);
-
-    const fetchData = async () => {
-      const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${SendTask.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        if (data.results && Object.keys(data.results) > 0) {
-          if (data.results.hasOwnProperty(SendTask.id) && data.results[SendTask.id].hasOwnProperty('route')) {
-            console.log('response to check planning');
-            SetRequestPlanning(10);
-            dispatch(missionActions.updateMission({ ...data.results[SendTask.id], version: '3' }));
-          }
-        }
-      } else {
-        throw Error(await response.text());
-      }
-    };
-    if (requestPlanning < 4) {
-      fetchData();
-    } else {
-      clearInterval(intervalPlanning);
+    // No hacer polling si no se ha iniciado (requestPlanning >= 100) o si ya se completó
+    if (requestPlanning >= SUCCESS_CODE || requestPlanning >= MAX_RETRIES) {
+      return;
     }
 
-    return () => clearInterval(intervalPlanning);
-  }, [requestPlanning]);
+    const fetchData = async () => {
+
+      try {
+        const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${SendTask.id}`);
+
+        if (!response.ok) {
+          console.error(`Error fetching plan: ${response.status} ${response.statusText}`);
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        console.log('Planning response:', data);
+
+        // Verificar si hay resultados válidos
+        if (data.results && Object.keys(data.results).length > 0) {
+          const planResult = data.results[SendTask.id];
+
+          if (planResult && planResult.hasOwnProperty('route')) {
+            console.log('Planning completed successfully');
+            SetRequestPlanning(SUCCESS_CODE); // Detener el polling
+            dispatch(missionActions.updateMission({ ...planResult, version: '3' }));
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching planning data:', error);
+      } finally {
+        // Incrementar el contador solo si no se completó exitosamente
+          SetRequestPlanning((old) => old + 1);
+      }
+    };
+
+    // Ejecutar la primera vez inmediatamente
+    fetchData();
+
+    // Configurar el intervalo solo si no hemos alcanzado el límite
+    const intervalId = setInterval(() => {
+      SetRequestPlanning((old) => {
+        if (old >= MAX_RETRIES - 1) {
+          console.warn(`Max polling attempts (${MAX_RETRIES}) reached. Stopping polling.`);
+          clearInterval(intervalId);
+          return SUCCESS_CODE;
+        }
+        return old + 1;
+      });
+    }, POLLING_INTERVAL);
+
+    // Cleanup: limpiar el intervalo cuando el componente se desmonte o cambie la dependencia
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [requestPlanning, SendTask.id, dispatch, myhostname]);
 
   return (
     <div className={classes.root}>
@@ -517,7 +661,7 @@ const PlanningPage = () => {
             <div className={classes.middleStyle}>
               <Paper square>
                 <Toolbar className={classes.toolbar}>
-                  <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
+                  <IconButton edge="start" sx={{ mr: 2 }} onClick={handleNavigateBack}>
                     <ArrowBackIcon />
                   </IconButton>
                   <Typography variant="h6" className={classes.title}>
@@ -530,24 +674,14 @@ const PlanningPage = () => {
                     name="checkedA"
                     inputProps={{ 'aria-label': 'secondary checkbox' }}
                   />
-                  <IconButton
-                    onClick={() => {
-                      SavePlanning({
-                        ...SendTask,
-                        markersbase: markers.bases,
-                        elements: markers.elements,
-                      });
-                    }}
-                  >
+                  <IconButton onClick={handleSavePlanning}>
                     <SaveAltIcon />
                   </IconButton>
                   <IconButton onClick={DeleteMission}>
                     <DeleteIcon />
                   </IconButton>
                   <UploadButtons
-                    readFile={(e) => {
-                      readFile(e);
-                    }}
+                    readFile={handleReadFile}
                     typefiles=".yaml, .plan, .waypoint, .kml"
                   />
                 </Toolbar>
@@ -555,12 +689,12 @@ const PlanningPage = () => {
                   <TabContext value={tabValue}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                       <TabList onChange={TabHandleChange} aria-label="Planning tabs">
-                        <Tab label="Elements" value="1" />
-                        <Tab label="Planning" value="2" />
-                        <Tab label="Settings" value="3" />
+                        <Tab label="Elements" value={TABS.ELEMENTS} />
+                        <Tab label="Planning" value={TABS.PLANNING} />
+                        <Tab label="Settings" value={TABS.SETTINGS} />
                       </TabList>
                     </Box>
-                    <TabPanel value="1">
+                    <TabPanel value={TABS.ELEMENTS}>
                       <div className={classes.details}>
                         <Accordion>
                           <AccordionSummary expandIcon={<ExpandMore />}>
@@ -584,14 +718,14 @@ const PlanningPage = () => {
                             variant="contained"
                             size="large"
                             className={classes.panelButton}
-                            onClick={SendPlanning}
+                            onClick={handleSaveGlobalMarkers}
                           >
                             Save Global Markers
                           </Button>
                         </Box>
                       </div>
                     </TabPanel>
-                    <TabPanel value="2">
+                    <TabPanel value={TABS.PLANNING}>
                       <Box className={classes.details}>
                         <TextField
                           required
@@ -600,7 +734,7 @@ const PlanningPage = () => {
                           type="number"
                           variant="standard"
                           value={SendTask.id ? SendTask.id : 123}
-                          onChange={(event) => setSendTask({ ...SendTask, id: event.target.value })}
+                          onChange={handleUpdatePlanningId}
                         />
                         <TextField
                           required
@@ -608,7 +742,7 @@ const PlanningPage = () => {
                           label="Name Mission"
                           variant="standard"
                           value={SendTask.name ? SendTask.name : ' '}
-                          onChange={(event) => setSendTask({ ...SendTask, name: event.target.value })}
+                          onChange={handleUpdatePlanningName}
                         />
                         <SelectField
                           emptyValue={null}
@@ -618,13 +752,8 @@ const PlanningPage = () => {
                           endpoint="/api/planning/missionstype"
                           keyGetter={(it) => it.id}
                           titleGetter={(it) => it.name}
-                          onChange={(e, items) => {
-                            updateObjetive(items[e.target.value]);
-                          }}
-                          getItems={(it) => {
-                            console.log(it);
-                            setSendTask({ ...SendTask, objetivo: it });
-                          }}
+                          onChange={handleUpdateObjective}
+                          getItems={handleGetItems}
                         />
 
                         <Accordion>
@@ -692,11 +821,13 @@ const PlanningPage = () => {
                         </Accordion>
                       </Box>
                     </TabPanel>
-                    <TabPanel value="3">
+                    <TabPanel value={TABS.SETTINGS}>
                       <div className={classes.details}>
                         <BaseSettings
-                          data={SendTask.bases}
-                          param={SendTask.settings}
+                          data={SendTask.assignments || []}
+                          markers={markers}
+                          param={SendTask.settingsSchema}
+                          defaultSettings={SendTask.defaultSettings}
                           setData={setBaseSettings}
                           goToBase={goToBase}
                         />
@@ -712,7 +843,7 @@ const PlanningPage = () => {
                               size="large"
                               sx={{ width: '20%' }}
                               endIcon={<ReplayIcon />}
-                              onClick={() => SetRequestPlanning(3)}
+                              onClick={handleResetPolling}
                             />
                           </div>
 
@@ -728,13 +859,7 @@ const PlanningPage = () => {
                             variant="contained"
                             size="large"
                             className={classes.panelButton}
-                            onClick={() =>
-                              setDefaultPlanning({
-                                ...SendTask,
-                                markersbase: markers.bases,
-                                elements: markers.elements,
-                              })
-                            }
+                            onClick={handleSaveGlobalMarkers}
                           >
                             Save Global Settings
                           </Button>

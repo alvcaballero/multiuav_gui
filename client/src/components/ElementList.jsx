@@ -72,7 +72,12 @@ const ElementList = ({ markers, setMarkers }) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers[index].name = value;
     setMarkers(auxMarkers);
-  }
+  };
+  const setElementDescription = (index, value) => {
+    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    auxMarkers[index].description = value;
+    setMarkers(auxMarkers);
+  };
   const setElementType = (index, value) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers[index].type = value;
@@ -127,7 +132,23 @@ const ElementList = ({ markers, setMarkers }) => {
                 <AccordionDetails className={classes.details}>
                   {expanded === 'Elements ' + index && (
                     <Fragment>
-                      <TextField required label="Name" variant="standard" value={base.name ? base.name : ''} onChange={(e)=> setElementName(e.target.value)} />
+                      <TextField
+                        required
+                        label="Name"
+                        variant="standard"
+                        value={base.name ? base.name : ''}
+                        onChange={(e)=> setElementName(index, e.target.value)}
+                      />
+                      <TextField
+                        label="Description"
+                        variant="standard"
+                        multiline
+                        rows={2}
+                        fullWidth
+                        value={base.description ? base.description : ''}
+                        onChange={(e)=> setElementDescription(index, e.target.value)}
+                        placeholder="Add a description for this group..."
+                      />
                       <SelectField
                         emptyValue={null}
                         label="Type"

@@ -63,6 +63,13 @@ const useStyles = makeStyles()((theme) => ({
     margin: '0px',
     zIndex: 3,
   },
+  map:{
+    position: 'absolute',
+    top: '88px',
+    left: '360px',
+    right: '0px',
+    bottom: '0px', 
+  }
 }));
 
 const MainPage = () => {
@@ -72,7 +79,6 @@ const MainPage = () => {
 
   const devices = useSelector((state) => state.devices.items);
   const positions = useSelector((state) => state.session.positions);
-  const cameradata = useSelector((state) => state.session.camera);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const sessionmarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);
@@ -137,15 +143,7 @@ const MainPage = () => {
         onClose={() => setconfirmMission(false)}
         onSucces={() => commandMission()}
       />
-      <div
-        style={{
-          position: 'absolute',
-          top: '88px',
-          left: '360px',
-          right: '0px',
-          bottom: '0px',
-        }}
-      >
+      <div className={classes.map}>
         <MainMap
           filteredPositions={filteredPositions}
           markers={markers}
