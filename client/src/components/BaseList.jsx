@@ -14,6 +14,7 @@ import {
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import palette from '../common/palette';
 import { map } from '../Mapview/MapView';
 
@@ -66,6 +67,10 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
     auxMarkers.push({ latitude: center.lat, longitude: center.lng });
     setMarkers(auxMarkers, { meth: 'add', index: -1 });
   };
+  const goToBase = (index) => {
+    let base = markers[index];
+    map.flyTo({ center: [base.longitude, base.latitude], zoom: 18 });
+  };
   const DeleteElement = (index) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers.splice(index, 1);
@@ -116,6 +121,15 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
                   <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
                     {base.name || type + ' ' + index}
                   </Typography>
+                  <IconButton
+                    sx={{ py: 0, pr: 0, flexShrink: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToBase(index);
+                    }}
+                  >
+                    <MyLocationIcon />
+                  </IconButton>
 
                   <IconButton sx={{ py: 0, pr: 0, flexShrink: 0 }} onClick={() => DeleteElement(index)}>
                     <DeleteIcon />
