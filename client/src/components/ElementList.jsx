@@ -101,7 +101,7 @@ const ElementList = ({ markers, setMarkers }) => {
     if (markers) {
       markers.length > 0 ? setBasesExist(false) : setBasesExist(true);
     }
-    console.log(markers);
+    //console.log(markers);
   }, [markers]);
 
   return (
@@ -124,8 +124,10 @@ const ElementList = ({ markers, setMarkers }) => {
             Object.values(markers).map((base, index, list) => (
               <Accordion expanded={expanded === 'Elements ' + index} onChange={handleChange('Elements ' + index)}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{'Group ' + index}</Typography>
-                  <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => DeleteList(index)}>
+                  <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
+                    {base.name || 'Group ' + index} {base.type && `(${base.type})`}
+                  </Typography>
+                  <IconButton sx={{ py: 0, pr: 0, flexShrink: 0 }} onClick={() => DeleteList(index)}>
                     <DeleteIcon />
                   </IconButton>
                 </AccordionSummary>

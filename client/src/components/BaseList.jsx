@@ -82,6 +82,11 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
     auxMarkers[index].longitude = value;
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
+  const setName = (index, value) => {
+    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    auxMarkers[index].name = value;
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
+  };
   useEffect(() => {
     if (markers) {
       markers.length > 0 ? setBasesExist(false) : setBasesExist(true);
@@ -106,16 +111,13 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
         <div className={classes.details}>
           {React.Children.toArray(
             Object.values(markers).map((base, index, list) => (
-              <Accordion
-                expanded={expanded === 'wp ' + index}
-                onChange={handleChange('wp ' + index)}
-              >
+              <Accordion expanded={expanded === 'wp ' + index} onChange={handleChange('wp ' + index)}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{type + ' ' + index}</Typography>
-                  <IconButton
-                    sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                    onClick={() => DeleteElement(index)}
-                  >
+                  <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
+                    {base.name || type + ' ' + index}
+                  </Typography>
+
+                  <IconButton sx={{ py: 0, pr: 0, flexShrink: 0 }} onClick={() => DeleteElement(index)}>
                     <DeleteIcon />
                   </IconButton>
                 </AccordionSummary>
@@ -128,6 +130,15 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
                           '& .MuiTextField-root': { m: 1 },
                         }}
                       >
+                        {type === 'Element' && (
+                          <TextField
+                            required
+                            label="Name"
+                            variant="standard"
+                            value={base.name ? base.name : ''}
+                            onChange={(e) => setName(index, e.target.value)}
+                          />
+                        )}
                         <div>
                           <Typography variant="subtitle1" style={{ display: 'inline' }}>
                             Position

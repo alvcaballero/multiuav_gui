@@ -9,18 +9,22 @@ markers:
     name: 'Power Tower'
     icon: 'powerTower'
     color: 'blue'
+    description: 'height:15 m'
   - id: 1
     name: 'Wind Generator'
     icon: 'windGenerator'
     color: 'red'
+    description: 'tower_height:30 m, blade_length:20 m'
   - id: 2
     name: 'Solar Panel'
     icon: 'solarPanel'
     color: 'green'
+    description: 'area: 20x20 m, height:2 m'
   - id: 3
     name: 'Default'
     icon: 'default'
     color: 'yellow'
+    description: 'height:10 m'
 
 # if dont have name is not modify
 missionTypes:

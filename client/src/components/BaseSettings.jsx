@@ -48,7 +48,7 @@ const BaseSettings = ({
   defaultSettings = {},
   setData,
   type = 'Base',
-  goToBase = () => null
+  goToBase = () => null,
 }) => {
   const { classes } = useStyles();
 
@@ -95,16 +95,14 @@ const BaseSettings = ({
               const assignment = assignmentIndex >= 0 ? data[assignmentIndex] : null;
 
               return (
-                <Accordion
-                  expanded={expanded === `wp ${base.id}`}
-                  onChange={handleChange(`wp ${base.id}`)}
-                >
+                <Accordion expanded={expanded === `wp ${base.id}`} onChange={handleChange(`wp ${base.id}`)}>
                   <AccordionSummary expandIcon={<ExpandMore />}>
-                    <Typography sx={{ width: '33%', flexShrink: 0 }}>
+                    <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
                       {`${type} ${baseIndex} - ${assignment?.device?.name || 'Sin asignar'}`}
                     </Typography>
+
                     <IconButton
-                      sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                      sx={{ py: 0, pr: 0, flexShrink: 0 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         goToBase(base.id);

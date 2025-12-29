@@ -94,13 +94,17 @@ const useStyles = makeStyles()((theme) => ({
     height: '30px',
     borderBottom: '3px solid rgb(212, 212, 212)',
   },
-  list: {
-    maxHeight: 'calc(100vh - 152px)',
-    overflowY: 'auto',
+  content: {
     display: 'flex',
     gap: '10px',
     flexDirection: 'column',
     margin: '20px',
+    overflow: 'hidden',
+  },
+  tabPanelContent: {
+    maxHeight: 'calc(100vh - 240px)',
+    overflowY: 'auto',
+    paddingRight: '8px',
   },
   title: {
     flexGrow: 1,
@@ -159,7 +163,10 @@ const PlanningPage = () => {
   const validateAssignments = useCallback((assignments) => {
     const validation = validateUniqueDevices(assignments);
 
-    console.log('Device IDs:', assignments.map(a => a.device.id).filter(id => id !== ''));
+    console.log(
+      'Device IDs:',
+      assignments.map((a) => a.device.id).filter((id) => id !== '')
+    );
 
     if (!validation.isValid) {
       console.error('❌', validation.errorMsg);
@@ -211,41 +218,50 @@ const PlanningPage = () => {
   }, []);
 
   // Función auxiliar: Mapear asignaciones a dispositivos de tarea
-  const mapAssignmentsToDevices = useCallback((assignments, devices, markers) => {
-    return assignments
-      .filter((assignment) => assignment.device.id !== '')
-      .map((assignment) => mapAssignmentToTaskDevice(assignment, devices, markers))
-      .filter(Boolean);
-  }, [mapAssignmentToTaskDevice]);
+  const mapAssignmentsToDevices = useCallback(
+    (assignments, devices, markers) => {
+      return assignments
+        .filter((assignment) => assignment.device.id !== '')
+        .map((assignment) => mapAssignmentToTaskDevice(assignment, devices, markers))
+        .filter(Boolean);
+    },
+    [mapAssignmentToTaskDevice]
+  );
 
   // Función auxiliar: Construir el objeto de tarea para enviar
-  const buildTaskPayload = useCallback((legacyPlanning, taskDevices) => {
-    return {
-      id: legacyPlanning.id,
-      name: legacyPlanning.name,
-      case: legacyPlanning.objetivo.case,
-      meteo: legacyPlanning.meteo,
-      locations: transformLocations(legacyPlanning.loc),
-      devices: taskDevices,
-    };
-  }, [transformLocations]);
+  const buildTaskPayload = useCallback(
+    (legacyPlanning, taskDevices) => {
+      return {
+        id: legacyPlanning.id,
+        name: legacyPlanning.name,
+        case: legacyPlanning.objetivo.case,
+        meteo: legacyPlanning.meteo,
+        locations: transformLocations(legacyPlanning.loc),
+        devices: taskDevices,
+      };
+    },
+    [transformLocations]
+  );
 
   // Función auxiliar: Enviar la tarea al servidor de planificación
-  const submitPlanningRequest = useCallback(async (taskPayload) => {
-    const response = await fetch(`http://${myhostname}:8004/mission_request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(taskPayload),
-    });
+  const submitPlanningRequest = useCallback(
+    async (taskPayload) => {
+      const response = await fetch(`http://${myhostname}:8004/mission_request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskPayload),
+      });
 
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
 
-    const result = await response.json();
-    console.log('Planning request submitted:', result);
-    return result;
-  }, [myhostname]);
+      const result = await response.json();
+      console.log('Planning request submitted:', result);
+      return result;
+    },
+    [myhostname]
+  );
 
   // Función principal: Enviar planning
   const SendPlanning = useCatch(async () => {
@@ -340,47 +356,55 @@ const PlanningPage = () => {
       throw Error(await response.text());
     }
   }, [SendTask]);
-  const goToBase = useCallback((baseId) => {
-    // Buscar la base por ID en lugar de índice
-    const base = markers.bases.find((b) => b.id === baseId);
-    if (base) {
-      map.flyTo({
-        center: [base.longitude, base.latitude],
-        zoom: 16,
-      });
-    }
-  }, [markers.bases]);
+  const goToBase = useCallback(
+    (baseId) => {
+      // Buscar la base por ID en lugar de índice
+      const base = markers.bases.find((b) => b.id === baseId);
+      if (base) {
+        map.flyTo({
+          center: [base.longitude, base.latitude],
+          zoom: 16,
+        });
+      }
+    },
+    [markers.bases]
+  );
 
   /*
    * https://www.youtube.com/watch?v=K3SshoCXC2g
    */
-  const readFile = useCallback((e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const readFile = useCallback(
+    (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    const fileReader = new FileReader();
-    fileReader.readAsText(file);
-    fileReader.onload = () => {
-      let myTask = YAML.parse(fileReader.result);
+      const fileReader = new FileReader();
+      fileReader.readAsText(file);
+      fileReader.onload = () => {
+        let myTask = YAML.parse(fileReader.result);
 
-      // Actualizar markers usando dispatch
-      dispatch(sessionActions.updateMarker({
-        ...markers,
-        bases: myTask.markersbase || markers.bases,
-        elements: myTask.elements || markers.elements,
-      }));
+        // Actualizar markers usando dispatch
+        dispatch(
+          sessionActions.updateMarker({
+            ...markers,
+            bases: myTask.markersbase || markers.bases,
+            elements: myTask.elements || markers.elements,
+          })
+        );
 
-      // Limpiar propiedades que ya se guardaron en markers
-      myTask.hasOwnProperty('markersbase') ? delete myTask.markersbase : null;
-      myTask.hasOwnProperty('elements') ? delete myTask.elements : null;
+        // Limpiar propiedades que ya se guardaron en markers
+        myTask.hasOwnProperty('markersbase') ? delete myTask.markersbase : null;
+        myTask.hasOwnProperty('elements') ? delete myTask.elements : null;
 
-      // Actualizar planning usando dispatch
-      dispatch(sessionActions.updatePlanning(myTask));
-    };
-    fileReader.onerror = () => {
-      console.error('Error reading file:', fileReader.error);
-    };
-  }, [dispatch, markers]);
+        // Actualizar planning usando dispatch
+        dispatch(sessionActions.updatePlanning(myTask));
+      };
+      fileReader.onerror = () => {
+        console.error('Error reading file:', fileReader.error);
+      };
+    },
+    [dispatch, markers]
+  );
 
   const setDefaultPlanning = useCallback(async (value) => {
     console.log('Setdefault');
@@ -395,9 +419,12 @@ const PlanningPage = () => {
       throw Error(await response.text());
     }
   }, []);
-  const setBaseSettings = useCallback((assignments) => {
-    dispatch(sessionActions.updatePlanning({ ...SendTask, assignments }));
-  }, [dispatch, SendTask]);
+  const setBaseSettings = useCallback(
+    (assignments) => {
+      dispatch(sessionActions.updatePlanning({ ...SendTask, assignments }));
+    },
+    [dispatch, SendTask]
+  );
   const TabHandleChange = useCallback((_event, newTabValue) => {
     setTabValue(newTabValue);
 
@@ -412,57 +439,75 @@ const PlanningPage = () => {
     SetMoveMarkers(newTabValue === TABS.ELEMENTS);
   }, []);
 
-  const setMarkersBase = useCallback((value, meta = {}) => {
-    dispatch(sessionActions.updateMarker({ ...markers, bases: value }));
+  const setMarkersBase = useCallback(
+    (value, meta = {}) => {
+      dispatch(sessionActions.updateMarker({ ...markers, bases: value }));
 
-    if (meta.hasOwnProperty('meth')) {
-      if (meta.meth == 'add') {
-        // Al agregar una nueva base, no necesitamos crear una asignación automática
-        // Solo se creará cuando el usuario asigne un dispositivo desde BaseSettings
-        console.log('Nueva base agregada, sin asignación inicial');
-      }
-      if (meta.meth == 'del') {
-        // Al eliminar una base, también eliminar su asignación si existe
-        const baseIdToRemove = value[meta.index]?.id;
-        if (baseIdToRemove) {
-          const newAssignments = (SendTask.assignments || []).filter(
-            (assignment) => assignment.baseId !== baseIdToRemove
-          );
-          dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
+      if (meta.hasOwnProperty('meth')) {
+        if (meta.meth == 'add') {
+          // Al agregar una nueva base, no necesitamos crear una asignación automática
+          // Solo se creará cuando el usuario asigne un dispositivo desde BaseSettings
+          console.log('Nueva base agregada, sin asignación inicial');
+        }
+        if (meta.meth == 'del') {
+          // Al eliminar una base, también eliminar su asignación si existe
+          const baseIdToRemove = value[meta.index]?.id;
+          if (baseIdToRemove) {
+            const newAssignments = (SendTask.assignments || []).filter(
+              (assignment) => assignment.baseId !== baseIdToRemove
+            );
+            dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
+          }
         }
       }
-    }
-  }, [dispatch, markers, SendTask]);
-  const setMarkersElements = useCallback((value) => {
-    console.log(value);
-    dispatch(sessionActions.updateMarker({ ...markers, elements: value }));
-  }, [dispatch, markers]);
-  const SetMapMarkers = useCallback((value) => {
-    dispatch(sessionActions.updateMarker(value));
-  }, [dispatch]);
-  const setLocations = useCallback((value) => {
-    dispatch(sessionActions.updatePlanning({ ...SendTask, loc: value }));
-  }, [dispatch, SendTask]);
+    },
+    [dispatch, markers, SendTask]
+  );
+  const setMarkersElements = useCallback(
+    (value) => {
+      //console.log(value);
+      dispatch(sessionActions.updateMarker({ ...markers, elements: value }));
+    },
+    [dispatch, markers]
+  );
+  const SetMapMarkers = useCallback(
+    (value) => {
+      dispatch(sessionActions.updateMarker(value));
+    },
+    [dispatch]
+  );
+  const setLocations = useCallback(
+    (value) => {
+      dispatch(sessionActions.updatePlanning({ ...SendTask, loc: value }));
+    },
+    [dispatch, SendTask]
+  );
   // Gestionar puntos de ubicación (usa el servicio de planning)
   const managepoints = useCallback((locations, point, objetivoType) => {
     return manageLocationPoints(locations, point, objetivoType);
   }, []);
-  const addLocations = useCallback((value) => {
-    console.log(value);
-    let auxloc = JSON.parse(JSON.stringify(SendTask.loc));
-    console.log(SendTask.objetivo.type);
-    const newLoc = managepoints(auxloc, value, SendTask.objetivo.type);
-    dispatch(sessionActions.updatePlanning({ ...SendTask, loc: newLoc }));
-  }, [dispatch, SendTask, managepoints]);
-  const updateObjetive = useCallback((newObjetive) => {
-    console.log('update objetivo');
-    let myTask = JSON.parse(JSON.stringify(SendTask));
-    myTask.objetivo = newObjetive;
-    if (newObjetive.type !== SendTask.objetivo.type) {
-      myTask.loc = [];
-    }
-    dispatch(sessionActions.updatePlanning(myTask));
-  }, [dispatch, SendTask]);
+  const addLocations = useCallback(
+    (value) => {
+      console.log(value);
+      let auxloc = JSON.parse(JSON.stringify(SendTask.loc));
+      console.log(SendTask.objetivo.type);
+      const newLoc = managepoints(auxloc, value, SendTask.objetivo.type);
+      dispatch(sessionActions.updatePlanning({ ...SendTask, loc: newLoc }));
+    },
+    [dispatch, SendTask, managepoints]
+  );
+  const updateObjetive = useCallback(
+    (newObjetive) => {
+      console.log('update objetivo');
+      let myTask = JSON.parse(JSON.stringify(SendTask));
+      myTask.objetivo = newObjetive;
+      if (newObjetive.type !== SendTask.objetivo.type) {
+        myTask.loc = [];
+      }
+      dispatch(sessionActions.updatePlanning(myTask));
+    },
+    [dispatch, SendTask]
+  );
   const toggleChecked = useCallback(() => {
     setChecked((prev) => !prev);
   }, []);
@@ -491,22 +536,34 @@ const PlanningPage = () => {
     });
   }, [setDefaultPlanning, SendTask, markers.bases, markers.elements]);
 
-  const handleUpdatePlanningId = useCallback((event) => {
-    dispatch(sessionActions.updatePlanning({ ...SendTask, id: event.target.value }));
-  }, [dispatch, SendTask]);
+  const handleUpdatePlanningId = useCallback(
+    (event) => {
+      dispatch(sessionActions.updatePlanning({ ...SendTask, id: event.target.value }));
+    },
+    [dispatch, SendTask]
+  );
 
-  const handleUpdatePlanningName = useCallback((event) => {
-    dispatch(sessionActions.updatePlanning({ ...SendTask, name: event.target.value }));
-  }, [dispatch, SendTask]);
+  const handleUpdatePlanningName = useCallback(
+    (event) => {
+      dispatch(sessionActions.updatePlanning({ ...SendTask, name: event.target.value }));
+    },
+    [dispatch, SendTask]
+  );
 
-  const handleUpdateObjective = useCallback((e, items) => {
-    updateObjetive(items[e.target.value]);
-  }, [updateObjetive]);
+  const handleUpdateObjective = useCallback(
+    (e, items) => {
+      updateObjetive(items[e.target.value]);
+    },
+    [updateObjetive]
+  );
 
-  const handleGetItems = useCallback((it) => {
-    console.log(it);
-    dispatch(sessionActions.updatePlanning({ ...SendTask, objetivo: it }));
-  }, [dispatch, SendTask]);
+  const handleGetItems = useCallback(
+    (it) => {
+      console.log(it);
+      dispatch(sessionActions.updatePlanning({ ...SendTask, objetivo: it }));
+    },
+    [dispatch, SendTask]
+  );
 
   const handleResetPolling = useCallback(() => {
     SetRequestPlanning(3);
@@ -580,7 +637,6 @@ const PlanningPage = () => {
     }
 
     const fetchData = async () => {
-
       try {
         const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${SendTask.id}`);
 
@@ -607,7 +663,7 @@ const PlanningPage = () => {
         console.error('Error fetching planning data:', error);
       } finally {
         // Incrementar el contador solo si no se completó exitosamente
-          SetRequestPlanning((old) => old + 1);
+        SetRequestPlanning((old) => old + 1);
       }
     };
 
@@ -680,12 +736,9 @@ const PlanningPage = () => {
                   <IconButton onClick={DeleteMission}>
                     <DeleteIcon />
                   </IconButton>
-                  <UploadButtons
-                    readFile={handleReadFile}
-                    typefiles=".yaml, .plan, .waypoint, .kml"
-                  />
+                  <UploadButtons readFile={handleReadFile} typefiles=".yaml, .plan, .waypoint, .kml" />
                 </Toolbar>
-                <div className={classes.list}>
+                <div className={classes.content}>
                   <TabContext value={tabValue}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                       <TabList onChange={TabHandleChange} aria-label="Planning tabs">
@@ -694,8 +747,8 @@ const PlanningPage = () => {
                         <Tab label="Settings" value={TABS.SETTINGS} />
                       </TabList>
                     </Box>
-                    <TabPanel value={TABS.ELEMENTS}>
-                      <div className={classes.details}>
+                    <TabPanel value={TABS.ELEMENTS} sx={{ padding: 0 }}>
+                      <div className={`${classes.details} ${classes.tabPanelContent}`}>
                         <Accordion>
                           <AccordionSummary expandIcon={<ExpandMore />}>
                             <Typography>Base elements</Typography>
@@ -725,8 +778,8 @@ const PlanningPage = () => {
                         </Box>
                       </div>
                     </TabPanel>
-                    <TabPanel value={TABS.PLANNING}>
-                      <Box className={classes.details}>
+                    <TabPanel value={TABS.PLANNING} sx={{ padding: 0 }}>
+                      <Box className={`${classes.details} ${classes.tabPanelContent}`}>
                         <TextField
                           required
                           fullWidth
@@ -821,8 +874,8 @@ const PlanningPage = () => {
                         </Accordion>
                       </Box>
                     </TabPanel>
-                    <TabPanel value={TABS.SETTINGS}>
-                      <div className={classes.details}>
+                    <TabPanel value={TABS.SETTINGS} sx={{ padding: 0 }}>
+                      <div className={`${classes.details} ${classes.tabPanelContent}`}>
                         <BaseSettings
                           data={SendTask.assignments || []}
                           markers={markers}
