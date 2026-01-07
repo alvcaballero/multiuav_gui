@@ -32,8 +32,8 @@ export class serverModel {
       bingKey: '',
       mapUrl: '',
       overlayUrl: null,
-      latitude: 37.19374,
-      longitude: -6.702911,
+      latitude: 41.68734389317842, //37.19374
+      longitude: -8.84768639812097, //-6.702911,
       zoom: 12,
       twelveHourFormat: false,
       forceSettings: false,

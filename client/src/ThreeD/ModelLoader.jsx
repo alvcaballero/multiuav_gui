@@ -7,7 +7,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 const BASE_PATH = window.location.origin;
 
 const modelPaths = {
-  windTurbine: `${BASE_PATH}/models/windturbine.gltf`,
+  windTurbine: `${BASE_PATH}/models/wind_turbine.glb`,
   base: `${BASE_PATH}/models/base.gltf`,
   drone: `${BASE_PATH}/models/Drone.glb`,
   drone2: `${BASE_PATH}/models/DroneLVL2A.glb`,

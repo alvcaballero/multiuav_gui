@@ -1,4 +1,4 @@
-agv: 
+agv:
   topics:
     position:
       name: '/odom'
@@ -982,9 +982,9 @@ px4_mavros:
 
 px4_ros2:
   topics:
-    position_gps:
-      name: '/fmu/out/vehicle_gps_position'
-      messageType: 'px4_msgs/msg/SensorGps'
+    position_global:
+      name: '/fmu/out/vehicle_global_position'
+      messageType: 'px4_msgs/msg/VehicleGlobalPosition'
     position_local:
       name: '/fmu/out/vehicle_local_position'
       messageType: 'px4_msgs/msg/VehicleLocalPosition'
@@ -998,7 +998,7 @@ px4_ros2:
       name: '/fmu/out/vehicle_command_ack'
       messageType: 'px4_msgs/msg/VehicleCommandAck'
     camera:
-      name: '/camera/image_compressed'
+      name: '/camera/image/compressed'
       messageType: 'sensor_msgs/CompressedImage'
   services:
     configureMission:

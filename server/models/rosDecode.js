@@ -12,13 +12,13 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
   }
-  if (type == 'position_gps' && msgType == 'px4_msgs/msg/SensorGps') {
+  if (type == 'position_global' && msgType == 'px4_msgs/msg/VehicleGlobalPosition') {
     return {
       id: 0,
       deviceId,
-      latitude: msg.latitude_deg,
-      longitude: msg.longitude_deg,
-      altitude: round(msg.altitude_msl_m, 1),
+      latitude: msg.lat,
+      longitude: msg.lon,
+      altitude: round(msg.alt, 1),
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
   }
@@ -30,9 +30,9 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       localposition: {
         x: msg.x,
         y: msg.y,
-        z: msg.z  
+        z: msg.z,
       },
-      course: msg.heading,
+      course: msg.heading * 57.2958, // radians to degrees
       speed: round(speed, 1),
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
@@ -41,7 +41,13 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     return { deviceId, batteryLevel: msg.remaining * 100 };
   }
   if (type == 'vehicle_status' && msgType == 'px4_msgs/msg/VehicleStatus') {
-    return { deviceId, armState: getArmingStatus(msg.arming_state), navState: getDroneStatus(msg.nav_state),failsafe:msg.failsafe,flightCheck:msg.pre_flight_checks_pass};
+    return {
+      deviceId,
+      armState: getArmingStatus(msg.arming_state),
+      navState: getDroneStatus(msg.nav_state),
+      failsafe: msg.failsafe,
+      flightCheck: msg.pre_flight_checks_pass,
+    };
   }
   if (type == 'vehicle_command_ack' && msgType == 'px4_msgs/msg/VehicleCommandAck') {
     return { deviceId, commandAck: getVehicleCommand(msg.command), resultCmdAck: getVehicleCmdResult(msg.result) };
@@ -161,5 +167,3 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
   // console.log(`Unknown message type: ${type} ${msgType} for device ${deviceId}`);
   return null;
 }
-
-

@@ -31,7 +31,7 @@ class OpenAIHandler extends BaseLLMHandler {
     });
   }
 
-  convertMsg(message= null, conversationHistory) {
+  convertMsg(message = null, conversationHistory) {
     let lastconversation = conversationHistory.map((msg) => {
       if (typeof msg.message.content === 'string') {
         return {
@@ -87,7 +87,6 @@ class OpenAIHandler extends BaseLLMHandler {
       for (const content of assistantMessage) {
         console.log('Processing content from assistantMessage:', JSON.stringify(content, null, 2));
         if (content.type === 'reasoning') {
-
           chatLogger.info('Reasoning:', JSON.stringify(content, null, 2));
         }
         if (content.type === 'function_call' || content.type === 'tool_call') {

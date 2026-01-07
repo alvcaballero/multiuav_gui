@@ -8,6 +8,7 @@ import { setupLogger } from './middlewares/logger.js';
 import { checkFile } from './common/utils.js';
 import { chatController } from './controllers/chat.js'; // LLM provider initialization
 import logger, { logHelpers } from './common/logger.js';
+import { getErrorPageHTML } from './views/errorPage.js';
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
@@ -38,12 +39,31 @@ app.use(corsMiddleware());
 setupLogger(app);
 app.use(json());
 
-let wedAppPath = checkFile('../client/build');
-if (wedAppPath === null) {
-  wedAppPath = checkFile('../../client/build');
+let webAppPath = checkFile('../client/build');
+if (webAppPath === null) {
+  webAppPath = checkFile('../../client/build');
+  if (webAppPath === null) {
+    logger.error('No se encontró la carpeta build del cliente. Asegúrese de que el cliente esté compilado.');
+
+    // Serve error page only for root path when webapp is not found (allows API routes to work)
+    app.get('/', (req, res) => {
+      res.status(503).send(
+        getErrorPageHTML({
+          port,
+          nodeVersion: process.version,
+          rosEnabled: RosEnable,
+          fbEnabled: FbEnable,
+          llmEnabled: LLM,
+        })
+      );
+    });
+  }
 }
 
-app.use(express.static(wedAppPath));
+if (webAppPath !== null) {
+  app.use(express.static(webAppPath));
+}
+
 setupRoutes(app);
 
 const server = createServer(app);
@@ -53,7 +73,7 @@ const websocketController = initWebsocketController(wsManager);
 // Initialize EventBus subscribers
 const wsSubscriber = new WebSocketSubscriber(websocketController);
 logger.info('EventBus system initialized', {
-  subscribers: ['WebSocketSubscriber']
+  subscribers: ['WebSocketSubscriber'],
 });
 
 // connect to  devices
