@@ -23,6 +23,7 @@ import logger from '../common/logger.js';
 
 const CHECK_INTERVAL = 5000;
 const UPDATE_INTERVAL = 2000;
+const DEVICE_TIMEOUT_MS = 30000; // 30 seconds - timeout for marking devices as offline
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
@@ -38,7 +39,7 @@ const protocols = Object.freeze({
 
 // update device time every 1.5 seconds
 const updateDeviceTime = async () => {
-  const limitDate = new Date(new Date() - 30000);
+  const limitDate = new Date(Date.now() - DEVICE_TIMEOUT_MS);
   try {
     const updates = await positionsController.getLastPositions();
     const validUpdates = updates.filter((update) => new Date(update.deviceTime) > limitDate);
@@ -73,10 +74,11 @@ setTimeout(updateDeviceTime, UPDATE_INTERVAL);
 
 //put device status to offline if not updated in 30 seconds
 const CheckDeviceOnline = async () => {
+  const cutoffTime = new Date(Date.now() - DEVICE_TIMEOUT_MS);
   await sequelize.models.Device.update(
     { status: devicesStatus.OFFLINE },
     {
-      where: { lastUpdate: { [Op.lte]: new Date(new Date() - 30000) } },
+      where: { lastUpdate: { [Op.lte]: cutoffTime } },
     }
   );
 
