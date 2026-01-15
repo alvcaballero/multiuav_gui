@@ -3,13 +3,11 @@
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 //https://docs.maptiler.com/sdk-js/examples/elevation-profile/
-import { useId, useCallback, useState, useEffect, useContext } from 'react';
+import { useId, useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { map } from '../MapView';
 import { findFonts } from '../mapUtil';
-import { missionActions } from '../../store'; // here update device action with position of uav for update in map
-import palette from '../../common/palette';
-import { MissionContext } from '../../components/MissionController';
+import { missionActions } from '../../store';
 import { createFeature, routesToFeature, routeTowaypoints } from '../transform/mission';
 
 class keepValue {
@@ -44,12 +42,17 @@ export const MapMissionsCreate = () => {
   const routePoints = `${id}-points`;
   const clusters = `${id}-points-clusters`;
   const routes = useSelector((state) => state.mission.route);
-  const selecwp = useSelector((state) => state.mission.selectpoint);
+  const groupRouteMode = useSelector((state) => state.mission.groupRouteMode);
   const mapCluster = true;
   const iconScale = 0.6;
   const dispatch = useDispatch();
-  const [testkeepValue, settestkeepValue] = useState(new keepValue());
-  const missionContext = useContext(MissionContext);
+  const [testkeepValue] = useState(new keepValue());
+
+  // Use ref to always have the latest groupRouteMode value in event handlers
+  const groupRouteModeRef = useRef(groupRouteMode);
+  useEffect(() => {
+    groupRouteModeRef.current = groupRouteMode;
+  }, [groupRouteMode]);
 
   let canvas = map.getCanvasContainer();
 
@@ -91,17 +94,17 @@ export const MapMissionsCreate = () => {
     });
   };
   const onUp = (e) => {
-    let coords = e.lngLat;
-
     canvas.style.cursor = '';
-    let auxselectpoint = testkeepValue.getSelectwp();
-    console.log(`Longitude: ${coords.lng} Latitude: ${coords.lat}`);
-    missionContext.setChangeWp({
+    const auxselectpoint = testkeepValue.getSelectwp();
+
+    // Dispatch directly to Redux with groupMode from ref (always current value)
+    dispatch(missionActions.moveWaypoint({
       wp_id: auxselectpoint.id,
       route_id: auxselectpoint.route_id,
       lng: e.lngLat.lng,
       lat: e.lngLat.lat,
-    });
+      groupMode: groupRouteModeRef.current,
+    }));
 
     testkeepValue.setSelecwp({ id: -1 });
     // Unbind mouse/touch events

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
-
 
 import MapView from '../Mapview/MapView';
 import Navbar from '../components/Navbar';
@@ -12,14 +11,13 @@ import MapPositions from '../Mapview/MapPositions';
 import MapMarkers from '../Mapview/MapMarkers';
 
 import { RosControl } from '../components/RosControl';
-import { MissionController } from '../components/MissionController';
 import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
 import MapScale from '../Mapview/MapScale';
 import MapDefaultCamera from '../Mapview/MapDefaultCamera';
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   root: {
     margin: '0',
     height: '100vh',
@@ -51,8 +49,10 @@ const useStyles = makeStyles()((theme) => ({
     zIndex: 3,
   },
 }));
+
 const showToast = (type, description) => {
-  setList([...list, toastProperties]);
+  // Toast notification placeholder
+  console.log('Toast:', type, description);
 };
 
 const MissionPage = () => {
@@ -68,51 +68,50 @@ const MissionPage = () => {
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
+
   useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
 
   return (
     <div className={classes.root}>
-      <MissionController>
-        <RosControl notification={showToast}>
-          <Navbar />
-          <Menu />
-          <div
-            style={{
-              float: 'right',
-              width: 'calc(100% - 560px)',
-              height: 'calc(70vh - 95px)',
-              right: '0px',
-              margin: 'auto',
-            }}
-          >
-            <MapView>
-              <MapMarkers markers={markers} />
-              <MapDefaultCamera />
-              <MapMissionsCreate />
-              <MapPositions positions={filteredPositions} onClick={null} selectedPosition={null} showStatus />
-            </MapView>
-            <MapScale />
-          </div>
+      <RosControl notification={showToast}>
+        <Navbar />
+        <Menu />
+        <div
+          style={{
+            float: 'right',
+            width: 'calc(100% - 560px)',
+            height: 'calc(70vh - 95px)',
+            right: '0px',
+            margin: 'auto',
+          }}
+        >
+          <MapView>
+            <MapMarkers markers={markers} />
+            <MapDefaultCamera />
+            <MapMissionsCreate />
+            <MapPositions positions={filteredPositions} onClick={null} selectedPosition={null} showStatus />
+          </MapView>
+          <MapScale />
+        </div>
 
-          <div className={classes.sidebarStyle}>
-            <div className={classes.middleStyle}>
-              <Paper square>
-                <MissionPanel SetOpenSave={setOpenSave} />
-              </Paper>
-            </div>
+        <div className={classes.sidebarStyle}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <MissionPanel SetOpenSave={setOpenSave} />
+            </Paper>
           </div>
-          <div className={classes.panelElevation}>
-            <div className={classes.middleStyle}>
-              <Paper square>
-                <MissionElevation />
-              </Paper>
-            </div>
+        </div>
+        <div className={classes.panelElevation}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <MissionElevation />
+            </Paper>
           </div>
-          {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
-        </RosControl>
-      </MissionController>
+        </div>
+        {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
+      </RosControl>
     </div>
   );
 };

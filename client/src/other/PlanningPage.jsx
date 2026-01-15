@@ -39,7 +39,6 @@ import SelectField from '../common/components/SelectField';
 import BaseList from '../components/BaseList';
 import BaseSettings from '../components/BaseSettings';
 import { RosControl } from '../components/RosControl';
-import { MissionController } from '../components/MissionController';
 import MissionElevation from '../components/MissionElevation';
 import MapMarkersCreate from '../Mapview/draw/MapMarkersCreate';
 import MapScale from '../Mapview/MapScale';
@@ -690,8 +689,7 @@ const PlanningPage = () => {
 
   return (
     <div className={classes.root}>
-      <MissionController>
-        <RosControl notification={showToast}>
+      <RosControl notification={showToast}>
           <Navbar />
           <Menu />
           <div className={classes.mapContainer}>
@@ -932,8 +930,7 @@ const PlanningPage = () => {
               </Paper>
             </div>
           </div>
-        </RosControl>
-      </MissionController>
+      </RosControl>
     </div>
   );
 };

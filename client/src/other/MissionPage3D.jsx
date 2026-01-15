@@ -7,7 +7,6 @@ import { Navbar2 } from '../components/Navbar2';
 import { Menu } from '../components/Menu';
 
 import { RosControl } from '../components/RosControl';
-import { MissionController } from '../components/MissionController';
 import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
 import SaveFile from '../components/SaveFile';
@@ -99,8 +98,7 @@ const MissionPage3D = () => {
 
   return (
     <div className={classes.root}>
-      <MissionController>
-        <RosControl notification={showToast}>
+      <RosControl notification={showToast}>
           <Navbar2 tabs={tabs} />
           <Menu />
           <div
@@ -136,8 +134,7 @@ const MissionPage3D = () => {
             </div>
           </div>
           {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
-        </RosControl>
-      </MissionController>
+      </RosControl>
     </div>
   );
 };

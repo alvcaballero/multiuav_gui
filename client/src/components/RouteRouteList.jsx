@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
 import {
-  Divider,
   Box,
   Button,
   IconButton,
@@ -20,8 +19,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import palette from '../common/palette';
 import { map } from '../Mapview/MapView';
 import WaypointRouteList from './WaypointRouteList';
-
-// https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
+import { missionActions } from '../store';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -55,10 +53,17 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) => {
+const RouteOptions = ({ index, route }) => {
   const { classes } = useStyles();
+  const dispatch = useDispatch();
+  const [expand, setExpand] = useState(false);
+
+  const handleAttributeChange = (attribute, value) => {
+    dispatch(missionActions.updateRouteAttribute({ index, attribute, value }));
+  };
+
   return (
-    <Accordion expanded={expand} onChange={setExpand(true)}>
+    <Accordion expanded={expand} onChange={() => setExpand(!expand)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
         <Typography sx={{ width: '53%', flexShrink: 0 }}>Route Attributes</Typography>
       </AccordionSummary>
@@ -73,19 +78,8 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                 <SelectField
                   emptyValue={null}
                   fullWidth={true}
-                  value={route.attributes.mode_speed ? route.attributes.mode_speed : 0}
-                  onChange={(e) =>
-                    setmission({
-                      ...mission,
-                      route: mission.route.map((rt) => {
-                        let copiedrt = JSON.parse(JSON.stringify(rt));
-                        rt === mission.route[index]
-                          ? (copiedrt.attributes.mode_speed = e.target.value)
-                          : (copiedrt = rt);
-                        return copiedrt;
-                      }),
-                    })
-                  }
+                  value={route.attributes.mode_speed || 0}
+                  onChange={(e) => handleAttributeChange('mode_speed', e.target.value)}
                   endpoint={'/api/category/atributesparam/dji_M300/mode_speed'}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
@@ -101,17 +95,8 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                 required
                 type="number"
                 className={classes.attributeValue}
-                value={route.attributes.idle_vel ? route.attributes.idle_vel : 1.85}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt === mission.route[index] ? (copiedrt.attributes.idle_vel = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                value={route.attributes.idle_vel || 1.85}
+                onChange={(e) => handleAttributeChange('idle_vel', +e.target.value)}
               />
             </div>
             <div>
@@ -123,17 +108,8 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                 required
                 type="number"
                 className={classes.attributeValue}
-                value={route.attributes.max_vel ? route.attributes.max_vel : 12}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index] ? (copiedrt.attributes.max_vel = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                value={route.attributes.max_vel || 12}
+                onChange={(e) => handleAttributeChange('max_vel', +e.target.value)}
               />
             </div>
             <div>
@@ -144,19 +120,8 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                 <SelectField
                   emptyValue={null}
                   fullWidth={true}
-                  value={route.attributes.mode_landing ? route.attributes.mode_landing : 0}
-                  onChange={(e) =>
-                    setmission({
-                      ...mission,
-                      route: mission.route.map((rt) => {
-                        let copiedrt = JSON.parse(JSON.stringify(rt));
-                        rt === mission.route[index]
-                          ? (copiedrt.attributes.mode_landing = e.target.value)
-                          : (copiedrt = rt);
-                        return copiedrt;
-                      }),
-                    })
-                  }
+                  value={route.attributes.mode_landing || 0}
+                  onChange={(e) => handleAttributeChange('mode_landing', e.target.value)}
                   endpoint={'/api/category/atributesparam/dji_M300/mode_landing'}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
@@ -171,17 +136,8 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                 <SelectField
                   emptyValue={null}
                   fullWidth={true}
-                  value={route.attributes.mode_yaw ? route.attributes.mode_yaw : 0}
-                  onChange={(e) =>
-                    setmission({
-                      ...mission,
-                      route: mission.route.map((rt) => {
-                        let copiedrt = JSON.parse(JSON.stringify(rt));
-                        rt === mission.route[index] ? (copiedrt.attributes.mode_yaw = e.target.value) : (copiedrt = rt);
-                        return copiedrt;
-                      }),
-                    })
-                  }
+                  value={route.attributes.mode_yaw || 0}
+                  onChange={(e) => handleAttributeChange('mode_yaw', e.target.value)}
                   endpoint={'/api/category/atributesparam/dji_M300/mode_yaw'}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
@@ -196,19 +152,8 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                 <SelectField
                   emptyValue={null}
                   fullWidth={true}
-                  value={route.attributes.mode_gimbal ? route.attributes.mode_gimbal : 0}
-                  onChange={(e) =>
-                    setmission({
-                      ...mission,
-                      route: mission.route.map((rt) => {
-                        let copiedrt = JSON.parse(JSON.stringify(rt));
-                        rt === mission.route[index]
-                          ? (copiedrt.attributes.mode_gimbal = e.target.value)
-                          : (copiedrt = rt);
-                        return copiedrt;
-                      }),
-                    })
-                  }
+                  value={route.attributes.mode_gimbal || 0}
+                  onChange={(e) => handleAttributeChange('mode_gimbal', e.target.value)}
                   endpoint={'/api/category/atributesparam/dji_M300/mode_gimbal'}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
@@ -223,19 +168,8 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
                 <SelectField
                   emptyValue={null}
                   fullWidth={true}
-                  value={route.attributes.mode_trace ? route.attributes.mode_trace : 0}
-                  onChange={(e) =>
-                    setmission({
-                      ...mission,
-                      route: mission.route.map((rt) => {
-                        let copiedrt = JSON.parse(JSON.stringify(rt));
-                        rt === mission.route[index]
-                          ? (copiedrt.attributes.mode_trace = e.target.value)
-                          : (copiedrt = rt);
-                        return copiedrt;
-                      }),
-                    })
-                  }
+                  value={route.attributes.mode_trace || 0}
+                  onChange={(e) => handleAttributeChange('mode_trace', e.target.value)}
                   endpoint={'/api/category/atributesparam/dji_M300/mode_trace'}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
@@ -250,8 +184,6 @@ const RouteOptions = ({ mission, setmission, index, route, expand, setExpand }) 
 };
 
 const RouteRoutesList = ({
-  mission,
-  setmission,
   index,
   route,
   expanded_route,
@@ -260,86 +192,67 @@ const RouteRoutesList = ({
   setExpand_wp,
 }) => {
   const { classes } = useStyles();
+  const dispatch = useDispatch();
   const devices = useSelector((state) => state.devices.items);
   const positions = useSelector((state) => state.session.positions);
-  const [expandedRouteOptions, setExpandedRouteOptions] = useState(false);
+  const idleVel = useSelector((state) => state.mission.route[index]?.attributes?.idle_vel);
   const [routeUAV, setRouteUAV] = useState(null);
 
   useEffect(() => {
     const myDevice = Object.values(devices).find((device) => device.name === route.uav);
     if (myDevice) {
       setRouteUAV(myDevice.id);
-      setmission({
-        ...mission,
-        route: mission.route.map((rt, rtIndex) => (rtIndex == index ? { ...route, uav_type: myDevice.category } : rt)),
-      });
+      // Update uav_type when device is found
+      if (route.uav_type !== myDevice.category) {
+        dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: myDevice.category }));
+      }
     } else {
       setRouteUAV(null);
     }
-  }, [route.uav, devices]);
+  }, [route.uav, devices, index, route.uav_type, dispatch]);
 
-  const AddnewWp = (index_route, index_wp) => {
-    console.log('add new wp' + index_route);
-    let auxroute = JSON.parse(JSON.stringify(mission.route));
-    let center = map.getCenter(); // cuando index es 0 o -1
-    if (index_wp > 0 && index_wp < auxroute[index_route]['wp'].length) {
-      center.lat =
-        (auxroute[index_route]['wp'][index_wp]['pos'][0] + auxroute[index_route]['wp'][index_wp + 1]['pos'][0]) / 2;
-      center.lng =
-        (auxroute[index_route]['wp'][index_wp]['pos'][1] + auxroute[index_route]['wp'][index_wp + 1]['pos'][1]) / 2;
-    }
-
-    let mywp = { pos: [center.lat, center.lng, 5], action: {} };
-    index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp + 1, 0, mywp);
-
-    setmission({ ...mission, route: auxroute });
+  const handleAddWaypoint = (index_route, index_wp) => {
+    let center = map.getCenter();
+    const mywp = { pos: [center.lat, center.lng, 5], action: {} };
+    dispatch(missionActions.addWaypoint({ routeIndex: index_route, waypoint: mywp, insertAt: index_wp }));
   };
 
-  const recordWp = (index_route, index_wp) => {
-    console.log('Record wp' + index_route);
-    let auxroute = JSON.parse(JSON.stringify(mission.route));
-
-    console.log(positions[routeUAV]);
-
+  const handleRecordWp = (index_route) => {
     if (positions[routeUAV]) {
       let altitude = positions[routeUAV].altitude;
-      if (positions[routeUAV].attributes.hasOwnProperty('home')) {
+      if (positions[routeUAV].attributes?.home) {
         altitude = altitude - positions[routeUAV].attributes.home[2];
-        console.log('home');
-        console.log(positions[routeUAV].attributes.home[2]);
       }
-      console.log(altitude);
-      let mywp = {
+
+      const mywp = {
         pos: [positions[routeUAV].latitude, positions[routeUAV].longitude, altitude],
         action: { yaw: 0, gimbal: 0 },
       };
-      if ([positions[routeUAV].hasOwnProperty('course')]) {
+
+      if (positions[routeUAV].course !== undefined) {
         mywp.action.yaw =
           +Number(positions[routeUAV].course).toFixed(2) <= 180
             ? +Number(positions[routeUAV].course).toFixed(2)
             : -360 + +Number(positions[routeUAV].course).toFixed(2);
       }
-      if ([positions[routeUAV].attributes.hasOwnProperty('gimbal')]) {
+      if (positions[routeUAV].attributes?.gimbal) {
         mywp.action.gimbal = Number(positions[routeUAV].attributes.gimbal[0]);
       }
-      index_wp < 0 ? auxroute[index_route].wp.push(mywp) : auxroute[index_route].wp.splice(index_wp, 0, mywp);
-      setmission({ ...mission, route: auxroute });
+
+      dispatch(missionActions.addWaypoint({ routeIndex: index_route, waypoint: mywp }));
     }
   };
-  const Removing_route = (index_route) => {
-    console.log('remove route' + index_route);
-    let auxroute = JSON.parse(JSON.stringify(mission.route));
-    auxroute.splice(index_route, 1);
-    //console.log(auxroute);
-    setmission({ ...mission, route: auxroute });
+
+  const handleRemoveRoute = (index_route) => {
+    dispatch(missionActions.deleteRoute(index_route));
+  };
+
+  const handleRouteFieldChange = (field, value) => {
+    dispatch(missionActions.updateRoute({ index, field, value }));
   };
 
   const handleChange_route = (panel) => (event, isExpanded) => {
     setExpanded_route(isExpanded ? panel : false);
-    setExpandedRouteOptions(false);
-  };
-  const handleChange_routeOptions = (panel) => (event, isExpanded) => {
-    setExpandedRouteOptions(isExpanded ? panel : false);
   };
 
   return (
@@ -355,7 +268,7 @@ const RouteRoutesList = ({
           {'Rute ' + index}
         </Typography>
         <Typography sx={{ color: 'text.secondary' }}>{route.name + '- ' + route.uav}</Typography>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => Removing_route(index)}>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => handleRemoveRoute(index)}>
           <DeleteIcon />
         </IconButton>
       </AccordionSummary>
@@ -366,94 +279,63 @@ const RouteRoutesList = ({
               required
               label="Route Name"
               variant="standard"
-              value={route.name ? route.name : ''}
-              onChange={(e) =>
-                setmission({
-                  ...mission,
-                  route: mission.route.map((rt) =>
-                    rt == mission.route[index] ? { ...route, name: e.target.value } : rt
-                  ),
-                })
-              }
+              value={route.name || ''}
+              onChange={(e) => handleRouteFieldChange('name', e.target.value)}
             />
 
             <TextField
               required
               label="UAV id"
               variant="standard"
-              value={route.uav ? route.uav : 'uav_'}
-              onChange={(e) =>
-                setmission({
-                  ...mission,
-                  route: mission.route.map((rt) =>
-                    rt == mission.route[index] ? { ...route, uav: e.target.value } : rt
-                  ),
-                })
-              }
+              value={route.uav || 'uav_'}
+              onChange={(e) => handleRouteFieldChange('uav', e.target.value)}
             />
 
             <SelectField
               emptyValue={null}
-              value={route.uav_type ? route.uav_type : ''}
-              onChange={(e) =>
-                setmission({
-                  ...mission,
-                  route: mission.route.map((rt) =>
-                    rt == mission.route[index] ? { ...route, uav_type: e.target.value } : rt
-                  ),
-                })
-              }
+              value={route.uav_type || ''}
+              onChange={(e) => handleRouteFieldChange('uav_type', e.target.value)}
               endpoint="/api/category"
               keyGetter={(it) => it}
               titleGetter={(it) => it}
               label={'Type UAV mission'}
               style={{ display: 'inline', width: '200px' }}
             />
-            <RouteOptions
-              mission={mission}
-              setmission={(e) => setmission(e)}
-              index={index}
-              route={route}
-              expand={expandedRouteOptions}
-              setExpand={handleChange_routeOptions}
-            />
+
+            <RouteOptions index={index} route={route} />
 
             <Typography variant="subtitle1">Waypoints</Typography>
-            {React.Children.toArray(
-              Object.values(route.wp).map((waypoint, index_wp, list_wp) => (
-                <WaypointRouteList
-                  mission={mission}
-                  setmission={setmission}
-                  indexWp={index_wp}
-                  index={index}
-                  waypoint={waypoint}
-                  AddnewWp={AddnewWp}
-                  expandWp={expand_wp}
-                  setExpandWp={setExpand_wp}
-                />
-              ))
-            )}
+            {route.wp.map((waypoint, index_wp) => (
+              <WaypointRouteList
+                key={`wp-${index}-${index_wp}`}
+                indexWp={index_wp}
+                routeIndex={index}
+                waypoint={waypoint}
+                idleVel={idleVel}
+                expandWp={expand_wp}
+                setExpandWp={setExpand_wp}
+                onAddWaypoint={handleAddWaypoint}
+              />
+            ))}
 
             <Box textAlign="center">
               <Button
-                value={index}
                 variant="contained"
                 size="large"
                 sx={{ width: '60%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
-                onClick={(e) => AddnewWp(e.target.value, -1)}
+                onClick={() => handleAddWaypoint(index, -1)}
               >
                 Add Waypoint
               </Button>
               <Button
-                value={index}
                 variant="contained"
                 color="secondary"
                 size="large"
                 disabled={routeUAV == null}
                 sx={{ width: '30%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
-                onClick={(e) => recordWp(e.target.value, -1)}
+                onClick={() => handleRecordWp(index)}
               >
                 Record
               </Button>

@@ -1,4 +1,5 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import {
   Divider,
   Box,
@@ -17,7 +18,7 @@ import SelectField from '../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
+import { missionActions } from '../store';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -51,8 +52,9 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expandWp, AddnewWp, setExpandWp }) => {
+const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, setExpandWp, onAddWaypoint }) => {
   const { classes } = useStyles();
+  const dispatch = useDispatch();
   const [expanded_ac, setExpanded_ac] = useState(false);
   const [newactionmenu, setnewactionmenu] = useState(true);
   const [newactionid, setnewactionid] = useState(0);
@@ -61,7 +63,19 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
     setExpandWp(isExpanded ? panel : false);
   };
 
-  async function setnewaction(indexRoute, indexWp) {
+  const handleWaypointFieldChange = (field, value) => {
+    dispatch(missionActions.updateWaypoint({ routeIndex, wpIndex: indexWp, field, value }));
+  };
+
+  const handlePositionChange = (posIndex, value) => {
+    dispatch(missionActions.updateWaypointPosIndex({ routeIndex, wpIndex: indexWp, posIndex, value: +value }));
+  };
+
+  const handleActionChange = (actionKey, value) => {
+    dispatch(missionActions.updateWaypointAction({ routeIndex, wpIndex: indexWp, actionKey, value }));
+  };
+
+  async function handleAddAction() {
     let command;
 
     const response = await fetch('/api/category/actions/dji_M210_noetic');
@@ -71,53 +85,29 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
       throw Error(await response.text());
     }
 
-    let selectcmd = command.find((element) => element.id == newactionid);
+    const selectcmd = command.find((element) => element.id == newactionid);
 
-    let auxroute = JSON.parse(JSON.stringify(mission.route));
-    if (!auxroute[indexRoute]['wp'][indexWp].hasOwnProperty('action')) {
-      auxroute[indexRoute]['wp'][indexWp]['action'] = {};
-    }
-    if (selectcmd.param) {
-      auxroute[indexRoute]['wp'][indexWp]['action'][selectcmd.name] = 0;
-    } else {
-      auxroute[indexRoute]['wp'][indexWp]['action'][selectcmd.name] = true;
-    }
-    setmission({ ...mission, route: auxroute });
+    const actionValue = selectcmd.param ? 0 : true;
+    dispatch(missionActions.addWaypointAction({ routeIndex, wpIndex: indexWp, actionKey: selectcmd.name, value: actionValue }));
     setnewactionmenu(true);
   }
-  const CopyWp = (index, indexWp) => {
-    const auxRoute = JSON.parse(JSON.stringify(mission.route));
-    const auxWaypoint = auxRoute[index].wp[indexWp];
-    auxRoute[index].wp.splice(indexWp + 1, 0, auxWaypoint);
-    setmission({ ...mission, route: auxRoute });
-  };
-  const MoveWp = (index, indexWp, direction) => {
-    const auxRoute = JSON.parse(JSON.stringify(mission.route));
-    const auxWaypoint = auxRoute[index].wp[indexWp];
-    auxRoute[index].wp.splice(indexWp, 1);
-    if (indexWp + direction < 0) {
-      auxRoute[index].wp.push(auxWaypoint);
-    } else {
-      auxRoute[index].wp.splice(indexWp + direction, 0, auxWaypoint);
-    }
-    setmission({ ...mission, route: auxRoute });
+
+  const handleCopyWp = () => {
+    dispatch(missionActions.copyWaypoint({ routeIndex, wpIndex: indexWp }));
   };
 
-  const RemoveWp = (indexRoute, indexWp) => {
-    console.log('remove wp' + indexRoute + '-' + indexWp);
-    let auxroute = [...mission.route];
-    let auxwaypoint = [...mission.route[indexRoute]['wp']];
-    auxwaypoint.splice(indexWp, 1);
-    let aux = { ...auxroute[indexRoute], wp: auxwaypoint };
-    auxroute[indexRoute] = aux;
-    setmission({ ...mission, route: auxroute });
+  const handleMoveWp = (direction) => {
+    dispatch(missionActions.moveWaypointOrder({ routeIndex, wpIndex: indexWp, direction }));
   };
-  const Removing_action = (indexRoute, indexWp, action) => {
-    console.log('remove action' + indexRoute + '-' + indexWp + '-' + action);
-    let auxroute = JSON.parse(JSON.stringify(mission.route));
-    delete auxroute[indexRoute]['wp'][indexWp]['action'][action];
-    setmission({ ...mission, route: auxroute });
+
+  const handleRemoveWp = () => {
+    dispatch(missionActions.deleteWaypoint({ routeIndex, wpIndex: indexWp }));
   };
+
+  const handleRemoveAction = (actionKey) => {
+    dispatch(missionActions.removeWaypointAction({ routeIndex, wpIndex: indexWp, actionKey }));
+  };
+
   const handleChange_ac = (panel) => (event, isExpanded) => {
     setExpanded_ac(isExpanded ? panel : false);
   };
@@ -126,13 +116,13 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
     <Accordion expanded={expandWp === `WP${indexWp}`} onChange={handleChange_wp(`WP${indexWp}`)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => MoveWp(index, indexWp, 1)}>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => handleMoveWp(1)}>
           <ArrowDownwardIcon />
         </IconButton>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => MoveWp(index, indexWp, -1)}>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => handleMoveWp(-1)}>
           <ArrowUpwardIcon />
         </IconButton>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => RemoveWp(index, indexWp)}>
+        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={handleRemoveWp}>
           <DeleteIcon />
         </IconButton>
       </AccordionSummary>
@@ -161,16 +151,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                   step: 0.0001,
                 }}
                 value={waypoint.pos ? waypoint.pos[0] : 0}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['pos'][0] = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                onChange={(e) => handlePositionChange(0, e.target.value)}
               />
               <TextField
                 required
@@ -183,16 +164,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                   step: 0.0001,
                 }}
                 value={waypoint.pos ? waypoint.pos[1] : 0}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['pos'][1] = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                onChange={(e) => handlePositionChange(1, e.target.value)}
               />
               <TextField
                 required
@@ -201,16 +173,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 variant="standard"
                 sx={{ width: '7ch' }}
                 value={waypoint.pos ? waypoint.pos[2] : 0}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['pos'][2] = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                onChange={(e) => handlePositionChange(2, e.target.value)}
               />
             </Box>
             <Box
@@ -225,17 +188,8 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
-                value={waypoint.speed ? waypoint.speed : mission.route[index].attributes.idle_vel}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      mission.route[index] ? (copiedrt.wp[indexWp]['speed'] = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                value={waypoint.speed ?? idleVel ?? 3}
+                onChange={(e) => handleWaypointFieldChange('speed', +e.target.value)}
               />
 
               <TextField
@@ -244,17 +198,8 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
-                value={waypoint.yaw ? waypoint.yaw : 0}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['yaw'] = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                value={waypoint.yaw ?? 0}
+                onChange={(e) => handleWaypointFieldChange('yaw', +e.target.value)}
               />
 
               <TextField
@@ -263,17 +208,8 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
-                value={waypoint.gimbal ? waypoint.gimbal : 0}
-                onChange={(e) =>
-                  setmission({
-                    ...mission,
-                    route: mission.route.map((rt) => {
-                      let copiedrt = JSON.parse(JSON.stringify(rt));
-                      rt == mission.route[index] ? (copiedrt.wp[indexWp]['gimbal'] = +e.target.value) : (copiedrt = rt);
-                      return copiedrt;
-                    }),
-                  })
-                }
+                value={waypoint.gimbal ?? 0}
+                onChange={(e) => handleWaypointFieldChange('gimbal', +e.target.value)}
               />
             </Box>
             <Accordion expanded={expanded_ac === 'wp ' + indexWp} onChange={handleChange_ac('wp ' + indexWp)}>
@@ -282,48 +218,35 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
               </AccordionSummary>
               <AccordionDetails className={classes.details}>
                 {waypoint.action &&
-                  React.Children.toArray(
-                    Object.keys(waypoint.action).map((action_key, index_ac, list_ac) => (
-                      <Fragment key={'fragment-action-' + index_ac}>
-                        <div>
-                          <Typography variant="subtitle1" className={classes.attributeName}>
-                            {action_key}
-                          </Typography>
-                          <div className={classes.actionValue}>
-                            <TextField
-                              required
-                              fullWidth={true}
-                              value={waypoint.action[action_key] ? waypoint.action[action_key] : 0}
-                              onChange={(e) =>
-                                setmission({
-                                  ...mission,
-                                  route: mission.route.map((rt) => {
-                                    let copiedrt = JSON.parse(JSON.stringify(rt));
-                                    rt == mission.route[index]
-                                      ? (copiedrt.wp[indexWp]['action'][action_key] = e.target.value)
-                                      : (copiedrt = rt);
-                                    return copiedrt;
-                                  }),
-                                })
-                              }
-                            />
-                          </div>
-                          <IconButton
-                            sx={{
-                              py: 0,
-                              pr: 2,
-                              marginLeft: 'auto',
-                            }}
-                            onClick={() => Removing_action(index, indexWp, action_key)}
-                            className={classes.negative}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                  Object.keys(waypoint.action).map((action_key, index_ac) => (
+                    <Fragment key={'fragment-action-' + index_ac}>
+                      <div>
+                        <Typography variant="subtitle1" className={classes.attributeName}>
+                          {action_key}
+                        </Typography>
+                        <div className={classes.actionValue}>
+                          <TextField
+                            required
+                            fullWidth={true}
+                            value={waypoint.action[action_key] ?? 0}
+                            onChange={(e) => handleActionChange(action_key, e.target.value)}
+                          />
                         </div>
-                        <Divider />
-                      </Fragment>
-                    ))
-                  )}
+                        <IconButton
+                          sx={{
+                            py: 0,
+                            pr: 2,
+                            marginLeft: 'auto',
+                          }}
+                          onClick={() => handleRemoveAction(action_key)}
+                          className={classes.negative}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </div>
+                      <Divider />
+                    </Fragment>
+                  ))}
                 <Box textAlign="center">
                   {newactionmenu ? (
                     <Button
@@ -349,7 +272,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                       />
                       <div>
                         <Button onClick={() => setnewactionmenu(true)}>Cancel</Button>
-                        <Button onClick={() => setnewaction(index, indexWp)}>Add</Button>
+                        <Button onClick={handleAddAction}>Add</Button>
                       </div>
                     </div>
                   )}
@@ -362,7 +285,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 size="large"
                 sx={{ width: '60%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
-                onClick={() => AddnewWp(index, indexWp)}
+                onClick={() => onAddWaypoint(routeIndex, indexWp)}
               >
                 Add new Waypoint
               </Button>
@@ -372,7 +295,7 @@ const WaypointRouteList = ({ mission, setmission, index, indexWp, waypoint, expa
                 size="large"
                 sx={{ width: '30%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
-                onClick={() => CopyWp(index, indexWp)}
+                onClick={handleCopyWp}
               >
                 Copy
               </Button>

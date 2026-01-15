@@ -1,4 +1,5 @@
-import React, { useState, Fragment, useRef, useContext, useEffect } from 'react';
+import { Fragment, useRef, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import RoutesList from './RoutesList';
 import { Typography, IconButton, Toolbar, Switch } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -8,8 +9,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { MissionContext } from '../components/MissionController';
 import { FiletoMission } from '../Mapview/MissionConvert';
+import { missionActions } from '../store';
 
 const useStyles = makeStyles()((theme) => ({
   toolbar: {
@@ -34,85 +35,45 @@ const MissionPanel = ({ SetOpenSave }) => {
   const { classes } = useStyles();
   const navigate = useNavigate();
   const scroolRef = useRef(null);
-  const [checked, setChecked] = useState(false);
-  const missionContext = useContext(MissionContext);
+  const dispatch = useDispatch();
 
-  const toggleChecked = () => {
-    setChecked((prev) => !prev);
+  // Read group route mode from Redux
+  const groupRouteMode = useSelector((state) => state.mission.groupRouteMode);
+
+  const toggleGroupRouteMode = () => {
+    dispatch(missionActions.setGroupRouteMode(!groupRouteMode));
   };
 
-  const [mission, setmission] = useState({
-    name: 'no mission',
-    description: '',
-    route: [],
-  });
-
-  useEffect(() => {
-    if (missionContext.changeWp.route_id >= 0) {
-      if (checked) {
-        let auxroute = JSON.parse(JSON.stringify(mission.route));
-        // change all wapypoints
-        let dif_lat =
-          missionContext.changeWp.lat -
-          auxroute[missionContext.changeWp.route_id]['wp'][missionContext.changeWp.wp_id]['pos'][0];
-        let dif_lng =
-          missionContext.changeWp.lng -
-          auxroute[missionContext.changeWp.route_id]['wp'][missionContext.changeWp.wp_id]['pos'][1];
-        let listWp = auxroute[missionContext.changeWp.route_id]['wp'].map((newWp) => {
-          let uaxWp = newWp;
-          uaxWp['pos'][0] = dif_lat + newWp['pos'][0];
-          uaxWp['pos'][1] = dif_lng + newWp['pos'][1];
-          return uaxWp;
-        });
-        auxroute[missionContext.changeWp.route_id]['wp'] = listWp;
-
-        setmission({ ...mission, route: auxroute });
-      } else {
-        // change only this waypoint
-        let auxroute = JSON.parse(JSON.stringify(mission.route));
-        // change all wapypoints
-        auxroute[missionContext.changeWp.route_id]['wp'][missionContext.changeWp.wp_id]['pos'][0] =
-          missionContext.changeWp.lat;
-        auxroute[missionContext.changeWp.route_id]['wp'][missionContext.changeWp.wp_id]['pos'][1] =
-          missionContext.changeWp.lng;
-        setmission({ ...mission, route: auxroute });
-      }
-    }
-  }, [missionContext.changeWp]);
-
-  const setScrool = (value) => {
-    console.log('scrool' + value);
-    if (scroolRef.current.scroll) {
+  const setScrool = useCallback((value) => {
+    if (scroolRef.current?.scroll) {
       setTimeout(() => {
         scroolRef.current.scroll(0, value);
       }, 1000);
     }
-  };
+  }, []);
 
   const readFile = (e) => {
-    //https://www.youtube.com/watch?v=K3SshoCXC2g
     const file = e.target.files[0];
     if (!file) return;
 
     const fileReader = new FileReader();
     fileReader.readAsText(file);
     fileReader.onload = () => {
-      console.log(fileReader.result);
-      console.log(file.name);
       FiletoMission({ name: file.name, data: fileReader.result });
     };
     fileReader.onerror = () => {
-      console.log(fileReader.error);
+      console.error(fileReader.error);
     };
   };
 
-  const DeleteMission = () => {
-    setmission({ name: 'no mission', description: '', route: [] });
+  const handleDeleteMission = () => {
+    dispatch(missionActions.clearMission());
   };
-  const SaveMission = () => {
-    console.log('save mission');
+
+  const handleSaveMission = () => {
     SetOpenSave(true);
   };
+
   return (
     <Fragment>
       <Toolbar className={classes.toolbar}>
@@ -125,15 +86,15 @@ const MissionPanel = ({ SetOpenSave }) => {
 
         <Typography>Group Route</Typography>
         <Switch
-          checked={checked}
-          onChange={toggleChecked}
-          name="checkedA"
-          inputProps={{ 'aria-label': 'secondary checkbox' }}
+          checked={groupRouteMode}
+          onChange={toggleGroupRouteMode}
+          name="groupRouteMode"
+          inputProps={{ 'aria-label': 'group route mode' }}
         />
-        <IconButton onClick={SaveMission}>
+        <IconButton onClick={handleSaveMission}>
           <SaveAltIcon />
         </IconButton>
-        <IconButton onClick={DeleteMission}>
+        <IconButton onClick={handleDeleteMission}>
           <DeleteIcon />
         </IconButton>
         <label htmlFor="upload-gpx">
@@ -144,13 +105,13 @@ const MissionPanel = ({ SetOpenSave }) => {
             className={classes.fileInput}
             onChange={readFile}
           />
-          <IconButton edge="end" component="span" onClick={() => {}}>
+          <IconButton edge="end" component="span">
             <UploadFileIcon />
           </IconButton>
         </label>
       </Toolbar>
       <div ref={scroolRef} className={classes.list}>
-        <RoutesList mission={mission} setmission={setmission} setScrool={setScrool} />
+        <RoutesList setScrool={setScrool} />
       </div>
     </Fragment>
   );

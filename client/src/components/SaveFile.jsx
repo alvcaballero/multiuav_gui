@@ -89,6 +89,7 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
     if (fileType == 'yaml') {
       let yamlmission = { version: '3' }; //JSON.parse(JSON.stringify(mission));
       yamlmission['name'] = mission.name;
+      yamlmission['description'] = mission.description;
       yamlmission['route'] = mission.route;
       fileData = YAML.stringify(yamlmission);
     }
