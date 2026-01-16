@@ -1,5 +1,5 @@
-import React, { useState, useEffect, Fragment, createRef } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, Fragment, useRef, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   CartesianGrid,
   Line,
@@ -10,14 +10,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { FormControl, InputLabel, Select, Box, MenuItem } from '@mui/material';
+import { FormControl, InputLabel, Select, Box, MenuItem, CircularProgress } from '@mui/material';
 import palette from '../common/palette';
 import { makeStyles } from 'tss-react/mui';
-//https://www.opentopodata.org/
-//https://open-elevation.com/
-//https://codepen.io/tobinbradley/pen/jOeRbwr
-// https://github.com/traccar/traccar-web/blob/667d0f68daaa3916fac6653ef9994f6f2d05e177/modern/src/reports/ChartReportPage.jsx#L8
-//https://medium.com/@onthegomap/new-and-improved-elevation-profiles-cb888b9ac8c4
+import { missionActions } from '../store';
+
 const useStyles = makeStyles()((theme) => ({
   chart: {
     flexGrow: 1,
@@ -31,29 +28,43 @@ const useStyles = makeStyles()((theme) => ({
     flexDirection: 'column',
     overflowY: 'auto',
   },
+  loading: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+  },
 }));
 
 const MissionElevation = () => {
   const { classes } = useStyles();
-  const [items, setItems] = useState([]);
-  const [location, setlocation] = useState([]);
-  const [ElevProfile, setElevProfile] = useState([]);
-  const ElevProfileRef = React.createRef();
-  ElevProfileRef.current = ElevProfile;
-  const [SelectRT, setSelectRT] = useState(-1);
-  const Mission_route = useSelector((state) => state.mission.route); //cambiar esto por  state.mission.route
-  const [chartValue, setChartValue] = useState({ min: 0, max: 0, range: 10 });
+  const dispatch = useDispatch();
 
-  useEffect(() => {
+  // Get state from Redux
+  const missionRoute = useSelector((state) => state.mission.route);
+  const elevProfile = useSelector((state) => state.mission.elevation.profile);
+  const location = useSelector((state) => state.mission.elevation.location);
+  const selectRT = useSelector((state) => state.mission.elevation.selectRT);
+  const loading = useSelector((state) => state.mission.elevation.loading);
+
+  // Ref for accessing latest elevProfile in callbacks
+  const elevProfileRef = useRef(elevProfile);
+  elevProfileRef.current = elevProfile;
+
+  // Computed items based on selectRT
+  const items = selectRT === -1 ? elevProfile : (elevProfile[selectRT] ? [elevProfile[selectRT]] : []);
+
+  // Chart value calculation
+  const chartValue = React.useMemo(() => {
     const routes = items.map((it) => it.data);
     const values = routes.flat().map((it) => it['elevation']);
     const values1 = routes.flat().map((it) => (it['uavheight'] ? Number(it['uavheight']) : 0));
-    const minValueAux = Math.min(...values);
-    const maxValueAux = Math.max(...values1);
-    setChartValue({ min: minValueAux, max: maxValueAux, range: maxValueAux - minValueAux });
+    const minValueAux = values.length > 0 ? Math.min(...values) : 0;
+    const maxValueAux = values1.length > 0 ? Math.max(...values1) : 0;
+    return { min: minValueAux, max: maxValueAux, range: maxValueAux - minValueAux || 10 };
   }, [items]);
 
-  const GetWplist = (auxroute) => {
+  const getWpList = useCallback((auxroute) => {
     const listwp = [];
     if (auxroute.length > 0) {
       auxroute.forEach((route) => {
@@ -65,228 +76,199 @@ const MissionElevation = () => {
       });
     }
     return listwp;
-  };
-
-  async function elevation() {
-    // mas robusto y llamar cuando cambie la altura del drone
-    console.log('--------------   LLAMANDO A ELEVATION');
-    if (Mission_route.length > 0) {
-      let auxroute = JSON.parse(JSON.stringify(Mission_route));
-      let ruteColor = auxroute.map((element) => element.id);
-      let listwp = GetWplist(auxroute);
-      setlocation(listwp);
-      //console.log(listwp);
-
-      let command;
-      try {
-        const response = await fetch('/api/map/elevation', {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ routes: listwp }),
-        });
-        if (response.ok) {
-          command = await response.json();
-        } else {
-          throw new Error(response.status);
-        }
-      } catch (error) {
-        console.log('error to call server /api/map/elevation');
-        console.log(error);
-      }
-      if (command.status) {
-        let elevationRoute = command.elevation.map((route, index_rt) => {
-          return {
-            name: 'RT' + index_rt,
-            data: route,
-            color: palette.colors_devices[ruteColor[index_rt]],
-          };
-        });
-        //console.log(elevationRoute);
-        setSelectRT(-1);
-        setElevProfile(elevationRoute);
-      } else {
-        console.log("command")
-        console.log(command)
-        console.log('no get elevation of point error to connect to API of  elevation');
-      }
-    }
-  }
-
-  useEffect(() => {
-    console.log('mission Elevation');
-    //elevation();
   }, []);
 
-  // el el caso de que haya cambiado la altura del uav  suamarla
+  const fetchElevation = useCallback(async () => {
+    console.log('--------------   LLAMANDO A ELEVATION');
+    if (missionRoute.length === 0) return;
+
+    dispatch(missionActions.setElevationLoading(true));
+
+    const auxroute = JSON.parse(JSON.stringify(missionRoute));
+    const ruteColor = auxroute.map((element) => element.id);
+    const listwp = getWpList(auxroute);
+    dispatch(missionActions.setElevationLocation(listwp));
+
+    let command;
+    try {
+      const response = await fetch('/api/map/elevation', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ routes: listwp }),
+      });
+      if (response.ok) {
+        command = await response.json();
+      } else {
+        throw new Error(response.status);
+      }
+    } catch (error) {
+      console.log('error to call server /api/map/elevation');
+      console.log(error);
+      dispatch(missionActions.setElevationLoading(false));
+      return;
+    }
+
+    if (command.status) {
+      const elevationRoute = command.elevation.map((route, index_rt) => ({
+        name: 'RT' + index_rt,
+        data: route,
+        color: palette.colors_devices[ruteColor[index_rt]],
+      }));
+      dispatch(missionActions.setElevationSelectRT(-1));
+      dispatch(missionActions.setElevationProfile(elevationRoute));
+    } else {
+      console.log('command', command);
+      console.log('no get elevation of point error to connect to API of elevation');
+    }
+    dispatch(missionActions.setElevationLoading(false));
+  }, [missionRoute, dispatch, getWpList]);
+
+  // Handle route changes
   useEffect(() => {
     let change = false;
-    let curentlocation = GetWplist(Mission_route);
+    const currentLocation = getWpList(missionRoute);
     console.log('update elevation');
-    //console.log(curentlocation);
-    //console.log(location);
-    if (curentlocation.length > location.length) {
-      // se ha creado una ruta
+
+    if (currentLocation.length > location.length) {
+      // New route created
       console.log('ruta mayor');
-      if (curentlocation[+curentlocation.length + -1].length > 0) {
+      if (currentLocation[currentLocation.length - 1].length > 0) {
         change = true;
       } else {
-        setlocation(curentlocation);
+        dispatch(missionActions.setElevationLocation(currentLocation));
       }
+    } else if (currentLocation.length < location.length) {
+      // Route deleted
+      console.log('se ha eliminado una ruta');
+      const indicesToKeep = [];
+      location.forEach((key, index) => {
+        const checkNodelete = currentLocation.some(
+          (ckey) => JSON.stringify(key) === JSON.stringify(ckey)
+        );
+        if (checkNodelete) {
+          indicesToKeep.push(index);
+        }
+      });
+      dispatch(missionActions.removeElevationRoute(indicesToKeep));
+      dispatch(missionActions.setElevationLocation(currentLocation));
     } else {
-      if (curentlocation.length < location.length) {
-        console.log(' se ha eliminado  una ruta');
-        let auxlocation = [];
-        let auxElevprofile = [];
-        location.map((key, index) => {
-          let check_nodelete = false;
-          curentlocation.map((ckey) => {
-            if (JSON.stringify(key) === JSON.stringify(ckey)) {
-              check_nodelete = true;
-            }
-          });
-          if (check_nodelete) {
-            auxlocation.push(key);
-            auxElevprofile.push(ElevProfileRef.current[index]);
-          }
-        });
-        setElevProfile(auxElevprofile);
-        setlocation(auxlocation);
-      } else {
-        console.log('ruta de la misma longitud');
-        // ver si hay cambios de latitud y longitud
-        for (let i = 0; i < curentlocation.length; i = i + 1) {
-          //find changes in routes
-          //console.log(JSON.stringify(curentlocation[i]));
-          //console.log(JSON.stringify(location[i]));
-          if (JSON.stringify(curentlocation[i]) != JSON.stringify(location[i])) {
-            console.log('latitude longitude no equals');
-            let latlonloc = location[i].map((wp) => [wp[0], wp[1]]);
-            let latloncur = curentlocation[i].map((wp) => [wp[0], wp[1]]);
-            if (JSON.stringify(latlonloc) === JSON.stringify(latloncur)) {
-              //if latitude and longitude  are equal then change heigh
-              for (let j = 0; j < location[i].length; j = j + 1) {
-                if (location[i][j][2] !== curentlocation[i][j][2]) {
-                  console.log('diferent elevation');
-                  //cambiar la altura de este punto en la elevacion
-                  let auxElevprofile = JSON.parse(JSON.stringify(ElevProfileRef.current));
-                  for (let k = 0; k < auxElevprofile[i].data.length; k = k + 1) {
-                    if (auxElevprofile[i]['data'][k].hasOwnProperty('wp')) {
-                      if (auxElevprofile[i].data[k].wp == j) {
+      // Same number of routes
+      console.log('ruta de la misma longitud');
+      for (let i = 0; i < currentLocation.length; i++) {
+        if (JSON.stringify(currentLocation[i]) !== JSON.stringify(location[i])) {
+          console.log('latitude longitude no equals');
+          const latlonloc = location[i]?.map((wp) => [wp[0], wp[1]]) || [];
+          const latloncur = currentLocation[i].map((wp) => [wp[0], wp[1]]);
+
+          if (JSON.stringify(latlonloc) === JSON.stringify(latloncur)) {
+            // Only altitude changed
+            for (let j = 0; j < (location[i]?.length || 0); j++) {
+              if (location[i][j][2] !== currentLocation[i][j][2]) {
+                console.log('diferent elevation');
+                const auxElevprofile = JSON.parse(JSON.stringify(elevProfileRef.current));
+                if (auxElevprofile[i]?.data) {
+                  for (let k = 0; k < auxElevprofile[i].data.length; k++) {
+                    if (auxElevprofile[i].data[k].hasOwnProperty('wp')) {
+                      if (auxElevprofile[i].data[k].wp === j) {
                         console.log('encontrado elev profile wp');
                         auxElevprofile[i].data[k].uavheight =
                           +auxElevprofile[i].data[k].uavheight -
                           +auxElevprofile[i].data[k].uav +
-                          +curentlocation[i][j][2];
-                        auxElevprofile[i].data[k].uav = +curentlocation[i][j][2];
+                          +currentLocation[i][j][2];
+                        auxElevprofile[i].data[k].uav = +currentLocation[i][j][2];
                       }
                     }
                   }
-                  console.log(auxElevprofile);
-                  setElevProfile(auxElevprofile);
+                  dispatch(missionActions.setElevationProfile(auxElevprofile));
                 }
               }
-              setlocation(curentlocation);
-              break;
-            } else {
-              //delete a waypoint -- a que las distancias entre los waypoints que  quedan son diferentes y tiene que se calculadas de nuevo
-              //add  a waypoint
-              console.log('nuevas posiciones');
-              change = true;
-              break;
             }
+            dispatch(missionActions.setElevationLocation(currentLocation));
+            break;
+          } else {
+            // Lat/lon changed - need to recalculate
+            console.log('nuevas posiciones');
+            change = true;
+            break;
           }
         }
       }
     }
-    change ? elevation() : null; //run elevarion only if get latitud, longitud changes and create points
-  }, [Mission_route]);
 
-  useEffect(() => {
-    if (SelectRT == -1) {
-      setItems(ElevProfile);
-    } else {
-      setItems([ElevProfile[SelectRT]]);
+    if (change) {
+      fetchElevation();
     }
-  }, [SelectRT, ElevProfile]);
+  }, [missionRoute, location, dispatch, getWpList, fetchElevation]);
+
+  const handleSelectChange = (event) => {
+    dispatch(missionActions.setElevationSelectRT(event.target.value));
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      let list = [payload[0].payload];
-      list[0]['color'] = payload[0].color;
-      payload.map((key) => {
-        let match = true;
-        list.map((listkey) => {
-          if (key.payload.rt == listkey.rt) {
-            match = false;
-          }
-        });
-        key.payload['color'] = key.color;
-        match ? list.push(key.payload) : null;
+      const list = [{ ...payload[0].payload, color: payload[0].color }];
+      payload.forEach((key) => {
+        const match = list.every((listkey) => key.payload.rt !== listkey.rt);
+        if (match) {
+          list.push({ ...key.payload, color: key.color });
+        }
       });
+
       if (list[0].uavheight) {
         return (
-          <div style={{ background: '#FFFFFF' }}>
+          <div style={{ background: '#FFFFFF', padding: '5px', border: '1px solid #ccc' }}>
             <div>{`distancia ${label} m `}</div>
             {list.map((key) => (
               <Fragment key={'s-' + key.rt}>
-                <div
-                  key={`tr${key.rt}`}
-                  style={{ color: key.color, fontSize: 16 }}
-                >{`Ruta ${key.rt} - wp ${key.wp}`}</div>
-                <div
-                  key={`dr${key.rt}`}
-                  style={{ color: key.color, fontSize: 16 }}
-                >{`Terreno:${key.elevation} - UAV: ${key.uavheight}`}</div>
-              </Fragment>
-            ))}
-          </div>
-        );
-      } else {
-        return (
-          <div style={{ background: '#FFFFFF' }}>
-            <div>{`distancia ${label} m `}</div>
-            {list.map((key) => (
-              <Fragment key={'s-' + key.rt}>
-                <div
-                  key={`tr${key.rt}`}
-                  style={{ color: key.color, fontSize: 16 }}
-                >{`Ruta ${key.rt}`}</div>
-                <div
-                  key={`dr${key.rt}`}
-                  style={{ color: key.color, fontSize: 16 }}
-                >{`Terreno:${key.elevation} `}</div>
+                <div style={{ color: key.color, fontSize: 16 }}>
+                  {`Ruta ${key.rt} - wp ${key.wp}`}
+                </div>
+                <div style={{ color: key.color, fontSize: 16 }}>
+                  {`Terreno:${key.elevation} - UAV: ${key.uavheight}`}
+                </div>
               </Fragment>
             ))}
           </div>
         );
       }
+      return (
+        <div style={{ background: '#FFFFFF', padding: '5px', border: '1px solid #ccc' }}>
+          <div>{`distancia ${label} m `}</div>
+          {list.map((key) => (
+            <Fragment key={'s-' + key.rt}>
+              <div style={{ color: key.color, fontSize: 16 }}>{`Ruta ${key.rt}`}</div>
+              <div style={{ color: key.color, fontSize: 16 }}>{`Terreno:${key.elevation} `}</div>
+            </Fragment>
+          ))}
+        </div>
+      );
     }
-
     return null;
   };
 
   return (
     <div className={classes.content}>
       <Box style={{ display: 'flex', margin: '10px', alignItems: 'center' }}>
-        <a style={{ marginInline: '20px' }}>Elevation Profile</a>
-        <FormControl>
-          <InputLabel id="demo-simple-select-label">Route</InputLabel>
+        <span style={{ marginInline: '20px' }}>Elevation Profile</span>
+        <FormControl size="small">
+          <InputLabel id="elevation-route-select-label">Route</InputLabel>
           <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            value={SelectRT}
-            label="Elevation Profile"
-            onChange={(event) => setSelectRT(event.target.value)}
+            labelId="elevation-route-select-label"
+            id="elevation-route-select"
+            value={selectRT}
+            label="Route"
+            onChange={handleSelectChange}
           >
             <MenuItem value={-1}>All Routes</MenuItem>
-            {ElevProfile.map((name, index, other) => (
-              <MenuItem key={`sel${index}`} value={index}>{`Route${index}`}</MenuItem>
+            {elevProfile.map((_, index) => (
+              <MenuItem key={`sel${index}`} value={index}>{`Route ${index}`}</MenuItem>
             ))}
           </Select>
         </FormControl>
+        {loading && <CircularProgress size={20} sx={{ ml: 2 }} />}
       </Box>
 
       {items.length > 0 && (
@@ -313,7 +295,7 @@ const MissionElevation = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              {items.map((s, s_index, s_array) => (
+              {items.map((s, s_index) => (
                 <Fragment key={'s-' + s_index}>
                   <Line
                     type="monotone"
@@ -326,7 +308,7 @@ const MissionElevation = () => {
                       r: 8,
                       onClick: (event, payload) => {
                         console.log(payload);
-                        let url = `https://www.google.com/maps?q=${payload.payload.lat},${payload.payload.lng}`;
+                        const url = `https://www.google.com/maps?q=${payload.payload.lat},${payload.payload.lng}`;
                         window.open(url, '_blank');
                       },
                     }}

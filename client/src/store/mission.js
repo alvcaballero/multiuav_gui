@@ -20,6 +20,13 @@ const { reducer, actions } = createSlice({
     attributes: {},
     selectpoint: { id: -1 },
     groupRouteMode: false,
+    // Elevation profile cache
+    elevation: {
+      profile: [],      // Array of {name, data, color} for each route
+      location: [],     // Cached waypoint locations [lat, lon, alt]
+      selectRT: -1,     // Selected route filter (-1 = all)
+      loading: false,   // Loading indicator
+    },
   },
   reducers: {
     // Existing actions
@@ -59,6 +66,11 @@ const { reducer, actions } = createSlice({
       state.route = [];
       state.attributes = {};
       state.selectpoint = { id: -1 };
+      // Clear elevation cache
+      state.elevation.profile = [];
+      state.elevation.location = [];
+      state.elevation.selectRT = -1;
+      state.elevation.loading = false;
     },
 
     // New granular actions
@@ -217,6 +229,39 @@ const { reducer, actions } = createSlice({
         const [wp] = wpArray.splice(wpIndex, 1);
         wpArray.splice(newIndex, 0, wp);
       }
+    },
+
+    // Elevation profile actions
+    setElevationProfile(state, action) {
+      state.elevation.profile = action.payload;
+    },
+    setElevationLocation(state, action) {
+      state.elevation.location = action.payload;
+    },
+    setElevationSelectRT(state, action) {
+      state.elevation.selectRT = action.payload;
+    },
+    setElevationLoading(state, action) {
+      state.elevation.loading = action.payload;
+    },
+    updateElevationProfile(state, action) {
+      // For updating specific route elevation data (e.g., when altitude changes)
+      const { routeIndex, data } = action.payload;
+      if (state.elevation.profile[routeIndex]) {
+        state.elevation.profile[routeIndex].data = data;
+      }
+    },
+    clearElevation(state) {
+      state.elevation.profile = [];
+      state.elevation.location = [];
+      state.elevation.selectRT = -1;
+      state.elevation.loading = false;
+    },
+    removeElevationRoute(state, action) {
+      // Remove specific routes from elevation cache by indices
+      const indicesToKeep = action.payload;
+      state.elevation.profile = indicesToKeep.map(i => state.elevation.profile[i]).filter(Boolean);
+      state.elevation.location = indicesToKeep.map(i => state.elevation.location[i]).filter(Boolean);
     },
   },
 });

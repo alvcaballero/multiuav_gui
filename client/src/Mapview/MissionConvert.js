@@ -11,12 +11,16 @@ export const GetMissionHome = () => {
 export const FiletoMission = (item) => {
   let plan_mission = {};
   if (item.name.endsWith('.yaml') || item.name.endsWith('.yml')) {
+    item.name = item.name.replace('.yaml', '');
     plan_mission = YAML.parse(item.data);
   } else if (item.name.endsWith('.waypoints')) {
+    item.name = item.name.replace('.waypoints', '');
     plan_mission = filewaypoint2mission(item.data);
   } else if (item.name.endsWith('.kml')) {
+    item.name = item.name.replace('.kml', '');
     plan_mission = fileKml2mission(item.data);
   } else if (item.name.endsWith('.plan')) {
+    item.name = item.name.replace('.plan', '');
     plan_mission = filePlan2mission(item.data);
   } else {
     alert('Formato de archivo no soportado');

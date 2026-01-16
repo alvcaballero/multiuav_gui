@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Paper } from '@mui/material';
+import { Paper, Tabs, Tab, Box } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
 import MapView from '../Mapview/MapView';
@@ -13,6 +13,7 @@ import MapMarkers from '../Mapview/MapMarkers';
 import { RosControl } from '../components/RosControl';
 import MissionPanel from '../components/MissionPanel';
 import MissionElevation from '../components/MissionElevation';
+import MissionStats from '../components/MissionStats';
 import SaveFile from '../components/SaveFile';
 import MapScale from '../Mapview/MapScale';
 import MapDefaultCamera from '../Mapview/MapDefaultCamera';
@@ -58,6 +59,7 @@ const showToast = (type, description) => {
 const MissionPage = () => {
   const { classes } = useStyles();
   const [Opensave, setOpenSave] = useState(false);
+  const [bottomTab, setBottomTab] = useState(0);
 
   const positions = useSelector((state) => state.session.positions);
   const sessionmarkers = useSelector((state) => state.session.markers);
@@ -104,11 +106,21 @@ const MissionPage = () => {
           </div>
         </div>
         <div className={classes.panelElevation}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <MissionElevation />
-            </Paper>
-          </div>
+          <Paper square sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Tabs
+              value={bottomTab}
+              onChange={(_, newValue) => setBottomTab(newValue)}
+              variant="fullWidth"
+              sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 36 }}
+            >
+              <Tab label="Statistics" sx={{ minHeight: 36, py: 0 }} />
+              <Tab label="Elevation" sx={{ minHeight: 36, py: 0 }} />
+            </Tabs>
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+              {bottomTab === 0 && <MissionStats />}
+              {bottomTab === 1 && <MissionElevation />}
+            </Box>
+          </Paper>
         </div>
         {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
       </RosControl>
