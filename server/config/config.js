@@ -12,7 +12,7 @@ export const FbEnable = typeof process.env.FB_CONNECTION === 'undefined' ? true 
 export const StreamServer = process.env.STREAM_SERVER === 'true'; //if use mediamtx server in local host
 export const LocalGlyphs = process.env.LOCAL_GLYPHS === 'true'; // if local server have a glyphs server
 export const NoElevation = process.env.NO_ELEVATION === 'true'; // if local server have a glyphs server
-export const db = process.env.DB === 'true';
+export const useExternalDb = process.env.DB === 'true';
 export const dbType = process.env.DB_TYPE;
 export const dbUser = process.env.DB_USER;
 export const dbPassword = process.env.DB_PASSWORD;

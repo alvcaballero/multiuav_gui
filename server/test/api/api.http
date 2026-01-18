@@ -752,3 +752,110 @@ Content-Type: application/json
   "provider": "gemini",
   "message":"cual es la capital de españa?"
 }
+
+### ============================================                                                                                                                                                      
+### Chat API Tests - server/routes/chat.js                                                                                                                                                            
+### ============================================                                                                                                                                                      
+### Base URL: http://localhost:4000/api/chat                                                                                                                                                          
+                                                                                                                                                                                                      
+### --------------------------------------------                                                                                                                                                      
+### POST / - Enviar mensaje al LLM                                                                                                                                                                    
+### --------------------------------------------                                                                                                                                                      
+                                                                                                                                                                                                      
+### Enviar mensaje simple                                                                                                                                                                             
+POST http://localhost:4000/api/chat                                                                                                                                                                   
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+  "message": "Hola, ¿cuántos drones hay conectados?"                                                                                                                                                  
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### Enviar mensaje con chatId específico                                                                                                                                                              
+POST http://localhost:4000/api/chat                                                                                                                                                                   
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+  "message": "Dame el estado de todos los dispositivos",                                                                                                                                              
+  "chatId": "mission-planning-001"                                                                                                                                                                    
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### Error: mensaje vacío (espera 400)                                                                                                                                                                 
+POST http://localhost:4000/api/chat                                                                                                                                                                   
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+  "message": ""                                                                                                                                                                                       
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### Error: sin campo message (espera 400)                                                                                                                                                             
+POST http://localhost:4000/api/chat                                                                                                                                                                   
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+  "chatId": "test-chat"                                                                                                                                                                               
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### --------------------------------------------                                                                                                                                                      
+### GET /chats - Listar todos los chats                                                                                                                                                               
+### --------------------------------------------                                                                                                                                                      
+                                                                                                                                                                                                      
+### Obtener lista de chats                                                                                                                                                                            
+GET http://localhost:4000/api/chat/chats                                                                                                                                                              
+                                                                                                                                                                                                      
+### --------------------------------------------                                                                                                                                                      
+### GET /history/:chatId - Obtener historial                                                                                                                                                          
+### --------------------------------------------                                                                                                                                                      
+                                                                                                                                                                                                      
+### Obtener historial de un chat específico                                                                                                                                                           
+GET http://localhost:4000/api/chat/history/default_http                                                                                                                                               
+                                                                                                                                                                                                      
+### Obtener historial de chat personalizado                                                                                                                                                           
+GET http://localhost:4000/api/chat/history/mission-planning-001                                                                                                                                       
+                                                                                                                                                                                                      
+### Chat que no existe (debería devolver array vacío o error)                                                                                                                                         
+GET http://localhost:4000/api/chat/history/chat-inexistente-xyz                                                                                                                                       
+                                                                                                                                                                                                      
+### --------------------------------------------                                                                                                                                                      
+### PATCH /chats/:chatId - Renombrar chat                                                                                                                                                             
+### --------------------------------------------                                                                                                                                                      
+                                                                                                                                                                                                      
+### Renombrar un chat                                                                                                                                                                                 
+PATCH http://localhost:4000/api/chat/chats/default_http                                                                                                                                               
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+  "name": "Chat Principal"                                                                                                                                                                            
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### Renombrar chat personalizado                                                                                                                                                                      
+PATCH http://localhost:4000/api/chat/chats/mission-planning-001                                                                                                                                       
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+  "name": "Planificación Misión Norte"                                                                                                                                                                
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### Error: sin nombre (espera 400)                                                                                                                                                                    
+PATCH http://localhost:4000/api/chat/chats/default_http                                                                                                                                               
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### Error: nombre vacío (espera 400)                                                                                                                                                                  
+PATCH http://localhost:4000/api/chat/chats/default_http                                                                                                                                               
+Content-Type: application/json                                                                                                                                                                        
+                                                                                                                                                                                                      
+{                                                                                                                                                                                                     
+  "name": ""                                                                                                                                                                                          
+}                                                                                                                                                                                                     
+                                                                                                                                                                                                      
+### --------------------------------------------                                                                                                                                                      
+### DELETE /chats/:chatId - Eliminar chat                                                                                                                                                             
+### --------------------------------------------                                                                                                                                                      
+                                                                                                                                                                                                      
+### Soft delete (marca como eliminado, mantiene en DB)                                                                                                                                                
+DELETE http://localhost:4000/api/chat/chats/chat-temporal                                                                                                                                             
+                                                                                                                                                                                                      
+### Hard delete (elimina permanentemente de DB)                                                                                                                                                       
+DELETE http://localhost:4000/api/chat/chats/chat-temporal?hard=true                                 

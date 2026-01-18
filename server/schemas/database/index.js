@@ -5,6 +5,8 @@ import { Route, RouteSchema } from './routes.model.js';
 import { File, FileSchema } from './file.model.js';
 import { Event, EventSchema } from './event.model.js';
 import { Geofence, GeofenceSchema } from './geofence.model.js';
+import { Chat, ChatSchema } from './chat.model.js';
+import { ChatMessage, ChatMessageSchema } from './chatMessage.model.js';
 
 export function setupModels(sequelize) {
   User.init(UserSchema, User.config(sequelize));
@@ -14,4 +16,6 @@ export function setupModels(sequelize) {
   File.init(FileSchema, File.config(sequelize));
   Event.init(EventSchema, Event.config(sequelize));
   Geofence.init(GeofenceSchema, Geofence.config(sequelize));
+  Chat.init(ChatSchema, Chat.config(sequelize));
+  ChatMessage.init(ChatMessageSchema, ChatMessage.config(sequelize));
 }

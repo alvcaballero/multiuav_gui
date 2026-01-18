@@ -1,10 +1,10 @@
 import Sequelize, { Op } from 'sequelize';
 
-import { db, dbType, dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
+import { useExternalDb, dbType, dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
 import { setupModels } from '../schemas/database/index.js';
 import logger from './logger.js';
 
-logger.info('use db is ' + db);
+logger.info('useExternalDb is ' + useExternalDb);
 
 let sequelizeConfig = {
   dialect: 'sqlite',
@@ -13,7 +13,7 @@ let sequelizeConfig = {
   pool: { max: 1, idle: Infinity, maxUses: Infinity },
 };
 
-if (db === 'true') {
+if (useExternalDb) {
   if (dbType === 'postgres') {
     sequelizeConfig = {
       dialect: 'postgres',

@@ -1,10 +1,10 @@
 import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './llmFactory.js';
-import logger, { chatLogger } from '../../common/logger.js';
-import { LLM, LLMType, LLMApiKey, MCPenable, MCPconfig } from '../../config/config.js';
+import { chatLogger } from '../../common/logger.js';
+import { LLM, MCPenable } from '../../config/config.js';
 import { SystemPrompts } from './SystemPromps.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
-import { time } from 'console';
+import { ChatPersistenceModel } from './chatPersistence.js';
 /**
  * Orquestador que maneja el flujo completo de procesamiento de mensajes
  * entre el LLM y el servidor MCP
@@ -31,12 +31,10 @@ import { time } from 'console';
  * }
  */
 
-var conversationHistories = {}; // Map of chatId -> conversation history
-var mcpClient = null;
-var llmHandler = null;
-var maxIterations = 6; // Prevenir loops infinitos
-
-export function initializeLLMProvider(provider, apiKey) {}
+let conversationHistories = {}; // Map of chatId -> conversation history
+let mcpClient = null;
+let llmHandler = null;
+const maxIterations = 6; // Prevenir loops infinitos
 
 export class MessageOrchestrator {
   static initializeLLMProvider(provider, apiKey) {
@@ -90,50 +88,52 @@ export class MessageOrchestrator {
     // Get or create conversation history for this chatId
     if (!conversationHistories[chatId]) {
       chatLogger.info(`🆕 Creando nuevo historial de conversación para chat: ${chatId}`);
-      conversationHistories[chatId] = [];
+
+      // Try to load from database
+      try {
+        const dbHistory = await ChatPersistenceModel.loadHistory(chatId);
+        conversationHistories[chatId] = dbHistory;
+        chatLogger.info(`📂 Loaded ${dbHistory.length} messages from DB for chat: ${chatId}`);
+      } catch (error) {
+        chatLogger.error('Error loading history from DB:', error);
+        conversationHistories[chatId] = [];
+      }
     }
     const conversationHistory = conversationHistories[chatId];
 
     try {
       // Obtener herramientas según el proveedor de LLM
       const tools = this.getToolsForProvider();
-
+      // add system prompt if history is empty
       if (conversationHistory.length === 0 && SystemPrompts.openai) {
-        conversationHistory.push({
+        await ChatPersistenceModel.addMessageToChat(
           chatId,
-          from: 'system',
-          timestamp: new Date().toISOString(),
-          message: { role: 'system', content: SystemPrompts.openai },
-        });
+          'system',
+          { role: 'system', content: SystemPrompts.openai },
+          conversationHistory
+        );
       }
 
       // Agregar el mensaje del usuario al historial
-      conversationHistory.push({
+      await ChatPersistenceModel.addMessageToChat(
         chatId,
-        from: 'user',
-        timestamp: new Date().toISOString(),
-        message: { role: 'user', content: message },
-      });
+        'user',
+        { role: 'user', content: message },
+        conversationHistory
+      );
 
       let response = await llmHandler.processMessage(message, tools, conversationHistory.slice(0, -1));
 
       let toolCallsFlag = false;
-      response.map((res) => {
-        console.log('Assistant message :', JSON.stringify(res));
+      for (const res of response) {
+        chatLogger.debug('Assistant message:', JSON.stringify(res));
 
         if (res.type === 'function_call' || res.type === 'tool_call') {
           toolCallsFlag = true;
         }
-        const chatItem = {
-          chatId,
-          from: 'assistant',
-          timestamp: new Date().toISOString(),
-          message: res,
-        };
-        eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
-        conversationHistory.push(chatItem);
-      });
-      console.log('history:', JSON.stringify(conversationHistory, null, 2));
+        await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
+      }
+      // chatLogger.debug('History:', JSON.stringify(conversationHistory, null, 2));
 
       if (toolCallsFlag) {
         this.handleToolCallsLoop(response, tools, chatId);
@@ -161,31 +161,28 @@ export class MessageOrchestrator {
   /**
    * Maneja el loop de llamadas a herramientas
    */
-  static async handleToolCallsLoop(response, tools, chatId) {
+  static async handleToolCallsLoop(response, _tools, chatId) {
     let isToolCalling = true;
     let iterations = 0;
-    console.log('\n🔄 Iniciando loop de llamadas a herramientas...\n');
-    console.log('Respuesta inicial con llamadas a herramientas:', JSON.stringify(response, null, 2));
+    chatLogger.debug('Starting tool calls loop...');
+    chatLogger.debug('Initial response with tool calls:', JSON.stringify(response, null, 2));
     let currentResponse = response;
 
     while (isToolCalling && iterations < maxIterations) {
       iterations++;
-      console.log(`\n🔄 Iteración ${iterations} - Procesando herramientas...\n`);
+      chatLogger.debug(`Iteration ${iterations} - Processing tools...`);
       isToolCalling = true;
       const toolResults = await this.executeToolCalls(currentResponse);
       currentResponse = await this.continueAfterTools(toolResults, chatId);
 
-      isToolCalling = currentResponse.some((content) => {
-        if (content.type === 'function_call' || content.type === 'tool_call') {
-          return true;
-        }
-        return false;
-      });
+      isToolCalling = currentResponse.some(
+        (content) => content.type === 'function_call' || content.type === 'tool_call'
+      );
     }
-    console.log('\n🔄 Loop de llamadas a herramientas finalizado.\n');
+    chatLogger.debug('Tool calls loop finished.');
 
     if (iterations >= maxIterations) {
-      console.warn('⚠️  Se alcanzó el máximo de iteraciones');
+      chatLogger.warn('Maximum iterations reached');
     }
 
     return currentResponse;
@@ -213,35 +210,17 @@ export class MessageOrchestrator {
    */
   static async continueAfterTools(toolResults, chatId) {
     const conversationHistory = conversationHistories[chatId];
-    //conversationHistory.push(...toolResults);
-    toolResults.map((res) => {
-      const chatItem = {
-        chatId,
-        from: 'assistant',
-        timestamp: new Date().toISOString(),
-        message: res,
-      };
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
-      conversationHistory.push(chatItem);
-    });
+    for (const res of toolResults) {
+      await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
+    }
 
     const chatresponse = await llmHandler.processMessage(null, this.getToolsForProvider(), conversationHistory);
 
-    console.log(
-      `Respuesta después de procesar la respuesta de la funcion:`,
-      JSON.stringify(chatresponse, null, 2)
-    );
+    chatLogger.debug('Response after tool execution:', JSON.stringify(chatresponse, null, 2));
 
-    chatresponse.map((res) => {
-      const chatItem = {
-        chatId,
-        from: 'assistant',
-        timestamp: new Date().toISOString(),
-        message: res,
-      };
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
-      conversationHistory.push(chatItem);
-    });
+    for (const res of chatresponse) {
+      await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
+    }
     return chatresponse;
   }
 
@@ -249,52 +228,102 @@ export class MessageOrchestrator {
    * Obtiene las herramientas en el formato correcto para el proveedor actual
    */
   static getToolsForProvider() {
-    if (!mcpClient.isReady()) {
-      console.log('ℹ️  No hay herramientas MCP disponibles');
+    if (!mcpClient || !mcpClient.isReady()) {
+      chatLogger.debug('No MCP tools available');
       return [];
     }
 
     const tools = mcpClient.getTools();
 
     if (!tools || tools.length === 0) {
-      console.log('ℹ️  No hay herramientas MCP disponibles');
+      chatLogger.debug('No MCP tools available');
       return [];
     }
     return tools;
   }
 
   /**
-   * Reinicia el historial de conversación
-   * @param {string} chatId - ID del chat a reiniciar (opcional, si no se proporciona reinicia todos)
-   */
-  static resetHistory(chatId = null) {
-    if (chatId) {
-      // Reset specific chat
-      conversationHistories[chatId] = [];
-      console.log(`🔄 Historial de conversación reiniciado para chat: ${chatId}`);
-    } else {
-      // Reset all chats
-      conversationHistories = {};
-      console.log('🔄 Todos los historiales de conversación reiniciados');
-    }
-  }
-
-  /**
    * Obtiene el historial de conversación para un chat específico
    * @param {string} chatId - ID del chat
    */
-  static getHistory(chatId) {
+  static async getHistory(chatId) {
+    // If not in memory, try to load from DB
+    if (!conversationHistories[chatId]) {
+      try {
+        const dbHistory = await ChatPersistenceModel.loadHistory(chatId);
+        conversationHistories[chatId] = dbHistory;
+      } catch (error) {
+        chatLogger.error('Error loading history from DB:', error);
+      }
+    }
     return conversationHistories[chatId] || [];
   }
 
   /**
    * Lista todos los chats disponibles
    */
-  static listChats() {
-    return Object.keys(conversationHistories).map((chatId) => ({
+  static async listChats() {
+    const inMemoryChats = Object.keys(conversationHistories).map((chatId) => ({
       id: chatId,
       messageCount: conversationHistories[chatId].length,
       lastUpdated: new Date().toISOString(),
+      source: 'memory',
     }));
+
+    try {
+      const dbChats = await ChatPersistenceModel.getAllChats();
+      const chatMap = new Map(inMemoryChats.map((c) => [c.id, c]));
+
+      for (const dbChat of dbChats) {
+        if (!chatMap.has(dbChat.id)) {
+          const messageCount = await ChatPersistenceModel.getMessageCount(dbChat.id);
+          chatMap.set(dbChat.id, {
+            id: dbChat.id,
+            name: dbChat.name,
+            messageCount: messageCount,
+            lastUpdated: dbChat.updatedAt,
+            source: 'database',
+          });
+        }
+      }
+
+      return Array.from(chatMap.values());
+    } catch (error) {
+      chatLogger.error('Error listing DB chats:', error);
+      return inMemoryChats;
+    }
+  }
+
+  /**
+   * Elimina un chat completamente
+   * @param {string} chatId - ID del chat a eliminar
+   * @param {boolean} hardDelete - Si true, elimina permanentemente de la BD
+   */
+  static async deleteChat(chatId, hardDelete = false) {
+    // Remove from memory
+    delete conversationHistories[chatId];
+
+    // Remove from database
+    try {
+      await ChatPersistenceModel.deleteChat(chatId, hardDelete);
+    } catch (error) {
+      chatLogger.error('Error deleting chat from DB:', error);
+    }
+    chatLogger.info(`Chat deleted: ${chatId}`);
+  }
+
+  /**
+   * Renombra un chat
+   * @param {string} chatId - ID del chat
+   * @param {string} name - Nuevo nombre
+   */
+  static async renameChat(chatId, name) {
+    try {
+      await ChatPersistenceModel.updateChat(chatId, { name });
+      return true;
+    } catch (error) {
+      chatLogger.error('Error renaming chat:', error);
+      return false;
+    }
   }
 }

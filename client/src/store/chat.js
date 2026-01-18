@@ -10,10 +10,14 @@ const initialState = {
   // Default chat ID (created on first load)
   defaultChatId: 'default',
 
+  // List of available chats from server (for selector)
+  availableChats: [],
+
   // Loading states
   loading: {
     sendingMessage: false,
     loadingHistory: false,
+    loadingChatList: false,
   },
 
   // Error state
@@ -130,6 +134,24 @@ const chatSlice = createSlice({
       state.conversations = {};
       state.activeChatId = null;
       state.error = null;
+    },
+
+    // Set available chats list from server
+    setAvailableChats(state, action) {
+      state.availableChats = action.payload;
+    },
+
+    // Rename a chat
+    renameChat(state, action) {
+      const { chatId, name } = action.payload;
+      if (state.conversations[chatId]) {
+        state.conversations[chatId].name = name;
+      }
+      // Also update in available chats list
+      const chatInList = state.availableChats.find((c) => c.id === chatId);
+      if (chatInList) {
+        chatInList.name = name;
+      }
     },
   },
 });

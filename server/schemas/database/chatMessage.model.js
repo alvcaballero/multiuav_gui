@@ -1,0 +1,66 @@
+import { Model, DataTypes, Sequelize } from 'sequelize';
+
+const ChatMessage_TABLE = 'ChatMessage';
+
+const ChatMessageSchema = {
+  id: {
+    allowNull: false,
+    autoIncrement: true,
+    primaryKey: true,
+    type: DataTypes.INTEGER,
+  },
+  chatId: {
+    allowNull: false,
+    type: DataTypes.STRING,
+  },
+  role: {
+    allowNull: false,
+    type: DataTypes.STRING,
+  },
+  from: {
+    allowNull: false,
+    type: DataTypes.STRING,
+  },
+  type: {
+    type: DataTypes.STRING,
+    defaultValue: 'text',
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  messageData: {
+    type: DataTypes.JSON,
+    allowNull: true,
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'completed',
+  },
+  timestamp: {
+    allowNull: false,
+    type: DataTypes.DATE,
+    defaultValue: Sequelize.NOW,
+  },
+};
+
+class ChatMessage extends Model {
+  static associate() {
+    // associate
+  }
+
+  static config(sequelize) {
+    return {
+      sequelize,
+      tableName: ChatMessage_TABLE,
+      modelName: 'ChatMessage',
+      timestamps: false,
+      indexes: [
+        { fields: ['chatId'] },
+        { fields: ['chatId', 'timestamp'] },
+      ],
+    };
+  }
+}
+
+export { ChatMessage_TABLE, ChatMessageSchema, ChatMessage };

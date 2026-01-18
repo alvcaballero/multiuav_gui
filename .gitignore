@@ -30,6 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 postgres_data
 
+CLAUDE.md
 # IDE and editor files
 .vscode/
 .vs/

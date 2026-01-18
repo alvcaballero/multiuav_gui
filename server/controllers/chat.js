@@ -1,5 +1,5 @@
-import { MessageOrchestrator} from '../models/chat/chat.js';
-
+import { MessageOrchestrator } from '../models/chat/chat.js';
+import logger from '../common/logger.js';
 
 export class chatController {
   static initializeLLMProvider(provider, apiKey) {
@@ -15,23 +15,22 @@ export class chatController {
     }
 
     if (!MessageOrchestrator.isReady()) {
-      console.error('LLM Provider not initialized.');
+      logger.error('LLM Provider not initialized.');
       return res.status(500).json({ error: 'AI service not ready.' });
     }
 
     try {
-        const aiResponse = await MessageOrchestrator.processMessage({ chatId: effectiveChatId, message });
-        res.json({ ...aiResponse });
+      const aiResponse = await MessageOrchestrator.processMessage(effectiveChatId, message);
+      res.json({ ...aiResponse });
     } catch (error) {
-      console.error('Error in chatController.sendMessage:', error);
+      logger.error('Error in chatController.sendMessage:', error);
       res.status(500).json({ error: error.message || 'Failed to get AI response.' });
     }
   }
-  
-  static async processMessage(data) {
-    console.log('Processing message with data:', data);
-    const { chatId, message, timestamp } = data;
 
+  static async processMessage(data) {
+    logger.debug('Processing message with data:', data);
+    const { chatId, message, timestamp } = data;
 
     const effectiveChatId = chatId || 'default_http'; // Default for HTTP requests
 
@@ -42,41 +41,62 @@ export class chatController {
     const { chatId } = req.params;
 
     try {
-      const history = MessageOrchestrator.getHistory(chatId);
+      const history = await MessageOrchestrator.getHistory(chatId);
 
       // Transform history to client format
-      const messages = history.map(msg => ({
-        role: msg.role,
-        text: msg.content || msg.text,
-        type: msg.type || 'text',
+      const messages = history.map((msg) => ({
+        from: msg.from,
+        message: msg.message,
         timestamp: msg.timestamp || new Date().toISOString(),
       }));
 
-      res.json({ chatId, messages });
+      res.json({ chatId, messages, count: messages.length });
     } catch (error) {
-      console.error('Error getting chat history:', error);
+      logger.error('Error getting chat history:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
-  static async listChats(req, res) {
+  static async listChats(_req, res) {
     try {
-      const chats = MessageOrchestrator.listChats();
+      const chats = await MessageOrchestrator.listChats();
       res.json({ chats });
     } catch (error) {
-      console.error('Error listing chats:', error);
+      logger.error('Error listing chats:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
   static async deleteChat(req, res) {
     const { chatId } = req.params;
+    const { hard } = req.query;
 
     try {
-      MessageOrchestrator.resetHistory(chatId);
+      await MessageOrchestrator.deleteChat(chatId, hard === 'true');
       res.json({ success: true, chatId });
     } catch (error) {
-      console.error('Error deleting chat:', error);
+      logger.error('Error deleting chat:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async renameChat(req, res) {
+    const { chatId } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required.' });
+    }
+
+    try {
+      const success = await MessageOrchestrator.renameChat(chatId, name);
+      if (success) {
+        res.json({ success: true, chatId, name });
+      } else {
+        res.status(400).json({ error: 'Could not rename chat. Database may be disabled.' });
+      }
+    } catch (error) {
+      logger.error('Error renaming chat:', error);
       res.status(500).json({ error: error.message });
     }
   }

@@ -12,6 +12,7 @@ chatRouter.post('/', chatController.sendMessage);
 chatRouter.get('/history/:chatId', chatController.getChatHistory);
 chatRouter.get('/chats', chatController.listChats);
 chatRouter.delete('/chats/:chatId', chatController.deleteChat);
+chatRouter.patch('/chats/:chatId', chatController.renameChat);
 
 // Ruta para speech-to-text (transcripción)
 chatRouter.post('/stt', upload.single('audio'), SpeechController.speechToText);

@@ -20,9 +20,13 @@ import {
   Paper,
   AppBar,
   Stack,
+  Select,
+  MenuItem,
+  FormControl,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SendIcon from '@mui/icons-material/Send';
@@ -500,6 +504,7 @@ const ChatDrawer = ({ open, onClose }) => {
   const activeConversation = useSelector((state) => (activeChatId ? state.chat.conversations[activeChatId] : null));
   const messages = activeConversation?.messages || [];
   const loading = useSelector((state) => state.chat.loading);
+  const availableChats = useSelector((state) => state.chat.availableChats);
 
   // Local UI state
   const [inputValue, setInputValue] = useState('');
@@ -516,6 +521,61 @@ const ChatDrawer = ({ open, onClose }) => {
     x: window.innerWidth - 500,
     y: 0,
   });
+
+  // Fetch available chats from server
+  const fetchAvailableChats = async () => {
+    try {
+      dispatch(chatActions.setLoading({ key: 'loadingChatList', value: true }));
+      const response = await fetch('/api/chat/chats');
+      if (response.ok) {
+        const data = await response.json();
+        dispatch(chatActions.setAvailableChats(data.chats || []));
+      }
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+    } finally {
+      dispatch(chatActions.setLoading({ key: 'loadingChatList', value: false }));
+    }
+  };
+
+  // Load chat history from server
+  const loadChatHistory = async (chatId) => {
+    try {
+      dispatch(chatActions.setLoading({ key: 'loadingHistory', value: true }));
+      const response = await fetch(`/api/chat/history/${chatId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && data.messages.length > 0) {
+          dispatch(chatActions.setMessages({ chatId, messages: data.messages }));
+          setShowOptions(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    } finally {
+      dispatch(chatActions.setLoading({ key: 'loadingHistory', value: false }));
+    }
+  };
+
+  // Handle chat selection change
+  const handleChatChange = async (event) => {
+    const newChatId = event.target.value;
+    if (newChatId && newChatId !== activeChatId) {
+      dispatch(chatActions.setActiveChat(newChatId));
+      // Load history if not already loaded
+      const existingConversation = availableChats.find((c) => c.id === newChatId);
+      if (existingConversation) {
+        await loadChatHistory(newChatId);
+      }
+    }
+  };
+
+  // Fetch chats on component mount
+  useEffect(() => {
+    if (open) {
+      fetchAvailableChats();
+    }
+  }, [open]);
 
   // Initialize new chat on mount with unique ID
   useEffect(() => {
@@ -614,6 +674,8 @@ const ChatDrawer = ({ open, onClose }) => {
     );
 
     setShowOptions(true);
+    // Refresh available chats list after a short delay
+    setTimeout(() => fetchAvailableChats(), 500);
   };
 
   const startRecording = async () => {
@@ -865,6 +927,56 @@ const ChatDrawer = ({ open, onClose }) => {
                 </IconButton>
               </Toolbar>
             </AppBar>
+
+            {/* Chat Selector */}
+            <Box sx={{ p: 1, borderBottom: '1px solid #e0e0e0', backgroundColor: '#fafafa' }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <FormControl size="small" sx={{ flexGrow: 1 }}>
+                  <Select
+                    value={activeChatId || ''}
+                    onChange={handleChatChange}
+                    displayEmpty
+                    disabled={loading.loadingChatList}
+                    sx={{
+                      bgcolor: '#ffffff',
+                      '& .MuiSelect-select': {
+                        py: 1,
+                      },
+                    }}
+                  >
+                    {activeChatId && !availableChats.find((c) => c.id === activeChatId) && (
+                      <MenuItem value={activeChatId}>
+                        {activeConversation?.name || 'New Chat'}
+                      </MenuItem>
+                    )}
+                    {availableChats.map((chat) => (
+                      <MenuItem key={chat.id} value={chat.id}>
+                        {chat.name || `Chat ${new Date(chat.createdAt).toLocaleDateString()}`}
+                      </MenuItem>
+                    ))}
+                    {availableChats.length === 0 && !activeChatId && (
+                      <MenuItem value="" disabled>
+                        No chats available
+                      </MenuItem>
+                    )}
+                  </Select>
+                </FormControl>
+                <Tooltip title="New Chat">
+                  <IconButton
+                    size="small"
+                    onClick={clearChat}
+                    sx={{
+                      bgcolor: '#673ab7',
+                      color: 'white',
+                      '&:hover': { bgcolor: '#5e35b1' },
+                    }}
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Box>
+
             {/* Messages Area */}
             <Box className={classes.MessagesArea}>
               {messages.length === 0 ? (
