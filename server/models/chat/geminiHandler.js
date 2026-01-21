@@ -1,9 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
-import { SystemPrompts } from './SystemPromps.js';
+import { SystemPrompts } from './prompts/index.js';
 
 export class GeminiHandler extends BaseLLMHandler {
-  constructor(apiKey, model = 'gemini-2.0-flash-001', systemPrompt = SystemPrompts.gemini) {
+  constructor(apiKey, model = 'gemini-2.0-flash-001', systemPrompt = SystemPrompts.main) {
     super(apiKey, model, systemPrompt);
     if (!apiKey) {
       throw new Error('Google API Key is required for GoogleGeminiProvider.');
@@ -31,7 +31,7 @@ export class GeminiHandler extends BaseLLMHandler {
   async sendMessage(prompt, tools = []) {
     const initMsg = {
       role: 'developer',
-      content: SystemPrompts['gemini'],
+      content: SystemPrompts.main,
     };
     let parseTools = [];
     if (tools && tools.length > 0) {

@@ -2,9 +2,11 @@ import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
 import { LLM, MCPenable } from '../../config/config.js';
-import { SystemPrompts } from './SystemPromps.js';
+import { SystemPrompts } from './prompts/index.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { ChatPersistenceModel } from './chatPersistence.js';
+import { convertMissionBriefingToXYZ, convertMissionXYZToLatLong } from './coordinateConverter.js';
+import { missionController } from '../../controllers/mission.js';
 /**
  * Orquestador que maneja el flujo completo de procesamiento de mensajes
  * entre el LLM y el servidor MCP
@@ -105,11 +107,13 @@ export class MessageOrchestrator {
       // Obtener herramientas según el proveedor de LLM
       const tools = this.getToolsForProvider();
       // add system prompt if history is empty
-      if (conversationHistory.length === 0 && SystemPrompts.openai) {
+      if (conversationHistory.length === 0 && SystemPrompts.main) {
+        const mySystemPrompt = `${SystemPrompts.main}\n\n---\nSession context:\n- chat_id: ${chatId}`;
+
         await ChatPersistenceModel.addMessageToChat(
           chatId,
           'system',
-          { role: 'system', content: SystemPrompts.openai },
+          { role: 'system', content: mySystemPrompt },
           conversationHistory
         );
       }
@@ -263,10 +267,12 @@ export class MessageOrchestrator {
    * Lista todos los chats disponibles
    */
   static async listChats() {
+    const now = new Date().toISOString();
     const inMemoryChats = Object.keys(conversationHistories).map((chatId) => ({
       id: chatId,
       messageCount: conversationHistories[chatId].length,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: now,
+      createdAt: now,
       source: 'memory',
     }));
 
@@ -282,6 +288,7 @@ export class MessageOrchestrator {
             name: dbChat.name,
             messageCount: messageCount,
             lastUpdated: dbChat.updatedAt,
+            createdAt: dbChat.createdAt,
             source: 'database',
           });
         }
@@ -325,5 +332,141 @@ export class MessageOrchestrator {
       chatLogger.error('Error renaming chat:', error);
       return false;
     }
+  }
+
+  /**
+   * Crea un nuevo chat y devuelve su ID
+   * @param {string} name - Nombre opcional del chat
+   * @returns {Promise<Object>} Chat creado con id, name, createdAt
+   */
+  static async createChat(name = null) {
+    try {
+      const chat = await ChatPersistenceModel.createChat(name);
+      // Initialize empty conversation history in memory
+      conversationHistories[chat.id] = [];
+      chatLogger.info(`Chat created: ${chat.id}`);
+      return {
+        id: chat.id,
+        name: chat.name,
+        createdAt: chat.createdAt,
+      };
+    } catch (error) {
+      chatLogger.error('Error creating chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Processes a mission briefing from the main chat and creates a secondary background chat
+   * for mission planning in local XYZ coordinates.
+   *
+   * Flow:
+   * 1. Receives mission briefing from main chat (with geodetic coordinates)
+   * 2. Converts coordinates to local XYZ (ENU: East/North/Up in meters)
+   * 3. Creates a secondary chat dedicated to mission planning
+   * 4. Starts background processing with specialized mission planning prompt
+   * 5. Returns immediately - secondary chat processes asynchronously
+   *
+   * @param {Object} missionBriefing - Mission briefing from main chat (filteredMissionSchema structure)
+   * @param {string} missionBriefing.chat_id - ID of the main chat that initiated this request
+   * @param {Array} missionBriefing.devices - Available devices with lat/lng positions
+   * @param {Array} missionBriefing.inspection_elements - Elements to inspect with lat/lng positions
+   * @param {Object} missionBriefing.mission_requeriments - Mission requirements and constraints
+   * @param {Object} missionBriefing.user_context - Original user request context
+   * @returns {Promise<Object>} Object with secondaryChatId and converted mission data
+   */
+  static async buildMissionPlanXYZ(missionBriefing) {
+    const mainChatId = missionBriefing.chat_id;
+    chatLogger.info(`[MainChat: ${mainChatId}] Starting mission plan XYZ generation`);
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 1: Convert geodetic coordinates to local XYZ (ENU)
+    // ═══════════════════════════════════════════════════════════════════
+    const missionDataXYZ = convertMissionBriefingToXYZ(missionBriefing);
+    const { origin_global } = missionDataXYZ;
+    chatLogger.info(
+      `[MainChat: ${mainChatId}] Coordinates converted. Origin: lat=${origin_global.lat}, lng=${origin_global.lng}, alt=${origin_global.alt}`
+    );
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 2: Create secondary chat for background mission planning
+    // ═══════════════════════════════════════════════════════════════════
+    const secondaryChat = await this.createChat(`MP-XYZ-${mainChatId}`);
+    const secondaryChatId = secondaryChat.id;
+    chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat created: ${secondaryChatId}`);
+
+    // Initialize conversation history for secondary chat
+    if (!conversationHistories[secondaryChatId]) {
+      conversationHistories[secondaryChatId] = [];
+    }
+    const secondaryChatHistory = conversationHistories[secondaryChatId];
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 3: Configure secondary chat with mission-specific system prompt
+    // ═══════════════════════════════════════════════════════════════════
+    const systemPromptContent = `${SystemPrompts.mission_build_xyz}
+
+---
+Session context:
+- main_chat_id: ${mainChatId}
+- secondary_chat_id: ${secondaryChatId}
+- coordinate_system: local XYZ (ENU - East/North/Up in meters)
+- origin: lat=${origin_global.lat}, lng=${origin_global.lng}, alt=${origin_global.alt}`;
+
+    await ChatPersistenceModel.addMessageToChat(
+      secondaryChatId,
+      'system',
+      { role: 'system', content: systemPromptContent },
+      secondaryChatHistory
+    );
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 4: Build the mission planning request message
+    // ═══════════════════════════════════════════════════════════════════
+    const userMessage = `Create a mission plan based on the following data in local XYZ coordinates (meters):
+
+## Origin (Global Reference)
+- Latitude: ${origin_global.lat}
+- Longitude: ${origin_global.lng}
+- Altitude: ${origin_global.alt}m
+
+## Devices Information
+${JSON.stringify(missionDataXYZ.drone_information, null, 2)}
+
+## Elements to Inspect
+${JSON.stringify(missionDataXYZ.target_elements, null, 2)}
+
+## group Information
+${JSON.stringify(missionDataXYZ.group_information, null, 2)}
+
+## Mission Requirements
+${JSON.stringify(missionDataXYZ.mission_requirements, null, 2)}
+
+## User Context
+${JSON.stringify(missionDataXYZ.user_context, null, 2)}
+
+Generate an optimized mission plan to cover all inspection elements using the available devices. Provide waypoints in local XYZ coordinates.`;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 5: Start background processing (non-blocking)
+    // ═══════════════════════════════════════════════════════════════════
+    // processMessage handles LLM interaction and tool calls asynchronously
+    this.processMessage(secondaryChatId, userMessage);
+
+    chatLogger.info(`[MainChat: ${mainChatId}] Background processing started in secondary chat: ${secondaryChatId}`);
+
+    // Return immediately - secondary chat continues processing in background
+    return { secondaryChatId, msg: 'Mission is processing.' };
+  }
+
+  static async generateMissionBriefing(missionData) {
+    chatLogger.info(`[MissionBriefing] Starting mission briefing generation`);
+
+    const mission = convertMissionXYZToLatLong(missionData);
+    const response = await missionController.showMission(mission);
+
+    chatLogger.info(`[MissionBriefing] Mission briefing generation completed`);
+
+    return { msg: 'Mission briefing created successfully.', response };
   }
 }

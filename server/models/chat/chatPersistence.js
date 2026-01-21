@@ -61,6 +61,28 @@ export class ChatPersistenceModel {
   }
 
   /**
+   * Create a new chat with server-generated UUID
+   * @param {string} name - Optional chat name
+   * @returns {Promise<object>} Created chat record
+   */
+  static async createChat(name = null) {
+    const chatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const now = new Date();
+
+    const chat = await sequelize.models.Chat.create({
+      id: chatId,
+      name: name,
+      metadata: {},
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    chatLogger.info(`Created new chat with server ID: ${chatId}`);
+    return chat;
+  }
+
+  /**
    * Get all chats with optional filters
    * @param {object} options - Filter options
    * @returns {Promise<Array>} List of chats
@@ -123,12 +145,49 @@ export class ChatPersistenceModel {
 
       const { from, timestamp, message } = messageItem;
 
+      // Determine role based on message type
+      // Tool calls from LLM: { type: 'function_call', name: '...', call_id: '...', arguments: '...' }
+      // Tool results: { type: 'function_call_output', call_id: '...', output: '...' }
+      // OpenAI Responses API message: { type: 'message', role: '...', content: [...] }
+      // OpenAI reasoning: { type: 'reasoning', summary: [...] }
+      let role = message.role;
+      let type = message.type || 'text';
+      let content = null;
+
+      if (message.type === 'function_call' || message.type === 'tool_call') {
+        role = 'assistant';
+        type = 'tool_call';
+        content = `Tool call: ${message.name}`;
+      } else if (message.type === 'function_call_output') {
+        role = 'tool';
+        type = 'tool_result';
+        content = typeof message.output === 'string' ? message.output.slice(0, 500) : null;
+      } else if (message.type === 'message') {
+        // OpenAI Responses API format: { type: 'message', role: '...', content: [{type: 'output_text', text: '...'}] }
+        role = message.role || 'assistant';
+        type = 'text';
+        if (Array.isArray(message.content)) {
+          const textBlocks = message.content.filter((b) => b.type === 'output_text' || b.type === 'text');
+          content = textBlocks.map((b) => b.text).join('\n');
+        } else if (typeof message.content === 'string') {
+          content = message.content;
+        }
+      } else if (message.type === 'reasoning') {
+        role = 'assistant';
+        type = 'reasoning';
+        if (Array.isArray(message.summary)) {
+          content = message.summary.map((s) => s.text || s).join('\n');
+        }
+      } else if (typeof message.content === 'string') {
+        content = message.content;
+      }
+
       const dbMessage = await sequelize.models.ChatMessage.create({
         chatId,
-        role: message.role,
+        role: role || 'unknown',
         from: from,
-        type: message.type || 'text',
-        content: typeof message.content === 'string' ? message.content : null,
+        type: type,
+        content: content,
         messageData: message,
         status: message.status || 'completed',
         timestamp: timestamp ? new Date(timestamp) : new Date(),

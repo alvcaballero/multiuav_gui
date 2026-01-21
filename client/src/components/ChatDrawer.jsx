@@ -207,6 +207,61 @@ const convertMsg = (msg) => {
   };
 };
 
+/**
+ * Formats MCP tool output content for better readability
+ * Handles nested escaped strings and extracts text content
+ */
+const formatMcpContent = (content) => {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (typeof content !== 'object' || content === null) {
+    return JSON.stringify(content, null, 2);
+  }
+
+  // Handle MCP response format: { content: [{ type: "text", text: "..." }] }
+  if (content.content && Array.isArray(content.content)) {
+    const textParts = content.content
+      .filter((item) => item.type === 'text' && item.text)
+      .map((item) => {
+        // Unescape the text content (handle \n, \", etc.)
+        let text = item.text;
+        if (typeof text === 'string') {
+          // Replace escaped newlines and other characters
+          text = text.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        }
+        return text;
+      });
+
+    if (textParts.length > 0) {
+      return textParts.join('\n');
+    }
+  }
+
+  // Handle direct text field
+  if (content.text && typeof content.text === 'string') {
+    return content.text.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+  }
+
+  // Fallback to formatted JSON
+  return JSON.stringify(content, null, 2);
+};
+
+/**
+ * Detects if content appears to be JSON-like for syntax highlighting
+ */
+const detectContentLanguage = (content) => {
+  if (typeof content === 'string') {
+    const trimmed = content.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      return 'json';
+    }
+    return 'text';
+  }
+  return 'json';
+};
+
 const CodeBlock = ({ language, value }) => {
   const [copied, setCopied] = useState(false);
 
@@ -352,6 +407,34 @@ const MessageBubble = ({ message }) => {
   }
 
   if (type === 'function_call') {
+    // Check if this is a create_mission call with missionData
+    const isCreateMission = name === 'create_mission' && content?.missionData;
+
+    const handleCreateMission = async () => {
+      if (!content?.missionData) return;
+
+      try {
+        const response = await fetch('/api/missions/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(content.missionData),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`Misión creada exitosamente! ID: ${result.id || 'N/A'}`);
+        } else {
+          const error = await response.json();
+          console.log(`Error al crear misión: ${error.message || response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error creating mission:', error);
+        console.log(`Error al crear misión: ${error.message}`);
+      }
+    };
+
     return (
       <ListItem sx={{ mb: 1, display: 'block', px: 2 }}>
         <Accordion sx={accordionStyle('#2196f3', '#1976d2')} defaultExpanded={false}>
@@ -363,6 +446,24 @@ const MessageBubble = ({ message }) => {
               >
                 🛠️ Ejecutando: {name}
               </Typography>
+              {isCreateMission && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateMission();
+                  }}
+                  sx={{
+                    bgcolor: '#4caf50',
+                    '&:hover': { bgcolor: '#388e3c' },
+                    textTransform: 'none',
+                    marginLeft: 'auto',
+                  }}
+                >
+                  Show Misión
+                </Button>
+              )}
             </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ pt: 1, pb: 1, pl: 2, pr: 1 }}>
@@ -420,10 +521,11 @@ const MessageBubble = ({ message }) => {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
               Resultado:
             </Typography>
-            <CodeBlock
-              language="json"
-              value={typeof content === 'object' ? JSON.stringify(content, null, 2) : content}
-            />
+            {(() => {
+              const formattedContent = formatMcpContent(content);
+              const language = detectContentLanguage(formattedContent);
+              return <CodeBlock language={language} value={formattedContent} />;
+            })()}
           </AccordionDetails>
         </Accordion>
       </ListItem>
@@ -501,7 +603,11 @@ const ChatDrawer = ({ open, onClose }) => {
 
   // Get chat state from Redux
   const activeChatId = useSelector((state) => state.chat.activeChatId);
-  const activeConversation = useSelector((state) => (activeChatId ? state.chat.conversations[activeChatId] : null));
+  const activeConversation = useSelector((state) => {
+    if (activeChatId) return state.chat.conversations[activeChatId];
+    // Show pending messages when no active chat
+    return state.chat.conversations['_pending'] || null;
+  });
   const messages = activeConversation?.messages || [];
   const loading = useSelector((state) => state.chat.loading);
   const availableChats = useSelector((state) => state.chat.availableChats);
@@ -560,8 +666,17 @@ const ChatDrawer = ({ open, onClose }) => {
   // Handle chat selection change
   const handleChatChange = async (event) => {
     const newChatId = event.target.value;
+
+    // Handle "new" option - clear active chat to start fresh
+    if (newChatId === 'new') {
+      dispatch(chatActions.setActiveChat(null));
+      setShowOptions(true);
+      return;
+    }
+
     if (newChatId && newChatId !== activeChatId) {
       dispatch(chatActions.setActiveChat(newChatId));
+      setShowOptions(false);
       // Load history if not already loaded
       const existingConversation = availableChats.find((c) => c.id === newChatId);
       if (existingConversation) {
@@ -577,14 +692,12 @@ const ChatDrawer = ({ open, onClose }) => {
     }
   }, [open]);
 
-  // Initialize new chat on mount with unique ID
+  // Refresh available chats when activeChatId changes (e.g., when server creates a new chat)
   useEffect(() => {
-    if (!activeChatId) {
-      // Create a unique chat ID based on timestamp
-      const newChatId = `chat_${Date.now()}`;
-      dispatch(chatActions.setActiveChat(newChatId));
+    if (activeChatId && !availableChats.find((c) => c.id === activeChatId)) {
+      fetchAvailableChats();
     }
-  }, [activeChatId, dispatch]);
+  }, [activeChatId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -602,16 +715,18 @@ const ChatDrawer = ({ open, onClose }) => {
       // Set loading state
       dispatch(chatActions.setLoading({ key: 'sendingMessage', value: true }));
 
-      // Add user message to Redux immediately
+      // Add user message to Redux immediately (use temp ID if no active chat)
       const userMessage = {
         role: 'user',
         content: messageToSend,
         timestamp: new Date().toISOString(),
       };
 
+      // Use a temporary chat ID for new conversations
+      const chatIdForMessage = activeChatId || '_pending';
       dispatch(
         chatActions.addMessage({
-          chatId: activeChatId,
+          chatId: chatIdForMessage,
           message: userMessage,
         })
       );
@@ -620,7 +735,7 @@ const ChatDrawer = ({ open, onClose }) => {
       setInputValue('');
       setShowOptions(false);
 
-      // Send via WebSocket (NOT HTTP!)
+      // Send via WebSocket - chatId can be null, server will create one
       sendChatMessage(activeChatId, messageToSend);
 
       // Store if we should play audio response
@@ -629,14 +744,16 @@ const ChatDrawer = ({ open, onClose }) => {
       }
 
       // Note: Response will come via WebSocket and be handled by SocketController
+      // If this is a new chat, server will send chatCreated event with the new ID
     } catch (error) {
       console.error('Error sending message:', error);
       dispatch(chatActions.setError(error.message));
 
       // Show error message in chat
+      const chatIdForError = activeChatId || '_pending';
       dispatch(
         chatActions.addMessage({
-          chatId: activeChatId,
+          chatId: chatIdForError,
           message: {
             role: 'assistant',
             content: 'Error: No se pudo enviar el mensaje. Por favor verifica la conexión WebSocket.',
@@ -664,18 +781,9 @@ const ChatDrawer = ({ open, onClose }) => {
   };
 
   const clearChat = () => {
-    // Create a new chat with unique ID
-    const newChatId = `chat_${Date.now()}`;
-    dispatch(
-      chatActions.createChat({
-        chatId: newChatId,
-        name: `Chat ${new Date().toLocaleString()}`,
-      })
-    );
-
+    // Clear active chat - new chat will be created when first message is sent
+    dispatch(chatActions.setActiveChat(null));
     setShowOptions(true);
-    // Refresh available chats list after a short delay
-    setTimeout(() => fetchAvailableChats(), 500);
   };
 
   const startRecording = async () => {
@@ -933,7 +1041,7 @@ const ChatDrawer = ({ open, onClose }) => {
               <Stack direction="row" spacing={1} alignItems="center">
                 <FormControl size="small" sx={{ flexGrow: 1 }}>
                   <Select
-                    value={activeChatId || ''}
+                    value={activeChatId || 'new'}
                     onChange={handleChatChange}
                     displayEmpty
                     disabled={loading.loadingChatList}
@@ -944,21 +1052,23 @@ const ChatDrawer = ({ open, onClose }) => {
                       },
                     }}
                   >
+                    {/* Option for new chat (no activeChatId) */}
+                    <MenuItem value="new">New Chat</MenuItem>
+                    {/* Option for active chat not yet in available list (just created by server) */}
                     {activeChatId && !availableChats.find((c) => c.id === activeChatId) && (
                       <MenuItem value={activeChatId}>
-                        {activeConversation?.name || 'New Chat'}
+                        {activeConversation?.name || `Chat ${activeChatId.slice(5, 13)}`}
                       </MenuItem>
                     )}
-                    {availableChats.map((chat) => (
-                      <MenuItem key={chat.id} value={chat.id}>
-                        {chat.name || `Chat ${new Date(chat.createdAt).toLocaleDateString()}`}
-                      </MenuItem>
-                    ))}
-                    {availableChats.length === 0 && !activeChatId && (
-                      <MenuItem value="" disabled>
-                        No chats available
-                      </MenuItem>
-                    )}
+                    {availableChats.map((chat) => {
+                      // Extract short ID from chat.id (e.g., "chat_1737312000000_abc123" -> "1737312000000")
+                      const shortId = chat.id.replace('chat_', '').split('_')[0];
+                      return (
+                        <MenuItem key={chat.id} value={chat.id}>
+                          {chat.name || `Chat #${shortId}`}
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
                 <Tooltip title="New Chat">

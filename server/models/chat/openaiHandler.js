@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
-import { SystemPrompts } from './SystemPromps.js';
+import { SystemPrompts } from './prompts/index.js';
 import { logger, chatLogger } from '../../common/logger.js';
 
 //suported roles= 'assistant', 'system', 'developer', and 'user'

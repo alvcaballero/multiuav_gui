@@ -4,7 +4,7 @@ class missionController {
     const response = await missionModel.getMissionValue(req.query.id);
     res.json(response);
   };
-  
+
   static createMission = async (req, res) => {
     const response = await missionModel.setMission(req.body);
     res.json(response);
@@ -44,9 +44,9 @@ class missionController {
     res.status(200).json('all ok');
   };
 
-  static setMission = async (req, res) => {
-    let response = await missionModel.setMission(req.body);
-    res.json(response);
+  static showMission = async (mission_data) => {
+    let response = await missionModel.setMission(mission_data);
+    return response;
   };
 
   static initMission = (mission_id, data) => {

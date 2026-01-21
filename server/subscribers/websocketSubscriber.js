@@ -172,7 +172,17 @@ export class WebSocketSubscriber {
     });
 
     try {
-      await chatController.processMessage(data);
+      const result = await chatController.processMessage(data);
+
+      // If a new chat was created (chatId was empty), notify the client
+      if (!data.chatId && result.chatId) {
+        this.wsController.sendMessage({
+          chatCreated: {
+            chatId: result.chatId,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
     } catch (error) {
       logger.error('WebSocketSubscriber: Error in chatController.processMessage', {
         chatId: data.chatId,

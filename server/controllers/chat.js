@@ -30,11 +30,20 @@ export class chatController {
 
   static async processMessage(data) {
     logger.debug('Processing message with data:', data);
-    const { chatId, message, timestamp } = data;
+    const { chatId, message } = data;
 
-    const effectiveChatId = chatId || 'default_http'; // Default for HTTP requests
+    let effectiveChatId = chatId;
 
-    return MessageOrchestrator.processMessage(effectiveChatId, message);
+    // If no chatId provided, create a new chat on the server
+    if (!chatId) {
+      const newChat = await MessageOrchestrator.createChat();
+      effectiveChatId = newChat.id;
+      logger.info(`Created new chat for message: ${effectiveChatId}`);
+    }
+
+    // Process message and return result with chatId
+    const result = await MessageOrchestrator.processMessage(effectiveChatId, message);
+    return { ...result, chatId: effectiveChatId };
   }
 
   static async getChatHistory(req, res) {
@@ -43,12 +52,14 @@ export class chatController {
     try {
       const history = await MessageOrchestrator.getHistory(chatId);
 
-      // Transform history to client format
-      const messages = history.map((msg) => ({
-        from: msg.from,
-        message: msg.message,
-        timestamp: msg.timestamp || new Date().toISOString(),
-      }));
+      // Transform history to client format, excluding system messages
+      const messages = history
+        .filter((msg) => msg.message?.role !== 'system' && msg.from !== 'system')
+        .map((msg) => ({
+          from: msg.from,
+          message: msg.message,
+          timestamp: msg.timestamp || new Date().toISOString(),
+        }));
 
       res.json({ chatId, messages, count: messages.length });
     } catch (error) {
@@ -63,6 +74,18 @@ export class chatController {
       res.json({ chats });
     } catch (error) {
       logger.error('Error listing chats:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async createChat(req, res) {
+    const { name } = req.body;
+
+    try {
+      const chat = await MessageOrchestrator.createChat(name);
+      res.status(201).json(chat);
+    } catch (error) {
+      logger.error('Error creating chat:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -98,6 +121,37 @@ export class chatController {
     } catch (error) {
       logger.error('Error renaming chat:', error);
       res.status(500).json({ error: error.message });
+    }
+  }
+  static async buildMissionPlanXYZ(req, res) {
+    const { target_elements } = req.body;
+
+    if (!target_elements) {
+      return res.status(400).json({ error: 'target_elements is required.' });
+    }
+
+    try {
+      const aiResponse = await MessageOrchestrator.buildMissionPlanXYZ(req.body);
+      res.json({ ...aiResponse });
+    } catch (error) {
+      logger.error('Error in chatController.buildMissionPlanXYZ:', error);
+      res.status(500).json({ error: error.message || 'Failed to create mission plan.' });
+    }
+  }
+
+  static async generateMissionBriefing(req, res) {
+    const { origin_global } = req.body;
+
+    if (!origin_global) {
+      return res.status(400).json({ error: 'Mission data are required.' });
+    }
+
+    try {
+      const aiResponse = await MessageOrchestrator.generateMissionBriefing(req.body);
+      res.json({ ...aiResponse });
+    } catch (error) {
+      logger.error('Error in chatController.generateMissionBriefing:', error);
+      res.status(500).json({ error: error.message || 'Failed to generate mission briefing.' });
     }
   }
 }

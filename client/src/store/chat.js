@@ -18,6 +18,7 @@ const initialState = {
     sendingMessage: false,
     loadingHistory: false,
     loadingChatList: false,
+    creatingChat: false,
   },
 
   // Error state
@@ -31,6 +32,7 @@ const chatSlice = createSlice({
     // Initialize or switch to a chat conversation
     setActiveChat(state, action) {
       const chatId = action.payload;
+      const previousChatId = state.activeChatId;
       state.activeChatId = chatId;
 
       // Create conversation if it doesn't exist
@@ -41,6 +43,18 @@ const chatSlice = createSlice({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
+      }
+
+      // Migrate messages from _pending to the new chat (when server creates chat)
+      if (state.conversations['_pending'] && previousChatId !== chatId) {
+        const pendingMessages = state.conversations['_pending'].messages || [];
+        if (pendingMessages.length > 0) {
+          state.conversations[chatId].messages = [
+            ...pendingMessages,
+            ...state.conversations[chatId].messages,
+          ];
+          delete state.conversations['_pending'];
+        }
       }
     },
 

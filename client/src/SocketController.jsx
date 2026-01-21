@@ -106,6 +106,10 @@ const SocketController = () => {
       if (data.chat) {
         dispatch(chatActions.addMessage(data.chat));
       }
+      if (data.chatCreated) {
+        // Server created a new chat, update the active chat ID
+        dispatch(chatActions.setActiveChat(data.chatCreated.chatId));
+      }
     };
   };
 

@@ -1,10 +1,9 @@
 // https://medium.com/google-cloud/model-context-protocol-mcp-with-google-gemini-llm-a-deep-dive-full-code-ea16e3fac9a3
 
-
 import { OpenAIHandler } from './openaiHandler.js';
 import { GeminiHandler } from './geminiHandler.js';
 // import { AnthropicHandler } from './anthropicHandler.js';
-import { SystemPrompts } from './SystemPromps.js';
+import { SystemPrompts } from './prompts/index.js';
 /**
  * Factory para crear instancias de manejadores de LLM
  */
@@ -16,16 +15,16 @@ export class LLMFactory {
    * @param {string} model - Modelo a utilizar
    * @returns {BaseLLMHandler} Instancia del manejador
    */
-  static createHandler(provider, apiKey, model ) {
+  static createHandler(provider, apiKey, model) {
     switch (provider.toLowerCase()) {
       case 'openai':
-        return new OpenAIHandler(apiKey, model, SystemPrompts.openai);
+        return new OpenAIHandler(apiKey, model, SystemPrompts.main);
       case 'gemini':
-        return new GeminiHandler(apiKey, model, SystemPrompts.gemini);
+        return new GeminiHandler(apiKey, model, SystemPrompts.main);
       // case 'anthropic':
       // case 'claude':
       //   return new AnthropicHandler(apiKey, model);
-      
+
       default:
         throw new Error(`Proveedor de LLM no soportado: ${provider}`);
     }
@@ -36,6 +35,6 @@ export class LLMFactory {
    * @returns {string[]}
    */
   static getSupportedProviders() {
-    return ['openai', 'anthropic','claude', 'gemini'];
+    return ['openai', 'anthropic', 'claude', 'gemini'];
   }
 }
