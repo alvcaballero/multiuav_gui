@@ -5,6 +5,7 @@ const { reducer, actions } = createSlice({
   name: 'session',
   initialState: {
     server: null,
+    serverROS: null,
     user: {},
     socket: null,
     includeLogs: false,
@@ -18,7 +19,7 @@ const { reducer, actions } = createSlice({
     },
     planning: {
       id: null,
-      objetivo: {},
+      objetivo: { id: 1 },
       loc: [],
       meteo: [],
       assignments: [],
@@ -35,7 +36,8 @@ const { reducer, actions } = createSlice({
       state.server = action.payload;
     },
     updateServerROS(state, action) {
-      state.server.rosState = action.payload;
+      //state.server.rosState = action.payload;
+      state.serverROS = action.payload;
     },
     updateUser(state, action) {
       state.user = action.payload;

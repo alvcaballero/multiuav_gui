@@ -22,10 +22,10 @@ const { reducer, actions } = createSlice({
     groupRouteMode: false,
     // Elevation profile cache
     elevation: {
-      profile: [],      // Array of {name, data, color} for each route
-      location: [],     // Cached waypoint locations [lat, lon, alt]
-      selectRT: -1,     // Selected route filter (-1 = all)
-      loading: false,   // Loading indicator
+      profile: [], // Array of {name, data, color} for each route
+      location: [], // Cached waypoint locations [lat, lon, alt]
+      selectRT: -1, // Selected route filter (-1 = all)
+      loading: false, // Loading indicator
     },
   },
   reducers: {
@@ -90,9 +90,7 @@ const { reducer, actions } = createSlice({
       state.selectpoint = { id: -1 };
     },
     addRoute(state) {
-      const newId = state.route.length > 0
-        ? state.route[state.route.length - 1].id + 1
-        : 0;
+      const newId = state.route.length > 0 ? state.route[state.route.length - 1].id + 1 : 0;
       state.route.push({
         name: '',
         uav: '',
@@ -120,13 +118,17 @@ const { reducer, actions } = createSlice({
       }
     },
     addWaypoint(state, action) {
-      const { routeIndex, waypoint } = action.payload;
+      const { routeIndex, waypoint, insertAt } = action.payload;
       if (state.route[routeIndex]) {
         const newWp = waypoint || {
           pos: [0, 0, 10],
           action: {},
         };
-        state.route[routeIndex].wp.push(newWp);
+        if (insertAt !== undefined && insertAt >= 0 && insertAt <= state.route[routeIndex].wp.length) {
+          state.route[routeIndex].wp.splice(insertAt, 0, newWp);
+        } else {
+          state.route[routeIndex].wp.push(newWp);
+        }
       }
     },
     deleteWaypoint(state, action) {
@@ -157,7 +159,7 @@ const { reducer, actions } = createSlice({
         const currentWp = state.route[route_id].wp[wp_id];
         const dif_lat = lat - currentWp.pos[0];
         const dif_lng = lng - currentWp.pos[1];
-        state.route[route_id].wp.forEach(wp => {
+        state.route[route_id].wp.forEach((wp) => {
           wp.pos[0] += dif_lat;
           wp.pos[1] += dif_lng;
         });
@@ -260,8 +262,8 @@ const { reducer, actions } = createSlice({
     removeElevationRoute(state, action) {
       // Remove specific routes from elevation cache by indices
       const indicesToKeep = action.payload;
-      state.elevation.profile = indicesToKeep.map(i => state.elevation.profile[i]).filter(Boolean);
-      state.elevation.location = indicesToKeep.map(i => state.elevation.location[i]).filter(Boolean);
+      state.elevation.profile = indicesToKeep.map((i) => state.elevation.profile[i]).filter(Boolean);
+      state.elevation.location = indicesToKeep.map((i) => state.elevation.location[i]).filter(Boolean);
     },
   },
 });

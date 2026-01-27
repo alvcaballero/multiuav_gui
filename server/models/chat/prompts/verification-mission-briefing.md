@@ -1,1 +1,0 @@
-Analyze the mission summary provided and verify that it contains all the information necessary to create a drone inspection mission. Identify any missing or inconsistent data and suggest the necessary corrections or additions to ensure that the summary is complete and adequate for mission planning.

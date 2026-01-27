@@ -16,7 +16,7 @@ chatRouter.delete('/chats/:chatId', chatController.deleteChat);
 chatRouter.patch('/chats/:chatId', chatController.renameChat);
 
 chatRouter.post('/build_mission_plan_xyz', chatController.buildMissionPlanXYZ);
-chatRouter.post('/validate_mission_briefing', chatController.generateMissionBriefing);
+chatRouter.post('/verification_mission', chatController.verificationMission);
 
 // Ruta para speech-to-text (transcripción)
 chatRouter.post('/stt', upload.single('audio'), SpeechController.speechToText);

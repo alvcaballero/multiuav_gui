@@ -42,8 +42,8 @@ export class AnthropicHandler extends BaseLLMHandler {
       const response = await this.client.messages.create(params);
 
       // Verificar si hay tool calls
-      const toolUseBlocks = response.content.filter(block => block.type === 'tool_use');
-      
+      const toolUseBlocks = response.content.filter((block) => block.type === 'tool_use');
+
       if (toolUseBlocks.length > 0) {
         console.log(`✓ Anthropic solicita ${toolUseBlocks.length} llamada(s) a herramientas`);
         return {
@@ -54,7 +54,7 @@ export class AnthropicHandler extends BaseLLMHandler {
       }
 
       // Extraer texto de la respuesta
-      const textBlock = response.content.find(block => block.type === 'text');
+      const textBlock = response.content.find((block) => block.type === 'text');
       const content = textBlock ? textBlock.text : '';
 
       console.log(`✓ Respuesta recibida de Anthropic`);
@@ -95,55 +95,15 @@ export class AnthropicHandler extends BaseLLMHandler {
   }
 
   /**
-   * Continúa la conversación después de ejecutar herramientas
-   */
-  async continueWithToolResults(conversationHistory, assistantContent, toolResults) {
-    // Agregar el mensaje del asistente con los tool_use
-    conversationHistory.push({
-      role: 'assistant',
-      content: assistantContent,
-    });
-
-    // Agregar los resultados de las herramientas
-    conversationHistory.push({
-      role: 'user',
-      content: toolResults,
-    });
-
-    const params = {
-      model: this.model,
-      max_tokens: 4096,
-      messages: conversationHistory,
-    };
-
-    try {
-      console.log(`→ Continuando conversación con resultados de herramientas...`);
-      const response = await this.client.messages.create(params);
-      
-      const textBlock = response.content.find(block => block.type === 'text');
-      const content = textBlock ? textBlock.text : '';
-
-      return {
-        type: 'text',
-        content: content,
-        response: response,
-      };
-    } catch (error) {
-      console.error('Error continuando conversación:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Convierte el historial de conversación al formato de Anthropic
    */
   convertHistoryToAnthropicFormat(history) {
-    return history.map(msg => {
+    return history.map((msg) => {
       if (msg.role === 'assistant' && msg.tool_calls) {
         // Convertir tool_calls de OpenAI a formato Anthropic
         return {
           role: 'assistant',
-          content: msg.tool_calls.map(tc => ({
+          content: msg.tool_calls.map((tc) => ({
             type: 'tool_use',
             id: tc.id,
             name: tc.function.name,

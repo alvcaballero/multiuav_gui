@@ -570,10 +570,15 @@ const PlanningPage = () => {
 
   useEffectAsync(async () => {
     console.log('change objetivo');
-    if (auxobjetive !== SendTask.objetivo.id) {
+    const objetivoId = SendTask?.objetivo?.id;
+    if (objetivoId === undefined || objetivoId === null) {
+      console.log('objetivo.id is undefined, skipping fetch');
+      return;
+    }
+    if (auxobjetive !== objetivoId) {
       console.log('are different');
-      setauxobjetive(SendTask.objetivo.id);
-      const response = await fetch(`/api/planning/missionparam/${SendTask.objetivo.id}`);
+      setauxobjetive(objetivoId);
+      const response = await fetch(`/api/planning/missionparam/${objetivoId}`);
       if (response.ok) {
         console.log('response ok');
         const paramsResponse = await response.json();
@@ -690,246 +695,227 @@ const PlanningPage = () => {
   return (
     <div className={classes.root}>
       <RosControl notification={showToast}>
-          <Navbar />
-          <Menu />
-          <div className={classes.mapContainer}>
-            <MapView>
-              {checked && <MapMissions routes={routeMission} />}
-              <MapMarkersCreate
-                markers={markers}
-                selectMarkers={SendTask.loc}
-                showTitles={showTitles}
-                showLines={showLines}
-                moveMarkers={moveMarkers}
-                setMarkers={SetMapMarkers}
-                SelectItems={SelectMarkers}
-                CreateItems={CreateMarkers}
-                setLocations={addLocations}
-              />
-              <MapDefaultCamera />
-            </MapView>
-            <MapScale />
-          </div>
+        <Navbar />
+        <Menu />
+        <div className={classes.mapContainer}>
+          <MapView>
+            {checked && <MapMissions routes={routeMission} />}
+            <MapMarkersCreate
+              markers={markers}
+              selectMarkers={SendTask.loc}
+              showTitles={showTitles}
+              showLines={showLines}
+              moveMarkers={moveMarkers}
+              setMarkers={SetMapMarkers}
+              SelectItems={SelectMarkers}
+              CreateItems={CreateMarkers}
+              setLocations={addLocations}
+            />
+            <MapDefaultCamera />
+          </MapView>
+          <MapScale />
+        </div>
 
-          <div className={classes.sidebarStyle}>
-            <div className={classes.middleStyle}>
-              <Paper square>
-                <Toolbar className={classes.toolbar}>
-                  <IconButton edge="start" sx={{ mr: 2 }} onClick={handleNavigateBack}>
-                    <ArrowBackIcon />
-                  </IconButton>
-                  <Typography variant="h6" className={classes.title}>
-                    Planning
-                  </Typography>
-                  <Typography>Show Mission</Typography>
-                  <Switch
-                    checked={checked}
-                    onChange={toggleChecked}
-                    name="checkedA"
-                    inputProps={{ 'aria-label': 'secondary checkbox' }}
-                  />
-                  <IconButton onClick={handleSavePlanning}>
-                    <SaveAltIcon />
-                  </IconButton>
-                  <IconButton onClick={DeleteMission}>
-                    <DeleteIcon />
-                  </IconButton>
-                  <UploadButtons readFile={handleReadFile} typefiles=".yaml, .plan, .waypoint, .kml" />
-                </Toolbar>
-                <div className={classes.content}>
-                  <TabContext value={tabValue}>
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                      <TabList onChange={TabHandleChange} aria-label="Planning tabs">
-                        <Tab label="Elements" value={TABS.ELEMENTS} />
-                        <Tab label="Planning" value={TABS.PLANNING} />
-                        <Tab label="Settings" value={TABS.SETTINGS} />
-                      </TabList>
-                    </Box>
-                    <TabPanel value={TABS.ELEMENTS} sx={{ padding: 0 }}>
-                      <div className={`${classes.details} ${classes.tabPanelContent}`}>
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Base elements</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <BaseList markers={markers.bases} setMarkers={setMarkersBase} />
-                          </AccordionDetails>
-                        </Accordion>
-                        <Divider />
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Interest Elements</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <ElementList markers={markers.elements} setMarkers={setMarkersElements} />
-                          </AccordionDetails>
-                        </Accordion>
-                        <Box textAlign="center">
-                          <Button
-                            variant="contained"
-                            size="large"
-                            className={classes.panelButton}
-                            onClick={handleSaveGlobalMarkers}
-                          >
-                            Save Global Markers
-                          </Button>
-                        </Box>
-                      </div>
-                    </TabPanel>
-                    <TabPanel value={TABS.PLANNING} sx={{ padding: 0 }}>
-                      <Box className={`${classes.details} ${classes.tabPanelContent}`}>
-                        <TextField
-                          required
-                          fullWidth
-                          label="id"
-                          type="number"
-                          variant="standard"
-                          value={SendTask.id ? SendTask.id : 123}
-                          onChange={handleUpdatePlanningId}
-                        />
-                        <TextField
-                          required
-                          fullWidth
-                          label="Name Mission"
-                          variant="standard"
-                          value={SendTask.name ? SendTask.name : ' '}
-                          onChange={handleUpdatePlanningName}
-                        />
-                        <SelectField
-                          emptyValue={null}
-                          fullWidth
-                          label="objetive"
-                          value={SendTask.objetivo.hasOwnProperty('id') ? SendTask.objetivo.id : 1}
-                          endpoint="/api/planning/missionstype"
-                          keyGetter={(it) => it.id}
-                          titleGetter={(it) => it.name}
-                          onChange={handleUpdateObjective}
-                          getItems={handleGetItems}
-                        />
-
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Points to inspect </Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <div className={classes.details}>
-                              {SendTask.objetivo.hasOwnProperty('description') ? (
-                                <Typography>{SendTask.objetivo.description}</Typography>
-                              ) : (
-                                <Typography>select doing click in the map</Typography>
-                              )}
-                              <SelectList Data={SendTask.loc} setData={setLocations} />
-                            </div>
-                          </AccordionDetails>
-                        </Accordion>
-                        <Divider />
-                        <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>Meteo</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails className={classes.details}>
-                            <TextField
-                              required
-                              fullWidth
-                              label="wind speed"
-                              type="number"
-                              variant="standard"
-                              value={12}
-                            />
-                            <TextField
-                              required
-                              fullWidth
-                              label="Wind direction"
-                              type="number"
-                              variant="standard"
-                              value={12}
-                            />
-                            <TextField
-                              required
-                              fullWidth
-                              label="Temperature"
-                              type="number"
-                              variant="standard"
-                              value={12}
-                            />
-                            <TextField
-                              required
-                              fullWidth
-                              label="Humidity"
-                              type="number"
-                              variant="standard"
-                              value={12}
-                            />
-                            <TextField
-                              required
-                              fullWidth
-                              label="Pressure"
-                              type="number"
-                              variant="standard"
-                              value={12}
-                            />
-                          </AccordionDetails>
-                        </Accordion>
+        <div className={classes.sidebarStyle}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <Toolbar className={classes.toolbar}>
+                <IconButton edge="start" sx={{ mr: 2 }} onClick={handleNavigateBack}>
+                  <ArrowBackIcon />
+                </IconButton>
+                <Typography variant="h6" className={classes.title}>
+                  Planning
+                </Typography>
+                <Typography>Show Mission</Typography>
+                <Switch
+                  checked={checked}
+                  onChange={toggleChecked}
+                  name="checkedA"
+                  inputProps={{ 'aria-label': 'secondary checkbox' }}
+                />
+                <IconButton onClick={handleSavePlanning}>
+                  <SaveAltIcon />
+                </IconButton>
+                <IconButton onClick={DeleteMission}>
+                  <DeleteIcon />
+                </IconButton>
+                <UploadButtons readFile={handleReadFile} typefiles=".yaml, .plan, .waypoint, .kml" />
+              </Toolbar>
+              <div className={classes.content}>
+                <TabContext value={tabValue}>
+                  <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <TabList onChange={TabHandleChange} aria-label="Planning tabs">
+                      <Tab label="Elements" value={TABS.ELEMENTS} />
+                      <Tab label="Planning" value={TABS.PLANNING} />
+                      <Tab label="Settings" value={TABS.SETTINGS} />
+                    </TabList>
+                  </Box>
+                  <TabPanel value={TABS.ELEMENTS} sx={{ padding: 0 }}>
+                    <div className={`${classes.details} ${classes.tabPanelContent}`}>
+                      <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMore />}>
+                          <Typography>Base elements</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails className={classes.details}>
+                          <BaseList markers={markers.bases} setMarkers={setMarkersBase} />
+                        </AccordionDetails>
+                      </Accordion>
+                      <Divider />
+                      <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMore />}>
+                          <Typography>Interest Elements</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails className={classes.details}>
+                          <ElementList markers={markers.elements} setMarkers={setMarkersElements} />
+                        </AccordionDetails>
+                      </Accordion>
+                      <Box textAlign="center">
+                        <Button
+                          variant="contained"
+                          size="large"
+                          className={classes.panelButton}
+                          onClick={handleSaveGlobalMarkers}
+                        >
+                          Save Global Markers
+                        </Button>
                       </Box>
-                    </TabPanel>
-                    <TabPanel value={TABS.SETTINGS} sx={{ padding: 0 }}>
-                      <div className={`${classes.details} ${classes.tabPanelContent}`}>
-                        <BaseSettings
-                          data={SendTask.assignments || []}
-                          markers={markers}
-                          param={SendTask.settingsSchema}
-                          defaultSettings={SendTask.defaultSettings}
-                          setData={setBaseSettings}
-                          goToBase={goToBase}
-                        />
+                    </div>
+                  </TabPanel>
+                  <TabPanel value={TABS.PLANNING} sx={{ padding: 0 }}>
+                    <Box className={`${classes.details} ${classes.tabPanelContent}`}>
+                      <TextField
+                        required
+                        fullWidth
+                        label="id"
+                        type="number"
+                        variant="standard"
+                        value={SendTask.id ? SendTask.id : 123}
+                        onChange={handleUpdatePlanningId}
+                      />
+                      <TextField
+                        required
+                        fullWidth
+                        label="Name Mission"
+                        variant="standard"
+                        value={SendTask.name ? SendTask.name : ' '}
+                        onChange={handleUpdatePlanningName}
+                      />
+                      <SelectField
+                        emptyValue={null}
+                        fullWidth
+                        label="objetive"
+                        value={SendTask.objetivo.hasOwnProperty('id') ? SendTask.objetivo.id : 1}
+                        endpoint="/api/planning/missionstype"
+                        keyGetter={(it) => it.id}
+                        titleGetter={(it) => it.name}
+                        onChange={handleUpdateObjective}
+                        getItems={handleGetItems}
+                      />
 
-                        <Box textAlign="center">
-                          <div className={classes.panelButton} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            <Button variant="contained" sx={{ width: '80%' }} onClick={SendPlanning}>
-                              Planning
-                            </Button>
-                            <Button
-                              variant="contained"
-                              color="secondary"
-                              size="large"
-                              sx={{ width: '20%' }}
-                              endIcon={<ReplayIcon />}
-                              onClick={handleResetPolling}
-                            />
+                      <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMore />}>
+                          <Typography>Points to inspect </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails className={classes.details}>
+                          <div className={classes.details}>
+                            {SendTask.objetivo.hasOwnProperty('description') ? (
+                              <Typography>{SendTask.objetivo.description}</Typography>
+                            ) : (
+                              <Typography>select doing click in the map</Typography>
+                            )}
+                            <SelectList Data={SendTask.loc} setData={setLocations} />
                           </div>
+                        </AccordionDetails>
+                      </Accordion>
+                      <Divider />
+                      <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMore />}>
+                          <Typography>Meteo</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails className={classes.details}>
+                          <TextField
+                            required
+                            fullWidth
+                            label="wind speed"
+                            type="number"
+                            variant="standard"
+                            value={12}
+                          />
+                          <TextField
+                            required
+                            fullWidth
+                            label="Wind direction"
+                            type="number"
+                            variant="standard"
+                            value={12}
+                          />
+                          <TextField
+                            required
+                            fullWidth
+                            label="Temperature"
+                            type="number"
+                            variant="standard"
+                            value={12}
+                          />
+                          <TextField required fullWidth label="Humidity" type="number" variant="standard" value={12} />
+                          <TextField required fullWidth label="Pressure" type="number" variant="standard" value={12} />
+                        </AccordionDetails>
+                      </Accordion>
+                    </Box>
+                  </TabPanel>
+                  <TabPanel value={TABS.SETTINGS} sx={{ padding: 0 }}>
+                    <div className={`${classes.details} ${classes.tabPanelContent}`}>
+                      <BaseSettings
+                        data={SendTask.assignments || []}
+                        markers={markers}
+                        param={SendTask.settingsSchema}
+                        defaultSettings={SendTask.defaultSettings}
+                        setData={setBaseSettings}
+                        goToBase={goToBase}
+                      />
 
-                          <Button
-                            variant="contained"
-                            size="large"
-                            className={classes.panelButton}
-                            onClick={MissionTask}
-                          >
-                            Planinng with Global Setting
+                      <Box textAlign="center">
+                        <div className={classes.panelButton} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                          <Button variant="contained" sx={{ width: '80%' }} onClick={SendPlanning}>
+                            Planning
                           </Button>
                           <Button
                             variant="contained"
+                            color="secondary"
                             size="large"
-                            className={classes.panelButton}
-                            onClick={handleSaveGlobalMarkers}
-                          >
-                            Save Global Settings
-                          </Button>
-                        </Box>
-                        <Typography>{notification}</Typography>
-                      </div>
-                    </TabPanel>
-                  </TabContext>
-                </div>
-              </Paper>
-            </div>
+                            sx={{ width: '20%' }}
+                            endIcon={<ReplayIcon />}
+                            onClick={handleResetPolling}
+                          />
+                        </div>
+
+                        <Button variant="contained" size="large" className={classes.panelButton} onClick={MissionTask}>
+                          Planinng with Global Setting
+                        </Button>
+                        <Button
+                          variant="contained"
+                          size="large"
+                          className={classes.panelButton}
+                          onClick={handleSaveGlobalMarkers}
+                        >
+                          Save Global Settings
+                        </Button>
+                      </Box>
+                      <Typography>{notification}</Typography>
+                    </div>
+                  </TabPanel>
+                </TabContext>
+              </div>
+            </Paper>
           </div>
-          <div className={classes.panelElevation}>
-            <div className={classes.middleStyle}>
-              <Paper square>
-                <MissionElevation />
-              </Paper>
-            </div>
+        </div>
+        <div className={classes.panelElevation}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <MissionElevation />
+            </Paper>
           </div>
+        </div>
       </RosControl>
     </div>
   );

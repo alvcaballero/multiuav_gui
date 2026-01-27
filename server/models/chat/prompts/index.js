@@ -25,7 +25,7 @@ export const SystemPrompts = {
   agv: loadPrompt('agv-prompt.md'),
   other: loadPrompt('other-prompt.md'),
   mission_build_xyz: loadPrompt('mission-build-xyz.md'),
-  verification_mission_briefing: loadPrompt('verification-mission-briefing.md'),
+  verification_mission: loadPrompt('verification-mission.md'),
 };
 
 // Exportaciones individuales para compatibilidad
@@ -33,4 +33,4 @@ export const mainPrompt = SystemPrompts.main;
 export const agvPrompt = SystemPrompts.agv;
 export const otherPrompt = SystemPrompts.other;
 export const missionBuildXyzPrompt = SystemPrompts.mission_build_xyz;
-export const verificationMissionBriefingPrompt = SystemPrompts.verification_mission_briefing;
+export const verificationMissionPrompt = SystemPrompts.verification_mission;

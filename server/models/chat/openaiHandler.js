@@ -4,8 +4,9 @@ import { SystemPrompts } from './prompts/index.js';
 import { logger, chatLogger } from '../../common/logger.js';
 
 //suported roles= 'assistant', 'system', 'developer', and 'user'
+// models: gpt-4.1, gpt-4o, o4-mini, gpt-5, gpt-5-mini,, gpt-5-nano gpt-5.2,etc.
 class OpenAIHandler extends BaseLLMHandler {
-  constructor(apiKey, model = 'gpt-5', systemPrompt = SystemPrompts.openai) {
+  constructor(apiKey, model = 'gpt-5.2', systemPrompt = SystemPrompts.openai) {
     //logger.info(`Apikey in handler ${apiKey}, ${model}`);
     super(apiKey, model, systemPrompt);
     if (!apiKey) {
@@ -17,7 +18,7 @@ class OpenAIHandler extends BaseLLMHandler {
     this.client = new OpenAI({
       apiKey: this.apiKey,
     });
-    chatLogger.info(`✓ Cliente OpenAI inicializado (modelo: ${this.model})`);
+    chatLogger.info(`✓ OpenAI client initialized (model: ${this.model})`);
   }
 
   convertToolsForMCP(tools) {
@@ -48,171 +49,104 @@ class OpenAIHandler extends BaseLLMHandler {
     return [...lastconversation, { role: 'user', content: message }];
   }
 
-  async processMessage(message = null, tools = [], conversationHistory = []) {
-    if (!this.client) {
-      throw new Error('Cliente OpenAI no inicializado');
+  _parseAssistantResponse(assistantMessage) {
+    let msgType = 'text';
+    let responseMsg = {
+      role: 'assistant',
+      content: '',
+    };
+    let toolCalls = [];
+
+    for (const content of assistantMessage) {
+      if (content.type === 'reasoning') {
+        chatLogger.info('Reasoning:', JSON.stringify(content.summary || content, null, 2).substring(0, 30) + '...');
+      }
+      if (content.type === 'function_call' || content.type === 'tool_call') {
+        chatLogger.info(`✓ Tool call request: ${content.name}`);
+        msgType = 'tool_calls';
+        toolCalls.push(content);
+        responseMsg.role = 'tool';
+        responseMsg.name = `execute_${content.name}`;
+      }
+      if (content.type === 'text' || content.type === 'message') {
+        chatLogger.info(`✓ Partial response: ${(content.text || content.content?.text || '').substring(0, 30)}...`);
+        responseMsg.role = 'assistant';
+        responseMsg.content += content.text || content.content?.text || '';
+        msgType = 'text';
+        if (Array.isArray(content.content)) {
+          for (const block of content.content) {
+            if (block.type === 'output_text') {
+              chatLogger.info(`✓ Output text block: ${block.text.substring(0, 30)}...`);
+              responseMsg.content = responseMsg.content === '' ? block.text : '';
+            }
+          }
+        }
+      }
     }
 
-    // Construir el array de mensajes
+    return { msgType, responseMsg, toolCalls };
+  }
+
+  async processMessage(message = null, tools = [], conversationHistory = []) {
+    if (!this.client) {
+      throw new Error('OpenAI client not initialized');
+    }
+
+    // Build the messages array
     const messages = this.convertMsg(message, conversationHistory);
 
-    console.log('Messages to send to OpenAI:', JSON.stringify(messages, null, 2));
-    // Parámetros para la llamada
+    //console.log('Messages to send to OpenAI:', JSON.stringify(messages, null, 2));
+    // Parameters for the call
     const params = {
       model: this.model,
       input: messages,
+      reasoning: { effort: 'high' },
     };
 
-    // Agregar tools si están disponibles
+    // Add tools if available
     if (tools.length > 0) {
       params.tools = this.convertToolsForMCP(tools);
       params.tool_choice = 'auto';
     }
 
     try {
-      chatLogger.info(`→ Enviando mensaje a OpenAI...`);
-      //const response = await this.client.chat.completions.create(params);
+      chatLogger.info(`→ Sending message to OpenAI...`);
       const response = await this.client.responses.create(params);
-      //const assistantMessage = response.choices[0].message;
-
-      chatLogger.info('OpenAI Response:', JSON.stringify(response, null, 2));
       const assistantMessage = response.output;
-      console.log('Assistant message from OpenAI:', JSON.stringify(assistantMessage, null, 2));
-      let msgType = 'text';
-      let responseMsg = {
-        role: 'assistant',
-        content: '',
-      };
-      let toolCalls = [];
-      for (const content of assistantMessage) {
-        console.log('Processing content from assistantMessage:', JSON.stringify(content, null, 2));
-        if (content.type === 'reasoning') {
-          chatLogger.info('Reasoning:', JSON.stringify(content, null, 2));
-        }
-        if (content.type === 'function_call' || content.type === 'tool_call') {
-          chatLogger.info(`✓ OpenAI solicita llamada a herramienta: ${content.name}`);
-          msgType = 'tool_calls';
-          toolCalls.push(content);
-          responseMsg.role = 'tool';
-          responseMsg.name = `execute_${content.name}`;
-        }
-        if (content.type === 'text' || content.type === 'message') {
-          chatLogger.info(`✓ Respuesta parcial de OpenAI: ${content.text || content.content?.text}`);
-          responseMsg.role = 'assistant';
-          responseMsg.content += content.text || content.content?.text || '';
-          msgType = 'text';
-          if (Array.isArray(content.content)) {
-            for (const block of content.content) {
-              if (block.type === 'output_text') {
-                chatLogger.info(`✓ Bloque de texto de salida: ${block.text}`);
-                responseMsg.content = responseMsg.content === '' ? block.text : '';
-              }
-            }
-          }
-        }
-      }
+
+      // Parse response (result unused here, but parsing logs the response)
+      this._parseAssistantResponse(assistantMessage);
+
       return assistantMessage;
     } catch (error) {
-      console.error('Error en OpenAI:', error);
+      chatLogger.error('Error in OpenAI:', error);
       throw error;
     }
   }
 
   async handleToolCall(toolCall, toolExecutor) {
-    console.log('Manejando tool call:', JSON.stringify(toolCall, null, 2));
+    chatLogger.info('Handling tool call:', JSON.stringify(toolCall, null, 2).substring(0, 30) + '...');
     try {
       const functionName = toolCall.name;
       const functionArgs = JSON.parse(toolCall.arguments);
 
-      // Ejecutar la herramienta a través del MCP
+      // Execute the tool through MCP
       const result = await toolExecutor(functionName, functionArgs);
-      console.log(`✓ Herramienta  ejecutada con éxito ${functionName}. Resultado:`, result);
+      chatLogger.info(`✓ Tool ${functionName} response:`, JSON.stringify(result, null, 2).substring(0, 30) + '...');
 
-      // Formato de respuesta para OpenAI
+      // Response format for OpenAI
       return {
         type: 'function_call_output',
         call_id: toolCall.call_id,
         output: JSON.stringify(result),
       };
     } catch (error) {
-      console.error('Error manejando tool call:', error);
+      chatLogger.error('Error handling tool call:', error);
       return {
         type: 'function_call_output',
         call_id: toolCall.call_id,
         output: JSON.stringify({ error: error.message }),
       };
-    }
-  }
-
-  /**
-   * Continúa la conversación después de ejecutar herramientas
-   */
-  async continueWithToolResults(conversationHistory, toolResults) {
-    const params = {
-      model: this.model,
-      input: conversationHistory,
-    };
-
-    try {
-      console.log(`→ Continuando conversación con resultados de herramientas...`);
-      console.log('Conversation history:', JSON.stringify(conversationHistory, null, 2));
-      //const response = await this.client.chat.completions.create(params);
-      const response = await this.client.responses.create(params);
-      const assistantMessage = response.output;
-      console.log('Assistant message from OpenAI:', JSON.stringify(assistantMessage, null, 2));
-      let msgType = 'text';
-      let responseMsg = {
-        role: 'assistant',
-        content: '',
-      };
-      let toolCalls = [];
-      for (const content of assistantMessage) {
-        if (content.type === 'reasoning') {
-          chatLogger.info('Reasoning:', JSON.stringify(content.summary, null, 2));
-        }
-        if (content.type === 'function_call' || content.type === 'tool_call') {
-          chatLogger.info(`✓ OpenAI solicita llamada a herramienta: ${content.name}`);
-          msgType = 'tool_calls';
-          toolCalls.push(content);
-          responseMsg.role = 'tool';
-          responseMsg.name = `execute_${content.name}`;
-        }
-        if (content.type === 'text' || content.type === 'message') {
-          chatLogger.info(`✓ Respuesta parcial de OpenAI: ${content.text || content.content?.text}`);
-          responseMsg.role = 'assistant';
-          responseMsg.content += content.text || content.content?.text || '';
-          msgType = 'text';
-          if (Array.isArray(content.content)) {
-            for (const block of content.content) {
-              if (block.type === 'output_text') {
-                chatLogger.info(`✓ Bloque de texto de salida: ${block.text}`);
-                responseMsg.content = responseMsg.content === '' ? block.text : '';
-              }
-            }
-          }
-        }
-      }
-
-      // Verificar si hay tool calls
-      if (msgType === 'tool_calls') {
-        console.log(`✓ OpenAI solicita ${toolCalls.length} llamada(s) a herramientas`);
-        return {
-          type: 'tool_calls',
-          content: assistantMessage,
-          message: responseMsg,
-          toolCalls: toolCalls,
-        };
-      }
-
-      console.log(`✓ Respuesta recibida de OpenAI`);
-      return {
-        type: 'text',
-        content: assistantMessage,
-        message: responseMsg,
-      };
-    } catch (error) {
-      console.error('Error continuando conversación:', error);
-      throw error;
     }
   }
 

@@ -139,19 +139,19 @@ export class chatController {
     }
   }
 
-  static async generateMissionBriefing(req, res) {
-    const { origin_global } = req.body;
+  static async verificationMission(req, res) {
+    const { origin_global, chat_id } = req.body;
 
-    if (!origin_global) {
-      return res.status(400).json({ error: 'Mission data are required.' });
+    if (!origin_global || !chat_id) {
+      return res.status(400).json({ error: 'Mission data with origin_global and chat_id are required.' });
     }
 
     try {
-      const aiResponse = await MessageOrchestrator.generateMissionBriefing(req.body);
+      const aiResponse = await MessageOrchestrator.verificationMission(req.body);
       res.json({ ...aiResponse });
     } catch (error) {
-      logger.error('Error in chatController.generateMissionBriefing:', error);
-      res.status(500).json({ error: error.message || 'Failed to generate mission briefing.' });
+      logger.error('Error in chatController.verificationMission:', error);
+      res.status(500).json({ error: error.message || 'Failed to verify mission.' });
     }
   }
 }

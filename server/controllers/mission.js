@@ -49,6 +49,16 @@ class missionController {
     return response;
   };
 
+  static showMissionXYZ = async (req, res) => {
+    try {
+      const response = await missionModel.showMissionXYZ(req.body);
+      res.json(response);
+    } catch (error) {
+      console.error('Error in showMissionXYZ:', error);
+      res.status(500).json({ error: error.message || 'Failed to show mission XYZ.' });
+    }
+  };
+
   static initMission = (mission_id, data) => {
     missionModel.initMission(mission_id, data);
   };

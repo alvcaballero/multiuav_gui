@@ -97,6 +97,21 @@ export class planningModel {
     return initPlanning.elements;
   }
 
+  static getBaseswithAssignments() {
+    console.log('get bases with assignments');
+    const assignments = initPlanning.assignments || [];
+    const bases = initPlanning.markersbase || [];
+
+    // Create a map of baseId -> assigned device
+    const assignmentsMap = new Map(assignments.map((a) => [a.baseId, a.device]));
+
+    // Return all bases with their assigned device (if any)
+    return bases.map((base) => ({
+      ...base,
+      device: assignmentsMap.get(base.id) || null,
+    }));
+  }
+
   static async PlanningRequest({ id, myTask }) {
     let response2;
     const response1 = await fetch(`${planningHost}/mission_request`, {

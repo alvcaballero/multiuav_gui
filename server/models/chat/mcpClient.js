@@ -16,7 +16,7 @@ class MCPclient {
     this.client = null;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 2000; // 2 segundos inicial
+    this.reconnectDelay = 2000; // 2 seconds initial
     this.isReconnecting = false;
   }
 
@@ -38,12 +38,12 @@ class MCPclient {
     logger.info('Connecting to MCP server using', MCPconfig, 'transport...');
 
     try {
-      // Limpiar cliente anterior si existe
+      // Clean up previous client if exists
       if (this.client) {
         try {
           await this.client.close();
         } catch (e) {
-          // Ignorar errores al cerrar
+          // Ignore errors when closing
         }
       }
 
@@ -80,11 +80,11 @@ class MCPclient {
       await this.client.connect(this.transport);
 
       this.isConnected = true;
-      this.reconnectAttempts = 0; // Resetear intentos al conectar exitosamente
+      this.reconnectAttempts = 0; // Reset attempts on successful connection
       await this.loadTools();
 
-      chatLogger.info('✓ Conectado al servidor MCP');
-      chatLogger.info(`✓ ${this.tools.length} herramientas cargadas`);
+      chatLogger.info('✓ Connected to MCP server');
+      chatLogger.info(`✓ ${this.tools.length} tools loaded`);
 
       return true;
     } catch (error) {
@@ -96,13 +96,13 @@ class MCPclient {
 
   async loadTools() {
     if (!this.client) {
-      throw new Error('Cliente MCP no inicializado');
+      throw new Error('MCP client not initialized');
     }
     try {
       const response = await this.client.listTools();
       this.tools = response.tools || [];
     } catch (error) {
-      console.error('Error cargando herramientas MCP:', error);
+      chatLogger.error('Error loading MCP tools:', error);
       this.tools = [];
     }
   }
@@ -112,8 +112,8 @@ class MCPclient {
   }
 
   /**
-   * Obtiene las herramientas en formato compatible con OpenAI
-   * @returns {Array} Array de herramientas en formato OpenAI
+   * Gets tools in OpenAI compatible format
+   * @returns {Array} Array of tools in OpenAI format
    */
   getToolsForOpenAI() {
     return this.tools.map((tool) => ({
@@ -129,8 +129,8 @@ class MCPclient {
     }));
   }
   /**
-   * Obtiene las herramientas en formato compatible con OpenAI
-   * @returns {Array} Array de herramientas en formato OpenAI
+   * Gets tools in Gemini compatible format
+   * @returns {Array} Array of tools in Gemini format
    */
   getToolsForGemini() {
     return this.tools.map((tool) => ({
@@ -147,8 +147,8 @@ class MCPclient {
   }
 
   /**
-   * Obtiene las herramientas en formato compatible con Anthropic
-   * @returns {Array} Array de herramientas en formato Anthropic
+   * Gets tools in Anthropic compatible format
+   * @returns {Array} Array of tools in Anthropic format
    */
   getToolsForAnthropic() {
     return this.tools.map((tool) => ({
@@ -170,16 +170,16 @@ class MCPclient {
   }
 
   /**
-   * Intenta reconectar al servidor MCP con backoff exponencial
+   * Attempts to reconnect to MCP server with exponential backoff
    */
   async reconnect() {
     if (this.isReconnecting) {
-      chatLogger.info('⏳ Ya hay un intento de reconexión en curso...');
+      chatLogger.info('⏳ Reconnection attempt already in progress...');
       return;
     }
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      chatLogger.error('❌ Se alcanzó el máximo de intentos de reconexión');
+      chatLogger.error('❌ Maximum reconnection attempts reached');
       return false;
     }
 
@@ -188,20 +188,20 @@ class MCPclient {
 
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    chatLogger.info(`🔄 Intento de reconexión ${this.reconnectAttempts}/${this.maxReconnectAttempts} en ${delay}ms...`);
+    chatLogger.info(`🔄 Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms...`);
 
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
 
     try {
       await this.connect();
-      chatLogger.info('✓ Reconexión exitosa al servidor MCP');
+      chatLogger.info('✓ Successfully reconnected to MCP server');
       this.isReconnecting = false;
       return true;
     } catch (error) {
-      chatLogger.error(`❌ Intento de reconexión ${this.reconnectAttempts} falló:`, error.message);
+      chatLogger.error(`❌ Reconnection attempt ${this.reconnectAttempts} failed:`, error.message);
       this.isReconnecting = false;
 
-      // Intentar reconectar recursivamente si no se alcanzó el máximo
+      // Try to reconnect recursively if max not reached
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         return await this.reconnect();
       }
@@ -211,28 +211,28 @@ class MCPclient {
   }
 
   /**
-   * Cierra la conexión con el servidor MCP
+   * Closes the connection to the MCP server
    */
   async disconnect() {
     if (this.client) {
       await this.client.close();
       this.isConnected = false;
-      console.log('✓ Desconectado del servidor MCP');
+      chatLogger.info('✓ Disconnected from MCP server');
     }
   }
 
   /**
-   * Ejecuta una herramienta del servidor MCP
-   * @param {string} toolName - Nombre de la herramienta
-   * @param {Object} args - Argumentos para la herramienta
-   * @returns {Promise<any>} Resultado de la ejecución
+   * Executes a tool from the MCP server
+   * @param {string} toolName - Tool name
+   * @param {Object} args - Arguments for the tool
+   * @returns {Promise<any>} Execution result
    */
   async executeTool(toolName, args = {}) {
     if (!this.client || !this.isConnected) {
-      chatLogger.warn('⚠️  Cliente MCP no conectado, intentando reconectar...');
+      chatLogger.warn('⚠️  MCP client not connected, attempting to reconnect...');
       const reconnected = await this.reconnect();
       if (!reconnected) {
-        throw new Error('Cliente MCP no conectado y no se pudo reconectar');
+        throw new Error('MCP client not connected and could not reconnect');
       }
     }
 
@@ -240,20 +240,20 @@ class MCPclient {
     if (!tool) throw new Error(`Tool not found: ${toolName}`);
 
     try {
-      console.log(`→ Ejecutando herramienta MCP: ${toolName}`);
-      console.log(`  Argumentos:`, args);
+      chatLogger.info(`→ Executing MCP tool: ${toolName}`);
+      //chatLogger.debug(`  Arguments:`, args);
 
       const result = await this.client.callTool({
         name: toolName,
         arguments: args,
       });
 
-      console.log(`✓ Herramienta ejecutada: ${toolName}`);
+      chatLogger.info(`✓ Tool executed: ${toolName}`);
       return result;
     } catch (error) {
-      console.error(`Error ejecutando herramienta ${toolName}:`, error);
+      chatLogger.error(`Error executing tool ${toolName}:`, error);
 
-      // Detectar errores de conexión y intentar reconectar
+      // Detect connection errors and attempt to reconnect
       const isConnectionError =
         error.message?.includes('ECONNREFUSED') ||
         error.message?.includes('ECONNRESET') ||
@@ -265,13 +265,13 @@ class MCPclient {
         error.code === 'EPIPE';
 
       if (isConnectionError) {
-        chatLogger.warn('⚠️  Detectada desconexión del servidor MCP, intentando reconectar...');
+        chatLogger.warn('⚠️  MCP server disconnection detected, attempting to reconnect...');
         this.isConnected = false;
 
         const reconnected = await this.reconnect();
         if (reconnected) {
-          // Reintentar la ejecución de la herramienta
-          chatLogger.info('🔄 Reintentando ejecución de herramienta después de reconexión...');
+          // Retry tool execution after reconnection
+          chatLogger.info('🔄 Retrying tool execution after reconnection...');
           return await this.executeTool(toolName, args);
         }
       }
@@ -281,7 +281,7 @@ class MCPclient {
   }
 
   /**
-   * Verifica si el cliente está conectado
+   * Checks if the client is connected
    * @returns {boolean}
    */
   isReady() {
@@ -301,8 +301,8 @@ class MCPclient {
   }
 
   /**
-   * Verifica la salud de la conexión intentando listar las herramientas
-   * @returns {Promise<boolean>} true si la conexión está activa
+   * Checks connection health by attempting to list tools
+   * @returns {Promise<boolean>} true if connection is active
    */
   async checkConnection() {
     if (!this.client || !this.isConnected) {
@@ -313,25 +313,21 @@ class MCPclient {
       await this.client.listTools();
       return true;
     } catch (error) {
-      chatLogger.warn('⚠️  Verificación de conexión falló:', error.message);
+      chatLogger.warn('⚠️  Connection check failed:', error.message);
       this.isConnected = false;
       return false;
     }
   }
 
   /**
-   * Resetea el contador de intentos de reconexión
-   * Útil cuando se quiere forzar nuevos intentos después de alcanzar el máximo
+   * Resets the reconnection attempts counter
+   * Useful when you want to force new attempts after reaching the maximum
    */
   resetReconnectAttempts() {
     this.reconnectAttempts = 0;
-    chatLogger.info('🔄 Contador de intentos de reconexión reseteado');
+    chatLogger.info('🔄 Reconnection attempts counter reset');
   }
 
   formatTools() {}
-
-
-
-
 }
 export { MCPclient };

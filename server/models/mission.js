@@ -8,6 +8,8 @@ import { eventsController } from '../controllers/events.js';
 import { readDataFile, writeJSON, sleep } from '../common/utils.js';
 import sequelize from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
+import { convertMissionXYZToLatLong } from './chat/coordinateConverter.js';
+import logger from '../common/logger.js';
 
 /**
  * @typedef Mission
@@ -477,6 +479,14 @@ export class missionModel {
         await this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR });
       }
     }
+  }
+
+  static async showMissionXYZ(missionDataXYZ) {
+    logger.info(`[MissionShowXYZ] Starting mission show in XYZ coordinates`);
+    const mission = convertMissionXYZToLatLong(missionDataXYZ);
+    const response = await this.setMission(mission);
+    logger.info(`[MissionShowXYZ] Mission show completed`);
+    return response;
   }
 }
 

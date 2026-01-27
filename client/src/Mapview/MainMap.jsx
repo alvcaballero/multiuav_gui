@@ -14,7 +14,7 @@ import MapLiveRoutes from './MapLiveRoutes';
 import MapGeocoder from './geocoder/MapGeocoder';
 import MapGeofence from './MapGeofence';
 import PegmanControl from './PegmanControl/PegmanControl';
-
+import MapObstacles from './MapObstacles';
 const MainMap = ({
   filteredPositions,
   markers = [],
@@ -35,6 +35,7 @@ const MainMap = ({
       <MapView>
         <MapMarkers markers={markers} />
         <MapMissions filtereddeviceid={filteredMissiondeviceid} routes={routes} />
+        <MapObstacles />
         <MapElements />
         <MapGeofence />
         <MapLiveRoutes />

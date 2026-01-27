@@ -12,6 +12,7 @@ import usePersistedState, { savePersistedState } from '../common/usePersistedSta
 
 import { mapImages } from './preloadImages';
 import useMapStyles from './useMapStyles';
+import { use } from 'react';
 
 const element = document.createElement('div');
 element.style.width = '100%';
@@ -24,8 +25,7 @@ export const map = new maplibregl.Map({
   zoom: 14,
   centerClampedToGround: false,
   maxPitch: 85,
-  canvasContextAttributes: {antialias: true} // create the gl context with MSAA antialiasing, so custom layers are antialiased
-
+  canvasContextAttributes: { antialias: true }, // create the gl context with MSAA antialiasing, so custom layers are antialiased
 });
 
 let ready = false;
@@ -105,12 +105,16 @@ const MapView = ({ children }) => {
       map.setMaxZoom(maxZoom);
     }
   }, [maxZoom]);
+  useEffect(() => {
+    console.log('Initializing map...');
+  }, [mapReady]);
 
   useEffect(() => {
     maplibregl.accessToken = mapboxAccessToken;
   }, [mapboxAccessToken]);
 
   useEffect(() => {
+    console.log('Updating map styles...');
     const filteredStyles = mapStyles.filter((s) => s.available && activeMapStyles.includes(s.id));
     const styles = filteredStyles.length ? filteredStyles : mapStyles.filter((s) => s.id === 'osm');
     switcher.updateStyles(styles, defaultMapStyle);

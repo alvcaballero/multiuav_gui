@@ -114,12 +114,12 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 const initialOptions = [
-  'crea una mission rapida para la inspecion de los aerogeneadores que se encuentran offshore en viena de castelo',
-  'crea una mission para la inspecion de los aerogeneadores de la linea A en viena de castelo',
-  'has una mission detallada para el aerogeneador 5 de la linea A en viena de castelo',
-  '¿Qué drones están disponibles?',
-  'Crea una misión para que un dron vuele 100m al norte y regrese.',
-  'Selecciona un dron y haz que se mantenga en vuelo estacionario a 10 metros de altura.',
+  'Create a quick mission to inspect the offshore wind turbines in Viana do Castelo',
+  'Create a mission to inspect the line B wind turbines in Viana do Castelo',
+  'Create a detailed mission for wind turbine 2 of line B in Viana do Castelo',
+  'Which drones are available?',
+  'Create a mission for a drone to fly 100m north and return.',
+  'Select a drone and make it hover at a height of 10 meters.',
 ];
 
 const convertMsg = (msg) => {
@@ -407,19 +407,32 @@ const MessageBubble = ({ message }) => {
   }
 
   if (type === 'function_call') {
-    // Check if this is a create_mission call with missionData
-    const isCreateMission = name === 'create_mission' && content?.missionData;
+    // Check if this is a create_mission call with missionData or missionDataXYZ
+    const hasMissionData = content?.missionData;
+    const hasMissionDataXYZ = content?.missionDataXYZ;
+    const isCreateMission = hasMissionData || hasMissionDataXYZ;
 
     const handleCreateMission = async () => {
-      if (!content?.missionData) return;
-
       try {
-        const response = await fetch('/api/missions/', {
+        let endpoint;
+        let missionPayload;
+
+        if (hasMissionDataXYZ) {
+          endpoint = '/api/missions/showXYZ';
+          missionPayload = content.missionDataXYZ;
+        } else if (hasMissionData) {
+          endpoint = '/api/missions/';
+          missionPayload = content.missionData;
+        } else {
+          return;
+        }
+
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(content.missionData),
+          body: JSON.stringify(missionPayload),
         });
 
         if (response.ok) {
@@ -1150,7 +1163,7 @@ const ChatDrawer = ({ open, onClose }) => {
                   fullWidth
                   multiline
                   maxRows={3}
-                  placeholder="Escribe tu mensaje..."
+                  placeholder="Ask me anything about drones, missions, or commands..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyUp={handleKeyPress}

@@ -130,7 +130,7 @@ export class MessageOrchestrator {
 
       let toolCallsFlag = false;
       for (const res of response) {
-        chatLogger.debug('Assistant message:', JSON.stringify(res));
+        //chatLogger.debug('Assistant message:', JSON.stringify(res));
 
         if (res.type === 'function_call' || res.type === 'tool_call') {
           toolCallsFlag = true;
@@ -169,7 +169,7 @@ export class MessageOrchestrator {
     let isToolCalling = true;
     let iterations = 0;
     chatLogger.debug('Starting tool calls loop...');
-    chatLogger.debug('Initial response with tool calls:', JSON.stringify(response, null, 2));
+    //chatLogger.debug('Initial response with tool calls:', JSON.stringify(response, null, 2));
     let currentResponse = response;
 
     while (isToolCalling && iterations < maxIterations) {
@@ -220,7 +220,7 @@ export class MessageOrchestrator {
 
     const chatresponse = await llmHandler.processMessage(null, this.getToolsForProvider(), conversationHistory);
 
-    chatLogger.debug('Response after tool execution:', JSON.stringify(chatresponse, null, 2));
+    //chatLogger.debug('Response after tool execution:', JSON.stringify(chatresponse, null, 2));
 
     for (const res of chatresponse) {
       await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
@@ -281,7 +281,14 @@ export class MessageOrchestrator {
       const chatMap = new Map(inMemoryChats.map((c) => [c.id, c]));
 
       for (const dbChat of dbChats) {
-        if (!chatMap.has(dbChat.id)) {
+        const existing = chatMap.get(dbChat.id);
+        if (existing) {
+          // Enrich memory data with DB metadata (name, timestamps)
+          existing.name = dbChat.name;
+          existing.createdAt = dbChat.createdAt;
+          existing.lastUpdated = dbChat.updatedAt;
+        } else {
+          // Add chat that only exists in DB
           const messageCount = await ChatPersistenceModel.getMessageCount(dbChat.id);
           chatMap.set(dbChat.id, {
             id: dbChat.id,
@@ -294,7 +301,12 @@ export class MessageOrchestrator {
         }
       }
 
-      return Array.from(chatMap.values());
+      // Sort by createdAt descending (newest first)
+      return Array.from(chatMap.values()).sort((a, b) => {
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        return dateB - dateA;
+      });
     } catch (error) {
       chatLogger.error('Error listing DB chats:', error);
       return inMemoryChats;
@@ -384,16 +396,13 @@ export class MessageOrchestrator {
     // ═══════════════════════════════════════════════════════════════════
     const missionDataXYZ = convertMissionBriefingToXYZ(missionBriefing);
     const { origin_global } = missionDataXYZ;
-    chatLogger.info(
-      `[MainChat: ${mainChatId}] Coordinates converted. Origin: lat=${origin_global.lat}, lng=${origin_global.lng}, alt=${origin_global.alt}`
-    );
 
     // ═══════════════════════════════════════════════════════════════════
     // STEP 2: Create secondary chat for background mission planning
     // ═══════════════════════════════════════════════════════════════════
     const secondaryChat = await this.createChat(`MP-XYZ-${mainChatId}`);
     const secondaryChatId = secondaryChat.id;
-    chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat created: ${secondaryChatId}`);
+    chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat XYZ: ${secondaryChatId}`);
 
     // Initialize conversation history for secondary chat
     if (!conversationHistories[secondaryChatId]) {
@@ -459,14 +468,88 @@ Generate an optimized mission plan to cover all inspection elements using the av
     return { secondaryChatId, msg: 'Mission is processing.' };
   }
 
-  static async generateMissionBriefing(missionData) {
-    chatLogger.info(`[MissionBriefing] Starting mission briefing generation`);
+  /**
+   * Verifies and corrects collision issues in mission trajectories.
+   * Receives mission data in XYZ coordinates and analyzes waypoints for potential collisions.
+   *
+   * @param {Object} missionDataXYZ - Mission data in XYZ coordinates
+   * @param {string} missionDataXYZ.chat_id - ID of the main chat that initiated this request
+   * @param {Object} missionDataXYZ.origin_global - Global origin reference (lat, lng, alt)
+   * @param {Array} missionDataXYZ.route - Array of routes with waypoints in XYZ
+   * @param {Array} missionDataXYZ.target_elements - Elements to inspect with collision data
+   * @returns {Promise<Object>} Object with verification chat ID and status
+   */
+  static async verificationMission(missionDataXYZ) {
+    const mainChatId = missionDataXYZ.chat_id;
+    const origin_global = missionDataXYZ.origin_global;
+    chatLogger.info(`[MainChat: ${mainChatId}] Starting mission verification for collisions`);
 
-    const mission = convertMissionXYZToLatLong(missionData);
-    const response = await missionController.showMission(mission);
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 1: Show mission to user (convert to LatLong for display)
+    // ═══════════════════════════════════════════════════════════════════
+    const missionLatLong = convertMissionXYZToLatLong(missionDataXYZ);
+    await missionController.showMission(missionLatLong);
 
-    chatLogger.info(`[MissionBriefing] Mission briefing generation completed`);
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 2: Create verification chat for collision analysis
+    // ═══════════════════════════════════════════════════════════════════
+    const verificationChat = await this.createChat(`MP-verify-${mainChatId}`);
+    const verifyChatId = verificationChat.id;
+    chatLogger.info(`[MainChat: ${mainChatId}] Verification chat: ${verifyChatId}`);
 
-    return { msg: 'Mission briefing created successfully.', response };
+    // Initialize conversation history for verification chat
+    if (!conversationHistories[verifyChatId]) {
+      conversationHistories[verifyChatId] = [];
+    }
+    const verifyChatHistory = conversationHistories[verifyChatId];
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 3: Configure verification chat with collision detection prompt
+    // ═══════════════════════════════════════════════════════════════════
+    const systemPromptContent = `${SystemPrompts.verification_mission}
+
+---
+Session context:
+- main_chat_id: ${mainChatId}
+- verification_chat_id: ${verifyChatId}
+- coordinate_system: local XYZ (ENU - East/North/Up in meters)
+- origin: lat=${origin_global.lat}, lng=${origin_global.lng}, alt=${origin_global.alt}`;
+
+    await ChatPersistenceModel.addMessageToChat(
+      verifyChatId,
+      'system',
+      { role: 'system', content: systemPromptContent },
+      verifyChatHistory
+    );
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 4: Build the verification request message
+    // ═══════════════════════════════════════════════════════════════════
+    const userMessage = `Verify and correct the following mission plan for potential collisions:
+
+## Origin (Global Reference)
+- Latitude: ${origin_global.lat}
+- Longitude: ${origin_global.lng}
+- Altitude: ${origin_global.alt}m
+
+## Mission Routes
+${JSON.stringify(missionDataXYZ.route, null, 2)}
+
+## Target Elements (with collision data)
+${JSON.stringify(missionDataXYZ.obstacles, null, 2)}
+
+Analyze each trajectory segment for potential collisions with obstacles.
+If collisions are detected, modify the waypoints to create safe detours.
+Return the corrected mission plan in XYZ coordinates.`;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 5: Start background processing (non-blocking)
+    // ═══════════════════════════════════════════════════════════════════
+    this.processMessage(verifyChatId, userMessage);
+
+    chatLogger.info(`[MainChat: ${mainChatId}] Verification processing started in chat: ${verifyChatId}`);
+
+    // Return immediately - verification chat continues processing in background
+    return { verifyChatId, msg: 'Mission verification in progress.' };
   }
 }

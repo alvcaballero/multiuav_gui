@@ -50,6 +50,10 @@ export class planningController {
     let response = await planningModel.getElements(req.params);
     res.json(response);
   }
+  static async getBasesWithAssignments(req, res) {
+    let response = await planningModel.getBaseswithAssignments();
+    res.json(response);
+  }
   static getBasesSettings() {
     return planningModel.getBasesSettings();
   }

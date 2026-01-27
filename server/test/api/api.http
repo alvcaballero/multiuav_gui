@@ -1060,199 +1060,175 @@ POST  http://localhost:4000/api/chat/validate_mission_briefing
 content-type: application/json
 
 {
-  "origin_global": {
-    "lat": 41.68722237457937,
-    "lng": -8.847745085750113,
-    "alt": 0
-  },
-  "chat_id": "chat_1769009405240_12c42x8",
-  "version": "3",
-  "name": "Offshore Viana do Castelo - Quick Inspection (XYZ)",
-  "description": "Two-UAV quick inspection. 1 frontal waypoint per turbine at 162 m upwind (east) from hub, 80 m AGL, yaw -90° to face turbine, speed 5 m/s. Start/Return at HOME 20 m AGL. Nearest-neighbor ordering per UAV. All heights <=120 m; paths remain in front of rotor planes to avoid crossing rotor disks; >=5 m clearance from structures (>=130 m from blade tips).",
-  "route": [
-    {
-      "name": "Line A - quick frontal",
-      "uav": "px4_2",
-      "id": 0,
-      "attributes": {
-        "max_vel": 6,
-        "idle_vel": 3,
-        "mode_yaw": 3,
-        "mode_gimbal": 0,
-        "mode_trace": 0,
-        "mode_landing": 2
-      },
-      "wp": [
-        {
-          "pos": [
-            1.52,
-            -13.458,
-            20
-          ],
-          "speed": 3
-        },
-        {
-          "pos": [
-            -578.998,
-            -2.592,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -581.987,
-            -96.393,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -580.492,
-            -182.751,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -680.624,
-            -181.262,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -680.624,
-            -96.393,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -685.107,
-            -4.08,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            1.52,
-            -13.458,
-            20
-          ],
-          "speed": 3
-        }
-      ],
-      "uav_type": "px4_ros2"
+    "origin_global": {
+      "lat": 41.68734383818229,
+      "lng": -8.847763635289304,
+      "alt": 0
     },
-    {
-      "name": "Line B - quick frontal",
-      "uav": "px4_3",
-      "id": 1,
-      "attributes": {
-        "max_vel": 6,
-        "idle_vel": 3,
-        "mode_yaw": 3,
-        "mode_gimbal": 0,
-        "mode_trace": 0,
-        "mode_landing": 2
-      },
-      "wp": [
-        {
-          "pos": [
-            -1.52,
-            13.458,
-            20
-          ],
-          "speed": 3
+    "chat_id": "chat_1769081456218_g8esni3",
+    "version": "3",
+    "name": "Viana Offshore Quick Frontal Inspection - XYZ",
+    "description": "Quick frontal inspection (one waypoint per turbine, 40 m East of hub at 80 m AGL). Energy-efficient lateral detours added to avoid rotor planes. Start/Return at (0,0,80).",
+    "route": [
+      {
+        "name": "lineAB_quick",
+        "uav": "px4_3",
+        "id": 0,
+        "attributes": {
+          "max_vel": 8,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_gimbal": 0,
+          "mode_trace": 0,
+          "mode_landing": 2
         },
-        {
-          "pos": [
-            -583.481,
-            86.742,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -686.602,
-            88.231,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -807.656,
-            88.231,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -807.656,
-            -1.103,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -806.162,
-            -85.971,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -806.162,
-            -173.818,
-            80
-          ],
-          "yaw": -90,
-          "speed": 5,
-          "gimbal": 0
-        },
-        {
-          "pos": [
-            -1.52,
-            13.458,
-            20
-          ],
-          "speed": 3
-        }
-      ],
-      "uav_type": "px4_ros2"
-    }
-  ]
-}
+        "wp": [
+          {
+            "pos": [
+              0,
+              0,
+              80
+            ],
+            "yaw": 0,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -699.452,
+              -16.082,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -703.936,
+              73.252,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -755.496,
+              130,
+              80
+            ],
+            "yaw": 0,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -807.056,
+              74.74,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -867.583,
+              129.74,
+              80
+            ],
+            "yaw": 0,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -928.11,
+              74.74,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -928.11,
+              -14.593,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -926.616,
+              -99.461,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -926.616,
+              -187.308,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -801.078,
+              -194.753,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -801.078,
+              -109.884,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -805.561,
+              -17.571,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -702.441,
+              -109.884,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              -700.947,
+              -196.242,
+              80
+            ],
+            "yaw": -90,
+            "speed": 5
+          },
+          {
+            "pos": [
+              0,
+              0,
+              80
+            ],
+            "yaw": 0,
+            "speed": 5
+          }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  }
