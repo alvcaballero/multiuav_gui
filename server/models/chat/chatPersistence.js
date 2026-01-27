@@ -9,14 +9,16 @@ export class ChatPersistenceModel {
    * @param {string} from - Message sender ('user', 'assistant', 'system')
    * @param {object} message - Message content object
    * @param {Array} conversationHistory - Reference to conversation history array to push to
+   * @param {string} responseId - Optional OpenAI response ID for assistant messages
    * @returns {Promise<object>} The created chat item
    */
-  static async addMessageToChat(chatId, from, message, conversationHistory) {
+  static async addMessageToChat(chatId, from, message, conversationHistory, responseId = null) {
     const chatItem = {
       chatId,
       from,
       timestamp: new Date().toISOString(),
       message,
+      responseId,
     };
 
     if (from === 'assistant') {
@@ -191,6 +193,7 @@ export class ChatPersistenceModel {
         messageData: message,
         status: message.status || 'completed',
         timestamp: timestamp ? new Date(timestamp) : new Date(),
+        responseId: messageItem.responseId || null,
       });
 
       await sequelize.models.Chat.update({ updatedAt: new Date() }, { where: { id: chatId } });
@@ -231,5 +234,66 @@ export class ChatPersistenceModel {
    */
   static async getMessageCount(chatId) {
     return await sequelize.models.ChatMessage.count({ where: { chatId } });
+  }
+
+  /**
+   * Get the last response ID for a chat
+   * @param {string} chatId - Chat identifier
+   * @returns {Promise<string|null>} Last response ID or null
+   */
+  static async getLastResponseId(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      return chat?.metadata?.lastResponseId || null;
+    } catch (error) {
+      chatLogger.error('Error getting last response ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update the chat's metadata including response ID, provider and model
+   * @param {string} chatId - Chat identifier
+   * @param {object} updates - Object with responseId, provider, model
+   */
+  static async updateChatMetadata(chatId, { responseId, provider, model }) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      if (chat) {
+        const metadata = chat.metadata || {};
+        if (responseId !== undefined) {
+          metadata.lastResponseId = responseId;
+          metadata.lastResponseAt = new Date().toISOString();
+        }
+        if (provider !== undefined) metadata.provider = provider;
+        if (model !== undefined) metadata.model = model;
+
+        chat.metadata = metadata;
+        chat.updatedAt = new Date();
+        await chat.save();
+        chatLogger.debug(`Updated chat ${chatId} metadata: responseId=${responseId ? responseId.substring(0, 20) + '...' : 'null'}, provider=${provider}, model=${model}`);
+      }
+    } catch (error) {
+      chatLogger.error('Error updating chat metadata:', error);
+    }
+  }
+
+  /**
+   * Clear the response chain (forces full history on next message)
+   * @param {string} chatId - Chat identifier
+   */
+  static async clearResponseChain(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      if (chat) {
+        const metadata = chat.metadata || {};
+        metadata.lastResponseId = null;
+        chat.metadata = metadata;
+        await chat.save();
+        chatLogger.info(`Response chain cleared for chat ${chatId}`);
+      }
+    } catch (error) {
+      chatLogger.error('Error clearing response chain:', error);
+    }
   }
 }

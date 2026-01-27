@@ -18,12 +18,15 @@ export class BaseLLMHandler {
 
   /**
    * Procesa un mensaje y retorna la respuesta
-   * @param {string} message - Mensaje del usuario
+   * @param {string} message - Mensaje del usuario (null para continuación de tool calls)
    * @param {Array} tools - Herramientas disponibles
    * @param {Array} conversationHistory - Historial de conversación
-   * @returns {Promise<Object>} Respuesta del LLM
+   * @param {Object} options - Opciones adicionales para el procesamiento
+   * @param {string} options.previousResponseId - ID de respuesta anterior para encadenar (evita enviar historial completo)
+   * @param {string} options.instructions - Instrucciones del sistema (necesarias al usar previousResponseId)
+   * @returns {Promise<Object>} Respuesta del LLM con formato { output: Array, responseId: string, model: string, status: string }
    */
-  async processMessage(message, tools = [], conversationHistory = []) {
+  async processMessage(message, tools = [], conversationHistory = [], options = {}) {
     throw new Error('processMessage() debe ser implementado por la clase derivada');
   }
 

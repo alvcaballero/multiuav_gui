@@ -6,7 +6,7 @@ export const RosContext = React.createContext();
 export const RosControl = ({ children }) => {
   const [rosState, setrosState] = useState(false);
   const [confirmMission, setconfirmMission] = useState(false);
-  const serverState = useSelector((state) => state.session.server.rosState);
+  const serverState = useSelector((state) => state.session.serverROS);
 
   useEffect(() => {
     console.log('RosControl mounted');

@@ -1,4 +1,4 @@
-import { useId, useEffect, useCallback } from 'react';
+import { useId, useEffect, useCallback, useMemo } from 'react';
 import { map } from './MapView';
 import { findFonts } from './mapUtil';
 import circle from '@turf/circle';
@@ -10,103 +10,267 @@ const DEFAULT_ORIGIN = {
   alt: 0,
 };
 
+// Default colors for zones
+const DEFAULT_COLORS = {
+  exclusion: '#F44336',
+  caution: '#FFC107',
+  safe: '#4CAF50',
+  point: '#1976D2',
+};
+
 // Hardcoded wind turbine obstacles
 const DEFAULT_OBSTACLES = [
   {
+    name: 'A1',
+    type: 'windTurbine',
+    position: { x: -1006.862, y: -259.905, z: 0 },
+    zones: {
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    },
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
+    aabb: {
+      min_point: { x: -1046.862, y: -299.905, z: 0 },
+      max_point: { x: -966.862, y: -219.905, z: 115 },
+    },
+  },
+  {
+    name: 'A2',
+    type: 'windTurbine',
+    position: { x: -1010.96, y: -6.765, z: 0 },
+    zones: {
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    },
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
+    aabb: {
+      min_point: { x: -1050.96, y: -46.765, z: 0 },
+      max_point: { x: -970.96, y: 33.235, z: 115 },
+    },
+  },
+  {
+    name: 'A3',
+    type: 'windTurbine',
+    position: { x: -1013.025, y: 191.794, z: 0 },
+    zones: {
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    },
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
+    aabb: {
+      min_point: { x: -1053.025, y: 151.794, z: 0 },
+      max_point: { x: -973.025, y: 231.794, z: 115 },
+    },
+  },
+  {
+    name: 'A4',
+    type: 'windTurbine',
+    position: { x: -734.116, y: 197.061, z: 0 },
+    zones: {
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    },
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
+    aabb: {
+      min_point: { x: -774.116, y: 157.061, z: 0 },
+      max_point: { x: -694.116, y: 237.061, z: 115 },
+    },
+  },
+  {
+    name: 'A5',
+    type: 'windTurbine',
+    position: { x: -730.919, y: -1.322, z: 0 },
+    zones: {
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    },
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
+    aabb: {
+      min_point: { x: -770.919, y: -41.322, z: 0 },
+      max_point: { x: -690.919, y: 38.678, z: 115 },
+    },
+  },
+  {
+    name: 'A6',
+    type: 'windTurbine',
+    position: { x: -729.553, y: -255.822, z: 0 },
+    zones: {
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    },
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
+    aabb: {
+      min_point: { x: -769.553, y: -295.822, z: 0 },
+      max_point: { x: -689.553, y: -215.822, z: 115 },
+    },
+  },
+  {
     name: 'B1',
     type: 'windTurbine',
-    position: { x: -968.162, y: -173.843, z: 0 },
+    position: { x: -1300.564, y: -263.988, z: 0 },
     zones: {
-      exclusion_zone: 'Cylinder r=40m, z=[0..108] around turbine center (includes rotor disc + safety buffer).',
-      caution_zone: 'Cylinder r=60m, z=[0..108].',
-      safe_zone: 'Maintain >=70m during transit when possible; inspection allowed at ~50m.',
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
     },
-    safe_passages: ['north', 'south', 'east', 'west'],
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
     aabb: {
-      min_point: { x: -1008.162, y: -213.843, z: 0 },
-      max_point: { x: -928.162, y: -133.843, z: 108 },
+      min_point: { x: -1340.564, y: -303.988, z: 0 },
+      max_point: { x: -1260.564, y: -223.988, z: 115 },
     },
-    metadata: 'hub 80m; rotor diam 56m; yaw 90deg (faces east); blades stopped.',
   },
   {
     name: 'B2',
     type: 'windTurbine',
-    position: { x: -968.162, y: -85.996, z: 0 },
+    position: { x: -1297.832, y: -16.292, z: 0 },
     zones: {
-      exclusion_zone: 'Cylinder r=40m, z=[0..108] around turbine center.',
-      caution_zone: 'Cylinder r=60m, z=[0..108].',
-      safe_zone: 'Maintain >=70m during transit when possible; inspection allowed at ~50m.',
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
     },
-    safe_passages: ['north', 'south', 'east', 'west'],
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
     aabb: {
-      min_point: { x: -1008.162, y: -125.996, z: 0 },
-      max_point: { x: -928.162, y: -45.996, z: 108 },
+      min_point: { x: -1337.832, y: -56.292, z: 0 },
+      max_point: { x: -1257.832, y: 23.708, z: 115 },
     },
-    metadata: 'hub 80m; rotor diam 56m; yaw 90deg (faces east); blades stopped.',
   },
   {
     name: 'B3',
     type: 'windTurbine',
-    position: { x: -969.657, y: -1.128, z: 0 },
+    position: { x: -1297.197, y: 193.346, z: 0 },
     zones: {
-      exclusion_zone: 'Cylinder r=40m, z=[0..108] around turbine center.',
-      caution_zone: 'Cylinder r=60m, z=[0..108].',
-      safe_zone: 'Maintain >=70m during transit when possible; inspection allowed at ~50m.',
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
     },
-    safe_passages: ['north', 'south', 'east', 'west'],
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
     aabb: {
-      min_point: { x: -1009.657, y: -41.128, z: 0 },
-      max_point: { x: -929.657, y: 38.872, z: 108 },
+      min_point: { x: -1337.197, y: 153.346, z: 0 },
+      max_point: { x: -1257.197, y: 233.346, z: 115 },
     },
-    metadata: 'hub 80m; rotor diam 56m; yaw 90deg (faces east); blades stopped.',
   },
   {
     name: 'B4',
     type: 'windTurbine',
-    position: { x: -969.657, y: 88.205, z: 0 },
+    position: { x: -1299.198, y: 420.557, z: 0 },
     zones: {
-      exclusion_zone: 'Cylinder r=40m, z=[0..108] around turbine center.',
-      caution_zone: 'Cylinder r=60m, z=[0..108].',
-      safe_zone: 'Maintain >=70m during transit when possible; inspection allowed at ~50m.',
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
     },
-    safe_passages: ['north', 'south', 'east', 'west'],
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
     aabb: {
-      min_point: { x: -1009.657, y: 48.205, z: 0 },
-      max_point: { x: -929.657, y: 128.205, z: 108 },
+      min_point: { x: -1339.198, y: 380.557, z: 0 },
+      max_point: { x: -1259.198, y: 460.557, z: 115 },
     },
-    metadata: 'hub 80m; rotor diam 56m; yaw 90deg (faces east); blades stopped.',
   },
   {
     name: 'B5',
     type: 'windTurbine',
-    position: { x: -848.602, y: 88.205, z: 0 },
+    position: { x: -1023.255, y: 424.64, z: 0 },
     zones: {
-      exclusion_zone: 'Cylinder r=40m, z=[0..108] around turbine center.',
-      caution_zone: 'Cylinder r=60m, z=[0..108].',
-      safe_zone: 'Maintain >=70m during transit when possible; inspection allowed at ~50m.',
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
     },
-    safe_passages: ['north', 'south', 'east', 'west'],
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
     aabb: {
-      min_point: { x: -888.602, y: 48.205, z: 0 },
-      max_point: { x: -808.602, y: 128.205, z: 108 },
+      min_point: { x: -1063.255, y: 384.64, z: 0 },
+      max_point: { x: -983.255, y: 464.64, z: 115 },
     },
-    metadata: 'hub 80m; rotor diam 56m; yaw 90deg (faces east); blades stopped.',
   },
   {
     name: 'B6',
     type: 'windTurbine',
-    position: { x: -745.482, y: 86.716, z: 0 },
+    position: { x: -732.285, y: 424.64, z: 0 },
     zones: {
-      exclusion_zone: 'Cylinder r=40m, z=[0..108] around turbine center.',
-      caution_zone: 'Cylinder r=60m, z=[0..108].',
-      safe_zone: 'Maintain >=70m during transit when possible; inspection allowed at ~50m.',
+      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
+      caution_zone: 'cylinder r=70m, z=[0,120]',
+      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
     },
-    safe_passages: ['north', 'south', 'east', 'west'],
+    safe_passages: [
+      'north: y>center_y+90 @ z 60-100',
+      'south: y<center_y-90 @ z 60-100',
+      'west: x<center_x-90 @ z 60-100',
+      'east: x>center_x+90 @ z 60-100',
+      'over: z>115',
+    ],
     aabb: {
-      min_point: { x: -785.482, y: 46.716, z: 0 },
-      max_point: { x: -705.482, y: 126.716, z: 108 },
+      min_point: { x: -772.285, y: 384.64, z: 0 },
+      max_point: { x: -692.285, y: 464.64, z: 115 },
     },
-    metadata: 'hub 80m; rotor diam 56m; yaw 90deg (faces east); blades stopped.',
   },
 ];
 
@@ -186,30 +350,25 @@ const MapObstacles = ({
   obstacles = DEFAULT_OBSTACLES,
   origin = DEFAULT_ORIGIN,
   visible = true,
-  colors = {
-    exclusion: '#F44336',
-    caution: '#FFC107',
-    safe: '#4CAF50',
-    point: '#1976D2',
-  },
+  colors = DEFAULT_COLORS,
 }) => {
   const id = useId();
 
-  const sourceIds = {
+  const sourceIds = useMemo(() => ({
     safe: `${id}-safe-zones`,
     caution: `${id}-caution-zones`,
     exclusion: `${id}-exclusion-zones`,
     points: `${id}-obstacle-points`,
-  };
+  }), [id]);
 
-  const layerIds = {
+  const layerIds = useMemo(() => ({
     safeFill: `${id}-safe-fill`,
     cautionFill: `${id}-caution-fill`,
     exclusionFill: `${id}-exclusion-fill`,
     exclusionBorder: `${id}-exclusion-border`,
     points: `${id}-obstacle-points`,
     labels: `${id}-obstacle-labels`,
-  };
+  }), [id]);
 
   const processObstacles = useCallback(() => {
     if (!origin || !obstacles.length) {
@@ -472,7 +631,6 @@ const MapObstacles = ({
 
     // Listen for style changes to re-add layers
     const onStyleData = () => {
-      // Small delay to ensure map is ready after style change
       setTimeout(() => {
         if (visible && !map.getSource(sourceIds.safe)) {
           updateMap();
@@ -482,7 +640,6 @@ const MapObstacles = ({
 
     map.on('styledata', onStyleData);
 
-    // Cleanup function
     return () => {
       map.off('styledata', onStyleData);
       removeSourcesAndLayers();

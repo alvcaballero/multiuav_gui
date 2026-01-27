@@ -106,14 +106,22 @@ export class MessageOrchestrator {
     try {
       // Obtener herramientas según el proveedor de LLM
       const tools = this.getToolsForProvider();
-      // add system prompt if history is empty
-      if (conversationHistory.length === 0 && SystemPrompts.main) {
-        const mySystemPrompt = `${SystemPrompts.main}\n\n---\nSession context:\n- chat_id: ${chatId}`;
 
+      // Get the last response ID for this chat (for response chaining)
+      let lastResponseId = await ChatPersistenceModel.getLastResponseId(chatId);
+
+      // Build system instructions (needed for first message or when using previous_response_id)
+      let systemInstructions = null;
+      if (SystemPrompts.main) {
+        systemInstructions = `${SystemPrompts.main}\n\n---\nSession context:\n- chat_id: ${chatId}`;
+      }
+
+      // Add system prompt to history if first message (for record keeping)
+      if (conversationHistory.length === 0 && systemInstructions) {
         await ChatPersistenceModel.addMessageToChat(
           chatId,
           'system',
-          { role: 'system', content: mySystemPrompt },
+          { role: 'system', content: systemInstructions },
           conversationHistory
         );
       }
@@ -126,26 +134,49 @@ export class MessageOrchestrator {
         conversationHistory
       );
 
-      let response = await llmHandler.processMessage(message, tools, conversationHistory.slice(0, -1));
+      // Call LLM with response chaining support
+      const result = await llmHandler.processMessage(
+        message,
+        tools,
+        conversationHistory.slice(0, -1),
+        {
+          previousResponseId: lastResponseId,
+          instructions: systemInstructions,
+        }
+      );
+
+      // Extract response ID and output from result
+      const { output, responseId, model, responseIdCleared } = result;
+
+      // If fallback happened, clear the stored responseId
+      if (responseIdCleared) {
+        await ChatPersistenceModel.clearResponseChain(chatId);
+      }
+      // Store the new response ID and metadata for this chat
+      else if (responseId) {
+        await ChatPersistenceModel.updateChatMetadata(chatId, {
+          responseId,
+          provider: llmHandler.getProviderName(),
+          model,
+        });
+      }
 
       let toolCallsFlag = false;
-      for (const res of response) {
-        //chatLogger.debug('Assistant message:', JSON.stringify(res));
-
+      for (const res of output) {
         if (res.type === 'function_call' || res.type === 'tool_call') {
           toolCallsFlag = true;
         }
-        await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
+        await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory, responseId);
       }
-      // chatLogger.debug('History:', JSON.stringify(conversationHistory, null, 2));
 
+      // Handle tool calls with the current responseId
       if (toolCallsFlag) {
-        this.handleToolCallsLoop(response, tools, chatId);
+        this.handleToolCallsLoop(output, tools, chatId, responseId, systemInstructions);
       }
 
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
 
-      return llmHandler.normalizeResponse(response);
+      return llmHandler.normalizeResponse(result);
     } catch (error) {
       chatLogger.error('Error procesando mensaje:', error);
       eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
@@ -164,20 +195,34 @@ export class MessageOrchestrator {
 
   /**
    * Maneja el loop de llamadas a herramientas
+   * @param {Array} response - Initial response with tool calls
+   * @param {Array} _tools - Available tools
+   * @param {string} chatId - Chat identifier
+   * @param {string} initialResponseId - Response ID to continue the chain
+   * @param {string} systemInstructions - System instructions to re-send
    */
-  static async handleToolCallsLoop(response, _tools, chatId) {
+  static async handleToolCallsLoop(response, _tools, chatId, initialResponseId, systemInstructions) {
     let isToolCalling = true;
     let iterations = 0;
     chatLogger.debug('Starting tool calls loop...');
-    //chatLogger.debug('Initial response with tool calls:', JSON.stringify(response, null, 2));
     let currentResponse = response;
+    let currentResponseId = initialResponseId;
 
     while (isToolCalling && iterations < maxIterations) {
       iterations++;
       chatLogger.debug(`Iteration ${iterations} - Processing tools...`);
       isToolCalling = true;
       const toolResults = await this.executeToolCalls(currentResponse);
-      currentResponse = await this.continueAfterTools(toolResults, chatId);
+
+      // Continue with the same response chain
+      const result = await this.continueAfterTools(toolResults, chatId, currentResponseId, systemInstructions);
+      currentResponse = result.output;
+      currentResponseId = result.responseId;
+
+      // Update stored responseId
+      if (currentResponseId) {
+        await ChatPersistenceModel.updateChatMetadata(chatId, { responseId: currentResponseId });
+      }
 
       isToolCalling = currentResponse.some(
         (content) => content.type === 'function_call' || content.type === 'tool_call'
@@ -211,21 +256,40 @@ export class MessageOrchestrator {
 
   /**
    * Continúa la conversación después de ejecutar herramientas
+   * @param {Array} toolResults - Results from tool executions
+   * @param {string} chatId - Chat identifier
+   * @param {string} previousResponseId - Response ID to continue the chain
+   * @param {string} systemInstructions - System instructions to re-send
+   * @returns {Promise<{output: Array, responseId: string}>} Response output and new responseId
    */
-  static async continueAfterTools(toolResults, chatId) {
+  static async continueAfterTools(toolResults, chatId, previousResponseId, systemInstructions) {
     const conversationHistory = conversationHistories[chatId];
+
+    // Store tool results
     for (const res of toolResults) {
       await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
     }
 
-    const chatresponse = await llmHandler.processMessage(null, this.getToolsForProvider(), conversationHistory);
+    // Continue conversation using previous_response_id with tool outputs
+    const result = await llmHandler.processMessage(
+      null, // No new user message
+      this.getToolsForProvider(),
+      conversationHistory,
+      {
+        previousResponseId,
+        instructions: systemInstructions,
+        toolOutputs: toolResults, // Pass tool outputs to be sent in input
+      }
+    );
 
-    //chatLogger.debug('Response after tool execution:', JSON.stringify(chatresponse, null, 2));
+    const { output, responseId } = result;
 
-    for (const res of chatresponse) {
-      await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
+    // Store assistant messages with new responseId
+    for (const res of output) {
+      await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory, responseId);
     }
-    return chatresponse;
+
+    return { output, responseId };
   }
 
   /**

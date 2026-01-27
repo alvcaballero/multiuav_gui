@@ -87,19 +87,16 @@ class OpenAIHandler extends BaseLLMHandler {
     return { msgType, responseMsg, toolCalls };
   }
 
-  async processMessage(message = null, tools = [], conversationHistory = []) {
+  async processMessage(message = null, tools = [], conversationHistory = [], options = {}) {
     if (!this.client) {
       throw new Error('OpenAI client not initialized');
     }
 
-    // Build the messages array
-    const messages = this.convertMsg(message, conversationHistory);
+    const { previousResponseId = null, instructions = null, toolOutputs = null } = options;
 
-    //console.log('Messages to send to OpenAI:', JSON.stringify(messages, null, 2));
     // Parameters for the call
     const params = {
       model: this.model,
-      input: messages,
       reasoning: { effort: 'high' },
     };
 
@@ -109,19 +106,91 @@ class OpenAIHandler extends BaseLLMHandler {
       params.tool_choice = 'auto';
     }
 
+    // CASE 1: Using previous_response_id (optimized path - no full history needed)
+    if (previousResponseId) {
+      params.previous_response_id = previousResponseId;
+
+      // Tool continuation - must send tool outputs in input
+      if (toolOutputs && toolOutputs.length > 0) {
+        params.input = toolOutputs;
+      }
+      // New user message
+      else if (message !== null) {
+        params.input = [{ role: 'user', content: message }];
+      }
+      // Empty continuation (shouldn't happen normally)
+      else {
+        params.input = [];
+      }
+
+      // Re-send instructions if provided (they don't persist in chains)
+      if (instructions) {
+        params.instructions = instructions;
+      }
+    }
+    // CASE 2: First message or fallback (full history path)
+    else {
+      params.input = this.convertMsg(message, conversationHistory);
+    }
+
     try {
-      chatLogger.info(`→ Sending message to OpenAI...`);
+      chatLogger.info(`→ Sending message to OpenAI (previousResponseId: ${previousResponseId ? previousResponseId.substring(0, 20) + '...' : 'none'})...`);
       const response = await this.client.responses.create(params);
+
+      // Verificar el estado de la respuesta
+      if (response.status !== 'completed') {
+        chatLogger.error(`OpenAI response status: ${response.status} | ID: ${response.id || 'N/A'} | Model: ${response.model || this.model}`);
+        if (response.status === 'failed' && response.error) {
+          chatLogger.error(`Error: [${response.error.code || 'unknown'}] ${response.error.message || 'No message'}`);
+        }
+        if (response.status === 'incomplete' && response.incomplete_details) {
+          chatLogger.error(`Incomplete reason: ${response.incomplete_details.reason || 'unknown'}`);
+        }
+      }
+
       const assistantMessage = response.output;
 
       // Parse response (result unused here, but parsing logs the response)
       this._parseAssistantResponse(assistantMessage);
 
-      return assistantMessage;
+      // Return extended result with response metadata
+      return {
+        output: assistantMessage,
+        responseId: response.id,
+        model: response.model || this.model,
+        status: response.status,
+      };
     } catch (error) {
       chatLogger.error('Error in OpenAI:', error);
+
+      // If previous_response_id fails (expired, not found, missing tool outputs), fall back to full history
+      if (previousResponseId && this._isResponseIdError(error)) {
+        chatLogger.warn(`previous_response_id failed (${error.message}), falling back to full history`);
+        // Return with flag to indicate responseId should be cleared
+        const result = await this.processMessage(message, tools, conversationHistory, {
+          previousResponseId: null,
+          instructions,
+        });
+        result.responseIdCleared = true; // Signal to clear stored responseId
+        return result;
+      }
       throw error;
     }
+  }
+
+  /**
+   * Check if the error is related to an invalid/expired response ID or missing tool outputs
+   * @param {Error} error - The error object
+   * @returns {boolean} True if it's a response ID error that should trigger fallback
+   */
+  _isResponseIdError(error) {
+    const message = error.message?.toLowerCase() || '';
+    return (
+      (message.includes('response') &&
+        (message.includes('not found') || message.includes('expired') || message.includes('invalid'))) ||
+      message.includes('tool output') ||
+      message.includes('function call')
+    );
   }
 
   async handleToolCall(toolCall, toolExecutor) {
@@ -151,12 +220,16 @@ class OpenAIHandler extends BaseLLMHandler {
   }
 
   normalizeResponse(response) {
+    // Handle both old format (array) and new format (object with output)
+    const output = Array.isArray(response) ? response : response.output;
+    const responseId = response.responseId || null;
+
     return {
       provider: 'openai',
-      content: response.content,
-      model: this.model,
+      content: output,
+      model: response.model || this.model,
+      responseId: responseId,
       raw: response,
-      ...response.message,
     };
   }
 
