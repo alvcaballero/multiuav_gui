@@ -237,7 +237,7 @@ export class ChatPersistenceModel {
   }
 
   /**
-   * Get the last response ID for a chat
+   * Get the last response ID for a chat (DEPRECATED - use getConversationId)
    * @param {string} chatId - Chat identifier
    * @returns {Promise<string|null>} Last response ID or null
    */
@@ -252,26 +252,80 @@ export class ChatPersistenceModel {
   }
 
   /**
-   * Update the chat's metadata including response ID, provider and model
-   * @param {string} chatId - Chat identifier
-   * @param {object} updates - Object with responseId, provider, model
+   * Get the OpenAI conversation ID for a chat
+   * @param {string} chatId - Chat identifier (internal app ID)
+   * @returns {Promise<string|null>} OpenAI conversation ID or null
    */
-  static async updateChatMetadata(chatId, { responseId, provider, model }) {
+  static async getConversationId(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      return chat?.metadata?.conversationId || null;
+    } catch (error) {
+      chatLogger.error('Error getting conversation ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Set the OpenAI conversation ID for a chat
+   * @param {string} chatId - Chat identifier (internal app ID)
+   * @param {string} conversationId - OpenAI conversation ID
+   */
+  static async setConversationId(chatId, conversationId) {
     try {
       const chat = await sequelize.models.Chat.findByPk(chatId);
       if (chat) {
-        const metadata = chat.metadata || {};
+        const metadata = { ...(chat.metadata || {}), conversationId, conversationCreatedAt: new Date().toISOString() };
+        chat.metadata = metadata;
+        chat.changed('metadata', true); // Force Sequelize to detect JSON change
+        chat.updatedAt = new Date();
+        await chat.save();
+        chatLogger.info(`Set conversation ID for chat ${chatId}: ${conversationId.substring(0, 20)}...`);
+      } else {
+        chatLogger.warn(`Chat ${chatId} not found when setting conversationId`);
+      }
+    } catch (error) {
+      chatLogger.error('Error setting conversation ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update the chat's metadata including conversation ID, response ID, provider and model
+   * @param {string} chatId - Chat identifier
+   * @param {object} updates - Object with conversationId, responseId, provider, model
+   */
+  static async updateChatMetadata(chatId, { conversationId, responseId, provider, model }) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      if (chat) {
+        const metadata = { ...(chat.metadata || {}) };
+
+        // NEW: Conversation ID (OpenAI Conversations API)
+        if (conversationId !== undefined) {
+          metadata.conversationId = conversationId;
+          if (conversationId) {
+            metadata.conversationCreatedAt = metadata.conversationCreatedAt || new Date().toISOString();
+          }
+        }
+
+        // DEPRECATED: Response ID (legacy response chaining)
         if (responseId !== undefined) {
           metadata.lastResponseId = responseId;
           metadata.lastResponseAt = new Date().toISOString();
         }
+
         if (provider !== undefined) metadata.provider = provider;
         if (model !== undefined) metadata.model = model;
 
         chat.metadata = metadata;
+        chat.changed('metadata', true); // Force Sequelize to detect JSON change
         chat.updatedAt = new Date();
         await chat.save();
-        chatLogger.debug(`Updated chat ${chatId} metadata: responseId=${responseId ? responseId.substring(0, 20) + '...' : 'null'}, provider=${provider}, model=${model}`);
+
+        const logConvId = conversationId ? conversationId.substring(0, 20) + '...' : 'null';
+        const logRespId = responseId ? responseId.substring(0, 20) + '...' : 'null';
+        chatLogger.debug(`Updated chat ${chatId} metadata: conversationId=${logConvId}, responseId=${logRespId}, provider=${provider}, model=${model}`);
       }
     } catch (error) {
       chatLogger.error('Error updating chat metadata:', error);
@@ -279,7 +333,28 @@ export class ChatPersistenceModel {
   }
 
   /**
+   * Clear the conversation (forces creation of new conversation on next message)
+   * Also clears response chain for backwards compatibility
+   * @param {string} chatId - Chat identifier
+   */
+  static async clearConversation(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      if (chat) {
+        const metadata = { ...(chat.metadata || {}), conversationId: null, lastResponseId: null };
+        chat.metadata = metadata;
+        chat.changed('metadata', true); // Force Sequelize to detect JSON change
+        await chat.save();
+        chatLogger.info(`Conversation cleared for chat ${chatId}`);
+      }
+    } catch (error) {
+      chatLogger.error('Error clearing conversation:', error);
+    }
+  }
+
+  /**
    * Clear the response chain (forces full history on next message)
+   * DEPRECATED - use clearConversation instead
    * @param {string} chatId - Chat identifier
    */
   static async clearResponseChain(chatId) {

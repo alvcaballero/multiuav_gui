@@ -1,19 +1,19 @@
-### Get server 
+### Get server
 GET http://localhost:4000/api/server
 
-### Get devices 
+### Get devices
 GET http://localhost:4000/api/devices
 
-### Get devices 
+### Get devices
 GET http://localhost:4000/api/devices/1
 
-### Get devices 
+### Get devices
 GET http://localhost:4000/api/devices?id=1
 
-### Get devices 
+### Get devices
 GET http://localhost:4000/api/devices?id=1&id=2&id=3
 
-### Get positions 
+### Get positions
 GET http://localhost:4000/api/positions
 
 ### Get position
@@ -29,7 +29,7 @@ Content-Type: application/json
 {
     "name": "uav_14",
     "category": "dji_M300",
-    "protocol": "ros",  
+    "protocol": "ros",
     "ip": "10.42.0.44",
     "camera":[
         {
@@ -57,10 +57,9 @@ Content-Type: application/json
 }
 
 ### delete a device
-
 DELETE http://localhost:4000/api/devices/1
 
-### update  a device 
+### update a device
 PATCH http://localhost:4000/api/device/2
 Content-Type: application/json
 
@@ -71,211 +70,122 @@ Content-Type: application/json
 ### Get list of category
 GET http://localhost:4000/api/category
 
-
 ### Get category info
 GET http://localhost:4000/api/category/dji_M300
 
 ### Get message info
 GET http://localhost:4000/api/category/messages/
 
-### Atributes 
+### Atributes
 GET http://localhost:4000/api/category/atributes/dji_M210_noetic
 
 ### Atributes
 GET http://localhost:4000/api/category/atributesparam/dji_M210_noetic/mode_yaw
 
-### Actions 
-
+### Actions
 GET http://localhost:4000/api/category/actions/dji_M210_noetic
 
-
-### Commandos 
-
+### Commandos
 GET http://localhost:4000/api/commands/send
 
-
 ### Commands types
-
 GET http://localhost:4000/api/commands/types
 
 ### send command threat
-
 POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
 {
-    "deviceId": 5, 
+    "deviceId": 5,
     "type": "threat"
 }
 
 ### send command loadmission
-
 POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
 < ./json/loadmission.json
 
-### send command command mission
-
+### send command mission
 POST http://localhost:4000/api/commands/send
 Content-Type: application/json
 
 {
-    "deviceId": 5, 
+    "deviceId": 5,
     "type": "commandMission"
 }
 
-### Mission
-### Sendtask
+### ============================================
+### Mission API
+### ============================================
+
+### Sendtask - Centro2
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
 < ./json/task_Centro2.json
 
-### Sendtask
+### Sendtask - GW tasks
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
 < ./json/gw-sendtasks.json
 
-
-### Sendtask
+### Sendtask - GW tasks 2
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
 < ./json/gw-sendtasks2.json
 
-
-
-
-
-### Sendtask
+### Sendtask - Prueba tramo largo drone (id 118)
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
-{
-  "id": 118,
-  "name": "Prueba tramo largo drone",
-  "objetivo": 0,
-  "loc":[
-    {
-      "name": "Centro1",
-      "geo_points": [
-        {
-          "lon": 37.0706021117295,
-          "lat": -6.6254878174821
-        },
-        {
-          "lon": 37.1060530670846,
-          "lat": -6.69479130605354
-        }
-      ]
-    }
-  ],
-  "meteo": [                                                                                                                                                                               
-    {                                                                                                                                                                                    
-      "lat": 37.164528,                                                                                                                                                                    
-      "lon": -5.611474,                                                                                                                                                                    
-      "wind_vel": 21.24,                                                                                                                                                                   
-      "wind_dir": 92,                                                                                                                                                                      
-      "temp": 13.4,                                                                                                                                                                        
-      "humidity": 13.4,                                                                                                                                                                    
-      "pressure": 0                                                                                                                                                                        
-    }                                                                                                                                                                                    
-  ]      
-}
+< ./json/sendtask_118.json
 
-### Sendtask
+### Sendtask - Prueba tramo largo drone (id 119)
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
-{
-  "id": 119,
-  "name": "Prueba tramo largo drone",
-  "objetivo": 0,
-  "loc":[
-    {
-      "name": "Centro1",
-      "geo_points": [
-        {
-          "lat": 37.0706021117295,
-          "lon": -6.6254878174821
-        },
-        {
-          "lat": 37.1060530670846,
-          "lon": -6.69479130605354
-        }
-      ]
-    }
-  ],
-  "meteo": [                                                                                                                                                                               
-    {                                                                                                                                                                                    
-      "lat": 37.164528,                                                                                                                                                                    
-      "lon": -5.611474,                                                                                                                                                                    
-      "wind_vel": 21.24,                                                                                                                                                                   
-      "wind_dir": 92,                                                                                                                                                                      
-      "temp": 13.4,                                                                                                                                                                        
-      "humidity": 13.4,                                                                                                                                                                    
-      "pressure": 0                                                                                                                                                                        
-    }                                                                                                                                                                                    
-  ]      
-}
-### Sendtask
+< ./json/sendtask_119.json
+
+### Sendtask - Alarma meteo apoyo
 POST http://localhost:4000/api/missions/sendTask
 Content-Type: application/json
 
-{
-  "objetivo": 3,
-  "loc": [
-    {
-      "name": "alarma_meteo_apoyo",
-      "geo_points": [
-        {
-          "lat": 37.136565344467,
-          "lon": -6.47123160018281
-        }
-      ]
-    }
-  ],
-  "meteo": [
-    {
-      "lat": 37.136565344467,
-      "lon": -6.47123160018281
-    }
-  ],
-  "mission_id":104
-}
+< ./json/sendtask_alarma_meteo.json
+
 ### setMission
 POST http://localhost:4000/api/missions/setMission
 Content-Type: application/json
 
 < ./json/mission.json
 
-
-### varibles 
-
+### variables
 @uav_id = 3
 @mission_id = 1
 
 ### get mission
 GET  http://localhost:4000/api/missions
-### get mission
+
+### get mission by id
 GET  http://localhost:4000/api/missions?id=72510181
 
-### get mission
+### get mission routes
 GET  http://localhost:4000/api/missions/routes
 
-### get mission route
+### get mission route by missionId
 GET  http://localhost:4000/api/missions/routes?missionId=72510181
 
 ### update files
-
 GET  http://localhost:4000/api/missions/updateFiles/{{uav_id}}/{{mission_id}}
 
 ### list files
 GET  http://localhost:4000/api/missions/listFiles/{{mission_id}}/{{uav_id}}
 
-
+### ============================================
+### Files API
+### ============================================
 
 ### show files
 GET  http://localhost:4000/api/files/showFiles/{{uav_id}}/{{mission_id}}
@@ -284,21 +194,21 @@ GET  http://localhost:4000/api/files/showFiles/{{uav_id}}/{{mission_id}}
 GET  http://localhost:4000/api/files/updateFiles/{{uav_id}}/{{mission_id}}
 
 ### download files
-### curl http://localhost:4000/api/files/download/mission_1/uav_15/DJI_20231124131954_0001_THRM.jpg --output some.jpg  
 GET http://localhost:4000/api/files/download/mission_1243/uav_15/DJI_20231124131954_0001_THRM.jpg
-### otro
-GET http://localhost:4000/api/files/download/mission_72510181/uav_14/distances.pcd 
+
+### download pcd file
+GET http://localhost:4000/api/files/download/mission_72510181/uav_14/distances.pcd
+
 ### list files GCS
 GET http://localhost:4000/api/files/get
 
-### list files GCS
+### list files GCS by missionId
 GET http://localhost:4000/api/files/get?missionId=72510181
 
+### list files GCS by missionId 2
+GET http://localhost:4000/api/files/get?missionId=57641431
 
-### list files GCS
-GET http://localhost:4000/api/files/get?missionId=57641431  
-
-### list files GCS
+### list files
 GET http://localhost:4000/api/files/listFiles
 
 ### Get metadata
@@ -309,7 +219,7 @@ Content-Type: application/json
     "src":"/home/grvc/work/GCS_media/mission_92254290/uav_14/DJI_20240226142604_0003_THRM_process.jpg"
 }
 
-### list get temp max of metadata
+### get temp max of metadata
 POST  http://localhost:4000/api/files/TempResult
 Content-Type: application/json
 
@@ -325,7 +235,7 @@ Content-Type: application/json
     ]
 }
 
-### list get temp max of metadata
+### process images
 POST  http://localhost:4000/api/files/ProcessImage
 Content-Type: application/json
 
@@ -337,27 +247,32 @@ Content-Type: application/json
     ]
 }
 
+### ============================================
+### Planning API
+### ============================================
 
-
-### planning
-### get planning
+### get planning mission
 GET http://localhost:4000/api/planning/mission
 
-### get planning
+### get planning missions type
 GET http://localhost:4000/api/planning/missionstype
 
-### get planning
+### get planning mission param
 GET http://localhost:4000/api/planning/missionparam/0
 
-### get markersType
+### get markers types
 GET http://localhost:4000/api/planning/getMarkersTypes
-### get Markers
+
+### get markers
 GET http://localhost:4000/api/planning/getMarkers
-  
+
 ### get bases
 GET http://localhost:4000/api/planning/getBases
 
-### --------- ROS -------------
+### ============================================
+### ROS API
+### ============================================
+
 ### get topics
 GET http://localhost:4000/api/ros/topics
 
@@ -367,18 +282,16 @@ GET http://localhost:4000/api/ros/services
 ### get service type
 GET http://localhost:4000/api/ros/service_type?service=/px4_3/land
 
-### get service type
+### get service type - mission load
 GET http://localhost:4000/api/ros/service_type?service=/px4_3/offboard/mission_load
 
-### check service request structure
+### check service request structure - Trigger
 GET http://localhost:4000/api/ros/service_request_details?type=std_srvs/srv/Trigger
 
-
-### check service request structure
+### check service request structure - LoadMission
 GET http://localhost:4000/api/ros/service_request_details?type=muav_gcs_interfaces/srv/LoadMission
 
-
-### call service 
+### call service - land
 POST http://localhost:4000/api/ros/service_call
 Content-Type: application/json
 
@@ -388,7 +301,7 @@ Content-Type: application/json
   "message": {}
 }
 
-### call service 
+### call service - takeoff
 POST http://localhost:4000/api/ros/service_call
 Content-Type: application/json
 
@@ -398,7 +311,7 @@ Content-Type: application/json
   "message": {
     "request": {
       "timestamp":0,
-      "param1":1 ,
+      "param1":1,
       "param2":2,
       "param3":3,
       "param4":4,
@@ -416,195 +329,72 @@ Content-Type: application/json
    }
 }
 
-
 ### get topic type
 GET http://localhost:4000/api/ros/topics_type?topic=/px4_3/fmu/out/vehicle_local_position
 
 ### get message details
 GET http://localhost:4000/api/ros/message_details?type=px4_msgs/msg/VehicleLocalPosition
 
-### get message details turtlesim
+### get message details - Twist
 GET http://localhost:4000/api/ros/message_details?type=geometry_msgs/msg/Twist
 
-
-### get message details turtlesim
+### get message details - Twist1 (error case)
 GET http://localhost:4000/api/ros/message_details?type=geometry_msgs/msg/Twist1
+
 ### get publisher
 GET http://localhost:4000/api/ros/publisher?topic=/px4_3/fmu/out/vehicle_local_position
 
-
-### get message
+### subscribe once - vehicle local position
 GET http://localhost:4000/api/ros/subscribe_once?topic=/px4_3/fmu/out/vehicle_local_position
 
-### get message
+### subscribe once - bcr_bot odom
 GET http://localhost:4000/api/ros/subscribe_once?topic=/bcr_bot/odom
 
-### get message turtlebot
+### subscribe once - turtlebot pose
 GET http://localhost:4000/api/ros/subscribe_once?topic=/turtle1/pose
 
 ### get action servers
+GET http://localhost:4000/api/ros/action_servers
 
-GET http://localhost:4000/api/ros/action_servers 
-
-
-### send action goal navigate_to_pose
+### send action goal - navigate_to_pose
 POST http://localhost:4000/api/ros/action_send_goal
 Content-Type: application/json
 
-{
-  "action": "navigate_to_pose",
-  "actionType": "nav2_msgs/action/NavigateToPose",
-  "message": {
-    "pose": {
-      "header": {
-        "frame_id": "map"
-      },
-      "pose": {
-        "position": {
-          "x": 16.0,
-          "y": -24.0,
-          "z": 0.0
-        },
-        "orientation": {
-          "x": 0.0,   
-          "y": 0.0,
-          "z": 0.7071,
-          "w": 0.7071
-        }
-      }
-    },
-    "behavior_tree": ""
-  }
-}
-### send stop action navigate_to_pose
+< ./json/action_navigate_to_pose.json
+
+### cancel action goal - navigate_to_pose
 POST http://localhost:4000/api/ros/action_cancel_goal
 Content-Type: application/json
+
 {
   "action": "navigate_to_pose"
 }
 
-### pub topic
+### publish - trajectory setpoint
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
-{
-  "topic": "px4_3/fmu/in/trajectory_setpoint",
-  "messageType": "px4_msgs/msg/TrajectorySetpoint",
-  "message": {
-    "timestamp": 1755871255821361,
-    "position": [
-      0.0,
-      0.0,
-      -10.0
-    ],
-    "velocity": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "acceleration": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "jerk": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "yaw": 1.5707900524139404,
-    "yawspeed": 1.0
-  }
-}
+< ./json/publish_trajectory_setpoint.json
 
-### pub  goto
+### publish - goto setpoint
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
-{
-  "topic": "/px4_3/fmu/in/goto_setpoint",
-  "messageType": "px4_msgs/msg/GotoSetpoint",
-  "message": {
-    "timestamp": 0,
-    "position": [
-      10,
-      10,
-      10
-    ],
-    "flag_control_heading": false,
-    "heading": 0,
-    "flag_set_max_horizontal_speed": false,
-    "max_horizontal_speed": 0,
-    "flag_set_max_vertical_speed": false,
-    "max_vertical_speed": 0,
-    "flag_set_max_heading_rate": false,
-    "max_heading_rate": 0
-  }
-}
-### pub a nav2 move 
+< ./json/publish_goto_setpoint.json
+
+### publish - bcr_bot goal pose
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
-{
-  "topic": "/bcr_bot/goal_pose_cmd",
-  "messageType": "geometry_msgs/msg/PoseStamped",
-  "message": {
-    "header": {
-      "stamp": {
-        "sec": 0,
-        "nanosec": 0
-      },
-      "frame_id": "map"
-    },
-    "pose": {
-      "position": {
-        "x": 20.0,
-        "y": -35.0,
-        "z": 0.0
-      },
-      "orientation": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.7071068,
-        "w": 0.7071068
-      }
-    }
-  }
-}
-### pub a nav2 move 
+< ./json/publish_bcr_bot_goal.json
+
+### publish - goal pose
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
-{
-  "topic": "/goal_pose",
-  "messageType": "geometry_msgs/msg/PoseStamped",
-  "message": {
-    "header": {
-      "stamp": {
-        "sec": 0,
-        "nanosec": 0
-      },
-      "frame_id": "map"
-    },
-    "pose": {
-      "position": {
-        "x": -30.0,
-        "y": -30.0,
-        "z": 0.0
-      },
-      "orientation": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.7071068,
-        "w": 0.7071068
-      }
-    }
-  }
-}
+< ./json/publish_goal_pose.json
 
-
-
-### pub topic
+### publish - turtle cmd_vel
 POST http://localhost:4000/api/ros/publish
 Content-Type: application/json
 
@@ -612,47 +402,33 @@ Content-Type: application/json
   "topic": "/turtle1/cmd_vel",
   "messageType": "geometry_msgs/msg/Twist",
   "message": {
-    "linear": {
-      "x": 1.0,
-      "y": 0.0,
-      "z": 0.0
-    },
-    "angular": {
-      "x": 0.0,
-      "y": 0.0,
-      "z": 0.0
-    }
+    "linear": { "x": 1.0, "y": 0.0, "z": 0.0 },
+    "angular": { "x": 0.0, "y": 0.0, "z": 0.0 }
   }
 }
 
-### test images
-GET http://localhost:4000/api/test.png
+### ============================================
+### Map API
+### ============================================
 
-
-### test images 
-GET http://localhost:4000/api/test.png
-
-
-### Elevation 
+### Elevation - query string
 GET http://localhost:4000/api/map/elevation?locations=[[44.074221911574284,11.221895356523419]]
 
-
-### Elevation 
+### Elevation - external API
 GET https://api.opentopodata.org/v1/eudem25m?locations=37.410266,-6.002490|37.410572,-6.002949|37.411010,-6.003243
 
-### Elevation 
+### Elevation - POST with route
 POST http://localhost:4000/api/map/elevation
 Content-Type: application/json
 
 < ./json/elevationRoute.json
 
-### Images
+### ============================================
+### Images/Media API
+### ============================================
+
+### placeholder image
 GET http://localhost:4000/api/placeholder
-
-
-### Images
-GET http://localhost:4000/api/placeholder
-
 
 ### Image ros
 GET http://localhost:4000/api/media/:deviceid
@@ -660,24 +436,30 @@ GET http://localhost:4000/api/media/:deviceid
 ### Image Ros
 GET http://localhost:4000/api/media1/:deviceid
 
+### ============================================
+### Server API
+### ============================================
+
 ### datetime
 GET http://localhost:4000/api/server/datetime
-
 
 ### server config
 GET http://localhost:4000/api/server
 
+### ============================================
+### External Application API
+### ============================================
 
-### Test external application request  Token
+### update token
 GET http://localhost:4000/api/ExtApp/updateToken
 
-### Test external application request start
+### start mission
 POST  http://localhost:4000/api/ExtApp/start
 Content-Type: application/json
 
 < ./json/missionresponse.json
 
-### Test external application request result
+### result
 POST  http://localhost:4000/api/ExtApp/result
 Content-Type: application/json
 
@@ -686,65 +468,58 @@ Content-Type: application/json
   "resolution_code": 0
 }
 
-### Test external application request media
+### media
 POST  http://localhost:4000/api/ExtApp/media
 Content-Type: application/json
 
-{
-  "mission_id": 1234231,
-  "results": {
-    "data": [
-              {
-                "latitude": 37.09241,
-                "longitude": -5.232,
-                "measures": [
-                  {
-                    "name": "minDistance",
-                    "value": 25.34
-                  }
-                ]
-              }
-            ],
-  "files": [
-      "mission_1243/uav_15/DJI_20231124131954_0001_THRM.jpg",
-      "mission_1243/uav_15/captura.jpg"
-      ]
-      }
-}
+< ./json/extapp_media.json
 
-### 
+### ============================================
+### Events API
+### ============================================
+
+### SSE events
 GET http://localhost:4000/api/events HTTP/1.1
 
-###
+### ============================================
+### External Services
+### ============================================
+
+### external input test
 POST http://192.168.1.180:8004/input_test
 Content-Type: application/json
 
 {
-    "deviceId": 5, 
+    "deviceId": 5,
     "type": "threat"
 }
 
-###
+### get plan from external
 GET http://192.168.1.180:8004/get_plan?IDs=1234
 
-###
+### missions test
 GET  http://localhost:4000/api/missions/test
-###
+
+### get plan local
 GET http://127.0.0.1:8004/get_plan?IDs=76327900
 
-### 
+### mission request 1
 POST http://127.0.0.1:8004/mission_request
 Content-Type: application/json
 
 < ./json/missionRequest1.json
 
-###
+### mission request 2
 POST http://127.0.0.1:8004/mission_request
 Content-Type: application/json
 
 < ./json/missionRequest2.json
 
-###
+### ============================================
+### Chat API - server/routes/chat.js
+### ============================================
+
+### chat simple
 POST http://localhost:4000/api/chat
 Content-Type: application/json
 
@@ -753,482 +528,146 @@ Content-Type: application/json
   "message":"cual es la capital de españa?"
 }
 
-### ============================================                                                                                                                                                      
-### Chat API Tests - server/routes/chat.js                                                                                                                                                            
-### ============================================                                                                                                                                                      
-### Base URL: http://localhost:4000/api/chat                                                                                                                                                          
-                                                                                                                                                                                                      
-### --------------------------------------------                                                                                                                                                      
-### POST / - Enviar mensaje al LLM                                                                                                                                                                    
-### --------------------------------------------                                                                                                                                                      
-                                                                                                                                                                                                      
-### Enviar mensaje simple                                                                                                                                                                             
-POST http://localhost:4000/api/chat                                                                                                                                                                   
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-  "message": "Hola, ¿cuántos drones hay conectados?"                                                                                                                                                  
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### Enviar mensaje con chatId específico                                                                                                                                                              
-POST http://localhost:4000/api/chat                                                                                                                                                                   
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-  "message": "Dame el estado de todos los dispositivos",                                                                                                                                              
-  "chatId": "mission-planning-001"                                                                                                                                                                    
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### Error: mensaje vacío (espera 400)                                                                                                                                                                 
-POST http://localhost:4000/api/chat                                                                                                                                                                   
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-  "message": ""                                                                                                                                                                                       
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### Error: sin campo message (espera 400)                                                                                                                                                             
-POST http://localhost:4000/api/chat                                                                                                                                                                   
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-  "chatId": "test-chat"                                                                                                                                                                               
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### --------------------------------------------                                                                                                                                                      
-### GET /chats - Listar todos los chats                                                                                                                                                               
-### --------------------------------------------                                                                                                                                                      
-                                                                                                                                                                                                      
-### Obtener lista de chats                                                                                                                                                                            
-GET http://localhost:4000/api/chat/chats                                                                                                                                                              
-                                                                                                                                                                                                      
-### --------------------------------------------                                                                                                                                                      
-### GET /history/:chatId - Obtener historial                                                                                                                                                          
-### --------------------------------------------                                                                                                                                                      
-                                                                                                                                                                                                      
-### Obtener historial de un chat específico                                                                                                                                                           
-GET http://localhost:4000/api/chat/history/default_http                                                                                                                                               
-                                                                                                                                                                                                      
-### Obtener historial de chat personalizado                                                                                                                                                           
-GET http://localhost:4000/api/chat/history/mission-planning-001                                                                                                                                       
-                                                                                                                                                                                                      
-### Chat que no existe (debería devolver array vacío o error)                                                                                                                                         
-GET http://localhost:4000/api/chat/history/chat-inexistente-xyz                                                                                                                                       
-                                                                                                                                                                                                      
-### --------------------------------------------                                                                                                                                                      
-### PATCH /chats/:chatId - Renombrar chat                                                                                                                                                             
-### --------------------------------------------                                                                                                                                                      
-                                                                                                                                                                                                      
-### Renombrar un chat                                                                                                                                                                                 
-PATCH http://localhost:4000/api/chat/chats/default_http                                                                                                                                               
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-  "name": "Chat Principal"                                                                                                                                                                            
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### Renombrar chat personalizado                                                                                                                                                                      
-PATCH http://localhost:4000/api/chat/chats/mission-planning-001                                                                                                                                       
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-  "name": "Planificación Misión Norte"                                                                                                                                                                
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### Error: sin nombre (espera 400)                                                                                                                                                                    
-PATCH http://localhost:4000/api/chat/chats/default_http                                                                                                                                               
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### Error: nombre vacío (espera 400)                                                                                                                                                                  
-PATCH http://localhost:4000/api/chat/chats/default_http                                                                                                                                               
-Content-Type: application/json                                                                                                                                                                        
-                                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-  "name": ""                                                                                                                                                                                          
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-### --------------------------------------------                                                                                                                                                      
-### DELETE /chats/:chatId - Eliminar chat                                                                                                                                                             
-### --------------------------------------------                                                                                                                                                      
-                                                                                                                                                                                                      
-### Soft delete (marca como eliminado, mantiene en DB)                                                                                                                                                
-DELETE http://localhost:4000/api/chat/chats/chat-temporal                                                                                                                                             
-                                                                                                                                                                                                      
-### Hard delete (elimina permanentemente de DB)                                                                                                                                                       
-DELETE http://localhost:4000/api/chat/chats/chat-temporal?hard=true                                 
-
-### second planning chat
-POST  http://localhost:4000/api/chat/build_mission_plan_xyz
-content-type: application/json
+### chat - drones conectados
+POST http://localhost:4000/api/chat
+Content-Type: application/json
 
 {
-  "chat_id": "chat_1768998561052_r0rmi3e",
-  "target_elements": [
-    {
-      "name": "A1",
-      "type": "windTurbine",
-      "group_name": "Line A",
-      "position": {
-        "lat": 41.68559036996601,
-        "lng": -8.857866056140523,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "A2",
-      "type": "windTurbine",
-      "group_name": "Line A",
-      "position": {
-        "lat": 41.68635449398681,
-        "lng": -8.857866056140523,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "A3",
-      "type": "windTurbine",
-      "group_name": "Line A",
-      "position": {
-        "lat": 41.68718563612592,
-        "lng": -8.857919908575411,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "A4",
-      "type": "windTurbine",
-      "group_name": "Line A",
-      "position": {
-        "lat": 41.68719904155651,
-        "lng": -8.856645400947343,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "A5",
-      "type": "windTurbine",
-      "group_name": "Line A",
-      "position": {
-        "lat": 41.68635449398681,
-        "lng": -8.856681302571161,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "A6",
-      "type": "windTurbine",
-      "group_name": "Line A",
-      "position": {
-        "lat": 41.68557696420092,
-        "lng": -8.856663351759266,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "B1",
-      "type": "windTurbine",
-      "group_name": "Line B",
-      "position": {
-        "lat": 41.685657398752284,
-        "lng": -8.859373924319044,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "B2",
-      "type": "windTurbine",
-      "group_name": "Line B",
-      "position": {
-        "lat": 41.68644833315312,
-        "lng": -8.859373924319044,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "B3",
-      "type": "windTurbine",
-      "group_name": "Line B",
-      "position": {
-        "lat": 41.68721244698364,
-        "lng": -8.859391875130939,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "B4",
-      "type": "windTurbine",
-      "group_name": "Line B",
-      "position": {
-        "lat": 41.68801676752793,
-        "lng": -8.859391875130939,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "B5",
-      "type": "windTurbine",
-      "group_name": "Line B",
-      "position": {
-        "lat": 41.68801676752793,
-        "lng": -8.857937859386396,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    },
-    {
-      "name": "B6",
-      "type": "windTurbine",
-      "group_name": "Line B",
-      "position": {
-        "lat": 41.68800336226772,
-        "lng": -8.856699253382175,
-        "alt": 0
-      },
-      "characteristics": "offshore wind turbine, hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, min_tip_height:52m, max_tip_height:108m, yaw_orientation:90deg (East), blades: stopped",
-      "metadata": "Sea level 0m AGL"
-    }
-  ],
-  "group_information": [
-    {
-      "elements_name": "Line A, Line B",
-      "group_name": "offshore wind turbines",
-      "shared_characteristics": "All turbines offshore at Viana do Castelo, Portugal. Sea level 0m AGL. hub_height:80m, rotor_diameter:56m, blade_length:28m, blade_count:3, tower_diameter:6m, yaw_orientation:90deg (facing East). blades currently stopped."
-    }
-  ],
-  "points_of_interest": [],
-  "drone_information": [
-    {
-      "name": "px4_3",
-      "type": "px4_ros2",
-      "location": {
-        "lat": 41.687343853854834,
-        "lng": -8.847763540168517,
-        "alt": 100.3
-      }
-    },
-    {
-      "name": "px4_2",
-      "type": "px4_ros2",
-      "location": {
-        "lat": 41.68710085298747,
-        "lng": -8.847727001560585,
-        "alt": 100.4
-      }
-    }
-  ],
-  "mission_requirements": {
-    "mission_type": "fast",
-    "mission_details": "Inspección simple de 12 aerogeneradores offshore (Líneas A y B) en Viana do Castelo. 1 waypoint frontal por turbina, a 84 m de distancia (1.5x rotor_diameter/2) con altura 80 m AGL (mitad vertical entre 52 m y 108 m). Yaw -90° (o 270°) apuntando al centro desde el frente (turbinas orientadas a 90°). Orden de visita optimizado por vecino más cercano desde la posición actual del dron. Altitud máxima <120 m. Velocidad 5 m/s."
-  },
-  "user_context": {
-    "user_request": "crea una mission rapida para la inspecion de los aerogeneadores que se encuentran offshore en viana de castelo",
-    "additional_info": {
-      "priority": "high",
-      "language": "es",
-      "constraints": [],
-      "notes": "Reconocimiento rápido solicitado. Sin requisitos especiales adicionales."
-    }
-  }
+  "message": "Hola, ¿cuántos drones hay conectados?"
 }
 
-### verification
-POST  http://localhost:4000/api/chat/validate_mission_briefing
-content-type: application/json
+### chat con chatId
+POST http://localhost:4000/api/chat
+Content-Type: application/json
 
 {
-    "origin_global": {
-      "lat": 41.68734383818229,
-      "lng": -8.847763635289304,
-      "alt": 0
-    },
-    "chat_id": "chat_1769081456218_g8esni3",
-    "version": "3",
-    "name": "Viana Offshore Quick Frontal Inspection - XYZ",
-    "description": "Quick frontal inspection (one waypoint per turbine, 40 m East of hub at 80 m AGL). Energy-efficient lateral detours added to avoid rotor planes. Start/Return at (0,0,80).",
-    "route": [
-      {
-        "name": "lineAB_quick",
-        "uav": "px4_3",
-        "id": 0,
-        "attributes": {
-          "max_vel": 8,
-          "idle_vel": 5,
-          "mode_yaw": 3,
-          "mode_gimbal": 0,
-          "mode_trace": 0,
-          "mode_landing": 2
-        },
-        "wp": [
-          {
-            "pos": [
-              0,
-              0,
-              80
-            ],
-            "yaw": 0,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -699.452,
-              -16.082,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -703.936,
-              73.252,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -755.496,
-              130,
-              80
-            ],
-            "yaw": 0,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -807.056,
-              74.74,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -867.583,
-              129.74,
-              80
-            ],
-            "yaw": 0,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -928.11,
-              74.74,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -928.11,
-              -14.593,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -926.616,
-              -99.461,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -926.616,
-              -187.308,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -801.078,
-              -194.753,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -801.078,
-              -109.884,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -805.561,
-              -17.571,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -702.441,
-              -109.884,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              -700.947,
-              -196.242,
-              80
-            ],
-            "yaw": -90,
-            "speed": 5
-          },
-          {
-            "pos": [
-              0,
-              0,
-              80
-            ],
-            "yaw": 0,
-            "speed": 5
-          }
-        ],
-        "uav_type": "px4_ros2"
-      }
-    ]
+  "message": "Dame el estado de todos los dispositivos",
+  "chatId": "mission-planning-001"
+}
+
+### Error: mensaje vacío (espera 400)
+POST http://localhost:4000/api/chat
+Content-Type: application/json
+
+{
+  "message": ""
+}
+
+### Error: sin campo message (espera 400)
+POST http://localhost:4000/api/chat
+Content-Type: application/json
+
+{
+  "chatId": "test-chat"
+}
+
+### listar todos los chats
+GET http://localhost:4000/api/chat/chats
+
+### historial de chat - default
+GET http://localhost:4000/api/chat/history/default_http
+
+### historial de chat - personalizado
+GET http://localhost:4000/api/chat/history/mission-planning-001
+
+### historial chat inexistente
+GET http://localhost:4000/api/chat/history/chat-inexistente-xyz
+
+### renombrar chat - default
+PATCH http://localhost:4000/api/chat/chats/default_http
+Content-Type: application/json
+
+{
+  "name": "Chat Principal"
+}
+
+### renombrar chat - personalizado
+PATCH http://localhost:4000/api/chat/chats/mission-planning-001
+Content-Type: application/json
+
+{
+  "name": "Planificación Misión Norte"
+}
+
+### Error: sin nombre (espera 400)
+PATCH http://localhost:4000/api/chat/chats/default_http
+Content-Type: application/json
+
+{
+}
+
+### Error: nombre vacío (espera 400)
+PATCH http://localhost:4000/api/chat/chats/default_http
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### Soft delete chat
+DELETE http://localhost:4000/api/chat/chats/chat-temporal
+
+### Hard delete chat
+DELETE http://localhost:4000/api/chat/chats/chat-temporal?hard=true
+
+### ============================================
+### Mission Planning Chat API
+### ============================================
+
+### build mission plan XYZ
+POST  http://localhost:4000/api/chat/build_mission_plan_xyz
+Content-Type: application/json
+
+< ./json/build_mission_plan_xyz.json
+
+### validate mission briefing
+POST  http://localhost:4000/api/chat/validate_mission_briefing
+Content-Type: application/json
+
+< ./json/validate_mission_briefing.json
+
+### ============================================
+### Collision Detection API - server/models/collision
+### ============================================
+
+### validate mission with collisions
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/collision_validate.json
+
+### validate mission - safe (no collisions)
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/collision_validate_safe.json
+
+### resolve collisions automatically
+POST http://localhost:4000/api/missions/resolve
+Content-Type: application/json
+
+< ./json/collision_resolve.json
+
+### resolve with multiple obstacles
+POST http://localhost:4000/api/missions/resolve
+Content-Type: application/json
+
+< ./json/collision_resolve_multi.json
+
+### Error case: missing mission
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+{
+  "obstacles": []
+}
+
+### Error case: missing obstacles
+POST http://localhost:4000/api/missions/resolve
+Content-Type: application/json
+
+{
+  "mission": {
+    "route": []
   }
+}

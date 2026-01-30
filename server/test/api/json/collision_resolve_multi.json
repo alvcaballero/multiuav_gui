@@ -1,0 +1,62 @@
+{
+  "mission": {
+    "version": "3",
+    "name": "Multi-Obstacle Mission",
+    "route": [
+      {
+        "name": "multi_obstacle_route",
+        "uav": "px4_3",
+        "id": 0,
+        "attributes": {
+          "max_vel": 8,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_gimbal": 0,
+          "mode_trace": 0,
+          "mode_landing": 2
+        },
+        "wp": [
+          { "type": "takeoff", "pos": [0, 0, 80], "yaw": 0 },
+          { "type": "transit", "pos": [-500, 200, 80], "yaw": -90 },
+          { "type": "transit", "pos": [-730, 200, 80], "yaw": -90 },
+          { "type": "transit", "pos": [-730, 500, 80], "yaw": 0 },
+          { "type": "transit", "pos": [-900, 500, 80], "yaw": -90 },
+          { "type": "landing", "pos": [0, 0, 80], "yaw": 0 }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  },
+  "obstacles": [
+    {
+      "name": "T1",
+      "type": "windTurbine",
+      "position": { "x": -730, "y": 300, "z": 0 },
+      "zones": {
+        "exclusion_zone": "Cilindro: radio 35m, altura 108m (z: 0→108).",
+        "caution_zone": "Cilindro: radio 50m, altura 108m (z: 0→108).",
+        "safe_zone": "Fuera de radio 50m o por encima de z>108m."
+      },
+      "safe_passages": [],
+      "aabb": {
+        "min_point": { "x": -765, "y": 265, "z": 0 },
+        "max_point": { "x": -695, "y": 335, "z": 108 }
+      }
+    },
+    {
+      "name": "T2",
+      "type": "windTurbine",
+      "position": { "x": -730, "y": 400, "z": 0 },
+      "zones": {
+        "exclusion_zone": "Cilindro: radio 35m, altura 108m (z: 0→108).",
+        "caution_zone": "Cilindro: radio 50m, altura 108m (z: 0→108).",
+        "safe_zone": "Fuera de radio 50m o por encima de z>108m."
+      },
+      "safe_passages": [],
+      "aabb": {
+        "min_point": { "x": -765, "y": 365, "z": 0 },
+        "max_point": { "x": -695, "y": 435, "z": 108 }
+      }
+    }
+  ]
+}

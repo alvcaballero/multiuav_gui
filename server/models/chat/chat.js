@@ -80,12 +80,13 @@ export class MessageOrchestrator {
    * Procesa un mensaje completo, manejando llamadas a herramientas si es necesario
    * @param {string} chatId - ID de la conversación
    * @param {string} message - Mensaje del usuario
+   * @param {Object} options - Opciones adicionales
+   * @param {Array<string>} options.allowedTools - Lista de herramientas permitidas (null = todas)
    * @returns {Promise<Object>} Respuesta final
    */
-  static async processMessage(chatId, message) {
-    chatLogger.info('═════════════════════════════════════════');
-    chatLogger.info(`📨 Chat: ${chatId} | Mensaje: "${message}"`);
-    chatLogger.info('═══════════════════════════════════════════');
+  static async processMessage(chatId, message, options = {}) {
+    const { allowedTools = null } = options;
+    chatLogger.info(`📨 Chat: ${chatId} | Mensaje: "${message.substring(0, 40)}${message.length > 40 ? '...' : ''}"`);
 
     // Get or create conversation history for this chatId
     if (!conversationHistories[chatId]) {
@@ -107,10 +108,22 @@ export class MessageOrchestrator {
       // Obtener herramientas según el proveedor de LLM
       const tools = this.getToolsForProvider();
 
-      // Get the last response ID for this chat (for response chaining)
-      let lastResponseId = await ChatPersistenceModel.getLastResponseId(chatId);
+      // Get the OpenAI conversation ID for this chat (Conversations API)
+      let conversationId = await ChatPersistenceModel.getConversationId(chatId);
 
-      // Build system instructions (needed for first message or when using previous_response_id)
+      // If no conversation exists, create one (for OpenAI provider)
+      if (!conversationId && llmHandler.getProviderName() === 'openai' && llmHandler.createConversation) {
+        try {
+          conversationId = await llmHandler.createConversation({ chatId });
+          await ChatPersistenceModel.setConversationId(chatId, conversationId);
+          chatLogger.info(`Created new OpenAI conversation for chat ${chatId}: ${conversationId}`);
+        } catch (error) {
+          chatLogger.error('Failed to create OpenAI conversation, will use full history:', error);
+          conversationId = null;
+        }
+      }
+
+      // Build system instructions (needed for first message of conversation)
       let systemInstructions = null;
       if (SystemPrompts.main) {
         systemInstructions = `${SystemPrompts.main}\n\n---\nSession context:\n- chat_id: ${chatId}`;
@@ -134,25 +147,31 @@ export class MessageOrchestrator {
         conversationHistory
       );
 
-      // Call LLM with response chaining support
-      const result = await llmHandler.processMessage(
-        message,
-        tools,
-        conversationHistory.slice(0, -1),
-        {
-          previousResponseId: lastResponseId,
-          instructions: systemInstructions,
+      // Call LLM with Conversations API support (or fallback to full history)
+      const result = await llmHandler.processMessage(message, tools, conversationHistory.slice(0, -1), {
+        conversationId, // NEW: OpenAI Conversations API
+        instructions: systemInstructions,
+        allowedTools, // Restrict tools if specified
+      });
+
+      // Extract response data from result
+      const { output, responseId, model, conversationIdCleared } = result;
+
+      // If conversation fallback happened, clear the stored conversationId and create new one
+      if (conversationIdCleared) {
+        await ChatPersistenceModel.clearConversation(chatId);
+        // Try to create a new conversation for next message
+        if (llmHandler.createConversation) {
+          try {
+            const newConversationId = await llmHandler.createConversation({ chatId });
+            await ChatPersistenceModel.setConversationId(chatId, newConversationId);
+            chatLogger.info(`Created replacement OpenAI conversation for chat ${chatId}: ${newConversationId}`);
+          } catch (error) {
+            chatLogger.error('Failed to create replacement conversation:', error);
+          }
         }
-      );
-
-      // Extract response ID and output from result
-      const { output, responseId, model, responseIdCleared } = result;
-
-      // If fallback happened, clear the stored responseId
-      if (responseIdCleared) {
-        await ChatPersistenceModel.clearResponseChain(chatId);
       }
-      // Store the new response ID and metadata for this chat
+      // Store metadata for this chat
       else if (responseId) {
         await ChatPersistenceModel.updateChatMetadata(chatId, {
           responseId,
@@ -169,9 +188,9 @@ export class MessageOrchestrator {
         await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory, responseId);
       }
 
-      // Handle tool calls with the current responseId
+      // Handle tool calls with the current conversationId
       if (toolCallsFlag) {
-        this.handleToolCallsLoop(output, tools, chatId, responseId, systemInstructions);
+        this.handleToolCallsLoop(output, tools, chatId, conversationId, systemInstructions, allowedTools);
       }
 
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
@@ -198,30 +217,44 @@ export class MessageOrchestrator {
    * @param {Array} response - Initial response with tool calls
    * @param {Array} _tools - Available tools
    * @param {string} chatId - Chat identifier
-   * @param {string} initialResponseId - Response ID to continue the chain
+   * @param {string} conversationId - OpenAI Conversation ID for persistent state
    * @param {string} systemInstructions - System instructions to re-send
+   * @param {Array<string>} allowedTools - List of allowed tool names (null = all)
    */
-  static async handleToolCallsLoop(response, _tools, chatId, initialResponseId, systemInstructions) {
+  static async handleToolCallsLoop(response, _tools, chatId, conversationId, systemInstructions, allowedTools = null) {
     let isToolCalling = true;
     let iterations = 0;
     chatLogger.debug('Starting tool calls loop...');
     let currentResponse = response;
-    let currentResponseId = initialResponseId;
 
     while (isToolCalling && iterations < maxIterations) {
       iterations++;
       chatLogger.debug(`Iteration ${iterations} - Processing tools...`);
       isToolCalling = true;
-      const toolResults = await this.executeToolCalls(currentResponse);
+      const toolResults = await this.executeToolCalls(currentResponse, chatId);
 
-      // Continue with the same response chain
-      const result = await this.continueAfterTools(toolResults, chatId, currentResponseId, systemInstructions);
+      // Check if this is the last iteration - force final response
+      const isLastIteration = iterations >= maxIterations;
+
+      // Continue with the same conversation
+      const result = await this.continueAfterTools(
+        toolResults,
+        chatId,
+        conversationId,
+        systemInstructions,
+        isLastIteration ? [] : allowedTools, // No tools on last iteration to force text response
+        isLastIteration // forceFinish flag
+      );
       currentResponse = result.output;
-      currentResponseId = result.responseId;
 
-      // Update stored responseId
-      if (currentResponseId) {
-        await ChatPersistenceModel.updateChatMetadata(chatId, { responseId: currentResponseId });
+      // Update stored responseId for tracking (conversation persists automatically)
+      if (result.responseId) {
+        await ChatPersistenceModel.updateChatMetadata(chatId, { responseId: result.responseId });
+      }
+
+      if (isLastIteration) {
+        chatLogger.warn('Maximum iterations reached - forced final response without tools');
+        break;
       }
 
       isToolCalling = currentResponse.some(
@@ -230,17 +263,13 @@ export class MessageOrchestrator {
     }
     chatLogger.debug('Tool calls loop finished.');
 
-    if (iterations >= maxIterations) {
-      chatLogger.warn('Maximum iterations reached');
-    }
-
     return currentResponse;
   }
 
   /**
    * Ejecuta todas las llamadas a herramientas solicitadas por el LLM
    */
-  static async executeToolCalls(toolCalls) {
+  static async executeToolCalls(toolCalls, chatId) {
     const results = [];
 
     for (const toolCall of toolCalls) {
@@ -251,6 +280,13 @@ export class MessageOrchestrator {
         results.push(result);
       }
     }
+
+    const conversationHistory = conversationHistories[chatId];
+
+    // Store tool results
+    for (const res of results) {
+      await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
+    }
     return results;
   }
 
@@ -258,27 +294,33 @@ export class MessageOrchestrator {
    * Continúa la conversación después de ejecutar herramientas
    * @param {Array} toolResults - Results from tool executions
    * @param {string} chatId - Chat identifier
-   * @param {string} previousResponseId - Response ID to continue the chain
+   * @param {string} conversationId - OpenAI Conversation ID for persistent state
    * @param {string} systemInstructions - System instructions to re-send
+   * @param {Array<string>} allowedTools - List of allowed tool names (null = all)
+   * @param {boolean} forceFinish - If true, adds a system message forcing final response
    * @returns {Promise<{output: Array, responseId: string}>} Response output and new responseId
    */
-  static async continueAfterTools(toolResults, chatId, previousResponseId, systemInstructions) {
+  static async continueAfterTools(
+    toolResults,
+    chatId,
+    conversationId,
+    systemInstructions,
+    allowedTools = null,
+    forceFinish = false
+  ) {
     const conversationHistory = conversationHistories[chatId];
 
-    // Store tool results
-    for (const res of toolResults) {
-      await ChatPersistenceModel.addMessageToChat(chatId, 'assistant', res, conversationHistory);
-    }
-
-    // Continue conversation using previous_response_id with tool outputs
+    // Continue conversation using conversationId with tool outputs
     const result = await llmHandler.processMessage(
       null, // No new user message
       this.getToolsForProvider(),
       conversationHistory,
       {
-        previousResponseId,
+        conversationId, // Use Conversations API
         instructions: systemInstructions,
         toolOutputs: toolResults, // Pass tool outputs to be sent in input
+        allowedTools, // Restrict tools if specified
+        forceFinish, // Signal to add final response message
       }
     );
 
@@ -511,20 +553,24 @@ ${JSON.stringify(missionDataXYZ.target_elements, null, 2)}
 
 ## group Information
 ${JSON.stringify(missionDataXYZ.group_information, null, 2)}
-
+## obstacles Information
+${JSON.stringify(missionDataXYZ.obstacle_elements, null, 2)}
 ## Mission Requirements
 ${JSON.stringify(missionDataXYZ.mission_requirements, null, 2)}
 
 ## User Context
 ${JSON.stringify(missionDataXYZ.user_context, null, 2)}
 
-Generate an optimized mission plan to cover all inspection elements using the available devices. Provide waypoints in local XYZ coordinates.`;
+Generate an optimized mission plan to cover all inspection elements using the available devices.`;
 
     // ═══════════════════════════════════════════════════════════════════
     // STEP 5: Start background processing (non-blocking)
     // ═══════════════════════════════════════════════════════════════════
     // processMessage handles LLM interaction and tool calls asynchronously
-    this.processMessage(secondaryChatId, userMessage);
+    // Only allow show_mission_xyz tool for mission planning
+    this.processMessage(secondaryChatId, userMessage, {
+      allowedTools: ['Show_mission_xyz_to_user', 'validate_mission_collisions'],
+    });
 
     chatLogger.info(`[MainChat: ${mainChatId}] Background processing started in secondary chat: ${secondaryChatId}`);
 
@@ -599,8 +645,8 @@ Session context:
 ## Mission Routes
 ${JSON.stringify(missionDataXYZ.route, null, 2)}
 
-## Target Elements (with collision data)
-${JSON.stringify(missionDataXYZ.obstacles, null, 2)}
+## collision Objects 
+${JSON.stringify(missionDataXYZ.collision_objects, null, 2)}
 
 Analyze each trajectory segment for potential collisions with obstacles.
 If collisions are detected, modify the waypoints to create safe detours.
@@ -609,7 +655,8 @@ Return the corrected mission plan in XYZ coordinates.`;
     // ═══════════════════════════════════════════════════════════════════
     // STEP 5: Start background processing (non-blocking)
     // ═══════════════════════════════════════════════════════════════════
-    this.processMessage(verifyChatId, userMessage);
+    // Only allow show_mission_xyz tool for mission verification
+    this.processMessage(verifyChatId, userMessage, { allowedTools: ['Show_mission_xyz_to_user'] });
 
     chatLogger.info(`[MainChat: ${mainChatId}] Verification processing started in chat: ${verifyChatId}`);
 

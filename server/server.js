@@ -21,7 +21,7 @@ import { eventBus } from './common/eventBus.js';
 
 // comunications with devices
 import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
-import { rosModel } from './models/ros.js'; // ros model
+import { rosModel } from './models/ros/ros.js'; // ros model
 
 // comunication with devices
 logger.info('Init MultiUAV GUI', {

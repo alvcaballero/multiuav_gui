@@ -222,6 +222,19 @@ function convertMissionBriefingToXYZ(missionBriefing) {
       }
     }
   }
+  // convert obstacle elements positions to XYZ (replace lat/lng with x/y/z)
+  if (converted.obstacle_elements) {
+    for (const obstacle of converted.obstacle_elements) {
+      if (obstacle.position) {
+        const enu = geodeticToENU(obstacle.position.lat, obstacle.position.lng, obstacle.position.alt || 0, origin);
+        obstacle.position = {
+          x: Number(enu.x.toFixed(3)),
+          y: Number(enu.y.toFixed(3)),
+          z: Number(enu.z.toFixed(3)),
+        };
+      }
+    }
+  }
 
   chatLogger.info('Mission briefing converted to XYZ coordinates');
   return converted;

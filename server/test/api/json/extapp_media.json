@@ -1,0 +1,21 @@
+{
+  "mission_id": 1234231,
+  "results": {
+    "data": [
+      {
+        "latitude": 37.09241,
+        "longitude": -5.232,
+        "measures": [
+          {
+            "name": "minDistance",
+            "value": 25.34
+          }
+        ]
+      }
+    ],
+    "files": [
+      "mission_1243/uav_15/DJI_20231124131954_0001_THRM.jpg",
+      "mission_1243/uav_15/captura.jpg"
+    ]
+  }
+}

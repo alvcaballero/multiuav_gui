@@ -1,0 +1,45 @@
+{
+  "mission": {
+    "version": "3",
+    "name": "Safe Mission",
+    "route": [
+      {
+        "name": "safe_route",
+        "uav": "px4_3",
+        "id": 0,
+        "attributes": {
+          "max_vel": 8,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_gimbal": 0,
+          "mode_trace": 0,
+          "mode_landing": 2
+        },
+        "wp": [
+          { "type": "takeoff", "pos": [0, 0, 50], "yaw": 0 },
+          { "type": "transit", "pos": [-500, 300, 120], "yaw": -90 },
+          { "type": "landing", "pos": [0, 0, 50], "yaw": 0 }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  },
+  "obstacles": [
+    {
+      "name": "B6",
+      "type": "windTurbine",
+      "position": { "x": -730.772, "y": 411.171, "z": 0 },
+      "zones": {
+        "exclusion_zone": "Cilindro: radio 35m, altura 108m (z: 0→108).",
+        "caution_zone": "Cilindro: radio 50m, altura 108m (z: 0→108).",
+        "safe_zone": "Fuera de radio 50m o por encima de z>108m + margen."
+      },
+      "safe_passages": [],
+      "aabb": {
+        "min_point": { "x": -760.772, "y": 381.171, "z": 0 },
+        "max_point": { "x": -700.772, "y": 441.171, "z": 108 }
+      },
+      "metadata": "Target turbine (Line B)"
+    }
+  ]
+}

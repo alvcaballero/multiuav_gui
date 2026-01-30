@@ -1,0 +1,46 @@
+{
+  "mission": {
+    "version": "3",
+    "name": "Mission With Collision",
+    "route": [
+      {
+        "name": "collision_route",
+        "uav": "px4_3",
+        "id": 0,
+        "attributes": {
+          "max_vel": 8,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_gimbal": 0,
+          "mode_trace": 0,
+          "mode_landing": 2
+        },
+        "wp": [
+          { "type": "takeoff", "pos": [0, 0, 80], "yaw": 0, "speed": 5 },
+          { "type": "transit", "pos": [-600, 411, 80], "yaw": -90, "speed": 5 },
+          { "type": "transit", "pos": [-850, 411, 80], "yaw": -90, "speed": 5 },
+          { "type": "landing", "pos": [0, 0, 80], "yaw": 0, "speed": 5 }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  },
+  "obstacles": [
+    {
+      "name": "B6",
+      "type": "windTurbine",
+      "position": { "x": -730.772, "y": 411.171, "z": 0 },
+      "zones": {
+        "exclusion_zone": "Cilindro: radio 35m, altura 108m (z: 0→108).",
+        "caution_zone": "Cilindro: radio 50m, altura 108m (z: 0→108).",
+        "safe_zone": "Fuera de radio 50m o por encima de z>108m + margen."
+      },
+      "safe_passages": ["North lateral passage at y=470m", "South lateral passage at y=350m"],
+      "aabb": {
+        "min_point": { "x": -765.772, "y": 376.171, "z": 0 },
+        "max_point": { "x": -695.772, "y": 446.171, "z": 108 }
+      },
+      "metadata": "Target turbine (Line B)"
+    }
+  ]
+}

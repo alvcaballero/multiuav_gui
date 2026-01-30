@@ -1,4 +1,4 @@
-import { rosModel } from '../models/ros.js';
+import { rosModel } from '../models/ros/ros.js';
 import { RosEnable } from '../config/config.js';
 export class rosController {
   static async getTopics(req, res) {

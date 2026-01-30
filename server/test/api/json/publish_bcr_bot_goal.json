@@ -1,0 +1,14 @@
+{
+  "topic": "/bcr_bot/goal_pose_cmd",
+  "messageType": "geometry_msgs/msg/PoseStamped",
+  "message": {
+    "header": {
+      "stamp": { "sec": 0, "nanosec": 0 },
+      "frame_id": "map"
+    },
+    "pose": {
+      "position": { "x": 20.0, "y": -35.0, "z": 0.0 },
+      "orientation": { "x": 0.0, "y": 0.0, "z": 0.7071068, "w": 0.7071068 }
+    }
+  }
+}

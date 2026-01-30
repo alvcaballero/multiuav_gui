@@ -1,0 +1,16 @@
+{
+  "topic": "/px4_3/fmu/in/goto_setpoint",
+  "messageType": "px4_msgs/msg/GotoSetpoint",
+  "message": {
+    "timestamp": 0,
+    "position": [10, 10, 10],
+    "flag_control_heading": false,
+    "heading": 0,
+    "flag_set_max_horizontal_speed": false,
+    "max_horizontal_speed": 0,
+    "flag_set_max_vertical_speed": false,
+    "max_vertical_speed": 0,
+    "flag_set_max_heading_rate": false,
+    "max_heading_rate": 0
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "topic": "px4_3/fmu/in/trajectory_setpoint",
+  "messageType": "px4_msgs/msg/TrajectorySetpoint",
+  "message": {
+    "timestamp": 1755871255821361,
+    "position": [0.0, 0.0, -10.0],
+    "velocity": [0.0, 0.0, 0.0],
+    "acceleration": [0.0, 0.0, 0.0],
+    "jerk": [0.0, 0.0, 0.0],
+    "yaw": 1.5707900524139404,
+    "yawspeed": 1.0
+  }
+}

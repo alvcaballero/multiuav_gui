@@ -1,4 +1,10 @@
 import { missionModel } from '../models/mission.js';
+import {
+  validateMission,
+  resolveCollisions as resolveCollisionsAlgo,
+  formatCollisionReport,
+} from '../models/collision/index.js';
+
 class missionController {
   static getMission = async (req, res) => {
     const response = await missionModel.getMissionValue(req.query.id);
@@ -86,6 +92,87 @@ class missionController {
   static updateMission = ({ device, mission, state }) => {
     missionModel.updateMission({ device, mission, state });
     return true;
+  };
+
+  /**
+   * Validate mission for collisions without modifying it
+   * POST /missions/validate
+   * Body: { mission: MissionObject, obstacles: ObstacleArray }
+   */
+  static validateCollisions = async (req, res) => {
+    try {
+      const { mission, obstacles } = req.body;
+
+      if (!mission) {
+        return res.status(400).json({ error: 'Mission data is required' });
+      }
+
+      if (!obstacles || !Array.isArray(obstacles)) {
+        return res.status(400).json({ error: 'Obstacles array is required' });
+      }
+
+      const result = validateMission(mission, obstacles);
+      const report = result.routes.map((r) => formatCollisionReport(r)).join('\n\n');
+
+      res.json({
+        valid: result.valid,
+        totalCollisions: result.totalCollisions,
+        totalWarnings: result.totalWarnings,
+        routes: result.routes,
+        report,
+      });
+    } catch (error) {
+      console.error('Error validating collisions:', error);
+      res.status(500).json({ error: error.message || 'Failed to validate collisions' });
+    }
+  };
+
+  /**
+   * Validate and automatically resolve collisions with detours
+   * POST /missions/resolve
+   * Body: { mission: MissionObject, obstacles: ObstacleArray }
+   */
+  static resolveCollisions = async (req, res) => {
+    try {
+      const { mission, obstacles } = req.body;
+
+      if (!mission) {
+        return res.status(400).json({ error: 'Mission data is required' });
+      }
+
+      if (!obstacles || !Array.isArray(obstacles)) {
+        return res.status(400).json({ error: 'Obstacles array is required' });
+      }
+
+      // First validate
+      const validation = validateMission(mission, obstacles);
+
+      if (validation.valid) {
+        return res.json({
+          modified: false,
+          message: 'Mission is already collision-free',
+          mission,
+          validation,
+        });
+      }
+
+      // Resolve collisions
+      const result = resolveCollisionsAlgo(mission, obstacles);
+
+      // Validate the corrected mission
+      const finalValidation = validateMission(result.mission, obstacles);
+
+      res.json({
+        modified: true,
+        detoursApplied: result.totalDetoursApplied,
+        mission: result.mission,
+        report: result.report,
+        validation: finalValidation,
+      });
+    } catch (error) {
+      console.error('Error resolving collisions:', error);
+      res.status(500).json({ error: error.message || 'Failed to resolve collisions' });
+    }
   };
 }
 

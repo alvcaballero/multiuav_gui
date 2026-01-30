@@ -1,0 +1,25 @@
+{
+  "action": "navigate_to_pose",
+  "actionType": "nav2_msgs/action/NavigateToPose",
+  "message": {
+    "pose": {
+      "header": {
+        "frame_id": "map"
+      },
+      "pose": {
+        "position": {
+          "x": 16.0,
+          "y": -24.0,
+          "z": 0.0
+        },
+        "orientation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.7071,
+          "w": 0.7071
+        }
+      }
+    },
+    "behavior_tree": ""
+  }
+}

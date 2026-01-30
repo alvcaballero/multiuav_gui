@@ -1,0 +1,45 @@
+{
+  "origin_global": {
+    "lat": 41.68734383818229,
+    "lng": -8.847763635289304,
+    "alt": 0
+  },
+  "chat_id": "chat_1769081456218_g8esni3",
+  "version": "3",
+  "name": "Viana Offshore Quick Frontal Inspection - XYZ",
+  "description": "Quick frontal inspection (one waypoint per turbine, 40 m East of hub at 80 m AGL). Energy-efficient lateral detours added to avoid rotor planes. Start/Return at (0,0,80).",
+  "route": [
+    {
+      "name": "lineAB_quick",
+      "uav": "px4_3",
+      "id": 0,
+      "attributes": {
+        "max_vel": 8,
+        "idle_vel": 5,
+        "mode_yaw": 3,
+        "mode_gimbal": 0,
+        "mode_trace": 0,
+        "mode_landing": 2
+      },
+      "wp": [
+        { "pos": [0, 0, 80], "yaw": 0, "speed": 5 },
+        { "pos": [-699.452, -16.082, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-703.936, 73.252, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-755.496, 130, 80], "yaw": 0, "speed": 5 },
+        { "pos": [-807.056, 74.74, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-867.583, 129.74, 80], "yaw": 0, "speed": 5 },
+        { "pos": [-928.11, 74.74, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-928.11, -14.593, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-926.616, -99.461, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-926.616, -187.308, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-801.078, -194.753, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-801.078, -109.884, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-805.561, -17.571, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-702.441, -109.884, 80], "yaw": -90, "speed": 5 },
+        { "pos": [-700.947, -196.242, 80], "yaw": -90, "speed": 5 },
+        { "pos": [0, 0, 80], "yaw": 0, "speed": 5 }
+      ],
+      "uav_type": "px4_ros2"
+    }
+  ]
+}

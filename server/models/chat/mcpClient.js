@@ -260,6 +260,8 @@ class MCPclient {
         error.message?.includes('EPIPE') ||
         error.message?.includes('Connection closed') ||
         error.message?.includes('socket hang up') ||
+        error.message?.includes('No valid session ID') ||
+        error.message?.includes('session') ||
         error.code === 'ECONNREFUSED' ||
         error.code === 'ECONNRESET' ||
         error.code === 'EPIPE';

@@ -9,5 +9,10 @@ export const createMissionRouter = () => {
   missionRouter.get('/routes', missionController.getRoutes); //get current mission//missionState
   missionRouter.post('/sendTask', missionController.sendTask);
   missionRouter.post('/showXYZ', missionController.showMissionXYZ);
+
+  // Collision detection endpoints
+  missionRouter.post('/validate', missionController.validateCollisions); // Validate mission for collisions
+  missionRouter.post('/resolve', missionController.resolveCollisions); // Validate and auto-resolve collisions
+
   return missionRouter;
 };

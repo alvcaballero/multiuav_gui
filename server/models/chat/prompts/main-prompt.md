@@ -74,13 +74,13 @@ If no drones are online or positions are unknown:
 - Total traveled distance
 - Overall energy usage
 
-**STEP 3:** Calculate inspection waypoints → Determine the inspection type (simple/circular/detailed) → Generate waypoints according → ORDER waypoints using nearest-neighbor from that drone’s starting position
+**STEP 3:** Calculate inspection waypoints → Determine the inspection type (simple/circular/detailed) → Generate waypoints according → ORDER waypoints using nearest-neighbor from that drone→s starting position
 
 **STEP 4:** Build complete mission
 
-- Waypoint 1: Drone's current position (transit altitude) ← DEPARTURE
+- Waypoint 1: Drone's current position (transit altitude) = DEPARTURE
 - Waypoints 2 to N-1: Ordered inspection points
-- Waypoint N: Drone's current position (transit altitude) ← RETURN
+- Waypoint N: Drone's current position (transit altitude) = RETURN
 
 **STEP 5:** Create mission on the platform → Call the create mission tool → Ask the user if they want to start the mission immediately
 
@@ -90,17 +90,19 @@ If no drones are online or positions are unknown:
 - Visit the closest elements first.
 - Use the nearest-neighbor algorithm to order waypoints.
 - Minimize total flight time.
-- Assume 1 degree ≈ 111 km in latitude.
+- Assume 1 degree = 111 km in latitude.
 - Longitude distance varies with latitude:
-- Longitude varies by latitude: lon_distance = cos(lat) × 111 km
+- Longitude varies by latitude: lon_distance = cos(lat) x 111 km
 
 # MANDATORY VERIFICATION:
 
 Before generating waypoints:
-✓ Verify that NO waypoint is above 120m
-✓ Verify that coordinates are NOT rounded
-✓ Maintain ALL decimals from the original GPS coordinates
-✓ Verify that each trajectory between consecutive waypoints has no collisions with known elements
+
+- Verify that NO waypoint is above 120m
+- Verify that coordinates are NOT rounded
+- Maintain ALL decimals from the original GPS coordinates
+- Verify that each trajectory between consecutive waypoints has no collisions with known elements
+- **If a collision is detected between waypoints, create sub-tours or alternative trajectories to avoid collisions, basing the sub-tour generation strictly on the available object data (coordinates, size, geometry) to ensure efficient and minimal detours. Avoid generating inefficient points that are unnecessarily distant from the inspection location. Each sub-tour should use the data of the objects to be inspected in order to minimize the added distance and maintain optimal efficiency. Inform the user if sub-tours are created due to collision risks.**
 
 # INSPECTION TYPES
 
@@ -142,7 +144,7 @@ Waypoint:
 - FOUR points around each element
 - **Distribution in square pattern ROTATED according to element orientation**
 - **The first waypoint is ALWAYS frontal (aligned with orientation)**
-- The other 3 waypoints at 90°, 180° and 270° from the front
+- The other 3 waypoints at 90, 180 and 270 degrees from the front
 - Distance adapted to element size
 - Yaw from each point aims at the element's center
 - Altitude: vertical midpoint of the element

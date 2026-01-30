@@ -66,18 +66,15 @@ export class missionModel {
 
   static async setMission(mission) {
     console.log('setMission mission');
-    console.log(mission);
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
-    return { success: false}
+      return { success: false };
     }
 
     // Emitir evento al EventBus para que los subscribers lo manejen
-    eventBus.emitSafe(EVENTS.MISSION_CREATED, { ...mission, name: 'name' });
+    eventBus.emitSafe(EVENTS.MISSION_CREATED, { ...mission, name: mission.name ? mission.name : 'name' });
 
-    return { success: true}
+    return { success: true };
   }
-    
-
 
   static async createMission({
     id,
@@ -483,10 +480,18 @@ export class missionModel {
 
   static async showMissionXYZ(missionDataXYZ) {
     logger.info(`[MissionShowXYZ] Starting mission show in XYZ coordinates`);
-    const mission = convertMissionXYZToLatLong(missionDataXYZ);
-    const response = await this.setMission(mission);
-    logger.info(`[MissionShowXYZ] Mission show completed`);
-    return response;
+    try {
+      logger.debug(`[MissionShowXYZ] Input data:`, JSON.stringify(missionDataXYZ, null, 2));
+      const mission = convertMissionXYZToLatLong(missionDataXYZ);
+      logger.debug(`[MissionShowXYZ] Converted mission:`, JSON.stringify(mission, null, 2));
+      const response = await this.setMission(mission);
+      logger.info(`[MissionShowXYZ] Mission show completed`);
+      return response;
+    } catch (error) {
+      logger.error(`[MissionShowXYZ] Error processing mission:`, error.message);
+      logger.error(`[MissionShowXYZ] Stack:`, error.stack);
+      throw error;
+    }
   }
 }
 
