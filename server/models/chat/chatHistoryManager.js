@@ -1,18 +1,16 @@
 import sequelize from '../../common/sequelize.js';
 import { chatLogger } from '../../common/logger.js';
-import { eventBus, EVENTS } from '../../common/eventBus.js';
 
-export class ChatPersistenceModel {
+export class ChatHistoryManager {
   /**
-   * Creates a chat item, emits event and persists to database
+   * Creates a chat item and persists to database
    * @param {string} chatId - Chat identifier
    * @param {string} from - Message sender ('user', 'assistant', 'system')
    * @param {object} message - Message content object
-   * @param {Array} conversationHistory - Reference to conversation history array to push to
    * @param {string} responseId - Optional OpenAI response ID for assistant messages
    * @returns {Promise<object>} The created chat item
    */
-  static async addMessageToChat(chatId, from, message, conversationHistory, responseId = null) {
+  static async addMessage(chatId, from, message, responseId = null) {
     const chatItem = {
       chatId,
       from,
@@ -21,21 +19,15 @@ export class ChatPersistenceModel {
       responseId,
     };
 
-    if (from === 'assistant') {
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
-    }
-
-    conversationHistory.push(chatItem);
-
     try {
       await this.saveMessage(chatId, chatItem);
     } catch (error) {
       chatLogger.error('Error persisting message:', error);
-      // Don't throw - continue processing even if DB fails
     }
 
     return chatItem;
   }
+
   /**
    * Get or create a chat conversation
    * @param {string} chatId - Chat identifier
@@ -147,11 +139,6 @@ export class ChatPersistenceModel {
 
       const { from, timestamp, message } = messageItem;
 
-      // Determine role based on message type
-      // Tool calls from LLM: { type: 'function_call', name: '...', call_id: '...', arguments: '...' }
-      // Tool results: { type: 'function_call_output', call_id: '...', output: '...' }
-      // OpenAI Responses API message: { type: 'message', role: '...', content: [...] }
-      // OpenAI reasoning: { type: 'reasoning', summary: [...] }
       let role = message.role;
       let type = message.type || 'text';
       let content = null;
@@ -165,7 +152,6 @@ export class ChatPersistenceModel {
         type = 'tool_result';
         content = typeof message.output === 'string' ? message.output.slice(0, 500) : null;
       } else if (message.type === 'message') {
-        // OpenAI Responses API format: { type: 'message', role: '...', content: [{type: 'output_text', text: '...'}] }
         role = message.role || 'assistant';
         type = 'text';
         if (Array.isArray(message.content)) {
@@ -237,79 +223,68 @@ export class ChatPersistenceModel {
   }
 
   /**
-   * Get the last response ID for a chat (DEPRECATED - use getConversationId)
-   * @param {string} chatId - Chat identifier
-   * @returns {Promise<string|null>} Last response ID or null
+   * Returns a persistence adapter for LLM session management.
+   * Decouples handlers from ChatHistoryManager's concrete implementation.
+   * @returns {Object} Adapter with { getSessionId, setSessionId, clearSession }
    */
-  static async getLastResponseId(chatId) {
+  static getSessionPersistence() {
+    return {
+      getSessionId: (chatId) => this.getSessionId(chatId),
+      setSessionId: (chatId, sessionId) => this.setSessionId(chatId, sessionId),
+      clearSession: (chatId) => this.clearSession(chatId),
+    };
+  }
+
+  /**
+   * Get the provider session ID for a chat (e.g., OpenAI conversation ID)
+   * @param {string} chatId - Chat identifier (internal app ID)
+   * @returns {Promise<string|null>} Provider session ID or null
+   */
+  static async getSessionId(chatId) {
     try {
       const chat = await sequelize.models.Chat.findByPk(chatId);
-      return chat?.metadata?.lastResponseId || null;
+      return chat?.metadata?.sessionId || null;
     } catch (error) {
-      chatLogger.error('Error getting last response ID:', error);
+      chatLogger.error('Error getting session ID:', error);
       return null;
     }
   }
 
   /**
-   * Get the OpenAI conversation ID for a chat
+   * Set the provider session ID for a chat
    * @param {string} chatId - Chat identifier (internal app ID)
-   * @returns {Promise<string|null>} OpenAI conversation ID or null
+   * @param {string} sessionId - Provider session ID
    */
-  static async getConversationId(chatId) {
-    try {
-      const chat = await sequelize.models.Chat.findByPk(chatId);
-      return chat?.metadata?.conversationId || null;
-    } catch (error) {
-      chatLogger.error('Error getting conversation ID:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Set the OpenAI conversation ID for a chat
-   * @param {string} chatId - Chat identifier (internal app ID)
-   * @param {string} conversationId - OpenAI conversation ID
-   */
-  static async setConversationId(chatId, conversationId) {
+  static async setSessionId(chatId, sessionId) {
     try {
       const chat = await sequelize.models.Chat.findByPk(chatId);
       if (chat) {
-        const metadata = { ...(chat.metadata || {}), conversationId, conversationCreatedAt: new Date().toISOString() };
+        const metadata = { ...(chat.metadata || {}), sessionId, sessionCreatedAt: new Date().toISOString() };
         chat.metadata = metadata;
-        chat.changed('metadata', true); // Force Sequelize to detect JSON change
+        chat.changed('metadata', true);
         chat.updatedAt = new Date();
         await chat.save();
-        chatLogger.info(`Set conversation ID for chat ${chatId}: ${conversationId.substring(0, 20)}...`);
+        chatLogger.info(`Set session ID for chat ${chatId}: ${sessionId.substring(0, 20)}...`);
       } else {
-        chatLogger.warn(`Chat ${chatId} not found when setting conversationId`);
+        chatLogger.warn(`Chat ${chatId} not found when setting sessionId`);
       }
     } catch (error) {
-      chatLogger.error('Error setting conversation ID:', error);
+      chatLogger.error('Error setting session ID:', error);
       throw error;
     }
   }
 
   /**
-   * Update the chat's metadata including conversation ID, response ID, provider and model
+   * Update the chat's metadata including response ID, provider and model
    * @param {string} chatId - Chat identifier
-   * @param {object} updates - Object with conversationId, responseId, provider, model
+   * @param {object} updates - Object with responseId, provider, model
    */
-  static async updateChatMetadata(chatId, { conversationId, responseId, provider, model }) {
+  static async updateChatMetadata(chatId, { responseId, provider, model }) {
     try {
       const chat = await sequelize.models.Chat.findByPk(chatId);
       if (chat) {
         const metadata = { ...(chat.metadata || {}) };
 
-        // NEW: Conversation ID (OpenAI Conversations API)
-        if (conversationId !== undefined) {
-          metadata.conversationId = conversationId;
-          if (conversationId) {
-            metadata.conversationCreatedAt = metadata.conversationCreatedAt || new Date().toISOString();
-          }
-        }
-
-        // DEPRECATED: Response ID (legacy response chaining)
         if (responseId !== undefined) {
           metadata.lastResponseId = responseId;
           metadata.lastResponseAt = new Date().toISOString();
@@ -319,13 +294,12 @@ export class ChatPersistenceModel {
         if (model !== undefined) metadata.model = model;
 
         chat.metadata = metadata;
-        chat.changed('metadata', true); // Force Sequelize to detect JSON change
+        chat.changed('metadata', true);
         chat.updatedAt = new Date();
         await chat.save();
 
-        const logConvId = conversationId ? conversationId.substring(0, 20) + '...' : 'null';
         const logRespId = responseId ? responseId.substring(0, 20) + '...' : 'null';
-        chatLogger.debug(`Updated chat ${chatId} metadata: conversationId=${logConvId}, responseId=${logRespId}, provider=${provider}, model=${model}`);
+        chatLogger.debug(`Updated chat ${chatId} metadata: responseId=${logRespId}, provider=${provider}, model=${model}`);
       }
     } catch (error) {
       chatLogger.error('Error updating chat metadata:', error);
@@ -333,42 +307,96 @@ export class ChatPersistenceModel {
   }
 
   /**
-   * Clear the conversation (forces creation of new conversation on next message)
-   * Also clears response chain for backwards compatibility
+   * Clear the provider session (forces creation of new session on next message)
    * @param {string} chatId - Chat identifier
    */
-  static async clearConversation(chatId) {
+  static async clearSession(chatId) {
     try {
       const chat = await sequelize.models.Chat.findByPk(chatId);
       if (chat) {
-        const metadata = { ...(chat.metadata || {}), conversationId: null, lastResponseId: null };
+        const metadata = { ...(chat.metadata || {}), sessionId: null, lastResponseId: null };
         chat.metadata = metadata;
-        chat.changed('metadata', true); // Force Sequelize to detect JSON change
+        chat.changed('metadata', true);
         await chat.save();
-        chatLogger.info(`Conversation cleared for chat ${chatId}`);
+        chatLogger.info(`Session cleared for chat ${chatId}`);
       }
     } catch (error) {
-      chatLogger.error('Error clearing conversation:', error);
+      chatLogger.error('Error clearing session:', error);
     }
   }
 
   /**
-   * Clear the response chain (forces full history on next message)
-   * DEPRECATED - use clearConversation instead
+   * Set the allowed tools for a chat (persists in metadata for consistency)
    * @param {string} chatId - Chat identifier
+   * @param {Array<string>|null} allowedTools - List of allowed tool names (null = all tools allowed)
    */
-  static async clearResponseChain(chatId) {
+  static async setAllowedTools(chatId, allowedTools) {
     try {
       const chat = await sequelize.models.Chat.findByPk(chatId);
       if (chat) {
-        const metadata = chat.metadata || {};
-        metadata.lastResponseId = null;
+        const metadata = { ...(chat.metadata || {}), allowedTools };
         chat.metadata = metadata;
+        chat.changed('metadata', true);
+        chat.updatedAt = new Date();
         await chat.save();
-        chatLogger.info(`Response chain cleared for chat ${chatId}`);
+        chatLogger.info(`Set allowedTools for chat ${chatId}: ${allowedTools ? allowedTools.join(', ') : 'all'}`);
+      } else {
+        chatLogger.warn(`Chat ${chatId} not found when setting allowedTools`);
       }
     } catch (error) {
-      chatLogger.error('Error clearing response chain:', error);
+      chatLogger.error('Error setting allowedTools:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the allowed tools for a chat from metadata
+   * @param {string} chatId - Chat identifier
+   * @returns {Promise<Array<string>|null>} List of allowed tool names or null (all allowed)
+   */
+  static async getAllowedTools(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      return chat?.metadata?.allowedTools;
+    } catch (error) {
+      chatLogger.error('Error getting allowedTools:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Set the agent profile for a chat (persists in metadata)
+   * @param {string} chatId - Chat identifier
+   * @param {string} agentProfile - Profile name ('default', 'planner', etc.)
+   */
+  static async setAgentProfile(chatId, agentProfile) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      if (chat) {
+        const metadata = { ...(chat.metadata || {}), agentProfile };
+        chat.metadata = metadata;
+        chat.changed('metadata', true);
+        chat.updatedAt = new Date();
+        await chat.save();
+        chatLogger.info(`Set agentProfile for chat ${chatId}: ${agentProfile}`);
+      }
+    } catch (error) {
+      chatLogger.error('Error setting agentProfile:', error);
+    }
+  }
+
+  /**
+   * Get the agent profile for a chat from metadata
+   * @param {string} chatId - Chat identifier
+   * @returns {Promise<string>} Profile name or 'default'
+   */
+  static async getAgentProfile(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      return chat?.metadata?.agentProfile || 'default';
+    } catch (error) {
+      chatLogger.error('Error getting agentProfile:', error);
+      return 'default';
     }
   }
 }

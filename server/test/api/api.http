@@ -642,6 +642,12 @@ Content-Type: application/json
 
 < ./json/collision_validate_safe.json
 
+### validate mission with collisions
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/collision_detail.json
+
 ### resolve collisions automatically
 POST http://localhost:4000/api/missions/resolve
 Content-Type: application/json
@@ -671,3 +677,25 @@ Content-Type: application/json
     "route": []
   }
 }
+
+### ============================================
+### MCP Client Collision Validation Tests
+### ============================================
+
+### MCP validate collision - with collisions expected
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/mcp_validate_collision.json
+
+### MCP validate collision - safe route (no collisions)
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/mcp_validate_collision_safe.json
+
+### MCP validate collision - multi-route mission
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/mcp_validate_collision_multi_route.json

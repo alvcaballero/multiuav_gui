@@ -6,6 +6,17 @@ import { logger, chatLogger } from '../../common/logger.js';
 //suported roles= 'assistant', 'system', 'developer', and 'user'
 // models: gpt-4.1, gpt-4o, o4-mini, gpt-5, gpt-5-mini,, gpt-5-nano gpt-5.2,etc.
 class OpenAIHandler extends BaseLLMHandler {
+  static AGENT_PROFILES = {
+    default: {
+      model: 'gpt-5',
+      reasoning: { effort: 'low' },
+    },
+    planner: {
+      model: 'gpt-5.2',
+      reasoning: { effort: 'medium' },
+    },
+  };
+
   constructor(apiKey, model = 'gpt-5.2', systemPrompt = SystemPrompts.openai) {
     //logger.info(`Apikey in handler ${apiKey}, ${model}`);
     super(apiKey, model, systemPrompt);
@@ -18,62 +29,76 @@ class OpenAIHandler extends BaseLLMHandler {
     this.client = new OpenAI({
       apiKey: this.apiKey,
     });
+    this.initialized = true;
     chatLogger.info(`✓ OpenAI client initialized (model: ${this.model})`);
   }
 
   /**
-   * Creates a new conversation in OpenAI for persistent state management.
-   * Conversations persist for 30 days and enable automatic prompt caching.
-   * @param {Object} metadata - Optional metadata to attach to the conversation
+   * Ensures an OpenAI conversation exists for the given chat.
+   * Creates one if it doesn't exist yet.
+   * @param {string} chatId - Internal chat identifier
+   * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
+   * @returns {Promise<string|null>} OpenAI conversation ID or null on failure
+   */
+  async ensureSession(chatId, persistence) {
+    let sessionId = await persistence.getSessionId(chatId);
+    if (sessionId) return sessionId;
+
+    try {
+      sessionId = await this._createConversation({ chatId });
+      await persistence.setSessionId(chatId, sessionId);
+      chatLogger.info(`Created OpenAI conversation for chat ${chatId}: ${sessionId}`);
+      return sessionId;
+    } catch (error) {
+      chatLogger.error('Failed to create OpenAI conversation, will use full history:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Handles session-related errors from processMessage.
+   * Clears invalid sessions and creates replacements.
+   * @param {string} chatId - Internal chat identifier
+   * @param {Error} error - The error from processMessage
+   * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
+   * @returns {Promise<boolean>} true if session was recovered (caller should clear sessionId for retry)
+   */
+  async handleSessionError(chatId, error, persistence) {
+    if (this._isConversationLockedError(error)) {
+      await persistence.clearSession(chatId);
+      chatLogger.warn(`Conversation locked for chat ${chatId}, cleared for next message`);
+      return false; // Not recoverable within this request
+    }
+
+    if (error.sessionCleared) {
+      // processMessage already fell back to full history, now recreate session for next message
+      await persistence.clearSession(chatId);
+      try {
+        const newSessionId = await this._createConversation({ chatId });
+        await persistence.setSessionId(chatId, newSessionId);
+        chatLogger.info(`Created replacement OpenAI conversation for chat ${chatId}: ${newSessionId}`);
+      } catch (recreateError) {
+        chatLogger.error('Failed to create replacement conversation:', recreateError);
+      }
+      return true; // The result is already good (fallback succeeded)
+    }
+
+    return false;
+  }
+
+  /**
+   * Creates a new OpenAI conversation (internal helper).
+   * @param {Object} metadata - Optional metadata
    * @returns {Promise<string>} The conversation ID
+   * @private
    */
-  async createConversation(metadata = {}) {
+  async _createConversation(metadata = {}) {
     if (!this.client) {
       throw new Error('OpenAI client not initialized');
     }
-    try {
-      const conversation = await this.client.conversations.create({
-        metadata,
-      });
-      chatLogger.info(`✓ OpenAI conversation created: ${conversation.id}`);
-      return conversation.id;
-    } catch (error) {
-      chatLogger.error('Error creating OpenAI conversation:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieves an existing conversation from OpenAI.
-   * @param {string} conversationId - The conversation ID to retrieve
-   * @returns {Promise<Object>} The conversation object
-   */
-  async getConversation(conversationId) {
-    if (!this.client) {
-      throw new Error('OpenAI client not initialized');
-    }
-    try {
-      const conversation = await this.client.conversations.retrieve(conversationId);
-      return conversation;
-    } catch (error) {
-      chatLogger.error(`Error retrieving conversation ${conversationId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Checks if a conversation exists and is valid.
-   * @param {string} conversationId - The conversation ID to check
-   * @returns {Promise<boolean>} True if the conversation exists
-   */
-  async isConversationValid(conversationId) {
-    if (!conversationId) return false;
-    try {
-      await this.getConversation(conversationId);
-      return true;
-    } catch (error) {
-      return false;
-    }
+    const conversation = await this.client.conversations.create({ metadata });
+    chatLogger.info(`✓ OpenAI conversation created: ${conversation.id}`);
+    return conversation.id;
   }
 
   convertToolsForMCP(tools) {
@@ -148,13 +173,17 @@ class OpenAIHandler extends BaseLLMHandler {
     }
 
     const {
-      conversationId = null, // NEW: OpenAI Conversations API
+      sessionId = null, // Provider session ID (e.g., OpenAI conversation ID)
       previousResponseId = null, // DEPRECATED: Response chaining (kept for backwards compatibility)
       instructions = null,
       toolOutputs = null,
-      allowedTools = null, // NEW: list of allowed tool names for this call
-      forceFinish = false, // NEW: force final response with system message
+      allowedTools = null, // list of allowed tool names for this call
+      forceFinish = false, // force final response with system message
+      agentProfile = 'default', // Agent profile for model/reasoning selection
     } = options;
+
+    // Resolve agent profile for model and reasoning config
+    const profile = this.getAgentProfile(agentProfile);
 
     // Message to force LLM to provide final response when tool limit is reached
     const forceFinishMessage = {
@@ -163,10 +192,10 @@ class OpenAIHandler extends BaseLLMHandler {
         'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools. Summarize what was accomplished and present the results to the user.',
     };
 
-    // Parameters for the call
+    // Parameters for the call — model and reasoning come from the agent profile
     const params = {
-      model: this.model,
-      reasoning: { effort: 'high' },
+      model: profile.model || this.model,
+      reasoning: profile.reasoning || { effort: 'medium' },
     };
 
     // Add tools if available
@@ -183,9 +212,9 @@ class OpenAIHandler extends BaseLLMHandler {
       }
     }
 
-    // CASE 1: Using conversationId (Conversations API - preferred, persistent 30 days)
-    if (conversationId) {
-      params.conversation = conversationId;
+    // CASE 1: Using sessionId (Conversations API - preferred, persistent 30 days)
+    if (sessionId) {
+      params.conversation = sessionId;
 
       // Tool continuation - must send tool outputs in input
       if (toolOutputs && toolOutputs.length > 0) {
@@ -241,8 +270,8 @@ class OpenAIHandler extends BaseLLMHandler {
     }
 
     try {
-      const logId = conversationId
-        ? `conversationId: ${conversationId.substring(0, 20)}...`
+      const logId = sessionId
+        ? `sessionId: ${sessionId.substring(0, 20)}...`
         : previousResponseId
           ? `previousResponseId: ${previousResponseId.substring(0, 20)}...`
           : 'none';
@@ -277,15 +306,26 @@ class OpenAIHandler extends BaseLLMHandler {
     } catch (error) {
       chatLogger.error('Error in OpenAI:', error);
 
-      // If conversationId fails (expired, not found, or missing tool outputs), try to recreate or fall back
-      if (conversationId && (this._isConversationError(error) || this._isResponseIdError(error))) {
-        chatLogger.warn(`conversationId failed (${error.message}), falling back to full history`);
+      // If conversation_locked error (concurrent access), signal to continue without conversation
+      if (this._isConversationLockedError(error)) {
+        chatLogger.warn(`Conversation locked error, will continue without persistent conversation`);
+        const wrappedError = new Error(error.message);
+        wrappedError.code = 'conversation_locked';
+        wrappedError.recoverable = true;
+        wrappedError.userMessage =
+          'La conversación está siendo procesada por otra solicitud. Puedes continuar chateando, pero el historial de esta sesión no se mantendrá en el servidor.';
+        throw wrappedError;
+      }
+
+      // If sessionId fails (expired, not found, or missing tool outputs), try to recreate or fall back
+      if (sessionId && (this._isConversationError(error) || this._isResponseIdError(error))) {
+        chatLogger.warn(`sessionId failed (${error.message}), falling back to full history`);
         const result = await this.processMessage(message, tools, conversationHistory, {
-          conversationId: null,
+          sessionId: null,
           previousResponseId: null,
           instructions,
         });
-        result.conversationIdCleared = true; // Signal to create new conversation
+        result.sessionCleared = true; // Signal for handleSessionError to recreate
         return result;
       }
 
@@ -293,7 +333,7 @@ class OpenAIHandler extends BaseLLMHandler {
       if (previousResponseId && this._isResponseIdError(error)) {
         chatLogger.warn(`previous_response_id failed (${error.message}), falling back to full history`);
         const result = await this.processMessage(message, tools, conversationHistory, {
-          conversationId: null,
+          sessionId: null,
           previousResponseId: null,
           instructions,
         });
@@ -331,6 +371,15 @@ class OpenAIHandler extends BaseLLMHandler {
         (message.includes('not found') || message.includes('expired') || message.includes('invalid'))) ||
       message.includes('conv_')
     );
+  }
+
+  /**
+   * Check if the error is a conversation_locked error (concurrent access)
+   * @param {Error} error - The error object
+   * @returns {boolean} True if it's a conversation_locked error
+   */
+  _isConversationLockedError(error) {
+    return error.code === 'conversation_locked' || error.message?.toLowerCase().includes('conversation_locked');
   }
 
   async handleToolCall(toolCall, toolExecutor) {

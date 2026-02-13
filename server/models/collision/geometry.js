@@ -283,7 +283,9 @@ export function interpolateSegment(segment, t) {
 
 /**
  * Create a cylinder from obstacle data with zone information
- * Parses zone strings like "Cilindro: radio 35m, altura 108m (z: 0→108)."
+ * Parses zone strings like:
+ *   - Spanish: "Cilindro: radio 35m, altura 108m (z: 0→108)."
+ *   - English: "cylinder: radius=30m, height=108m"
  * @param {Object} obstacle - Obstacle with position and zones
  * @param {string} zoneType - 'exclusion_zone' | 'caution_zone'
  * @returns {Cylinder|null}
@@ -292,9 +294,11 @@ export function cylinderFromObstacleZone(obstacle, zoneType = 'exclusion_zone') 
   const zone = obstacle.zones?.[zoneType];
   if (!zone) return null;
 
-  // Parse zone string for radius and height
-  const radiusMatch = zone.match(/radio\s+(\d+(?:\.\d+)?)\s*m/i);
-  const heightMatch = zone.match(/altura\s+(\d+(?:\.\d+)?)\s*m/i);
+  // Parse zone string for radius and height (supports Spanish and English formats)
+  // Spanish: "radio 35m" / English: "radius=30m" or "radius 30m"
+  const radiusMatch = zone.match(/(?:radio|radius)[=:\s]+(\d+(?:\.\d+)?)\s*m/i);
+  // Spanish: "altura 108m" / English: "height=108m" or "height 108m"
+  const heightMatch = zone.match(/(?:altura|height)[=:\s]+(\d+(?:\.\d+)?)\s*m/i);
 
   if (!radiusMatch || !heightMatch) {
     // Fallback to AABB dimensions if zone parsing fails

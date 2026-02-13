@@ -1,0 +1,94 @@
+{
+  "mission": {
+    "version": "3",
+    "name": "Wind Turbine Inspection - Collision Test",
+    "description": "Mission to test collision detection with wind turbines",
+    "origin_global": { "lat": 37.4219983, "lng": -5.9943, "alt": 20 },
+    "route": [
+      {
+        "name": "turbine_inspection_route",
+        "uav": "px4_3",
+        "id": 0,
+        "attributes": {
+          "max_vel": 8,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_gimbal": 0,
+          "mode_trace": 0,
+          "mode_landing": 2
+        },
+        "wp": [
+          { "type": "takeoff", "pos": [0, 0, 50], "yaw": 0, "speed": 5 },
+          { "type": "transit", "pos": [80, 40, 80], "yaw": 45, "speed": 8 },
+          {
+            "type": "inspection",
+            "pos": [100, 50, 60],
+            "yaw": 90,
+            "speed": 3,
+            "target_id": "turbine_1",
+            "notes": "This waypoint will collide with turbine exclusion zone"
+          },
+          { "type": "transit", "pos": [120, 60, 80], "yaw": 90, "speed": 8 },
+          {
+            "type": "inspection",
+            "pos": [200, 100, 45],
+            "yaw": 0,
+            "speed": 3,
+            "target_id": "building_A",
+            "notes": "This waypoint will collide with building"
+          },
+          { "type": "transit", "pos": [250, 120, 80], "yaw": -45, "speed": 8 },
+          { "type": "landing", "pos": [0, 0, 50], "yaw": 0, "speed": 5 }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  },
+  "collision_objects": [
+    {
+      "name": "turbine_1",
+      "type": "windTurbine",
+      "position": { "x": 100, "y": 50, "z": 0 },
+      "zones": {
+        "exclusion_zone": "cylinder: radius=15m, height=120m",
+        "caution_zone": "cylinder: radius=25m, height=130m",
+        "safe_zone": "beyond 30m radius"
+      },
+      "aabb": {
+        "min_point": { "x": 85, "y": 35, "z": 0 },
+        "max_point": { "x": 115, "y": 65, "z": 120 }
+      },
+      "metadata": "Wind turbine with 60m blade radius, hub height 80m"
+    },
+    {
+      "name": "building_A",
+      "type": "building",
+      "position": { "x": 200, "y": 100, "z": 0 },
+      "zones": {
+        "exclusion_zone": "box: 40m x 30m x 50m",
+        "caution_zone": "box: 50m x 40m x 55m",
+        "safe_zone": "beyond 25m from walls"
+      },
+      "aabb": {
+        "min_point": { "x": 180, "y": 85, "z": 0 },
+        "max_point": { "x": 220, "y": 115, "z": 50 }
+      },
+      "metadata": "Control building for wind farm operations"
+    },
+    {
+      "name": "power_line_1",
+      "type": "powerLine",
+      "position": { "x": 150, "y": 75, "z": 15 },
+      "zones": {
+        "exclusion_zone": "corridor: width=10m, height=30m",
+        "caution_zone": "corridor: width=20m, height=40m",
+        "safe_zone": "beyond 15m from cables"
+      },
+      "aabb": {
+        "min_point": { "x": 50, "y": 70, "z": 10 },
+        "max_point": { "x": 250, "y": 80, "z": 25 }
+      },
+      "metadata": "High voltage transmission line 132kV"
+    }
+  ]
+}

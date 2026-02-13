@@ -66,9 +66,9 @@ import {
 
 // Safety margins (meters)
 const SAFETY_MARGINS = {
-  EXCLUSION: 2.0,  // Extra margin for exclusion zones
-  CAUTION: 0,      // No extra margin for caution (it's already a buffer)
-  WAYPOINT: 1.0,   // Margin for waypoint position checks
+  EXCLUSION: 2.0, // Extra margin for exclusion zones
+  CAUTION: 0, // No extra margin for caution (it's already a buffer)
+  WAYPOINT: 1.0, // Margin for waypoint position checks
 };
 
 /**
@@ -108,7 +108,7 @@ function checkWaypointCollision(waypoint, obstacle) {
       segmentIndex: -1, // Single point, no segment
       collisionPoint: pos,
       penetrationDepth: exclusionCylinder.radius - distance3D(pos, exclusionCylinder.center),
-      obstacle,
+      // obstacle,
     };
   }
 
@@ -123,7 +123,7 @@ function checkWaypointCollision(waypoint, obstacle) {
       segmentIndex: -1,
       collisionPoint: pos,
       penetrationDepth: cautionCylinder.radius - distance3D(pos, cautionCylinder.center),
-      obstacle,
+      // obstacle,
     };
   }
 
@@ -147,19 +147,33 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
   let warning = null;
 
   // Quick AABB rejection test
-  const aabbResult = segmentIntersectsAABB(segment, obstacle.aabb, SAFETY_MARGINS.EXCLUSION);
+  // Use a larger margin to account for caution zone which may extend beyond AABB
+  // The AABB is typically sized for exclusion zone, but caution zone can be larger/taller
+  const cautionCylinder = cylinderFromObstacleZone(obstacle, 'caution_zone');
+  const exclusionCylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
+
+  // Calculate expanded AABB margin: max of caution zone dimensions beyond AABB
+  let aabbMargin = SAFETY_MARGINS.EXCLUSION;
+  if (cautionCylinder && obstacle.aabb) {
+    // Caution zone may extend higher and wider than AABB
+    const heightDiff = cautionCylinder.center.z + cautionCylinder.height - obstacle.aabb.max_point.z;
+    const radiusDiff =
+      cautionCylinder.radius -
+      Math.max(
+        (obstacle.aabb.max_point.x - obstacle.aabb.min_point.x) / 2,
+        (obstacle.aabb.max_point.y - obstacle.aabb.min_point.y) / 2
+      );
+    aabbMargin = Math.max(aabbMargin, heightDiff, radiusDiff);
+  }
+
+  const aabbResult = segmentIntersectsAABB(segment, obstacle.aabb, aabbMargin);
   if (!aabbResult.intersects) {
     return { collision: null, warning: null };
   }
 
-  // Check exclusion zone (cylinder)
-  const exclusionCylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
+  // Check exclusion zone (cylinder) - already parsed above for AABB margin calculation
   if (exclusionCylinder) {
-    const exclusionResult = segmentIntersectsCylinder(
-      segment,
-      exclusionCylinder,
-      SAFETY_MARGINS.EXCLUSION
-    );
+    const exclusionResult = segmentIntersectsCylinder(segment, exclusionCylinder, SAFETY_MARGINS.EXCLUSION);
 
     if (exclusionResult.intersects) {
       collision = {
@@ -170,19 +184,15 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
         segmentIndex,
         collisionPoint: exclusionResult.closestPoint,
         penetrationDepth: exclusionCylinder.radius - exclusionResult.distance,
-        obstacle,
+        // obstacle,
       };
     }
   }
 
   // Check caution zone (even if exclusion collision found, for complete reporting)
-  const cautionCylinder = cylinderFromObstacleZone(obstacle, 'caution_zone');
+  // cautionCylinder already parsed above for AABB margin calculation
   if (cautionCylinder && !collision) {
-    const cautionResult = segmentIntersectsCylinder(
-      segment,
-      cautionCylinder,
-      SAFETY_MARGINS.CAUTION
-    );
+    const cautionResult = segmentIntersectsCylinder(segment, cautionCylinder, SAFETY_MARGINS.CAUTION);
 
     if (cautionResult.intersects) {
       warning = {
@@ -193,7 +203,7 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
         segmentIndex,
         collisionPoint: cautionResult.closestPoint,
         penetrationDepth: cautionCylinder.radius - cautionResult.distance,
-        obstacle,
+        // obstacle,
       };
     }
   }
@@ -325,7 +335,7 @@ export function validateMission(mission, obstacles) {
 
   logger.info(
     `[CollisionDetector] Mission validation: valid=${results.valid}, ` +
-    `collisions=${results.totalCollisions}, warnings=${results.totalWarnings}`
+      `collisions=${results.totalCollisions}, warnings=${results.totalWarnings}`
   );
 
   return results;
@@ -380,8 +390,8 @@ export function formatCollisionReport(result) {
     for (const c of result.collisions) {
       lines.push(
         `  [Segment ${c.segmentIndex}] ${c.obstacleName} (${c.obstacleType}): ` +
-        `point=(${c.collisionPoint.x.toFixed(1)}, ${c.collisionPoint.y.toFixed(1)}, ${c.collisionPoint.z.toFixed(1)}), ` +
-        `penetration=${c.penetrationDepth.toFixed(1)}m`
+          `point=(${c.collisionPoint.x.toFixed(1)}, ${c.collisionPoint.y.toFixed(1)}, ${c.collisionPoint.z.toFixed(1)}), ` +
+          `penetration=${c.penetrationDepth.toFixed(1)}m`
       );
     }
     lines.push('');
@@ -390,9 +400,7 @@ export function formatCollisionReport(result) {
   if (result.warnings.length > 0) {
     lines.push('--- WARNINGS (Caution Zone Entries) ---');
     for (const w of result.warnings) {
-      lines.push(
-        `  [Segment ${w.segmentIndex}] ${w.obstacleName}: entering caution zone`
-      );
+      lines.push(`  [Segment ${w.segmentIndex}] ${w.obstacleName}: entering caution zone`);
     }
   }
 

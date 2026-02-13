@@ -4,16 +4,18 @@ export class BaseLLMHandler {
     this.model = model;
     this.client = null;
     this.systemPrompt = systemPrompt;
+    this.initialized = false;
     if (new.target === BaseLLMHandler) {
       throw new TypeError('Cannot construct BaseLLMHandler instances directly. Use a concrete subclass.');
     }
   }
   /**
-   * Inicializa el cliente del LLM
-   * Debe ser implementado por cada proveedor
+   * Inicializa el cliente del LLM.
+   * Subclasses should override, call their init logic, and set this.initialized = true.
+   * Base implementation just sets the flag (for providers that init in the constructor).
    */
   async initialize() {
-    throw new Error('initialize() debe ser implementado por la clase derivada');
+    this.initialized = true;
   }
 
   /**
@@ -56,4 +58,43 @@ export class BaseLLMHandler {
   getProviderName() {
     throw new Error('getProviderName() debe ser implementado por la clase derivada');
   }
+
+  /**
+   * Ensures a provider-specific session exists for the given chat.
+   * Providers that support persistent sessions (e.g., OpenAI Conversations API)
+   * should override this to create/retrieve a session ID.
+   * @param {string} chatId - Internal chat identifier
+   * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
+   * @returns {Promise<string|null>} Session ID or null if provider doesn't use sessions
+   */
+  async ensureSession(chatId, persistence) {
+    return null;
+  }
+
+  /**
+   * Handles session-related errors after a failed processMessage call.
+   * Providers should override this to recover from expired/invalid sessions.
+   * @param {string} chatId - Internal chat identifier
+   * @param {Error} error - The error from processMessage
+   * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
+   * @returns {Promise<boolean>} true if the session was recovered (caller should retry), false otherwise
+   */
+  async handleSessionError(chatId, error, persistence) {
+    return false;
+  }
+
+  /**
+   * Returns the resolved config for an agent profile.
+   * Subclasses define AGENT_PROFILES with provider-specific presets.
+   * @param {string} profileName - Profile name ('default', 'planner', etc.)
+   * @returns {Object} Profile config { model, reasoning, ... }
+   */
+  getAgentProfile(profileName = 'default') {
+    const profiles = this.constructor.AGENT_PROFILES || {};
+    return profiles[profileName] || profiles['default'] || { model: this.model };
+  }
+
+  static AGENT_PROFILES = {
+    default: {},
+  };
 }

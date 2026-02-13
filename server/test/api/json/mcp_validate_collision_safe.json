@@ -1,0 +1,81 @@
+{
+  "mission": {
+    "version": "3",
+    "name": "Wind Turbine Inspection - Safe Route",
+    "description": "Mission with waypoints that avoid all obstacles",
+    "origin_global": { "lat": 37.4219983, "lng": -5.9943, "alt": 20 },
+    "route": [
+      {
+        "name": "safe_inspection_route",
+        "uav": "px4_3",
+        "id": 0,
+        "attributes": {
+          "max_vel": 10,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_gimbal": 1,
+          "mode_trace": 0,
+          "mode_landing": 2
+        },
+        "wp": [
+          { "type": "takeoff", "pos": [0, 0, 50], "yaw": 0, "speed": 5 },
+          { "type": "transit", "pos": [50, 25, 140], "yaw": 45, "speed": 10, "notes": "Flying above all obstacles" },
+          {
+            "type": "inspection",
+            "pos": [100, 50, 140],
+            "yaw": 90,
+            "speed": 3,
+            "target_id": "turbine_1",
+            "gimbal": -45,
+            "notes": "Inspecting turbine from above safe zone"
+          },
+          { "type": "transit", "pos": [150, 75, 140], "yaw": 90, "speed": 10 },
+          {
+            "type": "inspection",
+            "pos": [200, 100, 70],
+            "yaw": 0,
+            "speed": 3,
+            "target_id": "building_A",
+            "gimbal": -30,
+            "notes": "Safe altitude above building"
+          },
+          { "type": "transit", "pos": [250, 120, 100], "yaw": -45, "speed": 10 },
+          { "type": "landing", "pos": [0, 0, 50], "yaw": 0, "speed": 5 }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  },
+  "collision_objects": [
+    {
+      "name": "turbine_1",
+      "type": "windTurbine",
+      "position": { "x": 100, "y": 50, "z": 0 },
+      "zones": {
+        "exclusion_zone": "cylinder: radius=15m, height=120m",
+        "caution_zone": "cylinder: radius=25m, height=130m",
+        "safe_zone": "beyond 30m radius or above 130m altitude"
+      },
+      "aabb": {
+        "min_point": { "x": 85, "y": 35, "z": 0 },
+        "max_point": { "x": 115, "y": 65, "z": 120 }
+      },
+      "metadata": "Wind turbine - safe to fly over at 140m"
+    },
+    {
+      "name": "building_A",
+      "type": "building",
+      "position": { "x": 200, "y": 100, "z": 0 },
+      "zones": {
+        "exclusion_zone": "box: 40m x 30m x 50m",
+        "caution_zone": "box: 50m x 40m x 60m",
+        "safe_zone": "above 60m altitude"
+      },
+      "aabb": {
+        "min_point": { "x": 180, "y": 85, "z": 0 },
+        "max_point": { "x": 220, "y": 115, "z": 50 }
+      },
+      "metadata": "Building - safe to fly over at 70m"
+    }
+  ]
+}

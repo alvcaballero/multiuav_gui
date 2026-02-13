@@ -23,253 +23,514 @@ const DEFAULT_OBSTACLES = [
   {
     name: 'A1',
     type: 'windTurbine',
-    position: { x: -1006.862, y: -259.905, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1005.348,
+      y: -273.373,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1046.862, y: -299.905, z: 0 },
-      max_point: { x: -966.862, y: -219.905, z: 115 },
+      min_point: {
+        x: -1040.348,
+        y: -308.373,
+        z: 0,
+      },
+      max_point: {
+        x: -970.348,
+        y: -238.373,
+        z: 120,
+      },
     },
   },
   {
     name: 'A2',
     type: 'windTurbine',
-    position: { x: -1010.96, y: -6.765, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1009.446,
+      y: -20.234,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1050.96, y: -46.765, z: 0 },
-      max_point: { x: -970.96, y: 33.235, z: 115 },
+      min_point: {
+        x: -1044.446,
+        y: -55.234,
+        z: 0,
+      },
+      max_point: {
+        x: -974.446,
+        y: 14.766,
+        z: 120,
+      },
     },
   },
   {
     name: 'A3',
     type: 'windTurbine',
-    position: { x: -1013.025, y: 191.794, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1011.511,
+      y: 178.326,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1053.025, y: 151.794, z: 0 },
-      max_point: { x: -973.025, y: 231.794, z: 115 },
+      min_point: {
+        x: -1046.511,
+        y: 143.326,
+        z: 0,
+      },
+      max_point: {
+        x: -976.511,
+        y: 213.326,
+        z: 120,
+      },
     },
   },
   {
     name: 'A4',
     type: 'windTurbine',
-    position: { x: -734.116, y: 197.061, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1010.936,
+      y: 407.945,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -774.116, y: 157.061, z: 0 },
-      max_point: { x: -694.116, y: 237.061, z: 115 },
+      min_point: {
+        x: -1045.936,
+        y: 372.945,
+        z: 0,
+      },
+      max_point: {
+        x: -975.936,
+        y: 442.945,
+        z: 120,
+      },
     },
   },
   {
     name: 'A5',
     type: 'windTurbine',
-    position: { x: -730.919, y: -1.322, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -743.808,
+      y: 411.313,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -770.919, y: -41.322, z: 0 },
-      max_point: { x: -690.919, y: 38.678, z: 115 },
+      min_point: {
+        x: -778.808,
+        y: 376.313,
+        z: 0,
+      },
+      max_point: {
+        x: -708.808,
+        y: 446.313,
+        z: 120,
+      },
     },
   },
   {
     name: 'A6',
     type: 'windTurbine',
-    position: { x: -729.553, y: -255.822, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -747.189,
+      y: 182.251,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -769.553, y: -295.822, z: 0 },
-      max_point: { x: -689.553, y: -215.822, z: 115 },
+      min_point: {
+        x: -782.189,
+        y: 147.251,
+        z: 0,
+      },
+      max_point: {
+        x: -712.189,
+        y: 217.251,
+        z: 120,
+      },
     },
   },
   {
     name: 'B1',
     type: 'windTurbine',
-    position: { x: -1300.564, y: -263.988, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1299.049,
+      y: -277.456,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1340.564, y: -303.988, z: 0 },
-      max_point: { x: -1260.564, y: -223.988, z: 115 },
+      min_point: {
+        x: -1334.049,
+        y: -312.456,
+        z: 0,
+      },
+      max_point: {
+        x: -1264.049,
+        y: -242.456,
+        z: 120,
+      },
     },
   },
   {
     name: 'B2',
     type: 'windTurbine',
-    position: { x: -1297.832, y: -16.292, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1296.317,
+      y: -29.761,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1337.832, y: -56.292, z: 0 },
-      max_point: { x: -1257.832, y: 23.708, z: 115 },
+      min_point: {
+        x: -1331.317,
+        y: -64.761,
+        z: 0,
+      },
+      max_point: {
+        x: -1261.317,
+        y: 5.239,
+        z: 120,
+      },
     },
   },
   {
     name: 'B3',
     type: 'windTurbine',
-    position: { x: -1297.197, y: 193.346, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1295.683,
+      y: 179.877,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1337.197, y: 153.346, z: 0 },
-      max_point: { x: -1257.197, y: 233.346, z: 115 },
+      min_point: {
+        x: -1330.683,
+        y: 144.877,
+        z: 0,
+      },
+      max_point: {
+        x: -1260.683,
+        y: 214.877,
+        z: 120,
+      },
     },
   },
   {
     name: 'B4',
     type: 'windTurbine',
-    position: { x: -1299.198, y: 420.557, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1297.683,
+      y: 407.089,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1339.198, y: 380.557, z: 0 },
-      max_point: { x: -1259.198, y: 460.557, z: 115 },
+      min_point: {
+        x: -1332.683,
+        y: 372.089,
+        z: 0,
+      },
+      max_point: {
+        x: -1262.683,
+        y: 442.089,
+        z: 120,
+      },
     },
   },
   {
     name: 'B5',
     type: 'windTurbine',
-    position: { x: -1023.255, y: 424.64, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1298.353,
+      y: 610.053,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -1063.255, y: 384.64, z: 0 },
-      max_point: { x: -983.255, y: 464.64, z: 115 },
+      min_point: {
+        x: -1333.353,
+        y: 575.053,
+        z: 0,
+      },
+      max_point: {
+        x: -1263.353,
+        y: 645.053,
+        z: 120,
+      },
     },
   },
   {
     name: 'B6',
     type: 'windTurbine',
-    position: { x: -732.285, y: 424.64, z: 0 },
-    zones: {
-      exclusion_zone: 'cylinder r=40m, z=[0,115] (rotor+buffer)',
-      caution_zone: 'cylinder r=70m, z=[0,120]',
-      safe_zone: 'keep >=80m laterally for transit; prefer z>=60m',
+    position: {
+      x: -1019.635,
+      y: 615.233,
+      z: 0,
     },
-    safe_passages: [
-      'north: y>center_y+90 @ z 60-100',
-      'south: y<center_y-90 @ z 60-100',
-      'west: x<center_x-90 @ z 60-100',
-      'east: x>center_x+90 @ z 60-100',
-      'over: z>115',
-    ],
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
     aabb: {
-      min_point: { x: -772.285, y: 384.64, z: 0 },
-      max_point: { x: -692.285, y: 464.64, z: 115 },
+      min_point: {
+        x: -1054.635,
+        y: 580.233,
+        z: 0,
+      },
+      max_point: {
+        x: -984.635,
+        y: 650.233,
+        z: 120,
+      },
+    },
+  },
+  {
+    name: 'C1',
+    type: 'windTurbine',
+    position: {
+      x: -1534.473,
+      y: -510.296,
+      z: 0,
+    },
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
+    aabb: {
+      min_point: {
+        x: -1569.473,
+        y: -545.296,
+        z: 0,
+      },
+      max_point: {
+        x: -1499.473,
+        y: -475.296,
+        z: 120,
+      },
+    },
+  },
+  {
+    name: 'C2',
+    type: 'windTurbine',
+    position: {
+      x: -1291.59,
+      y: -515.089,
+      z: 0,
+    },
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
+    aabb: {
+      min_point: {
+        x: -1326.59,
+        y: -550.089,
+        z: 0,
+      },
+      max_point: {
+        x: -1256.59,
+        y: -480.089,
+        z: 120,
+      },
+    },
+  },
+  {
+    name: 'C3',
+    type: 'windTurbine',
+    position: {
+      x: -994.029,
+      y: -508.351,
+      z: 0,
+    },
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
+    aabb: {
+      min_point: {
+        x: -1029.029,
+        y: -543.351,
+        z: 0,
+      },
+      max_point: {
+        x: -959.029,
+        y: -473.351,
+        z: 120,
+      },
+    },
+  },
+  {
+    name: 'C4',
+    type: 'windTurbine',
+    position: {
+      x: -720.138,
+      y: -501.613,
+      z: 0,
+    },
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
+    aabb: {
+      min_point: {
+        x: -755.138,
+        y: -536.613,
+        z: 0,
+      },
+      max_point: {
+        x: -685.138,
+        y: -466.613,
+        z: 120,
+      },
+    },
+  },
+  {
+    name: 'C5',
+    type: 'windTurbine',
+    position: {
+      x: -724.616,
+      y: -267.041,
+      z: 0,
+    },
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
+    aabb: {
+      min_point: {
+        x: -759.616,
+        y: -302.041,
+        z: 0,
+      },
+      max_point: {
+        x: -689.616,
+        y: -232.041,
+        z: 120,
+      },
+    },
+  },
+  {
+    name: 'C6',
+    type: 'windTurbine',
+    position: {
+      x: -743.808,
+      y: -26.607,
+      z: 0,
+    },
+    zones: {
+      exclusion_zone: 'cylinder: radius=35m, height=120m',
+      caution_zone: 'cylinder: radius=50m, height=130m',
+      safe_zone: 'beyond 60m radius',
+    },
+    safe_passages: ['approach from east at 54m AGL'],
+    aabb: {
+      min_point: {
+        x: -778.808,
+        y: -61.607,
+        z: 0,
+      },
+      max_point: {
+        x: -708.808,
+        y: 8.393,
+        z: 120,
+      },
+    },
+  },
+  {
+    name: 'Experimental_Turbine_1',
+    type: 'windTurbine',
+    position: {
+      x: 180.231,
+      y: 43.429,
+      z: 20,
+    },
+    zones: {
+      exclusion_zone: 'cylinder: radius=40m, height=108m',
+      caution_zone: 'cylinder: radius=60m, height=118m',
+      safe_zone: 'beyond 70m radius',
+    },
+    safe_passages: ['avoid base-area east sector'],
+    aabb: {
+      min_point: {
+        x: 140.231,
+        y: 3.429,
+        z: 0,
+      },
+      max_point: {
+        x: 220.231,
+        y: 83.429,
+        z: 128,
+      },
     },
   },
 ];
@@ -283,11 +544,11 @@ const DEFAULT_OBSTACLES = [
  */
 const xyzToLatLng = (x, y, origin) => {
   const metersPerDegreeLat = 111320;
-  const metersPerDegreeLng = 111320 * Math.cos(origin.lat * Math.PI / 180);
+  const metersPerDegreeLng = 111320 * Math.cos((origin.lat * Math.PI) / 180);
 
   return {
-    lat: origin.lat + (y / metersPerDegreeLat),
-    lng: origin.lng + (x / metersPerDegreeLng),
+    lat: origin.lat + y / metersPerDegreeLat,
+    lng: origin.lng + x / metersPerDegreeLng,
   };
 };
 
@@ -297,7 +558,7 @@ const xyzToLatLng = (x, y, origin) => {
  * @returns {number} Radius in meters
  */
 const extractRadiusFromZone = (zoneText) => {
-  const match = zoneText.match(/r=(\d+)m/);
+  const match = zoneText.match(/radius=(\d+)m/);
   return match ? parseInt(match[1], 10) : 0;
 };
 
@@ -354,21 +615,27 @@ const MapObstacles = ({
 }) => {
   const id = useId();
 
-  const sourceIds = useMemo(() => ({
-    safe: `${id}-safe-zones`,
-    caution: `${id}-caution-zones`,
-    exclusion: `${id}-exclusion-zones`,
-    points: `${id}-obstacle-points`,
-  }), [id]);
+  const sourceIds = useMemo(
+    () => ({
+      safe: `${id}-safe-zones`,
+      caution: `${id}-caution-zones`,
+      exclusion: `${id}-exclusion-zones`,
+      points: `${id}-obstacle-points`,
+    }),
+    [id]
+  );
 
-  const layerIds = useMemo(() => ({
-    safeFill: `${id}-safe-fill`,
-    cautionFill: `${id}-caution-fill`,
-    exclusionFill: `${id}-exclusion-fill`,
-    exclusionBorder: `${id}-exclusion-border`,
-    points: `${id}-obstacle-points`,
-    labels: `${id}-obstacle-labels`,
-  }), [id]);
+  const layerIds = useMemo(
+    () => ({
+      safeFill: `${id}-safe-fill`,
+      cautionFill: `${id}-caution-fill`,
+      exclusionFill: `${id}-exclusion-fill`,
+      exclusionBorder: `${id}-exclusion-border`,
+      points: `${id}-obstacle-points`,
+      labels: `${id}-obstacle-labels`,
+    }),
+    [id]
+  );
 
   const processObstacles = useCallback(() => {
     if (!origin || !obstacles.length) {
@@ -387,11 +654,7 @@ const MapObstacles = ({
 
     obstacles.forEach((obstacle) => {
       // Convert XYZ to lat/lng
-      const center = xyzToLatLng(
-        obstacle.position.x,
-        obstacle.position.y,
-        origin
-      );
+      const center = xyzToLatLng(obstacle.position.x, obstacle.position.y, origin);
 
       // Extract radii from zone descriptions
       const exclusionRadius = extractRadiusFromZone(obstacle.zones?.exclusion_zone || '');
@@ -451,129 +714,132 @@ const MapObstacles = ({
   }, [obstacles, origin]);
 
   // Function to add all sources and layers
-  const addSourcesAndLayers = useCallback((data) => {
-    const { safeFeatures, cautionFeatures, exclusionFeatures, pointFeatures } = data;
+  const addSourcesAndLayers = useCallback(
+    (data) => {
+      const { safeFeatures, cautionFeatures, exclusionFeatures, pointFeatures } = data;
 
-    // Add sources if they don't exist
-    if (!map.getSource(sourceIds.safe)) {
-      map.addSource(sourceIds.safe, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: safeFeatures },
-      });
-    }
+      // Add sources if they don't exist
+      if (!map.getSource(sourceIds.safe)) {
+        map.addSource(sourceIds.safe, {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: safeFeatures },
+        });
+      }
 
-    if (!map.getSource(sourceIds.caution)) {
-      map.addSource(sourceIds.caution, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: cautionFeatures },
-      });
-    }
+      if (!map.getSource(sourceIds.caution)) {
+        map.addSource(sourceIds.caution, {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: cautionFeatures },
+        });
+      }
 
-    if (!map.getSource(sourceIds.exclusion)) {
-      map.addSource(sourceIds.exclusion, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: exclusionFeatures },
-      });
-    }
+      if (!map.getSource(sourceIds.exclusion)) {
+        map.addSource(sourceIds.exclusion, {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: exclusionFeatures },
+        });
+      }
 
-    if (!map.getSource(sourceIds.points)) {
-      map.addSource(sourceIds.points, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: pointFeatures },
-      });
-    }
+      if (!map.getSource(sourceIds.points)) {
+        map.addSource(sourceIds.points, {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: pointFeatures },
+        });
+      }
 
-    // Add layers if they don't exist (order matters: safe -> caution -> exclusion -> points)
+      // Add layers if they don't exist (order matters: safe -> caution -> exclusion -> points)
 
-    // Safe zone (green, most transparent)
-    if (!map.getLayer(layerIds.safeFill)) {
-      map.addLayer({
-        id: layerIds.safeFill,
-        type: 'fill',
-        source: sourceIds.safe,
-        paint: {
-          'fill-color': colors.safe,
-          'fill-opacity': 0.15,
-        },
-      });
-    }
+      // Safe zone (green, most transparent)
+      if (!map.getLayer(layerIds.safeFill)) {
+        map.addLayer({
+          id: layerIds.safeFill,
+          type: 'fill',
+          source: sourceIds.safe,
+          paint: {
+            'fill-color': colors.safe,
+            'fill-opacity': 0.15,
+          },
+        });
+      }
 
-    // Caution zone (yellow)
-    if (!map.getLayer(layerIds.cautionFill)) {
-      map.addLayer({
-        id: layerIds.cautionFill,
-        type: 'fill',
-        source: sourceIds.caution,
-        paint: {
-          'fill-color': colors.caution,
-          'fill-opacity': 0.25,
-        },
-      });
-    }
+      // Caution zone (yellow)
+      if (!map.getLayer(layerIds.cautionFill)) {
+        map.addLayer({
+          id: layerIds.cautionFill,
+          type: 'fill',
+          source: sourceIds.caution,
+          paint: {
+            'fill-color': colors.caution,
+            'fill-opacity': 0.25,
+          },
+        });
+      }
 
-    // Exclusion zone (red, most visible)
-    if (!map.getLayer(layerIds.exclusionFill)) {
-      map.addLayer({
-        id: layerIds.exclusionFill,
-        type: 'fill',
-        source: sourceIds.exclusion,
-        paint: {
-          'fill-color': colors.exclusion,
-          'fill-opacity': 0.35,
-        },
-      });
-    }
+      // Exclusion zone (red, most visible)
+      if (!map.getLayer(layerIds.exclusionFill)) {
+        map.addLayer({
+          id: layerIds.exclusionFill,
+          type: 'fill',
+          source: sourceIds.exclusion,
+          paint: {
+            'fill-color': colors.exclusion,
+            'fill-opacity': 0.35,
+          },
+        });
+      }
 
-    // Exclusion zone border (dashed red line)
-    if (!map.getLayer(layerIds.exclusionBorder)) {
-      map.addLayer({
-        id: layerIds.exclusionBorder,
-        type: 'line',
-        source: sourceIds.exclusion,
-        paint: {
-          'line-color': '#D32F2F',
-          'line-width': 2,
-          'line-dasharray': [4, 2],
-        },
-      });
-    }
+      // Exclusion zone border (dashed red line)
+      if (!map.getLayer(layerIds.exclusionBorder)) {
+        map.addLayer({
+          id: layerIds.exclusionBorder,
+          type: 'line',
+          source: sourceIds.exclusion,
+          paint: {
+            'line-color': '#D32F2F',
+            'line-width': 2,
+            'line-dasharray': [4, 2],
+          },
+        });
+      }
 
-    // Obstacle center points
-    if (!map.getLayer(layerIds.points)) {
-      map.addLayer({
-        id: layerIds.points,
-        type: 'circle',
-        source: sourceIds.points,
-        paint: {
-          'circle-radius': 8,
-          'circle-color': colors.point,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
-    }
+      // Obstacle center points
+      if (!map.getLayer(layerIds.points)) {
+        map.addLayer({
+          id: layerIds.points,
+          type: 'circle',
+          source: sourceIds.points,
+          paint: {
+            'circle-radius': 8,
+            'circle-color': colors.point,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff',
+          },
+        });
+      }
 
-    // Obstacle labels
-    if (!map.getLayer(layerIds.labels)) {
-      map.addLayer({
-        id: layerIds.labels,
-        type: 'symbol',
-        source: sourceIds.points,
-        layout: {
-          'text-field': ['get', 'name'],
-          'text-font': findFonts(map),
-          'text-size': 12,
-          'text-offset': [0, 1.5],
-          'text-anchor': 'top',
-        },
-        paint: {
-          'text-color': '#333333',
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 1,
-        },
-      });
-    }
-  }, [sourceIds, layerIds, colors]);
+      // Obstacle labels
+      if (!map.getLayer(layerIds.labels)) {
+        map.addLayer({
+          id: layerIds.labels,
+          type: 'symbol',
+          source: sourceIds.points,
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-font': findFonts(map),
+            'text-size': 12,
+            'text-offset': [0, 1.5],
+            'text-anchor': 'top',
+          },
+          paint: {
+            'text-color': '#333333',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1,
+          },
+        });
+      }
+    },
+    [sourceIds, layerIds, colors]
+  );
 
   // Function to remove all sources and layers
   const removeSourcesAndLayers = useCallback(() => {

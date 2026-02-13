@@ -97,21 +97,21 @@ class missionController {
   /**
    * Validate mission for collisions without modifying it
    * POST /missions/validate
-   * Body: { mission: MissionObject, obstacles: ObstacleArray }
+   * Body: { mission: MissionObject, collision_objects: ObstacleArray }
    */
   static validateCollisions = async (req, res) => {
     try {
-      const { mission, obstacles } = req.body;
+      const { mission, collision_objects } = req.body;
 
       if (!mission) {
         return res.status(400).json({ error: 'Mission data is required' });
       }
 
-      if (!obstacles || !Array.isArray(obstacles)) {
-        return res.status(400).json({ error: 'Obstacles array is required' });
+      if (!collision_objects || !Array.isArray(collision_objects)) {
+        return res.status(400).json({ error: 'collision_objects array is required' });
       }
 
-      const result = validateMission(mission, obstacles);
+      const result = validateMission(mission, collision_objects);
       const report = result.routes.map((r) => formatCollisionReport(r)).join('\n\n');
 
       res.json({
@@ -130,22 +130,22 @@ class missionController {
   /**
    * Validate and automatically resolve collisions with detours
    * POST /missions/resolve
-   * Body: { mission: MissionObject, obstacles: ObstacleArray }
+   * Body: { mission: MissionObject, collision_objects: ObstacleArray }
    */
   static resolveCollisions = async (req, res) => {
     try {
-      const { mission, obstacles } = req.body;
+      const { mission, collision_objects } = req.body;
 
       if (!mission) {
         return res.status(400).json({ error: 'Mission data is required' });
       }
 
-      if (!obstacles || !Array.isArray(obstacles)) {
-        return res.status(400).json({ error: 'Obstacles array is required' });
+      if (!collision_objects || !Array.isArray(collision_objects)) {
+        return res.status(400).json({ error: 'collision_objects array is required' });
       }
 
       // First validate
-      const validation = validateMission(mission, obstacles);
+      const validation = validateMission(mission, collision_objects);
 
       if (validation.valid) {
         return res.json({
@@ -157,10 +157,10 @@ class missionController {
       }
 
       // Resolve collisions
-      const result = resolveCollisionsAlgo(mission, obstacles);
+      const result = resolveCollisionsAlgo(mission, collision_objects);
 
       // Validate the corrected mission
-      const finalValidation = validateMission(result.mission, obstacles);
+      const finalValidation = validateMission(result.mission, collision_objects);
 
       res.json({
         modified: true,
