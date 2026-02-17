@@ -113,11 +113,11 @@ async function runTests() {
     failed++;
   }
 
-  // Test 7: Execute get_telemetry_data tool
-  console.log('\nTest 7: Execute get_telemetry_data tool...');
+  // Test 7: Execute get_fleet_telemetry tool
+  console.log('\nTest 7: Execute get_fleet_telemetry tool...');
   try {
-    const result = await mcpClient.executeTool('get_telemetry_data', {});
-    console.log('  PASSED: get_telemetry_data executed successfully');
+    const result = await mcpClient.executeTool('get_fleet_telemetry', {});
+    console.log('  PASSED: get_fleet_telemetry executed successfully');
     console.log('  Result:', JSON.stringify(result, null, 2).substring(0, 200) + '...');
     passed++;
   } catch (error) {

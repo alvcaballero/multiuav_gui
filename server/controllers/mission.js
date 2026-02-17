@@ -2,7 +2,7 @@ import { missionModel } from '../models/mission.js';
 import {
   validateMission,
   resolveCollisions as resolveCollisionsAlgo,
-  formatCollisionReport,
+  formatMissionReport,
 } from '../models/collision/index.js';
 
 class missionController {
@@ -112,7 +112,7 @@ class missionController {
       }
 
       const result = validateMission(mission, collision_objects);
-      const report = result.routes.map((r) => formatCollisionReport(r)).join('\n\n');
+      const report = formatMissionReport(result);
 
       res.json({
         valid: result.valid,

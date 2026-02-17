@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './prompts/index.js';
-import { chatLogger } from '../../common/logger.js';
+import logger, { chatLogger } from '../../common/logger.js';
 
 // Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, etc.
 class GeminiHandler extends BaseLLMHandler {
@@ -10,7 +10,7 @@ class GeminiHandler extends BaseLLMHandler {
       model: 'gemini-2.5-flash',
     },
     planner: {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
     },
   };
 
@@ -64,9 +64,14 @@ class GeminiHandler extends BaseLLMHandler {
         try {
           args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : (item.arguments || {});
         } catch { /* keep empty */ }
+        const part = { functionCall: { name: item.name, args } };
+        // Restore thoughtSignature for Gemini thinking models (required to avoid 400 errors)
+        if (item.thoughtSignature) {
+          part.thoughtSignature = item.thoughtSignature;
+        }
         contents.push({
           role: 'model',
-          parts: [{ functionCall: { name: item.name, args } }],
+          parts: [part],
         });
         continue;
       }
@@ -135,19 +140,29 @@ class GeminiHandler extends BaseLLMHandler {
       for (const part of parts) {
         if (part.functionCall) {
           chatLogger.info(`✓ Tool call request: ${part.functionCall.name}`);
-          output.push({
+          const fcEntry = {
             type: 'function_call',
             name: part.functionCall.name,
             arguments: JSON.stringify(part.functionCall.args || {}),
             call_id: `gemini_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          });
+          };
+          // Preserve thoughtSignature for Gemini thinking models (required for history replay)
+          if (part.thoughtSignature) {
+            fcEntry.thoughtSignature = part.thoughtSignature;
+          }
+          output.push(fcEntry);
         } else if (part.text) {
           chatLogger.info(`✓ Response: ${part.text.substring(0, 30)}...`);
-          output.push({
+          const textEntry = {
             type: 'text',
             content: part.text,
             role: 'assistant',
-          });
+          };
+          // Preserve thoughtSignature for text parts too (recommended by Gemini docs)
+          if (part.thoughtSignature) {
+            textEntry.thoughtSignature = part.thoughtSignature;
+          }
+          output.push(textEntry);
         }
       }
     }
@@ -186,8 +201,16 @@ class GeminiHandler extends BaseLLMHandler {
     // System instruction
     const systemText = instructions || this.systemPrompt;
     if (systemText) {
-      config.systemInstruction = systemText;
+     config.systemInstruction = systemText;
+     logger.info(`✓ Using system instruction: ${systemText.substring(0, 100)}...`);
     }
+    // Prepend system prompt only if not already present in conversation history
+    // const systemText = instructions || this.systemPrompt;
+    // const hasSystemMessage = messages.some((m) => m.role === 'system');
+    // if (systemText && !hasSystemMessage) {
+    //   messages.unshift({ role: 'system', content: systemText });
+    // }
+
 
     // Add tools if available (empty allowedTools array = no tools for forced text response)
     if (tools.length > 0 && (!allowedTools || allowedTools.length > 0)) {
@@ -234,6 +257,16 @@ class GeminiHandler extends BaseLLMHandler {
       contents = this.convertMsg(message, conversationHistory);
     } else {
       contents = this.convertMsg(null, conversationHistory);
+    }
+    
+    chatLogger.info('Tools')
+    for (const tool of tools) {
+      chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
+    }
+    chatLogger.info(`✓ Message for Gemini`);
+    for (const msg of contents) {
+      const summary = JSON.stringify(msg.parts || msg.content || '').replace(/\r?\n|\r/g, ' ').substring(0, 100);
+      chatLogger.info(`- role: ${msg.role}, parts: ${summary}...`);
     }
 
     try {

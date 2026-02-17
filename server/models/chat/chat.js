@@ -11,28 +11,31 @@ import { missionController } from '../../controllers/mission.js';
 
 let mcpClient = null;
 let llmHandler = null;
+
 const maxIterations = 6; // Prevenir loops infinitos
+const maxIterations_planner = 12 ; // Prevenir loops infinitos
 
 // Default allowed tools per agent profile.
 // When processMessage receives no allowedTools and none are stored in metadata,                                                                             
 // this map determines which tools are available based on the agent profile.
 // null = all tools (no filtering), [] = no tools, [...] = specific tools
+
 const AGENT_DEFAULT_TOOLS = {
   default: [
     'get_devices', 
-    'get_telemetry_data',
+    'get_fleet_telemetry',
     'get_registered_objects',
-    'get_bases_with_assigments',
+    'get_bases_with_assignments',
     'show_mission_to_user',
-    'create_mission',
+    'request_mission_plan',
     'load_mission_to_uav',
     'start_mission',
     ],
   planner: [
-    'Show_mission_xyz_to_user', 
+    'show_mission_xyz', 
     'validate_mission_collisions', 
     'mark_step_complete',
-    'complete_mission_requested'
+    'complete_mission'
   ],
 
 };
@@ -185,6 +188,14 @@ export class MessageOrchestrator {
           content: systemInstructions,
         });
         historySnapshot.push(systemItem);
+      } else {
+        // Recover system prompt from history to maintain consistency (e.g. after server restarts)
+        const systemMsg = historySnapshot.find(
+          (item) => (item.message || item).role === 'system'
+        );
+        if (systemMsg) {
+          systemInstructions = (systemMsg.message || systemMsg).content;
+        }
       }
 
       // Agregar el mensaje del usuario a DB
@@ -346,11 +357,6 @@ export class MessageOrchestrator {
       }
     }
 
-    // Store tool results in DB and emit events
-    for (const res of results) {
-      const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
-      this._emitAssistantMessage(chatItem);
-    }
     return results;
   }
 
@@ -374,11 +380,20 @@ export class MessageOrchestrator {
     forceFinish = false,
     agentProfile = 'default'
   ) {
-    // Get tools filtered by allowedTools (empty array = no tools for forced text response)
-    const tools = this.getToolsForProvider(allowedTools);
+
 
     // Load history only if needed for fallback (no session)
     const conversationHistory = sessionId ? [] : await ChatHistoryManager.loadHistory(chatId);
+
+
+    // Get tools filtered by allowedTools (empty array = no tools for forced text response)
+    const tools = this.getToolsForProvider(allowedTools);
+
+    // Persist tool results in DB before sending to LLM (single write point)
+    for (const res of toolResults) {
+      const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
+      this._emitAssistantMessage(chatItem);
+    }
 
     // Continue conversation with tool outputs
     const result = await llmHandler.processMessage(
@@ -605,7 +620,7 @@ ${encode(missionDataXYZ.mission_requirements)}`;
     chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat XYZ: ${secondaryChatId}`);
 
     // Set allowed tools and agent profile in metadata for consistent config across all messages
-    const missionPlanningTools = ['Show_mission_xyz_to_user', 'validate_mission_collisions','mark_step_complete'];
+    const missionPlanningTools = ['show_mission_xyz', 'validate_mission_collisions','mark_step_complete'];
     await ChatHistoryManager.setAllowedTools(secondaryChatId, missionPlanningTools);
     await ChatHistoryManager.setAgentProfile(secondaryChatId, 'planner');
 

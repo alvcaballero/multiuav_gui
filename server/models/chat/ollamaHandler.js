@@ -3,6 +3,8 @@ import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './prompts/index.js';
 import { chatLogger } from '../../common/logger.js';
 
+
+// llama-px4  ,glm-4.7-flash,llama3.1:8b, etc.
 class OllamaHandler extends BaseLLMHandler {
   static AGENT_PROFILES = {
     default: {
@@ -21,9 +23,21 @@ class OllamaHandler extends BaseLLMHandler {
   }
 
   async initialize() {
-    this.client = new Ollama({ host: this.apiKey });
+    // Custom fetch with extended timeout (8 min) to avoid HeadersTimeoutError
+    // on slow LLM inference with large contexts and tool calling
+    const OLLAMA_TIMEOUT_MS = 8 * 60 * 1000;
+
+    const fetchWithTimeout = (url, options = {}) => {
+      const timeoutSignal = AbortSignal.timeout(OLLAMA_TIMEOUT_MS);
+      const signal = options.signal
+        ? AbortSignal.any([options.signal, timeoutSignal])
+        : timeoutSignal;
+      return fetch(url, { ...options, signal });
+    };
+
+    this.client = new Ollama({ host: this.apiKey, fetch: fetchWithTimeout });
     this.initialized = true;
-    chatLogger.info(`✓ Ollama client initialized (host: ${this.apiKey}, model: ${this.model})`);
+    chatLogger.info(`✓ Ollama client initialized (host: ${this.apiKey}, model: ${this.model}, timeout: ${OLLAMA_TIMEOUT_MS / 1000}s)`);
   }
 
   /**
@@ -108,6 +122,9 @@ class OllamaHandler extends BaseLLMHandler {
     const output = [];
     const msg = response.message;
 
+    chatLogger.info('Parsing Ollama response...');
+    chatLogger.info(`✓ Full response: ${JSON.stringify(response).substring(0, 1000000)}...`);
+
     if (msg.tool_calls && msg.tool_calls.length > 0) {
       for (const tc of msg.tool_calls) {
         chatLogger.info(`✓ Tool call request: ${tc.function.name}`);
@@ -154,9 +171,13 @@ class OllamaHandler extends BaseLLMHandler {
     // Build messages from conversation history
     let messages;
 
-    if (toolOutputs && toolOutputs.length > 0) {
+    if (message !== null) {
+      messages = this.convertMsg(message, conversationHistory);
+    } else {
       messages = this.convertMsg(null, conversationHistory);
+    }
 
+    if (toolOutputs && toolOutputs.length > 0) {
       // Append tool outputs as tool role messages
       for (const output of toolOutputs) {
         const content = typeof output.output === 'string' ? output.output : JSON.stringify(output.output || {});
@@ -165,22 +186,17 @@ class OllamaHandler extends BaseLLMHandler {
           content,
         });
       }
-
       if (forceFinish) {
         messages.push({
           role: 'system',
           content: 'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.',
         });
       }
-    } else if (message !== null) {
-      messages = this.convertMsg(message, conversationHistory);
-    } else {
-      messages = this.convertMsg(null, conversationHistory);
     }
-
-    // Prepend system prompt as first message
+    // Prepend system prompt only if not already present in conversation history
     const systemText = instructions || this.systemPrompt;
-    if (systemText) {
+    const hasSystemMessage = messages.some((m) => m.role === 'system');
+    if (systemText && !hasSystemMessage) {
       messages.unshift({ role: 'system', content: systemText });
     }
 
@@ -189,6 +205,14 @@ class OllamaHandler extends BaseLLMHandler {
       ? this.convertToolsForMCP(tools)
       : undefined;
 
+    chatLogger.info('tools')
+    for (const tool of tools) {
+      chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
+    }
+    chatLogger.info(`✓ Message for Ollama`);
+    for (const msg of messages) {
+      chatLogger.info(`- role: ${msg.role}, content: ${typeof msg.content === 'string' ? msg.content.replace(/\r?\n|\r/g, " ").substring(0, 100) + '...' : JSON.stringify(msg.content).replace(/\r?\n|\r/g, " ").substring(0, 100) + '...'}`);
+    }
     try {
       chatLogger.info(`→ Sending message to Ollama (model: ${modelId})...`);
 
@@ -197,6 +221,12 @@ class OllamaHandler extends BaseLLMHandler {
         messages,
         tools: ollamaTools,
         stream: false,
+        think: false,
+        options: {
+          num_ctx: 16384,
+          temperature: 0.2,
+          
+        }
       });
 
       const output = this._parseOllamaResponse(response);

@@ -8,16 +8,16 @@ import { logger, chatLogger } from '../../common/logger.js';
 class OpenAIHandler extends BaseLLMHandler {
   static AGENT_PROFILES = {
     default: {
-      model: 'gpt-5',
+      model: 'gpt-5-mini-2025-08-07',
       reasoning: { effort: 'low' },
     },
     planner: {
-      model: 'gpt-5.2',
+      model: 'gpt-5',
       reasoning: { effort: 'medium' },
     },
   };
 
-  constructor(apiKey, model = 'gpt-5.2', systemPrompt = SystemPrompts.openai) {
+  constructor(apiKey, model = 'gpt-5', systemPrompt = SystemPrompts.openai) {
     //logger.info(`Apikey in handler ${apiKey}, ${model}`);
     super(apiKey, model, systemPrompt);
     if (!apiKey) {
@@ -269,6 +269,14 @@ class OpenAIHandler extends BaseLLMHandler {
       params.input = this.convertMsg(message, conversationHistory);
     }
 
+    chatLogger.info('tools')
+    for (const tool of tools) {
+      chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
+    }
+    chatLogger.info(`✓ Message for OpenAI`);
+    for (const msg of messages) {
+      chatLogger.info(`- role: ${msg.role}, content: ${typeof msg.content === 'string' ? msg.content.replace(/\r?\n|\r/g, " ").substring(0, 100) + '...' : JSON.stringify(msg.content).replace(/\r?\n|\r/g, " ").substring(0, 100) + '...'}`);
+    }
     try {
       const logId = sessionId
         ? `sessionId: ${sessionId.substring(0, 20)}...`

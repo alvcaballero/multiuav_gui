@@ -278,6 +278,14 @@ export function validateRoute(waypoints, obstacles) {
     }
   }
 
+  // Calculate total route distance
+  let totalDistance = 0;
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const p1 = normalizePosition(waypoints[i].pos);
+    const p2 = normalizePosition(waypoints[i + 1].pos);
+    totalDistance += distance3D(p1, p2);
+  }
+
   // Sort by segment index
   collisions.sort((a, b) => a.segmentIndex - b.segmentIndex);
   warnings.sort((a, b) => a.segmentIndex - b.segmentIndex);
@@ -291,6 +299,7 @@ export function validateRoute(waypoints, obstacles) {
       totalSegments: waypoints.length - 1,
       collisionCount: collisions.length,
       warningCount: warnings.length,
+      totalDistance, // meters
     },
   };
 }
@@ -308,6 +317,7 @@ export function validateMission(mission, obstacles) {
     routes: [],
     totalCollisions: 0,
     totalWarnings: 0,
+    totalDistance: 0,
   };
 
   if (!mission?.route || !Array.isArray(mission.route)) {
@@ -331,11 +341,13 @@ export function validateMission(mission, obstacles) {
 
     results.totalCollisions += routeResult.collisions.length;
     results.totalWarnings += routeResult.warnings.length;
+    results.totalDistance += routeResult.summary.totalDistance;
   }
 
   logger.info(
     `[CollisionDetector] Mission validation: valid=${results.valid}, ` +
-      `collisions=${results.totalCollisions}, warnings=${results.totalWarnings}`
+      `collisions=${results.totalCollisions}, warnings=${results.totalWarnings}, ` +
+      `totalDistance=${results.totalDistance.toFixed(1)}m`
   );
 
   return results;
@@ -371,38 +383,76 @@ export function findCollidingObstacles(start, end, obstacles) {
 }
 
 /**
- * Get detailed collision report as formatted string
- * @param {RouteValidationResult} result
+ * Format a single collision/warning entry
+ * @param {CollisionResult} c
  * @returns {string}
  */
-export function formatCollisionReport(result) {
-  const lines = [];
-  lines.push('=== COLLISION DETECTION REPORT ===');
-  lines.push(`Status: ${result.valid ? 'VALID (No collisions)' : 'INVALID (Collisions detected)'}`);
-  lines.push(`Total waypoints: ${result.summary.totalWaypoints}`);
-  lines.push(`Total segments: ${result.summary.totalSegments}`);
-  lines.push(`Collisions: ${result.summary.collisionCount}`);
-  lines.push(`Warnings: ${result.summary.warningCount}`);
-  lines.push('');
+function formatCollisionEntry(c) {
+  const point = `point=(${c.collisionPoint.x.toFixed(1)}, ${c.collisionPoint.y.toFixed(1)}, ${c.collisionPoint.z.toFixed(1)})`;
+  if (c.zoneType === 'exclusion') {
+    return `  * Segment [${c.segmentIndex}]: Collision with ${c.obstacleName} at ${point} - Penetration: ${c.penetrationDepth.toFixed(1)}m`;
+  }
+  return `  * Segment [${c.segmentIndex}]: Warning near ${c.obstacleName} at ${point} - Proximity: ${c.penetrationDepth.toFixed(1)}m`;
+}
 
-  if (result.collisions.length > 0) {
-    lines.push('--- COLLISIONS (Exclusion Zone Violations) ---');
-    for (const c of result.collisions) {
-      lines.push(
-        `  [Segment ${c.segmentIndex}] ${c.obstacleName} (${c.obstacleType}): ` +
-          `point=(${c.collisionPoint.x.toFixed(1)}, ${c.collisionPoint.y.toFixed(1)}, ${c.collisionPoint.z.toFixed(1)}), ` +
-          `penetration=${c.penetrationDepth.toFixed(1)}m`
-      );
-    }
+/**
+ * Format a per-route collision report section
+ * @param {Object} routeResult - Route validation result with routeName, valid, collisions, warnings, summary
+ * @returns {string}
+ */
+export function formatRouteReport(routeResult) {
+  const lines = [];
+  const name = routeResult.routeName || routeResult.uav || `Route ${routeResult.routeId}`;
+
+  lines.push(`#### [ROUTE: ${name}]`);
+  lines.push(`- **Status:** ${routeResult.valid ? 'VALID' : 'INVALID'}`);
+  lines.push(`- Distance: ${routeResult.summary.totalDistance.toFixed(1)} (m)`);
+
+  if (routeResult.collisions.length > 0) {
     lines.push('');
+    lines.push('- **Critical Segments to Fix:**');
+    for (const c of routeResult.collisions) {
+      lines.push(formatCollisionEntry(c));
+    }
   }
 
-  if (result.warnings.length > 0) {
-    lines.push('--- WARNINGS (Caution Zone Entries) ---');
-    for (const w of result.warnings) {
-      lines.push(`  [Segment ${w.segmentIndex}] ${w.obstacleName}: entering caution zone`);
+  if (routeResult.warnings.length > 0) {
+    lines.push('');
+    lines.push('- **Warnings:**');
+    for (const w of routeResult.warnings) {
+      lines.push(formatCollisionEntry(w));
     }
   }
 
   return lines.join('\n');
+}
+
+/**
+ * Format full mission validation report
+ * @param {Object} missionResult - Result from validateMission()
+ * @returns {string}
+ */
+export function formatMissionReport(missionResult) {
+  const lines = [];
+  const status = missionResult.valid ? 'VALID (No collisions)' : 'INVALID (Collisions detected)';
+
+  lines.push(`Status: ${status}`);
+  lines.push(`**Total Collisions:** ${missionResult.totalCollisions} | **Total Warnings:** ${missionResult.totalWarnings}`);
+  lines.push(`- totalDistance: ${missionResult.totalDistance.toFixed(1)} (m)`);
+
+  for (const route of missionResult.routes) {
+    lines.push('');
+    lines.push(formatRouteReport(route));
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Get detailed collision report as formatted string (legacy per-route format)
+ * @param {RouteValidationResult} result
+ * @returns {string}
+ */
+export function formatCollisionReport(result) {
+  return formatRouteReport(result);
 }

@@ -17,7 +17,7 @@ You provide:
 - **Collision detection report:** Identifies hazardous segments
 - **Corrected mission plan:** Inserts detour waypoints as needed
 - **Verification summary:** Confirms all routes are safe after correction
-- use the tool `Show_mission_xyz_to_user` to display the generated mission on the platform.
+- use the tool `show_mission_xyz` to display the generated mission on the platform.
 
 ---
 

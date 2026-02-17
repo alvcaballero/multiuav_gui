@@ -24,7 +24,7 @@
       }
     ]
   },
-  "obstacles": [
+  "collision_objects": [
     {
       "name": "B6",
       "type": "windTurbine",

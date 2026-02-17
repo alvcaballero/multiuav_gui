@@ -24,6 +24,8 @@ export {
   validateMission,
   findCollidingObstacles,
   formatCollisionReport,
+  formatRouteReport,
+  formatMissionReport,
 } from './collisionDetector.js';
 
 // Detour Generation
