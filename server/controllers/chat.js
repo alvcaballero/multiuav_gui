@@ -154,4 +154,20 @@ export class chatController {
       res.status(500).json({ error: error.message || 'Failed to verify mission.' });
     }
   }
+
+    static async subAgentPlannerChat(req, res) {
+    const { userMessage } = req.body;
+
+    if (!userMessage) {
+      return res.status(400).json({ error: 'userMessage is required.' });
+    }
+
+    try {
+      const aiResponse = await MessageOrchestrator.subAgentPlannerChat(null, userMessage);
+      res.json({ ...aiResponse });
+    } catch (error) {
+      logger.error('Error in chatController.subAgentPlannerChat:', error);
+      res.status(500).json({ error: error.message || 'Failed to process planner chat.' });
+    }
+  }
 }

@@ -396,6 +396,7 @@ class OpenAIHandler extends BaseLLMHandler {
       return {
         type: 'function_call_output',
         call_id: toolCall.call_id,
+        name: functionName,
         output: JSON.stringify(result),
       };
     } catch (error) {
@@ -403,6 +404,7 @@ class OpenAIHandler extends BaseLLMHandler {
       return {
         type: 'function_call_output',
         call_id: toolCall.call_id,
+        name: toolCall.name,
         output: JSON.stringify({ error: error.message }),
       };
     }

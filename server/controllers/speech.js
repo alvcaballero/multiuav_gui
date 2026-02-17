@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { LLMApiKey, LLMType } from '../config/config.js';
+import { LLMApiKeys } from '../config/config.js';
 import logger from '../common/logger.js';
 import fs from 'fs';
 import path from 'path';
@@ -7,9 +7,9 @@ import os from 'os';
 
 let openaiClient;
 
-// Inicializar cliente OpenAI solo si el proveedor es OpenAI
-if (LLMType === 'openai' && LLMApiKey) {
-  openaiClient = new OpenAI({ apiKey: LLMApiKey });
+// Inicializar cliente OpenAI solo si hay API key de OpenAI (speech usa siempre OpenAI Whisper/TTS)
+if (LLMApiKeys.openai) {
+  openaiClient = new OpenAI({ apiKey: LLMApiKeys.openai });
 }
 
 export class SpeechController {

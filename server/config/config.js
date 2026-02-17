@@ -29,8 +29,13 @@ export const extAppUrl = process.env.EXT_APP_url || '';
 export const extAppUser = process.env.EXT_APP_user || '';
 export const extAppPWD = process.env.EXT_APP_pwd || '';
 export const LLM = process.env.LLM === 'true';
-export const LLMType = process.env.LLM_TYPE || 'gemini'; // gemini or openai
-export const LLMApiKey = process.env.LLM_API_KEY || '';
+export const LLMProvider = process.env.LLM_PROVIDER || 'openai';
+export const LLMApiKeys = {
+  openai: process.env.LLM_OPENAI_API_KEY || '',
+  gemini: process.env.LLM_GEMINI_API_KEY || '',
+  anthropic: process.env.LLM_ANTHROPIC_API_KEY || '',
+  ollama: process.env.LLM_OLLAMA_API_KEY || 'http://localhost:11434',
+};
 export const MCPenable = process.env.MCP_ENABLE === 'true'; // Model Context Protocol
 
 let _MCPconfig = {};

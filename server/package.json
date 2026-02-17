@@ -15,7 +15,8 @@
     "build": "tsc --module 'commonjs'  --target 'es5' --outDir fbmsglib/dist fbmsglib/src/schema_main.ts "
   },
   "dependencies": {
-    "@google/genai": "^1.0.0",
+    "@anthropic-ai/sdk": "^0.74.0",
+    "@google/genai": "^1.41.0",
     "@modelcontextprotocol/sdk": "^1.21.2",
     "@toon-format/toon": "^2.1.0",
     "@turf/turf": "^6.5.0",
@@ -30,6 +31,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
+    "ollama": "^0.6.3",
     "openai": "^6.8.1",
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",

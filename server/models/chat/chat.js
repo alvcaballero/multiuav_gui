@@ -13,6 +13,30 @@ let mcpClient = null;
 let llmHandler = null;
 const maxIterations = 6; // Prevenir loops infinitos
 
+// Default allowed tools per agent profile.
+// When processMessage receives no allowedTools and none are stored in metadata,                                                                             
+// this map determines which tools are available based on the agent profile.
+// null = all tools (no filtering), [] = no tools, [...] = specific tools
+const AGENT_DEFAULT_TOOLS = {
+  default: [
+    'get_devices', 
+    'get_telemetry_data',
+    'get_registered_objects',
+    'get_bases_with_assigments',
+    'show_mission_to_user',
+    'create_mission',
+    'load_mission_to_uav',
+    'start_mission',
+    ],
+  planner: [
+    'Show_mission_xyz_to_user', 
+    'validate_mission_collisions', 
+    'mark_step_complete',
+    'complete_mission_requested'
+  ],
+
+};
+
 // Per-chatId mutex: ensures only one processMessage runs at a time per chat.
 // Concurrent requests for the same chatId queue behind the active one.
 const chatLocks = new Map();
@@ -133,6 +157,14 @@ export class MessageOrchestrator {
     // Resolve agent profile from metadata (set by buildMissionPlanXYZ or defaults to 'default')
     const agentProfile = await ChatHistoryManager.getAgentProfile(chatId);
 
+    // Fallback: if no allowedTools from options or metadata, use agent profile defaults
+    if (allowedTools === null && AGENT_DEFAULT_TOOLS[agentProfile]) {
+      allowedTools = AGENT_DEFAULT_TOOLS[agentProfile];
+      chatLogger.debug(
+        `Using default tools for agent '${agentProfile}': ${allowedTools.join(', ')}`
+      );
+    }
+
     try {
       // Get tools from MCP client, filtered by allowedTools
       const tools = this.getToolsForProvider(allowedTools);
@@ -194,7 +226,21 @@ export class MessageOrchestrator {
       // Handle tool calls with the current sessionId
       // Pass allowedTools and agentProfile to maintain consistency across iterations
       if (toolCallsFlag) {
-        this.handleToolCallsLoop(output, tools, chatId, sessionId, systemInstructions, allowedTools, agentProfile);
+        this.handleToolCallsLoop(output, tools, chatId, sessionId, systemInstructions, allowedTools, agentProfile)
+          .catch((error) => {
+            chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
+            eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
+              chatId,
+              from: 'assistant',
+              timestamp: new Date().toISOString(),
+              message: {
+                role: 'assistant',
+                content: `Error processing tool results: ${error.message}`,
+                type: 'text',
+                status: 'error',
+              },
+            });
+          });
       }
 
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
@@ -517,32 +563,6 @@ export class MessageOrchestrator {
     // ═══════════════════════════════════════════════════════════════════
     const missionDataXYZ = convertMissionBriefingToXYZ(missionBriefing);
     const { origin_global } = missionDataXYZ;
-
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 2: Create secondary chat for background mission planning
-    // ═══════════════════════════════════════════════════════════════════
-    const secondaryChat = await this.createChat(`MP-XYZ-${mainChatId}`);
-    const secondaryChatId = secondaryChat.id;
-    chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat XYZ: ${secondaryChatId}`);
-
-    // Set allowed tools and agent profile in metadata for consistent config across all messages
-    const missionPlanningTools = ['Show_mission_xyz_to_user', 'validate_mission_collisions'];
-    await ChatHistoryManager.setAllowedTools(secondaryChatId, missionPlanningTools);
-    await ChatHistoryManager.setAgentProfile(secondaryChatId, 'planner');
-
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 3: Configure secondary chat with mission-specific system prompt
-    // ═══════════════════════════════════════════════════════════════════
-    const systemPromptContent = `${SystemPrompts.mission_build_xyz}
----
-Session context:
-- main_chat_id: ${mainChatId}
-- secondary_chat_id: ${secondaryChatId}
-- coordinate_system: local XYZ (ENU - East/North/Up in meters)
-- yaw_reference: Angle in degrees, 0 degrees = North (+Y), 90° = East (+X), ±180° = South (-Y), -90° = West (-X). Range: [-180°, 180°]`;
-
-    await ChatHistoryManager.addMessage(secondaryChatId, 'system', { role: 'system', content: systemPromptContent });
-
     // ═══════════════════════════════════════════════════════════════════
     // STEP 4: Build the mission planning request message
     // ═══════════════════════════════════════════════════════════════════
@@ -560,7 +580,49 @@ ${encode(missionDataXYZ.obstacle_elements)}
 ## Mission Requirements
 ${encode(missionDataXYZ.mission_requirements)}`;
 
+    const secondaryChatId = `MP-XYZ-${mainChatId}`;
+    this.subAgentPlannerChat(mainChatId, userMessage);
+    chatLogger.info(`[MainChat: ${mainChatId}] Background processing started in secondary chat: ${secondaryChatId}`);
+
+    // Return immediately - secondary chat continues processing in background
+    return { secondaryChatId, msg: 'Mission is processing.' };
+  }
+
+
+  
+  static async subAgentPlannerChat(mainChatId, userMessage) {
+    if (!userMessage) return null;
+    if (!mainChatId) {
+      mainChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      chatLogger.warn(`[subAgentPlannerChat] No mainChatId provided, generated: ${mainChatId}`);
+    }
+
     // ═══════════════════════════════════════════════════════════════════
+    // STEP 2: Create secondary chat for background mission planning
+    // ═══════════════════════════════════════════════════════════════════
+    const secondaryChat = await this.createChat(`MP-XYZ-${mainChatId}`);
+    const secondaryChatId = secondaryChat.id;
+    chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat XYZ: ${secondaryChatId}`);
+
+    // Set allowed tools and agent profile in metadata for consistent config across all messages
+    const missionPlanningTools = ['Show_mission_xyz_to_user', 'validate_mission_collisions','mark_step_complete'];
+    await ChatHistoryManager.setAllowedTools(secondaryChatId, missionPlanningTools);
+    await ChatHistoryManager.setAgentProfile(secondaryChatId, 'planner');
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 3: Configure secondary chat with mission-specific system prompt
+    // ═══════════════════════════════════════════════════════════════════
+    const systemPromptContent = `${SystemPrompts.mission_build_xyz}
+---
+Session context:
+- main_chat_id: ${mainChatId}
+- secondary_chat_id: ${secondaryChatId}
+- coordinate_system: local XYZ (ENU - East/North/Up in meters)
+- yaw_reference: Angle in degrees, 0 degrees = North (+Y), 90° = East (+X), ±180° = South (-Y), -90° = West (-X). Range: [-180°, 180°]`;
+
+    await ChatHistoryManager.addMessage(secondaryChatId, 'system', { role: 'system', content: systemPromptContent });
+
+        // ═══════════════════════════════════════════════════════════════════
     // STEP 5: Start background processing (non-blocking)
     // ═══════════════════════════════════════════════════════════════════
     // processMessage handles LLM interaction and tool calls asynchronously
@@ -580,9 +642,7 @@ ${encode(missionDataXYZ.mission_requirements)}`;
       });
     });
 
-    chatLogger.info(`[MainChat: ${mainChatId}] Background processing started in secondary chat: ${secondaryChatId}`);
 
-    // Return immediately - secondary chat continues processing in background
-    return { secondaryChatId, msg: 'Mission is processing.' };
+
   }
 }

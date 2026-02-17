@@ -33,6 +33,7 @@ postgres_data
 CLAUDE.md
 # IDE and editor files
 .vscode/
+.claude/
 .vs/
 .idea/
 *.swp

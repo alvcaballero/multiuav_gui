@@ -1,0 +1,271 @@
+{
+  "chat_id": "chat_1770999472394_wq06ahrAA",
+  "target_elements": [
+    {
+      "name": "A4",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.69089556151994,
+        "lng": -8.859887690492343,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    },
+    {
+      "name": "A5",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.69092589016125,
+        "lng": -8.856679142931966,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    },
+    {
+      "name": "A3",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.688828171755745,
+        "lng": -8.859894595093039,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    },
+    {
+      "name": "A6",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.68886350995794,
+        "lng": -8.856719757458563,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    },
+    {
+      "name": "A2",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.68704042798893,
+        "lng": -8.859869798009527,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    },
+    {
+      "name": "C6",
+      "type": "windTurbine",
+      "group_name": "Line C",
+      "position": {
+        "lat": 41.68698304685421,
+        "lng": -8.856679142931966,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    },
+    {
+      "name": "A1",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.684761272685364,
+        "lng": -8.859820574012133,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    },
+    {
+      "name": "C5",
+      "type": "windTurbine",
+      "group_name": "Line C",
+      "position": {
+        "lat": 41.68481828555932,
+        "lng": -8.856448622932675,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m, tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg, blade_state:stopped, rotor_speed_rpm:0, blade_azimuth_angle:0deg, blade_pitch_angle:2deg"
+    }
+  ],
+  "obstacle_elements": [
+    {
+      "id": "A_other",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68704042798893,
+        "lng": -8.859869798009527,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      },
+      "metadata": "All non-target turbines in Line A and Line B treated as obstacles for collision avoidance."
+    },
+    {
+      "id": "B1",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.684724511454306,
+        "lng": -8.863348293519067,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      }
+    },
+    {
+      "id": "B2",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68695465478885,
+        "lng": -8.863315477528346,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      }
+    },
+    {
+      "id": "B3",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68884214169691,
+        "lng": -8.863307854765054,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      }
+    },
+    {
+      "id": "B4",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.69088785107323,
+        "lng": -8.863331885521092,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      }
+    },
+    {
+      "id": "B5",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.692715254707394,
+        "lng": -8.86333992520764,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      }
+    },
+    {
+      "id": "B6",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.69276189308209,
+        "lng": -8.859992173043281,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      }
+    },
+    {
+      "id": "Experimental Turbine 1",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68761362281444,
+        "lng": -8.84558028096393,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 28,
+        "width_m": 6,
+        "length_m": 6
+      },
+      "metadata": "Test Bench turbine in Viana do Castelo"
+    }
+  ],
+  "points_of_interest": [
+    {
+      "name": "A4"
+    },
+    {
+      "name": "A5"
+    },
+    {
+      "name": "A3"
+    },
+    {
+      "name": "A6"
+    },
+    {
+      "name": "A2"
+    },
+    {
+      "name": "C6"
+    },
+    {
+      "name": "A1"
+    },
+    {
+      "name": "C5"
+    }
+  ],
+  "drone_information": [
+    {
+      "name": "px4_3",
+      "type": "px4_ros2",
+      "location": {
+        "lat": 41.68734387183079,
+        "lng": -8.84776324070532,
+        "alt": 0
+      }
+    },
+    {
+      "name": "px4_2",
+      "type": "px4_ros2",
+      "location": {
+        "lat": 41.68710134032415,
+        "lng": -8.847726916904463,
+        "alt": 0
+      }
+    }
+  ],
+  "mission_requirements": {
+    "mission_type": "circular inspection",
+    "mission_strategy": "- FOUR points around each element\n- MANDATORY FRONTAL POINT: One waypoint MUST be positioned directly in front of the element (aligned with element's orientation/facing direction at 0°)\n- Additional points at 90°, 180°, and 270° from the frontal position\n- Order optimization: Waypoints can be visited in ANY order - optimize for shortest path from drone's current position\n- Cluster-based inspection: Complete ALL waypoints of one element before moving to the next element\n- Yaw from each point aims at the element's center\n- inspection Altitude : vertical midpoint of the\n\nThe frontal waypoint is REQUIRED for proper inspection but does NOT need to be visited first."
+  },
+  "user_context": {
+    "user_request": "inspecciona los aerogeneradores A4, A5, A3, A6, A2, C6, A1, C5 de viana do castelo",
+    "additional_info": "Offshore parque eólico en Viana do Castelo (Portugal). Altitud/velocidad por defecto: 20m AGL y 5 m/s. Drones disponibles: px4_3 y px4_2 desde bases locales."
+  }
+}

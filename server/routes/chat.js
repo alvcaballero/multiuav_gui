@@ -17,7 +17,7 @@ chatRouter.patch('/chats/:chatId', chatController.renameChat);
 
 chatRouter.post('/build_mission_plan_xyz', chatController.buildMissionPlanXYZ);
 chatRouter.post('/verification_mission', chatController.verificationMission);
-
+chatRouter.post('/subagent_planner_chat', chatController.subAgentPlannerChat);
 // Ruta para speech-to-text (transcripción)
 chatRouter.post('/stt', upload.single('audio'), SpeechController.speechToText);
 // Ruta para text-to-speech (síntesis de voz)

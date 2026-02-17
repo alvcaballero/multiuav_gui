@@ -1,0 +1,311 @@
+{
+  "chat_id": "chat_1771001677944_6xwufyj",
+  "target_elements": [
+    {
+      "name": "A4",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.69089556151994,
+        "lng": -8.859887690492343,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    },
+    {
+      "name": "A5",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.69092589016125,
+        "lng": -8.856679142931966,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    },
+    {
+      "name": "A3",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.688828171755745,
+        "lng": -8.859894595093039,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    },
+    {
+      "name": "A6",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.68886350995794,
+        "lng": -8.856719757458563,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    },
+    {
+      "name": "A2",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.68704042798893,
+        "lng": -8.859869798009527,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    },
+    {
+      "name": "C6",
+      "type": "windTurbine",
+      "group_name": "Line C",
+      "position": {
+        "lat": 41.68698304685421,
+        "lng": -8.856679142931966,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    },
+    {
+      "name": "A1",
+      "type": "windTurbine",
+      "group_name": "Line A",
+      "position": {
+        "lat": 41.684761272685364,
+        "lng": -8.859820574012133,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    },
+    {
+      "name": "C5",
+      "type": "windTurbine",
+      "group_name": "Line C",
+      "position": {
+        "lat": 41.68481828555932,
+        "lng": -8.856448622932675,
+        "alt": 0
+      },
+      "characteristics": "hub_height:80m, blade_length:28m, blade_count:3, ground_elevation:0m (sea level), tower_diameter:6m, rotor_diameter:56m, max_tip_height:108m, min_tip_height:52m, yaw_orientation:90deg",
+      "metadata": "Offshore turbine near Viana do Castelo, Portugal"
+    }
+  ],
+  "obstacle_elements": [
+    {
+      "id": "B1",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.684724511454306,
+        "lng": -8.863348293519067,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line B offshore turbine"
+    },
+    {
+      "id": "B2",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68695465478885,
+        "lng": -8.863315477528346,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line B offshore turbine"
+    },
+    {
+      "id": "B3",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68884214169691,
+        "lng": -8.863307854765054,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line B offshore turbine"
+    },
+    {
+      "id": "B4",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.69088785107323,
+        "lng": -8.863331885521092,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line B offshore turbine"
+    },
+    {
+      "id": "B5",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.692715254707394,
+        "lng": -8.86333992520764,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line B offshore turbine"
+    },
+    {
+      "id": "B6",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.69276189308209,
+        "lng": -8.859992173043281,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line B offshore turbine"
+    },
+    {
+      "id": "C1",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68262812540479,
+        "lng": -8.866176021423598,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line C offshore turbine"
+    },
+    {
+      "id": "C2",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68258497500682,
+        "lng": -8.86325869615635,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line C offshore turbine"
+    },
+    {
+      "id": "C3",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68264564011159,
+        "lng": -8.859684617862115,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line C offshore turbine"
+    },
+    {
+      "id": "C4",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.6827063051592,
+        "lng": -8.856394841249369,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Line C offshore turbine"
+    },
+    {
+      "id": "Experimental Turbine 1",
+      "type": "windTurbine",
+      "position": {
+        "lat": 41.68761362281444,
+        "lng": -8.84558028096393,
+        "alt": 0
+      },
+      "dimensions": {
+        "height_m": 108,
+        "radius_m": 30
+      },
+      "metadata": "Onshore experimental turbine near port area"
+    }
+  ],
+  "points_of_interest": [
+    {
+      "id": "A4"
+    },
+    {
+      "id": "A5"
+    },
+    {
+      "id": "A3"
+    },
+    {
+      "id": "A6"
+    },
+    {
+      "id": "A2"
+    },
+    {
+      "id": "C6"
+    },
+    {
+      "id": "A1"
+    },
+    {
+      "id": "C5"
+    }
+  ],
+  "drone_information": [
+    {
+      "name": "px4_3",
+      "type": "px4_ros2",
+      "location": {
+        "lat": 41.68734387183079,
+        "lng": -8.84776324070532,
+        "alt": 0
+      }
+    },
+    {
+      "name": "px4_2",
+      "type": "px4_ros2",
+      "location": {
+        "lat": 41.68710134032415,
+        "lng": -8.847726916904463,
+        "alt": 0
+      }
+    }
+  ],
+  "mission_requirements": {
+    "mission_type": "simple inspection",
+    "mission_strategy": "When to use: Basic reconnaissance, simple elements, explicit \"quick\" request\n\nStrategy:\n\n- 1 waypoint per element\n- Optimal frontal view\n- Distance: Adapted to element size\n- Altitude: vertical midpoint of the element\n- Yaw pointing to the element's center\n\nExample - Quickly inspect electrical towers A, B and C (30m height):\n\nWaypoint:\n  - Position: 15m in front of the tower\n  - Altitude: 15m AGL (tower midpoint)\n  - Yaw: towards the tower center\n  - Speed: standard cruise"
+  },
+  "user_context": {
+    "user_request": "realiza una mission rapida inspecciona los aerogeneradores A4, A5, A3, A6, A2, C6, A1, C5 de viena do castelo",
+    "additional_info": "Offshore wind turbines near Viana do Castelo, Portugal. Quick mission requested. Weather not provided. Use 1 waypoint per turbine at hub height with frontal view (yaw_orientation 90deg). Start from nearest available base and return after completion."
+  }
+}

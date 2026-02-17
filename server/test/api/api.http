@@ -699,3 +699,18 @@ POST http://localhost:4000/api/missions/validate
 Content-Type: application/json
 
 < ./json/mcp_validate_collision_multi_route.json
+
+
+# test agent planner chat
+POST http://localhost:4000/api/chat/subagent_planner_chat
+Content-Type: application/json
+
+< ./json/subagent_planner_chat.json
+
+###
+
+### build mission plan XYZ
+POST  http://localhost:4000/api/chat/build_mission_plan_xyz
+Content-Type: application/json
+
+< ./json/subagent_planner_chat.json

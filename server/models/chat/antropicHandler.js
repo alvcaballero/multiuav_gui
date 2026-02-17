@@ -1,125 +1,277 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { BaseLLMHandler } from './baseLLMHandler.js';
+import { BaseLLMHandler } from './baseLLMhandler.js';
+import { SystemPrompts } from './prompts/index.js';
+import { chatLogger } from '../../common/logger.js';
 
-/**
- * Manejador para Anthropic Claude models
- */
-export class AnthropicHandler extends BaseLLMHandler {
-  constructor(apiKey, model = 'claude-3-5-sonnet-20241022') {
-    super(apiKey, model);
+// Models: claude-opus-4-6, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929, etc.
+class AnthropicHandler extends BaseLLMHandler {
+  static AGENT_PROFILES = {
+    default: {
+      model: 'claude-haiku-4-5-20251001',
+    },
+    planner: {
+      model: 'claude-sonnet-4-5-20250929',
+      maxTokens: 8192,
+    },
+  };
+
+  constructor(apiKey, model = 'claude-haiku-4-5-20251001', systemPrompt = SystemPrompts.main) {
+    super(apiKey, model, systemPrompt);
+    if (!apiKey) {
+      throw new Error('Anthropic API Key is required for AnthropicHandler.');
+    }
   }
 
   async initialize() {
-    this.client = new Anthropic({
-      apiKey: this.apiKey,
-    });
-    console.log(`✓ Cliente Anthropic inicializado (modelo: ${this.model})`);
+    this.client = new Anthropic({ apiKey: this.apiKey });
+    this.initialized = true;
+    chatLogger.info(`✓ Anthropic client initialized (model: ${this.model})`);
   }
 
-  async processMessage(message, tools = [], conversationHistory = []) {
-    if (!this.client) {
-      throw new Error('Cliente Anthropic no inicializado');
+  /**
+   * Converts MCP tools to Anthropic's tool format.
+   * Anthropic uses input_schema (JSON Schema) directly.
+   */
+  convertToolsForMCP(tools) {
+    return tools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      input_schema: tool.inputSchema,
+    }));
+  }
+
+  /**
+   * Converts conversation history to Anthropic messages format.
+   * Anthropic requires alternating user/assistant messages.
+   * System messages are handled via the 'system' parameter.
+   */
+  convertMsg(message = null, conversationHistory) {
+    const messages = [];
+
+    for (const msg of conversationHistory) {
+      const item = msg.message || msg;
+      const role = item.role;
+      const type = item.type;
+
+      // Skip system messages — handled via system parameter
+      if (role === 'system') continue;
+
+      // Map tool role to user with tool_result content
+      if (role === 'tool') continue;
+
+      // Normalized function_call from DB → Anthropic tool_use block (assistant role)
+      if (type === 'function_call') {
+        let input = {};
+        try {
+          input = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : (item.arguments || {});
+        } catch { /* keep empty */ }
+        messages.push({
+          role: 'assistant',
+          content: [{
+            type: 'tool_use',
+            id: item.call_id,
+            name: item.name,
+            input,
+          }],
+        });
+        continue;
+      }
+
+      // Normalized function_call_output from DB → Anthropic tool_result block (user role)
+      if (type === 'function_call_output') {
+        messages.push({
+          role: 'user',
+          content: [{
+            type: 'tool_result',
+            tool_use_id: item.call_id,
+            content: item.output || '',
+          }],
+        });
+        continue;
+      }
+
+      // Text content (normalized or legacy)
+      const content = item.content;
+      const anthropicRole = role === 'assistant' ? 'assistant' : 'user';
+
+      if (typeof content === 'string') {
+        messages.push({ role: anthropicRole, content });
+      } else if (Array.isArray(content)) {
+        messages.push({ role: anthropicRole, content });
+      }
     }
 
-    // Convertir historial al formato de Anthropic
-    const messages = this.convertHistoryToAnthropicFormat(conversationHistory);
-    messages.push({ role: 'user', content: message });
+    if (message !== null) {
+      messages.push({ role: 'user', content: message });
+    }
 
-    // Parámetros para la llamada
+    return messages;
+  }
+
+  /**
+   * Parses Anthropic response into the normalized output array format
+   * that the orchestrator expects (matching OpenAI's output structure).
+   */
+  _parseAnthropicResponse(response) {
+    const output = [];
+
+    for (const block of response.content) {
+      if (block.type === 'tool_use') {
+        chatLogger.info(`✓ Tool call request: ${block.name}`);
+        output.push({
+          type: 'function_call',
+          name: block.name,
+          arguments: JSON.stringify(block.input || {}),
+          call_id: block.id,
+        });
+      } else if (block.type === 'text') {
+        chatLogger.info(`✓ Response: ${block.text.substring(0, 30)}...`);
+        output.push({
+          type: 'text',
+          content: block.text,
+          role: 'assistant',
+        });
+      }
+    }
+
+    return output;
+  }
+
+  /**
+   * Processes a message following the same interface as OpenAIHandler.
+   * Returns { output: Array, responseId: string|null, model: string, status: string }
+   */
+  async processMessage(message = null, tools = [], conversationHistory = [], options = {}) {
+    if (!this.client) {
+      throw new Error('Anthropic client not initialized');
+    }
+
+    const {
+      instructions = null,
+      toolOutputs = null,
+      allowedTools = null,
+      forceFinish = false,
+      agentProfile = 'default',
+    } = options;
+
+    const profile = this.getAgentProfile(agentProfile);
+    const modelId = profile.model || this.model;
+    const maxTokens = profile.maxTokens || 4096;
+
+    // Build params
     const params = {
-      model: this.model,
-      max_tokens: 4096,
-      messages: messages,
+      model: modelId,
+      max_tokens: maxTokens,
     };
 
-    // Agregar tools si están disponibles
-    if (tools.length > 0) {
-      params.tools = tools;
+    // System prompt (Anthropic uses a top-level 'system' param, not in messages)
+    const systemText = instructions || this.systemPrompt;
+    if (systemText) {
+      params.system = systemText;
+    }
+
+    // Add tools if available
+    if (tools.length > 0 && (!allowedTools || allowedTools.length > 0)) {
+      params.tools = this.convertToolsForMCP(tools);
+    }
+
+    // Build messages
+    if (toolOutputs && toolOutputs.length > 0) {
+      // Tool continuation: build history + tool results
+      const messages = this.convertMsg(null, conversationHistory);
+
+      // The last assistant message should contain the tool_use blocks.
+      // Anthropic requires: assistant message with tool_use → user message with tool_result
+      const toolResultContent = toolOutputs.map((output) => ({
+        type: 'tool_result',
+        tool_use_id: output.call_id,
+        content: output.output,
+      }));
+
+      if (forceFinish) {
+        toolResultContent.push({
+          type: 'text',
+          text: 'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.',
+        });
+      }
+
+      messages.push({ role: 'user', content: toolResultContent });
+      params.messages = messages;
+    } else if (message !== null) {
+      params.messages = this.convertMsg(message, conversationHistory);
+    } else {
+      params.messages = this.convertMsg(null, conversationHistory);
+    }
+
+    // Ensure we have at least one message
+    if (!params.messages || params.messages.length === 0) {
+      params.messages = [{ role: 'user', content: 'Continue.' }];
     }
 
     try {
-      console.log(`→ Enviando mensaje a Anthropic...`);
+      chatLogger.info(`→ Sending message to Anthropic (model: ${modelId})...`);
+
       const response = await this.client.messages.create(params);
 
-      // Verificar si hay tool calls
-      const toolUseBlocks = response.content.filter((block) => block.type === 'tool_use');
-
-      if (toolUseBlocks.length > 0) {
-        console.log(`✓ Anthropic solicita ${toolUseBlocks.length} llamada(s) a herramientas`);
-        return {
-          type: 'tool_calls',
-          response: response,
-          toolCalls: toolUseBlocks,
-        };
+      // Check stop reason
+      if (response.stop_reason === 'end_turn' || response.stop_reason === 'tool_use') {
+        chatLogger.info(`Anthropic response stop_reason: ${response.stop_reason}`);
+      } else if (response.stop_reason === 'max_tokens') {
+        chatLogger.warn(`Anthropic response truncated (max_tokens reached)`);
       }
 
-      // Extraer texto de la respuesta
-      const textBlock = response.content.find((block) => block.type === 'text');
-      const content = textBlock ? textBlock.text : '';
+      const output = this._parseAnthropicResponse(response);
 
-      console.log(`✓ Respuesta recibida de Anthropic`);
       return {
-        type: 'text',
-        content: content,
-        response: response,
+        output,
+        responseId: response.id || null,
+        model: response.model || modelId,
+        status: 'completed',
       };
     } catch (error) {
-      console.error('Error en Anthropic:', error);
+      chatLogger.error('Error in Anthropic:', error);
       throw error;
     }
   }
 
+  /**
+   * Handles a tool call from Anthropic, matching the format
+   * that processMessage expects as toolOutputs.
+   */
   async handleToolCall(toolCall, toolExecutor) {
+    chatLogger.info('Handling tool call:', JSON.stringify(toolCall, null, 2).substring(0, 30) + '...');
     try {
       const functionName = toolCall.name;
-      const functionArgs = toolCall.input;
+      const functionArgs = JSON.parse(toolCall.arguments);
 
-      // Ejecutar la herramienta a través del MCP
       const result = await toolExecutor(functionName, functionArgs);
+      chatLogger.info(`✓ Tool ${functionName} response:`, JSON.stringify(result, null, 2).substring(0, 30) + '...');
 
-      // Formato de respuesta para Anthropic
       return {
-        type: 'tool_result',
-        tool_use_id: toolCall.id,
-        content: JSON.stringify(result),
+        type: 'function_call_output',
+        call_id: toolCall.call_id,
+        name: functionName,
+        output: JSON.stringify(result),
       };
     } catch (error) {
-      console.error('Error manejando tool call:', error);
+      chatLogger.error('Error handling tool call:', error);
       return {
-        type: 'tool_result',
-        tool_use_id: toolCall.id,
-        content: JSON.stringify({ error: error.message }),
-        is_error: true,
+        type: 'function_call_output',
+        call_id: toolCall.call_id,
+        name: toolCall.name,
+        output: JSON.stringify({ error: error.message }),
       };
     }
   }
 
-  /**
-   * Convierte el historial de conversación al formato de Anthropic
-   */
-  convertHistoryToAnthropicFormat(history) {
-    return history.map((msg) => {
-      if (msg.role === 'assistant' && msg.tool_calls) {
-        // Convertir tool_calls de OpenAI a formato Anthropic
-        return {
-          role: 'assistant',
-          content: msg.tool_calls.map((tc) => ({
-            type: 'tool_use',
-            id: tc.id,
-            name: tc.function.name,
-            input: JSON.parse(tc.function.arguments),
-          })),
-        };
-      }
-      return msg;
-    });
-  }
-
   normalizeResponse(response) {
+    const output = Array.isArray(response) ? response : response.output;
+
     return {
       provider: 'anthropic',
-      content: response.content,
-      model: this.model,
+      content: output,
+      model: response.model || this.model,
+      responseId: response.responseId || null,
       raw: response,
     };
   }
@@ -128,3 +280,5 @@ export class AnthropicHandler extends BaseLLMHandler {
     return 'anthropic';
   }
 }
+
+export { AnthropicHandler };

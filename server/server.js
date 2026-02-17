@@ -1,5 +1,5 @@
 import { port, RosEnable, FbEnable } from './config/config.js';
-import { LLMType, LLM, LLMApiKey } from './config/config.js';
+import { LLMProvider, LLM, LLMApiKeys } from './config/config.js';
 
 import express, { json } from 'express';
 import { createServer } from 'http';
@@ -92,20 +92,23 @@ if (FbEnable) {
 // Check if LLM is enabled and if the API key is provided.
 logger.info('LLM Configuration', {
   LLM,
-  LLMType,
-  LLMApiKey,
+  LLMProvider,
 });
 
 if (LLM) {
-  if (!LLMApiKey) {
-    const error = new Error('LLM API Key is required. Please set LLM_API_KEY in your environment variables.');
+  const provider = LLMProvider.toLowerCase();
+  const apiKey = LLMApiKeys[provider === 'claude' ? 'anthropic' : provider];
+
+  if (!apiKey) {
+    const envVar = `LLM_${(provider === 'claude' ? 'ANTHROPIC' : provider).toUpperCase()}_API_KEY`;
+    const error = new Error(`LLM API Key is required for provider "${provider}". Please set ${envVar} in your environment variables.`);
     logger.error('Error de configuración LLM', {
       error: error.message,
       type: 'configuration',
     });
     throw error;
   }
-  chatController.initializeLLMProvider(LLMType, LLMApiKey);
+  chatController.initializeLLMProvider(provider, apiKey);
 } else {
   logger.warn('LLM deshabilitado, no se inicializará ningún proveedor');
 }
