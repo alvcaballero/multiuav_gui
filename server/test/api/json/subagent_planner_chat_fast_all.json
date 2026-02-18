@@ -1,0 +1,250 @@
+{
+  "chat_id": "chat_test_003",
+  "user_context": {
+    "user_request": "Create a quick mission to inspect the offshore wind turbines in Viana do Castelo",
+    "additional_info": "Drones are offline, using base positions as starting points."
+  },
+  "target_elements": [
+    {
+      "group_name": "Line A ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "name": "A1",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.859820574012133,
+        "alt": 0,
+        "lat": 41.684761272685364
+      }
+    },
+    {
+      "type": "windTurbine",
+      "name": "A2",
+      "position": {
+        "lat": 41.68704042798893,
+        "lng": -8.859869798009527,
+        "alt": 0
+      },
+      "group_name": "Line A ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "group_name": "Line A ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "name": "A3",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.859894595093039,
+        "alt": 0,
+        "lat": 41.688828171755745
+      }
+    },
+    {
+      "name": "A4",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.859887690492343,
+        "alt": 0,
+        "lat": 41.69089556151994
+      },
+      "group_name": "Line A ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "group_name": "Line A ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "position": {
+        "lat": 41.69092589016125,
+        "lng": -8.856679142931966,
+        "alt": 0
+      },
+      "name": "A5",
+      "type": "windTurbine"
+    },
+    {
+      "position": {
+        "lng": -8.856719757458563,
+        "alt": 0,
+        "lat": 41.68886350995794
+      },
+      "name": "A6",
+      "type": "windTurbine",
+      "group_name": "Line A ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "type": "windTurbine",
+      "name": "B1",
+      "position": {
+        "lat": 41.684724511454306,
+        "lng": -8.863348293519067,
+        "alt": 0
+      },
+      "group_name": "Line B ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped\nblade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "name": "B2",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.863315477528346,
+        "alt": 0,
+        "lat": 41.68695465478885
+      },
+      "group_name": "Line B ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped\nblade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "group_name": "Line B ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped\nblade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "type": "windTurbine",
+      "name": "B3",
+      "position": {
+        "lng": -8.863307854765054,
+        "alt": 0,
+        "lat": 41.68884214169691
+      }
+    },
+    {
+      "group_name": "Line B ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped\nblade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "name": "B4",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.863331885521092,
+        "alt": 0,
+        "lat": 41.69088785107323
+      }
+    },
+    {
+      "group_name": "Line B ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped\nblade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "position": {
+        "lat": 41.692715254707394,
+        "lng": -8.86333992520764,
+        "alt": 0
+      },
+      "type": "windTurbine",
+      "name": "B5"
+    },
+    {
+      "group_name": "Line B ",
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped\nblade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "type": "windTurbine",
+      "name": "B6",
+      "position": {
+        "lng": -8.859992173043281,
+        "alt": 0,
+        "lat": 41.69276189308209
+      }
+    },
+    {
+      "position": {
+        "lat": 41.68262812540479,
+        "lng": -8.866176021423598,
+        "alt": 0
+      },
+      "type": "windTurbine",
+      "name": "C1",
+      "group_name": "Line C",
+      "characteristics": "location: Viana do Castelo, Portugal offshore  at sea windTurbine:  hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "type": "windTurbine",
+      "name": "C2",
+      "position": {
+        "lat": 41.68258497500682,
+        "lng": -8.86325869615635,
+        "alt": 0
+      },
+      "group_name": "Line C",
+      "characteristics": "location: Viana do Castelo, Portugal offshore  at sea windTurbine:  hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "name": "C3",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.859684617862115,
+        "alt": 0,
+        "lat": 41.68264564011159
+      },
+      "group_name": "Line C",
+      "characteristics": "location: Viana do Castelo, Portugal offshore  at sea windTurbine:  hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "name": "C4",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.856394841249369,
+        "alt": 0,
+        "lat": 41.6827063051592
+      },
+      "group_name": "Line C",
+      "characteristics": "location: Viana do Castelo, Portugal offshore  at sea windTurbine:  hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions"
+    },
+    {
+      "group_name": "Line C",
+      "characteristics": "location: Viana do Castelo, Portugal offshore  at sea windTurbine:  hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "name": "C5",
+      "type": "windTurbine",
+      "position": {
+        "lng": -8.856448622932675,
+        "alt": 0,
+        "lat": 41.68481828555932
+      }
+    },
+    {
+      "group_name": "Line C",
+      "characteristics": "location: Viana do Castelo, Portugal offshore  at sea windTurbine:  hub_height:80m blade_length: 28m blade_count:3 ground_elevation: sea level 0m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg        # heading del rotor 0deg north blade_state: stopped           # rotating | stopped | feathered rotor_speed_rpm: 0             # 0 if blades stopped blade_azimuth_angle: 0deg     # rotor rotation, 0° = blade vertical up, meaningful when the blades are stopped blade_pitch_angle: 2deg        # aerodynamic inclination, meaningless for missions",
+      "position": {
+        "lng": -8.856679142931966,
+        "alt": 0,
+        "lat": 41.68698304685421
+      },
+      "type": "windTurbine",
+      "name": "C6"
+    }
+  ],
+  "obstacle_elements": [
+    {
+      "position": {
+        "lat": 41.68761362281444,
+        "lng": -8.84558028096393,
+        "alt": 0
+      },
+      "id": "Experimental Turbine 1",
+      "name": "Experimental Turbine 1",
+      "type": "windTurbine",
+      "dimensions": {
+        "radius": 28,
+        "width": 6,
+        "height": 108
+      },
+      "characteristics": "hub_height:80m blade_length: 28m blade_count:3 ground_elevation: 20m tower_diameter:6m rotor_diameter: 56m max_tip_height: 108m min_tip_height: 52m yaw_orientation: 90deg blade_state: stopped rotor_speed_rpm: 0 blade_azimuth_angle: 0deg blade_pitch_angle: 2deg"
+    }
+  ],
+  "mission_requirements": {
+    "mission_strategy": "1 waypoint per element\n- Optimal frontal view\n- Distance: Adapted to element size\n- Altitude: vertical midpoint of the element\n- Yaw pointing to the element's center",
+    "mission_type": "SIMPLE INSPECTION"
+  },
+  "drone_information": [
+    {
+      "name": "px4_3",
+      "type": "px4_ros2",
+      "location": {
+        "lng": -8.84776324070532,
+        "alt": 0,
+        "lat": 41.68734387183079
+      }
+    },
+    {
+      "name": "px4_2",
+      "type": "px4_ros2",
+      "location": {
+        "lng": -8.847726916904463,
+        "alt": 0,
+        "lat": 41.68710134032415
+      }
+    }
+  ],
+  "points_of_interest": []
+}

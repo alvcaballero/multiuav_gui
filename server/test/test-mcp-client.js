@@ -174,6 +174,8 @@ async function runTests() {
   try {
     const collisionData = JSON.parse(readFileSync(join(jsonDir, 'mcp_validate_collision.json'), 'utf-8'));
     const result = await mcpClient.executeTool('validate_mission_collisions', collisionData);
+    console.log('  Tool executed successfully, analyzing results...');
+    console.log('  Result:', JSON.stringify(result, null, 2));
     const resultText = result.content?.[0]?.text || '';
     const parsed = decode(resultText);
 
@@ -196,6 +198,8 @@ async function runTests() {
   try {
     const safeData = JSON.parse(readFileSync(join(jsonDir, 'mcp_validate_collision_safe.json'), 'utf-8'));
     const result = await mcpClient.executeTool('validate_mission_collisions', safeData);
+    console.log('  Tool executed successfully, analyzing results...');
+    console.log('  Result:', JSON.stringify(result, null, 2));
     const resultText = result.content?.[0]?.text || '';
     const parsed = decode(resultText);
 
@@ -218,6 +222,8 @@ async function runTests() {
   try {
     const multiData = JSON.parse(readFileSync(join(jsonDir, 'mcp_validate_collision_multi_route.json'), 'utf-8'));
     const result = await mcpClient.executeTool('validate_mission_collisions', multiData);
+    console.log('  Tool executed successfully, analyzing results...');
+    console.log('  Result:', JSON.stringify(result, null, 2));
     const resultText = result.content?.[0]?.text || '';
     const parsed = decode(resultText);
 

@@ -16,12 +16,19 @@ import {
   Select,
   MenuItem,
   FormControl,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import AddIcon from '@mui/icons-material/Add';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReplayIcon from '@mui/icons-material/Replay';
+import DeleteIcon from '@mui/icons-material/Delete';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import { MessageBubble, WelcomeMessage } from './ChatMessages';
@@ -109,6 +116,7 @@ const ChatDrawer = ({ open, onClose }) => {
   // Local UI state
   const [showOptions, setShowOptions] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const audioChunksRef = useRef([]);
   const audioPlayerRef = useRef(null);
@@ -252,6 +260,29 @@ const ChatDrawer = ({ open, onClose }) => {
     // Clear active chat - new chat will be created when first message is sent
     dispatch(chatActions.setActiveChat(null));
     setShowOptions(true);
+  };
+
+  const handleDeleteClick = () => {
+    if (!activeChatId) return;
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteDialogOpen(false);
+    try {
+      const response = await fetch(`/api/chat/chats/${activeChatId}`, { method: 'DELETE' });
+      if (response.ok) {
+        dispatch(chatActions.setActiveChat(null));
+        setShowOptions(true);
+        fetchAvailableChats();
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
   };
 
   const startRecording = async () => {
@@ -498,6 +529,13 @@ const ChatDrawer = ({ open, onClose }) => {
                 <IconButton size="small" color="inherit" onClick={clearChat} sx={{ mr: 0.5 }}>
                   <ReplayIcon fontSize="small" />
                 </IconButton>
+                {activeChatId && (
+                  <Tooltip title="Delete current chat">
+                    <IconButton size="small" color="inherit" onClick={handleDeleteClick} sx={{ mr: 0.5 }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
                 <IconButton size="small" color="inherit" onClick={handleDrawerClose}>
                   <ChevronRightIcon fontSize="small" />
                 </IconButton>
@@ -594,6 +632,21 @@ const ChatDrawer = ({ open, onClose }) => {
           </Paper>
         </Rnd>
       )}
+
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Delete Chat</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this chat? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

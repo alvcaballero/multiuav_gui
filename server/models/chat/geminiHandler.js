@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './prompts/index.js';
 import logger, { chatLogger } from '../../common/logger.js';
+import { ar } from 'zod/v4/locales';
 
 // Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, etc.
 class GeminiHandler extends BaseLLMHandler {
@@ -63,7 +64,7 @@ class GeminiHandler extends BaseLLMHandler {
         let args = {};
         try {
           args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : (item.arguments || {});
-        } catch { /* keep empty */ }
+        } catch (e) { /* keep empty */ }
         const part = { functionCall: { name: item.name, args } };
         // Restore thoughtSignature for Gemini thinking models (required to avoid 400 errors)
         if (item.thoughtSignature) {
@@ -79,9 +80,13 @@ class GeminiHandler extends BaseLLMHandler {
       // Normalized function_call_output from DB → Gemini functionResponse part (user role)
       if (type === 'function_call_output') {
         let response = {};
+        let args = {};
         try {
           response = typeof item.output === 'string' ? JSON.parse(item.output) : (item.output || {});
-        } catch { /* keep empty */ }
+          if (item.call_id) {
+            args.call_id = item.call_id; // Preserve call_id for matching responses to tool calls
+          }
+        } catch (e) { /* keep empty */ }
         contents.push({
           role: 'user',
           parts: [{ functionResponse: { name: item.name, response } }],
