@@ -12,7 +12,7 @@ class OpenAIHandler extends BaseLLMHandler {
       reasoning: { effort: 'low' },
     },
     planner: {
-      model: 'gpt-5',
+      model: 'gpt-5-2025-08-07',
       reasoning: { effort: 'medium' },
     },
   };

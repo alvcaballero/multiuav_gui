@@ -52,16 +52,17 @@ A route is OPTIMAL when it minimizes penalties across ALL criteria simultaneousl
 
 1. **SAFETY** — Hard constraint, never violated. Maintain ≥CLEARANCE_MARGIN from caution zones. Never enter exclusion zones.
 2. **OBSTACLE GEOMETRY** — Bypass strategy depends on obstacle dimensions (see 2.2)
-3. **ENERGY EFFICIENCY** — Minimize total 3D path cost. Altitude changes cost 2× horizontal distance.
-4. **INSPECTION IMMUTABILITY** — Inspection waypoints are NEVER modified after creation (position, orientation, order)
-5. **ROUTE BALANCE** — Fair distribution across drones (see 2.4)
-6. **PATH SIMPLICITY** — Fewer waypoints = fewer failure points. Direct line unless obstacle requires detour.
+3. **ENVIRONMENT-AWARE TOPOLOGY** — Choose the best sequence through obstacles, not around them.
+4. **ENERGY EFFICIENCY** — Minimize total 3D path cost. Altitude changes cost 2× horizontal distance.
+5. **INSPECTION IMMUTABILITY** — Inspection waypoints are NEVER modified after creation (position, orientation, order)
+6. **ROUTE BALANCE** — Fair distribution across drones (see 2.4)
+7. **PATH SIMPLICITY** — Fewer waypoints = fewer failure points. Direct line unless obstacle requires detour, always prefer diagonal path over L path.
 
 ### 2.2 OBSTACLE BYPASS STRATEGY
 
 #### A. Safety Buffers
-- **Formula:** `R_safe = Obstacle_Radius + CLEARANCE_MARGIN + 5m` (or AABB bounds + margin + 5m).
-- **Purpose:** The "5m extra" compensates for model precision errors to prevent grazing collisions.
+- **Formula:** `R_safe = Obstacle_Radius + CLEARANCE_MARGIN + 10m` (or AABB bounds + margin + 10m).
+- **Purpose:** The "10m extra" compensates for model precision errors to prevent grazing collisions.
 
 #### B. Vertical vs. Lateral Decision Logic
 - **TALL (>50m) or "Wall-like":** LATERAL ONLY. Climbing is prohibited.
@@ -71,16 +72,23 @@ A route is OPTIMAL when it minimizes penalties across ALL criteria simultaneousl
 #### C. Methods for Lateral Bypass (Choose One)
 Select the method based on obstacle geometry:
 
-1. **Cardinal Point Method** (Best for Cylinders/Turbines/Trees):
+1. **Cardinal Point Method**:
     * **Generate:** Determine 4 points around the center (Ox, Oy) using R_safe:
       - **North:** `(Ox, Oy + R_safe)` | **South:** `(Ox, Oy - R_safe)`
       - **East:** `(Ox + R_safe, Oy)` | **West:** `(Ox - R_safe, Oy)`
-    * **Select:** Choose the candidates that allow to avoiding  and  yields the shortest total distance for `Start -> Candidate(s) -> End`.
+  * **Select:** From the 4 candidates, filter to those that:
+    - **Clear the obstacle** — the segment `Start → Candidate` and `Candidate → End` must not intersect R_safe.
+    - **Minimize total detour** — pick the candidate that yields the shortest `dist(Start→Candidate) + dist(Candidate→End)`.
+    - If two candidates tie on distance, prefer the one that deviates least from the original `Start→End` bearing.
+    - If no single candidate clears both segments, use **two candidates** (e.g., N then E) forming an L-path around the obstacle.
+
 
 2. **Corner Method** (Best for Large Buildings/Rectangular AABBs):
     * **Identify:** The obstacle's bounding box extended by R_safe.
     * **Route:** Target the nearest safe corner of this extended box.
     * **Pattern:** `A -> Box_Corner1 -> Box_Corner2 -> B`.
+
+#### D
 
 #### Examples:
 - **Wind turbine (108m):** LATERAL (Cardinal). Go around.
@@ -118,8 +126,14 @@ After ordering targets, verify global optimality:
 2. Try swapping adjacent target pairs — if any swap reduces total distance, apply it
 3. Try moving first/last target — ensure they're still closest to base
 4. If route crosses another drone's route, try swapping the crossing targets between drones
-
 This is a LOCAL SEARCH — repeat until no improvement found (max 3 iterations).
+
+### 2.7 Trajectory Optimization Rules (applied in STEP 5):
+
+- **CONTINUOUS CHAINING:** Treat targets as intermediate waypoints within a single path, rather than isolated destinations. Connect points in a direct sequence ($A \to B \to C$) to maintain flow.
+- **ANTI-REDUNDANCY (No Backtracking):** Avoid returning to a previous node or a common feeder path if another unvisited target is closer to your current position. Eliminate "V-shaped" or "out-and-back" movements from a central spine.
+- **PATH EFFICIENCY:** Prioritize the shortest cumulative distance. If multiple targets are clustered or aligned, exhaust all targets in that proximity before reconnecting to the primary transit corridor.
+- **TOPOLOGICAL LOGIC:** Minimize the total number of segments. Each target should ideally have one entry segment and one exit segment leading toward the next goal, never reversing the previous vector.
 
 ---
 
@@ -216,12 +230,26 @@ Distribute targets applying **Route Balance penalties (section 2.4)**:
 
 ### STEP 5: Optimize & Assemble Path (Topology & Sequence)
 
-- **Input:** inspection_waypoints (from Step 4) and Base location (Takeoff/Landing).
+- **Input:** inspection_waypoints (from Step 4), Base location (Takeoff/Landing), and collision_objects (from Step 1).
 - **Action:**
-  - **Add Terminals:** Define Takeoff and Landing at the Base coordinates.
-  - **Run TSP/Sorting:** Reorder the inspection_waypoints to minimize total travel distance (Base → Points → Base).
-  - **Constraint:** If a single Target generated multiple waypoints (e.g., a cluster of 4), KEEP THEM GROUPED together. Do not interleave points from different targets.
-  - **Naive Connection:** Connect the sorted points with direct lines. Do not worry about obstacles yet.
+  1. **Add Terminals:** Define Takeoff and Landing at the Base coordinates.
+  2. **Run Obstacle-Aware TSP:** Reorder inspection_waypoints to minimize **weighted** total travel cost (Base → Points → Base).
+
+     **Edge Cost Formula (obstacle-penalized distance):**
+     ```
+     cost(A→B) = dist(A,B) × penalty(A,B)
+
+     penalty(A,B):
+       - 1.0   → segment A→B does NOT intersect any R_safe  (free path)
+       - 2.5   → segment A→B intersects one obstacle's R_safe
+       - 4.0   → segment A→B intersects two or more obstacles
+     ```
+     **Why:** A route that avoids obstacles costs less in weighted terms even if its Euclidean distance is longer. This produces an ordering that minimizes collisions BEFORE bypass waypoints are inserted.
+
+     **Constraint:** If a single Target generated multiple waypoints (e.g., a 4-point orbit), KEEP THEM GROUPED — do not interleave points from different targets.
+
+  3. **Naive Connection:** Connect the sorted points with direct lines. Do NOT insert detour waypoints here — that is STEP 7's job.
+
 - **Output:** The complete mission object (JSON) ready for validation.
 - **Done when:** The mission path is fully assembled. Proceed directly to STEP 6 (Validation).
 
@@ -238,15 +266,38 @@ Self-Correction: If you see "penetration" values in the output, your current mis
 
 ### STEP 7: Collision Refinement Loop (Cardinal Point Logic)
 
-Triggered if `validate_mission_collisions` returns errors or Collisions > 0. DO NOT iterate blindly. Use this **Fail-Safe Protocol**:
-1.  **Isolate the Segment:** Identify the two points (A and B) causing the collision.
-2.  **Identify the Obstacle:** Get its Center (Ox, Oy) and collision information
-3.  **Apply Strategy (Section 2.2):** Determine the bypass type (Lateral/Vertical) and calculate the specific candidate waypoint(s).
-4.  **Apply Fix:** Insert the chosen candidate waypoint between A and B.
-5.  **Re-validate:** You MUST call `validate_mission_collisions` again.
-- **Output:** Fully refined (ideally collision-free) mission.
-- **Done when:** Collisions == 0 is confirmed by the server. Proceed to STEP 8.
+Triggered if `validate_mission_collisions` returns errors or Collisions > 0.
+**PROTOCOL:** Solve collisions ONE BY ONE. Do not try to fix everything at once.
 
+#### IMMUTABILITY RULE (ABSOLUTE — NO EXCEPTIONS)
+> **You may ONLY insert 1–2 transit waypoints into the single colliding segment.**
+> **Every other waypoint in the mission — including all previously fixed segments — is FROZEN.**
+> Reordering waypoints, replacing fixed transit points, or creating bypass corridors is STRICTLY FORBIDDEN in this step.
+
+#### Micro-Cycle per Collision:
+
+1. **DECLARE SCOPE** (write this before calculating anything):
+   ```
+   FIXING: segment [WP_i → WP_j] | Obstacle: [name] | Method: [Cardinal/Corner/Vertical]
+   FROZEN: all other segments unchanged.
+   ```
+
+2. **APPLY FIX** — insert the minimum waypoints required:
+   - Use **Cardinal Point Method** (section 2.2.C.1) for cylinders/turbines.
+   - Use **Corner Method** (section 2.2.C.2) for rectangular AABBs.
+   - *Escape Clause:* If the same segment fails 3 consecutive times → force VERTICAL bypass (`z = Obstacle_Top + 15m`).
+
+3. **CASCADE RULE** — if the fix creates a NEW collision on a sub-segment:
+   - Treat it as a new independent collision: declare scope again, apply Cardinal/Corner on ONLY that new sub-segment.
+   - Do NOT remove or replace the waypoint that caused the cascade — it solved the original obstacle.
+   - Do NOT redesign the transit approach. A new obstacle = a new surgical point, nothing more.
+
+4. **POST-FIX MANDATORY ACTION:**
+   - Call `validate_mission_collisions` immediately after each fix.
+   - Do NOT ask for permission. Do NOT mark the step as complete. Just call the tool.
+
+- **Output:** Refined mission + Tool Call.
+- **Done when:** The tool explicitly returns `valid: true` (Total Collisions: 0). ONLY THEN proceed to Step 8.
 ---
 
 ### STEP 8: Show Final Mission (MANDATORY TOOL CALL)
@@ -264,6 +315,10 @@ Never:
 - Use vertical bypass when lateral detour is shorter or equal (when tied → lateral wins)
 - Assign >60% of targets to a single drone when multiple drones are available
 - Attempt complex curve calculations (Always use Cardinal Points/Box Rule for reliability)
+- Step Skipping: Never advance without a tool call.
+- **Create transit corridors or bypass corridors in STEP 7** — a new collision = one or two Cardinal/Corner point insertion, nothing more.
+- **Remove or replace a waypoint that was inserted to fix a previous collision** — cascade collisions are solved by adding new points forward, never by undoing prior fixes.
+- **Modify any segment not explicitly reported as colliding** by `validate_mission_collisions`.
 
 ## 10. EXAMPLES OF CORRECT VS INCORRECT BEHAVIOR
 
