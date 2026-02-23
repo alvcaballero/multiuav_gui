@@ -14,6 +14,7 @@ chatRouter.get('/chats', chatController.listChats);
 chatRouter.post('/chats', chatController.createChat);
 chatRouter.delete('/chats/:chatId', chatController.deleteChat);
 chatRouter.patch('/chats/:chatId', chatController.renameChat);
+chatRouter.post('/chats/:chatId/fork', chatController.forkChat);
 
 chatRouter.post('/build_mission_plan_xyz', chatController.buildMissionPlanXYZ);
 chatRouter.post('/verification_mission', chatController.verificationMission);

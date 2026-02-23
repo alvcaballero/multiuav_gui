@@ -600,7 +600,7 @@ const ChatDrawer = ({ open, onClose }) => {
               ) : (
                 <>
                   {messages.map((msg, index) => (
-                    <MessageBubble key={index} message={msg} />
+                    <MessageBubble key={index} message={msg} chatId={activeChatId} />
                   ))}
                   {loading.sendingMessage && (
                     <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>

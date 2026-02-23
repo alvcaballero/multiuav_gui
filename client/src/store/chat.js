@@ -172,3 +172,43 @@ const chatSlice = createSlice({
 
 export const chatActions = chatSlice.actions;
 export const chatReducer = chatSlice.reducer;
+
+/**
+ * Fork a conversation up to (and including) the message at messageTimestamp.
+ * Calls the backend, creates the new chat in Redux, and switches to it.
+ * @param {string} sourceChatId
+ * @param {string} messageTimestamp - ISO timestamp of the last message to include
+ * @returns {Function} Redux thunk
+ */
+export const forkConversation = (sourceChatId, messageTimestamp) => async (dispatch) => {
+  try {
+    const response = await fetch(`/api/chat/chats/${sourceChatId}/fork`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageTimestamp }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Fork failed');
+    }
+
+    const newChat = await response.json();
+
+    dispatch(chatActions.setActiveChat(newChat.id));
+
+    // Load the forked history into Redux
+    const historyResponse = await fetch(`/api/chat/history/${newChat.id}`);
+    if (historyResponse.ok) {
+      const data = await historyResponse.json();
+      if (data.messages?.length > 0) {
+        dispatch(chatActions.setMessages({ chatId: newChat.id, messages: data.messages }));
+      }
+    }
+
+    return newChat;
+  } catch (error) {
+    dispatch(chatActions.setError(error.message));
+    throw error;
+  }
+};

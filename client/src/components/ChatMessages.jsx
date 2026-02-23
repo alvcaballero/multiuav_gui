@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { useDispatch } from 'react-redux';
 import {
   ListItem,
   Typography,
@@ -7,6 +8,8 @@ import {
   Avatar,
   Stack,
   IconButton,
+  Menu,
+  MenuItem as MuiMenuItem,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import Accordion from '@mui/material/Accordion';
@@ -15,12 +18,14 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
+import CallSplitIcon from '@mui/icons-material/CallSplit';
 import Tooltip from '@mui/material/Tooltip';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { forkConversation } from '../store/chat';
 
 // --- Data transformation utils ---
 
@@ -239,8 +244,30 @@ export const WelcomeMessage = () => {
   );
 };
 
-export const MessageBubble = memo(({ message }) => {
+export const MessageBubble = memo(({ message, chatId }) => {
+  const dispatch = useDispatch();
   const { role, type, content, name, status } = convertMsg(message);
+
+  const [contextMenu, setContextMenu] = useState(null);
+
+  const handleContextMenu = (event) => {
+    event.preventDefault();
+    setContextMenu({ mouseX: event.clientX, mouseY: event.clientY });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const handleFork = async () => {
+    handleCloseContextMenu();
+    if (!chatId || !message.timestamp) return;
+    try {
+      await dispatch(forkConversation(chatId, message.timestamp));
+    } catch (error) {
+      console.error('Error forking conversation:', error);
+    }
+  };
   const isAI = role !== 'user';
   const isError = status === 'error';
 
@@ -438,65 +465,81 @@ export const MessageBubble = memo(({ message }) => {
 
   // Standard text message (User or AI)
   return (
-    <ListItem
-      sx={{
-        justifyContent: isAI ? 'flex-start' : 'flex-end',
-        mb: 2,
-        alignItems: 'flex-start',
-      }}
-    >
-      <Stack direction={isAI ? 'row' : 'row-reverse'} alignItems="flex-start" spacing={1} sx={{ width: '100%' }}>
-        {!isAI && (
-          <Avatar sx={{ bgcolor: '#ed6c02', width: 32, height: 32, mt: 0.5 }}>
-            <PersonIcon fontSize="small" />
-          </Avatar>
-        )}
-        <Box
-          sx={{
-            bgcolor: isError ? '#fff3e0' : isAI ? '#ffffff' : '#1976d2',
-            color: isError ? '#e65100' : isAI ? 'text.primary' : '#fff',
-            borderRadius: '12px',
-            p: 2,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
-            width: 'fit-content',
-            minWidth: '200px',
-            border: isError ? '1px solid #ffb74d' : isAI ? '1px solid #f0f0f0' : 'none',
-          }}
-        >
-          {isAI ? (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                code({ node, inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
-                    <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} {...props} />
-                  ) : (
-                    <code
-                      className={className}
-                      style={{
-                        backgroundColor: 'rgba(0,0,0,0.05)',
-                        padding: '2px 4px',
-                        borderRadius: '4px',
-                        fontFamily: 'monospace',
-                      }}
-                      {...props}
-                    >
-                      {children}
-                    </code>
-                  );
-                },
-              }}
-            >
-              {content}
-            </ReactMarkdown>
-          ) : (
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-              {content}
-            </Typography>
+    <>
+      <ListItem
+        onContextMenu={handleContextMenu}
+        sx={{
+          justifyContent: isAI ? 'flex-start' : 'flex-end',
+          mb: 2,
+          alignItems: 'flex-start',
+          cursor: 'context-menu',
+        }}
+      >
+        <Stack direction={isAI ? 'row' : 'row-reverse'} alignItems="flex-start" spacing={1} sx={{ width: '100%' }}>
+          {!isAI && (
+            <Avatar sx={{ bgcolor: '#ed6c02', width: 32, height: 32, mt: 0.5 }}>
+              <PersonIcon fontSize="small" />
+            </Avatar>
           )}
-        </Box>
-      </Stack>
-    </ListItem>
+          <Box
+            sx={{
+              bgcolor: isError ? '#fff3e0' : isAI ? '#ffffff' : '#1976d2',
+              color: isError ? '#e65100' : isAI ? 'text.primary' : '#fff',
+              borderRadius: '12px',
+              p: 2,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+              width: 'fit-content',
+              minWidth: '200px',
+              border: isError ? '1px solid #ffb74d' : isAI ? '1px solid #f0f0f0' : 'none',
+            }}
+          >
+            {isAI ? (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    return !inline && match ? (
+                      <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} {...props} />
+                    ) : (
+                      <code
+                        className={className}
+                        style={{
+                          backgroundColor: 'rgba(0,0,0,0.05)',
+                          padding: '2px 4px',
+                          borderRadius: '4px',
+                          fontFamily: 'monospace',
+                        }}
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {content}
+              </ReactMarkdown>
+            ) : (
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                {content}
+              </Typography>
+            )}
+          </Box>
+        </Stack>
+      </ListItem>
+
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined}
+      >
+        <MuiMenuItem onClick={handleFork} disabled={!chatId}>
+          <CallSplitIcon fontSize="small" sx={{ mr: 1 }} />
+          Nueva conversación desde aquí
+        </MuiMenuItem>
+      </Menu>
+    </>
   );
 });

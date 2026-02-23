@@ -13,7 +13,7 @@ let mcpClient = null;
 let llmHandler = null;
 
 const maxIterations = 6; // Prevenir loops infinitos
-const maxIterations_planner = 12 ; // Prevenir loops infinitos
+const maxIterations_planner = 18 ; // Prevenir loops infinitos
 
 // Default allowed tools per agent profile.
 // When processMessage receives no allowedTools and none are stored in metadata,                                                                             
@@ -302,14 +302,16 @@ export class MessageOrchestrator {
     chatLogger.debug('Starting tool calls loop...');
     let currentResponse = response;
 
-    while (isToolCalling && iterations < maxIterations) {
+    let maxIter =  agentProfile === 'planner' ? maxIterations_planner : maxIterations;
+
+    while (isToolCalling && iterations < maxIter) {
       iterations++;
       chatLogger.debug(`Iteration ${iterations} - Processing tools...`);
       isToolCalling = true;
       const toolResults = await this.executeToolCalls(currentResponse, chatId);
 
       // Check if this is the last iteration - force final response
-      const isLastIteration = iterations >= maxIterations;
+      const isLastIteration = iterations >= maxIter;
 
       // Continue with the same session
       const result = await this.continueAfterTools(
@@ -527,6 +529,28 @@ export class MessageOrchestrator {
     } catch (error) {
       chatLogger.error('Error renaming chat:', error);
       return false;
+    }
+  }
+
+  /**
+   * Fork a conversation up to (and including) a specific message timestamp.
+   * @param {string} sourceChatId - Source chat ID
+   * @param {string} upToTimestamp - ISO timestamp of the last message to include
+   * @param {string} name - Optional name for the new chat
+   * @returns {Promise<Object>} New chat with id, name, createdAt
+   */
+  static async forkChat(sourceChatId, upToTimestamp, name = null) {
+    try {
+      const chat = await ChatHistoryManager.forkChat(sourceChatId, upToTimestamp, name);
+      chatLogger.info(`Chat forked: ${sourceChatId} → ${chat.id}`);
+      return {
+        id: chat.id,
+        name: chat.name,
+        createdAt: chat.createdAt,
+      };
+    } catch (error) {
+      chatLogger.error('Error forking chat:', error);
+      throw error;
     }
   }
 

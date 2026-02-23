@@ -123,6 +123,23 @@ export class chatController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async forkChat(req, res) {
+    const { chatId } = req.params;
+    const { messageTimestamp, name } = req.body;
+
+    if (!messageTimestamp) {
+      return res.status(400).json({ error: 'messageTimestamp is required.' });
+    }
+
+    try {
+      const newChat = await MessageOrchestrator.forkChat(chatId, messageTimestamp, name);
+      res.status(201).json(newChat);
+    } catch (error) {
+      logger.error('Error forking chat:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
   static async buildMissionPlanXYZ(req, res) {
     const { target_elements } = req.body;
 

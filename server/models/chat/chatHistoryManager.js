@@ -399,4 +399,58 @@ export class ChatHistoryManager {
       return 'default';
     }
   }
+
+  /**
+   * Fork a conversation up to (and including) a specific message timestamp.
+   * Creates a new chat and copies all messages up to that point.
+   * @param {string} sourceChatId - Source chat identifier
+   * @param {string} upToTimestamp - ISO timestamp of the last message to include
+   * @param {string} name - Optional name for the new chat
+   * @returns {Promise<object>} New chat record
+   */
+  static async forkChat(sourceChatId, upToTimestamp, name = null) {
+    const newChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const now = new Date();
+
+    // Create the new chat
+    const newChat = await sequelize.models.Chat.create({
+      id: newChatId,
+      name: name || null,
+      metadata: { forkedFrom: sourceChatId, forkedAt: now.toISOString() },
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Load messages from source up to and including the target timestamp
+    const cutoff = new Date(upToTimestamp);
+    const messages = await sequelize.models.ChatMessage.findAll({
+      where: {
+        chatId: sourceChatId,
+      },
+      order: [['timestamp', 'ASC']],
+    });
+
+    const messagesToCopy = messages.filter((m) => new Date(m.timestamp) <= cutoff);
+
+    if (messagesToCopy.length > 0) {
+      const copies = messagesToCopy.map((m) => ({
+        chatId: newChatId,
+        role: m.role,
+        from: m.from,
+        type: m.type,
+        content: m.content,
+        messageData: m.messageData,
+        status: m.status,
+        timestamp: m.timestamp,
+        responseId: null, // no heredar session IDs del proveedor LLM
+      }));
+
+      await sequelize.models.ChatMessage.bulkCreate(copies);
+      await sequelize.models.Chat.update({ updatedAt: now }, { where: { id: newChatId } });
+    }
+
+    chatLogger.info(`Forked chat ${sourceChatId} → ${newChatId} (${messagesToCopy.length} messages copied)`);
+    return newChat;
+  }
 }
