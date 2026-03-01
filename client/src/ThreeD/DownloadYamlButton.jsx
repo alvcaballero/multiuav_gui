@@ -9,7 +9,7 @@ import YAML from 'yaml';
 const DownloadYamlButton = () => {
     const elements = useSelector((state) => state.session.markers);
     const origin3d = useSelector((state) => state.session.scene3d.origin);
-    const perimeter =  1000; // meters
+    const perimeter =  10000; // meters
 
     // Reusing logic from R3DMarkers to flatten the list
     const list2Points = useCallback((mylist) => {

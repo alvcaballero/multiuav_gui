@@ -11,6 +11,7 @@ import {
   TableHead,
   TableRow,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import RouteIcon from '@mui/icons-material/Route';
@@ -198,6 +199,14 @@ const formatDistance = (meters) => {
   return `${Math.round(meters)} m`;
 };
 
+const getMaxtime = (time1, time2) => {
+  if (time1 > time2) {
+    return time1;
+  }
+  return time2;
+};
+
+
 const MissionStats = () => {
   const { classes } = useStyles();
   const missionRoutes = useSelector((state) => state.mission.route);
@@ -234,7 +243,7 @@ const MissionStats = () => {
         totalDistance2D: acc.totalDistance2D + route.distance2D,
         totalDistance3D: acc.totalDistance3D + route.distance3D,
         totalWaypoints: acc.totalWaypoints + route.waypoints,
-        totalTime: acc.totalTime + route.time,
+        totalTime: getMaxtime(acc.totalTime, route.time),
       }),
       { totalDistance2D: 0, totalDistance3D: 0, totalWaypoints: 0, totalTime: 0 }
     );
@@ -291,11 +300,13 @@ const MissionStats = () => {
             <Typography className={classes.statValue}>{formatDistance(stats.totalDistance3D)}</Typography>
             <Typography className={classes.statLabel}>Distance 3D</Typography>
           </Box>
-          <Box className={classes.statItem}>
-            <AccessTimeIcon color="primary" />
-            <Typography className={classes.statValue}>{formatTime(stats.totalTime)}</Typography>
-            <Typography className={classes.statLabel}>Est. Time</Typography>
-          </Box>
+          <Tooltip title={`${Math.round(stats.totalTime)} s`} arrow>
+            <Box className={classes.statItem}>
+              <AccessTimeIcon color="primary" />
+              <Typography className={classes.statValue}>{formatTime(stats.totalTime)}</Typography>
+              <Typography className={classes.statLabel}>Est. Time</Typography>
+            </Box>
+          </Tooltip>
         </Box>
       </Paper>
 

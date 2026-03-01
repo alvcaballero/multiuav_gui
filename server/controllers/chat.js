@@ -140,6 +140,20 @@ export class chatController {
       res.status(500).json({ error: error.message });
     }
   }
+  static async convertMissionBriefingToXYZ(req, res) {
+    const missionBriefing = req.body;
+    if (!missionBriefing.target_elements || !missionBriefing.drone_information ) {
+      return res.status(400).json({ error: 'target_elements is required.' });
+    }
+
+    try {
+      const missionDataXYZ = await MessageOrchestrator.convertMissionBriefingToXYZ(missionBriefing);
+      res.json(missionDataXYZ);
+    } catch (error) {
+      logger.error('Error in chatController.convertMissionBriefingToXYZ:', error);
+      res.status(500).json({ error: error.message || 'Failed to convert mission briefing to XYZ.' });
+    }
+  }
   static async buildMissionPlanXYZ(req, res) {
     const { target_elements } = req.body;
 
@@ -157,10 +171,10 @@ export class chatController {
   }
 
   static async verificationMission(req, res) {
-    const { origin_global, chat_id } = req.body;
+    const { global_origin, chat_id } = req.body;
 
-    if (!origin_global || !chat_id) {
-      return res.status(400).json({ error: 'Mission data with origin_global and chat_id are required.' });
+    if (!global_origin || !chat_id) {
+      return res.status(400).json({ error: 'Mission data with global_origin and chat_id are required.' });
     }
 
     try {
@@ -172,7 +186,23 @@ export class chatController {
     }
   }
 
-    static async subAgentPlannerChat(req, res) {
+  static async returnMissionPlanXYZ(req, res) {
+    const { chat_id, status, description, missionDataXYZ } = req.body;
+
+    if (!chat_id || !missionDataXYZ) {
+      return res.status(400).json({ error: 'chat_id and missionDataXYZ are required.' });
+    }
+
+    try {
+      const result = await MessageOrchestrator.returnMissionPlanXYZ({ chat_id, status, description, missionDataXYZ });
+      res.json(result);
+    } catch (error) {
+      logger.error('Error in chatController.returnMissionPlanXYZ:', error);
+      res.status(error.statusCode || 500).json({ error: error.message || 'Failed to process mission plan return.' });
+    }
+  }
+
+  static async subAgentPlannerChat(req, res) {
     const { userMessage } = req.body;
 
     if (!userMessage) {

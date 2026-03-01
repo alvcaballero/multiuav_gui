@@ -117,10 +117,10 @@ class GeminiHandler extends BaseLLMHandler {
   _parseGeminiResponse(response) {
     const output = [];
      
-    // ...
-    chatLogger.info(`Thoughts tokens: ${response.usageMetadata.thoughtsTokenCount}`);
-    chatLogger.info(`Output tokens: ${response.usageMetadata.candidatesTokenCount}`);
-    chatLogger.info(`Total tokens: ${response.usageMetadata.totalTokenCount}`);
+    const usage = response.usageMetadata || {};
+    chatLogger.info(`Thoughts tokens: ${usage.thoughtsTokenCount ?? 0}`);
+    chatLogger.info(`Output tokens: ${usage.candidatesTokenCount ?? 0}`);
+    chatLogger.info(`Total tokens: ${usage.totalTokenCount ?? 0}`);
 
     chatLogger.info('Parsing Gemini response...');
     chatLogger.info(`✓ Full response: ${JSON.stringify(response).substring(0, 1000000)}...`);
@@ -141,6 +141,18 @@ class GeminiHandler extends BaseLLMHandler {
 
     const candidates = response.candidates || [];
     for (const candidate of candidates) {
+      // Handle MALFORMED_FUNCTION_CALL: model tried to call a tool but generated invalid JSON args.
+      // Treat it as a recoverable error and return a text fallback so the orchestrator doesn't hang.
+      if (candidate.finishReason === 'MALFORMED_FUNCTION_CALL') {
+        chatLogger.warn(`⚠ Gemini returned MALFORMED_FUNCTION_CALL — injecting fallback text response`);
+        output.push({
+          type: 'text',
+          content: 'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
+          role: 'assistant',
+        });
+        continue;
+      }
+
       const parts = candidate.content?.parts || [];
       for (const part of parts) {
         if (part.functionCall) {

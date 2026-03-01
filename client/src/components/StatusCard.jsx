@@ -217,6 +217,8 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
       if (response.ok) {
         let myresponse = await response.json();
         dispatch(devicesActions.refresh(Object.values(myresponse)));
+        onClose();
+
       } else {
         throw Error(await response.text());
       }

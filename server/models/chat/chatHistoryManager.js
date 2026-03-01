@@ -1,5 +1,6 @@
 import sequelize from '../../common/sequelize.js';
 import { chatLogger } from '../../common/logger.js';
+import { Json } from 'sequelize/lib/utils';
 
 export class ChatHistoryManager {
   /**
@@ -199,7 +200,7 @@ export class ChatHistoryManager {
    */
   static async loadHistory(chatId, { limit = 100, offset = 0 } = {}) {
     const messages = await sequelize.models.ChatMessage.findAll({
-      where: { chatId },
+      where: { chatId, hidden: false },
       order: [['timestamp', 'ASC']],
       limit,
       offset,
@@ -452,5 +453,156 @@ export class ChatHistoryManager {
 
     chatLogger.info(`Forked chat ${sourceChatId} → ${newChatId} (${messagesToCopy.length} messages copied)`);
     return newChat;
+  }
+
+  /**
+   * Check whether a chat record exists (and is active) in the database.
+   * @param {string} chatId - Chat identifier
+   * @returns {Promise<boolean>}
+   */
+  static async chatExists(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findOne({
+        where: { id: chatId, status: 'active' },
+        attributes: ['id'],
+      });
+      return chat !== null;
+    } catch (error) {
+      chatLogger.error('Error checking chat existence:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Replace the last tool_result message for a specific tool name in a chat.
+   * Used to inject the real mission plan result in place of the placeholder
+   * returned by the MCP tool handler.
+   * @param {string} chatId - Chat identifier
+   * @param {string} toolName - Name of the tool whose last result will be replaced
+   * @param {object} newMessageData - New messageData object to store
+   * @param {string} newContent - New summarized content (≤500 chars)
+   * @returns {Promise<boolean>} true if a message was found and updated
+   */
+  /**
+   * Hides the last tool_result for a given tool name AND its paired function_call,
+   * then re-inserts both at the end of the history with the corrected output.
+   * Hidden messages remain in DB for the UI but are excluded from LLM history.
+   *
+   * Moving both messages to the end ensures the LLM sees a coherent
+   * function_call → function_call_output pair regardless of how many messages
+   * were interleaved between the original call and the async result.
+   *
+   * @param {string} chatId      - Chat identifier
+   * @param {string} toolName    - Tool name to search (e.g. 'request_mission_plan')
+   * @param {string} newOutput   - New value for messageData.output (JSON string)
+   * @param {string} newContent  - Summarized content (≤500 chars) for the DB content column
+   * @returns {Promise<boolean>} true if the original tool_result was found and hidden
+   */
+  static async hideAndReplaceToolResult(chatId, toolName, newOutput, newContent) {
+    // Load all tool_result rows for this chat and filter in JS to avoid
+    // SQLite JSON-column LIKE quirks (key order, spacing, dialect differences).
+    const candidates = await sequelize.models.ChatMessage.findAll({
+      where: { chatId, type: 'tool_result' },
+      order: [['timestamp', 'DESC']],
+    });
+
+    const originalToolResult = candidates.find((m) => {
+      const data = m.messageData;
+      if (!data) return false;
+      if (typeof data === 'object') return data.name === toolName;
+      if (typeof data === 'string') {
+        try { return JSON.parse(data).name === toolName; } catch { return false; }
+      }
+      return false;
+    });
+
+    if (!originalToolResult) {
+      chatLogger.warn(`[hideAndReplaceToolResult] No tool_result found for tool "${toolName}" in chat ${chatId}`);
+      return false;
+    }
+
+    // Extract call_id from the placeholder tool_result to find its paired function_call
+    const originalData = typeof originalToolResult.messageData === 'object'
+      ? originalToolResult.messageData
+      : JSON.parse(originalToolResult.messageData);
+    const callId = originalData.call_id;
+
+    // ── Hide the originalToolResult tool_result placeholder ────────────────────────────
+    originalToolResult.hidden = true;
+    originalToolResult.changed('hidden', true);
+    await originalToolResult.save();
+    chatLogger.info(`[hideAndReplaceToolResult] Hidden original tool_result for "${toolName}" in chat ${chatId} (id: ${originalToolResult.id})`);
+
+    // ── Find and hide the paired function_call (tool_call) ───────────────────
+    // It may have other messages between it and the tool_result (e.g. text
+    // responses from the LLM before it dispatched the tool). We hide it so the
+    // LLM does not see a dangling call without a result, then re-insert a copy
+    // at the end paired with the new tool_result.
+    let originalToolCall = null;
+    if (callId) {
+      const toolCallCandidates = await sequelize.models.ChatMessage.findAll({
+        where: { chatId, type: 'tool_call' },
+        order: [['timestamp', 'DESC']],
+      });
+
+      originalToolCall = toolCallCandidates.find((m) => {
+        const data = typeof m.messageData === 'object' ? m.messageData : (() => {
+          try { return JSON.parse(m.messageData); } catch { return null; }
+        })();
+        return data && (data.call_id === callId || data.id === callId);
+      });
+
+      if (originalToolCall) {
+        originalToolCall.hidden = true;
+        originalToolCall.changed('hidden', true);
+        await originalToolCall.save();
+        chatLogger.info(`[hideAndReplaceToolResult] Hidden original tool_call for "${toolName}" in chat ${chatId} (id: ${originalToolCall.id})`);
+      } else {
+        chatLogger.warn(`[hideAndReplaceToolResult] No tool_call found with call_id "${callId}" for tool "${toolName}" in chat ${chatId}`);
+      }
+    }
+
+    const now = new Date();
+
+    // ── Re-insert the function_call at the end (1 ms before the result) ──────
+    if (originalToolCall) {
+      const toolCallData = typeof originalToolCall.messageData === 'object'
+        ? originalToolCall.messageData
+        : JSON.parse(originalToolCall.messageData);
+
+      await sequelize.models.ChatMessage.create({
+        chatId,
+        role: originalToolCall.role,
+        from: originalToolCall.from,
+        type: originalToolCall.type,
+        content: originalToolCall.content,
+        messageData: toolCallData,
+        status: 'completed',
+        timestamp: new Date(now.getTime() - 1),
+        responseId: originalToolCall.responseId,
+        hidden: false,
+      });
+      chatLogger.info(`[hideAndReplaceToolResult] Re-inserted tool_call for "${toolName}" at end of chat ${chatId}`);
+    }
+
+    // ── Insert the new tool_result with the real output ───────────────────────
+    const newMessageData = { ...originalData, output: newOutput };
+
+    await sequelize.models.ChatMessage.create({
+      chatId,
+      role: originalToolResult.role,
+      from: originalToolResult.from,
+      type: originalToolResult.type,
+      content: typeof newContent === 'string' ? newContent.slice(0, 500) : newContent,
+      messageData: newMessageData,
+      status: 'completed',
+      timestamp: now,
+      responseId: originalToolResult.responseId,
+      hidden: false,
+    });
+
+    await sequelize.models.Chat.update({ updatedAt: new Date() }, { where: { id: chatId } });
+    chatLogger.info(`[hideAndReplaceToolResult] Inserted replacement tool_result for "${toolName}" in chat ${chatId}`);
+    return true;
   }
 }

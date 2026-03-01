@@ -16,7 +16,9 @@ chatRouter.delete('/chats/:chatId', chatController.deleteChat);
 chatRouter.patch('/chats/:chatId', chatController.renameChat);
 chatRouter.post('/chats/:chatId/fork', chatController.forkChat);
 
+chatRouter.post('/convert_mission_briefing_xyz', chatController.convertMissionBriefingToXYZ);
 chatRouter.post('/build_mission_plan_xyz', chatController.buildMissionPlanXYZ);
+chatRouter.post('/return_mission_plan_xyz', chatController.returnMissionPlanXYZ);
 chatRouter.post('/verification_mission', chatController.verificationMission);
 chatRouter.post('/subagent_planner_chat', chatController.subAgentPlannerChat);
 // Ruta para speech-to-text (transcripción)

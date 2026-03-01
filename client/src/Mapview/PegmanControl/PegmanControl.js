@@ -49,7 +49,7 @@ class Maplibre3DViewControl {
 
     // Create pegman container
     this.container = document.createElement('div');
-    this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group maplibre-streetview-pegman-container';
+    this.container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibre-streetview-pegman-container';
 
     // Create pegman button element
     this.pegman = document.createElement('button');
@@ -102,6 +102,9 @@ class Maplibre3DViewControl {
    * @private
    */
   _setupEventListeners() {
+    // Prevent the map from intercepting mouse events on the pegman button
+    this.pegman.addEventListener('mousedown', (e) => e.stopPropagation());
+
     // Make pegman draggable
     this.pegman.addEventListener('dragstart', (e) => {
       console.log('dragstart');
@@ -208,6 +211,7 @@ class Maplibre3DViewControl {
     // Handle touchstart on pegman for mobile drag
     this.pegman.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      e.stopPropagation();
 
       // Track touch start to distinguish between tap and drag
       this.touchStartTime = Date.now();
@@ -241,7 +245,6 @@ class Maplibre3DViewControl {
     // Handle touchend (drop) on map
     document.addEventListener('touchend', (e) => {
       if (this.isTouchInteraction) {
-        const touchDuration = Date.now() - this.touchStartTime;
         const touch = e.changedTouches[0];
 
         // If it was a drag (not just a tap)

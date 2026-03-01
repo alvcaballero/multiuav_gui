@@ -155,7 +155,7 @@ path_x_at_entry/exist = positions (x) where original path would enter/exit dange
   "corrected_mission": {
     "version": "3",
     "name": "Verified Mission",
-    "origin_global": {
+    "global_origin": {
       "lat": 47.3978,
       "lng": 8.5461,
       "alt": 0

@@ -120,7 +120,7 @@
 
 /* Pegman dragging element */
 .maplibre-streetview-pegman-marker {
-    position: absolute;
+    position: fixed;
     z-index: 9999;
     width: 19px;
     height: 32px;

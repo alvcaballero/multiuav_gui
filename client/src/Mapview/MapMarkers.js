@@ -65,21 +65,21 @@ const MapElements = ({ markers, showTitles }) => {
   }, [showTitles]);
 
   function list2Points(mylist) {
-    const waypoints = [];
+    const markers = [];
     if (mylist?.elements) {
       mylist.elements.forEach((conjunto, index_cj) => {
-        conjunto.items.forEach((items, item_index) => {
-          waypoints.push({ ...items, image: conjunto.type, title: `${index_cj}-${item_index}` });
+        conjunto.items.forEach((item, item_index) => {
+          markers.push({ ...item, image: conjunto.type, title: item.name ? `${item.name}` : `${index_cj}-${item_index}` });
         });
       });
     }
     if (mylist?.bases) {
       mylist.bases.forEach((items, item_index) => {
-        waypoints.push({ ...items, image: 'base', title: item_index });
+        markers.push({ ...items, image: 'base', title: item_index });
       });
     }
 
-    return waypoints;
+    return markers;
   }
 
   useEffect(() => {

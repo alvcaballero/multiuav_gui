@@ -66,7 +66,7 @@ function geodeticToENU(lat, lng, alt, origin) {
   const y = dLat * (rM + (origin.alt || 0)); // North
   const z = dAlt; // Up
 
-  return { x, y, z };
+  return { x:  Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, z: Math.round(z * 100) / 100 };
 }
 
 /**
@@ -113,18 +113,18 @@ function convertMissionXYZToLatLong(missionData) {
     throw new Error('Mission data is required');
   }
 
-  if (!missionData.origin_global) {
-    throw new Error('Mission data must contain origin_global for coordinate conversion');
+  if (!missionData.global_origin) {
+    throw new Error('Mission data must contain global_origin for coordinate conversion');
   }
 
-  const origin = missionData.origin_global;
+  const origin = missionData.global_origin;
   chatLogger.info(`Using origin for conversion: lat=${origin.lat}, lng=${origin.lng}, alt=${origin.alt}`);
 
   // Deep clone to avoid mutating original
   const converted = JSON.parse(JSON.stringify(missionData));
 
-  // Remove origin_global from converted mission (not needed in lat/lng format)
-  delete converted.origin_global;
+  // Remove global_origin from converted mission (not needed in lat/lng format)
+  delete converted.global_origin;
 
   // Convert waypoints in each route from XYZ to lat/lng/alt
   if (converted.route && Array.isArray(converted.route)) {
@@ -138,8 +138,8 @@ function convertMissionXYZToLatLong(missionData) {
 
             // Convert to [lat, lng, alt] format
             waypoint.pos = [
-              Number(geodetic.lat.toFixed(8)),
-              Number(geodetic.lng.toFixed(8)),
+              Number(geodetic.lat.toFixed(10)),
+              Number(geodetic.lng.toFixed(10)),
               Number(geodetic.alt.toFixed(2)),
             ];
           }
@@ -156,7 +156,7 @@ function convertMissionXYZToLatLong(missionData) {
  * Convert mission briefing data from geodetic coordinates to local XYZ (ENU) coordinates
  * Input structure follows filteredMissionSchema
  * @param {Object} missionBriefing - Mission briefing with filteredMissionSchema structure
- * @returns {Object} Mission briefing with XYZ coordinates and origin_global
+ * @returns {Object} Mission briefing with XYZ coordinates and global_origin
  */
 function convertMissionBriefingToXYZ(missionBriefing) {
   if (!missionBriefing) {
@@ -171,7 +171,7 @@ function convertMissionBriefingToXYZ(missionBriefing) {
   const converted = JSON.parse(JSON.stringify(missionBriefing));
 
   // Add origin to the converted mission
-  converted.origin_global = {
+  converted.global_origin = {
     lat: origin.lat,
     lng: origin.lng,
     alt: origin.alt,
@@ -185,7 +185,7 @@ function convertMissionBriefingToXYZ(missionBriefing) {
         device.location = {
           x: Number(enu.x.toFixed(3)),
           y: Number(enu.y.toFixed(3)),
-          z: Number(enu.z.toFixed(3)),
+          z: Number(0),
         };
       }
     }
@@ -217,7 +217,7 @@ function convertMissionBriefingToXYZ(missionBriefing) {
         poi.position = {
           x: Number(enu.x.toFixed(3)),
           y: Number(enu.y.toFixed(3)),
-          z: Number(enu.z.toFixed(3)),
+          z: Number(0),
         };
       }
     }

@@ -3,7 +3,7 @@
     "version": "3",
     "name": "Wind Turbine Inspection - Safe Route",
     "description": "Mission with waypoints that avoid all obstacles",
-    "origin_global": { "lat": 37.4219983, "lng": -5.9943, "alt": 20 },
+    "global_origin": { "lat": 37.4219983, "lng": -5.9943, "alt": 20 },
     "route": [
       {
         "name": "safe_inspection_route",

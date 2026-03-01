@@ -1,0 +1,445 @@
+{
+  "chat_id": "chat_1772062727836_wwqj71g",
+  "missionDataXYZ": {
+    "name": "Offshore Turbine Inspection Final",
+    "chat_id": "chat_1772062727836_wwqj71g",
+    "route": [
+      {
+        "name": "UAV 1 Strip",
+        "uav_type": "px4_ros2",
+        "id": 0,
+        "uav": "px4_1",
+        "attributes": {
+          "mode_gimbal": 1,
+          "mode_trace": 0,
+          "mode_landing": 0,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "max_vel": 10
+        },
+        "wp": [
+          {
+            "pos": [
+              8.587,
+              -61.622,
+              0
+            ],
+            "type": "takeoff"
+          },
+          {
+            "pos": [
+              -951.8,
+              -297.9,
+              80
+            ],
+            "type": "inspection",
+            "notes": "Target A1",
+            "yaw": -90
+          },
+          {
+            "type": "transit",
+            "notes": "Bypass A1 North transition",
+            "pos": [
+              -1001.8,
+              -237.9,
+              80
+            ]
+          },
+          {
+            "pos": [
+              -1245.5,
+              -302,
+              80
+            ],
+            "yaw": -90,
+            "notes": "Target B1",
+            "type": "inspection"
+          },
+          {
+            "type": "inspection",
+            "notes": "Target B2",
+            "yaw": -90,
+            "pos": [
+              -1242.8,
+              -54.3,
+              80
+            ]
+          },
+          {
+            "type": "transit",
+            "notes": "Bypass A2 North transition",
+            "pos": [
+              -1005.9,
+              15.2,
+              80
+            ]
+          },
+          {
+            "notes": "Return Corridor East transition 1",
+            "type": "transit",
+            "pos": [
+              -900,
+              15.2,
+              80
+            ]
+          },
+          {
+            "notes": "Return Corridor East transition 2",
+            "type": "transit",
+            "pos": [
+              0,
+              15.2,
+              80
+            ]
+          },
+          {
+            "type": "landing",
+            "pos": [
+              8.587,
+              -61.622,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "wp": [
+          {
+            "pos": [
+              4.107,
+              -25.417,
+              0
+            ],
+            "type": "takeoff"
+          },
+          {
+            "pos": [
+              -1005.9,
+              -104.8,
+              80
+            ],
+            "notes": "South Approach A2 transition 1",
+            "type": "transit"
+          },
+          {
+            "pos": [
+              -955.9,
+              -44.8,
+              80
+            ],
+            "type": "inspection",
+            "notes": "Target A2",
+            "yaw": -90
+          },
+          {
+            "type": "transit",
+            "notes": "East Bypass transition corridor",
+            "pos": [
+              -900,
+              50,
+              80
+            ]
+          },
+          {
+            "notes": "Target A3",
+            "yaw": -90,
+            "type": "inspection",
+            "pos": [
+              -958,
+              153.8,
+              80
+            ]
+          },
+          {
+            "pos": [
+              -1008,
+              213.8,
+              80
+            ],
+            "type": "transit",
+            "notes": "Bypass A3 North transition"
+          },
+          {
+            "pos": [
+              -1242.1,
+              155.3,
+              80
+            ],
+            "yaw": -90,
+            "notes": "Target B3",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              -900,
+              213.8,
+              80
+            ],
+            "notes": "Return Corridor East transition 1",
+            "type": "transit"
+          },
+          {
+            "pos": [
+              0,
+              213.8,
+              80
+            ],
+            "notes": "Return Corridor East transition 2",
+            "type": "transit"
+          },
+          {
+            "type": "landing",
+            "pos": [
+              4.107,
+              -25.417,
+              0
+            ]
+          }
+        ],
+        "uav": "px4_4",
+        "attributes": {
+          "max_vel": 10,
+          "mode_yaw": 3,
+          "idle_vel": 5,
+          "mode_landing": 0,
+          "mode_gimbal": 1,
+          "mode_trace": 0
+        },
+        "id": 1,
+        "uav_type": "px4_ros2",
+        "name": "UAV 2 Strip"
+      },
+      {
+        "wp": [
+          {
+            "pos": [
+              -3.36,
+              21.202,
+              0
+            ],
+            "type": "takeoff"
+          },
+          {
+            "notes": "South Approach A6 transition 1",
+            "type": "transit",
+            "pos": [
+              -743.6,
+              97.7,
+              80
+            ]
+          },
+          {
+            "pos": [
+              -693.6,
+              157.7,
+              80
+            ],
+            "notes": "Target A6",
+            "yaw": -90,
+            "type": "inspection"
+          },
+          {
+            "notes": "East Bypass transition corridor 1",
+            "type": "transit",
+            "pos": [
+              -650,
+              250,
+              80
+            ]
+          },
+          {
+            "type": "inspection",
+            "notes": "Target A4",
+            "yaw": -90,
+            "pos": [
+              -957.4,
+              383.4,
+              80
+            ]
+          },
+          {
+            "notes": "Bypass A4 North transition 1",
+            "type": "transit",
+            "pos": [
+              -1007.4,
+              443.4,
+              80
+            ]
+          },
+          {
+            "pos": [
+              -1244.1,
+              382.5,
+              80
+            ],
+            "type": "inspection",
+            "notes": "Target B4",
+            "yaw": -90
+          },
+          {
+            "pos": [
+              -900,
+              443.4,
+              80
+            ],
+            "type": "transit",
+            "notes": "Return Corridor East transition 1"
+          },
+          {
+            "type": "transit",
+            "notes": "Return Corridor East transition 2",
+            "pos": [
+              0,
+              443.4,
+              80
+            ]
+          },
+          {
+            "type": "landing",
+            "pos": [
+              -3.36,
+              21.202,
+              0
+            ]
+          }
+        ],
+        "uav": "px4_2",
+        "attributes": {
+          "mode_gimbal": 1,
+          "mode_trace": 0,
+          "mode_landing": 0,
+          "mode_yaw": 3,
+          "idle_vel": 5,
+          "max_vel": 10
+        },
+        "uav_type": "px4_ros2",
+        "id": 2,
+        "name": "UAV 3 Strip"
+      },
+      {
+        "wp": [
+          {
+            "pos": [
+              -9.334,
+              65.838,
+              0
+            ],
+            "type": "takeoff"
+          },
+          {
+            "pos": [
+              -740.3,
+              326.8,
+              80
+            ],
+            "type": "transit",
+            "notes": "South Approach A5 transition 1"
+          },
+          {
+            "pos": [
+              -690.3,
+              386.8,
+              80
+            ],
+            "yaw": -90,
+            "notes": "Target A5",
+            "type": "inspection"
+          },
+          {
+            "type": "transit",
+            "notes": "West Bypass A5 transition 1",
+            "pos": [
+              -740.3,
+              446.8,
+              80
+            ]
+          },
+          {
+            "pos": [
+              -850,
+              446.8,
+              80
+            ],
+            "type": "transit",
+            "notes": "West Bypass A5 transition 2"
+          },
+          {
+            "pos": [
+              -966.1,
+              590.7,
+              80
+            ],
+            "yaw": -90,
+            "notes": "Target B6",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              -1016.1,
+              650.7,
+              80
+            ],
+            "type": "transit",
+            "notes": "Bypass B6 North transition 1"
+          },
+          {
+            "pos": [
+              -1244.8,
+              585.5,
+              80
+            ],
+            "type": "inspection",
+            "yaw": -90,
+            "notes": "Target B5"
+          },
+          {
+            "pos": [
+              -900,
+              650.7,
+              80
+            ],
+            "notes": "Return Corridor East transition 1",
+            "type": "transit"
+          },
+          {
+            "pos": [
+              0,
+              650.7,
+              80
+            ],
+            "notes": "Return Corridor East transition 2",
+            "type": "transit"
+          },
+          {
+            "type": "landing",
+            "pos": [
+              -9.334,
+              65.838,
+              0
+            ]
+          }
+        ],
+        "uav": "px4_3",
+        "attributes": {
+          "mode_yaw": 3,
+          "idle_vel": 5,
+          "max_vel": 10,
+          "mode_gimbal": 1,
+          "mode_trace": 0,
+          "mode_landing": 0
+        },
+        "uav_type": "px4_ros2",
+        "id": 3,
+        "name": "UAV 4 Strip"
+      }
+    ],
+    "description": "Multi-UAV offshore wind turbine inspection mission at Viana do Castelo. 4 px4_ros2 UAVs inspect 12 turbines (Lines A & B). Routes are vertically and horizontally separated to prevent inter-drone and obstacle collisions. Each turbine is inspected at hub height (80m) with a frontal view. Optimized using lateral Cardinal Point bypasses. All routes validated as 100% collision-free.",
+    "global_origin": {
+      "alt": 0,
+      "lat": 41.6874436234916,
+      "lng": -8.84778771236438
+    }
+  },
+  "status": "valid",
+  "description": "Multi-UAV offshore wind turbine inspection mission at Viana do Castelo. 4 px4_ros2 UAVs inspect 12 turbines (Lines A & B). Routes are vertically and horizontally separated to prevent inter-drone and obstacle collisions. Each turbine is inspected at hub height (80m) with a frontal view. Optimized using lateral Cardinal Point bypasses. All routes validated as 100% collision-free."
+}

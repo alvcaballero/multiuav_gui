@@ -56,5 +56,22 @@ try {
   logger.error('DB Unable to create tables : ', error);
 }
 
+// Additive column migrations — safe to run on every startup.
+// Add new ALTER TABLE statements here when adding columns to existing tables.
+const migrations = [
+  `ALTER TABLE ChatMessage ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0`,
+];
+
+for (const sql of migrations) {
+  try {
+    await sequelize.query(sql);
+  } catch (e) {
+    // "duplicate column name" means the column already exists — skip silently
+    if (!e.message?.includes('duplicate column')) {
+      logger.error(`Migration failed: ${sql}`, e.message);
+    }
+  }
+}
+
 export default sequelize;
 export { Op };

@@ -318,30 +318,30 @@ export const MessageBubble = memo(({ message, chatId }) => {
 
   // Function call block
   if (type === 'function_call') {
-    const hasMissionData = content?.missionData;
+    const hasMissionData = content?.missionData 
+    const hasMissionDataResult =  name === 'request_mission_plan' && content?.mission;
     const hasMissionDataXYZ = content?.missionDataXYZ;
     const isValidateMission = name === 'validate_mission_collisions' && content?.mission;
-    const isCreateMission = hasMissionData || hasMissionDataXYZ || isValidateMission;
+    const isCreateMission = hasMissionData || hasMissionDataResult || hasMissionDataXYZ || isValidateMission;
 
-    const handleCreateMission = async () => {
+    const handlShowMission = async () => {
       try {
         let endpoint;
         let missionPayload;
 
         if (hasMissionDataXYZ) {
           endpoint = '/api/missions/showXYZ';
-          missionPayload = content.missionDataXYZ;
-        } else if (hasMissionData) {
+          missionPayload = { ...content.missionDataXYZ , version: '3', name: content.missionDataXYZ.name || 'Mission from XYZ Data' };
+        } else if (hasMissionData || hasMissionDataResult ) {
           endpoint = '/api/missions/';
-          missionPayload = content.missionData;
+          missionPayload = content.missionData || content.mission;
         } else if (isValidateMission) {
           endpoint = '/api/missions/showXYZ';
           missionPayload = {
             version: content.mission.version || '3',
             name: content.mission.name || 'Validated Mission',
             route: content.mission.route,
-            origin_global: content.origin_global || { lat: 41.68722260607747, lng: -8.847745078804891, alt: 0 },
-            chat_id: content.chat_id,
+            global_origin: content.mission.global_origin || { lat: 41.687222, lng: -8.84774507880, alt: 0 },
           };
         } else {
           return;
@@ -383,7 +383,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCreateMission();
+                    handlShowMission();
                   }}
                   sx={{
                     bgcolor: '#4caf50',
@@ -415,6 +415,38 @@ export const MessageBubble = memo(({ message, chatId }) => {
   if (type === 'function_call_output') {
     let resultSummary = 'Completado';
     let hasError = false;
+    const hasMissionDataResult =  name === 'request_mission_plan';
+    let missionPayload = content?.content[0]?.text
+    let missionData = null
+
+    try {
+      missionData = JSON.parse(missionPayload)
+    } catch (e) {
+      console.error('Error parsing mission payload:', e)
+    }
+
+    const isCreateMission = hasMissionDataResult && missionData?.mission;
+
+    const handlShowMission = async () => {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(missionData.mission),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`Misión creada exitosamente! ID: ${result.id || 'N/A'}`);
+        } else {
+          const error = await response.json();
+          console.log(`Error al crear misión: ${error.message || response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error creating mission:', error);
+        console.log(`Error al crear misión: ${error.message}`);
+      }
+    };
 
     if (typeof content === 'object') {
       if (content.error) {
@@ -446,6 +478,24 @@ export const MessageBubble = memo(({ message, chatId }) => {
               >
                 {resultSummary}
               </Typography>
+              {isCreateMission && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlShowMission();
+                  }}
+                  sx={{
+                    bgcolor: '#4caf50',
+                    '&:hover': { bgcolor: '#388e3c' },
+                    textTransform: 'none',
+                    marginLeft: 'auto',
+                  }}
+                >
+                  Show Misión
+                </Button>
+              )}
             </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ pt: 1, pb: 1, pl: 2, pr: 1 }}>

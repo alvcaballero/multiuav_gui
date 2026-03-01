@@ -565,7 +565,7 @@ Content-Type: application/json
 GET http://localhost:4000/api/chat/chats
 
 ### historial de chat - default
-GET http://localhost:4000/api/chat/history/default_http
+GET http://localhost:4000/api/chat/history/chat_1772053384444_s0gg4dn
 
 ### historial de chat - personalizado
 GET http://localhost:4000/api/chat/history/mission-planning-001
@@ -714,3 +714,18 @@ POST  http://localhost:4000/api/chat/build_mission_plan_xyz
 Content-Type: application/json
 
 < ./json/subagent_planner_chat_fast_all.json
+
+### request mission briefing xyz
+POST  http://localhost:4000/api/chat/convert_mission_briefing_xyz
+Content-Type: application/json
+
+< ./json/subagent_planner_chat_fast_all.json
+
+
+### complete mission validation
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/complete_mission_xyz.json
+
+###
