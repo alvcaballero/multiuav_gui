@@ -416,13 +416,13 @@ export function formatRouteReport(routeResult) {
     }
   }
 
-  if (routeResult.warnings.length > 0) {
-    lines.push('');
-    lines.push('- **Warnings:**');
-    for (const w of routeResult.warnings) {
-      lines.push(formatCollisionEntry(w));
-    }
-  }
+  // if (routeResult.warnings.length > 0) {
+  //   lines.push('');
+  //   lines.push('- **Warnings:**');
+  //   for (const w of routeResult.warnings) {
+  //     lines.push(formatCollisionEntry(w));
+  //   }
+  // }
 
   return lines.join('\n');
 }

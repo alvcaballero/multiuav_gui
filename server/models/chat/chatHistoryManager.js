@@ -82,7 +82,7 @@ export class ChatHistoryManager {
    * @param {object} options - Filter options
    * @returns {Promise<Array>} List of chats
    */
-  static async getAllChats({ status = 'active', limit = 50 } = {}) {
+  static async getAllChats({ status = 'active', limit = 400 } = {}) {
     const where = {};
     if (status) where.status = status;
 

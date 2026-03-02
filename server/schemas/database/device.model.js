@@ -53,6 +53,11 @@ const DeviceSchema = {
     type: DataTypes.DATE,
     defaultValue: Sequelize.NOW,
   },
+  deletedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
 };
 
 class Device extends Model {

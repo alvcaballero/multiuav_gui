@@ -78,7 +78,7 @@ const CheckDeviceOnline = async () => {
   await sequelize.models.Device.update(
     { status: devicesStatus.OFFLINE },
     {
-      where: { lastUpdate: { [Op.lte]: cutoffTime } },
+      where: { lastUpdate: { [Op.lte]: cutoffTime }, deletedAt: null },
     }
   );
 
@@ -95,6 +95,7 @@ export class DevicesModel {
   static async getAll(query) {
     let mydevices = await sequelize.models.Device.findAll({
       attributes: publicFields,
+      where: { deletedAt: null },
     });
     if (query) {
       console.log(query);
@@ -110,20 +111,20 @@ export class DevicesModel {
 
   static async getById({ id }) {
     return await sequelize.models.Device.findOne({
-      where: { id: id },
+      where: { id: id, deletedAt: null },
     });
   }
   static async getByName(name) {
     return await sequelize.models.Device.findOne({
       attributes: publicFields,
-      where: { name: name },
+      where: { name: name, deletedAt: null },
     });
   }
 
   static async getAccess(id) {
     return await sequelize.models.Device.findOne({
       attributes: privateFields,
-      where: { id: id },
+      where: { id: id, deletedAt: null },
     });
   }
 
@@ -242,7 +243,7 @@ export class DevicesModel {
   }
 
   static async removedevice({ id }) {
-    await sequelize.models.Device.destroy({ where: { id: id } });
+    await sequelize.models.Device.update({ deletedAt: new Date() }, { where: { id: id } });
   }
 
   static async addAllUAV() {

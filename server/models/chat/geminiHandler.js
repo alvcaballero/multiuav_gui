@@ -4,7 +4,7 @@ import { SystemPrompts } from './prompts/index.js';
 import logger, { chatLogger } from '../../common/logger.js';
 import { ar } from 'zod/v4/locales';
 
-// Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, etc.
+// Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, gemini-3.1-pro-preview
 class GeminiHandler extends BaseLLMHandler {
   static AGENT_PROFILES = {
     default: {
@@ -213,7 +213,8 @@ class GeminiHandler extends BaseLLMHandler {
     const modelId = profile.model || this.model;
 
     // Build config
-    const config = {};
+    const config = {temperature: 0.3}; // Adjust temperature as needed
+
 
     // System instruction
     const systemText = instructions || this.systemPrompt;

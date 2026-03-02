@@ -60,6 +60,7 @@ try {
 // Add new ALTER TABLE statements here when adding columns to existing tables.
 const migrations = [
   `ALTER TABLE ChatMessage ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE Devices ADD COLUMN deletedAt DATETIME DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

@@ -113,16 +113,18 @@ class OpenAIHandler extends BaseLLMHandler {
   }
 
   convertMsg(message = null, conversationHistory) {
-    let lastconversation = conversationHistory.map((msg) => {
-      if (typeof msg.message.content === 'string') {
-        return {
-          role: msg.message.role,
-          content: msg.message.content,
-        };
-      } else {
-        return { ...msg.message };
-      }
-    });
+    let lastconversation = conversationHistory
+      .filter((msg) => msg.message.role !== 'system')
+      .map((msg) => {
+        if (typeof msg.message.content === 'string') {
+          return {
+            role: msg.message.role,
+            content: msg.message.content,
+          };
+        } else {
+          return { ...msg.message };
+        }
+      });
     if (message === null) {
       return lastconversation;
     }
@@ -181,6 +183,11 @@ class OpenAIHandler extends BaseLLMHandler {
       forceFinish = false, // force final response with system message
       agentProfile = 'default', // Agent profile for model/reasoning selection
     } = options;
+    
+    chatLogger.info(`Processing message with OpenAIHandler (sessionId: ${sessionId ? sessionId.substring(0, 20) + '...' : 'none'}, previousResponseId: ${previousResponseId ? previousResponseId.substring(0, 20) + '...' : 'none'}, tools: ${tools.length}, conversationHistory: ${conversationHistory.length} messages)`);
+    if (instructions) {
+      chatLogger.info(`✓ Instructions provided: ${typeof instructions === 'string' ? instructions.substring(0, 30) + '...' : JSON.stringify(instructions).substring(0, 30) + '...'}`);
+    }
 
     // Resolve agent profile for model and reasoning config
     const profile = this.getAgentProfile(agentProfile);
@@ -267,6 +274,11 @@ class OpenAIHandler extends BaseLLMHandler {
     // CASE 3: First message or fallback (full history path)
     else {
       params.input = this.convertMsg(message, conversationHistory);
+      // Send system prompt as instructions (separate from input, like Gemini's systemInstruction)
+      const systemText = instructions || this.systemPrompt;
+      if (systemText) {
+        params.instructions = systemText;
+      }
     }
 
     chatLogger.info('tools')
@@ -274,8 +286,10 @@ class OpenAIHandler extends BaseLLMHandler {
       chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
     }
     chatLogger.info(`✓ Message for OpenAI`);
-    for (const msg of messages) {
-      chatLogger.info(`- role: ${msg.role}, content: ${typeof msg.content === 'string' ? msg.content.replace(/\r?\n|\r/g, " ").substring(0, 100) + '...' : JSON.stringify(msg.content).replace(/\r?\n|\r/g, " ").substring(0, 100) + '...'}`);
+    for (const msg of (Array.isArray(params.input) ? params.input : [])) {
+      const raw = msg.content ?? msg.output ?? msg;
+      const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+      chatLogger.info(`- role: ${msg.role ?? msg.type}, content: ${text.replace(/\r?\n|\r/g, " ").substring(0, 100)}...`);
     }
     try {
       const logId = sessionId
@@ -400,11 +414,10 @@ class OpenAIHandler extends BaseLLMHandler {
       const result = await toolExecutor(functionName, functionArgs);
       chatLogger.info(`✓ Tool ${functionName} response:`, JSON.stringify(result, null, 2).substring(0, 30) + '...');
 
-      // Response format for OpenAI
+      // Response format for OpenAI Responses API (no 'name' field allowed)
       return {
         type: 'function_call_output',
         call_id: toolCall.call_id,
-        name: functionName,
         output: JSON.stringify(result),
       };
     } catch (error) {
@@ -412,7 +425,6 @@ class OpenAIHandler extends BaseLLMHandler {
       return {
         type: 'function_call_output',
         call_id: toolCall.call_id,
-        name: toolCall.name,
         output: JSON.stringify({ error: error.message }),
       };
     }
