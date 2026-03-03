@@ -202,6 +202,22 @@ export class chatController {
     }
   }
 
+  static async testMcpTool(req, res) {
+    const { toolName, toolArgs } = req.body;
+
+    if (!toolName) {
+      return res.status(400).json({ error: 'toolName is required.' });
+    }
+
+    try {
+      const result = await MessageOrchestrator.testMcpTool(toolName, toolArgs ?? {});
+      res.json({ toolName, toolArgs: toolArgs ?? {}, result });
+    } catch (error) {
+      logger.error('Error in chatController.testMcpTool:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async subAgentPlannerChat(req, res) {
     const { userMessage } = req.body;
 

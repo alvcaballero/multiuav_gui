@@ -74,7 +74,7 @@ export class rosModel {
       ros = new ROSLIB.Ros({ url: 'ws://127.0.0.1:9090', encoding: 'utf8' });
       ros.on('connection', function () {
         logHelpers.ros.connect('server', { status: 'connected' });
-        rosModel.setrosState({ state: 'connect', msg: 'Conectado a ROS' });
+        rosModel.setrosState({ state: 'connect', msg: 'Conected to ROS' });
         rosModel.connectAllUAV();
         rosModel.GCSServicesMission();
       });
@@ -85,7 +85,7 @@ export class rosModel {
       });
       ros.on('close', function () {
         logHelpers.ros.error('Connection closed.', { message: 'Connection closed' });
-        rosModel.setrosState({ state: 'disconnect', msg: 'Desconectado a ROS' });
+        rosModel.setrosState({ state: 'disconnect', msg: 'offline a ROS' });
         rosModel.disconectRos();
       });
     }

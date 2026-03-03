@@ -79,6 +79,7 @@ const convertMsg = (msg) => {
 
   if (msg.message.type === 'function_call_output') {
     let output = msg.message.output || msg.message.content;
+
     if (typeof output === 'string') {
       try {
         output = JSON.parse(output);
@@ -86,6 +87,7 @@ const convertMsg = (msg) => {
         // Keep as string if not valid JSON
       }
     }
+    
 
     return {
       role: 'assistant',
@@ -271,6 +273,15 @@ export const MessageBubble = memo(({ message, chatId }) => {
   const isAI = role !== 'user';
   const isError = status === 'error';
 
+  const formatTimestamp = (ts) => {
+    if (!ts) return null;
+    const date = new Date(ts);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+
+  const timestampLabel = formatTimestamp(message.timestamp);
+
   const accordionStyle = (borderColor) => ({
     boxShadow: 'none',
     bgcolor: 'transparent',
@@ -375,7 +386,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
                 variant="caption"
                 sx={{ color: '#1976d2', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '0.85rem' }}
               >
-                Ejecutando: {name}
+                Run: {name}
               </Typography>
               {isCreateMission && (
                 <Button
@@ -395,6 +406,14 @@ export const MessageBubble = memo(({ message, chatId }) => {
                   Show Misión
                 </Button>
               )}
+              {timestampLabel && (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.disabled', fontSize: '0.65rem', ml: isCreateMission ? 1 : 'auto' }}
+                >
+                  {timestampLabel}
+                </Typography>
+              )}
             </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ pt: 1, pb: 1, pl: 2, pr: 1 }}>
@@ -413,7 +432,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
 
   // Function call output block
   if (type === 'function_call_output') {
-    let resultSummary = 'Completado';
+    let resultSummary = 'Result';
     let hasError = false;
     const hasMissionDataResult =  name === 'request_mission_plan';
     let missionPayload = content?.content[0]?.text
@@ -452,14 +471,17 @@ export const MessageBubble = memo(({ message, chatId }) => {
       if (content.error) {
         resultSummary = 'Error';
         hasError = true;
-      } else if (content.success === false) {
+      }else  if (missionPayload && missionPayload.includes('MCP error')) {
+         hasError= true;
+      } 
+      else if (content.success === false) {
         resultSummary = 'Falló';
         hasError = true;
       } else if (content.mission || content.missionId) {
         resultSummary = 'Misión creada';
       } else if (content.devices || Array.isArray(content)) {
         resultSummary = 'Datos obtenidos';
-      }
+      } 
     }
 
     return (
@@ -495,6 +517,14 @@ export const MessageBubble = memo(({ message, chatId }) => {
                 >
                   Show Misión
                 </Button>
+              )}
+              {timestampLabel && (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.disabled', fontSize: '0.65rem', ml: isCreateMission ? 1 : 'auto' }}
+                >
+                  {timestampLabel}
+                </Typography>
               )}
             </Box>
           </AccordionSummary>
@@ -573,6 +603,20 @@ export const MessageBubble = memo(({ message, chatId }) => {
             ) : (
               <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                 {content}
+              </Typography>
+            )}
+            {timestampLabel && (
+              <Typography
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  textAlign: 'right',
+                  color: isAI ? 'text.disabled' : 'rgba(255,255,255,0.6)',
+                  fontSize: '0.65rem',
+                  mt: 0.5,
+                }}
+              >
+                {timestampLabel}
               </Typography>
             )}
           </Box>

@@ -138,7 +138,7 @@ export const Menu = React.memo(({ SetAddUAVOpen }) => {
         <RosContext.Consumer>
           {({ rosState }) => (
             <Button id="rosConnect" className={classes.mediaButton}>
-              {rosState && 'conectado'} {!rosState && 'desconectado'}{' '}
+              {rosState && 'online'} {!rosState && 'offline'}{' '}
             </Button>
           )}
         </RosContext.Consumer>

@@ -198,13 +198,23 @@ export class ChatHistoryManager {
    * @param {object} options - Pagination options
    * @returns {Promise<Array>} Array of messages in internal format
    */
-  static async loadHistory(chatId, { limit = 100, offset = 0 } = {}) {
-    const messages = await sequelize.models.ChatMessage.findAll({
-      where: { chatId, hidden: false },
+  static async loadHistory(chatId, { limit = 100, offset = 0 ,all=false} = {}) {
+    
+    let messages = [];
+    if (all) {
+      messages = await sequelize.models.ChatMessage.findAll({
+      where: { chatId },
       order: [['timestamp', 'ASC']],
       limit,
       offset,
     });
+    }else{
+    messages = await sequelize.models.ChatMessage.findAll({
+      where: { chatId, hidden: false },
+      order: [['timestamp', 'ASC']],
+      limit,
+      offset,
+    });}
 
     return messages.map((msg) => ({
       chatId: msg.chatId,

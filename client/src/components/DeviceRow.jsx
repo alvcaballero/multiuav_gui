@@ -143,9 +143,10 @@ const DeviceRow = ({ data, index, style }) => {
     let uavStatus = null;
 
     if (position?.attributes?.navState) {
+      // {position.attributes.armState} -  {position.attributes.navState}
       uavStatus = (
         <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
-          {position.attributes.armState} - {position.attributes.navState}
+          {position.attributes.armState}
         </Typography>
       );
     } else if (position?.attributes?.landed_state) {
@@ -187,7 +188,7 @@ const DeviceRow = ({ data, index, style }) => {
             {/* Top row: Speed and Altitude */}
             <div style={{ display: 'flex', gap: '8px' }}>
               {position?.speed !== undefined && <PositionSpeed speed={position.speed} />}
-              {position?.altitude !== undefined && <PositionAltitude altitude={position.altitude} />}
+              {position?.attributes?.localposition && position.attributes.localposition.length > 2 && <PositionAltitude altitude={position.attributes.localposition[2]} />}
             </div>
             {/* Bottom row: Alarm, Ignition, Battery */}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>

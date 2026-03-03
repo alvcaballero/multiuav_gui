@@ -65,11 +65,11 @@ export class missionModel {
   }
 
   static async setMission(mission) {
-    console.log('setMission mission');
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
       return { success: false };
     }
-
+    
+    console.log('setMission mission');
     // Emitir evento al EventBus para que los subscribers lo manejen
     eventBus.emitSafe(EVENTS.MISSION_CREATED, { ...mission, name: mission.name ? mission.name : 'name' });
 
@@ -480,9 +480,10 @@ export class missionModel {
 
   static async showMissionXYZ(missionDataXYZ) {
     logger.info(`[MissionShowXYZ] Starting mission show in XYZ coordinates`);
+    let missionxyz = { ...missionDataXYZ , version: '3'};
     try {
       logger.debug(`[MissionShowXYZ] Input data:`, JSON.stringify(missionDataXYZ, null, 2));
-      const mission = convertMissionXYZToLatLong(missionDataXYZ);
+      const mission = convertMissionXYZToLatLong(missionxyz);
       logger.debug(`[MissionShowXYZ] Converted mission:`, JSON.stringify(mission, null, 2));
       const response = await this.setMission(mission);
       logger.info(`[MissionShowXYZ] Mission show completed`);

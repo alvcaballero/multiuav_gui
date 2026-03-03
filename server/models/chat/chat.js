@@ -463,7 +463,7 @@ export class MessageOrchestrator {
    */
   static async getHistory(chatId) {
     try {
-      return await ChatHistoryManager.loadHistory(chatId);
+      return await ChatHistoryManager.loadHistory(chatId,{all:true});
     } catch (error) {
       chatLogger.error('Error loading history from DB:', error);
       return [];
@@ -727,6 +727,30 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
    * @param {Object} payload.missionDataXYZ - Mission in local XYZ coordinates (MissionSchemaXYZ)
    * @returns {Promise<Object>}
    */
+  /**
+   * Executes a MCP tool directly, bypassing the LLM.
+   * Useful for debugging/testing tool availability and responses.
+   *
+   * @param {string} toolName - Name of the MCP tool to execute
+   * @param {Object} toolArgs - Arguments to pass to the tool
+   * @returns {Promise<Object>} Raw result from the MCP tool
+   */
+  static async testMcpTool(toolName, toolArgs = {}) {
+    if (!mcpClient || !mcpClient.isReady()) {
+      throw new Error('MCP client not connected or not ready');
+    }
+
+    const availableTools = mcpClient.getTools().map((t) => t.name);
+    if (!availableTools.includes(toolName)) {
+      throw new Error(`Tool "${toolName}" not found. Available: ${availableTools.join(', ')}`);
+    }
+
+    chatLogger.info(`[testMcpTool] Executing tool: ${toolName}`);
+    const result = await mcpClient.executeTool(toolName, toolArgs);
+    chatLogger.info(`[testMcpTool] Tool "${toolName}" executed successfully`);
+    return result;
+  }
+
   static async returnMissionPlanXYZ({ chat_id, status, description, missionDataXYZ }) {
     chatLogger.info(`[returnMissionPlanXYZ] Received mission result for main chat: ${chat_id} | status: ${status}`);
 

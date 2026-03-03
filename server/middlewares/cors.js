@@ -4,6 +4,7 @@ import { CorsEnable } from '../config/config.js';
 const ACCEPTED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:4000',
+  'http://localhost:5052',
   'https://mydomain.com',
   'https://mydomain.dev',
 ];

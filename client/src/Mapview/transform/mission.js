@@ -6,7 +6,7 @@ const createFeature = (myroute, point) => {
     let mySpeed = 0;
     if (
       myroute[point.routeid].wp[point.id].hasOwnProperty('action') &&
-      myroute[point.routeid].wp[point.id].action.hasOwnProperty('yaw')
+      myroute[point.routeid].wp[point.id].action?.hasOwnProperty('yaw')
     ) {
       myYaw = myroute[point.routeid].wp[point.id].action.yaw;
     } else if (myroute[point.routeid].wp[point.id].hasOwnProperty('yaw')) {
