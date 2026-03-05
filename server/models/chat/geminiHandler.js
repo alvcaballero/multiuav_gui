@@ -145,11 +145,11 @@ class GeminiHandler extends BaseLLMHandler {
       // Treat it as a recoverable error and return a text fallback so the orchestrator doesn't hang.
       if (candidate.finishReason === 'MALFORMED_FUNCTION_CALL') {
         chatLogger.warn(`⚠ Gemini returned MALFORMED_FUNCTION_CALL — injecting fallback text response`);
-        output.push({
-          type: 'text',
-          content: 'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
-          role: 'assistant',
-        });
+        // output.push({
+        //   type: 'text',
+        //   content: 'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
+        //   role: 'assistant',
+        // });
         continue;
       }
 
@@ -188,6 +188,7 @@ class GeminiHandler extends BaseLLMHandler {
     if (output.length === 0 && response.text) {
       output.push({ type: 'text', content: response.text, role: 'assistant' });
     }
+    chatLogger.info(`✓ Parsed ${output.length} output parts from Gemini response`);
 
     return output;
   }

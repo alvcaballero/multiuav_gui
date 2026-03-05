@@ -32,7 +32,7 @@ const AGENT_DEFAULT_TOOLS = {
     'load_mission_to_uav',
     'start_mission',
   ],
-  planner: ['show_mission_xyz', 'validate_mission_collisions', 'mark_step_complete', 'complete_mission'],
+  planner: [ 'validate_mission_collisions', 'mark_step_complete', 'complete_mission'],
 };
 
 // Per-chatId mutex: ensures only one processMessage runs at a time per chat.
@@ -202,6 +202,7 @@ export class MessageOrchestrator {
 
       // Extract response data from result
       const { output, responseId, model, sessionCleared } = result;
+      chatLogger.info(`✓ Parsed ${output.length} output parts from Gemini response`);
 
       // Let the handler recover from session errors (e.g., recreate expired conversation)
       if (sessionCleared) {
@@ -842,7 +843,24 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
       false,
       agentProfile,
       true // skipPersist: new row already inserted at step 3
-    ).catch((err) => {
+    ).then(({ output }) => {
+      // Check if the LLM response contains tool calls that need execution
+      const hasToolCalls = output.some(
+        (item) => item.type === 'function_call' || item.type === 'tool_call'
+      );
+      if (hasToolCalls) {
+        const tools = this.getToolsForProvider(allowedTools);
+        return this.handleToolCallsLoop(
+          output,
+          tools,
+          chat_id,
+          sessionId,
+          systemInstructions,
+          allowedTools,
+          agentProfile
+        );
+      }
+    }).catch((err) => {
       chatLogger.error(`[returnMissionPlanXYZ] continueAfterTools failed for chat ${chat_id}:`, err);
       eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
         chatId: chat_id,

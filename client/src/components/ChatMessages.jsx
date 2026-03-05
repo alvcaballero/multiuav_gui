@@ -566,7 +566,9 @@ export const MessageBubble = memo(({ message, chatId }) => {
               bgcolor: isError ? '#fff3e0' : isAI ? '#ffffff' : '#1976d2',
               color: isError ? '#e65100' : isAI ? 'text.primary' : '#fff',
               borderRadius: '12px',
-              p: 2,
+              pt: 2,
+              px: 2,
+              pb: 0.5,
               boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
               width: 'fit-content',
               minWidth: '200px',
@@ -613,7 +615,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
                   textAlign: 'right',
                   color: isAI ? 'text.disabled' : 'rgba(255,255,255,0.6)',
                   fontSize: '0.65rem',
-                  mt: 0.5,
+                  mt: 0,
                 }}
               >
                 {timestampLabel}

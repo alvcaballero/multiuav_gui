@@ -1,0 +1,448 @@
+{
+  "toolName": "complete_mission",
+  "toolArgs": 
+{
+  "missionDataXYZ": {
+    "global_origin": {
+      "lng": -8.84782047966137,
+      "lat": 41.6876728718369,
+      "alt": 0
+    },
+    "name": "Wind Farm Inspection (Final)",
+    "description": "Multi-UAV wind farm inspection. px4_2 covers southern half (A1, A2, B1, B2), px4_3 covers northern half (A3, A4, B3, B4). Circular inspection strategy. Collisions resolved with lateral bypasses.",
+    "route": [
+      {
+        "uav_type": "px4_ros2",
+        "wp": [
+          {
+            "pos": [
+              6.66,
+              -40.48,
+              5
+            ],
+            "type": "takeoff"
+          },
+          {
+            "pos": [
+              -951.06,
+              -323.38,
+              54
+            ],
+            "notes": "A1 East Point",
+            "type": "inspection",
+            "yaw": -90
+          },
+          {
+            "pos": [
+              -999.06,
+              -371.38,
+              54
+            ],
+            "yaw": 0,
+            "notes": "A1 South Point",
+            "type": "inspection"
+          },
+          {
+            "notes": "A1 West Point",
+            "type": "inspection",
+            "yaw": 90,
+            "pos": [
+              -1047.06,
+              -323.38,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -999.06,
+              -275.38,
+              54
+            ],
+            "notes": "A1 North Point",
+            "type": "inspection",
+            "yaw": 180
+          },
+          {
+            "pos": [
+              -1003.16,
+              -118.24,
+              54
+            ],
+            "notes": "A2 South Point",
+            "type": "inspection",
+            "yaw": 0
+          },
+          {
+            "pos": [
+              -955.16,
+              -70.24,
+              54
+            ],
+            "yaw": -90,
+            "notes": "A2 East Point",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              -1003.16,
+              -22.24,
+              54
+            ],
+            "yaw": 180,
+            "notes": "A2 North Point",
+            "type": "inspection"
+          },
+          {
+            "notes": "A2 West Point",
+            "type": "inspection",
+            "yaw": 90,
+            "pos": [
+              -1051.16,
+              -70.24,
+              54
+            ]
+          },
+          {
+            "notes": "Bypass B2 North Point",
+            "type": "transit",
+            "pos": [
+              -1290.03,
+              -31.77,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1338.03,
+              -79.77,
+              54
+            ],
+            "yaw": 90,
+            "notes": "B2 West Point",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              -1290.03,
+              -31.77,
+              54
+            ],
+            "yaw": 180,
+            "notes": "B2 North Point",
+            "type": "inspection"
+          },
+          {
+            "notes": "B2 East Point",
+            "type": "inspection",
+            "yaw": -90,
+            "pos": [
+              -1242.03,
+              -79.77,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1290.03,
+              -127.77,
+              54
+            ],
+            "notes": "B2 South Point",
+            "type": "inspection",
+            "yaw": 0
+          },
+          {
+            "notes": "Bypass B1 East Point",
+            "type": "transit",
+            "pos": [
+              -1244.76,
+              -327.47,
+              54
+            ]
+          },
+          {
+            "yaw": 0,
+            "notes": "B1 South Point",
+            "type": "inspection",
+            "pos": [
+              -1292.76,
+              -375.47,
+              54
+            ]
+          },
+          {
+            "notes": "B1 West Point",
+            "type": "inspection",
+            "yaw": 90,
+            "pos": [
+              -1340.76,
+              -327.47,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1292.76,
+              -279.47,
+              54
+            ],
+            "yaw": 180,
+            "notes": "B1 North Point",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              -1244.76,
+              -327.47,
+              54
+            ],
+            "yaw": -90,
+            "notes": "B1 East Point",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              6.66,
+              -40.48,
+              5
+            ],
+            "type": "landing"
+          }
+        ],
+        "name": "Route px4_2",
+        "id": 0,
+        "uav": "px4_2",
+        "attributes": {
+          "max_vel": 10,
+          "mode_gimbal": 1,
+          "mode_yaw": 3,
+          "idle_vel": 5,
+          "mode_trace": 1,
+          "mode_landing": 1
+        }
+      },
+      {
+        "attributes": {
+          "max_vel": 10,
+          "mode_gimbal": 1,
+          "mode_yaw": 3,
+          "mode_trace": 1,
+          "idle_vel": 5,
+          "mode_landing": 1
+        },
+        "uav": "px4_3",
+        "id": 1,
+        "name": "Route px4_3",
+        "wp": [
+          {
+            "type": "takeoff",
+            "pos": [
+              -6.66,
+              40.48,
+              5
+            ]
+          },
+          {
+            "yaw": -90,
+            "notes": "A3 East Point",
+            "type": "inspection",
+            "pos": [
+              -957.23,
+              128.32,
+              54
+            ]
+          },
+          {
+            "notes": "A3 South Point",
+            "type": "inspection",
+            "yaw": 0,
+            "pos": [
+              -1005.23,
+              80.32,
+              54
+            ]
+          },
+          {
+            "yaw": 90,
+            "notes": "A3 West Point",
+            "type": "inspection",
+            "pos": [
+              -1053.23,
+              128.32,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1005.23,
+              176.32,
+              54
+            ],
+            "notes": "A3 North Point",
+            "type": "inspection",
+            "yaw": 180
+          },
+          {
+            "notes": "A4 South Point",
+            "type": "inspection",
+            "yaw": 0,
+            "pos": [
+              -1004.65,
+              309.94,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -956.65,
+              357.94,
+              54
+            ],
+            "notes": "A4 East Point",
+            "type": "inspection",
+            "yaw": -90
+          },
+          {
+            "notes": "A4 North Point Luck Point",
+            "type": "inspection",
+            "yaw": 180,
+            "pos": [
+              -1004.65,
+              405.94,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1052.65,
+              357.94,
+              54
+            ],
+            "yaw": 90,
+            "notes": "A4 West Point",
+            "type": "inspection"
+          },
+          {
+            "notes": "Bypass B4 North Point",
+            "type": "transit",
+            "pos": [
+              -1291.4,
+              405.08,
+              54
+            ]
+          },
+          {
+            "notes": "B4 West Point",
+            "type": "inspection",
+            "yaw": 90,
+            "pos": [
+              -1339.4,
+              357.08,
+              54
+            ]
+          },
+          {
+            "notes": "B4 North Point",
+            "type": "inspection",
+            "yaw": 180,
+            "pos": [
+              -1291.4,
+              405.08,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1243.4,
+              357.08,
+              54
+            ],
+            "notes": "B4 East Point",
+            "type": "inspection",
+            "yaw": -90
+          },
+          {
+            "yaw": 0,
+            "notes": "B4 South Point",
+            "type": "inspection",
+            "pos": [
+              -1291.4,
+              309.08,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1337.4,
+              129.87,
+              54
+            ],
+            "notes": "Bypass B3 West Point",
+            "type": "transit"
+          },
+          {
+            "pos": [
+              -1289.4,
+              81.87,
+              54
+            ],
+            "notes": "B3 South Point",
+            "type": "inspection",
+            "yaw": 0
+          },
+          {
+            "pos": [
+              -1337.4,
+              129.87,
+              54
+            ],
+            "yaw": 90,
+            "notes": "B3 West Point",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              -1289.4,
+              177.87,
+              54
+            ],
+            "notes": "B3 North Point",
+            "type": "inspection",
+            "yaw": 180
+          },
+          {
+            "yaw": -90,
+            "notes": "B3 East Point",
+            "type": "inspection",
+            "pos": [
+              -1241.4,
+              129.87,
+              54
+            ]
+          },
+          {
+            "notes": "Bypass A3 South Point",
+            "type": "transit",
+            "pos": [
+              -1005.23,
+              80.32,
+              54
+            ]
+          },
+          {
+            "type": "landing",
+            "pos": [
+              -6.66,
+              40.48,
+              5
+            ]
+          }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  },
+  "chat_id": "chat_1772731979837_flpgeoz",
+  "description": "Multi-UAV wind farm inspection. px4_2 covers the southern half (A1, A2, B1, B2) and px4_3 covers the northern half (A3, A4, B3, B4). Circular inspection strategy with 4 points at R=48m, Z=54m. All collisions resolved with lateral bypasses. Final mission is collision-free.",
+  "status": "valid"
+}}
