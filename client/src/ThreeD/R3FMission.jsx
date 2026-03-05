@@ -22,7 +22,7 @@ const R3FMission = ({ routes = [] }) => {
         waypoint.push({
           x: wp[0],
           y: wp[2],
-          z: wp[1],
+          z: -wp[1],
           id: indexWp,
           routeid: indexRt,
         });
@@ -33,7 +33,7 @@ const R3FMission = ({ routes = [] }) => {
 
   function routesToLines(routes) {
     let routelineVector = routes.map((rt) => {
-      let mylineVector3 = rt.map((point) => [point[0], point[2], point[1]])
+      let mylineVector3 = rt.map((point) => [point[0], point[2], -point[1]])
       return mylineVector3;
     });
     return routelineVector;

@@ -48,7 +48,7 @@ const R3DMarkers = ({ elements }) => {
     });
     const posxyz = LatLon2XYZ(origin3d, pos);
     const elementxyz = listelemnts.map((element, index) => {
-      return { ...element, pos: [posxyz[index][0], posxyz[index][2], posxyz[index][1]] };
+      return { ...element, pos: [posxyz[index][0], posxyz[index][2], -posxyz[index][1]] };
     });
     const result = elementxyz.filter(
       (item) => item.pos[0] > -1000 && item.pos[0] < 1000 && item.pos[2] > -1000 && item.pos[2] < 1000

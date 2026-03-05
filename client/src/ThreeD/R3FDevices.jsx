@@ -58,7 +58,7 @@ const Device = ({ id, position }) => {
   useEffect(() => {
     const loc = position.find((item) => item.deviceId == id);
     if (loc) {
-      nextPosition.current.set(loc.pos[0], 10, loc.pos[1]);
+      nextPosition.current.set(loc.pos[0], 10, -loc.pos[1]);
     }
   }, [position]);
 
@@ -158,7 +158,7 @@ const R3FDevices = () => {
     if (positionxyz) {
       positionxyz.forEach((item) => {
         const pos = item.pos;
-        updateDronePosition(item.deviceId, [pos[0], 20, pos[1]], [0, 0, 0], 1);
+        updateDronePosition(item.deviceId, [pos[0], 20, -pos[1]], [0, 0, 0], 1);
       });
     }
   }, [positionxyz]);
