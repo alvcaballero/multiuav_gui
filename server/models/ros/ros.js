@@ -240,9 +240,9 @@ export class rosModel {
     try {
       const response = await rosModel.callRosService({ service, messageType: msgType, message: myRequest });
       if (response.success || response.result) {
-        return { state: 'success', msg: type + ' to' + name + ' ok' };
+        return { state: 'success', msg: type + ' to ' + name + ' ok' };
       } else {
-        return { state: 'error', msg: type + ' to:' + name + ' error' };
+        return { state: 'error', msg: type + ' to  ' + name + ' error' };
       }
     } catch (error) {
       console.error('Error calling service:', error);

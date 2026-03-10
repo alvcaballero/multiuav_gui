@@ -807,3 +807,412 @@ POST http://localhost:4000/api/chat/test_mcp_tool
 Content-Type: application/json
 
 < ./json/mcp_tool_complete_mission.json
+
+
+### test mcp tool return mission plan 
+POST http://localhost:4000/api/chat/return_mission_plan_xyz
+Content-Type: application/json
+
+{
+  "description": "Misión de inspección de parque eólico finalizada. 8 aerogeneradores, 2 drones asignados por líneas paralelas. Inspección circular (4 puntos por turbina) a media altura (54m). Misión validada sin colisiones tras optimización de trayectoria perimetral. Distancia total: 7277m.",
+  "chat_id": "chat_1772882285162_b5sx7g2",
+  "status": "valid",
+  "missionDataXYZ": {
+    "route": [
+      {
+        "attributes": {
+          "mode_yaw": 3,
+          "idle_vel": 5,
+          "mode_landing": 0,
+          "mode_trace": 0,
+          "mode_gimbal": 2,
+          "max_vel": 10
+        },
+        "uav_type": "px4_ros2",
+        "uav": "px4_1",
+        "id": 0,
+        "wp": [
+          {
+            "type": "takeoff",
+            "pos": [
+              5.99,
+              -41.46,
+              5
+            ]
+          },
+          {
+            "yaw": -90,
+            "pos": [
+              -956.34,
+              -277.73,
+              54
+            ],
+            "notes": "A1-E (Entrada)",
+            "type": "inspection"
+          },
+          {
+            "pos": [
+              -1004.34,
+              -325.73,
+              54
+            ],
+            "notes": "A1-S",
+            "type": "inspection",
+            "yaw": 0
+          },
+          {
+            "notes": "A1-W",
+            "type": "inspection",
+            "pos": [
+              -1052.34,
+              -277.73,
+              54
+            ],
+            "yaw": 90
+          },
+          {
+            "yaw": 180,
+            "notes": "A1-N (Salida)",
+            "type": "inspection",
+            "pos": [
+              -1004.34,
+              -229.73,
+              54
+            ]
+          },
+          {
+            "yaw": 0,
+            "notes": "A2-S (Entrada)",
+            "type": "inspection",
+            "pos": [
+              -1008.44,
+              -72.59,
+              54
+            ]
+          },
+          {
+            "yaw": -90,
+            "pos": [
+              -960.44,
+              -24.59,
+              54
+            ],
+            "notes": "A2-E",
+            "type": "inspection"
+          },
+          {
+            "yaw": 180,
+            "notes": "A2-N",
+            "type": "inspection",
+            "pos": [
+              -1008.44,
+              23.41,
+              54
+            ]
+          },
+          {
+            "notes": "A2-W (Salida)",
+            "type": "inspection",
+            "pos": [
+              -1056.44,
+              -24.59,
+              54
+            ],
+            "yaw": 90
+          },
+          {
+            "notes": "A3-S (Entrada)",
+            "type": "inspection",
+            "pos": [
+              -1010.5,
+              125.96,
+              54
+            ],
+            "yaw": 0
+          },
+          {
+            "pos": [
+              -962.5,
+              173.96,
+              54
+            ],
+            "notes": "A3-E",
+            "type": "inspection",
+            "yaw": -90
+          },
+          {
+            "yaw": 180,
+            "pos": [
+              -1010.5,
+              221.96,
+              54
+            ],
+            "notes": "A3-N",
+            "type": "inspection"
+          },
+          {
+            "yaw": 90,
+            "notes": "A3-W (Salida)",
+            "type": "inspection",
+            "pos": [
+              -1058.5,
+              173.96,
+              54
+            ]
+          },
+          {
+            "yaw": 0,
+            "notes": "A4-S (Entrada)",
+            "type": "inspection",
+            "pos": [
+              -1009.93,
+              355.58,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1057.93,
+              403.58,
+              54
+            ],
+            "notes": "A4-W",
+            "type": "inspection",
+            "yaw": 90
+          },
+          {
+            "yaw": 180,
+            "pos": [
+              -1009.93,
+              451.58,
+              54
+            ],
+            "notes": "A4-N",
+            "type": "inspection"
+          },
+          {
+            "yaw": -90,
+            "notes": "A4-E (Salida)",
+            "type": "inspection",
+            "pos": [
+              -961.93,
+              403.58,
+              54
+            ]
+          },
+          {
+            "type": "landing",
+            "pos": [
+              5.99,
+              -41.46,
+              5
+            ]
+          }
+        ],
+        "name": "Ruta Línea A (px4_1)"
+      },
+      {
+        "name": "Ruta Línea B (px4_2)",
+        "wp": [
+          {
+            "type": "takeoff",
+            "pos": [
+              -5.99,
+              41.46,
+              5
+            ]
+          },
+          {
+            "notes": "B1-E (Entrada)",
+            "type": "inspection",
+            "pos": [
+              -1250.04,
+              -281.82,
+              54
+            ],
+            "yaw": -90
+          },
+          {
+            "yaw": 0,
+            "notes": "B1-S",
+            "type": "inspection",
+            "pos": [
+              -1298.04,
+              -329.82,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1346.04,
+              -281.82,
+              54
+            ],
+            "notes": "B1-W",
+            "type": "inspection",
+            "yaw": 90
+          },
+          {
+            "yaw": 180,
+            "notes": "B1-N (Salida)",
+            "type": "inspection",
+            "pos": [
+              -1298.04,
+              -233.82,
+              54
+            ]
+          },
+          {
+            "yaw": 0,
+            "pos": [
+              -1295.31,
+              -82.12,
+              54
+            ],
+            "notes": "B2-S (Entrada)",
+            "type": "inspection"
+          },
+          {
+            "yaw": -90,
+            "pos": [
+              -1247.31,
+              -34.12,
+              54
+            ],
+            "notes": "B2-E",
+            "type": "inspection"
+          },
+          {
+            "yaw": 180,
+            "notes": "B2-N",
+            "type": "inspection",
+            "pos": [
+              -1295.31,
+              13.88,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -1343.31,
+              -34.12,
+              54
+            ],
+            "notes": "B2-W (Salida)",
+            "type": "inspection",
+            "yaw": 90
+          },
+          {
+            "pos": [
+              -1294.67,
+              127.52,
+              54
+            ],
+            "notes": "B3-S (Entrada)",
+            "type": "inspection",
+            "yaw": 0
+          },
+          {
+            "pos": [
+              -1246.67,
+              175.52,
+              54
+            ],
+            "notes": "B3-E",
+            "type": "inspection",
+            "yaw": -90
+          },
+          {
+            "notes": "B3-N",
+            "type": "inspection",
+            "pos": [
+              -1294.67,
+              223.52,
+              54
+            ],
+            "yaw": 180
+          },
+          {
+            "notes": "B3-W (Salida)",
+            "type": "inspection",
+            "pos": [
+              -1342.67,
+              175.52,
+              54
+            ],
+            "yaw": 90
+          },
+          {
+            "yaw": 0,
+            "pos": [
+              -1296.67,
+              354.73,
+              54
+            ],
+            "notes": "B4-S (Entrada)",
+            "type": "inspection"
+          },
+          {
+            "notes": "B4-W",
+            "type": "inspection",
+            "pos": [
+              -1344.67,
+              402.73,
+              54
+            ],
+            "yaw": 90
+          },
+          {
+            "yaw": 180,
+            "pos": [
+              -1296.67,
+              450.73,
+              54
+            ],
+            "notes": "B4-N",
+            "type": "inspection"
+          },
+          {
+            "yaw": -90,
+            "notes": "B4-E (Salida)",
+            "type": "inspection",
+            "pos": [
+              -1248.67,
+              402.73,
+              54
+            ]
+          },
+          {
+            "pos": [
+              -5.99,
+              41.46,
+              5
+            ],
+            "type": "landing"
+          }
+        ],
+        "id": 1,
+        "uav": "px4_2",
+        "uav_type": "px4_ros2",
+        "attributes": {
+          "max_vel": 10,
+          "mode_gimbal": 2,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_trace": 0,
+          "mode_landing": 0
+        }
+      }
+    ],
+    "description": "Inspección de parque eólico con px4_1 (Línea A) y px4_2 (Línea B). Trayectoria de arco perimetral para evitar colisiones.",
+    "name": "Inspección Eólica Validada V2",
+    "global_origin": {
+      "lng": -8.84775720944032,
+      "lat": 41.6872618681162,
+      "alt": 0
+    }
+  }
+}
+
+
+

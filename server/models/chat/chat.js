@@ -8,7 +8,7 @@ import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
 import { convertMissionBriefingToXYZ, convertMissionXYZToLatLong } from './coordinateConverter.js';
 import { missionController } from '../../controllers/mission.js';
-import { Json } from 'sequelize/lib/utils';
+import { missionModel } from '../mission.js';
 
 let mcpClient = null;
 let llmHandler = null;
@@ -398,6 +398,8 @@ export class MessageOrchestrator {
     }
 
     // Continue conversation with tool outputs
+    // When skipPersist=true the tool result is already in DB history — don't pass it as
+    // toolOutputs or Gemini will receive it twice (once from history, once as functionResponse).
     const result = await llmHandler.processMessage(
       null, // No new user message
       tools,
@@ -405,7 +407,7 @@ export class MessageOrchestrator {
       {
         sessionId,
         instructions: systemInstructions,
-        toolOutputs: toolResults, // Pass tool outputs to be sent in input
+        toolOutputs: skipPersist ? null : toolResults,
         forceFinish, // Signal to add final response message
         agentProfile,
       }
@@ -758,7 +760,7 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
     // ── 0. Verify the main chat exists ───────────────────────────────────────
     const chatExists = await ChatHistoryManager.chatExists(chat_id);
     if (!chatExists) {
-      const err = new Error(`Chat not found: ${chat_id}`);
+      const err = new Error(`Chat not found: ${chat_id}, please verify the chat_id is correct.`);
       err.statusCode = 404;
       throw err;
     }
@@ -775,11 +777,27 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
       throw err;
     }
 
+    // ── 1b. Persist mission to MissionPlan table ─────────────────────────────
+    // Se guarda la misión geodética en DB antes de inyectarla al chat,
+    // para que el ID exista si se necesita referenciar desde otros sistemas.
+    let missionPlanId = null;
+    try {
+      const saved = await missionModel.createMissionPlan(missionGeodetic);
+      missionPlanId = saved.id;
+      chatLogger.info(`[returnMissionPlanXYZ] Mission persisted as MissionPlan ID: ${missionPlanId}`);
+    } catch (err) {
+      // No bloqueante: el chat sigue funcionando aunque falle el guardado en DB.
+      chatLogger.error('[returnMissionPlanXYZ] Failed to persist MissionPlan:', err);
+    }
+
     // ── 2. Build the new output string ───────────────────────────────────────
     // Preserve the exact output format the MCP handlers produce:
     // a JSON string wrapping content[].text, same as other tool responses.
+    // const newOutput = JSON.stringify({
+    //   content: [{ type: 'text', text: JSON.stringify({ status, description, missionPlanId, mission: missionGeodetic }) }],
+    // });
     const newOutput = JSON.stringify({
-      content: [{ type: 'text', text: JSON.stringify({ status, description, mission: missionGeodetic }) }],
+      content: [{ type: 'text', text: JSON.stringify({ status, description ,missionPlanId }) }],
     });
     const newContent = `Mission plan result [${status}]: ${description}`;
 
@@ -787,6 +805,9 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
     // Original message is marked hidden=true (UI sees it, LLM won't).
     // New message clones original messageData and only replaces `output`,
     // so call_id, type, name and all LLM-set fields are preserved.
+    // Se hace hide+replace en lugar de insertar un mensaje nuevo porque el LLM
+    // necesita que el tool_result conserve el mismo call_id del function_call original.
+    // Si se insertara un mensaje nuevo sin ese call_id, el provider lo rechazaría.
     const hidden = await ChatHistoryManager.hideAndReplaceToolResult(
       chat_id,
       'request_mission_plan',
@@ -795,6 +816,9 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
     );
 
     if (!hidden) {
+      // Edge case: el planner llamó complete_mission sin que hubiera un
+      // request_mission_plan previo en el historial (flujo fuera de orden).
+      // Se inyecta el resultado como mensaje standalone para no perder los datos.
       chatLogger.warn(
         `[returnMissionPlanXYZ] No request_mission_plan tool_result found in chat ${chat_id} — injecting as new message`
       );
@@ -817,12 +841,16 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
     chatLogger.info(`[returnMissionPlanXYZ] Continuing main chat with real mission data: ${chat_id}`);
 
     const sessionId = await ChatHistoryManager.getSessionId(chat_id);
+    chatLogger.info(`[returnMissionPlanXYZ] Loaded sessionId: ${sessionId} for chat: ${chat_id}`);
     const agentProfile = await ChatHistoryManager.getAgentProfile(chat_id);
-    const allowedTools = await ChatHistoryManager.getAllowedTools(chat_id);
-
+    chatLogger.info(`[returnMissionPlanXYZ] Agent Profile: ${agentProfile}`);
+    let allowedTools = await ChatHistoryManager.getAllowedTools(chat_id);
+    if (allowedTools === undefined) {
+      allowedTools = AGENT_DEFAULT_TOOLS['default'];
+    }
+    chatLogger.info(`[returnMissionPlanXYZ] Allowed Tools: ${allowedTools.join(', ')}`);
     const history = await ChatHistoryManager.loadHistory(chat_id);
-    const systemMsg = history.find((item) => (item.message || item).role === 'system');
-    const systemInstructions = systemMsg ? (systemMsg.message || systemMsg).content : null;
+    const systemInstructions = SystemPrompts.main;
 
     // Get the real messageData that was just inserted (last visible tool_result for this tool)
     const realToolResult = history.findLast(
@@ -834,14 +862,32 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
       output: newOutput,
     };
 
+    // ── 5b. Emit the re-inserted function_call + new tool_result via WebSocket ─
+    // hideAndReplaceToolResult escribe directo a DB sin pasar por addMessage(),
+    // por lo que el WebSocket nunca emite esos mensajes. Se emiten manualmente aquí.
+    const callId = realToolResult?.message?.call_id;
+    if (callId) {
+      const pairedFunctionCall = history.findLast(
+        (item) =>
+          (item.message?.type === 'function_call' || item.message?.type === 'tool_call') &&
+          (item.message?.call_id === callId || item.message?.id === callId)
+      );
+      if (pairedFunctionCall) {
+        this._emitAssistantMessage(pairedFunctionCall);
+      }
+    }
+    if (realToolResult) {
+      this._emitAssistantMessage(realToolResult);
+    }
+
     this.continueAfterTools(
       [toolResultForLLM],
       chat_id,
-      sessionId,
+        sessionId,
       systemInstructions,
       allowedTools,
       false,
-      agentProfile,
+        agentProfile,
       true // skipPersist: new row already inserted at step 3
     ).then(({ output }) => {
       // Check if the LLM response contains tool calls that need execution

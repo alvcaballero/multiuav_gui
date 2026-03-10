@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './prompts/index.js';
 import logger, { chatLogger } from '../../common/logger.js';
-import { ar } from 'zod/v4/locales';
+import { tr } from 'zod/v4/locales';
 
 // Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, gemini-3.1-pro-preview
 class GeminiHandler extends BaseLLMHandler {
@@ -82,7 +82,13 @@ class GeminiHandler extends BaseLLMHandler {
         let response = {};
         let args = {};
         try {
-          response = typeof item.output === 'string' ? JSON.parse(item.output) : (item.output || {});
+          let output = typeof item.output === 'string' ? JSON.parse(item.output) : (item.output || {});
+          try {
+          response = typeof output.content[0].text  === 'string' ? JSON.parse(output.content[0].text) : output.content[0].text;
+          } catch (e) { 
+            response = { text: output.content[0].text || output.content[0] || output };
+          }
+
           if (item.call_id) {
             args.call_id = item.call_id; // Preserve call_id for matching responses to tool calls
           }
@@ -91,6 +97,7 @@ class GeminiHandler extends BaseLLMHandler {
           role: 'user',
           parts: [{ functionResponse: { name: item.name, response } }],
         });
+        // console.log('Parsed function call output response:', response); 
         continue;
       }
 
@@ -99,7 +106,11 @@ class GeminiHandler extends BaseLLMHandler {
       const geminiRole = role === 'assistant' ? 'model' : 'user';
 
       if (typeof content === 'string') {
-        contents.push({ role: geminiRole, parts: [{ text: content }] });
+        const part = { text: content };
+        if (item.thoughtSignature) {
+          part.thoughtSignature = item.thoughtSignature;
+        }
+        contents.push({ role: geminiRole, parts: [part] });
       }
     }
 
@@ -145,11 +156,11 @@ class GeminiHandler extends BaseLLMHandler {
       // Treat it as a recoverable error and return a text fallback so the orchestrator doesn't hang.
       if (candidate.finishReason === 'MALFORMED_FUNCTION_CALL') {
         chatLogger.warn(`⚠ Gemini returned MALFORMED_FUNCTION_CALL — injecting fallback text response`);
-        // output.push({
-        //   type: 'text',
-        //   content: 'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
-        //   role: 'assistant',
-        // });
+        output.push({
+          type: 'text',
+          content: 'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
+          role: 'assistant',
+        });
         continue;
       }
 
@@ -214,7 +225,7 @@ class GeminiHandler extends BaseLLMHandler {
     const modelId = profile.model || this.model;
 
     // Build config
-    const config = {temperature: 0.3}; // Adjust temperature as needed
+    const config = {temperature: 1}; // Adjust temperature as needed
 
 
     // System instruction
@@ -245,14 +256,14 @@ class GeminiHandler extends BaseLLMHandler {
 
       // Convert tool outputs to Gemini FunctionResponse format
       const functionResponses = toolOutputs.map((output) => {
-        let parsedResponse = output.output;
-        if (typeof parsedResponse === 'string') {
-          try {
-            parsedResponse = JSON.parse(parsedResponse);
+        let rawResponse = output.output;
+        let parsedResponse = {};     
+        let jsonresponse = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
+        try {
+          parsedResponse = typeof jsonresponse.content[0].text === 'string' ? JSON.parse(jsonresponse.content[0].text) : jsonresponse.content[0].text;
           } catch {
-            parsedResponse = { raw: parsedResponse };
+            parsedResponse = { text: jsonresponse.content[0].text || jsonresponse.content[0] || parsedResponse };
           }
-        }
         return {
           functionResponse: {
             name: output.name,
@@ -284,7 +295,7 @@ class GeminiHandler extends BaseLLMHandler {
     }
     chatLogger.info(`✓ Message for Gemini`);
     for (const msg of contents) {
-      const summary = JSON.stringify(msg.parts || msg.content || '').replace(/\r?\n|\r/g, ' ').substring(0, 100);
+      const summary = JSON.stringify(msg.parts || msg.content || '').replace(/\r?\n|\r/g, ' ').substring(0, 120);
       chatLogger.info(`- role: ${msg.role}, parts: ${summary}...`);
     }
 

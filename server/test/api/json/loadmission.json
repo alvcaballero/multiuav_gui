@@ -1,9 +1,9 @@
 {
-    "deviceId": -1, 
+    "deviceId": 3, 
     "type": "loadMission",
     "attributes":  [
     {
-      "uav": "uav_2",
+      "uav": "px4_2",
       "wp": [
         {
           "pos": [
@@ -59,7 +59,7 @@
       }
     },
     {
-      "uav": "uav_1",
+      "uav": "px4_1",
       "wp": [
         {
           "pos": [

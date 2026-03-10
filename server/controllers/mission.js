@@ -94,6 +94,24 @@ class missionController {
     return true;
   };
 
+  static getMissionPlans = async (req, res) => {
+    const response = await missionModel.getAllMissionPlans();
+    res.json(response);
+  };
+
+  static getMissionPlanById = async (req, res) => {
+    const response = await missionModel.getMissionPlan(req.params.id);
+    if (!response) return res.status(404).json({ error: 'MissionPlan not found' });
+    res.json(response);
+  };
+
+  static showMissionPlan = async (req, res) => {
+    const plan = await missionModel.getMissionPlan(req.params.id);
+    if (!plan) return res.status(404).json({ error: 'MissionPlan not found' });
+    await missionModel.setMission(plan.missionData);
+    res.json({ ok: true });
+  };
+
   /**
    * Validate mission for collisions without modifying it
    * POST /missions/validate

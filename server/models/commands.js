@@ -6,6 +6,7 @@ import { categoryController } from '../controllers/category.js';
 import { sendCommandToClient } from '../WebsocketDevices.js';
 import { positionsController } from '../controllers/positions.js';
 import { set } from 'zod';
+import { de } from 'zod/v4/locales';
 
 async function decodeMissionMsg({ uav_id, route }) {
   let device = await devicesController.getDevice(uav_id);
@@ -124,7 +125,7 @@ export class commandsModel {
     if (deviceId >= 0) {
       response = {
         state: 'error',
-        msg: 'Command to:' + devicesController.getDevice(deviceId).name + ' no exist',
+        msg: 'Command to:' + devicesController.getDevice(deviceId)?.name + ' no exist',
       };
     }
 
@@ -248,18 +249,21 @@ export class commandsModel {
     for (const route of routes) {
       console.log('load route ' + route.uav);
       let myDevice = await devicesController.getByName(route.uav);
-      console.log(myDevice);
+      console.log(`Device found in route : ${myDevice.id }-${myDevice.name} id search ${deviceId}`);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
         console.log('load mission to ' + myDevice.id);
         let attributes = await decodeMissionMsg({ uav_id: myDevice.id, route });
         if (attributes) {
           response = await this.standarCommand(myDevice.id, 'configureMission', attributes);
           callback(response);
+          if (deviceId >=0){
+            break;
+          }
         } else {
           response = { state: 'warning', msg: 'UAV no asing mission' };
         }
       } else {
-        response = { state: 'warning', msg: `device ${route.uav} not found` };
+        response = { state: 'warning', msg: `device ${route.uav} not found in mission route` };
       }
       if (deviceId < 0) {
         eventsController.addEvent({

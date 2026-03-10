@@ -442,7 +442,7 @@
       }
     ]
   },
-  "chat_id": "chat_1772731979837_flpgeoz",
+  "chat_id": "chat_1772808260088_9pg1foy",
   "description": "Multi-UAV wind farm inspection. px4_2 covers the southern half (A1, A2, B1, B2) and px4_3 covers the northern half (A3, A4, B3, B4). Circular inspection strategy with 4 points at R=48m, Z=54m. All collisions resolved with lateral bypasses. Final mission is collision-free.",
   "status": "valid"
 }}

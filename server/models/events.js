@@ -1,6 +1,7 @@
 import { positionsController } from '../controllers/positions.js';
 import sequelize from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
+import { de } from 'zod/v4/locales';
 
 /**
  * @typedef Event
@@ -30,10 +31,18 @@ export class eventsModel {
     console.log('missionId:', missionId);
     console.log('positionId:', positionId);
     console.log('attributes:', attributes);
+    let device_id = deviceId || null;
+    if (deviceId) {
+      const deviceExists = await sequelize.models.Device.findByPk(deviceId);
+      if (!deviceExists) {
+        console.warn(`addEvent: deviceId ${deviceId} not found in DB, skipping event insert`);
+        device_id = null;
+      }
+    }
 
     let eventPosition2 = [0, 0, 0];
-    if (deviceId) {
-      let eventPosition = positionsController.getByDeviceId(deviceId);
+    if (device_id) {
+      let eventPosition = positionsController.getByDeviceId(device_id);
       if (eventPosition) {
         eventPosition2 = [eventPosition.latitude, eventPosition.longitude, eventPosition.altitude];
       }
@@ -41,7 +50,7 @@ export class eventsModel {
     let myEvent = await sequelize.models.Event.create({
       type: type,
       eventTime: eventTime || undefined,
-      deviceId: deviceId || null,
+      deviceId: device_id,
       positionId: eventPosition2,
       missionId: missionId || null,
       attributes: attributes,

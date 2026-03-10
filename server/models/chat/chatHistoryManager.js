@@ -1,4 +1,5 @@
 import sequelize from '../../common/sequelize.js';
+import { Op } from 'sequelize';
 import { chatLogger } from '../../common/logger.js';
 import { Json } from 'sequelize/lib/utils';
 
@@ -530,6 +531,17 @@ export class ChatHistoryManager {
       chatLogger.warn(`[hideAndReplaceToolResult] No tool_result found for tool "${toolName}" in chat ${chatId}`);
       return false;
     }
+
+    // hidden all messages after the original tool_result to prevent the LLM confused
+      await sequelize.models.ChatMessage.update({ hidden: true }, {
+        where: {
+          chatId,
+          timestamp: {
+            [Op.gt]: originalToolResult.timestamp,
+          },
+        },
+      });
+      chatLogger.info(`[hideAndReplaceToolResult] Hidden ${candidates.length - 1} messages after original tool_result for "${toolName}" in chat ${chatId}`);
 
     // Extract call_id from the placeholder tool_result to find its paired function_call
     const originalData = typeof originalToolResult.messageData === 'object'

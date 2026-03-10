@@ -478,6 +478,18 @@ export class missionModel {
     }
   }
 
+  static async createMissionPlan(missionData) {
+    return await sequelize.models.MissionPlan.create({ missionData });
+  }
+
+  static async getMissionPlan(id) {
+    return await sequelize.models.MissionPlan.findOne({ where: { id } });
+  }
+
+  static async getAllMissionPlans() {
+    return await sequelize.models.MissionPlan.findAll({ order: [['createdAt', 'DESC']] });
+  }
+
   static async showMissionXYZ(missionDataXYZ) {
     logger.info(`[MissionShowXYZ] Starting mission show in XYZ coordinates`);
     let missionxyz = { ...missionDataXYZ , version: '3'};

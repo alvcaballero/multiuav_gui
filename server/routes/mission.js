@@ -10,6 +10,10 @@ export const createMissionRouter = () => {
   missionRouter.post('/sendTask', missionController.sendTask);
   missionRouter.post('/showXYZ', missionController.showMissionXYZ);
 
+  // Mission plan persistence endpoints
+  missionRouter.get('/plans', missionController.getMissionPlans);         // GET /missions/plans
+  missionRouter.get('/plans/:id', missionController.getMissionPlanById);  // GET /missions/plans/:id
+  missionRouter.get('/plans/show/:id', missionController.showMissionPlan);        // POST /missions/plans
   // Collision detection endpoints
   missionRouter.post('/validate', missionController.validateCollisions); // Validate mission for collisions
   missionRouter.post('/resolve', missionController.resolveCollisions); // Validate and auto-resolve collisions

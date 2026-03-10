@@ -34,7 +34,7 @@ export class serverModel {
       overlayUrl: null,
       latitude: 41.68734389317842, //37.19374
       longitude: -8.84768639812097, //-6.702911,
-      zoom: 12,
+      zoom: 15,
       twelveHourFormat: false,
       forceSettings: false,
       coordinateFormat: '',
