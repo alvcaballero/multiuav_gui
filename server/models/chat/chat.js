@@ -7,7 +7,6 @@ import { SystemPrompts } from './prompts/index.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
 import { convertMissionBriefingToXYZ, convertMissionXYZToLatLong } from './coordinateConverter.js';
-import { missionController } from '../../controllers/mission.js';
 import { missionModel } from '../mission.js';
 
 let mcpClient = null;
