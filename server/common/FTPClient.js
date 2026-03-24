@@ -49,13 +49,13 @@ function filterList(fileList, pattern = /.*/) {
 
 export class FTPClient {
   constructor() {
-    logger.debug(‘FTPClient initialized’);
+    logger.debug('FTPClient initialized');
     this.client = new ftp.Client();
   }
   /**
    * Close the client and all open socket connections.
    * @option {host, port, user, password}
-   * Close the client and all open socket connections. The client can’t be used anymore after calling this method,
+   * Close the client and all open socket connections. The client can't be used anymore after calling this method,
    * you have to either reconnect with `access` or `connect` or instantiate a new instance to continue any work.
    * A client is also closed automatically if any timeout or connection error occurs.
    */

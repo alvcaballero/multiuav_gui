@@ -1,4 +1,4 @@
-import { StreamServer, DEVICE_DEVICE_CHECK_INTERVAL_MS_MS, DEVICE_DEVICE_UPDATE_INTERVAL_MS_MS, DEVICE_TIMEOUT_MS } from '../config/config.js';
+import { StreamServer, DEVICE_CHECK_INTERVAL_MS, DEVICE_UPDATE_INTERVAL_MS, DEVICE_TIMEOUT_MS } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
