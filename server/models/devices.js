@@ -1,4 +1,4 @@
-import { StreamServer } from '../config/config.js';
+import { StreamServer, DEVICE_DEVICE_CHECK_INTERVAL_MS_MS, DEVICE_DEVICE_UPDATE_INTERVAL_MS_MS, DEVICE_TIMEOUT_MS } from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
@@ -21,9 +21,6 @@ import logger from '../common/logger.js';
 /   status:
 */
 
-const CHECK_INTERVAL = 5000;
-const UPDATE_INTERVAL = 2000;
-const DEVICE_TIMEOUT_MS = 30000; // 30 seconds - timeout for marking devices as offline
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
@@ -67,10 +64,10 @@ const updateDeviceTime = async () => {
   } catch (error) {
     logger.error('Error en updateDeviceTime:', error);
   } finally {
-    setTimeout(updateDeviceTime, UPDATE_INTERVAL);
+    setTimeout(updateDeviceTime, DEVICE_UPDATE_INTERVAL_MS);
   }
 };
-setTimeout(updateDeviceTime, UPDATE_INTERVAL);
+setTimeout(updateDeviceTime, DEVICE_UPDATE_INTERVAL_MS);
 
 //put device status to offline if not updated in 30 seconds
 const CheckDeviceOnline = async () => {
@@ -82,9 +79,9 @@ const CheckDeviceOnline = async () => {
     }
   );
 
-  setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
+  setTimeout(CheckDeviceOnline, DEVICE_CHECK_INTERVAL_MS);
 };
-setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
+setTimeout(CheckDeviceOnline, DEVICE_CHECK_INTERVAL_MS);
 
 export class DevicesModel {
   constructor() {

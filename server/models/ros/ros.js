@@ -9,7 +9,7 @@ import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
 import { categoryController } from '../../controllers/category.js';
 import logger, { logHelpers } from '../../common/logger.js';
 import { ROS2GoalActionClient } from './rosActionClient.js';
-import { error } from 'console';
+import { ROS_RECONNECT_INTERVAL_MS } from '../../config/config.js';
 
 var ros = null;
 const rosState = { state: 'disconnect', msg: 'init msg' };
@@ -32,7 +32,7 @@ function connectRos() {
 function autoConectRos() {
   if (noTimerflag) {
     noTimerflag = false;
-    autoconectRos = setInterval(connectRos, 30000);
+    autoconectRos = setInterval(connectRos, ROS_RECONNECT_INTERVAL_MS);
   }
 }
 

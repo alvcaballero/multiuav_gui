@@ -3,6 +3,7 @@
 
 import WebSocket, { WebSocketServer } from 'ws';
 import { logHelpers } from './common/logger.js';
+import { WS_PING_INTERVAL_MS } from './config/config.js';
 
 function heartbeat() {
   this.isAlive = true;
@@ -40,7 +41,7 @@ export class WebsocketManager {
       });
     });
 
-    this.interval_ping = setInterval(this.ping.bind(this), 30000);
+    this.interval_ping = setInterval(this.ping.bind(this), WS_PING_INTERVAL_MS);
 
     this.ws.on('close', () => {
       this._clearIntervals();

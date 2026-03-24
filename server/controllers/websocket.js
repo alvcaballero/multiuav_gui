@@ -3,6 +3,7 @@ import { rosController } from './ros.js';
 import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
 import logger from '../common/logger.js';
+import { WS_POSITIONS_INTERVAL_MS, WS_STATE_INTERVAL_MS } from '../config/config.js';
 
 let wsController = null;
 
@@ -10,8 +11,8 @@ export class websocketController {
   constructor(wsManager) {
     this.wsManager = wsManager;
 
-    this.interval_update = setInterval(this.updateclient.bind(this), 2000);
-    this.interval_server = setInterval(this.updateserver.bind(this), 10000);
+    this.interval_update = setInterval(this.updateclient.bind(this), WS_POSITIONS_INTERVAL_MS);
+    this.interval_server = setInterval(this.updateserver.bind(this), WS_STATE_INTERVAL_MS);
     // wellcome msg
     this.setupWelcomeMessage();
   }
