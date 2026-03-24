@@ -15,6 +15,7 @@
 // Compatible with Node.js >= v12
 // this is a emulation of format of the SFTPClient class
 import * as ftp from 'basic-ftp';
+import logger from './logger.js';
 
 function filterList(fileList, pattern = /.*/) {
   let newList = [];
@@ -48,7 +49,7 @@ function filterList(fileList, pattern = /.*/) {
 
 export class FTPClient {
   constructor() {
-    console.log('FTPClient constructor');
+    logger.debug(‘FTPClient initialized’);
     this.client = new ftp.Client();
   }
   /**
@@ -60,13 +61,13 @@ export class FTPClient {
    */
 
   async connect(options) {
-    console.log(`Connecting to ${options.host}:${options.port}`);
+    logger.info(`Connecting to FTP server ${options.host}:${options.port}`);
     this.client.ftp.verbose = false;
     options.user = options.username;
     try {
       await this.client.access(options);
     } catch (err) {
-      console.log('Failed to connect:', err);
+      logger.error(`Failed to connect to FTP server: ${err.message}`);
       return false;
     }
     return true;
@@ -86,19 +87,19 @@ export class FTPClient {
    * typefile = '-' =>, 'd' => directory, 'l'
    */
   async listFiles(remoteDir, fileGlob, typefile = 'all', order = false) {
-    console.log(`Listing ${remoteDir} ...`);
+    logger.debug(`Listing directory: ${remoteDir}`);
     let fileObjects = [];
     let list = [];
     try {
       list = await this.client.list(remoteDir);
       fileObjects = filterList(list, fileGlob);
     } catch (err) {
-      console.log('Listing failed:', err);
+      logger.error(`Failed to list directory: ${err.message}`);
       return [];
     }
 
     if (order) {
-      console.log('into in order');
+      logger.debug('Sorting files by modification time');
       fileObjects = fileObjects.sort(function (a, b) {
         return b.modifyTime - a.modifyTime;
       });
@@ -108,11 +109,11 @@ export class FTPClient {
 
     for (const file of fileObjects) {
       if (file.type === 'd') {
-        console.log(`${file.modifyTime} PRE ${file.name}`);
+        logger.debug(`[DIR] ${file.modifyTime} ${file.name}`);
       } else if (file.type === '-') {
-        console.log(`${file.modifyTime} - ${file.size} ${file.name}`);
+        logger.debug(`[FILE] ${file.modifyTime} ${file.size} bytes ${file.name}`);
       } else {
-        console.log(`${file.modifyTime} l ${file.size} ${file.name}`);
+        logger.debug(`[LINK] ${file.modifyTime} ${file.size} bytes ${file.name}`);
       }
       if (file.type === typefile || typefile === 'all') {
         fileNames.push(file.name);
@@ -122,33 +123,35 @@ export class FTPClient {
   }
 
   async uploadFile(localFile, remoteFile) {
-    console.log(`Uploading ${localFile} to ${remoteFile} ...`);
+    logger.info(`Uploading ${localFile} to ${remoteFile}`);
     try {
       let data = await this.client.uploadFrom(localFile, remoteFile);
+      logger.info(`File uploaded successfully: ${remoteFile}`);
       return { status: true, data: data };
     } catch (err) {
-      console.error('Uploading failed:', err);
+      logger.error(`Upload failed: ${err.message}`);
       return { status: false, data: 'Uploading failed' };
     }
   }
 
   async downloadFile(remoteFile, localFile) {
-    console.log(`Downloading ${remoteFile} to ${localFile} ...`);
+    logger.info(`Downloading ${remoteFile} to ${localFile}`);
     try {
       let data = await this.client.downloadTo(localFile, remoteFile);
+      logger.info(`File downloaded successfully: ${localFile}`);
       return { status: true, data: data };
     } catch (err) {
-      console.error('Downloading failed:', err);
+      logger.error(`Download failed: ${err.message}`);
       return { status: false, data: 'download failed' };
     }
   }
 
   async deleteFile(remoteFile) {
-    console.log(`Deleting ${remoteFile}`);
+    logger.info(`Deleting ${remoteFile}`);
     try {
       await this.client.remove(remoteFile);
     } catch (err) {
-      console.error('Deleting failed:', err);
+      logger.error(`Delete failed: ${err.message}`);
     }
   }
 }

@@ -1,6 +1,7 @@
 import { machine } from './deviceSM.js';
 import { createActor } from 'xstate';
 import { missionController } from '../controllers/mission.js';
+import logger from '../common/logger.js';
 
 const listSM = {}; // lista de acots maquinas de estados por id de UAV
 
@@ -8,8 +9,7 @@ export class missionSMModel {
   static createActorMission(uavId = 0, missionId = 0, routeId = 1) {
     listSM[uavId] = createActor(machine).start();
     listSM[uavId].subscribe((state) => {
-      console.log('state machine' + state.value);
-      console.log('Value:', state.context);
+      logger.debug(`State machine uav=${uavId} state=${state.value} context=${JSON.stringify(state.context)}`);
       MissionController.updateMission({
         device: state.context.uavId,
         mission: state.context.missionId,
@@ -24,7 +24,7 @@ export class missionSMModel {
     if (listSM.hasOwnProperty(id)) {
       return listSM[id].states;
     } else {
-      console.log('no exist estate machine for this UAV = ' + id);
+      logger.warn(`No state machine for UAV id=${id}`);
     }
     return null;
   }
@@ -33,21 +33,21 @@ export class missionSMModel {
     if (listSM.hasOwnProperty(id)) {
       listSM[id].send({ type: 'loadMission' });
     } else {
-      console.log('no exist estate machine for this UAV = ' + id);
+      logger.warn(`No state machine for UAV id=${id}`);
     }
   }
   static command_mission(id) {
     if (listSM.hasOwnProperty(id)) {
       listSM[id].send({ type: 'commandMission' });
     } else {
-      console.log('no exist estate machine for this UAV = ' + id);
+      logger.warn(`No state machine for UAV id=${id}`);
     }
   }
   static UAVFinishMission(id) {
     if (listSM.hasOwnProperty(id)) {
       listSM[id].send({ type: 'downloadFilesUAV' });
     } else {
-      console.log('no exist estate machine for this UAV = ' + id);
+      logger.warn(`No state machine for UAV id=${id}`);
     }
     return true;
   }
@@ -55,7 +55,7 @@ export class missionSMModel {
     if (listSM.hasOwnProperty(id)) {
       listSM[id].send({ type: 'downloadFilesGCS' });
     } else {
-      console.log('no exist estate machine for this UAV = ' + id);
+      logger.warn(`No state machine for UAV id=${id}`);
     }
     return true;
   }
@@ -63,16 +63,16 @@ export class missionSMModel {
     if (listSM.hasOwnProperty(id)) {
       listSM[id].send({ type: 'FinishMission' });
     } else {
-      console.log('no exist estate machine for this UAV = ' + id);
+      logger.warn(`No state machine for UAV id=${id}`);
     }
   }
   static DeleteActor(id) {
     if (listSM.hasOwnProperty(id)) {
       listSM[id].stop();
       delete listSM[id];
-      console.log('delete State machine ');
+      logger.info(`State machine deleted for UAV id=${id}`);
     } else {
-      console.log('no exist estate machine for this UAV = ' + id);
+      logger.warn(`No state machine for UAV id=${id}`);
     }
   }
 }

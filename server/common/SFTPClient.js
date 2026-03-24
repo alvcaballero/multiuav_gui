@@ -15,19 +15,20 @@
 // Using ssh2-sftp-client v8.0.0
 
 import sftp from 'ssh2-sftp-client';
+import logger from './logger.js';
 
 export class SFTPClient {
   constructor() {
-    console.log('SFTPClient constructor');
+    logger.debug('SFTPClient initialized');
     this.client = new sftp();
   }
 
   async connect(options) {
-    console.log(`Connecting to ${options.host}:${options.port}`);
+    logger.info(`Connecting to SFTP server ${options.host}:${options.port}`);
     try {
       await this.client.connect(options);
     } catch (err) {
-      console.log('Failed to connect: device  ===== !!!'); //, err);
+      logger.error(`Failed to connect to SFTP server: ${err.message}`);
       return false;
     }
     return true;
@@ -47,16 +48,16 @@ export class SFTPClient {
    * typefile = '-' =>, 'd' => directory, 'l'
    */
   async listFiles(remoteDir, fileGlob, typefile = 'all', order = false) {
-    console.log(`Listing ${remoteDir} ...`);
+    logger.debug(`Listing directory: ${remoteDir}`);
     let fileObjects;
     try {
       fileObjects = await this.client.list(remoteDir, fileGlob);
     } catch (err) {
-      console.log('Listing failed:', err);
+      logger.error(`Failed to list directory: ${err.message}`);
     }
 
     if (order) {
-      console.log('into in order');
+      logger.debug('Sorting files by modification time');
       fileObjects = fileObjects.sort(function (a, b) {
         return b.modifyTime - a.modifyTime;
       });
@@ -65,12 +66,13 @@ export class SFTPClient {
     let fileNames = [];
 
     for (const file of fileObjects) {
+      const timestamp = new Date(file.modifyTime).toISOString();
       if (file.type === 'd') {
-        console.log(`${new Date(file.modifyTime).toISOString()} PRE ${file.name}`);
+        logger.debug(`[DIR] ${timestamp} ${file.name}`);
       } else if (file.type === '-') {
-        console.log(`${new Date(file.modifyTime).toISOString()} - ${file.size} ${file.name}`);
+        logger.debug(`[FILE] ${timestamp} ${file.size} bytes ${file.name}`);
       } else {
-        console.log(`${new Date(file.modifyTime).toISOString()} l ${file.size} ${file.name}`);
+        logger.debug(`[LINK] ${timestamp} ${file.size} bytes ${file.name}`);
       }
       if (file.type === typefile || typefile === 'all') {
         fileNames.push(file.name);
@@ -80,33 +82,35 @@ export class SFTPClient {
   }
 
   async uploadFile(localFile, remoteFile) {
-    console.log(`Uploading ${localFile} to ${remoteFile} ...`);
+    logger.info(`Uploading ${localFile} to ${remoteFile}`);
     try {
       let data = await this.client.put(localFile, remoteFile);
+      logger.info(`File uploaded successfully: ${remoteFile}`);
       return { status: true, data: data };
     } catch (err) {
-      console.error('Uploading failed:', err);
+      logger.error(`Upload failed: ${err.message}`);
       return { status: false, data: 'Uploading failed' };
     }
   }
 
   async downloadFile(remoteFile, localFile) {
-    console.log(`Downloading ${remoteFile} to ${localFile} ...`);
+    logger.info(`Downloading ${remoteFile} to ${localFile}`);
     try {
       let data = await this.client.get(remoteFile, localFile);
+      logger.info(`File downloaded successfully: ${localFile}`);
       return { status: true, data: data };
     } catch (err) {
-      console.error('Downloading failed:', err);
+      logger.error(`Download failed: ${err.message}`);
       return { status: false, data: 'download failed' };
     }
   }
 
   async deleteFile(remoteFile) {
-    console.log(`Deleting ${remoteFile}`);
+    logger.debug(`Deleting ${remoteFile}`);
     try {
       await this.client.delete(remoteFile);
     } catch (err) {
-      console.error('Deleting failed:', err);
+      logger.error(`Deleting ${remoteFile} failed: ${err.message}`);
     }
   }
 }

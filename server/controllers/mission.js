@@ -4,6 +4,7 @@ import {
   resolveCollisions as resolveCollisionsAlgo,
   formatMissionReport,
 } from '../models/collision/index.js';
+import logger from '../common/logger.js';
 
 class missionController {
   static getMission = async (req, res) => {
@@ -17,18 +18,16 @@ class missionController {
   };
 
   static getRoutes = async (req, res) => {
-    console.log('get routes');
+    logger.debug('getRoutes');
     const response = await missionModel.getRoutes(req.query);
     res.json(Object.values(response));
   };
   static sendTask = async (req, res) => {
-    console.log('======== send task ========');
-    console.log(req.body);
+    logger.info(`sendTask: ${JSON.stringify(req.body)}`);
     let id = req.body.id || req.body.mission_id;
     let name = req.body.name;
     let objetivo = req.body.objetivo;
     let locations = req.body.locations || req.body.loc;
-    console.log(locations);
     let meteo = []; // req.body.meteo;
     for (let i = 0; i < locations.length; i++) {
       locations[i].hasOwnProperty('items') ? null : (locations[i].items = []);
@@ -42,10 +41,9 @@ class missionController {
         locations[i].items[j].hasOwnProperty('lon')
           ? (locations[i].items[j].longitude = locations[i].items[j].lon)
           : null;
-        console.log(locations[i].items[j]);
       }
     }
-    console.log('id: ', id);
+    logger.debug(`sendTask id=${id}`);
     let response = await missionModel.sendTask({ id, name, objetivo, locations, meteo });
     res.status(200).json('all ok');
   };
@@ -60,7 +58,7 @@ class missionController {
       const response = await missionModel.showMissionXYZ(req.body);
       res.json(response);
     } catch (error) {
-      console.error('Error in showMissionXYZ:', error);
+      logger.error(`Error in showMissionXYZ: ${error.message}`);
       res.status(500).json({ error: error.message || 'Failed to show mission XYZ.' });
     }
   };
@@ -140,7 +138,7 @@ class missionController {
         report,
       });
     } catch (error) {
-      console.error('Error validating collisions:', error);
+      logger.error(`Error validating collisions: ${error.message}`);
       res.status(500).json({ error: error.message || 'Failed to validate collisions' });
     }
   };
@@ -188,7 +186,7 @@ class missionController {
         validation: finalValidation,
       });
     } catch (error) {
-      console.error('Error resolving collisions:', error);
+      logger.error(`Error resolving collisions: ${error.message}`);
       res.status(500).json({ error: error.message || 'Failed to resolve collisions' });
     }
   };

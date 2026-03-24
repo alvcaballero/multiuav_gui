@@ -160,7 +160,7 @@ export class missionModel {
 
     let bases = planningController.getConfigBases();
     if (bases == null) {
-      console.log('bases is null');
+      logger.warn('bases is null');
       return null;
     }
     let devices = await devicesController.getAllDevices();
@@ -170,14 +170,12 @@ export class missionModel {
     Object.keys(param['settings']).forEach((key1) => {
       auxconfig[key1] = param['settings'][key1].default;
     });
-    console.log('-----param-------');
-    console.log(param['devices']);
+    logger.debug(`param devices: ${JSON.stringify(param['devices'])}`);
 
     let baseSettings = planningController.getBasesSettings();
     let devicesSettings = [];
     for (const [index, setting] of baseSettings.entries()) {
-      console.log('bases setting');
-      console.log(setting);
+      logger.debug(`bases setting: ${JSON.stringify(setting)}`);
       let config = { settings: {} };
       let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
       for (const value of Object.keys(auxconfig)) {
@@ -186,14 +184,14 @@ export class missionModel {
       // verify if the device is allow to do the mission
       if (param.devices && param.devices['category']) {
         const auvAllow = param.devices['category'].type.some((item) => item == myDevice.category);
-        console.log(`device ${myDevice.name} auvAllow ${auvAllow}`);
+        logger.debug(`device ${myDevice.name} auvAllow ${auvAllow}`);
         if (!auvAllow) {
           continue;
         }
       }
       // filter devices are online
       if (myDevice == null || myDevice.status == 'offline') {
-        console.log(`device offline ${myDevice.name}`);
+        logger.info(`device offline ${myDevice.name}`);
         continue;
       }
       // filter devices are free
@@ -207,7 +205,7 @@ export class missionModel {
             route.status == ROUTE_STATUS.INIT
         )
       ) {
-        console.log(`device ${myDevice.name} is busy`);
+        logger.info(`device ${myDevice.name} is busy`);
         continue;
       }
 
@@ -216,26 +214,24 @@ export class missionModel {
       config.settings.base = Object.values(bases[index]);
       config.settings.landing_mode = 2;
       let uavData = await positionsController.getLastPositions(myDevice.id);
-      console.log('uavData');
-      console.log(uavData);
+      logger.debug(`uavData: ${JSON.stringify(uavData)}`);
       if (uavData && uavData[0]?.attributes?.batteryLevel) {
         if (!Number.isNaN(Number.parseFloat(uavData[0].attributes.batteryLevel))) {
-          console.log(`device ${myDevice.name} battery ${uavData[0].attributes.batteryLevel}`);
+          logger.debug(`device ${myDevice.name} battery ${uavData[0].attributes.batteryLevel}`);
           config.settings.battery_level = uavData[0].attributes.batteryLevel / 100;
         }
       }
       devicesSettings.push(config);
     }
     myTask.devices = devicesSettings.filter((item) => item != null);
-    console.log(`Task ${myTask.id} ${myTask.name} ${myTask.case} ${myTask.devices.map((item) => item.id).flat()}`);
-    console.log(myTask);
-    console.log(myTask.devices);
-    console.log(myTask.locations);
+    logger.info(`Task ${myTask.id} ${myTask.name} ${myTask.case} devices: ${myTask.devices.map((item) => item.id).flat()}`);
+    logger.debug(`task devices: ${JSON.stringify(myTask.devices)}`);
+    logger.debug(`task locations: ${JSON.stringify(myTask.locations)}`);
     return myTask;
   }
 
   static async sendTask({ id, name, objetivo, locations, meteo }) {
-    console.log('command-sendtask');
+    logger.info('command-sendtask');
 
     const isPlanning = false;
     if (isPlanning) {
@@ -246,13 +242,13 @@ export class missionModel {
 
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
     if (myTask == null) {
-      console.log('myTask is null');
+      logger.warn('myTask is null');
       await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask });
       return { response: myTask, status: 'ERROR' };
     }
 
     if (myTask.devices.length == 0) {
-      console.log('no devices to do the mission');
+      logger.warn('no devices to do the mission');
       await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask });
       return { response: myTask, status: 'ERROR' };
     }
@@ -272,17 +268,17 @@ export class missionModel {
   }
 
   static async initMission(missionId, mission) {
-    console.log('===== initMission =====');
-    console.log(mission);
+    logger.info('===== initMission =====');
+    logger.debug(`initMission data: ${JSON.stringify(mission)}`);
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
       await this.editMission({ id: missionId, status: MISSION_STATUS.ERROR, mission: mission });
-      console.log('Mission ' + missionId + ' cant planning');
+      logger.warn(`Mission ${missionId} cant planning`);
       return false;
     }
     const listUAV = [];
     for (const route of mission.route) {
       let findDevice = await devicesController.getByName(route.uav);
-      console.log(findDevice.dataValues);
+      logger.debug(`findDevice: ${JSON.stringify(findDevice.dataValues)}`);
       listUAV.push(findDevice.id);
     }
     //const listUAV = mission.route.map((route) => devicesController.getByName(route.uav).id);
@@ -321,12 +317,12 @@ export class missionModel {
   static async deviceFinishSyncFiles({ name, id }) {
     let mydevice = await devicesController.getByName(name);
     if (mydevice == null) {
-      console.log('mydevice name ' + name + ' not found');
+      logger.warn(`mydevice name ${name} not found`);
       return false;
     }
 
-    console.log(mydevice);
-    console.log('mydevice finish download files' + mydevice.id);
+    logger.debug(`deviceFinishSyncFiles: ${JSON.stringify(mydevice)}`);
+    logger.info(`mydevice finish download files ${mydevice.id}`);
 
     eventsController.addEvent({
       type: 'info',
@@ -338,13 +334,13 @@ export class missionModel {
   }
 
   static async deviceFinishMission({ name, id }) {
-    console.log(name);
+    logger.debug(`deviceFinishMission name: ${name}`);
     let mydevice = await devicesController.getByName(name);
     if (mydevice == null) {
-      console.log('mydevice name ' + name + ' not found');
+      logger.warn(`mydevice name ${name} not found`);
       return false;
     }
-    console.log('mydevice in finish mission ' + mydevice.id);
+    logger.info(`mydevice in finish mission ${mydevice.id}`);
     eventsController.addEvent({
       type: 'info',
       deviceId: mydevice.id,
@@ -384,12 +380,11 @@ export class missionModel {
   }
 
   static async UAVEnd(missionId, uavId) {
-    console.log('===== UAVEnd whole mission =====');
+    logger.info('===== UAVEnd whole mission =====');
     const myRoute = await this.getRoutes({ missionId, uavId }).id;
     const routeId = myRoute.id;
     const listfiles = await filesController.getFilesInfo({ routeId });
-    console.log('listfiles');
-    console.log(listfiles);
+    logger.debug(`UAVEnd listfiles: ${JSON.stringify(listfiles)}`);
     const results = {};
     let attributes = {};
     for (const file of listfiles) {
@@ -407,9 +402,7 @@ export class missionModel {
         }
       }
     }
-    console.log('results');
-    console.log(attributes);
-    console.log(results);
+    logger.debug(`UAVEnd results: ${JSON.stringify(results)} attributes: ${JSON.stringify(attributes)}`);
     eventsController.addEvent({
       type: 'info',
       deviceId: uavId,
@@ -420,12 +413,11 @@ export class missionModel {
   }
 
   static async FinishProcessFiles(missionId) {
-    console.log('===== FinishProcessFiles whole mission =====');
+    logger.info('===== FinishProcessFiles whole mission =====');
     let code = 0;
     let result = { files: [], data: {} };
     let myfiles = await filesController.getFilesInfo({ missionId });
     result.files = myfiles.map((file) => `${file.route}${file.name}`);
-    console.log('mision');
     const myMission = await this.getMissionValue(missionId);
     result.data = myMission.results;
     eventsController.addEvent({

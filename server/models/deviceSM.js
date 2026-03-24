@@ -6,24 +6,23 @@ import { commandsController } from '../controllers/commands.js';
 import { dateString, addTime, GetLocalTime, sleep } from '../common/utils.js';
 import { missionSMModel } from './missionSM.js';
 import { missionController } from '../controllers/mission.js';
+import logger from '../common/logger.js';
 
 const LoadMissionSM = async (context) => {
-  console.log('service load mission');
+  logger.info('service load mission');
   try {
     let mission = await MissionController.getMissionRoute(context.missionId);
     let missionPlan = mission.mission;
-    console.log(mission);
-    console.log(missionPlan);
+    logger.debug(`LoadMissionSM mission: ${JSON.stringify(missionPlan)}`);
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
       type: 'loadMission',
       attributes: missionPlan.route,
     });
 
-    console.log('-----response in SM');
-    console.log(response);
+    logger.debug(`LoadMissionSM response: ${JSON.stringify(response)}`);
     if (response.state == 'success') {
-      console.log('----- success in SM');
+      logger.info('LoadMissionSM success');
       return response; // Resolve with the response
     } else {
       throw new Error('Problem send Mission');
@@ -34,19 +33,17 @@ const LoadMissionSM = async (context) => {
 };
 
 const CommandMissionSM = async (context) => {
-  console.log('service command mission');
+  logger.info('service command mission');
   try {
     sleep(2000);
-    //console.log(mission);
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
       type: 'commandMission',
     });
 
-    console.log('-----response in SM');
-    console.log(response);
+    logger.debug(`CommandMissionSM response: ${JSON.stringify(response)}`);
     if (response.state == 'success') {
-      console.log('----- success in SM');
+      logger.info('CommandMissionSM success');
       return response; // Resolve with the response
     } else {
       throw new Error('Problem send Command ');
@@ -57,16 +54,14 @@ const CommandMissionSM = async (context) => {
 };
 
 const CommandDownload = async (context) => {
-  console.log('service download files from Autopilot ');
+  logger.info('service download files from Autopilot');
   let resp = await MissionController.finishMission(context.missionId, context.uavId);
   let mymission = await MissionController.getMissionRoute(context.missionId);
-  //let missionPlan = mission.mission;
 
-  console.log('mission command download');
-  console.log(mymission);
+  logger.debug(`CommandDownload mission: ${JSON.stringify(mymission)}`);
   let myInitTime = dateString(GetLocalTime(mymission['initTime']));
   let myFinishTime = dateString(addTime(GetLocalTime(new Date()), 10));
-  console.log(myInitTime + '---' + myFinishTime);
+  logger.debug(`CommandDownload time range: ${myInitTime} --- ${myFinishTime}`);
   try {
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
@@ -77,13 +72,12 @@ const CommandDownload = async (context) => {
         FinishDate: myFinishTime,
       },
     });
-    console.log('-----response in Download');
-    console.log(response);
+    logger.debug(`CommandDownload response: ${JSON.stringify(response)}`);
     if (response.state == 'success') {
-      console.log('----- success in download');
+      logger.info('CommandDownload success');
       return response; // Resolve with the response
     } else {
-      console.log('Problem download Mission');
+      logger.warn('Problem download Mission');
       //throw new Error('Problem download Mission');
     }
   } catch (error) {
@@ -92,9 +86,8 @@ const CommandDownload = async (context) => {
 };
 
 const DownloadGCS = async (context) => {
-  console.log('Download files from UAV');
+  logger.info(`Download files from UAV id ${context.uavId}`);
   let result = await MissionController.updateFiles(context.missionId, context.uavId, context.routeId);
-  console.log(`Download files from UAV id ${context.uavId}`);
   return { state: 'success' };
 };
 
@@ -232,15 +225,14 @@ export const machine = createMachine(
   {
     actions: {
       updateUAV: assign(({ event }) => {
-        console.log('action Assing');
-        console.log(event);
+        logger.debug(`action updateUAV: ${JSON.stringify(event)}`);
         return {
           uavId: event.value.uavId,
           missionId: event.value.missionId,
         };
       }),
       DeleteSM: ({ context, event }, params) => {
-        console.log('delete state machine');
+        logger.info(`delete state machine for uavId ${context.uavId}`);
         missionSMModel.DeleteActor(context.uavId);
       },
     },

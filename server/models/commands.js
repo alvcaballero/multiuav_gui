@@ -2,97 +2,15 @@ import { devicesController } from '../controllers/devices.js';
 import { eventsController } from '../controllers/events.js';
 import { getDatetime } from '../common/utils.js';
 import { rosController } from '../controllers/ros.js';
-import { categoryController } from '../controllers/category.js';
-import { sendCommandToClient } from '../WebsocketDevices.js';
+import { getFlatbufferServer } from './flatbuffer/index.js';
 import { positionsController } from '../controllers/positions.js';
-import { set } from 'zod';
-import { de } from 'zod/v4/locales';
-
-async function decodeMissionMsg({ uav_id, route }) {
-  let device = await devicesController.getDevice(uav_id);
-  console.log(device);
-  let response = null;
-  let uavname = device.name;
-  let uavcategory = device.category;
-  let mode_yaw = 0;
-  let mode_gimbal = 0;
-  let mode_trace = 0;
-  let idle_vel = 1.8;
-  let max_vel = 10;
-  let mode_landing = 0;
-  let wp_command = [];
-  let yaw_pos = [];
-  let speed_pos = [];
-  let gimbal_pos = [];
-  let action_matrix = [];
-  let param_matrix = [];
-  if (route['uav'] == uavname) {
-    //console.log('route'); //console.log(route);
-    idle_vel = route.attributes.hasOwnProperty('idle_vel') ? route.attributes['idle_vel'] : idle_vel;
-    max_vel = route.attributes.hasOwnProperty('max_vel') ? route.attributes['max_vel'] : max_vel;
-    mode_yaw = route.attributes.hasOwnProperty('mode_yaw') ? route.attributes['mode_yaw'] : mode_yaw;
-    mode_gimbal = route.attributes.hasOwnProperty('mode_gimbal') ? route.attributes['mode_gimbal'] : mode_gimbal;
-    mode_trace = route.attributes.hasOwnProperty('mode_trace') ? route.attributes['mode_trace'] : mode_trace;
-    mode_landing = route.attributes.hasOwnProperty('mode_landing') ? route.attributes['mode_landing'] : mode_landing;
-
-    let categoryModel = await categoryController.getActionsParam({ type: uavcategory });
-
-    Object.values(route['wp']).forEach((item) => {
-      let yaw, gimbal, speed;
-      let action_array = Array(10).fill(0);
-      let param_array = Array(10).fill(0);
-      let pos = {
-        latitude: item.pos[0],
-        longitude: item.pos[1],
-        altitude: item.pos[2],
-      };
-      yaw = item.hasOwnProperty('yaw') ? item.yaw : 0;
-      speed = item.hasOwnProperty('speed') ? item.speed : idle_vel;
-      gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
-
-      console.log(item.action ?? 'no action');
-
-      if (item.hasOwnProperty('action')) {
-        Object.keys(item.action).forEach((action_val, index, arr) => {
-          let found = Object.values(categoryModel).find((element) => element.name == action_val);
-          if (found) {
-            action_array[index] = Number(found.id);
-            param_array[index] = found.param ? Number(item.action[action_val]) : 0;
-          }
-        });
-      }
-      wp_command.push(pos);
-      gimbal_pos.push(gimbal);
-      yaw_pos.push(yaw);
-      speed_pos.push(speed);
-      action_matrix.push(action_array);
-      param_matrix.push(param_array);
-    });
-
-    response = {
-      type: 'waypoint',
-      waypoint: wp_command,
-      radius: 0,
-      maxVel: max_vel,
-      idleVel: idle_vel,
-      yaw: yaw_pos,
-      speed: speed_pos,
-      gimbalPitch: gimbal_pos,
-      yawMode: mode_yaw,
-      traceMode: mode_trace,
-      gimbalPitchMode: mode_gimbal,
-      finishAction: mode_landing,
-      commandList: action_matrix,
-      commandParameter: param_matrix,
-    };
-  }
-  return response;
-}
+import { decodeMissionMsg } from './MissionDecoder.js';
+import logger from '../common/logger.js';
 
 export class commandsModel {
   static getSaveCommands(deviceId) {
     let deviceid = deviceId;
-    console.log('devices acction  save commands' + deviceid);
+    logger.debug(`getSaveCommands deviceId=${deviceid}`);
     return [];
   }
 
@@ -113,13 +31,13 @@ export class commandsModel {
       { type: 'configureMission' },
       { type: 'commandMission' },
     ];
-    console.log('devices acction get types ' + deviceid);
+    logger.debug(`getCommandTypes deviceId=${deviceid}`);
     return response;
   }
 
   static async sendCommand({ deviceId, type, attributes }) {
-    console.log('POST API command send');
-    console.log({ deviceId, type, attributes });
+    logger.info(`sendCommand deviceId=${deviceId} type=${type}`);
+    logger.debug(`sendCommand attributes: ${JSON.stringify(attributes)}`);
     //here get id and description, where description is string like threat,1 or sincronize, landing,1
     let response = { state: 'info', msg: 'Command no found' };
     if (deviceId >= 0) {
@@ -185,7 +103,7 @@ export class commandsModel {
       });
     }
 
-    console.log(response);
+    logger.debug(`sendCommand response: ${JSON.stringify(response)}`);
     return response;
   }
 
@@ -203,13 +121,12 @@ export class commandsModel {
     return statuscommand;
   }
   static async standarCommand(uav_id, type, attributes) {
-    console.log('sending astandarcommand uavId ' + uav_id);
+    logger.debug(`standarCommand uavId=${uav_id} type=${type}`);
     let response = {};
     //ros
     let myDevice = await devicesController.getDevice(uav_id);
-    //console.log(myDevice);
     if (myDevice.protocol == 'ros') {
-      console.log('ros device ros');
+      logger.debug(`sending via ROS device uavId=${uav_id}`);
       if (attributes) {
         response = await rosController.callService({ uav_id, type, request: attributes });
       } else {
@@ -218,13 +135,9 @@ export class commandsModel {
     }
     //robofleet
     if (myDevice.protocol == 'robofleet') {
-      console.log('robotflet device ros');
+      logger.debug(`sending via robofleet device uavId=${uav_id}`);
 
-      if (attributes) {
-        response = await sendCommandToClient({ uav_id, type, attributes });
-      } else {
-        response = await sendCommandToClient({ uav_id, type });
-      }
+      response = await getFlatbufferServer().sendCommand({ uav_id, type, attributes });
       if (response == {}) {
         response = {
           state: 'success',
@@ -239,7 +152,7 @@ export class commandsModel {
   }
 
   static async loadmissionDevice(deviceId, routes, callback = (x) => x) {
-    console.log('load mission device ' + deviceId);
+    logger.info(`loadmissionDevice deviceId=${deviceId}`);
 
     let response = { state: 'warning', msg: 'UAV no asing mission' };
     if (Object.values(routes).length == 0) {
@@ -247,11 +160,11 @@ export class commandsModel {
       return response;
     }
     for (const route of routes) {
-      console.log('load route ' + route.uav);
+      logger.debug(`load route for uav ${route.uav}`);
       let myDevice = await devicesController.getByName(route.uav);
-      console.log(`Device found in route : ${myDevice.id }-${myDevice.name} id search ${deviceId}`);
+      logger.debug(`device found in route: id=${myDevice.id} name=${myDevice.name} searched=${deviceId}`);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
-        console.log('load mission to ' + myDevice.id);
+        logger.info(`loading mission to device ${myDevice.id}`);
         let attributes = await decodeMissionMsg({ uav_id: myDevice.id, route });
         if (attributes) {
           response = await this.standarCommand(myDevice.id, 'configureMission', attributes);
@@ -274,7 +187,7 @@ export class commandsModel {
         });
       }
     }
-    console.log('finish load mission');
+    logger.info('finish load mission');
     return response;
   }
 
@@ -287,7 +200,7 @@ export class commandsModel {
         finding = deviceId.some((mydeviceId) => mydeviceId == device.id);
       }
       if (deviceId < 0 || deviceId == device.id || finding) {
-        console.log('command mission to ' + device.id);
+        logger.info(`commandMissionDevice sending to device ${device.id}`);
 
         response = await this.standarCommand(device.id, 'commandMission', { data: true });
 

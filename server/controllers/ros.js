@@ -1,12 +1,13 @@
 import { rosModel } from '../models/ros/ros.js';
 import { RosEnable } from '../config/config.js';
+import logger from '../common/logger.js';
 export class rosController {
   static async getTopics(req, res) {
     try {
       const response = await rosModel.getTopics();
       res.json(response);
     } catch (error) {
-      console.error('Error getting topics:', error);
+      logger.error(`Error getting topics: ${error}`);
       res.status(500).json({ error:'Error getting topics: ' + error });
     }
   }
@@ -19,7 +20,7 @@ export class rosController {
       const response = await rosModel.getTopicType(topic);
       res.json(response);
     } catch (error) {
-      console.error('Error getting topic type:', error);
+      logger.error(`Error getting topic type: ${error}`);
       res.status(500).json({ error: 'Failed to get topic type: ' + error });
     }
   }
@@ -32,7 +33,7 @@ export class rosController {
       const response = await rosModel.getMessageDetails(type);
       res.json(response);
     } catch (error) {
-      console.error('Error getting message details:', error);
+      logger.error(`Error getting message details: ${error}`);
       res.status(500).json({ error: 'Failed to get message details: ' + error });
     }
   }
@@ -45,7 +46,7 @@ export class rosController {
       const response = await rosModel.getPublishers(topic);
       res.json(response);
     } catch (error) {
-      console.error('Error getting publishers:', error);
+      logger.error(`Error getting publishers: ${error}`);
       res.status(500).json({ error: 'Failed to get publishers' + error });
     }
   }
@@ -55,12 +56,12 @@ export class rosController {
       const response = await rosModel.getServices();
       res.json(response);
     } catch (error) {
-      console.error('Error getting services:', error);
+      logger.error(`Error getting services: ${error}`);
       res.status(500).json({ error: 'Failed to get services' + error });
     }
   }
   static async getServicesType(req, res) {
-    const { service } = req.query;  
+    const { service } = req.query;
     if (!service || typeof service !== 'string') {
       return res.status(400).json({ error: 'El parámetro "service" es obligatorio y debe ser una cadena' });
     }
@@ -68,7 +69,7 @@ export class rosController {
       const response = await rosModel.getServicesType(service);
       res.json(response);
     } catch (error) {
-      console.error('Error getting services type:', error);
+      logger.error(`Error getting services type: ${error}`);
       res.status(500).json({ error: 'Failed to get services type' + error });
     }
   }
@@ -81,11 +82,11 @@ export class rosController {
       const response = await rosModel.getServiceRequestDetails(type);
       res.json(response);
     } catch (error) {
-      console.error('Error getting service details:', error);
+      logger.error(`Error getting service details: ${error}`);
       res.status(500).json({ error: 'Failed to get service details: ' + error });
     }
   }
-  
+
   static async getServiceResponseDetails(req, res) {
     const { type } = req.query;
     if (!type || typeof type !== 'string') {
@@ -95,7 +96,7 @@ export class rosController {
       const response = await rosModel.getServiceRequestDetails(type);
       res.json(response);
     } catch (error) {
-      console.error('Error getting service details:', error);
+      logger.error(`Error getting service details: ${error}`);
       res.status(500).json({ error: 'Failed to get service details: ' + error });
     }
   }
@@ -104,7 +105,7 @@ export class rosController {
       const response = await rosModel.getActionServers();
       res.json(response);
     } catch (error) {
-      console.error('Error getting action servers:', error);
+      logger.error(`Error getting action servers: ${error.message}`);
       res.status(500).json({ error: 'Failed to get action servers: ' + error });
     }
   }
@@ -113,7 +114,7 @@ export class rosController {
       const response = await rosModel.sendActionGoal(req.body);
       res.json(response);
     } catch (error) {
-      console.error('Error calling action:', error);
+      logger.error(`Error calling action: ${error.message}`);
       res.status(500).json({ error: 'Failed to call action: ' + error.message });
     }
   }
@@ -124,7 +125,7 @@ export class rosController {
       const response = await rosModel.callRosService(req.body);
       res.json(response);
     } catch (error) {
-      console.error('Error calling service:', error);
+      logger.error(`Error calling service: ${error.message}`);
       res.status(500).json({ error: 'Failed to call service: ' + error.message });
     }
   }
@@ -133,7 +134,7 @@ export class rosController {
       const response = await rosModel.PubRosMsg(req.body);
       res.json(response);
     } catch (error) {
-      console.error('Error publishing message:', error);
+      logger.error(`Error publishing message: ${error.message}`);
       res.status(500).json({ error: 'Failed to publish message' + error });
     }
   }
@@ -142,13 +143,13 @@ export class rosController {
       const response = await rosModel.subscribeOnce(req.query);
       res.json(response);
     } catch (error) {
-      console.error('Error subscribing to topic:', error);
+      logger.error(`Error subscribing to topic: ${error.message}`);
       res.status(500).json({ error: 'Failed to subscribe to topic: ' + error.message });
     }
   }
 
   static async getListMaster(req, res) {
-    console.log('controller get all');
+    logger.debug('getListMaster');
     const response = await rosModel.getListMaster();
     res.json(response);
   }
@@ -157,7 +158,7 @@ export class rosController {
     return RosEnable ? await rosModel.subscribeDevice({ id, name, category, camera, watch_bound, bag }) : null;
   }
   static async unsubscribeDevice(id) {
-    console.log('unsuscribe controller');
+    logger.debug(`unsubscribeDevice id=${id}`);
     return RosEnable ? await rosModel.unsubscribeDevice(id) : null;
   }
   static async callService(message) {

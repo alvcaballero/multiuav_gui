@@ -7,6 +7,7 @@ import { filesPath, filesData } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 import { missionController } from '../controllers/mission.js';
 import sequelize from '../common/sequelize.js';
+import logger from '../common/logger.js';
 
 /* files:
 /    id
@@ -110,7 +111,7 @@ export class filesModel {
     let missionFolder = firstFiles.filter((myroute) => myroute.isDirectory());
     for (let mymission of missionFolder) {
       var stats = fs.statSync(filesPath + mymission.name + '/');
-      console.log('last time create in secons' + stats.mtime);
+      logger.debug(`last time create in seconds: ${stats.mtime}`);
       let secondFiles = fs.readdirSync(filesPath + mymission.name + '/', { withFileTypes: true });
       let uavfolder = secondFiles.filter((myroute) => myroute.isDirectory());
       for (let myuav of uavfolder) {
@@ -133,7 +134,7 @@ export class filesModel {
   static checkFileRoute(path) {
     let dir = filesPath + path.replaceAll('-', '/');
     if (!fs.existsSync(dir)) {
-      console.log('no exist ' + dir);
+      logger.warn(`file path does not exist: ${dir}`);
       return null;
     }
     return dir;
@@ -144,13 +145,13 @@ export class filesModel {
   */
 
   static paramsConnection({ mydevice }) {
-    console.log(mydevice);
+    logger.debug(`paramsConnection device: ${JSON.stringify(mydevice)}`);
     let myurl = '';
     myurl = mydevice.url;
     const parsedURL = new URL(myurl);
     let port = parsedURL.port || 21;
     const { hostname, username, password, protocol } = parsedURL;
-    console.log(`host: ${hostname}:${port}, user: ${username}, pwd: ${password}, protocol: ${protocol}`);
+    logger.debug(`host: ${hostname}:${port}, user: ${username}, protocol: ${protocol}`);
     return { host: hostname, port, username, password, protocol };
   }
 
@@ -158,7 +159,7 @@ export class filesModel {
   // filter file '.jpg$'
 
   static async mylistFiles(client, path, lastFolder = false, filterFolder = '', filterFile = '') {
-    console.log(`list files ${path} ${lastFolder} ${filterFolder} ${filterFile}`);
+    logger.debug(`list files ${path} lastFolder=${lastFolder} filterFolder=${filterFolder} filterFile=${filterFile}`);
     let listFolder = [];
     let myfiles = [];
     let myfolders = await client.listFiles(path, filterFolder, 'd', true);
@@ -186,34 +187,34 @@ export class filesModel {
     let mydevice = await devicesController.getAccess(uavId);
     let myconfig = filesSetup.files.default;
     let listFiles = [];
-    console.log(`show files api call ${uavId} ${missionId} ${initTime} ${index}`);
+    logger.info(`show files api call ${uavId} ${missionId} ${initTime} index=${index}`);
     if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
-      console.log('UAV no have files setup ');
+      logger.warn('UAV no have files setup');
       return [];
     }
-    console.log(mydevice.files[index]);
+    logger.debug(`device file config: ${JSON.stringify(mydevice.files[index])}`);
 
     if (mydevice.files[index].hasOwnProperty('type')) {
       myconfig = filesSetup.files.hasOwnProperty(mydevice.files[index].type)
         ? filesSetup.files[mydevice.files[index].type]
         : filesSetup.files.default;
     }
-    console.log(myconfig);
+    logger.debug(`myconfig: ${JSON.stringify(myconfig)}`);
     let params = this.paramsConnection({ mydevice: mydevice.files[index] });
     const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
     let status = await client.connect(params);
     if (!status) {
-      console.log('cant connect to device ');
+      logger.warn('cant connect to device');
       return [];
     }
-    console.log(`config files ${myconfig.path} ${myconfig.type}`);
+    logger.debug(`config files ${myconfig.path} ${myconfig.type}`);
     listFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder' ? true : false);
 
     await client.disconnect();
 
     if (+index + 1 < mydevice.files.length) {
       let otherFiles = await this.showFiles({ uavId, missionId, initTime, index: index + 1 });
-      console.log('other files' + otherFiles.length);
+      logger.debug(`other files count: ${otherFiles.length}`);
       otherFiles.forEach((file) => {
         listFiles.push(file);
       });
@@ -228,19 +229,19 @@ export class filesModel {
    / return a list of files, and a list of metadata 
    */
   static async updateFiles(uavId, missionId, routeId, initTime, index = 0) {
-    console.log(`update files api call ${uavId} ${routeId} ${missionId} ${initTime} ${index}`);
+    logger.info(`update files api call uavId=${uavId} routeId=${routeId} missionId=${missionId} index=${index}`);
 
     let mydevice = await devicesController.getAccess(uavId);
     let myconfig = filesSetup.files.default;
     let listFiles = [];
 
     if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
-      console.log('UAV no have files setup ');
+      logger.warn('UAV no have files setup');
       return [];
     }
 
     const deviceFile = JSON.parse(JSON.stringify(mydevice.files[index]));
-    console.log(deviceFile);
+    logger.debug(`deviceFile: ${JSON.stringify(deviceFile)}`);
 
     if (deviceFile.hasOwnProperty('type')) {
       myconfig = filesSetup.files.hasOwnProperty(deviceFile.type)
@@ -253,11 +254,11 @@ export class filesModel {
 
     let status = await client.connect(params);
     if (!status) {
-      console.log('cant connect to device ');
+      logger.warn('cant connect to device');
       return [];
     }
 
-    console.log(`config files ${myconfig.path} ${myconfig.type}`);
+    logger.debug(`config files ${myconfig.path} ${myconfig.type}`);
 
     let pathFolder = myconfig.path;
     if (myconfig.type == 'specific') {
@@ -270,13 +271,13 @@ export class filesModel {
     await client.disconnect();
 
     if (listFiles.length == 0) {
-      console.log('no files to download');
+      logger.warn('no files to download');
       return [];
     }
 
     let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
     if (!fs.existsSync(dir)) {
-      console.log('no exist ' + dir);
+      logger.debug(`creating directory: ${dir}`);
       fs.mkdirSync(dir, { recursive: true });
     }
 
@@ -322,7 +323,7 @@ export class filesModel {
   }
 
   static async downloadFiles() {
-    console.log('download files');
+    logger.debug('download files');
     if (downloadQueue.length == 0) {
       return;
     }
@@ -333,7 +334,7 @@ export class filesModel {
     let myconfig = filesSetup.files.default;
 
     if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
-      console.log('UAV no have files setup ');
+      logger.warn('UAV no have files setup');
       return [];
     }
 
@@ -348,7 +349,7 @@ export class filesModel {
 
     let status = await client.connect(params);
     if (!status) {
-      console.log('cant connect to device ');
+      logger.warn('cant connect to device');
       return [];
     }
 
@@ -369,7 +370,7 @@ export class filesModel {
    *
    */
   static async processFiles() {
-    console.log('process file');
+    logger.debug('process file');
     if (processQueue.length == 0) {
       return;
     }
@@ -402,7 +403,7 @@ export class filesModel {
       let attributes = await getMetadata(`${filesPath}${myfile.path}${myfile.name}`);
       await this.editFile({ id: myFileId, status: FILE_STATUS.OK, attributes });
     } catch (e) {
-      console.log('error metadata');
+      logger.error('error reading file metadata', e);
       await this.editFile({ id: myFileId, status: FILE_STATUS.ERROR, attributes: {} });
     }
     // end process call other function for continuos the process of state machine
@@ -411,8 +412,7 @@ export class filesModel {
 
   static async ProcessThermalImages(src) {
     if (src.length == 0) return false;
-    console.log('process thermal images');
-    console.log(src);
+    logger.info(`process thermal images: ${JSON.stringify(src)}`);
     for (const file of src) {
       if (file.includes('THRM') || file.includes('.tiff')) {
         let response = await ProcessThermalImage(`${file}`, `${file.split('.')[0]}_process.jpg`);
@@ -422,7 +422,7 @@ export class filesModel {
   }
 
   static async listFiles({ uavId, missionId }) {
-    console.log('devices acction ' + uavId);
+    logger.debug(`listFiles for uavId ${uavId}`);
     return [];
   }
 }

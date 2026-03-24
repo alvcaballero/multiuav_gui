@@ -1,8 +1,9 @@
 import { eventsModel } from '../models/events.js';
+import logger from '../common/logger.js';
 
 export class eventsController {
   static async getAll(req, res) {
-    console.log('controller get all');
+    logger.debug('Getting all events');
     const positions = await eventsModel.get({});
     res.json(positions);
   }

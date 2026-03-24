@@ -1,4 +1,5 @@
 import { serverModel } from '../models/server.js';
+import logger from '../common/logger.js';
 
 export class serverController {
   static async server(req, res) {
@@ -18,16 +19,14 @@ export class serverController {
     return response;
   }
   static async donwload(req, res) {
-    //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
-    //https://medium.com/@imajeet5/how-to-serve-files-using-node-js-d99de4653a3
-    console.log('resources  donwload');
+    logger.info(`Downloading resource: ${req.params.filename}`);
     try {
       let response = await serverModel.checkFileRoute(req.params.filename);
-      console.log(response);
+      logger.debug(`File route resolved to: ${response}`);
       if (response) {
         res.download(response, function (err) {
           if (err) {
-            console.error('Error during file download:', err);
+            logger.error(`Error during file download: ${err}`);
             if (!res.headersSent) {
               res.send({
                 error: err,
@@ -43,7 +42,7 @@ export class serverController {
         }
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
+      logger.error(`Unexpected error during resource download: ${error.message}`);
       if (!res.headersSent) {
         res.status(500).send({
           error: error.message,

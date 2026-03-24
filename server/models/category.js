@@ -1,5 +1,6 @@
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { devicesMsg, missionSchema, messagesTypes } from '../config/config.js';
+import logger from '../common/logger.js';
 
 const devices_msg = readDataFile(devicesMsg);
 const messages_types = readDataFile(messagesTypes);
@@ -19,18 +20,18 @@ const getMissionAttributes = (type) => {
 };
 export class categoryModel {
   static getAll() {
-    console.log('devices type');
+    logger.debug('categoryModel.getAll');
     return Object.keys(devices_msg);
   }
   static getCategory(type) {
-    console.log('devices category ' + type);
+    logger.debug(`categoryModel.getCategory: ${type}`);
     if (devices_msg.hasOwnProperty(type)) {
       return devices_msg[type];
     }
     return devices_msg[type];
   }
   static updateCategory(type, value) {
-    console.log('devices update ' + type);
+    logger.info(`categoryModel.updateCategory: ${type}`);
     if (devices_msg.hasOwnProperty(type)) {
       devices_msg[type] = value;
       writeDataFile(devicesMsg, devices_msg);
@@ -38,7 +39,7 @@ export class categoryModel {
     return devices_msg[type];
   }
   static createCategory(type, value) {
-    console.log('devices create ' + value);
+    logger.info(`categoryModel.createCategory: ${type}`);
     if (!devices_msg.hasOwnProperty(value)) {
       devices_msg[type] = value;
       writeDataFile(devicesMsg, devices_msg);
@@ -47,7 +48,7 @@ export class categoryModel {
     return null;
   }
   static deleteCategory(type) {
-    console.log('devices delete ' + type);
+    logger.info(`categoryModel.deleteCategory: ${type}`);
     if (devices_msg.hasOwnProperty(type)) {
       delete devices_msg[type];
       writeDataFile(devicesMsg, devices_msg);
@@ -60,20 +61,20 @@ export class categoryModel {
   }
 
   static getAtributes(type) {
-    console.log('devices attributes ' + type);
+    logger.debug(`categoryModel.getAtributes: ${type}`);
     const attributes = getMissionAttributes(type);
     if (!attributes) return [];
     return Object.values(attributes.mission_param);
   }
   static getAtributesParam({ type, param }) {
-    console.log('devices atributes ' + type + '-' + param);
+    logger.debug(`categoryModel.getAtributesParam: ${type}-${param}`);
     const attributes = getMissionAttributes(type);
     if (!attributes) return {};
     return attributes.mission_param[param]?.param ?? {};
   }
 
   static getActions({ type }) {
-    console.log('get device actions ' + type);
+    logger.debug(`categoryModel.getActions: ${type}`);
     const attributes = getMissionAttributes(type);
     if (!attributes) return [];
     return Object.values(attributes.mission_action);

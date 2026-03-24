@@ -61,11 +61,11 @@ const updateDeviceTime = async () => {
         await transaction.commit();
       } catch (error) {
         await transaction.rollback();
-        console.error('Error al actualizar dispositivos:', error);
+        logger.error('Error al actualizar dispositivos:', error);
       }
     }
   } catch (error) {
-    console.error('Error en updateDeviceTime:', error);
+    logger.error('Error en updateDeviceTime:', error);
   } finally {
     setTimeout(updateDeviceTime, UPDATE_INTERVAL);
   }
@@ -89,7 +89,6 @@ setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
 export class DevicesModel {
   constructor() {
     // conect with ros and other things
-    console.log('constructor device model');
   }
 
   static async getAll(query) {
@@ -98,7 +97,6 @@ export class DevicesModel {
       where: { deletedAt: null },
     });
     if (query) {
-      console.log(query);
       if (Array.isArray(query)) {
         return mydevices.filter((device) => query.some((element) => device.id == element));
       }
@@ -160,7 +158,7 @@ export class DevicesModel {
     }
 
     if (serverState.state === 'connect') {
-      console.log('suscribe devices ');
+      logger.debug('suscribe devices');
       await rosController.subscribeDevice({
         id: myDevice.id,
         name: myDevice.name,
@@ -170,17 +168,17 @@ export class DevicesModel {
         bag: false,
       });
 
-      console.log('success', device.name + ' added. Type: ' + device.category);
+      logger.info(`Device ${device.name} added. Type: ${device.category}`);
       return { state: 'success', msg: 'conectado Correctamente' };
     } else {
-      console.log('\nRos no está conectado.\n\n Por favor conéctelo primero.');
+      logger.warn('ROS not connected. Please connect first.');
       return { state: 'error', msg: 'Ros no está conectado' };
     }
   }
 
   static async delete({ id }) {
     let device = await this.getById({ id: id });
-    console.log('remove id' + id);
+    logger.info(`Removing device id=${id}`);
     await cameraModel.removeCameraWebRTC(device);
     await this.removedevice({ id: id });
     let response = await rosController.unsubscribeDevice(id);
@@ -190,11 +188,11 @@ export class DevicesModel {
   static async editDevice({ id, name, category, ip, user, pwd, camera, files, protocol }) {
     let myDevice = await sequelize.models.Device.findOne({ where: { id: id }, raw: false });
     if (protocol && protocol !== myDevice.protocol) {
-      console.log('change protocol');
+      logger.debug(`Device ${id}: changing protocol to ${protocol}`);
       myDevice.protocol = protocol;
     }
     if ((name && name !== myDevice.name) || (category && category !== myDevice.category)) {
-      console.log('change name');
+      logger.debug(`Device ${id}: changing name/category`);
       myDevice.name = name ? name : myDevice.name;
       myDevice.category = category ? category : myDevice.category;
       if (protocol === protocols.ROBOFLEET) {
@@ -220,7 +218,7 @@ export class DevicesModel {
     }
 
     if (camera && JSON.stringify(camera) !== JSON.stringify(myDevice.camera)) {
-      console.log('change camera');
+      logger.debug(`Device ${id}: changing camera config`);
       myDevice.camera = camera;
       cameraModel.removeCameraWebRTC(myDevice);
       cameraModel.addCameraWebRTC({ ...myDevice, camera: camera });
@@ -247,7 +245,6 @@ export class DevicesModel {
   }
 
   static async addAllUAV() {
-    //console.log('---- init cameras of devices ------------');
     const myDevices = await this.getAll();
     for (let device of myDevices) {
       if (StreamServer) {

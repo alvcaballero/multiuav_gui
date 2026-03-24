@@ -1,5 +1,6 @@
 import { validateDevice, validatePartialDevice } from '../schemas/zod/devices.js';
 import { DevicesModel } from '../models/devices.js';
+import logger from '../common/logger.js';
 
 class devicesController {
   static getAll = async (req, res) => {
@@ -7,7 +8,6 @@ class devicesController {
     res.json(Object.values(devices));
   };
   static getAllDevices = async () => {
-    //console.log('get all devices controller');
     const devices = await DevicesModel.getAll();
     return devices;
   };
@@ -44,8 +44,7 @@ class devicesController {
 
   static delete = async (req, res) => {
     const { id } = req.params;
-    console.log('delete device ' + id);
-    //console.log(req.params);
+    logger.info(`Deleting device id=${id}`);
 
     const result = await DevicesModel.delete({ id });
 
@@ -57,7 +56,7 @@ class devicesController {
   };
 
   static update = async (req, res) => {
-    console.log('update device');
+    logger.info('Updating device');
 
     const result = validatePartialDevice(req.body);
 

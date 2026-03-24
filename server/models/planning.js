@@ -5,6 +5,7 @@ const configPlanning = readDataFile('../config/planning/config.yaml');
 var initPlanning = readDataFile(missionsConfigData);
 import { planningServer, planningHost } from '../config/config.js';
 import { missionController } from '../controllers/mission.js';
+import logger from '../common/logger.js';
 
 const requestPlanning = {};
 
@@ -21,13 +22,13 @@ const firstplanning = {
 };
 
 if (Object.keys(initPlanning).length === 0) {
-  console.log('init planning is empty');
+  logger.warn('init planning is empty, using default');
   initPlanning = firstplanning;
 }
 
 export class planningModel {
   static getTypes() {
-    console.log('Mission types map');
+    logger.debug('Mission types map');
     return configPlanning.missionTypes.map((mission) => ({
       id: mission.id,
       name: mission.name,
@@ -37,15 +38,15 @@ export class planningModel {
     }));
   }
   static getParam(type) {
-    console.log('Mission params' + type);
+    logger.debug(`Mission params type=${type}`);
     return configPlanning.missionTypes[type]['data'];
   }
   static getBasesSettings() {
-    console.log('Get bases settingd');
+    logger.debug('Get bases settings');
     return initPlanning.bases;
   }
   static getMissionTypes() {
-    console.log('Mission types all');
+    logger.debug('Mission types all');
     return configPlanning.missionTypes;
   }
   static getDefault() {
@@ -74,31 +75,31 @@ export class planningModel {
 
   static setMarkers(value) {
     // modify de markers
-    console.log('Set markers');
+    logger.debug('Set markers');
     auxinitPlanning = { ...initPlanning, markersbase: value.markersbase, elements: value.elements };
     initPlanning = auxinitPlanning;
     let response = writeDataFile(missionsConfigData, auxinitPlanning);
     return { result: response };
   }
   static getMarkers() {
-    console.log('get markers');
+    logger.debug('get markers');
     return { markersbase: initPlanning.markersbase, elements: initPlanning.elements };
   }
   static getMarkersTypes() {
-    console.log('get markers type');
+    logger.debug('get markers type');
     return configPlanning.markers;
   }
   static getBases() {
-    console.log('get Bases');
+    logger.debug('get Bases');
     return initPlanning.markersbase;
   }
   static getElements() {
-    console.log('get elements');
+    logger.debug('get elements');
     return initPlanning.elements;
   }
 
   static getBaseswithAssignments() {
-    console.log('get bases with assignments');
+    logger.debug('get bases with assignments');
     const assignments = initPlanning.assignments || [];
     const bases = initPlanning.markersbase || [];
 
@@ -121,12 +122,12 @@ export class planningModel {
     });
     if (response1.ok) {
       response2 = await response1.json();
-      console.log(response2);
+      logger.debug(`PlanningRequest response: ${JSON.stringify(response2)}`);
 
       requestPlanning[id] = {};
       requestPlanning[id]['count'] = 0;
       requestPlanning[id]['interval'] = setInterval(() => {
-        console.log('response Planning' + id);
+        logger.debug(`polling planning for id ${id}`);
         this.fetchPlanning(id);
       }, 10000);
     } else {
@@ -136,22 +137,21 @@ export class planningModel {
   }
 
   static async fetchPlanning(mission_id) {
-    console.log('Fetch planning ' + mission_id);
+    logger.info(`Fetch planning mission_id=${mission_id}`);
     let planningRoute = null;
     const response = await fetch(`${planningHost}/get_plan?IDs=${mission_id}`);
     if (response.ok) {
       const data = await response.json();
-      console.log(data);
-      console.log('response to check planning');
+      logger.debug(`fetchPlanning response: ${JSON.stringify(data)}`);
       if (data.results && Object.keys(data.results) > 0) {
         if (data.results.hasOwnProperty(mission_id) && data.results[mission_id].hasOwnProperty('route')) {
-          console.log('get response planning');
+          logger.info(`got planning response for mission ${mission_id}`);
           planningRoute = data.results[mission_id];
           requestPlanning[mission_id]['count'] = 10;
         }
       }
     } else {
-      console.log('!! --- error en el fetch planning --- !!');
+      logger.error(`error fetching planning for mission ${mission_id}`);
       throw Error(await response.text());
     }
     requestPlanning[mission_id]['count'] = requestPlanning[mission_id]['count'] + 1;

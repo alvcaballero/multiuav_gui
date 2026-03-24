@@ -1,8 +1,9 @@
 import { positionsModel } from '../models/positions.js';
+import logger from '../common/logger.js';
 
 export class positionsController {
   static async getAll(req, res) {
-    console.log('controller get all');
+    logger.debug('Getting all positions');
     const positions = await positionsModel.getAll(req.query.deviceId);
     res.json(Object.values(positions));
   }

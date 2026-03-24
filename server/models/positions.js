@@ -1,6 +1,7 @@
 import { map } from 'zod';
 import { eventsController } from '../controllers/events.js';
 import { round } from '../common/utils.js';
+import logger from '../common/logger.js';
 const positions = {};
 const history = {};
 const camera = {};
@@ -8,7 +9,6 @@ const camera = {};
 export class positionsModel {
   static async getAll(query) {
     if (query) {
-      console.log(query);
       if (Array.isArray(query)) {
         const asArray = Object.entries(positions);
         const filtered = asArray.filter(([key, value]) => query.some((element) => key == element));
@@ -32,11 +32,10 @@ export class positionsModel {
   }
   static removePosition({ id }) {
     delete positions[id];
-    console.log(positions);
+    logger.debug(`Position removed for device id=${id}`);
   }
   static async updatePosition(payload) {
     if (payload === null) {
-      // console.log('payload null');
       return null;
     }
 
@@ -59,10 +58,7 @@ export class positionsModel {
         },
       };
     }
-    //positions[payload.deviceId]['serverTime'] = new Date().toISOString();
-
     if (payload.hasOwnProperty('latitude')) {
-      //positions[payload.deviceId]["deviceId"] = payload.deviceId;
       positions[payload.deviceId]['latitude'] = payload.latitude;
       positions[payload.deviceId]['longitude'] = payload.longitude;
       positions[payload.deviceId]['deviceTime'] = payload.deviceTime;
@@ -123,7 +119,6 @@ export class positionsModel {
       positions[payload.deviceId]['attributes']['resultCmdAck'] = payload.resultCmdAck;
     }
     if (payload.hasOwnProperty('uav_state')) {
-      //positions[payload.deviceId]['attributes']['protocol'] = payload.protocol;
       positions[payload.deviceId]['attributes']['mission_state'] = payload.mission_state;
       positions[payload.deviceId]['attributes']['wp_reached'] = payload.wp_reached;
       positions[payload.deviceId]['attributes']['uav_state'] = payload.uav_state;
@@ -165,7 +160,6 @@ export class positionsModel {
     }
 
     if (payload.hasOwnProperty('threat')) {
-      //positions[payload.deviceId]['attributes']['threat'] = payload.threat;
       if (payload.threat == 2) {
         if (positions[payload.deviceId]['attributes']['alarm'] != 'threat') {
           eventsController.addEvent({

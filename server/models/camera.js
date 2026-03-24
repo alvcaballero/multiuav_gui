@@ -1,3 +1,4 @@
+import logger from '../common/logger.js';
 
 const apiURL = 'http://localhost:9997/v3/config/paths';
 
@@ -21,13 +22,13 @@ export class cameraModel {
                         }
                     );
                     if (response.status == 200) {
-                        console.log('camera added ' + device.camera[i].source);
+                        logger.info(`Camera added: ${device.camera[i].source}`);
                     } else {
-                        console.log(`Error adding camera  ${response.status} ${device.camera[i].source}`);
+                        logger.error(`Error adding camera ${device.camera[i].source}: HTTP ${response.status}`);
                         return false;
                     }
                 } catch (e) {
-                    console.log('\x1b[31m%s\x1b[0m', 'Error adding camera ' + device.camera[i].source);
+                    logger.error(`Error adding camera ${device.camera[i].source}: ${e.message}`);
                     return false;
                 }
             }
@@ -46,7 +47,7 @@ export class cameraModel {
                             }
                         );
                     } catch (e) {
-                        console.log('\x1b[31m%s\x1b[0m', 'Error removing camera ' + device.camera[i].source);
+                        logger.error(`Error removing camera ${device.camera[i].source}: ${e.message}`);
                         return false;
                     }
                 }

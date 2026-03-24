@@ -2,13 +2,14 @@ import { LocalGlyphs } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile } from '../common/utils.js';
 import { readDataFile } from '../common/utils.js';
+import logger from '../common/logger.js';
 
 const buildingImages = readDataFile('../data/elements.json');
 export class serverModel {
   static DateTime() {
     const dateObject = new Date();
     let stringdate = dateObject.toJSON(); //dateObject.toJSON().slice(0, -1).replace('T',' ');
-    console.log('uav sincronize time' + stringdate);
+    logger.debug(`UAV synchronize time: ${stringdate}`);
     return { datetime: stringdate };
   }
   static Serverconfig() {

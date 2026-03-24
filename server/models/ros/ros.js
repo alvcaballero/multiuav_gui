@@ -47,7 +47,6 @@ export class rosModel {
 
   static async connectAllUAV() {
     const devices = await devicesController.getAllDevices();
-    //console.log('begin to conncet all devices ------------');
     for (let device of Object.values(devices)) {
       if (device.protocol == 'ros') {
         await rosModel.subscribeDevice({
@@ -60,7 +59,6 @@ export class rosModel {
         });
       }
     }
-    //console.log('finish to connect all devices ------------');
   }
 
   static disconectRos() {
@@ -128,23 +126,20 @@ export class rosModel {
     });
     // subscribe camera
     for (let i = 0; i < camera.length; i = i + 1) {
-      console.log(camera[i]['type']);
+      logger.debug(`Camera type: ${camera[i]['type']}`);
       if (camera[i]['type'] == 'Websocket') {
-        console.log(`camera websocket for ${name} `);
+        logger.debug(`camera websocket for ${name}`);
         this.RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], decodeRosMsg);
       }
     }
   }
 
   static async unsubscribeDevice(id) {
-    //console.log('unsubscribe model');
     let cur_uav_idx;
     let Key_listener;
     if (Object.keys(uav_list).length != 0) {
       if (id < 0) {
-        //console.log('unsubscribe all');
         for (let i = 0; i < Object.keys(uav_list).length; i++) {
-          //uav_list[i].listener.unsubscribe();
           cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
           if (cur_uav_idx) {
             Key_listener = cur_uav_idx.filter((element) => element.includes('listener'));
@@ -153,25 +148,21 @@ export class rosModel {
             });
           }
         }
-        // uav_list = [];
         var props = Object.getOwnPropertyNames(uav_list);
         for (var i = 0; i < props.length; i++) {
           delete uav_list[props[i]];
         }
       } else {
-        // console.log('unsubscribe ' + id);
         cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
 
         Key_listener = Object.keys(cur_uav_idx).filter((element) => element.includes('listener'));
 
-        // console.log(Key_listener);
         if (Object.keys(uav_list).length != 0) {
           Key_listener.forEach((element) => {
-            // console.log(element);
             uav_list[cur_uav_idx.id][element].unsubscribe();
           });
           delete uav_list[cur_uav_idx.id];
-          return { state: 'success', msg: 'Se ha eliminado el ' + cur_uav_idx }; //notification('success',"Commanding mission to: " + cur_roster);
+          return { state: 'success', msg: 'Se ha eliminado el ' + cur_uav_idx };
         }
       }
     } else {
@@ -184,7 +175,7 @@ export class rosModel {
 
     const services = await rosModel.getServices();
     if (!services.includes(service)) {
-      console.log('Available services:', services);
+      logger.debug(`Available services: ${JSON.stringify(services)}`);
       throw new Error(`Service '${service}' not available`);
     }
 
@@ -195,7 +186,7 @@ export class rosModel {
     }
 
     const responseSrvStructure = await rosModel.getServiceRequestDetails(messageType);
-    console.log('Service request structure:', responseSrvStructure);
+    logger.debug(`Service request structure: ${JSON.stringify(responseSrvStructure)}`);
     const srvStructure = responseSrvStructure.typedefs || [];
 
     if (!srvStructure || srvStructure.length === 0) {
@@ -228,10 +219,8 @@ export class rosModel {
 
     let device = await devicesController.getDevice(uav_id);
     const { name, category } = device;
-    //console.log(device);
 
     if (!devices_msg[category]['services'].hasOwnProperty(type)) {
-      //console.log(type + ' to:' + name + ' dont have this service');
       return { state: 'warning', msg: type + ' to:' + name + ' dont have this service' };
     }
 
@@ -246,7 +235,7 @@ export class rosModel {
         return { state: 'error', msg: type + ' to  ' + name + ' error' };
       }
     } catch (error) {
-      console.error('Error calling service:', error);
+      logger.error(`Error calling service: ${error.message}`);
       return { state: 'error', msg: 'Failed to call service: ' + error.message };
     }
   }
@@ -271,7 +260,7 @@ export class rosModel {
   }
   static async getServicesType(service) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-    console.log('get service type for ' + service);
+    logger.debug(`Getting service type for ${service}`);
     return new Promise((resolve, reject) => {
       ros.getServiceType(
         service,
@@ -312,7 +301,7 @@ export class rosModel {
   }
   static getTopicType(topic) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-    console.log('get topic type for ' + topic);
+    logger.debug(`Getting topic type for ${topic}`);
     return new Promise((resolve, reject) => {
       ros.getTopicType(
         topic,
@@ -352,7 +341,7 @@ export class rosModel {
           resolve(result.ros_version);
         },
         function (error) {
-          console.error('Error getting ros version:', error);
+          logger.error(`Error getting ros version: ${error.message}`);
           rejects(error);
         }
       );
@@ -374,11 +363,11 @@ export class rosModel {
       servicemaster.callService(
         request,
         function (result) {
-          console.log(result);
+          logger.debug(`Publishers for topic '${topic}': ${JSON.stringify(result)}`);
           resolve(result.publishers);
         },
         function (error) {
-          console.error('Error getting publishers:', error);
+          logger.error(`Error getting publishers: ${error}`);
           rejects(error);
         }
       );
@@ -412,7 +401,7 @@ export class rosModel {
     }
 
     pub.on('warning', function (warning) {
-      console.error('Advertencia:', warning);
+      logger.warn(`ROS publish warning: ${warning}`);
     });
 
     pub.publish(rosMsg);
@@ -432,7 +421,7 @@ export class rosModel {
     // Por eso verificamos solo la existencia del topic
     const publisher = await rosModel.getPublishers(topic);
     if (publisher.length === 0) {
-      console.warn(
+      logger.warn(
         `Warning: /rosapi/publishers returned empty list for topic '${topic}', but topic exists. Proceeding anyway...`
       );
     }
@@ -470,7 +459,7 @@ export class rosModel {
         serviceName: '/GCS/FinishMission',
         serviceType: 'aerialcore_common/finishMission',
         callback: function (request, response) {
-          console.log(`callback Sevice finish mission: ${JSON.stringify(request)}`);
+          logger.debug(`Service finish mission callback: ${JSON.stringify(request)}`);
           if (request.hasOwnProperty('uav_id')) {
             missionController.deviceFinishMission({ name: request.uav_id });
           }
@@ -483,7 +472,7 @@ export class rosModel {
         serviceName: '/GCS/FinishDownload',
         serviceType: 'aerialcore_common/finishGetFiles',
         callback: function (request, response) {
-          console.log(`callback Service finish download files: ${JSON.stringify(request)}`);
+          logger.debug(`Service finish download files callback: ${JSON.stringify(request)}`);
           if (request.hasOwnProperty('uav_id')) {
             missionController.deviceFinishSyncFiles({ name: request.uav_id });
           }
@@ -549,7 +538,7 @@ export class rosModel {
           resolve(result.publishers);
         },
         function (error) {
-          console.error('Error getting publishers:', error);
+          logger.error(`Error getting action goal message: ${error}`);
           rejects(error);
         }
       );
@@ -559,7 +548,7 @@ export class rosModel {
   static async sendActionGoal(args) {
     if (!ros || !ros.isConnected) throw new Error('ROS not connected');
     const { action, actionType, message } = args;
-    console.log(`Sending goal to action server '${action}' of type '${actionType}' with message:`, message);
+    logger.info(`Sending goal to action server '${action}' of type '${actionType}' with message: ${JSON.stringify(message)}`);
     // action ros2 for roslibjs
     let newClient = new ROSLIB.Action({
       ros: ros,
@@ -570,21 +559,21 @@ export class rosModel {
     let goal_id = newClient.sendGoal(
       message,
       (result) => {
-        console.log(`✅ Resultado: ${JSON.stringify(result)}`);
+        logger.info(`Action result: ${JSON.stringify(result)}`);
         if (result.result && result.status === 4) {
-          console.log('🎯 Navegación completada!');
+          logger.info('Navigation completed');
         } else {
-          console.log('❌ La navegación falló o fue cancelada.');
+          logger.warn('Navigation failed or was cancelled');
         }
       },
       (feedback) => {
-        console.log(`📍 Feedback: ${JSON.stringify(feedback)}`);
+        logger.debug(`Action feedback: ${JSON.stringify(feedback)}`);
       },
       (error) => {
-        console.error('action goal failed:', error);
+        logger.error(`Action goal failed: ${error}`);
       }
     );
-    console.log('Goal sent with ID:', goal_id);
+    logger.info(`Goal sent with ID: ${goal_id}`);
 
     const goalHandle = { id: 'a' };
 
@@ -658,7 +647,7 @@ export class rosModel {
 
     return new Promise((resolve, rejects) => {
       servicemaster.callService(request, function (result) {
-        console.log('masterip -- ' + result.length);
+        logger.debug(`Master IPs found: ${result.length}`);
         resolve(result);
       });
     });

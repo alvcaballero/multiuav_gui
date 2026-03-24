@@ -1,17 +1,19 @@
 import { filesModel } from '../models/files.js';
+import logger from '../common/logger.js';
+
 class filesController {
   static getFiles = async (req, res) => {
-    console.log('controller get files');
+    logger.debug('Getting files');
     let response = await filesModel.getFiles(req.query);
     res.json(response);
   };
   static getFilesInfo = async (request) => {
-    console.log('controller get files');
+    logger.debug('Getting files info');
     let response = await filesModel.getFiles(request);
     return response;
   };
   static listFiles = async (req, res) => {
-    console.log('controller get list files');
+    logger.debug('Listing GCS files');
     let response = await filesModel.readGCSFiles();
     res.json(response);
   };
@@ -28,27 +30,25 @@ class filesController {
     return await filesModel.updateFiles(uavId, missionId, routeId, initTime);
   };
   static updateFilesAPI = async (req, res) => {
-    console.log(' update files');
+    logger.info('Updating files');
     const { uavId, missionId, routeId, initTime } = req.params;
     let response = await filesModel.updateFiles(uavId, missionId, routeId, initTime);
     res.json(response);
   };
   static showFiles = async (req, res) => {
-    console.log('show files');
+    logger.debug('Showing files');
     let response = await filesModel.showFiles(req.params);
     res.json(response);
   };
 
   static donwload = async (req, res) => {
-    //https://www.geeksforgeeks.org/how-to-download-a-file-using-express-js/
-    //https://medium.com/@imajeet5/how-to-serve-files-using-node-js-d99de4653a3
-    console.log('controller donwload file' + req.params.filename);
+    logger.info(`Downloading file: ${req.params.filename}`);
     try {
       let filePath = await filesModel.checkFileRoute(req.params.filename);
       if (filePath) {
         res.download(filePath, function (err) {
           if (err) {
-            console.error('Error during file download:', err);
+            logger.error(`Error during file download: ${err}`);
             if (!res.headersSent) {
               res.send({
                 error: err,
@@ -64,7 +64,7 @@ class filesController {
         }
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
+      logger.error(`Unexpected error during file download: ${error.message}`);
       if (!res.headersSent) {
         res.status(500).send({
           error: error.message,

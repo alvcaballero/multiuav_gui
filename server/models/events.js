@@ -2,6 +2,7 @@ import { positionsController } from '../controllers/positions.js';
 import sequelize from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
 import { de } from 'zod/v4/locales';
+import logger from '../common/logger.js';
 
 /**
  * @typedef Event
@@ -25,17 +26,12 @@ export class eventsModel {
   }
 
   static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId, attributes = {} }) {
-    console.log('type:', type);
-    console.log('eventTime:', eventTime);
-    console.log('deviceId:', deviceId);
-    console.log('missionId:', missionId);
-    console.log('positionId:', positionId);
-    console.log('attributes:', attributes);
+    logger.debug(`addEvent: type=${type} eventTime=${eventTime} deviceId=${deviceId} missionId=${missionId} attributes=${JSON.stringify(attributes)}`);
     let device_id = deviceId || null;
     if (deviceId) {
       const deviceExists = await sequelize.models.Device.findByPk(deviceId);
       if (!deviceExists) {
-        console.warn(`addEvent: deviceId ${deviceId} not found in DB, skipping event insert`);
+        logger.warn(`addEvent: deviceId ${deviceId} not found in DB, skipping event insert`);
         device_id = null;
       }
     }
