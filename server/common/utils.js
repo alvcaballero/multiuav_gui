@@ -1,4 +1,5 @@
-import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
+import { writeFile } from 'fs/promises';
 import { parse, stringify } from 'yaml';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, normalize } from 'path';
@@ -63,17 +64,16 @@ export const writeYAML = async (path, content) => {
   return await writeData(path, saveContent);
 };
 export const writeJSON = async (path, content) => {
-  console.log('write Json' + path);
   const saveContent = JSON.stringify(content, null, 2);
   return await writeData(path, saveContent);
 };
 
 const writeData = async (path, content) => {
   try {
-    await writeFileSync(resolve(__dirname, path), content);
+    await writeFile(resolve(__dirname, path), content);
     return true;
   } catch (err) {
-    console.log(err);
+    logger.error(`Error writing file ${path}: ${err.message}`);
     return false;
   }
 };

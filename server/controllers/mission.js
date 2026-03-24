@@ -12,7 +12,7 @@ class missionController {
   };
 
   static createMission = async (req, res) => {
-    const response = await missionModel.setMission(req.body);
+    const response = await missionModel.broadcastMission(req.body);
     res.json(response);
   };
 
@@ -51,7 +51,7 @@ class missionController {
   };
 
   static showMission = async (mission_data) => {
-    let response = await missionModel.setMission(mission_data);
+    let response = await missionModel.broadcastMission(mission_data);
     return response;
   };
 
@@ -108,7 +108,7 @@ class missionController {
   static showMissionPlan = async (req, res) => {
     const plan = await missionModel.getMissionPlan(req.params.id);
     if (!plan) return res.status(404).json({ error: 'MissionPlan not found' });
-    await missionModel.setMission(plan.missionData);
+    await missionModel.broadcastMission(plan.missionData);
     res.json({ ok: true });
   };
 

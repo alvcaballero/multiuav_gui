@@ -38,18 +38,20 @@ export const LLMApiKeys = {
 };
 export const MCPenable = process.env.MCP_ENABLE === 'true'; // Model Context Protocol
 
+const VALID_MCP_TRANSPORTS = ['stdio', 'http', 'sse'];
 let _MCPconfig = {};
-try {
-  const raw = process.env.MCP_CONFIG;
-  _MCPconfig = raw ? JSON.parse(raw) : {};
-  logger.info('_MCPconfig', _MCPconfig);
-  if (typeof _MCPconfig.transport === 'undefined') {
-    throw new Error(`Unknown transport: ${_MCPconfig.transport}`);
+const raw = process.env.MCP_CONFIG;
+if (raw) {
+  try {
+    _MCPconfig = JSON.parse(raw);
+    if (!VALID_MCP_TRANSPORTS.includes(_MCPconfig.transport)) {
+      throw new Error(`Unknown transport '${_MCPconfig.transport}'. Valid: ${VALID_MCP_TRANSPORTS.join(', ')}`);
+    }
+    logger.info('MCP config loaded', _MCPconfig);
+  } catch (err) {
+    logger.error('Invalid MCP_CONFIG:', err.message);
+    _MCPconfig = {};
   }
-} catch (err) {
-  // invalid JSON in MCP_CONFIG env var — fallback to empty object
-  logger.error('Invalid MCP_CONFIG JSON:', err);
-  _MCPconfig = {};
 }
 export const MCPconfig = _MCPconfig; // MCP configuration file
 // data files

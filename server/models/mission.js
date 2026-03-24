@@ -64,15 +64,11 @@ export class missionModel {
     return await sequelize.models.Route.findAll();
   }
 
-  static async setMission(mission) {
+  static async broadcastMission(mission) {
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
       return { success: false };
     }
-    
-    console.log('setMission mission');
-    // Emitir evento al EventBus para que los subscribers lo manejen
     eventBus.emitSafe(EVENTS.MISSION_CREATED, { ...mission, name: mission.name ? mission.name : 'name' });
-
     return { success: true };
   }
 
@@ -497,7 +493,7 @@ export class missionModel {
       logger.debug(`[MissionShowXYZ] Input data:`, JSON.stringify(missionDataXYZ, null, 2));
       const mission = convertMissionXYZToLatLong(missionxyz);
       logger.debug(`[MissionShowXYZ] Converted mission:`, JSON.stringify(mission, null, 2));
-      const response = await this.setMission(mission);
+      const response = await this.broadcastMission(mission);
       logger.info(`[MissionShowXYZ] Mission show completed`);
       return response;
     } catch (error) {
