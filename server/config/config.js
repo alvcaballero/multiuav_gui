@@ -60,4 +60,5 @@ export const missionsData = '../data/missions.json';
 export const missionsConfigData = '../data/missionConfig.yaml';
 // config files
 export const devicesMsg = '../config/devices/devices_msg.yaml';
+export const missionSchema = '../config/devices/mission_schema.yaml';
 export const messagesTypes = '../config/devices/messages.yaml';

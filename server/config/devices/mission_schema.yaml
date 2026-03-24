@@ -1,0 +1,80 @@
+mission_action:
+  stay: #action_stay
+    name: 'stay'
+    id: 0
+    param: true
+    description: 'action_stay'
+  photo: #simple_shot
+    name: 'photo'
+    id: 1
+    param: false
+    description: 'simple_shot'
+  video_start:
+    name: 'video_start'
+    id: 2
+    param: false
+    description: 'video_start'
+  video_stop:
+    name: 'video_stop'
+    id: 3
+    param: false
+    description: 'video_stop'
+  yaw: # craft_yaw
+    name: 'yaw'
+    id: 4
+    param: true
+    description: 'craft_yaw'
+  gimbal: #gimbal_pitch
+    name: 'gimbal'
+    id: 5
+    param: true
+    description: 'gimbal_pitch'
+
+mission_param:
+  mode_yaw:
+    Name: 'mode yaw'
+    id: 'mode_yaw'
+    param:
+      - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
+      - { id: 1, name: 'Lock' } # lock as an initial value
+      - { id: 2, name: 'RC' } # controlled by RC
+      - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
+  mode_trace:
+    Name: 'trace_mode'
+    id: 'mode_trace'
+    param:
+      - { id: 0, name: 'point to point' }
+      - { id: 1, name: 'smooth' }
+  mode_landing:
+    Name: 'finish action'
+    id: 'mode_landing'
+    param:
+      - { id: 0, name: 'no action' }
+      - { id: 1, name: 'return to home' }
+      - { id: 2, name: 'auto landing' }
+      - { id: 3, name: 'return to point 0' }
+      - { id: 4, name: 'infinite mode' }
+  mode_gimbal:
+    Name: 'gimbal mode'
+    id: 'mode_gimbal'
+    param:
+      - { id: 0, name: 'Gimbal free' }
+      - { id: 1, name: 'Waypoint' }
+  idle_velocity:
+    Name: 'Cruising Speed'
+    id: 'idle_speed'
+    param: true
+  max_velocity:
+    Name: 'Max Speed'
+    id: 'max_speed'
+    param: true
+
+# Extra params only available on devices that support WaypointV2 (M300, M300_rtk)
+mission_param_v2:
+  mode_speed:
+    Name: 'Mode Speed'
+    id: 'mode_speed'
+    param:
+      - { id: 0, name: 'Idle speed' }
+      - { id: 1, name: 'idle and max speed' }
+      - { id: 2, name: 'Waypoint Speed' }

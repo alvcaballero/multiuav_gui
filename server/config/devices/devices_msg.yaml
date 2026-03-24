@@ -77,76 +77,7 @@ dji_M210_noetic:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      mode_yaw:
-        Name: 'mode yaw'
-        id: 'mode_yaw'
-        param:
-          - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-          - { id: 1, name: 'Lock' } # lock as an initial value
-          - { id: 2, name: 'RC' } # controlled by RC
-          - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
-      mode_trace:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'point to point' } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - { id: 1, name: 'smooth' } #Coordinated turn mode, smooth transition between waypts, no waypts task
-      mode_landing:
-        Name: 'finish action'
-        id: 'mode_landing'
-        param:
-          - { id: 0, name: 'no action' } # no action
-          - { id: 1, name: 'return to home' } # return to home
-          - { id: 2, name: 'auto landing' } # auto landing
-          - { id: 3, name: 'return to point 0' } # return to point 0
-          - { id: 4, name: 'infinite mode' } # infinite mode， no exit
-      mode_gimbal:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'Gimbal free' } # free mode, no control on gimbal
-          - { id: 1, name: 'Waypoint' } # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed'
-        id: 'idle_speed'
-        param: true
-      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Max Speed'
-        id: 'max_speed'
-        param: true
+  mission_schema: default
 dji_M210_melodic:
   topics:
     position:
@@ -195,76 +126,7 @@ dji_M210_melodic:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      mode_yaw:
-        Name: 'mode yaw'
-        id: 'mode_yaw'
-        param:
-          - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-          - { id: 1, name: 'Lock' } # lock as an initial value
-          - { id: 2, name: 'RC' } # controlled by RC
-          - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
-      mode_trace:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'point to point' } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - { id: 1, name: 'smooth' } #Coordinated turn mode, smooth transition between waypts, no waypts task
-      mode_landing:
-        Name: 'finish action'
-        id: 'mode_landing'
-        param:
-          - { id: 0, name: 'no action' } # no action
-          - { id: 1, name: 'return to home' } # return to home
-          - { id: 2, name: 'auto landing' } # auto landing
-          - { id: 3, name: 'return to point 0' } # return to point 0
-          - { id: 4, name: 'infinite mode' } # infinite mode， no exit
-      mode_gimbal:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'Gimbal free' } # free mode, no control on gimbal
-          - { id: 1, name: 'Waypoint' } # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed'
-        id: 'idle_speed'
-        param: true
-      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Max Speed'
-        id: 'max_speed'
-        param: true
+  mission_schema: default
 dji_M210_noetic_rtk:
   topics:
     position:
@@ -313,76 +175,7 @@ dji_M210_noetic_rtk:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      mode_yaw:
-        Name: 'mode yaw'
-        id: 'mode_yaw'
-        param:
-          - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-          - { id: 1, name: 'Lock' } # lock as an initial value
-          - { id: 2, name: 'RC' } # controlled by RC
-          - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
-      mode_trace:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'point to point' } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - { id: 1, name: 'smooth' } #Coordinated turn mode, smooth transition between waypts, no waypts task
-      mode_landing:
-        Name: 'finish action'
-        id: 'mode_landing'
-        param:
-          - { id: 0, name: 'no action' } # no action
-          - { id: 1, name: 'return to home' } # return to home
-          - { id: 2, name: 'auto landing' } # auto landing
-          - { id: 3, name: 'return to point 0' } # return to point 0
-          - { id: 4, name: 'infinite mode' } # infinite mode， no exit
-      mode_gimbal:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'Gimbal free' } # free mode, no control on gimbal
-          - { id: 1, name: 'Waypoint' } # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed'
-        id: 'idle_speed'
-        param: true
-      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Max Speed'
-        id: 'max_speed'
-        param: true
+  mission_schema: default
 dji_M210_melodic_rtk:
   topics:
     position:
@@ -431,76 +224,7 @@ dji_M210_melodic_rtk:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      mode_yaw:
-        Name: 'mode yaw'
-        id: 'mode_yaw'
-        param:
-          - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-          - { id: 1, name: 'Lock' } # lock as an initial value
-          - { id: 2, name: 'RC' } # controlled by RC
-          - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
-      mode_trace:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'point to point' } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - { id: 1, name: 'smooth' } #Coordinated turn mode, smooth transition between waypts, no waypts task
-      mode_landing:
-        Name: 'finish action'
-        id: 'mode_landing'
-        param:
-          - { id: 0, name: 'no action' } # no action
-          - { id: 1, name: 'return to home' } # return to home
-          - { id: 2, name: 'auto landing' } # auto landing
-          - { id: 3, name: 'return to point 0' } # return to point 0
-          - { id: 4, name: 'infinite mode' } # infinite mode， no exit
-      mode_gimbal:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'Gimbal free' } # free mode, no control on gimbal
-          - { id: 1, name: 'Waypoint' } # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed'
-        id: 'idle_speed'
-        param: true
-      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Max Speed'
-        id: 'max_speed'
-        param: true
+  mission_schema: default
 dji_M600:
   topics:
     position:
@@ -537,98 +261,18 @@ dji_M600:
     CameraFileList:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
-
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      mode_yaw:
-        Name: 'mode yaw'
-        id: 'mode_yaw'
-        param:
-          - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-          - { id: 1, name: 'Lock' } # lock as an initial value
-          - { id: 2, name: 'RC' } # controlled by RC
-          - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
-      mode_trace:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'point to point' } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - { id: 1, name: 'smooth' } #Coordinated turn mode, smooth transition between waypts, no waypts task
-      mode_landing:
-        Name: 'finish action'
-        id: 'mode_landing'
-        param:
-          - { id: 0, name: 'no action' } # no action
-          - { id: 1, name: 'return to home' } # return to home
-          - { id: 2, name: 'auto landing' } # auto landing
-          - { id: 3, name: 'return to point 0' } # return to point 0
-          - { id: 4, name: 'infinite mode' } # infinite mode， no exit
-      mode_gimbal:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'Gimbal free' } # free mode, no control on gimbal
-          - { id: 1, name: 'Waypoint' } # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed'
-        id: 'idle_speed'
-        param: true
-      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Max Speed'
-        id: 'max_speed'
-        param: true
-
+  mission_schema: default
 dji_M300:
   topics:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-      # sensor_height:
-      #   name: '/dji_osdk_ros/height_above_takeoff'
-      #   messageType: 'std_msgs/Float32'
-      #vo_position:
-      #  name: '/dji_osdk_ros/vo_position'
-      #  messageType: 'dji_osdk_ros/VOPosition'
     IMU: #hdg
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     hdg: #hdg
       name: '/dji_osdk_ros/compass_heading'
       messageType: 'std_msgs/Float32'
-      # speed:
-      #  name: '/dji_osdk_ros/velocity'
-      #  messageType: 'geometry_msgs/Vector3Stamped'
     mission_state:
       name: '/dji_osdk_ros/waypointV2_mission_state'
       messageType: 'dji_osdk_ros/WaypointV2MissionStatePush'
@@ -681,84 +325,7 @@ dji_M300:
     CameraFileList:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        #name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        #name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      mode_yaw:
-        Name: 'mode yaw'
-        id: 'mode_yaw'
-        param:
-          - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-          - { id: 1, name: 'Lock' } # lock as an initial value
-          - { id: 2, name: 'RC' } # controlled by RC
-          - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
-      mode_trace:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'point to point' } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - { id: 1, name: 'smooth' } #Coordinated turn mode, smooth transition between waypts, no waypts task
-      mode_landing:
-        Name: 'finish action'
-        id: 'mode_landing'
-        param:
-          - { id: 0, name: 'no action' } # no action
-          - { id: 1, name: 'return to home' } # return to home
-          - { id: 2, name: 'auto landing' } # auto landing
-          - { id: 3, name: 'return to point 0' } # return to point 0
-          - { id: 4, name: 'infinite mode' } # infinite mode， no exit
-      mode_gimbal:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'Gimbal free' } # free mode, no control on gimbal
-          - { id: 1, name: 'Waypoint' } # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed'
-        id: 'idle_speed'
-        param: true
-      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Max Speed'
-        id: 'max_speed'
-        param: true
-      mode_speed: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Mode Speed'
-        id: 'mode_speed'
-        param:
-          - { id: 0, name: 'Idle speed' } #  one speed
-          - { id: 1, name: 'idle and max speed' } # two speed
-          - { id: 2, name: 'Waypoint Speed' } # custon speed for each waypoint
-
+  mission_schema: v2
 dji_M300_rtk:
   topics:
     position:
@@ -828,84 +395,7 @@ dji_M300_rtk:
     CameraFileList:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        #name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        #name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      mode_yaw:
-        Name: 'mode yaw'
-        id: 'mode_yaw'
-        param:
-          - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-          - { id: 1, name: 'Lock' } # lock as an initial value
-          - { id: 2, name: 'RC' } # controlled by RC
-          - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
-      mode_trace:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'point to point' } #point to point, after reaching the target waypoint hover, complete waypt action (if any), then fly to the next waypt
-          - { id: 1, name: 'smooth' } #Coordinated turn mode, smooth transition between waypts, no waypts task
-      mode_landing:
-        Name: 'finish action'
-        id: 'mode_landing'
-        param:
-          - { id: 0, name: 'no action' } # no action
-          - { id: 1, name: 'return to home' } # return to home
-          - { id: 2, name: 'auto landing' } # auto landing
-          - { id: 3, name: 'return to point 0' } # return to point 0
-          - { id: 4, name: 'infinite mode' } # infinite mode， no exit
-      mode_gimbal:
-        Name: 'trace_mode'
-        id: 'mode_trace'
-        param:
-          - { id: 0, name: 'Gimbal free' } # free mode, no control on gimbal
-          - { id: 1, name: 'Waypoint' } # auto mode, Smooth transition between waypoints on gimbal
-      idle_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Cruising Speed'
-        id: 'idle_speed'
-        param: true
-      max_velocity: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Max Speed'
-        id: 'max_speed'
-        param: true
-      mode_speed: # Cruising Speed (without joystick input, no more than vel_cmd_range)
-        Name: 'Mode Speed'
-        id: 'mode_speed'
-        param:
-          - { id: 0, name: 'Idle speed' } #  one speed
-          - { id: 1, name: 'idle and max speed' } # two speed
-          - { id: 2, name: 'Waypoint Speed' } # custon speed for each waypoint
-
+  mission_schema: v2
 px4_mavros:
   topics:
     position:
@@ -945,40 +435,7 @@ px4_mavros:
     CameraFileDownload:
       name: '/camera_download_files'
       serviceType: 'dji_osdk_ros/DownloadMedia'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      idle_velocity: 'Cruising Speed' # Cruising Speed (without joystick input, no more than vel_cmd_range)
+  mission_schema: default
 px4_mavros_slow:
   topics:
     position:
@@ -1015,41 +472,7 @@ px4_mavros_slow:
     CameraFileDownload:
       name: '/camera_download_files'
       serviceType: 'dji_osdk_ros/DownloadMedia'
-  attributes:
-    mission_action:
-      stay: #action_stay
-        name: 'stay'
-        id: 0
-        param: true
-        description: 'action_stay'
-      photo: #simple_shot
-        name: 'photo'
-        id: 1
-        param: false
-        description: 'simple_shot'
-      video_start:
-        name: 'video_start'
-        id: 2
-        param: false
-        description: 'video_start'
-      video_stop:
-        name: 'video_stop'
-        id: 3
-        param: false
-        description: 'video_stop'
-      yaw: # craft_yaw
-        name: 'yaw'
-        id: 4
-        param: true
-        description: 'craft_yaw'
-      gimbal: #gimbal_pitch
-        name: 'gimbal'
-        id: 5
-        param: true
-        description: 'gimbal_pitch'
-    mission_param:
-      idle_velocity: 'Cruising Speed' # Cruising Speed (without joystick input, no more than vel_cmd_range)
-
+  mission_schema: default
 px4_ros2:
   topics:
     position_global:
@@ -1077,6 +500,7 @@ px4_ros2:
     commandMission:
       name: '/offboard/mission/start_stop'
       serviceType: 'std_srvs/srv/SetBool'
+  mission_schema: default
 fuvex:
   topics:
     position:
@@ -1095,7 +519,6 @@ fuvex:
       name: '/battery'
       messageType: 'sensor_msgs/BatteryState'
   services: {}
-
 catec:
   topics:
     position:
@@ -1126,7 +549,6 @@ catec:
     threat_defuse:
       name: '/threat_defuse'
       serviceType: 'std_srvs/Trigger'
-
 griffin:
   topics:
     position:
