@@ -100,7 +100,6 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     };
   }
   if (type == 'speed' && msgType == 'geometry_msgs/TwistStamped') {
-    console.log(`Speed message: ${JSON.stringify(msg)}`);
     return {
       deviceId,
       speed: round(

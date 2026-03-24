@@ -46,7 +46,12 @@ export function validateRosMsg(typeMsg, msg, typeMap, Checkallparrams = true) {
   }
   //console.log("Validating message of type:", type);
   //console.log("Validating message data:", msg);
-  const def = typeMap[type];
+  // ROS1: el bridge puede retornar el tipo con sufijo "Request" (ej: ConfigMissionRequest)
+  // en vez del nombre base (ConfigMission). Si no se encuentra, intentar con el sufijo.
+  let def = typeMap[type];
+  if (!def && typeMap[`${type}Request`]) {
+    def = typeMap[`${type}Request`];
+  }
   if (!def) {
     throw new Error(`No definition found for type ${type}`);
   }

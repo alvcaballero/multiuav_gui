@@ -65,7 +65,7 @@ function MissionToRos2(param) {
 }
 
 export function encodeRosSrv({ type, msg, msgType }) {
-  if (type == 'configureMission' && msgType == 'aerialcore_common/ConfigMission') {
+  if (type == 'configureMission' && (msgType == 'aerialcore_common/ConfigMission' || msgType == 'multiuav_interfaces/ConfigMission')) {
     return MissionToRos(msg);
   }
   if (type == 'configureMission' && msgType == 'muav_gcs_interfaces/srv/LoadMission') {

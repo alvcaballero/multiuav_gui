@@ -195,6 +195,7 @@ export class rosModel {
     }
 
     const responseSrvStructure = await rosModel.getServiceRequestDetails(messageType);
+    console.log('Service request structure:', responseSrvStructure);
     const srvStructure = responseSrvStructure.typedefs || [];
 
     if (!srvStructure || srvStructure.length === 0) {
@@ -367,7 +368,7 @@ export class rosModel {
       serviceType: 'rosapi_msgs/srv/Publishers',
     });
 
-    let request ={ topic: topic };
+    let request = { topic: topic };
 
     return new Promise((resolve, rejects) => {
       servicemaster.callService(
@@ -471,13 +472,14 @@ export class rosModel {
         callback: function (request, response) {
           console.log(`callback Sevice finish mission: ${JSON.stringify(request)}`);
           if (request.hasOwnProperty('uav_id')) {
-              missionController.deviceFinishMission({ name: request.uav_id });
+            missionController.deviceFinishMission({ name: request.uav_id });
           }
           Object.assign(response, { success: true, msg: 'Set successfully' });
           return true;
         },
       },
-      { name: 'ServiceDownload',
+      {
+        name: 'ServiceDownload',
         serviceName: '/GCS/FinishDownload',
         serviceType: 'aerialcore_common/finishGetFiles',
         callback: function (request, response) {
@@ -496,11 +498,11 @@ export class rosModel {
         serviceName: srv.serviceName,
         serviceType: srv.serviceType,
         callback: srv.callback,
-      });  
+      });
     }
   }
 
-  static serviceServer({ serviceName, serviceType, callback } ) {
+  static serviceServer({ serviceName, serviceType, callback }) {
     const service = new ROSLIB.Service({
       ros: ros,
       name: serviceName,
@@ -565,25 +567,26 @@ export class rosModel {
       actionType: actionType,
     });
 
-    let goal_id = newClient.sendGoal(message,
+    let goal_id = newClient.sendGoal(
+      message,
       (result) => {
-          console.log(`✅ Resultado: ${JSON.stringify(result)}`);
-          if (result.result && result.status === 4) {
-            console.log('🎯 Navegación completada!');
-          }else{
-            console.log('❌ La navegación falló o fue cancelada.');
-          }
-        },
-        (feedback) => {
-          console.log(`📍 Feedback: ${JSON.stringify(feedback)}`);
-        },
-      (error)=>{
+        console.log(`✅ Resultado: ${JSON.stringify(result)}`);
+        if (result.result && result.status === 4) {
+          console.log('🎯 Navegación completada!');
+        } else {
+          console.log('❌ La navegación falló o fue cancelada.');
+        }
+      },
+      (feedback) => {
+        console.log(`📍 Feedback: ${JSON.stringify(feedback)}`);
+      },
+      (error) => {
         console.error('action goal failed:', error);
       }
     );
     console.log('Goal sent with ID:', goal_id);
 
-    const goalHandle = { id: "a" };
+    const goalHandle = { id: 'a' };
 
     // const nav2Client = new ROS2GoalActionClient(ros, action, actionType, true);
     // // Enviar goal
@@ -603,7 +606,7 @@ export class rosModel {
     //     },
     //   }
     // );
-    return { state: 'success', msg: 'Action goal sent successfully' , goalId: goalHandle.id};
+    return { state: 'success', msg: 'Action goal sent successfully', goalId: goalHandle.id };
   }
 
   static async cancelActionGoal(args) {

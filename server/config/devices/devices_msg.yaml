@@ -979,6 +979,76 @@ px4_mavros:
         description: 'gimbal_pitch'
     mission_param:
       idle_velocity: 'Cruising Speed' # Cruising Speed (without joystick input, no more than vel_cmd_range)
+px4_mavros_slow:
+  topics:
+    position:
+      name: '/gcs/gps_position'
+      messageType: 'sensor_msgs/NavSatFix'
+    sensor_height:
+      name: '/gcs/altitude'
+      messageType: 'mavros_msgs/Altitude'
+    hdg:
+      name: '/gcs/compass_hdg'
+      messageType: 'std_msgs/Float64'
+    speed:
+      name: '/gcs/velocity'
+      messageType: 'geometry_msgs/TwistStamped'
+    battery:
+      name: '/gcs/battery'
+      messageType: 'multiuav_interfaces/BatteryState'
+    camera:
+      name: '/gcs/video_stream_compress'
+      messageType: 'sensor_msgs/CompressedImage'
+    threat:
+      name: '/threat'
+      messageType: 'std_msgs/Bool'
+  services:
+    configureMission:
+      name: '/mission/new'
+      serviceType: 'multiuav_interfaces/ConfigMission'
+    commandMission:
+      name: '/mission/start_stop'
+      serviceType: 'std_srvs/SetBool'
+    sincronize:
+      name: '/px4_mission_node/send_bags'
+      serviceType: 'std_srvs/Bool'
+    CameraFileDownload:
+      name: '/camera_download_files'
+      serviceType: 'dji_osdk_ros/DownloadMedia'
+  attributes:
+    mission_action:
+      stay: #action_stay
+        name: 'stay'
+        id: 0
+        param: true
+        description: 'action_stay'
+      photo: #simple_shot
+        name: 'photo'
+        id: 1
+        param: false
+        description: 'simple_shot'
+      video_start:
+        name: 'video_start'
+        id: 2
+        param: false
+        description: 'video_start'
+      video_stop:
+        name: 'video_stop'
+        id: 3
+        param: false
+        description: 'video_stop'
+      yaw: # craft_yaw
+        name: 'yaw'
+        id: 4
+        param: true
+        description: 'craft_yaw'
+      gimbal: #gimbal_pitch
+        name: 'gimbal'
+        id: 5
+        param: true
+        description: 'gimbal_pitch'
+    mission_param:
+      idle_velocity: 'Cruising Speed' # Cruising Speed (without joystick input, no more than vel_cmd_range)
 
 px4_ros2:
   topics:
@@ -1007,7 +1077,6 @@ px4_ros2:
     commandMission:
       name: '/offboard/mission/start_stop'
       serviceType: 'std_srvs/srv/SetBool'
-
 fuvex:
   topics:
     position:
