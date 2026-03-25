@@ -2,7 +2,9 @@
 logs/
 *.log
 
-# server files 
+# server files
+server/fbmsglib/src/
+
 guides/Activities.md
 devices/init/vpn/login.text
 server/config/devices/devices_init.yaml

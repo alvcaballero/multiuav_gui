@@ -12,7 +12,7 @@
     "inspect": "node --inspect ./server.js",
     "test": "node --test test/*.js",
     "test-logger": "node test-logger.js",
-    "build": "tsc --module 'commonjs'  --target 'es5' --outDir fbmsglib/dist fbmsglib/src/schema_main.ts "
+    "build:fbmsglib": "tsup fbmsglib/src/schema_main.ts --format cjs --out-dir fbmsglib/dist --no-dts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
@@ -27,6 +27,7 @@
     "exif-reader": "^2.0.1",
     "express": "^4.21.1",
     "express-ws": "^5.0.2",
+    "fbmsglib": "file:./fbmsglib",
     "flatbuffers": "^24.3.25",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
@@ -51,6 +52,7 @@
   "devDependencies": {
     "@types/flatbuffers": "^1.10.3",
     "@types/node": "^20.16.11",
+    "tsup": "^8.5.1",
     "typescript": "^5.6.3"
   }
 }
