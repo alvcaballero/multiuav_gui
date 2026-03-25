@@ -1,25 +1,8 @@
 import { z } from 'zod';
+import { MISSION_STATUS as MISSION_STATUS_MAP, ROUTE_STATUS as ROUTE_STATUS_MAP } from '../../config/status.js';
 
-export const MISSION_STATUS = z.enum([
-  'init',
-  'planning',
-  'running',
-  'finish',
-  'done',
-  'cancelled',
-  'error'
-]);
-
-export const ROUTE_STATUS = z.enum([
-  'init',
-  'loaded',
-  'commanded',
-  'running',
-  'complete',
-  'end',
-  'cancelled',
-  'error'
-]);
+export const MISSION_STATUS = z.enum(Object.values(MISSION_STATUS_MAP));
+export const ROUTE_STATUS = z.enum(Object.values(ROUTE_STATUS_MAP));
 
 export const MissionSchema = z.object({
   id: z.string().optional(),

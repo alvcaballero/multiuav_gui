@@ -1,5 +1,6 @@
 import * as turf from '@turf/turf';
 import { NoElevation } from '../config/config.js';
+import logger from '../common/logger.js';
 
 // Constantes de configuración
 const ELEVATION_API_URL = 'https://api.opentopodata.org/v1/eudem25m';
@@ -55,12 +56,12 @@ export class mapModel {
 
     // Si la API de elevación está deshabilitada, devolver elevaciones en cero
     if (NoElevation) {
-      console.log('Elevation API disabled - returning zero elevations');
+      logger.info('Elevation API disabled - returning zero elevations');
       const allResults = chunks.flatMap((chunk) => this.createZeroElevationResults(chunk));
       return { status: 'warning', results: allResults };
     }
 
-    console.log(`Fetching elevation data for ${locationList.length} points in ${chunks.length} request(s)`);
+    logger.info(`Fetching elevation data for ${locationList.length} points in ${chunks.length} request(s)`);
 
     const allResults = [];
     let hasErrors = false;
@@ -75,12 +76,12 @@ export class mapModel {
         if (data.results) {
           allResults.push(...data.results);
         } else {
-          console.warn('Elevation API returned no results for chunk');
+          logger.warn('Elevation API returned no results for chunk');
           allResults.push(...this.createZeroElevationResults(chunk));
           hasErrors = true;
         }
       } catch (error) {
-        console.error(`Elevation API fetch error: ${error.message}`);
+        logger.error(`Elevation API fetch error: ${error.message}`);
         allResults.push(...this.createZeroElevationResults(chunk));
         hasErrors = true;
       }
@@ -205,7 +206,7 @@ export class mapModel {
    */
   static enrichWithElevationData(altitudeDataByRoute, elevationProfile) {
     if (!elevationProfile?.results || elevationProfile.results.length === 0) {
-      console.error('No elevation results available');
+      logger.error('No elevation results available');
       throw new Error('No elevation data available');
     }
 
@@ -220,7 +221,7 @@ export class mapModel {
         const elevationResult = elevationProfile.results[elevationIndex];
 
         if (!elevationResult) {
-          console.error(`Missing elevation data at index ${elevationIndex}`);
+          logger.error(`Missing elevation data at index ${elevationIndex}`);
           throw new Error(`Missing elevation data at index ${elevationIndex}`);
         }
 
@@ -261,7 +262,7 @@ export class mapModel {
       return { elevation: [], status: true };
     }
 
-    console.log(`Calculating elevation profile for ${routes.length} route(s)`);
+    logger.info(`Calculating elevation profile for ${routes.length} route(s)`);
 
     // Paso 1: Procesar todas las rutas y extraer waypoints
     const allWaypointCoords = [];
@@ -273,20 +274,20 @@ export class mapModel {
       altitudeDataByRoute.push(altitudeData);
     }
 
-    console.log(`Total waypoint coords: ${allWaypointCoords.length}, Routes processed: ${altitudeDataByRoute.length}`);
+    logger.debug(`Total waypoint coords: ${allWaypointCoords.length}, Routes processed: ${altitudeDataByRoute.length}`);
 
     // Paso 2: Obtener elevación del terreno para todos los puntos
     const elevationProfile = await this.ApiElevation(allWaypointCoords);
 
-    console.log(`Elevation API returned ${elevationProfile?.results?.length || 0} results`);
+    logger.debug(`Elevation API returned ${elevationProfile?.results?.length || 0} results`);
 
     // Paso 3: Enriquecer datos con elevación del terreno
     try {
       const enrichedData = this.enrichWithElevationData(altitudeDataByRoute, elevationProfile);
-      console.log(`Elevation calculation successful, returning ${enrichedData.length} routes`);
+      logger.info(`Elevation calculation successful, returning ${enrichedData.length} routes`);
       return { elevation: enrichedData, status: true };
     } catch (error) {
-      console.error(`Error processing elevation profile: ${error.message}`);
+      logger.error(`Error processing elevation profile: ${error.message}`);
       return { elevation: [], status: false };
     }
   }

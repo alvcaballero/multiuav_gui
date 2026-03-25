@@ -10,11 +10,12 @@ import sequelize from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
 import { convertMissionXYZToLatLong } from './chat/coordinateConverter.js';
 import logger from '../common/logger.js';
+import { MISSION_STATUS, ROUTE_STATUS } from '../config/status.js';
 
 /**
  * @typedef Mission
  * @property {integer} id
- * @property {string} status - init, planning, running, finish, done, cancelled, error
+ * @property {string} status - see MISSION_STATUS in config/status.js
  * @property {string} initTime
  * @property {string} FinishTime
  * @property {Array<number>} uav
@@ -23,25 +24,7 @@ import logger from '../common/logger.js';
  * @property {Array<object>} results
  */
 
-export const MISSION_STATUS = Object.freeze({
-  INIT: 'init',
-  PLANNING: 'planning',
-  RUNNING: 'running',
-  COMPLETED: 'finish', //uav finish but no complete, need to download files
-  END: 'done', //uav finish and complete
-  CANCELLED: 'cancelled',
-  ERROR: 'error',
-});
-export const ROUTE_STATUS = Object.freeze({
-  INIT: 'init',
-  LOADED: 'loaded',
-  COMMANDED: 'commanded',
-  RUNNING: 'running',
-  COMPLETED: 'complete', //uav finish but no complete, need to download files
-  END: 'end', //uav finish and complete
-  CANCELLED: 'cancelled',
-  ERROR: 'error',
-});
+export { MISSION_STATUS, ROUTE_STATUS };
 
 export class missionModel {
   static async getMissionValue(id) {

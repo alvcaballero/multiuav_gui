@@ -30,7 +30,7 @@ Content-Type: application/json
     "name": "uav_14",
     "category": "dji_M300",
     "protocol": "ros",
-    "ip": "10.42.0.44",
+    "ip": "10.20.0.52",
     "camera":[
         {
             "type": "WebRTC",

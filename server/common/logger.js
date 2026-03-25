@@ -22,31 +22,6 @@ const colorizeLevel = {
   silly: chalk.gray,
 };
 
-// Formato personalizado para consola con colores
-const consoleFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.errors({ stack: true }),
-  winston.format.printf(({ timestamp, level, message, stack, ...meta }) => {
-    const colorizedLevel = colorizeLevel[level] ? colorizeLevel[level](level.toUpperCase()) : level.toUpperCase();
-    const colorizedTimestamp = chalk.gray(timestamp);
-    const colorizedMessage = level === 'error' ? chalk.red(message) : message;
-
-    let logLine = `${colorizedTimestamp} [${colorizedLevel}]: ${colorizedMessage}`;
-
-    // Agregar metadatos si existen
-    if (Object.keys(meta).length > 0) {
-      logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
-    }
-
-    // Agregar stack trace para errores
-    if (stack) {
-      logLine += `\n${chalk.red(stack)}`;
-    }
-
-    return logLine;
-  })
-);
-
 // Formato para archivos (sin colores)
 const fileFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -54,15 +29,8 @@ const fileFormat = winston.format.combine(
   winston.format.json()
 );
 
-// Configuración de transports
-const transports = [
-  // Consola con colores
-  new winston.transports.Console({
-    level: process.env.LOG_LEVEL || 'info',
-    format: consoleFormat,
-  }),
-
-  // Archivo para errores
+// Transports base compartidos (error.log + combined.log)
+const baseFileTransports = [
   new winston.transports.File({
     filename: join(__dirname, '../logs/error.log'),
     level: 'error',
@@ -70,156 +38,149 @@ const transports = [
     maxsize: 5242880, // 5MB
     maxFiles: 5,
   }),
-
-  // Archivo para todos los logs
   new winston.transports.File({
     filename: join(__dirname, '../logs/combined.log'),
     format: fileFormat,
-    maxsize: 5242880, // 5MB
+    maxsize: 5242880,
     maxFiles: 5,
   }),
 ];
 
-// Crear el logger principal
+/**
+ * Crea un logger con label/contexto específico.
+ *
+ * @param {object} options
+ * @param {string} [options.label]        - Label visible en consola, ej: 'WEBSOCKET'
+ * @param {Function} [options.color]      - Función chalk para colorear el label
+ * @param {string} [options.level]        - Nivel mínimo de log (default: process.env.LOG_LEVEL || 'info')
+ * @param {string} [options.filename]     - Archivo de log adicional (relativo a logs/)
+ * @param {string} [options.envLevelKey]  - Variable de entorno para override del nivel
+ * @returns {winston.Logger}
+ */
+const createLogger = ({ label = null, color = chalk.blue, level = null, filename = null, envLevelKey = null } = {}) => {
+  const resolvedLevel = (envLevelKey && process.env[envLevelKey]) || level || process.env.LOG_LEVEL || 'info';
+
+  const consoleFormat = winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.printf(({ timestamp, level: lvl, message, stack, label: msgLabel, deviceId, deviceName, topic, nodeId, ...meta }) => {
+      const colorizedLevel = colorizeLevel[lvl] ? colorizeLevel[lvl](lvl.toUpperCase()) : lvl.toUpperCase();
+      const colorizedTimestamp = chalk.gray(timestamp);
+      const colorizedMessage = lvl === 'error' ? chalk.red(message) : message;
+
+      let prefix = '';
+      if (label || msgLabel) {
+        prefix = color.bold(`[${label || msgLabel}] `);
+      }
+
+      // Campos contextuales opcionales (device, ros topic, etc.)
+      let contextInfo = '';
+      if (deviceId || deviceName) contextInfo += chalk.green(`[${deviceName || deviceId}] `);
+      if (nodeId) contextInfo += chalk.green(`[${nodeId}] `);
+      if (topic) contextInfo += chalk.blue(`[${topic}] `);
+
+      let logLine = `${colorizedTimestamp} ${prefix}[${colorizedLevel}]: ${contextInfo}${colorizedMessage}`;
+
+      if (Object.keys(meta).length > 0) {
+        logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
+      }
+
+      if (stack) {
+        logLine += `\n${chalk.red(stack)}`;
+      }
+
+      return logLine;
+    })
+  );
+
+  const transports = [
+    new winston.transports.Console({
+      level: resolvedLevel,
+      format: consoleFormat,
+    }),
+    ...baseFileTransports,
+  ];
+
+  if (filename) {
+    transports.push(
+      new winston.transports.File({
+        filename: join(__dirname, `../logs/${filename}`),
+        format: fileFormat,
+        maxsize: 5242880,
+        maxFiles: 3,
+      })
+    );
+  }
+
+  return winston.createLogger({
+    level: resolvedLevel,
+    transports,
+    exitOnError: false,
+  });
+};
+
+// Logger principal (sin label, maneja excepciones globales)
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  transports,
+  transports: [
+    new winston.transports.Console({
+      level: process.env.LOG_LEVEL || 'info',
+      format: winston.format.combine(
+        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        winston.format.errors({ stack: true }),
+        winston.format.printf(({ timestamp, level: lvl, message, stack, ...meta }) => {
+          const colorizedLevel = colorizeLevel[lvl] ? colorizeLevel[lvl](lvl.toUpperCase()) : lvl.toUpperCase();
+          const colorizedTimestamp = chalk.gray(timestamp);
+          const colorizedMessage = lvl === 'error' ? chalk.red(message) : message;
+
+          let logLine = `${colorizedTimestamp} [${colorizedLevel}]: ${colorizedMessage}`;
+
+          if (Object.keys(meta).length > 0) {
+            logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
+          }
+
+          if (stack) {
+            logLine += `\n${chalk.red(stack)}`;
+          }
+
+          return logLine;
+        })
+      ),
+    }),
+    ...baseFileTransports,
+  ],
   exitOnError: false,
-  // Manejar excepciones no capturadas
   handleExceptions: true,
   handleRejections: true,
 });
 
-// Logger específico para WebSocket
-const wsLogger = winston.createLogger({
-  level: process.env.WS_LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.label({ label: 'WEBSOCKET' }),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(({ timestamp, level, message, label }) => {
-      const colorizedLevel = colorizeLevel[level] ? colorizeLevel[level](level.toUpperCase()) : level.toUpperCase();
-      const colorizedLabel = chalk.cyan.bold(`[${label}]`);
-      const colorizedTimestamp = chalk.gray(timestamp);
-      return `${colorizedTimestamp} ${colorizedLabel} [${colorizedLevel}]: ${message}`;
-    })
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({
-      filename: join(__dirname, '../logs/websocket.log'),
-      format: fileFormat,
-      maxsize: 5242880,
-      maxFiles: 3,
-    }),
-  ],
+// Loggers con contexto — creados con la factory unificada
+const wsLogger = createLogger({
+  label: 'WEBSOCKET',
+  color: chalk.cyan,
+  envLevelKey: 'WS_LOG_LEVEL',
+  filename: 'websocket.log',
 });
 
-// Logger específico para dispositivos/drones
-const deviceLogger = winston.createLogger({
-  level: process.env.DEVICE_LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.label({ label: 'DEVICE' }),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(({ timestamp, level, message, label, deviceId, deviceName, ...meta }) => {
-      const colorizedLevel = colorizeLevel[level] ? colorizeLevel[level](level.toUpperCase()) : level.toUpperCase();
-      const colorizedLabel = chalk.yellow.bold(`[${label}]`);
-      const colorizedTimestamp = chalk.gray(timestamp);
-
-      let deviceInfo = '';
-      if (deviceId || deviceName) {
-        deviceInfo = chalk.green(`[${deviceName || deviceId}] `);
-      }
-
-      let logLine = `${colorizedTimestamp} ${colorizedLabel} [${colorizedLevel}]: ${deviceInfo}${message}`;
-
-      if (Object.keys(meta).length > 0) {
-        logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
-      }
-
-      return logLine;
-    })
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({
-      filename: join(__dirname, '../logs/devices.log'),
-      format: fileFormat,
-      maxsize: 5242880,
-      maxFiles: 3,
-    }),
-  ],
+const deviceLogger = createLogger({
+  label: 'DEVICE',
+  color: chalk.yellow,
+  envLevelKey: 'DEVICE_LOG_LEVEL',
+  filename: 'devices.log',
 });
 
-// Logger específico para ROS
-const rosLogger = winston.createLogger({
-  level: process.env.ROS_LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.label({ label: 'ROS' }),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(({ timestamp, level, message, label, topic, nodeId, ...meta }) => {
-      const colorizedLevel = colorizeLevel[level] ? colorizeLevel[level](level.toUpperCase()) : level.toUpperCase();
-      const colorizedLabel = chalk.magenta.bold(`[${label}]`);
-      const colorizedTimestamp = chalk.gray(timestamp);
-
-      let topicInfo = '';
-      if (topic) {
-        topicInfo = chalk.blue(`[${topic}] `);
-      }
-
-      let nodeInfo = '';
-      if (nodeId) {
-        nodeInfo = chalk.green(`[${nodeId}] `);
-      }
-
-      let logLine = `${colorizedTimestamp} ${colorizedLabel} [${colorizedLevel}]: ${nodeInfo}${topicInfo}${message}`;
-
-      if (Object.keys(meta).length > 0) {
-        logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
-      }
-
-      return logLine;
-    })
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({
-      filename: join(__dirname, '../logs/ros.log'),
-      format: fileFormat,
-      maxsize: 5242880,
-      maxFiles: 3,
-    }),
-  ],
+const rosLogger = createLogger({
+  label: 'ROS',
+  color: chalk.magenta,
+  envLevelKey: 'ROS_LOG_LEVEL',
+  filename: 'ros.log',
 });
 
-// Logger específico para ROS
-const chatLogger = winston.createLogger({
-  level: process.env.CHAT_LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.label({ label: 'chat' }),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(({ timestamp, level, message, label, ...meta }) => {
-      const colorizedLevel = colorizeLevel[level] ? colorizeLevel[level](level.toUpperCase()) : level.toUpperCase();
-      const colorizedLabel = chalk.green.bold(`[${label}]`);
-      const colorizedTimestamp = chalk.gray(timestamp);
-
-      let logLine = `${colorizedTimestamp} ${colorizedLabel} [${colorizedLevel}]: ${message}`;
-
-      if (Object.keys(meta).length > 0) {
-        logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
-      }
-
-      return logLine;
-    })
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({
-      filename: join(__dirname, '../logs/ros.log'),
-      format: fileFormat,
-      maxsize: 5242880,
-      maxFiles: 3,
-    }),
-  ],
+const chatLogger = createLogger({
+  label: 'CHAT',
+  color: chalk.green,
+  envLevelKey: 'CHAT_LOG_LEVEL',
+  filename: 'chat.log',
 });
 
 // Funciones helper para logging fácil
@@ -337,48 +298,11 @@ const logHelpers = {
   },
 };
 
-// Función para crear logger personalizado
-const createCustomLogger = (label, options = {}) => {
-  const defaultOptions = {
-    level: 'info',
-    color: chalk.blue,
-    filename: `${label.toLowerCase()}.log`,
-    ...options,
-  };
-
-  return winston.createLogger({
-    level: defaultOptions.level,
-    format: winston.format.combine(
-      winston.format.label({ label: label.toUpperCase() }),
-      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-      winston.format.printf(({ timestamp, level, message, label: logLabel, ...meta }) => {
-        const colorizedLevel = colorizeLevel[level] ? colorizeLevel[level](level.toUpperCase()) : level.toUpperCase();
-        const colorizedLabel = defaultOptions.color.bold(`[${logLabel}]`);
-        const colorizedTimestamp = chalk.gray(timestamp);
-
-        let logLine = `${colorizedTimestamp} ${colorizedLabel} [${colorizedLevel}]: ${message}`;
-
-        if (Object.keys(meta).length > 0) {
-          logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
-        }
-
-        return logLine;
-      })
-    ),
-    transports: [
-      new winston.transports.Console(),
-      new winston.transports.File({
-        filename: join(__dirname, `../logs/${defaultOptions.filename}`),
-        format: fileFormat,
-        maxsize: 5242880,
-        maxFiles: 3,
-      }),
-    ],
-  });
-};
-
 // Exportar loggers y utilidades
-export { logger, wsLogger, deviceLogger, rosLogger, chatLogger, logHelpers, createCustomLogger, colorizeLevel, chalk };
+export { logger, wsLogger, deviceLogger, rosLogger, chatLogger, logHelpers, createLogger, colorizeLevel, chalk };
+
+// createCustomLogger es alias de createLogger para backwards compatibility
+export const createCustomLogger = createLogger;
 
 // Export default como el logger principal
 export default logger;

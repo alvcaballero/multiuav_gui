@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import exif from 'exif-reader';
 import util from 'util';
 import { processThermalImg, processThermalsSrc } from '../config/config.js';
+import logger from '../common/logger.js';
 
 const exec = util.promisify(child_process.exec);
 
@@ -27,7 +28,7 @@ function convertDMSToDD(degrees, minutes, seconds, direction) {
   */
 
 export async function getMetadata(path) {
-  console.log('metadata imagen');
+  logger.debug(`getMetadata: ${path}`);
   let latitude;
   let longitude;
   let measures = [];
@@ -66,21 +67,18 @@ export async function getMetadata(path) {
 }
 
 export async function ProcessThermalImage(input, output) {
-  console.log('process thermal image' + input);
+  logger.info(`ProcessThermalImage: ${input} -> ${output}`);
   if (!processThermalImg) return false;
-  //conda run -n DJIThermal
-  console.log('last images process');
-  console.log('process img' + input + ' ' + output);
   try {
     const { stdout, stderr } = await exec(
       ` ${processThermalsSrc} -i "${input}" -o "${output}" `, { shell: '/bin/bash' }
     );
-    console.log('stdout:', stdout);
-    console.log('stderr:', stderr);
+    logger.debug(`stdout: ${stdout}`);
+    if (stderr) logger.debug(`stderr: ${stderr}`);
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     return false;
   }
-  console.log('finish process');
+  logger.info('ProcessThermalImage finished');
   return true;
 }

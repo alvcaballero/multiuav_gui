@@ -10,7 +10,7 @@ export const CameraSchema = z.object({
 
 export const FileAccessSchema = z.object({
   url: z.string().url(),
-  type: z.literal('ftp'),
+  type: z.literal('onboard_computer', 'wiris_pro', 'default'),
 });
 
 export const DeviceSchema = z.object({

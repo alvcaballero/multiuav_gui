@@ -1,3 +1,32 @@
+// --- Device status ---
+export const DEVICE_STATUS = Object.freeze({
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+});
+
+// --- Mission / Route status ---
+export const MISSION_STATUS = Object.freeze({
+  INIT: 'init',
+  PLANNING: 'planning',
+  RUNNING: 'running',
+  COMPLETED: 'finish',   // UAV finished but files not yet downloaded
+  END: 'done',           // UAV finished and files downloaded
+  CANCELLED: 'cancelled',
+  ERROR: 'error',
+});
+
+export const ROUTE_STATUS = Object.freeze({
+  INIT: 'init',
+  LOADED: 'loaded',
+  COMMANDED: 'commanded',
+  RUNNING: 'running',
+  COMPLETED: 'complete', // UAV finished but files not yet downloaded
+  END: 'end',            // UAV finished and files downloaded
+  CANCELLED: 'cancelled',
+  ERROR: 'error',
+});
+
+// --- PX4 / ROS navigation maps ---
 // Definimos el mapa de estados
 const navigationStates = {
   0: "Manual mode",

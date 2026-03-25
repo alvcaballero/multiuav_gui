@@ -1,10 +1,16 @@
-import { StreamServer, DEVICE_CHECK_INTERVAL_MS, DEVICE_UPDATE_INTERVAL_MS, DEVICE_TIMEOUT_MS } from '../config/config.js';
+import {
+  StreamServer,
+  DEVICE_CHECK_INTERVAL_MS,
+  DEVICE_UPDATE_INTERVAL_MS,
+  DEVICE_TIMEOUT_MS,
+} from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
 import { object, set } from 'zod';
 import { positionsController } from '../controllers/positions.js';
 import logger from '../common/logger.js';
+import { DEVICE_STATUS } from '../config/status.js';
 /* devices:
 /   id
 /   name  : name of uav
@@ -24,64 +30,71 @@ import logger from '../common/logger.js';
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
-const devicesStatus = Object.freeze({
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-});
-
 const protocols = Object.freeze({
   ROS: 'ros',
   ROBOFLEET: 'robofleet',
 });
 
-// update device time every 1.5 seconds
-const updateDeviceTime = async () => {
-  const limitDate = new Date(Date.now() - DEVICE_TIMEOUT_MS);
-  try {
-    const updates = await positionsController.getLastPositions();
-    const validUpdates = updates.filter((update) => new Date(update.deviceTime) > limitDate);
+class DeviceHealthMonitor {
+  constructor() {
+    this._updateTimer = setInterval(() => this._updateDeviceTime(), DEVICE_UPDATE_INTERVAL_MS);
+    this._checkTimer = setInterval(() => this._checkDeviceOnline(), DEVICE_CHECK_INTERVAL_MS);
+    logger.info('DeviceHealthMonitor started');
 
-    if (validUpdates.length > 0) {
-      const transaction = await sequelize.transaction();
-      try {
-        await Promise.all(
-          validUpdates.map((update) =>
-            sequelize.models.Device.update(
-              { lastUpdate: update.deviceTime, status: devicesStatus.ONLINE },
-              {
-                where: { id: update.deviceId },
-                transaction,
-              }
-            )
-          )
-        );
-        await transaction.commit();
-      } catch (error) {
-        await transaction.rollback();
-        logger.error('Error al actualizar dispositivos:', error);
-      }
-    }
-  } catch (error) {
-    logger.error('Error en updateDeviceTime:', error);
-  } finally {
-    setTimeout(updateDeviceTime, DEVICE_UPDATE_INTERVAL_MS);
+    process.on('SIGTERM', () => this.stop());
+    process.on('SIGINT', () => this.stop());
   }
-};
-setTimeout(updateDeviceTime, DEVICE_UPDATE_INTERVAL_MS);
 
-//put device status to offline if not updated in 30 seconds
-const CheckDeviceOnline = async () => {
-  const cutoffTime = new Date(Date.now() - DEVICE_TIMEOUT_MS);
-  await sequelize.models.Device.update(
-    { status: devicesStatus.OFFLINE },
-    {
-      where: { lastUpdate: { [Op.lte]: cutoffTime }, deletedAt: null },
+  stop() {
+    clearInterval(this._updateTimer);
+    clearInterval(this._checkTimer);
+    this._updateTimer = null;
+    this._checkTimer = null;
+    logger.info('DeviceHealthMonitor stopped');
+  }
+
+  async _updateDeviceTime() {
+    const limitDate = new Date(Date.now() - DEVICE_TIMEOUT_MS);
+    try {
+      const updates = await positionsController.getLastPositions();
+      const validUpdates = updates.filter((update) => new Date(update.deviceTime) > limitDate);
+
+      if (validUpdates.length > 0) {
+        const transaction = await sequelize.transaction();
+        try {
+          await Promise.all(
+            validUpdates.map((update) =>
+              sequelize.models.Device.update(
+                { lastUpdate: update.deviceTime, status: DEVICE_STATUS.ONLINE },
+                { where: { id: update.deviceId }, transaction }
+              )
+            )
+          );
+          await transaction.commit();
+        } catch (error) {
+          await transaction.rollback();
+          logger.error('Error al actualizar dispositivos:', error);
+        }
+      }
+    } catch (error) {
+      logger.error('Error en updateDeviceTime:', error);
     }
-  );
+  }
 
-  setTimeout(CheckDeviceOnline, DEVICE_CHECK_INTERVAL_MS);
-};
-setTimeout(CheckDeviceOnline, DEVICE_CHECK_INTERVAL_MS);
+  async _checkDeviceOnline() {
+    const cutoffTime = new Date(Date.now() - DEVICE_TIMEOUT_MS);
+    try {
+      await sequelize.models.Device.update(
+        { status: DEVICE_STATUS.OFFLINE },
+        { where: { lastUpdate: { [Op.lte]: cutoffTime }, deletedAt: null } }
+      );
+    } catch (error) {
+      logger.error('Error en checkDeviceOnline:', error);
+    }
+  }
+}
+
+export const deviceHealthMonitor = new DeviceHealthMonitor();
 
 export class DevicesModel {
   constructor() {
@@ -133,7 +146,7 @@ export class DevicesModel {
         name: device.name,
         category: device.category,
         ip: device.ip,
-        status: devicesStatus.OFFLINE,
+        status: DEVICE_STATUS.OFFLINE,
         user: device.user,
         pwd: device.pwd,
         ip: device.ip,

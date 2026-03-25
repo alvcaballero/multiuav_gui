@@ -9,8 +9,9 @@ import logger, { logHelpers } from '../../common/logger.js';
 
 const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 
-// Module-level list used by GCSServicesMission / GCSunServicesMission
-const service_list = [];
+// Module-level registry used by GCSServicesMission / GCSunServicesMission.
+// Keyed by service name (e.g. 'ServiceMission') → ROSLIB.Service instance.
+const service_list = {};
 
 export async function callRosService({ service, messageType, message }, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
@@ -347,10 +348,13 @@ export function GCSServicesMission(ros) {
   }
 }
 
+// Unadvertise all GCS ROS services and clear the registry.
+// Called on graceful shutdown (SIGINT/SIGTERM) and uncaughtException
+// to avoid leaving orphaned service advertisements on the ROS master.
 export function GCSunServicesMission() {
-  for (let srv of service_list) {
-    service_list[srv.name].unadvertise();
-    delete service_list[srv.name];
+  for (const [name, service] of Object.entries(service_list)) {
+    service.unadvertise();
+    delete service_list[name];
   }
 }
 
