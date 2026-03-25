@@ -20,7 +20,7 @@ import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
 import { eventBus } from './common/eventBus.js';
 
 // comunications with devices
-import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
+import { initFlatbufferServer } from './models/flatbuffer/index.js';
 import { rosModel } from './models/ros/ros.js'; // ros model
 
 // comunication with devices
@@ -83,7 +83,7 @@ if (RosEnable) {
   logger.warn('ROS deshabilitado en configuración');
 }
 if (FbEnable) {
-  var ws2 = new WebsocketDevices(8082);
+  initFlatbufferServer(8082);
 } else {
   logger.warn('FB communication disabled');
 }
@@ -101,7 +101,9 @@ if (LLM) {
 
   if (!apiKey) {
     const envVar = `LLM_${(provider === 'claude' ? 'ANTHROPIC' : provider).toUpperCase()}_API_KEY`;
-    const error = new Error(`LLM API Key is required for provider "${provider}". Please set ${envVar} in your environment variables.`);
+    const error = new Error(
+      `LLM API Key is required for provider "${provider}". Please set ${envVar} in your environment variables.`
+    );
     logger.error('Error de configuración LLM', {
       error: error.message,
       type: 'configuration',
@@ -138,7 +140,6 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM recibido, cerrando servidor gracefully');
 
-  // Cleanup EventBus and subscribers
   wsSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();
@@ -152,7 +153,6 @@ process.on('SIGINT', () => {
   logger.info('SIGINT recibido, cerrando servidor gracefully');
   rosModel.GCSunServicesMission();
 
-  // Cleanup EventBus and subscribers
   wsSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();
