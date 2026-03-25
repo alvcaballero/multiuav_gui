@@ -1,4 +1,4 @@
-import { useId, useEffect, useState } from 'react';
+import { useId, useEffect, useRef, useState } from 'react';
 import { map } from '../MapView';
 import { findFonts } from '../mapUtil';
 import palette from '../../common/palette';
@@ -50,6 +50,12 @@ const MapMarkersCreate = ({
 
   const [testkeepValue, settestkeepValue] = useState(new keepMarkers());
 
+  // Use refs so event listeners always call the latest version without needing re-registration
+  const setLocationsRef = useRef(setLocations);
+  const setMarkersRef = useRef(setMarkers);
+  useEffect(() => { setLocationsRef.current = setLocations; }, [setLocations]);
+  useEffect(() => { setMarkersRef.current = setMarkers; }, [setMarkers]);
+
   const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
   const onMouseEnterPointer = () => (map.getCanvas().style.cursor = 'pointer');
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
@@ -57,10 +63,10 @@ const MapMarkersCreate = ({
     if (e.hasOwnProperty('features')) {
       //console.log(e.features[0]);
       if (e.features[0].properties.type == 'element') {
-        setLocations({ ...e.features[0].properties, type: 'object' });
+        setLocationsRef.current({ ...e.features[0].properties, type: 'object' });
       }
     } else {
-      setLocations({
+      setLocationsRef.current({
         latitude: e.lngLat.lat,
         longitude: e.lngLat.lng,
         groupId: 0,
@@ -121,7 +127,7 @@ const MapMarkersCreate = ({
       }
     }
     testkeepValue.getSelect({ id: -1 });
-    setMarkers(auxMarkers);
+    setMarkersRef.current(auxMarkers);
 
     console.log(`Longitude: ${coords.lng} Latitude: ${coords.lat}`);
 
