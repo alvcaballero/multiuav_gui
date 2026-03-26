@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useModelLoader, modelKey } from './ModelLoader.jsx';
+import { useModelLoader, modelKey } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
-import { LatLon2XYZ } from './convertion';
+import { LatLon2XYZ } from '../core/convertion';
 
 const Marker = ({ item }) => {
   const { model, error } = useModelLoader(item.type);

@@ -2,8 +2,8 @@ import React, { useCallback } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useSelector } from 'react-redux';
-import { LatLon2XYZ } from './convertion';
-import { modelKey } from './ModelLoader.jsx';
+import { LatLon2XYZ } from '../core/convertion';
+import { modelKey } from '../models/ModelLoader.jsx';
 import YAML from 'yaml';
 
 const DownloadYamlButton = () => {

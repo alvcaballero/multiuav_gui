@@ -1,4 +1,4 @@
-import groundTextureImg from '../resources/3d/ground.jpg';
+import groundTextureImg from '../../resources/3d/ground.jpg';
 import { NearestFilter, RepeatWrapping, TextureLoader, CanvasTexture } from 'three';
 
 const groundTexture = new TextureLoader().load(groundTextureImg);

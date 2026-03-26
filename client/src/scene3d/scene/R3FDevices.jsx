@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
-import { useModelLoader, getModelPath } from './ModelLoader.jsx';
-import Drone from './Drone.jsx';
-import { LatLon2XYZ, LatLon2XYZObj } from './convertion';
+import { useModelLoader, getModelPath } from '../models/ModelLoader.jsx';
+import Drone from '../models/Drone.jsx';
+import { LatLon2XYZ, LatLon2XYZObj } from '../core/convertion';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { useGLTF, PerspectiveCamera, useHelper, Helper } from '@react-three/drei';
 

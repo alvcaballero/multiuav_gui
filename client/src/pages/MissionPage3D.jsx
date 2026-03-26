@@ -12,10 +12,10 @@ import MissionElevation from '../components/mission/MissionElevation';
 import SaveFile from '../components/ui/SaveFile';
 
 
-import MapView from '../ThreeD/MapView';
-import R3FMission from '../ThreeD/R3FMission';
-import R3DMarkers from '../ThreeD/R3DMarkers';
-import R3FDevices from '../ThreeD/R3FDevices';
+import MapView from '../scene3d/core/MapView';
+import R3FMission from '../scene3d/scene/R3FMission';
+import R3DMarkers from '../scene3d/scene/R3DMarkers';
+import R3FDevices from '../scene3d/scene/R3FDevices';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

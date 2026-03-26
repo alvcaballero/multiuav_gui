@@ -3,11 +3,11 @@ import { useSelector } from 'react-redux';
 
 import * as THREE from 'three';
 import maplibregl from 'maplibre-gl';
-import palette from '../shared/palette';
+import palette from '../../shared/palette';
 import { Line } from '@react-three/drei';
 
-import NumberedSphere from './NumberedSphere';
-import { LatLon2XYZ } from './convertion';
+import NumberedSphere from '../primitives/NumberedSphere';
+import { LatLon2XYZ } from '../core/convertion';
 
 const R3FMission = ({ routes = [] }) => {
   const [routeLines, setRouteLines] = useState([]);

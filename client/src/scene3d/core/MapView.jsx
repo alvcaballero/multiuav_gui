@@ -4,7 +4,7 @@ import React, { Suspense, useEffect } from 'react';
 import * as THREE from 'three';
 import { Perf } from 'r3f-perf';
 
-import CameraControls from '../ThreeD/CameraControls';
+import CameraControls from './CameraControls';
 import { groundTexture, waterTexture } from './textures';
 // Crear textura del suelo
 groundTexture.repeat.set(100, 100);

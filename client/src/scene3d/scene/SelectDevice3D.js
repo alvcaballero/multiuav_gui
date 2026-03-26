@@ -1,9 +1,9 @@
 import { useRef, useEffect } from 'react';
 
 import { useSelector ,useDispatch} from 'react-redux';
-import { sessionActions } from '../store';
-import { LatLon2XYZ , LatLon2XYZObj} from './convertion';
-import { usePrevious } from '../reactHelper';
+import { sessionActions } from '../../store';
+import { LatLon2XYZ , LatLon2XYZObj} from '../core/convertion';
+import { usePrevious } from '../../reactHelper';
 
 
 const SelectDevice3D = () => {

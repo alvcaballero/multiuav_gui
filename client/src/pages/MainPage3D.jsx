@@ -15,15 +15,15 @@ import MainToolbar from '../components/layout/MainToolbar';
 import StatusCard from '../components/devices/StatusCard';
 import CameraDevice from '../components/camera/CameraDevice';
 
-import SelectDevice3D from '../ThreeD/SelectDevice3D';
+import SelectDevice3D from '../scene3d/scene/SelectDevice3D';
 
 import { devicesActions } from '../store';
 
-import MapView from '../ThreeD/MapView';
-import R3FMission from '../ThreeD/R3FMission';
-import R3DMarkers from '../ThreeD/R3DMarkers';
-import R3FDevices from '../ThreeD/R3FDevices';
-import DownloadYamlButton from '../ThreeD/DownloadYamlButton';
+import MapView from '../scene3d/core/MapView';
+import R3FMission from '../scene3d/scene/R3FMission';
+import R3DMarkers from '../scene3d/scene/R3DMarkers';
+import R3FDevices from '../scene3d/scene/R3FDevices';
+import DownloadYamlButton from '../scene3d/controls/DownloadYamlButton';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
