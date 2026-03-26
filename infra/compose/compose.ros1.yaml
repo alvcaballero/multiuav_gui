@@ -1,0 +1,17 @@
+# compose.ros1.yaml — ROS Bridge para ROS 1 Noetic
+#
+# Requiere imagen construida localmente:
+#   docker build -t muavgcs:ros1 -f <repo-ros-workspace>/Dockerfile .
+# Ver infra/README.md → ROS Bridge
+#
+# Uso:
+#   docker compose \
+#     -f infra/compose/compose.base.yaml \
+#     -f infra/compose/compose.ros1.yaml up
+
+services:
+  RosBridge:
+    image: 'muavgcs:ros1'
+    command: >
+      bash -c "source /root/catkin_ws/devel/setup.bash && roslaunch aerialcore_gui connect_uas.launch"
+    network_mode: host

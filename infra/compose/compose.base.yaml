@@ -1,0 +1,26 @@
+# compose.base.yaml — servicios mínimos para arrancar la GCS
+# Siempre se incluye. Combinar con otros overrides según el escenario.
+#
+# Uso mínimo:
+#   docker compose -f infra/compose/compose.base.yaml up
+#
+# El server lee server/.env — copiarlo desde server/.env.example antes de arrancar.
+# Variables de entorno para Docker (ROS, etc.) vienen del .env de la raíz.
+
+services:
+  node:
+    image: 'node:18'
+    user: 'node'
+    working_dir: /home/node/app
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ../../server/:/home/node/app
+    command: 'npm run server'
+    network_mode: host
+
+  VideoServer:
+    image: 'bluenviron/mediamtx'
+    volumes:
+      - ../../server/config/mediamtx.yml:/mediamtx.yml
+    network_mode: host

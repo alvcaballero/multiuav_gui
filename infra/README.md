@@ -87,15 +87,94 @@ Sin el volumen el MapServer arranca pero no servirá tiles.
 
 ---
 
-## Arrancar la stack
+## Compose modular — overrides por escenario
+
+El `compose.yaml` de la raíz levanta todo el stack junto. Para mayor control,
+usá los overrides en `infra/compose/` combinando solo lo que necesitás:
+
+| Archivo | Servicios | Cuándo usarlo |
+|---|---|---|
+| `compose.base.yaml` | `node`, `VideoServer` | Siempre — base obligatoria |
+| `compose.ros1.yaml` | `RosBridge` (Noetic) | UAVs reales con ROS 1 |
+| `compose.ros2.yaml` | `RosBridge` (Humble/Jazzy) | UAVs reales con ROS 2 |
+| `compose.planner.yaml` | `Planner` (MIP FastAPI) | `PLANNING_SERVER=true` |
+| `compose.mcp.yaml` | `MCP` server | `MCP_ENABLE=true` + LLM |
+| `compose.map.yaml` | `MapServer`, `glyphServer` | Tiles OSM offline |
+
+### Escenarios de uso
 
 ```bash
-# Primera vez
+# ── GCS mínima (sin ROS, sin map offline) ─────────────────────────────────
+docker compose -f infra/compose/compose.base.yaml up
+
+# ── GCS + ROS 1 Noetic ────────────────────────────────────────────────────
+docker compose \
+  -f infra/compose/compose.base.yaml \
+  -f infra/compose/compose.ros1.yaml up
+
+# ── GCS + ROS 1 + Planner MIP ─────────────────────────────────────────────
+docker compose \
+  -f infra/compose/compose.base.yaml \
+  -f infra/compose/compose.ros1.yaml \
+  -f infra/compose/compose.planner.yaml up
+
+# ── Stack completo para flujo LLM (ROS1 + Planner + MCP) ──────────────────
+docker compose \
+  -f infra/compose/compose.base.yaml \
+  -f infra/compose/compose.ros1.yaml \
+  -f infra/compose/compose.planner.yaml \
+  -f infra/compose/compose.mcp.yaml up
+
+# ── Todo incluyendo mapa offline ───────────────────────────────────────────
+docker compose \
+  -f infra/compose/compose.base.yaml \
+  -f infra/compose/compose.ros1.yaml \
+  -f infra/compose/compose.planner.yaml \
+  -f infra/compose/compose.mcp.yaml \
+  -f infra/compose/compose.map.yaml up
+```
+
+> El `compose.yaml` de la raíz sigue funcionando para levantar todo de golpe con
+> `docker compose up`. Los overrides son para control fino.
+
+---
+
+## Tmuxinator — desarrollo local (sin Docker para el GCS)
+
+Para desarrollo el GCS corre directo con Node/npm. Los archivos están en `infra/tmuxinator/`.
+
+| Archivo | Cuándo usarlo |
+|---|---|
+| `gcs-simple.yml` | Solo backend + frontend, sin ROS |
+| `gcs-ros1.yml` | + ROS Bridge Noetic vía Docker |
+| `gcs-mcp.yml` | + MCP server (flujo LLM) |
+| `gcs-dev.yml` | Todo: GCS + ROS + Planner + MCP + rosbag |
+
+```bash
+# Arrancar escenario simple
+tmuxinator start -p infra/tmuxinator/gcs-simple.yml
+
+# Flujo LLM completo
+tmuxinator start -p infra/tmuxinator/gcs-mcp.yml
+
+# Stack completo de dev
+tmuxinator start -p infra/tmuxinator/gcs-dev.yml
+```
+
+> Los archivos usan ERB (`<%= %>`) para resolver el path del repo de forma portátil —
+> funcionan sin importar dónde esté clonado el repo.
+
+---
+
+## Arrancar la stack (Docker completo)
+
+```bash
+# Primera vez — verifica prereqs, copia server/.env, chequea imágenes
 bash infra/setup.sh
 
-# Arrancar todo
+# Arrancar todo (compose.yaml raíz)
 docker compose up
 
-# Solo algunos servicios (ej: sin MapServer offline)
-docker compose up node VideoServer RosBridge Planner
+# Arrancar escenario específico (ver tabla arriba)
+docker compose -f infra/compose/compose.base.yaml up
 ```
