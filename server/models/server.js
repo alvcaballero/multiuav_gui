@@ -1,4 +1,4 @@
-import { LocalGlyphs } from '../config/config.js';
+import { LocalGlyphs, mapLatitude, mapLongitude, mapZoom } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile } from '../common/utils.js';
 import { readDataFile } from '../common/utils.js';
@@ -33,9 +33,9 @@ export class serverModel {
       bingKey: '',
       mapUrl: '',
       overlayUrl: null,
-      latitude: 37.19384681403371, //41.68734389317842, //37.19374
-      longitude: -6.702598762315071, //-8.84768639812097, //-6.702911,
-      zoom: 15,
+      latitude: mapLatitude,
+      longitude: mapLongitude,
+      zoom: mapZoom,
       twelveHourFormat: false,
       forceSettings: false,
       coordinateFormat: '',

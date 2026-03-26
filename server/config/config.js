@@ -61,6 +61,9 @@ export const routesData = '../data/routes.json';
 export const missionsData = '../data/missions.json';
 export const missionsConfigData = '../data/missionConfig.yaml';
 // intervals
+export const mapLatitude = Number(process.env.MAP_LATITUDE) || 37.19384681403371;
+export const mapLongitude = Number(process.env.MAP_LONGITUDE) || -6.702598762315071;
+export const mapZoom = Number(process.env.MAP_ZOOM) || 15;
 export const WS_PING_INTERVAL_MS = Number(process.env.WS_PING_INTERVAL_MS) || 30000;
 export const WS_POSITIONS_INTERVAL_MS = Number(process.env.WS_POSITIONS_INTERVAL_MS) || 500;
 export const WS_STATE_INTERVAL_MS = Number(process.env.WS_STATE_INTERVAL_MS) || 10000;
