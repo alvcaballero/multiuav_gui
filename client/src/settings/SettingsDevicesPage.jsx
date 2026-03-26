@@ -19,11 +19,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
 import { useEffectAsync } from '../reactHelper';
-import PageLayout from '../common/components/PageLayout';
+import PageLayout from '../shared/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
-import TableShimmer from '../common/components/TableShimmer';
+import TableShimmer from '../shared/components/TableShimmer';
 import SearchHeader, { filterByKeyword } from './components/SearchHeader';
-import { formatTime } from '../common/formatter';
+import { formatTime } from '../shared/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
 
 const SettingsDevicesPage = () => {

@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { RuteConvert, RuteConvertlegacy } from '../Mapview/MissionConvert';
+import { RuteConvert, RuteConvertlegacy } from '../map/MissionConvert';
 
 const defaultAttributes = {
   max_vel: 12,

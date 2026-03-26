@@ -1,5 +1,5 @@
 import React, { useState, Fragment } from 'react';
-import SelectField from '../common/components/SelectField';
+import SelectField from '../shared/components/SelectField';
 import {
   Divider,
   IconButton,
@@ -18,7 +18,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
-import useQuery from '../common/useQuery';
+import useQuery from '../shared/useQuery';
 import EditItemView from './components/EditItemView';
 
 

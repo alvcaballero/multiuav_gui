@@ -12,9 +12,9 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditItemView from './components/EditItemView';
 //import EditAttributesAccordion from './components/EditAttributesAccordion';
-//import useGeofenceAttributes from '../common/attributes/useGeofenceAttributes';
+//import useGeofenceAttributes from '../shared/attributes/useGeofenceAttributes';
 import SettingsMenu from './components/SettingsMenu';
-import SelectField from '../common/components/SelectField';
+import SelectField from '../shared/components/SelectField';
 import { geofencesActions } from '../store';
 import useSettingsStyles from './common/useSettingsStyles';
 

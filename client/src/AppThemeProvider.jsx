@@ -1,6 +1,6 @@
 import React from 'react';
 import { ThemeProvider } from '@mui/material';
-import theme from './common/theme';
+import theme from './shared/theme';
 
 const AppThemeProvider = ({ children }) => {
 
