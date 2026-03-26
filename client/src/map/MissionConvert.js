@@ -1,6 +1,5 @@
-import YAML from 'yaml';
-import store, { missionActions } from '../store'; // here update device action with position of uav for update in map
-import { useDispatch } from 'react-redux';
+import store, { missionActions } from '../store';
+import { parseMissionFile } from '../services/fileService';
 
 var mission_home = [];
 
@@ -8,78 +7,17 @@ export const GetMissionHome = () => {
   return mission_home;
 };
 
+/**
+ * @deprecated Usar parseMissionFile() + dispatch(missionActions.updateMission()) directamente.
+ * Wrapper de compatibilidad para componentes no migrados aún.
+ */
 export const FiletoMission = (item) => {
-  let plan_mission = {};
-  if (item.name.endsWith('.yaml') || item.name.endsWith('.yml')) {
-    item.name = item.name.replace('.yaml', '');
-    plan_mission = YAML.parse(item.data);
-  } else if (item.name.endsWith('.waypoints')) {
-    item.name = item.name.replace('.waypoints', '');
-    plan_mission = filewaypoint2mission(item.data);
-  } else if (item.name.endsWith('.kml')) {
-    item.name = item.name.replace('.kml', '');
-    plan_mission = fileKml2mission(item.data);
-  } else if (item.name.endsWith('.plan')) {
-    item.name = item.name.replace('.plan', '');
-    plan_mission = filePlan2mission(item.data);
-  } else {
+  const result = parseMissionFile(item);
+  if (!result) {
     alert('Formato de archivo no soportado');
     return;
   }
-  store.dispatch(missionActions.updateMission({ ...plan_mission, name: item.name }));
-  return null;
-};
-const filePlan2mission = (data) => {
-  let jsondoc = JSON.parse(data);
-  let mission_yaml = { uav_n: 1, uav_1: {} };
-  let count_wp = 0;
-  jsondoc.mission.items.forEach((element) => {
-    mission_yaml.uav_1['wp_' + count_wp] = [element.params[4], element.params[5], element.Altitude];
-    count_wp = count_wp + 1;
-  });
-  mission_yaml.uav_1['wp_n'] = count_wp;
-};
-const fileKml2mission = (data) => {
-  let xmlDocument = new DOMParser().parseFromString(data, 'text/xml');
-  let missionxml = xmlDocument.getElementsByTagName('coordinates');
-  let mission_line2 = Object.values(missionxml).map((x) => {
-    let mywp = x.textContent
-      .replace('\t1', '')
-      .replace(/(\r\n|\n|\r|\t)/gm, '')
-      .split(' ');
-    return mywp.map((point) => point.split(','));
-  });
-  let mission_yaml = { uav_n: mission_line2.length };
-  let count_uav = 1;
-  mission_line2.forEach((route) => {
-    console.log(route);
-    let count_wp = 0;
-    mission_yaml['uav_' + count_uav] = {};
-    route.forEach((element) => {
-      //console.log(element);
-      if (element.length == 3) {
-        mission_yaml['uav_' + count_uav]['wp_' + count_wp] = [element[1], element[0], element[2]];
-        count_wp = count_wp + 1;
-      }
-    });
-    mission_yaml['uav_' + count_uav]['wp_n'] = count_wp;
-    count_uav = count_uav + 1;
-  });
-  return mission_yaml;
-};
-const filewaypoint2mission = (data) => {
-  let mission_line = data.split('\n');
-  let mission_array = mission_line.map((x) => x.split('\t'));
-  let mission_yaml = { uav_n: 1, uav_1: {} };
-  let count_wp = 0;
-  mission_array.forEach((element) => {
-    if (element[3] == '16') {
-      mission_yaml.uav_1['wp_' + count_wp] = [element[8], element[9], element[10]];
-      count_wp = count_wp + 1;
-    }
-  });
-  mission_yaml.uav_1['wp_n'] = count_wp;
-  return mission_yaml;
+  store.dispatch(missionActions.updateMission({ ...result.mission, name: result.name }));
 };
 export const RuteConvert = (route) => {
   const rt = [];

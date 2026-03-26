@@ -16,7 +16,7 @@ import { grey } from '@mui/material/colors';
 import { makeStyles } from 'tss-react/mui';
 
 import { usePreference } from '../../shared/preferences';
-import { FiletoMission } from '../../map/MissionConvert';
+import { useMissionFile } from '../../services/useMissionFile';
 
 import { Card, IconButton, Button, ButtonGroup, CardMedia } from '@mui/material';
 
@@ -49,6 +49,7 @@ const useStyles = makeStyles()((theme) => ({
 
 export const Menu = React.memo(({ SetAddUAVOpen }) => {
   const { classes } = useStyles();
+  const handleMissionFile = useMissionFile();
   const [MissionName, setMissionName] = useState('no load mission');
   const Mission_Name = useSelector((state) => state.mission.name);
   const Mission_Home = useSelector((state) => state.mission.home);
@@ -58,21 +59,7 @@ export const Menu = React.memo(({ SetAddUAVOpen }) => {
   const defaultLongitude = usePreference('longitude', 0);
   const defaultZoom = usePreference('zoom', 10);
 
-  const readFile = (e) => {
-    //https://www.youtube.com/watch?v=K3SshoCXC2g
-    const file = e.target.files[0];
-    if (!file) return;
-    const fileReader = new FileReader();
-    fileReader.readAsText(file);
-    fileReader.onload = () => {
-      console.log(fileReader.result);
-      console.log(file.name);
-      FiletoMission({ name: file.name, data: fileReader.result });
-    };
-    fileReader.onerror = () => {
-      console.log(fileReader.error);
-    };
-  };
+  const readFile = (e) => handleMissionFile(e.target.files[0]);
 
   function HomeMap() {
     map.easeTo({

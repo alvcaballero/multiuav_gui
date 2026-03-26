@@ -9,8 +9,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { FiletoMission } from '../../map/MissionConvert';
 import { missionActions } from '../../store';
+import { useMissionFile } from '../../services/useMissionFile';
 
 const useStyles = makeStyles()((theme) => ({
   toolbar: {
@@ -36,6 +36,7 @@ const MissionPanel = ({ SetOpenSave }) => {
   const navigate = useNavigate();
   const scroolRef = useRef(null);
   const dispatch = useDispatch();
+  const handleMissionFile = useMissionFile();
 
   // Read group route mode from Redux
   const groupRouteMode = useSelector((state) => state.mission.groupRouteMode);
@@ -52,19 +53,7 @@ const MissionPanel = ({ SetOpenSave }) => {
     }
   }, []);
 
-  const readFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const fileReader = new FileReader();
-    fileReader.readAsText(file);
-    fileReader.onload = () => {
-      FiletoMission({ name: file.name, data: fileReader.result });
-    };
-    fileReader.onerror = () => {
-      console.error(fileReader.error);
-    };
-  };
+  const readFile = (e) => handleMissionFile(e.target.files[0]);
 
   const handleDeleteMission = () => {
     dispatch(missionActions.clearMission());
