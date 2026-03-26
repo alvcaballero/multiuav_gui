@@ -8,6 +8,7 @@ import { Menu } from '../components/layout/Menu';
 import Adduav from '../components/devices/Adduav';
 import { RosControl, RosContext } from '../components/commands/RosControl';
 import { commandMission } from '../shared/fetchs';
+import { useCatch } from '../reactHelper';
 
 import DeviceList from '../components/devices/DeviceList';
 import SwipeConfirm from '../shared/components/SwipeConfirm';
@@ -70,7 +71,10 @@ const MainPage3D = () => {
   const theme = useTheme();
 
   const devices = useSelector((state) => state.devices.items);
+  const mission = useSelector((state) => state.mission);
   const positions = useSelector((state) => state.session.positions);
+
+  const handleCommandMission = useCatch(() => commandMission(mission, devices));
   const cameradata = useSelector((state) => state.session.camera);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const sessionmarkers = useSelector((state) => state.session.markers);
@@ -162,7 +166,7 @@ const MainPage3D = () => {
       <SwipeConfirm
         enable={confirmMission}
         onClose={() => setconfirmMission(false)}
-        onSucces={() => commandMission()}
+        onSucces={() => handleCommandMission()}
       />
       <CameraDevice deviceId={selectDeviceId} onClose={unselectDevice} />
       {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}

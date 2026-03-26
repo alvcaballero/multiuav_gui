@@ -1,5 +1,5 @@
 import React, { useContext, Fragment, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
 
@@ -7,6 +7,7 @@ import { missionActions, sessionActions } from '../../store';
 import { map } from '../../map/core/MapView';
 import MenuItems from './MenuItems';
 import { connectRos, commandLoadMission, commandMission } from '../../shared/fetchs';
+import { useCatch } from '../../reactHelper';
 import { usePreference } from '../../shared/preferences';
 import { readTextFile, parseKmlElements } from '../../services/fileService';
 import { useMissionFile } from '../../services/useMissionFile';
@@ -14,6 +15,12 @@ import { useMissionFile } from '../../services/useMissionFile';
 const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, setChatOpen = () => null }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const mission = useSelector((state) => state.mission);
+  const devices = useSelector((state) => state.devices.items);
+
+  const handleConnectRos = useCatch(connectRos);
+  const handleCommandLoadMission = useCatch(() => commandLoadMission(mission));
+  const handleCommandMission = useCatch(() => commandMission(mission, devices));
   const handleMissionFile = useMissionFile();
   const defaultLatitude = usePreference('latitude', 0);
   const defaultLongitude = usePreference('longitude', 0);
@@ -26,7 +33,7 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
     {
       title: 'ROS',
       submenu: [
-        { title: 'Connect ROS', action: () => connectRos() },
+        { title: 'Connect ROS', action: () => handleConnectRos() },
         { title: 'Show Topics', action: () => navigate('/topics') },
         { title: 'Show Services' },
       ],
@@ -35,7 +42,7 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
       title: 'Devices',
       submenu: [
         { title: 'Connect Devices', action: () => openAddUav() },
-        { title: 'Load Mission all', action: () => commandLoadMission() },
+        { title: 'Load Mission all', action: () => handleCommandLoadMission() },
         { title: 'Command Mission All', action: () => setconfirmMission(true) },
       ],
     },

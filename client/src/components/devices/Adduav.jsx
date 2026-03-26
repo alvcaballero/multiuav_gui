@@ -21,6 +21,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import SelectField from '../../shared/components/SelectField';
 import { addDevice } from '../../shared/fetchs';
+import { useCatch } from '../../reactHelper';
 const useStyles = makeStyles()((theme) => ({
   root: {
     pointerEvents: 'none',
@@ -101,6 +102,7 @@ const useStyles = makeStyles()((theme) => ({
 
 const Adduav = ({ SetAddUAVOpen }) => {
   const { classes } = useStyles();
+  const handleAddDevice = useCatch(addDevice);
   const [item, setItem] = useState({
     name: 'uav_',
     ip: '10.42.0.42',
@@ -112,9 +114,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
     SetAddUAVOpen(false);
   }
   function AddnewUAV() {
-    console.log('add uav-' + item.name + '-' + item.category + '-' + item.protocol);
-    console.log(item);
-    addDevice(item);
+    handleAddDevice(item);
     SetAddUAVOpen(false);
   }
   const Remove_camera = (index) => {
