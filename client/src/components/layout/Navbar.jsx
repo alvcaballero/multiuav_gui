@@ -17,6 +17,7 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
   const navigate = useNavigate();
   const mission = useSelector((state) => state.mission);
   const devices = useSelector((state) => state.devices.items);
+  const llmEnabled = useSelector((state) => state.session.server?.llmEnabled ?? false);
 
   const handleConnectRos = useCatch(connectRos);
   const handleCommandLoadMission = useCatch(() => commandLoadMission(mission));
@@ -78,10 +79,7 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
       title: 'Settings',
       action: () => navigate('/settings/devices'),
     },
-    {
-      title: 'Chat',
-      action: () => setChatOpen(true),
-    },
+    ...(llmEnabled ? [{ title: 'Chat', action: () => setChatOpen(true) }] : []),
   ];
 
   const clearmission = () => {

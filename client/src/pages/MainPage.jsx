@@ -80,6 +80,7 @@ const MainPage = () => {
 
   const devices = useSelector((state) => state.devices.items);
   const mission = useSelector((state) => state.mission);
+  const llmEnabled = useSelector((state) => state.session.server?.llmEnabled ?? false);
   const positions = useSelector((state) => state.session.positions);
 
   const handleCommandMission = useCatch(() => commandMission(mission, devices));
@@ -173,7 +174,7 @@ const MainPage = () => {
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
       )}
-      <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
+      {llmEnabled && <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />}
       <CameraDevice deviceId={selectDeviceId} onClose={unselectDevice} />
       {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
     </div>

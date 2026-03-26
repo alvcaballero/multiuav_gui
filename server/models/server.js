@@ -1,4 +1,4 @@
-import { LocalGlyphs, mapLatitude, mapLongitude, mapZoom } from '../config/config.js';
+import { LocalGlyphs, mapLatitude, mapLongitude, mapZoom, LLM } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile } from '../common/utils.js';
 import { readDataFile } from '../common/utils.js';
@@ -51,6 +51,7 @@ export class serverModel {
       newServer: false,
       openIdEnabled: false,
       openIdForce: false,
+      llmEnabled: LLM,
     };
   }
   static Protocol() {
