@@ -41,7 +41,7 @@ import MapMarkers from '../map/devices/MapMarkers';
 import RoutesList from '../components/mission/RoutesList';
 import SelectField from '../shared/components/SelectField';
 import SelectList from '../components/ui/SelectList';
-import BaseSettings from '../components/map/BaseSettings';
+import BaseSettings from '../components/planning/BaseSettings';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

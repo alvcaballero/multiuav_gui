@@ -2,8 +2,8 @@ import React from 'react';
 import { Accordion, AccordionSummary, AccordionDetails, Box, Button, Divider, Typography } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
-import BaseList from '../map/BaseList';
-import ElementList from '../map/ElementList';
+import BaseList from './BaseList';
+import ElementList from './ElementList';
 
 const useStyles = makeStyles()((theme) => ({
   details: {

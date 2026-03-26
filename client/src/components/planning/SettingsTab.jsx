@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { makeStyles } from 'tss-react/mui';
-import BaseSettings from '../map/BaseSettings';
+import BaseSettings from './BaseSettings';
 
 const useStyles = makeStyles()((theme) => ({
   details: {
