@@ -101,7 +101,9 @@ if (LLM) {
 
   if (!apiKey) {
     const envVar = `LLM_${(provider === 'claude' ? 'ANTHROPIC' : provider).toUpperCase()}_API_KEY`;
-    const error = new Error(`LLM API Key is required for provider "${provider}". Please set ${envVar} in your environment variables.`);
+    const error = new Error(
+      `LLM API Key is required for provider "${provider}". Please set ${envVar} in your environment variables.`
+    );
     logger.error('Error de configuración LLM', {
       error: error.message,
       type: 'configuration',
