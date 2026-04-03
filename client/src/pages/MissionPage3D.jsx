@@ -12,7 +12,7 @@ import MissionElevation from '../components/mission/MissionElevation';
 import SaveFile from '../components/ui/SaveFile';
 
 
-import MapView from '../scene3d/core/MapView';
+import R3FCanvas from '../scene3d/core/R3FCanvas';
 import R3FMission from '../scene3d/scene/R3FMission';
 import R3DMarkers from '../scene3d/scene/R3DMarkers';
 import R3FDevices from '../scene3d/scene/R3FDevices';
@@ -27,7 +27,7 @@ const useStyles = makeStyles()((theme) => ({
     flexDirection: 'column',
     position: 'fixed',
     left: 0,
-    top: '88px',
+    top: theme.dimensions.navbarHeight,
     height: 'calc(100% - 95px)',
     width: '560px',
     margin: '0px',
@@ -110,12 +110,11 @@ const MissionPage3D = () => {
               margin: 'auto',
             }}
           >
-            <MapView>
+            <R3FCanvas>
               <R3FMission routes={routes} />
               <R3DMarkers elements={markers} />
-              <R3FDevices  />
-
-            </MapView>
+              <R3FDevices />
+            </R3FCanvas>
 
           </div>
 

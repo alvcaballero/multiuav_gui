@@ -1,4 +1,4 @@
-import React, { useContext, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -6,7 +6,7 @@ import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
 import Adduav from '../components/devices/Adduav';
-import { RosControl, RosContext } from '../components/commands/RosControl';
+import { RosControl } from '../components/commands/RosControl';
 import { commandMission } from '../shared/fetchs';
 import { useCatch } from '../reactHelper';
 
@@ -58,18 +58,18 @@ const useStyles = makeStyles()((theme) => ({
     flexDirection: 'column',
     position: 'absolute',
     left: 0,
-    top: '88px',
+    top: theme.dimensions.navbarHeight,
     bottom: 0,
-    width: '360px',
+    width: theme.dimensions.drawerWidthDesktop,
     margin: '0px',
     zIndex: 3,
   },
-  map:{
+  map: {
     position: 'absolute',
-    top: '88px',
-    left: '360px',
+    top: theme.dimensions.navbarHeight,
+    left: theme.dimensions.drawerWidthDesktop,
     right: '0px',
-    bottom: '0px', 
+    bottom: '0px',
   }
 }));
 
@@ -78,55 +78,26 @@ const MainPage = () => {
   const dispatch = useDispatch();
   const theme = useTheme();
 
-  const devices = useSelector((state) => state.devices.items);
+  const devicesMap = useSelector((state) => state.devices.items);
   const mission = useSelector((state) => state.mission);
   const llmEnabled = useSelector((state) => state.session.server?.llmEnabled ?? false);
-  const positions = useSelector((state) => state.session.positions);
-
-  const handleCommandMission = useCatch(() => commandMission(mission, devices));
+  const positionsMap = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
-  const sessionmarkers = useSelector((state) => state.session.markers);
+  const sessionMarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);
 
-  const [selectDeviceId, setSelecDeviceId] = useState(null);
-
-  const [filteredPositions, setFilteredPositions] = useState([]);
-  const [markers, setmarkers] = useState([]);
-
-  const selectedPosition = filteredPositions.find(
-    (position) => selectedDeviceId && position.deviceId === selectedDeviceId
+  const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
+  const filteredPositions = useMemo(() => Object.values(positionsMap), [positionsMap]);
+  const selectedPosition = useMemo(
+    () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
+    [filteredPositions, selectedDeviceId]
   );
-  const [filteredDevices, setFilteredDevices] = useState([]);
 
-  //const selectedImage = filteredImages.find((camera) => selectedDeviceId && camera.deviceId == selectedDeviceId);
+  const handleCommandMission = useCatch(() => commandMission(mission, devicesMap));
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-
   const [confirmMission, setconfirmMission] = useState(false);
-  const memoSetAddUAVOpen = useCallback(SetAddUAVOpen, []);
-  const memoSetConfirmMission = useCallback(setconfirmMission, []);
-  const memoSetChatOpen = useCallback(setChatOpen, []);
-
-  useEffect(() => {
-    console.log('MainPage mounted');
-    return () => {
-      console.log('MainPage unmounted');
-    };
-  }, []);
-  useEffect(() => {
-    setmarkers(sessionmarkers);
-  }, [sessionmarkers]);
-  useEffect(() => {
-    console.log('devices updated');
-    setFilteredDevices(Object.values(devices));
-  }, [devices]);
-  useEffect(() => {
-    setFilteredPositions(Object.values(positions));
-  }, [positions]);
-  useEffect(() => {
-    setSelecDeviceId(selectedDeviceId);
-  }, [selectedDeviceId]);
 
   const unselectDevice = useCallback(() => {
     dispatch(devicesActions.selectId(null));
@@ -135,12 +106,12 @@ const MainPage = () => {
   return (
     <div className={classes.root}>
       <Navbar
-        SetAddUAVOpen={memoSetAddUAVOpen}
-        setconfirmMission={memoSetConfirmMission}
-        setChatOpen={memoSetChatOpen}
+        SetAddUAVOpen={SetAddUAVOpen}
+        setconfirmMission={setconfirmMission}
+        setChatOpen={setChatOpen}
       />
       <RosControl>
-        <Menu SetAddUAVOpen={memoSetAddUAVOpen} />
+        <Menu SetAddUAVOpen={SetAddUAVOpen} />
       </RosControl>
 
       <SwipeConfirm
@@ -151,14 +122,14 @@ const MainPage = () => {
       <div className={classes.map}>
         <MainMap
           filteredPositions={filteredPositions}
-          markers={markers}
+          markers={sessionMarkers}
           routes={routes}
           selectedPosition={selectedPosition}
         />
       </div>
       <div className={classes.sidebar}>
         <Paper square elevation={3} className={classes.header}>
-          <MainToolbar SetAddUAVOpen={memoSetAddUAVOpen} />
+          <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
         </Paper>
         <div className={classes.middle}>
           <Paper square className={classes.contentList}>
@@ -166,16 +137,16 @@ const MainPage = () => {
           </Paper>
         </div>
       </div>
-      {selectDeviceId && (
+      {selectedDeviceId && (
         <StatusCard
-          deviceId={selectDeviceId}
+          deviceId={selectedDeviceId}
           position={selectedPosition}
           onClose={unselectDevice}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
       )}
       {llmEnabled && <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />}
-      <CameraDevice deviceId={selectDeviceId} onClose={unselectDevice} />
+      <CameraDevice deviceId={selectedDeviceId} onClose={unselectDevice} />
       {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
     </div>
   );

@@ -71,7 +71,7 @@ const Water = () => {
   );
 };
 
-const MapView = ({ children }) => {
+const R3FCanvas = ({ children }) => {
   return (
     <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: 800 }}>
       {/* Iluminación */}
@@ -94,4 +94,4 @@ const MapView = ({ children }) => {
   );
 };
 
-export default MapView;
+export default R3FCanvas;

@@ -11,7 +11,7 @@ import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
 import { CameraV1 } from '../components/camera/CameraV1';
 
 import { useSelector } from 'react-redux';
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100%',
   },
@@ -21,9 +21,9 @@ const useStyles = makeStyles(() => ({
     flexDirection: 'column',
     position: 'fixed',
     left: 0,
-    top: '88px',
-    height: `calc(100% - 88px)`,
-    width: '360px',
+    top: theme.dimensions.navbarHeight,
+    height: `calc(100% - ${theme.dimensions.navbarHeight})`,
+    width: theme.dimensions.drawerWidthDesktop,
     margin: '0px',
     zIndex: 3,
   },

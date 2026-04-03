@@ -18,7 +18,7 @@ import SaveFile from '../components/ui/SaveFile';
 import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     margin: '0',
     height: '100vh',
@@ -28,7 +28,7 @@ const useStyles = makeStyles()(() => ({
     flexDirection: 'column',
     position: 'fixed',
     left: 0,
-    top: '88px',
+    top: theme.dimensions.navbarHeight,
     height: 'calc(100% - 95px)',
     width: '560px',
     margin: '0px',

@@ -179,12 +179,12 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
     setDeviceName(device.name);
   }, [device]);
 
-  const handleOpenMenu = useCallback((e) => setAnchorEl(e.currentTarget), []);
+  const handleOpenMenu = (e) => setAnchorEl(e.currentTarget);
   const handleSyncFiles = useCallback(() => serverCommand(deviceId, 'SincroniseFiles'), [deviceId]);
-  const handleRemoving = useCallback(() => setRemoving(true), []);
+  const handleRemoving = () => setRemoving(true);
   const changeMapFollow = useCallback(() => dispatch(devicesActions.updateFollow(!mapFollow)), [mapFollow, dispatch]);
 
-  const openCommand = useCallback(() => setOpenSendCommand(true), []);
+  const openCommand = () => setOpenSendCommand(true);
   const navigateToDevice = useCallback(() => {
     navigate(`/device/${deviceId}`);
   }, [deviceId, navigate]);

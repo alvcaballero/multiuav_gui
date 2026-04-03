@@ -35,7 +35,7 @@ const TABS = {
   SETTINGS: '3',
 };
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     height: '100vh',
     margin: '0',
@@ -45,7 +45,7 @@ const useStyles = makeStyles()(() => ({
     flexDirection: 'column',
     position: 'fixed',
     left: 0,
-    top: '88px',
+    top: theme.dimensions.navbarHeight,
     height: 'calc(100% - 95px)',
     width: '560px',
     margin: '0px',
