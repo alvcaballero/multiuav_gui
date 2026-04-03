@@ -30,7 +30,7 @@ const SelectDevice3D = () => {
       }
     }
 
-  },[[selectedDeviceId, previousDeviceId, mapFollow, position]]);
+  }, [selectedDeviceId, previousDeviceId, mapFollow, position]);
 
   return null;
 };
