@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -16,15 +16,9 @@ import MainToolbar from '../components/layout/MainToolbar';
 import StatusCard from '../components/devices/StatusCard';
 import CameraDevice from '../components/camera/CameraDevice';
 
-import SelectDevice3D from '../scene3d/scene/SelectDevice3D';
-
 import { devicesActions } from '../store';
 
-import R3FCanvas from '../scene3d/core/R3FCanvas';
-import R3FMission from '../scene3d/scene/R3FMission';
-import R3DMarkers from '../scene3d/scene/R3DMarkers';
-import R3FDevices from '../scene3d/scene/R3FDevices';
-import DownloadYamlButton from '../scene3d/controls/DownloadYamlButton';
+import Scene3DCanvas from '../scene3d/Scene3DCanvas';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -81,10 +75,7 @@ const MainPage3D = () => {
   const mission = useSelector((state) => state.mission);
   const positionsMap = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
-  const sessionMarkers = useSelector((state) => state.session.markers);
-  const routes = useSelector((state) => state.mission.route);
-
-  const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
+const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
   const filteredPositions = useMemo(() => Object.values(positionsMap), [positionsMap]);
   const selectedPosition = useMemo(
     () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
@@ -106,15 +97,7 @@ const MainPage3D = () => {
         <Navbar SetAddUAVOpen={setAddUAVOpen} setconfirmMission={setConfirmMission} />
         <Menu SetAddUAVOpen={setAddUAVOpen} />
       </RosControl>
-      <div className={classes.canvas}>
-        <R3FCanvas>
-          <R3FMission routes={routes} />
-          <R3DMarkers elements={sessionMarkers} />
-          <R3FDevices />
-          <SelectDevice3D />
-        </R3FCanvas>
-        <DownloadYamlButton />
-      </div>
+      <Scene3DCanvas className={classes.canvas} />
 
       <div className={classes.sidebar}>
         <Paper square elevation={3} className={classes.header}>
