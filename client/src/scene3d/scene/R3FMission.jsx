@@ -49,13 +49,8 @@ const R3FMission = ({ routes = [] }) => {
 
   useEffect(() => {
     if (routes.length > 0) {
-      let origin = origin3d
-      if(routes.length >0 && routes[0].wp?.pos){
-        origin = {lat: routes[0].wp.pos[0] ,lng: routes[0].wp.pos[1],alt:0}
-      }
-      let routexyz = routesToXYZ(origin,routes)
-      setRouteWP(routesTowaypoints(routexyz))
-      //setRouteLines(routesToLines(routexyz));
+      let routexyz = routesToXYZ(origin3d, routes);
+      setRouteWP(routesTowaypoints(routexyz));
       setRouteLines(routesToLines(routexyz));
     }
   }, [routes,origin3d]);
