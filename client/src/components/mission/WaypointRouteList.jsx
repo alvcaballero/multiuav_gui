@@ -13,9 +13,11 @@ import {
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
+import { map } from '../../map/core/MapView';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../../shared/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { missionActions } from '../../store';
@@ -88,7 +90,9 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
     const selectcmd = command.find((element) => element.id == newactionid);
 
     const actionValue = selectcmd.param ? 0 : true;
-    dispatch(missionActions.addWaypointAction({ routeIndex, wpIndex: indexWp, actionKey: selectcmd.name, value: actionValue }));
+    dispatch(
+      missionActions.addWaypointAction({ routeIndex, wpIndex: indexWp, actionKey: selectcmd.name, value: actionValue })
+    );
     setnewactionmenu(true);
   }
 
@@ -116,13 +120,41 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
     <Accordion expanded={expandWp === `WP${indexWp}`} onChange={handleChange_wp(`WP${indexWp}`)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => handleMoveWp(1)}>
+        <IconButton
+          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleMoveWp(1);
+          }}
+        >
           <ArrowDownwardIcon />
         </IconButton>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => handleMoveWp(-1)}>
+        <IconButton
+          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleMoveWp(-1);
+          }}
+        >
           <ArrowUpwardIcon />
         </IconButton>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={handleRemoveWp}>
+        <IconButton
+          sx={{ py: 0, pr: 0, flexShrink: 0 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            map.flyTo({ center: [waypoint.pos[1], waypoint.pos[0]], zoom: Math.max(map.getZoom(), 16) });
+          }}
+        >
+          <MyLocationIcon />
+        </IconButton>
+
+        <IconButton
+          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemoveWp();
+          }}
+        >
           <DeleteIcon />
         </IconButton>
       </AccordionSummary>
@@ -150,8 +182,8 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                   maxLength: 16,
                   step: 0.0001,
                 }}
-                value={waypoint.pos ? waypoint.pos[0] : 0}
-                onChange={(e) => handlePositionChange(0, e.target.value)}
+                defaultValue={waypoint.pos ? waypoint.pos[0] : 0}
+                onBlur={(e) => handlePositionChange(0, +e.target.value)}
               />
               <TextField
                 required
@@ -163,8 +195,8 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                   maxLength: 16,
                   step: 0.0001,
                 }}
-                value={waypoint.pos ? waypoint.pos[1] : 0}
-                onChange={(e) => handlePositionChange(1, e.target.value)}
+                defaultValue={waypoint.pos ? waypoint.pos[1] : 0}
+                onBlur={(e) => handlePositionChange(1, +e.target.value)}
               />
               <TextField
                 required
@@ -172,8 +204,8 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 type="number"
                 variant="standard"
                 sx={{ width: '7ch' }}
-                value={waypoint.pos ? waypoint.pos[2] : 0}
-                onChange={(e) => handlePositionChange(2, e.target.value)}
+                defaultValue={waypoint.pos ? waypoint.pos[2] : 0}
+                onBlur={(e) => handlePositionChange(2, +e.target.value)}
               />
             </Box>
             <Box
@@ -188,8 +220,8 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
-                value={waypoint.speed ?? idleVel ?? 3}
-                onChange={(e) => handleWaypointFieldChange('speed', +e.target.value)}
+                defaultValue={waypoint.speed ?? idleVel ?? 3}
+                onBlur={(e) => handleWaypointFieldChange('speed', +e.target.value)}
               />
 
               <TextField
@@ -198,8 +230,8 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
-                value={waypoint.yaw ?? 0}
-                onChange={(e) => handleWaypointFieldChange('yaw', +e.target.value)}
+                defaultValue={waypoint.yaw ?? 0}
+                onBlur={(e) => handleWaypointFieldChange('yaw', +e.target.value)}
               />
 
               <TextField
@@ -208,8 +240,8 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
-                value={waypoint.gimbal ?? 0}
-                onChange={(e) => handleWaypointFieldChange('gimbal', +e.target.value)}
+                defaultValue={waypoint.gimbal ?? 0}
+                onBlur={(e) => handleWaypointFieldChange('gimbal', +e.target.value)}
               />
             </Box>
             <Accordion expanded={expanded_ac === 'wp ' + indexWp} onChange={handleChange_ac('wp ' + indexWp)}>

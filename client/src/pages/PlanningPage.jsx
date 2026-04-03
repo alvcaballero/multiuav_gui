@@ -306,7 +306,7 @@ const PlanningPage = () => {
   const goToBase = useCallback(
     (baseId) => {
       const base = markers.bases.find((b) => b.id === baseId);
-      if (base) map.flyTo({ center: [base.longitude, base.latitude], zoom: 16 });
+      if (base) map.flyTo({ center: [base.longitude, base.latitude], zoom: Math.max(map.getZoom(), 16) });
     },
     [markers.bases]
   );

@@ -95,8 +95,8 @@ const RouteOptions = ({ index, route }) => {
                 required
                 type="number"
                 className={classes.attributeValue}
-                value={route.attributes.idle_vel || 1.85}
-                onChange={(e) => handleAttributeChange('idle_vel', +e.target.value)}
+                defaultValue={route.attributes.idle_vel || 1.85}
+                onBlur={(e) => handleAttributeChange('idle_vel', +e.target.value)}
               />
             </div>
             <div>
@@ -108,8 +108,8 @@ const RouteOptions = ({ index, route }) => {
                 required
                 type="number"
                 className={classes.attributeValue}
-                value={route.attributes.max_vel || 12}
-                onChange={(e) => handleAttributeChange('max_vel', +e.target.value)}
+                defaultValue={route.attributes.max_vel || 12}
+                onBlur={(e) => handleAttributeChange('max_vel', +e.target.value)}
               />
             </div>
             <div>
@@ -183,14 +183,7 @@ const RouteOptions = ({ index, route }) => {
   );
 };
 
-const RouteRoutesList = ({
-  index,
-  route,
-  expanded_route,
-  setExpanded_route,
-  expand_wp,
-  setExpand_wp,
-}) => {
+const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expand_wp, setExpand_wp }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const devices = useSelector((state) => state.devices.items);
@@ -268,7 +261,13 @@ const RouteRoutesList = ({
           {'Rute ' + index}
         </Typography>
         <Typography sx={{ color: 'text.secondary' }}>{route.name + '- ' + route.uav}</Typography>
-        <IconButton sx={{ py: 0, pr: 2, marginLeft: 'auto' }} onClick={() => handleRemoveRoute(index)}>
+        <IconButton
+          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemoveRoute(index);
+          }}
+        >
           <DeleteIcon />
         </IconButton>
       </AccordionSummary>

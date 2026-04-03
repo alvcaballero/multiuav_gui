@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Box,
-  Divider,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Accordion, AccordionSummary, AccordionDetails, Box, Divider, TextField, Typography } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
 import SelectField from '../../shared/components/SelectField';
@@ -27,14 +19,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const PlanningTab = ({
-  sendTask,
-  onUpdateId,
-  onUpdateName,
-  onUpdateObjective,
-  onGetItems,
-  setLocations,
-}) => {
+const PlanningTab = ({ sendTask, onUpdateId, onUpdateName, onUpdateObjective, onGetItems, setLocations }) => {
   const { classes } = useStyles();
 
   return (
@@ -45,8 +30,8 @@ const PlanningTab = ({
         label="id"
         type="number"
         variant="standard"
-        value={sendTask.id ? sendTask.id : 123}
-        onChange={onUpdateId}
+        defaultValue={sendTask.id ? sendTask.id : 123}
+        onBlur={onUpdateId}
       />
       <TextField
         required

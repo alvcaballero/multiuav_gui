@@ -69,7 +69,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
   };
   const goToBase = (index) => {
     let base = markers[index];
-    map.flyTo({ center: [base.longitude, base.latitude], zoom: 18 });
+    map.flyTo({ center: [base.longitude, base.latitude], zoom: Math.max(map.getZoom(), 18) });
   };
   const DeleteElement = (index) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
@@ -168,9 +168,9 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
                             maxLength: 8,
                             step: 0.0001,
                           }}
-                          value={base.latitude}
-                          onChange={(e) => {
-                            changeLat(index, e.target.value);
+                          defaultValue={base.latitude}
+                          onBlur={(e) => {
+                            changeLat(index, +e.target.value);
                           }}
                         />
                         <TextField
@@ -183,9 +183,9 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
                             maxLength: 8,
                             step: 0.0001,
                           }}
-                          value={base.longitude}
-                          onChange={(e) => {
-                            changeLng(index, e.target.value);
+                          defaultValue={base.longitude}
+                          onBlur={(e) => {
+                            changeLng(index, +e.target.value);
                           }}
                         />
                       </Box>

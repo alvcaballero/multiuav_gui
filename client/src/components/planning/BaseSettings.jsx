@@ -193,12 +193,12 @@ const BaseSettings = ({
                                           required
                                           fullWidth
                                           type="number"
-                                          value={
+                                          defaultValue={
                                             assignment?.settings?.[actionKey] !== undefined
                                               ? assignment.settings[actionKey]
                                               : param.settings[actionKey].default
                                           }
-                                          onChange={(e) => {
+                                          onBlur={(e) => {
                                             if (assignmentIndex >= 0) {
                                               modifyData(assignmentIndex, 'settings', {
                                                 [actionKey]: +e.target.value,
