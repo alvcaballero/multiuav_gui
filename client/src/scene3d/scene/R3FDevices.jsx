@@ -1,86 +1,55 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
-import { useModelLoader, getModelPath } from '../models/ModelLoader.jsx';
-import Drone from '../models/Drone.jsx';
-import { LatLon2XYZ, LatLon2XYZObj } from '../core/convertion';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { useGLTF, PerspectiveCamera, useHelper, Helper } from '@react-three/drei';
+import { getModelPath } from '../models/ModelLoader.jsx';
+import { LatLon2XYZObj } from '../core/convertion';
+import { useGLTF, useHelper } from '@react-three/drei';
 
-//import { useGLTF, useAnimations, PerspectiveCamera, CameraHelper, Helper } from '@react-three/drei';
+const RING_HEIGHT_OFFSET = 1; // meters above drone
 
-// Objeto para almacenar las referencias a los objetos 3D de los drones
-const droneObjects = {};
-
-const createDroneObject = (id) => {
-  console.log('----createDroneObject' + id);
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Color inicial
-  const droneMesh = new THREE.Mesh(geometry, material);
-  // droneObjects[id] = model.scene.clone();
-  droneObjects[id] = droneMesh;
-  return droneMesh;
-};
-
-const updateDronePosition = (id, position, rotation, scale) => {
-  if (droneObjects[id]) {
-    //console.log('----updateDronePosition' + id);
-    droneObjects[id].position.set(...position);
-    droneObjects[id].rotation.set(...rotation);
-    droneObjects[id].scale.setScalar(scale);
-  }
-};
-
-const setDroneColor = (id, color) => {
-  if (droneObjects[id] && droneObjects[id].material) {
-    droneObjects[id].material.color.set(color);
-  }
-};
-
-// const R3FDevices = ({ positions, onClick, showStatus, selectedPosition, titleField }) => {
-
-const Device = ({ id, position }) => {
+const Device = ({ id, position, isSelected }) => {
   const meshRef = useRef();
   const camRef = useRef();
 
   const currentPosition = useRef(new THREE.Vector3());
   const nextPosition = useRef(new THREE.Vector3());
 
-  useHelper(camRef, THREE.CameraHelper);
-  //const { model, error } = useModelLoader('drone');
-  //const model = useLoader(GLTFLoader, getModelPath('drone'));
   const model = useGLTF(getModelPath('drone'));
-  //const position = useSelector((state) => state.session.positions[id]);
 
-  // Actualizamos la posición en cada frame (más eficiente que recrear el mesh)
-  // Encuentra la posición inicial
+  useHelper(camRef, THREE.CameraHelper);
+
   useEffect(() => {
     const loc = position.find((item) => item.deviceId == id);
     if (loc) {
       nextPosition.current.set(loc.pos[0], 10, -loc.pos[1]);
+      if (meshRef.current && loc.course !== undefined) {
+        // course: 0=North, clockwise. Three.js Y-up: negate for correct direction.
+        meshRef.current.rotation.y = -(loc.course * Math.PI) / 180;
+      }
     }
-  }, [position]);
-
-  useEffect(() => {
-    console.log('render device');
-  }, []);
+  }, [position, id]);
 
   useFrame(() => {
     if (meshRef.current) {
       currentPosition.current.lerp(nextPosition.current, 0.07);
       meshRef.current.position.copy(currentPosition.current);
-      meshRef.current.rotation.set(0, 10, 0); // Reset rotation if needed
-      camRef.current.rotation.set(10, 0, 0); // Reset camera rotation if needed
     }
   });
 
   if (!model) return null;
 
   return (
-    <group ref={meshRef} onClick={() => console.log(`Clicked on device ${id}`)}>
-      <perspectiveCamera ref={camRef} near={1} far={4} position={[0, 0, 0]} />
+    <group ref={meshRef}>
       <primitive object={model.scene.clone()} scale={[1, 1, 1]} />
+      {/* Camera helper: represents the drone's forward-looking camera direction */}
+      <perspectiveCamera ref={camRef} fov={60} near={1} far={4} position={[0, 0, 0]} />
+      {isSelected && (
+        <mesh position={[0, RING_HEIGHT_OFFSET, 0]}>
+          <boxGeometry args={[0.5, 0.5, 0.5]} />
+          <meshBasicMaterial color="#00aaff" depthTest={false} depthWrite={false} />
+        </mesh>
+      )}
     </group>
   );
 };
@@ -91,88 +60,29 @@ const R3FDevices = () => {
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const [positionxyz, setPositionxyz] = useState([]);
-  const { gl, scene } = useThree();
 
   const objectIds = useMemo(() => Object.keys(positions), [positions]);
 
-  const createFeature = (devices, position, selectedPositionId) => {
-    const device = devices[position.deviceId];
-    let showDirection;
-    switch (directionType) {
-      case 'none':
-        showDirection = false;
-        break;
-      case 'all':
-        showDirection = true;
-        break;
-      default:
-        showDirection = selectedPositionId === position.id;
-        break;
-    }
-    let thismission = routes.find((element) => element.uav == device.name);
-    let missionColor = thismission ? thismission.id : null;
-    return {
-      id: position.id,
-      deviceId: position.deviceId,
-      name: device.name,
-      fixTime: formatTime(position.fixTime, 'seconds', hours12),
-      category: mapIconKey(device.category),
-      color: showStatus ? getStatusColor(device.status) : 'neutral',
-      rotation: position.course,
-      direction: showDirection,
-      mission: thismission ? true : false,
-      missionColor: missionColor,
-    };
-  };
-
   useEffect(() => {
-    const pos = Object.values(positions).map((item) => {
-      return { ...item, lng: item.longitude, lat: item.latitude, alt: item.altitude };
-    });
+    const pos = Object.values(positions).map((item) => ({
+      ...item,
+      lng: item.longitude,
+      lat: item.latitude,
+      alt: item.altitude,
+    }));
     const posxyz = LatLon2XYZObj(origin3d, pos, 1000);
-    const result = posxyz.map((item, index) => {
-      return { ...item, name: devices[item.deviceId].name };
-    });
+    const result = posxyz.map((item) => ({
+      ...item,
+      name: devices[item.deviceId]?.name,
+      course: positions[item.deviceId]?.course,
+    }));
     setPositionxyz(result);
   }, [origin3d, positions]);
-
-  useEffect(() => {
-    // Crear los objetos de los drones y añadirlos a la escena
-    Object.values(positions).forEach((drone) => {
-      const droneMesh = createDroneObject(drone.deviceId);
-      scene.add(droneMesh);
-    });
-
-    return () => {
-      // Limpieza: remover los objetos de la escena al desmontar (opcional)
-      Object.values(positions).forEach((drone) => {
-        if (droneObjects[drone.deviceId]) {
-          scene.remove(droneObjects[drone.deviceId]);
-          delete droneObjects[drone.deviceId];
-        }
-      });
-    };
-  }, [scene, Object.values(positions).length]);
-
-  useEffect(() => {
-    if (positionxyz) {
-      positionxyz.forEach((item) => {
-        const pos = item.pos;
-        updateDronePosition(item.deviceId, [pos[0], 20, -pos[1]], [0, 0, 0], 1);
-      });
-    }
-  }, [positionxyz]);
-
-  useEffect(() => {
-    Object.values(positions).forEach((drone) => {
-      setDroneColor(drone.deviceId, selectedDeviceId === drone.deviceId ? 'blue' : 'red');
-    });
-  }, [selectedDeviceId]);
 
   return (
     <>
       {objectIds.map((id) => (
-        <Device key={id} id={id} position={positionxyz} />
+        <Device key={id} id={id} position={positionxyz} isSelected={String(selectedDeviceId) === String(id)} />
       ))}
     </>
   );

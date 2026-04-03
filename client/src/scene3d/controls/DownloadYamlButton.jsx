@@ -45,16 +45,7 @@ const DownloadYamlButton = () => {
 
         // Combine and Filter
         const elementxyz = listelemnts.map((element, index) => {
-            // LatLon2XYZ returns [x, y, z] (or similar, check convertion.js implementation)
-            // Based on R3DMarkers.jsx: pos: [posxyz[index][0], posxyz[index][2], posxyz[index][1]]
-            // It swaps Axis? 
-            // convertion.js: return [x, y, z] where y is up? No...
-            // MapLibre coords: x/y are ground plane?
-            // R3DMarkers uses: [posxyz[index][0], posxyz[index][2], posxyz[index][1]] -> [x, z, y]?
-            // Let's stick to what R3DMarkers does for visual consistency, but user asked for "xyz: [posx,posy,pos_z]"
-            // Usually in ROS: X forward, Y left, Z up.
-            // In ThreeJS: Y is up.
-            // Let's assume the R3DMarkers usage is correct for the scene.
+            // LatLon2XYZ returns ENU local coordinates: [East, North, Alt] (meters from origin)
             return {
                 ...element,
                 pos: [
@@ -81,7 +72,7 @@ const DownloadYamlButton = () => {
             yamlData[key] = {
                 type: item.type,
                 pose: {
-                    xyz: item.pos, // [x, y, z] from above
+                    xyz: item.pos,
                     rpy: [0, 0, 0]
                 }
             };
