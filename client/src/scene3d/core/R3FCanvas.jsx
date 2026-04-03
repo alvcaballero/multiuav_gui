@@ -1,6 +1,6 @@
-import { Canvas, useThree } from '@react-three/fiber';
-import { Sky, Stats } from '@react-three/drei';
-import React, { Suspense, useEffect } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { Sky } from '@react-three/drei';
+import React, { Suspense } from 'react';
 import * as THREE from 'three';
 import { Perf } from 'r3f-perf';
 
@@ -9,18 +9,15 @@ import { groundTexture, waterTexture } from './textures';
 // Crear textura del suelo
 groundTexture.repeat.set(100, 100);
 
-const Environment = () => {
-  const { gl, scene } = useThree();
-  scene.background = new THREE.Color('skyblue');
-  scene.fog = new THREE.Fog('#abddff', 600, 2000);
-  return null;
-};
 
-{
-  /* Suelo infinito */
-}
+// GROUND_SIZE must match scene3d.range in the Redux store (default 1000m)
 const GROUND_SIZE = 1000;
-const WATER_SIZE = 8000;
+// WATER_SIZE covers the visual horizon beyond the ground patch
+const WATER_SIZE = GROUND_SIZE * 8;
+// Camera far plane and fog end should match to avoid visible cutoff
+const CAMERA_FAR = 2000;
+const FOG_NEAR = 600;
+const FOG_FAR = CAMERA_FAR;
 
 // Área de tierra interior
 const Ground = () => (
@@ -73,10 +70,10 @@ const Water = () => {
 
 const R3FCanvas = ({ children }) => {
   return (
-    <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: 800 }}>
+    <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}>
       {/* Iluminación */}
       <Sky sunPosition={[100, 100, 100]} />
-      <fog attach="fog" args={['#abddff', 600, 2000]} />
+      <fog attach="fog" args={['#abddff', FOG_NEAR, FOG_FAR]} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[50, 50, 50]} intensity={3} />
       <Perf />
