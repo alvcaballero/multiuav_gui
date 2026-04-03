@@ -7,7 +7,7 @@ import { map } from '../core/MapView';
 const MapDefaultCamera = () => {
   const store = useStore();
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
-  //const positions = useSelector((state) => state.session.positions);
+  const positions = useSelector((state) => state.session.positions);
 
   const defaultLatitude = usePreference('latitude');
   const defaultLongitude = usePreference('longitude');
@@ -16,9 +16,17 @@ const MapDefaultCamera = () => {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
+    if (initialized) return;
     if (selectedDeviceId) {
-      setInitialized(true);
-    } else if (!initialized) {
+      const position = positions[selectedDeviceId];
+      if (position) {
+        map.jumpTo({
+          center: [position.longitude, position.latitude],
+          zoom: Math.max(defaultZoom > 0 ? defaultZoom : map.getZoom(), 10),
+        });
+        setInitialized(true);
+      }
+    } else {
       if (defaultLatitude && defaultLongitude) {
         map.jumpTo({
           center: [defaultLongitude, defaultLatitude],
@@ -49,7 +57,7 @@ const MapDefaultCamera = () => {
         }
       }
     }
-  }, [selectedDeviceId, initialized, defaultLatitude, defaultLongitude, defaultZoom]);
+  }, [selectedDeviceId, initialized, defaultLatitude, defaultLongitude, defaultZoom, positions]);
 
   return null;
 };
