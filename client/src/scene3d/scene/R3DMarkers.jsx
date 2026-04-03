@@ -1,26 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useModelLoader, modelKey } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
 
 const Marker = ({ item }) => {
   const { model, error } = useModelLoader(item.type);
+  const cloneRef = useRef(null);
 
-  if (error) {
-    console.error(error);
-    return null;
+  useEffect(() => {
+    return () => {
+      if (cloneRef.current) {
+        cloneRef.current.traverse((child) => {
+          if (child.isMesh) {
+            child.geometry.dispose();
+            if (Array.isArray(child.material)) {
+              child.material.forEach((m) => m.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+        cloneRef.current = null;
+      }
+    };
+  }, []);
+
+  if (error || !model) return null;
+
+  if (!cloneRef.current) {
+    cloneRef.current = model.scene.clone();
   }
 
-  if (!model) {
-    return null;
-  }
-
-  return <primitive object={model.scene.clone()} position={item.pos} scale={[1, 1, 1]} />;
+  return <primitive object={cloneRef.current} position={item.pos} scale={[1, 1, 1]} />;
 };
 
 const R3DMarkers = ({ elements }) => {
   const [markers, setmarkers] = useState([]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
+  const range = useSelector((state) => state.session.scene3d.range);
 
   function list2Points(mylist) {
     const waypoints = [];
@@ -43,19 +60,21 @@ const R3DMarkers = ({ elements }) => {
 
   useEffect(() => {
     const listelemnts = list2Points(elements);
-    const pos = listelemnts.map(({ latitude, longitude }) => {
-      return { lng: longitude, lat: latitude, alt: 0 };
-    });
+    const pos = listelemnts.map(({ latitude, longitude }) => ({
+      lng: longitude,
+      lat: latitude,
+      alt: 0,
+    }));
     const posxyz = LatLon2XYZ(origin3d, pos);
-    const elementxyz = listelemnts.map((element, index) => {
-      return { ...element, pos: [posxyz[index][0], posxyz[index][2], -posxyz[index][1]] };
-    });
+    const elementxyz = listelemnts.map((element, index) => ({
+      ...element,
+      pos: [posxyz[index][0], posxyz[index][2], -posxyz[index][1]],
+    }));
     const result = elementxyz.filter(
-      (item) => item.pos[0] > -1000 && item.pos[0] < 1000 && item.pos[2] > -1000 && item.pos[2] < 1000
+      (item) => item.pos[0] > -range && item.pos[0] < range && item.pos[2] > -range && item.pos[2] < range
     );
-    console.log(result);
     setmarkers(result);
-  }, [origin3d, elements]);
+  }, [origin3d, elements, range]);
 
   return (
     <>
