@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
@@ -19,10 +19,16 @@ const Device = ({ id, position, isSelected }) => {
 
   useHelper(camRef, THREE.CameraHelper);
 
+  const initialized = useRef(false);
+
   useEffect(() => {
     const loc = position.find((item) => item.deviceId == id);
     if (loc) {
       nextPosition.current.set(loc.pos[0], 10, -loc.pos[1]);
+      if (!initialized.current) {
+        currentPosition.current.copy(nextPosition.current);
+        initialized.current = true;
+      }
       if (meshRef.current && loc.course !== undefined) {
         // course: 0=North, clockwise. Three.js Y-up: negate for correct direction.
         meshRef.current.rotation.y = -(loc.course * Math.PI) / 180;
@@ -61,7 +67,6 @@ const R3FDevices = () => {
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const [positionxyz, setPositionxyz] = useState([]);
 
-  const objectIds = useMemo(() => Object.keys(positions), [positions]);
 
   useEffect(() => {
     const pos = Object.values(positions).map((item) => ({
@@ -81,8 +86,8 @@ const R3FDevices = () => {
 
   return (
     <>
-      {objectIds.map((id) => (
-        <Device key={id} id={id} position={positionxyz} isSelected={String(selectedDeviceId) === String(id)} />
+      {positionxyz.map((item) => (
+        <Device key={item.deviceId} id={item.deviceId} position={positionxyz} isSelected={String(selectedDeviceId) === String(item.deviceId)} />
       ))}
     </>
   );
