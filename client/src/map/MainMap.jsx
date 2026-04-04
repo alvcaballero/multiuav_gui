@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import MapView from './core/MapView';
 import MapMissions from './mission/MapMissions';
-import MapMarkers from './devices/MapMarkers';
+import MapMarkers from './environment/MapMarkers';
 import MapElements from './environment/MapElements';
 import MapPositions from './devices/MapPositions';
 import MapSelectedDevice from './devices/MapSelectedDevice';

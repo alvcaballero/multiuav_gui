@@ -37,7 +37,7 @@ import { formatTime } from '../shared/formatter';
 import { useEffectAsync } from '../reactHelper';
 import MapView from '../map/core/MapView';
 import MapMissions from '../map/mission/MapMissions';
-import MapMarkers from '../map/devices/MapMarkers';
+import MapMarkers from '../map/environment/MapMarkers';
 import RoutesList from '../components/mission/RoutesList';
 import SelectField from '../shared/components/SelectField';
 import SelectList from '../components/ui/SelectList';

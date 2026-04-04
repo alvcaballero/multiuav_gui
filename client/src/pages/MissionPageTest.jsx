@@ -10,7 +10,7 @@ import { Menu } from '../components/layout/Menu';
 import MapMissionsCreate from '../map/draw/MapMissionsCreate';
 import MapMissions3D from '../map/mission/MapMissions3D';
 import MapPositions from '../map/devices/MapPositions';
-import MapMarkers from '../map/devices/MapMarkers';
+import MapMarkers from '../map/environment/MapMarkers';
 
 import { RosControl } from '../components/commands/RosControl';
 import MissionPanel from '../components/mission/MissionPanel';
@@ -18,7 +18,7 @@ import MissionElevation from '../components/mission/MissionElevation';
 import SaveFile from '../components/ui/SaveFile';
 import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
-import MapMarkers3D from '../map/devices/MapMarkers3D';
+import MapMarkers3D from '../map/environment/MapMarkers3D';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
