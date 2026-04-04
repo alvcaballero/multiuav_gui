@@ -9,6 +9,7 @@ import { createFilesRouter } from './files.js';
 import { ExtAppRouter } from './ExtApp.js';
 import { serverRouter } from './server.js';
 import { planningRouter } from './planning.js';
+import { markersRouter } from './markers.js';
 import { geofenceRouter } from './geofence.js';
 import { chatRouter } from './chat.js';
 import { rosRouter } from './ros.js';
@@ -23,6 +24,7 @@ export function setupRoutes(app) {
   app.use('/api/missions', createMissionRouter());
   app.use('/api/files', createFilesRouter());
   app.use('/api/planning', planningRouter);
+  app.use('/api/markers', markersRouter);
   app.use('/api/ExtApp', ExtAppRouter);
   app.use('/api/server', serverRouter);
   app.use('/api/geofences', geofenceRouter);

@@ -30,38 +30,14 @@ export class planningController {
     res.json(response);
   }
 
-  static async setMarkers(req, res) {
-    let response = await planningModel.setMarkers(req.body);
-    res.json(response);
-  }
-  static async getMarkers(req, res) {
-    let response = await planningModel.getMarkers();
-    res.json(response);
-  }
-  static async getMarkersTypes(req, res) {
-    let response = await planningModel.getMarkersTypes();
-    res.json(response);
-  }
-  static async getBases(req, res) {
-    let response = await planningModel.getBases(req.params);
-    res.json(response);
-  }
-  static async getElements(req, res) {
-    let response = await planningModel.getElements(req.params);
-    res.json(response);
-  }
-  static async getBasesWithAssignments(req, res) {
-    let response = await planningModel.getBaseswithAssignments();
-    res.json(response);
-  }
-  static getBasesSettings() {
-    return planningModel.getBasesSettings();
-  }
   static getConfigParam(obj) {
     return planningModel.getParam(obj);
   }
   static getConfigBases() {
     return planningModel.getBases();
+  }
+  static getBasesSettings() {
+    return planningModel.getBasesSettings();
   }
   static getCaseTypes() {
     return planningModel.getTypes();

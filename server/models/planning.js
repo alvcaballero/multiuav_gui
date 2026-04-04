@@ -15,10 +15,10 @@ const firstplanning = {
   objetivo: { id: 1 },
   loc: [],
   meteo: [],
-  bases: [],
   settings: {},
   markersbase: [],
   elements: [],
+  assignments: [],
 };
 
 if (Object.keys(initPlanning).length === 0) {
@@ -41,10 +41,6 @@ export class planningModel {
     logger.debug(`Mission params type=${type}`);
     return configPlanning.missionTypes[type]['data'];
   }
-  static getBasesSettings() {
-    logger.debug('Get bases settings');
-    return initPlanning.bases;
-  }
   static getMissionTypes() {
     logger.debug('Mission types all');
     return configPlanning.missionTypes;
@@ -64,6 +60,23 @@ export class planningModel {
       settings: initPlanning.settings,
     };
   }
+  static getBasesSettings() {
+    logger.debug('Get bases settings (from assignments)');
+    const assignments = initPlanning.assignments || [];
+    const markersbase = initPlanning.markersbase || [];
+    const basesMap = new Map(markersbase.map((b) => [b.id, b]));
+    return assignments.map((a) => ({
+      devices: a.device,
+      settings: a.settings,
+      base: basesMap.get(a.baseId) || null,
+    }));
+  }
+
+  static getBases() {
+    logger.debug('get bases (landing sites)');
+    return initPlanning.markersbase;
+  }
+
   static setDefault(value) {
     //console.log('Set default mission');
     //console.log(value);
@@ -71,46 +84,6 @@ export class planningModel {
     let response = writeDataFile(missionsConfigData, value);
     return { result: response };
     // modify the mission init
-  }
-
-  static setMarkers(value) {
-    // modify de markers
-    logger.debug('Set markers');
-    auxinitPlanning = { ...initPlanning, markersbase: value.markersbase, elements: value.elements };
-    initPlanning = auxinitPlanning;
-    let response = writeDataFile(missionsConfigData, auxinitPlanning);
-    return { result: response };
-  }
-  static getMarkers() {
-    logger.debug('get markers');
-    return { markersbase: initPlanning.markersbase, elements: initPlanning.elements };
-  }
-  static getMarkersTypes() {
-    logger.debug('get markers type');
-    return configPlanning.markers;
-  }
-  static getBases() {
-    logger.debug('get Bases');
-    return initPlanning.markersbase;
-  }
-  static getElements() {
-    logger.debug('get elements');
-    return initPlanning.elements;
-  }
-
-  static getBaseswithAssignments() {
-    logger.debug('get bases with assignments');
-    const assignments = initPlanning.assignments || [];
-    const bases = initPlanning.markersbase || [];
-
-    // Create a map of baseId -> assigned device
-    const assignmentsMap = new Map(assignments.map((a) => [a.baseId, a.device]));
-
-    // Return all bases with their assigned device (if any)
-    return bases.map((base) => ({
-      ...base,
-      device: assignmentsMap.get(base.id) || null,
-    }));
   }
 
   static async PlanningRequest({ id, myTask }) {

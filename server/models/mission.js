@@ -141,11 +141,6 @@ export class missionModel {
     myTask.case = planningController.getCaseTypes()[objetivo].case;
     myTask.meteo = meteo;
 
-    let bases = planningController.getConfigBases();
-    if (bases == null) {
-      logger.warn('bases is null');
-      return null;
-    }
     let devices = await devicesController.getAllDevices();
     // get setting of the task
     let param = planningController.getConfigParam(objetivo);
@@ -156,8 +151,12 @@ export class missionModel {
     logger.debug(`param devices: ${JSON.stringify(param['devices'])}`);
 
     let baseSettings = planningController.getBasesSettings();
+    if (!baseSettings || baseSettings.length === 0) {
+      logger.warn('no base assignments found');
+      return null;
+    }
     let devicesSettings = [];
-    for (const [index, setting] of baseSettings.entries()) {
+    for (const setting of baseSettings) {
       logger.debug(`bases setting: ${JSON.stringify(setting)}`);
       let config = { settings: {} };
       let myDevice = Object.values(devices).find((device) => device.id == setting.devices.id);
@@ -194,7 +193,7 @@ export class missionModel {
 
       config.id = myDevice.name;
       config.category = myDevice.category;
-      config.settings.base = Object.values(bases[index]);
+      config.settings.base = setting.base ? Object.values(setting.base) : [];
       config.settings.landing_mode = 2;
       let uavData = await positionsController.getLastPositions(myDevice.id);
       logger.debug(`uavData: ${JSON.stringify(uavData)}`);
