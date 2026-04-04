@@ -1,0 +1,35 @@
+# Static element types — tracked in git.
+# These are the built-in inspection target types available to all users.
+# Custom user-defined types live in server/data/markerTypes.yaml (gitignored).
+
+- id: powerTower
+  name: Power Tower
+  icon: /api/markers/types/powerTower/icon
+  model3d: null
+  height: 15
+  color: blue
+  description: 'height: 15 m'
+
+- id: windTurbine
+  name: Wind Turbine
+  icon: /api/markers/types/windTurbine/icon
+  model3d: /api/markers/types/windTurbine/model
+  height: 80
+  color: red
+  description: 'tower_height: 80 m, blade_length: 28 m'
+
+- id: solarPanel
+  name: Solar Panel
+  icon: /api/markers/types/solarPanel/icon
+  model3d: null
+  height: 2
+  color: green
+  description: 'area: 20x20 m, height: 2 m'
+
+- id: bridge_crane
+  name: Bridge Crane
+  icon: /api/markers/types/bridge_crane/icon
+  model3d: /api/markers/types/bridge_crane/model
+  height: 15
+  color: orange
+  description: 'Metallic structure, height: 15 m'

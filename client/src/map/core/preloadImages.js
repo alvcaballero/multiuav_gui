@@ -103,6 +103,27 @@ export default async () => {
   mapImages.solarPanel = await prepareIcon(await loadImage(solarPanelSvg));
   mapImages.locPoint = await prepareIcon(await loadImage(locationPointSvg));
 
+  // Load icons from custom element type catalog
+  try {
+    const res = await fetch('/api/markers/types');
+    if (res.ok) {
+      const types = await res.json();
+      await Promise.all(
+        types
+          .filter((t) => t.custom && t.icon)
+          .map(async (t) => {
+            try {
+              mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
+            } catch (_) {
+              // fallback: use default-neutral icon if asset missing
+            }
+          })
+      );
+    }
+  } catch (_) {
+    // server unavailable — skip custom icons
+  }
+
   Object.keys(palette.colors_devices).forEach(async (color) => {
     mapImages[`background-${color}`] = await prepareIcon(background, null, colors[color]);
     mapImages[`mission-${color}`] = await prepareIcon(backgroundBorder, null, colors[color]);

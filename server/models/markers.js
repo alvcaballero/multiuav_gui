@@ -1,14 +1,17 @@
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { missionsConfigData } from '../config/config.js';
 import logger from '../common/logger.js';
 
-const STATIC_TYPES_PATH = '../config/planning/config.yaml';
-const CUSTOM_TYPES_PATH = '../data/markerTypes.yaml';
-const ASSETS_DIR = path.resolve('../data/element-types');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const staticConfig = readDataFile(STATIC_TYPES_PATH);
+const STATIC_TYPES_PATH = '../config/planning/elementTypes.yaml';
+const CUSTOM_TYPES_PATH = '../data/markerTypes.yaml';
+const ASSETS_DIR = path.resolve(__dirname, '../data/element-types');
+
+const staticTypes = readDataFile(STATIC_TYPES_PATH) || [];
 var initPlanning = readDataFile(missionsConfigData);
 
 function loadCustomTypes() {
@@ -57,9 +60,11 @@ export class markersModel {
 
   static getAllTypes() {
     logger.debug('get all marker types');
-    const staticTypes = (staticConfig.markers || []).map((t) => ({ ...t, custom: false }));
-    const customTypes = loadCustomTypes().map((t) => ({ ...t, custom: true }));
-    return [...staticTypes, ...customTypes];
+    const custom = loadCustomTypes().map((t) => ({ ...t, custom: true }));
+    return [
+      ...staticTypes.map((t) => ({ ...t, custom: false })),
+      ...custom,
+    ];
   }
 
   static getCustomTypes() {

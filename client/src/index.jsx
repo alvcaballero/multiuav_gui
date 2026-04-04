@@ -7,10 +7,12 @@ import store from './store';
 import ErrorHandler from './shared/components/ErrorHandler';
 import Navigation from './Navigation';
 import preloadImages from './map/core/preloadImages';
+import { loadCustomModelPaths } from './scene3d/models/ModelLoader.jsx';
 import ServerProvider from './ServerProvider';
 import AppThemeProvider from './AppThemeProvider';
 
 preloadImages();
+loadCustomModelPaths();
 
 const root = createRoot(document.getElementById('root'));
 root.render(

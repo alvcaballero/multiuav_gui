@@ -14,6 +14,25 @@ const modelPaths = {
   default: `${BASE_PATH}/models/Astronaut.glb`,
 };
 
+/**
+ * Registers 3D model paths from the custom element type catalog.
+ * Call once on app init (after preloadImages).
+ */
+export const loadCustomModelPaths = async () => {
+  try {
+    const res = await fetch('/api/markers/types');
+    if (!res.ok) return;
+    const types = await res.json();
+    types
+      .filter((t) => t.model3d)
+      .forEach((t) => {
+        modelPaths[t.id] = t.model3d;
+      });
+  } catch (_) {
+    // server unavailable — skip
+  }
+};
+
 // Cache para modelos ya cargados
 const modelCache = new Map();
 const loadingQueue = new Map();
@@ -45,17 +64,25 @@ export const getModelPath = (category) => {
 };
 
 export const getModel = async (type) => {
-  if (!type || !modelPaths[type]) {
-    setError(`Modelo no encontrado para el tipo: ${type}`);
-    return;
+  if (!type) return;
+
+  // If path not registered yet, try fetching from catalog
+  if (!modelPaths[type]) {
+    try {
+      await loadCustomModelPaths();
+    } catch (_) {}
   }
-  if (modelCache.has(type)) {
-    return modelCache.get(type);
+
+  // Fall back to default if type has no 3D model
+  const resolvedType = modelPaths[type] ? type : 'default';
+
+  if (modelCache.has(resolvedType)) {
+    return modelCache.get(resolvedType);
   }
-  if (loadingQueue.has(type)) return await loadingQueue.get(type);
+  if (loadingQueue.has(resolvedType)) return await loadingQueue.get(resolvedType);
 
   const loader = new GLTFLoader();
-  const modelPath = modelPaths[type];
+  const modelPath = modelPaths[resolvedType];
 
   const loadPromise = new Promise((resolve, reject) => {
     loader.load(
@@ -67,19 +94,19 @@ export const getModel = async (type) => {
             child.receiveShadow = true;
           }
         });
-        modelCache.set(type, gltf);
-        loadingQueue.delete(type);
+        modelCache.set(resolvedType, gltf);
+        loadingQueue.delete(resolvedType);
         resolve(gltf);
       },
       undefined,
       (error) => {
-        console.error(`Error cargando modelo "${type}":`, error);
-        loadingQueue.delete(type);
+        console.error(`Error cargando modelo "${resolvedType}":`, error);
+        loadingQueue.delete(resolvedType);
         reject(error);
       }
     );
   });
-  loadingQueue.set(type, loadPromise);
+  loadingQueue.set(resolvedType, loadPromise);
   return await loadPromise;
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useModelLoader, modelKey } from '../models/ModelLoader.jsx';
+import { useModelLoader } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
 
@@ -44,15 +44,13 @@ const R3DMarkers = ({ elements }) => {
     if (mylist?.elements) {
       mylist.elements.forEach((conjunto, index_cj) => {
         conjunto.items.forEach((items, item_index) => {
-          const type = modelKey(conjunto.type);
-          waypoints.push({ ...items, type, title: `${index_cj}-${item_index}` });
+          waypoints.push({ ...items, type: conjunto.type, title: `${index_cj}-${item_index}` });
         });
       });
     }
     if (mylist?.bases) {
       mylist.bases.forEach((items, item_index) => {
-        const type = modelKey('base');
-        waypoints.push({ ...items, type, title: item_index });
+        waypoints.push({ ...items, type: 'base', title: item_index });
       });
     }
     return waypoints;

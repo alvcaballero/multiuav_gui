@@ -1,5 +1,6 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -57,6 +58,7 @@ const ElementList = ({ markers, setMarkers }) => {
   const { classes } = useStyles();
 
   const dispatch = useDispatch();
+  const { types: markerTypes } = useMarkerTypes();
   const [init, setinit] = useState(false);
   //const [open_routes, setOpen_routes] = useState(true);
   const [expanded_route, setExpanded_route] = useState(false);
@@ -89,8 +91,9 @@ const ElementList = ({ markers, setMarkers }) => {
     setMarkers(auxMarkers);
   };
   const AddList = () => {
+    const defaultType = markerTypes[0]?.id || 'powerTower';
     let auxMarkers = JSON.parse(JSON.stringify(markers));
-    auxMarkers.push({ type: 'powerTower', name: 'Elements', linea: true, items: [] });
+    auxMarkers.push({ type: defaultType, name: 'Elements', linea: true, items: [] });
     setMarkers(auxMarkers);
   };
   const handleChange = (panel) => (event, isExpanded) => {
@@ -155,13 +158,9 @@ const ElementList = ({ markers, setMarkers }) => {
                         emptyValue={null}
                         label="Type"
                         value={base.type}
-                        data={[
-                          { id: 0, name: 'Power Tower', type: 'powerTower' },
-                          { id: 1, name: 'wind turbine', type: 'windTurbine' },
-                          { id: 2, name: 'Solar Panel' , type: 'solarPanel' },
-                        ]}
+                        data={markerTypes}
                         onChange={(e) => setElementType(index, e.target.value)}
-                        keyGetter={(item) => item.type}
+                        keyGetter={(item) => item.id}
                         titleGetter={(item) => item.name}
                         style={{ display: 'inline', width: '200px' }}
                       />

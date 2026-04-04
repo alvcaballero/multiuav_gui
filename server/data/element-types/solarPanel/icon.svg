@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  
+  <!-- base -->  
+  <ellipse cx="12" cy="21.5" rx="8" ry="2"  fill="darkgrey" stroke="black" stroke-width="0.5"/>
+  <path d="M9,12  V21 C 10 22, 14 22, 15 21 L15,10  Z" fill="grey"  stroke="black" stroke-width="0.5"/>
+
+  <!-- structure1 -->
+
+  <!-- panel -->
+  <path id="Fondo" d="M6,16  L23,16 L18,1 L1,1 Z" fill="darkblue" stroke="black" stroke-width="1.5"  />
+  
+  <path id="Fondo" d="M6,16  L23,16 L18,1 L1,1 Z" fill="darkblue" stroke="lightgrey" stroke-width="0.4"  />
+  <!-- linea de panel -->
+  <line x1="6" y1="1" x2="12" y2="16" stroke="lightgrey" stroke-width="0.4" />
+  <line x1="12" y1="1" x2="18" y2="16" stroke="lightgrey" stroke-width="0.4" />
+  <line x1="2.2" y1="5" x2="19.2" y2="5" stroke="lightgrey" stroke-width="0.4" />
+  <line x1="4" y1="10" x2="21" y2="10" stroke="lightgrey" stroke-width="0.4" />
+</svg>
