@@ -100,3 +100,37 @@ export const getBaseByIndex = (state, index) => {
   const bases = state.session.markers?.bases || [];
   return bases[index] || null;
 };
+
+// ─── Inspection targets (elements) ───────────────────────────────────────────
+
+/**
+ * Obtiene todos los grupos de inspection targets
+ */
+export const getAllInspectionGroups = (state) =>
+  state.session.markers?.elements || [];
+
+/**
+ * Obtiene los grupos filtrados por tipo (powerTower, windTurbine, solarPanel, etc.)
+ */
+export const getInspectionGroupsByType = (state, type) =>
+  getAllInspectionGroups(state).filter((group) => group.type === type);
+
+/**
+ * Obtiene todos los puntos de inspección aplanados con contexto de grupo
+ */
+export const getFlatInspectionPoints = (state) =>
+  getAllInspectionGroups(state).flatMap((group, groupIdx) =>
+    group.items.map((item, itemIdx) => ({
+      ...item,
+      groupType: group.type,
+      groupName: group.name,
+      groupIdx,
+      itemIdx,
+    }))
+  );
+
+/**
+ * Obtiene el total de puntos de inspección (suma de items de todos los grupos)
+ */
+export const getTotalInspectionPoints = (state) =>
+  getAllInspectionGroups(state).reduce((sum, group) => sum + group.items.length, 0);

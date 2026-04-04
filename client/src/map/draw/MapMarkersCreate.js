@@ -42,15 +42,16 @@ const MapMarkersCreate = ({
   setLocations,
 }) => {
   const id = useId();
-  const linesMarkers = `${id}-lines`;
-  const idselectMarkers = `${id}-select`;
+  const basesSourceId = `${id}-bases`;
+  const elementsSourceId = `${id}-elements`;
+  const linesMarkersId = `${id}-lines`;
+  const selectMarkersId = `${id}-select`;
 
   const iconScale = 0.8;
   const iconPointScale = 0.6;
 
-  const [testkeepValue, settestkeepValue] = useState(new keepMarkers());
+  const [testkeepValue] = useState(new keepMarkers());
 
-  // Use refs so event listeners always call the latest version without needing re-registration
   const setLocationsRef = useRef(setLocations);
   const setMarkersRef = useRef(setMarkers);
   useEffect(() => { setLocationsRef.current = setLocations; }, [setLocations]);
@@ -59,10 +60,10 @@ const MapMarkersCreate = ({
   const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
   const onMouseEnterPointer = () => (map.getCanvas().style.cursor = 'pointer');
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+
   const onMouseClick = (e) => {
     if (e.hasOwnProperty('features')) {
-      //console.log(e.features[0]);
-      if (e.features[0].properties.type == 'element') {
+      if (e.features[0].properties.type === 'element') {
         setLocationsRef.current({ ...e.features[0].properties, type: 'object' });
       }
     } else {
@@ -75,142 +76,149 @@ const MapMarkersCreate = ({
       });
     }
   };
+
   const onMove = (e) => {
-    // Set a UI indicator for dragging.
     map.getCanvas().style.cursor = 'grabbing';
-    console.log('on move point' + e.lngLat.lng + '-' + e.lngLat.lat);
-    // Update the Point feature in `geojson` coordinates
-    // and call setData to the source layer `point` on it.
+
     let auxMarkers = testkeepValue.getMarkers();
     let auxselectpoint = testkeepValue.getSelect();
-    console.log(auxMarkers);
-    console.log(auxselectpoint);
+
     if (auxselectpoint.id >= 0) {
-      if (auxselectpoint.type == 'base') {
-        auxMarkers.bases[auxselectpoint.id]['latitude'] = e.lngLat.lat;
-        auxMarkers.bases[auxselectpoint.id]['longitude'] = e.lngLat.lng;
-      }
-      if (auxselectpoint.type == 'element') {
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['latitude'] = e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['longitude'] = e.lngLat.lng;
+      if (auxselectpoint.type === 'base') {
+        auxMarkers.bases[auxselectpoint.id].latitude = e.lngLat.lat;
+        auxMarkers.bases[auxselectpoint.id].longitude = e.lngLat.lng;
+        map.getSource(basesSourceId)?.setData({
+          type: 'FeatureCollection',
+          features: basesToFeatures(auxMarkers.bases),
+        });
+      } else if (auxselectpoint.type === 'element') {
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude = e.lngLat.lat;
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude = e.lngLat.lng;
+        map.getSource(elementsSourceId)?.setData({
+          type: 'FeatureCollection',
+          features: elementsToFeatures(auxMarkers.elements),
+        });
       }
     }
-    let markersIcons = listtoPoints(auxMarkers);
-    map.getSource(id)?.setData({
-      type: 'FeatureCollection',
-      features: markersIcons.map((marker) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [marker.longitude, marker.latitude],
-        },
-        properties: { ...marker },
-      })),
-    });
   };
+
   const onUp = (e) => {
-    let coords = e.lngLat;
     map.getCanvas().style.cursor = '';
 
     let auxMarkers = testkeepValue.getMarkers();
     let auxselectpoint = testkeepValue.getSelect();
-    console.log(auxMarkers);
-    console.log(auxselectpoint);
+
     if (auxselectpoint.id >= 0) {
-      if (auxselectpoint.type == 'base') {
-        auxMarkers.bases[auxselectpoint.id]['latitude'] = e.lngLat.lat;
-        auxMarkers.bases[auxselectpoint.id]['longitude'] = e.lngLat.lng;
-      }
-      if (auxselectpoint.type == 'element') {
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['latitude'] = e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId]['items'][auxselectpoint.id]['longitude'] = e.lngLat.lng;
+      if (auxselectpoint.type === 'base') {
+        auxMarkers.bases[auxselectpoint.id].latitude = e.lngLat.lat;
+        auxMarkers.bases[auxselectpoint.id].longitude = e.lngLat.lng;
+      } else if (auxselectpoint.type === 'element') {
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude = e.lngLat.lat;
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude = e.lngLat.lng;
       }
     }
-    testkeepValue.getSelect({ id: -1 });
-    setMarkersRef.current(auxMarkers);
 
-    console.log(`Longitude: ${coords.lng} Latitude: ${coords.lat}`);
+    testkeepValue.setSelect({ id: -1 });
+    setMarkersRef.current(auxMarkers);
 
     map.off('mousemove', onMove);
     map.off('touchmove', onMove);
   };
+
   const onMouseDown = (e) => {
     e.preventDefault();
-
     testkeepValue.setSelect(e.features[0].properties);
-
     map.getCanvas().style.cursor = 'grab';
     map.on('mousemove', onMove);
     map.once('mouseup', onUp);
   };
+
   const onMouseTouchStart = (e) => {
     if (e.points.length !== 1) return;
-    console.log('touch start');
-
-    // Prevent the default map drag behavior.
     e.preventDefault();
-
     map.on('touchmove', onMove);
     map.once('touchend', onUp);
   };
 
-  useEffect(() => {
-    map.addSource(id, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [],
+  function basesToFeatures(bases) {
+    return (bases || []).map((base, index) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [base.longitude, base.latitude],
       },
-    });
-    map.addSource(linesMarkers, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [],
+      properties: {
+        ...base,
+        type: 'base',
+        groupId: 0,
+        id: index,
+        image: 'base',
+        title: base.name || `b-${index}`,
       },
-    });
-    map.addSource(idselectMarkers, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [],
-      },
-    });
-    map.addLayer({
-      id: idselectMarkers,
-      type: 'symbol',
-      source: idselectMarkers,
-      filter: ['!has', 'point_count'],
-      layout: {
-        'icon-image': 'background-{groupId}',
-        'icon-size': iconPointScale,
-        'icon-allow-overlap': true,
-        'text-allow-overlap': true,
-        'text-field': '{title}',
-        'text-font': findFonts(map),
-        'text-size': 14,
-      },
-      paint: {
-        'text-color': 'white',
-      },
-    });
-    if (showLines) {
-      map.addLayer({
-        source: linesMarkers,
-        id: linesMarkers,
-        type: 'line',
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': 2,
+    }));
+  }
+
+  function elementsToFeatures(elements) {
+    return (elements || []).flatMap((group, groupIdx) =>
+      group.items.map((item, itemIdx) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [item.longitude, item.latitude],
         },
+        properties: {
+          ...item,
+          type: 'element',
+          groupId: groupIdx,
+          id: itemIdx,
+          image: group.type,
+          title: item.name || `${groupIdx}-${itemIdx}`,
+        },
+      }))
+    );
+  }
+
+  function markerstolines(item, index) {
+    let waypoint_pos = Object.values(item.items).map((it) => [it['longitude'], it['latitude']]);
+    return {
+      id: item.id,
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: waypoint_pos,
+      },
+      properties: {
+        name: item.name,
+        color: palette.colors_devices[index % 7],
+      },
+    };
+  }
+
+  function selectToPoints(myList) {
+    const waypoints = [];
+    if (myList.length > 0) {
+      myList.forEach((conjunto, index_cj) => {
+        conjunto.items.forEach((items, itemIndex) => {
+          waypoints.push({
+            ...items,
+            type: 'element',
+            groupId: index_cj % 7,
+            id: itemIndex,
+            image: conjunto.type,
+            title: `${index_cj}-${itemIndex}`,
+          });
+        });
       });
     }
+    return waypoints;
+  }
 
+  function addSymbolLayer(layerId, sourceId) {
     if (showTitles) {
       map.addLayer({
-        id,
+        id: layerId,
         type: 'symbol',
-        source: id,
+        source: sourceId,
         filter: ['!has', 'point_count'],
         layout: {
           'icon-image': '{image}',
@@ -230,9 +238,9 @@ const MapMarkersCreate = ({
       });
     } else {
       map.addLayer({
-        id,
+        id: layerId,
         type: 'symbol',
-        source: id,
+        source: sourceId,
         layout: {
           'icon-image': '{image}',
           'icon-size': iconScale,
@@ -240,144 +248,118 @@ const MapMarkersCreate = ({
         },
       });
     }
+  }
+
+  useEffect(() => {
+    map.addSource(basesSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addSource(elementsSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addSource(linesMarkersId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addSource(selectMarkersId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+
+    map.addLayer({
+      id: selectMarkersId,
+      type: 'symbol',
+      source: selectMarkersId,
+      filter: ['!has', 'point_count'],
+      layout: {
+        'icon-image': 'background-{groupId}',
+        'icon-size': iconPointScale,
+        'icon-allow-overlap': true,
+        'text-allow-overlap': true,
+        'text-field': '{title}',
+        'text-font': findFonts(map),
+        'text-size': 14,
+      },
+      paint: {
+        'text-color': 'white',
+      },
+    });
+
+    if (showLines) {
+      map.addLayer({
+        id: linesMarkersId,
+        source: linesMarkersId,
+        type: 'line',
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': 2,
+        },
+      });
+    }
+
+    addSymbolLayer(elementsSourceId, elementsSourceId);
+    addSymbolLayer(basesSourceId, basesSourceId);
+
     if (SelectItems) {
-      map.on('mouseenter', id, onMouseEnterPointer);
-      map.on('mouseleave', id, onMouseLeave);
-      map.on('click', id, onMouseClick);
+      map.on('mouseenter', elementsSourceId, onMouseEnterPointer);
+      map.on('mouseleave', elementsSourceId, onMouseLeave);
+      map.on('click', elementsSourceId, onMouseClick);
+      map.on('mouseenter', basesSourceId, onMouseEnterPointer);
+      map.on('mouseleave', basesSourceId, onMouseLeave);
+      map.on('click', basesSourceId, onMouseClick);
     }
     if (CreateItems) {
       map.on('click', onMouseClick);
     }
     if (moveMarkers) {
-      map.on('mouseenter', id, onMouseEnter);
-      map.on('mouseleave', id, onMouseLeave);
-      map.on('mousedown', id, onMouseDown);
-      map.on('touchstart', id, onMouseTouchStart);
+      map.on('mouseenter', basesSourceId, onMouseEnter);
+      map.on('mouseleave', basesSourceId, onMouseLeave);
+      map.on('mousedown', basesSourceId, onMouseDown);
+      map.on('touchstart', basesSourceId, onMouseTouchStart);
+      map.on('mouseenter', elementsSourceId, onMouseEnter);
+      map.on('mouseleave', elementsSourceId, onMouseLeave);
+      map.on('mousedown', elementsSourceId, onMouseDown);
+      map.on('touchstart', elementsSourceId, onMouseTouchStart);
     }
 
     return () => {
       map.off('click', onMouseClick);
 
-      map.off('click', id, onMouseClick);
-      map.off('mouseenter', id, onMouseEnterPointer);
-      map.off('mouseenter', id, onMouseEnter);
-      map.off('mouseleave', id, onMouseLeave);
-      map.off('mousedown', id, onMouseDown);
-      map.off('touchstart', id, onMouseTouchStart);
-      if (map.getLayer(id)) {
-        map.removeLayer(id);
-      }
-      if (map.getLayer(idselectMarkers)) {
-        map.removeLayer(idselectMarkers);
-      }
-      if (map.getLayer(linesMarkers)) {
-        map.removeLayer(linesMarkers);
-      }
-      if (map.getSource(id)) {
-        map.removeSource(id);
-      }
-      if (map.getSource(linesMarkers)) {
-        map.removeSource(linesMarkers);
-      }
-      if (map.getSource(idselectMarkers)) {
-        map.removeSource(idselectMarkers);
-      }
+      map.off('click', elementsSourceId, onMouseClick);
+      map.off('mouseenter', elementsSourceId, onMouseEnterPointer);
+      map.off('mouseenter', elementsSourceId, onMouseEnter);
+      map.off('mouseleave', elementsSourceId, onMouseLeave);
+      map.off('mousedown', elementsSourceId, onMouseDown);
+      map.off('touchstart', elementsSourceId, onMouseTouchStart);
+
+      map.off('click', basesSourceId, onMouseClick);
+      map.off('mouseenter', basesSourceId, onMouseEnterPointer);
+      map.off('mouseenter', basesSourceId, onMouseEnter);
+      map.off('mouseleave', basesSourceId, onMouseLeave);
+      map.off('mousedown', basesSourceId, onMouseDown);
+      map.off('touchstart', basesSourceId, onMouseTouchStart);
+
+      [selectMarkersId, linesMarkersId, elementsSourceId, basesSourceId].forEach((layerId) => {
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+      });
+      [selectMarkersId, linesMarkersId, elementsSourceId, basesSourceId].forEach((sourceId) => {
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+      });
     };
   }, [showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
 
-  function listtoPoints(myList) {
-    const waypoints = [];
-    if (myList.elements) {
-      myList.elements.forEach((conjunto, index_cj) => {
-        conjunto.items.forEach((items, itemIndex) => {
-          waypoints.push({
-            ...items,
-            type: 'element',
-            groupId: index_cj,
-            id: itemIndex,
-            image: conjunto.type,
-            title: `${index_cj}-${itemIndex}`,
-          });
-        });
-      });
-    }
-    if (myList.bases) {
-      myList.bases.forEach((items, itemIndex) => {
-        waypoints.push({
-          ...items,
-          type: 'base',
-          groupId: 0,
-          id: itemIndex,
-          image: 'base',
-          title: `b-${itemIndex}`,
-        });
-      });
-    }
-
-    return waypoints;
-  }
-
-  function markerstolines(item, index) {
-    let waypoint_pos = Object.values(item.items).map((it) => [it['longitude'], it['latitude']]);
-    //console.log(waypoint_pos);
-    return {
-      id: item.id,
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: waypoint_pos,
-      },
-      properties: {
-        name: item.name, // name,
-        color: palette.colors_devices[index % 7],
-      },
-    };
-  }
-  function selectToPoints(myList) {
-    console.log(myList);
-    const waypoints = [];
-    if (myList.length > 0) {
-      myList.forEach((conjunto, index_cj) => {
-        conjunto.items.forEach((items, itemIndex) => {
-          waypoints.push({
-            ...items,
-            type: 'element',
-            groupId: index_cj % 7,
-            id: itemIndex,
-            image: conjunto.type,
-            title: `${index_cj}-${itemIndex}`,
-          });
-        });
-      });
-    }
-
-    return waypoints;
-  }
-
   useEffect(() => {
     testkeepValue.initMarkers(markers);
-    let markersIcons = listtoPoints(markers);
-    map.getSource(id)?.setData({
+
+    map.getSource(basesSourceId)?.setData({
       type: 'FeatureCollection',
-      features: markersIcons.map((marker) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [marker.longitude, marker.latitude],
-        },
-        properties: { ...marker },
-      })),
+      features: basesToFeatures(markers.bases),
     });
 
-    map.getSource(linesMarkers).setData({
+    map.getSource(elementsSourceId)?.setData({
       type: 'FeatureCollection',
-      features: markers.elements.map((element, index) => markerstolines(element, index)),
+      features: elementsToFeatures(markers.elements),
+    });
+
+    map.getSource(linesMarkersId)?.setData({
+      type: 'FeatureCollection',
+      features: (markers.elements || []).map(markerstolines),
     });
   }, [markers, showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
 
   useEffect(() => {
-    let selectPoints = selectToPoints(selectMarkers);
-    map.getSource(idselectMarkers).setData({
+    const selectPoints = selectToPoints(selectMarkers);
+    map.getSource(selectMarkersId)?.setData({
       type: 'FeatureCollection',
       features: selectPoints.map((point) => ({
         type: 'Feature',
