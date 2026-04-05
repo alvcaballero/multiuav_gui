@@ -52,7 +52,9 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
+const CORNERS = ['SW', 'SE', 'NE', 'NW'];
+
+const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) => {
   const { classes } = useStyles();
 
   const [expanded, setExpanded] = useState(false);
@@ -90,6 +92,15 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
   const setName = (index, value) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers[index].name = value;
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
+  };
+
+  const setCorner = (index, cornerIdx, axis, value) => {
+    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    if (!auxMarkers[index].corners) {
+      auxMarkers[index].corners = [[0, 0], [0, 0], [0, 0], [0, 0]];
+    }
+    auxMarkers[index].corners[cornerIdx][axis === 'lng' ? 0 : 1] = +value;
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
   useEffect(() => {
@@ -188,6 +199,36 @@ const BaseList = ({ markers, setMarkers, type = 'Base' }) => {
                             changeLng(index, +e.target.value);
                           }}
                         />
+                        {hasMapImage && (
+                          <>
+                            <div style={{ marginTop: '8px' }}>
+                              <Typography variant="subtitle1">Image corners (SW → SE → NE → NW)</Typography>
+                            </div>
+                            {CORNERS.map((label, cornerIdx) => (
+                              <div key={label}>
+                                <Typography variant="caption">{label}</Typography>
+                                <TextField
+                                  label="Lat"
+                                  type="number"
+                                  variant="standard"
+                                  sx={{ width: '15ch' }}
+                                  inputProps={{ step: 0.0001 }}
+                                  defaultValue={base.corners?.[cornerIdx]?.[1] ?? 0}
+                                  onBlur={(e) => setCorner(index, cornerIdx, 'lat', e.target.value)}
+                                />
+                                <TextField
+                                  label="Lng"
+                                  type="number"
+                                  variant="standard"
+                                  sx={{ width: '15ch' }}
+                                  inputProps={{ step: 0.0001 }}
+                                  defaultValue={base.corners?.[cornerIdx]?.[0] ?? 0}
+                                  onBlur={(e) => setCorner(index, cornerIdx, 'lng', e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </>
+                        )}
                       </Box>
                     </Fragment>
                   )}

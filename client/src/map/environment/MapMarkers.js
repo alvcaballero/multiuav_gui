@@ -1,11 +1,19 @@
-import { useId, useEffect } from 'react';
+import { useId, useEffect, useMemo } from 'react';
 import { map } from '../core/MapView';
 import { findFonts } from '../core/mapUtil';
+import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 
 const MapMarkers = ({ markers, showTitles }) => {
   const id = useId();
   const basesLayerId = `${id}-bases`;
   const elementsLayerId = `${id}-elements`;
+  const { types } = useMarkerTypes();
+
+  // Set of type IDs that render as map images — skip icon rendering for these
+  const mapImageTypes = useMemo(
+    () => new Set(types.filter((t) => t.mapImage).map((t) => t.id)),
+    [types]
+  );
 
   const iconScale = 0.8;
 
@@ -89,21 +97,23 @@ const MapMarkers = ({ markers, showTitles }) => {
     const elements = markers?.elements || [];
     map.getSource(elementsLayerId)?.setData({
       type: 'FeatureCollection',
-      features: elements.flatMap((group, groupIdx) =>
-        group.items.map((item, itemIdx) => ({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [item.longitude, item.latitude],
-          },
-          properties: {
-            image: group.type || 'default-neutral',
-            title: item.name || `${groupIdx}-${itemIdx}`,
-          },
-        }))
-      ),
+      features: elements
+        .filter((group) => !mapImageTypes.has(group.type))
+        .flatMap((group, groupIdx) =>
+          group.items.map((item, itemIdx) => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [item.longitude, item.latitude],
+            },
+            properties: {
+              image: group.type || 'default-neutral',
+              title: item.name || `${groupIdx}-${itemIdx}`,
+            },
+          }))
+        ),
     });
-  }, [showTitles, markers]);
+  }, [showTitles, markers, mapImageTypes]);
 
   return null;
 };

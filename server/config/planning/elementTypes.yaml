@@ -25,11 +25,3 @@
   height: 2
   color: green
   description: 'area: 20x20 m, height: 2 m'
-
-- id: bridge_crane
-  name: Bridge Crane
-  icon: /api/markers/types/bridge_crane/icon
-  model3d: /api/markers/types/bridge_crane/model
-  height: 15
-  color: orange
-  description: 'Metallic structure, height: 15 m'

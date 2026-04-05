@@ -1,41 +1,58 @@
-import { useId, useEffect } from 'react';
+import { useId, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { map } from '../core/MapView';
-import { useAttributePreference } from '../../shared/preferences';
+import { getMapImageItems } from '../../store/sessionSelectors';
 
+/**
+ * Renders georreferenced raster images for elements that have mapImage corners defined.
+ * Each item in an element group with corners [[lng,lat]x4] (SW, SE, NE, NW) is rendered
+ * as a MapLibre image source overlay.
+ */
 const MapElements = () => {
   const id = useId();
-  const buildingImages = useAttributePreference('customElements', []);
+  const imageItems = useSelector(getMapImageItems);
+  const mountedKeys = useRef(new Set());
 
   useEffect(() => {
-    buildingImages.forEach((building, index) => {
-      const { url, coordinates } = building;
+    const currentKeys = new Set(imageItems.map((i) => i.key));
 
-      // Add an image source for each building
-      map.addSource(`${id}-BImage-${index}`, {
-        type: 'image',
-        url,
-        coordinates, // Array of coordinates [SW, SE, NE, NW]
-      });
+    // Add new or update existing sources/layers
+    imageItems.forEach(({ key, url, coordinates }) => {
+      const sourceId = `${id}-img-${key}`;
+      const layerId = `${id}-lyr-${key}`;
 
-      // Add a layer for each building image
-      map.addLayer({
-        id: `${id}-BILayer-${index}`,
-        type: 'raster',
-        source: `${id}-BImage-${index}`,
-      });
+      if (!mountedKeys.current.has(key)) {
+        map.addSource(sourceId, { type: 'image', url, coordinates });
+        map.addLayer({ id: layerId, type: 'raster', source: sourceId });
+        mountedKeys.current.add(key);
+      } else {
+        map.getSource(sourceId)?.updateImage({ url, coordinates });
+      }
     });
 
+    // Remove sources/layers no longer in the list
+    mountedKeys.current.forEach((key) => {
+      if (!currentKeys.has(key)) {
+        const sourceId = `${id}-img-${key}`;
+        const layerId = `${id}-lyr-${key}`;
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+        mountedKeys.current.delete(key);
+      }
+    });
+  }, [imageItems]);
+
+  useEffect(() => {
     return () => {
-      buildingImages.forEach((building, index) => {
-        if (map.getLayer(`${id}-BILayer-${index}`)) {
-          map.removeLayer(`${id}-BILayer-${index}`);
-        }
-        if (map.getSource(`${id}-BImage-${index}`)) {
-          map.removeSource(`${id}-BImage-${index}`);
-        }
+      mountedKeys.current.forEach((key) => {
+        const sourceId = `${id}-img-${key}`;
+        const layerId = `${id}-lyr-${key}`;
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
       });
+      mountedKeys.current.clear();
     };
-  }, [buildingImages]);
+  }, []);
 
   return null;
 };

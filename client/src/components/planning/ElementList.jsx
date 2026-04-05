@@ -164,7 +164,12 @@ const ElementList = ({ markers, setMarkers }) => {
                         titleGetter={(item) => item.name}
                         style={{ display: 'inline', width: '200px' }}
                       />
-                      <BaseList markers={base.items} setMarkers={(value) => setElement(index, value)} type="Element" />
+                      <BaseList
+                        markers={base.items}
+                        setMarkers={(value) => setElement(index, value)}
+                        type="Element"
+                        hasMapImage={markerTypes.find((t) => t.id === base.type)?.mapImage === true}
+                      />
                     </Fragment>
                   )}
                 </AccordionDetails>
