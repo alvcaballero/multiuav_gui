@@ -6,9 +6,10 @@ import { Perf } from 'r3f-perf';
 
 import CameraControls from './CameraControls';
 import { groundTexture, waterTexture } from './textures';
+import useOnlineStatus from './useOnlineStatus';
+import MapTileGround from './MapTileGround';
 // Crear textura del suelo
 groundTexture.repeat.set(100, 100);
-
 
 // GROUND_SIZE must match scene3d.range in the Redux store (default 1000m)
 const GROUND_SIZE = 1000;
@@ -19,12 +20,15 @@ const CAMERA_FAR = 2000;
 const FOG_NEAR = 600;
 const FOG_FAR = CAMERA_FAR;
 
-// Área de tierra interior
+// Área de tierra interior + agua exterior (fallback offline)
 const Ground = () => (
-  <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-    <planeGeometry args={[GROUND_SIZE, GROUND_SIZE]} />
-    <meshStandardMaterial map={groundTexture} roughness={0.8} metalness={0.2} />
-  </mesh>
+  <>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+      <planeGeometry args={[GROUND_SIZE, GROUND_SIZE]} />
+      <meshStandardMaterial map={groundTexture} roughness={0.8} metalness={0.2} />
+    </mesh>
+    <Water />
+  </>
 );
 
 // Agua exterior con agujero donde está la tierra
@@ -69,6 +73,8 @@ const Water = () => {
 };
 
 const R3FCanvas = ({ children }) => {
+  const online = useOnlineStatus();
+
   return (
     <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}>
       {/* Iluminación */}
@@ -83,8 +89,7 @@ const R3FCanvas = ({ children }) => {
       <gridHelper />
 
       <Suspense fallback={null}>
-        <Ground />
-        <Water />
+        {online ? <MapTileGround /> : <Ground />}
         {children}
       </Suspense>
     </Canvas>
