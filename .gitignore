@@ -15,7 +15,7 @@ server/data/*.json
 server/data/*.yaml
 server/data/*.kml
 # Track static element type assets but not custom ones
-!server/data/element-types/
+server/data/element-types/
 !server/data/element-types/powerTower/
 !server/data/element-types/powerTower/**
 !server/data/element-types/windTurbine/
@@ -68,3 +68,7 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# development files
+TODO.MD
+TODO.md
