@@ -18,6 +18,8 @@ import StatusCard from '../components/devices/StatusCard';
 import CameraDevice from '../components/camera/CameraDevice';
 import ChatDrawer from '../components/chat/ChatDrawer';
 import { devicesActions } from '../store';
+import useFilter from '../components/devices/useFilter';
+import usePersistedState from '../shared/usePersistedState';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -70,7 +72,7 @@ const useStyles = makeStyles()((theme) => ({
     left: theme.dimensions.drawerWidthDesktop,
     right: '0px',
     bottom: '0px',
-  }
+  },
 }));
 
 const MainPage = () => {
@@ -81,17 +83,30 @@ const MainPage = () => {
   const devicesMap = useSelector((state) => state.devices.items);
   const mission = useSelector((state) => state.mission);
   const llmEnabled = useSelector((state) => state.session.server?.llmEnabled ?? false);
-  const positionsMap = useSelector((state) => state.session.positions);
+  const positions = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const sessionMarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);
 
-  const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
-  const filteredPositions = useMemo(() => Object.values(positionsMap), [positionsMap]);
+  // const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
+  // const filteredPositions = useMemo(() => Object.values(positions), [positions]);
+  const [filteredPositions, setFilteredPositions] = useState([]);
+  const [filteredDevices, setFilteredDevices] = useState([]);
+
   const selectedPosition = useMemo(
     () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
     [filteredPositions, selectedDeviceId]
   );
+
+  const [keyword, setKeyword] = useState('');
+  const [filter, setFilter] = usePersistedState('filter', {
+    statuses: [],
+    groups: [],
+  });
+  const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
+  const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
+
+  useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
 
   const handleCommandMission = useCatch(() => commandMission(mission, devicesMap));
 
@@ -105,11 +120,7 @@ const MainPage = () => {
 
   return (
     <div className={classes.root}>
-      <Navbar
-        SetAddUAVOpen={SetAddUAVOpen}
-        setconfirmMission={setconfirmMission}
-        setChatOpen={setChatOpen}
-      />
+      <Navbar SetAddUAVOpen={SetAddUAVOpen} setconfirmMission={setconfirmMission} setChatOpen={setChatOpen} />
       <RosControl>
         <Menu SetAddUAVOpen={SetAddUAVOpen} />
       </RosControl>
@@ -129,7 +140,18 @@ const MainPage = () => {
       </div>
       <div className={classes.sidebar}>
         <Paper square elevation={3} className={classes.header}>
-          <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
+          <MainToolbar
+            filteredDevices={filteredDevices}
+            keyword={keyword}
+            setKeyword={setKeyword}
+            filter={filter}
+            setFilter={setFilter}
+            filterSort={filterSort}
+            setFilterSort={setFilterSort}
+            filterMap={filterMap}
+            setFilterMap={setFilterMap}
+            SetAddUAVOpen={SetAddUAVOpen}
+          />
         </Paper>
         <div className={classes.middle}>
           <Paper square className={classes.contentList}>

@@ -73,10 +73,10 @@ const MainPage3D = () => {
 
   const devicesMap = useSelector((state) => state.devices.items);
   const mission = useSelector((state) => state.mission);
-  const positionsMap = useSelector((state) => state.session.positions);
+  const positions = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
-const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
-  const filteredPositions = useMemo(() => Object.values(positionsMap), [positionsMap]);
+  const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
+  const filteredPositions = useMemo(() => Object.values(positions), [positions]);
   const selectedPosition = useMemo(
     () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
     [filteredPositions, selectedDeviceId]
