@@ -95,6 +95,12 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
 
+  const setHeading = (index, value) => {
+    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    auxMarkers[index].heading = Math.min(360, Math.max(0, +value));
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
+  };
+
   const setCorner = (index, cornerIdx, axis, value) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     if (!auxMarkers[index].corners) {
@@ -199,6 +205,17 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                             changeLng(index, +e.target.value);
                           }}
                         />
+                        {type === 'Element' && (
+                          <TextField
+                            label="Heading (° from N)"
+                            type="number"
+                            variant="standard"
+                            sx={{ width: '18ch' }}
+                            inputProps={{ min: 0, max: 360, step: 1 }}
+                            defaultValue={base.heading ?? 0}
+                            onBlur={(e) => setHeading(index, e.target.value)}
+                          />
+                        )}
                         {hasMapImage && (
                           <>
                             <div style={{ marginTop: '8px' }}>

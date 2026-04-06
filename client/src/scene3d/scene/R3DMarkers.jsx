@@ -3,6 +3,10 @@ import { useModelLoader } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
 
+// heading: degrees from North, clockwise (0=N, 90=E, 180=S, 270=W)
+// Three.js axes: X=East, Y=up, Z=-North → rotY = -heading_rad
+const headingToRotationY = (heading = 0) => -(heading * Math.PI) / 180;
+
 const Marker = ({ item }) => {
   const { model, error } = useModelLoader(item.type);
   const cloneRef = useRef(null);
@@ -31,7 +35,14 @@ const Marker = ({ item }) => {
     cloneRef.current = model.scene.clone();
   }
 
-  return <primitive object={cloneRef.current} position={item.pos} scale={[1, 1, 1]} />;
+  return (
+    <primitive
+      object={cloneRef.current}
+      position={item.pos}
+      scale={[1, 1, 1]}
+      rotation={[0, headingToRotationY(item.heading), 0]}
+    />
+  );
 };
 
 const R3DMarkers = ({ elements }) => {
