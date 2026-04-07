@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useAttributePreference } from '../../shared/preferences';
+import { buildMartinStyle } from './martinStyle';
 
 const styleCustom = ({ tiles, minZoom, maxZoom, attribution, glyphs }) => {
   const source = {
@@ -280,6 +281,12 @@ export default () => {
         }),
         available: !!mapboxAccessToken,
         attribute: 'mapboxAccessToken',
+      },
+      {
+        id: 'martin',
+        title: 'Martin (OpenMapTiles)',
+        style: buildMartinStyle(glyphs, myhostname),
+        available: true,
       },
       {
         id: 'custom',
