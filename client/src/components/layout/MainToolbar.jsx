@@ -118,11 +118,6 @@ const MainToolbar = React.memo(
           {filteredDevices.slice(0, 3).map((_, index) => (
             <DeviceRow key={filteredDevices[index].id} data={filteredDevices} index={index} />
           ))}
-          {filteredDevices.length > 3 && (
-            <ListItemButton alignItems="center">
-              <ListItemText primary={'notificationAlways'} style={{ textAlign: 'center' }} />
-            </ListItemButton>
-          )}
         </Popover>
         <Popover
           open={!!filterAnchorEl}

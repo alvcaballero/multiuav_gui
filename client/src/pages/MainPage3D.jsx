@@ -17,6 +17,8 @@ import StatusCard from '../components/devices/StatusCard';
 import CameraDevice from '../components/camera/CameraDevice';
 
 import { devicesActions } from '../store';
+import useFilter from '../components/devices/useFilter';
+import usePersistedState from '../shared/usePersistedState';
 
 import Scene3DCanvas from '../scene3d/Scene3DCanvas';
 
@@ -75,12 +77,24 @@ const MainPage3D = () => {
   const mission = useSelector((state) => state.mission);
   const positions = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
-  const filteredDevices = useMemo(() => Object.values(devicesMap), [devicesMap]);
-  const filteredPositions = useMemo(() => Object.values(positions), [positions]);
+
+  const [filteredPositions, setFilteredPositions] = useState([]);
+  const [filteredDevices, setFilteredDevices] = useState([]);
+
   const selectedPosition = useMemo(
     () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
     [filteredPositions, selectedDeviceId]
   );
+
+  const [keyword, setKeyword] = useState('');
+  const [filter, setFilter] = usePersistedState('filter', {
+    statuses: [],
+    groups: [],
+  });
+  const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
+  const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
+
+  useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
 
   const handleCommandMission = useCatch(() => commandMission(mission, devicesMap));
 
@@ -101,7 +115,18 @@ const MainPage3D = () => {
 
       <div className={classes.sidebar}>
         <Paper square elevation={3} className={classes.header}>
-          <MainToolbar SetAddUAVOpen={setAddUAVOpen} />
+          <MainToolbar
+            filteredDevices={filteredDevices}
+            keyword={keyword}
+            setKeyword={setKeyword}
+            filter={filter}
+            setFilter={setFilter}
+            filterSort={filterSort}
+            setFilterSort={setFilterSort}
+            filterMap={filterMap}
+            setFilterMap={setFilterMap}
+            SetAddUAVOpen={setAddUAVOpen}
+          />
         </Paper>
         <div className={classes.middle}>
           <Paper square className={classes.contentList}>
