@@ -255,7 +255,10 @@ export class DevicesModel {
   }
 
   static async addAllUAV() {
-    const myDevices = await this.getAll();
+    const myDevices = await sequelize.models.Device.findAll({
+      attributes: ['id', 'name', 'category', 'ip', 'camera', 'status', 'protocol'],
+      where: { deletedAt: null },
+    });
     for (let device of myDevices) {
       if (StreamServer) {
         await cameraModel.addCameraWebRTC(device);
