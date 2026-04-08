@@ -8,6 +8,7 @@
     "@emotion/styled": "^11.14.0",
     "@mapbox/mapbox-gl-draw": "^1.5.1",
     "@mapbox/mapbox-gl-rtl-text": "^0.3.0",
+    "@mapbox/vector-tile": "^2.0.4",
     "@maplibre/maplibre-gl-geocoder": "^1.9.4",
     "@mui/icons-material": "^7.1.0",
     "@mui/lab": "^7.0.0-beta.12",
@@ -19,10 +20,12 @@
     "@turf/circle": "^7.3.4",
     "@vitejs/plugin-react": "^4.4.1",
     "dayjs": "^1.11.13",
+    "earcut": "^3.0.2",
     "maplibre-gl": "^5.18.0",
     "maplibre-google-maps": "^1.1.0",
     "mui-file-input": "^7.0.0",
     "notistack": "^3.0.2",
+    "pbf": "^4.0.1",
     "react": "^18.3.1",
     "react-country-flag": "3.1.0",
     "react-dom": "^18.3.1",
@@ -74,11 +77,11 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^17.3.0",
+    "prettier": "^3.7.4",
+    "r3f-perf": "^7.2.3",
     "vite": "^6.3.5",
     "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-static-copy": "^3.2.0",
-    "vite-plugin-svgr": "^4.3.0",
-    "prettier": "^3.7.4",
-    "r3f-perf": "^7.2.3"
+    "vite-plugin-svgr": "^4.3.0"
   }
 }

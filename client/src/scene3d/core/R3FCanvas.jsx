@@ -8,6 +8,8 @@ import CameraControls from './CameraControls';
 import { groundTexture, waterTexture } from './textures';
 import useOnlineStatus from './useOnlineStatus';
 import MapTileGround from './MapTileGround';
+import MapVectorGround from './MapVectorGround';
+import useMartinStatus from './useMartinStatus';
 // Crear textura del suelo
 groundTexture.repeat.set(100, 100);
 
@@ -74,6 +76,7 @@ const Water = () => {
 
 const R3FCanvas = ({ children }) => {
   const online = useOnlineStatus();
+  const martinAvailable = useMartinStatus();
 
   return (
     <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}>
@@ -89,7 +92,7 @@ const R3FCanvas = ({ children }) => {
       <gridHelper />
 
       <Suspense fallback={null}>
-        {online ? <MapTileGround /> : <Ground />}
+        {martinAvailable ? <MapVectorGround /> : online ? <MapTileGround /> : <Ground />}
         {children}
       </Suspense>
     </Canvas>
