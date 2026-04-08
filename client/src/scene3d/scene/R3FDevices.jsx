@@ -24,7 +24,7 @@ const Device = ({ id, position, isSelected }) => {
   useEffect(() => {
     const loc = position.find((item) => item.deviceId == id);
     if (loc) {
-      nextPosition.current.set(loc.pos[0], 10, -loc.pos[1]);
+      nextPosition.current.set(loc.pos[0], loc.pos[2], -loc.pos[1]);
       if (!initialized.current) {
         currentPosition.current.copy(nextPosition.current);
         initialized.current = true;
@@ -32,6 +32,10 @@ const Device = ({ id, position, isSelected }) => {
       if (meshRef.current && loc.course !== undefined) {
         // course: 0=North, clockwise. Three.js Y-up: negate for correct direction.
         meshRef.current.rotation.y = -(loc.course * Math.PI) / 180;
+      }
+      if (camRef.current && loc.gimbalPitch !== undefined) {
+        // gimbalPitch: 0=horizontal, -90=nadir. Negate to map to Three.js camera pitch.
+        camRef.current.rotation.x = -(loc.gimbalPitch * Math.PI) / 180;
       }
     }
   }, [position, id]);
@@ -67,7 +71,6 @@ const R3FDevices = () => {
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const [positionxyz, setPositionxyz] = useState([]);
 
-
   useEffect(() => {
     const pos = Object.values(positions).map((item) => ({
       ...item,
@@ -80,6 +83,7 @@ const R3FDevices = () => {
       ...item,
       name: devices[item.deviceId]?.name,
       course: positions[item.deviceId]?.course,
+      gimbalPitch: positions[item.deviceId]?.attributes?.gimbal?.[2] ?? 0,
     }));
     setPositionxyz(result);
   }, [origin3d, positions]);
@@ -87,7 +91,12 @@ const R3FDevices = () => {
   return (
     <>
       {positionxyz.map((item) => (
-        <Device key={item.deviceId} id={item.deviceId} position={positionxyz} isSelected={String(selectedDeviceId) === String(item.deviceId)} />
+        <Device
+          key={item.deviceId}
+          id={item.deviceId}
+          position={positionxyz}
+          isSelected={String(selectedDeviceId) === String(item.deviceId)}
+        />
       ))}
     </>
   );

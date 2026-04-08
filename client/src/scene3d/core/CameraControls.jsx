@@ -1,12 +1,25 @@
 import { useEffect, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { useSelector } from 'react-redux';
 import * as THREE from 'three';
 
 export default function CameraControls() {
   const { camera } = useThree();
   const controlsRef = useRef();
   const moveSpeed = 1;
+
+  const mapFollow = useSelector((state) => state.devices.follow);
+  const selectedDeviceId = useSelector((state) => state.devices.selectedId);
+  const followPosition = useSelector((state) => state.session.positions[selectedDeviceId]);
+
+  useEffect(() => {
+    if (!mapFollow || !controlsRef.current || !followPosition?.altitude) return;
+    const alt = followPosition.altitude;
+    const controls = controlsRef.current;
+    controls.target.y = alt;
+    controls.update();
+  }, [mapFollow, followPosition?.altitude]);
   const minHeight = 1; // Minimum height above ground
   const keys = useRef({
     w: false,
