@@ -8,14 +8,14 @@ import { useGLTF, useHelper } from '@react-three/drei';
 
 const RING_HEIGHT_OFFSET = 1; // meters above drone
 
-const Device = ({ id, position, isSelected }) => {
+const Device = ({ id, position, isSelected, category }) => {
   const meshRef = useRef();
   const camRef = useRef();
 
   const currentPosition = useRef(new THREE.Vector3());
   const nextPosition = useRef(new THREE.Vector3());
 
-  const model = useGLTF(getModelPath('drone'));
+  const model = useGLTF(getModelPath(category));
 
   useHelper(camRef, THREE.CameraHelper);
 
@@ -97,6 +97,7 @@ const R3FDevices = () => {
           id={item.deviceId}
           position={positionxyz}
           isSelected={String(selectedDeviceId) === String(item.deviceId)}
+          category={devices[item.deviceId]?.category}
         />
       ))}
     </>
