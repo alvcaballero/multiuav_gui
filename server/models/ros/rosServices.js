@@ -16,13 +16,17 @@ const service_list = {};
 export async function callRosService({ service, messageType, message }, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 
-  const services = await getServices(ros);
-  if (!services.includes(service)) {
-    logger.debug(`Available services: ${JSON.stringify(services)}`);
+  const servicesResult = await getServices(ros);
+  const servicesList = Array.isArray(servicesResult) ? servicesResult : (servicesResult.services || []);
+  if (!servicesList.includes(service)) {
+    logger.debug(`Available services: ${JSON.stringify(servicesList)}`);
     throw new Error(`Service '${service}' not available`);
   }
 
   const topicType = await getServicesType(service, ros);
+  if (!topicType) {
+    throw new Error(`Service '${service}' has no type info — the node may not be running`);
+  }
   const auxtopicType = topicType.replace('/srv/', '/');
   if (!(topicType == messageType || auxtopicType == messageType)) {
     throw new Error(`Service type mismatch: expected '${topicType}', got '${messageType}'`);
@@ -78,8 +82,9 @@ export async function callService({ uav_id, type, request }, ros) {
       return { state: 'error', msg: type + ' to  ' + name + ' error' };
     }
   } catch (error) {
-    logger.error(`Error calling service: ${error.message}`);
-    return { state: 'error', msg: 'Failed to call service: ' + error.message };
+    const errMsg = error instanceof Error ? error.message : String(error);
+    logger.error(`Error calling service: ${errMsg}`);
+    return { state: 'error', msg: 'Failed to call service: ' + errMsg };
   }
 }
 
@@ -300,8 +305,33 @@ export function serviceServer({ serviceName, serviceType, callback }, ros) {
     name: serviceName,
     serviceType: serviceType,
   });
+
+  // Tap the raw WebSocket to detect if rosbridge dispatches the call_service
+  // message to our handler. If we see the message here but NOT the REQUEST log
+  // below, rosbridge is dropping it internally before calling advertise handlers.
+  if (ros.socket) {
+    const _origOnMessage = ros.socket.onmessage;
+    ros.socket.onmessage = function (evt) {
+      try {
+        const parsed = JSON.parse(evt.data);
+        if (parsed.op === 'call_service' && parsed.service === serviceName) {
+          logger.info(`[serviceServer] RAW call_service on '${serviceName}' id=${parsed.id}`);
+        }
+      } catch (_) {}
+      return _origOnMessage.call(this, evt);
+    };
+  }
+
   service.advertise(function (request, response) {
-    callback(request, response);
+    logger.info(`[serviceServer] REQUEST on '${serviceName}': ${JSON.stringify(request)}`);
+    try {
+      callback(request, response);
+    } catch (err) {
+      logger.error(`[serviceServer] callback threw on '${serviceName}': ${err.message}`);
+      Object.assign(response, { success: false, msg: err.message });
+    }
+    logger.info(`[serviceServer] RESPONSE on '${serviceName}': ${JSON.stringify(response)}`);
+    return true;
   });
   return service;
 }
@@ -315,7 +345,8 @@ export function GCSServicesMission(ros) {
       callback: function (request, response) {
         logger.debug(`Service finish mission callback: ${JSON.stringify(request)}`);
         if (request.hasOwnProperty('uav_id')) {
-          missionController.deviceFinishMission({ name: request.uav_id });
+          missionController.deviceFinishMission({ name: request.uav_id })
+            .catch((err) => logger.error(`deviceFinishMission failed: ${err.message}`));
         }
         Object.assign(response, { success: true, msg: 'Set successfully' });
         return true;
@@ -328,7 +359,8 @@ export function GCSServicesMission(ros) {
       callback: function (request, response) {
         logger.debug(`Service finish download files callback: ${JSON.stringify(request)}`);
         if (request.hasOwnProperty('uav_id')) {
-          missionController.deviceFinishSyncFiles({ name: request.uav_id });
+          missionController.deviceFinishSyncFiles({ name: request.uav_id })
+            .catch((err) => logger.error(`deviceFinishSyncFiles failed: ${err.message}`));
         }
         Object.assign(response, { success: true, msg: 'Set successfully' });
         return true;
@@ -337,6 +369,12 @@ export function GCSServicesMission(ros) {
   ];
 
   for (let srv of gcs_services) {
+    // Unadvertise stale instance before re-advertising to avoid
+    // rosbridge routing requests to a dead handler on reconnect.
+    if (service_list[srv.name]) {
+      try { service_list[srv.name].unadvertise(); } catch (_) {}
+      delete service_list[srv.name];
+    }
     service_list[srv.name] = serviceServer(
       {
         serviceName: srv.serviceName,
