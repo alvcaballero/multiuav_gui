@@ -100,7 +100,7 @@ export class commandsModel {
         eventTime: getDatetime(),
         deviceId: deviceId,
         attributes: { message: response.msg },
-      });
+      }).catch((err) => logger.warn(`addEvent failed: ${err.message}`));
     }
 
     logger.debug(`sendCommand response: ${JSON.stringify(response)}`);
@@ -184,7 +184,7 @@ export class commandsModel {
           eventTime: getDatetime(),
           deviceId: myDevice ? myDevice.id : null,
           attributes: { message: response.msg },
-        });
+        }).catch((err) => logger.warn(`addEvent failed: ${err.message}`));
       }
     }
     logger.info('finish load mission');
@@ -211,7 +211,7 @@ export class commandsModel {
             eventTime: getDatetime(),
             deviceId: device.id,
             attributes: { message: response.msg },
-          });
+          }).catch((err) => logger.warn(`addEvent failed: ${err.message}`));
         }
       }
     }

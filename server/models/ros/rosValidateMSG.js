@@ -55,6 +55,13 @@ export function validateRosMsg(typeMsg, msg, typeMap, Checkallparrams = true) {
   if (!def) {
     throw new Error(`No definition found for type ${type}`);
   }
+  if (msg === null || msg === undefined) {
+    if (Checkallparrams) {
+      throw new Error(`Message of type ${type} is null or undefined`);
+    }
+    return true;
+  }
+
   // verify defined fields
   const expectedFields = def.fieldnames.map(fn => fn.replace(/^_/, ""));
   for (const key of Object.keys(msg)) {

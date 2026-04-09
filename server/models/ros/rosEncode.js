@@ -19,7 +19,7 @@ function MissionToRos({
 }) {
   let wp_command_msg = waypoint.map((pos) => {
     // return new ROSLIB.Message(pos);
-    return {...pos};
+    return { ...pos };
   });
 
   let yaw_pos_msg = { data: yaw };
@@ -46,26 +46,34 @@ function MissionToRos({
 }
 function MissionToRos2(param) {
   let msg = MissionToRos(param);
-  return {request : {
-    type: 'waypoint',
-    waypoint: msg.waypoint,
-    radius: msg.radius,
-    vel_max: msg.maxVel,
-    vel_idle: msg.idleVel,
-    yaw: msg.yaw,
-    gimbal_pitch: msg.gimbalPitch,
-    speed: msg.speed,
-    yaw_mode: msg.yawMode,
-    trace_mode: msg.traceMode,
-    gimbal_pitch_mode: msg.gimbalPitchMode,
-    finish_action: msg.finishAction,
-    command_list: msg.commandList,
-    command_parameter: msg.commandParameter,
-  }}
+  return {
+    request: {
+      type: 'waypoint',
+      waypoint: msg.waypoint,
+      radius: msg.radius,
+      vel_max: msg.maxVel,
+      vel_idle: msg.idleVel,
+      yaw: msg.yaw,
+      gimbal_pitch: msg.gimbalPitch,
+      speed: msg.speed,
+      yaw_mode: msg.yawMode,
+      trace_mode: msg.traceMode,
+      gimbal_pitch_mode: msg.gimbalPitchMode,
+      finish_action: msg.finishAction,
+      command_list: msg.commandList,
+      command_parameter: msg.commandParameter,
+    },
+  };
 }
 
 export function encodeRosSrv({ type, msg, msgType }) {
-  if (type == 'configureMission' && (msgType == 'aerialcore_common/ConfigMission' || msgType == 'multiuav_interfaces/ConfigMission')) {
+  if (msg === undefined || msg === null) {
+    return {};
+  }
+  if (
+    type == 'configureMission' &&
+    (msgType == 'aerialcore_common/ConfigMission' || msgType == 'multiuav_interfaces/ConfigMission')
+  ) {
     return MissionToRos(msg);
   }
   if (type == 'configureMission' && msgType == 'muav_gcs_interfaces/srv/LoadMission') {
