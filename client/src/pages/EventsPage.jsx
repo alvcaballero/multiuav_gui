@@ -96,7 +96,7 @@ const EventsPage = () => {
                 {item &&
                   item.map((event) => (
                     <TableRow key={event.id}>
-                      <TableCell>{event.deviceId ?  devices[event.deviceId].name :"GCS" }</TableCell>
+                      <TableCell>{event.deviceId ? (devices[event.deviceId]?.name ?? event.deviceId) : 'GCS'}</TableCell>
                       <TableCell>{event.type}</TableCell>
                       <TableCell>{event.eventTime}</TableCell>
                       <TableCell>{event.attributes.message}</TableCell>
