@@ -35,7 +35,7 @@ const Device = ({ id, position, isSelected }) => {
       }
       if (camRef.current && loc.gimbalPitch !== undefined) {
         // gimbalPitch: 0=horizontal, -90=nadir. Negate to map to Three.js camera pitch.
-        camRef.current.rotation.x = -(loc.gimbalPitch * Math.PI) / 180;
+        camRef.current.rotation.x = (loc.gimbalPitch * Math.PI) / 180;
       }
     }
   }, [position, id]);
@@ -83,7 +83,8 @@ const R3FDevices = () => {
       ...item,
       name: devices[item.deviceId]?.name,
       course: positions[item.deviceId]?.course,
-      gimbalPitch: positions[item.deviceId]?.attributes?.gimbal?.[2] ?? 0,
+      gimbalPitch: positions[item.deviceId]?.attributes?.gimbal?.[0] ?? 0,
+      gimbalYaw: positions[item.deviceId]?.attributes?.gimbal?.[1] ?? 0,
     }));
     setPositionxyz(result);
   }, [origin3d, positions]);
