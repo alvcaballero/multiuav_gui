@@ -67,17 +67,16 @@ export default function CameraControls({ controlsRef: externalRef }) {
   const followPosition = useSelector((state) => state.session.positions[selectedDeviceId]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
 
+  // Target position for smooth follow — updated on each telemetry tick, consumed by useFrame lerp
+  const followTargetRef = useRef(null);
+
   useEffect(() => {
-    if (!mapFollow || !controlsRef.current || !followPosition?.latitude) return;
+    if (!mapFollow || !followPosition?.latitude) return;
     const alt = followPosition.attributes?.home
       ? followPosition.altitude - followPosition.attributes.home[2]
       : followPosition.altitude;
     const xyz = LatLon2XYZ(origin3d, { lng: followPosition.longitude, lat: followPosition.latitude, alt });
-    const controls = controlsRef.current;
-    const offset = camera.position.clone().sub(controls.target);
-    controls.target.set(xyz[0], alt, -xyz[1]);
-    camera.position.copy(controls.target).add(offset);
-    controls.update();
+    followTargetRef.current = new THREE.Vector3(xyz[0], alt, -xyz[1]);
   }, [mapFollow, followPosition?.latitude, followPosition?.longitude, followPosition?.altitude]);
   const minHeight = 1; // Minimum height above ground
   const keys = useRef({
@@ -119,10 +118,19 @@ export default function CameraControls({ controlsRef: externalRef }) {
     };
   }, []);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!controlsRef.current) return;
 
     const controls = controlsRef.current;
+
+    // Smooth camera follow — lerp target (and camera) toward drone position
+    if (mapFollow && followTargetRef.current) {
+      const lerpFactor = 1 - Math.exp(-8 * delta);
+      const offset = camera.position.clone().sub(controls.target);
+      controls.target.lerp(followTargetRef.current, lerpFactor);
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    }
     const direction = new THREE.Vector3();
 
     // Forward/backward movement (W/S or up/down arrows)
