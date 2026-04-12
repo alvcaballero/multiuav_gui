@@ -267,6 +267,12 @@ dji_M300:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
+    local_position:
+      name: '/dji_osdk_ros/local_position'
+      messageType: 'geometry_msgs/PointStamped'
+    vo_position:
+      name: '/dji_osdk_ros/vo_position'
+      messageType: 'dji_osdk_ros/VOPosition'
     IMU: #hdg
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
@@ -288,6 +294,9 @@ dji_M300:
     gimbal:
       name: '/dji_osdk_ros/gimbal_angle'
       messageType: 'geometry_msgs/Vector3Stamped'
+    sensor_height:
+      name: '/dji_osdk_ros/height_above_takeoff'
+      messageType: 'std_msgs/Float32'
     obstacle_info:
       name: '/dji_osdk_ros/obstacle_info'
       messageType: 'dji_osdk_ros/ObstacleInfo'
@@ -331,9 +340,9 @@ dji_M300_rtk:
     position:
       name: '/dji_osdk_ros/rtk_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
-      name: '/dji_osdk_ros/height_above_takeoff'
-      messageType: 'std_msgs/Float32'
+    local_position:
+      name: '/dji_osdk_ros/local_position'
+      messageType: 'geometry_msgs/PointStamped'
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
@@ -358,6 +367,9 @@ dji_M300_rtk:
     gimbal:
       name: '/dji_osdk_ros/gimbal_angle'
       messageType: 'geometry_msgs/Vector3Stamped'
+    sensor_height:
+      name: '/dji_osdk_ros/height_above_takeoff'
+      messageType: 'std_msgs/Float32'
     obstacle_info:
       name: '/dji_osdk_ros/obstacle_info'
       messageType: 'dji_osdk_ros/ObstacleInfo'
