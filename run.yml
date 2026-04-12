@@ -1,0 +1,44 @@
+name: muav-gui
+root: ~/
+on_project_exit: tmux kill-session -t muav-gui
+
+windows:
+  - GCS:
+      layout: main-vertical
+      panes:
+        - backend:
+            - cd ~/work/px4/llm_planner_gcs/multiuav_gcs/server
+            - nvm use 20
+            - sleep 3
+            - npm run server
+        - glyphserver:
+            - cd ~/work/px4/glyphserver
+            - nvm use 12
+            - sleep 3
+            - npm start
+        - frontend:
+            - cd ~/work/px4/llm_planner_gcs/multiuav_gcs/client
+            - nvm use 20
+            - sleep 5;npm run start
+  - Docker:
+      layout: tiled
+      panes:
+        - multimaster:
+            - cd ~/work/ros_docker_volume
+            - ./container_run.sh
+            - roslaunch aerialcore_gui connect_uas.launch
+        - bag:
+            - cd ~/work/ros_docker_volume
+            - ./container_run.sh
+        - aux:
+            - cd ~/work/ros_docker_volume
+            - ./container_run.sh
+  - webrtc:
+      layout: tiled
+      panes:
+        - server:
+            - cd ~/work/px4/llm_planner_gcs/multiuav_gcs/server/config
+            - docker run --rm -it --network=host -v $PWD/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx
+        - gtreamer:
+            - cd ~/work/
+            - docker run --rm  -p 8080:3000  -v $(pwd)/data:/files  ghcr.io/maplibre/martin --webui enable-for-all /files/tiles.mbtiles
