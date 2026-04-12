@@ -7,6 +7,7 @@ import R3DMarkers from './scene/R3DMarkers';
 import R3FDevices from './scene/R3FDevices';
 import SelectDevice3D from './scene/SelectDevice3D';
 import DownloadYamlButton from './controls/DownloadYamlButton';
+import Scene3DNavigationControl from './controls/Scene3DNavigationControl';
 
 const Scene3DCanvas = ({ className }) => {
   const routes = useSelector((state) => state.mission.route);
@@ -20,6 +21,7 @@ const Scene3DCanvas = ({ className }) => {
         <R3FDevices />
         <SelectDevice3D />
       </R3FCanvas>
+      <Scene3DNavigationControl />
       <DownloadYamlButton />
     </div>
   );

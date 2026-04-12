@@ -1,10 +1,11 @@
 import { Canvas } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
-import React, { Suspense } from 'react';
+import React, { Suspense, useRef } from 'react';
 import * as THREE from 'three';
 import { Perf } from 'r3f-perf';
 
 import CameraControls from './CameraControls';
+import OrientationGizmo from '../controls/OrientationGizmo';
 import { groundTexture, waterTexture } from './textures';
 import useOnlineStatus from './useOnlineStatus';
 import MapTileGround from './MapTileGround';
@@ -77,6 +78,7 @@ const Water = () => {
 const R3FCanvas = ({ children }) => {
   const online = useOnlineStatus();
   const martinAvailable = useMartinStatus();
+  const controlsRef = useRef();
 
   return (
     <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}>
@@ -87,7 +89,8 @@ const R3FCanvas = ({ children }) => {
       <directionalLight position={[50, 50, 50]} intensity={3} />
       <Perf />
 
-      <CameraControls />
+      <CameraControls controlsRef={controlsRef} />
+      <OrientationGizmo controlsRef={controlsRef} />
       <axesHelper args={[5]} />
       <gridHelper />
 
