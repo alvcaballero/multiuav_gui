@@ -34,8 +34,15 @@ const Device = ({ id, position, isSelected, category }) => {
         meshRef.current.rotation.y = -(loc.course * Math.PI) / 180;
       }
       if (camRef.current && loc.gimbalPitch !== undefined) {
-        // gimbalPitch: 0=horizontal, -90=nadir. Negate to map to Three.js camera pitch.
-        camRef.current.rotation.x = (loc.gimbalPitch * Math.PI) / 180;
+        // gimbalYaw is drone-relative: 140 = forward. Shift so 0 = forward.
+        // Negate because Three.js Y-axis rotates CCW but gimbal yaw is CW.
+        // Order: yaw around local Y first, then pitch around local X (no gimbal lock).
+        const gimbalYawRad = loc.gimbalYaw !== undefined ? (-(loc.gimbalYaw - 140) * Math.PI) / 180 : 0;
+        const pitchRad = (loc.gimbalPitch * Math.PI) / 180;
+
+        const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), gimbalYawRad);
+        const qPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchRad);
+        camRef.current.quaternion.copy(qYaw.multiply(qPitch));
       }
     }
   }, [position, id]);
@@ -53,10 +60,10 @@ const Device = ({ id, position, isSelected, category }) => {
     <group ref={meshRef}>
       <primitive object={model.scene.clone()} scale={[1, 1, 1]} />
       {/* Camera helper: represents the drone's forward-looking camera direction */}
-      <perspectiveCamera ref={camRef} fov={60} near={1} far={4} position={[0, 0, 0]} />
+      <perspectiveCamera ref={camRef} fov={60} near={1} far={4} position={[0, 0.15, -0.15]} />
       {isSelected && (
         <mesh position={[0, RING_HEIGHT_OFFSET, 0]}>
-          <boxGeometry args={[0.5, 0.5, 0.5]} />
+          <boxGeometry args={[0.2, 0.2, 0.2]} />
           <meshBasicMaterial color="#00aaff" depthTest={false} depthWrite={false} />
         </mesh>
       )}
@@ -76,7 +83,7 @@ const R3FDevices = () => {
       ...item,
       lng: item.longitude,
       lat: item.latitude,
-      alt: item.altitude,
+      alt: item.attributes?.home ? item.altitude - item.attributes.home[2] : item.altitude,
     }));
     const posxyz = LatLon2XYZObj(origin3d, pos, 1000);
     const result = posxyz.map((item) => ({
@@ -84,7 +91,7 @@ const R3FDevices = () => {
       name: devices[item.deviceId]?.name,
       course: positions[item.deviceId]?.course,
       gimbalPitch: positions[item.deviceId]?.attributes?.gimbal?.[0] ?? 0,
-      gimbalYaw: positions[item.deviceId]?.attributes?.gimbal?.[1] ?? 0,
+      gimbalYaw: positions[item.deviceId]?.attributes?.gimbal?.[2] ?? 0,
     }));
     setPositionxyz(result);
   }, [origin3d, positions]);
