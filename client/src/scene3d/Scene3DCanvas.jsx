@@ -9,12 +9,12 @@ import SelectDevice3D from './scene/SelectDevice3D';
 import DownloadYamlButton from './controls/DownloadYamlButton';
 import Scene3DNavigationControl from './controls/Scene3DNavigationControl';
 
-const Scene3DCanvas = ({ className }) => {
+const Scene3DCanvas = ({ className, style }) => {
   const routes = useSelector((state) => state.mission.route);
   const sessionMarkers = useSelector((state) => state.session.markers);
 
   return (
-    <div className={className}>
+    <div className={className} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, height: '100%', ...style }}>
       <R3FCanvas>
         <R3FMission routes={routes} />
         <R3DMarkers elements={sessionMarkers} />

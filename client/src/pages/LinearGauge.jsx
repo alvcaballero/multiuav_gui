@@ -1,286 +1,219 @@
-import React, { useState, useEffect } from 'react';
-import './LinearGauge.css'; // Importamos los estilos
-import { mapIconKey, mapIcons, frontIcons } from '../map/core/preloadImages';
+import React, { useState, useEffect, useRef } from 'react';
+import './LinearGauge.css';
+import { mapIconKey, frontIcons } from '../map/core/preloadImages';
 
-
+/**
+ * LinearGauge — altímetro vertical con sensores up/down.
+ * Ocupa todo el ancho/alto que le da el padre (width/height 100%).
+ * El indicador del valor actual se muestra a la IZQUIERDA de la regla
+ * para que nunca se salga por la derecha.
+ */
 const LinearGauge = ({
-    value,                 // Valor actual a mostrar (ej: 10.0)
+    value,
+    valueASL,
     sensorValue = [7, 5],
-    sensorData = {up:7,down:5},
-    sensorLimits = {up:[0,20],down:[0,20]},
-    zeroValue = 0,         // Valor que representa la barra azul (ej: 0)
-    range = 50,            // Rango total de valores visibles en el medidor (ej: 50 para -15 a 35 si 'value' es 10)
-    height = 300,          // Altura del medidor en píxeles
-    width = 230,            // Ancho del cuerpo del medidor en píxeles
-    tickInterval = 5,      // Intervalo entre las marcas pequeñas (ej: 5 unidades)
-    majorTickInterval = 25, // Intervalo entre las marcas grandes con etiquetas (ej: 25 unidades)
-    unit = 'ALT (m)',      // Unidad a mostrar junto al valor (ej: "ALT (m)")
-    indicatorColor = 'rgb(51, 51, 51)', // Color del indicador/flecha
-    zeroBarColor = 'skyblue',    // Color de la barra azul del cero
-    tickColor = '#ccc',         // Color de las marcas (ticks)
-    labelColor = 'black',      // Color de las etiquetas de los números
-    backgroundColor = '#f8f8f8', // Color de fondo del medidor
+    sensorLimits = { up: [0, 20], down: [0, 20] },
+    range = 50,
+    tickInterval = 5,
+    majorTickInterval = 25,
+    unit = 'm',
+    indicatorColor = '#333',
+    tickColor = '#999',
+    labelColor = '#333',
 }) => {
-    // Calculamos el rango visible del medidor, centrado alrededor del valor actual
-    const [ticks, setTicks] = useState([])
-    const [labels, setLabels] = useState([])
-    const [ColorSensorUp, setColorSensorUp] = useState("gray")
-    const [ColorSensorDown, setColorSensorDown] = useState("gray")
-    const [sensorUp, setSensorUp] = useState(0)
-    const [sensorDown, setSensorDown] = useState(0)
+    const wrapperRef = useRef(null);
+    const [size, setSize] = useState({ w: 0, h: 0 });
 
+    useEffect(() => {
+        const el = wrapperRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(([entry]) => {
+            setSize({ w: entry.contentRect.width, h: entry.contentRect.height });
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
+    const { w, h } = size;
+
+    // ── Layout ──────────────────────────────────────────────────────────────
+    const SENSOR_W   = Math.max(8,  Math.round(w * 0.06));
+    const DRONE_W    = Math.max(20, Math.round(h * 0.12));
+    const RULER_X    = SENSOR_W + DRONE_W;
+    const TICK_MAJ   = Math.max(8, Math.round(w * 0.1));
+    const TICK_MIN   = Math.max(5, Math.round(w * 0.07));
+    const FONT       = Math.max(9, Math.round(h / 24));
+    // Padding vertical para que ticks/labels de los extremos no se corten
+    const PAD_Y      = Math.max(12, FONT + 2);
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
     const currentMin = value - range / 2;
-    const currentMax = value + range / 2;
+    // yOfVal mapea sobre [PAD_Y, h - PAD_Y] para que los extremos tengan margen
+    const yOfVal = (val) => PAD_Y + (h - 2 * PAD_Y) * (1 - (val - currentMin) / range);
 
-    // Función para mapear un valor a una posición vertical en píxeles
-    // El medidor va de abajo (valores más pequeños) a arriba (valores más grandes)
-    const getValuePosition = (val) => {
-        // Normaliza el valor a una escala de 0 a 1 dentro del rango actual
-        const normalizedValue = (val - currentMin) / (range);
-        // Convierte a posición en píxeles (0 es abajo, height es arriba)
-        return height * (1 - normalizedValue);
+    const sensorColor = (val, limits) => {
+        const lo = limits[0] + 0.3 * (limits[1] - limits[0]);
+        const hi = limits[0] + 0.75 * (limits[1] - limits[0]);
+        if (val <= lo) return 'red';
+        if (val <= hi) return '#f0b400';
+        return '#bbb';
     };
 
-    const zeroPos = getValuePosition(zeroValue);
-    const indicatorPos = getValuePosition(value);
-    const zeroPosX = 30;
-    const halfdrone = 30;
-
-    // Generamos las marcas (ticks) y etiquetas
-
-    // Determinamos el inicio y fin para la generación de ticks,
-    // asegurando que cubran el rango visible y sean múltiplos del intervalo.
-    const startValueForTicks = Math.floor(currentMin / tickInterval) * tickInterval;
-    const endValueForTicks = Math.ceil(currentMax / tickInterval) * tickInterval;
-
-    const setFillColor = (clampedDistance, limits=[0,10]) => {
-        const limitLow = limits[0] + 0.3 * (limits[1] - limits[0])
-        const limitHigh = limits[0] + 0.75 * (limits[1] - limits[0])
-        if (clampedDistance  <= limitLow) return 'red'; // Distancia baja, seguro
-        if (clampedDistance  <= limitHigh)   return 'yellow'; // Distancia media, precaución
-        return'lightgray'; // Distancia alta, cerca
-    }
-
-    useEffect(() => {
-        const myticks = [];
-        const mylabels = [];
-
-
-
-        for (let i = startValueForTicks; i <= endValueForTicks; i += tickInterval) {
-
-            let mystyle = {
-                position: "absolute",
-                left: 0, /* Alinea los ticks a la derecha del track del medidor */
-                height: "2px",
-                transform: "translateY(-50%)"
-            }
-
-            const pos = getValuePosition(i);
-            if (pos >= -10 && pos <= height + 10) { // Renderiza solo si está cerca o dentro de la vista
-                const isMajorTick = Math.abs(i % majorTickInterval) < tickInterval / 2; // Comprueba si es una marca principal (con tolerancia)
-                mystyle.width = isMajorTick ? '15px' : '10px'
-                mystyle.top = pos
-                mystyle.backgroundColor = tickColor
-                myticks.push(<div key={`tick-${i}`} style={mystyle} />);
-
-                if (isMajorTick) {
-                    let labelStyle = {
-                        position: "absolute",
-                        left: 30, /* Posición a la derecha de los ticks */
-                        fontSize: "18px",
-                        whiteSpace: "nowrap",
-                        top: pos - 10,
-                        color: labelColor
-                    }
-                    mylabels.push(<div key={`label-${i}`} style={labelStyle}>{i}</div>);
-                }
+    // ── Ticks ───────────────────────────────────────────────────────────────
+    const ticks = [];
+    const labels = [];
+    if (w > 0 && h > 0) {
+        const start = Math.floor(currentMin / tickInterval) * tickInterval;
+        const end   = Math.ceil((value + range / 2) / tickInterval) * tickInterval;
+        for (let i = start; i <= end; i += tickInterval) {
+            const y = yOfVal(i);
+            if (y < -4 || y > h + 4) continue;
+            const major = Math.abs(i % majorTickInterval) < tickInterval / 2;
+            ticks.push(
+                <div key={`t${i}`} style={{
+                    position: 'absolute', top: y, left: 0,
+                    width: major ? TICK_MAJ : TICK_MIN,
+                    height: 2, backgroundColor: tickColor,
+                    transform: 'translateY(-50%)',
+                }} />
+            );
+            if (major) {
+                labels.push(
+                    <div key={`l${i}`} style={{
+                        position: 'absolute', top: y,
+                        left: TICK_MAJ + 3,
+                        fontSize: FONT, color: labelColor,
+                        whiteSpace: 'nowrap',
+                        transform: 'translateY(-50%)',
+                        lineHeight: 1,
+                    }}>{i}</div>
+                );
             }
         }
-        setTicks(myticks)
-        setLabels(mylabels)
-    }, [value])
+    }
 
-    useEffect(() => {
-        const s1 = Math.max(sensorLimits.up[0], Math.min(sensorLimits.up[1], sensorValue[0]));
-        const ratios1 = ( sensorLimits.up[1]- s1) / (sensorLimits.up[1] - sensorLimits.up[0]);
-        setSensorUp(ratios1 *height / 2)
-        setColorSensorUp(setFillColor(s1),sensorLimits.up)
+    // ── Sensor bars ─────────────────────────────────────────────────────────
+    const s1     = Math.max(sensorLimits.up[0],   Math.min(sensorLimits.up[1],   sensorValue[0]));
+    const s2     = Math.max(sensorLimits.down[0], Math.min(sensorLimits.down[1], sensorValue[1]));
+    // Las barras ocupan la mitad del área útil (entre PAD_Y y h/2, y entre h/2 y h-PAD_Y)
+    const usable = (h - 2 * PAD_Y) / 2;
+    const upH    = PAD_Y + usable * (1 - (s1 - sensorLimits.up[0])   / (sensorLimits.up[1]   - sensorLimits.up[0]));
+    const downH  = PAD_Y + usable * (1 - (s2 - sensorLimits.down[0]) / (sensorLimits.down[1] - sensorLimits.down[0]));
+    const upCol  = sensorColor(s1, sensorLimits.up);
+    const downCol= sensorColor(s2, sensorLimits.down);
 
-        const  s2 = Math.max(sensorLimits.down[0], Math.min(sensorLimits.down[1], sensorValue[1]));
-        const ratios2 = ( sensorLimits.down[1] -s2) / (sensorLimits.down[1] - sensorLimits.down[0]);
-        setSensorDown(ratios2 * (height / 2) )
-        setColorSensorDown(setFillColor(s2),sensorLimits.down)
-    }, [sensorValue])
-
-
+    const indicatorY = w > 0 ? yOfVal(value) : h / 2;
 
     return (
-        <div
-            style={{
-                position: 'relative',
-                width: `${width}px`,
-                height: `${height}px`,
-                backgroundColor: backgroundColor,
-                overflow: "hidden"
-            }}
-        >
-            <div style={{
-                position: "absolute",
-                height: "100%",
-                width: "50px",
-                left: zeroPosX + halfdrone,
-                borderLeft: `4px solid ${tickColor}`,
-                borderTop: `4px solid ${tickColor}`,
-                borderBottom: `4px solid ${tickColor}`,
-                borderColor: tickColor,
-            }}>
+        <div ref={wrapperRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
+            {w > 0 && h > 0 && (
+                <>
+                    {/* ── Área de clip (regla + sensores) ──────────────────── */}
+                    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
 
-            </div>
-            {/* Barra del Cero */}
-            <div
-                style={{
-                    position: "absolute",
-                    left: zeroPosX,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    zIndex: 3
-                }} >
-                <img src={frontIcons[mapIconKey('ArrowMap')]} alt='' style={{ width: halfdrone * 2 }} />
-            </div>
+                        {/* Sensor UP barra — de PAD_Y hasta upH */}
+                        <div style={{
+                            position: 'absolute', top: PAD_Y, left: 0,
+                            width: SENSOR_W, height: Math.max(0, upH - PAD_Y),
+                            backgroundColor: upCol,
+                        }} />
+                        {/* Línea sensor UP */}
+                        <div style={{
+                            position: 'absolute', top: upH, left: 0,
+                            width: SENSOR_W + 6, height: 3,
+                            backgroundColor: upCol === '#bbb' ? tickColor : upCol,
+                            transform: 'translateY(-50%)',
+                        }} />
 
+                        {/* Sensor DOWN barra — de h-PAD_Y hasta h-PAD_Y-downH */}
+                        <div style={{
+                            position: 'absolute', bottom: PAD_Y, left: 0,
+                            width: SENSOR_W, height: Math.max(0, downH - PAD_Y),
+                            backgroundColor: downCol,
+                        }} />
+                        {/* Línea sensor DOWN */}
+                        <div style={{
+                            position: 'absolute', bottom: downH, left: 0,
+                            width: SENSOR_W + 6, height: 3,
+                            backgroundColor: downCol === '#bbb' ? tickColor : downCol,
+                            transform: 'translateY(50%)',
+                        }} />
 
-            {/* Contenedor de Ticks y Labels */}
-            <div
-                style={{
-                    position: "absolute",
-                    left: halfdrone + zeroPosX,
-                    top: 0,
-                    width: "100%",
-                    height: "100%",
-                }}
-            >
-                <div className="gauge-ticks-container">
-                    {ticks}
-                </div>
-                <div className="gauge-labels-container">
-                    {labels}
-                </div>
-            </div>
-            {/* sensor up */}
-            <div style={{
-                top: 0,
-                position: "absolute",
-                left: zeroPosX,
-                width: 30,
-                height: sensorUp, 
-            }} >
-                {/*  barra sensor*/}
-                <div style={{
-                    position: "absolute",
-                    bottom: 0,
-                    width: 20,
-                    left: 10,
-                    height: "100%", 
-                    backgroundColor: ColorSensorUp,
-                }} />
-                {/*  linea de senalar*/}    
-                <div style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    backgroundColor: "red",
-                    height: 10, 
-                    width: 40,
-                }} />
-            </div>
-            <div style={{
-                position: "absolute",
-                top: sensorUp -20,
-                fontSize: 15,
-            }} > {sensorValue[0]}</div>
+                        {/* Línea vertical de la regla */}
+                        <div style={{
+                            position: 'absolute', top: PAD_Y, bottom: PAD_Y,
+                            left: RULER_X, width: 2,
+                            backgroundColor: tickColor,
+                        }} />
 
+                        {/* Ticks + labels */}
+                        <div style={{ position: 'absolute', top: 0, left: RULER_X + 2, right: 0, height: '100%' }}>
+                            {ticks}
+                            {labels}
+                        </div>
 
-            {/* sensor s2 */}
-            <div style={{
-                bottom: 0,
-                position: "absolute",
-                left: zeroPosX,
-                height: sensorDown, 
-                width: 22,
-            }} >
-                {/*  barra sensor*/}
-                <div style={{
-                    position: "absolute",
-                    bottom: 0,
-                    width: 20,
-                    left: 10,
-                    height: "100%", 
-                    backgroundColor: ColorSensorDown,
-                }} />
-                {/*  linea de senalar*/}    
-                <div style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    backgroundColor: "red",
-                    height: 10, 
-                    width: 40,
-                }} />
-            </div>
-            <div style={{
-                position: "absolute",
-                bottom: sensorDown - 15,
-                left: 0,
-                fontSize: 15,
-            }} > {sensorValue[1]}</div>
+                        {/* ASL — esquina inferior derecha */}
+                        {valueASL != null && (
+                            <div style={{
+                                position: 'absolute', bottom: 4, right: 4,
+                                fontSize: FONT - 1, color: labelColor,
+                                opacity: 0.65, whiteSpace: 'nowrap',
+                            }}>{valueASL.toFixed(1)} ASL</div>
+                        )}
+                    </div>
 
-            {/* altitude level sea*/}
-            <div style={{
-                position: "absolute",
-                bottom: 10,
-                left: zeroPosX + halfdrone * 2,
-                fontSize: 15,
-            }} > 120  ASL</div>
-            {/* Indicador y Valor Actual */}
-            <div
-                style={{
-                    position: "absolute",
-                    color: indicatorColor,
-                    left: zeroPosX + halfdrone * 2,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: 100,
-                    height: 40,
-                    display: "flex",
-                    alignItems: "center"
-                }}
-            >
-                <div
-                    style={{
-                        borderLeftColor: indicatorColor,
-                        borderRight: " 15px solid ",
-                        borderTop: " 10px solid transparent",
-                        borderBottom: " 10px solid transparent"
-                    }}
-                />
-                <div
-                    style={{
-                        backgroundColor: "white",
-                        border: "1px solid #ccc",
-                        padding: "5px 10px",
-                        borderRadius: "4px",
-                        whiteSpace: "nowrap",
-                        fontSize: "18px",
-                        fontWeight: "bold",
-                        right: `${width + 5}px`,
-                        color: labelColor,
-                    }}
-                >
-                    {value.toFixed(1)} {unit}
-                </div>
-            </div>
-        </div >
+                    {/* Labels sensor fuera del clip */}
+                    <div style={{
+                        position: 'absolute', top: Math.max(2, upH - FONT - 2),
+                        left: 1, fontSize: FONT, color: labelColor,
+                        whiteSpace: 'nowrap', zIndex: 4, pointerEvents: 'none',
+                    }}>{sensorValue[0].toFixed(0)}↑</div>
+                    <div style={{
+                        position: 'absolute', bottom: Math.max(2, downH - FONT - 2),
+                        left: 1, fontSize: FONT, color: labelColor,
+                        whiteSpace: 'nowrap', zIndex: 4, pointerEvents: 'none',
+                    }}>{sensorValue[1].toFixed(0)}↓</div>
+
+                    {/* ── Indicador: ícono + flecha + caja — todos centrados en indicatorY ── */}
+                    <div style={{
+                        position: 'absolute',
+                        top: indicatorY,
+                        left: SENSOR_W,
+                        transform: 'translateY(-50%)',
+                        display: 'flex', alignItems: 'center',
+                        zIndex: 10, pointerEvents: 'none',
+                    }}>
+                        {/* Ícono dron vista frontal */}
+                        <img
+                            src={frontIcons[mapIconKey('ArrowMap')]}
+                            alt=""
+                            style={{ width: DRONE_W, display: 'block', flexShrink: 0 }}
+                        />
+                        {/* Punta de flecha → hacia la derecha */}
+                        <div style={{
+                            width: 0, height: 0, flexShrink: 0,
+                            borderTop: '7px solid transparent',
+                            borderBottom: '7px solid transparent',
+                            borderLeft: `10px solid ${indicatorColor}`,
+                        }} />
+                        {/* Caja del valor */}
+                        <div style={{
+                            backgroundColor: 'white',
+                            border: `1px solid ${indicatorColor}`,
+                            padding: '1px 5px',
+                            borderRadius: 3,
+                            whiteSpace: 'nowrap',
+                            fontSize: FONT + 1,
+                            fontWeight: 'bold',
+                            color: indicatorColor,
+                            flexShrink: 0,
+                        }}>
+                            {value.toFixed(1)}&thinsp;{unit}
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
     );
 };
 

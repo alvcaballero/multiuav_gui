@@ -1,88 +1,68 @@
-import React, { useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import DistanceSensor from './DistanceSensor'; // Ajusta la ruta si es necesario
-import { mapIconKey, mapIcons, frontIcons } from '../map/core/preloadImages';
+import DistanceSensor from './DistanceSensor';
+import { mapIconKey, mapIcons } from '../map/core/preloadImages';
 import LinearGauge from './LinearGauge';
 
-
-
-const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize, droneSize) => {
-
+const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize) => {
   const center = containerSize / 2;
-  const halfDrone = droneSize / 2;
-  const halfConeSize = sensorWidth / 2;
 
-  let style = {
-    position: "absolute",
-    zIndex: 1,
-    transform: 'translate(-50%, 0)',
-  }
-  const textLabelStyle = {
+  const coneStyle = { position: 'absolute', zIndex: 1 };
+  const textStyle = {
     position: 'absolute',
-    fontSize: '1.2em',
-    color: 'black',
+    fontSize: '0.75em',
+    color: '#333',
     fontWeight: 'bold',
-    zIndex: 2, // Encima del cono
+    zIndex: 2,
+    pointerEvents: 'none',
   };
 
   switch (direction) {
     case 'front':
-      style.top = 0
-      style.left = center
-      style.transform = 'translate(-50%, 0) rotate(180deg)'
-      textLabelStyle.top = style.top;
-      textLabelStyle.left = style.left - 20;
+      coneStyle.top = 0;
+      coneStyle.left = center;
+      coneStyle.transform = 'translate(-50%, 0) rotate(180deg)';
+      textStyle.top = sensorHeight * 0.4;
+      textStyle.left = center;
+      textStyle.transform = 'translateX(-50%)';
       break;
-
     case 'back':
-      style.bottom = 0
-      style.left = center
-      textLabelStyle.bottom = style.bottom;
-      textLabelStyle.left = style.left - 20;
+      coneStyle.bottom = 0;
+      coneStyle.left = center;
+      coneStyle.transform = 'translate(-50%, 0)';
+      textStyle.bottom = sensorHeight * 0.4;
+      textStyle.left = center;
+      textStyle.transform = 'translateX(-50%)';
       break;
-
     case 'left':
-      style.top = center
-      style.transform = 'translate(0, -50%) rotateZ(180deg)'
-      style.left = 0
-
-      textLabelStyle.top = style.top - 10;
-      textLabelStyle.left = style.left + 40;
+      coneStyle.top = center;
+      coneStyle.left = 0;
+      coneStyle.transform = 'translate(0, -50%) rotateZ(180deg)';
+      textStyle.top = center;
+      textStyle.left = sensorWidth * 0.3;
+      textStyle.transform = 'translateY(-50%)';
       break;
-
     case 'right':
-      style.top = center
-      style.right = 0
-      style.transform = 'translate(0, -50%)'
-
-      textLabelStyle.top = style.top - 10;
-      textLabelStyle.right = style.right + 40;
+      coneStyle.top = center;
+      coneStyle.right = 0;
+      coneStyle.transform = 'translate(0, -50%)';
+      textStyle.top = center;
+      textStyle.right = sensorWidth * 0.3;
+      textStyle.transform = 'translateY(-50%)';
       break;
     default:
       break;
   }
 
-
-  return { coneStyle: style, textStyle: textLabelStyle };
-
-}
-
-
+  return { coneStyle, textStyle };
+};
 
 /**
- * Componente que visualiza los sensores de un dron en vistas superior y frontal.
- * Muestra un dron simple y utiliza el componente DistanceSensor para graficar
- * las lecturas de distancia en diferentes direcciones.
+ * Ocupa todo el espacio que le da el padre (width + height 100%).
+ * El ResizeObserver mide AMBAS dimensiones para que nada se corte.
  */
 const DroneSensorVisualizer = ({
-  sensorData = {
-    down: 10,
-    front: 10,
-    left: 10,
-    back: 10,
-    right: 10,
-    up: 10,
-  },
+  sensorData = { down: 10, front: 10, left: 10, back: 10, right: 10, up: 10 },
   sensorConfig = {
     down: [0, 15],
     front: [0, 15],
@@ -90,119 +70,112 @@ const DroneSensorVisualizer = ({
     back: [0, 12],
     right: [0, 12],
     up: [0, 20],
-  }
+  },
+  altitude = 10,
+  altitudeASL,
 }) => {
-  const [currentAltitude, setCurrentAltitude] = useState(10.0);
-  const [currentS1, setCurrents1] = useState(10.0);
-  const [currentS2, setCurrents2] = useState(10.0);
+  const containerRef = useRef(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
 
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setSize({ w: entry.contentRect.width, h: entry.contentRect.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-  // Función para manejar el cambio del valor con un slider de ejemplo
-  const handleSliderChange = (event) => {
-    setCurrentAltitude(parseFloat(event.target.value));
-  };
-  // Tamaños para los sensores visuales
-  const sensorSize = 150; // Ancho y alto de los componentes DistanceSensor
-  const droneSizeTop = 100; // Tamaño del cuadrado del dron en vista superior
-  const CONTAINER_SIZE = 350; // Tamaño del contenedor en píxeles
-  const sensorWidth = sensorSize * 1.5
-  const sensorHeight = sensorSize
+  const { w, h } = size;
+  const ready = w > 10 && h > 10;
 
+  // El panel top-view es cuadrado con lado = min(h, 65% del ancho)
+  const topViewSize = ready ? Math.min(h, Math.round(w * 0.65)) : 0;
+  // El gauge toma el resto del ancho
+  const gaugeW = ready ? w - topViewSize - 8 : 0;
 
-  //GET STYLES FOR SENSOR 
-  const { coneStyle: styleFrontCone, textStyle: styleFrontText } = getSensorStyle("front", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
-  const { coneStyle: styleBackCone, textStyle: styleBackText } = getSensorStyle("back", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
-  const { coneStyle: styleLeftCone, textStyle: styleLeftText } = getSensorStyle("left", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
-  const { coneStyle: styleRightCone, textStyle: styleRightText } = getSensorStyle("right", sensorWidth, sensorHeight, CONTAINER_SIZE, droneSizeTop)
-  //margin: '20px auto', // Centrar el contenedor
-  //overflow: 'hidden', // Ocultar cualquier cosa posicionada fuera
-  //borderRadius: '8px', // Bordes redondeados
+  // Conos: proporcionales al panel cuadrado
+  const sensorConeLen  = Math.round(topViewSize * 0.38);
+  const sensorConeWide = Math.round(topViewSize * 0.52);
+  const droneSize      = Math.round(topViewSize * 0.22);
 
-  //position: 'relative',
-  //
+  const { coneStyle: styleFrontCone, textStyle: styleFrontText } = getSensorStyle('front', sensorConeWide, sensorConeLen, topViewSize);
+  const { coneStyle: styleBackCone,  textStyle: styleBackText  } = getSensorStyle('back',  sensorConeWide, sensorConeLen, topViewSize);
+  const { coneStyle: styleLeftCone,  textStyle: styleLeftText  } = getSensorStyle('left',  sensorConeLen,  sensorConeWide, topViewSize);
+  const { coneStyle: styleRightCone, textStyle: styleRightText } = getSensorStyle('right', sensorConeLen,  sensorConeWide, topViewSize);
+
   return (
-    <>
-      <div style={{
-        display: "flex",
-        width: CONTAINER_SIZE + 240,
-        height: CONTAINER_SIZE,
-        border: '1px solid #ccc',
-        backgroundColor: '#f9f9f9', // Fondo muy claro
-        boxShadow: '2px 2px 8px rgba(0,0,0,0.1)', // Sombra suave
-        flexWrap: "wrap",
-        justifyContent: "space-around"
-      }}>
+    // Wrapper: ocupa TODO el espacio del padre, sin overflow propio
+    <div
+      ref={containerRef}
+      style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}
+    >
+      {ready && (
+        <>
+          {/* ── Vista superior con conos ── */}
+          <div style={{
+            width: topViewSize,
+            height: topViewSize,
+            position: 'relative',
+            flexShrink: 0,
+          }}>
+            <img
+              src={mapIcons[mapIconKey('ArrowMap')]}
+              alt=""
+              style={{
+                width: droneSize,
+                position: 'absolute',
+                top: '50%', left: '50%',
+                transform: 'translate(-50%,-50%)',
+                zIndex: 2,
+              }}
+            />
 
-        <div style={{
-          width: CONTAINER_SIZE,
-          height: CONTAINER_SIZE,
-          position: 'relative',
-          justifyContent: 'center', /* Centra el dron */
-          alignItems: 'center'
-        }}>
-          {/* Representacion del drone */}
-          <img src={mapIcons[mapIconKey('ArrowMap')]} alt=''
-            style={{
-              width: droneSizeTop,
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%,-50%)",
-              zIndex: 2
-            }} />
+            <div style={styleFrontText}>{sensorData.front.toFixed(0)}m</div>
+            <div style={styleFrontCone}>
+              <DistanceSensor distance={sensorData.front} limits={sensorConfig.front} width={sensorConeWide} height={sensorConeLen} />
+            </div>
 
-          <div style={styleFrontText}>{sensorData.front.toFixed(0)}m</div>
-          <div style={styleFrontCone}>
-            <DistanceSensor distance={sensorData.front} limits={sensorConfig.front} width={sensorWidth} height={sensorHeight} />
+            <div style={styleBackText}>{sensorData.back.toFixed(0)}m</div>
+            <div style={styleBackCone}>
+              <DistanceSensor distance={sensorData.back} limits={sensorConfig.back} width={sensorConeWide} height={sensorConeLen} />
+            </div>
+
+            <div style={styleLeftText}>{sensorData.left.toFixed(0)}m</div>
+            <div style={styleLeftCone}>
+              <DistanceSensor distance={sensorData.left} limits={sensorConfig.left} width={sensorConeLen} height={sensorConeWide} orientation="h" />
+            </div>
+
+            <div style={styleRightText}>{sensorData.right.toFixed(0)}m</div>
+            <div style={styleRightCone}>
+              <DistanceSensor distance={sensorData.right} limits={sensorConfig.right} width={sensorConeLen} height={sensorConeWide} orientation="h" />
+            </div>
           </div>
 
-          <div style={styleBackText}>{sensorData.back.toFixed(0)}m</div>
-          <div style={styleBackCone} >
-            <DistanceSensor distance={sensorData.back} limits={sensorConfig.back} width={sensorWidth} height={sensorHeight} />
+          {/* ── LinearGauge: ocupa el ancho restante, alto = topViewSize ── */}
+          <div style={{ width: gaugeW, height: topViewSize, flexShrink: 0, overflow: 'visible' }}>
+            <LinearGauge
+              value={altitude}
+              valueASL={altitudeASL}
+              sensorValue={[sensorData.up, sensorData.down]}
+              sensorLimits={{ up: sensorConfig.up, down: sensorConfig.down }}
+            />
           </div>
-
-          <div style={styleLeftText}>{sensorData.left.toFixed(0)}m</div>
-          <div style={styleLeftCone} >
-            <DistanceSensor distance={sensorData.left} limits={sensorConfig.left} width={sensorHeight} height={sensorWidth} orientation={"h"} />
-          </div>
-
-          <div style={styleRightText}>{sensorData.right.toFixed(0)}m</div>
-          <div style={styleRightCone} >
-            <DistanceSensor distance={sensorData.right} limits={sensorConfig.right} width={sensorHeight} height={sensorWidth} orientation={"h"} />
-          </div>
-
-        </div>
-        <div style={{
-          width: CONTAINER_SIZE,
-          height: CONTAINER_SIZE,
-          position: 'relative',
-          display: "flex",
-          flexDirection: "column",
-          flex: 1,
-          justifyContent: 'center', /* Centra el dron */
-          alignItems: 'center'
-        }}>
-          <LinearGauge
-            value={currentAltitude}
-            sensorValue={[sensorData.up, sensorData.down]}
-            sensorLimits={{ up: sensorConfig.up, down: sensorConfig.down }}
-            height={CONTAINER_SIZE}
-          />
-        </div>
-      </div >
-    </>
+        </>
+      )}
+    </div>
   );
 };
 
-// Definición de PropTypes para la estructura de sensorData
 DroneSensorVisualizer.propTypes = {
   sensorData: PropTypes.shape({
     front: PropTypes.number.isRequired,
-    back: PropTypes.number.isRequired,
-    left: PropTypes.number.isRequired,
+    back:  PropTypes.number.isRequired,
+    left:  PropTypes.number.isRequired,
     right: PropTypes.number.isRequired,
-    up: PropTypes.number.isRequired,
-    down: PropTypes.number.isRequired,
+    up:    PropTypes.number.isRequired,
+    down:  PropTypes.number.isRequired,
   }).isRequired,
 };
 

@@ -34,13 +34,14 @@ import PositionValue from '../components/ui/PositionValue';
 import usePersistedState from '../shared/usePersistedState';
 import SquareMove from './SquareMove';
 import SquareMove1 from './SquareMove1';
-import DroneSensorVisualizer from './DroneSensorVisualizer'
+import DroneSensorVisualizer from './DroneSensorVisualizer';
 import useFilter from '../shared/useFilter';
 import MainMap from '../map/MainMap';
 import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
 import { CameraV1 } from '../components/camera/CameraV1';
 import SendCommand from '../components/commands/SendCommand';
 import CommandCard from '../components/commands/CommandCard';
+import Scene3DCanvas from '../scene3d/Scene3DCanvas';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -104,7 +105,7 @@ const RenderCamera = ({ device, myhostname }) => {
   );
 };
 
-const DevicePage = () => {
+const DevicePage3D = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
 
@@ -144,7 +145,7 @@ const DevicePage = () => {
   const [openSendCommand, setOpenSendCommand] = useState(false);
   useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
 
-  const onMarkerClick = () => { };
+  const onMarkerClick = () => {};
   useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
@@ -163,9 +164,9 @@ const DevicePage = () => {
         right: item.attributes.obstacle_info[2],
         up: item.attributes.obstacle_info[5],
         down: item.attributes.obstacle_info[0],
-      })
+      });
     }
-  }, [id, positions])
+  }, [id, positions]);
 
   useEffect(() => {
     if (id) {
@@ -185,23 +186,74 @@ const DevicePage = () => {
         </Toolbar>
       </AppBar>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div style={{ flex: 1, justifyContent: 'space-between', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
           <div
             style={{
-              height: '50vh',
+              height: '45vh',
+              flexShrink: 0,
             }}
             className={classes.content}
           >
-            <MainMap
-              filteredPositions={filteredPositions}
-              markers={markers}
-              routes={routes}
-              selectedPosition={id}
-              filteredMissiondeviceid={id}
-            />
-          </div>
-          <div style={{ padding: '15px', margin: '5px' }}>
             {Object.keys(thisDevice).length > 0 && <RenderCamera device={thisDevice} myhostname={myhostname} />}
+          </div>
+          <div
+            style={{
+              padding: '0px',
+              margin: '5px',
+              display: 'flex',
+              gap: '16px',
+              alignItems: 'stretch',
+              flex: 1,
+              overflow: 'hidden',
+              minHeight: 0,
+            }}
+          >
+            <Container
+              maxWidth="false"
+              style={{ flex: 1, padding: 0, overflow: 'auto', maxHeight: '100%', alignSelf: 'flex-start' }}
+            >
+              <Paper>
+                <Table aria-label="simple table" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Attributes</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Value</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {item &&
+                      Object.getOwnPropertyNames(item)
+                        .filter((it) => it !== 'attributes')
+                        .map((property) => (
+                          <TableRow key={property}>
+                            <TableCell>{property}</TableCell>
+                            <TableCell>
+                              <PositionValue position={item} property={property} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    {item &&
+                      Object.getOwnPropertyNames(item.attributes).map((attribute) => (
+                        <TableRow key={attribute}>
+                          <TableCell>{attribute}</TableCell>
+                          <TableCell>
+                            <PositionValue position={item} attribute={attribute} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </Paper>
+            </Container>
+            {item?.attributes?.obstacle_info && (
+              <Paper style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <DroneSensorVisualizer
+                  sensorData={currentSensorData}
+                  altitude={item.attributes?.home ? item.altitude - item.attributes.home[2] : (item.altitude ?? 0)}
+                  altitudeASL={item.altitude ?? 0}
+                />
+              </Paper>
+            )}
           </div>
           <div style={{ padding: '15px', marginTop: 'auto' }}>
             <Paper>
@@ -221,81 +273,12 @@ const DevicePage = () => {
         <div
           style={{
             flex: 1,
-            justifyContent: 'space-between',
             display: 'flex',
             flexDirection: 'column',
+            minHeight: 0,
           }}
         >
-          <div style={{ height: '50vh' }} className={classes.content}>
-            <Container maxWidth="false">
-              <Paper>
-                <Table aria-label="simple table">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Attributes</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Value</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {item &&
-                      Object.getOwnPropertyNames(item)
-                        .filter((it) => it !== 'attributes')
-                        .map((property) => (
-                          <TableRow key={property}>
-                            <TableCell>{property}</TableCell>
-
-                            <TableCell>
-                              <PositionValue position={item} property={property} />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    {item &&
-                      Object.getOwnPropertyNames(item.attributes).map((attribute) => (
-                        <TableRow key={attribute}>
-                          <TableCell>{attribute}</TableCell>
-                          <TableCell>
-                            <PositionValue position={item} attribute={attribute} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </Paper>
-            </Container>
-          </div>
-          <div style={{ padding: '15px', margin: '10px' }}>
-            {item?.attributes?.obstacle_info && (
-              <Paper>
-                <Typography align="center" variant="h5" component="div" style={{ padding: '15px' }}>
-                  Avoidance sensor
-                </Typography>
-                <div style={{ height: 280 }}>
-                  <DroneSensorVisualizer sensorData={currentSensorData} />
-                </div>
-              </Paper>
-            )}
-          </div>
-
-          <div style={{ padding: '15px', marginTop: 'auto' }}>
-            <Paper>
-              <BottomNavigation
-                showLabels
-                value={value}
-                onChange={(event, newValue) => {
-                  setValue(newValue);
-                }}
-              >
-                <BottomNavigationAction label="Edit" icon={<EditIcon />} />
-                <BottomNavigationAction label="Result" icon={<ReplayIcon />} />
-                <BottomNavigationAction
-                  label="Command"
-                  icon={<PublishIcon />}
-                  onClick={() => setOpenSendCommand(true)}
-                />
-                <BottomNavigationAction label="Delete" icon={<DeleteIcon />} />
-              </BottomNavigation>
-            </Paper>
-          </div>
+          <Scene3DCanvas style={{ flex: 1, minHeight: 0 }} />
         </div>
       </div>
       {openSendCommand && <CommandCard id={id} onClose={() => setOpenSendCommand(false)} />}
@@ -303,4 +286,4 @@ const DevicePage = () => {
   );
 };
 
-export default DevicePage;
+export default DevicePage3D;
