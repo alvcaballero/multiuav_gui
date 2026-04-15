@@ -1,4 +1,4 @@
-import { Fragment, useRef, useCallback } from 'react';
+import { Fragment, useRef, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import RoutesList from './RoutesList';
 import { Typography, IconButton, Toolbar, Switch } from '@mui/material';
@@ -9,8 +9,10 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Handyman from '@mui/icons-material/Handyman';
 import { missionActions } from '../../store';
 import { useMissionFile } from '../../services/useMissionFile';
+import MissionTransformDialog from './MissionTransformDialog';
 
 const useStyles = makeStyles()((theme) => ({
   toolbar: {
@@ -37,6 +39,7 @@ const MissionPanel = ({ SetOpenSave }) => {
   const scroolRef = useRef(null);
   const dispatch = useDispatch();
   const handleMissionFile = useMissionFile();
+  const [transformOpen, setTransformOpen] = useState(false);
 
   // Read group route mode from Redux
   const groupRouteMode = useSelector((state) => state.mission.groupRouteMode);
@@ -70,7 +73,7 @@ const MissionPanel = ({ SetOpenSave }) => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h6" className={classes.title}>
-          Mission Task
+          Mission
         </Typography>
 
         <Typography>Group Route</Typography>
@@ -80,6 +83,9 @@ const MissionPanel = ({ SetOpenSave }) => {
           name="groupRouteMode"
           inputProps={{ 'aria-label': 'group route mode' }}
         />
+        <IconButton onClick={() => setTransformOpen(true)}>
+          <Handyman />
+        </IconButton>
         <IconButton onClick={handleSaveMission}>
           <SaveAltIcon />
         </IconButton>
@@ -102,6 +108,7 @@ const MissionPanel = ({ SetOpenSave }) => {
       <div ref={scroolRef} className={classes.list}>
         <RoutesList setScrool={setScrool} />
       </div>
+      <MissionTransformDialog open={transformOpen} onClose={() => setTransformOpen(false)} />
     </Fragment>
   );
 };

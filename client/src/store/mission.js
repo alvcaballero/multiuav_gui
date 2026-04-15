@@ -259,6 +259,77 @@ const { reducer, actions } = createSlice({
       state.elevation.selectRT = -1;
       state.elevation.loading = false;
     },
+
+    // Rotate all waypoints around a center point (lat/lng in degrees)
+    // Uses local-metric projection: 1° lat ≈ 111320 m, 1° lng ≈ 111320 * cos(lat) m
+    rotateMission(state, action) {
+      const { angleDeg, routeIndex } = action.payload; // routeIndex = -1 → all routes
+      const angleRad = (angleDeg * Math.PI) / 180;
+
+      // Collect all waypoints to compute centroid
+      const routes = routeIndex >= 0 ? [state.route[routeIndex]] : state.route;
+
+      let sumLat = 0,
+        sumLng = 0,
+        count = 0;
+      routes.forEach((route) => {
+        route.wp.forEach((wp) => {
+          sumLat += wp.pos[0];
+          sumLng += wp.pos[1];
+          count++;
+        });
+      });
+      if (count === 0) return;
+
+      const cLat = sumLat / count;
+      const cLng = sumLng / count;
+      const cosLat = Math.cos((cLat * Math.PI) / 180);
+      const mPerDegLat = 111320;
+      const mPerDegLng = 111320 * cosLat;
+
+      const cosA = Math.cos(angleRad);
+      const sinA = Math.sin(angleRad);
+
+      // Yaw is NED/aeronautic convention: 0=North, clockwise positive.
+      // Position rotates CCW for positive angleDeg (math convention).
+      // To keep both consistent, negate angleDeg when rotating yaw.
+      // Normalize result to [-180, 180).
+      const rotateYaw = (yawDeg) => {
+        const r = ((yawDeg - angleDeg) % 360 + 360) % 360;
+        return r >= 180 ? r - 360 : r;
+      };
+
+      routes.forEach((route) => {
+        route.wp.forEach((wp) => {
+          // Project to local meters relative to centroid
+          const dx = (wp.pos[1] - cLng) * mPerDegLng;
+          const dy = (wp.pos[0] - cLat) * mPerDegLat;
+          // Rotate position
+          const rx = dx * cosA - dy * sinA;
+          const ry = dx * sinA + dy * cosA;
+          // Back to lat/lng
+          wp.pos[0] = cLat + ry / mPerDegLat;
+          wp.pos[1] = cLng + rx / mPerDegLng;
+          // Rotate yaw: direct field
+          if (wp.yaw != null) wp.yaw = rotateYaw(wp.yaw);
+          // Rotate yaw: inside action object
+          if (wp.action?.yaw != null) wp.action.yaw = rotateYaw(wp.action.yaw);
+        });
+      });
+    },
+
+    // Translate all waypoints by delta lat/lng
+    translateMission(state, action) {
+      const { deltaLat, deltaLng, routeIndex } = action.payload;
+      const routes = routeIndex >= 0 ? [state.route[routeIndex]] : state.route;
+
+      routes.forEach((route) => {
+        route.wp.forEach((wp) => {
+          wp.pos[0] += deltaLat;
+          wp.pos[1] += deltaLng;
+        });
+      });
+    },
     removeElevationRoute(state, action) {
       // Remove specific routes from elevation cache by indices
       const indicesToKeep = action.payload;
