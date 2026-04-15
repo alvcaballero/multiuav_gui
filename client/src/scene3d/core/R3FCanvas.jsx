@@ -87,7 +87,7 @@ const R3FCanvas = ({ children }) => {
       <fog attach="fog" args={['#abddff', FOG_NEAR, FOG_FAR]} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[50, 50, 50]} intensity={3} />
-      <Perf />
+      {/*<Perf />*/}
 
       <CameraControls controlsRef={controlsRef} />
       <OrientationGizmo controlsRef={controlsRef} />

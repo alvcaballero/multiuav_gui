@@ -19,7 +19,7 @@ function Word({ children, position, color }) {
   const myColor = new THREE.Color();
   const fontProps = {
     font: '/Inter-Bold.woff',
-    fontSize: 2.5,
+    fontSize: 1,
     letterSpacing: -0.05,
     lineHeight: 1,
     'material-toneMapped': false,
@@ -39,7 +39,7 @@ function Word({ children, position, color }) {
   });
   return (
     <Billboard position={position}>
-      <Circle args={[1.8, 150]}>
+      <Circle args={[1, 25]}>
         <meshBasicMaterial attach="material" color={color} />
       </Circle>
       <Text

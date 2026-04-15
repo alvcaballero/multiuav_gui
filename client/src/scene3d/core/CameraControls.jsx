@@ -74,8 +74,12 @@ export default function CameraControls({ controlsRef: externalRef }) {
     if (!mapFollow || !followPosition?.latitude) return;
     const alt = followPosition.attributes?.home
       ? followPosition.altitude - followPosition.attributes.home[2]
-      : followPosition.altitude;
-    const xyz = LatLon2XYZ(origin3d, { lng: followPosition.longitude, lat: followPosition.latitude, alt });
+      : (followPosition.altitude ?? 0);
+    const xyz = LatLon2XYZ(origin3d, {
+      lng: followPosition.longitude ?? origin3d.lng,
+      lat: followPosition.latitude ?? origin3d.lat,
+      alt,
+    });
     followTargetRef.current = new THREE.Vector3(xyz[0], alt, -xyz[1]);
   }, [mapFollow, followPosition?.latitude, followPosition?.longitude, followPosition?.altitude]);
   const minHeight = 1; // Minimum height above ground

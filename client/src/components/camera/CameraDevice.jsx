@@ -17,13 +17,14 @@ const useStyles = makeStyles()((theme) => ({
   },
   media: {
     width: theme.dimensions.popupMaxWidth,
+    height: '16vh',
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
     background: 'black',
   },
   mediaMed: {
-    width: '45vw',
+    width: '34vw',
     height: '40vh',
     display: 'flex',
     justifyContent: 'flex-end',

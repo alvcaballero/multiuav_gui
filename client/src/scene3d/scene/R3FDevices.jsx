@@ -37,7 +37,7 @@ const Device = ({ id, position, isSelected, category }) => {
         // gimbalYaw is drone-relative: 140 = forward. Shift so 0 = forward.
         // Negate because Three.js Y-axis rotates CCW but gimbal yaw is CW.
         // Order: yaw around local Y first, then pitch around local X (no gimbal lock).
-        const gimbalYawRad = loc.gimbalYaw !== undefined ? (-(loc.gimbalYaw - 140) * Math.PI) / 180 : 0;
+        const gimbalYawRad = loc.gimbalYaw !== undefined ? (-(loc.gimbalYaw - loc.course) * Math.PI) / 180 : 0;
         const pitchRad = (loc.gimbalPitch * Math.PI) / 180;
 
         const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), gimbalYawRad);
@@ -58,9 +58,9 @@ const Device = ({ id, position, isSelected, category }) => {
 
   return (
     <group ref={meshRef}>
+      <perspectiveCamera ref={camRef} fov={60} near={1} far={4} position={[0, 0.15, -0.15]} />
       <primitive object={model.scene.clone()} scale={[1, 1, 1]} />
       {/* Camera helper: represents the drone's forward-looking camera direction */}
-      <perspectiveCamera ref={camRef} fov={60} near={1} far={4} position={[0, 0.15, -0.15]} />
       {isSelected && (
         <mesh position={[0, RING_HEIGHT_OFFSET, 0]}>
           <boxGeometry args={[0.2, 0.2, 0.2]} />
@@ -81,9 +81,9 @@ const R3FDevices = () => {
   useEffect(() => {
     const pos = Object.values(positions).map((item) => ({
       ...item,
-      lng: item.longitude,
-      lat: item.latitude,
-      alt: item.attributes?.home ? item.altitude - item.attributes.home[2] : item.altitude,
+      lng: item.hasOwnProperty('longitude') ? item.longitude : origin3d.lng,
+      lat: item.hasOwnProperty('latitude') ? item.latitude : origin3d.lat,
+      alt: item.attributes?.home ? item.altitude - item.attributes.home[2] : (item.altitude ?? 0),
     }));
     const posxyz = LatLon2XYZObj(origin3d, pos, 1000);
     const result = posxyz.map((item) => ({

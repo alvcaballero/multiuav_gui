@@ -49,11 +49,15 @@ const useStyles = makeStyles()((theme) => ({
   },
   root: {
     pointerEvents: 'none',
-    //position: "fixed",
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
   },
   root_max: {
     pointerEvents: 'none',
-    //position: "fixed",
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
   },
 }));
 
@@ -85,13 +89,13 @@ export const CameraWebRTCV4 = ({
   }
 
   return (
-    <div className={rootclass}>
+    <div className={rootclass} style={{ flex: 1 }}>
       {device && (
-        <Card className={btn_class}>
+        <Card className={btn_class} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div>
             <div className={classes.tittle}>{'Id: ' + device.name}</div>
           </div>
-          <iframe src={deviceip} className={frameclass} />
+          <iframe src={deviceip} className={classes.media1} style={{ flex: 1, border: 'none' }} />
         </Card>
       )}
     </div>
