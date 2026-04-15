@@ -189,7 +189,7 @@ const DevicePage3D = () => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
           <div
             style={{
-              height: '45vh',
+              height: '50vh',
               flexShrink: 0,
             }}
             className={classes.content}
@@ -255,7 +255,7 @@ const DevicePage3D = () => {
               </Paper>
             )}
           </div>
-          <div style={{ padding: '15px', marginTop: 'auto' }}>
+          <div style={{ marginTop: 'auto' }}>
             <Paper>
               <BottomNavigation showLabels>
                 <BottomNavigationAction label="Stop Mission" icon={<StopCircleIcon />} />

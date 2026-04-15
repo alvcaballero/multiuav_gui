@@ -140,6 +140,7 @@ const MainPage3D = () => {
           position={selectedPosition}
           onClose={unselectDevice}
           desktopPadding={theme.dimensions.drawerWidthDesktop}
+          is3d={true}
         />
       )}
       <SwipeConfirm

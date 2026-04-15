@@ -149,7 +149,7 @@ const MemoCardHeader = React.memo(({ classes, deviceName, onClose, changeMapFoll
   );
 });
 
-const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
+const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = false }) => {
   const { classes } = useStyles({ desktopPadding });
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -186,8 +186,12 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
 
   const openCommand = () => setOpenSendCommand(true);
   const navigateToDevice = useCallback(() => {
-    navigate(`/device/${deviceId}`);
-  }, [deviceId, navigate]);
+    if (is3d) {
+      navigate(`/device3d/${deviceId}`);
+    } else {
+      navigate(`/device/${deviceId}`);
+    }
+  }, [deviceId, navigate, is3d]);
 
   const serverCommand = async (deviceId, command, attributes) => {
     console.log('send command uavud: ' + deviceId + command);
@@ -218,7 +222,6 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0 }) => {
         let myresponse = await response.json();
         dispatch(devicesActions.refresh(Object.values(myresponse)));
         onClose();
-
       } else {
         throw Error(await response.text());
       }

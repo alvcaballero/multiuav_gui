@@ -10,6 +10,7 @@ import MissionPage3D from './pages/MissionPage3D';
 import MainPage3D from './pages/MainPage3D';
 import ReplayPage from './pages/ReplayPage';
 import DevicePage from './pages/DevicePage';
+import DevicePage3D from './pages/DevicePage3D';
 import CameraPage from './pages/CameraPage';
 import EventsPage from './pages/EventsPage';
 import TopicsPage from './pages/TopicsPage';
@@ -45,7 +46,7 @@ const Navigation = () => {
 
         {/* This is a temporary route for testing purposes, can be removed later
          */}
-         <Route path="chat" element={<ChatPage />} />
+        <Route path="chat" element={<ChatPage />} />
         <Route path="3Dview" element={<MainPage3D />} />
         <Route path="3Dmission" element={<MissionPage3D />} />
 
@@ -54,6 +55,7 @@ const Navigation = () => {
         <Route path="planning" element={<PlanningPage />} />
         <Route path="camera" element={<CameraPage />} />
         <Route path="device/:id" element={<DevicePage />} />
+        <Route path="device3d/:id" element={<DevicePage3D />} />
 
         <Route path="replay" element={<ReplayPage />} />
         <Route path="topics" element={<TopicsPage />} />
