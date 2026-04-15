@@ -10,7 +10,7 @@ import { SwitcherControl } from '../switcher/switcher';
 import { useAttributePreference, usePreference } from '../../shared/preferences';
 import usePersistedState, { savePersistedState } from '../../shared/usePersistedState';
 
-import { mapImages } from './preloadImages';
+import { mapImages, imagesReady } from './preloadImages';
 import useMapStyles from './useMapStyles';
 import { use } from 'react';
 
@@ -47,6 +47,7 @@ const updateReadyValue = (value) => {
 
 const initMap = async () => {
   if (ready) return;
+  await imagesReady;
   if (!map.hasImage('background')) {
     Object.entries(mapImages).forEach(([key, value]) => {
       map.addImage(key, value, {
@@ -56,6 +57,13 @@ const initMap = async () => {
   }
   updateReadyValue(true);
 };
+
+map.on('styleimagemissing', (e) => {
+  const missingId = e.id;
+  if (mapImages[missingId]) {
+    map.addImage(missingId, mapImages[missingId], { pixelRatio: window.devicePixelRatio });
+  }
+});
 
 map.addControl(new maplibregl.NavigationControl());
 map.addControl(

@@ -82,6 +82,11 @@ export const mapIconKey = (category) => {
 
 export const mapImages = {};
 
+let imagesReadyResolve;
+export const imagesReady = new Promise((resolve) => {
+  imagesReadyResolve = resolve;
+});
+
 const theme = createTheme({
   palette: {
     neutral: { main: grey[500] },
@@ -115,33 +120,37 @@ export default async () => {
             try {
               mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
             } catch (_) {
+              console.log('faild to load custom icon');
               // fallback: use default-neutral icon if asset missing
             }
           })
       );
     }
   } catch (_) {
+    console.log('fialt to make a call to get customs icons ');
     // server unavailable — skip custom icons
   }
 
-  Object.keys(palette.colors_devices).forEach(async (color) => {
-    mapImages[`background-${color}`] = await prepareIcon(background, null, colors[color]);
-    mapImages[`mission-${color}`] = await prepareIcon(backgroundBorder, null, colors[color]);
-    mapImages[`backgroundDirection-${color}`] = await prepareIcon(backgroundDirection, null, colors[color]);
+  Object.keys(palette.colors_devices).forEach((color) => {
+    mapImages[`background-${color}`] = prepareIcon(background, null, colors[color]);
+    mapImages[`mission-${color}`] = prepareIcon(backgroundBorder, null, colors[color]);
+    mapImages[`backgroundDirection-${color}`] = prepareIcon(backgroundDirection, null, colors[color]);
   });
   await Promise.all(
     Object.keys(mapIcons).map(async (category) => {
-      const results = [];
+      let icon;
+      try {
+        icon = await loadImage(mapIcons[category]);
+      } catch (e) {
+        console.warn(`preloadImages: failed to load icon for "${category}"`, e);
+        return;
+      }
       ['info', 'success', 'error', 'neutral'].forEach((color) => {
-        results.push(
-          loadImage(mapIcons[category]).then((icon) => {
-            mapImages[`${category}-${color}`] = prepareIcon(background, icon, theme.palette[color].main);
-          })
-        );
+        mapImages[`${category}-${color}`] = prepareIcon(background, icon, theme.palette[color].main);
       });
-      await Promise.all(results);
     })
   );
   console.log('preload icon');
   console.log(mapImages);
+  imagesReadyResolve();
 };

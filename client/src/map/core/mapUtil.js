@@ -2,9 +2,10 @@ import { parse, stringify } from 'wellknown';
 import circle from '@turf/circle';
 
 export const loadImage = (url) =>
-  new Promise((imageLoaded) => {
+  new Promise((resolve, reject) => {
     const image = new Image();
-    image.onload = () => imageLoaded(image);
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Failed to load image: ${url}`));
     image.src = url;
   });
 
