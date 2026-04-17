@@ -1,53 +1,83 @@
 import * as THREE from 'three';
 import earcut from 'earcut';
+// based on https://github.com/lorenzoMezza/Three-geo-play
 
 // Each layer gets a distinct Y offset to avoid z-fighting between coplanar meshes.
 // Small enough to be invisible from normal camera angles (~cm scale).
 const LAYER_CONFIG = {
-  //           color       yOffset
-  landcover:  { color: 0xd0e8c0, y: 0.00 },
-  landuse:    { color: 0xf0ece4, y: 0.01 },
-  park:       { color: 0xd8ecbc, y: 0.02 },
-  water:      { color: 0xa0c8f0, y: 0.03 },
-  waterway:   { color: 0xa0c8f0, y: 0.04 },
-  transportation: { color: 0xffffff, y: 0.06 },
-  building:   { color: 0xe0d8d0, y: 0.08 },
+  //           color       yOffset   allowedClasses (null = all)
+  landcover: { color: 0xa8d878, y: 0.0, classes: null },
+  landuse: { color: 0xe8ddd0, y: 0.01, classes: new Set(['residential', 'commercial', 'retail']) },
+  park: { color: 0x90d060, y: 0.02, classes: null },
+  water: { color: 0x60a8e8, y: 0.03, classes: null },
+  waterway: { color: 0x60a8e8, y: 0.04, classes: null },
+  transportation: { color: 0xffffff, y: 0.06, classes: null },
+  building: { color: 0xc8bdb0, y: 0.08, classes: null },
 };
 
 const LAYER_ORDER = Object.keys(LAYER_CONFIG);
 
-/**
- * Builds a THREE.BufferGeometry from polygon rings (flat [x,y,...] arrays)
- * using earcut triangulation. yOffset separates layers to avoid z-fighting.
- */
+// Returns signed area of a flat [x,y,...] ring. Positive = clockwise (outer in MVT tile coords).
+const signedArea = (ring) => {
+  let area = 0;
+  for (let i = 0, len = ring.length - 2; i < len; i += 2) {
+    area += ring[i] * ring[i + 3] - ring[i + 2] * ring[i + 1];
+  }
+  return area / 2;
+};
+
+// Groups flat rings into polygons [{outer, holes}] using MVT winding convention:
+// outer rings have positive signed area (clockwise), holes have negative (CCW).
+const groupRings = (rings) => {
+  const polygons = [];
+  let current = null;
+  for (const ring of rings) {
+    if (signedArea(ring) > 0) {
+      current = { outer: ring, holes: [] };
+      polygons.push(current);
+    } else if (current) {
+      current.holes.push(ring);
+    }
+  }
+  return polygons;
+};
+
 const buildPolygonGeometry = (rings, extent, tileOriginX, tileOriginZ, tileSize, yOffset) => {
   if (!rings || rings.length === 0) return null;
 
   const scale = tileSize / extent;
-  const verts = [];
-  const holeIndices = [];
+  const polygons = groupRings(rings);
+  if (polygons.length === 0) return null;
 
-  for (let r = 0; r < rings.length; r++) {
-    if (r > 0) holeIndices.push(verts.length / 2);
-    const ring = rings[r];
-    for (let i = 0; i < ring.length - 2; i += 2) {
-      verts.push(ring[i], ring[i + 1]);
+  const allPositions = [];
+
+  for (const { outer, holes } of polygons) {
+    const verts = [];
+    const holeIndices = [];
+
+    const addRing = (ring) => {
+      for (let i = 0; i < ring.length - 2; i += 2) verts.push(ring[i], ring[i + 1]);
+    };
+
+    addRing(outer);
+    for (const hole of holes) {
+      holeIndices.push(verts.length / 2);
+      addRing(hole);
+    }
+
+    const triangles = earcut(verts, holeIndices.length ? holeIndices : null, 2);
+    if (!triangles || triangles.length === 0) continue;
+
+    for (let i = 0; i < triangles.length; i++) {
+      const vi = triangles[i] * 2;
+      allPositions.push(tileOriginX + verts[vi] * scale, yOffset, tileOriginZ + verts[vi + 1] * scale);
     }
   }
 
-  const triangles = earcut(verts, holeIndices.length ? holeIndices : null, 2);
-  if (!triangles || triangles.length === 0) return null;
-
-  const positions = new Float32Array(triangles.length * 3);
-  for (let i = 0; i < triangles.length; i++) {
-    const vi = triangles[i] * 2;
-    positions[i * 3]     = tileOriginX + verts[vi]     * scale;
-    positions[i * 3 + 1] = yOffset;
-    positions[i * 3 + 2] = tileOriginZ + verts[vi + 1] * scale;
-  }
+  if (allPositions.length === 0) return null;
 
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(allPositions), 3));
   geo.computeVertexNormals();
   return geo;
 };
@@ -64,11 +94,12 @@ export const buildTileGeometry = (vectorTile, tileOriginX, tileOriginZ, tileSize
     const layer = vectorTile.layers[layerName];
     if (!layer) continue;
 
-    const { color, y: yOffset } = LAYER_CONFIG[layerName];
+    const { color, y: yOffset, classes } = LAYER_CONFIG[layerName];
     const extent = layer.extent || 4096;
 
     for (let fi = 0; fi < layer.length; fi++) {
       const feature = layer.feature(fi);
+      if (classes && !classes.has(feature.properties?.class)) continue;
       if (feature.type !== 3 && feature.type !== 2) continue;
 
       const rawGeom = feature.loadGeometry();
@@ -77,7 +108,7 @@ export const buildTileGeometry = (vectorTile, tileOriginX, tileOriginZ, tileSize
         const rings = rawGeom.map((ring) => {
           const flat = new Array(ring.length * 2);
           for (let i = 0; i < ring.length; i++) {
-            flat[i * 2]     = ring[i].x;
+            flat[i * 2] = ring[i].x;
             flat[i * 2 + 1] = ring[i].y;
           }
           return flat;
@@ -85,11 +116,11 @@ export const buildTileGeometry = (vectorTile, tileOriginX, tileOriginZ, tileSize
 
         const geo = buildPolygonGeometry(rings, extent, tileOriginX, tileOriginZ, tileSize, yOffset);
         if (geo) meshes.push({ geometry: geo, color, renderOrder: li });
-
-      } else if (feature.type === 2 && layerName === 'transportation') {
+      } else if (feature.type === 2 && (layerName === 'transportation' || layerName === 'waterway')) {
+        const width = layerName === 'waterway' ? 1.0 : 1.5;
         for (const ring of rawGeom) {
           if (ring.length < 2) continue;
-          const lineGeo = buildLineGeometry(ring, extent, tileOriginX, tileOriginZ, tileSize, 1.5, yOffset);
+          const lineGeo = buildLineGeometry(ring, extent, tileOriginX, tileOriginZ, tileSize, width, yOffset);
           if (lineGeo) meshes.push({ geometry: lineGeo, color, renderOrder: li });
         }
       }
@@ -112,8 +143,8 @@ const buildLineGeometry = (points, extent, tileOriginX, tileOriginZ, tileSize, w
   const indices = [];
 
   for (let i = 0; i < points.length - 1; i++) {
-    const ax = tileOriginX + points[i].x     * scale;
-    const az = tileOriginZ + points[i].y     * scale;
+    const ax = tileOriginX + points[i].x * scale;
+    const az = tileOriginZ + points[i].y * scale;
     const bx = tileOriginX + points[i + 1].x * scale;
     const bz = tileOriginZ + points[i + 1].y * scale;
 
@@ -121,7 +152,7 @@ const buildLineGeometry = (points, extent, tileOriginX, tileOriginZ, tileSize, w
     const dz = bz - az;
     const len = Math.sqrt(dx * dx + dz * dz) || 1;
     const nx = (-dz / len) * hw;
-    const nz = (dx  / len) * hw;
+    const nz = (dx / len) * hw;
 
     const base = positions.length / 3;
     positions.push(ax + nx, yOffset, az + nz);

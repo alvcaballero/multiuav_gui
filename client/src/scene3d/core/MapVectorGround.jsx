@@ -32,7 +32,7 @@ const tileToLngLat = (tx, ty, z) => {
 const tileNWOffset = (tx, ty, z, origin) => {
   const nw = tileToLngLat(tx, ty, z);
   const originMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: origin.lng, lat: origin.lat }, 0);
-  const nwMerc     = maplibregl.MercatorCoordinate.fromLngLat({ lng: nw.lng,     lat: nw.lat     }, 0);
+  const nwMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: nw.lng, lat: nw.lat }, 0);
   const d = calculateDistanceMercatorToMeters(originMerc, nwMerc);
   return { x: d.x, z: -d.y }; // R3F: Z = -north = south
 };
@@ -69,7 +69,7 @@ const TileGroup = ({ tx, ty, origin }) => {
     (async () => {
       try {
         const tile = await fetchTile(ZOOM, tx, ty, ctrl.signal);
-        const nw   = tileNWOffset(tx, ty, ZOOM, origin);
+        const nw = tileNWOffset(tx, ty, ZOOM, origin);
         const size = tileSizeMeters(tx, ty, ZOOM);
         // MVT Y axis grows downward (south), matches our +Z=south convention
         const built = buildTileGeometry(tile, nw.x, nw.z, size);
@@ -92,18 +92,8 @@ const TileGroup = ({ tx, ty, origin }) => {
   return (
     <group ref={groupRef}>
       {meshes.map((m, i) => (
-        <mesh
-          key={i}
-          geometry={m.geometry}
-          renderOrder={m.renderOrder}
-        >
-          <meshStandardMaterial
-            color={m.color}
-            roughness={0.9}
-            metalness={0.0}
-            side={THREE.DoubleSide}
-            depthWrite
-          />
+        <mesh key={i} geometry={m.geometry} renderOrder={m.renderOrder}>
+          <meshBasicMaterial color={m.color} side={THREE.DoubleSide} depthWrite />
         </mesh>
       ))}
     </group>
@@ -118,8 +108,8 @@ const MapVectorGround = () => {
   if (!origin) return null;
 
   const center = lngLatToTile(origin.lng, origin.lat, ZOOM);
-  const half   = Math.floor(GRID / 2);
-  const tiles  = [];
+  const half = Math.floor(GRID / 2);
+  const tiles = [];
 
   for (let dy = -half; dy <= half; dy++) {
     for (let dx = -half; dx <= half; dx++) {

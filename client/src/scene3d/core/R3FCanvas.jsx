@@ -83,10 +83,10 @@ const R3FCanvas = ({ children }) => {
   return (
     <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}>
       {/* Iluminación */}
-      <Sky sunPosition={[100, 100, 100]} />
-      <fog attach="fog" args={['#abddff', FOG_NEAR, FOG_FAR]} />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[50, 50, 50]} intensity={3} />
+      <Sky sunPosition={[1, 0.4, 0]} rayleigh={0.5} turbidity={2} />
+      <fog attach="fog" args={['#cce0f0', FOG_NEAR, FOG_FAR]} />
+      <ambientLight intensity={2.5} />
+      <directionalLight position={[200, 400, 100]} intensity={1.5} castShadow={false} />
       {/*<Perf />*/}
 
       <CameraControls controlsRef={controlsRef} />
@@ -95,7 +95,19 @@ const R3FCanvas = ({ children }) => {
       <gridHelper />
 
       <Suspense fallback={null}>
-        {martinAvailable ? <MapVectorGround /> : online ? <MapTileGround /> : <Ground />}
+        {martinAvailable ? (
+          <>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
+              <planeGeometry args={[GROUND_SIZE * 8, GROUND_SIZE * 8]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+            <MapVectorGround />
+          </>
+        ) : online ? (
+          <MapTileGround />
+        ) : (
+          <Ground />
+        )}
         {children}
       </Suspense>
     </Canvas>
