@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { IconButton, Tooltip, Avatar, ListItemAvatar, ListItemText, ListItemButton, Typography } from '@mui/material';
 import BatteryFullIcon from '@mui/icons-material/BatteryFull';
@@ -111,61 +111,35 @@ const PositionBattery = React.memo(({ batteryLevel, charge, classes }) => {
   );
 });
 
-const customEqual = (oldValue, newValue) => {
-  return (
-    oldValue?.attributes?.landed_state === newValue?.attributes?.landed_state &&
-    oldValue?.attributes?.ignition === newValue?.attributes?.ignition &&
-    oldValue?.attributes?.batteryLevel === newValue?.attributes?.batteryLevel &&
-    oldValue?.attributes?.alarm === newValue?.attributes?.alarm &&
-    oldValue?.attributes?.charge === newValue?.attributes?.charge &&
-    oldValue?.speed === newValue?.speed &&
-    oldValue?.altitude === newValue?.altitude
-  );
-};
-
-const DeviceRow = ({ data, index, style }) => {
+const DeviceRow = ({ devices, index, style }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
 
-  const item = data[index];
-  const position = useSelector((state) => state.session.positions[item.id], customEqual);
+  const item = devices[index];
+  const position = useSelector((state) => state.session.positions[item.id]);
 
   const devicePrimary = item['name'];
-  const deviceSecondary = 'test';
 
-  const secondaryText = useCallback(() => {
-    let status;
-    if (item.status === 'online') {
-      status = item.status;
-    } else {
-      status = dayjs(item.lastUpdate).fromNow();
-    }
-    let uavStatus = null;
+  const status = item.status === 'online' ? item.status : dayjs(item.lastUpdate).fromNow();
 
-    if (position?.attributes?.navState) {
-      // {position.attributes.armState} -  {position.attributes.navState}
-      uavStatus = (
-        <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
-          {position.attributes.armState}
-        </Typography>
-      );
-    } else if (position?.attributes?.landed_state) {
-      uavStatus = (
-        <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
-          {position.attributes.landed_state}
-        </Typography>
-      );
-    }
+  const uavStatus = position?.attributes?.navState ? (
+    <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
+      {position.attributes.armState}
+    </Typography>
+  ) : position?.attributes?.landed_state ? (
+    <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
+      {position.attributes.landed_state}
+    </Typography>
+  ) : null;
 
-    return (
-      <>
-        {uavStatus}
-        <Typography component="span" style={{ fontSize: 12 }} className={classes[getStatusColor(item.status)]}>
-          {status}
-        </Typography>
-      </>
-    );
-  }, [item.status, item.lastUpdate, position?.attributes?.landed_state, classes]); // Dependencias de useCallback
+  const secondaryText = (
+    <>
+      {uavStatus}
+      <Typography component="span" style={{ fontSize: 12 }} className={classes[getStatusColor(item.status)]}>
+        {status}
+      </Typography>
+    </>
+  );
 
   return (
     <div style={style}>
@@ -177,7 +151,7 @@ const DeviceRow = ({ data, index, style }) => {
         </ListItemAvatar>
         <ListItemText
           primary={devicePrimary}
-          secondary={secondaryText()}
+          secondary={secondaryText}
           slotProps={{
             primary: { noWrap: true },
             secondary: { noWrap: true },

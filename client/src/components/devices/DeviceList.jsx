@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { FixedSizeList } from 'react-window';
+import { List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { makeStyles } from 'tss-react/mui';
-
 
 import { devicesActions } from '../../store';
 import DeviceRow from './DeviceRow';
@@ -22,11 +21,6 @@ const useStyles = makeStyles()((theme) => ({
 const DeviceList = ({ devices }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
-  const listInnerEl = useRef(null);
-
-  if (listInnerEl.current) {
-    listInnerEl.current.className = classes.listInner;
-  }
 
   const [, setTime] = useState(Date.now());
 
@@ -47,21 +41,14 @@ const DeviceList = ({ devices }) => {
   }, []);
 
   return (
-    <AutoSizer className={classes.list}>
-      {({ height, width }) => (
-        <FixedSizeList
-          width={width}
-          height={height}
-          itemCount={devices.length}
-          itemData={devices}
-          itemSize={72}
-          overscanCount={10}
-          innerRef={listInnerEl}
-        >
-          {DeviceRow}
-        </FixedSizeList>
-      )}
-    </AutoSizer>
+    <List
+      className={classes.list}
+      rowComponent={DeviceRow}
+      rowCount={devices.length}
+      rowHeight={72}
+      rowProps={{ devices }}
+      overscanCount={5}
+    />
   );
 };
 
