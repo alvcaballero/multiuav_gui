@@ -14,7 +14,7 @@ const Scene3DCanvas = ({ className, style }) => {
   const sessionMarkers = useSelector((state) => state.session.markers);
 
   return (
-    <div className={className} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, height: '100%', ...style }}>
+    <div className={className} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, ...style }}>
       <R3FCanvas>
         <R3FMission routes={routes} />
         <R3DMarkers elements={sessionMarkers} />

@@ -64,7 +64,7 @@ const useStyles = makeStyles()((theme) => ({
     top: theme.dimensions.navbarHeight,
     right: '0px',
     width: `calc(100% - ${theme.dimensions.drawerWidthDesktop})`,
-    height: `calc(100vh - ${theme.dimensions.navbarHeight})`,
+    height: `calc(100% - ${theme.dimensions.navbarHeight})`,
   },
 }));
 
