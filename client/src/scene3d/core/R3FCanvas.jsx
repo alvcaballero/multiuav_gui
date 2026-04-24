@@ -1,8 +1,7 @@
 import { Canvas } from '@react-three/fiber';
-import { Sky } from '@react-three/drei';
+import { Sky, Environment } from '@react-three/drei';
 import React, { Suspense, useRef } from 'react';
 import * as THREE from 'three';
-import { Perf } from 'r3f-perf';
 
 import CameraControls from './CameraControls';
 import OrientationGizmo from '../controls/OrientationGizmo';
@@ -26,7 +25,7 @@ const FOG_FAR = CAMERA_FAR;
 // Área de tierra interior + agua exterior (fallback offline)
 const Ground = () => (
   <>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
       <planeGeometry args={[GROUND_SIZE, GROUND_SIZE]} />
       <meshStandardMaterial map={groundTexture} roughness={0.8} metalness={0.2} />
     </mesh>
@@ -81,13 +80,28 @@ const R3FCanvas = ({ children }) => {
   const controlsRef = useRef();
 
   return (
-    <Canvas camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}>
+    <Canvas
+      shadows
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9 }}
+      camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}
+    >
       {/* Iluminación */}
-      <Sky sunPosition={[1, 0.4, 0]} rayleigh={0.5} turbidity={2} />
+      <Sky sunPosition={[1, 0.4, 0]} rayleigh={0.8} turbidity={8} />
+      <Environment preset="sunset" />
       <fog attach="fog" args={['#cce0f0', FOG_NEAR, FOG_FAR]} />
-      <ambientLight intensity={2.5} />
-      <directionalLight position={[200, 400, 100]} intensity={1.5} castShadow={false} />
-      {/*<Perf />*/}
+      <ambientLight intensity={0.4} />
+      <hemisphereLight args={['#87ceeb', '#4a7c59', 0.6]} />
+      <directionalLight
+        position={[200, 400, 100]}
+        intensity={2.5}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-far={1000}
+        shadow-camera-left={-500}
+        shadow-camera-right={500}
+        shadow-camera-top={500}
+        shadow-camera-bottom={-500}
+      />
 
       <CameraControls controlsRef={controlsRef} />
       <OrientationGizmo controlsRef={controlsRef} />

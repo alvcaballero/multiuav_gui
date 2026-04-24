@@ -33,6 +33,12 @@ const Marker = ({ item }) => {
 
   if (!cloneRef.current) {
     cloneRef.current = model.scene.clone();
+    cloneRef.current.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
   }
 
   return (
