@@ -59,6 +59,9 @@ ehthumbs.db
 Thumbs.db
 
 
+# Build artifacts
+client/build/
+
 # Dependencies
 node_modules/
 
