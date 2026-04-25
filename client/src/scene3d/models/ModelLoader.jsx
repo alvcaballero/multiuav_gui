@@ -8,7 +8,8 @@ const BASE_PATH = window.location.origin;
 
 const modelPaths = {
   windTurbine: `${BASE_PATH}/models/wind_turbine.glb`,
-  base: `${BASE_PATH}/models/base.glb`,
+  base1: `${BASE_PATH}/models/base.glb`,
+  base: `${BASE_PATH}/models/LandingPad.glb`,
   drone: `${BASE_PATH}/models/Drone.glb`,
   drone2: `${BASE_PATH}/models/DroneLVL2A.glb`,
   m300: `${BASE_PATH}/models/M300.glb`,

@@ -14,7 +14,6 @@ const R3FMission = ({ routes = [] }) => {
   const [routeWP, setRouteWP] = useState([]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
 
-
   function routesTowaypoints(myroute) {
     const waypoint = [];
     myroute.forEach((rt, indexRt) => {
@@ -33,18 +32,20 @@ const R3FMission = ({ routes = [] }) => {
 
   function routesToLines(routes) {
     let routelineVector = routes.map((rt) => {
-      let mylineVector3 = rt.map((point) => [point[0], point[2], -point[1]])
+      let mylineVector3 = rt.map((point) => [point[0], point[2], -point[1]]);
       return mylineVector3;
     });
     return routelineVector;
   }
 
-  function routesToXYZ(origin,routes) {
+  function routesToXYZ(origin, routes) {
     let routesXYZ = routes.map((rt, index_rt) => {
-      const position = rt.wp.map((wp, index_wp) => {return { lng: wp['pos'][1], lat: wp['pos'][0], alt: wp['pos'][2]}})
-       return LatLon2XYZ(origin,position)
-    })
-    return routesXYZ
+      const position = rt.wp.map((wp, index_wp) => {
+        return { lng: wp['pos'][1], lat: wp['pos'][0], alt: wp['pos'][2] };
+      });
+      return LatLon2XYZ(origin, position);
+    });
+    return routesXYZ;
   }
 
   useEffect(() => {
@@ -52,14 +53,14 @@ const R3FMission = ({ routes = [] }) => {
       let routexyz = routesToXYZ(origin3d, routes);
       setRouteWP(routesTowaypoints(routexyz));
       setRouteLines(routesToLines(routexyz));
+    } else {
+      setRouteWP([]);
+      setRouteLines([]);
     }
-  }, [routes,origin3d]);
-
-
+  }, [routes, origin3d]);
 
   return (
     <Fragment>
-
       {/* Waypoints*/}
       {React.Children.toArray(
         routeWP.map((wp, index) => (
@@ -83,6 +84,6 @@ const R3FMission = ({ routes = [] }) => {
         ))
       )}
     </Fragment>
-  )
-}
-export default R3FMission
+  );
+};
+export default R3FMission;
