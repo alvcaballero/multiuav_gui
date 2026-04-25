@@ -10,8 +10,8 @@ const LAYER_CONFIG = {
   landuse: { color: 0xe8ddd0, y: 0.01, classes: new Set(['residential', 'commercial', 'retail']) },
   park: { color: 0x90d060, y: 0.02, classes: null },
   water: { color: 0x60a8e8, y: 0.03, classes: null },
-  waterway: { color: 0x60a8e8, y: 0.04, classes: null },
-  transportation: { color: 0xffffff, y: 0.06, classes: null },
+  waterway: { color: 0x4488cc, y: 0.04, classes: null },
+  transportation: { color: 0xaaaaaa, y: 0.06, classes: null },
   building: { color: 0xc8bdb0, y: 0.08, classes: null },
 };
 
@@ -117,7 +117,7 @@ export const buildTileGeometry = (vectorTile, tileOriginX, tileOriginZ, tileSize
         const geo = buildPolygonGeometry(rings, extent, tileOriginX, tileOriginZ, tileSize, yOffset);
         if (geo) meshes.push({ geometry: geo, color, renderOrder: li });
       } else if (feature.type === 2 && (layerName === 'transportation' || layerName === 'waterway')) {
-        const width = layerName === 'waterway' ? 1.0 : 1.5;
+        const width = layerName === 'waterway' ? 3.0 : 6.0;
         for (const ring of rawGeom) {
           if (ring.length < 2) continue;
           const lineGeo = buildLineGeometry(ring, extent, tileOriginX, tileOriginZ, tileSize, width, yOffset);

@@ -113,7 +113,7 @@ const R3FCanvas = ({ children }) => {
           <>
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
               <planeGeometry args={[GROUND_SIZE * 8, GROUND_SIZE * 8]} />
-              <meshBasicMaterial color="#ffffff" />
+              <meshBasicMaterial color="#e8e4dc" />
             </mesh>
             <MapVectorGround />
           </>
