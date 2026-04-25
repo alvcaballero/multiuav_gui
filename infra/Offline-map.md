@@ -26,3 +26,12 @@ https://github.com/Geodan/glyphserver
 for import or export volume of maps i use docker volume snapshot
 
 https://github.com/junedkhatri31/docker-volume-snapshot
+
+# using martin
+
+follow the instructions: https://maplibre.org/martin/recipe-basemap-postgis/#generate-an-mbtiles-basemap-with-planetiler
+
+wget https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar\njava -Xmx1g -jar planetiler.jar --download --area=spain
+docker pull ghcr.io/maplibre/martin
+
+docker run --rm -p 8080:3000 -v $(pwd)/data:/files ghcr.io/maplibre/martin --webui enable-for-all /files/tiles.mbtiles
