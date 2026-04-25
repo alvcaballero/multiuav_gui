@@ -29,6 +29,13 @@ const Marker = ({ item }) => {
     };
   }, []);
 
+  // Sync position/rotation when item changes without remounting
+  useEffect(() => {
+    if (!cloneRef.current) return;
+    cloneRef.current.position.set(...item.pos);
+    cloneRef.current.rotation.set(0, headingToRotationY(item.heading), 0);
+  }, [item.pos, item.heading]);
+
   if (error || !model) return null;
 
   if (!cloneRef.current) {
@@ -39,14 +46,14 @@ const Marker = ({ item }) => {
         child.receiveShadow = true;
       }
     });
+    cloneRef.current.position.set(...item.pos);
+    cloneRef.current.rotation.set(0, headingToRotationY(item.heading), 0);
   }
 
   return (
     <primitive
       object={cloneRef.current}
-      position={item.pos}
       scale={[1, 1, 1]}
-      rotation={[0, headingToRotationY(item.heading), 0]}
     />
   );
 };
@@ -93,8 +100,8 @@ const R3DMarkers = ({ elements }) => {
 
   return (
     <>
-      {markers.map((item, index) => (
-        <Marker key={index} item={item} />
+      {markers.map((item) => (
+        <Marker key={`${item.type}-${item.title}`} item={item} />
       ))}
     </>
   );

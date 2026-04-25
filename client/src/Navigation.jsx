@@ -25,6 +25,7 @@ import SettingsDevicesPageEdit from './settings/SettingsDevicesPageEdit';
 import GeofencesPage from './pages/GeofencesPage';
 import GeofencePage from './settings/GeofencePage';
 import ChatPage from './pages/ChatPage';
+import Scene3DEditorPage from './pages/Scene3DEditorPage';
 const padding = {
   padding: 5,
 };
@@ -48,6 +49,7 @@ const Navigation = () => {
          */}
         <Route path="chat" element={<ChatPage />} />
         <Route path="3Dview" element={<MainPage3D />} />
+        <Route path="3Deditor" element={<Scene3DEditorPage />} />
         <Route path="3Dmission" element={<MissionPage3D />} />
 
         <Route path="mission" element={<MissionPage />} />
