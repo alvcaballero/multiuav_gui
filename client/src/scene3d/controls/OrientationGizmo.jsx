@@ -39,7 +39,7 @@ function makeLabelTexture(label, bgColor) {
 
 // ── component ──────────────────────────────────────────────────────────────────
 export default function OrientationGizmo({ controlsRef }) {
-  const { gl, camera: mainCamera, scene: mainScene, size } = useThree(); // mainScene needed for manual render
+  const { gl } = useThree();
 
   // ── isolated scene + camera for the gizmo ───────────────────────────────────
   const { gizmoScene, gizmoBox } = useMemo(() => {
@@ -63,22 +63,24 @@ export default function OrientationGizmo({ controlsRef }) {
   // ── animation state ──────────────────────────────────────────────────────────
   const animRef = useRef(null);
 
+  const cameraRef = useRef(null);
   const startAnimRef = useRef(null);
   startAnimRef.current = (faceNormal) => {
-    if (!controlsRef.current) return;
+    if (!controlsRef.current || !cameraRef.current) return;
+    const cam = cameraRef.current;
     const controls = controlsRef.current;
     const target = controls.target.clone();
-    const dist = mainCamera.position.clone().sub(target).length();
+    const dist = cam.position.clone().sub(target).length();
 
     let toPos = target.clone().addScaledVector(faceNormal, dist);
     if (Math.abs(faceNormal.y) > 0.9) {
       toPos = target.clone().add(new THREE.Vector3(0.001, dist * faceNormal.y, 0.001));
     }
 
-    const fromPos = mainCamera.position.clone();
-    const fromQ   = mainCamera.quaternion.clone();
+    const fromPos = cam.position.clone();
+    const fromQ   = cam.quaternion.clone();
 
-    const tempCam = mainCamera.clone();
+    const tempCam = cam.clone();
     tempCam.position.copy(toPos);
     tempCam.lookAt(target);
     const toQ = tempCam.quaternion.clone();
@@ -96,8 +98,10 @@ export default function OrientationGizmo({ controlsRef }) {
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
 
-      const vx = size.width  - GIZMO_SIZE;
-      const vy = size.height - GIZMO_SIZE;
+      const w = rect.width;
+      const h = rect.height;
+      const vx = w - GIZMO_SIZE;
+      const vy = h - GIZMO_SIZE;
       if (px < vx || py < vy) return;
 
       const ndcX =  ((px - vx) / GIZMO_SIZE) * 2 - 1;
@@ -113,12 +117,13 @@ export default function OrientationGizmo({ controlsRef }) {
 
     canvas.addEventListener('click', onClick);
     return () => canvas.removeEventListener('click', onClick);
-  }, [gl, size, gizmoCam, gizmoBox]);
+  }, [gl, gizmoCam, gizmoBox]);
 
   // ── per-frame ────────────────────────────────────────────────────────────────
   // Priority 1: R3F skips its own render when any useFrame has priority > 0,
   // so we MUST render the main scene ourselves first, then draw the gizmo on top.
-  useFrame((_, delta) => {
+  useFrame(({ scene, camera, size: frameSize, gl: frameGl }, delta) => {
+    cameraRef.current = camera;
     // 1. Animate main camera
     const anim = animRef.current;
     if (anim && controlsRef.current) {
@@ -126,44 +131,39 @@ export default function OrientationGizmo({ controlsRef }) {
       const t = Math.min(anim.elapsed / ANIM_DURATION, 1);
       const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
-      mainCamera.position.lerpVectors(anim.fromPos, anim.toPos, ease);
-      mainCamera.quaternion.slerpQuaternions(anim.fromQ, anim.toQ, ease);
+      camera.position.lerpVectors(anim.fromPos, anim.toPos, ease);
+      camera.quaternion.slerpQuaternions(anim.fromQ, anim.toQ, ease);
       controlsRef.current.update();
 
       if (t >= 1) animRef.current = null;
     }
 
-    const w   = size.width;
-    const h   = size.height;
-    const s   = GIZMO_SIZE;
-    const dpr = gl.getPixelRatio();
+    const w = frameSize.width;
+    const h = frameSize.height;
+    const s = GIZMO_SIZE;
 
-    // 2. Render main scene (full viewport)
-    gl.autoClear = true;
-    gl.setViewport(0, 0, Math.round(w * dpr), Math.round(h * dpr));
-    gl.setScissorTest(false);
-    gl.render(mainScene, mainCamera);
+    // 2. Render main scene (full viewport) — THREE multiplies by dpr internally
+    frameGl.autoClear = true;
+    frameGl.setViewport(0, 0, w, h);
+    frameGl.setScissorTest(false);
+    frameGl.render(scene, camera);
 
     // 3. Sync gizmo box rotation
-    gizmoBox.quaternion.copy(mainCamera.quaternion).invert();
+    gizmoBox.quaternion.copy(camera.quaternion).invert();
     gizmoCam.position.set(0, 0, GIZMO_CAMERA_DIST);
 
-    // 4. Render gizmo on top — bottom-right corner
-    const vx = Math.round((w - s) * dpr);
-    const vw = Math.round(s * dpr);
-    const vh = Math.round(s * dpr);
-
-    gl.autoClear = false;
-    gl.setScissorTest(true);
-    gl.setScissor(vx, 0, vw, vh);
-    gl.setViewport(vx, 0, vw, vh);
-    gl.clearDepth();
-    gl.render(gizmoScene, gizmoCam);
+    // 4. Render gizmo on top — bottom-right corner (WebGL Y=0 is bottom)
+    frameGl.autoClear = false;
+    frameGl.setScissorTest(true);
+    frameGl.setScissor(w - s, 0, s, s);
+    frameGl.setViewport(w - s, 0, s, s);
+    frameGl.clearDepth();
+    frameGl.render(gizmoScene, gizmoCam);
 
     // Restore
-    gl.setScissorTest(false);
-    gl.setViewport(0, 0, Math.round(w * dpr), Math.round(h * dpr));
-    gl.autoClear = true;
+    frameGl.setScissorTest(false);
+    frameGl.setViewport(0, 0, w, h);
+    frameGl.autoClear = true;
   }, 1);
 
   return null;

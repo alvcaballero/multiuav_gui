@@ -81,8 +81,9 @@ const R3FCanvas = ({ children }) => {
 
   return (
     <Canvas
-      shadows
+      shadows={{ type: THREE.PCFShadowMap }}
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9 }}
+      frameloop="always"
       camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}
     >
       {/* Iluminación */}
