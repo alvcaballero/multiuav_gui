@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useThree } from '@react-three/fiber';
 import { useModelLoader } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
@@ -9,59 +10,69 @@ const headingToRotationY = (heading = 0) => -(heading * Math.PI) / 180;
 
 const Marker = ({ item }) => {
   const { model, error } = useModelLoader(item.type);
-  const cloneRef = useRef(null);
+  const { invalidate } = useThree();
 
-  useEffect(() => {
-    return () => {
-      if (cloneRef.current) {
-        cloneRef.current.traverse((child) => {
-          if (child.isMesh) {
-            child.geometry.dispose();
-            if (Array.isArray(child.material)) {
-              child.material.forEach((m) => m.dispose());
-            } else {
-              child.material.dispose();
-            }
-          }
-        });
-        cloneRef.current = null;
-      }
-    };
-  }, []);
-
-  // Sync position/rotation when item changes without remounting
-  useEffect(() => {
-    if (!cloneRef.current) return;
-    cloneRef.current.position.set(...item.pos);
-    cloneRef.current.rotation.set(0, headingToRotationY(item.heading), 0);
-  }, [item.pos, item.heading]);
-
-  if (error || !model) return null;
-
-  if (!cloneRef.current) {
-    cloneRef.current = model.scene.clone();
-    cloneRef.current.traverse((child) => {
+  // Clone is created inside useMemo so React owns the lifecycle — safe with Strict Mode.
+  const clone = useMemo(() => {
+    if (!model) return null;
+    const c = model.scene.clone();
+    c.traverse((child) => {
       if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
+        child.castShadow = false;
+        child.receiveShadow = false;
+        // Let the PBR material pick up the scene environment map.
+        if (child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((m) => {
+            if (m.isMeshStandardMaterial) {
+              m.envMapIntensity = 1.2;
+              m.needsUpdate = true;
+            }
+          });
+        }
       }
     });
-    cloneRef.current.position.set(...item.pos);
-    cloneRef.current.rotation.set(0, headingToRotationY(item.heading), 0);
-  }
+    return c;
+  }, [model]);
 
-  return (
-    <primitive
-      object={cloneRef.current}
-      scale={[1, 1, 1]}
-    />
-  );
+  // Dispose the clone when it's replaced or the marker unmounts.
+  useEffect(() => {
+    return () => {
+      if (clone) {
+        clone.traverse((child) => {
+          if (child.isMesh) {
+            child.geometry.dispose();
+            if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
+            else child.material.dispose();
+          }
+        });
+      }
+    };
+  }, [clone]);
+
+  // Tell R3F to draw a frame when the model finishes loading.
+  useEffect(() => {
+    if (clone) invalidate();
+  }, [clone]);
+
+  // Sync position/rotation imperatively to avoid remounting the primitive.
+  useEffect(() => {
+    if (!clone) return;
+    clone.position.set(...item.pos);
+    clone.rotation.set(0, headingToRotationY(item.heading), 0);
+    invalidate();
+  }, [clone, item.pos, item.heading]);
+
+  if (error || !clone) return null;
+
+  return <primitive object={clone} />;
 };
 
 const R3DMarkers = ({ elements }) => {
   const [markers, setmarkers] = useState([]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const range = useSelector((state) => state.session.scene3d.range);
+  const { invalidate } = useThree();
 
   function list2Points(mylist) {
     const waypoints = [];
@@ -96,6 +107,7 @@ const R3DMarkers = ({ elements }) => {
       (item) => item.pos[0] > -range && item.pos[0] < range && item.pos[2] > -range && item.pos[2] < range
     );
     setmarkers(result);
+    invalidate();
   }, [origin3d, elements, range]);
 
   return (

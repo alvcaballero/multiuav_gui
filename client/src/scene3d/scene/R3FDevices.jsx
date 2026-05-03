@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { getModelPath } from '../models/ModelLoader.jsx';
@@ -8,9 +8,16 @@ import { useGLTF, useHelper } from '@react-three/drei';
 
 const RING_HEIGHT_OFFSET = 1; // meters above drone
 
+// Reusable objects to avoid per-frame allocations.
+const _qYaw = new THREE.Quaternion();
+const _qPitch = new THREE.Quaternion();
+const _axisY = new THREE.Vector3(0, 1, 0);
+const _axisX = new THREE.Vector3(1, 0, 0);
+
 const Device = ({ id, position, isSelected, category }) => {
   const meshRef = useRef();
   const camRef = useRef();
+  const { invalidate } = useThree();
 
   const currentPosition = useRef(new THREE.Vector3());
   const nextPosition = useRef(new THREE.Vector3());
@@ -18,6 +25,22 @@ const Device = ({ id, position, isSelected, category }) => {
   const model = useGLTF(getModelPath(category));
 
   useHelper(camRef, THREE.CameraHelper);
+
+  // Boost envMapIntensity so PBR materials pick up the scene environment.
+  useEffect(() => {
+    if (!meshRef.current) return;
+    meshRef.current.traverse((child) => {
+      if (child.isMesh) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((m) => {
+          if (m.isMeshStandardMaterial) {
+            m.envMapIntensity = 1.2;
+            m.needsUpdate = true;
+          }
+        });
+      }
+    });
+  }, [model]);
 
   const initialized = useRef(false);
 
@@ -30,20 +53,16 @@ const Device = ({ id, position, isSelected, category }) => {
         initialized.current = true;
       }
       if (meshRef.current && loc.course !== undefined) {
-        // course: 0=North, clockwise. Three.js Y-up: negate for correct direction.
         meshRef.current.rotation.y = -(loc.course * Math.PI) / 180;
       }
       if (camRef.current && loc.gimbalPitch !== undefined) {
-        // gimbalYaw is drone-relative: 140 = forward. Shift so 0 = forward.
-        // Negate because Three.js Y-axis rotates CCW but gimbal yaw is CW.
-        // Order: yaw around local Y first, then pitch around local X (no gimbal lock).
         const gimbalYawRad = loc.gimbalYaw !== undefined ? (-(loc.gimbalYaw - loc.course) * Math.PI) / 180 : 0;
         const pitchRad = (loc.gimbalPitch * Math.PI) / 180;
-
-        const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), gimbalYawRad);
-        const qPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchRad);
-        camRef.current.quaternion.copy(qYaw.multiply(qPitch));
+        _qYaw.setFromAxisAngle(_axisY, gimbalYawRad);
+        _qPitch.setFromAxisAngle(_axisX, pitchRad);
+        camRef.current.quaternion.copy(_qYaw.multiply(_qPitch));
       }
+      invalidate();
     }
   }, [position, id]);
 
@@ -51,6 +70,9 @@ const Device = ({ id, position, isSelected, category }) => {
     if (meshRef.current) {
       currentPosition.current.lerp(nextPosition.current, 0.07);
       meshRef.current.position.copy(currentPosition.current);
+      // Keep requesting frames while the drone is still moving toward target.
+      const dist = currentPosition.current.distanceToSquared(nextPosition.current);
+      if (dist > 0.0001) invalidate();
     }
   });
 
