@@ -178,10 +178,7 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 type="number"
                 sx={{ width: '15ch' }}
                 variant="standard"
-                inputProps={{
-                  maxLength: 16,
-                  step: 0.0001,
-                }}
+                slotProps={{ htmlInput: { maxLength: 16, step: 0.0001 } }}
                 defaultValue={waypoint.pos ? waypoint.pos[0] : 0}
                 onBlur={(e) => handlePositionChange(0, +e.target.value)}
               />
@@ -191,10 +188,7 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 type="number"
                 variant="standard"
                 sx={{ width: '15ch' }}
-                inputProps={{
-                  maxLength: 16,
-                  step: 0.0001,
-                }}
+                slotProps={{ htmlInput: { maxLength: 16, step: 0.0001 } }}
                 defaultValue={waypoint.pos ? waypoint.pos[1] : 0}
                 onBlur={(e) => handlePositionChange(1, +e.target.value)}
               />
@@ -245,7 +239,7 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
               />
             </Box>
             <Accordion expanded={expanded_ac === 'wp ' + indexWp} onChange={handleChange_ac('wp ' + indexWp)}>
-              <AccordionSummary expandIcon={<ExpandMore />}>
+              <AccordionSummary component="div" expandIcon={<ExpandMore />}>
                 <Typography sx={{ width: '33%', flexShrink: 0 }}>Actions</Typography>
               </AccordionSummary>
               <AccordionDetails className={classes.details}>
@@ -279,7 +273,7 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                       <Divider />
                     </Fragment>
                   ))}
-                <Box textAlign="center">
+                <Box sx={{ textAlign: 'center' }}>
                   {newactionmenu ? (
                     <Button
                       variant="contained"
@@ -311,7 +305,7 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 </Box>
               </AccordionDetails>
             </Accordion>
-            <Box textAlign="center">
+            <Box sx={{ textAlign: 'center' }}>
               <Button
                 variant="contained"
                 size="large"

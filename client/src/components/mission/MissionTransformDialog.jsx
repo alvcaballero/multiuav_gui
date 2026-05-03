@@ -112,7 +112,7 @@ const MissionTransformDialog = ({ open, onClose }) => {
                 size="small"
                 value={angleDeg}
                 onChange={(e) => setAngleDeg(e.target.value)}
-                inputProps={{ step: 1 }}
+                slotProps={{ htmlInput: { step: 1 } }}
                 fullWidth
               />
             </>
@@ -130,7 +130,7 @@ const MissionTransformDialog = ({ open, onClose }) => {
                 size="small"
                 value={deltaLat}
                 onChange={(e) => setDeltaLat(e.target.value)}
-                inputProps={{ step: 0.0001 }}
+                slotProps={{ htmlInput: { step: 0.0001 } }}
                 fullWidth
               />
               <TextField
@@ -139,7 +139,7 @@ const MissionTransformDialog = ({ open, onClose }) => {
                 size="small"
                 value={deltaLng}
                 onChange={(e) => setDeltaLng(e.target.value)}
-                inputProps={{ step: 0.0001 }}
+                slotProps={{ htmlInput: { step: 0.0001 } }}
                 fullWidth
               />
             </>

@@ -110,7 +110,7 @@ const ElementList = ({ markers, setMarkers }) => {
   return (
     <Fragment>
       {BasesExist ? (
-        <Box textAlign="center">
+        <Box sx={{ textAlign: 'center' }}>
           <Button
             variant="contained"
             size="large"
@@ -123,10 +123,9 @@ const ElementList = ({ markers, setMarkers }) => {
         </Box>
       ) : (
         <div className={classes.details}>
-          {React.Children.toArray(
-            Object.values(markers).map((base, index, list) => (
-              <Accordion expanded={expanded === 'Elements ' + index} onChange={handleChange('Elements ' + index)}>
-                <AccordionSummary expandIcon={<ExpandMore />}>
+          {Object.values(markers).map((base, index) => (
+              <Accordion key={index} expanded={expanded === 'Elements ' + index} onChange={handleChange('Elements ' + index)}>
+                <AccordionSummary component="div" expandIcon={<ExpandMore />}>
                   <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
                     {base.name || 'Group ' + index} {base.type && `(${base.type})`}
                   </Typography>
@@ -174,9 +173,8 @@ const ElementList = ({ markers, setMarkers }) => {
                   )}
                 </AccordionDetails>
               </Accordion>
-            ))
-          )}
-          <Box textAlign="center">
+          ))}
+          <Box sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"
               size="large"

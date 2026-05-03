@@ -39,13 +39,11 @@ const MenuItems = ({ items, depthLevel }) => {
       {items.submenu && (
         <Menu
           id="fade-menu"
-          MenuListProps={{
-            'aria-labelledby': 'fade-button',
-          }}
+          slotProps={{ list: { 'aria-labelledby': 'fade-button' } }}
           anchorEl={anchorEl}
           open={open}
           onClose={handleClose}
-          TransitionComponent={Fade}
+          slots={{ transition: Fade }}
         >
           {items.submenu.map((element, index) => {
             if (element.input) {

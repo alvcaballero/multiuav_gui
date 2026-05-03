@@ -83,7 +83,7 @@ const BaseSettings = ({
   return (
     <div>
       {dataExist ? (
-        <Box textAlign="center">
+        <Box sx={{ textAlign: 'center' }}>
           <Typography>No existen bases</Typography>
         </Box>
       ) : (

@@ -86,7 +86,7 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
   return (
     <Fragment>
       {!hasMission ? (
-        <Box textAlign="center">
+        <Box sx={{ textAlign: 'center' }}>
           <Button
             variant="contained"
             size="large"
@@ -135,7 +135,7 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
               </Fragment>
             ))}
             {!NoEdit && (
-              <Box textAlign="center">
+              <Box sx={{ textAlign: 'center' }}>
                 <Button
                   variant="contained"
                   size="large"

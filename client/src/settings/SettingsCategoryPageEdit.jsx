@@ -149,7 +149,7 @@ const SettingsCategoryPageEdit = () => {
                 </TableBody>
               </Table>
 
-              <Box textAlign="center">
+              <Box sx={{ textAlign: 'center' }}>
                 {typeMsgMenu ? (
                   <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
                     add a telemetry
@@ -218,7 +218,7 @@ const SettingsCategoryPageEdit = () => {
                 </TableBody>
               </Table>
 
-              <Box textAlign="center">
+              <Box sx={{ textAlign: 'center' }}>
                 {typeMsgMenu ? (
                   <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
                     add a telemetry

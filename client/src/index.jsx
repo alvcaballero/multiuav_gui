@@ -1,4 +1,3 @@
-import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
@@ -9,6 +8,7 @@ import Navigation from './Navigation';
 import preloadImages from './map/core/preloadImages';
 import { loadCustomModelPaths } from './scene3d/models/ModelLoader.jsx';
 import ServerProvider from './ServerProvider';
+import ErrorBoundary from './ErrorBoundary';
 import AppThemeProvider from './AppThemeProvider';
 
 preloadImages();
@@ -16,22 +16,19 @@ loadCustomModelPaths();
 
 const root = createRoot(document.getElementById('root'));
 root.render(
-  <Provider store={store} stabilityCheck="always">
-    <StyledEngineProvider injectFirst>
-      <AppThemeProvider>
-        <CssBaseline />
-        <ServerProvider>
-          <BrowserRouter>
-            <Navigation />
-          </BrowserRouter>
-          <ErrorHandler />
-        </ServerProvider>
-      </AppThemeProvider>
-    </StyledEngineProvider>
-  </Provider>
+  <ErrorBoundary>
+    <Provider store={store} stabilityCheck="always">
+      <StyledEngineProvider injectFirst>
+        <AppThemeProvider>
+          <CssBaseline />
+          <ServerProvider>
+            <BrowserRouter>
+              <Navigation />
+            </BrowserRouter>
+            <ErrorHandler />
+          </ServerProvider>
+        </AppThemeProvider>
+      </StyledEngineProvider>
+    </Provider>{' '}
+  </ErrorBoundary>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-//reportWebVitals();  <StrictMode> </StrictMode>

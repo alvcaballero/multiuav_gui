@@ -81,7 +81,7 @@ const MissionPanel = ({ SetOpenSave }) => {
           checked={groupRouteMode}
           onChange={toggleGroupRouteMode}
           name="groupRouteMode"
-          inputProps={{ 'aria-label': 'group route mode' }}
+          slotProps={{ input: { 'aria-label': 'group route mode' } }}
         />
         <IconButton onClick={() => setTransformOpen(true)}>
           <Handyman />

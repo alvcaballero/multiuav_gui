@@ -147,10 +147,7 @@ const SelectList = ({ Data, setData = () => null }) => {
                                       type="number"
                                       sx={{ width: '15ch' }}
                                       variant="standard"
-                                      inputProps={{
-                                        maxLength: 8,
-                                        step: 0.0001,
-                                      }}
+                                      slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
                                       value={element.latitude}
                                     />
                                     <TextField
@@ -159,10 +156,7 @@ const SelectList = ({ Data, setData = () => null }) => {
                                       type="number"
                                       variant="standard"
                                       sx={{ width: '15ch' }}
-                                      inputProps={{
-                                        maxLength: 8,
-                                        step: 0.0001,
-                                      }}
+                                      slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
                                       value={element.longitude}
                                     />
                                   </Box>

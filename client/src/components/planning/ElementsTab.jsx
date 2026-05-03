@@ -46,7 +46,7 @@ const ElementsTab = ({ markers, setMarkersBase, setMarkersElements, onSaveGlobal
           <ElementList markers={markers.elements} setMarkers={setMarkersElements} />
         </AccordionDetails>
       </Accordion>
-      <Box textAlign="center">
+      <Box sx={{ textAlign: 'center' }}>
         <Button variant="contained" size="large" className={classes.panelButton} onClick={onSaveGlobalMarkers}>
           Save Global Markers
         </Button>

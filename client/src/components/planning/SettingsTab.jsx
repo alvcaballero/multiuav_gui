@@ -47,7 +47,7 @@ const SettingsTab = ({
         goToBase={onGoToBase}
       />
 
-      <Box textAlign="center">
+      <Box sx={{ textAlign: 'center' }}>
         <div className={classes.panelButton} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
           <Button variant="contained" sx={{ width: '80%' }} onClick={onSendPlanning}>
             Planning

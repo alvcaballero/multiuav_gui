@@ -34,7 +34,7 @@ const PlanningToolbar = ({ onBack, onSave, onDelete, onReadFile, showMission, on
         checked={showMission}
         onChange={onToggleShowMission}
         name="checkedA"
-        inputProps={{ 'aria-label': 'secondary checkbox' }}
+        slotProps={{ input: { 'aria-label': 'secondary checkbox' } }}
       />
       <IconButton onClick={onSave}>
         <SaveAltIcon />

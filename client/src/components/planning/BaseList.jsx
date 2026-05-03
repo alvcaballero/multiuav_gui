@@ -118,7 +118,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
   return (
     <Fragment>
       {BasesExist ? (
-        <Box textAlign="center">
+        <Box sx={{ textAlign: 'center' }}>
           <Button
             variant="contained"
             size="large"
@@ -131,10 +131,9 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
         </Box>
       ) : (
         <div className={classes.details}>
-          {React.Children.toArray(
-            Object.values(markers).map((base, index, list) => (
-              <Accordion expanded={expanded === 'wp ' + index} onChange={handleChange('wp ' + index)}>
-                <AccordionSummary expandIcon={<ExpandMore />}>
+          {Object.values(markers).map((base, index) => (
+              <Accordion key={index} expanded={expanded === 'wp ' + index} onChange={handleChange('wp ' + index)}>
+                <AccordionSummary component="div" expandIcon={<ExpandMore />}>
                   <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
                     {base.name || type + ' ' + index}
                   </Typography>
@@ -181,10 +180,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                           type="number"
                           sx={{ width: '15ch' }}
                           variant="standard"
-                          inputProps={{
-                            maxLength: 8,
-                            step: 0.0001,
-                          }}
+                          slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
                           defaultValue={base.latitude}
                           onBlur={(e) => {
                             changeLat(index, +e.target.value);
@@ -196,10 +192,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                           type="number"
                           variant="standard"
                           sx={{ width: '15ch' }}
-                          inputProps={{
-                            maxLength: 8,
-                            step: 0.0001,
-                          }}
+                          slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
                           defaultValue={base.longitude}
                           onBlur={(e) => {
                             changeLng(index, +e.target.value);
@@ -211,7 +204,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                             type="number"
                             variant="standard"
                             sx={{ width: '18ch' }}
-                            inputProps={{ min: 0, max: 360, step: 1 }}
+                            slotProps={{ htmlInput: { min: 0, max: 360, step: 1 } }}
                             defaultValue={base.heading ?? 0}
                             onBlur={(e) => setHeading(index, e.target.value)}
                           />
@@ -229,7 +222,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                                   type="number"
                                   variant="standard"
                                   sx={{ width: '15ch' }}
-                                  inputProps={{ step: 0.0001 }}
+                                  slotProps={{ htmlInput: { step: 0.0001 } }}
                                   defaultValue={base.corners?.[cornerIdx]?.[1] ?? 0}
                                   onBlur={(e) => setCorner(index, cornerIdx, 'lat', e.target.value)}
                                 />
@@ -238,7 +231,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                                   type="number"
                                   variant="standard"
                                   sx={{ width: '15ch' }}
-                                  inputProps={{ step: 0.0001 }}
+                                  slotProps={{ htmlInput: { step: 0.0001 } }}
                                   defaultValue={base.corners?.[cornerIdx]?.[0] ?? 0}
                                   onBlur={(e) => setCorner(index, cornerIdx, 'lng', e.target.value)}
                                 />
@@ -251,9 +244,8 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                   )}
                 </AccordionDetails>
               </Accordion>
-            ))
-          )}
-          <Box textAlign="center">
+          ))}
+          <Box sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"
               size="large"

@@ -116,9 +116,13 @@ const MissionPage = () => {
               <Tab label="Statistics" sx={{ minHeight: 36, py: 0 }} />
               <Tab label="Elevation" sx={{ minHeight: 36, py: 0 }} />
             </Tabs>
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
-              {bottomTab === 0 && <MissionStats />}
-              {bottomTab === 1 && <MissionElevation />}
+            <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ flex: 1, overflow: 'hidden', display: bottomTab === 0 ? 'flex' : 'none', flexDirection: 'column' }}>
+                <MissionStats />
+              </Box>
+              <Box sx={{ flex: 1, overflow: 'hidden', display: bottomTab === 1 ? 'flex' : 'none', flexDirection: 'column' }}>
+                <MissionElevation />
+              </Box>
             </Box>
           </Paper>
         </div>

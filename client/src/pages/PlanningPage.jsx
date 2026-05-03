@@ -514,7 +514,7 @@ const PlanningPage = () => {
         </div>
         <div className={classes.panelElevation}>
           <div className={classes.middleStyle}>
-            <Paper square>
+            <Paper square sx={{ height: '100%' }}>
               <MissionElevation />
             </Paper>
           </div>

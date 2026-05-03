@@ -151,7 +151,7 @@ const XYZEditor = ({ label, xyz, onChange, showAlt = true }) => {
         onChange={(e) => setLocal((p) => ({ ...p, x: +e.target.value }))}
         onBlur={commit}
         onKeyDown={handleKey}
-        inputProps={{ step: 0.5 }}
+        slotProps={{ htmlInput: { step: 0.5 } }}
       />
       <TextField
         className={classes.coordField}
@@ -163,7 +163,7 @@ const XYZEditor = ({ label, xyz, onChange, showAlt = true }) => {
         onChange={(e) => setLocal((p) => ({ ...p, y: +e.target.value }))}
         onBlur={commit}
         onKeyDown={handleKey}
-        inputProps={{ step: 0.5 }}
+        slotProps={{ htmlInput: { step: 0.5 } }}
       />
       {showAlt && (
         <TextField
@@ -176,7 +176,7 @@ const XYZEditor = ({ label, xyz, onChange, showAlt = true }) => {
           onChange={(e) => setLocal((p) => ({ ...p, z: +e.target.value }))}
           onBlur={commit}
           onKeyDown={handleKey}
-          inputProps={{ step: 0.5 }}
+          slotProps={{ htmlInput: { step: 0.5 } }}
         />
       )}
     </Box>
@@ -208,7 +208,7 @@ const HeadingEditor = ({ heading, onChange }) => {
         onChange={(e) => setLocal(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => e.key === 'Enter' && commit()}
-        inputProps={{ min: 0, max: 360, step: 5 }}
+        slotProps={{ htmlInput: { min: 0, max: 360, step: 5 } }}
         sx={{ width: 150 }}
       />
       <Typography variant="caption" color="text.secondary">
@@ -281,7 +281,7 @@ const OriginTab = () => {
         onChange={(e) => setLatLocal(e.target.value)}
         onBlur={commitOrigin}
         onKeyDown={handleKey}
-        inputProps={{ step: 0.0001 }}
+        slotProps={{ htmlInput: { step: 0.0001 } }}
       />
       <TextField
         label="Longitude"
@@ -291,7 +291,7 @@ const OriginTab = () => {
         onChange={(e) => setLngLocal(e.target.value)}
         onBlur={commitOrigin}
         onKeyDown={handleKey}
-        inputProps={{ step: 0.0001 }}
+        slotProps={{ htmlInput: { step: 0.0001 } }}
       />
       <TextField
         label="Altitude (m)"
@@ -301,7 +301,7 @@ const OriginTab = () => {
         onChange={(e) => setAltLocal(e.target.value)}
         onBlur={commitOrigin}
         onKeyDown={handleKey}
-        inputProps={{ step: 1 }}
+        slotProps={{ htmlInput: { step: 1 } }}
       />
 
       <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
@@ -360,7 +360,7 @@ const OriginTab = () => {
         value={rangeLocal}
         onChange={(e) => setRangeLocal(e.target.value)}
         onBlur={() => applyOrigin(latLocal, lngLocal, altLocal)}
-        inputProps={{ step: 100, min: 100 }}
+        slotProps={{ htmlInput: { step: 100, min: 100 } }}
       />
     </Box>
   );
@@ -663,7 +663,7 @@ const TransformDialog = ({ open, onClose, routes, origin }) => {
                 size="small"
                 value={angleDeg}
                 onChange={(e) => setAngleDeg(e.target.value)}
-                inputProps={{ step: 1 }}
+                slotProps={{ htmlInput: { step: 1 } }}
                 fullWidth
               />
             </>
@@ -680,7 +680,7 @@ const TransformDialog = ({ open, onClose, routes, origin }) => {
                 size="small"
                 value={dx}
                 onChange={(e) => setDx(e.target.value)}
-                inputProps={{ step: 1 }}
+                slotProps={{ htmlInput: { step: 1 } }}
                 fullWidth
               />
               <TextField
@@ -689,7 +689,7 @@ const TransformDialog = ({ open, onClose, routes, origin }) => {
                 size="small"
                 value={dy}
                 onChange={(e) => setDy(e.target.value)}
-                inputProps={{ step: 1 }}
+                slotProps={{ htmlInput: { step: 1 } }}
                 fullWidth
               />
             </>

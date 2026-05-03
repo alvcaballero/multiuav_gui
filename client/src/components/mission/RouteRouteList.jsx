@@ -317,7 +317,7 @@ const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expa
               />
             ))}
 
-            <Box textAlign="center">
+            <Box sx={{ textAlign: 'center' }}>
               <Button
                 variant="contained"
                 size="large"

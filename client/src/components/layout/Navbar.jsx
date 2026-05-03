@@ -141,13 +141,11 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
               Management Tool
             </Typography>
           </Button>
-          {React.Children.toArray(
-            menuItemsData.map((menu, index) => (
-              <Fragment key={'s-' + index}>
-                <MenuItems items={menu} depthLevel={0} />
-              </Fragment>
-            ))
-          )}
+          {menuItemsData.map((menu, index) => (
+            <Fragment key={'s-' + index}>
+              <MenuItems items={menu} depthLevel={0} />
+            </Fragment>
+          ))}
         </Toolbar>
       </Container>
     </AppBar>
