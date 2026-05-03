@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useThree, useFrame } from '@react-three/fiber';
+import { useThree, useFrame, invalidate as r3fInvalidate } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
@@ -122,83 +122,64 @@ export default function CameraControls({ controlsRef: externalRef }) {
     };
   }, []);
 
+  // Reusable vectors to avoid per-frame allocation.
+  const _dir = useRef(new THREE.Vector3());
+  const _offset = useRef(new THREE.Vector3());
+
   useFrame((_, delta) => {
     if (!controlsRef.current) return;
 
     const controls = controlsRef.current;
+    let didMove = false;
 
-    // Smooth camera follow — lerp target (and camera) toward drone position
     if (mapFollow && followTargetRef.current) {
       const lerpFactor = 1 - Math.exp(-8 * delta);
-      const offset = camera.position.clone().sub(controls.target);
+      _offset.current.copy(camera.position).sub(controls.target);
       controls.target.lerp(followTargetRef.current, lerpFactor);
-      camera.position.copy(controls.target).add(offset);
+      camera.position.copy(controls.target).add(_offset.current);
       controls.update();
-    }
-    const direction = new THREE.Vector3();
-
-    // Forward/backward movement (W/S or up/down arrows)
-    if (keys.current.w || keys.current.ArrowUp) {
-      direction.z -= moveSpeed;
-    }
-    if (keys.current.s || keys.current.ArrowDown) {
-      direction.z += moveSpeed;
+      didMove = true;
     }
 
-    // Left/right movement (A/D or left/right arrows)
-    if (keys.current.a || keys.current.ArrowLeft) {
-      direction.x -= moveSpeed;
-    }
-    if (keys.current.d || keys.current.ArrowRight) {
-      direction.x += moveSpeed;
-    }
+    _dir.current.set(0, 0, 0);
+    if (keys.current.w || keys.current.ArrowUp)    _dir.current.z -= moveSpeed;
+    if (keys.current.s || keys.current.ArrowDown)  _dir.current.z += moveSpeed;
+    if (keys.current.a || keys.current.ArrowLeft)  _dir.current.x -= moveSpeed;
+    if (keys.current.d || keys.current.ArrowRight) _dir.current.x += moveSpeed;
+    if (keys.current.q) _dir.current.y += moveSpeed;
+    if (keys.current.e) _dir.current.y -= moveSpeed;
 
-    // Height control (Q/E)
-    if (keys.current.q) {
-      direction.y += moveSpeed;
-    }
-    if (keys.current.e) {
-      direction.y -= moveSpeed;
-    }
+    if (_dir.current.lengthSq() > 0) {
+      _dir.current.applyQuaternion(camera.quaternion);
+      const newY = camera.position.y + _dir.current.y;
 
-    // Apply movement to camera
-    if (direction.length() > 0) {
-      direction.applyQuaternion(camera.quaternion);
-
-      // Calculate new position
-      const newPosition = camera.position.clone().add(direction);
-      const newTarget = controls.target.clone().add(direction);
-
-      if (newPosition.y >= minHeight) {
-        // If new position is above ground, apply complete movement
-        camera.position.copy(newPosition);
-        controls.target.copy(newTarget);
+      if (newY >= minHeight) {
+        camera.position.add(_dir.current);
+        controls.target.add(_dir.current);
       } else {
-        // If new position is below ground, maintain horizontal position
-        // but adjust height to minimum allowed
-        camera.position.set(newPosition.x, minHeight, newPosition.z);
-        controls.target.set(newTarget.x, minHeight, newTarget.z);
+        _dir.current.y = 0;
+        camera.position.add(_dir.current);
+        controls.target.add(_dir.current);
+        camera.position.y = minHeight;
+        controls.target.y = minHeight;
       }
-
       controls.update();
+      didMove = true;
     }
 
-    // Emit bearing/pitch/roll so NorthOrientButton can replicate MapLibre's compass transform.
-    // bearing: clockwise angle from North (-Z axis in ENU/Three.js), in degrees.
-    // pitch: vertical tilt angle (0 = top-down, 90 = horizontal), in degrees.
-    // roll: currently 0 (OrbitControls doesn't roll), reserved for future use.
-    const offset = camera.position.clone().sub(controls.target);
-    const horizontalDist = Math.sqrt(offset.x * offset.x + offset.z * offset.z);
-    const bearingRad = Math.atan2(offset.x, -offset.z);
-    const pitchRad = Math.atan2(offset.y, horizontalDist);
-    const bearing = bearingRad * (180 / Math.PI);
-    const pitch = pitchRad * (180 / Math.PI);
+    _offset.current.copy(camera.position).sub(controls.target);
+    const horizontalDist = Math.sqrt(_offset.current.x * _offset.current.x + _offset.current.z * _offset.current.z);
+    const bearing = Math.atan2(_offset.current.x, -_offset.current.z) * (180 / Math.PI);
+    const pitch   = Math.atan2(_offset.current.y, horizontalDist) * (180 / Math.PI);
 
     const prev = lastAzimuthRef.current;
     if (!prev || Math.abs(bearing - prev.bearing) > 0.3 || Math.abs(pitch - prev.pitch) > 0.3) {
       lastAzimuthRef.current = { bearing, pitch, roll: 0 };
       window.dispatchEvent(new CustomEvent('camera-azimuth', { detail: { bearing, pitch, roll: 0 } }));
+      didMove = true;
     }
+
+    if (didMove) r3fInvalidate();
   });
 
   return (

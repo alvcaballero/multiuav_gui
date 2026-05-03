@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import { Sky, Environment } from '@react-three/drei';
 import React, { Suspense, useRef } from 'react';
 import * as THREE from 'three';
+import { Perf } from 'r3f-perf';
 
 import CameraControls from './CameraControls';
 import OrientationGizmo from '../controls/OrientationGizmo';
@@ -78,32 +79,23 @@ const R3FCanvas = ({ children }) => {
   const online = useOnlineStatus();
   const martinAvailable = useMartinStatus();
   const controlsRef = useRef();
+  const BASE_PATH = window.location.origin;
 
   return (
     <Canvas
-      shadows={{ type: THREE.PCFShadowMap }}
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9 }}
-      frameloop="always"
+      frameloop={import.meta.env.DEV ? 'always' : 'demand'}
       camera={{ position: [100, 100, 100], fov: 35, near: 2, far: CAMERA_FAR }}
     >
-      {/* Iluminación */}
       <Sky sunPosition={[1, 0.4, 0]} rayleigh={0.8} turbidity={8} />
-      <Environment preset="sunset" />
+      {/* background=false: generates the PBR env cubemap for metallic/roughness materials
+          without replacing the Sky or adding per-frame rendering cost */}
+      <Environment files={`/textures/venice_sunset_1k.hdr`} background={false} />
       <fog attach="fog" args={['#cce0f0', FOG_NEAR, FOG_FAR]} />
       <ambientLight intensity={0.4} />
       <hemisphereLight args={['#87ceeb', '#4a7c59', 0.6]} />
-      <directionalLight
-        position={[200, 400, 100]}
-        intensity={2.5}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={1000}
-        shadow-camera-left={-500}
-        shadow-camera-right={500}
-        shadow-camera-top={500}
-        shadow-camera-bottom={-500}
-      />
-
+      <directionalLight position={[200, 400, 100]} intensity={2.5} />
+      <Perf />
       <CameraControls controlsRef={controlsRef} />
       <OrientationGizmo controlsRef={controlsRef} />
       <axesHelper args={[5]} />
