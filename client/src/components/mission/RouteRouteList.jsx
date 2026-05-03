@@ -250,7 +250,7 @@ const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expa
 
   return (
     <Accordion expanded={expanded_route === 'Rute ' + index} onChange={handleChange_route('Rute ' + index)}>
-      <AccordionSummary expandIcon={<ExpandMore />}>
+      <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography
           sx={{
             width: '33%',

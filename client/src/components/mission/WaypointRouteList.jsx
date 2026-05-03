@@ -118,7 +118,7 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
 
   return (
     <Accordion expanded={expandWp === `WP${indexWp}`} onChange={handleChange_wp(`WP${indexWp}`)}>
-      <AccordionSummary expandIcon={<ExpandMore />}>
+      <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
         <IconButton
           sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
