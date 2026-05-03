@@ -1,25 +1,51 @@
 import React from 'react';
-import { Billboard, Text, Circle, calcPosFromAngles } from '@react-three/drei';
-import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
-import { useRef, useState, useMemo, useEffect, Suspense } from 'react';
-import { ColorType } from 'maplibre-gl';
+import { Billboard, Text, Circle, Box, Line } from '@react-three/drei';
+import { useRef, useState, useEffect } from 'react';
 
-const NumberedSphere = ({ position, number, color = '#ff0000', scale = 1 }) => {
+const NumberedSphere = ({ position, properties, hideLabel = false }) => {
   return (
-    <group position={position} scale={scale}>
-      <Word key={number} position={[0, 0, 0]} color={color}>
-        {number}
-      </Word>
+    <group position={position} scale={1}>
+      {!hideLabel && (
+        <Word key={properties.id} position={[0, 0, 0]} color={properties.color ?? '#ff0000'}>
+          {properties.id ?? 0}
+        </Word>
+      )}
+      {properties.yaw !== null && (
+        <group rotation={[0, (-properties.yaw * Math.PI) / 180, 0]}>
+          <Line
+            points={[
+              [0, 0, 0],
+              [0, 0, -1],
+            ]}
+            color={properties.color ?? '#ff0000'}
+          />
+          <Box args={[0.2, 0.2, 0.2]} position={[0, 0, -1]}>
+            <meshStandardMaterial color={properties.color ?? '#ff0000'} />
+          </Box>
+          {properties.gimbal_pitch !== null && (
+            <group rotation={[(properties.gimbal_pitch * Math.PI) / 180, 0, 0]}>
+              <Line
+                points={[
+                  [0, 0, 0],
+                  [0, 0, -1],
+                ]}
+                color={'#04ff00'}
+              />
+              <Box args={[0.1, 0.1, 0.1]} position={[0, 0, -1]} rotation={[0, 0, 0]}>
+                <meshStandardMaterial color={'#04ff00'} />
+              </Box>
+            </group>
+          )}
+        </group>
+      )}
     </group>
   );
 };
 
 function Word({ children, position, color }) {
-  const myColor = new THREE.Color();
   const fontProps = {
     font: '/Inter-Bold.woff',
-    fontSize: 1,
+    fontSize: 0.5,
     letterSpacing: -0.05,
     lineHeight: 1,
     'material-toneMapped': false,
@@ -28,18 +54,20 @@ function Word({ children, position, color }) {
   const [hovered, setHovered] = useState(false);
   const over = (e) => (e.stopPropagation(), setHovered(true));
   const out = () => setHovered(false);
-  // Change the mouse cursor on hover¨
+
   useEffect(() => {
-    if (hovered) document.body.style.cursor = 'pointer';
+    document.body.style.cursor = hovered ? 'pointer' : 'auto';
     return () => (document.body.style.cursor = 'auto');
   }, [hovered]);
-  // Tie component to the render-loop
-  useFrame(({ camera }) => {
-    ref.current.material.color.lerp(myColor.set(hovered ? 'black' : 'white'), 0.1);
-  });
+
+  // Only update color imperatively when hover state changes, not every frame.
+  useEffect(() => {
+    if (ref.current) ref.current.material.color.set(hovered ? 'black' : 'white');
+  }, [hovered]);
+
   return (
     <Billboard position={position}>
-      <Circle args={[1, 25]}>
+      <Circle args={[0.5, 25]}>
         <meshBasicMaterial attach="material" color={color} />
       </Circle>
       <Text

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
 import * as THREE from 'three';
@@ -7,23 +7,67 @@ import palette from '../../shared/palette';
 import { Line } from '@react-three/drei';
 
 import NumberedSphere from '../primitives/NumberedSphere';
-import { LatLon2XYZ } from '../core/convertion';
+import { LatLon2XYZ, LatLon2XYZObj } from '../core/convertion';
+
+const HIDE_RADIUS = 3; // meters: hide waypoint sphere when a device is within this distance
 
 const R3FMission = ({ routes = [] }) => {
   const [routeLines, setRouteLines] = useState([]);
   const [routeWP, setRouteWP] = useState([]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
+  const positions = useSelector((state) => state.session.positions);
 
-  function routesTowaypoints(myroute) {
+  const devicePositionsXYZ = useMemo(() => {
+    const pos = Object.values(positions).map((item) => ({
+      ...item,
+      lng: item.hasOwnProperty('longitude') ? item.longitude : origin3d.lng,
+      lat: item.hasOwnProperty('latitude') ? item.latitude : origin3d.lat,
+      alt: item.attributes?.home ? item.altitude - item.attributes.home[2] : (item.altitude ?? 0),
+    }));
+    return LatLon2XYZObj(origin3d, pos, 1000);
+  }, [positions, origin3d]);
+
+  const createFeature = (myroute, point) => {
+    let myYaw = null;
+    let gimbal_pitch = null;
+    if (
+      myroute[point.routeid].wp[point.id].hasOwnProperty('action') &&
+      myroute[point.routeid].wp[point.id].action?.hasOwnProperty('yaw')
+    ) {
+      myYaw = myroute[point.routeid].wp[point.id].action.yaw;
+    } else if (myroute[point.routeid].wp[point.id].hasOwnProperty('yaw')) {
+      myYaw = myroute[point.routeid].wp[point.id].yaw;
+    }
+
+    if (
+      myroute[point.routeid].wp[point.id].hasOwnProperty('action') &&
+      myroute[point.routeid].wp[point.id].action?.hasOwnProperty('gimbal')
+    ) {
+      gimbal_pitch = myroute[point.routeid].wp[point.id].action.gimbal;
+    } else if (myroute[point.routeid].wp[point.id].hasOwnProperty('gimbal')) {
+      gimbal_pitch = myroute[point.routeid].wp[point.id].gimbal;
+    }
+
+    return {
+      id: point.id,
+      route_id: point.routeid,
+      name: myroute[point.routeid].name,
+      yaw: myYaw,
+      gimbal_pitch: gimbal_pitch,
+      color: palette.colors_devices[point.routeid],
+    };
+  };
+
+  function routesTowaypoints(myroute, originalRoutes) {
     const waypoint = [];
     myroute.forEach((rt, indexRt) => {
       rt.forEach((wp, indexWp) => {
+        const feature = createFeature(originalRoutes, { id: indexWp, routeid: indexRt });
         waypoint.push({
           x: wp[0],
           y: wp[2],
           z: -wp[1],
-          id: indexWp,
-          routeid: indexRt,
+          properties: feature,
         });
       });
     });
@@ -51,7 +95,7 @@ const R3FMission = ({ routes = [] }) => {
   useEffect(() => {
     if (routes.length > 0) {
       let routexyz = routesToXYZ(origin3d, routes);
-      setRouteWP(routesTowaypoints(routexyz));
+      setRouteWP(routesTowaypoints(routexyz, routes));
       setRouteLines(routesToLines(routexyz));
     } else {
       setRouteWP([]);
@@ -63,11 +107,19 @@ const R3FMission = ({ routes = [] }) => {
     <Fragment>
       {/* Waypoints*/}
       {React.Children.toArray(
-        routeWP.map((wp, index) => (
-          <Fragment key={'wp' + index}>
-            <NumberedSphere position={[wp.x, wp.y, wp.z]} number={wp.id} color={palette.colors_devices[wp.routeid]} />
-          </Fragment>
-        ))
+        routeWP.map((wp, index) => {
+          const hideLabel = devicePositionsXYZ.some((dev) => {
+            const dx = dev.pos[0] - wp.x;
+            const dy = dev.pos[1] - wp.y;
+            const dz = dev.pos[2] - wp.z;
+            return Math.sqrt(dx * dx + dy * dy + dz * dz) < HIDE_RADIUS;
+          });
+          return (
+            <Fragment key={'wp' + index}>
+              <NumberedSphere position={[wp.x, wp.y, wp.z]} properties={wp.properties} hideLabel={hideLabel} />
+            </Fragment>
+          );
+        })
       )}
 
       {React.Children.toArray(
@@ -76,7 +128,7 @@ const R3FMission = ({ routes = [] }) => {
             <Line
               points={line}
               color={palette.colors_devices[index]}
-              linewidth={5}
+              linewidth={3}
               linecap={'round'}
               linejoin={'round'}
             />
