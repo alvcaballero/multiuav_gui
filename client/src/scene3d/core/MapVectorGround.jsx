@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
@@ -8,10 +9,17 @@ import { buildTileGeometry } from './mvt/buildTileGeometry';
 import { calculateDistanceMercatorToMeters } from './convertion';
 
 const ZOOM = 14;
-const GRID = 5; // 5×5 tiles
+const GRID = 5;
 const MARTIN_URL = `http://${window.location.hostname}:8080/tiles`;
 
-// ── tile coordinate helpers ────────────────────────────────────────────────
+// Shared materials — created once, never recreated per mesh or per render.
+const MATERIAL_CACHE = new Map();
+const getMaterial = (color) => {
+  if (!MATERIAL_CACHE.has(color)) {
+    MATERIAL_CACHE.set(color, new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, depthWrite: true }));
+  }
+  return MATERIAL_CACHE.get(color);
+};
 
 const lngLatToTile = (lng, lat, z) => {
   const n = 2 ** z;
@@ -28,13 +36,12 @@ const tileToLngLat = (tx, ty, z) => {
   return { lng, lat: (latRad * 180) / Math.PI };
 };
 
-// NW corner of a tile in scene-space meters (X=east, Z=south relative to origin)
 const tileNWOffset = (tx, ty, z, origin) => {
   const nw = tileToLngLat(tx, ty, z);
   const originMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: origin.lng, lat: origin.lat }, 0);
   const nwMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: nw.lng, lat: nw.lat }, 0);
   const d = calculateDistanceMercatorToMeters(originMerc, nwMerc);
-  return { x: d.x, z: -d.y }; // R3F: Z = -north = south
+  return { x: d.x, z: -d.y };
 };
 
 const tileSizeMeters = (tx, ty, z) => {
@@ -43,10 +50,8 @@ const tileSizeMeters = (tx, ty, z) => {
   const nwM = maplibregl.MercatorCoordinate.fromLngLat({ lng: nw.lng, lat: nw.lat }, 0);
   const seM = maplibregl.MercatorCoordinate.fromLngLat({ lng: se.lng, lat: se.lat }, 0);
   const d = calculateDistanceMercatorToMeters(nwM, seM);
-  return Math.abs(d.x); // tiles are ~square; use width
+  return Math.abs(d.x);
 };
-
-// ── fetch one MVT tile ─────────────────────────────────────────────────────
 
 const fetchTile = async (z, x, y, signal) => {
   const url = `${MARTIN_URL}/${z}/${x}/${y}`;
@@ -58,22 +63,24 @@ const fetchTile = async (z, x, y, signal) => {
 
 // ── per-tile mesh group ────────────────────────────────────────────────────
 
-const TileGroup = ({ tx, ty, origin }) => {
-  const groupRef = useRef();
+const TileGroup = ({ tx, ty, originLng, originLat }) => {
   const [meshes, setMeshes] = useState([]);
+  const { invalidate } = useThree();
 
   useEffect(() => {
-    if (!origin) return;
     const ctrl = new AbortController();
+    const origin = { lng: originLng, lat: originLat };
 
     (async () => {
       try {
         const tile = await fetchTile(ZOOM, tx, ty, ctrl.signal);
         const nw = tileNWOffset(tx, ty, ZOOM, origin);
         const size = tileSizeMeters(tx, ty, ZOOM);
-        // MVT Y axis grows downward (south), matches our +Z=south convention
         const built = buildTileGeometry(tile, nw.x, nw.z, size);
-        if (!ctrl.signal.aborted) setMeshes(built);
+        if (!ctrl.signal.aborted) {
+          setMeshes(built);
+          invalidate();
+        }
       } catch (e) {
         if (e.name !== 'AbortError') console.warn(`[MapVectorGround] tile ${tx}/${ty}:`, e.message);
       }
@@ -81,20 +88,17 @@ const TileGroup = ({ tx, ty, origin }) => {
 
     return () => {
       ctrl.abort();
-      // dispose geometries on unmount
       setMeshes((prev) => {
         prev.forEach((m) => m.geometry?.dispose());
         return [];
       });
     };
-  }, [tx, ty, origin]);
+  }, [tx, ty, originLng, originLat]);
 
   return (
-    <group ref={groupRef}>
+    <group>
       {meshes.map((m, i) => (
-        <mesh key={i} geometry={m.geometry} renderOrder={m.renderOrder}>
-          <meshBasicMaterial color={m.color} side={THREE.DoubleSide} depthWrite />
-        </mesh>
+        <mesh key={i} geometry={m.geometry} material={getMaterial(m.color)} renderOrder={m.renderOrder} />
       ))}
     </group>
   );
@@ -103,26 +107,30 @@ const TileGroup = ({ tx, ty, origin }) => {
 // ── root component ─────────────────────────────────────────────────────────
 
 const MapVectorGround = () => {
-  const origin = useSelector((state) => state.session.scene3d.origin);
+  const originLng = useSelector((state) => state.session.scene3d.origin?.lng);
+  const originLat = useSelector((state) => state.session.scene3d.origin?.lat);
 
-  if (!origin) return null;
-
-  const center = lngLatToTile(origin.lng, origin.lat, ZOOM);
-  const half = Math.floor(GRID / 2);
-  const tiles = [];
-
-  for (let dy = -half; dy <= half; dy++) {
-    for (let dx = -half; dx <= half; dx++) {
-      const tx = center.x + dx;
-      const ty = center.y + dy;
-      tiles.push({ tx, ty, key: `${tx}-${ty}` });
+  const tiles = useMemo(() => {
+    if (originLng == null || originLat == null) return null;
+    const center = lngLatToTile(originLng, originLat, ZOOM);
+    const half = Math.floor(GRID / 2);
+    const result = [];
+    for (let dy = -half; dy <= half; dy++) {
+      for (let dx = -half; dx <= half; dx++) {
+        const tx = center.x + dx;
+        const ty = center.y + dy;
+        result.push({ tx, ty, key: `${tx}-${ty}` });
+      }
     }
-  }
+    return result;
+  }, [originLng, originLat]);
+
+  if (!tiles) return null;
 
   return (
     <>
       {tiles.map(({ tx, ty, key }) => (
-        <TileGroup key={key} tx={tx} ty={ty} origin={origin} />
+        <TileGroup key={key} tx={tx} ty={ty} originLng={originLng} originLat={originLat} />
       ))}
     </>
   );
