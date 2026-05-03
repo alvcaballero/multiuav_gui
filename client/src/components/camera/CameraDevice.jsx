@@ -24,8 +24,8 @@ const useStyles = makeStyles()((theme) => ({
     background: 'black',
   },
   mediaMed: {
-    width: '34vw',
-    height: '40vh',
+    width: '40vw',
+    height: '59vh',
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
@@ -42,7 +42,6 @@ const useStyles = makeStyles()((theme) => ({
   gruopBtn: {
     display: 'flex',
     right: '5px',
-    height: '40px',
     position: 'absolute',
   },
   mediaButton: {
@@ -53,8 +52,8 @@ const useStyles = makeStyles()((theme) => ({
     display: 'block',
     width: 'calc( 100% - 60pt )',
     paddingLeft: '15pt',
-    paddingTop: '10pt',
-    paddingBottom: '10pt',
+    paddingTop: '3pt',
+    paddingBottom: '3pt',
     textAlign: 'left',
   },
   header: {
@@ -68,7 +67,7 @@ const useStyles = makeStyles()((theme) => ({
     position: 'fixed',
     zIndex: 6,
     left: '360px',
-    top: theme.spacing(15),
+    top: theme.spacing(12),
     transform: 'translateX(1%)',
   },
   root_max: {
@@ -118,7 +117,7 @@ const CameraDevice = React.memo(({ deviceId, onClose }) => {
 
   const myhostname = `${window.location.hostname}`;
 
-  const [cardSize, setCardSize] = useState(size.min);
+  const [cardSize, setCardSize] = useState(size.med);
   const [type, setType] = useState('Websocket');
   const [cameraSrc, setCameraSrc] = useState('');
   const [srcIp, setSrcIp] = useState('');
@@ -128,7 +127,7 @@ const CameraDevice = React.memo(({ deviceId, onClose }) => {
     cardSize === size.min ? classes.media : cardSize === size.med ? classes.mediaMed : classes.mediaMax;
 
   const ChangeMaxSize = () => {
-    setCardSize(cardSize === size.max ? size.min : size.max);
+    setCardSize(cardSize === size.max ? size.med : size.max);
   };
   const ChangeMedSize = () => {
     setCardSize(cardSize === size.med ? size.min : size.med);
@@ -136,7 +135,7 @@ const CameraDevice = React.memo(({ deviceId, onClose }) => {
 
   const closeCard = () => {
     onClose();
-    setCardSize(size.min);
+    setCardSize(size.med);
   };
 
   useEffect(() => {
