@@ -1,93 +1,54 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { Card, IconButton } from '@mui/material';
+import { Card, CardHeader, IconButton, CircularProgress, Typography, Box } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
+import dayjs from 'dayjs';
 
 import CloseIcon from '@mui/icons-material/Close';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 
 import novideo from '../../resources/images/placeholder.jpg';
+import { MediaMTXWebRTCReader } from './MediaMTXWebRTCReader';
 
 const useStyles = makeStyles()((theme) => ({
   card: {
     pointerEvents: 'auto',
   },
-  media: {
-    width: theme.dimensions.popupMaxWidth,
-    height: '16vh',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    background: 'black',
-  },
-  mediaMed: {
-    width: '40vw',
-    height: '59vh',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    background: 'black',
-  },
-  mediaMax: {
-    width: '95vw',
-    height: '90vh',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    background: 'black',
-  },
-  gruopBtn: {
-    display: 'flex',
-    right: '5px',
-    position: 'absolute',
-  },
   mediaButton: {
     color: theme.palette.colors.white,
     mixBlendMode: 'difference',
   },
-  tittle: {
-    display: 'block',
-    width: 'calc( 100% - 60pt )',
-    paddingLeft: '15pt',
-    paddingTop: '3pt',
-    paddingBottom: '3pt',
-    textAlign: 'left',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: theme.spacing(1, 1, 0, 2),
-  },
-  root: {
-    pointerEvents: 'none',
-    position: 'fixed',
-    zIndex: 6,
-    left: '360px',
-    top: theme.spacing(12),
-    transform: 'translateX(1%)',
-  },
-  root_max: {
-    pointerEvents: 'none',
-    position: 'fixed',
-    zIndex: 6,
-    left: '51%',
-    top: '5%',
-    transform: 'translateX(-50%)',
-  },
 }));
 
-const size = { min: 0, med: 2, max: 1 };
+const SIZE = { MIN: 'min', MED: 'med', MAX: 'max' };
+
+const SIZE_CONFIG = {
+  [SIZE.MIN]: {
+    frame: { width: '320px', height: '16vh' },
+    root: { left: '360px', top: '96px', transform: 'translateX(1%)' },
+  },
+  [SIZE.MED]: {
+    frame: { width: '40vw', height: '59vh' },
+    root: { left: '360px', top: '96px', transform: 'translateX(1%)' },
+  },
+  [SIZE.MAX]: {
+    frame: { width: '95vw', height: '90vh' },
+    root: { left: '51%', top: '5%', transform: 'translateX(-50%)' },
+  },
+};
+
+const hostname = window.location.hostname;
 
 const RenderImages = ({ datacamera }) => {
   const [camera_image, setcamera_image] = useState(novideo);
 
   useEffect(() => {
     if (datacamera != null) {
-      setcamera_image('data:image/bgr8;base64,' + datacamera.camera);
+      setcamera_image('data:image/jpeg;base64,' + datacamera.camera);
     } else {
       setcamera_image(novideo);
     }
@@ -95,100 +56,206 @@ const RenderImages = ({ datacamera }) => {
   return <img src={camera_image} style={{ width: '100%' }} />;
 };
 
+const MediaMTXPlayer = ({ src, videoRef }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!src) return;
+    setLoading(true);
+    setError(null);
+
+    const whepUrl = src.endsWith('/') ? `${src}whep` : `${src}/whep`;
+
+    const reader = new MediaMTXWebRTCReader({
+      url: whepUrl,
+      onTrack: (evt) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = evt.streams[0];
+        }
+      },
+      onError: (err) => {
+        setLoading(false);
+        setError(err);
+        console.error('MediaMTX Reader Error:', err);
+      },
+    });
+
+    return () => {
+      reader.close();
+      if (videoRef.current) videoRef.current.srcObject = null;
+    };
+  }, [src, videoRef]);
+
+  return (
+    <Box
+      sx={{
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: 'black',
+        overflow: 'hidden',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      {loading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <CircularProgress aria-label="Loading…" />
+        </Box>
+      )}
+      {error && !loading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            color: '#888',
+          }}
+        >
+          <Typography variant="caption" display="block">
+            STREAM NOT AVAILABLE
+          </Typography>
+        </Box>
+      )}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        onCanPlay={() => setLoading(false)}
+        style={{
+          objectFit: 'contain',
+          width: '100%',
+          height: '100%',
+          display: loading || error ? 'none' : 'block',
+        }}
+      />
+    </Box>
+  );
+};
+
 const customEqual = (oldValue, newValue) => {
   return oldValue?.camera === newValue?.camera && oldValue?.ip === newValue?.ip && oldValue?.name === newValue?.name;
 };
-
-/**
- * CameraDevice component displays a video stream from a specified device using WebRTC WebRTC_env or Websocket.
- *
- * @param {Object} props - The properties object.
- * @param {string} props.device - The device for get de streaming of video.
- * @param {function} props.onClose - The function to call when the close button is clicked.
- * @param {string} [props.datacamera] - for  Websocket image '.
- *
- * @returns {JSX.Element} The CameraWebRTCV3 component.
- */
 
 const CameraDevice = React.memo(({ deviceId, onClose }) => {
   const { classes } = useStyles();
   const device = useSelector((state) => state.devices.items[deviceId], customEqual);
   const datacamera = useSelector((state) => state.session.camera[deviceId]);
 
-  const myhostname = `${window.location.hostname}`;
+  const [cardSize, setCardSize] = useState(SIZE.MED);
+  const videoRef = useRef(null);
 
-  const [cardSize, setCardSize] = useState(size.med);
-  const [type, setType] = useState('Websocket');
-  const [cameraSrc, setCameraSrc] = useState('');
-  const [srcIp, setSrcIp] = useState('');
+  const { type, cameraSrc, srcIp } = useMemo(() => {
+    const cam = device?.camera?.[0];
+    if (!cam) return { type: 'Websocket', cameraSrc: '', srcIp: '' };
+    if (cam.type === 'WebRTC') {
+      return { type: 'WebRTC', cameraSrc: `${device.name}_${cam.source}`, srcIp: hostname };
+    }
+    return { type: cam.type, cameraSrc: cam.source, srcIp: device.ip };
+  }, [device]);
 
-  const rootClass = cardSize === size.min ? classes.root : cardSize === size.med ? classes.root : classes.root_max;
-  const frameClass =
-    cardSize === size.min ? classes.media : cardSize === size.med ? classes.mediaMed : classes.mediaMax;
+  const { frame: frameSx, root: rootSx } = SIZE_CONFIG[cardSize];
 
-  const ChangeMaxSize = () => {
-    setCardSize(cardSize === size.max ? size.med : size.max);
-  };
-  const ChangeMedSize = () => {
-    setCardSize(cardSize === size.med ? size.min : size.med);
-  };
+  const toggleCollapse = () => setCardSize((s) => (s === SIZE.MIN ? SIZE.MED : SIZE.MIN));
+  const toggleFullscreen = () => setCardSize((s) => (s === SIZE.MAX ? SIZE.MED : SIZE.MAX));
 
   const closeCard = () => {
     onClose();
-    setCardSize(size.med);
+    setCardSize(SIZE.MED);
   };
 
-  useEffect(() => {
-    if (device) {
-      console.log(`device in camera ${device.name}`);
-      if (device.camera.length > 0) {
-        console.log(`device in camera ${device.camera[0].type} - ${device.camera[0].source}`);
-        setType(device.camera[0].type);
-        if (device.camera[0].type === 'WebRTC') {
-          setCameraSrc(`${device.name}_${device.camera[0].source}`);
-          setSrcIp(myhostname);
-        } else {
-          setCameraSrc(device.camera[0].source);
-          setSrcIp(device.ip);
-        }
-      }
+  const handleCapture = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const timestamp = dayjs().format('YYYYMMDD_HHmmss');
+    const fileName = `snap_${cameraSrc}_${timestamp}.jpg`;
+
+    if (type === 'Websocket' && datacamera) {
+      const link = document.createElement('a');
+      link.href = 'data:image/jpeg;base64,' + datacamera.camera;
+      link.download = fileName;
+      link.click();
+    } else if (videoRef.current) {
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      ctx.drawImage(videoRef.current, 0, 0);
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/jpeg');
+      link.download = fileName;
+      link.click();
     }
-  }, [deviceId]);
+  };
 
   return (
-    <div className={rootClass}>
+    <Box
+      sx={{
+        pointerEvents: 'none',
+        position: 'fixed',
+        zIndex: 6,
+        ...rootSx,
+      }}
+    >
       {device && (
         <Card elevation={3} className={classes.card}>
-          <div className={classes.gruopBtn}>
-            <IconButton size="small" onClick={ChangeMedSize}>
-              {cardSize === size.med ? (
-                <MinimizeIcon fontSize="small" className={classes.mediaButton} />
-              ) : (
-                <MaximizeIcon fontSize="small" className={classes.mediaButton} />
-              )}
-            </IconButton>
-            <IconButton size="small" onClick={ChangeMaxSize}>
-              {cardSize === size.max ? (
-                <FullscreenExitIcon fontSize="small" className={classes.mediaButton} />
-              ) : (
-                <ZoomOutMapIcon fontSize="small" className={classes.mediaButton} />
-              )}
-            </IconButton>
-            <IconButton size="small" onClick={closeCard}>
-              <CloseIcon fontSize="small" className={classes.mediaButton} />
-            </IconButton>
-          </div>
-          <div className={classes.tittle}>{` ${device.name}`}</div>
-          {type === 'Websocket' ? (
-            <div className={frameClass}>
-              <RenderImages datacamera={datacamera} Myclass={frameClass} />
-            </div>
-          ) : (
-            <iframe src={`http://${srcIp}:8889/${cameraSrc}`} className={frameClass} title={`Image ${device.name}`} />
-          )}
+          <CardHeader
+            title={device.name}
+            slotProps={{ title: { variant: 'subtitle2' } }}
+            sx={{ py: 1, px: 1 }}
+            action={
+              <Box sx={{ display: 'flex' }}>
+                <IconButton size="small" onClick={handleCapture}>
+                  <CameraAltIcon fontSize="small" className={classes.mediaButton} />
+                </IconButton>
+                <IconButton size="small" onClick={toggleCollapse}>
+                  {cardSize === SIZE.MIN ? (
+                    <MaximizeIcon fontSize="small" className={classes.mediaButton} />
+                  ) : (
+                    <MinimizeIcon fontSize="small" className={classes.mediaButton} />
+                  )}
+                </IconButton>
+                <IconButton size="small" onClick={toggleFullscreen}>
+                  {cardSize === SIZE.MAX ? (
+                    <FullscreenExitIcon fontSize="small" className={classes.mediaButton} />
+                  ) : (
+                    <ZoomOutMapIcon fontSize="small" className={classes.mediaButton} />
+                  )}
+                </IconButton>
+                <IconButton size="small" onClick={closeCard}>
+                  <CloseIcon fontSize="small" className={classes.mediaButton} />
+                </IconButton>
+              </Box>
+            }
+          />
+          <Box
+            sx={{
+              ...frameSx,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'flex-start',
+              background: 'black',
+            }}
+          >
+            {type === 'Websocket' ? (
+              <RenderImages datacamera={datacamera} />
+            ) : (
+              <MediaMTXPlayer src={`http://${srcIp}:8889/${cameraSrc}`} videoRef={videoRef} />
+            )}
+          </Box>
         </Card>
       )}
-    </div>
+    </Box>
   );
 });
 
