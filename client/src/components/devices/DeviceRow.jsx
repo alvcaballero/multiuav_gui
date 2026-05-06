@@ -162,7 +162,7 @@ const DeviceRow = ({ devices, index, style }) => {
             {/* Top row: Speed and Altitude */}
             <div style={{ display: 'flex', gap: '8px' }}>
               {position?.speed !== undefined && <PositionSpeed speed={position.speed} />}
-              {position?.attributes?.localposition && position.attributes.localposition.length > 2 && <PositionAltitude altitude={position.attributes.localposition[2]} />}
+              {(position?.attributes?.localposition?.length ?? 0) > 2 && <PositionAltitude altitude={position.attributes.localposition[2]} />}
             </div>
             {/* Bottom row: Alarm, Ignition, Battery */}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
