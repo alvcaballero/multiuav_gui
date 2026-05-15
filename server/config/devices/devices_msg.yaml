@@ -2,7 +2,7 @@ agv:
   topics:
     position:
       name: '/odom'
-      messageType: 'sensor_msgs/NavSatFix'
+      messageType: 'nav_msgs/msg/Odometry'
     goal_cmd:
       name: '/goal_pose_cmd'
       messageType: 'geometry_msgs/msg/PoseStamped'
@@ -12,6 +12,12 @@ agv:
     goal_status:
       name: '/goal_pose_status'
       messageType: 'std_msgs/msg/String'
+    camera1:
+      name: '/stereo_camera/right/image_raw'
+      messageType: 'sensor_msgs/msg/Image'
+    camera:
+      name: '/stereo_camera/right/image_raw/compressed'
+      messageType: 'sensor_msgs/msg/CompressedImage'
 sjtu:
   topics:
     position:

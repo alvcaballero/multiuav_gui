@@ -127,7 +127,12 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
   if (type == 'obstacle_info' && msgType == 'sensor_msg/Range') {
     return { deviceId, obstacle_info: { down: msg.range } };
   }
-  if (type == 'camera' && msgType == 'sensor_msgs/CompressedImage') {
+  if (
+    type == 'camera' &&
+    (msgType == 'sensor_msgs/CompressedImage' ||
+      msgType == 'sensor_msgs/msg/CompressedImage' ||
+      msgType == 'sensor_msgs/msg/Image')
+  ) {
     return { deviceId, camera: msg.data }; // {deviceId:uav_id,camera:"data:image/jpg;base64," + msg.data};
   }
   if (type == 'flight_status' && msgType == 'std_msgs/UInt8') {
@@ -135,6 +140,12 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       deviceId,
       protocol: 'dji',
       landed_state: msg.data,
+    };
+  }
+  if (type == 'position' && msgType == 'nav_msgs/msg/Odometry') {
+    return {
+      deviceId,
+      localposition: { x: msg.pose.pose.position.x, y: msg.pose.pose.position.y, z: msg.pose.pose.position.z },
     };
   }
   if (type == 'sensors_humidity') {

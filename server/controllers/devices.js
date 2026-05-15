@@ -35,7 +35,7 @@ class devicesController {
     const result = validateDevice(req.body);
 
     if (!result.success) {
-     return res.status(400).json({ error: JSON.parse(result.error.message) });
+      return res.status(400).json({ error: JSON.parse(result.error.message) });
     }
 
     const newDevice = await DevicesModel.create(result.data);
@@ -69,6 +69,27 @@ class devicesController {
     const updatedDevice = await DevicesModel.editDevice(result.data);
 
     res.json(updatedDevice);
+  };
+
+  static getSnapshot = async (req, res) => {
+    const { id } = req.params;
+    const { cameraModel } = await import('../models/camera.js');
+
+    // Obtenemos el dispositivo de la DB (CRUD)
+    const device = await DevicesModel.getById({ id });
+
+    // Delegamos la captura al modelo de cámaras
+    const snapshot = await cameraModel.getSnapshot(device);
+
+    if (snapshot) {
+      res.writeHead(200, {
+        'Content-Type': snapshot.mimeType,
+        'Content-Length': snapshot.buffer.length,
+      });
+      return res.end(snapshot.buffer);
+    }
+
+    res.status(404).json({ message: 'No snapshot available. Ensure stream is active.' });
   };
 }
 

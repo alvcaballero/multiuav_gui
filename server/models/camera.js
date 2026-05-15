@@ -1,8 +1,57 @@
 import logger from '../common/logger.js';
+import { VideoUtils } from '../common/videoUtils.js';
+import { positionsModel } from './positions.js';
 
 const apiURL = 'http://localhost:9997/v3/config/paths';
 
 export class cameraModel {
+  /**
+   * Obtiene una captura de imagen (snapshot) del dron.
+   * Centraliza la lógica de decidir si usar ROS (caché) o FFmpeg (RTSP).
+   */
+  static async getSnapshot(device) {
+    if (!device) return null;
+
+    // 1. Prioridad: Caché de ROS (en positionsModel)
+    const cameraData = await positionsModel.getCamera();
+    const deviceCamera = cameraData[device.id];
+
+    if (deviceCamera && deviceCamera.camera) {
+      return {
+        buffer: Buffer.from(deviceCamera.camera, 'base64'),
+        base64: deviceCamera.camera,
+        mimeType: 'image/jpeg',
+      };
+    }
+
+    // 2. Alternativa: Captura vía FFmpeg desde MediaMTX/RTSP
+    if (device.camera && device.camera.length > 0) {
+      try {
+        const cameraConfig = device.camera[0];
+        const devicePort = device.ip === '127.0.0.1' ? 8553 : 8554;
+
+        let rtspUrl = `rtsp://${device.ip}:${devicePort}/${cameraConfig.source}`;
+        if (cameraConfig.type === 'WebRTC') {
+          // MediaMTX path format
+          rtspUrl = `rtsp://localhost:8554/${device.name}_${cameraConfig.source}`;
+        }
+
+        const imgBuffer = await VideoUtils.captureFrame(rtspUrl);
+        if (imgBuffer) {
+          return {
+            buffer: imgBuffer,
+            base64: imgBuffer.toString('base64'),
+            mimeType: 'image/jpeg',
+          };
+        }
+      } catch (error) {
+        logger.error(`Error en captura FFmpeg para ${device.name}: ${error.message}`);
+      }
+    }
+
+    return null;
+  }
+
   static async addCameraWebRTC(device) {
     logger.info(`Adding WebRTC cameras for device ${device.name}`);
     const devicePort = device.ip === '127.0.0.1' ? 8553 : 8554;

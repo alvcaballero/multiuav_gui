@@ -7,6 +7,7 @@ export const createDevicesRouter = () => {
   devicesRouter.get('/', devicesController.getAll);
   devicesRouter.post('/', devicesController.create);
   devicesRouter.get('/:id', devicesController.getById);
+  devicesRouter.get('/:id/snapshot', devicesController.getSnapshot);
   devicesRouter.delete('/:id', devicesController.delete);
   devicesRouter.put('/:id', devicesController.update);
   devicesRouter.patch('/:id');
