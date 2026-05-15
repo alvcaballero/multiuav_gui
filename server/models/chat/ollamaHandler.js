@@ -1,6 +1,6 @@
 import { Ollama } from 'ollama';
 import { BaseLLMHandler } from './baseLLMhandler.js';
-import { SystemPrompts } from './prompts/index.js';
+import { SystemPrompts } from './agents/index.js';
 import { chatLogger } from '../../common/logger.js';
 
 

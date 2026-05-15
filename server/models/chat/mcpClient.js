@@ -23,7 +23,7 @@ class MCPclient {
   async connectStdio() {
     this.transport = new StdioClientTransport({
       command: 'npx',
-      args: ['-y', 'tsx', '/home/grvc/mcpServers/muav_gui_assistant/src/index.ts', 'stdio'],
+      args: ['-y', 'tsx', '/home/grvc/work/px4/llm_planner_gcs/mcp_server/src/index.ts', 'stdio'],
     });
   }
   async connectHttp() {

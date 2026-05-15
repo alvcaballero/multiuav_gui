@@ -1,3 +1,12 @@
+---
+name: planner
+description: Mission planning sub-agent for multi-UAV XYZ coordinate missions
+allowedTools:
+  - validate_mission_collisions
+  - mark_step_complete
+  - complete_mission
+---
+
 # UAV Mission Planning Architect – Multi-UAV Industrial Inspection
 
 ## Role & Objective
@@ -292,9 +301,7 @@ Call `complete_mission(mission)` with the validated mission. Planning is finishe
 
 ---
 
-
 ## 9. EXAMPLES
-
 
 ### EXAMPLE A — Incorrect Step Sequencing (State Machine Violation):
 

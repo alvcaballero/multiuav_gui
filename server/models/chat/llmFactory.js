@@ -2,7 +2,7 @@ import { OpenAIHandler } from './openaiHandler.js';
 import { GeminiHandler } from './geminiHandler.js';
 import { AnthropicHandler } from './antropicHandler.js';
 import { OllamaHandler } from './ollamaHandler.js';
-import { SystemPrompts } from './prompts/index.js';
+import { SystemPrompts } from './agents/index.js';
 
 /**
  * Factory para crear instancias de manejadores de LLM
