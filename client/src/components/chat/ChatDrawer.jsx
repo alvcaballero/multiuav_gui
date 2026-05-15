@@ -209,7 +209,8 @@ const ChatDrawer = ({ open, onClose }) => {
   }, [messages]);
 
   const handleSendMessage = async (messageToSend, fromAudio = false) => {
-    if (!messageToSend.trim() || loading.sendingMessage) return;
+    const isEmpty = Array.isArray(messageToSend) ? messageToSend.length === 0 : !messageToSend.trim();
+    if (isEmpty || loading.sendingMessage) return;
 
     try {
       dispatch(chatActions.setLoading({ key: 'sendingMessage', value: true }));
@@ -544,7 +545,7 @@ const ChatDrawer = ({ open, onClose }) => {
 
             {/* Chat Selector */}
             <Box sx={{ p: 1, borderBottom: '1px solid #e0e0e0', backgroundColor: '#fafafa' }}>
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <FormControl size="small" sx={{ flexGrow: 1 }}>
                   <Select
                     value={activeChatId || 'new'}

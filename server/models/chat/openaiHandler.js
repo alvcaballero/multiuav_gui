@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
-import { SystemPrompts } from './prompts/index.js';
+import { SystemPrompts } from './agents/index.js';
 import { logger, chatLogger } from '../../common/logger.js';
 
 //suported roles= 'assistant', 'system', 'developer', and 'user'
@@ -112,22 +112,68 @@ class OpenAIHandler extends BaseLLMHandler {
     });
   }
 
-  convertMsg(message = null, conversationHistory) {
-    let lastconversation = conversationHistory
-      .filter((msg) => msg.message.role !== 'system')
-      .map((msg) => {
-        if (typeof msg.message.content === 'string') {
-          return {
-            role: msg.message.role,
-            content: msg.message.content,
-          };
-        } else {
-          return { ...msg.message };
+  /**
+   * Expands tool outputs by appending an input_image block when the tool result
+   * contains image_data (same convention as Gemini's inlineData support).
+   * @param {Array} toolOutputs
+   * @returns {Array} Flat list of function_call_output items + optional input_image items
+   */
+  _expandToolOutputsWithImages(toolOutputs) {
+    const expanded = [];
+    for (const output of toolOutputs) {
+      expanded.push(output);
+      try {
+        const raw = typeof output.output === 'string' ? JSON.parse(output.output) : output.output;
+        const inner = raw?.content?.[0]?.text;
+        const parsed = typeof inner === 'string' ? JSON.parse(inner) : inner;
+        if (parsed?.image_data) {
+          const mimeType = parsed.mime_type || 'image/jpeg';
+          expanded.push({
+            role: 'user',
+            content: [{ type: 'input_image', image_url: `data:${mimeType};base64,${parsed.image_data}` }],
+          });
         }
-      });
+      } catch {
+        // no image_data, skip
+      }
+    }
+    return expanded;
+  }
+
+  convertMsg(message = null, conversationHistory) {
+    const lastconversation = [];
+    for (const msg of conversationHistory) {
+      if (msg.message.role === 'system') continue;
+
+      if (typeof msg.message.content === 'string') {
+        lastconversation.push({ role: msg.message.role, content: msg.message.content });
+      } else {
+        lastconversation.push({ ...msg.message });
+      }
+
+      // If this is a tool output with image_data, inject the image block right after
+      if (msg.message.type === 'function_call_output') {
+        try {
+          const raw = typeof msg.message.output === 'string' ? JSON.parse(msg.message.output) : msg.message.output;
+          const inner = raw?.content?.[0]?.text;
+          const parsed = typeof inner === 'string' ? JSON.parse(inner) : inner;
+          if (parsed?.image_data) {
+            const mimeType = parsed.mime_type || 'image/jpeg';
+            lastconversation.push({
+              role: 'user',
+              content: [{ type: 'input_image', image_url: `data:${mimeType};base64,${parsed.image_data}` }],
+            });
+          }
+        } catch {
+          // no image_data, skip
+        }
+      }
+    }
+
     if (message === null) {
       return lastconversation;
     }
+    // message can be a string or an array of content blocks (input_text / input_image)
     return [...lastconversation, { role: 'user', content: message }];
   }
 
@@ -225,7 +271,7 @@ class OpenAIHandler extends BaseLLMHandler {
 
       // Tool continuation - must send tool outputs in input
       if (toolOutputs && toolOutputs.length > 0) {
-        params.input = [...toolOutputs];
+        params.input = this._expandToolOutputsWithImages(toolOutputs);
         // Add force finish message after tool outputs to ensure final response
         if (forceFinish) {
           params.input.push(forceFinishMessage);
@@ -251,7 +297,7 @@ class OpenAIHandler extends BaseLLMHandler {
 
       // Tool continuation - must send tool outputs in input
       if (toolOutputs && toolOutputs.length > 0) {
-        params.input = [...toolOutputs];
+        params.input = this._expandToolOutputsWithImages(toolOutputs);
         // Add force finish message after tool outputs to ensure final response
         if (forceFinish) {
           params.input.push(forceFinishMessage);
@@ -273,7 +319,18 @@ class OpenAIHandler extends BaseLLMHandler {
     }
     // CASE 3: First message or fallback (full history path)
     else {
-      params.input = this.convertMsg(message, conversationHistory);
+      const historyInput = this.convertMsg(message, conversationHistory);
+
+      if (toolOutputs && toolOutputs.length > 0) {
+        // Tool continuation without session: history + expanded tool outputs
+        params.input = [...historyInput, ...this._expandToolOutputsWithImages(toolOutputs)];
+        if (forceFinish) {
+          params.input.push(forceFinishMessage);
+        }
+      } else {
+        params.input = historyInput;
+      }
+
       // Send system prompt as instructions (separate from input, like Gemini's systemInstruction)
       const systemText = instructions || this.systemPrompt;
       if (systemText) {
@@ -298,6 +355,9 @@ class OpenAIHandler extends BaseLLMHandler {
           ? `previousResponseId: ${previousResponseId.substring(0, 20)}...`
           : 'none';
       chatLogger.info(`→ Sending message to OpenAI (${logId})...`);
+      if (Array.isArray(params.input) && params.input.length === 0 && !params.conversation) {
+        throw new Error('params.input is empty and no conversation/session — cannot send request to OpenAI');
+      }
       const response = await this.client.responses.create(params);
 
       // Verificar el estado de la respuesta
@@ -346,6 +406,7 @@ class OpenAIHandler extends BaseLLMHandler {
           sessionId: null,
           previousResponseId: null,
           instructions,
+          toolOutputs,
         });
         result.sessionCleared = true; // Signal for handleSessionError to recreate
         return result;
@@ -358,6 +419,7 @@ class OpenAIHandler extends BaseLLMHandler {
           sessionId: null,
           previousResponseId: null,
           instructions,
+          toolOutputs,
         });
         result.responseIdCleared = true; // Signal to clear stored responseId
         return result;

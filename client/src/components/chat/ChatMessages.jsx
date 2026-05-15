@@ -34,6 +34,16 @@ const convertMsg = (msg) => {
 
   const status = msg.message.status || null;
 
+  // Multipart content: array of input_text / input_image blocks (user messages with images)
+  if (Array.isArray(msg.message.content) && msg.message.content.some((b) => b.type === 'input_image')) {
+    return {
+      role: msg.message.role,
+      type: 'multipart',
+      content: msg.message.content,
+      status,
+    };
+  }
+
   if (typeof msg.message.content === 'string' && (msg.message.type === 'text' || !msg.message.type)) {
     return {
       role: msg.message.role,
@@ -81,13 +91,13 @@ const convertMsg = (msg) => {
     let output = msg.message.output || msg.message.content;
 
     if (typeof output === 'string') {
-      try {
-        output = JSON.parse(output);
-      } catch (e) {
-        // Keep as string if not valid JSON
-      }
+      try { output = JSON.parse(output); } catch (e) { /* keep as string */ }
     }
-    
+
+    // MCP wraps the real payload inside content[0].text as a JSON string — unwrap it
+    if (output?.content?.[0]?.text) {
+      try { output = JSON.parse(output.content[0].text); } catch (e) { /* keep outer */ }
+    }
 
     return {
       role: 'assistant',
@@ -435,8 +445,13 @@ export const MessageBubble = memo(({ message, chatId }) => {
     let resultSummary = 'Result';
     let hasError = false;
     const hasMissionDataResult =  name === 'request_mission_plan';
-    let missionPayload = content?.content[0]?.text
-    let missionData = null
+    let missionPayload = content?.content?.[0]?.text;
+    let missionData = null;
+
+    // Extract image if tool result contains image_data
+    const imageData = content?.image_data;
+    const imageMime = content?.mime_type || 'image/jpeg';
+    const imageSrc = imageData ? `data:${imageMime};base64,${imageData}` : null;
 
     try {
       missionData = JSON.parse(missionPayload)
@@ -486,6 +501,15 @@ export const MessageBubble = memo(({ message, chatId }) => {
 
     return (
       <ListItem sx={{ mb: 1, display: 'block', px: 2 }}>
+        {imageSrc && (
+          <Box sx={{ mb: 1, pl: 0.5 }}>
+            <img
+              src={imageSrc}
+              alt={`${name} result`}
+              style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 8, display: 'block' }}
+            />
+          </Box>
+        )}
         <Accordion sx={accordionStyle(hasError ? '#f44336' : '#4caf50')}>
           <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />} sx={summaryStyle}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
@@ -555,7 +579,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
           cursor: 'context-menu',
         }}
       >
-        <Stack direction={isAI ? 'row' : 'row-reverse'} alignItems="flex-start" spacing={1} sx={{ width: '100%' }}>
+        <Stack direction={isAI ? 'row' : 'row-reverse'} spacing={1} sx={{ alignItems: 'flex-start', width: '100%' }}>
           {!isAI && (
             <Avatar sx={{ bgcolor: '#ed6c02', width: 32, height: 32, mt: 0.5 }}>
               <PersonIcon fontSize="small" />
@@ -602,6 +626,30 @@ export const MessageBubble = memo(({ message, chatId }) => {
               >
                 {content}
               </ReactMarkdown>
+            ) : type === 'multipart' ? (
+              <Box>
+                {content.map((block, i) => {
+                  if (block.type === 'input_text' && block.text?.trim()) {
+                    return (
+                      <Typography key={i} variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
+                        {block.text}
+                      </Typography>
+                    );
+                  }
+                  if (block.type === 'input_image') {
+                    return (
+                      <Box key={i} sx={{ mt: 1 }}>
+                        <img
+                          src={block.image_url}
+                          alt="attached"
+                          style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, display: 'block' }}
+                        />
+                      </Box>
+                    );
+                  }
+                  return null;
+                })}
+              </Box>
             ) : (
               <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                 {content}

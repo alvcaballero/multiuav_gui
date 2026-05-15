@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
-import { SystemPrompts } from './prompts/index.js';
+import { SystemPrompts } from './agents/index.js';
 import logger, { chatLogger } from '../../common/logger.js';
 import { tr } from 'zod/v4/locales';
 
@@ -84,20 +84,38 @@ class GeminiHandler extends BaseLLMHandler {
         try {
           let output = typeof item.output === 'string' ? JSON.parse(item.output) : (item.output || {});
           try {
-          response = typeof output.content[0].text  === 'string' ? JSON.parse(output.content[0].text) : output.content[0].text;
-          } catch (e) { 
-            response = { text: output.content[0].text || output.content[0] || output };
+            response =
+              typeof output.content?.[0]?.text === 'string'
+                ? JSON.parse(output.content[0].text)
+                : output.content?.[0]?.text || output.content || output;
+          } catch (e) {
+            response = { text: output.content?.[0]?.text || output.content?.[0] || output };
           }
 
           if (item.call_id) {
             args.call_id = item.call_id; // Preserve call_id for matching responses to tool calls
           }
-        } catch (e) { /* keep empty */ }
+        } catch (e) {
+          /* keep empty */
+        }
+
+        const parts = [{ functionResponse: { name: item.name, response } }];
+
+        // Si la respuesta contiene datos de imagen, añadimos una parte de imagen para que el VLM la analice
+        if (response && response.image_data) {
+          parts.push({
+            inlineData: {
+              mimeType: response.mime_type || 'image/jpeg',
+              data: response.image_data,
+            },
+          });
+        }
+
         contents.push({
           role: 'user',
-          parts: [{ functionResponse: { name: item.name, response } }],
+          parts: parts,
         });
-        // console.log('Parsed function call output response:', response); 
+        // console.log('Parsed function call output response:', response);
         continue;
       }
 
@@ -255,22 +273,39 @@ class GeminiHandler extends BaseLLMHandler {
       contents = this.convertMsg(null, conversationHistory);
 
       // Convert tool outputs to Gemini FunctionResponse format
-      const functionResponses = toolOutputs.map((output) => {
+      const functionResponses = [];
+      for (const output of toolOutputs) {
         let rawResponse = output.output;
-        let parsedResponse = {};     
+        let parsedResponse = {};
         let jsonresponse = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
         try {
-          parsedResponse = typeof jsonresponse.content[0].text === 'string' ? JSON.parse(jsonresponse.content[0].text) : jsonresponse.content[0].text;
-          } catch {
-            parsedResponse = { text: jsonresponse.content[0].text || jsonresponse.content[0] || parsedResponse };
-          }
-        return {
+          parsedResponse =
+            typeof jsonresponse.content?.[0]?.text === 'string'
+              ? JSON.parse(jsonresponse.content[0].text)
+              : jsonresponse.content?.[0]?.text || jsonresponse.content || jsonresponse;
+        } catch {
+          parsedResponse = {
+            text: jsonresponse.content?.[0]?.text || jsonresponse.content?.[0] || jsonresponse || parsedResponse,
+          };
+        }
+
+        functionResponses.push({
           functionResponse: {
             name: output.name,
             response: parsedResponse || {},
           },
-        };
-      });
+        });
+
+        // Soporte para imágenes en la continuación del tool loop
+        if (parsedResponse && parsedResponse.image_data) {
+          functionResponses.push({
+            inlineData: {
+              mimeType: parsedResponse.mime_type || 'image/jpeg',
+              data: parsedResponse.image_data,
+            },
+          });
+        }
+      }
       contents.push({ role: 'user', parts: functionResponses });
 
       if (forceFinish) {

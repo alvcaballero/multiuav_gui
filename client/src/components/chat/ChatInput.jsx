@@ -1,32 +1,45 @@
-import { useState } from 'react';
-import {
-  IconButton,
-  TextField,
-  Button,
-  Box,
-  Stack,
-} from '@mui/material';
+import { useState, useRef } from 'react';
+import { IconButton, TextField, Button, Box, Stack, Chip } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import CloseIcon from '@mui/icons-material/Close';
 import CircularProgressIcon from '@mui/material/CircularProgress';
 
-const initialOptions = [
-  'Create a quick mission to inspect the offshore wind turbines in Viana do Castelo',
-  'Create a mission to inspect the line B wind turbines in Viana do Castelo',
-  'Create a detailed mission for wind turbine 2 of line B in Viana do Castelo',
-  'Which drones are available?',
-  'Create a mission for a drone to fly 100m north and return.',
-  'Select a drone and make it hover at a height of 10 meters.',
-];
+const initialOptions = ['Which drones are available?'];
 
-const ChatInput = ({ onSendMessage, loading, showOptions, isRecording, onStartRecording, onStopRecording, hasMessages }) => {
+const ChatInput = ({
+  onSendMessage,
+  loading,
+  showOptions,
+  isRecording,
+  onStartRecording,
+  onStopRecording,
+  hasMessages,
+}) => {
   const [inputValue, setInputValue] = useState('');
+  const [attachedImages, setAttachedImages] = useState([]);
+  const fileInputRef = useRef(null);
 
   const handleSend = () => {
-    if (!inputValue.trim()) return;
-    onSendMessage(inputValue);
+    if (!inputValue.trim() && attachedImages.length === 0) return;
+
+    if (attachedImages.length > 0) {
+      const content = [
+        { type: 'input_text', text: inputValue.trim() || ' ' },
+        ...attachedImages.map((img) => ({
+          type: 'input_image',
+          image_url: img.dataUrl,
+        })),
+      ];
+      onSendMessage(content);
+    } else {
+      onSendMessage(inputValue);
+    }
+
     setInputValue('');
+    setAttachedImages([]);
   };
 
   const handleKeyPress = (event) => {
@@ -40,11 +53,30 @@ const ChatInput = ({ onSendMessage, loading, showOptions, isRecording, onStartRe
     onSendMessage(optionText);
   };
 
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAttachedImages((prev) => [
+          ...prev,
+          { name: file.name, dataUrl: e.target.result },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    event.target.value = '';
+  };
+
+  const removeImage = (index) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
       {showOptions && !hasMessages && (
         <Box sx={{ mb: 2 }}>
-          <Stack direction="row" flexWrap="wrap" spacing={1} useFlexGap>
+          <Stack direction="column" sx={{ flexWrap: 'wrap' }} spacing={1} useFlexGap>
             {initialOptions.map((option, index) => (
               <Button
                 key={index}
@@ -70,7 +102,45 @@ const ChatInput = ({ onSendMessage, loading, showOptions, isRecording, onStartRe
         </Box>
       )}
 
+      {attachedImages.length > 0 && (
+        <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', mb: 1 }}>
+          {attachedImages.map((img, i) => (
+            <Chip
+              key={i}
+              label={img.name}
+              size="small"
+              onDelete={() => removeImage(i)}
+              deleteIcon={<CloseIcon />}
+              sx={{ maxWidth: 160 }}
+            />
+          ))}
+        </Stack>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+
       <Stack direction="row" spacing={1}>
+        <IconButton
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading || isRecording}
+          sx={{
+            bgcolor: '#f5f5f5',
+            color: attachedImages.length > 0 ? '#1976d2' : '#757575',
+            '&:hover': { bgcolor: '#e0e0e0' },
+            '&:disabled': { bgcolor: '#f5f5f5' },
+            width: 40,
+            height: 40,
+          }}
+        >
+          <AttachFileIcon fontSize="small" />
+        </IconButton>
         <TextField
           fullWidth
           multiline
@@ -114,7 +184,7 @@ const ChatInput = ({ onSendMessage, loading, showOptions, isRecording, onStartRe
         </IconButton>
         <IconButton
           onClick={handleSend}
-          disabled={!inputValue.trim() || loading || isRecording}
+          disabled={(!inputValue.trim() && attachedImages.length === 0) || loading || isRecording}
           sx={{
             bgcolor: '#1976d2',
             color: 'white',
@@ -124,11 +194,7 @@ const ChatInput = ({ onSendMessage, loading, showOptions, isRecording, onStartRe
             height: 40,
           }}
         >
-          {loading ? (
-            <CircularProgressIcon size={20} color="inherit" />
-          ) : (
-            <SendIcon fontSize="small" />
-          )}
+          {loading ? <CircularProgressIcon size={20} color="inherit" /> : <SendIcon fontSize="small" />}
         </IconButton>
       </Stack>
     </Box>
