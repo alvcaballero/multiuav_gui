@@ -74,7 +74,7 @@ const DownloadYamlButton = () => {
         type: item.type,
         pose: {
           xyz: item.pos,
-          rpy: [0, 0, 0],
+          rpy: [0, 0, ((item.heading ?? 0) * Math.PI) / 180],
         },
       };
     });

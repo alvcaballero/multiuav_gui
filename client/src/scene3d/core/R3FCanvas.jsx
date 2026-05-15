@@ -95,7 +95,7 @@ const R3FCanvas = ({ children }) => {
       <ambientLight intensity={0.4} />
       <hemisphereLight args={['#87ceeb', '#4a7c59', 0.6]} />
       <directionalLight position={[200, 400, 100]} intensity={2.5} />
-      <Perf />
+      {/* <Perf /> */}
       <CameraControls controlsRef={controlsRef} />
       <OrientationGizmo controlsRef={controlsRef} />
       <axesHelper args={[5]} />

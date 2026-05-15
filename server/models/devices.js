@@ -11,21 +11,6 @@ import { object, set } from 'zod';
 import { positionsController } from '../controllers/positions.js';
 import logger from '../common/logger.js';
 import { DEVICE_STATUS } from '../config/status.js';
-/* devices:
-/   id
-/   name  : name of uav
-/   category : model of uav registered
-/   ip : ip of uav
-/   protocol: ros, robofleet
-/   camera : array of camera devices 
-/       type: WebRTC, RTSP
-/       source: source of camera
-/   files: array of files access
-/        url: ftp://user:pwd@ip:port
-/        type: ftp
-/   lastUpdate:
-/   status:
-*/
 
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
@@ -217,7 +202,7 @@ export class DevicesModel {
           id: myDevice.id,
           name: myDevice.name,
           category: myDevice.category,
-          camera: myDevice.camerak,
+          camera: myDevice.camera,
         });
       }
     }

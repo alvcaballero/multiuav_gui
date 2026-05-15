@@ -13,7 +13,7 @@ const modelPaths = {
   drone: `${BASE_PATH}/models/Drone.glb`,
   drone2: `${BASE_PATH}/models/DroneLVL2A.glb`,
   m300: `${BASE_PATH}/models/M300.glb`,
-  default: `${BASE_PATH}/models/Astronaut.glb`,
+  default: `${BASE_PATH}/models/M300.glb`,
 };
 
 /**

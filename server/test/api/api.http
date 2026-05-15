@@ -22,6 +22,9 @@ GET http://localhost:4000/api/positions?deviceId=4
 ### Get position
 GET http://localhost:4000/api/positions?deviceId=1&deviceId=2&deviceId=3
 
+### Get camera snapshot
+GET http://localhost:4000/api/devices/7/snapshot
+
 ### Add Devices
 POST http://localhost:4000/api/devices
 Content-Type: application/json
@@ -264,7 +267,10 @@ GET http://localhost:4000/api/planning/missionparam/0
 GET http://localhost:4000/api/planning/getMarkersTypes
 
 ### get markers
-GET http://localhost:4000/api/planning/getMarkers
+GET http://localhost:4000/api/markers
+
+### get bases with assigments
+GET http://localhost:4000/api/markers/bases/assigned
 
 ### get bases
 GET http://localhost:4000/api/planning/getBases

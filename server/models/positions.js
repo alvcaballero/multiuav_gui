@@ -107,6 +107,7 @@ export class positionsModel {
         round(payload.localposition.y, 2),
         round(payload.localposition.z, 2),
       ];
+      positions[payload.deviceId]['deviceTime'] = new Date().toISOString();
     }
     if (payload.hasOwnProperty('armState')) {
       positions[payload.deviceId]['attributes']['armState'] = payload.armState;
