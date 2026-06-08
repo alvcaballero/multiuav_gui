@@ -10,7 +10,7 @@ const NumberedSphere = ({ position, properties, hideLabel = false }) => {
           {properties.id ?? 0}
         </Word>
       )}
-      {properties.yaw !== null && (
+      {properties.yaw != null && (
         <group rotation={[0, (-properties.yaw * Math.PI) / 180, 0]}>
           <Line
             points={[
@@ -22,7 +22,7 @@ const NumberedSphere = ({ position, properties, hideLabel = false }) => {
           <Box args={[0.2, 0.2, 0.2]} position={[0, 0, -1]}>
             <meshStandardMaterial color={properties.color ?? '#ff0000'} />
           </Box>
-          {properties.gimbal_pitch !== null && (
+          {properties.gimbal_pitch != null && (
             <group rotation={[(properties.gimbal_pitch * Math.PI) / 180, 0, 0]}>
               <Line
                 points={[

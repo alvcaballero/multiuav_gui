@@ -75,10 +75,9 @@ const R3FMission = ({ routes = [] }) => {
   }
 
   function routesToLines(routes) {
-    let routelineVector = routes.map((rt) => {
-      let mylineVector3 = rt.map((point) => [point[0], point[2], -point[1]]);
-      return mylineVector3;
-    });
+    let routelineVector = routes
+      .map((rt) => rt.map((point) => [point[0], point[2], -point[1]]))
+      .filter((line) => line.length >= 2);
     return routelineVector;
   }
 
