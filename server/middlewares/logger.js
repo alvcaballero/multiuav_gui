@@ -14,7 +14,7 @@ function requestLoggingMiddleware(req, res, next) {
   // Log del response cuando termine
   res.on('finish', () => {
     const duration = Date.now() - start;
-    logHelpers.api.response(req.method, req.url, res.statusCode, duration);
+    logHelpers.api.response(req.method, req.originalUrl, res.statusCode, duration);
   });
 
   next();

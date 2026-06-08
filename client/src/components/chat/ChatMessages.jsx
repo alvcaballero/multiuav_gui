@@ -91,12 +91,20 @@ const convertMsg = (msg) => {
     let output = msg.message.output || msg.message.content;
 
     if (typeof output === 'string') {
-      try { output = JSON.parse(output); } catch (e) { /* keep as string */ }
+      try {
+        output = JSON.parse(output);
+      } catch (e) {
+        /* keep as string */
+      }
     }
 
     // MCP wraps the real payload inside content[0].text as a JSON string — unwrap it
     if (output?.content?.[0]?.text) {
-      try { output = JSON.parse(output.content[0].text); } catch (e) { /* keep outer */ }
+      try {
+        output = JSON.parse(output.content[0].text);
+      } catch (e) {
+        /* keep outer */
+      }
     }
 
     return {
@@ -339,8 +347,8 @@ export const MessageBubble = memo(({ message, chatId }) => {
 
   // Function call block
   if (type === 'function_call') {
-    const hasMissionData = content?.missionData 
-    const hasMissionDataResult =  name === 'request_mission_plan' && content?.mission;
+    const hasMissionData = content?.missionData;
+    const hasMissionDataResult = name === 'request_mission_plan' && content?.mission;
     const hasMissionDataXYZ = content?.missionDataXYZ;
     const isValidateMission = name === 'validate_mission_collisions' && content?.mission;
     const isCreateMission = hasMissionData || hasMissionDataResult || hasMissionDataXYZ || isValidateMission;
@@ -352,8 +360,12 @@ export const MessageBubble = memo(({ message, chatId }) => {
 
         if (hasMissionDataXYZ) {
           endpoint = '/api/missions/showXYZ';
-          missionPayload = { ...content.missionDataXYZ , version: '3', name: content.missionDataXYZ.name || 'Mission from XYZ Data' };
-        } else if (hasMissionData || hasMissionDataResult ) {
+          missionPayload = {
+            ...content.missionDataXYZ,
+            version: '3',
+            name: content.missionDataXYZ.name || 'Mission from XYZ Data',
+          };
+        } else if (hasMissionData || hasMissionDataResult) {
           endpoint = '/api/missions/';
           missionPayload = content.missionData || content.mission;
         } else if (isValidateMission) {
@@ -362,7 +374,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
             version: content.mission.version || '3',
             name: content.mission.name || 'Validated Mission',
             route: content.mission.route,
-            global_origin: content.mission.global_origin || { lat: 41.687222, lng: -8.84774507880, alt: 0 },
+            global_origin: content.mission.global_origin || { lat: 41.687222, lng: -8.8477450788, alt: 0 },
           };
         } else {
           return;
@@ -444,7 +456,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
   if (type === 'function_call_output') {
     let resultSummary = 'Result';
     let hasError = false;
-    const hasMissionDataResult =  name === 'request_mission_plan';
+    const hasMissionDataResult = name === 'request_mission_plan';
     let missionPayload = content?.content?.[0]?.text;
     let missionData = null;
 
@@ -454,9 +466,9 @@ export const MessageBubble = memo(({ message, chatId }) => {
     const imageSrc = imageData ? `data:${imageMime};base64,${imageData}` : null;
 
     try {
-      missionData = JSON.parse(missionPayload)
+      missionData = JSON.parse(missionPayload);
     } catch (e) {
-      console.error('Error parsing mission payload:', e)
+      console.error('Error parsing mission payload:', e);
     }
 
     const isCreateMission = hasMissionDataResult && missionData?.mission;
@@ -486,17 +498,16 @@ export const MessageBubble = memo(({ message, chatId }) => {
       if (content.error) {
         resultSummary = 'Error';
         hasError = true;
-      }else  if (missionPayload && missionPayload.includes('MCP error')) {
-         hasError= true;
-      } 
-      else if (content.success === false) {
-        resultSummary = 'Falló';
+      } else if (missionPayload && missionPayload.includes('MCP error')) {
+        hasError = true;
+      } else if (content.success === false) {
+        resultSummary = 'Fault';
         hasError = true;
       } else if (content.mission || content.missionId) {
-        resultSummary = 'Misión creada';
+        resultSummary = 'Created Mission';
       } else if (content.devices || Array.isArray(content)) {
-        resultSummary = 'Datos obtenidos';
-      } 
+        resultSummary = 'Information getted successfully';
+      }
     }
 
     return (
