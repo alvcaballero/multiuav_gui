@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { Route, Routes, useLocation, useNavigate, Link } from 'react-router-dom';
+import { CircularProgress, Box } from '@mui/material';
 import { useEffectAsync } from './reactHelper';
 import App from './App';
 import useQuery from './shared/useQuery';
 import MainPage from './pages/MainPage';
 import MissionPage from './pages/MissionPage';
 import MissionPageTest from './pages/MissionPageTest';
-import MissionPage3D from './pages/MissionPage3D';
-import MainPage3D from './pages/MainPage3D';
 import ReplayPage from './pages/ReplayPage';
 import DevicePage from './pages/DevicePage';
-import DevicePage3D from './pages/DevicePage3D';
 import CameraPage from './pages/CameraPage';
 import EventsPage from './pages/EventsPage';
 import TopicsPage from './pages/TopicsPage';
@@ -25,7 +23,17 @@ import SettingsDevicesPageEdit from './settings/SettingsDevicesPageEdit';
 import GeofencesPage from './pages/GeofencesPage';
 import GeofencePage from './settings/GeofencePage';
 import ChatPage from './pages/ChatPage';
-import Scene3DEditorPage from './pages/Scene3DEditorPage';
+
+const MainPage3D = lazy(() => import('./pages/MainPage3D'));
+const MissionPage3D = lazy(() => import('./pages/MissionPage3D'));
+const Scene3DEditorPage = lazy(() => import('./pages/Scene3DEditorPage'));
+const DevicePage3D = lazy(() => import('./pages/DevicePage3D'));
+
+const Loader3D = () => (
+  <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+    <CircularProgress />
+  </Box>
+);
 const padding = {
   padding: 5,
 };
@@ -48,16 +56,16 @@ const Navigation = () => {
         {/* This is a temporary route for testing purposes, can be removed later
          */}
         <Route path="chat" element={<ChatPage />} />
-        <Route path="3Dview" element={<MainPage3D />} />
-        <Route path="3Deditor" element={<Scene3DEditorPage />} />
-        <Route path="3Dmission" element={<MissionPage3D />} />
+        <Route path="3Dview" element={<Suspense fallback={<Loader3D />}><MainPage3D /></Suspense>} />
+        <Route path="3Deditor" element={<Suspense fallback={<Loader3D />}><Scene3DEditorPage /></Suspense>} />
+        <Route path="3Dmission" element={<Suspense fallback={<Loader3D />}><MissionPage3D /></Suspense>} />
 
         <Route path="mission" element={<MissionPage />} />
         <Route path="missiontest" element={<MissionPageTest />} />
         <Route path="planning" element={<PlanningPage />} />
         <Route path="camera" element={<CameraPage />} />
         <Route path="device/:id" element={<DevicePage />} />
-        <Route path="device3d/:id" element={<DevicePage3D />} />
+        <Route path="device3d/:id" element={<Suspense fallback={<Loader3D />}><DevicePage3D /></Suspense>} />
 
         <Route path="replay" element={<ReplayPage />} />
         <Route path="topics" element={<TopicsPage />} />
