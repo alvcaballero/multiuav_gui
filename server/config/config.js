@@ -67,6 +67,7 @@ export const mapZoom = Number(process.env.MAP_ZOOM) || 15;
 export const WS_PING_INTERVAL_MS = Number(process.env.WS_PING_INTERVAL_MS) || 30000;
 export const WS_POSITIONS_INTERVAL_MS = Number(process.env.WS_POSITIONS_INTERVAL_MS) || 500;
 export const WS_STATE_INTERVAL_MS = Number(process.env.WS_STATE_INTERVAL_MS) || 10000;
+export const ROS_URL = process.env.ROS_URL || 'ws://127.0.0.1:9090';
 export const ROS_RECONNECT_INTERVAL_MS = Number(process.env.ROS_RECONNECT_INTERVAL_MS) || 30000;
 export const DEVICE_CHECK_INTERVAL_MS = Number(process.env.DEVICE_CHECK_INTERVAL_MS) || 5000;
 export const DEVICE_UPDATE_INTERVAL_MS = Number(process.env.DEVICE_UPDATE_INTERVAL_MS) || 2000;

@@ -1,6 +1,6 @@
 import * as ROSLIB from 'roslib';
 import logger, { logHelpers } from '../../common/logger.js';
-import { ROS_RECONNECT_INTERVAL_MS } from '../../config/config.js';
+import { ROS_RECONNECT_INTERVAL_MS, ROS_URL } from '../../config/config.js';
 
 var ros = null;
 const rosState = { state: 'disconnect', msg: 'init msg' };
@@ -61,7 +61,7 @@ export function rosConnect(onConnected) {
     _onConnected = onConnected;
   }
   if (rosState.state != 'connect') {
-    ros = new ROSLIB.Ros({ url: 'ws://127.0.0.1:9090', encoding: 'utf8' });
+    ros = new ROSLIB.Ros({ url: ROS_URL, encoding: 'utf8' });
     ros.on('connection', function () {
       logHelpers.ros.connect('server', { status: 'connected' });
       setRosState({ state: 'connect', msg: 'Conected to ROS' });
