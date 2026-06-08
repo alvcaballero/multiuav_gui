@@ -14,6 +14,7 @@ import {
   RosSubscribeCamera as _RosSubscribeCamera,
 } from './rosSubscriptions.js';
 import * as rosServices from './rosServices.js';
+import * as actionRegistry from './rosActionRegistry.js';
 
 export class rosModel {
   static setrosState({ state, msg }) {
@@ -138,7 +139,15 @@ export class rosModel {
   }
 
   static async sendActionGoal(args) {
-    return rosServices.sendActionGoal(args, getRos());
+    return actionRegistry.sendActionGoal(args, getRos());
+  }
+
+  static getActionStatus(params) {
+    return actionRegistry.getActionStatus(params);
+  }
+
+  static cancelAction(params) {
+    return actionRegistry.cancelAction(params);
   }
 
   static async cancelActionGoal(args) {

@@ -16,8 +16,20 @@ const service_list = {};
 export async function callRosService({ service, messageType, message }, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 
+  logger.debug(`Calling ROS service -'${service}'- with message type -'${messageType}'-`);
+
+  if (!service || typeof service !== 'string') {
+    throw new Error('The "service" parameter is required and must be a string');
+  }
+  if (!messageType || typeof messageType !== 'string') {
+    throw new Error('The "messageType" parameter is required and must be a string');
+  }
+  if (message === undefined) {
+    throw new Error('The "message" parameter is required');
+  }
+
   const servicesResult = await getServices(ros);
-  const servicesList = Array.isArray(servicesResult) ? servicesResult : (servicesResult.services || []);
+  const servicesList = Array.isArray(servicesResult) ? servicesResult : servicesResult.services || [];
   if (!servicesList.includes(service)) {
     logger.debug(`Available services: ${JSON.stringify(servicesList)}`);
     throw new Error(`Service '${service}' not available`);
@@ -27,6 +39,8 @@ export async function callRosService({ service, messageType, message }, ros) {
   if (!topicType) {
     throw new Error(`Service '${service}' has no type info — the node may not be running`);
   }
+  logger.debug(`service type: ${JSON.stringify(topicType)}`);
+
   const auxtopicType = topicType.replace('/srv/', '/');
   if (!(topicType == messageType || auxtopicType == messageType)) {
     throw new Error(`Service type mismatch: expected '${topicType}', got '${messageType}'`);
@@ -55,8 +69,14 @@ export async function callRosService({ service, messageType, message }, ros) {
   return new Promise((resolve, rejects) => {
     Message.callService(
       MsgRequest,
-      (result) => resolve(result),
-      (error) => rejects(error)
+      (result) => {
+        logger.debug(`Service call result for ${service}: ${JSON.stringify(result)}`);
+        resolve(result);
+      },
+      (error) => {
+        logger.debug(`Error calling service ${service}: ${error}`);
+        rejects(error);
+      }
     );
   });
 }
@@ -345,7 +365,8 @@ export function GCSServicesMission(ros) {
       callback: function (request, response) {
         logger.debug(`Service finish mission callback: ${JSON.stringify(request)}`);
         if (request.hasOwnProperty('uav_id')) {
-          missionController.deviceFinishMission({ name: request.uav_id })
+          missionController
+            .deviceFinishMission({ name: request.uav_id })
             .catch((err) => logger.error(`deviceFinishMission failed: ${err.message}`));
         }
         Object.assign(response, { success: true, msg: 'Set successfully' });
@@ -359,7 +380,8 @@ export function GCSServicesMission(ros) {
       callback: function (request, response) {
         logger.debug(`Service finish download files callback: ${JSON.stringify(request)}`);
         if (request.hasOwnProperty('uav_id')) {
-          missionController.deviceFinishSyncFiles({ name: request.uav_id })
+          missionController
+            .deviceFinishSyncFiles({ name: request.uav_id })
             .catch((err) => logger.error(`deviceFinishSyncFiles failed: ${err.message}`));
         }
         Object.assign(response, { success: true, msg: 'Set successfully' });
@@ -372,7 +394,9 @@ export function GCSServicesMission(ros) {
     // Unadvertise stale instance before re-advertising to avoid
     // rosbridge routing requests to a dead handler on reconnect.
     if (service_list[srv.name]) {
-      try { service_list[srv.name].unadvertise(); } catch (_) {}
+      try {
+        service_list[srv.name].unadvertise();
+      } catch (_) {}
       delete service_list[srv.name];
     }
     service_list[srv.name] = serviceServer(
@@ -431,41 +455,21 @@ export async function getActionGoalmsg(actionServer, ros) {
   });
 }
 
-export async function sendActionGoal(args, ros) {
+export async function cancelActionGoal(args, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-  const { action, actionType, message } = args;
-  logger.info(`Sending goal to action server '${action}' of type '${actionType}' with message: ${JSON.stringify(message)}`);
+  const { action, actionType, goalId } = args;
 
   let newClient = new ROSLIB.Action({
     ros: ros,
     name: action,
     actionType: actionType,
   });
+  newClient.cancel(goalId);
 
-  let goal_id = newClient.sendGoal(
-    message,
-    (result) => {
-      logger.info(`Action result: ${JSON.stringify(result)}`);
-      if (result.result && result.status === 4) {
-        logger.info('Navigation completed');
-      } else {
-        logger.warn('Navigation failed or was cancelled');
-      }
-    },
-    (feedback) => {
-      logger.debug(`Action feedback: ${JSON.stringify(feedback)}`);
-    },
-    (error) => {
-      logger.error(`Action goal failed: ${error}`);
-    }
-  );
-  logger.info(`Goal sent with ID: ${goal_id}`);
-
-  const goalHandle = { id: 'a' };
-  return { state: 'success', msg: 'Action goal sent successfully', goalId: goalHandle.id };
+  return { state: 'success', msg: 'Action goal canceled successfully' };
 }
 
-export async function cancelActionGoal(args, ros) {
+export async function cancelActionGoalros1(args, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
   const { action, actionType, goalId } = args;
 

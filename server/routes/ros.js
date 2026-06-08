@@ -17,3 +17,5 @@ rosRouter.post('/publish', rosController.pubTopicOnce);
 rosRouter.get('/subscribe_once', rosController.subscribeOnce);
 rosRouter.get('/action_servers', rosController.getActionServers);
 rosRouter.post('/action_send_goal', rosController.sendActionGoal);
+rosRouter.get('/action_status', rosController.getActionStatusHandler);
+rosRouter.post('/action_cancel', rosController.cancelActionHandler);

@@ -115,14 +115,36 @@ export class rosController {
       res.json(response);
     } catch (error) {
       logger.error(`Error calling action: ${error.message}`);
-      res.status(500).json({ error: 'Failed to call action: ' + error.message });
+      res.status(400).json({ error: error.message });
     }
+  }
+
+  static getActionStatus({ device, action } = {}) {
+    return rosModel.getActionStatus({ device, action });
+  }
+
+  static getActionStatusHandler(req, res) {
+    const { device, action } = req.query;
+    if (!device && !action) return res.status(400).json({ error: 'device or action is required' });
+    res.json(rosController.getActionStatus({ device, action }));
+  }
+
+  static cancelAction({ device, action } = {}) {
+    return rosModel.cancelAction({ device, action });
+  }
+
+  static cancelActionHandler(req, res) {
+    const { device, action } = req.body;
+    if (!action) return res.status(400).json({ error: 'action is required' });
+    res.json(rosController.cancelAction({ device, action }));
   }
 
 
   static async callRosService(req, res) {
     try {
       const response = await rosModel.callRosService(req.body);
+      const byteSize = JSON.stringify(response).length;
+      logger.debug(`Service call response: ${byteSize} bytes, keys: ${Object.keys(response || {}).join(', ')}`);
       res.json(response);
     } catch (error) {
       logger.error(`Error calling service: ${error.message}`);
