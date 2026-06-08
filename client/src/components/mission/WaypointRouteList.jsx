@@ -1,5 +1,4 @@
 import React, { Fragment, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import {
   Divider,
   Box,
@@ -20,7 +19,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { missionActions } from '../../store';
+import useWaypoint from './useWaypoint';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -54,62 +53,35 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, setExpandWp, onAddWaypoint }) => {
+const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, uavType, expanded, setExpanded, onAddWaypoint }) => {
   const { classes } = useStyles();
-  const dispatch = useDispatch();
+  const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } = useWaypoint(routeIndex, indexWp, uavType);
+
   const [expanded_ac, setExpanded_ac] = useState(false);
   const [newactionmenu, setnewactionmenu] = useState(true);
   const [newactionid, setnewactionid] = useState(0);
+  const [posInput, setPosInput] = useState({ lat: '', lon: '', alt: '' });
 
-  const handleChange_wp = (panel) => (event, isExpanded) => {
-    setExpandWp(isExpanded ? panel : false);
+  const wpKey = `r${routeIndex}-wp${indexWp}`;
+  const isOpen = expanded === wpKey;
+
+  // Keep posInput in sync when waypoint is updated externally (e.g. map drag)
+  React.useEffect(() => {
+    if (!isOpen) return;
+    setPosInput({
+      lat: waypoint.pos?.[0] ?? 0,
+      lon: waypoint.pos?.[1] ?? 0,
+      alt: waypoint.pos?.[2] ?? 0,
+    });
+  }, [waypoint.pos, isOpen]);
+
+  const handleChange_wp = (_, isExpanded) => {
+    // closing the WP keeps the parent route open
+    setExpanded(isExpanded ? wpKey : `r${routeIndex}`);
   };
 
-  const handleWaypointFieldChange = (field, value) => {
-    dispatch(missionActions.updateWaypoint({ routeIndex, wpIndex: indexWp, field, value }));
-  };
-
-  const handlePositionChange = (posIndex, value) => {
-    dispatch(missionActions.updateWaypointPosIndex({ routeIndex, wpIndex: indexWp, posIndex, value: +value }));
-  };
-
-  const handleActionChange = (actionKey, value) => {
-    dispatch(missionActions.updateWaypointAction({ routeIndex, wpIndex: indexWp, actionKey, value }));
-  };
-
-  async function handleAddAction() {
-    let command;
-
-    const response = await fetch('/api/category/actions/dji_M210_noetic');
-    if (response.ok) {
-      command = await response.json();
-    } else {
-      throw Error(await response.text());
-    }
-
-    const selectcmd = command.find((element) => element.id == newactionid);
-
-    const actionValue = selectcmd.param ? 0 : true;
-    dispatch(
-      missionActions.addWaypointAction({ routeIndex, wpIndex: indexWp, actionKey: selectcmd.name, value: actionValue })
-    );
-    setnewactionmenu(true);
-  }
-
-  const handleCopyWp = () => {
-    dispatch(missionActions.copyWaypoint({ routeIndex, wpIndex: indexWp }));
-  };
-
-  const handleMoveWp = (direction) => {
-    dispatch(missionActions.moveWaypointOrder({ routeIndex, wpIndex: indexWp, direction }));
-  };
-
-  const handleRemoveWp = () => {
-    dispatch(missionActions.deleteWaypoint({ routeIndex, wpIndex: indexWp }));
-  };
-
-  const handleRemoveAction = (actionKey) => {
-    dispatch(missionActions.removeWaypointAction({ routeIndex, wpIndex: indexWp, actionKey }));
+  const handlePositionCommit = () => {
+    updatePos([+posInput.lat, +posInput.lon, +posInput.alt]);
   };
 
   const handleChange_ac = (panel) => (event, isExpanded) => {
@@ -117,24 +89,18 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
   };
 
   return (
-    <Accordion expanded={expandWp === `WP${indexWp}`} onChange={handleChange_wp(`WP${indexWp}`)}>
+    <Accordion expanded={isOpen} onChange={handleChange_wp}>
       <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
         <IconButton
           sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleMoveWp(1);
-          }}
+          onClick={(e) => { e.stopPropagation(); move(1); }}
         >
           <ArrowDownwardIcon />
         </IconButton>
         <IconButton
           sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleMoveWp(-1);
-          }}
+          onClick={(e) => { e.stopPropagation(); move(-1); }}
         >
           <ArrowUpwardIcon />
         </IconButton>
@@ -147,26 +113,17 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
         >
           <MyLocationIcon />
         </IconButton>
-
         <IconButton
           sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleRemoveWp();
-          }}
+          onClick={(e) => { e.stopPropagation(); remove(); }}
         >
           <DeleteIcon />
         </IconButton>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        {expandWp === `WP${indexWp}` && (
+        {isOpen && (
           <>
-            <Box
-              component="form"
-              sx={{
-                '& .MuiTextField-root': { m: 1 },
-              }}
-            >
+            <Box component="form" sx={{ '& .MuiTextField-root': { m: 1 } }}>
               <div>
                 <Typography variant="subtitle1" style={{ display: 'inline' }}>
                   Position
@@ -174,68 +131,67 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
               </div>
               <TextField
                 required
-                label="Latitud "
+                label="Latitud"
                 type="number"
                 sx={{ width: '15ch' }}
                 variant="standard"
-                slotProps={{ htmlInput: { maxLength: 16, step: 0.0001 } }}
-                defaultValue={waypoint.pos ? waypoint.pos[0] : 0}
-                onBlur={(e) => handlePositionChange(0, +e.target.value)}
+                slotProps={{ htmlInput: { step: 0.0001 } }}
+                value={posInput.lat}
+                onChange={(e) => setPosInput((p) => ({ ...p, lat: e.target.value }))}
+                onBlur={handlePositionCommit}
+                onKeyDown={(e) => e.key === 'Enter' && handlePositionCommit()}
               />
               <TextField
                 required
-                label="Longitud "
+                label="Longitud"
                 type="number"
                 variant="standard"
                 sx={{ width: '15ch' }}
-                slotProps={{ htmlInput: { maxLength: 16, step: 0.0001 } }}
-                defaultValue={waypoint.pos ? waypoint.pos[1] : 0}
-                onBlur={(e) => handlePositionChange(1, +e.target.value)}
+                slotProps={{ htmlInput: { step: 0.0001 } }}
+                value={posInput.lon}
+                onChange={(e) => setPosInput((p) => ({ ...p, lon: e.target.value }))}
+                onBlur={handlePositionCommit}
+                onKeyDown={(e) => e.key === 'Enter' && handlePositionCommit()}
               />
               <TextField
                 required
-                label="altura "
+                label="Altura"
                 type="number"
                 variant="standard"
                 sx={{ width: '7ch' }}
-                defaultValue={waypoint.pos ? waypoint.pos[2] : 0}
-                onBlur={(e) => handlePositionChange(2, +e.target.value)}
+                value={posInput.alt}
+                onChange={(e) => setPosInput((p) => ({ ...p, alt: e.target.value }))}
+                onBlur={handlePositionCommit}
+                onKeyDown={(e) => e.key === 'Enter' && handlePositionCommit()}
               />
             </Box>
-            <Box
-              component="form"
-              sx={{
-                '& .MuiTextField-root': { m: 1 },
-              }}
-            >
+            <Box component="form" sx={{ '& .MuiTextField-root': { m: 1 } }}>
               <TextField
                 required
-                label="Speed "
+                label="Speed"
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
                 defaultValue={waypoint.speed ?? idleVel ?? 3}
-                onBlur={(e) => handleWaypointFieldChange('speed', +e.target.value)}
+                onBlur={(e) => updateField('speed', +e.target.value)}
               />
-
               <TextField
                 required
-                label="YAW "
+                label="YAW"
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
                 defaultValue={waypoint.yaw ?? 0}
-                onBlur={(e) => handleWaypointFieldChange('yaw', +e.target.value)}
+                onBlur={(e) => updateField('yaw', +e.target.value)}
               />
-
               <TextField
                 required
-                label="Gimbal "
+                label="Gimbal"
                 type="number"
                 variant="standard"
                 sx={{ width: '13ch' }}
                 defaultValue={waypoint.gimbal ?? 0}
-                onBlur={(e) => handleWaypointFieldChange('gimbal', +e.target.value)}
+                onBlur={(e) => updateField('gimbal', +e.target.value)}
               />
             </Box>
             <Accordion expanded={expanded_ac === 'wp ' + indexWp} onChange={handleChange_ac('wp ' + indexWp)}>
@@ -255,17 +211,12 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                             required
                             fullWidth={true}
                             value={waypoint.action[action_key] ?? 0}
-                            onChange={(e) => handleActionChange(action_key, e.target.value)}
+                            onChange={(e) => updateAction(action_key, e.target.value)}
                           />
                         </div>
                         <IconButton
-                          sx={{
-                            py: 0,
-                            pr: 2,
-                            marginLeft: 'auto',
-                          }}
-                          onClick={() => handleRemoveAction(action_key)}
-                          className={classes.negative}
+                          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                          onClick={() => removeAction(action_key)}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -286,19 +237,19 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                     </Button>
                   ) : (
                     <div>
-                      <Typography variant="subtitle1">Tipo de acccion a añadir</Typography>
+                      <Typography variant="subtitle1">Tipo de acción a añadir</Typography>
                       <SelectField
                         emptyValue={null}
                         fullWidth={true}
                         value={newactionid}
                         onChange={(e) => setnewactionid(e.target.value)}
-                        endpoint={'/api/category/actions/dji_M210_noetic'}
+                        endpoint={`/api/category/actions/${uavType}`}
                         keyGetter={(it) => it.id}
                         titleGetter={(it) => it.description}
                       />
                       <div>
                         <Button onClick={() => setnewactionmenu(true)}>Cancel</Button>
-                        <Button onClick={handleAddAction}>Add</Button>
+                        <Button onClick={() => addAction(newactionid, () => setnewactionmenu(true))}>Add</Button>
                       </div>
                     </div>
                   )}
@@ -321,7 +272,7 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, expandWp, s
                 size="large"
                 sx={{ width: '30%', flexShrink: 0 }}
                 style={{ marginTop: '15px' }}
-                onClick={handleCopyWp}
+                onClick={copy}
               >
                 Copy
               </Button>

@@ -63,9 +63,6 @@ export const MapMissionsCreate = () => {
     let coords = e.lngLat;
     // Set a UI indicator for dragging.
     canvas.style.cursor = 'grabbing';
-    // Update the Point feature in `geojson` coordinates
-    // and call setData to the source layer `point` on it.
-    console.log('on move point' + coords.lng + '-' + coords.lat);
     let auxroute = testkeepValue.getroute();
     //console.log(auxroute);
 
@@ -126,7 +123,6 @@ export const MapMissionsCreate = () => {
   };
   const onMouseTouchStart = (e) => {
     if (e.points.length !== 1) return;
-    console.log('touch start');
 
     // Prevent the default map drag behavior.
     e.preventDefault();
@@ -138,7 +134,6 @@ export const MapMissionsCreate = () => {
  
 
   useEffect(() => {
-    console.log('render');
     if (true) {
       map.addSource(routePoints, {
         type: 'geojson',
@@ -250,8 +245,6 @@ export const MapMissionsCreate = () => {
   }, []);
 
   useEffect(() => {
-    console.log('Mapmission upload mission');
-    // console.log(routes);
     testkeepValue.initroute(routes);
     let waypointPosition = routeTowaypoints(routes);
 

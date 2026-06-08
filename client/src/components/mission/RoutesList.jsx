@@ -52,16 +52,13 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
   const mission = useSelector((state) => state.mission);
   const selectwp = useSelector((state) => state.mission.selectpoint);
 
-  const [expanded_route, setExpanded_route] = useState(false);
-  const [expanded_wp, setExpanded_wp] = useState(false);
+  const [expanded, setExpanded] = useState(null);
 
   const hasMission = mission.route.length > 0;
 
   useEffect(() => {
-    // Scroll to selected waypoint
     if (selectwp.id >= 0) {
-      setExpanded_route('Rute ' + selectwp.route_id);
-      setExpanded_wp('wp ' + selectwp.id);
+      setExpanded(`r${selectwp.route_id}-wp${selectwp.id}`);
       setScrool(500 + selectwp.route_id * 50 + selectwp.id * 50);
     }
   }, [selectwp, setScrool]);
@@ -126,10 +123,8 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
                 <RouteRoutesList
                   index={index}
                   route={item_route}
-                  expanded_route={expanded_route}
-                  setExpanded_route={setExpanded_route}
-                  expand_wp={expanded_wp}
-                  setExpand_wp={setExpanded_wp}
+                  expanded={expanded}
+                  setExpanded={setExpanded}
                 />
                 {index < list.length - 1 ? <Divider /> : null}
               </Fragment>

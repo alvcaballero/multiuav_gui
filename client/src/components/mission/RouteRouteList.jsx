@@ -53,10 +53,13 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const RouteOptions = ({ index, route }) => {
+const DEFAULT_UAV_TYPE = 'dji_M300';
+
+const RouteOptions = ({ index, route, uavType }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const [expand, setExpand] = useState(false);
+  const resolvedUavType = uavType || DEFAULT_UAV_TYPE;
 
   const handleAttributeChange = (attribute, value) => {
     dispatch(missionActions.updateRouteAttribute({ index, attribute, value }));
@@ -80,7 +83,7 @@ const RouteOptions = ({ index, route }) => {
                   fullWidth={true}
                   value={route.attributes.mode_speed || 0}
                   onChange={(e) => handleAttributeChange('mode_speed', e.target.value)}
-                  endpoint={'/api/category/atributesparam/dji_M300/mode_speed'}
+                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_speed`}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
                 />
@@ -122,7 +125,7 @@ const RouteOptions = ({ index, route }) => {
                   fullWidth={true}
                   value={route.attributes.mode_landing || 0}
                   onChange={(e) => handleAttributeChange('mode_landing', e.target.value)}
-                  endpoint={'/api/category/atributesparam/dji_M300/mode_landing'}
+                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_landing`}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
                 />
@@ -138,7 +141,7 @@ const RouteOptions = ({ index, route }) => {
                   fullWidth={true}
                   value={route.attributes.mode_yaw || 0}
                   onChange={(e) => handleAttributeChange('mode_yaw', e.target.value)}
-                  endpoint={'/api/category/atributesparam/dji_M300/mode_yaw'}
+                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_yaw`}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
                 />
@@ -154,7 +157,7 @@ const RouteOptions = ({ index, route }) => {
                   fullWidth={true}
                   value={route.attributes.mode_gimbal || 0}
                   onChange={(e) => handleAttributeChange('mode_gimbal', e.target.value)}
-                  endpoint={'/api/category/atributesparam/dji_M300/mode_gimbal'}
+                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_gimbal`}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
                 />
@@ -170,7 +173,7 @@ const RouteOptions = ({ index, route }) => {
                   fullWidth={true}
                   value={route.attributes.mode_trace || 0}
                   onChange={(e) => handleAttributeChange('mode_trace', e.target.value)}
-                  endpoint={'/api/category/atributesparam/dji_M300/mode_trace'}
+                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_trace`}
                   keyGetter={(it) => it.id}
                   titleGetter={(it) => it.name}
                 />
@@ -183,7 +186,7 @@ const RouteOptions = ({ index, route }) => {
   );
 };
 
-const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expand_wp, setExpand_wp }) => {
+const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const devices = useSelector((state) => state.devices.items);
@@ -244,12 +247,15 @@ const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expa
     dispatch(missionActions.updateRoute({ index, field, value }));
   };
 
-  const handleChange_route = (panel) => (event, isExpanded) => {
-    setExpanded_route(isExpanded ? panel : false);
+  const routeKey = `r${index}`;
+  const isRouteOpen = expanded?.startsWith(routeKey);
+
+  const handleChange_route = (_, isExpanded) => {
+    setExpanded(isExpanded ? routeKey : null);
   };
 
   return (
-    <Accordion expanded={expanded_route === 'Rute ' + index} onChange={handleChange_route('Rute ' + index)}>
+    <Accordion expanded={!!isRouteOpen} onChange={handleChange_route}>
       <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography
           sx={{
@@ -272,7 +278,7 @@ const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expa
         </IconButton>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        {expanded_route === 'Rute ' + index && (
+        {isRouteOpen && (
           <Fragment>
             <TextField
               required
@@ -301,7 +307,7 @@ const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expa
               style={{ display: 'inline', width: '200px' }}
             />
 
-            <RouteOptions index={index} route={route} />
+            <RouteOptions index={index} route={route} uavType={route.uav_type} />
 
             <Typography variant="subtitle1">Waypoints</Typography>
             {route.wp.map((waypoint, index_wp) => (
@@ -311,8 +317,9 @@ const RouteRoutesList = ({ index, route, expanded_route, setExpanded_route, expa
                 routeIndex={index}
                 waypoint={waypoint}
                 idleVel={idleVel}
-                expandWp={expand_wp}
-                setExpandWp={setExpand_wp}
+                uavType={route.uav_type}
+                expanded={expanded}
+                setExpanded={setExpanded}
                 onAddWaypoint={handleAddWaypoint}
               />
             ))}
