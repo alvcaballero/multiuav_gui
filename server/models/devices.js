@@ -91,15 +91,57 @@ export class DevicesModel {
       attributes: publicFields,
       where: { deletedAt: null },
     });
+    const plain = mydevices.map((d) => d.dataValues);
     if (query) {
       if (Array.isArray(query)) {
-        return mydevices.filter((device) => query.some((element) => device.id == element));
+        return plain.filter((device) => query.some((element) => device.id == element));
       }
       if (!isNaN(query)) {
-        return mydevices.filter((device) => device.id == query);
+        return plain.filter((device) => device.id == query);
       }
     }
-    return mydevices;
+    return plain;
+  }
+
+  static async getDevicesWithPositions() {
+    const [devices, positions] = await Promise.all([DevicesModel.getAll(), positionsController.getLastPositions()]);
+
+    const positionsByDeviceId = Object.fromEntries(positions.map((p) => [p.deviceId, p]));
+
+    return Promise.all(
+      devices.map(async (device) => {
+        const pos = positionsByDeviceId[device.id];
+        const positionInfo = { yaw: pos?.course };
+        if (pos?.latitude !== undefined) {
+          positionInfo.latitude = pos.latitude;
+          positionInfo.longitude = pos.longitude;
+        }
+        if (pos?.attributes?.localposition !== undefined) {
+          positionInfo.localposition = {
+            x: pos.attributes.localposition[0],
+            y: pos.attributes.localposition[1],
+            z: pos.attributes.localposition[2],
+          };
+        }
+
+        const actionsByKey = rosController.getActionStatus({ device: device.name });
+        const isBusy =
+          typeof actionsByKey.status === 'string'
+            ? actionsByKey.status === 'idle'
+              ? false
+              : actionsByKey.status === 'executing' || actionsByKey.status === 'canceling'
+            : Object.values(actionsByKey).some((a) => a.status === 'executing' || a.status === 'canceling');
+
+        return {
+          id: device.id,
+          name: device.name,
+          connection_status: device.status,
+          busy: isBusy,
+          lastUpdate: device.lastUpdate,
+          ...positionInfo,
+        };
+      })
+    );
   }
 
   static async getById({ id }) {

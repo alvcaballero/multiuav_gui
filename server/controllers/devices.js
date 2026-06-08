@@ -20,6 +20,11 @@ class devicesController {
     return device;
   };
 
+  static getDevicesWithPositions = async (req, res) => {
+    const summary = await DevicesModel.getDevicesWithPositions();
+    res.json(summary);
+  };
+
   static getAccess = async (id) => {
     return await DevicesModel.getAccess(id);
   };
@@ -73,20 +78,42 @@ class devicesController {
 
   static getSnapshot = async (req, res) => {
     const { id } = req.params;
-    const { cameraModel } = await import('../models/camera.js');
 
-    // Obtenemos el dispositivo de la DB (CRUD)
-    const device = await DevicesModel.getById({ id });
+    if (!id) {
+      return res.status(400).json({ message: 'Device id is required.' });
+    }
 
-    // Delegamos la captura al modelo de cámaras
-    const snapshot = await cameraModel.getSnapshot(device);
+    let device;
+    try {
+      device = await DevicesModel.getById({ id });
+    } catch (err) {
+      logger.error(`getSnapshot: DB error for id=${id}: ${err.message}`);
+      return res.status(500).json({ message: 'Error retrieving device.' });
+    }
 
-    if (snapshot) {
-      res.writeHead(200, {
-        'Content-Type': snapshot.mimeType,
-        'Content-Length': snapshot.buffer.length,
-      });
-      return res.end(snapshot.buffer);
+    if (!device) {
+      return res.status(404).json({ message: `Device with id=${id} not found.` });
+    }
+
+    const hasCamera = device.camera && device.camera.length > 0;
+    if (!hasCamera) {
+      return res.status(422).json({ message: `Device '${device.name}' has no camera configured.` });
+    }
+
+    try {
+      const { cameraModel } = await import('../models/camera.js');
+      const snapshot = await cameraModel.getSnapshot(device);
+
+      if (snapshot) {
+        res.writeHead(200, {
+          'Content-Type': snapshot.mimeType,
+          'Content-Length': snapshot.buffer.length,
+        });
+        return res.end(snapshot.buffer);
+      }
+    } catch (err) {
+      logger.error(`getSnapshot: capture error for device '${device.name}': ${err.message}`);
+      return res.status(500).json({ message: 'Snapshot capture failed.' });
     }
 
     res.status(404).json({ message: 'No snapshot available. Ensure stream is active.' });
