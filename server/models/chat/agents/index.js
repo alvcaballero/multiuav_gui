@@ -1,6 +1,8 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import sequelize from '../../../common/sequelize.js';
+import { chatLogger } from '../../../common/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -53,6 +55,7 @@ function loadAgent(filename) {
   return {
     name: meta.name ?? filename.replace('.md', ''),
     description: meta.description ?? '',
+    capability: meta.capability ?? 'low',
     systemPrompt: body,
     allowedTools: meta.allowedTools ?? null,
   };
@@ -68,12 +71,58 @@ const agents = {
 
 export { agents };
 
-// Named exports for individual access
-export const defaultAgent = agents.default;
-export const plannerAgent = agents.planner;
-export const agvAgent = agents.agv;
-export const otherAgent = agents.other;
-export const verificationMissionAgent = agents['verification-mission'];
+export const DEFAULT_AGENT = 'agv';
+
+/**
+ * Resolves the full agent definition for a chat from DB metadata.
+ * Falls back to DEFAULT_AGENT if not set or unknown.
+ * @param {string} chatId
+ * @returns {Promise<{ name: string, description: string, systemPrompt: string, allowedTools: string[]|null }>}
+ */
+export async function resolveAgentForChat(chatId) {
+  try {
+    const chat = await sequelize.models.Chat.findByPk(chatId);
+    const profileName = chat?.metadata?.agentProfile ?? DEFAULT_AGENT;
+    return resolveAgent(profileName);
+  } catch (error) {
+    chatLogger.error(`resolveAgentForChat: error for chat ${chatId}:`, error);
+    return agents[DEFAULT_AGENT];
+  }
+}
+
+/**
+ * Resolves an agent by name. Falls back to DEFAULT_AGENT if unknown.
+ * @param {string} name
+ * @returns {{ name: string, description: string, systemPrompt: string, allowedTools: string[]|null }}
+ */
+export function resolveAgent(name) {
+  if (!agents[name]) {
+    chatLogger.warn(`resolveAgent: unknown profile '${name}', falling back to '${DEFAULT_AGENT}'`);
+    return agents[DEFAULT_AGENT];
+  }
+  return agents[name];
+}
+
+/**
+ * Persists the agent choice for a chat in DB metadata.
+ * @param {string} chatId
+ * @param {string} name
+ */
+export async function setAgentForChat(chatId, name) {
+  if (!agents[name]) throw new Error(`setAgentForChat: unknown agent '${name}'`);
+  try {
+    const chat = await sequelize.models.Chat.findByPk(chatId);
+    if (chat) {
+      chat.metadata = { ...(chat.metadata || {}), agentProfile: name };
+      chat.changed('metadata', true);
+      chat.updatedAt = new Date();
+      await chat.save();
+      chatLogger.info(`setAgentForChat: agent '${name}' set for chat ${chatId}`);
+    }
+  } catch (error) {
+    chatLogger.error(`setAgentForChat: error for chat ${chatId}:`, error);
+  }
+}
 
 // Legacy compatibility — same shape as old SystemPrompts
 export const SystemPrompts = {

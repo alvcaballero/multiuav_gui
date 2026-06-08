@@ -5,14 +5,10 @@ import { chatLogger } from '../../common/logger.js';
 
 // Models: claude-opus-4-6, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929, etc.
 class AnthropicHandler extends BaseLLMHandler {
-  static AGENT_PROFILES = {
-    default: {
-      model: 'claude-haiku-4-5-20251001',
-    },
-    planner: {
-      model: 'claude-sonnet-4-5-20250929',
-      maxTokens: 8192,
-    },
+  static CAPABILITY_MAP = {
+    low:    { model: 'claude-haiku-4-5-20251001' },
+    medium: { model: 'claude-sonnet-4-6' },
+    high:   { model: 'claude-sonnet-4-6', maxTokens: 8192 },
   };
 
   constructor(apiKey, model = 'claude-haiku-4-5-20251001', systemPrompt = SystemPrompts.main) {
@@ -151,10 +147,10 @@ class AnthropicHandler extends BaseLLMHandler {
       toolOutputs = null,
       allowedTools = null,
       forceFinish = false,
-      agentProfile = 'default',
+      agent = null,
     } = options;
 
-    const profile = this.getAgentProfile(agentProfile);
+    const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
     const maxTokens = profile.maxTokens || 4096;
 

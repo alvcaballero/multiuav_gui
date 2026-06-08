@@ -1,6 +1,7 @@
 ---
 name: other
 description: Generic drone platform monitoring and control assistant
+capability: medium
 allowedTools: null
 ---
 

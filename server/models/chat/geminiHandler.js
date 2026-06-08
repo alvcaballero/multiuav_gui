@@ -6,13 +6,10 @@ import { tr } from 'zod/v4/locales';
 
 // Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, gemini-3.1-pro-preview
 class GeminiHandler extends BaseLLMHandler {
-  static AGENT_PROFILES = {
-    default: {
-      model: 'gemini-2.5-flash',
-    },
-    planner: {
-      model: 'gemini-3-flash-preview',
-    },
+  static CAPABILITY_MAP = {
+    low:    { model: 'gemini-2.5-flash' },
+    medium: { model: 'gemini-2.5-pro' },
+    high:   { model: 'gemini-3-flash-preview' },
   };
 
   constructor(apiKey, model = 'gemini-2.5-flash', systemPrompt = SystemPrompts.main) {
@@ -236,10 +233,10 @@ class GeminiHandler extends BaseLLMHandler {
       toolOutputs = null,
       allowedTools = null,
       forceFinish = false,
-      agentProfile = 'default',
+      agent = null,
     } = options;
 
-    const profile = this.getAgentProfile(agentProfile);
+    const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
 
     // Build config

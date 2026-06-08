@@ -6,13 +6,10 @@ import { chatLogger } from '../../common/logger.js';
 
 // llama-px4  ,glm-4.7-flash,llama3.1:8b, etc.
 class OllamaHandler extends BaseLLMHandler {
-  static AGENT_PROFILES = {
-    default: {
-      model: 'glm-4.7-flash',
-    },
-    planner: {
-      model: 'glm-4.7-flash',
-    },
+  static CAPABILITY_MAP = {
+    low:    { model: 'glm-4.7-flash' },
+    medium: { model: 'glm-4.7-flash' },
+    high:   { model: 'glm-4.7-flash' },
   };
 
   constructor(apiKey, model = 'glm-4.7-flash', systemPrompt = SystemPrompts.main) {
@@ -162,10 +159,10 @@ class OllamaHandler extends BaseLLMHandler {
       toolOutputs = null,
       allowedTools = null,
       forceFinish = false,
-      agentProfile = 'default',
+      agent = null,
     } = options;
 
-    const profile = this.getAgentProfile(agentProfile);
+    const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
 
     // Build messages from conversation history

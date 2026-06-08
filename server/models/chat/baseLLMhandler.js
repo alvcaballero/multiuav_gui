@@ -84,17 +84,20 @@ export class BaseLLMHandler {
   }
 
   /**
-   * Returns the resolved config for an agent profile.
-   * Subclasses define AGENT_PROFILES with provider-specific presets.
-   * @param {string} profileName - Profile name ('default', 'planner', etc.)
-   * @returns {Object} Profile config { model, reasoning, ... }
+   * Resolves the provider-specific model config for an agent based on its capability tier.
+   * Subclasses define CAPABILITY_MAP: { low, medium, high } → { model, reasoning, ... }
+   * @param {{ capability: string }} agent - Agent definition from agents/index.js
+   * @returns {Object} Config { model, reasoning, maxTokens, ... }
    */
-  getAgentProfile(profileName = 'default') {
-    const profiles = this.constructor.AGENT_PROFILES || {};
-    return profiles[profileName] || profiles['default'] || { model: this.model };
+  resolveModelConfig(agent) {
+    const tier = agent?.capability ?? 'low';
+    const map = this.constructor.CAPABILITY_MAP || {};
+    return map[tier] || map['low'] || { model: this.model };
   }
 
-  static AGENT_PROFILES = {
-    default: {},
+  static CAPABILITY_MAP = {
+    low: {},
+    medium: {},
+    high: {},
   };
 }

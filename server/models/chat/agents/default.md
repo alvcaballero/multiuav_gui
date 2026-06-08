@@ -1,6 +1,7 @@
 ---
 name: default
 description: Main UAV control and mission planning assistant
+capability: low
 allowedTools:
   - get_devices
   - get_fleet_telemetry
@@ -10,7 +11,7 @@ allowedTools:
   - request_mission_plan
   - load_mission_to_uav
   - start_mission
-  - get_uav_snapshot
+  - download_device_camera_image
 ---
 
 # Role

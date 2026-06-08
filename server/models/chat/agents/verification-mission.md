@@ -1,6 +1,7 @@
 ---
 name: verification-mission
 description: UAV mission verifier for collision detection and safe detour generation
+capability: high
 allowedTools:
   - show_mission_xyz
 ---

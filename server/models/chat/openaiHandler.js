@@ -6,15 +6,10 @@ import { logger, chatLogger } from '../../common/logger.js';
 //suported roles= 'assistant', 'system', 'developer', and 'user'
 // models: gpt-4.1, gpt-4o, o4-mini, gpt-5, gpt-5-mini,, gpt-5-nano gpt-5.2,etc.
 class OpenAIHandler extends BaseLLMHandler {
-  static AGENT_PROFILES = {
-    default: {
-      model: 'gpt-5-mini-2025-08-07',
-      reasoning: { effort: 'low' },
-    },
-    planner: {
-      model: 'gpt-5-2025-08-07',
-      reasoning: { effort: 'medium' },
-    },
+  static CAPABILITY_MAP = {
+    low: { model: 'gpt-5-mini-2025-08-07', reasoning: { effort: 'low' } },
+    medium: { model: 'gpt-5-mini-2025-08-07', reasoning: { effort: 'medium' } },
+    high: { model: 'gpt-5-2025-08-07', reasoning: { effort: 'high' } },
   };
 
   constructor(apiKey, model = 'gpt-5', systemPrompt = SystemPrompts.openai) {
@@ -187,7 +182,13 @@ class OpenAIHandler extends BaseLLMHandler {
 
     for (const content of assistantMessage) {
       if (content.type === 'reasoning') {
-        chatLogger.info('Reasoning:', JSON.stringify(content.summary || content, null, 2).substring(0, 30) + '...');
+        const summaryText = Array.isArray(content.summary)
+          ? content.summary.map((s) => s.text || '').join('\n')
+          : typeof content.summary === 'string'
+            ? content.summary
+            : JSON.stringify(content.summary || content, null, 2);
+        chatLogger.info(`[Reasoning]\n${summaryText}`);
+        content.content = summaryText; // normalizado para el cliente (msg.message.content)
       }
       if (content.type === 'function_call' || content.type === 'tool_call') {
         chatLogger.info(`✓ Tool call request: ${content.name}`);
@@ -227,23 +228,22 @@ class OpenAIHandler extends BaseLLMHandler {
       toolOutputs = null,
       allowedTools = null, // list of allowed tool names for this call
       forceFinish = false, // force final response with system message
-      agentProfile = 'default', // Agent profile for model/reasoning selection
+      agent = null, // Full agent object from resolveAgentForChat
     } = options;
-    
-    chatLogger.info(`Processing message with OpenAIHandler (sessionId: ${sessionId ? sessionId.substring(0, 20) + '...' : 'none'}, previousResponseId: ${previousResponseId ? previousResponseId.substring(0, 20) + '...' : 'none'}, tools: ${tools.length}, conversationHistory: ${conversationHistory.length} messages)`);
+
+    chatLogger.info(
+      `Processing message with OpenAIHandler (sessionId: ${sessionId ? sessionId.substring(0, 20) + '...' : 'none'}, previousResponseId: ${previousResponseId ? previousResponseId.substring(0, 20) + '...' : 'none'}, tools: ${tools.length}, conversationHistory: ${conversationHistory.length} messages)`
+    );
     if (instructions) {
-      chatLogger.info(`✓ Instructions provided: ${typeof instructions === 'string' ? instructions.substring(0, 30) + '...' : JSON.stringify(instructions).substring(0, 30) + '...'}`);
+      chatLogger.info(
+        `✓ Instructions provided: ${typeof instructions === 'string' ? instructions.substring(0, 30) + '...' : JSON.stringify(instructions).substring(0, 30) + '...'}`
+      );
     }
 
-    // Resolve agent profile for model and reasoning config
-    const profile = this.getAgentProfile(agentProfile);
+    const profile = this.resolveModelConfig(agent);
 
-    // Message to force LLM to provide final response when tool limit is reached
-    const forceFinishMessage = {
-      role: 'system',
-      content:
-        'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools. Summarize what was accomplished and present the results to the user.',
-    };
+    const forceFinishInstructions =
+      'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools. Summarize what was accomplished and present the results to the user.';
 
     // Parameters for the call — model and reasoning come from the agent profile
     const params = {
@@ -272,10 +272,6 @@ class OpenAIHandler extends BaseLLMHandler {
       // Tool continuation - must send tool outputs in input
       if (toolOutputs && toolOutputs.length > 0) {
         params.input = this._expandToolOutputsWithImages(toolOutputs);
-        // Add force finish message after tool outputs to ensure final response
-        if (forceFinish) {
-          params.input.push(forceFinishMessage);
-        }
       }
       // New user message
       else if (message !== null) {
@@ -286,8 +282,10 @@ class OpenAIHandler extends BaseLLMHandler {
         params.input = [];
       }
 
-      // Instructions can be sent on first message of conversation
-      if (instructions) {
+      // instructions override for this turn only — not persisted in OpenAI conversation history
+      if (forceFinish) {
+        params.instructions = forceFinishInstructions;
+      } else if (instructions) {
         params.instructions = instructions;
       }
     }
@@ -298,10 +296,6 @@ class OpenAIHandler extends BaseLLMHandler {
       // Tool continuation - must send tool outputs in input
       if (toolOutputs && toolOutputs.length > 0) {
         params.input = this._expandToolOutputsWithImages(toolOutputs);
-        // Add force finish message after tool outputs to ensure final response
-        if (forceFinish) {
-          params.input.push(forceFinishMessage);
-        }
       }
       // New user message
       else if (message !== null) {
@@ -312,8 +306,10 @@ class OpenAIHandler extends BaseLLMHandler {
         params.input = [];
       }
 
-      // Re-send instructions if provided (they don't persist in chains)
-      if (instructions) {
+      // instructions override for this turn only — not persisted in response chain
+      if (forceFinish) {
+        params.instructions = forceFinishInstructions;
+      } else if (instructions) {
         params.instructions = instructions;
       }
     }
@@ -325,7 +321,7 @@ class OpenAIHandler extends BaseLLMHandler {
         // Tool continuation without session: history + expanded tool outputs
         params.input = [...historyInput, ...this._expandToolOutputsWithImages(toolOutputs)];
         if (forceFinish) {
-          params.input.push(forceFinishMessage);
+          params.input.push({ role: 'system', content: forceFinishInstructions });
         }
       } else {
         params.input = historyInput;
@@ -333,20 +329,22 @@ class OpenAIHandler extends BaseLLMHandler {
 
       // Send system prompt as instructions (separate from input, like Gemini's systemInstruction)
       const systemText = instructions || this.systemPrompt;
-      if (systemText) {
+      if (systemText && !forceFinish) {
         params.instructions = systemText;
       }
     }
 
-    chatLogger.info('tools')
+    chatLogger.info('tools');
     for (const tool of tools) {
       chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
     }
     chatLogger.info(`✓ Message for OpenAI`);
-    for (const msg of (Array.isArray(params.input) ? params.input : [])) {
+    for (const msg of Array.isArray(params.input) ? params.input : []) {
       const raw = msg.content ?? msg.output ?? msg;
       const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
-      chatLogger.info(`- role: ${msg.role ?? msg.type}, content: ${text.replace(/\r?\n|\r/g, " ").substring(0, 100)}...`);
+      chatLogger.info(
+        `- role: ${msg.role ?? msg.type}, content: ${text.replace(/\r?\n|\r/g, ' ').substring(0, 100)}...`
+      );
     }
     try {
       const logId = sessionId

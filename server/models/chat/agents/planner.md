@@ -1,6 +1,7 @@
 ---
 name: planner
 description: Mission planning sub-agent for multi-UAV XYZ coordinate missions
+capability: high
 allowedTools:
   - validate_mission_collisions
   - mark_step_complete
