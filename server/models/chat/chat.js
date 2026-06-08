@@ -3,28 +3,20 @@ import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
 import { LLM, MCPenable } from '../../config/config.js';
-import { SystemPrompts, agents } from './agents/index.js';
+import { resolveAgentForChat, setAgentForChat, resolveAgent } from './agents/index.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
-import { convertMissionBriefingToXYZ, convertMissionXYZToLatLong } from './coordinateConverter.js';
+import {
+  convertMissionBriefingToXYZ as convertBriefingToXYZ,
+  convertMissionXYZToLatLong,
+} from './coordinateConverter.js';
 import { missionModel } from '../mission.js';
 
 let mcpClient = null;
 let llmHandler = null;
 
-const maxIterations = 6; // Prevenir loops infinitos
+const maxIterations = 25; // Prevenir loops infinitos
 const maxIterations_planner = 18; // Prevenir loops infinitos
-
-/**
- * Returns the default allowedTools for a given agent profile.
- * Reads from the agent definition so tools live alongside the prompt.
- * null = all tools, [] = no tools, [...] = specific list
- * @param {string} profile
- * @returns {string[]|null}
- */
-function getAgentDefaultTools(profile) {
-  return agents[profile]?.allowedTools ?? null;
-}
 
 // Per-chatId mutex: ensures only one processMessage runs at a time per chat.
 // Concurrent requests for the same chatId queue behind the active one.
@@ -128,33 +120,12 @@ export class MessageOrchestrator {
       historySnapshot = [];
     }
 
-    // Determinar allowedTools: usar opciones si se pasan, sino cargar de metadata
-    let allowedTools = optionsAllowedTools;
-    if (optionsAllowedTools !== null) {
-      // Si se pasan allowedTools en opciones, guardarlas en metadata para consistencia
-      await ChatHistoryManager.setAllowedTools(chatId, optionsAllowedTools);
-    } else {
-      // Si no se pasan, intentar cargar de metadata (para mantener consistencia en el chat)
-      const storedAllowedTools = await ChatHistoryManager.getAllowedTools(chatId);
-      if (storedAllowedTools !== undefined) {
-        allowedTools = storedAllowedTools;
-        chatLogger.debug(
-          `Using stored allowedTools for chat ${chatId}: ${allowedTools ? allowedTools.join(', ') : 'all'}`
-        );
-      }
-    }
-
     const persistence = ChatHistoryManager.getSessionPersistence();
 
-    // Resolve agent profile from metadata (set by buildMissionPlanXYZ or defaults to 'default')
-    const agentProfile = await ChatHistoryManager.getAgentProfile(chatId);
-
-    // Fallback: if no allowedTools from options or metadata, use agent profile defaults
-    const agentDefaultTools = getAgentDefaultTools(agentProfile);
-    if (allowedTools === null && agentDefaultTools !== null) {
-      allowedTools = agentDefaultTools;
-      chatLogger.debug(`Using default tools for agent '${agentProfile}': ${allowedTools.join(', ')}`);
-    }
+    const agent = await resolveAgentForChat(chatId);
+    const agentProfile = agent.name;
+    const allowedTools = optionsAllowedTools ?? agent.allowedTools;
+    chatLogger.debug(`Using agent '${agentProfile}' with tools: ${allowedTools ? allowedTools.join(', ') : 'all'}`);
 
     try {
       // Get tools from MCP client, filtered by allowedTools
@@ -165,8 +136,8 @@ export class MessageOrchestrator {
 
       // Build system instructions (needed for first message of conversation)
       let systemInstructions = null;
-      if (SystemPrompts.main) {
-        systemInstructions = `${SystemPrompts.main}\n\n---\nSession context:\n- chat_id: ${chatId}`;
+      if (agent.systemPrompt) {
+        systemInstructions = `${agent.systemPrompt}\n\n---\nSession context:\n- chat_id: ${chatId}`;
       }
 
       // Add system prompt to history if first message (for record keeping)
@@ -192,12 +163,12 @@ export class MessageOrchestrator {
       const result = await llmHandler.processMessage(message, tools, historySnapshot, {
         sessionId,
         instructions: systemInstructions,
-        agentProfile,
+        agent,
       });
 
       // Extract response data from result
       const { output, responseId, model, sessionCleared } = result;
-      chatLogger.info(`✓ Parsed ${output.length} output parts from Gemini response`);
+      chatLogger.info(`✓ Parsed ${output.length} output parts from LLM response`);
 
       // Let the handler recover from session errors (e.g., recreate expired conversation)
       if (sessionCleared) {
@@ -224,28 +195,22 @@ export class MessageOrchestrator {
       // Handle tool calls with the current sessionId
       // Pass allowedTools and agentProfile to maintain consistency across iterations
       if (toolCallsFlag) {
-        this.handleToolCallsLoop(
-          output,
-          tools,
-          chatId,
-          sessionId,
-          systemInstructions,
-          allowedTools,
-          agentProfile
-        ).catch((error) => {
-          chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
-          eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-            chatId,
-            from: 'assistant',
-            timestamp: new Date().toISOString(),
-            message: {
-              role: 'assistant',
-              content: `Error processing tool results: ${error.message}`,
-              type: 'text',
-              status: 'error',
-            },
-          });
-        });
+        this.handleToolCallsLoop(output, tools, chatId, sessionId, systemInstructions, allowedTools, agent).catch(
+          (error) => {
+            chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
+            eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
+              chatId,
+              from: 'assistant',
+              timestamp: new Date().toISOString(),
+              message: {
+                role: 'assistant',
+                content: `Error processing tool results: ${error.message}`,
+                type: 'text',
+                status: 'error',
+              },
+            });
+          }
+        );
       }
 
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
@@ -280,7 +245,7 @@ export class MessageOrchestrator {
    * @param {string} sessionId - Provider session ID for persistent state
    * @param {string} systemInstructions - System instructions to re-send
    * @param {Array<string>} allowedTools - List of allowed tool names (null = all)
-   * @param {string} agentProfile - Agent profile name for model/reasoning selection
+   * @param {Object} agent - Full agent definition from resolveAgentForChat
    */
   static async handleToolCallsLoop(
     response,
@@ -289,14 +254,14 @@ export class MessageOrchestrator {
     sessionId,
     systemInstructions,
     allowedTools = null,
-    agentProfile = 'default'
+    agent = null
   ) {
     let isToolCalling = true;
     let iterations = 0;
     chatLogger.debug('Starting tool calls loop...');
     let currentResponse = response;
 
-    let maxIter = agentProfile === 'planner' ? maxIterations_planner : maxIterations;
+    const maxIter = agent?.capability === 'high' ? maxIterations_planner : maxIterations;
 
     while (isToolCalling && iterations < maxIter) {
       iterations++;
@@ -315,7 +280,7 @@ export class MessageOrchestrator {
         systemInstructions,
         isLastIteration ? [] : allowedTools, // No tools on last iteration to force text response
         isLastIteration, // forceFinish flag
-        agentProfile
+        agent
       );
       currentResponse = result.output;
 
@@ -364,7 +329,7 @@ export class MessageOrchestrator {
    * @param {string} systemInstructions - System instructions to re-send
    * @param {Array<string>} allowedTools - List of allowed tool names (null = all, [] = none for final response)
    * @param {boolean} forceFinish - If true, adds a system message forcing final response
-   * @param {string} agentProfile - Agent profile name for model/reasoning selection
+   * @param {Object} agent - Full agent definition from resolveAgentForChat
    * @returns {Promise<{output: Array, responseId: string}>} Response output and new responseId
    */
   static async continueAfterTools(
@@ -374,7 +339,7 @@ export class MessageOrchestrator {
     systemInstructions,
     allowedTools = null,
     forceFinish = false,
-    agentProfile = 'default',
+    agent = null,
     skipPersist = false
   ) {
     // Load history only if needed for fallback (no session)
@@ -404,7 +369,7 @@ export class MessageOrchestrator {
         instructions: systemInstructions,
         toolOutputs: skipPersist ? null : toolResults,
         forceFinish, // Signal to add final response message
-        agentProfile,
+        agent,
       }
     );
 
@@ -571,21 +536,6 @@ export class MessageOrchestrator {
     }
   }
 
-  static async convertMissionBriefingToXYZ(missionBriefing) {
-    const missionDataXYZ = convertMissionBriefingToXYZ(missionBriefing);
-    return {
-      global_origin: missionDataXYZ.global_origin,
-      devices_info: missionDataXYZ.drone_information,
-      target_elements: missionDataXYZ.target_elements,
-      group_information: missionDataXYZ.group_information,
-      obstacle_elements: missionDataXYZ.obstacle_elements,
-      mission_requirements: missionDataXYZ.mission_requirements,
-      user_context: missionDataXYZ.user_context,
-    };
-  }
-
-  /**
-
   /**
    * Processes a mission briefing from the main chat and creates a secondary background chat
    * for mission planning in local XYZ coordinates.
@@ -612,7 +562,7 @@ export class MessageOrchestrator {
     // ═══════════════════════════════════════════════════════════════════
     // STEP 1: Convert geodetic coordinates to local XYZ (ENU)
     // ═══════════════════════════════════════════════════════════════════
-    const missionDataXYZ = convertMissionBriefingToXYZ(missionBriefing);
+    const missionDataXYZ = convertBriefingToXYZ(missionBriefing);
     const { global_origin } = missionDataXYZ;
     // ═══════════════════════════════════════════════════════════════════
     // STEP 4: Build the mission planning request message
@@ -655,14 +605,13 @@ ${encode(missionDataXYZ.mission_requirements)}`;
     const secondaryChatId = secondaryChat.id;
     chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat XYZ: ${secondaryChatId}`);
 
-    // Set allowed tools and agent profile in metadata for consistent config across all messages
-    await ChatHistoryManager.setAllowedTools(secondaryChatId, getAgentDefaultTools('planner'));
-    await ChatHistoryManager.setAgentProfile(secondaryChatId, 'planner');
+    await setAgentForChat(secondaryChatId, 'planner');
 
     // ═══════════════════════════════════════════════════════════════════
     // STEP 3: Configure secondary chat with mission-specific system prompt
     // ═══════════════════════════════════════════════════════════════════
-    const systemPromptContent = `${SystemPrompts.mission_build_xyz}
+    const plannerAgent = resolveAgent('planner');
+    const systemPromptContent = `${plannerAgent.systemPrompt}
 ---
 Session_context:
 - main_chat_id: ${mainChatId}
@@ -708,7 +657,7 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
    */
   static async convertMissionBriefingToXYZ(missionBriefing) {
     chatLogger.info('[convertMissionBriefingToXYZ] Converting mission briefing to XYZ');
-    return convertMissionBriefingToXYZ(missionBriefing);
+    return convertBriefingToXYZ(missionBriefing);
   }
 
   /**
@@ -837,15 +786,12 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
 
     const sessionId = await ChatHistoryManager.getSessionId(chat_id);
     chatLogger.info(`[returnMissionPlanXYZ] Loaded sessionId: ${sessionId} for chat: ${chat_id}`);
-    const agentProfile = await ChatHistoryManager.getAgentProfile(chat_id);
-    chatLogger.info(`[returnMissionPlanXYZ] Agent Profile: ${agentProfile}`);
-    let allowedTools = await ChatHistoryManager.getAllowedTools(chat_id);
-    if (allowedTools === undefined) {
-      allowedTools = getAgentDefaultTools('default');
-    }
-    chatLogger.info(`[returnMissionPlanXYZ] Allowed Tools: ${allowedTools.join(', ')}`);
+    const agent = await resolveAgentForChat(chat_id);
+    const agentProfile = agent.name;
+    const allowedTools = agent.allowedTools;
+    chatLogger.info(`[returnMissionPlanXYZ] Agent: ${agentProfile}, Tools: ${allowedTools?.join(', ')}`);
     const history = await ChatHistoryManager.loadHistory(chat_id);
-    const systemInstructions = SystemPrompts.main;
+    const systemInstructions = agent.systemPrompt;
 
     // Get the real messageData that was just inserted (last visible tool_result for this tool)
     const realToolResult = history.findLast(
@@ -882,7 +828,7 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
       systemInstructions,
       allowedTools,
       false,
-      agentProfile,
+      agent,
       true // skipPersist: new row already inserted at step 3
     )
       .then(({ output }) => {
@@ -890,15 +836,7 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
         const hasToolCalls = output.some((item) => item.type === 'function_call' || item.type === 'tool_call');
         if (hasToolCalls) {
           const tools = this.getToolsForProvider(allowedTools);
-          return this.handleToolCallsLoop(
-            output,
-            tools,
-            chat_id,
-            sessionId,
-            systemInstructions,
-            allowedTools,
-            agentProfile
-          );
+          return this.handleToolCallsLoop(output, tools, chat_id, sessionId, systemInstructions, allowedTools, agent);
         }
       })
       .catch((err) => {

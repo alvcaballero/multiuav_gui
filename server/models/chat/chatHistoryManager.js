@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import { chatLogger } from '../../common/logger.js';
 import { Json } from 'sequelize/lib/utils';
 
+
 export class ChatHistoryManager {
   /**
    * Creates a chat item and persists to database
@@ -199,23 +200,23 @@ export class ChatHistoryManager {
    * @param {object} options - Pagination options
    * @returns {Promise<Array>} Array of messages in internal format
    */
-  static async loadHistory(chatId, { limit = 100, offset = 0 ,all=false} = {}) {
-    
+  static async loadHistory(chatId, { limit = 100, offset = 0, all = false } = {}) {
     let messages = [];
     if (all) {
       messages = await sequelize.models.ChatMessage.findAll({
-      where: { chatId },
-      order: [['timestamp', 'ASC']],
-      limit,
-      offset,
-    });
-    }else{
-    messages = await sequelize.models.ChatMessage.findAll({
-      where: { chatId, hidden: false },
-      order: [['timestamp', 'ASC']],
-      limit,
-      offset,
-    });}
+        where: { chatId },
+        order: [['timestamp', 'ASC']],
+        limit,
+        offset,
+      });
+    } else {
+      messages = await sequelize.models.ChatMessage.findAll({
+        where: { chatId, hidden: false },
+        order: [['timestamp', 'ASC']],
+        limit,
+        offset,
+      });
+    }
 
     return messages.map((msg) => ({
       chatId: msg.chatId,
@@ -311,7 +312,9 @@ export class ChatHistoryManager {
         await chat.save();
 
         const logRespId = responseId ? responseId.substring(0, 20) + '...' : 'null';
-        chatLogger.debug(`Updated chat ${chatId} metadata: responseId=${logRespId}, provider=${provider}, model=${model}`);
+        chatLogger.debug(
+          `Updated chat ${chatId} metadata: responseId=${logRespId}, provider=${provider}, model=${model}`
+        );
       }
     } catch (error) {
       chatLogger.error('Error updating chat metadata:', error);
@@ -376,41 +379,6 @@ export class ChatHistoryManager {
     }
   }
 
-  /**
-   * Set the agent profile for a chat (persists in metadata)
-   * @param {string} chatId - Chat identifier
-   * @param {string} agentProfile - Profile name ('default', 'planner', etc.)
-   */
-  static async setAgentProfile(chatId, agentProfile) {
-    try {
-      const chat = await sequelize.models.Chat.findByPk(chatId);
-      if (chat) {
-        const metadata = { ...(chat.metadata || {}), agentProfile };
-        chat.metadata = metadata;
-        chat.changed('metadata', true);
-        chat.updatedAt = new Date();
-        await chat.save();
-        chatLogger.info(`Set agentProfile for chat ${chatId}: ${agentProfile}`);
-      }
-    } catch (error) {
-      chatLogger.error('Error setting agentProfile:', error);
-    }
-  }
-
-  /**
-   * Get the agent profile for a chat from metadata
-   * @param {string} chatId - Chat identifier
-   * @returns {Promise<string>} Profile name or 'default'
-   */
-  static async getAgentProfile(chatId) {
-    try {
-      const chat = await sequelize.models.Chat.findByPk(chatId);
-      return chat?.metadata?.agentProfile || 'default';
-    } catch (error) {
-      chatLogger.error('Error getting agentProfile:', error);
-      return 'default';
-    }
-  }
 
   /**
    * Fork a conversation up to (and including) a specific message timestamp.
@@ -522,7 +490,11 @@ export class ChatHistoryManager {
       if (!data) return false;
       if (typeof data === 'object') return data.name === toolName;
       if (typeof data === 'string') {
-        try { return JSON.parse(data).name === toolName; } catch { return false; }
+        try {
+          return JSON.parse(data).name === toolName;
+        } catch {
+          return false;
+        }
       }
       return false;
     });
@@ -533,27 +505,35 @@ export class ChatHistoryManager {
     }
 
     // hidden all messages after the original tool_result to prevent the LLM confused
-      await sequelize.models.ChatMessage.update({ hidden: true }, {
+    await sequelize.models.ChatMessage.update(
+      { hidden: true },
+      {
         where: {
           chatId,
           timestamp: {
             [Op.gt]: originalToolResult.timestamp,
           },
         },
-      });
-      chatLogger.info(`[hideAndReplaceToolResult] Hidden ${candidates.length - 1} messages after original tool_result for "${toolName}" in chat ${chatId}`);
+      }
+    );
+    chatLogger.info(
+      `[hideAndReplaceToolResult] Hidden ${candidates.length - 1} messages after original tool_result for "${toolName}" in chat ${chatId}`
+    );
 
     // Extract call_id from the placeholder tool_result to find its paired function_call
-    const originalData = typeof originalToolResult.messageData === 'object'
-      ? originalToolResult.messageData
-      : JSON.parse(originalToolResult.messageData);
+    const originalData =
+      typeof originalToolResult.messageData === 'object'
+        ? originalToolResult.messageData
+        : JSON.parse(originalToolResult.messageData);
     const callId = originalData.call_id;
 
     // ── Hide the originalToolResult tool_result placeholder ────────────────────────────
     originalToolResult.hidden = true;
     originalToolResult.changed('hidden', true);
     await originalToolResult.save();
-    chatLogger.info(`[hideAndReplaceToolResult] Hidden original tool_result for "${toolName}" in chat ${chatId} (id: ${originalToolResult.id})`);
+    chatLogger.info(
+      `[hideAndReplaceToolResult] Hidden original tool_result for "${toolName}" in chat ${chatId} (id: ${originalToolResult.id})`
+    );
 
     // ── Find and hide the paired function_call (tool_call) ───────────────────
     // It may have other messages between it and the tool_result (e.g. text
@@ -568,9 +548,16 @@ export class ChatHistoryManager {
       });
 
       originalToolCall = toolCallCandidates.find((m) => {
-        const data = typeof m.messageData === 'object' ? m.messageData : (() => {
-          try { return JSON.parse(m.messageData); } catch { return null; }
-        })();
+        const data =
+          typeof m.messageData === 'object'
+            ? m.messageData
+            : (() => {
+                try {
+                  return JSON.parse(m.messageData);
+                } catch {
+                  return null;
+                }
+              })();
         return data && (data.call_id === callId || data.id === callId);
       });
 
@@ -578,9 +565,13 @@ export class ChatHistoryManager {
         originalToolCall.hidden = true;
         originalToolCall.changed('hidden', true);
         await originalToolCall.save();
-        chatLogger.info(`[hideAndReplaceToolResult] Hidden original tool_call for "${toolName}" in chat ${chatId} (id: ${originalToolCall.id})`);
+        chatLogger.info(
+          `[hideAndReplaceToolResult] Hidden original tool_call for "${toolName}" in chat ${chatId} (id: ${originalToolCall.id})`
+        );
       } else {
-        chatLogger.warn(`[hideAndReplaceToolResult] No tool_call found with call_id "${callId}" for tool "${toolName}" in chat ${chatId}`);
+        chatLogger.warn(
+          `[hideAndReplaceToolResult] No tool_call found with call_id "${callId}" for tool "${toolName}" in chat ${chatId}`
+        );
       }
     }
 
@@ -588,9 +579,10 @@ export class ChatHistoryManager {
 
     // ── Re-insert the function_call at the end (1 ms before the result) ──────
     if (originalToolCall) {
-      const toolCallData = typeof originalToolCall.messageData === 'object'
-        ? originalToolCall.messageData
-        : JSON.parse(originalToolCall.messageData);
+      const toolCallData =
+        typeof originalToolCall.messageData === 'object'
+          ? originalToolCall.messageData
+          : JSON.parse(originalToolCall.messageData);
 
       await sequelize.models.ChatMessage.create({
         chatId,
