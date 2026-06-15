@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { RuteConvert, RuteConvertlegacy } from '../map/MissionConvert';
 
 const defaultAttributes = {
@@ -10,7 +10,17 @@ const defaultAttributes = {
   mode_landing: 2,
 };
 
-const { reducer, actions } = createSlice({
+export const applyUavTypeDefaults = createAsyncThunk(
+  'mission/applyUavTypeDefaults',
+  async ({ routeIndex, uavType }) => {
+    const response = await fetch(`/api/category/attributesdefaults/${uavType}`);
+    if (!response.ok) throw new Error('Failed to fetch attribute defaults');
+    const defaults = await response.json();
+    return { routeIndex, defaults };
+  }
+);
+
+const { reducer: missionReducerBase, actions } = createSlice({
   name: 'mission',
   initialState: {
     name: 'Mission no loaded',
@@ -337,7 +347,15 @@ const { reducer, actions } = createSlice({
       state.elevation.location = indicesToKeep.map((i) => state.elevation.location[i]).filter(Boolean);
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(applyUavTypeDefaults.fulfilled, (state, action) => {
+      const { routeIndex, defaults } = action.payload;
+      if (state.route[routeIndex]) {
+        state.route[routeIndex].attributes = { ...state.route[routeIndex].attributes, ...defaults };
+      }
+    });
+  },
 });
 
 export { actions as missionActions };
-export { reducer as missionReducer };
+export { missionReducerBase as missionReducer };

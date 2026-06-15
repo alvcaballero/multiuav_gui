@@ -20,6 +20,8 @@ import palette from '../../shared/palette';
 import { map } from '../../map/core/MapView';
 import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';
+import { applyUavTypeDefaults } from '../../store/mission';
+import { useEffectAsync } from '../../reactHelper';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -55,14 +57,50 @@ const useStyles = makeStyles()((theme) => ({
 
 const DEFAULT_UAV_TYPE = 'dji_M300';
 
+const AttributeField = ({ attrDef, value, uavType, onChange }) => {
+  const { classes } = useStyles();
+
+  if (attrDef.type === 'number') {
+    return (
+      <TextField
+        fullWidth
+        type="number"
+        className={classes.attributeValue}
+        defaultValue={value ?? attrDef.default ?? 0}
+        onBlur={(e) => onChange(+e.target.value)}
+      />
+    );
+  }
+
+  return (
+    <div className={classes.attributeValue}>
+      <SelectField
+        emptyValue={null}
+        fullWidth={true}
+        value={value ?? attrDef.default ?? 0}
+        onChange={(e) => onChange(e.target.value)}
+        endpoint={`/api/category/atributesparam/${uavType}/${attrDef.id}`}
+        keyGetter={(it) => it.id}
+        titleGetter={(it) => it.name}
+      />
+    </div>
+  );
+};
+
 const RouteOptions = ({ index, route, uavType }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const [expand, setExpand] = useState(false);
+  const [attrDefs, setAttrDefs] = useState([]);
   const resolvedUavType = uavType || DEFAULT_UAV_TYPE;
 
-  const handleAttributeChange = (attribute, value) => {
-    dispatch(missionActions.updateRouteAttribute({ index, attribute, value }));
+  useEffectAsync(async () => {
+    const response = await fetch(`/api/category/attributeslist/${resolvedUavType}`);
+    if (response.ok) setAttrDefs(await response.json());
+  }, [resolvedUavType]);
+
+  const handleAttributeChange = (attrId, value) => {
+    dispatch(missionActions.updateRouteAttribute({ index, attribute: attrId, value }));
   };
 
   return (
@@ -71,116 +109,19 @@ const RouteOptions = ({ index, route, uavType }) => {
         <Typography sx={{ width: '53%', flexShrink: 0 }}>Route Attributes</Typography>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        {route.attributes && (
-          <Fragment key={'fragment-route-atri-' + route.id}>
-            <div>
-              <Typography variant="subtitle1" className={classes.attribute}>
-                Speed Mode
-              </Typography>
-              <div className={classes.attributeValue}>
-                <SelectField
-                  emptyValue={null}
-                  fullWidth={true}
-                  value={route.attributes.mode_speed || 0}
-                  onChange={(e) => handleAttributeChange('mode_speed', e.target.value)}
-                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_speed`}
-                  keyGetter={(it) => it.id}
-                  titleGetter={(it) => it.name}
-                />
-              </div>
-            </div>
-            <div>
-              <Typography variant="subtitle1" className={classes.attribute}>
-                Speed idle (m/s):
-              </Typography>
-              <TextField
-                fullWidth
-                required
-                type="number"
-                className={classes.attributeValue}
-                defaultValue={route.attributes.idle_vel || 1.85}
-                onBlur={(e) => handleAttributeChange('idle_vel', +e.target.value)}
-              />
-            </div>
-            <div>
-              <Typography variant="subtitle1" className={classes.attribute}>
-                Speed MAX (m/s):
-              </Typography>
-              <TextField
-                fullWidth
-                required
-                type="number"
-                className={classes.attributeValue}
-                defaultValue={route.attributes.max_vel || 12}
-                onBlur={(e) => handleAttributeChange('max_vel', +e.target.value)}
-              />
-            </div>
-            <div>
-              <Typography variant="subtitle1" className={classes.attribute}>
-                landing mode
-              </Typography>
-              <div className={classes.attributeValue}>
-                <SelectField
-                  emptyValue={null}
-                  fullWidth={true}
-                  value={route.attributes.mode_landing || 0}
-                  onChange={(e) => handleAttributeChange('mode_landing', e.target.value)}
-                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_landing`}
-                  keyGetter={(it) => it.id}
-                  titleGetter={(it) => it.name}
-                />
-              </div>
-            </div>
-            <div>
-              <Typography variant="subtitle1" className={classes.attribute}>
-                Yaw mode
-              </Typography>
-              <div className={classes.attributeValue}>
-                <SelectField
-                  emptyValue={null}
-                  fullWidth={true}
-                  value={route.attributes.mode_yaw || 0}
-                  onChange={(e) => handleAttributeChange('mode_yaw', e.target.value)}
-                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_yaw`}
-                  keyGetter={(it) => it.id}
-                  titleGetter={(it) => it.name}
-                />
-              </div>
-            </div>
-            <div>
-              <Typography variant="subtitle1" className={classes.attribute}>
-                Gimbal mode
-              </Typography>
-              <div className={classes.attributeValue}>
-                <SelectField
-                  emptyValue={null}
-                  fullWidth={true}
-                  value={route.attributes.mode_gimbal || 0}
-                  onChange={(e) => handleAttributeChange('mode_gimbal', e.target.value)}
-                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_gimbal`}
-                  keyGetter={(it) => it.id}
-                  titleGetter={(it) => it.name}
-                />
-              </div>
-            </div>
-            <div>
-              <Typography variant="subtitle1" className={classes.attribute}>
-                Trace mode:
-              </Typography>
-              <div className={classes.attributeValue}>
-                <SelectField
-                  emptyValue={null}
-                  fullWidth={true}
-                  value={route.attributes.mode_trace || 0}
-                  onChange={(e) => handleAttributeChange('mode_trace', e.target.value)}
-                  endpoint={`/api/category/atributesparam/${resolvedUavType}/mode_trace`}
-                  keyGetter={(it) => it.id}
-                  titleGetter={(it) => it.name}
-                />
-              </div>
-            </div>
-          </Fragment>
-        )}
+        {route.attributes && attrDefs.map((attrDef) => (
+          <div key={attrDef.id}>
+            <Typography variant="subtitle1" className={classes.attribute}>
+              {attrDef.name}
+            </Typography>
+            <AttributeField
+              attrDef={attrDef}
+              value={route.attributes[attrDef.id]}
+              uavType={resolvedUavType}
+              onChange={(value) => handleAttributeChange(attrDef.id, value)}
+            />
+          </div>
+        ))}
       </AccordionDetails>
     </Accordion>
   );
@@ -198,9 +139,9 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
     const myDevice = Object.values(devices).find((device) => device.name === route.uav);
     if (myDevice) {
       setRouteUAV(myDevice.id);
-      // Update uav_type when device is found
       if (route.uav_type !== myDevice.category) {
         dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: myDevice.category }));
+        dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: myDevice.category }));
       }
     } else {
       setRouteUAV(null);
