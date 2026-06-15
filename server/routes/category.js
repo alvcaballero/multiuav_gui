@@ -7,6 +7,8 @@ export const categoryRouter = Router();
 categoryRouter.get('/messages/', categoryController.messagesTypes);
 categoryRouter.get('/atributes/:type', categoryController.getAtributes);
 categoryRouter.get('/atributesparam/:type/:param', categoryController.getAtributesParam);
+categoryRouter.get('/attributeslist/:type', categoryController.getAttributesList);
+categoryRouter.get('/attributesdefaults/:type', categoryController.getAttributesDefaults);
 categoryRouter.get('/actions/:type', categoryController.getActions);
 categoryRouter.get('/:category', categoryController.getCategory);
 categoryRouter.put('/:category', categoryController.updateCategory);

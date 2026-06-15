@@ -66,6 +66,29 @@ export class categoryModel {
     if (!attributes) return [];
     return Object.values(attributes.mission_param);
   }
+
+  static getAttributesList(type) {
+    logger.debug(`categoryModel.getAttributesList: ${type}`);
+    const attributes = getMissionAttributes(type);
+    if (!attributes) return [];
+    return Object.values(attributes.mission_param).map(({ Name, id, type: fieldType, default: defaultValue }) => ({
+      id,
+      name: Name,
+      type: fieldType,
+      default: defaultValue ?? null,
+    }));
+  }
+
+  static getAttributesDefaults(type) {
+    logger.debug(`categoryModel.getAttributesDefaults: ${type}`);
+    const attributes = getMissionAttributes(type);
+    if (!attributes) return {};
+    return Object.values(attributes.mission_param).reduce((acc, { id, default: defaultValue }) => {
+      if (defaultValue !== undefined) acc[id] = defaultValue;
+      return acc;
+    }, {});
+  }
+
   static getAtributesParam({ type, param }) {
     logger.debug(`categoryModel.getAtributesParam: ${type}-${param}`);
     const attributes = getMissionAttributes(type);

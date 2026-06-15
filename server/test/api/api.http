@@ -86,6 +86,12 @@ GET http://localhost:4000/api/category/messages/
 GET http://localhost:4000/api/category/atributes/dji_M210_noetic
 
 ### Atributes
+GET http://localhost:4000/api/category/attributeslist/dji_M210_noetic
+
+### Atributes
+GET http://localhost:4000/api/category/attributesdefaults/dji_M210_noetic
+
+### Atributes
 GET http://localhost:4000/api/category/atributesparam/dji_M210_noetic/mode_yaw
 
 ### Actions

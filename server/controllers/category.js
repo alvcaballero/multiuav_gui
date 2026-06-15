@@ -54,4 +54,16 @@ export class categoryController {
     logger.debug(`Getting action parameters for: ${JSON.stringify(params)}`);
     return await categoryModel.getActions(params);
   }
+
+  static async getAttributesList(req, res) {
+    logger.debug(`Getting attributes list for: ${req.params.type}`);
+    const response = await categoryModel.getAttributesList(req.params.type);
+    res.json(response);
+  }
+
+  static async getAttributesDefaults(req, res) {
+    logger.debug(`Getting attributes defaults for: ${req.params.type}`);
+    const response = await categoryModel.getAttributesDefaults(req.params.type);
+    res.json(response);
+  }
 }
