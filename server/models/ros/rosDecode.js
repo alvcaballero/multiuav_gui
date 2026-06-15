@@ -1,5 +1,8 @@
 import { getDatetime, round } from '../../common/utils.js';
 import { getDroneStatus, getArmingStatus, getVehicleCommand, getVehicleCmdResult } from '../../config/status.js';
+
+const toDeg = (rad) => (rad * 180) / Math.PI;
+
 export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
   // console.log(`Decoding ROS message: ${type} ${msgType} for device ${deviceId}`);
   if (type == 'position' && msgType == 'sensor_msgs/NavSatFix') {
@@ -22,7 +25,29 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
   }
-  if (type == 'position_local' && msgType == 'px4_msgs/msg/VehicleLocalPosition') {
+  if (type == 'local_position' && msgType == 'psdk_interfaces/msg/PositionFused') {
+    return {
+      id: 0,
+      deviceId,
+      localposition: {
+        x: msg.position.x,
+        y: msg.position.y,
+        z: msg.position.z,
+      },
+    };
+  }
+  if (type == 'local_position' && msgType == 'geometry_msgs/PointStamped') {
+    return {
+      id: 0,
+      deviceId,
+      localposition: {
+        x: msg.point.x,
+        y: msg.point.y,
+        z: msg.point.z,
+      },
+    };
+  }
+  if (type == 'local_position' && msgType == 'px4_msgs/msg/VehicleLocalPosition') {
     const speed = Math.sqrt(msg.vx * msg.vx + msg.vy * msg.vy + msg.vz * msg.vz);
     return {
       id: 0,
@@ -37,9 +62,7 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
     };
   }
-  if (type == 'battery' && msgType == 'px4_msgs/msg/BatteryStatus') {
-    return { deviceId, batteryLevel: msg.remaining * 100 };
-  }
+
   if (type == 'vehicle_status' && msgType == 'px4_msgs/msg/VehicleStatus') {
     return {
       deviceId,
@@ -93,7 +116,7 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     return { deviceId, speed: round(msg.velocity * 0.01, 1) };
   }
 
-  if (type == 'speed' && msgType == 'geometry_msgs/Vector3Stamped' && !uav_type.includes('dji_M300')) {
+  if (type == 'speed' && (msgType == 'geometry_msgs/Vector3Stamped' || msgType == 'geometry_msgs/msg/Vector3Stamped')) {
     return {
       deviceId,
       speed: round(Math.sqrt(Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2) + Math.pow(msg.vector.z, 2)), 1),
@@ -115,13 +138,29 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
       batteryLevel: Math.round(msg.percentage * 100),
     };
   }
+  if (type == 'battery' && msgType == 'px4_msgs/msg/BatteryStatus') {
+    return { deviceId, batteryLevel: msg.remaining * 100 };
+  }
+  if (type == 'battery' && uav_type == 'dji_M300_PSDK') {
+    return { deviceId, batteryLevel: msg.percentage * 100 };
+  }
   if (type == 'battery') {
     return { deviceId, batteryLevel: msg.percentage };
   }
   if (type == 'gimbal' && msgType == 'geometry_msgs/Vector3Stamped') {
     return { deviceId, gimbal: msg.vector };
   }
-  if (type == 'obstacle_info' && msgType == 'dji_osdk_ros/ObstacleInfo') {
+  if (type == 'gimbal' && msgType == 'geometry_msgs/msg/Vector3Stamped' && uav_type == 'dji_M300_PSDK') {
+    const gimbal = msg.vector;
+    return {
+      deviceId,
+      gimbal: { x: toDeg(gimbal.x), y: toDeg(gimbal.y), z: toDeg(gimbal.z) },
+    };
+  }
+  if (
+    type == 'obstacle_info' &&
+    (msgType == 'dji_osdk_ros/ObstacleInfo' || msgType == 'psdk_interfaces/msg/RelativeObstacleInfo')
+  ) {
     return { deviceId, obstacle_info: msg };
   }
   if (type == 'obstacle_info' && msgType == 'sensor_msg/Range') {
@@ -146,6 +185,24 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
     return {
       deviceId,
       localposition: { x: msg.pose.pose.position.x, y: msg.pose.pose.position.y, z: msg.pose.pose.position.z },
+    };
+  }
+  if (type == 'attitude' && msgType == 'geometry_msgs/msg/QuaternionStamped') {
+    const q = msg.quaternion;
+    // 1. Calcular el yaw en radianes
+    const siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
+    const cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
+    const yaw_rad = Math.atan2(siny_cosp, cosy_cosp);
+
+    let yaw = (yaw_rad * 180) / Math.PI; // [-180, 180]
+    yaw = 90 - yaw; // Convertir a un sistema donde 0 es hacia el norte, 90 hacia el este
+
+    // 3. Opcional: Normalizar el ángulo entre -180 y 180 grados (estándar en ROS)
+    if (yaw > 180) yaw -= 360;
+    if (yaw < -180) yaw += 360;
+    return {
+      deviceId,
+      course: round(yaw, 1),
     };
   }
   if (type == 'sensors_humidity') {

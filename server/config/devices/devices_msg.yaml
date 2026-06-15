@@ -414,6 +414,54 @@ dji_M300_rtk:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
   mission_schema: v2
+
+dji_M300_PSDK:
+  topics:
+    position:
+      name: '/psdk_ros2/gps_position_fused'
+      messageType: 'sensor_msgs/NavSatFix'
+    local_position:
+      name: '/psdk_ros2/position_fused'
+      messageType: 'psdk_interfaces/msg/PositionFused'
+    speed:
+      name: '/psdk_ros2/velocity_ground_fused'
+      messageType: 'geometry_msgs/msg/Vector3Stamped'
+    attitude:
+      name: '/psdk_ros2/attitude'
+      messageType: 'geometry_msgs/msg/QuaternionStamped'
+    battery:
+      name: '/psdk_ros2/battery'
+      messageType: 'sensor_msgs/msg/BatteryState'
+    camera:
+      name: '/video_stream_compress'
+      messageType: 'sensor_msgs/CompressedImage'
+    gimbal:
+      name: '/psdk_ros2/gimbal_angles'
+      messageType: 'geometry_msgs/msg/Vector3Stamped'
+    obstacle_info:
+      name: '/psdk_ros2/relative_obstacle_info'
+      messageType: 'psdk_interfaces/msg/RelativeObstacleInfo'
+
+  services:
+    configureMission:
+      name: '/psdk_ros2/waypointV2_initSetting'
+      serviceType: 'psdk_interfaces/srv/InitWaypointV2Setting'
+    uploadMission:
+      name: '/psdk_ros2/waypointV2_uploadMission'
+      serviceType: 'psdk_interfaces/srv/UploadWaypointV2Mission'
+    commandMission:
+      name: '/psdk_ros2/waypointV2_startMission'
+      serviceType: 'psdk_interfaces/srv/StartWaypointV2Mission'
+    stopMission:
+      name: '/psdk_ros2/waypointV2_stopMission'
+      serviceType: 'dji_osdk_ros/StopWaypointV2Mission'
+    resumemission:
+      name: '/psdk_ros2/waypointV2_resumeMission'
+      serviceType: 'dji_osdk_ros/ResumeWaypointV2Mission'
+    pausemission:
+      name: '/psdk_ros2/waypointV2_pauseMission'
+      serviceType: 'dji_osdk_ros/PauseWaypointV2Mission'
+  mission_schema: v2
 px4_mavros:
   topics:
     position:
@@ -496,7 +544,7 @@ px4_ros2:
     position_global:
       name: '/fmu/out/vehicle_global_position'
       messageType: 'px4_msgs/msg/VehicleGlobalPosition'
-    position_local:
+    local_position:
       name: '/fmu/out/vehicle_local_position'
       messageType: 'px4_msgs/msg/VehicleLocalPosition'
     battery:
