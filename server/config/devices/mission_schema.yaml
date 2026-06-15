@@ -32,49 +32,81 @@ mission_action:
 
 mission_param:
   mode_yaw:
-    Name: 'mode yaw'
+    Name: 'Yaw mode'
     id: 'mode_yaw'
+    type: 'select'
+    default: 0
     param:
-      - { id: 0, name: 'Auto' } # auto mode (point to next waypoint)
-      - { id: 1, name: 'Lock' } # lock as an initial value
-      - { id: 2, name: 'RC' } # controlled by RC
-      - { id: 3, name: 'Waypoint' } # use waypoint's yaw(tgt_yaw)
+      - { id: 0, name: 'Auto' }           # HEADING_MODE_AUTO: follows direction of flight
+      - { id: 1, name: 'Fixed' }          # HEADING_FIXED: locked to heading at first waypoint
+      - { id: 2, name: 'RC' }             # HEADING_MANUAL: controlled by remote controller
+      - { id: 3, name: 'Waypoint custom' } # HEADING_WAYPOINT_CUSTOM: adapts to next waypoint
+      - { id: 4, name: 'Point of interest' } # HEADING_TOWARD_POINT_OF_INTEREST
+      - { id: 5, name: 'Gimbal yaw' }     # HEADING_GIMBAL_YAW_FOLLOW
   mode_trace:
-    Name: 'trace_mode'
+    Name: 'Flight path mode'
     id: 'mode_trace'
+    type: 'select'
+    default: 2
     param:
-      - { id: 0, name: 'point to point' }
-      - { id: 1, name: 'smooth' }
+      - { id: 0, name: 'Curve (fly past)' }    # FLIGHT_PATH_MODE_GO_TO_POINT_ALONG_A_CURVE
+      - { id: 1, name: 'Curve and stop' }       # FLIGHT_PATH_MODE_GO_TO_POINT_ALONG_A_CURVE_AND_STOP
+      - { id: 2, name: 'Straight and stop' }    # FLIGHT_PATH_MODE_GO_TO_POINT_IN_A_STRAIGHT_LINE_AND_STOP
+      - { id: 3, name: 'Coordinate turn' }      # FLIGHT_PATH_MODE_COORDINATE_TURN (smooth, no stop)
+  mode_turn:
+    Name: 'Turn mode'
+    id: 'mode_turn'
+    type: 'select'
+    default: 0
+    param:
+      - { id: 0, name: 'Clockwise' }        # TURN_MODE_CLOCKWISE
+      - { id: 1, name: 'Counter-clockwise' } # TURN_MODE_COUNTER_CLOCKWISE
   mode_landing:
-    Name: 'finish action'
+    Name: 'Finish action'
     id: 'mode_landing'
+    type: 'select'
+    default: 2
     param:
-      - { id: 0, name: 'no action' }
-      - { id: 1, name: 'return to home' }
-      - { id: 2, name: 'auto landing' }
-      - { id: 3, name: 'return to point 0' }
-      - { id: 4, name: 'infinite mode' }
+      - { id: 0, name: 'No action' }           # MISSION_FINISHED_NO_ACTION: hover at last WP
+      - { id: 1, name: 'Return to home' }       # MISSION_FINISHED_GO_HOME
+      - { id: 2, name: 'Auto landing' }         # MISSION_FINISHED_AUTO_LANDING: land at last WP
+      - { id: 3, name: 'Return to point 0' }    # MISSION_FINISHED_GO_TO_FIRST_WAYPOINT
+      - { id: 4, name: 'Infinite mode' }        # MISSION_FINISHED_CONTINUE_UNTIL_STOP
+  mode_goto_first:
+    Name: 'Go to first waypoint'
+    id: 'mode_goto_first'
+    type: 'select'
+    default: 0
+    param:
+      - { id: 0, name: 'Safely (climb first)' }   # GOTO_FIRST_WAYPOINT_MODE_SAFELY
+      - { id: 1, name: 'Direct (point to point)' } # GOTO_FIRST_WAYPOINT_MODE_POINT_TO_POINT
   mode_gimbal:
-    Name: 'gimbal mode'
+    Name: 'Gimbal mode'
     id: 'mode_gimbal'
+    type: 'select'
+    default: 1
     param:
       - { id: 0, name: 'Gimbal free' }
       - { id: 1, name: 'Waypoint' }
-  idle_velocity:
-    Name: 'Cruising Speed'
-    id: 'idle_speed'
-    param: true
-  max_velocity:
-    Name: 'Max Speed'
-    id: 'max_speed'
-    param: true
+  idle_vel:
+    Name: 'Cruising speed (m/s)'
+    id: 'idle_vel'
+    type: 'number'
+    default: 2
+  max_vel:
+    Name: 'Max speed (m/s)'
+    id: 'max_vel'
+    type: 'number'
+    default: 12
 
-# Extra params only available on devices that support WaypointV2 (M300, M300_rtk)
+# Extra params only available on devices that support WaypointV2 (M300, M300_rtk, PSDK)
 mission_param_v2:
   mode_speed:
-    Name: 'Mode Speed'
+    Name: 'Speed mode'
     id: 'mode_speed'
+    type: 'select'
+    default: 0
     param:
       - { id: 0, name: 'Idle speed' }
-      - { id: 1, name: 'idle and max speed' }
-      - { id: 2, name: 'Waypoint Speed' }
+      - { id: 1, name: 'Idle and max speed' }
+      - { id: 2, name: 'Waypoint speed' }
