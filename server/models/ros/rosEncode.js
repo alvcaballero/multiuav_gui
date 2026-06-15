@@ -1,51 +1,46 @@
-import * as ROSLIB from 'roslib';
-import { timeStamp } from 'console';
-import { request } from 'http';
-import { type } from 'os';
+import { decodeMissionRoute } from '../MissionDecoder.js';
+import { MissionToPsdkV2 } from './psdkEncode.js';
 
-function MissionToRos({
-  yawMode = 0,
-  gimbalPitchMode = 0,
-  traceMode = 0,
-  idleVel = 1.8,
-  maxVel = 10,
-  finishAction = 0,
-  waypoint = [],
-  yaw = [],
-  speed = [],
-  gimbalPitch = [],
-  commandList = [],
-  commandParameter = [],
-}) {
-  let wp_command_msg = waypoint.map((pos) => {
-    // return new ROSLIB.Message(pos);
-    return { ...pos };
-  });
+// ─── Encoder: route crudo → aerialcore_common/ConfigMission (ROS1) ───────────
 
-  let yaw_pos_msg = { data: yaw };
-  let speed_pos_msg = { data: speed };
-  let gimbal_pos_msg = { data: gimbalPitch };
-  let action_matrix_msg = { data: commandList.flat() };
-  let param_matrix_msg = { data: commandParameter.flat() };
+function MissionToRos(route) {
+  const {
+    waypoint,
+    yaw,
+    speed,
+    gimbalPitch,
+    commandList,
+    commandParameter,
+    maxVel,
+    idleVel,
+    yawMode,
+    traceMode,
+    gimbalPitchMode,
+    finishAction,
+  } = decodeMissionRoute(route);
+
   return {
     type: 'waypoint',
-    waypoint: wp_command_msg,
+    waypoint,
     radius: 0,
-    maxVel: maxVel,
-    idleVel: idleVel,
-    yaw: yaw_pos_msg,
-    speed: speed_pos_msg,
-    gimbalPitch: gimbal_pos_msg,
-    yawMode: yawMode,
-    traceMode: traceMode,
-    gimbalPitchMode: gimbalPitchMode,
-    finishAction: finishAction,
-    commandList: action_matrix_msg,
-    commandParameter: param_matrix_msg,
+    maxVel,
+    idleVel,
+    yaw: { data: yaw },
+    speed: { data: speed },
+    gimbalPitch: { data: gimbalPitch },
+    yawMode,
+    traceMode,
+    gimbalPitchMode,
+    finishAction,
+    commandList: { data: commandList.flat() },
+    commandParameter: { data: commandParameter.flat() },
   };
 }
-function MissionToRos2(param) {
-  let msg = MissionToRos(param);
+
+// ─── Encoder: route crudo → muav_gcs_interfaces/srv/LoadMission (ROS2) ───────
+
+function MissionToRos2(route) {
+  const msg = MissionToRos(route);
   return {
     request: {
       type: 'waypoint',
@@ -66,23 +61,30 @@ function MissionToRos2(param) {
   };
 }
 
+// ─── Dispatch: msgType → encoder ─────────────────────────────────────────────
+
+const MISSION_ENCODERS = {
+  'aerialcore_common/ConfigMission': MissionToRos,
+  'multiuav_interfaces/ConfigMission': MissionToRos,
+  'muav_gcs_interfaces/srv/LoadMission': MissionToRos2,
+  'psdk_interfaces/srv/InitWaypointV2Setting': MissionToPsdkV2,
+};
+
 export function encodeRosSrv({ type, msg, msgType }) {
-  if (msg === undefined || msg === null) {
-    return {};
+  if (msg == null) return {};
+
+  if (type === 'configureMission' && MISSION_ENCODERS[msgType]) {
+    const mission_encode = MISSION_ENCODERS[msgType](msg);
+    return mission_encode;
   }
-  if (
-    type == 'configureMission' &&
-    (msgType == 'aerialcore_common/ConfigMission' || msgType == 'multiuav_interfaces/ConfigMission')
-  ) {
-    return MissionToRos(msg);
-  }
-  if (type == 'configureMission' && msgType == 'muav_gcs_interfaces/srv/LoadMission') {
-    return MissionToRos2(msg);
-  }
-  if (msgType == 'std_srvs/TriggerRequest') {
-    return {};
-  }
-  if (msgType == 'px4_msgs/msg/TrajectorySetpoint') {
+
+  if (msgType === 'std_srvs/TriggerRequest') return {};
+  if (msgType === 'psdk_interfaces/srv/StartWaypointV2Mission') return {};
+  if (msgType === 'psdk_interfaces/srv/StopWaypointV2Mission') return {};
+  if (msgType === 'psdk_interfaces/srv/PauseWaypointV2Mission') return {};
+  if (msgType === 'psdk_interfaces/srv/ResumeWaypointV2Mission') return {};
+
+  if (msgType === 'px4_msgs/msg/TrajectorySetpoint') {
     return {
       timestamp: msg.timestamp || 0,
       position: msg.position || [0, 0, 0],
@@ -93,7 +95,8 @@ export function encodeRosSrv({ type, msg, msgType }) {
       yawspeed: msg.yawspeed || 0,
     };
   }
-  if (msgType == 'geometry_msgs/Twist') {
+
+  if (msgType === 'geometry_msgs/Twist') {
     return { linear: msg.linear || { x: 0, y: 0, z: 0 }, angular: msg.angular || { x: 0, y: 0, z: 0 } };
   }
 

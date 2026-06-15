@@ -4,7 +4,6 @@ import { getDatetime } from '../common/utils.js';
 import { rosController } from '../controllers/ros.js';
 import { getFlatbufferServer } from './flatbuffer/index.js';
 import { positionsController } from '../controllers/positions.js';
-import { decodeMissionMsg } from './MissionDecoder.js';
 import logger from '../common/logger.js';
 
 export class commandsModel {
@@ -162,18 +161,20 @@ export class commandsModel {
     for (const route of routes) {
       logger.debug(`load route for uav ${route.uav}`);
       let myDevice = await devicesController.getByName(route.uav);
-      logger.debug(`device found in route: id=${myDevice.id} name=${myDevice.name} searched=${deviceId}`);
+      logger.debug(`device found in route: id=${myDevice?.id} name=${myDevice?.name} searched=${deviceId}`);
       if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
         logger.info(`loading mission to device ${myDevice.id}`);
-        let attributes = await decodeMissionMsg({ uav_id: myDevice.id, route });
-        if (attributes) {
-          response = await this.standarCommand(myDevice.id, 'configureMission', attributes);
+        if (!route.wp || Object.values(route.wp).length === 0) {
+          response = { state: 'warning', msg: `route for ${route.uav} has no waypoints` };
+        } else {
+          // Pass the raw route to standarCommand — encoding happens in rosEncode.js
+          // uav_type is injected here so MissionDecoder can resolve action IDs from categoryModel
+          const rawRoute = { ...route, uav_type: myDevice.category };
+          response = await this.standarCommand(myDevice.id, 'configureMission', rawRoute);
           callback(response);
-          if (deviceId >=0){
+          if (deviceId >= 0) {
             break;
           }
-        } else {
-          response = { state: 'warning', msg: 'UAV no asing mission' };
         }
       } else {
         response = { state: 'warning', msg: `device ${route.uav} not found in mission route` };

@@ -1,5 +1,4 @@
-import { devicesController } from '../controllers/devices.js';
-import { categoryController } from '../controllers/category.js';
+import { categoryModel } from './category.js';
 import logger from '../common/logger.js';
 
 const ROUTE_DEFAULTS = {
@@ -19,11 +18,11 @@ function extractRouteAttributes(routeAttributes) {
   return attrs;
 }
 
-function buildWaypointActions(wpAction, categoryModel) {
+function buildWaypointActions(wpAction, categoryActions) {
   const action_array = Array(10).fill(0);
   const param_array = Array(10).fill(0);
   Object.keys(wpAction).forEach((action_val, index) => {
-    const found = Object.values(categoryModel).find((el) => el.name === action_val);
+    const found = categoryActions.find((el) => el.name === action_val);
     if (found) {
       action_array[index] = Number(found.id);
       param_array[index] = found.param ? Number(wpAction[action_val]) : 0;
@@ -32,7 +31,7 @@ function buildWaypointActions(wpAction, categoryModel) {
   return { action_array, param_array };
 }
 
-function transformWaypoints(waypoints, idle_vel, categoryModel) {
+function transformWaypoints(waypoints, idle_vel, categoryActions) {
   const wp_command = [];
   const yaw_pos = [];
   const speed_pos = [];
@@ -55,7 +54,7 @@ function transformWaypoints(waypoints, idle_vel, categoryModel) {
     let action_array = Array(10).fill(0);
     let param_array = Array(10).fill(0);
     if (item.hasOwnProperty('action')) {
-      ({ action_array, param_array } = buildWaypointActions(item.action, categoryModel));
+      ({ action_array, param_array } = buildWaypointActions(item.action, categoryActions));
     }
 
     wp_command.push(pos);
@@ -69,24 +68,22 @@ function transformWaypoints(waypoints, idle_vel, categoryModel) {
   return { wp_command, yaw_pos, speed_pos, gimbal_pos, action_matrix, param_matrix };
 }
 
-export async function decodeMissionMsg({ uav_id, route }) {
-  const device = await devicesController.getDevice(uav_id);
-  logger.debug(`decodeMissionMsg device: ${JSON.stringify(device)}`);
+// ─── Public API ───────────────────────────────────────────────────────────────
 
-  if (route['uav'] !== device.name) return null;
-
+// Decodes a raw route object into the internal normalized mission format.
+// route.uav_type must be present so categoryModel can resolve action IDs.
+export function decodeMissionRoute(route) {
   const { idle_vel, max_vel, mode_yaw, mode_gimbal, mode_trace, mode_landing } =
-    extractRouteAttributes(route.attributes);
+    extractRouteAttributes(route.attributes ?? {});
 
-  const categoryModel = await categoryController.getActionsParam({ type: device.category });
+  // categoryModel.getActions is synchronous — reads from in-memory YAML
+  const categoryActions = categoryModel.getActions({ type: route.uav_type });
 
   const { wp_command, yaw_pos, speed_pos, gimbal_pos, action_matrix, param_matrix } =
-    transformWaypoints(route['wp'], idle_vel, categoryModel);
+    transformWaypoints(route.wp, idle_vel, categoryActions);
 
   return {
-    type: 'waypoint',
     waypoint: wp_command,
-    radius: 0,
     maxVel: max_vel,
     idleVel: idle_vel,
     yaw: yaw_pos,
