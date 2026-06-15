@@ -9,7 +9,9 @@ import {
   AccordionSummary,
   AccordionDetails,
   Typography,
+  Stack,
 } from '@mui/material';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { makeStyles } from 'tss-react/mui';
 
 import { map } from '../../map/core/MapView';
@@ -53,11 +55,23 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, uavType, expanded, setExpanded, onAddWaypoint }) => {
+const WaypointRouteList = ({
+  routeIndex,
+  indexWp,
+  waypoint,
+  idleVel,
+  uavType,
+  expanded,
+  setExpanded,
+  onAddWaypoint,
+}) => {
   const { classes } = useStyles();
-  const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } = useWaypoint(routeIndex, indexWp, uavType);
+  const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } = useWaypoint(
+    routeIndex,
+    indexWp,
+    uavType
+  );
 
-  const [expanded_ac, setExpanded_ac] = useState(false);
   const [newactionmenu, setnewactionmenu] = useState(true);
   const [newactionid, setnewactionid] = useState(0);
   const [posInput, setPosInput] = useState({ lat: '', lon: '', alt: '' });
@@ -84,23 +98,25 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, uavType, ex
     updatePos([+posInput.lat, +posInput.lon, +posInput.alt]);
   };
 
-  const handleChange_ac = (panel) => (event, isExpanded) => {
-    setExpanded_ac(isExpanded ? panel : false);
-  };
-
   return (
     <Accordion expanded={isOpen} onChange={handleChange_wp}>
       <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
         <IconButton
           sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => { e.stopPropagation(); move(1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            move(1);
+          }}
         >
           <ArrowDownwardIcon />
         </IconButton>
         <IconButton
           sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => { e.stopPropagation(); move(-1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            move(-1);
+          }}
         >
           <ArrowUpwardIcon />
         </IconButton>
@@ -115,7 +131,10 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, uavType, ex
         </IconButton>
         <IconButton
           sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => { e.stopPropagation(); remove(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            remove();
+          }}
         >
           <DeleteIcon />
         </IconButton>
@@ -194,68 +213,57 @@ const WaypointRouteList = ({ routeIndex, indexWp, waypoint, idleVel, uavType, ex
                 onBlur={(e) => updateField('gimbal', +e.target.value)}
               />
             </Box>
-            <Accordion expanded={expanded_ac === 'wp ' + indexWp} onChange={handleChange_ac('wp ' + indexWp)}>
-              <AccordionSummary component="div" expandIcon={<ExpandMore />}>
-                <Typography sx={{ width: '33%', flexShrink: 0 }}>Actions</Typography>
-              </AccordionSummary>
-              <AccordionDetails className={classes.details}>
-                {waypoint.action &&
-                  Object.keys(waypoint.action).map((action_key, index_ac) => (
-                    <Fragment key={'fragment-action-' + index_ac}>
-                      <div>
-                        <Typography variant="subtitle1" className={classes.attributeName}>
-                          {action_key}
-                        </Typography>
-                        <div className={classes.actionValue}>
-                          <TextField
-                            required
-                            fullWidth={true}
-                            value={waypoint.action[action_key] ?? 0}
-                            onChange={(e) => updateAction(action_key, e.target.value)}
-                          />
-                        </div>
-                        <IconButton
-                          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                          onClick={() => removeAction(action_key)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </div>
-                      <Divider />
-                    </Fragment>
-                  ))}
-                <Box sx={{ textAlign: 'center' }}>
-                  {newactionmenu ? (
-                    <Button
-                      variant="contained"
-                      size="large"
-                      sx={{ width: '80%', flexShrink: 0 }}
-                      style={{ marginTop: '15px' }}
-                      onClick={() => setnewactionmenu(false)}
-                    >
-                      Add new action
-                    </Button>
-                  ) : (
-                    <div>
-                      <Typography variant="subtitle1">Tipo de acción a añadir</Typography>
-                      <SelectField
-                        emptyValue={null}
-                        fullWidth={true}
-                        value={newactionid}
-                        onChange={(e) => setnewactionid(e.target.value)}
-                        endpoint={`/api/category/actions/${uavType}`}
-                        keyGetter={(it) => it.id}
-                        titleGetter={(it) => it.description}
+            <Box>
+              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
+                <Typography variant="subtitle1">Actions</Typography>
+                <IconButton size="small" onClick={() => setnewactionmenu((v) => !v)} title="Add action">
+                  <AddCircleIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+              {!newactionmenu && (
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <SelectField
+                      label="Action"
+                      fullWidth
+                      emptyValue={null}
+                      value={newactionid}
+                      onChange={(e) => setnewactionid(e.target.value)}
+                      endpoint={`/api/category/actions/${uavType}`}
+                      keyGetter={(it) => it.id}
+                      titleGetter={(it) => it.description}
+                    />
+                  </Box>
+                  <Button size="small" variant="contained" onClick={() => addAction(newactionid, () => setnewactionmenu(true))}>
+                    Add
+                  </Button>
+                  <Button size="small" onClick={() => setnewactionmenu(true)}>
+                    Cancel
+                  </Button>
+                </Stack>
+              )}
+              {waypoint.action &&
+                Object.keys(waypoint.action).map((action_key, index_ac) => (
+                  <Fragment key={'fragment-action-' + index_ac}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
+                      <Typography variant="body2" sx={{ width: '40%', flexShrink: 0 }}>
+                        {action_key}
+                      </Typography>
+                      <TextField
+                        size="small"
+                        variant="standard"
+                        sx={{ flexGrow: 1 }}
+                        value={waypoint.action[action_key] ?? 0}
+                        onChange={(e) => updateAction(action_key, e.target.value)}
                       />
-                      <div>
-                        <Button onClick={() => setnewactionmenu(true)}>Cancel</Button>
-                        <Button onClick={() => addAction(newactionid, () => setnewactionmenu(true))}>Add</Button>
-                      </div>
-                    </div>
-                  )}
-                </Box>
-              </AccordionDetails>
-            </Accordion>
+                      <IconButton size="small" onClick={() => removeAction(action_key)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                    <Divider />
+                  </Fragment>
+                ))}
+            </Box>
             <Box sx={{ textAlign: 'center' }}>
               <Button
                 variant="contained"
