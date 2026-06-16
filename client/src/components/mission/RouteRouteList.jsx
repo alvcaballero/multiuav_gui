@@ -22,6 +22,7 @@ import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';
 import { applyUavTypeDefaults } from '../../store/mission';
 import { useEffectAsync } from '../../reactHelper';
+import { DEFAULT_UAV_TYPE } from './missionDefaults';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -55,19 +56,29 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const DEFAULT_UAV_TYPE = 'dji_M300';
-
 const AttributeField = ({ attrDef, value, uavType, onChange }) => {
   const { classes } = useStyles();
 
   if (attrDef.type === 'number') {
+    // Clamp to the catalog [min,max] on blur so the committed value is firmware-valid.
+    const clamp = (raw) => {
+      let v = Number(raw);
+      if (Number.isNaN(v)) v = attrDef.default ?? 0;
+      if (attrDef.min != null && v < attrDef.min) v = attrDef.min;
+      if (attrDef.max != null && v > attrDef.max) v = attrDef.max;
+      return v;
+    };
     return (
       <TextField
         fullWidth
         type="number"
         className={classes.attributeValue}
         defaultValue={value ?? attrDef.default ?? 0}
-        onBlur={(e) => onChange(+e.target.value)}
+        slotProps={{
+          htmlInput: { min: attrDef.min, max: attrDef.max, step: attrDef.step },
+          input: attrDef.unit ? { endAdornment: attrDef.unit } : undefined,
+        }}
+        onBlur={(e) => onChange(clamp(e.target.value))}
       />
     );
   }

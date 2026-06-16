@@ -1,15 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { RuteConvert, RuteConvertlegacy } from '../map/MissionConvert';
 
-const defaultAttributes = {
-  max_vel: 12,
-  idle_vel: 2,
-  mode_yaw: 3,
-  mode_gimbal: 1,
-  mode_trace: 0,
-  mode_landing: 2,
-};
-
 export const applyUavTypeDefaults = createAsyncThunk(
   'mission/applyUavTypeDefaults',
   async ({ routeIndex, uavType }) => {
@@ -105,7 +96,9 @@ const { reducer: missionReducerBase, actions } = createSlice({
         name: '',
         uav: '',
         id: newId,
-        attributes: { ...defaultAttributes },
+        // Defaults se traen del server (SSOT) vía applyUavTypeDefaults una vez
+        // que se asigna un UAV y se conoce su categoría.
+        attributes: {},
         wp: [],
       });
     },

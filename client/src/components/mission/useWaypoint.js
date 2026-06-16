@@ -1,7 +1,6 @@
 import { useDispatch } from 'react-redux';
 import { missionActions } from '../../store';
-
-const DEFAULT_UAV_TYPE = 'dji_M210_noetic';
+import { DEFAULT_UAV_TYPE } from './missionDefaults';
 
 const useWaypoint = (routeIndex, wpIndex, uavType) => {
   const resolvedUavType = uavType || DEFAULT_UAV_TYPE;
@@ -30,8 +29,9 @@ const useWaypoint = (routeIndex, wpIndex, uavType) => {
     const cmd = commands.find((c) => c.id == actionId);
     if (!cmd) return;
 
-    // param present → numeric value (0), otherwise boolean flag (true)
-    dispatch(missionActions.addWaypointAction({ routeIndex, wpIndex, actionKey: cmd.name, value: cmd.param ? 0 : true }));
+    // Acción con payload → valor inicial = payload.default del catálogo; sin payload → flag (true)
+    const value = cmd.payload ? (cmd.payload.default ?? 0) : true;
+    dispatch(missionActions.addWaypointAction({ routeIndex, wpIndex, actionKey: cmd.name, value }));
     onDone?.();
   };
 

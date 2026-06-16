@@ -1,32 +1,51 @@
 import { categoryModel } from './category.js';
 import logger from '../common/logger.js';
+import { CONFIG_SYMBOLS } from './ros/missionSymbols.js';
 
-const ROUTE_DEFAULTS = {
-  idle_vel: 1.8,
-  max_vel: 10,
-  mode_yaw: 0,
-  mode_gimbal: 0,
-  mode_trace: 0,
-  mode_landing: 0,
-};
+// ─── ConfigMission symbol → firmware number translation ───────────────────────
+//
+// CONFIG_SYMBOLS (in ros/missionSymbols.js) maps each CANONICAL SYMBOL (the `key`
+// in mission_schema.yaml) to the aerialcore_common/ConfigMission firmware number.
+// A symbol absent from that table means this firmware doesn't support the mode.
 
-function extractRouteAttributes(routeAttributes) {
-  const attrs = {};
-  for (const [key, defaultValue] of Object.entries(ROUTE_DEFAULTS)) {
-    attrs[key] = routeAttributes.hasOwnProperty(key) ? routeAttributes[key] : defaultValue;
-  }
-  return attrs;
+// symbol → ConfigMission firmware number. Throws if asked for a symbol this family
+// doesn't map (should never happen: the catalog is filtered to supported options).
+export function toConfigValue(group, symbol) {
+  const n = CONFIG_SYMBOLS[group]?.[symbol];
+  if (n === undefined) throw new RangeError(`MissionToRos: unmapped symbol ${group}.${symbol}`);
+  return n;
 }
 
+// Resolves a route attribute (wire number) to its ConfigMission firmware number
+// via the catalog symbol: number → symbol (catalog) → number (ConfigMission table).
+function configParamFromValue(group, value) {
+  const symbol = categoryModel.symbolForValue(group, value);
+  if (symbol == null) throw new RangeError(`MissionToRos: no symbol for ${group}=${value}`);
+  return toConfigValue(group, symbol);
+}
+
+// Defaults come from the mission_schema YAML, resolved per robot category (SSOT).
+// route.attributes overrides any default the user explicitly set.
+function extractRouteAttributes(routeAttributes, uavType) {
+  const defaults = categoryModel.getAttributesDefaults(uavType);
+  return { ...defaults, ...routeAttributes };
+}
+
+// ConfigMission transmits domain values UNCHANGED (no unit transform — this is the
+// family's contract). The action gate uses `payload` (number action) vs flag.
 function buildWaypointActions(wpAction, categoryActions) {
   const action_array = Array(10).fill(0);
   const param_array = Array(10).fill(0);
   Object.keys(wpAction).forEach((action_val, index) => {
     const found = categoryActions.find((el) => el.name === action_val);
-    if (found) {
-      action_array[index] = Number(found.id);
-      param_array[index] = found.param ? Number(wpAction[action_val]) : 0;
+    if (!found) {
+      // The category's profile doesn't support this action — surface it instead
+      // of silently dropping (e.g. focus/zoom on a non-PSDK robot).
+      logger.warn(`MissionDecoder: action '${action_val}' not supported by this category, skipping`);
+      return;
     }
+    action_array[index] = Number(found.id);
+    param_array[index] = found.payload != null ? Number(wpAction[action_val]) : 0;
   });
   return { action_array, param_array };
 }
@@ -73,14 +92,19 @@ function transformWaypoints(waypoints, idle_vel, categoryActions) {
 // Decodes a raw route object into the internal normalized mission format.
 // route.uav_type must be present so categoryModel can resolve action IDs.
 export function decodeMissionRoute(route) {
-  const { idle_vel, max_vel, mode_yaw, mode_gimbal, mode_trace, mode_landing } =
-    extractRouteAttributes(route.attributes ?? {});
+  const { idle_vel, max_vel, mode_yaw, mode_gimbal, mode_trace, mode_landing } = extractRouteAttributes(
+    route.attributes ?? {},
+    route.uav_type
+  );
 
   // categoryModel.getActions is synchronous — reads from in-memory YAML
   const categoryActions = categoryModel.getActions({ type: route.uav_type });
 
-  const { wp_command, yaw_pos, speed_pos, gimbal_pos, action_matrix, param_matrix } =
-    transformWaypoints(route.wp, idle_vel, categoryActions);
+  const { wp_command, yaw_pos, speed_pos, gimbal_pos, action_matrix, param_matrix } = transformWaypoints(
+    route.wp,
+    idle_vel,
+    categoryActions
+  );
 
   return {
     waypoint: wp_command,
@@ -89,10 +113,12 @@ export function decodeMissionRoute(route) {
     yaw: yaw_pos,
     speed: speed_pos,
     gimbalPitch: gimbal_pos,
-    yawMode: mode_yaw,
-    traceMode: mode_trace,
+    // Modes resolved wire number → catalog symbol → ConfigMission firmware number.
+    yawMode: configParamFromValue('mode_yaw', mode_yaw),
+    traceMode: configParamFromValue('mode_trace', mode_trace),
+    finishAction: configParamFromValue('mode_landing', mode_landing),
+    // mode_gimbal has its own scheme (GIMBAL_MODE_*); passed raw until mapped.
     gimbalPitchMode: mode_gimbal,
-    finishAction: mode_landing,
     commandList: action_matrix,
     commandParameter: param_matrix,
   };

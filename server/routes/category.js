@@ -8,6 +8,7 @@ categoryRouter.get('/messages/', categoryController.messagesTypes);
 categoryRouter.get('/atributes/:type', categoryController.getAtributes);
 categoryRouter.get('/atributesparam/:type/:param', categoryController.getAtributesParam);
 categoryRouter.get('/attributeslist/:type', categoryController.getAttributesList);
+categoryRouter.get('/waypointparams/:type', categoryController.getWaypointParams);
 categoryRouter.get('/attributesdefaults/:type', categoryController.getAttributesDefaults);
 categoryRouter.get('/actions/:type', categoryController.getActions);
 categoryRouter.get('/:category', categoryController.getCategory);

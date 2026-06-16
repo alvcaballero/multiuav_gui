@@ -83,13 +83,19 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
     assert.equal(result.traceMode, 2);
   });
 
-  test('atributos con defaults cuando attributes está vacío', () => {
+  test('atributos con defaults del YAML cuando attributes está vacío (SSOT)', () => {
+    // 'default' profile exposes mode_yaw/mode_trace/mode_landing/idle_vel (no max_vel).
     const emptyRoute = makeRoute('dji_M210_noetic', {});
     const result = encodeRosSrv({ type: 'configureMission', msg: emptyRoute, msgType });
-    assert.equal(result.idleVel, 1.8);
-    assert.equal(result.maxVel, 10);
+    assert.equal(result.idleVel, 2);
     assert.equal(result.yawMode, 0);
-    assert.equal(result.finishAction, 0);
+    assert.equal(result.finishAction, 2);
+  });
+
+  test('un perfil v2 sí aporta max_vel por defecto', () => {
+    const emptyRoute = makeRoute('dji_M300', {});
+    const result = encodeRosSrv({ type: 'configureMission', msg: emptyRoute, msgType });
+    assert.equal(result.maxVel, 12);
   });
 
   test('msg null devuelve {}', () => {
@@ -200,19 +206,19 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
     assert.equal(result.action_num, 0);
   });
 
-  test('lanza RangeError si mode_yaw tiene valor inválido', () => {
+  test('lanza RangeError si mode_yaw tiene valor inválido (sin símbolo en el catálogo)', () => {
     const badRoute = makeRoute('dji_M300_PSDK', { ...BASE_ATTRS, mode_yaw: 99 });
     assert.throws(
       () => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }),
-      { name: 'RangeError', message: /yawMode=99/ }
+      { name: 'RangeError', message: /mode_yaw=99/ }
     );
   });
 
-  test('lanza RangeError si mode_landing tiene valor inválido', () => {
+  test('lanza RangeError si mode_landing tiene valor inválido (sin símbolo en el catálogo)', () => {
     const badRoute = makeRoute('dji_M300_PSDK', { ...BASE_ATTRS, mode_landing: 99 });
     assert.throws(
       () => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }),
-      { name: 'RangeError', message: /finishAction=99/ }
+      { name: 'RangeError', message: /mode_landing=99/ }
     );
   });
 });

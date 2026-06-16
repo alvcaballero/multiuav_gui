@@ -83,7 +83,6 @@ dji_M210_noetic:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  mission_schema: default
 dji_M210_melodic:
   topics:
     position:
@@ -132,7 +131,6 @@ dji_M210_melodic:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  mission_schema: default
 dji_M210_noetic_rtk:
   topics:
     position:
@@ -181,7 +179,6 @@ dji_M210_noetic_rtk:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  mission_schema: default
 dji_M210_melodic_rtk:
   topics:
     position:
@@ -230,7 +227,6 @@ dji_M210_melodic_rtk:
     Gimbal:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
-  mission_schema: default
 dji_M600:
   topics:
     position:
@@ -267,7 +263,6 @@ dji_M600:
     CameraFileList:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
-  mission_schema: default
 dji_M300:
   topics:
     position:
@@ -340,7 +335,6 @@ dji_M300:
     CameraFileList:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
-  mission_schema: v2
 dji_M300_rtk:
   topics:
     position:
@@ -413,7 +407,6 @@ dji_M300_rtk:
     CameraFileList:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
-  mission_schema: v2
 
 dji_M300_PSDK:
   topics:
@@ -461,7 +454,6 @@ dji_M300_PSDK:
     pausemission:
       name: '/psdk_ros2/waypointV2_pauseMission'
       serviceType: 'dji_osdk_ros/PauseWaypointV2Mission'
-  mission_schema: v2
 px4_mavros:
   topics:
     position:
@@ -501,7 +493,6 @@ px4_mavros:
     CameraFileDownload:
       name: '/camera_download_files'
       serviceType: 'dji_osdk_ros/DownloadMedia'
-  mission_schema: default
 px4_mavros_slow:
   topics:
     position:
@@ -538,7 +529,6 @@ px4_mavros_slow:
     CameraFileDownload:
       name: '/camera_download_files'
       serviceType: 'dji_osdk_ros/DownloadMedia'
-  mission_schema: default
 px4_ros2:
   topics:
     position_global:
@@ -566,7 +556,6 @@ px4_ros2:
     commandMission:
       name: '/offboard/mission/start_stop'
       serviceType: 'std_srvs/srv/SetBool'
-  mission_schema: default
 fuvex:
   topics:
     position:
