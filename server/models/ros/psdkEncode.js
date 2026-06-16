@@ -357,27 +357,62 @@ export function MissionToPsdkV2(route, { missionId = 1 } = {}) {
 
   const waypoints = Object.values(route.wp);
 
-  const mission = waypoints.map((item, i) => ({
-    longitude: item.pos[1],
-    latitude: item.pos[0],
-    relative_height: item.pos[2],
-    waypoint_type: traceMode,
-    heading_mode: headingMode,
-    config: {
-      // use per-waypoint speed only when it differs from idle
-      use_local_cruise_vel: Object.prototype.hasOwnProperty.call(item, 'speed') && item.speed !== idle_vel ? 1 : 0,
-      use_local_max_vel: 0,
-    },
-    damping_distance: 0,
-    heading: item.yaw ?? 0,
-    // wp.mode_turn matches the catalog id (like wp.speed / wp.gimbal); → firmware turn_mode
-    turn_mode: psdkParamFromValue('mode_turn', item.mode_turn ?? defaultTurn),
-    position_x: 0,
-    position_y: 0,
-    position_z: 0,
-    max_flight_speed: max_vel,
-    auto_flight_speed: item.speed ?? idle_vel,
-  }));
+  // Wire value for TURN_MODE_AUTO is 0 (mission_schema.yaml — NOT the PSDK firmware number);
+  // when a waypoint carries this value we pick CW or CCW at encode-time to minimise the arc.
+  const WIRE_TURN_AUTO = 0;
+  const PSDK_CW = PSDK_SYMBOLS.mode_turn.TURN_MODE_CLOCKWISE;
+  const PSDK_CCW = PSDK_SYMBOLS.mode_turn.TURN_MODE_COUNTER_CLOCKWISE;
+
+  // Returns the signed shortest delta in [-180, 180] between two yaw angles.
+  function yawDelta(from, to) {
+    return ((to - from + 540) % 360) - 180;
+  }
+
+  // Tracks the last action yaw seen across waypoints for arc-minimisation.
+  let prevActionYaw = null;
+
+  const mission = waypoints.map((item, i) => {
+    const wireTurn = item.mode_turn ?? defaultTurn;
+    let turn_mode = PSDK_CW;
+    if (wireTurn === WIRE_TURN_AUTO) {
+      const actionYaw = item.action?.yaw != null ? Number(item.action.yaw) : null;
+      if (actionYaw !== null) {
+        // Compare this action yaw against the last seen action yaw (or wp heading if none yet).
+        const from = prevActionYaw ?? (i > 0 ? (waypoints[i - 1].yaw ?? 0) : 0);
+        turn_mode = yawDelta(from, actionYaw) >= 0 ? PSDK_CW : PSDK_CCW;
+        prevActionYaw = actionYaw;
+      } else if (headingMode === PSDK_SYMBOLS.mode_yaw.HEADING_MODE_WAYPOINT_CUSTOM) {
+        const prevYaw = i > 0 ? (waypoints[i - 1].yaw ?? 0) : 0;
+        const curYaw = item.yaw ?? 0;
+        turn_mode = yawDelta(prevYaw, curYaw) >= 0 ? PSDK_CW : PSDK_CCW;
+      }
+    } else {
+      turn_mode = psdkParamFromValue('mode_turn', wireTurn);
+    }
+    if (turn_mode !== PSDK_CW && turn_mode !== PSDK_CCW) {
+      throw new RangeError(`MissionToPsdkV2: invalid turn_mode ${turn_mode} at waypoint ${i}`);
+    }
+    return {
+      longitude: item.pos[1],
+      latitude: item.pos[0],
+      relative_height: item.pos[2],
+      waypoint_type: traceMode,
+      heading_mode: headingMode,
+      config: {
+        // use per-waypoint speed only when it differs from idle
+        use_local_cruise_vel: Object.prototype.hasOwnProperty.call(item, 'speed') && item.speed !== idle_vel ? 1 : 0,
+        use_local_max_vel: 0,
+      },
+      damping_distance: 0,
+      heading: item.yaw ?? 0,
+      turn_mode,
+      position_x: 0,
+      position_y: 0,
+      position_z: 0,
+      max_flight_speed: max_vel,
+      auto_flight_speed: item.speed ?? idle_vel,
+    };
+  });
 
   const actions = buildPsdkActions(waypoints);
 
