@@ -77,6 +77,14 @@ export const CONFIG_SYMBOLS = Object.freeze({
     MISSION_FINISHED_AUTO_LANDING: 2,
     // GO_TO_FIRST_WAYPOINT / CONTINUE_UNTIL_STOP not supported by ConfigMission firmware
   },
+  actions: {
+    ACTION_STAY: 0,
+    ACTION_PHOTO: 1,
+    ACTION_VIDEO_START: 2,
+    ACTION_VIDEO_STOP: 3,
+    ACTION_YAW: 4,
+    ACTION_GIMBAL: 5,
+  },
 });
 
 // serviceType (from devices_msg.yaml services.configureMission) → symbol table.
