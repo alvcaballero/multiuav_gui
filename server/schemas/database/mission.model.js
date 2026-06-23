@@ -13,6 +13,13 @@ const MissionSchema = {
     allowNull: false,
     type: DataTypes.STRING,
   },
+  planId: {
+    type: DataTypes.INTEGER,
+  },
+  trigger: {
+    type: DataTypes.STRING,
+    defaultValue: 'automatic',
+  },
   uav: {
     type: DataTypes.JSON,
   },

@@ -61,6 +61,11 @@ try {
 const migrations = [
   `ALTER TABLE ChatMessage ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE Devices ADD COLUMN deletedAt DATETIME DEFAULT NULL`,
+  // mission-db-schema refactor
+  `ALTER TABLE Mission ADD COLUMN planId INTEGER DEFAULT NULL`,
+  `ALTER TABLE Mission ADD COLUMN trigger TEXT DEFAULT 'automatic'`,
+  `ALTER TABLE MissionPlan ADD COLUMN name TEXT DEFAULT NULL`,
+  `ALTER TABLE MissionPlan ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'`,
 ];
 
 for (const sql of migrations) {
