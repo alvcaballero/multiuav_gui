@@ -1,9 +1,9 @@
 import { devicesController } from '../controllers/devices.js';
 import { eventsController } from '../controllers/events.js';
-import { getDatetime } from '../common/utils.js';
 import { rosController } from '../controllers/ros.js';
 import { getFlatbufferServer } from './flatbuffer/index.js';
 import { positionsController } from '../controllers/positions.js';
+import { missionWpTracking } from './missionWpTracking.js';
 import logger from '../common/logger.js';
 
 export class commandsModel {
@@ -96,10 +96,9 @@ export class commandsModel {
 
       eventsController.addEvent({
         type: response.state,
-        eventTime: getDatetime(),
         deviceId: deviceId,
         attributes: { message: response.msg },
-      }).catch((err) => logger.warn(`addEvent failed: ${err.message}`));
+      });
     }
 
     logger.debug(`sendCommand response: ${JSON.stringify(response)}`);
@@ -158,6 +157,9 @@ export class commandsModel {
       response = { state: 'info', msg: 'no mission' };
       return response;
     }
+
+    const loadedDeviceIds = [];
+
     for (const route of routes) {
       logger.debug(`load route for uav ${route.uav}`);
       let myDevice = await devicesController.getByName(route.uav);
@@ -167,14 +169,11 @@ export class commandsModel {
         if (!route.wp || Object.values(route.wp).length === 0) {
           response = { state: 'warning', msg: `route for ${route.uav} has no waypoints` };
         } else {
-          // Pass the raw route to standarCommand — encoding happens in rosEncode.js
-          // uav_type is injected here so MissionDecoder can resolve action IDs from categoryModel
           const rawRoute = { ...route, uav_type: myDevice.category };
           response = await this.standarCommand(myDevice.id, 'configureMission', rawRoute);
           callback(response);
-          if (deviceId >= 0) {
-            break;
-          }
+          if (response.state !== 'error') loadedDeviceIds.push(myDevice.id);
+          if (deviceId >= 0) break;
         }
       } else {
         response = { state: 'warning', msg: `device ${route.uav} not found in mission route` };
@@ -182,12 +181,19 @@ export class commandsModel {
       if (deviceId < 0) {
         eventsController.addEvent({
           type: response.state,
-          eventTime: getDatetime(),
           deviceId: myDevice ? myDevice.id : null,
           attributes: { message: response.msg },
-        }).catch((err) => logger.warn(`addEvent failed: ${err.message}`));
+        });
       }
     }
+
+    if (loadedDeviceIds.length > 0) {
+      const missionData = { route: routes, version: '3' };
+      missionWpTracking.onMissionLoaded(loadedDeviceIds, missionData).catch((err) =>
+        logger.error(`WpTracking onMissionLoaded error: ${err.message}`)
+      );
+    }
+
     logger.info('finish load mission');
     return response;
   }
@@ -195,27 +201,31 @@ export class commandsModel {
   static async commandMissionDevice(deviceId, callback = (x) => x) {
     let alldevices = await devicesController.getAllDevices();
     let response = { state: 'error', msg: 'Mission canceled' };
+    const commandedDeviceIds = [];
+
     for (const device of alldevices) {
-      let finding = false;
-      if (Array.isArray(deviceId)) {
-        finding = deviceId.some((mydeviceId) => mydeviceId == device.id);
-      }
+      let finding = Array.isArray(deviceId) && deviceId.some((id) => id == device.id);
       if (deviceId < 0 || deviceId == device.id || finding) {
         logger.info(`commandMissionDevice sending to device ${device.id}`);
-
         response = await this.standarCommand(device.id, 'commandMission', { data: true });
-
         callback(response);
+        if (response.state !== 'error') commandedDeviceIds.push(device.id);
         if (deviceId < 0) {
           eventsController.addEvent({
             type: response.state,
-            eventTime: getDatetime(),
             deviceId: device.id,
             attributes: { message: response.msg },
-          }).catch((err) => logger.warn(`addEvent failed: ${err.message}`));
+          });
         }
       }
     }
+
+    if (commandedDeviceIds.length > 0) {
+      missionWpTracking.onMissionCommanded(commandedDeviceIds).catch((err) =>
+        logger.error(`WpTracking onMissionCommanded error: ${err.message}`)
+      );
+    }
+
     return response;
   }
 }

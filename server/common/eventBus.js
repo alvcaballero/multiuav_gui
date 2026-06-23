@@ -123,6 +123,8 @@ export const EVENTS = Object.freeze({
   MISSION_UPDATED: 'mission:updated',
   MISSION_INIT: 'mission:init',
   MISSION_STATUS_CHANGED: 'mission:status:changed',
+  MISSION_PROGRESS: 'mission:progress',
+  MISSION_COMPLETED: 'mission:completed',
 
   // Eventos del sistema
   EVENT_CREATED: 'event:created',

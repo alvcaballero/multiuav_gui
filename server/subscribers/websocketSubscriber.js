@@ -28,6 +28,8 @@ export class WebSocketSubscriber {
     this.subscribe(EVENTS.MISSION_CREATED, this.onMissionCreated.bind(this));
     this.subscribe(EVENTS.MISSION_UPDATED, this.onMissionUpdated.bind(this));
     this.subscribe(EVENTS.MISSION_INIT, this.onMissionInit.bind(this));
+    this.subscribe(EVENTS.MISSION_PROGRESS, this.onMissionProgress.bind(this));
+    this.subscribe(EVENTS.MISSION_COMPLETED, this.onMissionCompleted.bind(this));
 
     // Eventos del sistema
     this.subscribe(EVENTS.EVENT_CREATED, this.onEventCreated.bind(this));
@@ -103,6 +105,14 @@ export class WebSocketSubscriber {
         name: mission.name || 'name',
       },
     });
+  }
+
+  onMissionProgress(data) {
+    this.wsController.sendMessage({ missionProgress: data });
+  }
+
+  onMissionCompleted(data) {
+    this.wsController.sendMessage({ missionCompleted: data });
   }
 
   /**
