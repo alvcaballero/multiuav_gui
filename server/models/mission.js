@@ -36,15 +36,15 @@ export class missionModel {
 
   static async getRoutes({ id, deviceId, missionId }) {
     if (deviceId && missionId) {
-      return await sequelize.models.Route.findOne({ where: { deviceId: deviceId, missionId: missionId } });
+      return await sequelize.models.MissionRoute.findOne({ where: { deviceId: deviceId, missionId: missionId } });
     }
     if (id) {
-      return await sequelize.models.Route.findOne({ where: { id: id } });
+      return await sequelize.models.MissionRoute.findOne({ where: { id: id } });
     }
     if (missionId) {
-      return await sequelize.models.Route.findAll({ where: { missionId: missionId } });
+      return await sequelize.models.MissionRoute.findAll({ where: { missionId: missionId } });
     }
-    return await sequelize.models.Route.findAll();
+    return await sequelize.models.MissionRoute.findAll();
   }
 
   static async broadcastMission(mission) {
@@ -58,6 +58,8 @@ export class missionModel {
   static async createMission({
     id,
     name,
+    planId = null,
+    trigger = 'automatic',
     uav = [],
     status = MISSION_STATUS.INIT,
     initTime = new Date(),
@@ -70,6 +72,8 @@ export class missionModel {
     return await sequelize.models.Mission.create({
       id,
       name,
+      planId,
+      trigger,
       uav,
       status,
       initTime,
@@ -81,8 +85,7 @@ export class missionModel {
   }
 
   static async createRoute(payload) {
-    const myRoute = sequelize.models.Route.create({ ...payload });
-    return myRoute;
+    return await sequelize.models.MissionRoute.create({ ...payload });
   }
 
   static async editMission({ id, uav, status, initTime, endTime, task, mission, results }) {
@@ -101,11 +104,11 @@ export class missionModel {
     return myMission;
   }
 
-  static async editRoute({ id, deviceId, missionId, status, initTime, endTime, task, mission, results }) {
+  static async editRoute({ id, deviceId, missionId, status, initTime, endTime, task, mission, results, currentWp, totalWp }) {
     let myRoute = null;
-    if (id) myRoute = await sequelize.models.Route.findOne({ where: { id: id } });
+    if (id) myRoute = await sequelize.models.MissionRoute.findOne({ where: { id: id } });
     if (deviceId && missionId)
-      myRoute = await sequelize.models.Route.findOne({ where: { deviceId: deviceId, missionId: missionId } });
+      myRoute = await sequelize.models.MissionRoute.findOne({ where: { deviceId: deviceId, missionId: missionId } });
     if (!myRoute) {
       return null;
     }
@@ -115,6 +118,8 @@ export class missionModel {
     if (task) myRoute.task = task;
     if (mission) myRoute.mission = mission;
     if (results) myRoute.results = results;
+    if (currentWp !== undefined) myRoute.currentWp = currentWp;
+    if (totalWp !== undefined) myRoute.totalWp = totalWp;
     await myRoute.save();
 
     if (status === ROUTE_STATUS.COMPLETED) this.validateMission(missionId);
@@ -241,7 +246,6 @@ export class missionModel {
 
     eventsController.addEvent({
       type: 'info',
-      eventTime: new Date(),
       deviceId: null,
       attributes: { message: 'Ext APP send task' },
     });
@@ -263,14 +267,22 @@ export class missionModel {
       logger.debug(`findDevice: ${JSON.stringify(findDevice.dataValues)}`);
       listUAV.push(findDevice.id);
     }
-    //const listUAV = mission.route.map((route) => devicesController.getByName(route.uav).id);
+
+    const plan = await this.createMissionPlan(mission, { source: 'automatic' });
+    logger.info(`MissionPlan created id=${plan.id} for automatic mission ${missionId}`);
+
     await this.editMission({
       id: missionId,
       uav: listUAV,
+      planId: plan.id,
       status: MISSION_STATUS.PLANNING,
       mission: mission,
     });
     for (const uavId of listUAV) {
+      const routeData = mission.route.find((r) => {
+        return true;
+      });
+      const totalWp = routeData?.wp?.length ?? 0;
       let myroute = await this.createRoute({
         status: ROUTE_STATUS.INIT,
         missionId: missionId,
@@ -278,6 +290,8 @@ export class missionModel {
         initTime: new Date(),
         endTime: null,
         result: {},
+        currentWp: 0,
+        totalWp,
       });
       missionSMModel.createActorMission(uavId, missionId, myroute.id);
     }
@@ -448,8 +462,24 @@ export class missionModel {
     }
   }
 
-  static async createMissionPlan(missionData) {
-    return await sequelize.models.MissionPlan.create({ missionData });
+  static async createMissionPlan(missionData, { name = null, source = 'manual' } = {}) {
+    return await sequelize.models.MissionPlan.create({ missionData, name, source });
+  }
+
+  static async createMissionFromPlan(planId, { trigger = 'manual', uav = [] } = {}) {
+    const plan = await sequelize.models.MissionPlan.findOne({ where: { id: planId } });
+    if (!plan) return null;
+    const initTime = new Date();
+    const name = plan.name ?? `mission_plan_${planId}_${initTime.getTime()}`;
+    return await this.createMission({
+      name,
+      planId,
+      trigger,
+      uav,
+      status: MISSION_STATUS.RUNNING,
+      initTime,
+      mission: plan.missionData,
+    });
   }
 
   static async getMissionPlan(id) {
