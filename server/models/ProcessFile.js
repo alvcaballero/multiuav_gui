@@ -2,7 +2,7 @@ import child_process from 'child_process';
 import sharp from 'sharp';
 import exif from 'exif-reader';
 import util from 'util';
-import { processThermalImg, processThermalsSrc } from '../config/config.js';
+import { processThermalImg, processThermalScript } from '../config/config.js';
 import logger from '../common/logger.js';
 
 const exec = util.promisify(child_process.exec);
@@ -70,9 +70,9 @@ export async function ProcessThermalImage(input, output) {
   logger.info(`ProcessThermalImage: ${input} -> ${output}`);
   if (!processThermalImg) return false;
   try {
-    const { stdout, stderr } = await exec(
-      ` ${processThermalsSrc} -i "${input}" -o "${output}" `, { shell: '/bin/bash' }
-    );
+    const { stdout, stderr } = await exec(` ${processThermalScript} -i "${input}" -o "${output}" `, {
+      shell: '/bin/bash',
+    });
     logger.debug(`stdout: ${stdout}`);
     if (stderr) logger.debug(`stderr: ${stderr}`);
   } catch (e) {

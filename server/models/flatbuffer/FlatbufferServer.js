@@ -7,7 +7,6 @@ import { positionsController } from '../../controllers/positions.js';
 import { eventsController } from '../../controllers/events.js';
 import { decodeFbMsg, decodeServiceResponse, isServiceResponse, getNameFromTopic } from './fbDecode.js';
 import { encodeFbMsg } from './fbEncode.js';
-import { getDatetime } from '../../common/utils.js';
 import logger from '../../common/logger.js';
 
 const SERVICE_TIMEOUT_MS = 5000;
@@ -127,7 +126,6 @@ export class FlatbufferServer {
     }
     eventsController.addEvent({
       type: response.state,
-      eventTime: getDatetime(),
       deviceId: uav_id,
       attributes: { message: response.msg },
     });

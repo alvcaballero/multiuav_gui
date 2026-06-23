@@ -165,7 +165,6 @@ export class positionsModel {
         if (positions[payload.deviceId]['attributes']['alarm'] != 'threat') {
           eventsController.addEvent({
             type: 'warning',
-            eventTime: new Date().toISOString(),
             deviceId: payload.deviceId,
             attributes: {
               message: 'Threat detected',
@@ -179,7 +178,6 @@ export class positionsModel {
           if (positions[payload.deviceId]['attributes']['alarm'] != 'confirm') {
             eventsController.addEvent({
               type: 'warning',
-              eventTime: new Date().toISOString(),
               deviceId: payload.deviceId,
               attributes: {
                 message: 'Threat confirmed',

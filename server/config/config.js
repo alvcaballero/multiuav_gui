@@ -21,9 +21,10 @@ export const dbName = process.env.DB_NAME;
 export const dbPort = process.env.DB_PORT;
 export const planningServer = process.env.PLANNING_SERVER === 'true';
 export const planningHost = process.env.PLANNING_HOST;
-export const filesPath = process.env.FILES_PATH ?? './data/';
+export const missionDataPath = process.env.MISSION_DATA_PATH ?? '../data/';
 export const processThermalImg = process.env.PROCESS_THERMAL_IMG === 'true';
-export const processThermalsSrc = process.env.PROCESS_PROGRAM_SRC;
+export const processThermalScript =
+  process.env.PROCESS_THERMAL_IMG_SRC ?? 'uv run ./utils/proccessThermalImg/processThermalGen.py';
 export const extApp = process.env.EXT_APP === 'true';
 export const extAppUrl = process.env.EXT_APP_URL || '';
 export const extAppUser = process.env.EXT_APP_USER || '';
@@ -54,11 +55,7 @@ if (raw) {
   }
 }
 export const MCPconfig = _MCPconfig; // MCP configuration file
-// data files
-export const filesData = '../data/files.json';
-export const devicesData = '../data/devices.json';
-export const routesData = '../data/routes.json';
-export const missionsData = '../data/missions.json';
+
 export const missionsConfigData = '../data/missionConfig.yaml';
 // intervals
 export const mapLatitude = Number(process.env.MAP_LATITUDE) || 37.19384681403371;
