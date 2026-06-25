@@ -9,7 +9,7 @@ import { readDataFile, writeJSON, sleep } from '../../common/utils.js';
 import sequelize from '../../common/sequelize.js';
 import { Op } from 'sequelize';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
-import { convertMissionXYZToLatLong } from './coordinateConverter.js';
+import { convertMissionXYZToLatLong, convertMissionBriefingToXYZ } from './coordinateConverter.js';
 import logger from '../../common/logger.js';
 import { MISSION_STATUS, ROUTE_STATUS } from '../../config/status.js';
 
@@ -510,6 +510,14 @@ export class missionModel {
 
   static async getAllMissionPlans() {
     return await sequelize.models.MissionPlan.findAll({ order: [['createdAt', 'DESC']] });
+  }
+
+  static convertBriefingToXYZ(missionBriefing) {
+    return convertMissionBriefingToXYZ(missionBriefing);
+  }
+
+  static convertXYZToGeodetic(missionDataXYZ) {
+    return convertMissionXYZToLatLong(missionDataXYZ);
   }
 
   static async showMissionXYZ(missionDataXYZ) {
