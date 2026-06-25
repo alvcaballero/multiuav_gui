@@ -102,7 +102,7 @@ const MissionReportPage = () => {
   };
 
   useEffectAsync(async () => {
-    const response = await fetch('/api/missions');
+    const response = await fetch('/api/missions?all=true');
     if (response.ok) {
       const myMissions = await response.json();
       setMissions(myMissions);
