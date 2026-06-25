@@ -1,16 +1,17 @@
-import { devicesController } from '../controllers/devices.js';
-import { positionsController } from '../controllers/positions.js';
+import { devicesController } from '../../controllers/devices.js';
+import { positionsController } from '../../controllers/positions.js';
 import { missionSMModel } from './missionSM.js';
-import { ExtAppController } from '../controllers/ExtApp.js';
-import { planningController } from '../controllers/planning.js';
-import { filesController } from '../controllers/files.js';
-import { eventsController } from '../controllers/events.js';
-import { readDataFile, writeJSON, sleep } from '../common/utils.js';
-import sequelize from '../common/sequelize.js';
-import { eventBus, EVENTS } from '../common/eventBus.js';
-import { convertMissionXYZToLatLong } from './chat/coordinateConverter.js';
-import logger from '../common/logger.js';
-import { MISSION_STATUS, ROUTE_STATUS } from '../config/status.js';
+import { ExtAppController } from '../../controllers/ExtApp.js';
+import { planningController } from '../../controllers/planning.js';
+import { filesController } from '../../controllers/files.js';
+import { eventsController } from '../../controllers/events.js';
+import { readDataFile, writeJSON, sleep } from '../../common/utils.js';
+import sequelize from '../../common/sequelize.js';
+import { Op } from 'sequelize';
+import { eventBus, EVENTS } from '../../common/eventBus.js';
+import { convertMissionXYZToLatLong } from './coordinateConverter.js';
+import logger from '../../common/logger.js';
+import { MISSION_STATUS, ROUTE_STATUS } from '../../config/status.js';
 
 /**
  * @typedef Mission
@@ -24,14 +25,21 @@ import { MISSION_STATUS, ROUTE_STATUS } from '../config/status.js';
  * @property {Array<object>} results
  */
 
-export { MISSION_STATUS, ROUTE_STATUS };
-
 export class missionModel {
-  static async getMissionValue(id) {
+  static async getMissionValue(id, all = false) {
     if (id) {
       return await sequelize.models.Mission.findOne({ where: { id: id } });
     }
-    return await sequelize.models.Mission.findAll();
+    if (all) {
+      return await sequelize.models.Mission.findAll();
+    }
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return await sequelize.models.Mission.findAll({
+      where: {
+        status: { [Op.in]: [MISSION_STATUS.INIT, MISSION_STATUS.PLANNING, MISSION_STATUS.RUNNING] },
+        initTime: { [Op.gte]: since },
+      },
+    });
   }
 
   static async getRoutes({ id, deviceId, missionId }) {
@@ -104,7 +112,19 @@ export class missionModel {
     return myMission;
   }
 
-  static async editRoute({ id, deviceId, missionId, status, initTime, endTime, task, mission, results, currentWp, totalWp }) {
+  static async editRoute({
+    id,
+    deviceId,
+    missionId,
+    status,
+    initTime,
+    endTime,
+    task,
+    mission,
+    results,
+    currentWp,
+    totalWp,
+  }) {
     let myRoute = null;
     if (id) myRoute = await sequelize.models.MissionRoute.findOne({ where: { id: id } });
     if (deviceId && missionId)
@@ -211,7 +231,9 @@ export class missionModel {
       devicesSettings.push(config);
     }
     myTask.devices = devicesSettings.filter((item) => item != null);
-    logger.info(`Task ${myTask.id} ${myTask.name} ${myTask.case} devices: ${myTask.devices.map((item) => item.id).flat()}`);
+    logger.info(
+      `Task ${myTask.id} ${myTask.name} ${myTask.case} devices: ${myTask.devices.map((item) => item.id).flat()}`
+    );
     logger.debug(`task devices: ${JSON.stringify(myTask.devices)}`);
     logger.debug(`task locations: ${JSON.stringify(myTask.locations)}`);
     return myTask;
@@ -492,7 +514,7 @@ export class missionModel {
 
   static async showMissionXYZ(missionDataXYZ) {
     logger.info(`[MissionShowXYZ] Starting mission show in XYZ coordinates`);
-    let missionxyz = { ...missionDataXYZ , version: '3'};
+    let missionxyz = { ...missionDataXYZ, version: '3' };
     try {
       logger.debug(`[MissionShowXYZ] Input data:`, JSON.stringify(missionDataXYZ, null, 2));
       const mission = convertMissionXYZToLatLong(missionxyz);

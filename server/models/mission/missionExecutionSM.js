@@ -1,12 +1,12 @@
 //https://stately.ai/docs/editor-states-and-transitions
 // https://dev.to/davidkpiano/you-don-t-need-a-library-for-state-machines-k7h
 import { createMachine, createActor, fromPromise, assign } from 'xstate';
-import { commandsController } from '../controllers/commands.js';
+import { commandsController } from '../../controllers/commands.js';
 //import { missionModel } from './mission.js';
-import { dateString, addTime, GetLocalTime, sleep } from '../common/utils.js';
+import { dateString, addTime, GetLocalTime, sleep } from '../../common/utils.js';
 import { missionSMModel } from './missionSM.js';
-import { missionController } from '../controllers/mission.js';
-import logger from '../common/logger.js';
+import { missionController } from '../../controllers/mission.js';
+import logger from '../../common/logger.js';
 
 const LoadMissionSM = async (context) => {
   logger.info('service load mission');

@@ -57,8 +57,8 @@ const { reducer: activeMissionsReducer, actions: activeMissionsActions } = creat
     },
 
     updateProgress(state, action) {
-      // From WS missionProgress: { missionId, deviceId, currentWp, totalWp, completed }
-      const { missionId, deviceId, currentWp, totalWp } = action.payload;
+      // From WS missionProgress: { missionId, deviceId, currentWp, totalWp, completed, anomalies, wpEstimate, confidence }
+      const { missionId, deviceId, currentWp, totalWp, anomalies = [], wpEstimate = null, confidence = null } = action.payload;
       const mission = state.items[missionId];
       // If mission is unknown, create a placeholder — SocketController will fetch full data
       if (!mission) {
@@ -69,16 +69,21 @@ const { reducer: activeMissionsReducer, actions: activeMissionsActions } = creat
           uav: [],
           initTime: null,
           endTime: null,
-          routes: { [deviceId]: { deviceId, status: 'running', currentWp, totalWp } },
+          routes: {
+            [deviceId]: { deviceId, status: 'running', currentWp, totalWp, anomalies, wpEstimate, confidence },
+          },
         };
         return;
       }
       if (!mission.routes[deviceId]) {
-        mission.routes[deviceId] = { deviceId, status: 'running', currentWp, totalWp };
+        mission.routes[deviceId] = { deviceId, status: 'running', currentWp, totalWp, anomalies, wpEstimate, confidence };
       } else {
         mission.routes[deviceId].currentWp = currentWp;
         mission.routes[deviceId].totalWp = totalWp;
         mission.routes[deviceId].status = action.payload.completed ? 'completed' : 'running';
+        mission.routes[deviceId].anomalies = anomalies;
+        mission.routes[deviceId].wpEstimate = wpEstimate;
+        mission.routes[deviceId].confidence = confidence;
       }
       mission.status = 'running';
     },

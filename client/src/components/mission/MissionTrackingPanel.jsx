@@ -7,8 +7,10 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Tooltip,
   Typography,
 } from '@mui/material';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { activeMissionsActions, missionActions } from '../../store';
 import { map } from '../../map/core/MapView';
 
@@ -26,31 +28,58 @@ const STATUS_LABEL = {
   completed: 'Done',
 };
 
+const ANOMALY_LABEL = {
+  DEVIATION:      'Deviating from route',
+  RTH_SUSPECTED:  'Return to home suspected',
+  ON_GROUND:      'UAV on ground',
+  DISARMED:       'UAV disarmed',
+  TELEMETRY_GAP:  'Telemetry gap — WP estimate may be ahead',
+};
+
 const RouteRow = ({ route, devicesMap }) => {
   const device = Object.values(devicesMap).find((d) => d.id === route.deviceId);
   const name = device?.name ?? `UAV ${route.deviceId}`;
   const pct = route.totalWp > 0 ? Math.round((route.currentWp / route.totalWp) * 100) : 0;
+  const hasAnomaly = route.anomalies?.length > 0;
+  const anomalyText = route.anomalies?.map((a) => ANOMALY_LABEL[a] ?? a).join(' · ') ?? '';
+  const showEstimate = route.wpEstimate !== null && route.wpEstimate !== route.currentWp;
 
   return (
     <Box sx={{ px: 2, py: 0.5 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.25 }}>
-        <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-          {name}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ ml: 1, whiteSpace: 'nowrap' }}>
-          {route.currentWp}/{route.totalWp} WP
-        </Typography>
-        <Chip
-          label={STATUS_LABEL[route.status] ?? route.status}
-          color={STATUS_COLOR[route.status] ?? 'default'}
-          size="small"
-          sx={{ ml: 1, height: 18, fontSize: '0.6rem' }}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          {hasAnomaly && (
+            <Tooltip title={anomalyText} placement="top" arrow>
+              <WarningAmberIcon sx={{ fontSize: 14, color: 'warning.main', mr: 0.5, flexShrink: 0 }} />
+            </Tooltip>
+          )}
+          <Typography variant="caption" noWrap>
+            {name}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, ml: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            {route.currentWp}/{route.totalWp} WP
+          </Typography>
+          {showEstimate && (
+            <Tooltip title={`Time estimate: WP ${route.wpEstimate}`} placement="top" arrow>
+              <Typography variant="caption" color="warning.main" sx={{ ml: 0.5, whiteSpace: 'nowrap' }}>
+                (~{route.wpEstimate})
+              </Typography>
+            </Tooltip>
+          )}
+          <Chip
+            label={STATUS_LABEL[route.status] ?? route.status}
+            color={hasAnomaly ? 'warning' : (STATUS_COLOR[route.status] ?? 'default')}
+            size="small"
+            sx={{ ml: 1, height: 18, fontSize: '0.6rem' }}
+          />
+        </Box>
       </Box>
       <LinearProgress
         variant="determinate"
         value={pct}
-        color={route.status === 'completed' ? 'success' : 'primary'}
+        color={route.status === 'completed' ? 'success' : hasAnomaly ? 'warning' : 'primary'}
         sx={{ height: 4, borderRadius: 2 }}
       />
     </Box>

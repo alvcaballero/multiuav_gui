@@ -1,4 +1,4 @@
-import { decodeMissionRoute } from '../MissionDecoder.js';
+import { decodeMissionRoute } from '../mission/MissionDecoder.js';
 import { MissionToPsdkV2 } from './psdkEncode.js';
 
 // Drops keys whose value is undefined, so a param the profile doesn't expose

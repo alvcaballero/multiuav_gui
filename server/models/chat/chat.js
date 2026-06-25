@@ -9,8 +9,8 @@ import { ChatHistoryManager } from './chatHistoryManager.js';
 import {
   convertMissionBriefingToXYZ as convertBriefingToXYZ,
   convertMissionXYZToLatLong,
-} from './coordinateConverter.js';
-import { missionModel } from '../mission.js';
+} from '../mission/coordinateConverter.js';
+import { missionModel } from '../mission/mission.js';
 
 let mcpClient = null;
 let llmHandler = null;

@@ -1,4 +1,4 @@
-import { missionModel } from '../models/mission.js';
+import { missionModel } from '../models/mission/mission.js';
 import {
   validateMission,
   resolveCollisions as resolveCollisionsAlgo,
@@ -8,7 +8,7 @@ import logger from '../common/logger.js';
 
 class missionController {
   static getMission = async (req, res) => {
-    const response = await missionModel.getMissionValue(req.query.id);
+    const response = await missionModel.getMissionValue(req.query.id, req.query.all === 'true');
     res.json(response);
   };
 

@@ -4,7 +4,7 @@ import { readDataFile } from '../common/utils.js';
 import { missionSchema } from '../config/config.js';
 import { categoryModel } from '../models/category.js';
 import { toPsdkValue } from '../models/ros/psdkEncode.js';
-import { toConfigValue } from '../models/MissionDecoder.js';
+import { toConfigValue } from '../models/mission/MissionDecoder.js';
 import { encodeRosSrv } from '../models/ros/rosEncode.js';
 import { profileFor } from '../models/ros/missionSymbols.js';
 

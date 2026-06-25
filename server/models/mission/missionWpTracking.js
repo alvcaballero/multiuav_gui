@@ -1,16 +1,19 @@
-import sequelize from '../common/sequelize.js';
-import { eventBus, EVENTS } from '../common/eventBus.js';
-import logger from '../common/logger.js';
-import { ROUTE_STATUS, MISSION_STATUS } from '../config/status.js';
+import sequelize from '../../common/sequelize.js';
+import { eventBus, EVENTS } from '../../common/eventBus.js';
+import logger from '../../common/logger.js';
+import { ROUTE_STATUS, MISSION_STATUS } from '../../config/status.js';
+import {
+  signalFlightState,
+  signalAutopilotFeedback,
+  signalTimeEstimate,
+  signalDeviation,
+  combineSignals,
+  clearDeviationHistory,
+} from './missionSignals.js';
 
 const WP_REACHED_THRESHOLD_M = 2;
 
-// TODO:
-//  - error cases like timeouts, device landing , exit of mission
-//
-
 // Keyed by deviceId → { planId, missionData, loadedAt }
-// Allows multiple operators loading different missions for different UAVs concurrently.
 const _pendingByDevice = {};
 
 function haversineMeters(lat1, lon1, lat2, lon2) {
@@ -25,7 +28,6 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
 export class missionWpTracking {
   /**
    * Called by commandsModel.loadmissionDevice after the ROS/FB command succeeds.
-   * Stores plan metadata per device so commandMission can pick it up later.
    */
   static async onMissionLoaded(deviceIds, missionData) {
     const { missionModel } = await import('./mission.js');
@@ -40,13 +42,11 @@ export class missionWpTracking {
 
   /**
    * Called by commandsModel.commandMissionDevice after the ROS/FB command succeeds.
-   * Creates Mission + MissionRoute records for each commanded device using their pending plan.
    */
   static async onMissionCommanded(commandedDeviceIds) {
     const { devicesController } = await import('../controllers/devices.js');
     const { missionModel } = await import('./mission.js');
 
-    // Group commanded devices by planId — same plan → one Mission record
     const planGroups = {};
     for (const devId of commandedDeviceIds) {
       const pending = _pendingByDevice[devId];
@@ -97,7 +97,7 @@ export class missionWpTracking {
 
   /**
    * Called on every position update that has lat/lon.
-   * Checks if the device is running an active MissionRoute and advances WP counter.
+   * Runs all tracking signals in parallel and emits combined progress.
    */
   static async checkProgress(deviceId, position) {
     if (!position?.latitude || !position?.longitude) return;
@@ -132,32 +132,72 @@ export class missionWpTracking {
     const [tLat, tLon] = Array.isArray(target.pos) ? target.pos : [target.pos.lat, target.pos.lon];
     const dist = haversineMeters(position.latitude, position.longitude, tLat, tLon);
 
+    // --- Run all signals in parallel ---
+    const signals = [
+      signalFlightState(deviceId),
+      signalAutopilotFeedback(deviceId, missionRoute.totalWp),
+      signalTimeEstimate(waypoints, devRoute.attributes, missionRoute.initTime, currentWp, missionRoute.totalWp),
+      signalDeviation(deviceId, position.latitude, position.longitude, target),
+    ];
+    const { wpEstimate, confidence, anomalies } = combineSignals(signals);
+
     logger.debug(
-      `WpTracking device=${deviceId} route=${missionRoute.id} wp=${currentWp}/${waypoints.length} dist=${dist.toFixed(1)}m`
+      `WpTracking device=${deviceId} wp=${currentWp}/${waypoints.length} dist=${dist.toFixed(1)}m ` +
+      `signals={estimate:${wpEstimate},confidence:${confidence},anomalies:[${anomalies}]}`
     );
 
-    if (dist > WP_REACHED_THRESHOLD_M) return;
+    // If a high-confidence signal (autopilot feedback) gives a higher WP, advance directly
+    if (wpEstimate !== null && confidence === 'high' && wpEstimate > currentWp) {
+      const jumpTarget = Math.min(wpEstimate, waypoints.length);
+      const isLast = jumpTarget >= waypoints.length;
+      missionRoute.currentWp = jumpTarget;
+      missionRoute.status = isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING;
+      if (isLast) missionRoute.endTime = new Date();
+      await missionRoute.save();
+      logger.info(`WpTracking device=${deviceId} autopilot feedback jump wp ${currentWp} → ${jumpTarget}`);
+      this._emitProgress(missionRoute, deviceId, jumpTarget, anomalies);
+      if (isLast) await this._checkMissionComplete(missionRoute.missionId);
+      return;
+    }
 
-    const nextWp = currentWp + 1;
-    const isLast = nextWp >= waypoints.length;
+    // Haversine: UAV reached current WP
+    if (dist <= WP_REACHED_THRESHOLD_M) {
+      const nextWp = currentWp + 1;
+      const isLast = nextWp >= waypoints.length;
 
-    missionRoute.currentWp = nextWp;
-    missionRoute.status = isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING;
-    if (isLast) missionRoute.endTime = new Date();
-    await missionRoute.save();
+      missionRoute.currentWp = nextWp;
+      missionRoute.status = isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING;
+      if (isLast) {
+        missionRoute.endTime = new Date();
+        clearDeviationHistory(deviceId);
+      }
+      await missionRoute.save();
 
-    logger.info(`WpTracking device=${deviceId} wp reached ${currentWp} → next=${nextWp} last=${isLast}`);
+      logger.info(`WpTracking device=${deviceId} wp reached ${currentWp} → ${nextWp} last=${isLast}`);
+      this._emitProgress(missionRoute, deviceId, nextWp, anomalies);
+      if (isLast) await this._checkMissionComplete(missionRoute.missionId);
+      return;
+    }
 
+    // No WP advance — but still emit if there are anomalies or time estimate differs
+    const hasNewInfo = anomalies.length > 0 || (wpEstimate !== null && wpEstimate !== currentWp);
+    if (hasNewInfo) {
+      this._emitProgress(missionRoute, deviceId, currentWp, anomalies, { wpEstimate, confidence });
+    }
+  }
+
+  static _emitProgress(missionRoute, deviceId, currentWp, anomalies, signals = {}) {
     eventBus.emitSafe(EVENTS.MISSION_PROGRESS, {
       missionId: missionRoute.missionId,
       deviceId,
       routeId: missionRoute.id,
-      currentWp: nextWp,
+      currentWp,
       totalWp: missionRoute.totalWp,
-      completed: isLast,
+      completed: missionRoute.status === ROUTE_STATUS.COMPLETED,
+      anomalies,                          // e.g. ['DEVIATION', 'RTH_SUSPECTED']
+      wpEstimate: signals.wpEstimate ?? null,
+      confidence: signals.confidence ?? null,
     });
-
-    if (isLast) await this._checkMissionComplete(missionRoute.missionId);
   }
 
   static async _findRouteForDevice(missionData, deviceId, devicesController) {

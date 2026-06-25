@@ -3,7 +3,7 @@ import { eventsController } from '../controllers/events.js';
 import { rosController } from '../controllers/ros.js';
 import { getFlatbufferServer } from './flatbuffer/index.js';
 import { positionsController } from '../controllers/positions.js';
-import { missionWpTracking } from './missionWpTracking.js';
+import { missionWpTracking } from './mission/missionWpTracking.js';
 import logger from '../common/logger.js';
 
 export class commandsModel {

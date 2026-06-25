@@ -1,5 +1,5 @@
 import { positionsModel } from '../models/positions.js';
-import { missionWpTracking } from '../models/missionWpTracking.js';
+import { missionWpTracking } from '../models/mission/missionWpTracking.js';
 import logger from '../common/logger.js';
 
 export class positionsController {
