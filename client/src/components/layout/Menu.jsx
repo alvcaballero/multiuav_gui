@@ -1,69 +1,213 @@
-import { Height } from '@mui/icons-material';
-import React, { useEffect, useState, useContext } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { makeStyles } from 'tss-react/mui';
+import { grey, red, orange, green } from '@mui/material/colors';
+
+import HomeIcon from '@mui/icons-material/Home';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import SendIcon from '@mui/icons-material/Send';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import MapIcon from '@mui/icons-material/Map';
+import ViewInArIcon from '@mui/icons-material/ViewInAr';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import CircleIcon from '@mui/icons-material/Circle';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import StopIcon from '@mui/icons-material/Stop';
+import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import RouteIcon from '@mui/icons-material/Route';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+
+import { Button, IconButton, Box, Chip, Tooltip, Typography } from '@mui/material';
+
 import { map } from '../../map/core/MapView';
 import { RosContext } from '../commands/RosControl';
-import { useSelector } from 'react-redux';
-import HomeIcon from '@mui/icons-material/Home';
-import FolderIcon from '@mui/icons-material/Folder';
-import FlightIcon from '@mui/icons-material/Flight';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import TabIcon from '@mui/icons-material/Tab';
-import ReplyIcon from '@mui/icons-material/Reply';
-import CallMadeIcon from '@mui/icons-material/CallMade';
-import ModeEditIcon from '@mui/icons-material/ModeEdit';
-import CachedIcon from '@mui/icons-material/Cached';
-import { grey } from '@mui/material/colors';
-import { makeStyles } from 'tss-react/mui';
-
 import { usePreference } from '../../shared/preferences';
 import { useMissionFile } from '../../services/useMissionFile';
+import {
+  commandLoadMission,
+  commandMission,
+  commandStopMission,
+  commandPauseMission,
+  commandResumeMission,
+} from '../../shared/fetchs';
+import { useCatch } from '../../reactHelper';
+import { missionActions } from '../../store';
+import SwipeConfirm from '../../shared/components/SwipeConfirm';
+import MissionDetailPopover from './menu/MissionDetailPopover';
+import ActiveMissionsPopover from './menu/ActiveMissionsPopover';
+import EventsPopover from './menu/EventsPopover';
 
-import { Card, IconButton, Button, ButtonGroup, CardMedia, Popover, Typography, Box } from '@mui/material';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import MissionTrackingPanel from '../mission/MissionTrackingPanel';
+const MISSION_STATUS_COLOR = {
+  running: green[700],
+  completed: grey[500],
+  init: orange[700],
+};
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   toolbar: {
     height: '36px',
-    //backgroundColor: grey[300],
-    background: 'linear-gradient(#E7E5E7, #D3D1D3)',
-    borderTop: '1px solid rgba(255, 255, 255, .6)',
+    background: 'linear-gradient(180deg, #f0f2f5 0%, #e4e7ec 100%)',
+    borderBottom: '1px solid #c8cdd6',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    display: 'flex',
+    alignItems: 'center',
+    flexShrink: 0,
+    userSelect: 'none',
   },
-  mediaButton: {
-    width: 'auto',
-    color: grey[700],
-    backgroundColor: '#F9F9F9', //grey[50],
-    boxShadow: 'inset 0px -4px 4px 0 rgba(0, 0, 0, 0.1)',
-    maxHeight: '22px',
-    top: '2px',
-    border: '1px solid #C2C0C2',
-    margin: '5px 10px',
-    fontSize: '12px',
-    '&:hover': {
-      backgroundColor: grey[300],
-    },
+  leftGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1px',
+    paddingLeft: '6px',
+    flex: '1 1 0',
+    minWidth: 0,
   },
-  mediaicon: {
+  rightGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '2px',
+    paddingRight: '8px',
+    flex: '1 1 0',
+    minWidth: 0,
+    justifyContent: 'flex-end',
+  },
+  center: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    padding: '0 8px',
+  },
+  vDivider: {
+    width: '1px',
+    height: '18px',
+    backgroundColor: '#c0c5ce',
+    margin: '0 5px',
+    flexShrink: 0,
+  },
+  iconBtn: {
+    color: grey[600],
+    padding: '4px',
+    borderRadius: '5px',
+    '&:hover': { backgroundColor: 'rgba(0,0,0,0.07)', color: grey[900] },
+    '&.Mui-disabled': { color: grey[400] },
+  },
+  stopBtn: {
+    color: red[700],
+    padding: '4px',
+    borderRadius: '5px',
+    '&:hover': { backgroundColor: red[50] },
+    '&.Mui-disabled': { color: grey[400] },
+  },
+  pauseBtn: {
+    color: orange[800],
+    padding: '4px',
+    borderRadius: '5px',
+    '&:hover': { backgroundColor: orange[50] },
+    '&.Mui-disabled': { color: grey[400] },
+  },
+  resumeBtn: {
+    color: green[700],
+    padding: '4px',
+    borderRadius: '5px',
+    '&:hover': { backgroundColor: green[50] },
+    '&.Mui-disabled': { color: grey[400] },
+  },
+  rosChip: {
+    height: '20px',
+    fontSize: '10px',
+    fontWeight: 600,
+    letterSpacing: '0.3px',
+    cursor: 'default',
+    flexShrink: 0,
+  },
+  loadBtn: {
+    height: '24px',
+    fontSize: '11px',
+    fontWeight: 600,
+    textTransform: 'none',
+    borderRadius: '5px',
+    paddingLeft: '8px',
+    paddingRight: '8px',
     color: grey[700],
-    width: '15px',
+    border: `1px solid ${grey[400]}`,
+    '&:hover': { backgroundColor: grey[200], border: `1px solid ${grey[500]}` },
+    '&.Mui-disabled': { color: grey[400], border: `1px solid ${grey[300]}` },
+  },
+  flyBtn: {
+    height: '24px',
+    fontSize: '11px',
+    fontWeight: 600,
+    textTransform: 'none',
+    borderRadius: '5px',
+    paddingLeft: '8px',
+    paddingRight: '8px',
+    background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
+    color: '#fff',
+    border: 'none',
+    '&:hover': { background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)' },
+    '&.Mui-disabled': { background: grey[300], color: grey[500] },
+  },
+  toggleBtn: {
+    height: '24px',
+    fontSize: '11px',
+    fontWeight: 600,
+    textTransform: 'none',
+    borderRadius: '5px',
+    paddingLeft: '7px',
+    paddingRight: '7px',
+    color: grey[700],
+    border: `1px solid ${grey[400]}`,
+    '&:hover': { backgroundColor: grey[200], border: `1px solid ${grey[500]}` },
   },
 }));
 
-export const Menu = React.memo(({ SetAddUAVOpen }) => {
+export const Menu = () => {
   const { classes } = useStyles();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const is3D = location.pathname === '/3Dview';
+
   const handleMissionFile = useMissionFile();
-  const [MissionName, setMissionName] = useState('no load mission');
-  const Mission_Name = useSelector((state) => state.mission.name);
-  const Mission_Home = useSelector((state) => state.mission.home);
-  const [hidestatus, sethidestatus] = useState(true);
+
+  const mission = useSelector((state) => state.mission);
+  const missionName = useSelector((state) => state.mission.name);
+  const missionHome = useSelector((state) => state.mission.home);
+  const devices = useSelector((state) => state.devices.items);
+  const activeMissions = useSelector((state) => state.activeMissions.items);
+  const events = useSelector((state) => state.events.items);
 
   const defaultLatitude = usePreference('latitude', 0);
   const defaultLongitude = usePreference('longitude', 0);
   const defaultZoom = usePreference('zoom', 10);
 
+  const handleLoadMission = useCatch(() => commandLoadMission(mission));
+  const handleCommandMission = useCatch(() => commandMission(mission, devices));
+  const handleStopMission = useCatch(() => commandStopMission(devices));
+  const handlePauseMission = useCatch(() => commandPauseMission(devices));
+  const handleResumeMission = useCatch(() => commandResumeMission(devices));
+
+  const LOADED_NAMES = ['Mission no loaded', 'no load mission'];
+  const hasMission = Boolean(missionName && !LOADED_NAMES.includes(missionName));
+
+  const activeMissionsList = Object.values(activeMissions);
+  const runningMission = activeMissionsList.find((m) => m.status === 'running');
+  const currentStatus = runningMission?.status ?? activeMissionsList[0]?.status ?? null;
+  const isRunning = currentStatus === 'running';
+
+  const [eventsLastSeen, setEventsLastSeen] = useState(() => Date.now());
+  const unseenErrors = events.filter((e) => e.type === 'error' && e.eventTime > eventsLastSeen);
+
   const readFile = (e) => handleMissionFile(e.target.files[0]);
 
-  function HomeMap() {
+  function goHome() {
+    if (is3D || !map) return;
     map.easeTo({
       center: [defaultLongitude, defaultLatitude],
       zoom: Math.max(map.getZoom(), defaultZoom),
@@ -71,130 +215,315 @@ export const Menu = React.memo(({ SetAddUAVOpen }) => {
     });
   }
 
-  function MissionMap() {
+  function goToMission() {
+    if (is3D || !map || !missionHome) return;
     map.easeTo({
-      center: [Mission_Home[1], Mission_Home[0]],
+      center: [missionHome[1], missionHome[0]],
       zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
   }
 
-  function openAddUav() {
-    SetAddUAVOpen(true);
-  }
-
-  const hideStatusWindow = () => {
-    sethidestatus(!hidestatus);
-  };
+  useEffect(() => {
+    if (!missionHome || is3D || !map) return;
+    map.easeTo({
+      center: [missionHome[1], missionHome[0]],
+      zoom: Math.max(map.getZoom(), defaultZoom),
+      offset: [0, -1 / 2],
+    });
+  }, [missionHome]);
 
   const [missionsAnchor, setMissionsAnchor] = useState(null);
-  const missionsOpen = Boolean(missionsAnchor);
-  const handleMissionsOpen = (e) => setMissionsAnchor(e.currentTarget);
-  const handleMissionsClose = () => setMissionsAnchor(null);
+  const [eventsAnchor, setEventsAnchor] = useState(null);
+  const [missionDetailAnchor, setMissionDetailAnchor] = useState(null);
+  const [confirmFly, setConfirmFly] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
-  useEffect(() => {
-    setMissionName(Mission_Name);
-  }, [Mission_Name]);
-  useEffect(() => {
-    MissionMap();
-  }, [Mission_Home]);
+  function openEvents(e) {
+    setEventsAnchor(e.currentTarget);
+    setEventsLastSeen(Date.now());
+  }
 
   return (
     <header className={classes.toolbar}>
-      <div>
-        <ButtonGroup
-          style={{
-            height: '26px',
-            display: 'inline',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <Button onClick={HomeMap} className={classes.mediaButton} style={{ margin: '0px 0px' }}>
-            <HomeIcon fontSize="small" className={classes.mediaicon} />
-          </Button>
-          <Button id="openMission" className={classes.mediaButton} style={{ margin: '0px 0px' }}>
-            <label htmlFor="openMissionNavbar" style={{ padding: 0 }}>
-              <FolderIcon fontSize="small" className={classes.mediaicon} style={{ position: 'relative', top: '3px' }} />
-            </label>
-            <input
-              type="file"
-              multiple={false}
-              style={{ display: 'none' }}
-              id="openMissionNavbar"
-              onChange={readFile}
-            />
-          </Button>
-          <Button id="openAddUav" onClick={openAddUav} className={classes.mediaButton} style={{ margin: '0px 0px' }}>
-            <FlightIcon fontSize="small" className={classes.mediaicon} style={{ transform: 'rotate(90deg)' }} />
-          </Button>
-        </ButtonGroup>
 
+      {/* ── LEFT: conexión · mapa · archivo ── */}
+      <div className={classes.leftGroup}>
         <RosContext.Consumer>
           {({ rosState }) => (
-            <Button id="rosConnect" className={classes.mediaButton}>
-              {rosState && 'online'} {!rosState && 'offline'}{' '}
-            </Button>
+            <Chip
+              icon={<CircleIcon sx={{ fontSize: '7px !important', color: rosState ? green[500] : red[500] }} />}
+              label={rosState ? 'ROS' : 'offline'}
+              size="small"
+              className={classes.rosChip}
+              sx={{
+                backgroundColor: rosState ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.10)',
+                color: rosState ? green[800] : red[700],
+                border: `1px solid ${rosState ? 'rgba(76,175,80,0.35)' : 'rgba(244,67,54,0.35)'}`,
+              }}
+            />
           )}
         </RosContext.Consumer>
 
-        <Button id="loadMission" size="small" onClick={openAddUav} className={classes.mediaButton}>
-          <FileUploadIcon fontSize="small" className={classes.mediaicon} />
-        </Button>
+        <div className={classes.vDivider} />
 
-        <Button id="commandMission" onClick={openAddUav} className={classes.mediaButton}>
-          Fly!
-        </Button>
+        <Tooltip title="Home position" placement="bottom">
+          <span>
+            <IconButton className={classes.iconBtn} size="small" onClick={goHome} disabled={is3D}>
+              <HomeIcon sx={{ fontSize: 17 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
 
-        <Button
-          id="openedmission"
-          onClick={MissionMap}
-          className={classes.mediaButton}
-          style={{ margin: '0px 100px', width: '500px' }}
-        >
-          {' '}
-          {MissionName}
-        </Button>
-        <Button variant="filledTonal" onClick={(e) => hideStatusWindow()} className={classes.mediaButton}>
-          Status
-        </Button>
+        <Tooltip title="Open mission file" placement="bottom">
+          <IconButton className={classes.iconBtn} size="small" component="label">
+            <FolderOpenIcon sx={{ fontSize: 17 }} />
+            <input type="file" multiple={false} style={{ display: 'none' }} onChange={readFile} />
+          </IconButton>
+        </Tooltip>
 
-        <Button onClick={handleMissionsOpen} className={classes.mediaButton}>
-          <AssignmentIcon fontSize="small" className={classes.mediaicon} />
-        </Button>
-        <Popover
-          open={missionsOpen}
-          anchorEl={missionsAnchor}
-          onClose={handleMissionsClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        >
-          <Box sx={{ width: 320 }}>
-            <Typography variant="caption" sx={{ px: 1.5, py: 0.75, display: 'block', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>
-              Active Missions
-            </Typography>
-            <MissionTrackingPanel />
-          </Box>
-        </Popover>
-
-        <Button id="openTerminal" style={{ visibility: true }} className={classes.mediaButton}>
-          <TabIcon fontSize="small" className={classes.mediaicon} />
-        </Button>
-        <Button id="UndoMission" style={{ visibility: true }} className={classes.mediaButton}>
-          <ReplyIcon fontSize="small" className={classes.mediaicon} />
-        </Button>
-
-        <Button id="reset" className={classes.mediaButton}>
-          <CallMadeIcon fontSize="small" className={classes.mediaicon} />
-        </Button>
-
-        <Button id="showManualMode" className={classes.mediaButton}>
-          <ModeEditIcon fontSize="small" className={classes.mediaicon} />
-        </Button>
-
-        <Button id="commandManualMission" style={{ visibility: true }} className={classes.mediaButton}>
-          <CachedIcon fontSize="small" className={classes.mediaicon} />
-        </Button>
+        <Tooltip title="Clear mission" placement="bottom">
+          <span>
+            <IconButton
+              className={classes.iconBtn}
+              size="small"
+              onClick={() => setConfirmClear(true)}
+              disabled={!hasMission}
+              sx={{ '&:hover': { color: red[600], backgroundColor: red[50] } }}
+            >
+              <DeleteForeverIcon sx={{ fontSize: 17 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
       </div>
+
+      {/* ── CENTER: localizar · nombre · status (grupo unificado) ── */}
+      <div className={classes.center}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'stretch',
+            height: '26px',
+            border: `1px solid ${grey[300]}`,
+            borderRadius: '6px',
+            overflow: 'hidden',
+            backgroundColor: '#fff',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+          }}
+        >
+          {/* Segmento localizar */}
+          <Tooltip title={hasMission && !is3D ? 'Center map on mission' : ''} placement="bottom">
+            <span style={{ display: 'flex' }}>
+              <Box
+                component="button"
+                onClick={hasMission && !is3D ? goToMission : undefined}
+                disabled={!hasMission || is3D}
+                sx={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '28px', border: 'none', borderRight: `1px solid ${grey[200]}`,
+                  backgroundColor: 'transparent', padding: 0,
+                  cursor: hasMission && !is3D ? 'pointer' : 'default',
+                  color: hasMission && !is3D ? grey[600] : grey[400],
+                  '&:hover': hasMission && !is3D ? { backgroundColor: grey[100], color: grey[900] } : {},
+                }}
+              >
+                <MyLocationIcon sx={{ fontSize: 14 }} />
+              </Box>
+            </span>
+          </Tooltip>
+
+          {/* Segmento nombre */}
+          <Tooltip title={hasMission ? 'Mission details' : ''} placement="bottom">
+            <span style={{ display: 'flex' }}>
+              <Box
+                component="button"
+                onClick={hasMission ? (e) => setMissionDetailAnchor(e.currentTarget) : undefined}
+                disabled={!hasMission}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  border: 'none', borderRight: `1px solid ${grey[200]}`,
+                  backgroundColor: 'transparent', padding: '0 10px',
+                  minWidth: '160px', maxWidth: '300px',
+                  cursor: hasMission ? 'pointer' : 'default',
+                  '&:hover': hasMission ? { backgroundColor: grey[50] } : {},
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '12px', fontWeight: 600, overflow: 'hidden',
+                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    color: hasMission ? grey[800] : grey[400],
+                    flex: 1, textAlign: 'left',
+                  }}
+                >
+                  {hasMission ? missionName : 'No mission loaded'}
+                </Typography>
+                {hasMission && <ExpandMoreIcon sx={{ fontSize: 14, color: grey[400], flexShrink: 0 }} />}
+              </Box>
+            </span>
+          </Tooltip>
+
+          {/* Segmento status */}
+          <Box
+            sx={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '0 9px', minWidth: '72px', justifyContent: 'center',
+              backgroundColor: currentStatus ? (MISSION_STATUS_COLOR[currentStatus] ?? grey[400]) : grey[100],
+              cursor: 'default',
+            }}
+          >
+            {currentStatus && (
+              <CircleIcon
+                sx={{
+                  fontSize: 7, color: '#fff', flexShrink: 0,
+                  ...(currentStatus === 'running' && {
+                    animation: 'menuPulse 1.4s ease-in-out infinite',
+                    '@keyframes menuPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } },
+                  }),
+                }}
+              />
+            )}
+            <Typography
+              sx={{
+                fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px',
+                textTransform: 'uppercase', whiteSpace: 'nowrap',
+                color: currentStatus ? '#fff' : grey[500],
+              }}
+            >
+              {currentStatus ?? 'no status'}
+            </Typography>
+          </Box>
+        </Box>
+      </div>
+
+      {/* ── RIGHT: comandos · control · vista · monitoreo ── */}
+      <div className={classes.rightGroup}>
+        <Tooltip title="Load mission to UAVs" placement="bottom">
+          <span>
+            <Button
+              className={classes.loadBtn}
+              startIcon={<FileUploadIcon sx={{ fontSize: 14 }} />}
+              onClick={handleLoadMission}
+              disabled={!hasMission}
+              variant="outlined"
+            >
+              Load
+            </Button>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Command mission — Fly!" placement="bottom">
+          <span>
+            <Button
+              className={classes.flyBtn}
+              startIcon={<SendIcon sx={{ fontSize: 13 }} />}
+              onClick={() => setConfirmFly(true)}
+              disabled={!hasMission}
+            >
+              Fly!
+            </Button>
+          </span>
+        </Tooltip>
+
+        <div className={classes.vDivider} />
+
+        <Tooltip title="Pause mission" placement="bottom">
+          <span>
+            <IconButton className={classes.pauseBtn} size="small" onClick={handlePauseMission} disabled={!isRunning}>
+              <PauseIcon sx={{ fontSize: 17 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Resume mission" placement="bottom">
+          <span>
+            <IconButton className={classes.resumeBtn} size="small" onClick={handleResumeMission} disabled={!isRunning}>
+              <PlayArrowIcon sx={{ fontSize: 17 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Stop mission" placement="bottom">
+          <span>
+            <IconButton className={classes.stopBtn} size="small" onClick={handleStopMission} disabled={!isRunning}>
+              <StopIcon sx={{ fontSize: 17 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <div className={classes.vDivider} />
+
+        <Tooltip title="Planning" placement="bottom">
+          <IconButton className={classes.iconBtn} size="small" onClick={() => navigate('/planning')}>
+            <RouteIcon sx={{ fontSize: 17 }} />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Edit mission" placement="bottom">
+          <IconButton className={classes.iconBtn} size="small" onClick={() => navigate('/mission')}>
+            <ModeEditIcon sx={{ fontSize: 17 }} />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title={is3D ? 'Switch to 2D map' : 'Switch to 3D view'} placement="bottom">
+          <Button
+            className={classes.toggleBtn}
+            startIcon={is3D ? <MapIcon sx={{ fontSize: 13 }} /> : <ViewInArIcon sx={{ fontSize: 13 }} />}
+            onClick={() => navigate(is3D ? '/' : '/3Dview')}
+          >
+            {is3D ? '2D' : '3D'}
+          </Button>
+        </Tooltip>
+
+        <div className={classes.vDivider} />
+
+        <Tooltip title="Active missions" placement="bottom">
+          <IconButton className={classes.iconBtn} size="small" onClick={(e) => setMissionsAnchor(e.currentTarget)}>
+            <AssignmentIcon sx={{ fontSize: 17 }} />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title={unseenErrors.length ? `${unseenErrors.length} new error(s)` : 'Events log'} placement="bottom">
+          <IconButton className={classes.iconBtn} size="small" onClick={openEvents} sx={{ position: 'relative' }}>
+            <NotificationsIcon sx={{ fontSize: 17 }} />
+            {unseenErrors.length > 0 && (
+              <Box sx={{
+                position: 'absolute', top: 3, right: 3,
+                width: 7, height: 7, borderRadius: '50%',
+                backgroundColor: red[500], border: '1.5px solid #e4e7ec',
+              }} />
+            )}
+          </IconButton>
+        </Tooltip>
+      </div>
+
+      {/* ── Popovers ── */}
+      <MissionDetailPopover
+        anchor={missionDetailAnchor}
+        onClose={() => setMissionDetailAnchor(null)}
+        onClear={() => setConfirmClear(true)}
+      />
+      <ActiveMissionsPopover
+        anchor={missionsAnchor}
+        onClose={() => setMissionsAnchor(null)}
+      />
+      <EventsPopover
+        anchor={eventsAnchor}
+        onClose={() => setEventsAnchor(null)}
+      />
+
+      {/* ── Confirmaciones ── */}
+      <SwipeConfirm
+        enable={confirmFly}
+        onClose={() => setConfirmFly(false)}
+        onSucces={() => { setConfirmFly(false); handleCommandMission(); }}
+      />
+      <SwipeConfirm
+        enable={confirmClear}
+        onClose={() => setConfirmClear(false)}
+        onSucces={() => { setConfirmClear(false); dispatch(missionActions.clearMission()); }}
+      />
+
     </header>
   );
-});
+};

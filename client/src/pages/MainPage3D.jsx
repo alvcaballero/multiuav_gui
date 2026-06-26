@@ -109,7 +109,7 @@ const MainPage3D = () => {
     <div className={classes.root}>
       <RosControl>
         <Navbar SetAddUAVOpen={setAddUAVOpen} setconfirmMission={setConfirmMission} />
-        <Menu SetAddUAVOpen={setAddUAVOpen} />
+        <Menu />
       </RosControl>
       <Scene3DCanvas className={classes.canvas} />
 

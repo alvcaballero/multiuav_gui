@@ -70,6 +70,42 @@ export const addDevice = async (device) => {
   throw new Error(await response.text());
 };
 
+export const commandStopMission = async (devices) => {
+  const listDeviceId = Object.values(devices).map((d) => d.id);
+  const requests = listDeviceId.map((id) =>
+    fetch('/api/commands/send', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId: id, type: 'StopMission' }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+  );
+  await Promise.all(requests);
+};
+
+export const commandPauseMission = async (devices) => {
+  const listDeviceId = Object.values(devices).map((d) => d.id);
+  const requests = listDeviceId.map((id) =>
+    fetch('/api/commands/send', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId: id, type: 'Pausemission' }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+  );
+  await Promise.all(requests);
+};
+
+export const commandResumeMission = async (devices) => {
+  const listDeviceId = Object.values(devices).map((d) => d.id);
+  const requests = listDeviceId.map((id) =>
+    fetch('/api/commands/send', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId: id, type: 'ResumeMission' }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+  );
+  await Promise.all(requests);
+};
+
 export const connectRos = async () => {
   const response = await fetch('/api/rosConnect', {
     method: 'POST',

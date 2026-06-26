@@ -123,7 +123,7 @@ const MainPage = () => {
     <div className={classes.root}>
       <Navbar SetAddUAVOpen={SetAddUAVOpen} setconfirmMission={setconfirmMission} setChatOpen={setChatOpen} />
       <RosControl>
-        <Menu SetAddUAVOpen={SetAddUAVOpen} />
+        <Menu />
       </RosControl>
 
       <SwipeConfirm
