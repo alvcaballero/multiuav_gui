@@ -136,20 +136,36 @@ class OpenAIHandler extends BaseLLMHandler {
   }
 
   convertMsg(message = null, conversationHistory) {
+    const VALID_ROLES = new Set(['assistant', 'developer', 'user']);
     const lastconversation = [];
-    for (const msg of conversationHistory) {
-      if (msg.message.role === 'system') continue;
 
-      if (typeof msg.message.content === 'string') {
-        lastconversation.push({ role: msg.message.role, content: msg.message.content });
-      } else {
-        lastconversation.push({ ...msg.message });
+    for (let i = 0; i < conversationHistory.length; i++) {
+      const m = conversationHistory[i].message;
+
+      // system goes as instructions, not in input
+      if (m.role === 'system') continue;
+
+      // reasoning must be sent together with its paired assistant message that follows.
+      // If the next item is not that message, skip the reasoning (dangling, e.g. at history boundary).
+      if (m.type === 'reasoning') {
+        const next = conversationHistory[i + 1]?.message;
+        if (next && (next.type === 'message' || next.role === 'assistant')) {
+          lastconversation.push({ ...m });
+        }
+        continue;
       }
 
-      // If this is a tool output with image_data, inject the image block right after
-      if (msg.message.type === 'function_call_output') {
+      // function_call / function_call_output: Responses API format — no role field
+      if (m.type === 'function_call' || m.type === 'function_call_output') {
+        lastconversation.push({ ...m });
+      } else if (VALID_ROLES.has(m.role)) {
+        lastconversation.push(typeof m.content === 'string' ? { role: m.role, content: m.content } : { ...m });
+      }
+
+      // If this is a tool output with image_data, inject an input_image block right after
+      if (m.type === 'function_call_output') {
         try {
-          const raw = typeof msg.message.output === 'string' ? JSON.parse(msg.message.output) : msg.message.output;
+          const raw = typeof m.output === 'string' ? JSON.parse(m.output) : m.output;
           const inner = raw?.content?.[0]?.text;
           const parsed = typeof inner === 'string' ? JSON.parse(inner) : inner;
           if (parsed?.image_data) {

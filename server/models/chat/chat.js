@@ -126,8 +126,17 @@ export class MessageOrchestrator {
       // Get tools from MCP client, filtered by allowedTools
       const tools = this.getToolsForProvider(allowedTools);
 
-      // Let the handler manage its own session (OpenAI creates conversations, others may no-op)
-      const sessionId = await llmHandler.ensureSession(chatId, persistence);
+      // Forked chats have copied history that the LLM provider doesn't know about.
+      // On the first turn of a fork, bypass the session so the full history snapshot
+      // is sent to the provider (CASE 3 in processMessage). After that turn the
+      // provider creates a real session seeded with the complete context.
+      const chatMeta = await ChatHistoryManager.getChatMetadata(chatId);
+      const isUnseededFork = !!(chatMeta.forkedFrom && !chatMeta.sessionId);
+
+      const sessionId = isUnseededFork ? null : await llmHandler.ensureSession(chatId, persistence);
+      if (isUnseededFork) {
+        chatLogger.info(`[fork] First turn of forked chat ${chatId} — using full-history path to seed provider context`);
+      }
 
       // Build system instructions (needed for first message of conversation)
       let systemInstructions = null;
