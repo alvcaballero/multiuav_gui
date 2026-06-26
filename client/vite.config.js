@@ -15,6 +15,21 @@ export default defineConfig(() => ({
   build: {
     outDir: 'build',
     target: 'es2022',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/node_modules\/(react|react-dom|react-redux|@reduxjs)\//.test(id)) {
+            return 'vendor-react';
+          }
+          if (/node_modules\/(@mui|@emotion|tss-react)\//.test(id)) {
+            return 'vendor-mui';
+          }
+          if (/node_modules\/(maplibre-gl|@maplibre|@mapbox\/mapbox-gl-draw|@mapbox\/mapbox-gl-rtl-text)\//.test(id)) {
+            return 'vendor-map';
+          }
+        },
+      },
+    },
   },
   esbuild: {
     target: 'es2022',

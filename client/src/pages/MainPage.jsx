@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, Suspense, lazy } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -16,10 +16,11 @@ import MainToolbar from '../components/layout/MainToolbar';
 import MainMap from '../map/MainMap';
 import StatusCard from '../components/devices/StatusCard';
 import CameraDevice from '../components/camera/CameraDevice';
-import ChatDrawer from '../components/chat/ChatDrawer';
 import { devicesActions } from '../store';
 import useFilter from '../components/devices/useFilter';
 import usePersistedState from '../shared/usePersistedState';
+
+const ChatDrawer = lazy(() => import('../components/chat/ChatDrawer'));
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -167,7 +168,11 @@ const MainPage = () => {
           desktopPadding={theme.dimensions.drawerWidthDesktop}
         />
       )}
-      {llmEnabled && <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />}
+      {llmEnabled && (
+        <Suspense fallback={null}>
+          <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
+        </Suspense>
+      )}
       <CameraDevice deviceId={selectedDeviceId} onClose={unselectDevice} />
       {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
     </div>

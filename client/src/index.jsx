@@ -10,6 +10,7 @@ import ServerProvider from './ServerProvider';
 import ErrorBoundary from './ErrorBoundary';
 import AppThemeProvider from './AppThemeProvider';
 
+// Fire-and-forget: map icons load in background while React mounts
 preloadImages();
 
 const root = createRoot(document.getElementById('root'));

@@ -133,24 +133,26 @@ const SocketController = () => {
   useEffectAsync(async () => {
     if (socketState) {
       setsocketState(false);
-      const response = await fetch('/api/devices');
-      if (response.ok) {
-        dispatch(devicesActions.refresh(await response.json()));
-      } else {
-        throw Error(await response.text());
-      }
 
-      const missionsRes = await fetch('/api/missions');
+      const [devicesRes, missionsRes, routesRes] = await Promise.all([
+        fetch('/api/devices'),
+        fetch('/api/missions'),
+        fetch('/api/missions/routes'),
+      ]);
+
+      if (devicesRes.ok) {
+        dispatch(devicesActions.refresh(await devicesRes.json()));
+      } else {
+        throw Error(await devicesRes.text());
+      }
       if (missionsRes.ok) {
         const missions = await missionsRes.json();
         dispatch(activeMissionsActions.setMissions(Array.isArray(missions) ? missions : [missions].filter(Boolean)));
       }
-      const routesRes = await fetch('/api/missions/routes');
       if (routesRes.ok) {
         dispatch(activeMissionsActions.setRoutes(await routesRes.json()));
       }
 
-      console.log('Socket first connection');
       connectSocket();
       return () => {
         const socket = socketRef.current;
