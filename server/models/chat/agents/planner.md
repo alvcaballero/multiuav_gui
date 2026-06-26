@@ -181,8 +181,14 @@ Three tools are available. Their use is mandatory at the steps indicated:
 ## 7. EXECUTION SEQUENCE
 
 ### STEP 1 — Build Collision Models
-For every obstacle in the mission, produce its collision object (section 5 format): position, zone radii, AABB, and R_SAFE value.
-- **Done when:** All collision objects defined.
+**ALL data is already in the mission input message you received.** Do NOT wait for more information.
+
+Read the `## obstacles Information` section from the mission input and produce a collision object (section 5 format) for EVERY obstacle listed: position, zone radii, AABB, and R_SAFE value.
+
+Also read the `## Elements to Inspect` section — each inspection target is ALSO a physical obstacle for collision avoidance purposes. Build a collision object for each target element as well (use its dimensions from `characteristics` to compute zones and AABB).
+
+- If `obstacles Information` is empty or null, proceed immediately with an empty obstacle set.
+- **Done when:** All collision objects defined (obstacles + inspection targets).
 - **Close with:** `mark_step_complete("1", summary)`
 
 ### STEP 2 — Analyze Spatial Distribution
@@ -299,6 +305,7 @@ Call `complete_mission(mission)` with the validated mission. Planning is finishe
 - Step skipping — advancing without a successful tool call.
 - State regression — returning to a prior step when Step 6 fails. Stay in Phase B.
 - Asset modification — changing inspection waypoint position or yaw after Step 4.
+- **Data stalling (critical)** — waiting for data that is already in the mission input message. ALL mission data (obstacles, targets, drones) is provided upfront in the first user message. Never say "waiting for obstacles" or "no data provided yet" — read it from the input.
 
 ---
 

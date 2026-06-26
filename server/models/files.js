@@ -3,7 +3,7 @@ import { dateString, GetLocalTime, readDataFile } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
 import { devicesController } from '../controllers/devices.js';
-import { filesPath, filesData } from '../config/config.js';
+import { missionDataPath } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 import { missionController } from '../controllers/mission.js';
 import sequelize from '../common/sequelize.js';
@@ -107,15 +107,15 @@ export class filesModel {
 
   static readGCSFiles() {
     let response = [];
-    let firstFiles = fs.readdirSync(filesPath, { withFileTypes: true });
+    let firstFiles = fs.readdirSync(missionDataPath, { withFileTypes: true });
     let missionFolder = firstFiles.filter((myroute) => myroute.isDirectory());
     for (let mymission of missionFolder) {
-      var stats = fs.statSync(filesPath + mymission.name + '/');
+      var stats = fs.statSync(missionDataPath + mymission.name + '/');
       logger.debug(`last time create in seconds: ${stats.mtime}`);
-      let secondFiles = fs.readdirSync(filesPath + mymission.name + '/', { withFileTypes: true });
+      let secondFiles = fs.readdirSync(missionDataPath + mymission.name + '/', { withFileTypes: true });
       let uavfolder = secondFiles.filter((myroute) => myroute.isDirectory());
       for (let myuav of uavfolder) {
-        let thirdFiles = fs.readdirSync(filesPath + mymission.name + '/' + myuav.name + '/', {
+        let thirdFiles = fs.readdirSync(missionDataPath + mymission.name + '/' + myuav.name + '/', {
           withFileTypes: true,
         });
         let uavfiles = thirdFiles.filter((myroute) => myroute.isFile());
@@ -132,7 +132,7 @@ export class filesModel {
   */
 
   static checkFileRoute(path) {
-    let dir = filesPath + path.replaceAll('-', '/');
+    let dir = missionDataPath + path.replaceAll('-', '/');
     if (!fs.existsSync(dir)) {
       logger.warn(`file path does not exist: ${dir}`);
       return null;
@@ -275,7 +275,7 @@ export class filesModel {
       return [];
     }
 
-    let dir = `${filesPath}mission_${missionId}/${mydevice.name}`;
+    let dir = `${missionDataPath}mission_${missionId}/${mydevice.name}`;
     if (!fs.existsSync(dir)) {
       logger.debug(`creating directory: ${dir}`);
       fs.mkdirSync(dir, { recursive: true });
@@ -306,7 +306,7 @@ export class filesModel {
   static async downloadFiles2(client, url, fileId, remove = false) {
     let myfile = await this.getFiles({ id: fileId });
 
-    let response = await client.downloadFile(myfile.path2, `${filesPath}${myfile.path}${myfile.name}`);
+    let response = await client.downloadFile(myfile.path2, `${missionDataPath}${myfile.path}${myfile.name}`);
     if (response.status) {
       await this.editFile({ id: fileId, status: FILE_STATUS.DOWNLOAD });
       processQueue.push(fileId);
@@ -378,8 +378,8 @@ export class filesModel {
     let myfile = await this.getFiles({ id: myFileId });
     if (myfile.name.includes('THRM') && !myfile.name.includes('process')) {
       let response = await ProcessThermalImage(
-        `${filesPath}${myfile.path}${myfile.name}`,
-        `${filesPath}${myfile.path}${myfile.name.slice(0, -4)}_process.jpg`
+        `${missionDataPath}${myfile.path}${myfile.name}`,
+        `${missionDataPath}${myfile.path}${myfile.name.slice(0, -4)}_process.jpg`
       );
       if (response) {
         let createFile = await this.addFile({
@@ -400,7 +400,7 @@ export class filesModel {
       }
     }
     try {
-      let attributes = await getMetadata(`${filesPath}${myfile.path}${myfile.name}`);
+      let attributes = await getMetadata(`${missionDataPath}${myfile.path}${myfile.name}`);
       await this.editFile({ id: myFileId, status: FILE_STATUS.OK, attributes });
     } catch (e) {
       logger.error('error reading file metadata', e);

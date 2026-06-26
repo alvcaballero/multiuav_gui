@@ -1,5 +1,12 @@
-import { decodeMissionRoute } from '../MissionDecoder.js';
+import { decodeMissionRoute } from '../mission/MissionDecoder.js';
 import { MissionToPsdkV2 } from './psdkEncode.js';
+
+// Drops keys whose value is undefined, so a param the profile doesn't expose
+// (e.g. max_vel / mode_gimbal on the v1 profile) is OMITTED from the message
+// instead of sent as `undefined`.
+function omitUndefined(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+}
 
 // ─── Encoder: route crudo → aerialcore_common/ConfigMission (ROS1) ───────────
 
@@ -19,7 +26,7 @@ function MissionToRos(route) {
     finishAction,
   } = decodeMissionRoute(route);
 
-  return {
+  return omitUndefined({
     type: 'waypoint',
     waypoint,
     radius: 0,
@@ -34,7 +41,7 @@ function MissionToRos(route) {
     finishAction,
     commandList: { data: commandList.flat() },
     commandParameter: { data: commandParameter.flat() },
-  };
+  });
 }
 
 // ─── Encoder: route crudo → muav_gcs_interfaces/srv/LoadMission (ROS2) ───────
@@ -42,7 +49,7 @@ function MissionToRos(route) {
 function MissionToRos2(route) {
   const msg = MissionToRos(route);
   return {
-    request: {
+    request: omitUndefined({
       type: 'waypoint',
       waypoint: msg.waypoint,
       radius: msg.radius,
@@ -57,7 +64,7 @@ function MissionToRos2(route) {
       finish_action: msg.finishAction,
       command_list: msg.commandList,
       command_parameter: msg.commandParameter,
-    },
+    }),
   };
 }
 

@@ -71,7 +71,7 @@ const agents = {
 
 export { agents };
 
-export const DEFAULT_AGENT = 'agv';
+export const DEFAULT_AGENT = 'default';
 
 /**
  * Resolves the full agent definition for a chat from DB metadata.

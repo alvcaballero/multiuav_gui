@@ -61,6 +61,12 @@ export class categoryController {
     res.json(response);
   }
 
+  static async getWaypointParams(req, res) {
+    logger.debug(`Getting waypoint params for: ${req.params.type}`);
+    const response = await categoryModel.getWaypointParams(req.params.type);
+    res.json(response);
+  }
+
   static async getAttributesDefaults(req, res) {
     logger.debug(`Getting attributes defaults for: ${req.params.type}`);
     const response = await categoryModel.getAttributesDefaults(req.params.type);

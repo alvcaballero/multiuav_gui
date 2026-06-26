@@ -51,7 +51,7 @@ export class positionsModel {
           obstacle_info: [100, 100, 100, 100, 100, 100],
           takeoff_height: 400,
           mission_state: 'Ready',
-          wp_reached: 0,
+          wp_reached: null,
           uav_state: 'OK',
           landed_state: 'Ready',
           alarm: 'UNDEFINED',
@@ -165,7 +165,6 @@ export class positionsModel {
         if (positions[payload.deviceId]['attributes']['alarm'] != 'threat') {
           eventsController.addEvent({
             type: 'warning',
-            eventTime: new Date().toISOString(),
             deviceId: payload.deviceId,
             attributes: {
               message: 'Threat detected',
@@ -179,7 +178,6 @@ export class positionsModel {
           if (positions[payload.deviceId]['attributes']['alarm'] != 'confirm') {
             eventsController.addEvent({
               type: 'warning',
-              eventTime: new Date().toISOString(),
               deviceId: payload.deviceId,
               attributes: {
                 message: 'Threat confirmed',

@@ -6,11 +6,6 @@ import { LLM, MCPenable } from '../../config/config.js';
 import { resolveAgentForChat, setAgentForChat, resolveAgent } from './agents/index.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
-import {
-  convertMissionBriefingToXYZ as convertBriefingToXYZ,
-  convertMissionXYZToLatLong,
-} from './coordinateConverter.js';
-import { missionModel } from '../mission.js';
 
 let mcpClient = null;
 let llmHandler = null;
@@ -131,8 +126,17 @@ export class MessageOrchestrator {
       // Get tools from MCP client, filtered by allowedTools
       const tools = this.getToolsForProvider(allowedTools);
 
-      // Let the handler manage its own session (OpenAI creates conversations, others may no-op)
-      const sessionId = await llmHandler.ensureSession(chatId, persistence);
+      // Forked chats have copied history that the LLM provider doesn't know about.
+      // On the first turn of a fork, bypass the session so the full history snapshot
+      // is sent to the provider (CASE 3 in processMessage). After that turn the
+      // provider creates a real session seeded with the complete context.
+      const chatMeta = await ChatHistoryManager.getChatMetadata(chatId);
+      const isUnseededFork = !!(chatMeta.forkedFrom && !chatMeta.sessionId);
+
+      const sessionId = isUnseededFork ? null : await llmHandler.ensureSession(chatId, persistence);
+      if (isUnseededFork) {
+        chatLogger.info(`[fork] First turn of forked chat ${chatId} — using full-history path to seed provider context`);
+      }
 
       // Build system instructions (needed for first message of conversation)
       let systemInstructions = null;
@@ -555,133 +559,145 @@ export class MessageOrchestrator {
    * @param {Object} missionBriefing.user_context - Original user request context
    * @returns {Promise<Object>} Object with secondaryChatId and converted mission data
    */
-  static async buildMissionPlanXYZ(missionBriefing) {
-    const mainChatId = missionBriefing.chat_id;
-    chatLogger.info(`[MainChat: ${mainChatId}] Starting mission plan XYZ generation`);
+  /**
+   * Creates a subagent chat for background processing.
+   *
+   * @param {string} mainChatId - ID of the main chat that initiated this request
+   * @param {string} agentType  - Agent type to assign (e.g. 'planner')
+   * @param {string} userMessage - First message to send to the subagent
+   * @param {Object} context    - Optional extra context injected into system prompt
+   * @param {Object} context.global_origin - ENU origin {lat, lng} for coordinate reference
+   */
+  static async createSubAgent({ mainChatId, agentType, userMessage, contextInstructions = '' }) {
+    if (!userMessage) throw new Error('userMessage is required');
+    if (!mainChatId) throw new Error('mainChatId is required');
+    if (!agentType) throw new Error('agentType is required');
 
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 1: Convert geodetic coordinates to local XYZ (ENU)
-    // ═══════════════════════════════════════════════════════════════════
-    const missionDataXYZ = convertBriefingToXYZ(missionBriefing);
-    const { global_origin } = missionDataXYZ;
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 4: Build the mission planning request message
-    // ═══════════════════════════════════════════════════════════════════
-    const userMessage = `Execute the MISSION PLANNING SEQUENCE with this data for ${missionDataXYZ.user_context.user_request} :
-
-## global_origin_coordinates
-${JSON.stringify(global_origin)}
-## Devices Information
-${encode(missionDataXYZ.drone_information)}
-## Elements to Inspect
-${encode(missionDataXYZ.target_elements)}
-## group Information
-${encode(missionDataXYZ.group_information)}
-## obstacles Information
-${encode(missionDataXYZ.obstacle_elements)}
-## Mission Requirements
-${encode(missionDataXYZ.mission_requirements)}`;
-
-    const secondaryChatId = `MP-XYZ-${mainChatId}`;
-    this.subAgentPlannerChat(mainChatId, userMessage, missionDataXYZ);
-    chatLogger.info(`[MainChat: ${mainChatId}] Background processing started in secondary chat: ${secondaryChatId}`);
-
-    // Return immediately - secondary chat continues processing in background
-    return { secondaryChatId, msg: 'Mission is processing.' };
-  }
-
-  static async subAgentPlannerChat(mainChatId, userMessage, missionDataXYZ) {
-    const { global_origin } = missionDataXYZ;
-    if (!userMessage) return null;
-    if (!mainChatId) {
-      mainChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      chatLogger.warn(`[subAgentPlannerChat] No mainChatId provided, generated: ${mainChatId}`);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 2: Create secondary chat for background mission planning
-    // ═══════════════════════════════════════════════════════════════════
-    const secondaryChat = await this.createChat(`MP-XYZ-${mainChatId}`);
+    const secondaryChat = await this.createChat(`${agentType.toUpperCase()}-${mainChatId}`);
     const secondaryChatId = secondaryChat.id;
-    chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat XYZ: ${secondaryChatId}`);
+    chatLogger.info(`[createSubAgent] mainChat=${mainChatId} subAgent=${secondaryChatId} type=${agentType}`);
 
-    await setAgentForChat(secondaryChatId, 'planner');
+    await setAgentForChat(secondaryChatId, agentType);
 
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 3: Configure secondary chat with mission-specific system prompt
-    // ═══════════════════════════════════════════════════════════════════
-    const plannerAgent = resolveAgent('planner');
-    const systemPromptContent = `${plannerAgent.systemPrompt}
----
-Session_context:
-- main_chat_id: ${mainChatId}
-- secondary_chat_id: ${secondaryChatId}
-- global_origin_coordinates: ${JSON.stringify(global_origin)} (lat, lng in decimal degrees)
-- coordinate_system: Cartesian coordinates (ENU - East/North/Up in meters)
-- yaw_reference: Angle in degrees, 0 degrees = North (+Y), 90° = East (+X), ±180° = South (-Y), -90° = West (-X). Range: [-180°, 180°]
+    const agentDef = resolveAgent(agentType);
+    const baseContext = `- main_chat_id: ${mainChatId}\n- secondary_chat_id: ${secondaryChatId}`;
+    const fullContext = contextInstructions ? `${baseContext}\n${contextInstructions}` : baseContext;
 
-Mandatory: Maintain all the session context data accurately and unchanged the session.
-`;
+    const systemPromptContent = `${agentDef.systemPrompt}\n---\nSession_context:\n${fullContext}\nMandatory: Maintain all the session context data accurately and unchanged the session.`;
 
     await ChatHistoryManager.addMessage(secondaryChatId, 'system', { role: 'system', content: systemPromptContent });
 
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 5: Start background processing (non-blocking)
-    // ═══════════════════════════════════════════════════════════════════
-    // processMessage handles LLM interaction and tool calls asynchronously
-    // allowedTools and agentProfile already set in metadata — will be loaded automatically
     this.processMessage(secondaryChatId, userMessage).catch((error) => {
-      chatLogger.error(`[MainChat: ${mainChatId}] Background mission planning failed:`, error);
+      chatLogger.error(`[createSubAgent] Background processing failed for ${secondaryChatId}:`, error);
       eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
         chatId: mainChatId,
         from: 'assistant',
         timestamp: new Date().toISOString(),
         message: {
           role: 'assistant',
-          content: `Error en planificación de misión: ${error.message}`,
+          content: `Error en subagente ${agentType}: ${error.message}`,
           type: 'text',
           status: 'error',
         },
       });
     });
+
+    return { secondaryChatId, msg: `Subagent ${agentType} started.` };
   }
 
   /**
-   * Converts a mission briefing from geodetic coordinates to local XYZ (ENU)
-   * and returns the result as a plain JSON object — no LLM, no serialization.
-   * Intended for external consumers (e.g. the mission evaluator) that need the
-   * structured data directly instead of the text prompt built by buildMissionPlanXYZ.
+   * Injects the result of a subagent tool call into the main chat and resumes it.
+   * Replaces the placeholder tool_result for `toolName` in the main chat history,
+   * clears the provider session, and continues the conversation.
    *
-   * @param {Object} missionBriefing - filteredMissionSchema structure with geodetic coords
-   * @returns {Promise<Object>} Converted mission briefing with XYZ coordinates + global_origin
+   * @param {string} chatId       - Main chat ID
+   * @param {string} toolName     - MCP tool name whose placeholder to replace
+   * @param {string} status       - 'valid' | 'error' | 'incomplete'
+   * @param {string} description  - Human-readable summary
+   * @param {Object} payload      - Data to embed in the tool result output
    */
-  static async convertMissionBriefingToXYZ(missionBriefing) {
-    chatLogger.info('[convertMissionBriefingToXYZ] Converting mission briefing to XYZ');
-    return convertBriefingToXYZ(missionBriefing);
+  static async injectSubAgentResponse({ chatId, toolName, status, description, payload = {} }) {
+    chatLogger.info(`[injectSubAgentResponse] chat=${chatId} tool=${toolName} status=${status}`);
+
+    const chatExists = await ChatHistoryManager.chatExists(chatId);
+    if (!chatExists) {
+      const err = new Error(`Chat not found: ${chatId}`);
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const newOutput = JSON.stringify({
+      content: [{ type: 'text', text: JSON.stringify({ status, description, ...payload }) }],
+    });
+    const newContent = `Tool result [${toolName}] [${status}]: ${description}`;
+
+    const hidden = await ChatHistoryManager.hideAndReplaceToolResult(chatId, toolName, newOutput, newContent);
+
+    if (!hidden) {
+      chatLogger.warn(`[injectSubAgentResponse] No ${toolName} tool_result found in chat ${chatId} — injecting as new message`);
+      await ChatHistoryManager.addMessage(chatId, 'assistant', {
+        type: 'function_call_output',
+        name: toolName,
+        output: newOutput,
+      });
+    }
+
+    await ChatHistoryManager.clearSession(chatId);
+
+    const sessionId = await ChatHistoryManager.getSessionId(chatId);
+    const agent = await resolveAgentForChat(chatId);
+    const allowedTools = agent.allowedTools;
+    const systemInstructions = agent.systemPrompt;
+    chatLogger.info(`[injectSubAgentResponse] Agent: ${agent.name}, Tools: ${allowedTools?.join(', ')}`);
+
+    const history = await ChatHistoryManager.loadHistory(chatId);
+    const realToolResult = history.findLast(
+      (item) => item.message?.type === 'function_call_output' && item.message?.name === toolName
+    );
+    const toolResultForLLM = realToolResult?.message ?? {
+      type: 'function_call_output',
+      name: toolName,
+      output: newOutput,
+    };
+
+    // Emit the replaced function_call + tool_result via WebSocket
+    const callId = realToolResult?.message?.call_id;
+    if (callId) {
+      const pairedFunctionCall = history.findLast(
+        (item) =>
+          (item.message?.type === 'function_call' || item.message?.type === 'tool_call') &&
+          (item.message?.call_id === callId || item.message?.id === callId)
+      );
+      if (pairedFunctionCall) this._emitAssistantMessage(pairedFunctionCall);
+    }
+    if (realToolResult) this._emitAssistantMessage(realToolResult);
+
+    this.continueAfterTools([toolResultForLLM], chatId, sessionId, systemInstructions, allowedTools, false, agent, true)
+      .then(({ output }) => {
+        const hasToolCalls = output.some((item) => item.type === 'function_call' || item.type === 'tool_call');
+        if (hasToolCalls) {
+          const tools = this.getToolsForProvider(allowedTools);
+          return this.handleToolCallsLoop(output, tools, chatId, sessionId, systemInstructions, allowedTools, agent);
+        }
+      })
+      .catch((err) => {
+        chatLogger.error(`[injectSubAgentResponse] continueAfterTools failed for chat ${chatId}:`, err);
+        eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
+          chatId,
+          from: 'assistant',
+          timestamp: new Date().toISOString(),
+          message: {
+            role: 'assistant',
+            content: `Error al procesar resultado del subagente: ${err.message}`,
+            type: 'text',
+            status: 'error',
+          },
+        });
+      });
+
+    return { ok: true, msg: 'Subagent response injected. Main chat processing resumed.' };
   }
 
-  /**
-   * Receives the real mission plan from the MCP `complete_mission` tool,
-   * converts its waypoints from local XYZ (ENU) to geodetic coordinates,
-   * replaces the placeholder tool_result for `request_mission_plan` in the
-   * MAIN chat history, and re-runs processMessage so the main agent can
-   * continue with the actual mission data.
-   *
-   * @param {Object} payload - Body from POST /chat/return_mission_plan_xyz
-   * @param {string} payload.chat_id       - Main chat ID (from completeMissionSchema)
-   * @param {string} payload.status        - 'valid' | 'error' | 'incomplete'
-   * @param {string} payload.description   - Human-readable summary of the result
-   * @param {Object} payload.missionDataXYZ - Mission in local XYZ coordinates (MissionSchemaXYZ)
-   * @returns {Promise<Object>}
-   */
-  /**
-   * Executes a MCP tool directly, bypassing the LLM.
-   * Useful for debugging/testing tool availability and responses.
-   *
-   * @param {string} toolName - Name of the MCP tool to execute
-   * @param {Object} toolArgs - Arguments to pass to the tool
-   * @returns {Promise<Object>} Raw result from the MCP tool
-   */
   static async testMcpTool(toolName, toolArgs = {}) {
     if (!mcpClient || !mcpClient.isReady()) {
       throw new Error('MCP client not connected or not ready');
@@ -696,164 +712,5 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
     const result = await mcpClient.executeTool(toolName, toolArgs);
     chatLogger.info(`[testMcpTool] Tool "${toolName}" executed successfully`);
     return result;
-  }
-
-  static async returnMissionPlanXYZ({ chat_id, status, description, missionDataXYZ }) {
-    chatLogger.info(`[returnMissionPlanXYZ] Received mission result for main chat: ${chat_id} | status: ${status}`);
-
-    // ── 0. Verify the main chat exists ───────────────────────────────────────
-    const chatExists = await ChatHistoryManager.chatExists(chat_id);
-    if (!chatExists) {
-      const err = new Error(`Chat not found: ${chat_id}, please verify the chat_id is correct.`);
-      err.statusCode = 404;
-      throw err;
-    }
-
-    // ── 1. Convert waypoints XYZ → geodetic ─────────────────────────────────
-    let missionGeodetic = null;
-    try {
-      missionGeodetic = convertMissionXYZToLatLong(missionDataXYZ);
-      chatLogger.info(
-        `[returnMissionPlanXYZ] Converted mission to geodetic. Routes: ${missionGeodetic?.route?.length ?? 0}`
-      );
-    } catch (err) {
-      chatLogger.error('[returnMissionPlanXYZ] Coordinate conversion failed:', err);
-      throw err;
-    }
-
-    // ── 1b. Persist mission to MissionPlan table ─────────────────────────────
-    // Se guarda la misión geodética en DB antes de inyectarla al chat,
-    // para que el ID exista si se necesita referenciar desde otros sistemas.
-    let missionPlanId = null;
-    try {
-      const saved = await missionModel.createMissionPlan(missionGeodetic);
-      missionPlanId = saved.id;
-      chatLogger.info(`[returnMissionPlanXYZ] Mission persisted as MissionPlan ID: ${missionPlanId}`);
-    } catch (err) {
-      // No bloqueante: el chat sigue funcionando aunque falle el guardado en DB.
-      chatLogger.error('[returnMissionPlanXYZ] Failed to persist MissionPlan:', err);
-    }
-
-    // ── 2. Build the new output string ───────────────────────────────────────
-    // Preserve the exact output format the MCP handlers produce:
-    // a JSON string wrapping content[].text, same as other tool responses.
-    // const newOutput = JSON.stringify({
-    //   content: [{ type: 'text', text: JSON.stringify({ status, description, missionPlanId, mission: missionGeodetic }) }],
-    // });
-    const newOutput = JSON.stringify({
-      content: [{ type: 'text', text: JSON.stringify({ status, description, missionPlanId }) }],
-    });
-    const newContent = `Mission plan result [${status}]: ${description}`;
-
-    // ── 3. Hide placeholder, insert new message with real data ───────────────
-    // Original message is marked hidden=true (UI sees it, LLM won't).
-    // New message clones original messageData and only replaces `output`,
-    // so call_id, type, name and all LLM-set fields are preserved.
-    // Se hace hide+replace en lugar de insertar un mensaje nuevo porque el LLM
-    // necesita que el tool_result conserve el mismo call_id del function_call original.
-    // Si se insertara un mensaje nuevo sin ese call_id, el provider lo rechazaría.
-    const hidden = await ChatHistoryManager.hideAndReplaceToolResult(
-      chat_id,
-      'request_mission_plan',
-      newOutput,
-      newContent
-    );
-
-    if (!hidden) {
-      // Edge case: el planner llamó complete_mission sin que hubiera un
-      // request_mission_plan previo en el historial (flujo fuera de orden).
-      // Se inyecta el resultado como mensaje standalone para no perder los datos.
-      chatLogger.warn(
-        `[returnMissionPlanXYZ] No request_mission_plan tool_result found in chat ${chat_id} — injecting as new message`
-      );
-      // Fallback: inject as a bare tool result message
-      await ChatHistoryManager.addMessage(chat_id, 'assistant', {
-        type: 'function_call_output',
-        name: 'request_mission_plan',
-        output: newOutput,
-      });
-    }
-
-    // ── 4. Clear provider session so next call rebuilds context from the
-    //      updated DB history (placeholder hidden, real result visible).
-    await ChatHistoryManager.clearSession(chat_id);
-
-    // ── 5. Continue the conversation with the real tool result.
-    //      continueAfterTools avoids persisting a spurious user message.
-    //      We need the actual messageData object for the LLM input, so we load
-    //      the last non-hidden tool_result for request_mission_plan from DB.
-    chatLogger.info(`[returnMissionPlanXYZ] Continuing main chat with real mission data: ${chat_id}`);
-
-    const sessionId = await ChatHistoryManager.getSessionId(chat_id);
-    chatLogger.info(`[returnMissionPlanXYZ] Loaded sessionId: ${sessionId} for chat: ${chat_id}`);
-    const agent = await resolveAgentForChat(chat_id);
-    const agentProfile = agent.name;
-    const allowedTools = agent.allowedTools;
-    chatLogger.info(`[returnMissionPlanXYZ] Agent: ${agentProfile}, Tools: ${allowedTools?.join(', ')}`);
-    const history = await ChatHistoryManager.loadHistory(chat_id);
-    const systemInstructions = agent.systemPrompt;
-
-    // Get the real messageData that was just inserted (last visible tool_result for this tool)
-    const realToolResult = history.findLast(
-      (item) => item.message?.type === 'function_call_output' && item.message?.name === 'request_mission_plan'
-    );
-    const toolResultForLLM = realToolResult?.message ?? {
-      type: 'function_call_output',
-      name: 'request_mission_plan',
-      output: newOutput,
-    };
-
-    // ── 5b. Emit the re-inserted function_call + new tool_result via WebSocket ─
-    // hideAndReplaceToolResult escribe directo a DB sin pasar por addMessage(),
-    // por lo que el WebSocket nunca emite esos mensajes. Se emiten manualmente aquí.
-    const callId = realToolResult?.message?.call_id;
-    if (callId) {
-      const pairedFunctionCall = history.findLast(
-        (item) =>
-          (item.message?.type === 'function_call' || item.message?.type === 'tool_call') &&
-          (item.message?.call_id === callId || item.message?.id === callId)
-      );
-      if (pairedFunctionCall) {
-        this._emitAssistantMessage(pairedFunctionCall);
-      }
-    }
-    if (realToolResult) {
-      this._emitAssistantMessage(realToolResult);
-    }
-
-    this.continueAfterTools(
-      [toolResultForLLM],
-      chat_id,
-      sessionId,
-      systemInstructions,
-      allowedTools,
-      false,
-      agent,
-      true // skipPersist: new row already inserted at step 3
-    )
-      .then(({ output }) => {
-        // Check if the LLM response contains tool calls that need execution
-        const hasToolCalls = output.some((item) => item.type === 'function_call' || item.type === 'tool_call');
-        if (hasToolCalls) {
-          const tools = this.getToolsForProvider(allowedTools);
-          return this.handleToolCallsLoop(output, tools, chat_id, sessionId, systemInstructions, allowedTools, agent);
-        }
-      })
-      .catch((err) => {
-        chatLogger.error(`[returnMissionPlanXYZ] continueAfterTools failed for chat ${chat_id}:`, err);
-        eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-          chatId: chat_id,
-          from: 'assistant',
-          timestamp: new Date().toISOString(),
-          message: {
-            role: 'assistant',
-            content: `Error al procesar el plan de misión: ${err.message}`,
-            type: 'text',
-            status: 'error',
-          },
-        });
-      });
-
-    return { ok: true, msg: 'Mission plan received. Main chat processing resumed.' };
   }
 }

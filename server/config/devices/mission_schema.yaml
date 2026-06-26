@@ -1,112 +1,223 @@
-mission_action:
-  stay: #action_stay
-    name: 'stay'
+# ─── Mission catalog (enriched, symbolic) ─────────────────────────────────────
+#
+# SINGLE SOURCE OF TRUTH for the mission DOMAIN. Each option/action carries a
+# canonical `key` (symbol) on top of its numeric `value`. The wire keeps the
+# number; the catalog maps number -> symbol; each encoder maps symbol -> its
+# firmware number (see PSDK_SYMBOLS in psdkEncode.js). This makes the value the
+# firmware receives match BY DESIGN, not by coincidence.
+#
+# Firmware id-encoding and value-transforms (e.g. PSDK gimbal x10) live in the
+# encoders, NOT here. This file is firmware-agnostic.
+
+version: 2
+
+# ─── Actions ──────────────────────────────────────────────────────────────────
+# `payload` (when present) describes the action's value: type/unit/range/default.
+# Absence of `payload` means the action is a flag (no value).
+actions:
+  stay:
+    key: ACTION_STAY
     id: 0
-    param: true
+    label: 'Stay'
     description: 'action_stay'
-  photo: #simple_shot
-    name: 'photo'
+    payload: { type: number, unit: s, min: 0, max: 600, step: 1, default: 0 }
+  photo:
+    key: ACTION_PHOTO
     id: 1
-    param: false
+    label: 'Take photo'
     description: 'simple_shot'
   video_start:
-    name: 'video_start'
+    key: ACTION_VIDEO_START
     id: 2
-    param: false
+    label: 'Start recording'
     description: 'video_start'
   video_stop:
-    name: 'video_stop'
+    key: ACTION_VIDEO_STOP
     id: 3
-    param: false
+    label: 'Stop recording'
     description: 'video_stop'
-  yaw: # craft_yaw
-    name: 'yaw'
+  yaw:
+    key: ACTION_YAW
     id: 4
-    param: true
+    label: 'Rotate yaw'
     description: 'craft_yaw'
-  gimbal: #gimbal_pitch
-    name: 'gimbal'
+    payload: { type: number, unit: deg, min: -180, max: 180, step: 1, default: 0 }
+  gimbal:
+    key: ACTION_GIMBAL
     id: 5
-    param: true
+    label: 'Gimbal pitch'
     description: 'gimbal_pitch'
+    payload: { type: number, unit: deg, min: -120, max: 35, step: 1, default: 0 }
+  focus_camara:
+    key: ACTION_FOCUS
+    id: 6
+    label: 'Set focus'
+    description: 'set_focus'
+    payload: { type: number, unit: ratio, min: 0, max: 1, step: 0.01, default: 0.5 }
+  zoom_camera:
+    key: ACTION_ZOOM
+    id: 7
+    label: 'Set zoom'
+    description: 'set_zoom'
+    payload: { type: number, unit: mm, min: 0, max: 200, step: 1, default: 24 }
 
-mission_param:
+# ─── Parameters (route attributes) ────────────────────────────────────────────
+# select params: each option carries value (wire) + key (symbol) + name (UI) + description.
+# number params: type/unit/min/max/step/default.
+params:
   mode_yaw:
     Name: 'Yaw mode'
     id: 'mode_yaw'
     type: 'select'
     default: 0
-    param:
-      - { id: 0, name: 'Auto' }           # HEADING_MODE_AUTO: follows direction of flight
-      - { id: 1, name: 'Fixed' }          # HEADING_FIXED: locked to heading at first waypoint
-      - { id: 2, name: 'RC' }             # HEADING_MANUAL: controlled by remote controller
-      - { id: 3, name: 'Waypoint custom' } # HEADING_WAYPOINT_CUSTOM: adapts to next waypoint
-      - { id: 4, name: 'Point of interest' } # HEADING_TOWARD_POINT_OF_INTEREST
-      - { id: 5, name: 'Gimbal yaw' }     # HEADING_GIMBAL_YAW_FOLLOW
+    description: 'How the aircraft heading behaves while flying the route'
+    options:
+      - { value: 0, key: HEADING_MODE_AUTO, name: 'Auto', description: 'follows direction of flight' }
+      - { value: 1, key: HEADING_MODE_FIXED, name: 'Fixed', description: 'locked to heading at first waypoint' }
+      - { value: 2, key: HEADING_MODE_RC, name: 'RC', description: 'controlled by remote controller' }
+      - { value: 3, key: HEADING_MODE_WAYPOINT_CUSTOM, name: 'Waypoint custom', description: 'adapts to next waypoint' }
+      - { value: 4, key: HEADING_MODE_POI, name: 'Point of interest', description: 'always points to POI' }
+      - { value: 5, key: HEADING_MODE_GIMBAL_YAW_FOLLOW, name: 'Gimbal yaw', description: 'rotates with gimbal yaw' }
   mode_trace:
     Name: 'Flight path mode'
     id: 'mode_trace'
     type: 'select'
     default: 2
-    param:
-      - { id: 0, name: 'Curve (fly past)' }    # FLIGHT_PATH_MODE_GO_TO_POINT_ALONG_A_CURVE
-      - { id: 1, name: 'Curve and stop' }       # FLIGHT_PATH_MODE_GO_TO_POINT_ALONG_A_CURVE_AND_STOP
-      - { id: 2, name: 'Straight and stop' }    # FLIGHT_PATH_MODE_GO_TO_POINT_IN_A_STRAIGHT_LINE_AND_STOP
-      - { id: 3, name: 'Coordinate turn' }      # FLIGHT_PATH_MODE_COORDINATE_TURN (smooth, no stop)
-  mode_turn:
-    Name: 'Turn mode'
-    id: 'mode_turn'
-    type: 'select'
-    default: 0
-    param:
-      - { id: 0, name: 'Clockwise' }        # TURN_MODE_CLOCKWISE
-      - { id: 1, name: 'Counter-clockwise' } # TURN_MODE_COUNTER_CLOCKWISE
+    description: 'How the aircraft moves between waypoints (curve vs straight, stop or fly past)'
+    options:
+      - {
+          value: 0,
+          key: FLIGHT_PATH_MODE_CURVE,
+          name: 'Curve (fly past)',
+          description: 'go to point along a curve, fly past',
+        }
+      - {
+          value: 1,
+          key: FLIGHT_PATH_MODE_CURVE_AND_STOP,
+          name: 'Curve and stop',
+          description: 'go to point along a curve, stop',
+        }
+      - {
+          value: 2,
+          key: FLIGHT_PATH_MODE_STRAIGHT_AND_STOP,
+          name: 'Straight and stop',
+          description: 'go to point in straight line, stop',
+        }
+      - {
+          value: 3,
+          key: FLIGHT_PATH_MODE_COORDINATE_TURN,
+          name: 'Coordinate turn',
+          description: 'smooth curve, no stop',
+        }
   mode_landing:
     Name: 'Finish action'
     id: 'mode_landing'
     type: 'select'
     default: 2
-    param:
-      - { id: 0, name: 'No action' }           # MISSION_FINISHED_NO_ACTION: hover at last WP
-      - { id: 1, name: 'Return to home' }       # MISSION_FINISHED_GO_HOME
-      - { id: 2, name: 'Auto landing' }         # MISSION_FINISHED_AUTO_LANDING: land at last WP
-      - { id: 3, name: 'Return to point 0' }    # MISSION_FINISHED_GO_TO_FIRST_WAYPOINT
-      - { id: 4, name: 'Infinite mode' }        # MISSION_FINISHED_CONTINUE_UNTIL_STOP
+    description: 'What the aircraft does after reaching the last waypoint'
+    options:
+      - { value: 0, key: MISSION_FINISHED_NO_ACTION, name: 'No action', description: 'hover at last waypoint' }
+      - { value: 1, key: MISSION_FINISHED_GO_HOME, name: 'Return to home' }
+      - { value: 2, key: MISSION_FINISHED_AUTO_LANDING, name: 'Auto landing', description: 'land at last waypoint' }
+      - { value: 3, key: MISSION_FINISHED_GO_TO_FIRST_WAYPOINT, name: 'Return to point 0' }
+      - { value: 4, key: MISSION_FINISHED_CONTINUE_UNTIL_STOP, name: 'Infinite mode' }
   mode_goto_first:
     Name: 'Go to first waypoint'
     id: 'mode_goto_first'
     type: 'select'
     default: 0
-    param:
-      - { id: 0, name: 'Safely (climb first)' }   # GOTO_FIRST_WAYPOINT_MODE_SAFELY
-      - { id: 1, name: 'Direct (point to point)' } # GOTO_FIRST_WAYPOINT_MODE_POINT_TO_POINT
+    description: 'How the aircraft travels from its current position to the first waypoint'
+    options:
+      - { value: 0, key: GOTO_FIRST_WAYPOINT_MODE_SAFELY, name: 'Safely (climb first)' }
+      - { value: 1, key: GOTO_FIRST_WAYPOINT_MODE_POINT_TO_POINT, name: 'Direct (point to point)' }
   mode_gimbal:
     Name: 'Gimbal mode'
     id: 'mode_gimbal'
     type: 'select'
     default: 1
-    param:
-      - { id: 0, name: 'Gimbal free' }
-      - { id: 1, name: 'Waypoint' }
-  idle_vel:
-    Name: 'Cruising speed (m/s)'
-    id: 'idle_vel'
-    type: 'number'
-    default: 2
-  max_vel:
-    Name: 'Max speed (m/s)'
-    id: 'max_vel'
-    type: 'number'
-    default: 12
-
-# Extra params only available on devices that support WaypointV2 (M300, M300_rtk, PSDK)
-mission_param_v2:
+    description: 'Whether the gimbal moves freely or follows per-waypoint pitch settings'
+    options:
+      - { value: 0, key: GIMBAL_MODE_FREE, name: 'Gimbal free' }
+      - { value: 1, key: GIMBAL_MODE_WAYPOINT, name: 'Waypoint' }
   mode_speed:
     Name: 'Speed mode'
     id: 'mode_speed'
     type: 'select'
     default: 0
-    param:
-      - { id: 0, name: 'Idle speed' }
-      - { id: 1, name: 'Idle and max speed' }
-      - { id: 2, name: 'Waypoint speed' }
+    description: 'Which speed limits apply along the route (WaypointV2 devices only)'
+    options:
+      - { value: 0, key: SPEED_MODE_IDLE, name: 'Idle speed' }
+      - { value: 1, key: SPEED_MODE_IDLE_AND_MAX, name: 'Idle and max speed' }
+      - { value: 2, key: SPEED_MODE_WAYPOINT, name: 'Waypoint speed' }
+  idle_vel:
+    Name: 'Cruising speed (m/s)'
+    id: 'idle_vel'
+    type: 'number'
+    unit: 'm/s'
+    min: 0.5
+    max: 15
+    step: 0.1
+    default: 2
+    description: 'Default speed used when flying between waypoints without a per-waypoint speed'
+  max_vel:
+    Name: 'Max speed (m/s)'
+    id: 'max_vel'
+    type: 'number'
+    unit: 'm/s'
+    min: 1
+    max: 20
+    step: 0.1
+    default: 12
+    description: 'Upper speed limit the aircraft will not exceed during the mission'
+waypoint_params:
+  mode_turn:
+    Name: 'Turn mode'
+    id: 'mode_turn'
+    type: 'select'
+    default: 0
+    description: 'Direction the aircraft rotates when turning between waypoints'
+    options:
+      - { value: 0, key: TURN_MODE_AUTO, name: 'auto' }
+      - { value: 1, key: TURN_MODE_CLOCKWISE, name: 'CW' }
+      - { value: 2, key: TURN_MODE_COUNTER_CLOCKWISE, name: 'CCW' }
+  speed:
+    Name: 'Waypoint speed (m/s)'
+    id: 'speed'
+    type: 'number'
+    unit: 'm/s'
+    min: 0.5
+    max: 15
+    step: 0.1
+    default: 2
+    description: 'Speed used when flying to this waypoint (overrides idle_vel)'
+  gimbal:
+    Name: 'Gimbal pitch (deg)'
+    id: 'gimbal'
+    type: 'number'
+    unit: 'deg'
+    min: -120
+    max: 35
+    step: 1
+    default: 0
+    description: 'Gimbal pitch angle at this waypoint'
+# ─── Capability profiles ──────────────────────────────────────────────────────
+# A category's `mission:` string (in devices_msg.yaml) selects one of these.
+# Lists which catalog actions/params that family of robot exposes.
+profiles:
+  default:
+    actions: []
+    params: [idle_vel]
+    waypoint_params: []
+  v1:
+    actions: [stay, photo, video_start, video_stop, yaw, gimbal]
+    params: [mode_yaw, mode_trace, mode_landing, idle_vel]
+    waypoint_params: [gimbal]
+  v2:
+    actions: [stay, photo, video_start, video_stop, yaw, gimbal]
+    params: [mode_yaw, mode_trace, mode_landing, mode_gimbal, idle_vel, max_vel]
+    waypoint_params: [gimbal, speed]
+
+  psdk:
+    actions: [stay, photo, video_start, video_stop, yaw, gimbal, focus_camara, zoom_camera]
+    params: [mode_yaw, mode_trace, mode_landing, mode_goto_first, idle_vel, max_vel, mode_speed]
+    waypoint_params: [mode_turn, gimbal, speed]

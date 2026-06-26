@@ -264,6 +264,21 @@ export class ChatHistoryManager {
   }
 
   /**
+   * Get the full metadata object for a chat.
+   * @param {string} chatId - Chat identifier
+   * @returns {Promise<object>} Metadata object (empty object if not found)
+   */
+  static async getChatMetadata(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      return chat?.metadata || {};
+    } catch (error) {
+      chatLogger.error('Error getting chat metadata:', error);
+      return {};
+    }
+  }
+
+  /**
    * Set the provider session ID for a chat
    * @param {string} chatId - Chat identifier (internal app ID)
    * @param {string} sessionId - Provider session ID
@@ -392,11 +407,14 @@ export class ChatHistoryManager {
     const newChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const now = new Date();
 
+    const sourceChat = await sequelize.models.Chat.findByPk(sourceChatId);
+    const sourceMetadata = sourceChat?.metadata || {};
+
     // Create the new chat
     const newChat = await sequelize.models.Chat.create({
       id: newChatId,
       name: name || null,
-      metadata: { forkedFrom: sourceChatId, forkedAt: now.toISOString() },
+      metadata: { ...sourceMetadata, sessionId: null, lastResponseId: null, forkedFrom: sourceChatId, forkedAt: now.toISOString() },
       status: 'active',
       createdAt: now,
       updatedAt: now,

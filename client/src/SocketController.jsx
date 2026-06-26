@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
-import { devicesActions, missionActions, sessionActions, chatActions } from './store'; // here update device action with position of uav for update in map
+import { devicesActions, missionActions, sessionActions, chatActions, activeMissionsActions } from './store';
 import { eventsActions } from './store/events';
 import { Snackbar } from '@mui/material';
 import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
@@ -107,8 +107,25 @@ const SocketController = () => {
         dispatch(chatActions.addMessage(data.chat));
       }
       if (data.chatCreated) {
-        // Server created a new chat, update the active chat ID
         dispatch(chatActions.setActiveChat(data.chatCreated.chatId));
+      }
+      if (data.missionProgress) {
+        const { missionId } = data.missionProgress;
+        const known = store.getState().activeMissions.items[missionId];
+        if (!known) {
+          // Mission arrived before initial fetch or was created after page load — fetch it now
+          Promise.all([
+            fetch(`/api/missions?id=${missionId}`).then((r) => r.ok ? r.json() : null),
+            fetch(`/api/missions/routes?missionId=${missionId}`).then((r) => r.ok ? r.json() : null),
+          ]).then(([mission, routes]) => {
+            if (mission) dispatch(activeMissionsActions.upsertMission(Array.isArray(mission) ? mission[0] : mission));
+            if (routes) dispatch(activeMissionsActions.setRoutes(Array.isArray(routes) ? routes : Object.values(routes)));
+          });
+        }
+        dispatch(activeMissionsActions.updateProgress(data.missionProgress));
+      }
+      if (data.missionCompleted) {
+        dispatch(activeMissionsActions.completeMission(data.missionCompleted));
       }
     };
   };
@@ -122,6 +139,17 @@ const SocketController = () => {
       } else {
         throw Error(await response.text());
       }
+
+      const missionsRes = await fetch('/api/missions');
+      if (missionsRes.ok) {
+        const missions = await missionsRes.json();
+        dispatch(activeMissionsActions.setMissions(Array.isArray(missions) ? missions : [missions].filter(Boolean)));
+      }
+      const routesRes = await fetch('/api/missions/routes');
+      if (routesRes.ok) {
+        dispatch(activeMissionsActions.setRoutes(await routesRes.json()));
+      }
+
       console.log('Socket first connection');
       connectSocket();
       return () => {

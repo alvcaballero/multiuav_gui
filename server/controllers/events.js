@@ -13,9 +13,12 @@ export class eventsController {
   }
 
   static async addEvent(value) {
-    const { type, eventTime, deviceId, attributes } = value;
-    const position = await eventsModel.addEvent({ type, eventTime, deviceId, attributes });
-    return position;
+    const { type, eventTime, deviceId, missionId, positionId, attributes } = value;
+    try {
+      await eventsModel.addEvent({ type, eventTime, deviceId, missionId, positionId, attributes });
+    } catch (err) {
+      logger.warn(`addEvent failed: ${err.message}`);
+    }
   }
 
   static async getByDeviceId(req, res) {

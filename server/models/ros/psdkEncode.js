@@ -1,53 +1,41 @@
-// ─── PSDK WaypointV2 constants (mirror of psdk_interfaces msg definitions) ────
+import { categoryModel } from '../category.js';
+import { PSDK_SYMBOLS } from './missionSymbols.js';
 
+// ─── PSDK symbol → firmware number translation ────────────────────────────────
+//
+// PSDK_SYMBOLS (in missionSymbols.js) maps each CANONICAL SYMBOL (the `key` in
+// mission_schema.yaml) to the DJI WaypointV2 firmware number. The mission wire
+// carries a number; the catalog turns it into a symbol; toPsdkValue() turns the
+// symbol into the firmware number.
+
+// symbol → PSDK firmware number. Fails loud if the catalog offers a symbol this
+// family doesn't map (guarded by a contract test so it can't happen silently).
+export function toPsdkValue(group, symbol) {
+  const n = PSDK_SYMBOLS[group]?.[symbol];
+  if (n === undefined) throw new RangeError(`MissionToPsdkV2: unmapped symbol ${group}.${symbol}`);
+  return n;
+}
+
+// Resolves a route attribute (wire number) to its PSDK firmware number via the
+// catalog symbol: number → symbol (catalog) → number (PSDK table).
+function psdkParamFromValue(group, value) {
+  const symbol = categoryModel.symbolForValue(group, value);
+  if (symbol == null) throw new RangeError(`MissionToPsdkV2: no symbol for ${group}=${value}`);
+  return toPsdkValue(group, symbol);
+}
+
+// Internal numeric aliases (derived from the symbol tables) for the action
+// builders below, which reference actions by short name.
 const ACTION_TYPE = {
-  stay: 0,
-  photo: 1,
-  video_start: 2,
-  video_stop: 3,
-  yaw: 4,
-  gimbal: 5,
-  focus_camara: 6,
-  zoom_camera: 7,
+  stay: PSDK_SYMBOLS.actions.ACTION_STAY,
+  photo: PSDK_SYMBOLS.actions.ACTION_PHOTO,
+  video_start: PSDK_SYMBOLS.actions.ACTION_VIDEO_START,
+  video_stop: PSDK_SYMBOLS.actions.ACTION_VIDEO_STOP,
+  yaw: PSDK_SYMBOLS.actions.ACTION_YAW,
+  gimbal: PSDK_SYMBOLS.actions.ACTION_GIMBAL,
+  focus_camera: PSDK_SYMBOLS.actions.ACTION_FOCUS,
+  zoom_camera: PSDK_SYMBOLS.actions.ACTION_ZOOM,
 };
-
-// DJI_WAYPOINT_V2_FLIGHT_PATH_MODE_*
-const FLIGHT_PATH_MODE = Object.freeze({
-  CURVE: 0, // Go to point along a curve, fly past
-  CURVE_AND_STOP: 1, // Go to point along a curve, stop
-  STRAIGHT_AND_STOP: 2, // Go to point in straight line, stop
-  COORDINATE_TURN: 3, // Smooth curve, no stop (used between waypoints)
-  FIRST_POINT_STRAIGHT: 4, // Go to first waypoint in straight line
-  STRAIGHT_OUT: 5, // Straight exit — only valid for last waypoint
-  UNKNOWN: 255,
-});
-
-// DJI_WAYPOINT_V2_HEADING_MODE_*
-const HEADING_MODE = Object.freeze({
-  AUTO: 0, // Heading follows direction of flight
-  FIXED: 1, // Heading locked to heading at first waypoint
-  MANUAL: 2, // Heading controlled by RC
-  WAYPOINT_CUSTOM: 3, // Heading adapts to next waypoint's heading setting
-  TOWARD_POINT_OF_INTEREST: 4, // Heading always points to POI
-  GIMBAL_YAW_FOLLOW: 5, // Heading rotates with gimbal yaw
-  UNKNOWN: 255,
-});
-
-// DJI_WAYPOINT_V2_TURN_MODE_*
-const TURN_MODE = Object.freeze({
-  CLOCKWISE: 0,
-  COUNTER_CLOCKWISE: 1,
-  UNKNOWN: 255,
-});
-
-// DJI_WAYPOINT_V2_MISSION_FINISHED_*
-const FINISH_ACTION = Object.freeze({
-  NO_ACTION: 0, // Hover at last waypoint
-  GO_HOME: 1, // Return to home
-  AUTO_LANDING: 2, // Land at last waypoint
-  GO_TO_FIRST_WAYPOINT: 3, // Go back to first waypoint and hover
-  CONTINUE_UNTIL_STOP: 4, // Hover at last waypoint without ending mission
-});
 
 // DJI_WAYPOINT_V2_MISSION_GOTO_FIRST_WAYPOINT_MODE_*
 const GOTO_FIRST_MODE = Object.freeze({
@@ -61,24 +49,15 @@ const ACTUATOR = { CAMERA: 1, GIMBAL: 2, AIRCRAFT: 4 };
 const CAM_OP = { TAKE_PHOTO: 1, START_RECORD: 2, STOP_RECORD: 3, SET_FOCUS: 4, SET_ZOOM: 5 };
 const GIMBAL_OP = { ROTATE: 1 };
 const AIRCRAFT_OP = { ROTATE_YAW: 1, FLYING_CONTROL: 2 };
-const AIRCRAFT_FLIGHT = { START: 1, STOP: 0 };
+const AIRCRAFT_FLIGHT = { STOP: 0, START: 1 };
 
 // ─── Route attribute defaults ─────────────────────────────────────────────────
 
-const ROUTE_DEFAULTS = {
-  idle_vel: 1.8,
-  max_vel: 10,
-  mode_yaw: HEADING_MODE.AUTO,
-  mode_trace: FLIGHT_PATH_MODE.STRAIGHT_AND_STOP,
-  mode_landing: FINISH_ACTION.AUTO_LANDING,
-};
-
-function extractRouteAttributes(routeAttributes) {
-  const attrs = {};
-  for (const [key, defaultValue] of Object.entries(ROUTE_DEFAULTS)) {
-    attrs[key] = Object.prototype.hasOwnProperty.call(routeAttributes, key) ? routeAttributes[key] : defaultValue;
-  }
-  return attrs;
+// Defaults come from the mission_schema YAML, resolved per robot category (SSOT).
+// route.attributes overrides any default the user explicitly set.
+function extractRouteAttributes(routeAttributes, uavType) {
+  const defaults = categoryModel.getAttributesDefaults(uavType);
+  return { ...defaults, ...routeAttributes };
 }
 
 // ─── PSDK actuator builders ───────────────────────────────────────────────────
@@ -355,54 +334,85 @@ function buildPsdkActions(waypoints) {
 
 // ─── PSDK parameter validation ────────────────────────────────────────────────
 
-const VALID_VALUES = {
-  finishAction: new Set(Object.values(FINISH_ACTION)),
-  yawMode: new Set(Object.values(HEADING_MODE)),
-  traceMode: new Set(Object.values(FLIGHT_PATH_MODE)),
-  turnMode: new Set(Object.values(TURN_MODE)),
-};
-
-function validatePsdkParam(name, value) {
-  if (!VALID_VALUES[name].has(value)) {
-    throw new RangeError(
-      `MissionToPsdkV2: invalid ${name}=${value}. Valid values: ${[...VALID_VALUES[name]].join(', ')}`
-    );
-  }
-  return value;
-}
+// All modes (mode_yaw/mode_trace/mode_landing/mode_turn) are validated implicitly
+// by psdkParamFromValue — an unmapped or unknown symbol throws RangeError.
 
 // ─── Encoder: route crudo → psdk_interfaces/srv/InitWaypointV2Setting ────────
 
-export function MissionToPsdkV2(route, { missionId = 1, turnMode = TURN_MODE.CLOCKWISE } = {}) {
-  const { idle_vel, max_vel, mode_yaw, mode_trace, mode_landing } = extractRouteAttributes(route.attributes ?? {});
+export function MissionToPsdkV2(route, { missionId = 1 } = {}) {
+  const { idle_vel, max_vel, mode_yaw, mode_trace, mode_landing } = extractRouteAttributes(
+    route.attributes ?? {},
+    route.uav_type
+  );
 
-  validatePsdkParam('finishAction', mode_landing);
-  validatePsdkParam('yawMode', mode_yaw);
-  validatePsdkParam('traceMode', mode_trace);
-  validatePsdkParam('turnMode', turnMode);
+  // Resolve each route mode from its wire number to the PSDK firmware number,
+  // going through the catalog symbol (number → symbol → firmware number).
+  const headingMode = psdkParamFromValue('mode_yaw', mode_yaw);
+  const traceMode = psdkParamFromValue('mode_trace', mode_trace);
+  const finishAction = psdkParamFromValue('mode_landing', mode_landing);
+
+  // mode_turn is per-waypoint: each wp may carry its own wp.mode_turn (wire number);
+  // fall back to the catalog default when absent. Resolved via symbol like the rest.
+  const defaultTurn = categoryModel.getWaypointDefault(route.uav_type, 'mode_turn');
 
   const waypoints = Object.values(route.wp);
 
-  const mission = waypoints.map((item, i) => ({
-    longitude: item.pos[1],
-    latitude: item.pos[0],
-    relative_height: item.pos[2],
-    waypoint_type: mode_trace,
-    heading_mode: mode_yaw,
-    config: {
-      // use per-waypoint speed only when it differs from idle
-      use_local_cruise_vel: Object.prototype.hasOwnProperty.call(item, 'speed') && item.speed !== idle_vel ? 1 : 0,
-      use_local_max_vel: 0,
-    },
-    damping_distance: 0,
-    heading: item.yaw ?? 0,
-    turn_mode: turnMode,
-    position_x: 0,
-    position_y: 0,
-    position_z: 0,
-    max_flight_speed: max_vel,
-    auto_flight_speed: item.speed ?? idle_vel,
-  }));
+  // Wire value for TURN_MODE_AUTO is 0 (mission_schema.yaml — NOT the PSDK firmware number);
+  // when a waypoint carries this value we pick CW or CCW at encode-time to minimise the arc.
+  const WIRE_TURN_AUTO = 0;
+  const PSDK_CW = PSDK_SYMBOLS.mode_turn.TURN_MODE_CLOCKWISE;
+  const PSDK_CCW = PSDK_SYMBOLS.mode_turn.TURN_MODE_COUNTER_CLOCKWISE;
+
+  // Returns the signed shortest delta in [-180, 180] between two yaw angles.
+  function yawDelta(from, to) {
+    return ((to - from + 540) % 360) - 180;
+  }
+
+  // Tracks the last action yaw seen across waypoints for arc-minimisation.
+  let prevActionYaw = null;
+
+  const mission = waypoints.map((item, i) => {
+    const wireTurn = item.mode_turn ?? defaultTurn;
+    let turn_mode = PSDK_CW;
+    if (wireTurn === WIRE_TURN_AUTO) {
+      const actionYaw = item.action?.yaw != null ? Number(item.action.yaw) : null;
+      if (actionYaw !== null) {
+        // Compare this action yaw against the last seen action yaw (or wp heading if none yet).
+        const from = prevActionYaw ?? (i > 0 ? (waypoints[i - 1].yaw ?? 0) : 0);
+        turn_mode = yawDelta(from, actionYaw) >= 0 ? PSDK_CW : PSDK_CCW;
+        prevActionYaw = actionYaw;
+      } else if (headingMode === PSDK_SYMBOLS.mode_yaw.HEADING_MODE_WAYPOINT_CUSTOM) {
+        const prevYaw = i > 0 ? (waypoints[i - 1].yaw ?? 0) : 0;
+        const curYaw = item.yaw ?? 0;
+        turn_mode = yawDelta(prevYaw, curYaw) >= 0 ? PSDK_CW : PSDK_CCW;
+      }
+    } else {
+      turn_mode = psdkParamFromValue('mode_turn', wireTurn);
+    }
+    if (turn_mode !== PSDK_CW && turn_mode !== PSDK_CCW) {
+      throw new RangeError(`MissionToPsdkV2: invalid turn_mode ${turn_mode} at waypoint ${i}`);
+    }
+    return {
+      longitude: item.pos[1],
+      latitude: item.pos[0],
+      relative_height: item.pos[2],
+      waypoint_type: traceMode,
+      heading_mode: headingMode,
+      config: {
+        // use per-waypoint speed only when it differs from idle
+        use_local_cruise_vel: Object.prototype.hasOwnProperty.call(item, 'speed') && item.speed !== idle_vel ? 1 : 0,
+        use_local_max_vel: 0,
+      },
+      damping_distance: 0,
+      heading: item.yaw ?? 0,
+      turn_mode,
+      position_x: 0,
+      position_y: 0,
+      position_z: 0,
+      max_flight_speed: max_vel,
+      auto_flight_speed: item.speed ?? idle_vel,
+    };
+  });
 
   const actions = buildPsdkActions(waypoints);
 
@@ -411,7 +421,7 @@ export function MissionToPsdkV2(route, { missionId = 1, turnMode = TURN_MODE.CLO
       mission_id: missionId,
       miss_total_len: waypoints.length,
       repeat_times: 0,
-      finished_action: mode_landing,
+      finished_action: finishAction,
       max_flight_speed: max_vel,
       auto_flight_speed: idle_vel,
       exit_mission_on_signal_lost: 1,

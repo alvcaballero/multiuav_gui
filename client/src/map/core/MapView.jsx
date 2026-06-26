@@ -103,7 +103,7 @@ const MapView = ({ children }) => {
   const [mapReady, setMapReady] = useState(false);
 
   const mapStyles = useMapStyles();
-  const activeMapStyles = 'osm,locationIqStreets,carto,martin,custom';
+  const activeMapStyles = 'osm,locationIqStreets,carto,googleSatellite,martin,custom';
   const [defaultMapStyle] = usePersistedState('selectedMapStyle', usePreference('map', 'osm'));
   const mapboxAccessToken = 'my tocken';
   const maxZoom = 21;

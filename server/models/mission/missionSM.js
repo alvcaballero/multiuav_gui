@@ -1,7 +1,7 @@
-import { machine } from './deviceSM.js';
+import { machine } from './missionExecutionSM.js';
 import { createActor } from 'xstate';
-import { missionController } from '../controllers/mission.js';
-import logger from '../common/logger.js';
+import { missionController } from '../../controllers/mission.js';
+import logger from '../../common/logger.js';
 
 const listSM = {}; // lista de acots maquinas de estados por id de UAV
 

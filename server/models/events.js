@@ -1,7 +1,7 @@
 import { positionsController } from '../controllers/positions.js';
 import sequelize from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import { de } from 'zod/v4/locales';
+import { getDatetime } from '../common/utils.js';
 import logger from '../common/logger.js';
 
 /**
@@ -45,7 +45,7 @@ export class eventsModel {
     }
     let myEvent = await sequelize.models.Event.create({
       type: type,
-      eventTime: eventTime || undefined,
+      eventTime: eventTime || getDatetime(),
       deviceId: device_id,
       positionId: eventPosition2,
       missionId: missionId || null,

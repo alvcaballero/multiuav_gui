@@ -18,7 +18,9 @@ import { makeStyles } from 'tss-react/mui';
 import { usePreference } from '../../shared/preferences';
 import { useMissionFile } from '../../services/useMissionFile';
 
-import { Card, IconButton, Button, ButtonGroup, CardMedia } from '@mui/material';
+import { Card, IconButton, Button, ButtonGroup, CardMedia, Popover, Typography, Box } from '@mui/material';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import MissionTrackingPanel from '../mission/MissionTrackingPanel';
 
 const useStyles = makeStyles()((theme) => ({
   toolbar: {
@@ -85,6 +87,11 @@ export const Menu = React.memo(({ SetAddUAVOpen }) => {
     sethidestatus(!hidestatus);
   };
 
+  const [missionsAnchor, setMissionsAnchor] = useState(null);
+  const missionsOpen = Boolean(missionsAnchor);
+  const handleMissionsOpen = (e) => setMissionsAnchor(e.currentTarget);
+  const handleMissionsClose = () => setMissionsAnchor(null);
+
   useEffect(() => {
     setMissionName(Mission_Name);
   }, [Mission_Name]);
@@ -150,6 +157,24 @@ export const Menu = React.memo(({ SetAddUAVOpen }) => {
         <Button variant="filledTonal" onClick={(e) => hideStatusWindow()} className={classes.mediaButton}>
           Status
         </Button>
+
+        <Button onClick={handleMissionsOpen} className={classes.mediaButton}>
+          <AssignmentIcon fontSize="small" className={classes.mediaicon} />
+        </Button>
+        <Popover
+          open={missionsOpen}
+          anchorEl={missionsAnchor}
+          onClose={handleMissionsClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        >
+          <Box sx={{ width: 320 }}>
+            <Typography variant="caption" sx={{ px: 1.5, py: 0.75, display: 'block', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>
+              Active Missions
+            </Typography>
+            <MissionTrackingPanel />
+          </Box>
+        </Popover>
 
         <Button id="openTerminal" style={{ visibility: true }} className={classes.mediaButton}>
           <TabIcon fontSize="small" className={classes.mediaicon} />

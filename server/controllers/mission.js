@@ -1,4 +1,4 @@
-import { missionModel } from '../models/mission.js';
+import { missionModel } from '../models/mission/mission.js';
 import {
   validateMission,
   resolveCollisions as resolveCollisionsAlgo,
@@ -8,7 +8,7 @@ import logger from '../common/logger.js';
 
 class missionController {
   static getMission = async (req, res) => {
-    const response = await missionModel.getMissionValue(req.query.id);
+    const response = await missionModel.getMissionValue(req.query.id, req.query.all === 'true');
     res.json(response);
   };
 
@@ -90,6 +90,48 @@ class missionController {
   static updateMission = ({ device, mission, state }) => {
     missionModel.updateMission({ device, mission, state });
     return true;
+  };
+
+  static convertGeodeticToXYZ = async (req, res) => {
+    const missionBriefing = req.body;
+    if (!missionBriefing.target_elements || !missionBriefing.drone_information) {
+      return res.status(400).json({ error: 'target_elements and drone_information are required.' });
+    }
+    try {
+      const missionDataXYZ = missionModel.convertBriefingToXYZ(missionBriefing);
+      res.json(missionDataXYZ);
+    } catch (error) {
+      logger.error(`Error in convertGeodeticToXYZ: ${error.message}`);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  static convertXYZToGeodetic = async (req, res) => {
+    const missionDataXYZ = req.body;
+    if (!missionDataXYZ.route) {
+      return res.status(400).json({ error: 'route is required.' });
+    }
+    try {
+      const missionGeodetic = missionModel.convertXYZToGeodetic(missionDataXYZ);
+      res.json(missionGeodetic);
+    } catch (error) {
+      logger.error(`Error in convertXYZToGeodetic: ${error.message}`);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  static createMissionPlan = async (req, res) => {
+    const { missionData, name, source } = req.body;
+    if (!missionData) {
+      return res.status(400).json({ error: 'missionData is required.' });
+    }
+    try {
+      const saved = await missionModel.createMissionPlan(missionData, { name, source });
+      res.status(201).json({ id: saved.id, name: saved.name, createdAt: saved.createdAt });
+    } catch (error) {
+      logger.error(`Error in createMissionPlan: ${error.message}`);
+      res.status(500).json({ error: error.message });
+    }
   };
 
   static getMissionPlans = async (req, res) => {
