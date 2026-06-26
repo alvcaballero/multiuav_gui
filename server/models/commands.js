@@ -48,9 +48,23 @@ export class commandsModel {
 
     if (type == 'loadMission') {
       response = await this.loadmissionDevice(deviceId, attributes);
+      if (deviceId < 0) {
+        eventsController.addEvent({
+          type: response.state,
+          deviceId: null,
+          attributes: { message: response.msg },
+        });
+      }
     }
     if (type == 'commandMission') {
       response = await this.commandMissionDevice(deviceId);
+      if (deviceId < 0) {
+        eventsController.addEvent({
+          type: response.state,
+          deviceId: null,
+          attributes: { message: response.msg },
+        });
+      }
     }
     if (deviceId >= 0) {
       if (type == 'saveHome') {
@@ -125,10 +139,16 @@ export class commandsModel {
     let myDevice = await devicesController.getDevice(uav_id);
     if (myDevice.protocol == 'ros') {
       logger.debug(`sending via ROS device uavId=${uav_id}`);
-      if (attributes) {
-        response = await rosController.callService({ uav_id, type, request: attributes });
-      } else {
-        response = await rosController.callService({ uav_id, type });
+      try {
+        if (attributes) {
+          response = await rosController.callService({ uav_id, type, request: attributes });
+        } else {
+          response = await rosController.callService({ uav_id, type });
+        }
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        logger.error(`standarCommand ROS error uavId=${uav_id} type=${type}: ${errMsg}`);
+        response = { state: 'error', msg: errMsg };
       }
     }
     //robofleet
