@@ -1,4 +1,6 @@
 import { devicesController } from '../../controllers/devices.js';
+import { positionsController } from '../../controllers/positions.js';
+import { decodeRosMsg } from './rosDecode.js';
 import {
   getRos,
   setRosState,
@@ -62,7 +64,16 @@ export class rosModel {
   }
 
   static async subscribeDevice(uavAdded) {
-    return _subscribeDevice(uavAdded, getRos(), serverStatus());
+    return _subscribeDevice(uavAdded, getRos(), serverStatus(), {
+      onPosition: (args) => {
+        const decoded = decodeRosMsg(args);
+        if (decoded) positionsController.updatePosition(decoded);
+      },
+      onCamera: (args) => {
+        const decoded = decodeRosMsg(args);
+        if (decoded) positionsController.updateCamera(decoded);
+      },
+    });
   }
 
   static async unsubscribeDevice(id) {

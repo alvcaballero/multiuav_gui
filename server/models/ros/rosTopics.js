@@ -1,38 +1,47 @@
 import * as ROSLIB from 'roslib';
 import { readDataFile } from '../../common/utils.js';
-import { decodeRosMsg } from './rosDecode.js';
 import { encodeRosSrv } from './rosEncode.js';
 import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
 import { getTopics, getMessageDetails, getPublishers } from './rosInspect.js';
 import logger, { logHelpers } from '../../common/logger.js';
 
 const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
-const uav_list = {};
+
+// Registry of active ROS topic subscriptions, indexed by device id.
+// Each entry is a map of topicKey -> ROSLIB.Topic, kept only so the
+// listeners can be unsubscribed later. Device metadata is NOT stored here.
+// activeSubscriptions[deviceId] = { position: ROSLIB.Topic, camera: ROSLIB.Topic, ... }
+const activeSubscriptions = {};
 
 export function RosSubscribe(uav_id, uav_type, type, msgType, onMessage, ros) {
-  uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
+  activeSubscriptions[uav_id][type].subscribe(function (msg) {
     onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
   });
 }
 
 export function RosSubscribeCamera(uav_id, uav_type, type, msgType, onMessage, ros) {
-  uav_list[uav_id]['listener_' + type].subscribe(function (msg) {
+  activeSubscriptions[uav_id][type].subscribe(function (msg) {
     onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
   });
 }
 
-export async function subscribeDevice(uavAdded, ros, rosState) {
+export async function subscribeDevice(uavAdded, ros, rosState, { onPosition, onCamera }) {
   if (!rosState || rosState.state != 'connect') {
     return { state: 'error', msg: 'ROS no conectado' };
   }
   logHelpers.ros.subscribe(uavAdded.id, uavAdded.name, { category: uavAdded.category });
 
   const { id, name, category, camera } = uavAdded;
-  uav_list[id] = uavAdded;
+  // Unsubscribe any stale listeners before re-subscribing so a reconnect
+  // can't leave two live subscriptions feeding duplicate telemetry.
+  if (activeSubscriptions[id]) {
+    unsubscribeDevice(id);
+  }
+  activeSubscriptions[id] = {};
   let msgType = devices_msg[category]['topics'];
   // create listeners
   Object.keys(devices_msg[category]['topics']).forEach((element) => {
-    uav_list[id]['listener_' + element] = new ROSLIB.Topic({
+    activeSubscriptions[id][element] = new ROSLIB.Topic({
       ros: ros,
       name: name + devices_msg[category]['topics'][element]['name'],
       messageType: devices_msg[category]['topics'][element]['messageType'],
@@ -41,7 +50,7 @@ export async function subscribeDevice(uavAdded, ros, rosState) {
   // subscribe devices
   Object.keys(devices_msg[category]['topics']).forEach((element) => {
     if (element !== 'camera') {
-      RosSubscribe(id, category, element, msgType[element]['messageType'], decodeRosMsg, ros);
+      RosSubscribe(id, category, element, msgType[element]['messageType'], onPosition, ros);
     }
   });
   // subscribe camera
@@ -49,45 +58,40 @@ export async function subscribeDevice(uavAdded, ros, rosState) {
     logger.debug(`Camera type: ${camera[i]['type']}`);
     if (camera[i]['type'] == 'Websocket') {
       logger.debug(`camera websocket for ${name}`);
-      RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], decodeRosMsg, ros);
+      RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], onCamera, ros);
     }
   }
 }
 
+// Unsubscribe one device's listeners and drop its registry entry.
+function unsubscribeOne(deviceId) {
+  const listeners = activeSubscriptions[deviceId];
+  if (!listeners) return;
+  for (const topic of Object.values(listeners)) {
+    topic.unsubscribe();
+  }
+  delete activeSubscriptions[deviceId];
+}
+
+// Unsubscribe a single device by id, or ALL devices when id < 0
+// (id = -1 is used on every ROS disconnect to leave no orphaned subscriptions).
 export async function unsubscribeDevice(id) {
-  let cur_uav_idx;
-  let Key_listener;
-  if (Object.keys(uav_list).length != 0) {
-    if (id < 0) {
-      for (let i = 0; i < Object.keys(uav_list).length; i++) {
-        cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
-        if (cur_uav_idx) {
-          Key_listener = cur_uav_idx.filter((element) => element.includes('listener'));
-          Key_listener.forEach((element) => {
-            uav_list[cur_uav_idx.id][element].unsubscribe();
-          });
-        }
-      }
-      var props = Object.getOwnPropertyNames(uav_list);
-      for (var i = 0; i < props.length; i++) {
-        delete uav_list[props[i]];
-      }
-    } else {
-      cur_uav_idx = Object.values(uav_list).find((element) => element.id == id);
-
-      Key_listener = Object.keys(cur_uav_idx).filter((element) => element.includes('listener'));
-
-      if (Object.keys(uav_list).length != 0) {
-        Key_listener.forEach((element) => {
-          uav_list[cur_uav_idx.id][element].unsubscribe();
-        });
-        delete uav_list[cur_uav_idx.id];
-        return { state: 'success', msg: 'Se ha eliminado el ' + cur_uav_idx };
-      }
-    }
-  } else {
+  if (Object.keys(activeSubscriptions).length === 0) {
     return { state: 'success', msg: 'no quedan UAV de la lista' };
   }
+
+  if (id < 0) {
+    for (const deviceId of Object.keys(activeSubscriptions)) {
+      unsubscribeOne(deviceId);
+    }
+    return { state: 'success', msg: 'Se han desuscrito todos los dispositivos' };
+  }
+
+  if (!activeSubscriptions[id]) {
+    return { state: 'warning', msg: `device ${id} no estaba suscrito` };
+  }
+  unsubscribeOne(id);
+  return { state: 'success', msg: `Se ha eliminado el dispositivo ${id}` };
 }
 
 export async function PubRosMsg(params, ros) {
