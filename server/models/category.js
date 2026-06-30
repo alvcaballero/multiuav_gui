@@ -1,7 +1,7 @@
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { devicesMsg, missionSchema, messagesTypes } from '../config/config.js';
 import logger from '../common/logger.js';
-import { symbolsForService, profileFor } from './ros/missionSymbols.js';
+import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 
 const devices_msg = readDataFile(devicesMsg);
 const messages_types = readDataFile(messagesTypes);

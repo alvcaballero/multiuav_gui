@@ -1,10 +1,10 @@
 import { categoryModel } from '../category.js';
 import { missionLogger as logger } from '../../common/logger.js';
-import { CONFIG_SYMBOLS } from '../ros/missionSymbols.js';
+import { CONFIG_SYMBOLS } from './missionSymbols.js';
 
 // ─── ConfigMission symbol → firmware number translation ───────────────────────
 //
-// CONFIG_SYMBOLS (in ros/missionSymbols.js) maps each CANONICAL SYMBOL (the `key`
+// CONFIG_SYMBOLS (in mission/missionSymbols.js) maps each CANONICAL SYMBOL (the `key`
 // in mission_schema.yaml) to the aerialcore_common/ConfigMission firmware number.
 // A symbol absent from that table means this firmware doesn't support the mode.
 
@@ -12,7 +12,7 @@ import { CONFIG_SYMBOLS } from '../ros/missionSymbols.js';
 // doesn't map (should never happen: the catalog is filtered to supported options).
 export function toConfigValue(group, symbol) {
   const n = CONFIG_SYMBOLS[group]?.[symbol];
-  if (n === undefined) throw new RangeError(`MissionToRos: unmapped symbol ${group}.${symbol}`);
+  if (n === undefined) throw new RangeError(`missionEncodeConfig: unmapped symbol ${group}.${symbol}`);
   return n;
 }
 
@@ -20,7 +20,7 @@ export function toConfigValue(group, symbol) {
 // via the catalog symbol: number → symbol (catalog) → number (ConfigMission table).
 function configParamFromValue(group, value) {
   const symbol = categoryModel.symbolForValue(group, value);
-  if (symbol == null) throw new RangeError(`MissionToRos: no symbol for ${group}=${value}`);
+  if (symbol == null) throw new RangeError(`missionEncodeConfig: no symbol for ${group}=${value}`);
   return toConfigValue(group, symbol);
 }
 
@@ -41,7 +41,7 @@ function buildWaypointActions(wpAction, categoryActions) {
     if (!found) {
       // The category's profile doesn't support this action — surface it instead
       // of silently dropping (e.g. focus/zoom on a non-PSDK robot).
-      logger.warn(`MissionDecoder: action '${action_val}' not supported by this category, skipping`);
+      logger.warn(`missionEncodeConfig: action '${action_val}' not supported by this category, skipping`);
       return;
     }
     action_array[index] = Number(found.id);

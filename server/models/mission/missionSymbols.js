@@ -5,7 +5,7 @@
 // source of truth for "which option does this family support": the catalog may
 // offer 6 yaw modes, but a family that only maps 4 supports only those 4.
 //
-// Lives in its own module so both the encoders (psdkEncode/MissionDecoder) and
+// Lives in its own module so both the encoders (missionEncodePsdk/missionEncodeConfig) and
 // category.js (which filters the catalog per family) can import it without an
 // import cycle.
 

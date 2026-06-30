@@ -1,5 +1,5 @@
-import { decodeMissionRoute } from '../mission/MissionDecoder.js';
-import { MissionToPsdkV2 } from './psdkEncode.js';
+import { decodeMissionRoute } from '../mission/missionEncodeConfig.js';
+import { MissionToPsdkV2 } from '../mission/missionEncodePsdk.js';
 
 // Drops keys whose value is undefined, so a param the profile doesn't expose
 // (e.g. max_vel / mode_gimbal on the v1 profile) is OMITTED from the message

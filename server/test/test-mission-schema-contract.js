@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { readDataFile } from '../common/utils.js';
 import { missionSchema } from '../config/config.js';
 import { categoryModel } from '../models/category.js';
-import { toPsdkValue } from '../models/ros/psdkEncode.js';
-import { toConfigValue } from '../models/mission/MissionDecoder.js';
+import { toPsdkValue } from '../models/mission/missionEncodePsdk.js';
+import { toConfigValue } from '../models/mission/missionEncodeConfig.js';
 import { encodeRosSrv } from '../models/ros/rosEncode.js';
-import { profileFor } from '../models/ros/missionSymbols.js';
+import { profileFor } from '../models/mission/missionSymbols.js';
 
 // ─── Contract tests: the enriched catalog is internally consistent ────────────
 // These guard the DOMAIN catalog (symbols, payloads, profiles). The catalog↔firmware
