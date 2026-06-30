@@ -1,6 +1,6 @@
 import * as ROSLIB from 'roslib';
 import logger from '../../common/logger.js';
-import { getActionServer } from './rosServices.js';
+import { getActionServer } from './rosInspect.js';
 
 export const ActionStatus = Object.freeze({
   EXECUTING: 'executing',

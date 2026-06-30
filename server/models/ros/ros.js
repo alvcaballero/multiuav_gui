@@ -12,8 +12,11 @@ import {
   unsubscribeDevice as _unsubscribeDevice,
   RosSubscribe as _RosSubscribe,
   RosSubscribeCamera as _RosSubscribeCamera,
-} from './rosSubscriptions.js';
+  PubRosMsg as _PubRosMsg,
+  subscribeOnce as _subscribeOnce,
+} from './rosTopics.js';
 import * as rosServices from './rosServices.js';
+import * as rosInspect from './rosInspect.js';
 import * as actionRegistry from './rosActionRegistry.js';
 
 export class rosModel {
@@ -75,47 +78,47 @@ export class rosModel {
   }
 
   static getTopics() {
-    return rosServices.getTopics(getRos());
+    return rosInspect.getTopics(getRos());
   }
 
   static getServices() {
-    return rosServices.getServices(getRos());
+    return rosInspect.getServices(getRos());
   }
 
   static async getServicesType(service) {
-    return rosServices.getServicesType(service, getRos());
+    return rosInspect.getServicesType(service, getRos());
   }
 
   static async getServiceRequestDetails(type) {
-    return rosServices.getServiceRequestDetails(type, getRos());
+    return rosInspect.getServiceRequestDetails(type, getRos());
   }
 
   static async getServiceResponseDetails(type) {
-    return rosServices.getServiceResponseDetails(type, getRos());
+    return rosInspect.getServiceResponseDetails(type, getRos());
   }
 
   static getTopicType(topic) {
-    return rosServices.getTopicType(topic, getRos());
+    return rosInspect.getTopicType(topic, getRos());
   }
 
   static getMessageDetails(message) {
-    return rosServices.getMessageDetails(message, getRos());
+    return rosInspect.getMessageDetails(message, getRos());
   }
 
   static async getRosVersion() {
-    return rosServices.getRosVersion(getRos());
+    return rosInspect.getRosVersion(getRos());
   }
 
   static async getPublishers(topic) {
-    return rosServices.getPublishers(topic, getRos());
+    return rosInspect.getPublishers(topic, getRos());
   }
 
   static async PubRosMsg(params) {
-    return rosServices.PubRosMsg(params, getRos());
+    return _PubRosMsg(params, getRos());
   }
 
   static async subscribeOnce({ topic, messageType, timeout = 2000 }) {
-    return rosServices.subscribeOnce({ topic, messageType, timeout }, getRos());
+    return _subscribeOnce({ topic, messageType, timeout }, getRos());
   }
 
   static GCSServicesMission() {
@@ -131,11 +134,11 @@ export class rosModel {
   }
 
   static async getActionServer() {
-    return rosServices.getActionServer(getRos());
+    return rosInspect.getActionServer(getRos());
   }
 
   static async getActionGoalmsg(actionServer) {
-    return rosServices.getActionGoalmsg(actionServer, getRos());
+    return rosInspect.getActionGoalmsg(actionServer, getRos());
   }
 
   static async sendActionGoal(args) {
@@ -155,15 +158,15 @@ export class rosModel {
   }
 
   static async getActionServers() {
-    return rosServices.getActionServers(getRos());
+    return rosInspect.getActionServers(getRos());
   }
 
   static Getservicehost(nameService) {
-    return rosServices.Getservicehost(nameService, getRos());
+    return rosInspect.Getservicehost(nameService, getRos());
   }
 
   static async getListMaster() {
-    return rosServices.getListMaster(getRos());
+    return rosInspect.getListMaster(getRos());
   }
 }
 
