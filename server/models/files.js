@@ -7,7 +7,7 @@ import { missionDataPath } from '../config/config.js';
 import { getMetadata, ProcessThermalImage } from './ProcessFile.js';
 import { missionController } from '../controllers/mission.js';
 import sequelize from '../common/sequelize.js';
-import logger from '../common/logger.js';
+import { missionLogger as logger } from '../common/logger.js';
 
 /* files:
 /    id
@@ -79,8 +79,13 @@ export class filesModel {
       date,
       attributes,
     };
-    const myfile = await sequelize.models.File.create(newFile); // save to database
-    return myfile;
+    try {
+      const myfile = await sequelize.models.File.create(newFile);
+      return myfile;
+    } catch (error) {
+      logger.error(`addFile FK constraint failed missionId=${missionId} routeId=${routeId} deviceId=${deviceId}: ${error.message}`);
+      return null;
+    }
   }
 
   static async editFile({ id, status, attributes }) {
@@ -94,7 +99,7 @@ export class filesModel {
       let myfiles = await this.getFiles({ routeId: file.routeId });
       let allFilesOk = myfiles.every((file) => file.status == FILE_STATUS.OK || file.status == FILE_STATUS.ERROR);
       if (allFilesOk) {
-        await MissionController.endRouteUAV(file.missionId, file.deviceId);
+        await missionController.endRouteUAV(file.missionId, file.deviceId);
       }
     }
     await file.save();
@@ -291,7 +296,7 @@ export class filesModel {
         source: deviceFile,
         path2: myfile,
       });
-      downloadQueue.push(createFile.id);
+      if (createFile) downloadQueue.push(createFile.id);
     }
 
     this.downloadFiles();

@@ -66,6 +66,7 @@ const migrations = [
   `ALTER TABLE Mission ADD COLUMN trigger TEXT DEFAULT 'automatic'`,
   `ALTER TABLE MissionPlan ADD COLUMN name TEXT DEFAULT NULL`,
   `ALTER TABLE MissionPlan ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'`,
+  `ALTER TABLE Mission ADD COLUMN errorMessage TEXT DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

@@ -6,12 +6,12 @@ import { commandsController } from '../../controllers/commands.js';
 import { dateString, addTime, GetLocalTime, sleep } from '../../common/utils.js';
 import { missionSMModel } from './missionSM.js';
 import { missionController } from '../../controllers/mission.js';
-import logger from '../../common/logger.js';
+import { missionLogger as logger } from '../../common/logger.js';
 
 const LoadMissionSM = async (context) => {
   logger.info('service load mission');
   try {
-    let mission = await MissionController.getMissionRoute(context.missionId);
+    let mission = await missionController.getMissionRoute(context.missionId);
     let missionPlan = mission.mission;
     logger.debug(`LoadMissionSM mission: ${JSON.stringify(missionPlan)}`);
     let response = await commandsController.sendCommandDevice({
@@ -55,8 +55,8 @@ const CommandMissionSM = async (context) => {
 
 const CommandDownload = async (context) => {
   logger.info('service download files from Autopilot');
-  let resp = await MissionController.finishMission(context.missionId, context.uavId);
-  let mymission = await MissionController.getMissionRoute(context.missionId);
+  let resp = await missionController.finishMission(context.missionId, context.uavId);
+  let mymission = await missionController.getMissionRoute(context.missionId);
 
   logger.debug(`CommandDownload mission: ${JSON.stringify(mymission)}`);
   let myInitTime = dateString(GetLocalTime(mymission['initTime']));
@@ -87,7 +87,7 @@ const CommandDownload = async (context) => {
 
 const DownloadGCS = async (context) => {
   logger.info(`Download files from UAV id ${context.uavId}`);
-  let result = await MissionController.updateFiles(context.missionId, context.uavId, context.routeId);
+  let result = await missionController.updateFiles(context.missionId, context.uavId, context.routeId);
   return { state: 'success' };
 };
 

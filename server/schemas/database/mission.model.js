@@ -1,4 +1,5 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
+import { MissionPlan } from './missionPlan.model.js';
 
 const Mission_TABLE = 'Mission';
 
@@ -15,6 +16,10 @@ const MissionSchema = {
   },
   planId: {
     type: DataTypes.INTEGER,
+    references: {
+      model: MissionPlan,
+      key: 'id',
+    },
   },
   trigger: {
     type: DataTypes.STRING,
@@ -44,6 +49,10 @@ const MissionSchema = {
   },
   mission: {
     type: DataTypes.JSON,
+  },
+  errorMessage: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
 };
 

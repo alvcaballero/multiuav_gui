@@ -1,7 +1,7 @@
 import { machine } from './missionExecutionSM.js';
 import { createActor } from 'xstate';
 import { missionController } from '../../controllers/mission.js';
-import logger from '../../common/logger.js';
+import { missionLogger as logger } from '../../common/logger.js';
 
 const listSM = {}; // lista de acots maquinas de estados por id de UAV
 
@@ -10,7 +10,7 @@ export class missionSMModel {
     listSM[uavId] = createActor(machine).start();
     listSM[uavId].subscribe((state) => {
       logger.debug(`State machine uav=${uavId} state=${state.value} context=${JSON.stringify(state.context)}`);
-      MissionController.updateMission({
+      missionController.updateMission({
         device: state.context.uavId,
         mission: state.context.missionId,
         state: state.value,

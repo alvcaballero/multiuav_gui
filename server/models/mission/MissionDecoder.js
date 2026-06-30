@@ -1,5 +1,5 @@
 import { categoryModel } from '../category.js';
-import logger from '../../common/logger.js';
+import { missionLogger as logger } from '../../common/logger.js';
 import { CONFIG_SYMBOLS } from '../ros/missionSymbols.js';
 
 // ─── ConfigMission symbol → firmware number translation ───────────────────────

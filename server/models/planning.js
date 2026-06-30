@@ -5,7 +5,7 @@ const configPlanning = readDataFile('../config/planning/config.yaml');
 var initPlanning = readDataFile(missionsConfigData);
 import { planningServer, planningHost } from '../config/config.js';
 import { missionController } from '../controllers/mission.js';
-import logger from '../common/logger.js';
+import { missionLogger as logger } from '../common/logger.js';
 
 const requestPlanning = {};
 
@@ -130,7 +130,13 @@ export class planningModel {
     requestPlanning[mission_id]['count'] = requestPlanning[mission_id]['count'] + 1;
     if (requestPlanning[mission_id]['count'] > 3) {
       clearInterval(requestPlanning[mission_id]['interval']);
-      missionController.initMission(mission_id, planningRoute); // error
+      delete requestPlanning[mission_id];
+      if (planningRoute == null) {
+        logger.warn(`fetchPlanning: timeout waiting for plan mission=${mission_id}, marking as ERROR`);
+        missionController.editMission({ id: mission_id, status: 'error', errorMessage: 'El planificador no respondió en el tiempo esperado (timeout de 40 s)' });
+      } else {
+        missionController.initMission(mission_id, planningRoute);
+      }
     }
   }
 

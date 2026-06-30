@@ -1,6 +1,6 @@
 import sequelize from '../../common/sequelize.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
-import logger from '../../common/logger.js';
+import { missionLogger as logger } from '../../common/logger.js';
 import { ROUTE_STATUS, MISSION_STATUS } from '../../config/status.js';
 import {
   signalFlightState,
@@ -44,7 +44,7 @@ export class missionWpTracking {
    * Called by commandsModel.commandMissionDevice after the ROS/FB command succeeds.
    */
   static async onMissionCommanded(commandedDeviceIds) {
-    const { devicesController } = await import('../controllers/devices.js');
+    const { devicesController } = await import('../../controllers/devices.js');
     const { missionModel } = await import('./mission.js');
 
     const planGroups = {};
@@ -120,7 +120,7 @@ export class missionWpTracking {
     const plan = await sequelize.models.MissionPlan.findOne({ where: { id: mission.planId } });
     if (!plan?.missionData?.route) return;
 
-    const { devicesController } = await import('../controllers/devices.js');
+    const { devicesController } = await import('../../controllers/devices.js');
     const devRoute = await this._findRouteForDevice(plan.missionData, deviceId, devicesController);
     if (!devRoute?.wp?.length) return;
 

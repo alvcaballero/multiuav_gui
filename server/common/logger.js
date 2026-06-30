@@ -183,6 +183,13 @@ const chatLogger = createLogger({
   filename: 'chat.log',
 });
 
+const missionLogger = createLogger({
+  label: 'MISSION',
+  color: chalk.blue,
+  envLevelKey: 'MISSION_LOG_LEVEL',
+  filename: 'mission.log',
+});
+
 // Funciones helper para logging fácil
 const logHelpers = {
   // Helper para logs de sistema
@@ -299,7 +306,7 @@ const logHelpers = {
 };
 
 // Exportar loggers y utilidades
-export { logger, wsLogger, deviceLogger, rosLogger, chatLogger, logHelpers, createLogger, colorizeLevel, chalk };
+export { logger, wsLogger, deviceLogger, rosLogger, chatLogger, missionLogger, logHelpers, createLogger, colorizeLevel, chalk };
 
 // createCustomLogger es alias de createLogger para backwards compatibility
 export const createCustomLogger = createLogger;

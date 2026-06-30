@@ -16,7 +16,7 @@
  */
 
 import { positionsModel } from '../positions.js';
-import logger from '../../common/logger.js';
+import { missionLogger as logger } from '../../common/logger.js';
 
 const DEG_TO_RAD = Math.PI / 180;
 function haversineMeters(lat1, lon1, lat2, lon2) {

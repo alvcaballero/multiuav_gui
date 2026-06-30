@@ -4,7 +4,7 @@ import {
   resolveCollisions as resolveCollisionsAlgo,
   formatMissionReport,
 } from '../models/collision/index.js';
-import logger from '../common/logger.js';
+import { missionLogger as logger } from '../common/logger.js';
 
 class missionController {
   static getMission = async (req, res) => {
@@ -66,6 +66,9 @@ class missionController {
   static initMission = (mission_id, data) => {
     missionModel.initMission(mission_id, data);
   };
+  static editMission = (payload) => {
+    return missionModel.editMission(payload);
+  };
   static finishMission = (missionId, deviceId) => {
     return missionModel.UAVFinish(missionId, deviceId);
   };
@@ -84,8 +87,8 @@ class missionController {
   static getMissionRoute = async (missionId) => {
     return await missionModel.getMissionValue(missionId);
   };
-  static updateFiles = (missionId, deviceId) => {
-    return missionModel.updateFiles(missionId, deviceId);
+  static updateFiles = (missionId, deviceId, routeId) => {
+    return missionModel.updateFiles(missionId, deviceId, routeId);
   };
   static updateMission = ({ device, mission, state }) => {
     missionModel.updateMission({ device, mission, state });

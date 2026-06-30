@@ -10,7 +10,7 @@ import sequelize from '../../common/sequelize.js';
 import { Op } from 'sequelize';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { convertMissionXYZToLatLong, convertMissionBriefingToXYZ } from './coordinateConverter.js';
-import logger from '../../common/logger.js';
+import { missionLogger as logger } from '../../common/logger.js';
 import { MISSION_STATUS, ROUTE_STATUS } from '../../config/status.js';
 
 /**
@@ -75,20 +75,21 @@ export class missionModel {
     task = {},
     mission = {},
     results = [],
+    errorMessage = null,
   }) {
     if (name == null) name = `automatic_${initTime.getTime()}`;
+    // id is only provided by the automatic (ExtApp) flow — use findOrCreate for idempotency.
+    // Manual flow has no external id: use plain create and let autoIncrement assign one.
+    if (id != null) {
+      const [instance, created] = await sequelize.models.Mission.findOrCreate({
+        where: { id },
+        defaults: { name, planId, trigger, uav, status, initTime, endTime, task, mission, results, errorMessage },
+      });
+      if (!created) logger.warn(`createMission: id=${id} already exists, returning existing record`);
+      return instance;
+    }
     return await sequelize.models.Mission.create({
-      id,
-      name,
-      planId,
-      trigger,
-      uav,
-      status,
-      initTime,
-      endTime,
-      task,
-      mission,
-      results,
+      name, planId, trigger, uav, status, initTime, endTime, task, mission, results, errorMessage,
     });
   }
 
@@ -96,18 +97,20 @@ export class missionModel {
     return await sequelize.models.MissionRoute.create({ ...payload });
   }
 
-  static async editMission({ id, uav, status, initTime, endTime, task, mission, results }) {
+  static async editMission({ id, uav, planId, status, initTime, endTime, task, mission, results, errorMessage }) {
     let myMission = await sequelize.models.Mission.findOne({ where: { id: id } });
     if (!myMission) {
       return null;
     }
     if (status) myMission.status = status;
     if (uav) myMission.uav = uav;
+    if (planId != null) myMission.planId = planId;
     if (initTime) myMission.initTime = initTime;
     if (endTime) myMission.endTime = endTime;
     if (task) myMission.task = task;
     if (mission) myMission.mission = mission;
     if (results) myMission.results = results;
+    if (errorMessage != null) myMission.errorMessage = errorMessage;
     await myMission.save();
     return myMission;
   }
@@ -252,13 +255,13 @@ export class missionModel {
     let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
     if (myTask == null) {
       logger.warn('myTask is null');
-      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask });
+      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask, errorMessage: 'No se pudo decodificar la tarea: datos de misión inválidos o incompletos' });
       return { response: myTask, status: 'ERROR' };
     }
 
     if (myTask.devices.length == 0) {
       logger.warn('no devices to do the mission');
-      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask });
+      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask, errorMessage: 'No hay dispositivos disponibles para ejecutar esta misión' });
       return { response: myTask, status: 'ERROR' };
     }
 
@@ -279,7 +282,7 @@ export class missionModel {
     logger.info('===== initMission =====');
     logger.debug(`initMission data: ${JSON.stringify(mission)}`);
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
-      await this.editMission({ id: missionId, status: MISSION_STATUS.ERROR, mission: mission });
+      await this.editMission({ id: missionId, status: MISSION_STATUS.ERROR, mission: mission, errorMessage: 'El planificador no devolvió rutas válidas para esta misión' });
       logger.warn(`Mission ${missionId} cant planning`);
       return false;
     }
@@ -388,12 +391,14 @@ export class missionModel {
   }
 
   static async updateFiles(missionId, uavId) {
-    // myRoute = 1;
     const myRoute = await this.getRoutes({ deviceId: uavId, missionId: missionId });
     const myMission = await this.getMissionValue(missionId);
+    if (!myRoute || !myMission) {
+      logger.warn(`updateFiles: mission=${missionId} or route for uav=${uavId} not found in DB, skipping file download`);
+      return false;
+    }
     const results = await filesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
     await sleep(5000);
-    //ExtAppController.missionReqMedia(missionId, { code, files: results.files, data: results.data });
     return true;
   }
 
@@ -479,7 +484,7 @@ export class missionModel {
         for (const route of listRoutes) {
           await this.editRoute({ id: route.id, status: ROUTE_STATUS.ERROR });
         }
-        await this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR });
+        await this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR, errorMessage: 'Misión interrumpida: el servidor se reinició mientras estaba activa' });
       }
     }
   }
