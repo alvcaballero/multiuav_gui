@@ -13,13 +13,11 @@ const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 // activeSubscriptions[deviceId] = { position: ROSLIB.Topic, camera: ROSLIB.Topic, ... }
 const activeSubscriptions = {};
 
+// Subscribe a device topic and forward each message to onMessage. The
+// caller (the facade) supplies the effect callback, so position and camera
+// topics share the same subscription primitive — they only differ in which
+// onMessage they pass.
 export function RosSubscribe(uav_id, uav_type, type, msgType, onMessage) {
-  activeSubscriptions[uav_id][type].subscribe(function (msg) {
-    onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
-  });
-}
-
-export function RosSubscribeCamera(uav_id, uav_type, type, msgType, onMessage) {
   activeSubscriptions[uav_id][type].subscribe(function (msg) {
     onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
   });
@@ -58,7 +56,7 @@ export async function subscribeDevice(uavAdded, ros, rosState, { onPosition, onC
     logger.debug(`Camera type: ${camera[i]['type']}`);
     if (camera[i]['type'] == 'Websocket') {
       logger.debug(`camera websocket for ${name}`);
-      RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], onCamera);
+      RosSubscribe(id, category, 'camera', msgType['camera']['messageType'], onCamera);
     }
   }
 }
