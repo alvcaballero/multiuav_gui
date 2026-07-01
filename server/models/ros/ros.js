@@ -179,16 +179,40 @@ export class rosModel {
     return rosInspect.getActionGoalmsg(actionServer, getRos());
   }
 
-  static async sendActionGoal(args) {
-    return actionRegistry.sendActionGoal(args, getRos());
+  // Device-layer actions: resolve the ROS action name/type from config by uav_id.
+  static async sendActionGoal({ uav_id, type, ...rest }) {
+    const { name, category } = await devicesController.getDevice(uav_id);
+    return actionRegistry.sendActionGoal({ name, category, type, ...rest }, getRos());
   }
 
-  static getActionStatus(params) {
-    return actionRegistry.getActionStatus(params);
+  static async getActionStatus({ uav_id, type }) {
+    const { name, category } = await devicesController.getDevice(uav_id);
+    // no type → every action of the device (prefix mode, no config lookup)
+    return actionRegistry.getActionStatus(type ? { name, category, type } : { name });
   }
 
-  static cancelAction(params) {
-    return actionRegistry.cancelAction(params);
+  // Status for every action registered to a device, by name (no config lookup).
+  static getActionStatusByName(name) {
+    return actionRegistry.getActionStatus({ name });
+  }
+
+  static async cancelAction({ uav_id, type }) {
+    const { name, category } = await devicesController.getDevice(uav_id);
+    return actionRegistry.cancelAction({ name, category, type });
+  }
+
+  // Primitive-layer actions: caller supplies the fully-resolved ROS action name
+  // and type (e.g. the MCP server, which already builds them).
+  static async sendRosActionGoal(args) {
+    return actionRegistry.sendRosActionGoal(args, getRos());
+  }
+
+  static getRosActionStatus(params) {
+    return actionRegistry.getRosActionStatus(params);
+  }
+
+  static cancelRosAction(params) {
+    return actionRegistry.cancelRosAction(params);
   }
 
   static async getActionServers() {

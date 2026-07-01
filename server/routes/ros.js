@@ -16,6 +16,11 @@ rosRouter.post('/service_call', rosController.callRosService);
 rosRouter.post('/publish', rosController.pubTopicOnce);
 rosRouter.get('/subscribe_once', rosController.subscribeOnce);
 rosRouter.get('/action_servers', rosController.getActionServers);
+// Device-layer: resolve ROS action from config by uav_id + type
 rosRouter.post('/action_send_goal', rosController.sendActionGoal);
 rosRouter.get('/action_status', rosController.getActionStatusHandler);
 rosRouter.post('/action_cancel', rosController.cancelActionHandler);
+// Primitive-layer: caller passes the raw ROS action-server name + type
+rosRouter.post('/action_send_goal_raw', rosController.sendRosActionGoalHandler);
+rosRouter.get('/action_status_raw', rosController.getRosActionStatusHandler);
+rosRouter.post('/action_cancel_raw', rosController.cancelRosActionHandler);

@@ -18,6 +18,10 @@ agv:
     camera:
       name: '/stereo_camera/right/image_raw/compressed'
       messageType: 'sensor_msgs/msg/CompressedImage'
+  actions:
+    navigateToPose:
+      name: '/navigate_to_pose'
+      actionType: 'nav2_msgs/action/NavigateToPose'
 sjtu:
   topics:
     position:
@@ -454,6 +458,10 @@ dji_M300_PSDK:
     pausemission:
       name: '/psdk_ros2/waypointV2_pauseMission'
       serviceType: 'dji_osdk_ros/PauseWaypointV2Mission'
+  actions:
+    CameraFileDownload:
+      name: '/camera_download_files'
+      actionType: 'muav_gcs_interfaces/DownloadMedia'
 px4_mavros:
   topics:
     position:

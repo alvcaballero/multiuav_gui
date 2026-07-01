@@ -119,26 +119,65 @@ export class rosController {
     }
   }
 
-  static getActionStatus({ device, action } = {}) {
-    return rosModel.getActionStatus({ device, action });
+  // Status for every action of a device, by device name (internal callers).
+  static getActionStatusByName(name) {
+    return rosModel.getActionStatusByName(name);
   }
 
-  static getActionStatusHandler(req, res) {
-    const { device, action } = req.query;
-    if (!device && !action) return res.status(400).json({ error: 'device or action is required' });
-    res.json(rosController.getActionStatus({ device, action }));
+  static async getActionStatusHandler(req, res) {
+    const { uav_id, type } = req.query;
+    if (!uav_id) return res.status(400).json({ error: 'uav_id is required' });
+    try {
+      // type given → that specific action; otherwise every action of the device
+      res.json(await rosModel.getActionStatus({ uav_id, type }));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   }
 
-  static cancelAction({ device, action } = {}) {
-    return rosModel.cancelAction({ device, action });
+  static async cancelActionHandler(req, res) {
+    const { uav_id, type } = req.body;
+    if (!uav_id || !type) return res.status(400).json({ error: 'uav_id and type are required' });
+    try {
+      res.json(await rosModel.cancelAction({ uav_id, type }));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   }
 
-  static cancelActionHandler(req, res) {
-    const { device, action } = req.body;
+  // ─── Primitive-layer handlers: caller passes the raw ROS action name/type ───
+  // `action` here is the full action-server name (e.g. /agv_1/navigate_to_pose).
+
+  static async sendRosActionGoalHandler(req, res) {
+    const { action, actionType, message, target, timeout, blocking } = req.body;
+    if (!action || !actionType) return res.status(400).json({ error: 'action and actionType are required' });
+    try {
+      const response = await rosModel.sendRosActionGoal({
+        actionServerName: action,
+        actionType,
+        message,
+        target,
+        timeout,
+        blocking,
+      });
+      res.json(response);
+    } catch (error) {
+      logger.error(`Error calling ros action: ${error.message}`);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  static getRosActionStatusHandler(req, res) {
+    const { action } = req.query;
     if (!action) return res.status(400).json({ error: 'action is required' });
-    res.json(rosController.cancelAction({ device, action }));
+    res.json(rosModel.getRosActionStatus({ actionServerName: action }));
   }
 
+  static cancelRosActionHandler(req, res) {
+    const { action } = req.body;
+    if (!action) return res.status(400).json({ error: 'action is required' });
+    res.json(rosModel.cancelRosAction({ actionServerName: action }));
+  }
 
   static async callRosService(req, res) {
     try {

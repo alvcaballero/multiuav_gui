@@ -1,6 +1,28 @@
 import * as ROSLIB from 'roslib';
+import { readDataFile } from '../../common/utils.js';
 import logger from '../../common/logger.js';
 import { getActionServer } from './rosInspect.js';
+
+const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
+
+/**
+ * Resolve a device action from the config into the ROS action-server name and
+ * type. Shared by send/cancel/status so they all key the registry identically.
+ *
+ * @param {string} name     - Device name, e.g. agv_1
+ * @param {string} category - Device category, e.g. agv
+ * @param {string} type     - Action key in devices_msg[category].actions, e.g. navigateToPose
+ * @returns {{ actionServerName: string, actionType: string }}
+ * @throws if the category has no such action
+ */
+function resolveDeviceAction(name, category, type) {
+  const actions = devices_msg[category]?.actions;
+  if (!actions || !actions.hasOwnProperty(type)) {
+    throw new Error(`Action '${type}' not configured for category '${category}' (device ${name})`);
+  }
+  const cfg = actions[type];
+  return { actionServerName: `/${name}${cfg.name}`, actionType: cfg.actionType };
+}
 
 export const ActionStatus = Object.freeze({
   EXECUTING: 'executing',
@@ -28,30 +50,34 @@ export const ActionStatus = Object.freeze({
  */
 const registry = new Map();
 
+// ─────────────────────────────────────────────────────────────────────────
+// Primitives — operate on already-resolved ROS action names/types, never on
+// device config. Parallel to callRosService in rosServices.js.
+// ─────────────────────────────────────────────────────────────────────────
+
 /**
- * Sends a ROS action goal and registers it under the action name.
+ * Sends a ROS action goal and registers it under the action-server name.
+ * Pure ROS-transport primitive: receives the fully-resolved server name and
+ * type, knows nothing about devices_msg.
  *
  * @param {object} args
- * @param {string} args.device    - Used for validating the action server exists, e.g. bcr_bot_1
- * @param {string} args.action      - Full action server name, e.g. /bcr_bot_1/navigate_to_pose
- * @param {string} args.actionType  - e.g. nav2_msgs/action/NavigateToPose
- * @param {object} args.message     - Goal message
- * @param {object} [args.target]    - Human-readable goal summary stored for status queries
- * @param {number} [args.timeout]   - ms, default 120 000 (only applies when blocking=true)
- * @param {boolean} [args.blocking] - If true, waits until the action completes before resolving
- * @param {object} ros              - Connected ROSLIB.Ros instance
+ * @param {string} args.actionServerName - Full action server name, e.g. /agv_1/navigate_to_pose
+ * @param {string} args.actionType       - e.g. nav2_msgs/action/NavigateToPose
+ * @param {object} args.message          - Goal message
+ * @param {object} [args.target]         - Human-readable goal summary stored for status queries
+ * @param {number} [args.timeout]        - ms, default 120 000 (only applies when blocking=true)
+ * @param {boolean} [args.blocking]      - If true, waits until the action completes before resolving
+ * @param {object} ros                   - Connected ROSLIB.Ros instance
  * @returns {Promise<{state, msg, goalId}>}
  */
-export async function sendActionGoal(args, ros) {
+export async function sendRosActionGoal(args, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 
-  const { device, action, actionType, message, target = {}, timeout = 120_000, blocking = false } = args;
+  const { actionServerName, actionType, message, target = {}, timeout = 120_000, blocking = false } = args;
 
-  if (!action) throw new Error('Missing required arg: action');
+  if (!actionServerName) throw new Error('Missing required arg: actionServerName');
   if (!actionType) throw new Error('Missing required arg: actionType');
   if (!message || typeof message !== 'object') throw new Error('Missing required arg: message (must be an object)');
-
-  const actionServerName = device ? `/${device}/${action}` : `${action}`;
 
   let servers = await getActionServer(ros);
   if (!servers.toString().includes(actionServerName)) {
@@ -138,45 +164,8 @@ export async function sendActionGoal(args, ros) {
   return promise;
 }
 
-/**
- * Returns the current status entry for an action.
- *
- * Lookup modes:
- *  - getActionStatus({ action })         → exact key match (full name or bare action)
- *  - getActionStatus({ device })         → returns all actions registered for that device
- *  - getActionStatus({ device, action }) → exact match on /${device}/${action}
- *
- * @param {object} params
- * @param {string} [params.device]
- * @param {string} [params.action]
- */
-export function getActionStatus({ device, action } = {}) {
-  // device only → return all entries whose key starts with /${device}/
-  if (device && !action) {
-    const prefix = `/${device}/`;
-    const results = {};
-    for (const [key, entry] of registry) {
-      if (key.startsWith(prefix)) {
-        results[key] = {
-          status: entry.status,
-          goalId: entry.goalId,
-          target: entry.target,
-          startedAt: entry.startedAt,
-          endedAt: entry.endedAt,
-          msg: entry.msg,
-        };
-      }
-    }
-    return Object.keys(results).length
-      ? results
-      : { status: ActionStatus.IDLE, msg: `No actions registered for device ${device}` };
-  }
-
-  // action provided (with optional device prefix)
-  const key = device ? `/${device}/${action}` : action;
-  const entry = registry.get(key);
-  if (!entry) return { status: ActionStatus.IDLE, msg: 'No action registered' };
-
+// Serializes a registry entry into the public status shape.
+function _entryStatus(entry) {
   return {
     status: entry.status,
     goalId: entry.goalId,
@@ -188,33 +177,100 @@ export function getActionStatus({ device, action } = {}) {
 }
 
 /**
- * Cancels the active goal for an action server (no-op if idle or already finished).
+ * Reads action status from the registry by raw key/prefix.
  *
  * @param {object} params
- * @param {string} [params.device]
- * @param {string} [params.action] - Required; if device provided, resolves to /${device}/${action}
+ * @param {string} [params.actionServerName] - Exact registry key, e.g. /agv_1/navigate_to_pose
+ * @param {string} [params.prefix]           - Return all entries whose key starts with this
  */
-export function cancelAction({ device, action } = {}) {
-  if (!action) return { state: 'error', msg: 'Missing required param: action' };
-
-  const key = device ? `/${device}/${action}` : action;
-  const entry = registry.get(key);
-  if (!entry) return { state: 'warning', msg: `No action registered for ${key}` };
-  if (entry.status !== ActionStatus.EXECUTING) {
-    return { state: 'warning', msg: `Action ${key} is not executing (status: ${entry.status})` };
+export function getRosActionStatus({ actionServerName, prefix } = {}) {
+  // prefix → all entries under a device
+  if (prefix) {
+    const results = {};
+    for (const [key, entry] of registry) {
+      if (key.startsWith(prefix)) results[key] = _entryStatus(entry);
+    }
+    return Object.keys(results).length
+      ? results
+      : { status: ActionStatus.IDLE, msg: `No actions registered for ${prefix}` };
   }
 
-  _cancelEntry(key, entry);
-  return { state: 'success', msg: `Goal canceled for ${key}` };
+  const entry = registry.get(actionServerName);
+  if (!entry) return { status: ActionStatus.IDLE, msg: 'No action registered' };
+  return _entryStatus(entry);
 }
 
-function _cancelEntry(action, entry) {
+/**
+ * Cancels the active goal for an action server by raw key (no-op if idle or
+ * already finished).
+ *
+ * @param {object} params
+ * @param {string} params.actionServerName - Exact registry key
+ */
+export function cancelRosAction({ actionServerName } = {}) {
+  if (!actionServerName) return { state: 'error', msg: 'Missing required param: actionServerName' };
+
+  const entry = registry.get(actionServerName);
+  if (!entry) return { state: 'warning', msg: `No action registered for ${actionServerName}` };
+  if (entry.status !== ActionStatus.EXECUTING) {
+    return { state: 'warning', msg: `Action ${actionServerName} is not executing (status: ${entry.status})` };
+  }
+
+  _cancelEntry(actionServerName, entry);
+  return { state: 'success', msg: `Goal canceled for ${actionServerName}` };
+}
+
+function _cancelEntry(key, entry) {
   try {
     entry.client.cancel(entry.goalId);
   } catch (e) {
-    logger.warn(`[ActionRegistry] Error canceling goal on ${action}: ${e.message}`);
+    logger.warn(`[ActionRegistry] Error canceling goal on ${key}: ${e.message}`);
   }
   entry.status = ActionStatus.CANCELING;
   entry.endedAt = new Date();
   entry.msg = 'Canceled by operator';
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Device layer — resolve the action from devices_msg config, then delegate to
+// the primitives above. Parallel to callService in rosServices.js.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Sends an action goal to a device, resolving the ROS name/type from config.
+ *
+ * @param {object} args
+ * @param {string} args.name     - Device name, e.g. agv_1
+ * @param {string} args.category - Device category, e.g. agv
+ * @param {string} args.type     - Action config key, e.g. navigateToPose
+ * @param {object} args.message  - Goal message
+ * @param {object} [args.target]
+ * @param {number} [args.timeout]
+ * @param {boolean} [args.blocking]
+ * @param {object} ros
+ */
+export async function sendActionGoal({ name, category, type, ...rest }, ros) {
+  const { actionServerName, actionType } = resolveDeviceAction(name, category, type);
+  return sendRosActionGoal({ actionServerName, actionType, ...rest }, ros);
+}
+
+/**
+ * Reads action status for a device.
+ *  - { name, category }       → all actions registered for that device
+ *  - { name, category, type } → status of that specific action
+ */
+export function getActionStatus({ name, category, type } = {}) {
+  if (name && !type) {
+    return getRosActionStatus({ prefix: `/${name}/` });
+  }
+  const { actionServerName } = resolveDeviceAction(name, category, type);
+  return getRosActionStatus({ actionServerName });
+}
+
+/**
+ * Cancels a device's active action goal.
+ */
+export function cancelAction({ name, category, type } = {}) {
+  const { actionServerName } = resolveDeviceAction(name, category, type);
+  return cancelRosAction({ actionServerName });
 }

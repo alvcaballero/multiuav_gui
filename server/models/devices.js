@@ -124,7 +124,7 @@ export class DevicesModel {
           };
         }
 
-        const actionsByKey = rosController.getActionStatus({ device: device.name });
+        const actionsByKey = rosController.getActionStatusByName(device.name);
         const isBusy =
           typeof actionsByKey.status === 'string'
             ? actionsByKey.status === 'idle'
