@@ -191,10 +191,6 @@ export class rosModel {
     return actionRegistry.cancelAction(params);
   }
 
-  static async cancelActionGoal(args) {
-    return actionRegistry.cancelActionGoal(args, getRos());
-  }
-
   static async getActionServers() {
     return rosInspect.getActionServers(getRos());
   }

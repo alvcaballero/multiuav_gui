@@ -1,7 +1,6 @@
 import * as ROSLIB from 'roslib';
 import logger from '../../common/logger.js';
 import { getActionServer } from './rosInspect.js';
-import { ROS2GoalActionClient } from './ros2ActionClient.js';
 
 export const ActionStatus = Object.freeze({
   EXECUTING: 'executing',
@@ -218,27 +217,4 @@ function _cancelEntry(action, entry) {
   entry.status = ActionStatus.CANCELING;
   entry.endedAt = new Date();
   entry.msg = 'Canceled by operator';
-}
-
-export async function cancelActionGoal(args, ros) {
-  if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-  const { action, actionType, goalId } = args;
-
-  let newClient = new ROSLIB.Action({
-    ros: ros,
-    name: action,
-    actionType: actionType,
-  });
-  newClient.cancel(goalId);
-
-  return { state: 'success', msg: 'Action goal canceled successfully' };
-}
-
-export async function cancelActionGoalros1(args, ros) {
-  if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-  const { action, actionType, goalId } = args;
-
-  const nav2Client = new ROS2GoalActionClient(ros, action, actionType, true);
-  nav2Client.cancelGoal(goalId);
-  return { state: 'success', msg: 'Action goal canceled successfully' };
 }
