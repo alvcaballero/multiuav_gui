@@ -13,13 +13,13 @@ const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 // activeSubscriptions[deviceId] = { position: ROSLIB.Topic, camera: ROSLIB.Topic, ... }
 const activeSubscriptions = {};
 
-export function RosSubscribe(uav_id, uav_type, type, msgType, onMessage, ros) {
+export function RosSubscribe(uav_id, uav_type, type, msgType, onMessage) {
   activeSubscriptions[uav_id][type].subscribe(function (msg) {
     onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
   });
 }
 
-export function RosSubscribeCamera(uav_id, uav_type, type, msgType, onMessage, ros) {
+export function RosSubscribeCamera(uav_id, uav_type, type, msgType, onMessage) {
   activeSubscriptions[uav_id][type].subscribe(function (msg) {
     onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
   });
@@ -50,7 +50,7 @@ export async function subscribeDevice(uavAdded, ros, rosState, { onPosition, onC
   // subscribe devices
   Object.keys(devices_msg[category]['topics']).forEach((element) => {
     if (element !== 'camera') {
-      RosSubscribe(id, category, element, msgType[element]['messageType'], onPosition, ros);
+      RosSubscribe(id, category, element, msgType[element]['messageType'], onPosition);
     }
   });
   // subscribe camera
@@ -58,7 +58,7 @@ export async function subscribeDevice(uavAdded, ros, rosState, { onPosition, onC
     logger.debug(`Camera type: ${camera[i]['type']}`);
     if (camera[i]['type'] == 'Websocket') {
       logger.debug(`camera websocket for ${name}`);
-      RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], onCamera, ros);
+      RosSubscribeCamera(id, category, 'camera', msgType['camera']['messageType'], onCamera);
     }
   }
 }

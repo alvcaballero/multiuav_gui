@@ -14,8 +14,6 @@ import {
 import {
   subscribeDevice as _subscribeDevice,
   unsubscribeDevice as _unsubscribeDevice,
-  RosSubscribe as _RosSubscribe,
-  RosSubscribeCamera as _RosSubscribeCamera,
   PubRosMsg as _PubRosMsg,
   subscribeOnce as _subscribeOnce,
 } from './rosTopics.js';
@@ -54,15 +52,6 @@ export class rosModel {
 
   static async rosConnect() {
     rosConnect(null);
-  }
-
-  // Subscribing
-  static RosSubscribe(uav_id, uav_type, type, msgType, callback) {
-    _RosSubscribe(uav_id, uav_type, type, msgType, callback, getRos());
-  }
-
-  static RosSubscribeCamera(uav_id, uav_type, type, msgType, callback) {
-    _RosSubscribeCamera(uav_id, uav_type, type, msgType, callback, getRos());
   }
 
   static async subscribeDevice(uavAdded) {
