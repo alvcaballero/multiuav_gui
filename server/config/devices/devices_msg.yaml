@@ -3,18 +3,6 @@ agv:
     position:
       name: '/odom'
       messageType: 'nav_msgs/msg/Odometry'
-    goal_cmd:
-      name: '/goal_pose_cmd'
-      messageType: 'geometry_msgs/msg/PoseStamped'
-    goal_cancel:
-      name: '/goal_pose_cancel'
-      messageType: 'std_msgs/msg/Empty'
-    goal_status:
-      name: '/goal_pose_status'
-      messageType: 'std_msgs/msg/String'
-    camera1:
-      name: '/stereo_camera/right/image_raw'
-      messageType: 'sensor_msgs/msg/Image'
     camera:
       name: '/stereo_camera/right/image_raw/compressed'
       messageType: 'sensor_msgs/msg/CompressedImage'

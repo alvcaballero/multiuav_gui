@@ -1,11 +1,45 @@
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { devicesMsg, missionSchema, messagesTypes } from '../config/config.js';
+import { KNOWN_SERVICE_KEYS, KNOWN_TOPIC_KEYS } from '../config/deviceMsgCatalog.js';
 import logger from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 
 const devices_msg = readDataFile(devicesMsg);
 const messages_types = readDataFile(messagesTypes);
 const _mission_schema = readDataFile(missionSchema);
+
+// Valida que cada key de los bloques topics/services/actions en devices_msg esté
+// registrada en su catálogo correspondiente. Una key huérfana significa que un UAV
+// declara una capacidad que el sistema no sabe manejar:
+//   - topics  → key sin entrada en deviceMsgCatalog (posible typo o topic no soportado)
+//   - services/actions → sin entrada en commandCatalog → comando invisible o roto
+//
+// Cada bloque se valida contra SU SSOT (topics ≠ commands: naturalezas distintas).
+// warn por defecto; en modo debug (LOG_LEVEL=debug) lanza para forzar la alineación
+// temprano — un typo en el YAML no debe llegar silencioso a runtime.
+const DEVICES_MSG_BLOCKS = {
+  topics: KNOWN_TOPIC_KEYS,
+  services: KNOWN_SERVICE_KEYS,
+  actions: KNOWN_SERVICE_KEYS,
+};
+
+function validateDevicesMsgKeys(catalog) {
+  const strict = process.env.LOG_LEVEL === 'debug';
+  const orphans = [];
+  for (const [category, def] of Object.entries(catalog)) {
+    for (const [block, knownKeys] of Object.entries(DEVICES_MSG_BLOCKS)) {
+      for (const key of Object.keys(def?.[block] ?? {})) {
+        if (!knownKeys.has(key)) orphans.push(`${category}.${block}.${key}`);
+      }
+    }
+  }
+  if (orphans.length === 0) return;
+  const msg = `devices_msg: ${orphans.length} unknown key(s) not in catalog: ${orphans.join(', ')}`;
+  if (strict) throw new Error(msg);
+  logger.warn(msg);
+}
+
+validateDevicesMsgKeys(devices_msg);
 
 // ─── Mission catalog resolution (enriched catalog → per-category profile) ──────
 

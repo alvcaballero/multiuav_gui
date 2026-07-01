@@ -4,6 +4,8 @@ import { rosController } from '../controllers/ros.js';
 import { getFlatbufferServer } from './flatbuffer/index.js';
 import { positionsController } from '../controllers/positions.js';
 import { missionWpTracking } from './mission/missionWpTracking.js';
+import { categoryModel } from './category.js';
+import { DEFAULT_COMMAND_TYPES, typesForServiceKey, commandDef, Dispatch, Payload } from '../config/commandCatalog.js';
 import logger from '../common/logger.js';
 
 export class commandsModel {
@@ -13,25 +15,23 @@ export class commandsModel {
     return [];
   }
 
-  static getCommandTypes(deviceid) {
-    let response = [
-      { type: 'custom' },
-      { type: 'saveHome' },
-      { type: 'ResumeMission' },
-      { type: 'Pausemission' },
-      { type: 'StopMission' },
-      { type: 'Gimbal' },
-      { type: 'GimbalPitch' },
-      { type: 'ResetGimbal' },
-      { type: 'SincroniseFiles' },
-      { type: 'threat_confirmation' },
-      { type: 'threat_defuse' },
-      { type: 'setupcamera' },
-      { type: 'configureMission' },
-      { type: 'commandMission' },
-    ];
-    logger.debug(`getCommandTypes deviceId=${deviceid}`);
-    return response;
+  static async getCommandTypes(deviceId) {
+    logger.debug(`getCommandTypes deviceId=${deviceId}`);
+    const types = [...DEFAULT_COMMAND_TYPES];
+
+    const category = (await devicesController.getDevice(deviceId))?.category;
+    const categoryConfig = category ? categoryModel.getCategory(category) : undefined;
+
+    // Capacidades ROS de la categoría (keys de devices_msg.yaml). Cada command
+    // cuyo `requires` matchea una capacidad se expone; typesForServiceKey hace el
+    // lookup inverso. Una key sin command asociado devuelve [] (ya avisada por
+    // validateDevicesMsgKeys al cargar).
+    const available = [...Object.keys(categoryConfig?.services ?? {}), ...Object.keys(categoryConfig?.actions ?? {})];
+    for (const serviceKey of available) {
+      types.push(...typesForServiceKey(serviceKey));
+    }
+
+    return types.map((type) => ({ type }));
   }
 
   static async sendCommand({ deviceId, type, attributes }) {
@@ -67,45 +67,24 @@ export class commandsModel {
       }
     }
     if (deviceId >= 0) {
-      if (type == 'saveHome') {
-        positionsController.updatePosition({ deviceId, setHome: true });
-        response = { state: 'success', msg: 'Home saved' };
-      }
-      if (type == 'threat_confirmation') {
-        response = await this.standarCommand(deviceId, 'threat_confirmation'); //threatUAV(deviceId);
-      }
-      if (type == 'threat_defuse') {
-        response = await this.standarCommand(deviceId, 'threat_defuse'); //threatUAV(deviceId);
-      }
-      if (type == 'SincroniseFiles') {
-        response = await this.standarCommand(deviceId, 'sincronize');
-      }
-      if (type == 'ResumeMission') {
-        response = await this.standarCommand(deviceId, 'resumemission');
-      }
-      if (type == 'StopMission') {
-        response = await this.standarCommand(deviceId, 'stopMission');
-      }
-      if (type == 'Pausemission') {
-        response = await this.standarCommand(deviceId, 'pausemission');
-      }
-      if (type == 'Gimbal') {
-        response = await this.GimbalUAV(deviceId, attributes);
-      }
-      if (type == 'GimbalPitch') {
-        response = await this.GimbalUAV(deviceId, attributes);
-      }
-      if (type == 'ResetGimbal') {
-        response = await this.GimbalUAV(deviceId, { reset: true });
-      }
-      if (type == 'setupcamera') {
-        response = await this.standarCommand(deviceId, 'setupcamera', attributes);
-      }
-      if (type == 'CameraFileDownload') {
-        response = await this.standarCommand(deviceId, 'CameraFileDownload', attributes);
-      }
-      if (type == 'custom') {
-        response = await this.standarCommand(deviceId, undefined, attributes);
+      // Despacho por command def. Los FLEET (loadMission/commandMission) ya se
+      // ejecutaron arriba (soportan deviceId<0); acá se despacha el resto según
+      // su `dispatch`. Un type sin def deja el 'Command no found' inicial.
+      const command = commandDef(type);
+      if (command && command.dispatch !== Dispatch.FLEET) {
+        if (command.dispatch === Dispatch.LOCAL) {
+          // saveHome: efecto local en el server, sin ROS.
+          positionsController.updatePosition({ deviceId, setHome: true });
+          response = { state: 'success', msg: 'Home saved' };
+        } else if (command.dispatch === Dispatch.GIMBAL) {
+          // Gimbal enruta por GimbalUAV; ResetGimbal fuerza el flag de reset.
+          const gimbalAttrs = command.payload === Payload.RESET ? { reset: true } : attributes;
+          response = await this.GimbalUAV(deviceId, gimbalAttrs);
+        } else if (command.dispatch === Dispatch.SERVICE) {
+          // ROS service. rosService undefined (custom) → standarCommand lo maneja.
+          const request = command.payload === Payload.ATTRIBUTES ? attributes : undefined;
+          response = await this.standarCommand(deviceId, command.rosService, request);
+        }
       }
 
       eventsController.addEvent({
@@ -209,9 +188,9 @@ export class commandsModel {
 
     if (loadedDeviceIds.length > 0) {
       const missionData = { route: routes, version: '3' };
-      missionWpTracking.onMissionLoaded(loadedDeviceIds, missionData).catch((err) =>
-        logger.error(`WpTracking onMissionLoaded error: ${err.message}`)
-      );
+      missionWpTracking
+        .onMissionLoaded(loadedDeviceIds, missionData)
+        .catch((err) => logger.error(`WpTracking onMissionLoaded error: ${err.message}`));
     }
 
     logger.info('finish load mission');
@@ -241,9 +220,9 @@ export class commandsModel {
     }
 
     if (commandedDeviceIds.length > 0) {
-      missionWpTracking.onMissionCommanded(commandedDeviceIds).catch((err) =>
-        logger.error(`WpTracking onMissionCommanded error: ${err.message}`)
-      );
+      missionWpTracking
+        .onMissionCommanded(commandedDeviceIds)
+        .catch((err) => logger.error(`WpTracking onMissionCommanded error: ${err.message}`));
     }
 
     return response;
