@@ -1,6 +1,8 @@
 import { devicesController } from '../../controllers/devices.js';
+import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
 import { decodeRosMsg } from './rosDecode.js';
+import logger from '../../common/logger.js';
 import {
   getRos,
   setRosState,
@@ -85,7 +87,9 @@ export class rosModel {
   }
 
   static async callService({ uav_id, type, request }) {
-    return rosServices.callService({ uav_id, type, request }, getRos());
+    const device = await devicesController.getDevice(uav_id);
+    const { name, category } = device;
+    return rosServices.callService({ name, category, type, request }, getRos());
   }
 
   static getTopics() {
@@ -133,7 +137,41 @@ export class rosModel {
   }
 
   static GCSServicesMission() {
-    rosServices.GCSServicesMission(getRos());
+    // Business callbacks live here in the facade — rosServices only owns the
+    // ROSLIB advertise/registry lifecycle and never touches missionController.
+    const gcs_services = [
+      {
+        name: 'ServiceFinishMission',
+        serviceName: '/GCS/FinishMission',
+        serviceType: 'aerialcore_common/finishMission',
+        callback: function (request, response) {
+          logger.debug(`Service finish mission callback: ${JSON.stringify(request)}`);
+          if (request.hasOwnProperty('uav_id')) {
+            missionController
+              .deviceFinishMission({ name: request.uav_id })
+              .catch((err) => logger.error(`deviceFinishMission failed: ${err.message}`));
+          }
+          Object.assign(response, { success: true, msg: 'Set successfully' });
+          return true;
+        },
+      },
+      {
+        name: 'ServiceDownload',
+        serviceName: '/GCS/FinishDownload',
+        serviceType: 'aerialcore_common/finishGetFiles',
+        callback: function (request, response) {
+          logger.debug(`Service finish download files callback: ${JSON.stringify(request)}`);
+          if (request.hasOwnProperty('uav_id')) {
+            missionController
+              .deviceFinishSyncFiles({ name: request.uav_id })
+              .catch((err) => logger.error(`deviceFinishSyncFiles failed: ${err.message}`));
+          }
+          Object.assign(response, { success: true, msg: 'Set successfully' });
+          return true;
+        },
+      },
+    ];
+    rosServices.GCSServicesMission(gcs_services, getRos());
   }
 
   static serviceServer({ serviceName, serviceType, callback }) {
@@ -165,7 +203,7 @@ export class rosModel {
   }
 
   static async cancelActionGoal(args) {
-    return rosServices.cancelActionGoal(args, getRos());
+    return actionRegistry.cancelActionGoal(args, getRos());
   }
 
   static async getActionServers() {

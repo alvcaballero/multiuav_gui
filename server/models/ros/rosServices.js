@@ -1,10 +1,7 @@
 import * as ROSLIB from 'roslib';
 import { readDataFile } from '../../common/utils.js';
-import { devicesController } from '../../controllers/devices.js';
-import { missionController } from '../../controllers/mission.js';
 import { encodeRosSrv } from './rosEncode.js';
 import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
-import { ROS2GoalActionClient } from './rosActionClient.js';
 import { getServices, getServicesType, getServiceRequestDetails } from './rosInspect.js';
 import logger from '../../common/logger.js';
 
@@ -82,11 +79,8 @@ export async function callRosService({ service, messageType, message }, ros) {
   });
 }
 
-export async function callService({ uav_id, type, request }, ros) {
+export async function callService({ name, category, type, request }, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-
-  let device = await devicesController.getDevice(uav_id);
-  const { name, category } = device;
 
   if (!devices_msg[category]['services'].hasOwnProperty(type)) {
     return { state: 'warning', msg: type + ' to:' + name + ' dont have this service' };
@@ -146,40 +140,10 @@ export function serviceServer({ serviceName, serviceType, callback }, ros) {
   return service;
 }
 
-export function GCSServicesMission(ros) {
-  const gcs_services = [
-    {
-      name: 'ServiceFinishMission',
-      serviceName: '/GCS/FinishMission',
-      serviceType: 'aerialcore_common/finishMission',
-      callback: function (request, response) {
-        logger.debug(`Service finish mission callback: ${JSON.stringify(request)}`);
-        if (request.hasOwnProperty('uav_id')) {
-          missionController
-            .deviceFinishMission({ name: request.uav_id })
-            .catch((err) => logger.error(`deviceFinishMission failed: ${err.message}`));
-        }
-        Object.assign(response, { success: true, msg: 'Set successfully' });
-        return true;
-      },
-    },
-    {
-      name: 'ServiceDownload',
-      serviceName: '/GCS/FinishDownload',
-      serviceType: 'aerialcore_common/finishGetFiles',
-      callback: function (request, response) {
-        logger.debug(`Service finish download files callback: ${JSON.stringify(request)}`);
-        if (request.hasOwnProperty('uav_id')) {
-          missionController
-            .deviceFinishSyncFiles({ name: request.uav_id })
-            .catch((err) => logger.error(`deviceFinishSyncFiles failed: ${err.message}`));
-        }
-        Object.assign(response, { success: true, msg: 'Set successfully' });
-        return true;
-      },
-    },
-  ];
-
+// Advertise the GCS mission services. The service definitions (including
+// the business callbacks) are supplied by the facade — this layer only owns
+// the ROSLIB advertise/registry lifecycle, not what the callbacks do.
+export function GCSServicesMission(gcs_services, ros) {
   for (let srv of gcs_services) {
     // Unadvertise stale instance before re-advertising to avoid
     // rosbridge routing requests to a dead handler on reconnect.
@@ -208,27 +172,4 @@ export function GCSunServicesMission() {
     service.unadvertise();
     delete service_list[name];
   }
-}
-
-export async function cancelActionGoal(args, ros) {
-  if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-  const { action, actionType, goalId } = args;
-
-  let newClient = new ROSLIB.Action({
-    ros: ros,
-    name: action,
-    actionType: actionType,
-  });
-  newClient.cancel(goalId);
-
-  return { state: 'success', msg: 'Action goal canceled successfully' };
-}
-
-export async function cancelActionGoalros1(args, ros) {
-  if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-  const { action, actionType, goalId } = args;
-
-  const nav2Client = new ROS2GoalActionClient(ros, action, actionType, true);
-  nav2Client.cancelGoal(goalId);
-  return { state: 'success', msg: 'Action goal canceled successfully' };
 }
