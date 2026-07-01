@@ -19,7 +19,7 @@ import {
 } from './rosTopics.js';
 import * as rosServices from './rosServices.js';
 import * as rosInspect from './rosInspect.js';
-import * as actionRegistry from './rosActionRegistry.js';
+import * as actionRegistry from './rosAction.js';
 
 export class rosModel {
   static setrosState({ state, msg }) {
