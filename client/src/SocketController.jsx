@@ -4,6 +4,7 @@ import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
 import { devicesActions, missionActions, sessionActions, chatActions, activeMissionsActions } from './store';
 import { eventsActions } from './store/events';
+import { loadMissionPlanToEditor } from './services/missionPlanLoader';
 import { Snackbar } from '@mui/material';
 import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
 import store from './store';
@@ -93,6 +94,8 @@ const SocketController = () => {
       if (data.mission) {
         console.log(data.mission);
         dispatch(missionActions.updateMission(data.mission));
+        // Server pushed a mission into the editor — drop any active selection.
+        dispatch(activeMissionsActions.selectMission(null));
       }
       if (data.events) {
         handleEvents(data.events);
@@ -147,7 +150,19 @@ const SocketController = () => {
       }
       if (missionsRes.ok) {
         const missions = await missionsRes.json();
-        dispatch(activeMissionsActions.setMissions(Array.isArray(missions) ? missions : [missions].filter(Boolean)));
+        const missionList = Array.isArray(missions) ? missions : [missions].filter(Boolean);
+        dispatch(activeMissionsActions.setMissions(missionList));
+
+        // Pre-select the most recent active mission so the tracking panel opens
+        // showing something useful right away, instead of nothing selected — and
+        // load its plan into the editor/map, same as clicking it manually would.
+        if (missionList.length > 0) {
+          const mostRecent = missionList.reduce((latest, m) =>
+            new Date(m.initTime) > new Date(latest.initTime) ? m : latest
+          );
+          dispatch(activeMissionsActions.selectMission(mostRecent.id));
+          loadMissionPlanToEditor(mostRecent.id, dispatch);
+        }
       }
       if (routesRes.ok) {
         dispatch(activeMissionsActions.setRoutes(await routesRes.json()));

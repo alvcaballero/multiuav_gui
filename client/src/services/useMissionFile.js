@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux';
-import { missionActions } from '../store';
+import { missionActions, activeMissionsActions } from '../store';
 import { readTextFile, parseMissionFile } from './fileService';
 
 /**
@@ -19,6 +19,8 @@ export const useMissionFile = () => {
         return;
       }
       dispatch(missionActions.updateMission({ ...result.mission, name: result.name }));
+      // Loading a mission from file replaces the editor — drop any active selection.
+      dispatch(activeMissionsActions.selectMission(null));
     });
   };
 };

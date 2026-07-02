@@ -9,21 +9,17 @@ export const loadMission = async (mission) => {
   throw new Error(await response.text());
 };
 
-export const commandMission = async (missions, devices) => {
-  const listUAV = missions.route.map((element) => element.uav);
-  const listDeviceId = listUAV.map((name) => {
-    const item = Object.values(devices).find((d) => d.name === name);
-    return item ? item.id : null;
-  });
+// Command an already-loaded mission by its id. The mission + routes were created
+// by commandLoadMission; the server commands each LOADED route. Returns
+// { missionId, results: [{ deviceId, state, msg }] }.
+export const commandMission = async (missionId) => {
+  if (missionId == null) {
+    throw new Error('No hay misión cargada: cargá o seleccioná una misión antes de comandar');
+  }
 
-  const command2send = {
-    deviceId: listDeviceId.length > 0 ? listDeviceId : -1,
-    type: 'commandMission',
-  };
-
-  const response = await fetch('/api/commands/send', {
+  const response = await fetch('/api/missions/command', {
     method: 'POST',
-    body: JSON.stringify(command2send),
+    body: JSON.stringify({ missionId }),
     headers: { 'Content-Type': 'application/json' },
   });
   if (response.ok) {
@@ -36,10 +32,12 @@ export const commandMission = async (missions, devices) => {
   throw new Error('Error in commandMission: ' + (await response.text()));
 };
 
+// Load a mission: creates MissionPlan + Mission + Routes (LOADED) and loads each
+// drone. Returns { missionId, planId, results: [{ deviceId, name, state, msg }] }.
 export const commandLoadMission = async (missions) => {
-  const data = { deviceId: -1, type: 'loadMission', attributes: missions.route };
+  const data = { route: missions.route };
 
-  const response = await fetch('/api/commands/send', {
+  const response = await fetch('/api/missions/load', {
     method: 'POST',
     body: JSON.stringify(data),
     headers: { 'Content-Type': 'application/json' },

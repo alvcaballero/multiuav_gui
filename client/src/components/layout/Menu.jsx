@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 import { grey, red, orange, green } from '@mui/material/colors';
+import { missionStyle } from '../../shared/missionStatus';
 
 import HomeIcon from '@mui/icons-material/Home';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -36,17 +37,11 @@ import {
   commandResumeMission,
 } from '../../shared/fetchs';
 import { useCatch } from '../../reactHelper';
-import { missionActions } from '../../store';
+import { missionActions, activeMissionsActions, getCommandableMissionId } from '../../store';
 import SwipeConfirm from '../../shared/components/SwipeConfirm';
 import MissionDetailPopover from './menu/MissionDetailPopover';
 import ActiveMissionsPopover from './menu/ActiveMissionsPopover';
 import EventsPopover from './menu/EventsPopover';
-
-const MISSION_STATUS_COLOR = {
-  running: green[700],
-  completed: grey[500],
-  init: orange[700],
-};
 
 const useStyles = makeStyles()(() => ({
   toolbar: {
@@ -179,16 +174,34 @@ export const Menu = () => {
   const mission = useSelector((state) => state.mission);
   const missionName = useSelector((state) => state.mission.name);
   const missionHome = useSelector((state) => state.mission.home);
+  const socketState = useSelector((state) => state.session.socket);
   const devices = useSelector((state) => state.devices.items);
   const activeMissions = useSelector((state) => state.activeMissions.items);
+  const selectedMissionId = useSelector((state) => state.activeMissions.selectedMissionId);
   const events = useSelector((state) => state.events.items);
 
   const defaultLatitude = usePreference('latitude', 0);
   const defaultLongitude = usePreference('longitude', 0);
   const defaultZoom = usePreference('zoom', 10);
 
-  const handleLoadMission = useCatch(() => commandLoadMission(mission));
-  const handleCommandMission = useCatch(() => commandMission(mission, devices));
+  const commandableMissionId = useSelector(getCommandableMissionId);
+  // Guards against double-click/double-tap firing loadMission twice in a row,
+  // which would create duplicate Mission/Plan/Route rows server-side and
+  // re-send configureMission to the same drones for no reason.
+  const [loadingMission, setLoadingMission] = useState(false);
+  const handleLoadMission = useCatch(async () => {
+    if (loadingMission) return;
+    setLoadingMission(true);
+    try {
+      const res = await commandLoadMission(mission);
+      // Select the created mission so it becomes the one commandMission will command.
+      if (res?.missionId != null) dispatch(activeMissionsActions.selectMission(res.missionId));
+      return res;
+    } finally {
+      setLoadingMission(false);
+    }
+  });
+  const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
   const handleStopMission = useCatch(() => commandStopMission(devices));
   const handlePauseMission = useCatch(() => commandPauseMission(devices));
   const handleResumeMission = useCatch(() => commandResumeMission(devices));
@@ -196,9 +209,10 @@ export const Menu = () => {
   const LOADED_NAMES = ['Mission no loaded', 'no load mission'];
   const hasMission = Boolean(missionName && !LOADED_NAMES.includes(missionName));
 
-  const activeMissionsList = Object.values(activeMissions);
-  const runningMission = activeMissionsList.find((m) => m.status === 'running');
-  const currentStatus = runningMission?.status ?? activeMissionsList[0]?.status ?? null;
+  // Status shown reflects the selected mission; fall back to any running one so
+  // the controls stay meaningful when nothing is explicitly selected.
+  const selectedMission = selectedMissionId != null ? activeMissions[selectedMissionId] : null;
+  const currentStatus = selectedMission?.status ?? null;
   const isRunning = currentStatus === 'running';
 
   const [eventsLastSeen, setEventsLastSeen] = useState(() => Date.now());
@@ -246,9 +260,24 @@ export const Menu = () => {
 
   return (
     <header className={classes.toolbar}>
-
       {/* ── LEFT: conexión · mapa · archivo ── */}
       <div className={classes.leftGroup}>
+        <Tooltip title={socketState ? 'WebSocket connected' : 'WebSocket disconnected'} placement="bottom">
+          <Chip
+            icon={<CircleIcon sx={{ fontSize: '7px !important', color: socketState ? green[500] : red[500] }} />}
+            label={socketState ? 'WS' : 'offline'}
+            size="small"
+            className={classes.rosChip}
+            sx={{
+              backgroundColor: socketState ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.10)',
+              color: socketState ? green[800] : red[700],
+              border: `1px solid ${socketState ? 'rgba(76,175,80,0.35)' : 'rgba(244,67,54,0.35)'}`,
+            }}
+          />
+        </Tooltip>
+
+        <div className={classes.vDivider} />
+
         <RosContext.Consumer>
           {({ rosState }) => (
             <Chip
@@ -319,9 +348,14 @@ export const Menu = () => {
                 onClick={hasMission && !is3D ? goToMission : undefined}
                 disabled={!hasMission || is3D}
                 sx={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: '28px', border: 'none', borderRight: `1px solid ${grey[200]}`,
-                  backgroundColor: 'transparent', padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  border: 'none',
+                  borderRight: `1px solid ${grey[200]}`,
+                  backgroundColor: 'transparent',
+                  padding: 0,
                   cursor: hasMission && !is3D ? 'pointer' : 'default',
                   color: hasMission && !is3D ? grey[600] : grey[400],
                   '&:hover': hasMission && !is3D ? { backgroundColor: grey[100], color: grey[900] } : {},
@@ -340,20 +374,29 @@ export const Menu = () => {
                 onClick={hasMission ? (e) => setMissionDetailAnchor(e.currentTarget) : undefined}
                 disabled={!hasMission}
                 sx={{
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  border: 'none', borderRight: `1px solid ${grey[200]}`,
-                  backgroundColor: 'transparent', padding: '0 10px',
-                  minWidth: '160px', maxWidth: '300px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  border: 'none',
+                  borderRight: `1px solid ${grey[200]}`,
+                  backgroundColor: 'transparent',
+                  padding: '0 10px',
+                  minWidth: '160px',
+                  maxWidth: '300px',
                   cursor: hasMission ? 'pointer' : 'default',
                   '&:hover': hasMission ? { backgroundColor: grey[50] } : {},
                 }}
               >
                 <Typography
                   sx={{
-                    fontSize: '12px', fontWeight: 600, overflow: 'hidden',
-                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                     color: hasMission ? grey[800] : grey[400],
-                    flex: 1, textAlign: 'left',
+                    flex: 1,
+                    textAlign: 'left',
                   }}
                 >
                   {hasMission ? missionName : 'No mission loaded'}
@@ -366,16 +409,22 @@ export const Menu = () => {
           {/* Segmento status */}
           <Box
             sx={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '0 9px', minWidth: '72px', justifyContent: 'center',
-              backgroundColor: currentStatus ? (MISSION_STATUS_COLOR[currentStatus] ?? grey[400]) : grey[100],
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '0 9px',
+              minWidth: '72px',
+              justifyContent: 'center',
+              backgroundColor: currentStatus ? missionStyle(currentStatus).color : grey[100],
               cursor: 'default',
             }}
           >
             {currentStatus && (
               <CircleIcon
                 sx={{
-                  fontSize: 7, color: '#fff', flexShrink: 0,
+                  fontSize: 7,
+                  color: '#fff',
+                  flexShrink: 0,
                   ...(currentStatus === 'running' && {
                     animation: 'menuPulse 1.4s ease-in-out infinite',
                     '@keyframes menuPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } },
@@ -385,12 +434,15 @@ export const Menu = () => {
             )}
             <Typography
               sx={{
-                fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px',
-                textTransform: 'uppercase', whiteSpace: 'nowrap',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.4px',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
                 color: currentStatus ? '#fff' : grey[500],
               }}
             >
-              {currentStatus ?? 'no status'}
+              {currentStatus ? missionStyle(currentStatus).label : 'no status'}
             </Typography>
           </Box>
         </Box>
@@ -404,10 +456,10 @@ export const Menu = () => {
               className={classes.loadBtn}
               startIcon={<FileUploadIcon sx={{ fontSize: 14 }} />}
               onClick={handleLoadMission}
-              disabled={!hasMission}
+              disabled={!hasMission || loadingMission}
               variant="outlined"
             >
-              Load
+              {loadingMission ? 'Loading…' : 'Load'}
             </Button>
           </span>
         </Tooltip>
@@ -487,11 +539,18 @@ export const Menu = () => {
           <IconButton className={classes.iconBtn} size="small" onClick={openEvents} sx={{ position: 'relative' }}>
             <NotificationsIcon sx={{ fontSize: 17 }} />
             {unseenErrors.length > 0 && (
-              <Box sx={{
-                position: 'absolute', top: 3, right: 3,
-                width: 7, height: 7, borderRadius: '50%',
-                backgroundColor: red[500], border: '1.5px solid #e4e7ec',
-              }} />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 3,
+                  right: 3,
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  backgroundColor: red[500],
+                  border: '1.5px solid #e4e7ec',
+                }}
+              />
             )}
           </IconButton>
         </Tooltip>
@@ -503,27 +562,26 @@ export const Menu = () => {
         onClose={() => setMissionDetailAnchor(null)}
         onClear={() => setConfirmClear(true)}
       />
-      <ActiveMissionsPopover
-        anchor={missionsAnchor}
-        onClose={() => setMissionsAnchor(null)}
-      />
-      <EventsPopover
-        anchor={eventsAnchor}
-        onClose={() => setEventsAnchor(null)}
-      />
+      <ActiveMissionsPopover anchor={missionsAnchor} onClose={() => setMissionsAnchor(null)} />
+      <EventsPopover anchor={eventsAnchor} onClose={() => setEventsAnchor(null)} />
 
       {/* ── Confirmaciones ── */}
       <SwipeConfirm
         enable={confirmFly}
         onClose={() => setConfirmFly(false)}
-        onSucces={() => { setConfirmFly(false); handleCommandMission(); }}
+        onSucces={() => {
+          setConfirmFly(false);
+          handleCommandMission();
+        }}
       />
       <SwipeConfirm
         enable={confirmClear}
         onClose={() => setConfirmClear(false)}
-        onSucces={() => { setConfirmClear(false); dispatch(missionActions.clearMission()); }}
+        onSucces={() => {
+          setConfirmClear(false);
+          dispatch(missionActions.clearMission());
+        }}
       />
-
     </header>
   );
 };

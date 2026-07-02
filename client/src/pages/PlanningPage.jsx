@@ -9,7 +9,7 @@ import { TabPanel, TabList, TabContext } from '@mui/lab';
 import { makeStyles } from 'tss-react/mui';
 
 import { useNavigate } from 'react-router-dom';
-import { missionActions, sessionActions, planningToLegacy } from '../store';
+import { missionActions, sessionActions, activeMissionsActions, planningToLegacy } from '../store';
 
 import MapView, { map } from '../map/core/MapView';
 import Navbar from '../components/layout/Navbar';
@@ -408,6 +408,8 @@ const PlanningPage = () => {
         if (planResult?.hasOwnProperty('route')) {
           SetRequestPlanning(SUCCESS_CODE);
           dispatch(missionActions.updateMission({ ...planResult, version: '3' }));
+          // New plan replaces the editor — drop any active selection.
+          dispatch(activeMissionsActions.selectMission(null));
           return;
         }
       } catch (error) {

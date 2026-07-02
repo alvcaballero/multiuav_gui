@@ -1,4 +1,4 @@
-import store, { missionActions } from '../store';
+import store, { missionActions, activeMissionsActions } from '../store';
 import { parseMissionFile } from '../services/fileService';
 
 var mission_home = [];
@@ -18,6 +18,8 @@ export const FiletoMission = (item) => {
     return;
   }
   store.dispatch(missionActions.updateMission({ ...result.mission, name: result.name }));
+  // Loading a mission from file replaces the editor — drop any active selection.
+  store.dispatch(activeMissionsActions.selectMission(null));
 };
 export const RuteConvert = (route) => {
   const rt = [];

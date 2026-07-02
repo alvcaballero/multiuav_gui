@@ -16,7 +16,7 @@ import MainToolbar from '../components/layout/MainToolbar';
 import MainMap from '../map/MainMap';
 import StatusCard from '../components/devices/StatusCard';
 import CameraDevice from '../components/camera/CameraDevice';
-import { devicesActions } from '../store';
+import { devicesActions, getCommandableMissionId } from '../store';
 import useFilter from '../components/devices/useFilter';
 import usePersistedState from '../shared/usePersistedState';
 
@@ -81,8 +81,6 @@ const MainPage = () => {
   const dispatch = useDispatch();
   const theme = useTheme();
 
-  const devicesMap = useSelector((state) => state.devices.items);
-  const mission = useSelector((state) => state.mission);
   const llmEnabled = useSelector((state) => state.session.server?.llmEnabled ?? false);
   const positions = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
@@ -109,7 +107,8 @@ const MainPage = () => {
 
   useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
 
-  const handleCommandMission = useCatch(() => commandMission(mission, devicesMap));
+  const commandableMissionId = useSelector(getCommandableMissionId);
+  const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
 
   const [AddUAVOpen, SetAddUAVOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);

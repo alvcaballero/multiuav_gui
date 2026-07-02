@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { grey, blue, green, orange } from '@mui/material/colors';
+import { grey, blue } from '@mui/material/colors';
 import { Box, Button, Chip, Collapse, Divider, Popover, Typography } from '@mui/material';
 import RouteIcon from '@mui/icons-material/Route';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -9,12 +9,8 @@ import PlaceIcon from '@mui/icons-material/Place';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { makeStyles } from 'tss-react/mui';
-
-const MISSION_STATUS_COLOR = {
-  running: green[700],
-  completed: grey[500],
-  init: orange[700],
-};
+import { missionStyle } from '../../../shared/missionStatus';
+import RouteTrackingRow from '../../mission/RouteTrackingRow';
 
 const useStyles = makeStyles()(() => ({
   panelHeader: {
@@ -52,10 +48,18 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
   const mission = useSelector((state) => state.mission);
   const missionRoutes = useSelector((state) => state.mission.route);
   const activeMissions = useSelector((state) => state.activeMissions.items);
+  const selectedMissionId = useSelector((state) => state.activeMissions.selectedMissionId);
+  const devicesMap = useSelector((state) => state.devices.items);
 
+  // Status shown reflects the selected mission; fall back to any running one.
   const activeMissionsList = Object.values(activeMissions);
+  const selectedMission = selectedMissionId != null ? activeMissions[selectedMissionId] : null;
   const runningMission = activeMissionsList.find((m) => m.status === 'running');
-  const currentStatus = runningMission?.status ?? activeMissionsList[0]?.status ?? null;
+  const currentStatus = selectedMission?.status ?? runningMission?.status ?? null;
+
+  // Live route tracking (WP progress, status, anomalies) for the selected mission,
+  // same data ActiveMissionsPopover shows. Empty until a mission is selected/loaded.
+  const trackedRoutes = Object.values(selectedMission?.routes ?? {});
 
   const [expandedRoute, setExpandedRoute] = useState(null);
 
@@ -78,13 +82,13 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
           <Typography className={classes.panelTitle}>Mission details</Typography>
           {currentStatus && (
             <Chip
-              label={currentStatus}
+              label={missionStyle(currentStatus).label}
               size="small"
               sx={{
                 height: '16px',
                 fontSize: '10px',
                 fontWeight: 700,
-                backgroundColor: MISSION_STATUS_COLOR[currentStatus] ?? grey[400],
+                backgroundColor: missionStyle(currentStatus).color,
                 color: '#fff',
               }}
             />
@@ -95,6 +99,20 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
           <Typography sx={{ px: 1.5, pb: 0.5, fontSize: 12, color: grey[600] }}>
             {mission.description}
           </Typography>
+        )}
+
+        {trackedRoutes.length > 0 && (
+          <>
+            <Divider />
+            <Typography className={classes.panelTitle} sx={{ px: 1.5, pt: 0.75 }}>
+              Live tracking
+            </Typography>
+            <Box sx={{ pb: 0.5 }}>
+              {trackedRoutes.map((r) => (
+                <RouteTrackingRow key={r.deviceId} route={r} devicesMap={devicesMap} />
+              ))}
+            </Box>
+          </>
         )}
 
         <Divider />

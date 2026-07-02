@@ -28,7 +28,7 @@ export { missionActions } from './mission';
 export { sessionActions } from './session';
 export { geofencesActions } from './geofences';
 export { chatActions } from './chat';
-export { activeMissionsActions } from './activeMissions';
+export { activeMissionsActions, getCommandableMissionId } from './activeMissions';
 
 // Export selectors
 export * as sessionSelectors from './sessionSelectors';

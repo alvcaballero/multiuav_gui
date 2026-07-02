@@ -1,12 +1,12 @@
-import React, { useContext, Fragment, useEffect } from 'react';
+import React, { useContext, useRef, Fragment, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
 
-import { missionActions, sessionActions } from '../../store';
+import { missionActions, sessionActions, activeMissionsActions } from '../../store';
 import { map } from '../../map/core/MapView';
 import MenuItems from './MenuItems';
-import { connectRos, commandLoadMission, commandMission } from '../../shared/fetchs';
+import { connectRos, commandLoadMission } from '../../shared/fetchs';
 import { useCatch } from '../../reactHelper';
 import { usePreference } from '../../shared/preferences';
 import { readTextFile, parseKmlElements } from '../../services/fileService';
@@ -16,12 +16,24 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const mission = useSelector((state) => state.mission);
-  const devices = useSelector((state) => state.devices.items);
   const llmEnabled = useSelector((state) => state.session.server?.llmEnabled ?? false);
 
   const handleConnectRos = useCatch(connectRos);
-  const handleCommandLoadMission = useCatch(() => commandLoadMission(mission));
-  const handleCommandMission = useCatch(() => commandMission(mission, devices));
+  // Guards against firing loadMission twice in a row (menu item has no disabled
+  // state to show) — would create duplicate Mission/Plan/Route rows server-side.
+  const loadingMissionRef = useRef(false);
+  const handleCommandLoadMission = useCatch(async () => {
+    if (loadingMissionRef.current) return;
+    loadingMissionRef.current = true;
+    try {
+      const res = await commandLoadMission(mission);
+      // Select the created mission so it becomes the one commandMission will command.
+      if (res?.missionId != null) dispatch(activeMissionsActions.selectMission(res.missionId));
+      return res;
+    } finally {
+      loadingMissionRef.current = false;
+    }
+  });
   const handleMissionFile = useMissionFile();
   const defaultLatitude = usePreference('latitude', 0);
   const defaultLongitude = usePreference('longitude', 0);
