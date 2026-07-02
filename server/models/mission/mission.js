@@ -5,7 +5,8 @@ import { ExtAppController } from '../../controllers/ExtApp.js';
 import { planningController } from '../../controllers/planning.js';
 import { filesController } from '../../controllers/files.js';
 import { eventsController } from '../../controllers/events.js';
-import { readDataFile, writeJSON, sleep } from '../../common/utils.js';
+import { commandsController } from '../../controllers/commands.js';
+import { readDataFile, writeJSON, sleep, withRetry } from '../../common/utils.js';
 import sequelize from '../../common/sequelize.js';
 import { Op } from 'sequelize';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
@@ -507,6 +508,223 @@ export class missionModel {
       initTime,
       mission: plan.missionData,
     });
+  }
+
+  /**
+   * MANUAL flow — load. Mirrors initMission (automatic): creates MissionPlan +
+   * Mission + one MissionRoute per device, and loads each drone's route via the
+   * per-device command primitive. Persists the plan explicitly (no side-effect).
+   * Routes that fail after one retry are left in ROUTE_STATUS.ERROR so `command`
+   * can skip them. Returns { missionId, planId, results }.
+   * @param {object} missionData - { route: [...], version }
+   */
+  static async loadMissionManual(missionData) {
+    logger.info('===== loadMissionManual =====');
+    if (missionData == null || !Array.isArray(missionData.route) || missionData.route.length === 0) {
+      return { missionId: null, planId: null, results: [], state: 'info', msg: 'no mission' };
+    }
+
+    // Persist with version:'3' so consumers (client RuteConvert) parse it as the
+    // current route format instead of falling back to the legacy parser.
+    const normalizedMission = { ...missionData, version: '3' };
+    const plan = await this.createMissionPlan(normalizedMission, { source: 'manual' });
+    logger.info(`loadMissionManual: MissionPlan created id=${plan.id}`);
+
+    // Resolve devices for the mission (skip routes whose UAV is unknown).
+    const routeDevices = [];
+    for (const route of normalizedMission.route) {
+      const device = await devicesController.getByName(route.uav);
+      routeDevices.push({ route, device });
+    }
+    const listUAV = routeDevices.filter((rd) => rd.device).map((rd) => rd.device.id);
+
+    // Idempotency: a drone can't have two not-yet-commanded missions at once.
+    // Cancel any INIT mission that overlaps with this load's devices before
+    // creating the new one, so double-clicks / repeated loads don't pile up
+    // orphaned Mission/Route rows or re-send configureMission redundantly.
+    await this._cancelStaleInitMissions(listUAV);
+
+    const mission = await this.createMission({
+      name: `manual_${plan.id}`,
+      planId: plan.id,
+      trigger: 'manual',
+      uav: listUAV,
+      // Loaded, not yet commanded: INIT until commandMissionManual promotes it.
+      status: MISSION_STATUS.INIT,
+      mission: normalizedMission,
+    });
+    logger.info(`loadMissionManual: Mission created id=${mission.id} devices=[${listUAV.join(',')}]`);
+
+    const results = [];
+    for (const { route, device } of routeDevices) {
+      if (!device) {
+        results.push({ deviceId: null, name: route.uav, state: 'warning', msg: `device ${route.uav} not found` });
+        continue;
+      }
+      const totalWp = route.wp?.length ?? 0;
+      let response;
+      try {
+        // Pass the FULL mission; loadMissionToDevice extracts this drone's route.
+        response = await withRetry(() =>
+          commandsController.sendCommandDevice({ deviceId: device.id, type: 'loadMission', attributes: normalizedMission })
+        );
+      } catch (err) {
+        response = { state: 'error', msg: err instanceof Error ? err.message : String(err) };
+      }
+      const ok = response.state !== 'error';
+      await this.createRoute({
+        missionId: mission.id,
+        deviceId: device.id,
+        status: ok ? ROUTE_STATUS.LOADED : ROUTE_STATUS.ERROR,
+        initTime: new Date(),
+        currentWp: 0,
+        totalWp,
+      });
+      results.push({ deviceId: device.id, name: device.name, state: response.state, msg: response.msg });
+    }
+
+    // If no route loaded (e.g. the only drone failed), the mission is unusable → ERROR.
+    // Otherwise it stays INIT and command will handle the routes that did load.
+    const anyLoaded = results.some((r) => r.state !== 'error' && r.deviceId != null);
+    const finalStatus = anyLoaded ? MISSION_STATUS.INIT : MISSION_STATUS.ERROR;
+    if (!anyLoaded) {
+      await this.editMission({ id: mission.id, status: finalStatus, errorMessage: 'Ninguna ruta se pudo cargar' });
+    }
+
+    // The client only discovers new missions via the initial REST fetch or by
+    // seeing a missionProgress for an unknown missionId (SocketController auto-
+    // fetches it then). Emit one now so ActiveMissionsPopover picks up the mission
+    // right after load, without waiting for a page refresh.
+    for (const { deviceId, state } of results) {
+      if (deviceId == null) continue;
+      eventBus.emitSafe(EVENTS.MISSION_PROGRESS, {
+        missionId: mission.id,
+        deviceId,
+        currentWp: 0,
+        totalWp: routeDevices.find((rd) => rd.device?.id === deviceId)?.route.wp?.length ?? 0,
+        completed: false,
+        anomalies: [],
+        wpEstimate: null,
+        confidence: null,
+        missionStatus: finalStatus,
+        routeStatus: state === 'error' ? ROUTE_STATUS.ERROR : ROUTE_STATUS.LOADED,
+      });
+    }
+
+    logger.info(`loadMissionManual finished mission=${mission.id} anyLoaded=${anyLoaded}`);
+    return { missionId: mission.id, planId: plan.id, results };
+  }
+
+  /**
+   * MANUAL flow — command. Mission + routes already exist (created in load).
+   * Commands each LOADED route (skips ERROR ones) and promotes LOADED → COMMANDED
+   * so missionWpTracking.checkProgress picks it up. Returns { missionId, results }.
+   * @param {number} missionId
+   */
+  static async commandMissionManual(missionId) {
+    logger.info(`===== commandMissionManual mission=${missionId} =====`);
+    const routes = await this.getRoutes({ missionId });
+    const routeList = Array.isArray(routes) ? routes : Object.values(routes ?? {});
+    if (routeList.length === 0) {
+      return { missionId, results: [], state: 'warning', msg: `mission ${missionId} has no routes` };
+    }
+
+    const results = [];
+    for (const route of routeList) {
+      if (route.status !== ROUTE_STATUS.LOADED) {
+        results.push({ deviceId: route.deviceId, state: 'warning', msg: `route not loaded (status=${route.status})` });
+        continue;
+      }
+      let response;
+      try {
+        response = await withRetry(() =>
+          commandsController.sendCommandDevice({ deviceId: route.deviceId, type: 'commandMission' })
+        );
+      } catch (err) {
+        response = { state: 'error', msg: err instanceof Error ? err.message : String(err) };
+      }
+      if (response.state !== 'error') {
+        await this.editRoute({ id: route.id, status: ROUTE_STATUS.COMMANDED });
+      }
+      results.push({ deviceId: route.deviceId, state: response.state, msg: response.msg });
+    }
+
+    // RUNNING if at least one route was commanded OK; ERROR if none could be
+    // (all failed or none were in LOADED to begin with).
+    const anyCommanded = results.some((r) => r.state !== 'error' && r.state !== 'warning');
+    const finalStatus = anyCommanded ? MISSION_STATUS.RUNNING : MISSION_STATUS.ERROR;
+    if (anyCommanded) {
+      await this.editMission({ id: missionId, status: finalStatus });
+    } else {
+      await this.editMission({ id: missionId, status: finalStatus, errorMessage: 'Ninguna ruta se pudo comandar' });
+    }
+
+    // Nudge the client so ActiveMissionsPopover reflects the new mission/route
+    // status right away (see loadMissionManual for why this is needed).
+    for (const route of routeList) {
+      const result = results.find((r) => r.deviceId === route.deviceId);
+      if (!result || result.state === 'warning') continue;
+      eventBus.emitSafe(EVENTS.MISSION_PROGRESS, {
+        missionId,
+        deviceId: route.deviceId,
+        currentWp: route.currentWp ?? 0,
+        totalWp: route.totalWp ?? 0,
+        completed: false,
+        anomalies: [],
+        wpEstimate: null,
+        confidence: null,
+        missionStatus: finalStatus,
+        routeStatus: result.state === 'error' ? route.status : ROUTE_STATUS.COMMANDED,
+      });
+    }
+
+    logger.info(`commandMissionManual finished mission=${missionId} anyCommanded=${anyCommanded}`);
+    return { missionId, results };
+  }
+
+  /**
+   * Cancels any Mission still in INIT (loaded but not yet commanded) that shares
+   * at least one device with `deviceIds`. Called before creating a new manual
+   * Mission so a repeated/duplicate load doesn't leave the old one orphaned in
+   * INIT forever — the new load supersedes it.
+   * @param {number[]} deviceIds
+   */
+  static async _cancelStaleInitMissions(deviceIds) {
+    if (deviceIds.length === 0) return;
+
+    const staleMissions = await sequelize.models.Mission.findAll({
+      where: { status: MISSION_STATUS.INIT },
+    });
+    for (const stale of staleMissions) {
+      const overlaps = (stale.uav ?? []).some((id) => deviceIds.includes(id));
+      if (!overlaps) continue;
+
+      await this.editMission({ id: stale.id, status: MISSION_STATUS.CANCELLED });
+      const routes = await this.getRoutes({ missionId: stale.id });
+      const routeList = Array.isArray(routes) ? routes : Object.values(routes ?? {});
+      await sequelize.models.MissionRoute.update(
+        { status: ROUTE_STATUS.CANCELLED },
+        { where: { missionId: stale.id } }
+      );
+      logger.info(`_cancelStaleInitMissions: cancelled stale mission=${stale.id} (device overlap with new load)`);
+
+      // Nudge the client so ActiveMissionsPopover drops/updates the stale mission
+      // instead of showing it stuck in 'init' (same reasoning as loadMissionManual).
+      for (const route of routeList) {
+        eventBus.emitSafe(EVENTS.MISSION_PROGRESS, {
+          missionId: stale.id,
+          deviceId: route.deviceId,
+          currentWp: route.currentWp ?? 0,
+          totalWp: route.totalWp ?? 0,
+          completed: false,
+          anomalies: [],
+          wpEstimate: null,
+          confidence: null,
+          missionStatus: MISSION_STATUS.CANCELLED,
+          routeStatus: ROUTE_STATUS.CANCELLED,
+        });
+      }
+    }
   }
 
   static async getMissionPlan(id) {

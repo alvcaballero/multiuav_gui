@@ -90,3 +90,24 @@ export const dateString = (date) => {
 export const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
+
+/**
+ * Runs an async fn and retries it once (by default) if it throws or resolves to
+ * a { state: 'error' } response. Returns the last result/throw after retries.
+ * @param {() => Promise<any>} fn
+ * @param {{ retries?: number, delayMs?: number, isError?: (res:any)=>boolean }} opts
+ */
+export const withRetry = async (fn, { retries = 1, delayMs = 1000, isError = (res) => res?.state === 'error' } = {}) => {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await fn();
+      if (!isError(result) || attempt === retries) return result;
+    } catch (err) {
+      lastError = err;
+      if (attempt === retries) throw err;
+    }
+    await sleep(delayMs);
+  }
+  throw lastError;
+};

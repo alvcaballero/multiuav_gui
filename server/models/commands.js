@@ -3,7 +3,6 @@ import { eventsController } from '../controllers/events.js';
 import { rosController } from '../controllers/ros.js';
 import { getFlatbufferServer } from './flatbuffer/index.js';
 import { positionsController } from '../controllers/positions.js';
-import { missionWpTracking } from './mission/missionWpTracking.js';
 import { categoryModel } from './category.js';
 import { DEFAULT_COMMAND_TYPES, typesForServiceKey, commandDef, Dispatch, Payload } from '../config/commandCatalog.js';
 import logger from '../common/logger.js';
@@ -46,30 +45,19 @@ export class commandsModel {
       };
     }
 
+    // loadMission/commandMission son POR-DEVICE: cargan/comandan a UN dron. El
+    // fan-out de flota + creación de plan/mission/routes vive en missionModel
+    // (flujo manual) o initMission + missionExecutionSM (flujo automático).
     if (type == 'loadMission') {
-      response = await this.loadmissionDevice(deviceId, attributes);
-      if (deviceId < 0) {
-        eventsController.addEvent({
-          type: response.state,
-          deviceId: null,
-          attributes: { message: response.msg },
-        });
-      }
+      response = await this.loadMissionToDevice(deviceId, attributes);
     }
     if (type == 'commandMission') {
-      response = await this.commandMissionDevice(deviceId);
-      if (deviceId < 0) {
-        eventsController.addEvent({
-          type: response.state,
-          deviceId: null,
-          attributes: { message: response.msg },
-        });
-      }
+      response = await this.commandMissionToDevice(deviceId);
     }
     if (deviceId >= 0) {
-      // Despacho por command def. Los FLEET (loadMission/commandMission) ya se
-      // ejecutaron arriba (soportan deviceId<0); acá se despacha el resto según
-      // su `dispatch`. Un type sin def deja el 'Command no found' inicial.
+      // Despacho por command def. loadMission/commandMission ya se ejecutaron
+      // arriba (por-device); acá se despacha el resto según su `dispatch`.
+      // Un type sin def deja el 'Command no found' inicial.
       const command = commandDef(type);
       if (command && command.dispatch !== Dispatch.FLEET) {
         if (command.dispatch === Dispatch.LOCAL) {
@@ -148,83 +136,42 @@ export class commandsModel {
     return response;
   }
 
-  static async loadmissionDevice(deviceId, routes, callback = (x) => x) {
-    logger.info(`loadmissionDevice deviceId=${deviceId}`);
-
-    let response = { state: 'warning', msg: 'UAV no asing mission' };
-    if (Object.values(routes).length == 0) {
-      response = { state: 'info', msg: 'no mission' };
-      return response;
+  /**
+   * Loads a mission to a SINGLE device: receives the FULL mission and internally
+   * extracts the route that belongs to `deviceId` (matched by UAV name), then
+   * sends it via the ROS `configureMission` service.
+   * Fleet fan-out + plan/mission/route persistence live in missionModel (manual)
+   * or initMission + missionExecutionSM (automatic).
+   * @param {number} deviceId
+   * @param {object} missionData - full mission ({ route: [...], version })
+   */
+  static async loadMissionToDevice(deviceId, missionData) {
+    logger.info(`loadMissionToDevice deviceId=${deviceId}`);
+    const routes = missionData?.route ?? missionData;
+    if (!Array.isArray(routes) || routes.length === 0) {
+      return { state: 'info', msg: 'no mission' };
     }
-
-    const loadedDeviceIds = [];
-
-    for (const route of routes) {
-      logger.debug(`load route for uav ${route.uav}`);
-      let myDevice = await devicesController.getByName(route.uav);
-      logger.debug(`device found in route: id=${myDevice?.id} name=${myDevice?.name} searched=${deviceId}`);
-      if (myDevice && (deviceId < 0 || deviceId == myDevice.id)) {
-        logger.info(`loading mission to device ${myDevice.id}`);
-        if (!route.wp || Object.values(route.wp).length === 0) {
-          response = { state: 'warning', msg: `route for ${route.uav} has no waypoints` };
-        } else {
-          const rawRoute = { ...route, uav_type: myDevice.category };
-          response = await this.standarCommand(myDevice.id, 'configureMission', rawRoute);
-          callback(response);
-          if (response.state !== 'error') loadedDeviceIds.push(myDevice.id);
-          if (deviceId >= 0) break;
-        }
-      } else {
-        response = { state: 'warning', msg: `device ${route.uav} not found in mission route` };
-      }
-      if (deviceId < 0) {
-        eventsController.addEvent({
-          type: response.state,
-          deviceId: myDevice ? myDevice.id : null,
-          attributes: { message: response.msg },
-        });
-      }
+    const myDevice = await devicesController.getDevice(deviceId);
+    if (!myDevice) {
+      return { state: 'warning', msg: `device ${deviceId} not found` };
     }
-
-    if (loadedDeviceIds.length > 0) {
-      const missionData = { route: routes, version: '3' };
-      missionWpTracking
-        .onMissionLoaded(loadedDeviceIds, missionData)
-        .catch((err) => logger.error(`WpTracking onMissionLoaded error: ${err.message}`));
+    const route = routes.find((r) => r.uav === myDevice.name);
+    if (!route) {
+      return { state: 'warning', msg: `device ${myDevice.name} not found in mission route` };
     }
-
-    logger.info('finish load mission');
-    return response;
+    if (!route.wp || Object.values(route.wp).length === 0) {
+      return { state: 'warning', msg: `route for ${route.uav} has no waypoints` };
+    }
+    const rawRoute = { ...route, uav_type: myDevice.category };
+    return await this.standarCommand(deviceId, 'configureMission', rawRoute);
   }
 
-  static async commandMissionDevice(deviceId, callback = (x) => x) {
-    let alldevices = await devicesController.getAllDevices();
-    let response = { state: 'error', msg: 'Mission canceled' };
-    const commandedDeviceIds = [];
-
-    for (const device of alldevices) {
-      let finding = Array.isArray(deviceId) && deviceId.some((id) => id == device.id);
-      if (deviceId < 0 || deviceId == device.id || finding) {
-        logger.info(`commandMissionDevice sending to device ${device.id}`);
-        response = await this.standarCommand(device.id, 'commandMission', { data: true });
-        callback(response);
-        if (response.state !== 'error') commandedDeviceIds.push(device.id);
-        if (deviceId < 0) {
-          eventsController.addEvent({
-            type: response.state,
-            deviceId: device.id,
-            attributes: { message: response.msg },
-          });
-        }
-      }
-    }
-
-    if (commandedDeviceIds.length > 0) {
-      missionWpTracking
-        .onMissionCommanded(commandedDeviceIds)
-        .catch((err) => logger.error(`WpTracking onMissionCommanded error: ${err.message}`));
-    }
-
-    return response;
+  /**
+   * Commands (starts) the loaded mission on a SINGLE device.
+   * @param {number} deviceId
+   */
+  static async commandMissionToDevice(deviceId) {
+    logger.info(`commandMissionToDevice deviceId=${deviceId}`);
+    return await this.standarCommand(deviceId, 'commandMission', { data: true });
   }
 }

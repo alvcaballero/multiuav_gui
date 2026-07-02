@@ -13,9 +13,6 @@ import {
 
 const WP_REACHED_THRESHOLD_M = 2;
 
-// Keyed by deviceId → { planId, missionData, loadedAt }
-const _pendingByDevice = {};
-
 function haversineMeters(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const toRad = (d) => (d * Math.PI) / 180;
@@ -26,75 +23,6 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
 }
 
 export class missionWpTracking {
-  /**
-   * Called by commandsModel.loadmissionDevice after the ROS/FB command succeeds.
-   */
-  static async onMissionLoaded(deviceIds, missionData) {
-    const { missionModel } = await import('./mission.js');
-    const plan = await missionModel.createMissionPlan(missionData, { source: 'manual' });
-    logger.info(`WpTracking: MissionPlan created id=${plan.id} for devices=[${deviceIds.join(',')}]`);
-
-    for (const deviceId of deviceIds) {
-      _pendingByDevice[deviceId] = { planId: plan.id, missionData, loadedAt: Date.now() };
-      logger.debug(`WpTracking: pending registered device=${deviceId} planId=${plan.id}`);
-    }
-  }
-
-  /**
-   * Called by commandsModel.commandMissionDevice after the ROS/FB command succeeds.
-   */
-  static async onMissionCommanded(commandedDeviceIds) {
-    const { devicesController } = await import('../../controllers/devices.js');
-    const { missionModel } = await import('./mission.js');
-
-    const planGroups = {};
-    for (const devId of commandedDeviceIds) {
-      const pending = _pendingByDevice[devId];
-      if (!pending) {
-        logger.warn(`WpTracking: no pending plan for device=${devId}, skipping MissionRoute creation`);
-        continue;
-      }
-      const key = pending.planId;
-      if (!planGroups[key]) {
-        planGroups[key] = { planId: pending.planId, missionData: pending.missionData, deviceIds: [] };
-      }
-      planGroups[key].deviceIds.push(devId);
-    }
-
-    for (const group of Object.values(planGroups)) {
-      try {
-        const mission = await missionModel.createMission({
-          name: `manual_${group.planId}`,
-          planId: group.planId,
-          trigger: 'manual',
-          uav: group.deviceIds,
-          status: MISSION_STATUS.RUNNING,
-          mission: group.missionData,
-        });
-        logger.info(
-          `WpTracking: Mission created id=${mission.id} planId=${group.planId} devices=[${group.deviceIds.join(',')}]`
-        );
-
-        for (const devId of group.deviceIds) {
-          const devRoute = await this._findRouteForDevice(group.missionData, devId, devicesController);
-          const totalWp = devRoute?.wp?.length ?? 0;
-          await missionModel.createRoute({
-            missionId: mission.id,
-            deviceId: devId,
-            status: ROUTE_STATUS.COMMANDED,
-            initTime: new Date(),
-            currentWp: 0,
-            totalWp,
-          });
-          logger.debug(`WpTracking: MissionRoute created device=${devId} totalWp=${totalWp}`);
-          delete _pendingByDevice[devId];
-        }
-      } catch (err) {
-        logger.error(`WpTracking: error creating Mission for planId=${group.planId}: ${err.message}`);
-      }
-    }
-  }
-
   /**
    * Called on every position update that has lat/lon.
    * Runs all tracking signals in parallel and emits combined progress.
@@ -210,13 +138,23 @@ export class missionWpTracking {
 
   static async _checkMissionComplete(missionId) {
     const routes = await sequelize.models.MissionRoute.findAll({ where: { missionId } });
-    if (!routes.every((r) => r.status === ROUTE_STATUS.COMPLETED)) return;
 
+    // A route in ERROR never flew — it doesn't block completion, but it means the
+    // mission finished with failures. Only the "active" (non-error) routes need to
+    // be COMPLETED for the mission to be considered done.
+    const active = routes.filter((r) => r.status !== ROUTE_STATUS.ERROR);
+    const hasErrors = active.length < routes.length;
+
+    // If every route errored there is nothing to complete (mission already ERROR).
+    if (active.length === 0) return;
+    if (!active.every((r) => r.status === ROUTE_STATUS.COMPLETED)) return;
+
+    const status = hasErrors ? MISSION_STATUS.COMPLETED_WITH_ERRORS : MISSION_STATUS.COMPLETED;
     await sequelize.models.Mission.update(
-      { status: MISSION_STATUS.COMPLETED, endTime: new Date() },
+      { status, endTime: new Date() },
       { where: { id: missionId } }
     );
-    logger.info(`WpTracking: Mission ${missionId} all routes completed`);
-    eventBus.emitSafe(EVENTS.MISSION_COMPLETED, { missionId });
+    logger.info(`WpTracking: Mission ${missionId} finished status=${status} (errors=${hasErrors})`);
+    eventBus.emitSafe(EVENTS.MISSION_COMPLETED, { missionId, status });
   }
 }

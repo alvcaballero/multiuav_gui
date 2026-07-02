@@ -2,11 +2,11 @@
 // https://dev.to/davidkpiano/you-don-t-need-a-library-for-state-machines-k7h
 import { createMachine, createActor, fromPromise, assign } from 'xstate';
 import { commandsController } from '../../controllers/commands.js';
-//import { missionModel } from './mission.js';
 import { dateString, addTime, GetLocalTime, sleep } from '../../common/utils.js';
 import { missionSMModel } from './missionSM.js';
 import { missionController } from '../../controllers/mission.js';
 import { missionLogger as logger } from '../../common/logger.js';
+import { ROUTE_STATUS } from '../../config/status.js';
 
 const LoadMissionSM = async (context) => {
   logger.info('service load mission');
@@ -14,10 +14,11 @@ const LoadMissionSM = async (context) => {
     let mission = await missionController.getMissionRoute(context.missionId);
     let missionPlan = mission.mission;
     logger.debug(`LoadMissionSM mission: ${JSON.stringify(missionPlan)}`);
+    // Pass the FULL mission; loadMissionToDevice extracts this UAV's own route.
     let response = await commandsController.sendCommandDevice({
       deviceId: context.uavId,
       type: 'loadMission',
-      attributes: missionPlan.route,
+      attributes: missionPlan,
     });
 
     logger.debug(`LoadMissionSM response: ${JSON.stringify(response)}`);
@@ -44,6 +45,13 @@ const CommandMissionSM = async (context) => {
     logger.debug(`CommandMissionSM response: ${JSON.stringify(response)}`);
     if (response.state == 'success') {
       logger.info('CommandMissionSM success');
+      // initMission creates the MissionRoute in INIT; promote it to COMMANDED so
+      // missionWpTracking.checkProgress starts tracking waypoint progress.
+      await missionController.editRoute({
+        missionId: context.missionId,
+        deviceId: context.uavId,
+        status: ROUTE_STATUS.COMMANDED,
+      });
       return response; // Resolve with the response
     } else {
       throw new Error('Problem send Command ');
@@ -149,7 +157,7 @@ export const machine = createMachine(
       Commadmission: {
         invoke: {
           src: fromPromise(({ input }) => CommandMissionSMPromise(input)),
-          input: ({ context: { uavId } }) => ({ uavId }),
+          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
           onDone: [{ target: 'RunningMission' }],
           onError: [{ target: 'resetUAV' }],
         },

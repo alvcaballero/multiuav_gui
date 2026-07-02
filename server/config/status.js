@@ -10,6 +10,7 @@ export const MISSION_STATUS = Object.freeze({
   PLANNING: 'planning',
   RUNNING: 'running',
   COMPLETED: 'finish',   // UAV finished but files not yet downloaded
+  COMPLETED_WITH_ERRORS: 'finish_errors', // active routes finished, but some route errored (never flew)
   END: 'done',           // UAV finished and files downloaded
   CANCELLED: 'cancelled',
   ERROR: 'error',

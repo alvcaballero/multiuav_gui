@@ -63,11 +63,47 @@ class missionController {
     }
   };
 
+  // Manual flow — load. Body: { route: [...] } (a mission's routes).
+  // Returns { missionId, planId, results }.
+  static loadMissionManual = async (req, res) => {
+    const missionData = req.body?.route ? req.body : { route: req.body?.mission?.route ?? [] };
+    if (!Array.isArray(missionData.route) || missionData.route.length === 0) {
+      return res.status(400).json({ error: 'route is required and must be a non-empty array.' });
+    }
+    try {
+      const response = await missionModel.loadMissionManual(missionData);
+      res.json(response);
+    } catch (error) {
+      logger.error(`Error in loadMissionManual: ${error.message}`);
+      res.status(500).json({ error: error.message || 'Failed to load mission.' });
+    }
+  };
+
+  // Manual flow — command. Body: { missionId }. Returns { missionId, results }.
+  static commandMissionManual = async (req, res) => {
+    const missionId = req.body?.missionId;
+    if (missionId == null) {
+      return res.status(400).json({ error: 'missionId is required.' });
+    }
+    try {
+      const mission = await missionModel.getMissionValue(missionId);
+      if (!mission) return res.status(404).json({ error: `Mission ${missionId} not found.` });
+      const response = await missionModel.commandMissionManual(missionId);
+      res.json(response);
+    } catch (error) {
+      logger.error(`Error in commandMissionManual: ${error.message}`);
+      res.status(500).json({ error: error.message || 'Failed to command mission.' });
+    }
+  };
+
   static initMission = (mission_id, data) => {
     missionModel.initMission(mission_id, data);
   };
   static editMission = (payload) => {
     return missionModel.editMission(payload);
+  };
+  static editRoute = (payload) => {
+    return missionModel.editRoute(payload);
   };
   static finishMission = (missionId, deviceId) => {
     return missionModel.UAVFinish(missionId, deviceId);

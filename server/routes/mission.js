@@ -10,6 +10,11 @@ export const createMissionRouter = () => {
   missionRouter.post('/sendTask', missionController.sendTask);
   missionRouter.post('/showXYZ', missionController.showMissionXYZ);
 
+  // Manual mission execution: load creates Plan+Mission+Routes and loads each
+  // drone; command promotes the loaded routes and starts the mission.
+  missionRouter.post('/load', missionController.loadMissionManual);
+  missionRouter.post('/command', missionController.commandMissionManual);
+
   // Coordinate conversion endpoints
   missionRouter.post('/convert/geodetic-to-xyz', missionController.convertGeodeticToXYZ);
   missionRouter.post('/convert/xyz-to-geodetic', missionController.convertXYZToGeodetic);
