@@ -1,5 +1,5 @@
 import { positionsController } from '../controllers/positions.js';
-import sequelize from '../common/sequelize.js';
+import sequelize, { Op } from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
 import { getDatetime } from '../common/utils.js';
 import logger from '../common/logger.js';
@@ -15,14 +15,22 @@ import logger from '../common/logger.js';
  */
 
 export class eventsModel {
-  static async get({ id, missionId, deviceId, type, createdAt }) {
-    if (deviceId) {
-      return await sequelize.models.Event.findAll({ where: { deviceId: deviceId } });
-    }
+  static async get({ id, missionId, deviceId, type, from, to }) {
     if (id) {
       return await sequelize.models.Event.findByPk(id);
     }
-    return await sequelize.models.Event.findAll();
+
+    const where = {};
+    if (deviceId) where.deviceId = deviceId;
+    if (missionId) where.missionId = missionId;
+    if (type) where.type = type;
+    if (from || to) {
+      where.eventTime = {};
+      if (from) where.eventTime[Op.gte] = new Date(from);
+      if (to) where.eventTime[Op.lte] = new Date(to);
+    }
+
+    return await sequelize.models.Event.findAll({ where, order: [['eventTime', 'DESC']] });
   }
 
   static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId, attributes = {} }) {

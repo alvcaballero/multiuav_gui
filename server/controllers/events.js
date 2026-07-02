@@ -3,9 +3,10 @@ import logger from '../common/logger.js';
 
 export class eventsController {
   static async getAll(req, res) {
-    logger.debug('Getting all events');
-    const positions = await eventsModel.get({});
-    res.json(positions);
+    const { deviceId, type, from, to } = req.query;
+    logger.debug(`Getting events deviceId=${deviceId} type=${type} from=${from} to=${to}`);
+    const events = await eventsModel.get({ deviceId, type, from, to });
+    res.json(events);
   }
 
   static async getAllEvent() {
