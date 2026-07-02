@@ -23,6 +23,7 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../shared/formatter';
+import { routeStyle } from '../shared/missionStatus';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -85,12 +86,13 @@ const MissionReportRoutePage = () => {
         return formatTime(value, 'minutes');
 
       case 'status': {
-        let typeColor = 'primary';
-        typeColor = value === 'done' ? 'success' : typeColor;
-        typeColor = value === 'cancel' ? 'warning' : typeColor;
-        typeColor = value === 'error' ? 'error' : typeColor;
-        typeColor = value === 'init' ? 'info' : typeColor;
-        return <Chip color={typeColor} label={value.toUpperCase()} />;
+        const style = routeStyle(value);
+        return (
+          <Chip
+            label={style.label.toUpperCase()}
+            sx={{ backgroundColor: style.color, color: '#fff' }}
+          />
+        );
       }
       default:
         return value;

@@ -33,6 +33,7 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { formatTime } from '../shared/formatter';
+import { missionStyle, routeStyle } from '../shared/missionStatus';
 
 import { useEffectAsync } from '../reactHelper';
 import MapView from '../map/core/MapView';
@@ -207,7 +208,9 @@ const MissionDetailReportPage = () => {
     return null;
   };
 
-  const formatValue = (item, key) => {
+  // `axis` selects the status vocabulary: mission and route status share names
+  // ('running', etc.) but mean different things, so each has its own color map.
+  const formatValue = (item, key, axis = 'mission') => {
     const value = item[key];
     if (value === null || value === undefined) {
       return '';
@@ -225,12 +228,8 @@ const MissionDetailReportPage = () => {
         return formatTime(value, 'minutes');
 
       case 'status': {
-        let typeColor = 'primary';
-        typeColor = value === 'done' ? 'success' : typeColor;
-        typeColor = value === 'cancel' ? 'warning' : typeColor;
-        typeColor = value === 'error' ? 'error' : typeColor;
-        typeColor = value === 'init' ? 'info' : typeColor;
-        return <Chip color={typeColor} label={value} />;
+        const style = axis === 'route' ? routeStyle(value) : missionStyle(value);
+        return <Chip label={style.label} sx={{ backgroundColor: style.color, color: '#fff' }} />;
       }
       case 'result':
         return FormatResult({ result: value });
@@ -378,7 +377,7 @@ const MissionDetailReportPage = () => {
                             {key}
                           </Typography>
                           {key === 'status' ? (
-                            formatValue(missions, key)
+                            formatValue(route, key, 'route')
                           ) : (
                             <Typography variant="body1">{formatValue(route, key)}</Typography>
                           )}
