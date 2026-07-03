@@ -2,6 +2,7 @@ import * as ROSLIB from 'roslib';
 import { readDataFile } from '../../common/utils.js';
 import logger from '../../common/logger.js';
 import { getActionServer } from './rosInspect.js';
+import { encodeRosSrv } from './rosEncode.js';
 
 const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 
@@ -249,9 +250,10 @@ function _cancelEntry(key, entry) {
  * @param {boolean} [args.blocking]
  * @param {object} ros
  */
-export async function sendActionGoal({ name, category, type, ...rest }, ros) {
+export async function sendActionGoal({ name, category, type, message, ...rest }, ros) {
   const { actionServerName, actionType } = resolveDeviceAction(name, category, type);
-  return sendRosActionGoal({ actionServerName, actionType, ...rest }, ros);
+  const goalMessage = encodeRosSrv({ type, msg: message, msgType: actionType });
+  return sendRosActionGoal({ actionServerName, actionType, message: goalMessage, ...rest }, ros);
 }
 
 /**

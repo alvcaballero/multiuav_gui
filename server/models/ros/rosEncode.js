@@ -106,6 +106,20 @@ export function encodeRosSrv({ type, msg, msgType }) {
   if (msgType === 'geometry_msgs/Twist') {
     return { linear: msg.linear || { x: 0, y: 0, z: 0 }, angular: msg.angular || { x: 0, y: 0, z: 0 } };
   }
-
+  if (msgType === 'muav_gcs_interfaces/action/DownloadFilesByDateRange') {
+    return {
+      payload_index: msg.payload_index || 0,
+      init_date: msg.startDate || '',
+      finish_date: msg.endDate || '',
+      file_type: msg.file_type || 'all',
+      delete_after_download: msg.delete_after_download || false,
+    };
+  }
+  if (msgType === 'dji_osdk_ros/DownloadMedia') {
+    return {
+      start_date: msg.start_date || 0,
+      end_date: msg.end_date || 0,
+    };
+  }
   return msg;
 }

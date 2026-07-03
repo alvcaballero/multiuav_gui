@@ -77,6 +77,18 @@ export default () =>
           type: 'number',
         },
       ],
+      CameraFileDownload: [
+        {
+          key: 'startDate',
+          name: 'commandStartDate',
+          type: 'string',
+        },
+        {
+          key: 'endDate',
+          name: 'commandEndDate',
+          type: 'string',
+        },
+      ],
     }),
     []
   );

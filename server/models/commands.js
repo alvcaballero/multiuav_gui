@@ -4,7 +4,15 @@ import { rosController } from '../controllers/ros.js';
 import { getFlatbufferServer } from './flatbuffer/index.js';
 import { positionsController } from '../controllers/positions.js';
 import { categoryModel } from './category.js';
-import { DEFAULT_COMMAND_TYPES, typesForServiceKey, commandDef, Dispatch, Payload } from '../config/commandCatalog.js';
+import {
+  CommandType,
+  DEFAULT_COMMAND_TYPES,
+  typesForServiceKey,
+  commandDef,
+  Dispatch,
+  Payload,
+  KNOWN_COMMAND_TYPES,
+} from '../config/commandCatalog.js';
 import logger from '../common/logger.js';
 
 export class commandsModel {
@@ -37,50 +45,55 @@ export class commandsModel {
     logger.info(`sendCommand deviceId=${deviceId} type=${type}`);
     logger.debug(`sendCommand attributes: ${JSON.stringify(attributes)}`);
     //here get id and description, where description is string like threat,1 or sincronize, landing,1
-    let response = { state: 'info', msg: 'Command no found' };
-    if (deviceId >= 0) {
-      response = {
-        state: 'error',
-        msg: 'Command to:' + devicesController.getDevice(deviceId)?.name + ' no exist',
-      };
+    if (!(deviceId >= 0)) {
+      return { state: 'info', msg: 'Command no found' };
     }
 
+    const myDevice = await devicesController.getDevice(deviceId);
+    if (!myDevice) {
+      return { state: 'error', msg: `device ${deviceId} not found` };
+    }
+
+    if (!KNOWN_COMMAND_TYPES.has(type)) {
+      return { state: 'error', msg: `Command type '${type}' does not exist` };
+    }
+
+    const command = commandDef(type);
+    const categoryConfig = categoryModel.getCategory(myDevice.category);
+    const available = command.requires == null || Boolean(categoryConfig?.services?.[command.requires] ?? categoryConfig?.actions?.[command.requires]);
+    if (!available) {
+      return { state: 'error', msg: `Command '${type}' not supported by device ${myDevice.name}` };
+    }
+
+    let response;
     // loadMission/commandMission son POR-DEVICE: cargan/comandan a UN dron. El
     // fan-out de flota + creación de plan/mission/routes vive en missionModel
     // (flujo manual) o initMission + missionExecutionSM (flujo automático).
-    if (type == 'loadMission') {
+    if (type == CommandType.LOAD_MISSION) {
       response = await this.loadMissionToDevice(deviceId, attributes);
-    }
-    if (type == 'commandMission') {
+    } else if (type == CommandType.COMMAND_MISSION) {
       response = await this.commandMissionToDevice(deviceId);
+    } else if (command.dispatch === Dispatch.LOCAL) {
+      // saveHome: efecto local en el server, sin ROS.
+      positionsController.updatePosition({ deviceId, setHome: true });
+      response = { state: 'success', msg: 'Home saved' };
+    } else if (command.dispatch === Dispatch.GIMBAL) {
+      // Gimbal enruta por GimbalUAV; ResetGimbal fuerza el flag de reset.
+      const gimbalAttrs = command.payload === Payload.RESET ? { reset: true } : attributes;
+      response = await this.GimbalUAV(deviceId, gimbalAttrs);
+    } else if (command.dispatch === Dispatch.SERVICE) {
+      // ROS service/action. rosService undefined (custom) → standarCommand lo maneja.
+      const request = command.payload === Payload.ATTRIBUTES ? attributes : undefined;
+      response = await this.standarCommand(deviceId, command.rosService, request);
+    } else {
+      response = { state: 'error', msg: `Command '${type}' has no dispatch handler` };
     }
-    if (deviceId >= 0) {
-      // Despacho por command def. loadMission/commandMission ya se ejecutaron
-      // arriba (por-device); acá se despacha el resto según su `dispatch`.
-      // Un type sin def deja el 'Command no found' inicial.
-      const command = commandDef(type);
-      if (command && command.dispatch !== Dispatch.FLEET) {
-        if (command.dispatch === Dispatch.LOCAL) {
-          // saveHome: efecto local en el server, sin ROS.
-          positionsController.updatePosition({ deviceId, setHome: true });
-          response = { state: 'success', msg: 'Home saved' };
-        } else if (command.dispatch === Dispatch.GIMBAL) {
-          // Gimbal enruta por GimbalUAV; ResetGimbal fuerza el flag de reset.
-          const gimbalAttrs = command.payload === Payload.RESET ? { reset: true } : attributes;
-          response = await this.GimbalUAV(deviceId, gimbalAttrs);
-        } else if (command.dispatch === Dispatch.SERVICE) {
-          // ROS service. rosService undefined (custom) → standarCommand lo maneja.
-          const request = command.payload === Payload.ATTRIBUTES ? attributes : undefined;
-          response = await this.standarCommand(deviceId, command.rosService, request);
-        }
-      }
 
-      eventsController.addEvent({
-        type: response.state,
-        deviceId: deviceId,
-        attributes: { message: response.msg },
-      });
-    }
+    eventsController.addEvent({
+      type: response.state,
+      deviceId: deviceId,
+      attributes: { message: response.msg },
+    });
 
     logger.debug(`sendCommand response: ${JSON.stringify(response)}`);
     return response;
@@ -103,14 +116,20 @@ export class commandsModel {
     logger.debug(`standarCommand uavId=${uav_id} type=${type}`);
     let response = {};
     //ros
-    let myDevice = await devicesController.getDevice(uav_id);
+    const myDevice = await devicesController.getDevice(uav_id);
     if (myDevice.protocol == 'ros') {
-      logger.debug(`sending via ROS device uavId=${uav_id}`);
+      // Mismo `type` puede vivir en services: o actions: según la categoría del
+      // device (ej. CameraFileDownload es service en unas y action en otras) —
+      // services: gana si aparece en ambos bloques.
+      const categoryConfig = categoryModel.getCategory(myDevice.category);
+      const isAction = !categoryConfig?.services?.hasOwnProperty(type) && categoryConfig?.actions?.hasOwnProperty(type);
       try {
-        if (attributes) {
-          response = await rosController.callService({ uav_id, type, request: attributes });
+        if (isAction) {
+          logger.debug(`sending via ROS action uavId=${uav_id}`);
+          response = await rosController.sendActionGoal({ uav_id, type, message: attributes ?? {} });
         } else {
-          response = await rosController.callService({ uav_id, type });
+          logger.debug(`sending via ROS device uavId=${uav_id}`);
+          response = await rosController.callService({ uav_id, type, request: attributes });
         }
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);

@@ -552,6 +552,10 @@ px4_ros2:
     commandMission:
       name: '/offboard/mission/start_stop'
       serviceType: 'std_srvs/srv/SetBool'
+  actions:
+    CameraFileDownload:
+      name: '/offboard/download_files_by_date_range'
+      actionType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 fuvex:
   topics:
     position:
