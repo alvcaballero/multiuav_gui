@@ -11,6 +11,7 @@ import { useCatch } from '../../reactHelper';
 import { usePreference } from '../../shared/preferences';
 import { readTextFile, parseKmlElements } from '../../services/fileService';
 import { useMissionFile } from '../../services/useMissionFile';
+import { getMissionCentroid } from '../../shared/util/missionGeo';
 
 const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, setChatOpen = () => null }) => {
   const dispatch = useDispatch();
@@ -75,7 +76,7 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
         { title: 'add elements', input: (e) => loadElements(e), type: '.kml' },
         { title: 'Camera view', action: () => navigate('/camera') },
         { title: '3D view', action: () => navigate('/3Dview') },
-        { title: '3D Missionview', action: () => navigate('/3Dmission') },
+        { title: '3D Missionview', action: () => goto3DMission() },
         { title: '3D Editor', action: () => navigate('/3Deditor') },
         { title: 'Mission test', action: () => navigate('/missiontest') },
       ],
@@ -114,12 +115,22 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
     });
   };
 
-  function sethome() {
+  function moveToDefaultHome() {
     map.easeTo({
       center: [defaultLongitude, defaultLatitude],
       zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
+  }
+
+  // Centra el origen 3D en el centroide de la misión actual antes de abrir la vista 3D,
+  // igual que hace el Pegman al soltarse sobre un punto del mapa 2D.
+  function goto3DMission() {
+    const centroid = getMissionCentroid(mission.route);
+    if (centroid) {
+      dispatch(sessionActions.updateScene3dOrigin(centroid));
+    }
+    navigate('/3Dmission');
   }
 
   function openAddUav() {
@@ -132,7 +143,7 @@ const Navbar = React.memo(({ SetAddUAVOpen, setconfirmMission = (item) => item, 
         <Toolbar disableGutters>
           <Button
             onClick={() => {
-              sethome();
+              moveToDefaultHome();
               navigate('/');
             }}
           >

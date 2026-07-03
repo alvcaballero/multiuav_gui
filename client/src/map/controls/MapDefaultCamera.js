@@ -4,6 +4,12 @@ import { useSelector, useStore } from 'react-redux';
 import { usePreference } from '../../shared/preferences';
 import { map } from '../core/MapView';
 
+// Vive fuera del componente: MapDefaultCamera se desmonta/remonta al ir y volver
+// de la vista 3D, y el mapa (singleton en MapView.jsx) nunca pierde su cámara.
+// Sin esto, cada vuelta a 2D pisaría la posición donde el usuario había dejado
+// el mapa con el auto-centrado por defecto.
+let appliedDefaultCamera = false;
+
 const MapDefaultCamera = () => {
   const store = useStore();
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
@@ -13,7 +19,11 @@ const MapDefaultCamera = () => {
   const defaultLongitude = usePreference('longitude');
   const defaultZoom = usePreference('zoom', 10);
 
-  const [initialized, setInitialized] = useState(false);
+  const [initialized, setInitialized] = useState(appliedDefaultCamera);
+  const markInitialized = () => {
+    appliedDefaultCamera = true;
+    setInitialized(true);
+  };
 
   useEffect(() => {
     if (initialized) return;
@@ -24,7 +34,7 @@ const MapDefaultCamera = () => {
           center: [position.longitude, position.latitude],
           zoom: Math.max(defaultZoom > 0 ? defaultZoom : map.getZoom(), 10),
         });
-        setInitialized(true);
+        markInitialized();
       }
     } else {
       if (defaultLatitude && defaultLongitude) {
@@ -32,7 +42,7 @@ const MapDefaultCamera = () => {
           center: [defaultLongitude, defaultLatitude],
           zoom: defaultZoom,
         });
-        setInitialized(true);
+        markInitialized();
       } else {
         const positions = store.getState().session.positions;
         const coordinates = Object.values(positions).map((item) => [item.longitude, item.latitude]);
@@ -46,14 +56,14 @@ const MapDefaultCamera = () => {
             duration: 0,
             padding: Math.min(canvas.width, canvas.height) * 0.1,
           });
-          setInitialized(true);
+          markInitialized();
         } else if (coordinates.length) {
           const [individual] = coordinates;
           map.jumpTo({
             center: individual,
             zoom: Math.max(map.getZoom(), 10),
           });
-          setInitialized(true);
+          markInitialized();
         }
       }
     }

@@ -37,7 +37,8 @@ import {
   commandResumeMission,
 } from '../../shared/fetchs';
 import { useCatch } from '../../reactHelper';
-import { missionActions, activeMissionsActions, getCommandableMissionId } from '../../store';
+import { missionActions, activeMissionsActions, sessionActions, getCommandableMissionId } from '../../store';
+import { getMissionCentroid } from '../../shared/util/missionGeo';
 import SwipeConfirm from '../../shared/components/SwipeConfirm';
 import MissionDetailPopover from './menu/MissionDetailPopover';
 import ActiveMissionsPopover from './menu/ActiveMissionsPopover';
@@ -236,6 +237,16 @@ export const Menu = () => {
       zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
+  }
+
+  // Centra el origen 3D en el centroide de la misión actual antes de abrir la vista 3D,
+  // igual que hace el Pegman al soltarse sobre un punto del mapa 2D.
+  function goto3DView() {
+    const centroid = getMissionCentroid(mission.route);
+    if (centroid) {
+      dispatch(sessionActions.updateScene3dOrigin(centroid));
+    }
+    navigate('/3Dview');
   }
 
   useEffect(() => {
@@ -521,7 +532,7 @@ export const Menu = () => {
           <Button
             className={classes.toggleBtn}
             startIcon={is3D ? <MapIcon sx={{ fontSize: 13 }} /> : <ViewInArIcon sx={{ fontSize: 13 }} />}
-            onClick={() => navigate(is3D ? '/' : '/3Dview')}
+            onClick={() => (is3D ? navigate('/') : goto3DView())}
           >
             {is3D ? '2D' : '3D'}
           </Button>
