@@ -181,8 +181,8 @@ export const Menu = () => {
   const selectedMissionId = useSelector((state) => state.activeMissions.selectedMissionId);
   const events = useSelector((state) => state.events.items);
 
-  const defaultLatitude = usePreference('latitude', 0);
-  const defaultLongitude = usePreference('longitude', 0);
+  const defaultLatitude = usePreference('latitude');
+  const defaultLongitude = usePreference('longitude');
   const defaultZoom = usePreference('zoom', 10);
 
   const commandableMissionId = useSelector(getCommandableMissionId);
