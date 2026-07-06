@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
 import YAML from 'yaml';
@@ -98,17 +98,22 @@ const PlanningPage = () => {
 
   const [showTitles, setShowTitles] = useState(true);
   const [showLines, setShowLines] = useState(false);
-  const [moveMarkers, SetMoveMarkers] = useState(false);
-  const [SelectMarkers, SetSelectMarkers] = useState(false);
-  const [CreateMarkers, SetCreateMarkers] = useState(false);
-  const [requestPlanning, SetRequestPlanning] = useState(100);
+  const [moveMarkers, setMoveMarkers] = useState(false);
+  const [SelectMarkers, setSelectMarkers] = useState(false);
+  const [CreateMarkers, setCreateMarkers] = useState(false);
+  const [requestPlanning, setRequestPlanning] = useState(100);
   const myhostname = `${window.location.hostname}`;
 
   const markers = useSelector((state) => state.session.markers);
   const SendTask = useSelector((state) => state.session.planning);
   const routeMission = useSelector((state) => state.mission.route);
 
-  const [auxobjetive, setauxobjetive] = useState(-1);
+  const sendTaskRef = useRef(SendTask);
+  useEffect(() => {
+    sendTaskRef.current = SendTask;
+  }, [SendTask]);
+
+  const [auxobjetive, setAuxobjetive] = useState(-1);
   const [tabValue, setTabValue] = useState(TABS.PLANNING);
   const [notification, setNotification] = useState('');
   const [checked, setChecked] = useState(true);
@@ -183,7 +188,7 @@ const PlanningPage = () => {
     });
     if (!response.ok) throw new Error(await response.text());
 
-    SetRequestPlanning(0);
+    setRequestPlanning(0);
     return true;
   });
 
@@ -278,12 +283,12 @@ const PlanningPage = () => {
 
   const updateObjetive = useCallback(
     (newObjetive) => {
-      const myTask = JSON.parse(JSON.stringify(SendTask));
+      const myTask = JSON.parse(JSON.stringify(sendTaskRef.current));
       myTask.objetivo = newObjetive;
-      if (newObjetive.type !== SendTask.objetivo.type) myTask.loc = [];
+      if (newObjetive.type !== sendTaskRef.current.objetivo.type) myTask.loc = [];
       dispatch(sessionActions.updatePlanning(myTask));
     },
-    [dispatch, SendTask],
+    [dispatch],
   );
 
   // --- Handlers de UI ---
@@ -324,7 +329,7 @@ const PlanningPage = () => {
     setTabValue(newTabValue);
     setShowTitles([TABS.ELEMENTS, TABS.PLANNING, TABS.SETTINGS].includes(newTabValue));
     setShowLines(newTabValue === TABS.ELEMENTS);
-    SetMoveMarkers(newTabValue === TABS.ELEMENTS);
+    setMoveMarkers(newTabValue === TABS.ELEMENTS);
   }, []);
 
   const handleNavigateBack = useCallback(() => navigate(-1), [navigate]);
@@ -356,11 +361,11 @@ const PlanningPage = () => {
   );
 
   const handleGetItems = useCallback(
-    (it) => dispatch(sessionActions.updatePlanning({ ...SendTask, objetivo: it })),
-    [dispatch, SendTask],
+    (it) => dispatch(sessionActions.updatePlanningObjective(it)),
+    [dispatch],
   );
 
-  const handleResetPolling = useCallback(() => SetRequestPlanning(3), []);
+  const handleResetPolling = useCallback(() => setRequestPlanning(3), []);
 
   const handleDeleteMission = useCallback(() => {
     // future implementation
@@ -373,7 +378,7 @@ const PlanningPage = () => {
     if (objetivoId === undefined || objetivoId === null) return;
     if (auxobjetive === objetivoId) return;
 
-    setauxobjetive(objetivoId);
+    setAuxobjetive(objetivoId);
     const response = await fetch(`/api/planning/missionparam/${objetivoId}`);
     if (!response.ok) throw new Error(await response.text());
 
@@ -397,8 +402,8 @@ const PlanningPage = () => {
 
   useEffect(() => {
     const isInPlanningTab = tabValue === TABS.PLANNING;
-    SetSelectMarkers(isInPlanningTab && SendTask.objetivo.id !== 3);
-    SetCreateMarkers(isInPlanningTab && SendTask.objetivo.id === 3);
+    setSelectMarkers(isInPlanningTab && SendTask.objetivo.id !== 3);
+    setCreateMarkers(isInPlanningTab && SendTask.objetivo.id === 3);
   }, [tabValue, SendTask.objetivo]);
 
   useEffect(() => {
@@ -416,7 +421,7 @@ const PlanningPage = () => {
         const data = await response.json();
         const planResult = data.results?.[SendTask.id];
         if (planResult?.hasOwnProperty('route')) {
-          SetRequestPlanning(SUCCESS_CODE);
+          setRequestPlanning(SUCCESS_CODE);
           dispatch(missionActions.updateMission({ ...planResult, version: '3' }));
           // New plan replaces the editor — drop any active selection.
           dispatch(activeMissionsActions.selectMission(null));
@@ -425,21 +430,11 @@ const PlanningPage = () => {
       } catch (error) {
         console.error('Error fetching planning data:', error);
       } finally {
-        SetRequestPlanning((old) => old + 1);
+        setRequestPlanning((old) => old + 1);
       }
     };
 
-    fetchData();
-
-    const intervalId = setInterval(() => {
-      SetRequestPlanning((old) => {
-        if (old >= MAX_RETRIES - 1) {
-          clearInterval(intervalId);
-          return SUCCESS_CODE;
-        }
-        return old + 1;
-      });
-    }, POLLING_INTERVAL);
+    const intervalId = setInterval(fetchData, POLLING_INTERVAL);
 
     return () => clearInterval(intervalId);
   }, [requestPlanning, SendTask.id, dispatch, myhostname]);
