@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -53,7 +53,7 @@ const SelectList = ({ Data, setData = () => null }) => {
 
   const [expandedGroup, setExpandedGroup] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [ElementsExist, setElementsExist] = useState(false);
+  const elementsExist = !!Data && Data.length > 0;
 
   const DeleteGroup = (index) => {
     let auxData = JSON.parse(JSON.stringify(Data));
@@ -72,15 +72,9 @@ const SelectList = ({ Data, setData = () => null }) => {
     setExpandedGroup(isExpanded ? panel : false);
   };
 
-  useEffect(() => {
-    if (Data) {
-      Data.length > 0 ? setElementsExist(true) : setElementsExist(false);
-    }
-  }, [Data]);
-
   return (
     <div>
-      {ElementsExist && (
+      {elementsExist && (
         <div className={classes.details}>
           {Object.values(Data).map((group, indexGroup) => (
             <Accordion

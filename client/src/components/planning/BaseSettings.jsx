@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -61,7 +61,7 @@ const BaseSettings = ({
   const { classes } = useStyles();
 
   const [expanded, setExpanded] = useState(false);
-  const [dataExist, setDataExist] = useState(false);
+  const dataExist = !(markers && markers.bases && markers.bases.length > 0);
 
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
@@ -81,12 +81,6 @@ const BaseSettings = ({
 
     setData(auxData);
   };
-
-  useEffect(() => {
-    if (markers && markers.bases) {
-      markers.bases.length > 0 ? setDataExist(false) : setDataExist(true);
-    }
-  }, [markers]);
 
   return (
     <div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment, useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
 import palette from '../../shared/palette';
@@ -74,8 +74,6 @@ function routesToXYZ(origin, routes) {
 }
 
 const R3FMission = ({ routes = [] }) => {
-  const [routeLines, setRouteLines] = useState([]);
-  const [routeWP, setRouteWP] = useState([]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const positions = useSelector((state) => state.session.positions);
 
@@ -89,16 +87,17 @@ const R3FMission = ({ routes = [] }) => {
     return LatLon2XYZObj(origin3d, pos, 1000);
   }, [positions, origin3d]);
 
-  useEffect(() => {
-    if (routes.length > 0) {
-      let routexyz = routesToXYZ(origin3d, routes);
-      setRouteWP(routesTowaypoints(routexyz, routes));
-      setRouteLines(routesToLines(routexyz));
-    } else {
-      setRouteWP([]);
-      setRouteLines([]);
-    }
+  const routesXYZ = useMemo(() => {
+    return routes.length > 0 ? routesToXYZ(origin3d, routes) : [];
   }, [routes, origin3d]);
+
+  const routeWP = useMemo(() => {
+    return routesXYZ.length > 0 ? routesTowaypoints(routesXYZ, routes) : [];
+  }, [routesXYZ, routes]);
+
+  const routeLines = useMemo(() => {
+    return routesXYZ.length > 0 ? routesToLines(routesXYZ) : [];
+  }, [routesXYZ]);
 
   return (
     <Fragment>

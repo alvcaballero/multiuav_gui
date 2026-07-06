@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import React, { Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { TextField, FormControlLabel, Checkbox } from '@mui/material';
 import SelectField from '../../shared/components/SelectField';
@@ -9,15 +9,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
 
   const availableAttributes = useCommandAttributes();
 
-  const [attributes, setAttributes] = useState([]);
-
-  useEffect(() => {
-    if (item && item.type) {
-      setAttributes(availableAttributes[item.type] || []);
-    } else {
-      setAttributes([]);
-    }
-  }, [availableAttributes, item]);
+  const attributes = item && item.type ? availableAttributes[item.type] || [] : [];
 
   return (
     <Fragment key="sdf">

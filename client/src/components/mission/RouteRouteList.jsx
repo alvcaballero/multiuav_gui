@@ -145,22 +145,16 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
   const devices = useSelector((state) => state.devices.items);
   const positions = useSelector((state) => state.session.positions);
   const idleVel = useSelector((state) => state.mission.route[index]?.attributes?.idle_vel);
-  const [routeUAV, setRouteUAV] = useState(null);
+  const matchedDevice = Object.values(devices).find((device) => device.name === route.uav);
+  const routeUAV = matchedDevice ? matchedDevice.id : null;
+  const matchedCategory = matchedDevice?.category;
 
   useEffect(() => {
-    const myDevice = Object.values(devices).find((device) => device.name === route.uav);
-    if (myDevice) {
-      setRouteUAV(myDevice.id);
-      if (route.uav_type !== myDevice.category) {
-        dispatch(
-          missionActions.updateRoute({ index, field: 'uav_type', value: myDevice.category }),
-        );
-        dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: myDevice.category }));
-      }
-    } else {
-      setRouteUAV(null);
+    if (matchedCategory && route.uav_type !== matchedCategory) {
+      dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: matchedCategory }));
+      dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: matchedCategory }));
     }
-  }, [route.uav, devices, index, route.uav_type, dispatch]);
+  }, [matchedCategory, index, route.uav_type, dispatch]);
 
   const handleAddWaypoint = (index_route, index_wp) => {
     let center = map.getCenter();

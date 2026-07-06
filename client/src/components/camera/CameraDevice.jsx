@@ -44,26 +44,17 @@ const SIZE_CONFIG = {
 const hostname = window.location.hostname;
 
 const RenderImages = ({ datacamera }) => {
-  const [camera_image, setCameraImage] = useState(novideo);
-
-  useEffect(() => {
-    if (datacamera != null) {
-      setCameraImage('data:image/jpeg;base64,' + datacamera.camera);
-    } else {
-      setCameraImage(novideo);
-    }
-  }, [datacamera]);
-  return <img src={camera_image} style={{ width: '100%' }} />;
+  const cameraImage = datacamera != null ? 'data:image/jpeg;base64,' + datacamera.camera : novideo;
+  return <img src={cameraImage} alt="Device camera feed" style={{ width: '100%' }} />;
 };
 
 const MediaMTXPlayer = ({ src, videoRef }) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [connection, setConnection] = useState({ src: null, status: 'loading', error: null });
+  const loading = connection.src !== src || connection.status === 'loading';
+  const error = connection.src === src ? connection.error : null;
 
   useEffect(() => {
     if (!src) return;
-    setLoading(true);
-    setError(null);
 
     const whepUrl = src.endsWith('/') ? `${src}whep` : `${src}/whep`;
     const videoEl = videoRef.current;
@@ -76,8 +67,7 @@ const MediaMTXPlayer = ({ src, videoRef }) => {
         }
       },
       onError: (err) => {
-        setLoading(false);
-        setError(err);
+        setConnection({ src, status: 'error', error: err });
         console.error('MediaMTX Reader Error:', err);
       },
     });
@@ -134,7 +124,7 @@ const MediaMTXPlayer = ({ src, videoRef }) => {
         autoPlay
         muted
         playsInline
-        onCanPlay={() => setLoading(false)}
+        onCanPlay={() => setConnection((c) => (c.src === src ? { ...c, status: 'ready' } : c))}
         style={{
           objectFit: 'contain',
           width: '100%',

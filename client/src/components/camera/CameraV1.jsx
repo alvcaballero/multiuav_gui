@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import novideo from '../../resources/images/placeholder.jpg';
 import { useSelector } from 'react-redux';
 import { Card } from '@mui/material';
@@ -44,7 +44,6 @@ const useStyles = makeStyles()((theme) => ({
 
 export const CameraV1 = ({ deviceId }) => {
   const { classes } = useStyles();
-  const [camera_image, setCameraImage] = useState(novideo);
 
   const device = useSelector((state) => state.devices.items[deviceId]);
 
@@ -52,15 +51,10 @@ export const CameraV1 = ({ deviceId }) => {
   let rootclass = classes.root_max;
   const cameradata = useSelector((state) => state.session.camera[deviceId]);
 
-  useEffect(() => {
-    if (deviceId != null) {
-      if (cameradata != null) {
-        setCameraImage('data:image/bgr8;base64,' + cameradata.camera);
-      } else {
-        setCameraImage(novideo);
-      }
-    }
-  }, [cameradata, deviceId]);
+  const cameraImage =
+    deviceId != null && cameradata != null
+      ? 'data:image/bgr8;base64,' + cameradata.camera
+      : novideo;
 
   return (
     <div className={rootclass}>
@@ -70,7 +64,7 @@ export const CameraV1 = ({ deviceId }) => {
             <div className={classes.tittle}>{'Image ' + device.name} </div>
           </div>
 
-          <img src={camera_image} className={classes.media} />
+          <img src={cameraImage} className={classes.media} alt={`${device.name} camera feed`} />
         </Card>
       )}
     </div>

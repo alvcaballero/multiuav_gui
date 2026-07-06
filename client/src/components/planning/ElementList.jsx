@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 import { makeStyles } from 'tss-react/mui';
 
@@ -56,9 +56,8 @@ const ElementList = ({ markers, setMarkers }) => {
   const { classes } = useStyles();
 
   const { types: markerTypes } = useMarkerTypes();
-  //const [open_routes, setOpen_routes] = useState(true);
   const [expanded, setExpanded] = useState(false);
-  const [BasesExist, setBasesExist] = useState(true);
+  const basesExist = !markers || markers.length === 0;
 
   const setElement = (index, value) => {
     let auxMarkers = JSON.parse(JSON.stringify(markers));
@@ -85,7 +84,7 @@ const ElementList = ({ markers, setMarkers }) => {
     auxMarkers.splice(index, 1);
     setMarkers(auxMarkers);
   };
-  const AddList = () => {
+  const addList = () => {
     const defaultType = markerTypes[0]?.id || 'powerTower';
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers.push({ type: defaultType, name: 'Elements', linea: true, items: [] });
@@ -95,23 +94,16 @@ const ElementList = ({ markers, setMarkers }) => {
     setExpanded(isExpanded ? panel : false);
   };
 
-  useEffect(() => {
-    if (markers) {
-      markers.length > 0 ? setBasesExist(false) : setBasesExist(true);
-    }
-    //console.log(markers);
-  }, [markers]);
-
   return (
     <Fragment>
-      {BasesExist ? (
+      {basesExist ? (
         <Box sx={{ textAlign: 'center' }}>
           <Button
             variant="contained"
             size="large"
             sx={{ width: '80%', flexShrink: 0 }}
             style={{ marginTop: '15px' }}
-            onClick={AddList}
+            onClick={addList}
           >
             Create New Group
           </Button>
@@ -179,7 +171,7 @@ const ElementList = ({ markers, setMarkers }) => {
               size="large"
               sx={{ width: '80%', flexShrink: 0 }}
               style={{ marginTop: '15px' }}
-              onClick={AddList}
+              onClick={addList}
             >
               Create List of Elements
             </Button>

@@ -113,7 +113,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
   function closeAddUav() {
     SetAddUAVOpen(false);
   }
-  function AddnewUAV() {
+  function addNewUAV() {
     handleAddDevice(item);
     SetAddUAVOpen(false);
   }
@@ -357,7 +357,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
             justifyContent: 'center',
           }}
         >
-          <Button className={classes.button} variant="contained" onClick={AddnewUAV}>
+          <Button className={classes.button} variant="contained" onClick={addNewUAV}>
             Add new device
           </Button>
         </div>

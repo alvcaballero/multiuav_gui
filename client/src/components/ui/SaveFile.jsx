@@ -83,7 +83,7 @@ const SaveFile = ({ SetOpenSave }) => {
   const [fileType, setFileType] = useState('yaml');
   const [fileName, setFileName] = useState(mission.name);
 
-  const SaveMission = async () => {
+  const saveMission = async () => {
     let fileData;
     let archivetype = 'text/plain';
     if (fileType == 'yaml') {
@@ -222,7 +222,7 @@ const SaveFile = ({ SetOpenSave }) => {
     link.click();
   };
 
-  const CloseSaveMission = () => {
+  const closeSaveMission = () => {
     SetOpenSave(false);
   };
 
@@ -233,7 +233,7 @@ const SaveFile = ({ SetOpenSave }) => {
           <Typography variant="body2" color="textSecondary">
             Save Mission
           </Typography>
-          <IconButton size="small" onClick={CloseSaveMission} onTouchStart={CloseSaveMission}>
+          <IconButton size="small" onClick={closeSaveMission} onTouchStart={closeSaveMission}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </div>
@@ -265,7 +265,7 @@ const SaveFile = ({ SetOpenSave }) => {
           </FormControl>
         </CardContent>
         <CardActions classes={{ root: classes.actions }} disableSpacing>
-          <Button onClick={SaveMission}>Save Mission</Button>
+          <Button onClick={saveMission}>Save Mission</Button>
         </CardActions>
       </Card>
     </div>

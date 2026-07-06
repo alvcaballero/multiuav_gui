@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -57,12 +57,12 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
   const { classes } = useStyles();
 
   const [expanded, setExpanded] = useState(false);
-  const [BasesExist, setBasesExist] = useState(true);
+  const basesExist = !markers || markers.length === 0;
 
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
   };
-  const AddNewElement = () => {
+  const addNewElement = () => {
     let center = map.getCenter();
     let auxMarkers = JSON.parse(JSON.stringify(markers));
     auxMarkers.push({ latitude: center.lat, longitude: center.lng });
@@ -113,22 +113,17 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
     auxMarkers[index].corners[cornerIdx][axis === 'lng' ? 0 : 1] = +value;
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
-  useEffect(() => {
-    if (markers) {
-      markers.length > 0 ? setBasesExist(false) : setBasesExist(true);
-    }
-  }, [markers]);
 
   return (
     <Fragment>
-      {BasesExist ? (
+      {basesExist ? (
         <Box sx={{ textAlign: 'center' }}>
           <Button
             variant="contained"
             size="large"
             sx={{ width: '80%', flexShrink: 0 }}
             style={{ marginTop: '15px' }}
-            onClick={AddNewElement}
+            onClick={addNewElement}
           >
             Create New Base
           </Button>
@@ -264,7 +259,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
               size="large"
               sx={{ width: '80%', flexShrink: 0 }}
               style={{ marginTop: '15px' }}
-              onClick={AddNewElement}
+              onClick={addNewElement}
             >
               Create new {type}
             </Button>
