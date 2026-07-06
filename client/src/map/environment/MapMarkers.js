@@ -1,4 +1,4 @@
-import { useId, useEffect, useMemo } from 'react';
+import { useId, useEffect, useMemo, useCallback } from 'react';
 import { map } from '../core/MapView';
 import { findFonts } from '../core/mapUtil';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
@@ -17,42 +17,45 @@ const MapMarkers = ({ markers, showTitles }) => {
 
   const iconScale = 0.8;
 
-  function addSymbolLayer(layerId, sourceId) {
-    if (showTitles) {
-      map.addLayer({
-        id: layerId,
-        type: 'symbol',
-        source: sourceId,
-        filter: ['!has', 'point_count'],
-        layout: {
-          'icon-image': '{image}',
-          'icon-size': iconScale,
-          'icon-allow-overlap': true,
-          'text-field': '{title}',
-          'text-allow-overlap': true,
-          'text-anchor': 'bottom',
-          'text-offset': [0, -2 * iconScale],
-          'text-font': findFonts(map),
-          'text-size': 12,
-        },
-        paint: {
-          'text-halo-color': 'white',
-          'text-halo-width': 1,
-        },
-      });
-    } else {
-      map.addLayer({
-        id: layerId,
-        type: 'symbol',
-        source: sourceId,
-        layout: {
-          'icon-image': '{image}',
-          'icon-size': iconScale,
-          'icon-allow-overlap': true,
-        },
-      });
-    }
-  }
+  const addSymbolLayer = useCallback(
+    (layerId, sourceId) => {
+      if (showTitles) {
+        map.addLayer({
+          id: layerId,
+          type: 'symbol',
+          source: sourceId,
+          filter: ['!has', 'point_count'],
+          layout: {
+            'icon-image': '{image}',
+            'icon-size': iconScale,
+            'icon-allow-overlap': true,
+            'text-field': '{title}',
+            'text-allow-overlap': true,
+            'text-anchor': 'bottom',
+            'text-offset': [0, -2 * iconScale],
+            'text-font': findFonts(map),
+            'text-size': 12,
+          },
+          paint: {
+            'text-halo-color': 'white',
+            'text-halo-width': 1,
+          },
+        });
+      } else {
+        map.addLayer({
+          id: layerId,
+          type: 'symbol',
+          source: sourceId,
+          layout: {
+            'icon-image': '{image}',
+            'icon-size': iconScale,
+            'icon-allow-overlap': true,
+          },
+        });
+      }
+    },
+    [showTitles],
+  );
 
   useEffect(() => {
     map.addSource(basesLayerId, {
@@ -75,7 +78,7 @@ const MapMarkers = ({ markers, showTitles }) => {
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       });
     };
-  }, [showTitles]);
+  }, [showTitles, addSymbolLayer, basesLayerId, elementsLayerId]);
 
   useEffect(() => {
     const bases = markers?.bases || [];
@@ -113,7 +116,7 @@ const MapMarkers = ({ markers, showTitles }) => {
           })),
         ),
     });
-  }, [showTitles, markers, mapImageTypes]);
+  }, [showTitles, markers, mapImageTypes, basesLayerId, elementsLayerId]);
 
   return null;
 };

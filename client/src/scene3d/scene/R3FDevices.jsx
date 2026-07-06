@@ -65,7 +65,7 @@ const Device = ({ id, position, isSelected, category }) => {
       }
       invalidate();
     }
-  }, [position, id]);
+  }, [position, id, invalidate]);
 
   useFrame(() => {
     if (meshRef.current) {
@@ -117,7 +117,7 @@ const R3FDevices = () => {
       gimbalYaw: positions[item.deviceId]?.attributes?.gimbal?.[2] ?? 0,
     }));
     setPositionxyz(result);
-  }, [origin3d, positions]);
+  }, [origin3d, positions, devices]);
 
   return (
     <>

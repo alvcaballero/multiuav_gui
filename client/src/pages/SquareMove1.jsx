@@ -129,7 +129,7 @@ const SquareMove1 = ({
       sensors.hasOwnProperty('back') ? setDown(40 - (40 * data[3]) / sensors.down[1]) : null;
       sensors.hasOwnProperty('right') ? setRight(40 - (50 * data[4]) / sensors.right[1]) : null;
     }
-  }, [data, device, sensors]);
+  }, [data, device, sensors, front_view]);
 
   const handleMoveLeft = () => {
     setLeft((prevLeft) => prevLeft - 10);

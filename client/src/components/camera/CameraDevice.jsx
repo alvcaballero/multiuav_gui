@@ -66,6 +66,7 @@ const MediaMTXPlayer = ({ src, videoRef }) => {
     setError(null);
 
     const whepUrl = src.endsWith('/') ? `${src}whep` : `${src}/whep`;
+    const videoEl = videoRef.current;
 
     const reader = new MediaMTXWebRTCReader({
       url: whepUrl,
@@ -83,7 +84,7 @@ const MediaMTXPlayer = ({ src, videoRef }) => {
 
     return () => {
       reader.close();
-      if (videoRef.current) videoRef.current.srcObject = null;
+      if (videoEl) videoEl.srcObject = null;
     };
   }, [src, videoRef]);
 

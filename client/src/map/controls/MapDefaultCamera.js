@@ -63,6 +63,7 @@ const MapDefaultCamera = () => {
       center: [scene3dOrigin.lng, scene3dOrigin.lat],
       zoom: defaultZoom,
     });
+    // eslint-disable-next-line @eslint-react/exhaustive-deps -- intentional mount-only effect, see comment above
   }, []);
 
   useEffect(() => {

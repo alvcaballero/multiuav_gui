@@ -130,7 +130,7 @@ export const useModelLoader = (type) => {
       }
     };
     load();
-  }, [type, getModel]);
+  }, [type]);
 
   return { model, error };
 };

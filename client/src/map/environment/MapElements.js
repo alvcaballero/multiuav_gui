@@ -40,19 +40,20 @@ const MapElements = () => {
         mountedKeysRef.current.delete(key);
       }
     });
-  }, [imageItems]);
+  }, [imageItems, id]);
 
   useEffect(() => {
+    const mountedKeys = mountedKeysRef.current;
     return () => {
-      mountedKeysRef.current.forEach((key) => {
+      mountedKeys.forEach((key) => {
         const sourceId = `${id}-img-${key}`;
         const layerId = `${id}-lyr-${key}`;
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       });
-      mountedKeysRef.current.clear();
+      mountedKeys.clear();
     };
-  }, []);
+  }, [id]);
 
   return null;
 };

@@ -60,7 +60,7 @@ export const CameraV1 = ({ deviceId }) => {
         setcamera_image(novideo);
       }
     }
-  }, [cameradata]);
+  }, [cameradata, deviceId]);
 
   return (
     <div className={rootclass}>

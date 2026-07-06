@@ -1,4 +1,4 @@
-import { useId, useEffect, useRef, useState } from 'react';
+import { useId, useEffect, useRef, useState, useCallback } from 'react';
 import { map } from '../core/MapView';
 import { findFonts } from '../core/mapUtil';
 import palette from '../../shared/palette';
@@ -61,11 +61,11 @@ const MapMarkersCreate = ({
     setMarkersRef.current = setMarkers;
   }, [setMarkers]);
 
-  const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
-  const onMouseEnterPointer = () => (map.getCanvas().style.cursor = 'pointer');
-  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+  const onMouseEnter = useCallback(() => (map.getCanvas().style.cursor = 'move'), []);
+  const onMouseEnterPointer = useCallback(() => (map.getCanvas().style.cursor = 'pointer'), []);
+  const onMouseLeave = useCallback(() => (map.getCanvas().style.cursor = ''), []);
 
-  const onMouseClick = (e) => {
+  const onMouseClick = useCallback((e) => {
     if (e.hasOwnProperty('features')) {
       if (e.features[0].properties.type === 'element') {
         setLocationsRef.current({ ...e.features[0].properties, type: 'object' });
@@ -79,74 +79,86 @@ const MapMarkersCreate = ({
         type: 'point',
       });
     }
-  };
+  }, []);
 
-  const onMove = (e) => {
-    map.getCanvas().style.cursor = 'grabbing';
+  const onMove = useCallback(
+    (e) => {
+      map.getCanvas().style.cursor = 'grabbing';
 
-    let auxMarkers = testkeepValue.getMarkers();
-    let auxselectpoint = testkeepValue.getSelect();
+      let auxMarkers = testkeepValue.getMarkers();
+      let auxselectpoint = testkeepValue.getSelect();
 
-    if (auxselectpoint.id >= 0) {
-      if (auxselectpoint.type === 'base') {
-        auxMarkers.bases[auxselectpoint.id].latitude = e.lngLat.lat;
-        auxMarkers.bases[auxselectpoint.id].longitude = e.lngLat.lng;
-        map.getSource(basesSourceId)?.setData({
-          type: 'FeatureCollection',
-          features: basesToFeatures(auxMarkers.bases),
-        });
-      } else if (auxselectpoint.type === 'element') {
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude =
-          e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude =
-          e.lngLat.lng;
-        map.getSource(elementsSourceId)?.setData({
-          type: 'FeatureCollection',
-          features: elementsToFeatures(auxMarkers.elements),
-        });
+      if (auxselectpoint.id >= 0) {
+        if (auxselectpoint.type === 'base') {
+          auxMarkers.bases[auxselectpoint.id].latitude = e.lngLat.lat;
+          auxMarkers.bases[auxselectpoint.id].longitude = e.lngLat.lng;
+          map.getSource(basesSourceId)?.setData({
+            type: 'FeatureCollection',
+            features: basesToFeatures(auxMarkers.bases),
+          });
+        } else if (auxselectpoint.type === 'element') {
+          auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude =
+            e.lngLat.lat;
+          auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude =
+            e.lngLat.lng;
+          map.getSource(elementsSourceId)?.setData({
+            type: 'FeatureCollection',
+            features: elementsToFeatures(auxMarkers.elements),
+          });
+        }
       }
-    }
-  };
+    },
+    [testkeepValue, basesSourceId, elementsSourceId],
+  );
 
-  const onUp = (e) => {
-    map.getCanvas().style.cursor = '';
+  const onUp = useCallback(
+    (e) => {
+      map.getCanvas().style.cursor = '';
 
-    let auxMarkers = testkeepValue.getMarkers();
-    let auxselectpoint = testkeepValue.getSelect();
+      let auxMarkers = testkeepValue.getMarkers();
+      let auxselectpoint = testkeepValue.getSelect();
 
-    if (auxselectpoint.id >= 0) {
-      if (auxselectpoint.type === 'base') {
-        auxMarkers.bases[auxselectpoint.id].latitude = e.lngLat.lat;
-        auxMarkers.bases[auxselectpoint.id].longitude = e.lngLat.lng;
-      } else if (auxselectpoint.type === 'element') {
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude =
-          e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude =
-          e.lngLat.lng;
+      if (auxselectpoint.id >= 0) {
+        if (auxselectpoint.type === 'base') {
+          auxMarkers.bases[auxselectpoint.id].latitude = e.lngLat.lat;
+          auxMarkers.bases[auxselectpoint.id].longitude = e.lngLat.lng;
+        } else if (auxselectpoint.type === 'element') {
+          auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude =
+            e.lngLat.lat;
+          auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude =
+            e.lngLat.lng;
+        }
       }
-    }
 
-    testkeepValue.setSelect({ id: -1 });
-    setMarkersRef.current(auxMarkers);
+      testkeepValue.setSelect({ id: -1 });
+      setMarkersRef.current(auxMarkers);
 
-    map.off('mousemove', onMove);
-    map.off('touchmove', onMove);
-  };
+      map.off('mousemove', onMove);
+      map.off('touchmove', onMove);
+    },
+    [testkeepValue, onMove],
+  );
 
-  const onMouseDown = (e) => {
-    e.preventDefault();
-    testkeepValue.setSelect(e.features[0].properties);
-    map.getCanvas().style.cursor = 'grab';
-    map.on('mousemove', onMove);
-    map.once('mouseup', onUp);
-  };
+  const onMouseDown = useCallback(
+    (e) => {
+      e.preventDefault();
+      testkeepValue.setSelect(e.features[0].properties);
+      map.getCanvas().style.cursor = 'grab';
+      map.on('mousemove', onMove);
+      map.once('mouseup', onUp);
+    },
+    [testkeepValue, onMove, onUp],
+  );
 
-  const onMouseTouchStart = (e) => {
-    if (e.points.length !== 1) return;
-    e.preventDefault();
-    map.on('touchmove', onMove);
-    map.once('touchend', onUp);
-  };
+  const onMouseTouchStart = useCallback(
+    (e) => {
+      if (e.points.length !== 1) return;
+      e.preventDefault();
+      map.on('touchmove', onMove);
+      map.once('touchend', onUp);
+    },
+    [onMove, onUp],
+  );
 
   function basesToFeatures(bases) {
     return (bases || []).map((base, index) => ({
@@ -221,42 +233,45 @@ const MapMarkersCreate = ({
     return waypoints;
   }
 
-  function addSymbolLayer(layerId, sourceId) {
-    if (showTitles) {
-      map.addLayer({
-        id: layerId,
-        type: 'symbol',
-        source: sourceId,
-        filter: ['!has', 'point_count'],
-        layout: {
-          'icon-image': '{image}',
-          'icon-size': iconScale,
-          'icon-allow-overlap': true,
-          'text-field': '{title}',
-          'text-allow-overlap': true,
-          'text-anchor': 'bottom',
-          'text-offset': [0, -2 * iconScale],
-          'text-font': findFonts(map),
-          'text-size': 12,
-        },
-        paint: {
-          'text-halo-color': 'white',
-          'text-halo-width': 1,
-        },
-      });
-    } else {
-      map.addLayer({
-        id: layerId,
-        type: 'symbol',
-        source: sourceId,
-        layout: {
-          'icon-image': '{image}',
-          'icon-size': iconScale,
-          'icon-allow-overlap': true,
-        },
-      });
-    }
-  }
+  const addSymbolLayer = useCallback(
+    (layerId, sourceId) => {
+      if (showTitles) {
+        map.addLayer({
+          id: layerId,
+          type: 'symbol',
+          source: sourceId,
+          filter: ['!has', 'point_count'],
+          layout: {
+            'icon-image': '{image}',
+            'icon-size': iconScale,
+            'icon-allow-overlap': true,
+            'text-field': '{title}',
+            'text-allow-overlap': true,
+            'text-anchor': 'bottom',
+            'text-offset': [0, -2 * iconScale],
+            'text-font': findFonts(map),
+            'text-size': 12,
+          },
+          paint: {
+            'text-halo-color': 'white',
+            'text-halo-width': 1,
+          },
+        });
+      } else {
+        map.addLayer({
+          id: layerId,
+          type: 'symbol',
+          source: sourceId,
+          layout: {
+            'icon-image': '{image}',
+            'icon-size': iconScale,
+            'icon-allow-overlap': true,
+          },
+        });
+      }
+    },
+    [showTitles],
+  );
 
   useEffect(() => {
     map.addSource(basesSourceId, {
@@ -356,7 +371,24 @@ const MapMarkersCreate = ({
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       });
     };
-  }, [showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
+  }, [
+    showTitles,
+    showLines,
+    moveMarkers,
+    SelectItems,
+    CreateItems,
+    addSymbolLayer,
+    basesSourceId,
+    elementsSourceId,
+    linesMarkersId,
+    selectMarkersId,
+    onMouseDown,
+    onMouseTouchStart,
+    onMouseEnter,
+    onMouseEnterPointer,
+    onMouseLeave,
+    onMouseClick,
+  ]);
 
   useEffect(() => {
     testkeepValue.initMarkers(markers);
@@ -375,7 +407,18 @@ const MapMarkersCreate = ({
       type: 'FeatureCollection',
       features: (markers.elements || []).map(markerstolines),
     });
-  }, [markers, showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
+  }, [
+    markers,
+    showTitles,
+    showLines,
+    moveMarkers,
+    SelectItems,
+    CreateItems,
+    testkeepValue,
+    basesSourceId,
+    elementsSourceId,
+    linesMarkersId,
+  ]);
 
   useEffect(() => {
     const selectPoints = selectToPoints(selectMarkers);
@@ -390,7 +433,15 @@ const MapMarkersCreate = ({
         properties: { ...point },
       })),
     });
-  }, [selectMarkers, showTitles, showLines, moveMarkers, SelectItems, CreateItems]);
+  }, [
+    selectMarkers,
+    showTitles,
+    showLines,
+    moveMarkers,
+    SelectItems,
+    CreateItems,
+    selectMarkersId,
+  ]);
 
   return null;
 };

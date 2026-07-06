@@ -145,7 +145,7 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
         }
       };
     }
-  }, []);
+  }, [id, routePoints, clusters, mapCluster]);
 
   useEffect(() => {
     if (!routes) {
@@ -175,7 +175,7 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
       type: 'FeatureCollection',
       features: routerFiltered.map((route) => routesToFeature(route)),
     });
-  }, [routes]);
+  }, [routes, devices, filteredDeviceId, id, routePoints]);
 
   useEffect(() => {
     console.log('render');

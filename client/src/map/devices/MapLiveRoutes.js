@@ -52,7 +52,7 @@ const MapLiveRoutes = () => {
       };
     }
     return () => {};
-  }, [type]);
+  }, [type, id]);
 
   useEffect(() => {
     if (type !== 'none') {
@@ -77,7 +77,7 @@ const MapLiveRoutes = () => {
         })),
       });
     }
-  }, [theme, type, devices, selectedDeviceId, history]);
+  }, [theme, type, devices, selectedDeviceId, history, id]);
 
   return null;
 };

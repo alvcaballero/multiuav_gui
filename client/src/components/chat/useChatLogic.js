@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { chatActions } from '../../store';
 import { sendChatMessage } from '../../SocketController';
+
+const EMPTY_MESSAGES = [];
 
 const useChatLogic = (open = true) => {
   const dispatch = useDispatch();
@@ -11,7 +13,7 @@ const useChatLogic = (open = true) => {
     if (state.chat.activeChatId) return state.chat.conversations[state.chat.activeChatId];
     return state.chat.conversations['_pending'] || null;
   });
-  const messages = activeConversation?.messages || [];
+  const messages = activeConversation?.messages || EMPTY_MESSAGES;
   const loading = useSelector((state) => state.chat.loading);
   const availableChats = useSelector((state) => state.chat.availableChats);
 
@@ -22,7 +24,7 @@ const useChatLogic = (open = true) => {
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
 
-  const fetchAvailableChats = async () => {
+  const fetchAvailableChats = useCallback(async () => {
     try {
       dispatch(chatActions.setLoading({ key: 'loadingChatList', value: true }));
       const response = await fetch('/api/chat/chats');
@@ -35,7 +37,7 @@ const useChatLogic = (open = true) => {
     } finally {
       dispatch(chatActions.setLoading({ key: 'loadingChatList', value: false }));
     }
-  };
+  }, [dispatch]);
 
   const loadChatHistory = async (chatId) => {
     try {
@@ -74,13 +76,13 @@ const useChatLogic = (open = true) => {
 
   useEffect(() => {
     if (open) fetchAvailableChats();
-  }, [open]);
+  }, [open, fetchAvailableChats]);
 
   useEffect(() => {
     if (activeChatId && !availableChats.find((c) => c.id === activeChatId)) {
       fetchAvailableChats();
     }
-  }, [activeChatId]);
+  }, [activeChatId, availableChats, fetchAvailableChats]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -70,11 +70,7 @@ const MissionPage3D = () => {
 
   const tabs = (
     <>
-      <Tabs
-        value={tabIndex}
-        onChange={(_, index) => setTabIndex(index)}
-        style={{ flexGrow: 1 }}
-      >
+      <Tabs value={tabIndex} onChange={(_, index) => setTabIndex(index)} style={{ flexGrow: 1 }}>
         <Tab label="Viz" />
         <Tab label="Imagery" />
         <Tab label="Stats" />

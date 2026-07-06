@@ -3,7 +3,7 @@
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 //https://docs.maptiler.com/sdk-js/examples/elevation-profile/
-import { useId, useState, useEffect, useRef } from 'react';
+import { useId, useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { map } from '../core/MapView';
 import { findFonts } from '../core/mapUtil';
@@ -56,81 +56,94 @@ export const MapMissionsCreate = () => {
 
   let canvas = map.getCanvasContainer();
 
-  const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
-  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+  const onMouseEnter = useCallback(() => (map.getCanvas().style.cursor = 'move'), []);
+  const onMouseLeave = useCallback(() => (map.getCanvas().style.cursor = ''), []);
 
-  const onMove = (e) => {
-    // Set a UI indicator for dragging.
-    canvas.style.cursor = 'grabbing';
-    let auxroute = testkeepValue.getroute();
-    //console.log(auxroute);
+  const onMove = useCallback(
+    (e) => {
+      // Set a UI indicator for dragging.
+      canvas.style.cursor = 'grabbing';
+      let auxroute = testkeepValue.getroute();
+      //console.log(auxroute);
 
-    let auxselectpoint = testkeepValue.getSelectwp();
-    if (auxselectpoint.id >= 0) {
-      auxroute[auxselectpoint.route_id]['wp'][auxselectpoint.id]['pos'][0] = e.lngLat.lat;
-      auxroute[auxselectpoint.route_id]['wp'][auxselectpoint.id]['pos'][1] = e.lngLat.lng;
-    }
+      let auxselectpoint = testkeepValue.getSelectwp();
+      if (auxselectpoint.id >= 0) {
+        auxroute[auxselectpoint.route_id]['wp'][auxselectpoint.id]['pos'][0] = e.lngLat.lat;
+        auxroute[auxselectpoint.route_id]['wp'][auxselectpoint.id]['pos'][1] = e.lngLat.lng;
+      }
 
-    let waypointPosition = routeTowaypoints(auxroute);
-    map.getSource(routePoints).setData({
-      type: 'FeatureCollection',
-      features: waypointPosition.map((position) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [position.longitude, position.latitude],
-        },
-        properties: createFeature(auxroute, position),
-      })),
-    });
+      let waypointPosition = routeTowaypoints(auxroute);
+      map.getSource(routePoints).setData({
+        type: 'FeatureCollection',
+        features: waypointPosition.map((position) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [position.longitude, position.latitude],
+          },
+          properties: createFeature(auxroute, position),
+        })),
+      });
 
-    map.getSource(id).setData({
-      type: 'FeatureCollection',
-      features: auxroute.map((route) => routesToFeature(route)),
-    });
-  };
-  const onUp = (e) => {
-    canvas.style.cursor = '';
-    const auxselectpoint = testkeepValue.getSelectwp();
+      map.getSource(id).setData({
+        type: 'FeatureCollection',
+        features: auxroute.map((route) => routesToFeature(route)),
+      });
+    },
+    [canvas, testkeepValue, routePoints, id],
+  );
 
-    // Dispatch directly to Redux with groupMode from ref (always current value)
-    dispatch(
-      missionActions.moveWaypoint({
-        wp_id: auxselectpoint.id,
-        route_id: auxselectpoint.route_id,
-        lng: e.lngLat.lng,
-        lat: e.lngLat.lat,
-        groupMode: groupRouteModeRef.current,
-      }),
-    );
+  const onUp = useCallback(
+    (e) => {
+      canvas.style.cursor = '';
+      const auxselectpoint = testkeepValue.getSelectwp();
 
-    testkeepValue.setSelecwp({ id: -1 });
-    // Unbind mouse/touch events
-    map.off('mousemove', onMove);
-    map.off('touchmove', onMove);
-  };
+      // Dispatch directly to Redux with groupMode from ref (always current value)
+      dispatch(
+        missionActions.moveWaypoint({
+          wp_id: auxselectpoint.id,
+          route_id: auxselectpoint.route_id,
+          lng: e.lngLat.lng,
+          lat: e.lngLat.lat,
+          groupMode: groupRouteModeRef.current,
+        }),
+      );
 
-  const onMouseDown = (e) => {
-    e.preventDefault();
+      testkeepValue.setSelecwp({ id: -1 });
+      // Unbind mouse/touch events
+      map.off('mousemove', onMove);
+      map.off('touchmove', onMove);
+    },
+    [canvas, testkeepValue, dispatch, onMove],
+  );
 
-    testkeepValue.setSelecwp(e.features[0].properties);
+  const onMouseDown = useCallback(
+    (e) => {
+      e.preventDefault();
 
-    // when click  visualize in list
-    dispatch(missionActions.selectpoint(e.features[0].properties));
+      testkeepValue.setSelecwp(e.features[0].properties);
 
-    canvas.style.cursor = 'grab';
-    map.on('mousemove', onMove);
-    map.once('mouseup', onUp);
-  };
-  const onMouseTouchStart = (e) => {
-    if (e.points.length !== 1) return;
+      // when click  visualize in list
+      dispatch(missionActions.selectpoint(e.features[0].properties));
 
-    // Prevent the default map drag behavior.
-    e.preventDefault();
+      canvas.style.cursor = 'grab';
+      map.on('mousemove', onMove);
+      map.once('mouseup', onUp);
+    },
+    [testkeepValue, dispatch, canvas, onMove, onUp],
+  );
+  const onMouseTouchStart = useCallback(
+    (e) => {
+      if (e.points.length !== 1) return;
 
-    map.on('touchmove', onMove);
-    map.once('touchend', onUp);
-  };
+      // Prevent the default map drag behavior.
+      e.preventDefault();
+
+      map.on('touchmove', onMove);
+      map.once('touchend', onUp);
+    },
+    [onMove, onUp],
+  );
 
   useEffect(() => {
     if (true) {
@@ -241,7 +254,16 @@ export const MapMissionsCreate = () => {
         }
       };
     }
-  }, []);
+  }, [
+    clusters,
+    id,
+    mapCluster,
+    onMouseDown,
+    onMouseTouchStart,
+    onMouseEnter,
+    onMouseLeave,
+    routePoints,
+  ]);
 
   useEffect(() => {
     testkeepValue.initroute(routes);
@@ -263,7 +285,7 @@ export const MapMissionsCreate = () => {
       type: 'FeatureCollection',
       features: routes.map((route) => routesToFeature(route)),
     });
-  }, [routes]);
+  }, [routes, testkeepValue, routePoints, id]);
 
   return null;
 };

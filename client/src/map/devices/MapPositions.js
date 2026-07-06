@@ -20,35 +20,38 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
   const hours12 = false; //usePreference('twelveHourFormat');
   const directionType = 'all'; //useAttributePreference('mapDirection', 'selected');
 
-  const createFeature = (devices, position, selectedPositionId) => {
-    const device = devices[position.deviceId];
-    let showDirection;
-    switch (directionType) {
-      case 'none':
-        showDirection = false;
-        break;
-      case 'all':
-        showDirection = true;
-        break;
-      default:
-        showDirection = selectedPositionId === position.id;
-        break;
-    }
-    let thismission = routes.find((element) => element.uav == device.name);
-    let missionColor = thismission ? thismission.id : null;
-    return {
-      id: position.id,
-      deviceId: position.deviceId,
-      name: device.name,
-      fixTime: formatTime(position.fixTime, 'seconds', hours12),
-      category: mapIconKey(device.category),
-      color: showStatus ? getStatusColor(device.status) : 'neutral',
-      rotation: position.course,
-      direction: showDirection,
-      mission: thismission ? true : false,
-      missionColor: missionColor,
-    };
-  };
+  const createFeature = useCallback(
+    (devices, position, selectedPositionId) => {
+      const device = devices[position.deviceId];
+      let showDirection;
+      switch (directionType) {
+        case 'none':
+          showDirection = false;
+          break;
+        case 'all':
+          showDirection = true;
+          break;
+        default:
+          showDirection = selectedPositionId === position.id;
+          break;
+      }
+      let thismission = routes.find((element) => element.uav == device.name);
+      let missionColor = thismission ? thismission.id : null;
+      return {
+        id: position.id,
+        deviceId: position.deviceId,
+        name: device.name,
+        fixTime: formatTime(position.fixTime, 'seconds', hours12),
+        category: mapIconKey(device.category),
+        color: showStatus ? getStatusColor(device.status) : 'neutral',
+        rotation: position.course,
+        direction: showDirection,
+        mission: thismission ? true : false,
+        missionColor: missionColor,
+      };
+    },
+    [directionType, routes, hours12, showStatus],
+  );
 
   const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
@@ -89,7 +92,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         }
       });
     },
-    [clusters],
+    [clusters, id],
   );
 
   useEffect(() => {
@@ -196,7 +199,17 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         map.removeSource(id);
       }
     };
-  }, [mapCluster, clusters, direction, mission, onMarkerClick, onClusterClick]);
+  }, [
+    mapCluster,
+    clusters,
+    direction,
+    mission,
+    onMarkerClick,
+    onClusterClick,
+    id,
+    onMapClick,
+    titleField,
+  ]);
 
   useEffect(() => {
     map.getSource(id).setData({
@@ -212,7 +225,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
           properties: createFeature(devices, position, selectedPosition && selectedPosition.id),
         })),
     });
-  }, [devices, positions, selectedPosition]);
+  }, [devices, positions, selectedPosition, createFeature, id]);
 
   return null;
 };

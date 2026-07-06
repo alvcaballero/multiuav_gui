@@ -28,7 +28,7 @@ const MapSelectedDevice = () => {
         });
       }
     }
-  }, [selectedDeviceId, previousDeviceId, mapFollow, position, selectZoom]);
+  }, [selectedDeviceId, previousDeviceId, mapFollow, position, selectZoom, previousPosition]);
 
   return null;
 };

@@ -42,7 +42,7 @@ const SelectField = ({
         onChange({ target: { value: items[0] } });
       }
     }
-  }, [items, value]);
+  }, [items, value, emptyValue, getItems, onChange]);
 
   if (items) {
     return (

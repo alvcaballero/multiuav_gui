@@ -53,7 +53,7 @@ const Marker = ({ item }) => {
   // Tell R3F to draw a frame when the model finishes loading.
   useEffect(() => {
     if (clone) invalidate();
-  }, [clone]);
+  }, [clone, invalidate]);
 
   // Sync position/rotation imperatively to avoid remounting the primitive.
   useEffect(() => {
@@ -61,7 +61,7 @@ const Marker = ({ item }) => {
     clone.position.set(...item.pos);
     clone.rotation.set(0, headingToRotationY(item.heading), 0);
     invalidate();
-  }, [clone, item.pos, item.heading]);
+  }, [clone, item.pos, item.heading, invalidate]);
 
   if (error || !clone) return null;
 
@@ -109,7 +109,7 @@ const R3DMarkers = ({ elements }) => {
     );
     setmarkers(result);
     invalidate();
-  }, [origin3d, elements, range]);
+  }, [origin3d, elements, range, invalidate]);
 
   return (
     <>

@@ -2,7 +2,7 @@
 // https://stackoverflow.com/questions/53257291/how-to-make-a-custom-line-layer-in-mapbox-gl
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
-import { useEffect } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
@@ -10,24 +10,24 @@ import * as THREE from 'three';
 import { map } from '../core/MapView';
 import palette from '../../shared/palette';
 
+const modelOrigin = [-6.485616, 37.144592];
+const modelRotate = [Math.PI / 2, 0, 0];
+
+function calculateDistanceMercatorToMeters(from, to) {
+  const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
+  // mercator x: 0=west, 1=east
+  const dEast = to.x - from.x;
+  const dEastMeter = dEast / mercatorPerMeter;
+  // mercator y: 0=north, 1=south
+  const dNorth = to.y - from.y;
+  const dNorthMeter = dNorth / mercatorPerMeter;
+  return { dEastMeter, dNorthMeter };
+}
+
 export const MapMissions3D = () => {
   const routes = useSelector((state) => state.mission.route);
 
-  const modelOrigin = [-6.485616, 37.144592];
-  const modelRotate = [Math.PI / 2, 0, 0];
-
-  //const sceneOrigin = new maplibregl.LngLat(-6.485616, 37.144592);
-  function calculateDistanceMercatorToMeters(from, to) {
-    const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
-    // mercator x: 0=west, 1=east
-    const dEast = to.x - from.x;
-    const dEastMeter = dEast / mercatorPerMeter;
-    // mercator y: 0=north, 1=south
-    const dNorth = to.y - from.y;
-    const dNorthMeter = dNorth / mercatorPerMeter;
-    return { dEastMeter, dNorthMeter };
-  }
-  function getOrigin() {
+  const getOrigin = useCallback(() => {
     let origen = null;
     routes.map((rt) => {
       rt.wp.map((wp) => {
@@ -40,9 +40,9 @@ export const MapMissions3D = () => {
       origen = modelOrigin;
     }
     return origen;
-  }
+  }, [routes]);
 
-  function preparelines() {
+  const preparelines = useCallback(() => {
     let line = [];
     let origen = null;
     let origen2 = null;
@@ -95,103 +95,108 @@ export const MapMissions3D = () => {
     //setRouteLines(new THREE.BufferGeometry().setFromPoints(lineVector3));
     //setRouteLines(routelineVector3);
     return routelineVector3;
-  }
+  }, [routes]);
 
   // configuration of the custom layer for a 3D model per the CustomLayerInterface
-  const customLayer = {
-    id: '3d-model',
-    type: 'custom',
-    renderingMode: '3d',
-    onAdd(map, gl) {
-      this.camera = new THREE.Camera();
-      this.scene = new THREE.Scene();
+  const customLayer = useMemo(
+    () => ({
+      id: '3d-model',
+      type: 'custom',
+      renderingMode: '3d',
+      onAdd(map, gl) {
+        this.camera = new THREE.Camera();
+        this.scene = new THREE.Scene();
 
-      // create two three.js lights to illuminate the model
-      const directionalLight = new THREE.DirectionalLight(0xffffff);
-      directionalLight.position.set(0, -70, 100).normalize();
-      this.scene.add(directionalLight);
+        // create two three.js lights to illuminate the model
+        const directionalLight = new THREE.DirectionalLight(0xffffff);
+        directionalLight.position.set(0, -70, 100).normalize();
+        this.scene.add(directionalLight);
 
-      const directionalLight2 = new THREE.DirectionalLight(0xffffff);
-      directionalLight2.position.set(0, 70, 100).normalize();
-      this.scene.add(directionalLight2);
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff);
+        directionalLight2.position.set(0, 70, 100).normalize();
+        this.scene.add(directionalLight2);
 
-      this.map = map;
-      let myrouteLines = preparelines();
-      // do a for bucle to add the lines
-      for (let i = 0; i < myrouteLines.length; i++) {
-        let material = new THREE.LineBasicMaterial({
-          linewidth: 10,
-          color: palette.colors_devices[i],
+        this.map = map;
+        let myrouteLines = preparelines();
+        // do a for bucle to add the lines
+        for (let i = 0; i < myrouteLines.length; i++) {
+          let material = new THREE.LineBasicMaterial({
+            linewidth: 10,
+            color: palette.colors_devices[i],
+          });
+          let myline = new THREE.Line(myrouteLines[i], material);
+          this.scene.add(myline);
+        }
+
+        // use the MapLibre GL JS map canvas for three.js
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: map.getCanvas(),
+          context: gl,
+          antialias: true,
         });
-        let myline = new THREE.Line(myrouteLines[i], material);
-        this.scene.add(myline);
-      }
 
-      // use the MapLibre GL JS map canvas for three.js
-      this.renderer = new THREE.WebGLRenderer({
-        canvas: map.getCanvas(),
-        context: gl,
-        antialias: true,
-      });
+        this.renderer.autoClear = false;
+      },
+      render(gl, args) {
+        // `queryTerrainElevation` gives us the elevation of a point on the terrain
+        // **relative to the elevation of `center`**,
+        // where `center` is the point on the terrain that the middle of the camera points at.
+        // If we didn't account for that offset, and the scene lay on a point on the terrain that is
+        // below `center`, then the scene would appear to float in the air.
+        let myorigin = getOrigin();
+        const sceneOrigin = new maplibregl.LngLat(myorigin[0], myorigin[1]);
 
-      this.renderer.autoClear = false;
-    },
-    render(gl, args) {
-      // `queryTerrainElevation` gives us the elevation of a point on the terrain
-      // **relative to the elevation of `center`**,
-      // where `center` is the point on the terrain that the middle of the camera points at.
-      // If we didn't account for that offset, and the scene lay on a point on the terrain that is
-      // below `center`, then the scene would appear to float in the air.
-      let myorigin = getOrigin();
-      const sceneOrigin = new maplibregl.LngLat(myorigin[0], myorigin[1]);
+        const offsetFromCenterElevation = map.queryTerrainElevation(sceneOrigin) || 0;
+        const sceneOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(
+          sceneOrigin,
+          offsetFromCenterElevation,
+        );
 
-      const offsetFromCenterElevation = map.queryTerrainElevation(sceneOrigin) || 0;
-      const sceneOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(
-        sceneOrigin,
-        offsetFromCenterElevation,
-      );
+        const sceneTransform = {
+          translateX: sceneOriginMercator.x,
+          translateY: sceneOriginMercator.y,
+          translateZ: sceneOriginMercator.z,
+          rotateX: modelRotate[0],
+          rotateY: modelRotate[1],
+          rotateZ: modelRotate[2],
+          scale: sceneOriginMercator.meterInMercatorCoordinateUnits(),
+        };
 
-      const sceneTransform = {
-        translateX: sceneOriginMercator.x,
-        translateY: sceneOriginMercator.y,
-        translateZ: sceneOriginMercator.z,
-        rotateX: modelRotate[0],
-        rotateY: modelRotate[1],
-        rotateZ: modelRotate[2],
-        scale: sceneOriginMercator.meterInMercatorCoordinateUnits(),
-      };
+        const rotationX = new THREE.Matrix4().makeRotationAxis(
+          new THREE.Vector3(1, 0, 0),
+          sceneTransform.rotateX,
+        );
+        const rotationY = new THREE.Matrix4().makeRotationAxis(
+          new THREE.Vector3(0, 1, 0),
+          sceneTransform.rotateY,
+        );
+        const rotationZ = new THREE.Matrix4().makeRotationAxis(
+          new THREE.Vector3(0, 0, 1),
+          sceneTransform.rotateZ,
+        );
 
-      const rotationX = new THREE.Matrix4().makeRotationAxis(
-        new THREE.Vector3(1, 0, 0),
-        sceneTransform.rotateX,
-      );
-      const rotationY = new THREE.Matrix4().makeRotationAxis(
-        new THREE.Vector3(0, 1, 0),
-        sceneTransform.rotateY,
-      );
-      const rotationZ = new THREE.Matrix4().makeRotationAxis(
-        new THREE.Vector3(0, 0, 1),
-        sceneTransform.rotateZ,
-      );
+        const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
+        const l = new THREE.Matrix4()
+          .makeTranslation(
+            sceneTransform.translateX,
+            sceneTransform.translateY,
+            sceneTransform.translateZ,
+          )
+          .scale(
+            new THREE.Vector3(sceneTransform.scale, -sceneTransform.scale, sceneTransform.scale),
+          )
+          .multiply(rotationX)
+          .multiply(rotationY)
+          .multiply(rotationZ);
 
-      const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
-      const l = new THREE.Matrix4()
-        .makeTranslation(
-          sceneTransform.translateX,
-          sceneTransform.translateY,
-          sceneTransform.translateZ,
-        )
-        .scale(new THREE.Vector3(sceneTransform.scale, -sceneTransform.scale, sceneTransform.scale))
-        .multiply(rotationX)
-        .multiply(rotationY)
-        .multiply(rotationZ);
-
-      this.camera.projectionMatrix = m.multiply(l);
-      this.renderer.resetState();
-      this.renderer.render(this.scene, this.camera);
-      map.triggerRepaint();
-    },
-  };
+        this.camera.projectionMatrix = m.multiply(l);
+        this.renderer.resetState();
+        this.renderer.render(this.scene, this.camera);
+        map.triggerRepaint();
+      },
+    }),
+    [getOrigin, preparelines],
+  );
 
   useEffect(() => {
     console.log('style loaded');
@@ -202,7 +207,7 @@ export const MapMissions3D = () => {
         map.removeLayer('3d-model');
       }
     };
-  }, [routes]);
+  }, [customLayer]);
 
   return null;
 };

@@ -99,7 +99,7 @@ const TileGroup = ({ tx, ty, originLng, originLat }) => {
         return [];
       });
     };
-  }, [tx, ty, originLng, originLat]);
+  }, [tx, ty, originLng, originLat, invalidate]);
 
   return (
     <group>

@@ -60,7 +60,7 @@ export default function CameraControls({ controlsRef: externalRef }) {
       window.removeEventListener('camera-zoom-in', handleZoomIn);
       window.removeEventListener('camera-zoom-out', handleZoomOut);
     };
-  }, [camera]);
+  }, [camera, controlsRef]);
 
   const mapFollow = useSelector((state) => state.devices.follow);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
@@ -81,7 +81,14 @@ export default function CameraControls({ controlsRef: externalRef }) {
       alt,
     });
     followTargetRef.current = new THREE.Vector3(xyz[0], alt, -xyz[1]);
-  }, [mapFollow, followPosition?.latitude, followPosition?.longitude, followPosition?.altitude]);
+  }, [
+    mapFollow,
+    followPosition?.latitude,
+    followPosition?.longitude,
+    followPosition?.altitude,
+    followPosition?.attributes?.home,
+    origin3d,
+  ]);
   const minHeight = 1; // Minimum height above ground
   const keysRef = useRef({
     w: false,

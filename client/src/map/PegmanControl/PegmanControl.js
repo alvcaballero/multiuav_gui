@@ -347,7 +347,10 @@ const PegmanControl = () => {
   // Create the control instance once
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const control = useMemo(() => new Maplibre3DViewControl({ navigate, dispatch }), []);
+  const control = useMemo(
+    () => new Maplibre3DViewControl({ navigate, dispatch }),
+    [navigate, dispatch],
+  );
 
   useEffect(() => {
     map.addControl(control, 'top-right');

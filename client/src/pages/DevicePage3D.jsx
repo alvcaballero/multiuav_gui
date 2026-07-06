@@ -159,14 +159,14 @@ const DevicePage3D = () => {
         down: item.attributes.obstacle_info[0],
       });
     }
-  }, [id, positions]);
+  }, [item]);
 
   useEffect(() => {
     if (id) {
       setthisdevice(devicelist[id]);
       console.log(devicelist[id]);
     }
-  }, [id]);
+  }, [id, devicelist]);
 
   return (
     <div className={classes.root}>
