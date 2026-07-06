@@ -16,7 +16,7 @@ const { reducer: missionReducerBase, actions } = createSlice({
   initialState: {
     name: 'Mission no loaded',
     description: '',
-    home: [0, 0],
+    home: null,
     route: [],
     attributes: {},
     selectpoint: { id: -1 },

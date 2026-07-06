@@ -1,21 +1,28 @@
 import maplibregl from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { usePreference } from '../../shared/preferences';
 import { map } from '../core/MapView';
 
-// Viven fuera del componente: MapDefaultCamera se desmonta/remonta al ir y volver
-// de la vista 3D, y el mapa (singleton en MapView.jsx) nunca pierde su cámara.
+// Rutas que renderizan una vista 3D (Scene3DCanvas) en vez de MainMap/MapDefaultCamera.
+const THREED_ROUTES = ['/3Dview', '/3Deditor', '/3Dmission'];
+const isThreeDPath = (pathname) => THREED_ROUTES.some((p) => pathname.startsWith(p)) || pathname.startsWith('/device3d');
+
+// Viven fuera del componente: MapDefaultCamera se desmonta/remonta en cada
+// navegación entre páginas 2D (Main/Mission/Planning/Device), no solo al
+// volver de 3D. El mapa (singleton en MapView.jsx) nunca pierde su cámara.
 // - appliedDefaultCamera evita repetir el centrado inicial (drones/preferencia)
 //   en cada vuelta a 2D, pisando la posición donde el usuario dejó el mapa.
-// - hasMountedOnce distingue "primer montaje de toda la sesión" (donde NO
-//   queremos que el scene3d.origin por defecto tape el centrado inicial) de
-//   "remontaje al volver de 3D" (donde SÍ queremos aplicar el origen que dejó
-//   el Pegman/misión).
+// - lastPathname permite distinguir, en cada montaje, si la página anterior
+//   era una vista 3D real (donde SÍ queremos aplicar el scene3d.origin que
+//   dejó el Pegman/misión) de un simple cambio entre páginas 2D (donde NO
+//   queremos pisar la posición donde el usuario dejó el mapa).
 let appliedDefaultCamera = false;
-let hasMountedOnce = false;
+let lastPathname = null;
 
 const MapDefaultCamera = () => {
+  const location = useLocation();
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const positions = useSelector((state) => state.session.positions);
   const scene3dOrigin = useSelector((state) => state.session.scene3d.origin);
@@ -30,15 +37,16 @@ const MapDefaultCamera = () => {
     setInitialized(true);
   };
 
-  // Al volver de 3D (remontaje), la cámara se recentra según lo que haya
-  // cambiado mientras se estuvo en 3D — independiente del flag "initialized"
-  // (que solo cubre el centrado inicial único de arranque por drones/
-  // preferencia). Con UAV seleccionado manda su posición; si no, manda el
-  // origen 3D (Pegman/misión).
-  const isRemount = useRef(hasMountedOnce);
+  // Al volver de una vista 3D (remontaje precedido por una ruta 3D), la
+  // cámara se recentra según lo que haya cambiado mientras se estuvo en 3D
+  // — independiente del flag "initialized" (que solo cubre el centrado
+  // inicial único de arranque por drones/preferencia). Con UAV seleccionado
+  // manda su posición; si no, manda el origen 3D (Pegman/misión).
+  // Corre SOLO al montar (no reacciona a selecciones/deselecciones
+  // posteriores en la misma página) y solo cuando venimos de una vista 3D.
+  const cameFrom3D = useRef(lastPathname !== null && isThreeDPath(lastPathname));
   useEffect(() => {
-    hasMountedOnce = true;
-    if (!isRemount.current) return;
+    if (!cameFrom3D.current) return;
     if (selectedDeviceId) {
       const position = positions[selectedDeviceId];
       if (position) {
@@ -55,7 +63,14 @@ const MapDefaultCamera = () => {
       zoom: defaultZoom,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene3dOrigin, selectedDeviceId]);
+  }, []);
+
+  useEffect(() => {
+    lastPathname = location.pathname;
+    return () => {
+      lastPathname = location.pathname;
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     if (initialized) return;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
@@ -248,15 +248,6 @@ export const Menu = () => {
     }
     navigate('/3Dview');
   }
-
-  useEffect(() => {
-    if (!missionHome || is3D || !map) return;
-    map.easeTo({
-      center: [missionHome[1], missionHome[0]],
-      zoom: Math.max(map.getZoom(), defaultZoom),
-      offset: [0, -1 / 2],
-    });
-  }, [missionHome]);
 
   const [missionsAnchor, setMissionsAnchor] = useState(null);
   const [eventsAnchor, setEventsAnchor] = useState(null);

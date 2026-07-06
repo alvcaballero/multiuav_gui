@@ -17,6 +17,7 @@ import MissionStats from '../components/mission/MissionStats';
 import SaveFile from '../components/ui/SaveFile';
 import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
+import MapMissionHome from '../map/mission/MapMissionHome';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -92,6 +93,7 @@ const MissionPage = () => {
           <MapView>
             <MapMarkers markers={markers} />
             <MapDefaultCamera />
+            <MapMissionHome />
             <MapMissionsCreate />
             <MapPositions positions={filteredPositions} onClick={null} selectedPosition={null} showStatus />
           </MapView>

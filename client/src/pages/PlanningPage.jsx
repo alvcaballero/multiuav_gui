@@ -20,6 +20,7 @@ import MissionElevation from '../components/mission/MissionElevation';
 import MapMarkersCreate from '../map/draw/MapMarkersCreate';
 import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
+import MapMissionHome from '../map/mission/MapMissionHome';
 import { useEffectAsync, useCatch } from '../reactHelper';
 import { manageLocationPoints, validateUniqueDevices, transformLocationsForAPI } from '../services/planningService';
 
@@ -454,6 +455,7 @@ const PlanningPage = () => {
               setLocations={addLocations}
             />
             <MapDefaultCamera />
+            <MapMissionHome />
           </MapView>
           <MapScale />
         </div>

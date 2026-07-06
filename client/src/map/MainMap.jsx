@@ -7,6 +7,7 @@ import MapMarkers from './environment/MapMarkers';
 import MapElements from './environment/MapElements';
 import MapPositions from './devices/MapPositions';
 import MapSelectedDevice from './devices/MapSelectedDevice';
+import MapMissionHome from './mission/MapMissionHome';
 import MapScale from './controls/MapScale';
 import { devicesActions } from '../store';
 import MapDefaultCamera from './controls/MapDefaultCamera';
@@ -46,6 +47,7 @@ const MainMap = ({
           showStatus
         />
         <MapSelectedDevice />
+        <MapMissionHome />
         <MapDefaultCamera />
       </MapView>
       <MapScale />
