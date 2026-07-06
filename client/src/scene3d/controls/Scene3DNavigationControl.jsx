@@ -68,6 +68,8 @@ const btnStyle = {
 
 const dividerStyle = { borderTop: '1px solid #ddd' };
 
+const dispatch = (event) => window.dispatchEvent(new CustomEvent(event));
+
 const Scene3DNavigationControl = () => {
   const [cam, setCam] = useState({ bearing: 0, pitch: 0 });
 
@@ -76,8 +78,6 @@ const Scene3DNavigationControl = () => {
     window.addEventListener('camera-azimuth', handler);
     return () => window.removeEventListener('camera-azimuth', handler);
   }, []);
-
-  const dispatch = (event) => window.dispatchEvent(new CustomEvent(event));
 
   return (
     <div

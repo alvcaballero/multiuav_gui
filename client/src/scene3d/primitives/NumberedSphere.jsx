@@ -1,6 +1,14 @@
 import { useRef, useState, useEffect } from 'react';
 import { Billboard, Text, Circle, Box, Line } from '@react-three/drei';
 
+const WORD_FONT_PROPS = {
+  font: '/Inter-Bold.woff',
+  fontSize: 0.5,
+  letterSpacing: -0.05,
+  lineHeight: 1,
+  'material-toneMapped': false,
+};
+
 const NumberedSphere = ({ position, properties, hideLabel = false }) => {
   return (
     <group position={position} scale={1}>
@@ -42,13 +50,6 @@ const NumberedSphere = ({ position, properties, hideLabel = false }) => {
 };
 
 function Word({ children, position, color }) {
-  const fontProps = {
-    font: '/Inter-Bold.woff',
-    fontSize: 0.5,
-    letterSpacing: -0.05,
-    lineHeight: 1,
-    'material-toneMapped': false,
-  };
   const ref = useRef();
   const [hovered, setHovered] = useState(false);
   const over = (e) => (e.stopPropagation(), setHovered(true));
@@ -75,7 +76,7 @@ function Word({ children, position, color }) {
         onPointerOver={over}
         onPointerOut={out}
         onClick={() => console.log('clicked')}
-        {...fontProps}
+        {...WORD_FONT_PROPS}
       >
         {children}
       </Text>

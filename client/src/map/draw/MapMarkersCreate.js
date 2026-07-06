@@ -30,6 +30,79 @@ class keepMarkers {
   }
 }
 
+function basesToFeatures(bases) {
+  return (bases || []).map((base, index) => ({
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [base.longitude, base.latitude],
+    },
+    properties: {
+      ...base,
+      type: 'base',
+      groupId: 0,
+      id: index,
+      image: 'base',
+      title: base.name || `b-${index}`,
+    },
+  }));
+}
+
+function elementsToFeatures(elements) {
+  return (elements || []).flatMap((group, groupIdx) =>
+    group.items.map((item, itemIdx) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [item.longitude, item.latitude],
+      },
+      properties: {
+        ...item,
+        type: 'element',
+        groupId: groupIdx,
+        id: itemIdx,
+        image: group.type,
+        title: item.name || `${groupIdx}-${itemIdx}`,
+      },
+    })),
+  );
+}
+
+function markerstolines(item, index) {
+  let waypoint_pos = Object.values(item.items).map((it) => [it['longitude'], it['latitude']]);
+  return {
+    id: item.id,
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates: waypoint_pos,
+    },
+    properties: {
+      name: item.name,
+      color: palette.colors_devices[index % 7],
+    },
+  };
+}
+
+function selectToPoints(myList) {
+  const waypoints = [];
+  if (myList.length > 0) {
+    myList.forEach((conjunto, index_cj) => {
+      conjunto.items.forEach((items, itemIndex) => {
+        waypoints.push({
+          ...items,
+          type: 'element',
+          groupId: index_cj % 7,
+          id: itemIndex,
+          image: conjunto.type,
+          title: `${index_cj}-${itemIndex}`,
+        });
+      });
+    });
+  }
+  return waypoints;
+}
+
 const MapMarkersCreate = ({
   markers,
   selectMarkers = [],
@@ -159,79 +232,6 @@ const MapMarkersCreate = ({
     },
     [onMove, onUp],
   );
-
-  function basesToFeatures(bases) {
-    return (bases || []).map((base, index) => ({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [base.longitude, base.latitude],
-      },
-      properties: {
-        ...base,
-        type: 'base',
-        groupId: 0,
-        id: index,
-        image: 'base',
-        title: base.name || `b-${index}`,
-      },
-    }));
-  }
-
-  function elementsToFeatures(elements) {
-    return (elements || []).flatMap((group, groupIdx) =>
-      group.items.map((item, itemIdx) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [item.longitude, item.latitude],
-        },
-        properties: {
-          ...item,
-          type: 'element',
-          groupId: groupIdx,
-          id: itemIdx,
-          image: group.type,
-          title: item.name || `${groupIdx}-${itemIdx}`,
-        },
-      })),
-    );
-  }
-
-  function markerstolines(item, index) {
-    let waypoint_pos = Object.values(item.items).map((it) => [it['longitude'], it['latitude']]);
-    return {
-      id: item.id,
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: waypoint_pos,
-      },
-      properties: {
-        name: item.name,
-        color: palette.colors_devices[index % 7],
-      },
-    };
-  }
-
-  function selectToPoints(myList) {
-    const waypoints = [];
-    if (myList.length > 0) {
-      myList.forEach((conjunto, index_cj) => {
-        conjunto.items.forEach((items, itemIndex) => {
-          waypoints.push({
-            ...items,
-            type: 'element',
-            groupId: index_cj % 7,
-            id: itemIndex,
-            image: conjunto.type,
-            title: `${index_cj}-${itemIndex}`,
-          });
-        });
-      });
-    }
-    return waypoints;
-  }
 
   const addSymbolLayer = useCallback(
     (layerId, sourceId) => {

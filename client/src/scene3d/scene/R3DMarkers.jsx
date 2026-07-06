@@ -68,27 +68,27 @@ const Marker = ({ item }) => {
   return <primitive object={clone} />;
 };
 
+function list2Points(mylist) {
+  const waypoints = [];
+  if (mylist?.elements) {
+    mylist.elements.forEach((conjunto, index_cj) => {
+      conjunto.items.forEach((items, item_index) => {
+        waypoints.push({ ...items, type: conjunto.type, title: `${index_cj}-${item_index}` });
+      });
+    });
+  }
+  if (mylist?.bases) {
+    mylist.bases.forEach((items, item_index) => {
+      waypoints.push({ ...items, type: 'base', title: item_index });
+    });
+  }
+  return waypoints;
+}
+
 const R3DMarkers = ({ elements }) => {
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const range = useSelector((state) => state.session.scene3d.range);
   const { invalidate } = useThree();
-
-  function list2Points(mylist) {
-    const waypoints = [];
-    if (mylist?.elements) {
-      mylist.elements.forEach((conjunto, index_cj) => {
-        conjunto.items.forEach((items, item_index) => {
-          waypoints.push({ ...items, type: conjunto.type, title: `${index_cj}-${item_index}` });
-        });
-      });
-    }
-    if (mylist?.bases) {
-      mylist.bases.forEach((items, item_index) => {
-        waypoints.push({ ...items, type: 'base', title: item_index });
-      });
-    }
-    return waypoints;
-  }
 
   const markers = useMemo(() => {
     const listelemnts = list2Points(elements);

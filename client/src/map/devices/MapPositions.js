@@ -6,6 +6,9 @@ import { mapIconKey } from '../core/preloadImages';
 import { findFonts } from '../core/mapUtil';
 //import { useAttributePreference, usePreference } from '../../shared/preferences';
 
+const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
+const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+
 const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleField }) => {
   const id = useId();
   const clusters = `${id}-clusters`;
@@ -52,9 +55,6 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
     },
     [directionType, routes, hours12, showStatus],
   );
-
-  const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
-  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
   const onMapClick = useCallback(
     (event) => {

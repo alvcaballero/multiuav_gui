@@ -8,6 +8,14 @@ import { mapIconKey, frontIcons } from '../map/core/preloadImages';
  * El indicador del valor actual se muestra a la IZQUIERDA de la regla
  * para que nunca se salga por la derecha.
  */
+const sensorColor = (val, limits) => {
+  const lo = limits[0] + 0.3 * (limits[1] - limits[0]);
+  const hi = limits[0] + 0.75 * (limits[1] - limits[0]);
+  if (val <= lo) return 'red';
+  if (val <= hi) return '#f0b400';
+  return '#bbb';
+};
+
 const LinearGauge = ({
   value,
   valueASL,
@@ -50,14 +58,6 @@ const LinearGauge = ({
   const currentMin = value - range / 2;
   // yOfVal mapea sobre [PAD_Y, h - PAD_Y] para que los extremos tengan margen
   const yOfVal = (val) => PAD_Y + (h - 2 * PAD_Y) * (1 - (val - currentMin) / range);
-
-  const sensorColor = (val, limits) => {
-    const lo = limits[0] + 0.3 * (limits[1] - limits[0]);
-    const hi = limits[0] + 0.75 * (limits[1] - limits[0]);
-    if (val <= lo) return 'red';
-    if (val <= hi) return '#f0b400';
-    return '#bbb';
-  };
 
   // ── Ticks ───────────────────────────────────────────────────────────────
   const ticks = [];

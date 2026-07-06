@@ -15,6 +15,9 @@ import {
   routeTowaypoints,
   cleanRoute,
 } from '../transform/mission';
+const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
+const onMouseLeave = () => (map.getCanvas().style.cursor = '');
+
 export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
   const id = useId();
   const routePoints = `${id}-points`;
@@ -24,9 +27,6 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
 
   const mapCluster = true;
   const iconScale = 0.6;
-
-  const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
-  const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
   const WaypointDetail = (e) => {
     const properties = structuredClone(e.features[0].properties);

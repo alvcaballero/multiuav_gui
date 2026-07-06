@@ -148,6 +148,28 @@ const MemoCardHeader = React.memo(
   },
 );
 
+const serverCommand = async (deviceId, command, attributes) => {
+  console.log('send command uavud: ' + deviceId + command);
+  try {
+    const response = await fetch('/api/commands/send', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId, type: command, attributes }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (response.ok) {
+      const myResponse = await response.json();
+      console.log(myResponse);
+    } else {
+      console.log('Error1:' + response);
+      throw Error(await response.text());
+    }
+  } catch (error) {
+    console.log('Error2:' + error);
+  }
+};
+
 const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = false }) => {
   const { classes } = useStyles({ desktopPadding });
   const navigate = useNavigate();
@@ -182,28 +204,6 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
       navigate(`/device/${deviceId}`);
     }
   }, [deviceId, navigate, is3d]);
-
-  const serverCommand = async (deviceId, command, attributes) => {
-    console.log('send command uavud: ' + deviceId + command);
-    try {
-      const response = await fetch('/api/commands/send', {
-        method: 'POST',
-        body: JSON.stringify({ deviceId, type: command, attributes }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.ok) {
-        const myResponse = await response.json();
-        console.log(myResponse);
-      } else {
-        console.log('Error1:' + response);
-        throw Error(await response.text());
-      }
-    } catch (error) {
-      console.log('Error2:' + error);
-    }
-  };
 
   const handleRemove = async (removed) => {
     if (removed) {

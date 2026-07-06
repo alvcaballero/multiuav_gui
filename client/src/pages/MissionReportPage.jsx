@@ -66,14 +66,14 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
+const COLUMNS_ARRAY = ['id', 'initTime', 'endTime', 'uav', 'status'];
+
 const MissionReportPage = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
 
   const [missions, setMissions] = useState(null);
   const devices = useSelector((state) => state.devices.items);
-
-  const columnsArray = ['id', 'initTime', 'endTime', 'uav', 'status'];
 
   const formatValue = (item, key) => {
     const value = item[key];
@@ -129,7 +129,7 @@ const MissionReportPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  {columnsArray.map((key) => (
+                  {COLUMNS_ARRAY.map((key) => (
                     <TableCell key={`${key}x`}>{key.toUpperCase()}</TableCell>
                   ))}
 
@@ -140,7 +140,7 @@ const MissionReportPage = () => {
                 {missions &&
                   missions.map((item) => (
                     <TableRow key={`${item.id}_`}>
-                      {columnsArray.map((key) => (
+                      {COLUMNS_ARRAY.map((key) => (
                         <TableCell key={key}>{formatValue(item, key)}</TableCell>
                       ))}
                       <TableCell>

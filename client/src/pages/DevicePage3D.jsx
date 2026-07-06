@@ -95,6 +95,8 @@ const RenderCamera = ({ device, myhostname }) => {
   );
 };
 
+const DEFAULT_SENSOR_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
+
 const DevicePage3D = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
@@ -120,7 +122,6 @@ const DevicePage3D = () => {
     statuses: [],
     groups: [],
   });
-  const DEFAULT_SENSOR_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
   const currentSensorData = item?.attributes?.obstacle_info
     ? {
         front: item.attributes.obstacle_info[1],

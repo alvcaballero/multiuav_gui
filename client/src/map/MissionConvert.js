@@ -1,9 +1,16 @@
+// Lista de atributos posibles
+const ROUTE_CONVERT_ATTRS = [
+  'mode_landing',
+  'mode_yaw',
+  'mode_gimbal',
+  'mode_trace',
+  'idle_vel',
+  'max_vel',
+];
+
 export const RuteConvert = (route) => {
   const rt = [];
   let latlongError = false;
-
-  // Lista de atributos posibles
-  const ATTRS = ['mode_landing', 'mode_yaw', 'mode_gimbal', 'mode_trace', 'idle_vel', 'max_vel'];
 
   for (let uavN = 0; uavN < route.length; uavN++) {
     const src = route[uavN];
@@ -39,7 +46,7 @@ export const RuteConvert = (route) => {
 
     // Atributos
     const attrSrc = src.attributes || src;
-    ATTRS.forEach((key) => {
+    ROUTE_CONVERT_ATTRS.forEach((key) => {
       if (key in attrSrc) {
         dst.attributes[key] = attrSrc[key];
         if (key === 'mode_landing' && src.attributes) {
@@ -58,9 +65,10 @@ export const RuteConvert = (route) => {
   return rt;
 };
 
+const LEGACY_CONVERT_ATTRS = ['mode_landing', 'mode_yaw', 'idle_vel', 'max_vel'];
+
 export const RuteConvertlegacy = (mission) => {
   const rt = [];
-  const ATTRS = ['mode_landing', 'mode_yaw', 'idle_vel', 'max_vel'];
 
   for (let uavN = 1; uavN <= mission['uav_n']; uavN++) {
     const uavKey = 'uav_' + uavN;
@@ -88,7 +96,7 @@ export const RuteConvertlegacy = (mission) => {
     }
 
     // Global attributes
-    ATTRS.forEach((attr) => {
+    LEGACY_CONVERT_ATTRS.forEach((attr) => {
       if (mission.hasOwnProperty(attr) && attr !== 'max_vel') {
         uavObj.attributes[attr] = mission[attr];
       }
@@ -96,7 +104,7 @@ export const RuteConvertlegacy = (mission) => {
 
     // UAV-specific attributes
     const attrSrc = uavData.attributes || uavData;
-    ATTRS.forEach((attr) => {
+    LEGACY_CONVERT_ATTRS.forEach((attr) => {
       if (attr in attrSrc) {
         uavObj.attributes[attr] = attrSrc[attr];
         if (attr === 'mode_landing' && uavData.attributes) {

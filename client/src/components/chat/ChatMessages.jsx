@@ -284,6 +284,29 @@ export const WelcomeMessage = () => {
   );
 };
 
+const formatTimestamp = (ts) => {
+  if (!ts) return null;
+  const date = new Date(ts);
+  if (isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
+
+const accordionStyle = (borderColor) => ({
+  boxShadow: 'none',
+  bgcolor: 'transparent',
+  border: 'none',
+  borderLeft: `4px solid ${borderColor}`,
+  '&:before': { display: 'none' },
+  margin: '4px 0',
+});
+
+const summaryStyle = {
+  minHeight: '36px',
+  height: '36px',
+  padding: '0 8px',
+  '& .MuiAccordionSummary-content': { margin: 0 },
+};
+
 export const MessageBubble = memo(({ message, chatId }) => {
   const dispatch = useDispatch();
   const { role, type, content, name, status } = convertMsg(message);
@@ -311,30 +334,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
   const isAI = role !== 'user';
   const isError = status === 'error';
 
-  const formatTimestamp = (ts) => {
-    if (!ts) return null;
-    const date = new Date(ts);
-    if (isNaN(date.getTime())) return null;
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-
   const timestampLabel = formatTimestamp(message.timestamp);
-
-  const accordionStyle = (borderColor) => ({
-    boxShadow: 'none',
-    bgcolor: 'transparent',
-    border: 'none',
-    borderLeft: `4px solid ${borderColor}`,
-    '&:before': { display: 'none' },
-    margin: '4px 0',
-  });
-
-  const summaryStyle = {
-    minHeight: '36px',
-    height: '36px',
-    padding: '0 8px',
-    '& .MuiAccordionSummary-content': { margin: 0 },
-  };
 
   // Reasoning block
   if (type === 'reasoning') {
