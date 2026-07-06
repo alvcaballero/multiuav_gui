@@ -5,18 +5,6 @@ const round = (number, decimals = 0) => {
   return Math.round(number * factor) / factor;
 };
 
-const latLonToXYZ = (lat, lon, alt) => {
-  const radius = 6371; // Earth radius in kilometers
-  const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lon + 180) * (Math.PI / 180);
-
-  const x = -(radius + alt) * Math.sin(phi) * Math.cos(theta);
-  const y = (radius + alt) * Math.cos(phi);
-  const z = (radius + alt) * Math.sin(phi) * Math.sin(theta);
-
-  return [x, y, z];
-};
-
 export const calculateDistanceMercatorToMeters = (from, to) => {
   const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
   // mercator x: 0=west, 1=east

@@ -2,7 +2,6 @@ import React, { useEffect, useState, Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { TextField, FormControlLabel, Checkbox } from '@mui/material';
 import SelectField from '../../shared/components/SelectField';
-import { prefixString } from '../../shared/stringUtils';
 import useCommandAttributes from '../../shared/attributes/useCommandAttributes';
 
 const BaseCommandView = ({ deviceId, item, setItem }) => {

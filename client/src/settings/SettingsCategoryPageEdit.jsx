@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import SelectField from '../shared/components/SelectField';
 import {
   IconButton,
@@ -35,7 +33,7 @@ const SettingsCategoryPageEdit = () => {
   const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
   const [itemMsg, setItemMsg] = useState(uniqueId ? { uniqueId } : null);
   const [loading, setLoading] = useState(false);
-  const [showAll, setShowAll] = useState(false);
+  const [showAll] = useState(false);
   const [typeMsgMenu, setTypeMsgMenu] = useState(true);
   const [selectTypeMsgMenu, setSelectTypeMsgMenu] = useState(true);
 

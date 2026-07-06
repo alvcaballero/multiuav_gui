@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
@@ -30,7 +29,7 @@ export const loadCustomModelPaths = async () => {
       .forEach((t) => {
         modelPaths[t.id] = t.model3d;
       });
-  } catch (_) {
+  } catch {
     // server unavailable — skip
   }
 };
@@ -73,7 +72,9 @@ export const getModel = async (type) => {
   if (!modelPaths[type]) {
     try {
       await loadCustomModelPaths();
-    } catch (_) {}
+    } catch {
+      // server unavailable — skip
+    }
   }
 
   // Fall back to default if type has no 3D model

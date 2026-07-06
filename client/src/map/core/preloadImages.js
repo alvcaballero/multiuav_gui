@@ -119,14 +119,14 @@ export default async () => {
           .map(async (t) => {
             try {
               mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
-            } catch (_) {
+            } catch {
               console.log('faild to load custom icon');
               // fallback: use default-neutral icon if asset missing
             }
           }),
       );
     }
-  } catch (_) {
+  } catch {
     console.log('fialt to make a call to get customs icons ');
     // server unavailable — skip custom icons
   }

@@ -80,7 +80,7 @@ const convertMsg = (msg) => {
     if (typeof args === 'string') {
       try {
         args = JSON.parse(args);
-      } catch (e) {
+      } catch {
         // Keep as string if not valid JSON
       }
     }
@@ -100,7 +100,7 @@ const convertMsg = (msg) => {
     if (typeof output === 'string') {
       try {
         output = JSON.parse(output);
-      } catch (e) {
+      } catch {
         /* keep as string */
       }
     }
@@ -109,7 +109,7 @@ const convertMsg = (msg) => {
     if (output?.content?.[0]?.text) {
       try {
         output = JSON.parse(output.content[0].text);
-      } catch (e) {
+      } catch {
         /* keep outer */
       }
     }
@@ -662,7 +662,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  code({ node, inline, className, children, ...props }) {
+                  code({ inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline && match ? (
                       <CodeBlock

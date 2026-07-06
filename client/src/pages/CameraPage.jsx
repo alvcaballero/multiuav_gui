@@ -38,47 +38,8 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const showToast = (type, description) => {
-  switch (type) {
-    case 'success':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Success',
-        description: description,
-        backgroundColor: '#5cb85c',
-      };
-      break;
-    case 'danger':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Danger',
-        description: description,
-        backgroundColor: '#d9534f',
-      };
-      break;
-    case 'info':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Info',
-        description: description,
-        backgroundColor: '#5bc0de',
-      };
-      break;
-    case 'warning':
-      toastProperties = {
-        id: list.length + 1,
-        title: 'Warning',
-        description: description,
-        backgroundColor: '#f0ad4e',
-      };
-      break;
-    default:
-      toastProperties = [];
-  }
-  setList([...list, toastProperties]);
-};
 const CameraPage = () => {
-  const [AddUAVOpen, SetAddUAVOpen] = useState(false);
+  const [, SetAddUAVOpen] = useState(false);
   const devices = useSelector((state) => state.devices.items);
   let listdevices = Object.values(devices);
   const myhostname = `${window.location.hostname}`;

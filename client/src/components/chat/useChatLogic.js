@@ -20,7 +20,6 @@ const useChatLogic = (open = true) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const audioChunksRef = useRef([]);
-  const audioPlayerRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const fetchAvailableChats = async () => {

@@ -60,7 +60,6 @@ export const MapMissionsCreate = () => {
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
   const onMove = (e) => {
-    let coords = e.lngLat;
     // Set a UI indicator for dragging.
     canvas.style.cursor = 'grabbing';
     let auxroute = testkeepValue.getroute();

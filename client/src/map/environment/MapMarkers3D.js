@@ -2,17 +2,14 @@
 // https://stackoverflow.com/questions/53257291/how-to-make-a-custom-line-layer-in-mapbox-gl
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
-import { useId, useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import { map } from '../core/MapView';
-import palette from '../../shared/palette';
 
 export const MapMarkers3D = () => {
-  const id = useId();
-  const modelAltitude = 0;
   const modelRotate = [Math.PI / 2, 0, 0];
 
   // configuration of the custom layer for a 3D model per the CustomLayerInterface

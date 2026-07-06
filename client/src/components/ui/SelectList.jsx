@@ -3,7 +3,6 @@ import { makeStyles } from 'tss-react/mui';
 
 import {
   Box,
-  Button,
   IconButton,
   TextField,
   Accordion,
@@ -14,8 +13,6 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import SelectField from '../../shared/components/SelectField';
-import { map } from '../../map/core/MapView';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
@@ -86,7 +83,7 @@ const SelectList = ({ Data, setData = () => null }) => {
       {ElementsExist && (
         <div className={classes.details}>
           {React.Children.toArray(
-            Object.values(Data).map((group, indexGroup, list) => (
+            Object.values(Data).map((group, indexGroup) => (
               <Accordion
                 expanded={expandedGroup === `Elements ${indexGroup}`}
                 onChange={handleChangeGroup(`Elements ${indexGroup}`)}
@@ -116,7 +113,7 @@ const SelectList = ({ Data, setData = () => null }) => {
                       />
                       <div className={classes.details}>
                         {React.Children.toArray(
-                          Object.values(group.items).map((element, index, list) => (
+                          Object.values(group.items).map((element, index) => (
                             <Accordion
                               expanded={expanded === `Elements ${index}`}
                               onChange={handleChange(`Elements ${index}`)}

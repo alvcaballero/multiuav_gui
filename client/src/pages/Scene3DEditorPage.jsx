@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import {
@@ -50,13 +50,6 @@ import { useCatch } from '../reactHelper';
 // ---------------------------------------------------------------------------
 // Helpers — mirrors convertion.js but inverse: XYZ (meters) → lat/lon
 // ---------------------------------------------------------------------------
-const mercatorPerMeterAt = (origin) => {
-  const ref = maplibregl.MercatorCoordinate.fromLngLat(
-    { lng: origin.lng, lat: origin.lat },
-    origin.alt ?? 0,
-  );
-  return ref.meterInMercatorCoordinateUnits();
-};
 
 /** Local XYZ (East, North, Up in metres) relative to origin → { lat, lng, alt } */
 const xyzToLatLon = (origin, x, y, z) => {
@@ -533,7 +526,7 @@ const MarkersTab = () => {
                 No elements within range.
               </Typography>
             )}
-            {groupsWithVisible.map(({ group, visibleItems }, gIdx) => {
+            {groupsWithVisible.map(({ group, visibleItems }) => {
               const realGIdx = markers.elements.indexOf(group);
               return (
                 <Accordion

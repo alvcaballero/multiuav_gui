@@ -15,8 +15,6 @@ import {
   FormControlLabel,
   Checkbox,
   Badge,
-  ListItemButton,
-  ListItemText,
   Tooltip,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -26,13 +24,6 @@ import AddIcon from '@mui/icons-material/Add';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TuneIcon from '@mui/icons-material/Tune';
 import DeviceRow from '../devices/DeviceRow';
-
-const toolbar = {
-  display: 'flex',
-  gap: '10px 10px',
-  height: '30px',
-  borderBottom: '3px solid rgb(212, 212, 212)',
-};
 
 const useStyles = makeStyles()((theme) => ({
   toolbar: {
@@ -121,7 +112,7 @@ const MainToolbar = React.memo(
           disableEnforceFocus
         >
           {filteredDevices.slice(0, 3).map((_, index) => (
-            <DeviceRow key={filteredDevices[index].id} data={filteredDevices} index={index} />
+            <DeviceRow key={filteredDevices[index].id} devices={filteredDevices} index={index} />
           ))}
         </Popover>
         <Popover

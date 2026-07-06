@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState } from 'react';
 
 import {
   Typography,
@@ -15,7 +14,6 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { makeStyles } from 'tss-react/mui';
 
-import { useNavigate } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BaseCommandView from '../../shared/components/BaseCommandView';
 import { useCatch } from '../../reactHelper';
@@ -66,7 +64,7 @@ const CommandCard = ({ id, onClose }) => {
   const { classes } = useStyles();
 
   const [item, setItem] = useState({});
-  const [savedId, setSavedId] = useState(0);
+  const savedId = 0;
   const limitCommands = 0;
 
   const handleSend = useCatch(async () => {

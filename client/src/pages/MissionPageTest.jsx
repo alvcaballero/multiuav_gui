@@ -51,7 +51,7 @@ const useStyles = makeStyles()((theme) => ({
     zIndex: 3,
   },
 }));
-const showToast = (type, description) => {
+const showToast = () => {
   setList([...list, toastProperties]);
 };
 

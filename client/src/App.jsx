@@ -1,8 +1,7 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { makeStyles } from 'tss-react/mui';
 
-import { LinearProgress, useMediaQuery, useTheme } from '@mui/material';
 import SocketController from './SocketController';
 
 import { useDispatch } from 'react-redux';
@@ -22,7 +21,6 @@ const useStyles = makeStyles()(() => ({
 
 const App = () => {
   const { classes } = useStyles();
-  const theme = useTheme();
   const dispatch = useDispatch();
 
   useEffectAsync(async () => {

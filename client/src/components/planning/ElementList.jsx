@@ -1,10 +1,8 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 import { makeStyles } from 'tss-react/mui';
 
 import {
-  Divider,
   Box,
   Button,
   IconButton,
@@ -57,11 +55,8 @@ const useStyles = makeStyles()((theme) => ({
 const ElementList = ({ markers, setMarkers }) => {
   const { classes } = useStyles();
 
-  const dispatch = useDispatch();
   const { types: markerTypes } = useMarkerTypes();
-  const [init, setinit] = useState(false);
   //const [open_routes, setOpen_routes] = useState(true);
-  const [expanded_route, setExpanded_route] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [BasesExist, setBasesExist] = useState(true);
 

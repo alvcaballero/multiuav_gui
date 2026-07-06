@@ -1,33 +1,14 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import {
-  Table,
-  TableRow,
-  TableCell,
-  TableHead,
-  TableBody,
-  Button,
-  TableFooter,
-  FormControlLabel,
-  Switch,
-  IconButton,
-  Menu,
-  MenuItem,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Table, TableRow, TableCell, TableHead, TableBody, IconButton } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import LinkIcon from '@mui/icons-material/Link';
 import { useEffectAsync } from '../reactHelper';
 import PageLayout from '../shared/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
 import TableShimmer from '../shared/components/TableShimmer';
 import SearchHeader, { filterByKeyword } from './components/SearchHeader';
-import { formatTime } from '../shared/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
 import RemoveDialog from '../components/ui/RemoveDialog';
 
@@ -35,10 +16,10 @@ const SettingsCategoryPage = () => {
   const { classes } = useSettingsStyles();
   const navigate = useNavigate();
 
-  const [timestamp, setTimestamp] = useState(Date.now());
+  const [timestamp] = useState(() => Date.now());
   const [items, setItems] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [showAll, setShowAll] = useState(false);
+  const [showAll] = useState(false);
   const [loading, setLoading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [myCategory, setMyCategory] = useState(null);
@@ -46,7 +27,6 @@ const SettingsCategoryPage = () => {
   useEffectAsync(async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({ all: showAll });
       const response = await fetch(`/api/category`);
       if (response.ok) {
         setItems(await response.json());
@@ -67,7 +47,7 @@ const SettingsCategoryPage = () => {
     setRemoving(true);
   };
 
-  const hamdleRemoveResult = (result) => {
+  const hamdleRemoveResult = () => {
     setMyCategory(null);
     setRemoving(false);
   };

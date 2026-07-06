@@ -33,10 +33,6 @@ const EditItemView = ({
   useEffectAsync(async () => {
     if (!item) {
       if (id) {
-        let url = `/api/${endpoint}/${id}`;
-        if (endpoint === 'devices') {
-          url += '?admin=true';
-        }
         const response = await fetch(`/api/${endpoint}/${id}`);
         if (response.ok) {
           setItem(await response.json());

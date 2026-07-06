@@ -153,31 +153,6 @@ const ImageFull = ({ file, closecard }) => {
     </div>
   );
 };
-const ImageFull2 = ({ file, closecard }) => {
-  const { classes } = useStyles();
-
-  return (
-    <div className={classes.root_max}>
-      {file && (
-        <Card elevation={3} className={classes.card}>
-          <div className={classes.gruopBtn}>
-            <IconButton size="small" onClick={closecard}>
-              <CloseIcon fontSize="small" className={classes.mediaButton} />
-            </IconButton>
-          </div>
-          <div className={classes.tittle}>{file.name}</div>
-          <img
-            src={`/api/files/download/${file.path}${file.name}`}
-            alt={file.name}
-            loading="lazy"
-            className={classes.media1}
-          />
-        </Card>
-      )}
-    </div>
-  );
-};
-
 const MissionDetailReportPage = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();

@@ -3,10 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import { mapIconKey, mapIcons, frontIcons } from '../map/core/preloadImages';
-import { Typography } from '@mui/material';
 //import styled from 'styled-components';
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   root: {
     position: 'relative',
     width: '200px',

@@ -160,11 +160,10 @@ const calculateRouteDistance = (waypoints, include3D = false) => {
 /**
  * Estima el tiempo de vuelo basado en distancia y velocidad
  * @param {number} distance - Distancia en metros
- * @param {number} maxVel - Velocidad máxima en m/s
  * @param {number} idleVel - Velocidad idle en m/s
  * @returns {number} Tiempo estimado en segundos
  */
-const estimateFlightTime = (distance, maxVel = 10, idleVel = 3) => {
+const estimateFlightTime = (distance, idleVel = 3) => {
   // Usar velocidad promedio entre max e idlek
   const avgVel = idleVel;
   return avgVel > 0 ? distance / avgVel : 0;
@@ -224,7 +223,7 @@ const MissionStats = () => {
       const maxVel = route.attributes?.max_vel || 10;
       const idleVel = route.attributes?.idle_vel || 3;
       // Use 3D distance for time estimation (more realistic)
-      const time = estimateFlightTime(distance3D, maxVel, idleVel);
+      const time = estimateFlightTime(distance3D, idleVel);
 
       return {
         id: route.id ?? index,

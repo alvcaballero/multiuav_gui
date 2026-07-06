@@ -31,9 +31,7 @@ const TopViewIcon = () => (
   </svg>
 );
 
-const CompassIcon = ({ roll, bearing, pitch }) => {
-  const rollRad = roll * (Math.PI / 180);
-  const pitchRad = pitch * (Math.PI / 180);
+const CompassIcon = ({ bearing }) => {
   const scale = 1;
   //const scale = pitch !== 0 ? 1 / Math.pow(Math.cos(pitchRad), 0.5) : 1;
 
@@ -70,11 +68,7 @@ const btnStyle = {
 
 const dividerStyle = { borderTop: '1px solid #ddd' };
 
-const Scene3DNavigationControl = ({
-  visualize_pitch = false,
-  visualize_bearing = false,
-  visualize_roll = false,
-}) => {
+const Scene3DNavigationControl = () => {
   const [cam, setCam] = useState({ bearing: 0, pitch: 0 });
 
   useEffect(() => {

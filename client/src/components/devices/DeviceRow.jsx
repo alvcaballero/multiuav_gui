@@ -23,7 +23,6 @@ import {
   formatAlarm,
   formatBoolean,
   formatPercentage,
-  formatStatus,
   getStatusColor,
 } from '../../shared/formatter';
 import { mapIconKey, mapIcons } from '../../map/core/preloadImages';

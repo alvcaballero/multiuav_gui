@@ -8,7 +8,6 @@ import maplibregl from 'maplibre-gl';
 
 import { map } from '../core/MapView';
 import { findFonts } from '../core/mapUtil';
-import palette from '../../shared/palette';
 import {
   createFeature,
   textPopUp,

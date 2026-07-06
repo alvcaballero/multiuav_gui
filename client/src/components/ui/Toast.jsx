@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
-import { Card, IconButton, CardMedia, Typography } from '@mui/material';
+import { Card, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 const useStyles = makeStyles()((theme) => ({
@@ -54,7 +54,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const Toast = ({ toastlist, position, setList }) => {
+const Toast = ({ toastlist, setList }) => {
   const { classes } = useStyles();
 
   const deleteToast = useCallback(
@@ -79,7 +79,7 @@ const Toast = ({ toastlist, position, setList }) => {
 
   return (
     <div className={classes.root}>
-      {toastlist.map((toast, i) => (
+      {toastlist.map((toast) => (
         <Card
           elevation={3}
           className={classes.card}

@@ -14,7 +14,7 @@ import { missionActions } from '../../store';
 import { useMissionFile } from '../../services/useMissionFile';
 import MissionTransformDialog from './MissionTransformDialog';
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   toolbar: {
     display: 'flex',
     gap: '10px 10px',

@@ -1,8 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Card, IconButton, CardMedia, ButtonGroup } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { Card } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
 const useStyles = makeStyles()((theme) => ({
@@ -60,32 +58,15 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export const CameraWebRTCV4 = ({
-  deviceId,
-  deviceIp = '127.0.0.1',
-  camera_src = 'video0',
-  onClose,
-}) => {
+export const CameraWebRTCV4 = ({ deviceId, deviceIp = '127.0.0.1', camera_src = 'video0' }) => {
   const { classes } = useStyles();
   //const camera_stream ="20"// useSelector((state) => state.session.camera[deviceId]);
   const device = deviceId
     ? useSelector((state) => state.devices.items[deviceId])
     : { name: 'test' };
   const deviceip = 'http://' + deviceIp + ':8889/' + camera_src; //device?.ip;
-  const [maxsize, setmaxsize] = useState(false);
   let btn_class = classes.card;
   let rootclass = classes.root_max;
-  let frameclass = classes.media;
-  function Changemaxsize() {
-    setmaxsize(!maxsize);
-  }
-  const restartPause = 2000;
-  const localVideoRef = useRef();
-
-  function closecard() {
-    onClose();
-    setmaxsize(false);
-  }
 
   return (
     <div className={rootclass} style={{ flex: 1 }}>

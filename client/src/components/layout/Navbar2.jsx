@@ -1,18 +1,7 @@
-import React, { useContext, useState, Fragment, useEffect, useRef } from 'react';
+import React, { useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import {
-  AppBar,
-  IconButton,
-  Toolbar,
-  Tooltip,
-  Typography,
-  Container,
-  Button,
-  Menu,
-  MenuItem,
-  Fade,
-} from '@mui/material';
+import { AppBar, IconButton, Toolbar, Tooltip, Typography, Container } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
@@ -39,7 +28,7 @@ export const Navbar2 = ({ title, navIcon, tabs }) => {
   // const { darkMode, setDarkMode } = appContext;
   const navigate = useNavigate();
 
-  const [ws, setws] = useState(null);
+  const ws = null;
   const [darkMode, setDarkMode] = useState(false);
   const { classes } = useStyles();
 

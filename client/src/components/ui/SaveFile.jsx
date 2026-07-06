@@ -76,7 +76,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const SaveFile = ({ SetOpenSave, OpenSave }) => {
+const SaveFile = ({ SetOpenSave }) => {
   const { classes } = useStyles();
   const mission = useSelector((state) => state.mission);
 
@@ -98,7 +98,7 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
       let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xmlString += '<kml>\n';
       xmlString += '<Document>\n';
-      mission.route.map((elem, elem_n, list) => {
+      mission.route.map((elem, elem_n) => {
         xmlString += `<Style id="sn_ylw-pushpin1${elem_n}">\n`;
         xmlString += '<LineStyle>\n';
         xmlString += `<color>ff${palette.colors_devices[elem_n].substr(-6)}</color>\n`;
@@ -170,7 +170,7 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
       planmission['mission']['globalPlanAltitudeMode'] = 0;
       planmission['mission']['hoverSpeed'] = 5;
       planmission['mission']['items'] = [];
-      mission.route.map((elem, elem_n, elem_list) => {
+      mission.route.map((elem) => {
         elem.wp.map((mywp, mywp_n, mywp_list) => {
           let aux = {
             AMSLAltAboveTerrain: null,
@@ -203,7 +203,7 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
     if (fileType == 'waypoint') {
       let xmlString = 'QGC WPL 110\n';
       mission.route.map((elem) => {
-        elem.wp.map((mywp, mywp_n, mywp_list) => {
+        elem.wp.map((mywp, mywp_n) => {
           if (mywp_n == 0) {
             xmlString += `${mywp_n}\t1\t0\t16\t0\t0\t0\t0\t${mywp.pos[0]}\t${mywp.pos[1]}\t${mywp.pos[2]}\t1\n`;
           } else {

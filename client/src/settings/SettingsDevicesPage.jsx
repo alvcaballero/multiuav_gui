@@ -1,49 +1,29 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import {
-  Table,
-  TableRow,
-  TableCell,
-  TableHead,
-  TableBody,
-  Button,
-  TableFooter,
-  FormControlLabel,
-  Switch,
-  IconButton,
-  Menu,
-  MenuItem,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Table, TableRow, TableCell, TableHead, TableBody, IconButton } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import LinkIcon from '@mui/icons-material/Link';
 import { useEffectAsync } from '../reactHelper';
 import PageLayout from '../shared/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
 import TableShimmer from '../shared/components/TableShimmer';
 import SearchHeader, { filterByKeyword } from './components/SearchHeader';
-import { formatTime } from '../shared/formatter';
 import useSettingsStyles from './common/useSettingsStyles';
 
 const SettingsDevicesPage = () => {
   const { classes } = useSettingsStyles();
   const navigate = useNavigate();
 
-  const [timestamp, setTimestamp] = useState(Date.now());
+  const [timestamp] = useState(() => Date.now());
   const [items, setItems] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [showAll, setShowAll] = useState(false);
+  const [showAll] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffectAsync(async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({ all: showAll });
       const response = await fetch(`/api/devices`);
       if (response.ok) {
         setItems(await response.json());
@@ -54,17 +34,6 @@ const SettingsDevicesPage = () => {
       setLoading(false);
     }
   }, [timestamp, showAll]);
-
-  const handleExport = () => {
-    window.location.assign('/api/reports/devices/xlsx');
-  };
-
-  const actionConnections = {
-    key: 'connections',
-    title: 'sharedConnections',
-    icon: <LinkIcon fontSize="small" />,
-    handler: (deviceId) => navigate(`/settings/device/${deviceId}/connections`),
-  };
 
   return (
     <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>

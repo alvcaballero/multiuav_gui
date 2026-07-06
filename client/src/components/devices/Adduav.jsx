@@ -1,4 +1,4 @@
-import React, { useContext, useState, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import CloseIcon from '@mui/icons-material/Close';
@@ -200,7 +200,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
               <AccordionDetails className={classes.details}>
                 <Typography variant="caption">Source example:main</Typography>
                 {item.camera &&
-                  item.camera.map((action_key, index_ac, list_ac) => (
+                  item.camera.map((action_key, index_ac) => (
                     <Fragment key={'fragment-action-' + index_ac}>
                       <Typography variant="subtitle1" className={classes.attributeName}>
                         {'Camera ' + index_ac}
@@ -278,7 +278,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
                   protovol
                 </Typography>
                 {item.files &&
-                  item.files.map((action_key, index_ac, list_ac) => (
+                  item.files.map((action_key, index_ac) => (
                     <Fragment key={'fragment-action-file' + index_ac}>
                       <Typography variant="subtitle1" className={classes.attributeName}>
                         {'File ' + index_ac}

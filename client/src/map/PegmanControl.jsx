@@ -36,7 +36,7 @@ class PegmanControlImpl {
 const PegmanButton = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [isDragon, setDragging] = useState(false); // Preserving variable name 'isDragon' from original even if typo for 'isDragging'
+  const [, setDragging] = useState(false);
 
   const handleDragStart = useCallback((e) => {
     setDragging(true);

@@ -48,7 +48,7 @@ const useStyles = makeStyles()((theme) => ({
     zIndex: 3,
   },
 }));
-const showToast = (type, description) => {
+const showToast = () => {
   setList([...list, toastProperties]);
 };
 
@@ -58,24 +58,10 @@ const MissionPage3D = () => {
 
   const [Opensave, setOpenSave] = useState(false);
 
-  const positions = useSelector((state) => state.session.positions);
   const routes = useSelector((state) => state.mission.route);
   const sessionmarkers = useSelector((state) => state.session.markers);
-  const origin3d = useSelector((state) => state.session.scene3d.origin);
 
   const [markers, setmarkers] = useState([]);
-
-  const [filteredPositions, setFilteredPositions] = useState([]);
-
-  const elements = [
-    { type: 'windturbine', pos: [10, 10, 0] },
-    { type: 'base', pos: [0, 0, 0] },
-    { type: 'drone', pos: [1, 1, 1] },
-  ];
-
-  useEffect(() => {
-    setFilteredPositions(Object.values(positions));
-  }, [positions]);
 
   useEffect(() => {
     setmarkers(sessionmarkers);

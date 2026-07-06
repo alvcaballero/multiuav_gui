@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useDispatch, useSelector, connect } from 'react-redux';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 
 export const RosContext = React.createContext();
 

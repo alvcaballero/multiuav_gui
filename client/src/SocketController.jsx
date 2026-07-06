@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch, connect } from 'react-redux';
+import { useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
 import store, {
@@ -11,11 +11,9 @@ import store, {
 } from './store';
 import { eventsActions } from './store/events';
 import { loadMissionPlanToEditor } from './services/missionPlanLoader';
-import { Snackbar } from '@mui/material';
-import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
+import { SnackbarProvider, enqueueSnackbar } from 'notistack';
 
 const logoutCode = 4000;
-const snackBarDurationLongMs = 1000;
 
 const SocketController = () => {
   const dispatch = useDispatch();
@@ -73,7 +71,7 @@ const SocketController = () => {
           if (devicesResponse.status === 401 || positionsResponse.status === 401) {
             //navigate('/login');
           }
-        } catch (error) {
+        } catch {
           // ignore errors
         }
         setTimeout(() => connectSocket(), 60000);

@@ -36,7 +36,7 @@ const { reducer, actions } = createSlice({
     remove(state, action) {
       delete state.items[action.payload];
     },
-    clear(state, action) {
+    clear(state) {
       state.items = {};
     },
   },

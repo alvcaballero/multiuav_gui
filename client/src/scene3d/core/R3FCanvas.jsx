@@ -2,7 +2,6 @@ import { Canvas } from '@react-three/fiber';
 import { Sky, Environment } from '@react-three/drei';
 import React, { Suspense, useRef } from 'react';
 import * as THREE from 'three';
-import { Perf } from 'r3f-perf';
 
 import CameraControls from './CameraControls';
 import OrientationGizmo from '../controls/OrientationGizmo';
@@ -79,7 +78,6 @@ const R3FCanvas = ({ children }) => {
   const online = useOnlineStatus();
   const martinAvailable = useMartinStatus();
   const controlsRef = useRef();
-  const BASE_PATH = window.location.origin;
 
   return (
     <Canvas

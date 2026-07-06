@@ -1,18 +1,12 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl';
-import React, { useRef, useLayoutEffect, useEffect, useState, use } from 'react';
+import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
 
-import {
-  MaplibreExportControl,
-  Size,
-  PageOrientation,
-  Format,
-  DPI,
-} from '@watergis/maplibre-gl-export';
+import { MaplibreExportControl, Size, PageOrientation, Format } from '@watergis/maplibre-gl-export';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
 import { SwitcherControl } from '../switcher/switcher';
-import { useAttributePreference, usePreference } from '../../shared/preferences';
+import { usePreference } from '../../shared/preferences';
 import usePersistedState, { savePersistedState } from '../../shared/usePersistedState';
 
 import { mapImages, imagesReady } from './preloadImages';

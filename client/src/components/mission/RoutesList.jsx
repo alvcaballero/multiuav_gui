@@ -1,46 +1,12 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { makeStyles } from 'tss-react/mui';
 
 import { Divider, Box, Button, TextField } from '@mui/material';
 
 import { missionActions } from '../../store';
 import RouteRoutesList from './RouteRouteList';
 
-const useStyles = makeStyles()((theme) => ({
-  list: {
-    maxHeight: '100%',
-    overflow: 'auto',
-  },
-  icon: {
-    width: '25px',
-    height: '25px',
-    filter: 'brightness(0) invert(1)',
-  },
-  details: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(2),
-    paddingBottom: theme.spacing(3),
-  },
-  attribute: {
-    display: 'inline-block',
-    width: '40%',
-    textAlign: 'left',
-    verticalAlign: 'middle',
-  },
-  attributeValue: {
-    display: 'inline-block',
-    width: '58%',
-  },
-  actionValue: {
-    display: 'inline-block',
-    width: '40%',
-  },
-}));
-
 const RoutesList = ({ setScrool, NoEdit = false }) => {
-  const { classes } = useStyles();
   const dispatch = useDispatch();
 
   // Read directly from Redux - single source of truth

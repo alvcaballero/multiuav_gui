@@ -1,5 +1,5 @@
 import ReactSwipeButton from 'react-swipe-button';
-import React, { useState } from 'react';
+import React from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import { Card, CardContent, Typography, IconButton } from '@mui/material';

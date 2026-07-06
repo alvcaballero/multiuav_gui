@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 
 import {
@@ -15,31 +15,21 @@ import {
   TableBody,
   BottomNavigation,
   BottomNavigationAction,
-  Button,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ReplayIcon from '@mui/icons-material/Replay';
-import PublishIcon from '@mui/icons-material/Publish';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import HomeIcon from '@mui/icons-material/Home';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../components/ui/PositionValue';
 import usePersistedState from '../shared/usePersistedState';
-import SquareMove from './SquareMove';
-import SquareMove1 from './SquareMove1';
 import DroneSensorVisualizer from './DroneSensorVisualizer';
 import useFilter from '../shared/useFilter';
-import MainMap from '../map/MainMap';
 import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
 import { CameraV1 } from '../components/camera/CameraV1';
-import SendCommand from '../components/commands/SendCommand';
 import CommandCard from '../components/commands/CommandCard';
 import Scene3DCanvas from '../scene3d/Scene3DCanvas';
 
@@ -110,24 +100,20 @@ const DevicePage3D = () => {
   const navigate = useNavigate();
 
   const { id } = useParams();
-  const [value, setValue] = React.useState(0);
 
   const [item, setItem] = useState();
   const [thisDevice, setthisdevice] = useState({});
   const positions = useSelector((state) => state.session.positions);
   const devicelist = useSelector((state) => state.devices.items);
   const sessionmarkers = useSelector((state) => state.session.markers);
-  const routes = useSelector((state) => state.mission.route);
 
-  const [savedId, setSavedId] = useState(0);
-  const limitCommands = 0;
-  const [markers, setmarkers] = useState([]);
+  const [, setmarkers] = useState([]);
 
   const myhostname = `${window.location.hostname}`;
-  const [filteredPositions, setFilteredPositions] = useState([]);
-  const [filteredDevices, setFilteredDevices] = useState([]);
-  const [keyword, setKeyword] = useState('');
-  const [filter, setFilter] = usePersistedState('filter', {
+  const [, setFilteredPositions] = useState([]);
+  const [, setFilteredDevices] = useState([]);
+  const [keyword] = useState('');
+  const [filter] = usePersistedState('filter', {
     statuses: [],
     groups: [],
   });
@@ -140,8 +126,8 @@ const DevicePage3D = () => {
     down: 8,
   });
 
-  const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
-  const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
+  const [filterSort] = usePersistedState('filterSort', '');
+  const [filterMap] = usePersistedState('filterMap', false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
   useFilter(
     keyword,
@@ -153,7 +139,6 @@ const DevicePage3D = () => {
     setFilteredPositions,
   );
 
-  const onMarkerClick = () => {};
   useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);

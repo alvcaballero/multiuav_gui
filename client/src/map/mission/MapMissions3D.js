@@ -2,33 +2,21 @@
 // https://stackoverflow.com/questions/53257291/how-to-make-a-custom-line-layer-in-mapbox-gl
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
-import { useId, useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 import { map } from '../core/MapView';
-import { findFonts } from '../core/mapUtil';
 import palette from '../../shared/palette';
 
 export const MapMissions3D = () => {
-  const id = useId();
-  const route_points = `${id}-points`;
-  const clusters = `${id}-points-clusters`;
   const routes = useSelector((state) => state.mission.route);
-  const devices = useSelector((state) => state.devices.items);
-  const [routeLines, setRouteLines] = useState([]);
 
   const modelOrigin = [-6.485616, 37.144592];
-  const modelAltitude = 0;
   const modelRotate = [Math.PI / 2, 0, 0];
 
   //const sceneOrigin = new maplibregl.LngLat(-6.485616, 37.144592);
-  const modelAsMercatorCoordinate = maplibregl.MercatorCoordinate.fromLngLat(
-    modelOrigin,
-    modelAltitude,
-  );
   function calculateDistanceMercatorToMeters(from, to) {
     const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
     // mercator x: 0=west, 1=east
@@ -41,8 +29,8 @@ export const MapMissions3D = () => {
   }
   function getOrigin() {
     let origen = null;
-    routes.map((rt, index_rt) => {
-      rt.wp.map((wp, index_wp) => {
+    routes.map((rt) => {
+      rt.wp.map((wp) => {
         if (origen == null) {
           origen = [wp['pos'][1], wp['pos'][0]];
         }
@@ -62,9 +50,9 @@ export const MapMissions3D = () => {
     let routeline = [];
     let routelineVector3 = [];
 
-    routes.map((rt, index_rt) => {
+    routes.map((rt) => {
       line = [];
-      rt.wp.map((wp, index_wp) => {
+      rt.wp.map((wp) => {
         if (origen == null) {
           //origen = latLonToXYZ(wp['pos'][1], wp['pos'][0], 0);
           origen = [wp['pos'][1], wp['pos'][0], 0];

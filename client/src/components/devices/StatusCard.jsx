@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Rnd } from 'react-rnd';
 import {
   Card,
   CardContent,
@@ -14,7 +13,6 @@ import {
   TableCell,
   Menu,
   MenuItem,
-  CardMedia,
   Button,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -26,7 +24,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PendingIcon from '@mui/icons-material/Pending';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
-import { Alarm } from '@mui/icons-material';
 
 import PositionValue from '../ui/PositionValue';
 import RemoveDialog from '../ui/RemoveDialog';
@@ -159,15 +156,13 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
   const device = useSelector((state) => state.devices.items[deviceId]);
   const mapFollowstats = useSelector((state) => state.devices.follow);
 
-  const deviceImage = device?.attributes?.deviceImage;
-
   const positionItems = 'speed,course,batteryLevel,gimbal,MIC_1,MIC_2,MIC_3,Metano,Alcohol,CO';
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [removing, setRemoving] = useState(false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
   const [nullPosition, setNullPosition] = useState(false);
-  const [disableActions, setDisableActions] = useState(false);
+  const disableActions = false;
   const [mapFollow, setMapFollow] = useState(false);
   const [deviceName, setDeviceName] = useState('');
   useEffect(() => {

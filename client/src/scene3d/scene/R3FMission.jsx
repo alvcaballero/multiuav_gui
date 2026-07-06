@@ -1,8 +1,6 @@
 import React, { useState, useEffect, Fragment, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
-import * as THREE from 'three';
-import maplibregl from 'maplibre-gl';
 import palette from '../../shared/palette';
 import { Line } from '@react-three/drei';
 
@@ -82,8 +80,8 @@ const R3FMission = ({ routes = [] }) => {
   }
 
   function routesToXYZ(origin, routes) {
-    let routesXYZ = routes.map((rt, index_rt) => {
-      const position = rt.wp.map((wp, index_wp) => {
+    let routesXYZ = routes.map((rt) => {
+      const position = rt.wp.map((wp) => {
         return { lng: wp['pos'][1], lat: wp['pos'][0], alt: wp['pos'][2] };
       });
       return LatLon2XYZ(origin, position);

@@ -35,7 +35,7 @@ export const loadMissionPlanToEditor = async (missionId, dispatch) => {
     // so updateMission parses it with RuteConvert (not the legacy parser).
     dispatch(missionActions.updateMission({ ...missionData, version: '3', name: mission?.name }));
     flyToMission(missionData);
-  } catch (_) {
+  } catch {
     // fetch failed — silently skip map load
   }
 };

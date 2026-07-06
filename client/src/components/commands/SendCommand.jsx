@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState } from 'react';
 
 import {
   Typography,
@@ -51,7 +50,7 @@ const SendCommand = () => {
   const { id } = useParams();
 
   const [itemc, setItemc] = useState({});
-  const [savedId, setSavedId] = useState(0);
+  const savedId = 0;
   const limitCommands = 0;
 
   const handleSend = useCatch(async () => {

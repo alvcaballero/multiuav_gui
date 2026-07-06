@@ -1,9 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import novideo from '../../resources/images/placeholder.jpg';
-import { useDispatch, useSelector } from 'react-redux';
-import { Card, IconButton, CardMedia } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
+import { useSelector } from 'react-redux';
+import { Card } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
 const useStyles = makeStyles()((theme) => ({
@@ -44,20 +42,16 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export const CameraV1 = ({ deviceId, datacamera, onClose }) => {
+export const CameraV1 = ({ deviceId }) => {
   const { classes } = useStyles();
   const [camera_image, setcamera_image] = useState(novideo);
 
   const device = useSelector((state) => state.devices.items[deviceId]);
 
-  const [maxsize, setmaxsize] = useState(false);
   let btn_class = classes.card;
   let rootclass = classes.root_max;
   const cameradata = useSelector((state) => state.session.camera[deviceId]);
 
-  function Changemaxsize() {
-    setmaxsize(!maxsize);
-  }
   useEffect(() => {
     if (deviceId != null) {
       if (cameradata != null) {

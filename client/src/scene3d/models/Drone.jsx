@@ -1,5 +1,4 @@
 import React from 'react';
-import * as THREE from 'three';
 
 export default function Drone({
   position = [10, 5, 1],

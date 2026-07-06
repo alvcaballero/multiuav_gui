@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 
 import MapView from './core/MapView';
 import MapMissions from './mission/MapMissions';
@@ -22,7 +22,6 @@ const MainMap = ({
   selectedPosition,
   filteredMissiondeviceid = -1,
   routes = [],
-  onEventsClick,
 }) => {
   const dispatch = useDispatch();
   const onMarkerClick = useCallback(

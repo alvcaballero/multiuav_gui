@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button, Menu, MenuItem, Fade } from '@mui/material';
 import UploadButtons from '../ui/uploadButton';
 
-const MenuItems = ({ items, depthLevel }) => {
+const MenuItems = ({ items }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -15,12 +15,6 @@ const MenuItems = ({ items, depthLevel }) => {
   };
   const handleClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleHover = (event) => {
-    if (items.submenu) {
-      setAnchorEl(event.currentTarget);
-    }
   };
 
   return (
