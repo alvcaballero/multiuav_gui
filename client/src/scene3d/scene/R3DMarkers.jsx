@@ -69,7 +69,7 @@ const Marker = ({ item }) => {
 };
 
 const R3DMarkers = ({ elements }) => {
-  const [markers, setmarkers] = useState([]);
+  const [markers, setMarkers] = useState([]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const range = useSelector((state) => state.session.scene3d.range);
   const { invalidate } = useThree();
@@ -107,7 +107,7 @@ const R3DMarkers = ({ elements }) => {
       (item) =>
         item.pos[0] > -range && item.pos[0] < range && item.pos[2] > -range && item.pos[2] < range,
     );
-    setmarkers(result);
+    setMarkers(result);
     invalidate();
   }, [origin3d, elements, range, invalidate]);
 

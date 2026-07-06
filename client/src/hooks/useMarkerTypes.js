@@ -8,7 +8,8 @@ export const useMarkerTypes = () => {
 
   useEffect(() => {
     if (cachedTypes) return;
-    fetch('/api/markers/types')
+    const controller = new AbortController();
+    fetch('/api/markers/types', { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         cachedTypes = data;
@@ -16,6 +17,7 @@ export const useMarkerTypes = () => {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   return { types, loading };

@@ -56,7 +56,7 @@ const EventsPage = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
 
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(() => today());
   const [items, setItems] = useState(null);
   const devices = useSelector((state) => state.devices.items);
 

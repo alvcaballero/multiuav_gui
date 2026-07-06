@@ -46,7 +46,7 @@ export const MapMissionsCreate = () => {
   const mapCluster = true;
   const iconScale = 0.6;
   const dispatch = useDispatch();
-  const [testkeepValue] = useState(new keepValue());
+  const [testkeepValue] = useState(() => new keepValue());
 
   // Use ref to always have the latest groupRouteMode value in event handlers
   const groupRouteModeRef = useRef(groupRouteMode);

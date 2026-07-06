@@ -50,7 +50,7 @@ const MapMarkersCreate = ({
   const iconScale = 0.8;
   const iconPointScale = 0.6;
 
-  const [testkeepValue] = useState(new keepMarkers());
+  const [testkeepValue] = useState(() => new keepMarkers());
 
   const setLocationsRef = useRef(setLocations);
   const setMarkersRef = useRef(setMarkers);

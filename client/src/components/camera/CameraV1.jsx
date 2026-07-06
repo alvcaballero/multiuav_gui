@@ -44,7 +44,7 @@ const useStyles = makeStyles()((theme) => ({
 
 export const CameraV1 = ({ deviceId }) => {
   const { classes } = useStyles();
-  const [camera_image, setcamera_image] = useState(novideo);
+  const [camera_image, setCameraImage] = useState(novideo);
 
   const device = useSelector((state) => state.devices.items[deviceId]);
 
@@ -55,9 +55,9 @@ export const CameraV1 = ({ deviceId }) => {
   useEffect(() => {
     if (deviceId != null) {
       if (cameradata != null) {
-        setcamera_image('data:image/bgr8;base64,' + cameradata.camera);
+        setCameraImage('data:image/bgr8;base64,' + cameradata.camera);
       } else {
-        setcamera_image(novideo);
+        setCameraImage(novideo);
       }
     }
   }, [cameradata, deviceId]);

@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from 'react';
+import { useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AppBar, IconButton, Toolbar, Tooltip, Typography, Container } from '@mui/material';
@@ -103,13 +103,11 @@ export const Navbar2 = ({ title, navIcon, tabs }) => {
           </Typography>
           {tabs && <>{tabs}</>}
 
-          {React.Children.toArray(
-            menuItemsData.map((menu, index) => (
-              <Fragment key={'s1-' + index}>
-                <MenuItems items={menu} depthLevel={0} />
-              </Fragment>
-            )),
-          )}
+          {menuItemsData.map((menu, index) => (
+            <Fragment key={'s1-' + index}>
+              <MenuItems items={menu} depthLevel={0} />
+            </Fragment>
+          ))}
           {darkModeButton}
           {connectionIndicator}
           <AccountCircleIcon />

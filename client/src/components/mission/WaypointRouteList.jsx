@@ -176,8 +176,8 @@ const WaypointRouteList = ({
   const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } =
     useWaypoint(routeIndex, indexWp, uavType);
 
-  const [newactionmenu, setnewactionmenu] = useState(true);
-  const [newactionid, setnewactionid] = useState(0);
+  const [newactionmenu, setNewactionmenu] = useState(true);
+  const [newactionid, setNewactionid] = useState(0);
   const [posInput, setPosInput] = useState({ lat: '', lon: '', alt: '' });
   // Action metadata (payload type/range/unit) keyed by action name, from the catalog
   const [actionDefs, setActionDefs] = useState({});
@@ -190,22 +190,21 @@ const WaypointRouteList = ({
   // Fetch the rich action catalog + per-waypoint params for this category once open
   React.useEffect(() => {
     if (!isOpen || !uavType) return;
-    let cancelled = false;
-    fetch(`/api/category/actions/${uavType}`)
+    const controller = new AbortController();
+    fetch(`/api/category/actions/${uavType}`, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : []))
       .then((defs) => {
-        if (cancelled) return;
         setActionDefs(Object.fromEntries(defs.map((d) => [d.name, d])));
       })
       .catch(() => {});
-    fetch(`/api/category/waypointparams/${uavType}`)
+    fetch(`/api/category/waypointparams/${uavType}`, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : []))
       .then((defs) => {
-        if (!cancelled) setWpParams(defs);
+        setWpParams(defs);
       })
       .catch(() => {});
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [isOpen, uavType]);
 
@@ -344,7 +343,7 @@ const WaypointRouteList = ({
                 <Typography variant="subtitle1">Actions</Typography>
                 <IconButton
                   size="small"
-                  onClick={() => setnewactionmenu((v) => !v)}
+                  onClick={() => setNewactionmenu((v) => !v)}
                   title="Add action"
                 >
                   <AddCircleIcon fontSize="small" />
@@ -358,7 +357,7 @@ const WaypointRouteList = ({
                       fullWidth
                       emptyValue={null}
                       value={newactionid}
-                      onChange={(e) => setnewactionid(e.target.value)}
+                      onChange={(e) => setNewactionid(e.target.value)}
                       endpoint={`/api/category/actions/${uavType}`}
                       keyGetter={(it) => it.id}
                       titleGetter={(it) => it.description}
@@ -367,11 +366,11 @@ const WaypointRouteList = ({
                   <Button
                     size="small"
                     variant="contained"
-                    onClick={() => addAction(newactionid, () => setnewactionmenu(true))}
+                    onClick={() => addAction(newactionid, () => setNewactionmenu(true))}
                   >
                     Add
                   </Button>
-                  <Button size="small" onClick={() => setnewactionmenu(true)}>
+                  <Button size="small" onClick={() => setNewactionmenu(true)}>
                     Cancel
                   </Button>
                 </Stack>

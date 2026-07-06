@@ -39,7 +39,8 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 const CameraPage = () => {
-  const [, SetAddUAVOpen] = useState(false);
+  const [addUAVOpen, setAddUAVOpen] = useState(false);
+  void addUAVOpen;
   const devices = useSelector((state) => state.devices.items);
   let listdevices = Object.values(devices);
   const myhostname = `${window.location.hostname}`;
@@ -69,52 +70,50 @@ const CameraPage = () => {
             }}
           >
             <Grid container spacing={2} justifyContent="space-around">
-              {React.Children.toArray(
-                Object.values(devices).map((device) => (
-                  <Fragment key={'dev' + device.id}>
-                    {device.camera.map((camera, cam_index) => (
-                      <Grid item xs={12} sm={6} key={'card-' + device.id + '-' + cam_index}>
-                        {camera.type === 'WebRTC' && (
-                          <CameraWebRTCV4
-                            deviceId={device.id}
-                            deviceIp={myhostname}
-                            devicename={device.name}
-                            camera_src={device.name + '_' + camera.source}
-                            onClose={() => {
-                              console.log('cerrar ');
-                            }}
-                          />
-                        )}
-                        {camera.type === 'WebRTC_env' && (
-                          <CameraWebRTCV4
-                            deviceId={device.id}
-                            deviceIp={device.ip}
-                            devicename={device.name}
-                            camera_src={camera.source}
-                            onClose={() => {
-                              console.log('cerrar ');
-                            }}
-                          />
-                        )}
-                        {camera.type === 'Websocket' && (
-                          <CameraV1
-                            deviceId={device.id}
-                            datacamera={null}
-                            onClose={() => console.log('cerrar ')}
-                          />
-                        )}
-                      </Grid>
-                    ))}
-                  </Fragment>
-                )),
-              )}
+              {Object.values(devices).map((device) => (
+                <Fragment key={'dev' + device.id}>
+                  {device.camera.map((camera, cam_index) => (
+                    <Grid item xs={12} sm={6} key={'card-' + device.id + '-' + cam_index}>
+                      {camera.type === 'WebRTC' && (
+                        <CameraWebRTCV4
+                          deviceId={device.id}
+                          deviceIp={myhostname}
+                          devicename={device.name}
+                          camera_src={device.name + '_' + camera.source}
+                          onClose={() => {
+                            console.log('cerrar ');
+                          }}
+                        />
+                      )}
+                      {camera.type === 'WebRTC_env' && (
+                        <CameraWebRTCV4
+                          deviceId={device.id}
+                          deviceIp={device.ip}
+                          devicename={device.name}
+                          camera_src={camera.source}
+                          onClose={() => {
+                            console.log('cerrar ');
+                          }}
+                        />
+                      )}
+                      {camera.type === 'Websocket' && (
+                        <CameraV1
+                          deviceId={device.id}
+                          datacamera={null}
+                          onClose={() => console.log('cerrar ')}
+                        />
+                      )}
+                    </Grid>
+                  ))}
+                </Fragment>
+              ))}
             </Grid>
           </Box>
         </div>
         <div className={classes.sidebarStyle}>
           <div className={classes.middleStyle}>
             <Paper square className={classes.contentListStyle}>
-              <MainToolbar SetAddUAVOpen={SetAddUAVOpen} />
+              <MainToolbar SetAddUAVOpen={setAddUAVOpen} />
               <DeviceList devices={listdevices} />
             </Paper>
           </div>

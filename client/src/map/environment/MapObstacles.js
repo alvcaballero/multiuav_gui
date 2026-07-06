@@ -896,8 +896,9 @@ const MapObstacles = ({
     updateMap();
 
     // Listen for style changes to re-add layers
+    let styleDataTimeout;
     const onStyleData = () => {
-      setTimeout(() => {
+      styleDataTimeout = setTimeout(() => {
         if (visible && !map.getSource(sourceIds.safe)) {
           updateMap();
         }
@@ -908,6 +909,7 @@ const MapObstacles = ({
 
     return () => {
       map.off('styledata', onStyleData);
+      clearTimeout(styleDataTimeout);
       removeSourcesAndLayers();
     };
   }, [visible, obstacles, origin, colors, updateMap, removeSourcesAndLayers, sourceIds.safe]);

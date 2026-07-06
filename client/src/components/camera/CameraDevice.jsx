@@ -44,13 +44,13 @@ const SIZE_CONFIG = {
 const hostname = window.location.hostname;
 
 const RenderImages = ({ datacamera }) => {
-  const [camera_image, setcamera_image] = useState(novideo);
+  const [camera_image, setCameraImage] = useState(novideo);
 
   useEffect(() => {
     if (datacamera != null) {
-      setcamera_image('data:image/jpeg;base64,' + datacamera.camera);
+      setCameraImage('data:image/jpeg;base64,' + datacamera.camera);
     } else {
-      setcamera_image(novideo);
+      setCameraImage(novideo);
     }
   }, [datacamera]);
   return <img src={camera_image} style={{ width: '100%' }} />;

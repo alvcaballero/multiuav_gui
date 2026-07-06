@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -82,102 +82,100 @@ const SelectList = ({ Data, setData = () => null }) => {
     <div>
       {ElementsExist && (
         <div className={classes.details}>
-          {React.Children.toArray(
-            Object.values(Data).map((group, indexGroup) => (
-              <Accordion
-                expanded={expandedGroup === `Elements ${indexGroup}`}
-                onChange={handleChangeGroup(`Elements ${indexGroup}`)}
-              >
-                <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography
-                    sx={{ width: '33%', flexShrink: 0 }}
-                  >{`Group ${indexGroup}`}</Typography>
-                  <IconButton
-                    sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      DeleteGroup(indexGroup);
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </AccordionSummary>
-                <AccordionDetails className={classes.details}>
-                  {expandedGroup === `Elements ${indexGroup}` && (
-                    <>
-                      <TextField
-                        required
-                        label="Name"
-                        variant="standard"
-                        value={group.name ? group.name : ''}
-                      />
-                      <div className={classes.details}>
-                        {React.Children.toArray(
-                          Object.values(group.items).map((element, index) => (
-                            <Accordion
-                              expanded={expanded === `Elements ${index}`}
-                              onChange={handleChange(`Elements ${index}`)}
-                            >
-                              <AccordionSummary expandIcon={<ExpandMore />}>
-                                {element.title ? (
-                                  <Typography sx={{ width: '33%', flexShrink: 0 }}>
-                                    {`Element ${element.title}`}
-                                  </Typography>
-                                ) : (
-                                  <Typography
-                                    sx={{ width: '33%', flexShrink: 0 }}
-                                  >{`Element ${index}`}</Typography>
-                                )}
+          {Object.values(Data).map((group, indexGroup) => (
+            <Accordion
+              key={indexGroup}
+              expanded={expandedGroup === `Elements ${indexGroup}`}
+              onChange={handleChangeGroup(`Elements ${indexGroup}`)}
+            >
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography
+                  sx={{ width: '33%', flexShrink: 0 }}
+                >{`Group ${indexGroup}`}</Typography>
+                <IconButton
+                  sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    DeleteGroup(indexGroup);
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </AccordionSummary>
+              <AccordionDetails className={classes.details}>
+                {expandedGroup === `Elements ${indexGroup}` && (
+                  <>
+                    <TextField
+                      required
+                      label="Name"
+                      variant="standard"
+                      value={group.name ? group.name : ''}
+                    />
+                    <div className={classes.details}>
+                      {Object.values(group.items).map((element, index) => (
+                        <Accordion
+                          key={index}
+                          expanded={expanded === `Elements ${index}`}
+                          onChange={handleChange(`Elements ${index}`)}
+                        >
+                          <AccordionSummary expandIcon={<ExpandMore />}>
+                            {element.title ? (
+                              <Typography sx={{ width: '33%', flexShrink: 0 }}>
+                                {`Element ${element.title}`}
+                              </Typography>
+                            ) : (
+                              <Typography
+                                sx={{ width: '33%', flexShrink: 0 }}
+                              >{`Element ${index}`}</Typography>
+                            )}
 
-                                <IconButton
-                                  sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    DeleteElement(indexGroup, index);
-                                  }}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </AccordionSummary>
-                              <AccordionDetails className={classes.details}>
-                                {expanded === `Elements ${index}` && (
-                                  <Box
-                                    component="form"
-                                    sx={{
-                                      '& .MuiTextField-root': { m: 1 },
-                                    }}
-                                  >
-                                    <TextField
-                                      disabled
-                                      label="Latitude "
-                                      type="number"
-                                      sx={{ width: '15ch' }}
-                                      variant="standard"
-                                      slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
-                                      value={element.latitude}
-                                    />
-                                    <TextField
-                                      disabled
-                                      label="Longitud "
-                                      type="number"
-                                      variant="standard"
-                                      sx={{ width: '15ch' }}
-                                      slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
-                                      value={element.longitude}
-                                    />
-                                  </Box>
-                                )}
-                              </AccordionDetails>
-                            </Accordion>
-                          )),
-                        )}
-                      </div>
-                    </>
-                  )}
-                </AccordionDetails>
-              </Accordion>
-            )),
-          )}
+                            <IconButton
+                              sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                DeleteElement(indexGroup, index);
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </AccordionSummary>
+                          <AccordionDetails className={classes.details}>
+                            {expanded === `Elements ${index}` && (
+                              <Box
+                                component="form"
+                                sx={{
+                                  '& .MuiTextField-root': { m: 1 },
+                                }}
+                              >
+                                <TextField
+                                  disabled
+                                  label="Latitude "
+                                  type="number"
+                                  sx={{ width: '15ch' }}
+                                  variant="standard"
+                                  slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
+                                  value={element.latitude}
+                                />
+                                <TextField
+                                  disabled
+                                  label="Longitud "
+                                  type="number"
+                                  variant="standard"
+                                  sx={{ width: '15ch' }}
+                                  slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
+                                  value={element.longitude}
+                                />
+                              </Box>
+                            )}
+                          </AccordionDetails>
+                        </Accordion>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          ))}
         </div>
       )}
     </div>

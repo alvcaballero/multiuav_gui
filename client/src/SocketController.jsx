@@ -20,7 +20,7 @@ const SocketController = () => {
   const dispatch = useDispatch();
 
   const socketRef = useRef();
-  const [socketState, setsocketState] = useState(true);
+  const [socketState, setSocketState] = useState(true);
 
   const [notifications, setNotifications] = useState([]);
 
@@ -149,7 +149,7 @@ const SocketController = () => {
 
   useEffectAsync(async () => {
     if (socketState) {
-      setsocketState(false);
+      setSocketState(false);
 
       const [devicesRes, missionsRes, routesRes] = await Promise.all([
         fetch('/api/devices'),

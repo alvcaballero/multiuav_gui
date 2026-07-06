@@ -102,16 +102,19 @@ const DevicePage3D = () => {
   const { id } = useParams();
 
   const [item, setItem] = useState();
-  const [thisDevice, setthisdevice] = useState({});
+  const [thisDevice, setThisDevice] = useState({});
   const positions = useSelector((state) => state.session.positions);
   const devicelist = useSelector((state) => state.devices.items);
   const sessionmarkers = useSelector((state) => state.session.markers);
 
-  const [, setmarkers] = useState([]);
+  const [markers, setMarkers] = useState([]);
+  void markers;
 
   const myhostname = `${window.location.hostname}`;
-  const [, setFilteredPositions] = useState([]);
-  const [, setFilteredDevices] = useState([]);
+  const [filteredPositions, setFilteredPositions] = useState([]);
+  void filteredPositions;
+  const [filteredDevices, setFilteredDevices] = useState([]);
+  void filteredDevices;
   const [keyword] = useState('');
   const [filter] = usePersistedState('filter', {
     statuses: [],
@@ -140,7 +143,7 @@ const DevicePage3D = () => {
   );
 
   useEffect(() => {
-    setmarkers(sessionmarkers);
+    setMarkers(sessionmarkers);
   }, [sessionmarkers]);
 
   useEffect(() => {
@@ -163,7 +166,7 @@ const DevicePage3D = () => {
 
   useEffect(() => {
     if (id) {
-      setthisdevice(devicelist[id]);
+      setThisDevice(devicelist[id]);
       console.log(devicelist[id]);
     }
   }, [id, devicelist]);

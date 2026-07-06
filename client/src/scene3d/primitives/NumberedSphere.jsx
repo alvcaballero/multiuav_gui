@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Billboard, Text, Circle, Box, Line } from '@react-three/drei';
 
 const NumberedSphere = ({ position, properties, hideLabel = false }) => {
@@ -76,8 +76,9 @@ function Word({ children, position, color }) {
         onPointerOut={out}
         onClick={() => console.log('clicked')}
         {...fontProps}
-        children={children}
-      />
+      >
+        {children}
+      </Text>
     </Billboard>
   );
 }

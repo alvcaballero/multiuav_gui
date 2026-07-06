@@ -58,19 +58,19 @@ const showToast = (type, description) => {
 
 const MissionPageTest = () => {
   const { classes } = useStyles();
-  const [Opensave, setOpenSave] = useState(false);
+  const [Opensave, setOpensave] = useState(false);
 
   const positions = useSelector((state) => state.session.positions);
   const sessionmarkers = useSelector((state) => state.session.markers);
 
   const [filteredPositions, setFilteredPositions] = useState([]);
-  const [markers, setmarkers] = useState([]);
+  const [markers, setMarkers] = useState([]);
 
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
   }, [positions]);
   useEffect(() => {
-    setmarkers(sessionmarkers);
+    setMarkers(sessionmarkers);
   }, [sessionmarkers]);
 
   return (
@@ -106,7 +106,7 @@ const MissionPageTest = () => {
         <div className={classes.sidebarStyle}>
           <div className={classes.middleStyle}>
             <Paper square>
-              <MissionPanel SetOpenSave={setOpenSave} />
+              <MissionPanel SetOpenSave={setOpensave} />
             </Paper>
           </div>
         </div>
@@ -117,7 +117,7 @@ const MissionPageTest = () => {
             </Paper>
           </div>
         </div>
-        {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
+        {Opensave && <SaveFile SetOpenSave={setOpensave} />}
       </RosControl>
     </div>
   );

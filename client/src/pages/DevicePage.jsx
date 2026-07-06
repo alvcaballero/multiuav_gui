@@ -107,17 +107,18 @@ const DevicePage = () => {
   const [value, setValue] = React.useState(0);
 
   const [item, setItem] = useState();
-  const [thisDevice, setthisdevice] = useState({});
+  const [thisDevice, setThisDevice] = useState({});
   const positions = useSelector((state) => state.session.positions);
   const devicelist = useSelector((state) => state.devices.items);
   const sessionmarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);
 
-  const [markers, setmarkers] = useState([]);
+  const [markers, setMarkers] = useState([]);
 
   const myhostname = `${window.location.hostname}`;
   const [filteredPositions, setFilteredPositions] = useState([]);
-  const [, setFilteredDevices] = useState([]);
+  const [filteredDevices, setFilteredDevices] = useState([]);
+  void filteredDevices;
   const [keyword] = useState('');
   const [filter] = usePersistedState('filter', {
     statuses: [],
@@ -146,7 +147,7 @@ const DevicePage = () => {
   );
 
   useEffect(() => {
-    setmarkers(sessionmarkers);
+    setMarkers(sessionmarkers);
   }, [sessionmarkers]);
 
   useEffect(() => {
@@ -169,7 +170,7 @@ const DevicePage = () => {
 
   useEffect(() => {
     if (id) {
-      setthisdevice(devicelist[id]);
+      setThisDevice(devicelist[id]);
       console.log(devicelist[id]);
     }
   }, [id, devicelist]);

@@ -36,7 +36,8 @@ class PegmanControlImpl {
 const PegmanButton = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [, setDragging] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  void dragging;
 
   const handleDragStart = useCallback((e) => {
     setDragging(true);

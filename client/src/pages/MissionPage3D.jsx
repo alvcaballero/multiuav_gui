@@ -57,15 +57,15 @@ const MissionPage3D = () => {
   const { classes } = useStyles();
   const [tabIndex, setTabIndex] = useState(0);
 
-  const [Opensave, setOpenSave] = useState(false);
+  const [Opensave, setOpensave] = useState(false);
 
   const routes = useSelector((state) => state.mission.route);
   const sessionmarkers = useSelector((state) => state.session.markers);
 
-  const [markers, setmarkers] = useState([]);
+  const [markers, setMarkers] = useState([]);
 
   useEffect(() => {
-    setmarkers(sessionmarkers);
+    setMarkers(sessionmarkers);
   }, [sessionmarkers]);
 
   const tabs = (
@@ -103,7 +103,7 @@ const MissionPage3D = () => {
         <div className={classes.sidebarStyle}>
           <div className={classes.middleStyle}>
             <Paper square>
-              <MissionPanel SetOpenSave={setOpenSave} />
+              <MissionPanel SetOpenSave={setOpensave} />
             </Paper>
           </div>
         </div>
@@ -114,7 +114,7 @@ const MissionPage3D = () => {
             </Paper>
           </div>
         </div>
-        {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
+        {Opensave && <SaveFile SetOpenSave={setOpensave} />}
       </RosControl>
     </div>
   );

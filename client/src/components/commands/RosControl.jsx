@@ -4,8 +4,8 @@ import { useSelector } from 'react-redux';
 export const RosContext = React.createContext();
 
 export const RosControl = ({ children }) => {
-  const [rosState, setrosState] = useState(false);
-  const [confirmMission, setconfirmMission] = useState(false);
+  const [rosState, setRosState] = useState(false);
+  const [confirmMission, setConfirmMission] = useState(false);
   const serverState = useSelector((state) => state.session.serverROS);
 
   useEffect(() => {
@@ -16,17 +16,17 @@ export const RosControl = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    setrosState(serverState);
+    setRosState(serverState);
   }, [serverState]);
 
   const contextValue = useMemo(
     () => ({
       rosState,
       confirmMission,
-      setconfirmMission,
+      setconfirmMission: setConfirmMission,
     }),
     [rosState, confirmMission],
   );
 
-  return <RosContext.Provider value={contextValue}>{children}</RosContext.Provider>;
+  return <RosContext value={contextValue}>{children}</RosContext>;
 };

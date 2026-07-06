@@ -118,9 +118,9 @@ const MainPage = () => {
   const commandableMissionId = useSelector(getCommandableMissionId);
   const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
 
-  const [AddUAVOpen, SetAddUAVOpen] = useState(false);
+  const [AddUAVOpen, setAddUAVOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [confirmMission, setconfirmMission] = useState(false);
+  const [confirmMission, setConfirmMission] = useState(false);
 
   const unselectDevice = useCallback(() => {
     dispatch(devicesActions.selectId(null));
@@ -129,8 +129,8 @@ const MainPage = () => {
   return (
     <div className={classes.root}>
       <Navbar
-        SetAddUAVOpen={SetAddUAVOpen}
-        setconfirmMission={setconfirmMission}
+        SetAddUAVOpen={setAddUAVOpen}
+        setconfirmMission={setConfirmMission}
         setChatOpen={setChatOpen}
       />
       <RosControl>
@@ -139,7 +139,7 @@ const MainPage = () => {
 
       <SwipeConfirm
         enable={confirmMission}
-        onClose={() => setconfirmMission(false)}
+        onClose={() => setConfirmMission(false)}
         onSucces={() => handleCommandMission()}
       />
       <div className={classes.map}>
@@ -162,7 +162,7 @@ const MainPage = () => {
             setFilterSort={setFilterSort}
             filterMap={filterMap}
             setFilterMap={setFilterMap}
-            SetAddUAVOpen={SetAddUAVOpen}
+            SetAddUAVOpen={setAddUAVOpen}
           />
         </Paper>
         <div className={classes.middle}>
@@ -185,7 +185,7 @@ const MainPage = () => {
         </Suspense>
       )}
       <CameraDevice deviceId={selectedDeviceId} onClose={unselectDevice} />
-      {AddUAVOpen && <Adduav SetAddUAVOpen={SetAddUAVOpen} />}
+      {AddUAVOpen && <Adduav SetAddUAVOpen={setAddUAVOpen} />}
     </div>
   );
 };

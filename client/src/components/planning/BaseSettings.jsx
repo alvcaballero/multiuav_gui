@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -96,147 +96,138 @@ const BaseSettings = ({
         </Box>
       ) : (
         <div className={classes.details}>
-          {React.Children.toArray(
-            markers.bases.map((base, baseIndex) => {
-              // Buscar si existe una asignación para esta base
-              const assignmentIndex = data.findIndex((a) => a.baseId === base.id);
-              const assignment = assignmentIndex >= 0 ? data[assignmentIndex] : null;
+          {markers.bases.map((base, baseIndex) => {
+            // Buscar si existe una asignación para esta base
+            const assignmentIndex = data.findIndex((a) => a.baseId === base.id);
+            const assignment = assignmentIndex >= 0 ? data[assignmentIndex] : null;
 
-              return (
-                <Accordion
-                  expanded={expanded === `wp ${base.id}`}
-                  onChange={handleChange(`wp ${base.id}`)}
-                >
-                  <AccordionSummary expandIcon={<ExpandMore />}>
-                    <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
-                      {`${type} ${baseIndex} - ${assignment?.device?.name || 'Sin asignar'}`}
-                    </Typography>
+            return (
+              <Accordion
+                key={base.id}
+                expanded={expanded === `wp ${base.id}`}
+                onChange={handleChange(`wp ${base.id}`)}
+              >
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
+                    {`${type} ${baseIndex} - ${assignment?.device?.name || 'Sin asignar'}`}
+                  </Typography>
 
-                    <IconButton
-                      sx={{ py: 0, pr: 0, flexShrink: 0 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        goToBase(base.id);
+                  <IconButton
+                    sx={{ py: 0, pr: 0, flexShrink: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToBase(base.id);
+                    }}
+                  >
+                    <MyLocationIcon />
+                  </IconButton>
+                </AccordionSummary>
+                <AccordionDetails className={classes.details}>
+                  {expanded === `wp ${base.id}` && (
+                    <Box
+                      component="form"
+                      sx={{
+                        '& .MuiTextField-root': { m: 1 },
                       }}
                     >
-                      <MyLocationIcon />
-                    </IconButton>
-                  </AccordionSummary>
-                  <AccordionDetails className={classes.details}>
-                    {expanded === `wp ${base.id}` && (
-                      <Box
-                        component="form"
-                        sx={{
-                          '& .MuiTextField-root': { m: 1 },
-                        }}
-                      >
-                        <div>
-                          <Typography variant="subtitle1" style={{ display: 'inline' }}>
-                            Device params
-                          </Typography>
-                        </div>
-                        <div>
-                          {param.devices &&
-                            React.Children.toArray(
-                              Object.keys(param.devices).map((actionKey) => (
-                                <div>
-                                  {actionKey === 'id' && (
-                                    <SelectField
-                                      emptyValue={''}
+                      <div>
+                        <Typography variant="subtitle1" style={{ display: 'inline' }}>
+                          Device params
+                        </Typography>
+                      </div>
+                      <div>
+                        {param.devices &&
+                          Object.keys(param.devices).map((actionKey) => (
+                            <div key={actionKey}>
+                              {actionKey === 'id' && (
+                                <SelectField
+                                  emptyValue={''}
+                                  fullWidth
+                                  label="device"
+                                  value={assignment?.device?.id || ''}
+                                  endpoint="/api/devices"
+                                  keyGetter={(it) => String(it.id)}
+                                  titleGetter={(it) => `${it.name} - ${it.category}`}
+                                  onChange={(e, items) => {
+                                    console.log(items);
+                                    console.log(e.target.value);
+
+                                    // Crear o actualizar asignación
+                                    const auxData = JSON.parse(JSON.stringify(data));
+                                    const deviceId = e.target.value;
+                                    const selectedDevice = items.find(
+                                      (item) => +item.id === +deviceId,
+                                    );
+
+                                    if (assignmentIndex >= 0) {
+                                      // Actualizar asignación existente
+                                      auxData[assignmentIndex].device = {
+                                        id: deviceId,
+                                        name: deviceId === '' ? '' : selectedDevice?.name || '',
+                                      };
+                                    } else {
+                                      // Crear nueva asignación
+                                      auxData.push({
+                                        baseId: base.id,
+                                        device: {
+                                          id: deviceId,
+                                          name: deviceId === '' ? '' : selectedDevice?.name || '',
+                                        },
+                                        settings: defaultSettings,
+                                      });
+                                    }
+
+                                    setData(auxData);
+                                  }}
+                                />
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                      <div>
+                        <Typography variant="subtitle1" style={{ display: 'inline' }}>
+                          Settings
+                        </Typography>
+                      </div>
+                      <div>
+                        {param.settings &&
+                          Object.keys(param.settings).map((actionKey) => (
+                            <div key={actionKey}>
+                              {param.settings[actionKey].name && (
+                                <>
+                                  <Typography variant="subtitle1" className={classes.attributeName}>
+                                    {param.settings[actionKey].name}
+                                  </Typography>
+                                  <div className={classes.actionValue}>
+                                    <TextField
+                                      required
                                       fullWidth
-                                      label="device"
-                                      value={assignment?.device?.id || ''}
-                                      endpoint="/api/devices"
-                                      keyGetter={(it) => String(it.id)}
-                                      titleGetter={(it) => `${it.name} - ${it.category}`}
-                                      onChange={(e, items) => {
-                                        console.log(items);
-                                        console.log(e.target.value);
-
-                                        // Crear o actualizar asignación
-                                        const auxData = JSON.parse(JSON.stringify(data));
-                                        const deviceId = e.target.value;
-                                        const selectedDevice = items.find(
-                                          (item) => +item.id === +deviceId,
-                                        );
-
+                                      type="number"
+                                      defaultValue={
+                                        assignment?.settings?.[actionKey] !== undefined
+                                          ? assignment.settings[actionKey]
+                                          : param.settings[actionKey].default
+                                      }
+                                      onBlur={(e) => {
                                         if (assignmentIndex >= 0) {
-                                          // Actualizar asignación existente
-                                          auxData[assignmentIndex].device = {
-                                            id: deviceId,
-                                            name: deviceId === '' ? '' : selectedDevice?.name || '',
-                                          };
-                                        } else {
-                                          // Crear nueva asignación
-                                          auxData.push({
-                                            baseId: base.id,
-                                            device: {
-                                              id: deviceId,
-                                              name:
-                                                deviceId === '' ? '' : selectedDevice?.name || '',
-                                            },
-                                            settings: defaultSettings,
+                                          modifyData(assignmentIndex, 'settings', {
+                                            [actionKey]: +e.target.value,
                                           });
                                         }
-
-                                        setData(auxData);
                                       }}
                                     />
-                                  )}
-                                </div>
-                              )),
-                            )}
-                        </div>
-                        <div>
-                          <Typography variant="subtitle1" style={{ display: 'inline' }}>
-                            Settings
-                          </Typography>
-                        </div>
-                        <div>
-                          {param.settings &&
-                            React.Children.toArray(
-                              Object.keys(param.settings).map((actionKey) => (
-                                <div>
-                                  {param.settings[actionKey].name && (
-                                    <>
-                                      <Typography
-                                        variant="subtitle1"
-                                        className={classes.attributeName}
-                                      >
-                                        {param.settings[actionKey].name}
-                                      </Typography>
-                                      <div className={classes.actionValue}>
-                                        <TextField
-                                          required
-                                          fullWidth
-                                          type="number"
-                                          defaultValue={
-                                            assignment?.settings?.[actionKey] !== undefined
-                                              ? assignment.settings[actionKey]
-                                              : param.settings[actionKey].default
-                                          }
-                                          onBlur={(e) => {
-                                            if (assignmentIndex >= 0) {
-                                              modifyData(assignmentIndex, 'settings', {
-                                                [actionKey]: +e.target.value,
-                                              });
-                                            }
-                                          }}
-                                        />
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              )),
-                            )}
-                        </div>
-                      </Box>
-                    )}
-                  </AccordionDetails>
-                </Accordion>
-              );
-            }),
-          )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
         </div>
       )}
     </div>

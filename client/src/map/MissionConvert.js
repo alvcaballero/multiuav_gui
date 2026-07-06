@@ -75,7 +75,7 @@ export const RuteConvert = (route) => {
   }
 
   if (latlongError) {
-    alert('Error en coordenadas latitud y longitud valores entre -90 y 90');
+    console.error('Error en coordenadas latitud y longitud valores entre -90 y 90');
     return [];
   }
   return rt;

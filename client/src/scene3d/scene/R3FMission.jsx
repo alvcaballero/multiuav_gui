@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment, useMemo } from 'react';
+import { useState, useEffect, Fragment, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
 import palette from '../../shared/palette';
@@ -103,39 +103,35 @@ const R3FMission = ({ routes = [] }) => {
   return (
     <Fragment>
       {/* Waypoints*/}
-      {React.Children.toArray(
-        routeWP.map((wp, index) => {
-          const hideLabel = devicePositionsXYZ.some((dev) => {
-            const dx = dev.pos[0] - wp.x;
-            const dy = dev.pos[1] - wp.y;
-            const dz = dev.pos[2] - wp.z;
-            return Math.sqrt(dx * dx + dy * dy + dz * dz) < HIDE_RADIUS;
-          });
-          return (
-            <Fragment key={'wp' + index}>
-              <NumberedSphere
-                position={[wp.x, wp.y, wp.z]}
-                properties={wp.properties}
-                hideLabel={hideLabel}
-              />
-            </Fragment>
-          );
-        }),
-      )}
-
-      {React.Children.toArray(
-        routeLines.map((line, index) => (
-          <Fragment key={'line' + index}>
-            <Line
-              points={line}
-              color={palette.colors_devices[index]}
-              linewidth={3}
-              linecap={'round'}
-              linejoin={'round'}
+      {routeWP.map((wp, index) => {
+        const hideLabel = devicePositionsXYZ.some((dev) => {
+          const dx = dev.pos[0] - wp.x;
+          const dy = dev.pos[1] - wp.y;
+          const dz = dev.pos[2] - wp.z;
+          return Math.sqrt(dx * dx + dy * dy + dz * dz) < HIDE_RADIUS;
+        });
+        return (
+          <Fragment key={'wp' + index}>
+            <NumberedSphere
+              position={[wp.x, wp.y, wp.z]}
+              properties={wp.properties}
+              hideLabel={hideLabel}
             />
           </Fragment>
-        )),
-      )}
+        );
+      })}
+
+      {routeLines.map((line, index) => (
+        <Fragment key={'line' + index}>
+          <Line
+            points={line}
+            color={palette.colors_devices[index]}
+            linewidth={3}
+            linecap={'round'}
+            linejoin={'round'}
+          />
+        </Fragment>
+      ))}
     </Fragment>
   );
 };
