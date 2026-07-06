@@ -51,8 +51,9 @@ const useStyles = makeStyles()((theme) => ({
     zIndex: 3,
   },
 }));
-const showToast = () => {
-  setList([...list, toastProperties]);
+const showToast = (type, description) => {
+  // Toast notification placeholder
+  console.log('Toast:', type, description);
 };
 
 const MissionPageTest = () => {

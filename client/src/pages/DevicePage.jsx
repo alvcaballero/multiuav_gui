@@ -116,7 +116,7 @@ const DevicePage = () => {
   const [markers, setmarkers] = useState([]);
 
   const myhostname = `${window.location.hostname}`;
-  const [, setFilteredPositions] = useState([]);
+  const [filteredPositions, setFilteredPositions] = useState([]);
   const [, setFilteredDevices] = useState([]);
   const [keyword] = useState('');
   const [filter] = usePersistedState('filter', {

@@ -70,7 +70,7 @@ const textPopUp = ({ properties, attributes, actions }) => {
   htmlAttributes += Object.keys(attributes)
     .map((key) => {
       const unit = key === 'idle_vel' || key === 'max_vel' ? 'm/s' : '';
-      return `<div style="display:inline"><span>${key}: </span><span>${attribute[key]} ${unit} </span></div>`;
+      return `<div style="display:inline"><span>${key}: </span><span>${attributes[key]} ${unit} </span></div>`;
     })
     .join('');
   return html + htmlAction + htmlAttributes;

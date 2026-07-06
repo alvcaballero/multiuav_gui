@@ -48,13 +48,14 @@ const useStyles = makeStyles()((theme) => ({
     zIndex: 3,
   },
 }));
-const showToast = () => {
-  setList([...list, toastProperties]);
+const showToast = (type, description) => {
+  // Toast notification placeholder
+  console.log('Toast:', type, description);
 };
 
 const MissionPage3D = () => {
   const { classes } = useStyles();
-  const tabIndex = 0;
+  const [tabIndex, setTabIndex] = useState(0);
 
   const [Opensave, setOpenSave] = useState(false);
 
@@ -71,7 +72,7 @@ const MissionPage3D = () => {
     <>
       <Tabs
         value={tabIndex}
-        onChange={(_, index) => navigate(`/robot/${id}/${index}`)}
+        onChange={(_, index) => setTabIndex(index)}
         style={{ flexGrow: 1 }}
       >
         <Tab label="Viz" />

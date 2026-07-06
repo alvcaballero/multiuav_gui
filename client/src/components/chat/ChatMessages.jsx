@@ -515,7 +515,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
 
     const handlShowMission = async () => {
       try {
-        const response = await fetch(endpoint, {
+        const response = await fetch('/api/missions/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(missionData.mission),
