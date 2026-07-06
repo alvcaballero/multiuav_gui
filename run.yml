@@ -20,6 +20,9 @@ windows:
             - cd ~/work/px4/llm_planner_gcs/multiuav_gcs/client
             - nvm use 20
             - sleep 5;npm run start
+        - planner:
+            - cd ~/work/px4/Smart-Flies-MUAVPlanner
+            - uv run python -m flask --app ./api run --host=0.0.0.0 --port=8004
   - Docker:
       layout: tiled
       panes:
