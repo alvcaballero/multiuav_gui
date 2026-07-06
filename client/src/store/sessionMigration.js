@@ -190,19 +190,3 @@ export const planningToLegacy = (planning, markers) => {
     settings: planning.settingsSchema || {},
   };
 };
-
-/**
- * Migra datos completos de session
- */
-export const migrateSessionData = (session) => {
-  if (!session) return session;
-
-  const migratedMarkers = migrateMarkers(session.markers);
-  const migratedPlanning = migratePlanning(session.planning, migratedMarkers);
-
-  return {
-    ...session,
-    markers: migratedMarkers,
-    planning: migratedPlanning,
-  };
-};

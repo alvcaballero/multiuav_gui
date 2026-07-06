@@ -8,7 +8,7 @@
 /**
  * Tipos de objetivo disponibles
  */
-export const OBJETIVO_TYPES = {
+const OBJETIVO_TYPES = {
   PATH_OBJECT: 'path-object',
   OBJECT: 'object',
   POINT: 'point',
@@ -115,40 +115,6 @@ const createNewElement = (point) => {
     linea: true,
     items: [point],
   };
-};
-
-/**
- * Valida que un punto tenga la estructura correcta
- *
- * @param {Object} point - Punto a validar
- * @returns {boolean} True si el punto es válido
- */
-export const isValidPoint = (point) => {
-  return (
-    point &&
-    typeof point === 'object' &&
-    typeof point.latitude === 'number' &&
-    typeof point.longitude === 'number'
-  );
-};
-
-/**
- * Valida que un array de locations tenga la estructura correcta
- *
- * @param {Array} locations - Array de locations a validar
- * @returns {boolean} True si todas las locations son válidas
- */
-export const areValidLocations = (locations) => {
-  if (!Array.isArray(locations)) return false;
-
-  return locations.every(
-    (location) =>
-      location &&
-      typeof location === 'object' &&
-      location.type &&
-      Array.isArray(location.items) &&
-      location.items.every(isValidPoint),
-  );
 };
 
 /**

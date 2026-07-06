@@ -24,8 +24,6 @@ export const speedUnitString = (unit) => {
 
 export const speedFromKnots = (value, unit) => value * speedConverter(unit);
 
-export const speedToKnots = (value, unit) => value / speedConverter(unit);
-
 const distanceConverter = (unit) => {
   switch (unit) {
     case 'mi':
@@ -52,8 +50,6 @@ export const distanceUnitString = (unit) => {
 
 export const distanceFromMeters = (value, unit) => value * distanceConverter(unit);
 
-export const distanceToMeters = (value, unit) => value / distanceConverter(unit);
-
 const altitudeConverter = (unit) => {
   switch (unit) {
     case 'ft':
@@ -75,33 +71,3 @@ export const altitudeUnitString = (unit) => {
 };
 
 export const altitudeFromMeters = (value, unit) => value * altitudeConverter(unit);
-
-export const altitudeToMeters = (value, unit) => value / altitudeConverter(unit);
-
-const volumeConverter = (unit) => {
-  switch (unit) {
-    case 'impGal':
-      return 4.546;
-    case 'usGal':
-      return 3.785;
-    case 'ltr':
-    default:
-      return 1;
-  }
-};
-
-export const volumeUnitString = (unit) => {
-  switch (unit) {
-    case 'impGal':
-      return 'sharedGallonAbbreviation';
-    case 'usGal':
-      return 'sharedGallonAbbreviation';
-    case 'ltr':
-    default:
-      return 'sharedLiterAbbreviation';
-  }
-};
-
-export const volumeFromLiters = (value, unit) => value / volumeConverter(unit);
-
-export const volumeToLiters = (value, unit) => value * volumeConverter(unit);

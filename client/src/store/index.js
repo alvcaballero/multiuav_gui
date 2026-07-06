@@ -41,5 +41,4 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(throttleMiddleware),
 });
 
-export default store;
 export { store };

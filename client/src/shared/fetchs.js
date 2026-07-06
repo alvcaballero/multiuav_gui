@@ -1,14 +1,3 @@
-export const loadMission = async (mission) => {
-  const response = await fetch('/api/mission', {
-    method: 'POST',
-    body: new URLSearchParams(`mission=${encodeURIComponent(mission)}`),
-  });
-  if (response.ok) {
-    return await response.json();
-  }
-  throw new Error(await response.text());
-};
-
 // Command an already-loaded mission by its id. The mission + routes were created
 // by commandLoadMission; the server commands each LOADED route. Returns
 // { missionId, results: [{ deviceId, state, msg }] }.

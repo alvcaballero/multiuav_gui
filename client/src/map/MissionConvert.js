@@ -1,26 +1,3 @@
-import { store, missionActions, activeMissionsActions } from '../store';
-import { parseMissionFile } from '../services/fileService';
-
-var mission_home = [];
-
-export const GetMissionHome = () => {
-  return mission_home;
-};
-
-/**
- * @deprecated Usar parseMissionFile() + dispatch(missionActions.updateMission()) directamente.
- * Wrapper de compatibilidad para componentes no migrados aún.
- */
-export const FiletoMission = (item) => {
-  const result = parseMissionFile(item);
-  if (!result) {
-    alert('Formato de archivo no soportado');
-    return;
-  }
-  store.dispatch(missionActions.updateMission({ ...result.mission, name: result.name }));
-  // Loading a mission from file replaces the editor — drop any active selection.
-  store.dispatch(activeMissionsActions.selectMission(null));
-};
 export const RuteConvert = (route) => {
   const rt = [];
   let latlongError = false;

@@ -9,7 +9,7 @@
 // every consumer renders the exact same color via sx={{ backgroundColor, color }}.
 import { blue, green, grey, amber, red, blueGrey } from '@mui/material/colors';
 
-export const MISSION_STATUS_STYLE = {
+const MISSION_STATUS_STYLE = {
   init: { color: blue[600], label: 'Init' },
   planning: { color: blue[300], label: 'Planning' },
   running: { color: green[700], label: 'Running' },
@@ -20,7 +20,7 @@ export const MISSION_STATUS_STYLE = {
   cancelled: { color: blueGrey[600], label: 'Cancelled' },
 };
 
-export const ROUTE_STATUS_STYLE = {
+const ROUTE_STATUS_STYLE = {
   init: { color: grey[400], label: 'Init' },
   loaded: { color: amber[600], label: 'Loaded' },
   commanded: { color: blue[600], label: 'Sent' },

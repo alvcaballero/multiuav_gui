@@ -181,4 +181,3 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
 
   return null;
 };
-export default MapMissions;

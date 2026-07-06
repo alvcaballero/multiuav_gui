@@ -90,8 +90,6 @@ export const parseKmlElements = (kmlText) => {
 // Mission file parsers
 // ---------------------------------------------------------------------------
 
-const SUPPORTED_EXTENSIONS = ['.yaml', '.yml', '.waypoints', '.kml', '.plan'];
-
 /**
  * Parsea un archivo de misión y retorna los datos listos para el store.
  * No despacha nada — responsabilidad del llamador.
@@ -121,9 +119,6 @@ export const parseMissionFile = ({ name, data }) => {
 
   return { mission, name: cleanName };
 };
-
-/** @returns {string[]} Extensiones de archivo soportadas para misiones */
-export const missionSupportedExtensions = () => SUPPORTED_EXTENSIONS;
 
 // --- parsers privados -------------------------------------------------------
 

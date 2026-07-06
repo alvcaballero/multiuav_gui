@@ -131,4 +131,3 @@ export const MapMarkers3D = () => {
 
   return null;
 };
-export default MapMarkers3D;

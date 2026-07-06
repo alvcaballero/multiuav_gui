@@ -64,7 +64,7 @@ export const prepareIcon = (background, icon, color, border, boder_color) => {
   return context.getImageData(0, 0, canvas.width, canvas.height);
 };
 
-export const reverseCoordinates = (it) => {
+const reverseCoordinates = (it) => {
   if (!it) {
     return it;
   }

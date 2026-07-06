@@ -287,4 +287,3 @@ export const MapMissionsCreate = () => {
 
   return null;
 };
-export default MapMissionsCreate;

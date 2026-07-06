@@ -25,7 +25,7 @@ import ArrowMapFronSvg from '../../resources/images/icon/ArrowMap2.svg';
 
 import FrontDroneSvg from '../../resources/images/icon/drone-svgrepo.svg';
 
-export const colors = {
+const colors = {
   0: '#F34C28',
   1: '#F39A28',
   2: '#1EC910',

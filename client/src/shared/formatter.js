@@ -7,8 +7,6 @@ import {
   distanceUnitString,
   speedFromKnots,
   speedUnitString,
-  volumeFromLiters,
-  volumeUnitString,
 } from './converter';
 import { prefixString } from './stringUtils';
 
@@ -37,7 +35,6 @@ export const formatTime = (value, format) => {
   }
   return '';
 };
-export const formatStatus = (value) => prefixString('deviceStatus', value);
 export const formatAlarm = (value) => (value ? prefixString('alarm_', value) : '');
 
 export const formatCourse = (value) => {
@@ -66,9 +63,6 @@ export const formatAltitude = (value, unit, t) =>
 
 export const formatSpeed = (value, unit, t) =>
   `${speedFromKnots(value, unit).toFixed(2)} ${speedUnitString(unit, t)}`;
-
-export const formatVolume = (value, unit, t) =>
-  `${volumeFromLiters(value, unit).toFixed(2)} ${volumeUnitString(unit, t)}`;
 
 export const formatNumericHours = (value, t) => {
   const hours = Math.floor(value / 3600000);
@@ -115,33 +109,4 @@ export const getStatusColor = (status) => {
     default:
       return 'neutral';
   }
-};
-
-export const getBatteryStatus = (batteryLevel) => {
-  if (batteryLevel >= 70) {
-    return 'success';
-  }
-  if (batteryLevel > 30) {
-    return 'warning';
-  }
-  return 'error';
-};
-
-export const formatNotificationTitle = (t, notification, includeId) => {
-  let title = t(prefixString('event', notification.type));
-  if (notification.type === 'alarm') {
-    const alarmString = notification.attributes.alarms;
-    if (alarmString) {
-      const alarms = alarmString.split(',');
-      if (alarms.length > 1) {
-        title += ` (${alarms.length})`;
-      } else {
-        title += ` ${formatAlarm(alarms[0], t)}`;
-      }
-    }
-  }
-  if (includeId) {
-    title += ` [${notification.id}]`;
-  }
-  return title;
 };

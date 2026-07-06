@@ -211,4 +211,3 @@ export const MapMissions3D = () => {
 
   return null;
 };
-export default MapMissions3D;
