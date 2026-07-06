@@ -79,7 +79,12 @@ export const CameraWebRTCV4 = ({ deviceId, deviceIp = '127.0.0.1', camera_src = 
           <div>
             <div className={classes.tittle}>{'Id: ' + device.name}</div>
           </div>
-          <iframe src={deviceip} className={classes.media1} style={{ flex: 1, border: 'none' }} />
+          <iframe
+            src={deviceip}
+            className={classes.media1}
+            style={{ flex: 1, border: 'none' }}
+            sandbox="allow-scripts"
+          />
         </Card>
       )}
     </div>
