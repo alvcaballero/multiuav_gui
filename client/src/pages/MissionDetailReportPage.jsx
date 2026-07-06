@@ -153,6 +153,15 @@ const ImageFull = ({ file, closecard }) => {
     </div>
   );
 };
+const formatResult = (result) => {
+  if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
+    return result.measures.map((item, itemIndex) => (
+      <Typography key={`m-${item.name}${itemIndex}`}>{`${item.name}: ${item.value}`}</Typography>
+    ));
+  }
+  return null;
+};
+
 const MissionDetailReportPage = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
@@ -172,20 +181,11 @@ const MissionDetailReportPage = () => {
 
   const [tabValue, setTabValue] = useState('1');
 
-  const TabHandleChange = (event, newTabValue) => {
+  const handleTabChange = (event, newTabValue) => {
     setTabValue(newTabValue);
   };
   const missionItems = 'id,initTime,endTime,status';
   const routeItems = 'id,initTime,endTime,status,deviceId,result';
-
-  const FormatResult = ({ result }) => {
-    if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
-      return result.measures.map((item, itemIndex) => (
-        <Typography key={`m-${item.name}${itemIndex}`}>{`${item.name}: ${item.value}`}</Typography>
-      ));
-    }
-    return null;
-  };
 
   // `axis` selects the status vocabulary: mission and route status share names
   // ('running', etc.) but mean different things, so each has its own color map.
@@ -211,7 +211,7 @@ const MissionDetailReportPage = () => {
         return <Chip label={style.label} sx={{ backgroundColor: style.color, color: '#fff' }} />;
       }
       case 'result':
-        return FormatResult({ result: value });
+        return formatResult(value);
       default:
         return value;
     }
@@ -340,9 +340,7 @@ const MissionDetailReportPage = () => {
                     <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                       Results
                     </Typography>
-                    {missions.results.map((item, itemIndex) => (
-                      <FormatResult result={item} key={`msrs_${itemIndex}`} />
-                    ))}
+                    {missions.results.flatMap((item) => formatResult(item))}
                   </Grid>
                 </Grid>
               </div>
@@ -420,7 +418,7 @@ const MissionDetailReportPage = () => {
                   >
                     <TabContext value={tabValue}>
                       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <TabList onChange={TabHandleChange} aria-label="lab API tabs example">
+                        <TabList onChange={handleTabChange} aria-label="lab API tabs example">
                           <Tab label="mission" value="1" />
                           <Tab label="Planning" value="2" />
                         </TabList>

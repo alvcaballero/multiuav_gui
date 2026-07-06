@@ -146,114 +146,112 @@ export const MapMissionsCreate = () => {
   );
 
   useEffect(() => {
-    if (true) {
-      map.addSource(routePoints, {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [],
-        },
-        cluster: mapCluster,
-        clusterMaxZoom: 10,
-        clusterRadius: 50,
-      });
+    map.addSource(routePoints, {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+      cluster: mapCluster,
+      clusterMaxZoom: 10,
+      clusterRadius: 50,
+    });
 
-      map.addSource(id, {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [],
-        },
-      });
-      map.addLayer({
-        source: id,
-        id: 'mission-line',
-        type: 'line',
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': 2,
-        },
-      });
-      map.addLayer({
-        source: id,
-        id: 'mission-title',
-        type: 'symbol',
-        layout: {
-          'text-field': '{name}',
-          'text-font': findFonts(map),
-          'text-size': 12,
-        },
-        paint: {
-          'text-halo-color': 'white',
-          'text-halo-width': 1,
-        },
-      });
-      map.addLayer({
-        id: 'mission-points',
-        type: 'symbol',
-        source: routePoints,
-        filter: ['!has', 'point_count'],
-        layout: {
-          'icon-image': '{category}-{color}',
-          'icon-size': iconScale,
-          'icon-allow-overlap': true,
-          'text-allow-overlap': true,
-          'text-field': '{id}',
-          'text-font': findFonts(map),
-          'text-size': 14,
-          'icon-rotate': ['get', 'rotation'],
-          'icon-rotation-alignment': 'map',
-        },
-        paint: {
-          'text-color': 'white',
-        },
-      });
-      map.addLayer({
-        id: clusters,
-        type: 'symbol',
-        source: routePoints,
-        filter: ['has', 'point_count'],
-        layout: {
-          'icon-image': 'background',
-          'icon-size': iconScale,
-          'text-field': 'M',
-          'text-font': findFonts(map),
-          'text-size': 14,
-        },
-      });
-      map.on('mouseenter', 'mission-points', onMouseEnter);
-      map.on('mouseleave', 'mission-points', onMouseLeave);
-      map.on('mousedown', 'mission-points', onMouseDown);
-      map.on('touchstart', 'mission-points', onMouseTouchStart);
+    map.addSource(id, {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+    });
+    map.addLayer({
+      source: id,
+      id: 'mission-line',
+      type: 'line',
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 2,
+      },
+    });
+    map.addLayer({
+      source: id,
+      id: 'mission-title',
+      type: 'symbol',
+      layout: {
+        'text-field': '{name}',
+        'text-font': findFonts(map),
+        'text-size': 12,
+      },
+      paint: {
+        'text-halo-color': 'white',
+        'text-halo-width': 1,
+      },
+    });
+    map.addLayer({
+      id: 'mission-points',
+      type: 'symbol',
+      source: routePoints,
+      filter: ['!has', 'point_count'],
+      layout: {
+        'icon-image': '{category}-{color}',
+        'icon-size': iconScale,
+        'icon-allow-overlap': true,
+        'text-allow-overlap': true,
+        'text-field': '{id}',
+        'text-font': findFonts(map),
+        'text-size': 14,
+        'icon-rotate': ['get', 'rotation'],
+        'icon-rotation-alignment': 'map',
+      },
+      paint: {
+        'text-color': 'white',
+      },
+    });
+    map.addLayer({
+      id: clusters,
+      type: 'symbol',
+      source: routePoints,
+      filter: ['has', 'point_count'],
+      layout: {
+        'icon-image': 'background',
+        'icon-size': iconScale,
+        'text-field': 'M',
+        'text-font': findFonts(map),
+        'text-size': 14,
+      },
+    });
+    map.on('mouseenter', 'mission-points', onMouseEnter);
+    map.on('mouseleave', 'mission-points', onMouseLeave);
+    map.on('mousedown', 'mission-points', onMouseDown);
+    map.on('touchstart', 'mission-points', onMouseTouchStart);
 
-      //https://stackoverflow.com/questions/72010274/stopping-map-on-listener-in-mapbox-gl-js
-      //https://stackoverflow.com/questions/63036623/how-to-disable-an-event-listener-in-mapbox
-      //map.off("click", "mission-points");
-      return () => {
-        map.off('mouseenter', 'mission-points', onMouseEnter);
-        map.off('mouseleave', 'mission-points', onMouseLeave);
-        map.off('mousedown', 'mission-points', onMouseDown);
-        map.off('touchstart', 'mission-points', onMouseTouchStart);
-        if (map.getLayer('mission-line')) {
-          map.removeLayer('mission-line');
-        }
-        if (map.getLayer('mission-title')) {
-          map.removeLayer('mission-title');
-        }
-        if (map.getLayer('mission-points')) {
-          map.removeLayer('mission-points');
-        }
-        if (map.getLayer(clusters)) {
-          map.removeLayer(clusters);
-        }
-        if (map.getSource(id)) {
-          map.removeSource(id);
-        }
-        if (map.getSource(routePoints)) {
-          map.removeSource(routePoints);
-        }
-      };
-    }
+    //https://stackoverflow.com/questions/72010274/stopping-map-on-listener-in-mapbox-gl-js
+    //https://stackoverflow.com/questions/63036623/how-to-disable-an-event-listener-in-mapbox
+    //map.off("click", "mission-points");
+    return () => {
+      map.off('mouseenter', 'mission-points', onMouseEnter);
+      map.off('mouseleave', 'mission-points', onMouseLeave);
+      map.off('mousedown', 'mission-points', onMouseDown);
+      map.off('touchstart', 'mission-points', onMouseTouchStart);
+      if (map.getLayer('mission-line')) {
+        map.removeLayer('mission-line');
+      }
+      if (map.getLayer('mission-title')) {
+        map.removeLayer('mission-title');
+      }
+      if (map.getLayer('mission-points')) {
+        map.removeLayer('mission-points');
+      }
+      if (map.getLayer(clusters)) {
+        map.removeLayer(clusters);
+      }
+      if (map.getSource(id)) {
+        map.removeSource(id);
+      }
+      if (map.getSource(routePoints)) {
+        map.removeSource(routePoints);
+      }
+    };
   }, [
     clusters,
     id,

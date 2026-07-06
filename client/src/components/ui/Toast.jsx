@@ -81,6 +81,7 @@ const Toast = ({ toastlist, setList }) => {
     <div className={classes.root}>
       {toastlist.map((toast) => (
         <Card
+          key={toast.id}
           elevation={3}
           className={classes.card}
           style={{ backgroundColor: toast.backgroundColor }}

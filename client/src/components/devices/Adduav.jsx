@@ -117,7 +117,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
     handleAddDevice(item);
     SetAddUAVOpen(false);
   }
-  const Remove_camera = (index) => {
+  const removeCamera = (index) => {
     let auxcamera = JSON.parse(JSON.stringify(item.camera));
     auxcamera.splice(index, 1);
     setItem({ ...item, camera: auxcamera });
@@ -127,7 +127,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
     auxcamera.push({ type: 'WebRTC', source: '' });
     setItem({ ...item, camera: auxcamera });
   }
-  const Remove_file = (index) => {
+  const removeFile = (index) => {
     let auxcamera = JSON.parse(JSON.stringify(item.files));
     auxcamera.splice(index, 1);
     setItem({ ...item, files: auxcamera });
@@ -253,7 +253,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
                             pr: 2,
                             marginLeft: 'auto',
                           }}
-                          onClick={() => Remove_camera(index_ac)}
+                          onClick={() => removeCamera(index_ac)}
                           className={classes.negative}
                         >
                           <DeleteIcon />
@@ -331,7 +331,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
                             pr: 2,
                             marginLeft: 'auto',
                           }}
-                          onClick={() => Remove_file(index_ac)}
+                          onClick={() => removeFile(index_ac)}
                           className={classes.negative}
                         >
                           <DeleteIcon />

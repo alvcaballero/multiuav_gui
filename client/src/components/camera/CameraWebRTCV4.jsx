@@ -61,9 +61,10 @@ const useStyles = makeStyles()((theme) => ({
 export const CameraWebRTCV4 = ({ deviceId, deviceIp = '127.0.0.1', camera_src = 'video0' }) => {
   const { classes } = useStyles();
   //const camera_stream ="20"// useSelector((state) => state.session.camera[deviceId]);
-  const device = deviceId
-    ? useSelector((state) => state.devices.items[deviceId])
-    : { name: 'test' };
+  const selectedDevice = useSelector((state) =>
+    deviceId ? state.devices.items[deviceId] : undefined,
+  );
+  const device = deviceId ? selectedDevice : { name: 'test' };
   const deviceip = 'http://' + deviceIp + ':8889/' + camera_src; //device?.ip;
   let btn_class = classes.card;
   let rootclass = classes.root_max;
