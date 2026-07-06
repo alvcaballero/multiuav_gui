@@ -9,7 +9,7 @@ import {
   DialogActions,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { usePrevious } from '../../reactHelper';
 import { errorsActions } from '../../store';
@@ -25,12 +25,6 @@ const ErrorHandler = () => {
   const displayMessage = multiline ? message.split('\n')[0] : message;
 
   const [expanded, setExpanded] = useState(false);
-  useEffect(() => {
-    console.log('ErrorHandler mounted');
-    if (error && !expanded) {
-      //setExpanded(true);
-    }
-  }, [error, expanded]);
 
   return (
     <>
