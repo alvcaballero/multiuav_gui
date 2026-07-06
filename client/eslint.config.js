@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import eslintReact from '@eslint-react/eslint-plugin';
 import { configs as importConfigs } from 'eslint-plugin-import-x';
+import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
@@ -24,6 +25,7 @@ export default [
       },
     },
     plugins: {
+      react,
       'react-hooks': reactHooks,
     },
     settings: {
@@ -35,6 +37,8 @@ export default [
     },
     rules: {
       'no-prototype-builtins': 'off',
+      'react/jsx-uses-vars': 'error',
+      'react/jsx-uses-react': 'error',
       'import-x/no-unresolved': [
         'warn',
         {
@@ -45,7 +49,10 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'off',
       '@eslint-react/no-array-index-key': 'off',
-      '@eslint-react/exhaustive-deps': ['warn', { additionalHooks: '(useCatchCallback|useAsyncTask)$' }],
+      '@eslint-react/exhaustive-deps': [
+        'warn',
+        { additionalHooks: '(useCatchCallback|useAsyncTask)$' },
+      ],
     },
   },
   prettierRecommended,
