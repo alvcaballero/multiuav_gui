@@ -105,7 +105,7 @@ const TileGroup = ({ tx, ty, originLng, originLat }) => {
     <group>
       {meshes.map((m, i) => (
         <mesh
-          key={i}
+          key={`${m.renderOrder}-${m.color}-${i}`}
           geometry={m.geometry}
           material={getMaterial(m.color)}
           renderOrder={m.renderOrder}

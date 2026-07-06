@@ -694,14 +694,18 @@ export const MessageBubble = memo(({ message, chatId }) => {
                 {content.map((block, i) => {
                   if (block.type === 'input_text' && block.text?.trim()) {
                     return (
-                      <Typography key={i} variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
+                      <Typography
+                        key={`text-${block.text}-${i}`}
+                        variant="body1"
+                        sx={{ whiteSpace: 'pre-wrap', mb: 1 }}
+                      >
                         {block.text}
                       </Typography>
                     );
                   }
                   if (block.type === 'input_image') {
                     return (
-                      <Box key={i} sx={{ mt: 1 }}>
+                      <Box key={`image-${block.image_url}`} sx={{ mt: 1 }}>
                         <img
                           src={block.image_url}
                           alt="attached"

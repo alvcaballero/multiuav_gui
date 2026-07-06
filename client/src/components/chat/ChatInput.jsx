@@ -103,7 +103,7 @@ const ChatInput = ({
         <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', mb: 1 }}>
           {attachedImages.map((img, i) => (
             <Chip
-              key={i}
+              key={img.dataUrl}
               label={img.name}
               size="small"
               onDelete={() => removeImage(i)}

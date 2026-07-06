@@ -108,7 +108,7 @@ const SelectList = ({ Data, setData = () => null }) => {
                     <div className={classes.details}>
                       {Object.values(group.items).map((element, index) => (
                         <Accordion
-                          key={index}
+                          key={`${element.title ?? 'el'}-${element.latitude}-${element.longitude}-${index}`}
                           expanded={expanded === `Elements ${index}`}
                           onChange={handleChange(`Elements ${index}`)}
                         >

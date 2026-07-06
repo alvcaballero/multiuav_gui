@@ -135,8 +135,8 @@ const ChatPanel = ({
         <WelcomeMessage />
       ) : (
         <>
-          {messages.map((msg, index) => (
-            <MessageBubble key={index} message={msg} chatId={activeChatId} />
+          {messages.map((msg) => (
+            <MessageBubble key={msg.id} message={msg} chatId={activeChatId} />
           ))}
           {loading.sendingMessage && (
             <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>

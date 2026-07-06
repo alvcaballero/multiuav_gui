@@ -171,7 +171,7 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
                 <Box sx={{ backgroundColor: grey[50], maxHeight: 160, overflowY: 'auto' }}>
                   {(route.wp ?? []).map((wp, idx) => (
                     <Box
-                      key={idx}
+                      key={`${route.id}-wp-${wp.pos?.join(',')}-${idx}`}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
