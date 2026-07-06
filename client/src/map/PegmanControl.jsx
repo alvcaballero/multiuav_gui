@@ -1,5 +1,5 @@
 // based on https://github.com/rezw4n/maplibre-google-streetview/tree/master
-import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import StreetviewIcon from '@mui/icons-material/Streetview';
 import { useDispatch } from 'react-redux';
@@ -36,11 +36,10 @@ class PegmanControlImpl {
 const PegmanButton = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [dragging, setDragging] = useState(false);
-  void dragging;
+  const draggingRef = useRef(false);
 
   const handleDragStart = useCallback((e) => {
-    setDragging(true);
+    draggingRef.current = true;
     e.dataTransfer.effectAllowed = 'copyMove';
     // Create a ghost image if needed, or rely on default browser drag image
     // const img = new Image();
@@ -50,7 +49,7 @@ const PegmanButton = () => {
 
   const handleDragEnd = useCallback(
     (e) => {
-      setDragging(false);
+      draggingRef.current = false;
       // Get drop coordinates relative to the viewport
       const { clientX, clientY } = e;
 

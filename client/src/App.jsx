@@ -7,7 +7,7 @@ import SocketController from './SocketController';
 import { useDispatch } from 'react-redux';
 
 import { geofencesActions } from './store';
-import { useEffectAsync } from './reactHelper';
+import { useAsyncTask } from './reactHelper';
 
 const useStyles = makeStyles()(() => ({
   page: {
@@ -23,7 +23,7 @@ const App = () => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     const response = await fetch('/api/geofences');
     if (response.ok) {
       dispatch(geofencesActions.refresh(await response.json()));

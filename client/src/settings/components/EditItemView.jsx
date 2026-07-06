@@ -10,7 +10,7 @@ import {
   Typography,
   TextField,
 } from '@mui/material';
-import { useCatch, useEffectAsync } from '../../reactHelper';
+import { useCatch, useAsyncTask } from '../../reactHelper';
 import PageLayout from '../../shared/components/PageLayout';
 import useSettingsStyles from '../common/useSettingsStyles';
 
@@ -30,7 +30,7 @@ const EditItemView = ({
 
   const { id } = useParams();
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (!item) {
       if (id) {
         const response = await fetch(`/api/${endpoint}/${id}`);

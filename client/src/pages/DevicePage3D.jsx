@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 
 import {
@@ -107,8 +107,7 @@ const DevicePage3D = () => {
   const devicelist = useSelector((state) => state.devices.items);
   const sessionmarkers = useSelector((state) => state.session.markers);
 
-  const [markers, setMarkers] = useState([]);
-  void markers;
+  const markersRef = useRef([]);
 
   const myhostname = `${window.location.hostname}`;
   const [filteredPositions, setFilteredPositions] = useState([]);
@@ -143,7 +142,7 @@ const DevicePage3D = () => {
   );
 
   useEffect(() => {
-    setMarkers(sessionmarkers);
+    markersRef.current = sessionmarkers;
   }, [sessionmarkers]);
 
   useEffect(() => {

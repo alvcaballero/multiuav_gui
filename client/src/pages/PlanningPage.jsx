@@ -21,7 +21,7 @@ import MapMarkersCreate from '../map/draw/MapMarkersCreate';
 import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
 import MapMissionHome from '../map/mission/MapMissionHome';
-import { useEffectAsync, useCatch } from '../reactHelper';
+import { useAsyncTask, useCatch } from '../reactHelper';
 import {
   manageLocationPoints,
   validateUniqueDevices,
@@ -373,7 +373,7 @@ const PlanningPage = () => {
 
   // --- Effects ---
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     const objetivoId = SendTask?.objetivo?.id;
     if (objetivoId === undefined || objetivoId === null) return;
     if (auxobjetive === objetivoId) return;

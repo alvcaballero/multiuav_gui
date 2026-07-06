@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, connect } from 'react-redux';
-import { useEffectAsync } from './reactHelper';
+import { useAsyncTask } from './reactHelper';
 import alarm from './resources/alarm.mp3';
 import {
   store,
@@ -147,7 +147,7 @@ const SocketController = () => {
     };
   };
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (socketState) {
       setSocketState(false);
 

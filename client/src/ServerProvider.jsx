@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, IconButton, LinearProgress } from '@mui/material';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { useDispatch, useSelector } from 'react-redux';
-import { useEffectAsync } from './reactHelper';
+import { useAsyncTask } from './reactHelper';
 import { sessionActions } from './store';
 
 const ServerProvider = ({ children }) => {
@@ -11,7 +11,7 @@ const ServerProvider = ({ children }) => {
   const initialized = useSelector((state) => !!state.session.server);
   const [error, setError] = useState(null);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (!error) {
       try {
         const response = await fetch('/api/server');

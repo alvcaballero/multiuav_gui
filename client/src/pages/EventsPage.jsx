@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useEffectAsync } from '../reactHelper';
+import { useAsyncTask } from '../reactHelper';
 
 import {
   Typography,
@@ -60,7 +60,7 @@ const EventsPage = () => {
   const [items, setItems] = useState(null);
   const devices = useSelector((state) => state.devices.items);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     setItems(null);
     const params = new URLSearchParams({ from: `${date}T00:00:00`, to: `${date}T23:59:59` });
     const response = await fetch(`/api/events?${params}`);

@@ -10,21 +10,25 @@ export const usePrevious = (value) => {
   return ref.current;
 };
 
-/* eslint-disable */
-export const useEffectAsync = (effect, deps) => {
+export const useAsyncTask = (effect, deps) => {
   const dispatch = useDispatch();
-  const ref = useRef();
   useEffect(() => {
-    effect()
-      .then((result) => ref.current = result)
-      .catch((error) => dispatch(errorsActions.push(error.message)));
-      
+    const controller = new AbortController();
+    let cleanup;
+    effect({ signal: controller.signal })
+      .then((result) => {
+        cleanup = result;
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          dispatch(errorsActions.push(error.message));
+        }
+      });
     return () => {
-      const result = ref.current;
-      if (result) {
-        result();
-      }
+      controller.abort();
+      cleanup?.();
     };
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, [...deps, dispatch]);
 };
 

@@ -1,6 +1,6 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useEffectAsync } from '../../reactHelper';
+import { useAsyncTask } from '../../reactHelper';
 
 const SelectField = ({
   label,
@@ -18,7 +18,7 @@ const SelectField = ({
 }) => {
   const [items, setItems] = useState(data);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (endpoint) {
       const response = await fetch(endpoint);
       if (response.ok) {

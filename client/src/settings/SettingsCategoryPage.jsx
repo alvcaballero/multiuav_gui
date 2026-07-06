@@ -4,7 +4,7 @@ import { Table, TableRow, TableCell, TableHead, TableBody, IconButton } from '@m
 import Tooltip from '@mui/material/Tooltip';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useEffectAsync } from '../reactHelper';
+import { useAsyncTask } from '../reactHelper';
 import PageLayout from '../shared/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
 import TableShimmer from '../shared/components/TableShimmer';
@@ -24,7 +24,7 @@ const SettingsCategoryPage = () => {
   const [removing, setRemoving] = useState(false);
   const [myCategory, setMyCategory] = useState(null);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/category`);

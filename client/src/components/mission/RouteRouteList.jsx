@@ -21,7 +21,7 @@ import { map } from '../../map/core/MapView';
 import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';
 import { applyUavTypeDefaults } from '../../store/mission';
-import { useEffectAsync } from '../../reactHelper';
+import { useAsyncTask } from '../../reactHelper';
 import { DEFAULT_UAV_TYPE } from './missionDefaults';
 
 const useStyles = makeStyles()((theme) => ({
@@ -105,7 +105,7 @@ const RouteOptions = ({ index, route, uavType }) => {
   const [attrDefs, setAttrDefs] = useState([]);
   const resolvedUavType = uavType || DEFAULT_UAV_TYPE;
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     const response = await fetch(`/api/category/attributeslist/${resolvedUavType}`);
     if (response.ok) setAttrDefs(await response.json());
   }, [resolvedUavType]);

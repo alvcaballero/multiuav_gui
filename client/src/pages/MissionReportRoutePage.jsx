@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useEffectAsync } from '../reactHelper';
+import { useAsyncTask } from '../reactHelper';
 
 import {
   Typography,
@@ -99,7 +99,7 @@ const MissionReportRoutePage = () => {
     }
   };
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     const response = await fetch('/api/missions/routes');
     if (response.ok) {
       const myMissions = await response.json();

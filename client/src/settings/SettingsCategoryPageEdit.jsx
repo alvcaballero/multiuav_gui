@@ -18,7 +18,7 @@ import {
 import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useEffectAsync } from '../reactHelper';
+import { useAsyncTask } from '../reactHelper';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
 import useQuery from '../shared/useQuery';
@@ -37,7 +37,7 @@ const SettingsCategoryPageEdit = () => {
   const [typeMsgMenu, setTypeMsgMenu] = useState(true);
   const [selectTypeMsgMenu, setSelectTypeMsgMenu] = useState(true);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     setLoading(true);
     try {
       const response2 = await fetch('/api/category/messages');

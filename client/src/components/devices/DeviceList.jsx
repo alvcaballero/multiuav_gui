@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { useDispatch } from 'react-redux';
-import { List } from 'react-window';
 import { makeStyles } from 'tss-react/mui';
-
+import { List } from 'react-window';
 import { devicesActions } from '../../store';
+import { useAsyncTask } from '../../reactHelper';
 import DeviceRow from './DeviceRow';
-import { useEffectAsync } from '../../reactHelper';
+import fetchOrThrow from '../../shared/fetchOrThrow';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -21,24 +21,22 @@ const DeviceList = ({ devices }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
 
-  const [time, setTime] = useState(() => Date.now());
-  void time;
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    const interval = setInterval(() => setTime(Date.now()), 60000);
+    const interval = setInterval(forceUpdate, 60000);
     return () => {
       clearInterval(interval);
     };
   }, []);
 
-  useEffectAsync(async () => {
-    const response = await fetch('/api/devices');
-    if (response.ok) {
+  useAsyncTask(
+    async ({ signal }) => {
+      const response = await fetchOrThrow('/api/devices', { signal });
       dispatch(devicesActions.refresh(await response.json()));
-    } else {
-      throw Error(await response.text());
-    }
-  }, []);
+    },
+    [dispatch],
+  );
 
   return (
     <List

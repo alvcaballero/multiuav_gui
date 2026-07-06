@@ -35,7 +35,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { formatTime } from '../shared/formatter';
 import { missionStyle, routeStyle } from '../shared/missionStatus';
 
-import { useEffectAsync } from '../reactHelper';
+import { useAsyncTask } from '../reactHelper';
 import MapView from '../map/core/MapView';
 import { MapMissions } from '../map/mission/MapMissions';
 import MapMarkers from '../map/environment/MapMarkers';
@@ -250,7 +250,7 @@ const MissionDetailReportPage = () => {
     setMissionMarkers({ bases: myBases, elements: myElements });
   }, [missions]);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     const response = await fetch(`/api/missions?id=${id}`);
     if (response.ok) {
       const myMissions = await response.json();
@@ -277,7 +277,7 @@ const MissionDetailReportPage = () => {
     }
   }, []);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (
       missions &&
       missions.hasOwnProperty('task') &&

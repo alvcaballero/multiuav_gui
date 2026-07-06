@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
-import { useEffectAsync } from './reactHelper';
+import { useAsyncTask } from './reactHelper';
 import App from './App';
 import useQuery from './shared/useQuery';
 import MainPage from './pages/MainPage';
@@ -58,7 +58,7 @@ const Navigation = () => {
 
   const query = useQuery();
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (!query.get('redirect')) return;
     navigate('/');
   }, [query]);
