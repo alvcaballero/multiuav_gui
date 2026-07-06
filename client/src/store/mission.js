@@ -340,12 +340,14 @@ const { reducer: missionReducerBase, actions } = createSlice({
     removeElevationRoute(state, action) {
       // Remove specific routes from elevation cache by indices
       const indicesToKeep = action.payload;
-      state.elevation.profile = indicesToKeep
-        .map((i) => state.elevation.profile[i])
-        .filter(Boolean);
-      state.elevation.location = indicesToKeep
-        .map((i) => state.elevation.location[i])
-        .filter(Boolean);
+      state.elevation.profile = indicesToKeep.flatMap((i) => {
+        const entry = state.elevation.profile[i];
+        return entry ? [entry] : [];
+      });
+      state.elevation.location = indicesToKeep.flatMap((i) => {
+        const entry = state.elevation.location[i];
+        return entry ? [entry] : [];
+      });
     },
   },
   extraReducers: (builder) => {

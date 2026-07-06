@@ -138,10 +138,11 @@ const PlanningPage = () => {
 
   const mapAssignmentsToDevices = useCallback(
     (assignments, devices, markers) =>
-      assignments
-        .filter((a) => a.device.id !== '')
-        .map((a) => mapAssignmentToTaskDevice(a, devices, markers))
-        .filter(Boolean),
+      assignments.flatMap((a) => {
+        if (a.device.id === '') return [];
+        const taskDevice = mapAssignmentToTaskDevice(a, devices, markers);
+        return taskDevice ? [taskDevice] : [];
+      }),
     [mapAssignmentToTaskDevice],
   );
 

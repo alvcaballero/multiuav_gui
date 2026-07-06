@@ -11,7 +11,7 @@ const MapMarkers = ({ markers, showTitles }) => {
 
   // Set of type IDs that render as map images — skip icon rendering for these
   const mapImageTypes = useMemo(
-    () => new Set(types.filter((t) => t.mapImage).map((t) => t.id)),
+    () => new Set(types.flatMap((t) => (t.mapImage ? [t.id] : []))),
     [types],
   );
 
@@ -100,21 +100,20 @@ const MapMarkers = ({ markers, showTitles }) => {
     const elements = markers?.elements || [];
     map.getSource(elementsLayerId)?.setData({
       type: 'FeatureCollection',
-      features: elements
-        .filter((group) => !mapImageTypes.has(group.type))
-        .flatMap((group, groupIdx) =>
-          group.items.map((item, itemIdx) => ({
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [item.longitude, item.latitude],
-            },
-            properties: {
-              image: group.type || 'default-neutral',
-              title: item.name || `${groupIdx}-${itemIdx}`,
-            },
-          })),
-        ),
+      features: elements.flatMap((group, groupIdx) => {
+        if (mapImageTypes.has(group.type)) return [];
+        return group.items.map((item, itemIdx) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [item.longitude, item.latitude],
+          },
+          properties: {
+            image: group.type || 'default-neutral',
+            title: item.name || `${groupIdx}-${itemIdx}`,
+          },
+        }));
+      }),
     });
   }, [showTitles, markers, mapImageTypes, basesLayerId, elementsLayerId]);
 

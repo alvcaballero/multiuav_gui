@@ -501,14 +501,12 @@ const MarkersTab = () => {
 
       {/* ---- ELEMENTS ---- */}
       {(() => {
-        const groupsWithVisible = markers.elements
-          .map((group) => ({
-            group,
-            visibleItems: (group.items ?? [])
-              .map((item, iIdx) => ({ item, iIdx }))
-              .filter(({ item }) => inRange(item.latitude, item.longitude)),
-          }))
-          .filter(({ visibleItems }) => visibleItems.length > 0);
+        const groupsWithVisible = markers.elements.flatMap((group) => {
+          const visibleItems = (group.items ?? []).flatMap((item, iIdx) =>
+            inRange(item.latitude, item.longitude) ? [{ item, iIdx }] : [],
+          );
+          return visibleItems.length > 0 ? [{ group, visibleItems }] : [];
+        });
 
         const totalVisible = groupsWithVisible.reduce(
           (acc, { visibleItems }) => acc + visibleItems.length,

@@ -372,18 +372,20 @@ const MissionDetailReportPage = () => {
                         Route files
                       </Typography>
                       <ImageList sx={{ width: '100%', height: 500 }} cols={3}>
-                        {files
-                          .filter((item) => item.routeId == route.id && item.name.endsWith('.jpg'))
-                          .map((item) => (
-                            <ImageListItem key={item.id}>
-                              <img
-                                src={`/api/files/download/${item.path}${item.name}`}
-                                alt={item.name}
-                                loading="lazy"
-                                onClick={() => setSelectFile(item)}
-                              />
-                            </ImageListItem>
-                          ))}
+                        {files.flatMap((item) =>
+                          item.routeId == route.id && item.name.endsWith('.jpg')
+                            ? [
+                                <ImageListItem key={item.id}>
+                                  <img
+                                    src={`/api/files/download/${item.path}${item.name}`}
+                                    alt={item.name}
+                                    loading="lazy"
+                                    onClick={() => setSelectFile(item)}
+                                  />
+                                </ImageListItem>,
+                              ]
+                            : [],
+                        )}
                       </ImageList>
                     </>
                   )}

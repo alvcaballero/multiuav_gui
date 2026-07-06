@@ -212,16 +212,18 @@ const DevicePage3D = () => {
                   </TableHead>
                   <TableBody>
                     {item &&
-                      Object.getOwnPropertyNames(item)
-                        .filter((it) => it !== 'attributes')
-                        .map((property) => (
-                          <TableRow key={property}>
-                            <TableCell>{property}</TableCell>
-                            <TableCell>
-                              <PositionValue position={item} property={property} />
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                      Object.getOwnPropertyNames(item).flatMap((property) =>
+                        property === 'attributes'
+                          ? []
+                          : [
+                              <TableRow key={property}>
+                                <TableCell>{property}</TableCell>
+                                <TableCell>
+                                  <PositionValue position={item} property={property} />
+                                </TableCell>
+                              </TableRow>,
+                            ],
+                      )}
                     {item &&
                       Object.getOwnPropertyNames(item.attributes).map((attribute) => (
                         <TableRow key={attribute}>

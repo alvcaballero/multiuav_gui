@@ -214,16 +214,19 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
   useEffect(() => {
     map.getSource(id).setData({
       type: 'FeatureCollection',
-      features: positions
-        .filter((it) => devices.hasOwnProperty(it.deviceId))
-        .map((position) => ({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [position.longitude, position.latitude],
+      features: positions.flatMap((position) => {
+        if (!devices.hasOwnProperty(position.deviceId)) return [];
+        return [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [position.longitude, position.latitude],
+            },
+            properties: createFeature(devices, position, selectedPosition && selectedPosition.id),
           },
-          properties: createFeature(devices, position, selectedPosition && selectedPosition.id),
-        })),
+        ];
+      }),
     });
   }, [devices, positions, selectedPosition, createFeature, id]);
 

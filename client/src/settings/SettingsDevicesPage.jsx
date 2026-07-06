@@ -52,33 +52,37 @@ const SettingsDevicesPage = () => {
         </TableHead>
         <TableBody>
           {!loading ? (
-            items.filter(filterByKeyword(searchKeyword)).map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.id}</TableCell>
-                <TableCell>{item.name}</TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>{item.protocol}</TableCell>
-                <TableCell>{item.camera ? item.camera.length : 0}</TableCell>
-                <TableCell>{item.files ? item.files.length : 0}</TableCell>
-                <TableCell className={classes.columnAction} padding="none">
-                  <div className={classes.row}>
-                    <Tooltip title={'Edit'}>
-                      <IconButton
-                        size="small"
-                        onClick={() => navigate(`/settings/devices/${item.id}`)}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={'Remove'}>
-                      <IconButton size="small" onClick={() => null}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
+            items.flatMap((item) =>
+              filterByKeyword(searchKeyword)(item)
+                ? [
+                    <TableRow key={item.id}>
+                      <TableCell>{item.id}</TableCell>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.category}</TableCell>
+                      <TableCell>{item.protocol}</TableCell>
+                      <TableCell>{item.camera ? item.camera.length : 0}</TableCell>
+                      <TableCell>{item.files ? item.files.length : 0}</TableCell>
+                      <TableCell className={classes.columnAction} padding="none">
+                        <div className={classes.row}>
+                          <Tooltip title={'Edit'}>
+                            <IconButton
+                              size="small"
+                              onClick={() => navigate(`/settings/devices/${item.id}`)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={'Remove'}>
+                            <IconButton size="small" onClick={() => null}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>,
+                  ]
+                : [],
+            )
           ) : (
             <TableShimmer columns={7} endAction />
           )}

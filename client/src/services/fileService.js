@@ -73,12 +73,16 @@ export const parseKmlElements = (kmlText) => {
   if (coordGroups.length) {
     const markers = coordGroups.map((group) => ({
       type: 'powerTower',
-      items: group
-        .filter((coords) => coords.length > 1)
-        .map((coords) => ({
-          latitude: Number(coords[1]),
-          longitude: Number(coords[0]),
-        })),
+      items: group.flatMap((coords) =>
+        coords.length > 1
+          ? [
+              {
+                latitude: Number(coords[1]),
+                longitude: Number(coords[0]),
+              },
+            ]
+          : [],
+      ),
     }));
     return { kind: 'towers', markers };
   }

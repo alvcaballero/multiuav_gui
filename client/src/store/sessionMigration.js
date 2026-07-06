@@ -100,30 +100,30 @@ export const migratePlanning = (planning, markers) => {
   }
 
   // Crear assignments solo para bases que tienen dispositivos asignados
-  const assignments = planning.bases
-    .map((base, index) => {
-      // Saltar entradas vacías
-      if (!base.devices || !base.devices.id || base.devices.id === '') {
-        return null;
-      }
+  const assignments = planning.bases.flatMap((base, index) => {
+    // Saltar entradas vacías
+    if (!base.devices || !base.devices.id || base.devices.id === '') {
+      return [];
+    }
 
-      // Obtener el baseId correspondiente del array de markers
-      const baseId = markers.bases[index]?.id;
-      if (!baseId) {
-        console.warn(`No se encontró base en markers para índice ${index}`);
-        return null;
-      }
+    // Obtener el baseId correspondiente del array de markers
+    const baseId = markers.bases[index]?.id;
+    if (!baseId) {
+      console.warn(`No se encontró base en markers para índice ${index}`);
+      return [];
+    }
 
-      return {
+    return [
+      {
         baseId,
         device: {
           id: String(base.devices.id), // Normalizar a string
           name: base.devices.name || '',
         },
         settings: { ...base.settings },
-      };
-    })
-    .filter(Boolean); // Remover nulls
+      },
+    ];
+  });
 
   // Crear nueva estructura de planning
   const newPlanning = {

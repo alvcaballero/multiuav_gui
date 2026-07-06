@@ -145,19 +145,18 @@ const formatMcpContent = (content) => {
   }
 
   if (content.content && Array.isArray(content.content)) {
-    const textParts = content.content
-      .filter((item) => item.type === 'text' && item.text)
-      .map((item) => {
-        let text = item.text;
-        if (typeof text === 'string') {
-          text = text
-            .replace(/\\n/g, '\n')
-            .replace(/\\t/g, '\t')
-            .replace(/\\"/g, '"')
-            .replace(/\\\\/g, '\\');
-        }
-        return text;
-      });
+    const textParts = content.content.flatMap((item) => {
+      if (item.type !== 'text' || !item.text) return [];
+      let text = item.text;
+      if (typeof text === 'string') {
+        text = text
+          .replace(/\\n/g, '\n')
+          .replace(/\\t/g, '\t')
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, '\\');
+      }
+      return [text];
+    });
 
     if (textParts.length > 0) {
       return textParts.join('\n');

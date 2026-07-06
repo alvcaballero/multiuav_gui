@@ -66,26 +66,31 @@ const SettingsCategoryPage = () => {
           </TableHead>
           <TableBody>
             {!loading ? (
-              items.filter(filterByKeyword(searchKeyword)).map((item, indexItem) => (
-                <TableRow key={indexItem}>
-                  <TableCell>{indexItem}</TableCell>
-                  <TableCell>{item}</TableCell>
-                  <TableCell className={classes.columnAction} padding="none">
-                    <div className={classes.row}>
-                      <Tooltip title={'Edit'}>
-                        <IconButton size="small" onClick={() => handleEdit(item)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={'Remove'}>
-                        <IconButton size="small" onClick={() => handleRemove(item)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+              items.reduce((rows, item) => {
+                if (!filterByKeyword(searchKeyword)(item)) return rows;
+                const indexItem = rows.length;
+                rows.push(
+                  <TableRow key={indexItem}>
+                    <TableCell>{indexItem}</TableCell>
+                    <TableCell>{item}</TableCell>
+                    <TableCell className={classes.columnAction} padding="none">
+                      <div className={classes.row}>
+                        <Tooltip title={'Edit'}>
+                          <IconButton size="small" onClick={() => handleEdit(item)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={'Remove'}>
+                          <IconButton size="small" onClick={() => handleRemove(item)}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>,
+                );
+                return rows;
+              }, [])
             ) : (
               <TableShimmer columns={3} endAction />
             )}

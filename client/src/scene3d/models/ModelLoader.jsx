@@ -24,11 +24,9 @@ const loadCustomModelPaths = async () => {
     const res = await fetch('/api/markers/types');
     if (!res.ok) return;
     const types = await res.json();
-    types
-      .filter((t) => t.model3d)
-      .forEach((t) => {
-        modelPaths[t.id] = t.model3d;
-      });
+    for (const t of types) {
+      if (t.model3d) modelPaths[t.id] = t.model3d;
+    }
   } catch {
     // server unavailable — skip
   }

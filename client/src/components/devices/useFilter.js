@@ -14,14 +14,13 @@ export default (
   const devices = useSelector((state) => state.devices.items);
 
   useEffect(() => {
-    const filtered = Object.values(devices)
-      .filter((device) => !filter.statuses.length || filter.statuses.includes(device.status))
-      .filter((device) => {
-        const lowerCaseKeyword = keyword.toLowerCase();
-        return [device.name, device.uniqueId, device.phone, device.model, device.contact].some(
-          (s) => s && s.toLowerCase().includes(lowerCaseKeyword),
-        );
-      });
+    const filtered = Object.values(devices).filter((device) => {
+      if (filter.statuses.length && !filter.statuses.includes(device.status)) return false;
+      const lowerCaseKeyword = keyword.toLowerCase();
+      return [device.name, device.uniqueId, device.phone, device.model, device.contact].some(
+        (s) => s && s.toLowerCase().includes(lowerCaseKeyword),
+      );
+    });
     switch (filterSort) {
       case 'name':
         filtered.sort((device1, device2) => device1.name.localeCompare(device2.name));
@@ -39,7 +38,7 @@ export default (
     setFilteredDevices(filtered);
     setFilteredPositions(
       filterMap
-        ? filtered.map((device) => positions[device.id]).filter(Boolean)
+        ? filtered.flatMap((device) => (positions[device.id] ? [positions[device.id]] : []))
         : Object.values(positions),
     );
   }, [

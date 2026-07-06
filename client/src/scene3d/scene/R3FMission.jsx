@@ -57,10 +57,10 @@ function routesTowaypoints(myroute, originalRoutes) {
 }
 
 function routesToLines(routes) {
-  let routelineVector = routes
-    .map((rt) => rt.map((point) => [point[0], point[2], -point[1]]))
-    .filter((line) => line.length >= 2);
-  return routelineVector;
+  return routes.flatMap((rt) => {
+    const line = rt.map((point) => [point[0], point[2], -point[1]]);
+    return line.length >= 2 ? [line] : [];
+  });
 }
 
 function routesToXYZ(origin, routes) {

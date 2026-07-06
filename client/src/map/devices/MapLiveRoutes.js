@@ -56,10 +56,12 @@ const MapLiveRoutes = () => {
 
   useEffect(() => {
     if (type !== 'none') {
-      const deviceIds = Object.values(devices)
-        .map((device) => device.id)
-        .filter((id) => (type === 'selected' ? id === selectedDeviceId : true))
-        .filter((id) => history.hasOwnProperty(id));
+      const deviceIds = Object.values(devices).flatMap((device) => {
+        const deviceId = device.id;
+        if (type === 'selected' && deviceId !== selectedDeviceId) return [];
+        if (!history.hasOwnProperty(deviceId)) return [];
+        return [deviceId];
+      });
 
       map.getSource(id)?.setData({
         type: 'FeatureCollection',

@@ -140,7 +140,9 @@ export const transformLocationsForAPI = (locations) => {
  * @returns {Object} { isValid: boolean, duplicates: Array, errorMsg: string }
  */
 export const validateUniqueDevices = (assignments) => {
-  const deviceIds = assignments.map((assignment) => assignment.device.id).filter((id) => id !== '');
+  const deviceIds = assignments.flatMap((assignment) =>
+    assignment.device.id !== '' ? [assignment.device.id] : [],
+  );
 
   const hasDuplicates = deviceIds.some((id, index, list) => list.indexOf(id) !== index);
 

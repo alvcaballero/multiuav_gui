@@ -114,16 +114,19 @@ export default async () => {
     if (res.ok) {
       const types = await res.json();
       await Promise.all(
-        types
-          .filter((t) => t.custom && t.icon)
-          .map(async (t) => {
-            try {
-              mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
-            } catch {
-              console.log('faild to load custom icon');
-              // fallback: use default-neutral icon if asset missing
-            }
-          }),
+        types.flatMap((t) => {
+          if (!t.custom || !t.icon) return [];
+          return [
+            (async () => {
+              try {
+                mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
+              } catch {
+                console.log('faild to load custom icon');
+                // fallback: use default-neutral icon if asset missing
+              }
+            })(),
+          ];
+        }),
       );
     }
   } catch {

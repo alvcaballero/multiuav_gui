@@ -17,13 +17,17 @@ const getAllInspectionGroups = (state) => state.session.markers?.elements || [];
  * Memoizado con createSelector para evitar re-renders innecesarios.
  */
 export const getMapImageItems = createSelector(getAllInspectionGroups, (groups) =>
-  groups.flatMap((group) =>
-    (group.items || [])
-      .filter((item) => Array.isArray(item.corners) && item.corners.length === 4)
-      .map((item, idx) => ({
+  groups.flatMap((group) => {
+    let idx = 0;
+    return (group.items || []).flatMap((item) => {
+      if (!Array.isArray(item.corners) || item.corners.length !== 4) return [];
+      const result = {
         key: `${group.type}-${idx}`,
         url: `/api/markers/types/${group.type}/icon`,
         coordinates: item.corners,
-      })),
-  ),
+      };
+      idx += 1;
+      return [result];
+    });
+  }),
 );
