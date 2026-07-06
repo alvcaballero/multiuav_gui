@@ -96,7 +96,7 @@ const switcher = new SwitcherControl(
 map.addControl(switcher);
 
 const MapView = ({ children }) => {
-  const containerEl = useRef(null);
+  const containerElRef = useRef(null);
 
   const [mapReady, setMapReady] = useState(false);
 
@@ -135,16 +135,16 @@ const MapView = ({ children }) => {
   }, []);
 
   useLayoutEffect(() => {
-    const currentEl = containerEl.current;
+    const currentEl = containerElRef.current;
     currentEl.appendChild(element);
     map.resize();
     return () => {
       currentEl.removeChild(element);
     };
-  }, [containerEl]);
+  }, [containerElRef]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }} ref={containerEl}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }} ref={containerElRef}>
       {mapReady && children}
     </div>
   );

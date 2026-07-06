@@ -45,9 +45,9 @@ const MapDefaultCamera = () => {
   // manda su posición; si no, manda el origen 3D (Pegman/misión).
   // Corre SOLO al montar (no reacciona a selecciones/deselecciones
   // posteriores en la misma página) y solo cuando venimos de una vista 3D.
-  const cameFrom3D = useRef(lastPathname !== null && isThreeDPath(lastPathname));
+  const cameFrom3DRef = useRef(lastPathname !== null && isThreeDPath(lastPathname));
   useEffect(() => {
-    if (!cameFrom3D.current) return;
+    if (!cameFrom3DRef.current) return;
     if (selectedDeviceId) {
       const position = positions[selectedDeviceId];
       if (position) {

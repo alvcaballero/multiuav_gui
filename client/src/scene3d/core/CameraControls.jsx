@@ -83,7 +83,7 @@ export default function CameraControls({ controlsRef: externalRef }) {
     followTargetRef.current = new THREE.Vector3(xyz[0], alt, -xyz[1]);
   }, [mapFollow, followPosition?.latitude, followPosition?.longitude, followPosition?.altitude]);
   const minHeight = 1; // Minimum height above ground
-  const keys = useRef({
+  const keysRef = useRef({
     w: false,
     a: false,
     s: false,
@@ -100,16 +100,16 @@ export default function CameraControls({ controlsRef: externalRef }) {
     const handleKeyDown = (event) => {
       // For WASD keys, convert to lowercase
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-      if (keys.current.hasOwnProperty(key)) {
-        keys.current[key] = true;
+      if (keysRef.current.hasOwnProperty(key)) {
+        keysRef.current[key] = true;
       }
     };
 
     const handleKeyUp = (event) => {
       // For WASD keys, convert to lowercase
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-      if (keys.current.hasOwnProperty(key)) {
-        keys.current[key] = false;
+      if (keysRef.current.hasOwnProperty(key)) {
+        keysRef.current[key] = false;
       }
     };
 
@@ -123,8 +123,8 @@ export default function CameraControls({ controlsRef: externalRef }) {
   }, []);
 
   // Reusable vectors to avoid per-frame allocation.
-  const _dir = useRef(new THREE.Vector3());
-  const _offset = useRef(new THREE.Vector3());
+  const _dirRef = useRef(new THREE.Vector3());
+  const _offsetRef = useRef(new THREE.Vector3());
 
   useFrame((_, delta) => {
     if (!controlsRef.current) return;
@@ -134,32 +134,32 @@ export default function CameraControls({ controlsRef: externalRef }) {
 
     if (mapFollow && followTargetRef.current) {
       const lerpFactor = 1 - Math.exp(-8 * delta);
-      _offset.current.copy(camera.position).sub(controls.target);
+      _offsetRef.current.copy(camera.position).sub(controls.target);
       controls.target.lerp(followTargetRef.current, lerpFactor);
-      camera.position.copy(controls.target).add(_offset.current);
+      camera.position.copy(controls.target).add(_offsetRef.current);
       controls.update();
       didMove = true;
     }
 
-    _dir.current.set(0, 0, 0);
-    if (keys.current.w || keys.current.ArrowUp) _dir.current.z -= moveSpeed;
-    if (keys.current.s || keys.current.ArrowDown) _dir.current.z += moveSpeed;
-    if (keys.current.a || keys.current.ArrowLeft) _dir.current.x -= moveSpeed;
-    if (keys.current.d || keys.current.ArrowRight) _dir.current.x += moveSpeed;
-    if (keys.current.q) _dir.current.y += moveSpeed;
-    if (keys.current.e) _dir.current.y -= moveSpeed;
+    _dirRef.current.set(0, 0, 0);
+    if (keysRef.current.w || keysRef.current.ArrowUp) _dirRef.current.z -= moveSpeed;
+    if (keysRef.current.s || keysRef.current.ArrowDown) _dirRef.current.z += moveSpeed;
+    if (keysRef.current.a || keysRef.current.ArrowLeft) _dirRef.current.x -= moveSpeed;
+    if (keysRef.current.d || keysRef.current.ArrowRight) _dirRef.current.x += moveSpeed;
+    if (keysRef.current.q) _dirRef.current.y += moveSpeed;
+    if (keysRef.current.e) _dirRef.current.y -= moveSpeed;
 
-    if (_dir.current.lengthSq() > 0) {
-      _dir.current.applyQuaternion(camera.quaternion);
-      const newY = camera.position.y + _dir.current.y;
+    if (_dirRef.current.lengthSq() > 0) {
+      _dirRef.current.applyQuaternion(camera.quaternion);
+      const newY = camera.position.y + _dirRef.current.y;
 
       if (newY >= minHeight) {
-        camera.position.add(_dir.current);
-        controls.target.add(_dir.current);
+        camera.position.add(_dirRef.current);
+        controls.target.add(_dirRef.current);
       } else {
-        _dir.current.y = 0;
-        camera.position.add(_dir.current);
-        controls.target.add(_dir.current);
+        _dirRef.current.y = 0;
+        camera.position.add(_dirRef.current);
+        controls.target.add(_dirRef.current);
         camera.position.y = minHeight;
         controls.target.y = minHeight;
       }
@@ -167,12 +167,12 @@ export default function CameraControls({ controlsRef: externalRef }) {
       didMove = true;
     }
 
-    _offset.current.copy(camera.position).sub(controls.target);
+    _offsetRef.current.copy(camera.position).sub(controls.target);
     const horizontalDist = Math.sqrt(
-      _offset.current.x * _offset.current.x + _offset.current.z * _offset.current.z,
+      _offsetRef.current.x * _offsetRef.current.x + _offsetRef.current.z * _offsetRef.current.z,
     );
-    const bearing = Math.atan2(_offset.current.x, -_offset.current.z) * (180 / Math.PI);
-    const pitch = Math.atan2(_offset.current.y, horizontalDist) * (180 / Math.PI);
+    const bearing = Math.atan2(_offsetRef.current.x, -_offsetRef.current.z) * (180 / Math.PI);
+    const pitch = Math.atan2(_offsetRef.current.y, horizontalDist) * (180 / Math.PI);
 
     const prev = lastAzimuthRef.current;
     if (!prev || Math.abs(bearing - prev.bearing) > 0.3 || Math.abs(pitch - prev.pitch) > 0.3) {

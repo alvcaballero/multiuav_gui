@@ -11,10 +11,10 @@ const MapMissionHome = () => {
   const missionHome = useSelector((state) => state.mission.home);
   const defaultZoom = usePreference('zoom', 10);
 
-  const previousMissionHome = useRef(missionHome);
+  const previousMissionHomeRef = useRef(missionHome);
   useEffect(() => {
-    const changed = previousMissionHome.current !== missionHome;
-    previousMissionHome.current = missionHome;
+    const changed = previousMissionHomeRef.current !== missionHome;
+    previousMissionHomeRef.current = missionHome;
     if (!changed || !missionHome) return;
     map.easeTo({
       center: [missionHome[1], missionHome[0]],

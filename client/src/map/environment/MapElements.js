@@ -11,7 +11,7 @@ import { getMapImageItems } from '../../store/sessionSelectors';
 const MapElements = () => {
   const id = useId();
   const imageItems = useSelector(getMapImageItems);
-  const mountedKeys = useRef(new Set());
+  const mountedKeysRef = useRef(new Set());
 
   useEffect(() => {
     const currentKeys = new Set(imageItems.map((i) => i.key));
@@ -21,36 +21,36 @@ const MapElements = () => {
       const sourceId = `${id}-img-${key}`;
       const layerId = `${id}-lyr-${key}`;
 
-      if (!mountedKeys.current.has(key)) {
+      if (!mountedKeysRef.current.has(key)) {
         map.addSource(sourceId, { type: 'image', url, coordinates });
         map.addLayer({ id: layerId, type: 'raster', source: sourceId });
-        mountedKeys.current.add(key);
+        mountedKeysRef.current.add(key);
       } else {
         map.getSource(sourceId)?.updateImage({ url, coordinates });
       }
     });
 
     // Remove sources/layers no longer in the list
-    mountedKeys.current.forEach((key) => {
+    mountedKeysRef.current.forEach((key) => {
       if (!currentKeys.has(key)) {
         const sourceId = `${id}-img-${key}`;
         const layerId = `${id}-lyr-${key}`;
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
-        mountedKeys.current.delete(key);
+        mountedKeysRef.current.delete(key);
       }
     });
   }, [imageItems]);
 
   useEffect(() => {
     return () => {
-      mountedKeys.current.forEach((key) => {
+      mountedKeysRef.current.forEach((key) => {
         const sourceId = `${id}-img-${key}`;
         const layerId = `${id}-lyr-${key}`;
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       });
-      mountedKeys.current.clear();
+      mountedKeysRef.current.clear();
     };
   }, []);
 

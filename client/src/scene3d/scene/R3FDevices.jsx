@@ -19,8 +19,8 @@ const Device = ({ id, position, isSelected, category }) => {
   const camRef = useRef();
   const { invalidate } = useThree();
 
-  const currentPosition = useRef(new THREE.Vector3());
-  const nextPosition = useRef(new THREE.Vector3());
+  const currentPositionRef = useRef(new THREE.Vector3());
+  const nextPositionRef = useRef(new THREE.Vector3());
 
   const model = useGLTF(getModelPath(category));
 
@@ -42,15 +42,15 @@ const Device = ({ id, position, isSelected, category }) => {
     });
   }, [model]);
 
-  const initialized = useRef(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     const loc = position.find((item) => item.deviceId == id);
     if (loc) {
-      nextPosition.current.set(loc.pos[0], loc.pos[2], -loc.pos[1]);
-      if (!initialized.current) {
-        currentPosition.current.copy(nextPosition.current);
-        initialized.current = true;
+      nextPositionRef.current.set(loc.pos[0], loc.pos[2], -loc.pos[1]);
+      if (!initializedRef.current) {
+        currentPositionRef.current.copy(nextPositionRef.current);
+        initializedRef.current = true;
       }
       if (meshRef.current && loc.course !== undefined) {
         meshRef.current.rotation.y = -(loc.course * Math.PI) / 180;
@@ -69,10 +69,10 @@ const Device = ({ id, position, isSelected, category }) => {
 
   useFrame(() => {
     if (meshRef.current) {
-      currentPosition.current.lerp(nextPosition.current, 0.07);
-      meshRef.current.position.copy(currentPosition.current);
+      currentPositionRef.current.lerp(nextPositionRef.current, 0.07);
+      meshRef.current.position.copy(currentPositionRef.current);
       // Keep requesting frames while the drone is still moving toward target.
-      const dist = currentPosition.current.distanceToSquared(nextPosition.current);
+      const dist = currentPositionRef.current.distanceToSquared(nextPositionRef.current);
       if (dist > 0.0001) invalidate();
     }
   });
