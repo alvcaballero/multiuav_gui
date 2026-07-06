@@ -17,7 +17,7 @@ class keepValue {
   }
 
   initroute(routes) {
-    this.routes = JSON.parse(JSON.stringify(routes));
+    this.routes = structuredClone(routes);
   }
 
   getroute() {

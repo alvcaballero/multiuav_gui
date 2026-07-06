@@ -68,7 +68,7 @@ const BaseSettings = ({
   };
 
   const modifyData = (assignmentIndex, field, objvalue) => {
-    const auxData = JSON.parse(JSON.stringify(data));
+    const auxData = structuredClone(data);
     console.log(auxData);
 
     if (field === 'device') {
@@ -147,7 +147,7 @@ const BaseSettings = ({
                                     console.log(e.target.value);
 
                                     // Crear o actualizar asignación
-                                    const auxData = JSON.parse(JSON.stringify(data));
+                                    const auxData = structuredClone(data);
                                     const deviceId = e.target.value;
                                     const selectedDevice = items.find(
                                       (item) => +item.id === +deviceId,

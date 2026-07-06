@@ -29,7 +29,7 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
   const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
   const WaypointDetail = (e) => {
-    const properties = JSON.parse(JSON.stringify(e.features[0].properties));
+    const properties = structuredClone(e.features[0].properties);
     const attributes = properties.attributes ? JSON.parse(properties.attributes) : null;
     const actions = properties.actions ? JSON.parse(properties.actions) : null;
     const html = textPopUp({ properties, attributes, actions });

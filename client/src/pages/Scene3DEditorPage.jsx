@@ -414,7 +414,7 @@ const MarkersTab = () => {
   const updateBase = useCallback(
     (index, xyz) => {
       const { lat, lng } = xyzToLatLon(origin, xyz.x, xyz.y, xyz.z);
-      const newBases = JSON.parse(JSON.stringify(markers.bases));
+      const newBases = structuredClone(markers.bases);
       newBases[index].latitude = lat;
       newBases[index].longitude = lng;
       dispatch(sessionActions.updateMarker({ ...markers, bases: newBases }));
@@ -426,7 +426,7 @@ const MarkersTab = () => {
   const updateElement = useCallback(
     (groupIdx, itemIdx, xyz) => {
       const { lat, lng } = xyzToLatLon(origin, xyz.x, xyz.y, xyz.z);
-      const newElements = JSON.parse(JSON.stringify(markers.elements));
+      const newElements = structuredClone(markers.elements);
       newElements[groupIdx].items[itemIdx].latitude = lat;
       newElements[groupIdx].items[itemIdx].longitude = lng;
       dispatch(sessionActions.updateMarker({ ...markers, elements: newElements }));
@@ -436,7 +436,7 @@ const MarkersTab = () => {
 
   const updateElementHeading = useCallback(
     (groupIdx, itemIdx, heading) => {
-      const newElements = JSON.parse(JSON.stringify(markers.elements));
+      const newElements = structuredClone(markers.elements);
       newElements[groupIdx].items[itemIdx].heading = Math.min(360, Math.max(0, +heading));
       dispatch(sessionActions.updateMarker({ ...markers, elements: newElements }));
     },

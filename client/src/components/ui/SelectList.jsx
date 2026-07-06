@@ -56,12 +56,12 @@ const SelectList = ({ Data, setData = () => null }) => {
   const elementsExist = !!Data && Data.length > 0;
 
   const DeleteGroup = (index) => {
-    let auxData = JSON.parse(JSON.stringify(Data));
+    let auxData = structuredClone(Data);
     auxData.splice(index, 1);
     setData(auxData);
   };
   const DeleteElement = (index, IndexElement) => {
-    let auxData = JSON.parse(JSON.stringify(Data));
+    let auxData = structuredClone(Data);
     auxData[index].items.splice(IndexElement, 1);
     setData(auxData);
   };

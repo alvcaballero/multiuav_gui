@@ -109,7 +109,7 @@ function routeTowaypoints(myroute) {
 }
 
 function cleanRoute(myroute) {
-  const myRoutes = JSON.parse(JSON.stringify(myroute));
+  const myRoutes = structuredClone(myroute);
   for (let i = 0; i < myroute.length; i += 1) {
     if (!myroute[i].hasOwnProperty('id')) {
       myRoutes[i].id = i;

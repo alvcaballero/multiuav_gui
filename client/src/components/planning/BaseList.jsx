@@ -64,7 +64,7 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
   };
   const addNewElement = () => {
     let center = map.getCenter();
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers.push({ latitude: center.lat, longitude: center.lng });
     setMarkers(auxMarkers, { meth: 'add', index: -1 });
   };
@@ -73,35 +73,35 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
     map.flyTo({ center: [base.longitude, base.latitude], zoom: Math.max(map.getZoom(), 18) });
   };
   const DeleteElement = (index) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers.splice(index, 1);
     setMarkers(auxMarkers, { meth: 'del', index: index });
   };
 
   const changeLat = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].latitude = value;
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
   const changeLng = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].longitude = value;
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
   const setName = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].name = value;
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
 
   const setHeading = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].heading = Math.min(360, Math.max(0, +value));
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
 
   const setCorner = (index, cornerIdx, axis, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     if (!auxMarkers[index].corners) {
       auxMarkers[index].corners = [
         [0, 0],

@@ -32,17 +32,17 @@ const SettingsDevicesPageEdit = () => {
   const validate = () => item && item.name && item.category && item.protocol && item.ip;
 
   const removeCamera = (index) => {
-    let auxcamera = JSON.parse(JSON.stringify(item.camera));
+    let auxcamera = structuredClone(item.camera);
     auxcamera.splice(index, 1);
     setItem({ ...item, camera: auxcamera });
   };
   function addNewcamera() {
-    let auxcamera = JSON.parse(JSON.stringify(item.camera));
+    let auxcamera = structuredClone(item.camera);
     auxcamera.push({ type: 'WebRTC', source: '' });
     setItem({ ...item, camera: auxcamera });
   }
   const removeFile = (index) => {
-    let auxcamera = JSON.parse(JSON.stringify(item.files));
+    let auxcamera = structuredClone(item.files);
     auxcamera.splice(index, 1);
     setItem({ ...item, files: auxcamera });
   };
@@ -50,7 +50,7 @@ const SettingsDevicesPageEdit = () => {
     if (!item.files) {
       item.files = [];
     }
-    let auxfile = JSON.parse(JSON.stringify(item.files));
+    let auxfile = structuredClone(item.files);
     auxfile.push({ type: 'onboard_computer', url: '' });
     setItem({ ...item, files: auxfile });
   };
@@ -132,7 +132,7 @@ const SettingsDevicesPageEdit = () => {
                             setItem({
                               ...item,
                               camera: item.camera.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
+                                let mycam = structuredClone(cam);
                                 index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
                                 return mycam;
                               }),
@@ -154,7 +154,7 @@ const SettingsDevicesPageEdit = () => {
                             setItem({
                               ...item,
                               camera: item.camera.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
+                                let mycam = structuredClone(cam);
                                 index_ac == cam_ind ? (mycam['source'] = e.target.value) : null;
                                 return mycam;
                               }),
@@ -210,7 +210,7 @@ const SettingsDevicesPageEdit = () => {
                             setItem({
                               ...item,
                               files: item.files.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
+                                let mycam = structuredClone(cam);
                                 index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
                                 return mycam;
                               }),
@@ -232,7 +232,7 @@ const SettingsDevicesPageEdit = () => {
                             setItem({
                               ...item,
                               files: item.files.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
+                                let mycam = structuredClone(cam);
                                 index_ac == cam_ind ? (mycam['url'] = e.target.value) : null;
                                 return mycam;
                               }),

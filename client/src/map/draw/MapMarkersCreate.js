@@ -10,7 +10,7 @@ class keepMarkers {
   }
 
   initMarkers(value) {
-    this.markers = JSON.parse(JSON.stringify(value));
+    this.markers = structuredClone(value);
   }
 
   getMarkers() {

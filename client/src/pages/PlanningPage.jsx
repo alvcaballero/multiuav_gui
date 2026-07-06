@@ -267,7 +267,7 @@ const PlanningPage = () => {
   const addLocations = useCallback(
     (value) => {
       const newLoc = manageLocationPoints(
-        JSON.parse(JSON.stringify(SendTask.loc)),
+        structuredClone(SendTask.loc),
         value,
         SendTask.objetivo.type,
       );
@@ -283,7 +283,7 @@ const PlanningPage = () => {
 
   const updateObjetive = useCallback(
     (newObjetive) => {
-      const myTask = JSON.parse(JSON.stringify(sendTaskRef.current));
+      const myTask = structuredClone(sendTaskRef.current);
       myTask.objetivo = newObjetive;
       if (newObjetive.type !== sendTaskRef.current.objetivo.type) myTask.loc = [];
       dispatch(sessionActions.updatePlanning(myTask));
@@ -389,7 +389,7 @@ const PlanningPage = () => {
       Object.entries(paramsResponse.settings).map(([k, v]) => [k, v.default]),
     );
 
-    const myTask = JSON.parse(JSON.stringify(SendTask));
+    const myTask = structuredClone(SendTask);
     myTask.settingsSchema = paramsResponse;
     myTask.defaultSettings = defaultConfig;
     if (!myTask.assignments) myTask.assignments = [];

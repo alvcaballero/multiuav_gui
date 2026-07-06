@@ -60,33 +60,33 @@ const ElementList = ({ markers, setMarkers }) => {
   const basesExist = !markers || markers.length === 0;
 
   const setElement = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].items = value;
     setMarkers(auxMarkers);
   };
   const setElementName = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].name = value;
     setMarkers(auxMarkers);
   };
   const setElementDescription = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].description = value;
     setMarkers(auxMarkers);
   };
   const setElementType = (index, value) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers[index].type = value;
     setMarkers(auxMarkers);
   };
   const DeleteList = (index) => {
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers.splice(index, 1);
     setMarkers(auxMarkers);
   };
   const addList = () => {
     const defaultType = markerTypes[0]?.id || 'powerTower';
-    let auxMarkers = JSON.parse(JSON.stringify(markers));
+    let auxMarkers = structuredClone(markers);
     auxMarkers.push({ type: defaultType, name: 'Elements', linea: true, items: [] });
     setMarkers(auxMarkers);
   };

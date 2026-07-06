@@ -168,7 +168,7 @@ const MissionElevation = () => {
       }
 
       // Only altitude changed — update profile in place without re-fetching
-      const auxElevprofile = JSON.parse(JSON.stringify(elevProfile));
+      const auxElevprofile = structuredClone(elevProfile);
       for (let j = 0; j < (location[i]?.length || 0); j++) {
         if (location[i][j][2] === currentLocation[i][j][2]) continue;
         if (!auxElevprofile[i]?.data) continue;

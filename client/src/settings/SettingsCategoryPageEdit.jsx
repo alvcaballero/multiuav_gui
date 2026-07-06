@@ -54,7 +54,7 @@ const SettingsCategoryPageEdit = () => {
   }, [showAll]);
 
   const addnewTopic = () => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     if (!newItem.topics) {
       newItem.topics = {};
     }
@@ -70,7 +70,7 @@ const SettingsCategoryPageEdit = () => {
   };
 
   const addnewService = () => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     if (!newItem.services) {
       newItem.services = {};
     }
@@ -86,13 +86,13 @@ const SettingsCategoryPageEdit = () => {
   };
 
   const changeMsgType = (value, key, type) => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     newItem[type][key].messageType = value;
     setItem(newItem);
   };
 
   const removeElement = (key, type) => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     delete newItem[type][key];
     setItem(newItem);
   };
