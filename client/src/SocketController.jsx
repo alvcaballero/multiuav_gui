@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
-import store, {
+import {
+  store,
   devicesActions,
   missionActions,
   sessionActions,

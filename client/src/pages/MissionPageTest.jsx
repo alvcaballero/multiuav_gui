@@ -6,8 +6,8 @@ import { makeStyles } from 'tss-react/mui';
 import MapView from '../map/core/MapView';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
-import MapMissionsCreate from '../map/draw/MapMissionsCreate';
-import MapMissions3D from '../map/mission/MapMissions3D';
+import { MapMissionsCreate } from '../map/draw/MapMissionsCreate';
+import { MapMissions3D } from '../map/mission/MapMissions3D';
 import MapPositions from '../map/devices/MapPositions';
 import MapMarkers from '../map/environment/MapMarkers';
 
@@ -17,7 +17,7 @@ import MissionElevation from '../components/mission/MissionElevation';
 import SaveFile from '../components/ui/SaveFile';
 import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
-import MapMarkers3D from '../map/environment/MapMarkers3D';
+import { MapMarkers3D } from '../map/environment/MapMarkers3D';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

@@ -1,5 +1,5 @@
 import { parse, stringify } from 'wellknown';
-import circle from '@turf/circle';
+import { circle } from '@turf/circle';
 
 export const loadImage = (url) =>
   new Promise((resolve, reject) => {

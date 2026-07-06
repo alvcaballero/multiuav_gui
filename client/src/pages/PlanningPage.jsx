@@ -14,7 +14,7 @@ import { missionActions, sessionActions, activeMissionsActions, planningToLegacy
 import MapView, { map } from '../map/core/MapView';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
-import MapMissions from '../map/mission/MapMissions';
+import { MapMissions } from '../map/mission/MapMissions';
 import { RosControl } from '../components/commands/RosControl';
 import MissionElevation from '../components/mission/MissionElevation';
 import MapMarkersCreate from '../map/draw/MapMarkersCreate';

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 
 import MapView from './core/MapView';
-import MapMissions from './mission/MapMissions';
+import { MapMissions } from './mission/MapMissions';
 import MapMarkers from './environment/MapMarkers';
 import MapElements from './environment/MapElements';
 import MapPositions from './devices/MapPositions';

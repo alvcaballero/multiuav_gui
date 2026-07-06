@@ -37,7 +37,7 @@ import { missionStyle, routeStyle } from '../shared/missionStatus';
 
 import { useEffectAsync } from '../reactHelper';
 import MapView from '../map/core/MapView';
-import MapMissions from '../map/mission/MapMissions';
+import { MapMissions } from '../map/mission/MapMissions';
 import MapMarkers from '../map/environment/MapMarkers';
 import RoutesList from '../components/mission/RoutesList';
 import SelectField from '../shared/components/SelectField';

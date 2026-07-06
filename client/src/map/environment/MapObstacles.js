@@ -1,7 +1,7 @@
 import { useId, useEffect, useCallback, useMemo } from 'react';
 import { map } from '../core/MapView';
 import { findFonts } from '../core/mapUtil';
-import circle from '@turf/circle';
+import { circle } from '@turf/circle';
 
 // Default origin (Global Reference)
 const DEFAULT_ORIGIN = {

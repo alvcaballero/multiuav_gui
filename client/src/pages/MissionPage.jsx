@@ -6,7 +6,7 @@ import { makeStyles } from 'tss-react/mui';
 import MapView from '../map/core/MapView';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
-import MapMissionsCreate from '../map/draw/MapMissionsCreate';
+import { MapMissionsCreate } from '../map/draw/MapMissionsCreate';
 import MapPositions from '../map/devices/MapPositions';
 import MapMarkers from '../map/environment/MapMarkers';
 

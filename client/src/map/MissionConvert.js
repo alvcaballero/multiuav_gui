@@ -1,4 +1,4 @@
-import store, { missionActions, activeMissionsActions } from '../store';
+import { store, missionActions, activeMissionsActions } from '../store';
 import { parseMissionFile } from '../services/fileService';
 
 var mission_home = [];
