@@ -117,8 +117,9 @@ export function encodeRosSrv({ type, msg, msgType }) {
   }
   if (msgType === 'dji_osdk_ros/DownloadMedia') {
     return {
-      start_date: msg.start_date || 0,
-      end_date: msg.end_date || 0,
+      initDate: msg.startDate || 0,
+      FinishDate: msg.endDate || 0,
+      downloadCnt: 0,
     };
   }
   return msg;

@@ -75,9 +75,8 @@ const CommandDownload = async (context) => {
       deviceId: context.uavId,
       type: 'CameraFileDownload',
       attributes: {
-        downloadCnt: 0,
-        initDate: myInitTime,
-        FinishDate: myFinishTime,
+        startDate: myInitTime,
+        endDate: myFinishTime,
       },
     });
     logger.debug(`CommandDownload response: ${JSON.stringify(response)}`);
