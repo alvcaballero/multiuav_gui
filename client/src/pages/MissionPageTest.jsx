@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -63,15 +63,8 @@ const MissionPageTest = () => {
   const positions = useSelector((state) => state.session.positions);
   const sessionmarkers = useSelector((state) => state.session.markers);
 
-  const [filteredPositions, setFilteredPositions] = useState([]);
-  const [markers, setMarkers] = useState([]);
-
-  useEffect(() => {
-    setFilteredPositions(Object.values(positions));
-  }, [positions]);
-  useEffect(() => {
-    setMarkers(sessionmarkers);
-  }, [sessionmarkers]);
+  const filteredPositions = Object.values(positions);
+  const markers = sessionmarkers;
 
   return (
     <div className={classes.root}>

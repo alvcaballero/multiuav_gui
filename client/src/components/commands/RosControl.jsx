@@ -4,9 +4,9 @@ import { useSelector } from 'react-redux';
 export const RosContext = React.createContext();
 
 export const RosControl = ({ children }) => {
-  const [rosState, setRosState] = useState(false);
   const [confirmMission, setConfirmMission] = useState(false);
   const serverState = useSelector((state) => state.session.serverROS);
+  const rosState = serverState;
 
   useEffect(() => {
     console.log('RosControl mounted');
@@ -14,10 +14,6 @@ export const RosControl = ({ children }) => {
       console.log('RosControl unmounted');
     };
   }, []);
-
-  useEffect(() => {
-    setRosState(serverState);
-  }, [serverState]);
 
   const contextValue = useMemo(
     () => ({

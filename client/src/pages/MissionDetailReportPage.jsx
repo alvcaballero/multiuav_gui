@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -168,14 +168,44 @@ const MissionDetailReportPage = () => {
   const { id } = useParams();
 
   const [missions, setMissions] = useState(null);
-  const [dataMission, setDataMission] = useState(null);
   const [dataParam, setDataParam] = useState(null);
-  const [missionMarkers, setMissionMarkers] = useState({ elements: [], bases: [] });
   const [routes, setRoutes] = useState(null);
 
   const [files, setFiles] = useState(null);
-  const [routePath, setRoutePath] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
+
+  const routePath = missions?.mission?.route ?? null;
+
+  const dataMission = useMemo(() => {
+    if (!missions?.task?.devices) return null;
+    return Object.values(missions.task.devices).map((deviceValue) => {
+      const myData = { devices: {} };
+      myData.devices.name = deviceValue.id;
+      myData.devices.category = deviceValue.category;
+      if (deviceValue?.settings) {
+        myData.settings = deviceValue.settings;
+      }
+      return myData;
+    });
+  }, [missions]);
+
+  const missionMarkers = useMemo(() => {
+    const myBases = [];
+    if (missions?.task?.devices) {
+      Object.values(missions.task.devices).forEach((deviceValue) => {
+        if (deviceValue?.settings?.base) {
+          myBases.push({
+            latitude: deviceValue.settings.base[0],
+            longitude: deviceValue.settings.base[1],
+          });
+        }
+      });
+    }
+    const myElements = missions?.task?.locations
+      ? missions.task.locations.map((item) => ({ ...item, type: 'locPoint' }))
+      : [];
+    return { bases: myBases, elements: myElements };
+  }, [missions]);
 
   const devices = useSelector((state) => state.devices.items);
 
@@ -216,39 +246,6 @@ const MissionDetailReportPage = () => {
         return value;
     }
   };
-
-  useEffect(() => {
-    const myBases = [];
-    let myElements = [];
-    if (missions?.mission?.route) {
-      setRoutePath(missions.mission.route);
-    }
-    if (missions?.task?.devices) {
-      const data = [];
-      Object.values(missions.task.devices).forEach((deviceValue) => {
-        const myData = { devices: {} };
-        myData.devices.name = deviceValue.id;
-        myData.devices.category = deviceValue.category;
-        if (deviceValue?.settings) {
-          myData.settings = deviceValue.settings;
-          if (deviceValue?.settings?.base) {
-            myBases.push({
-              latitude: deviceValue.settings.base[0],
-              longitude: deviceValue.settings.base[1],
-            });
-          }
-        }
-        data.push(myData);
-      });
-      setDataMission(data);
-    }
-    if (missions?.task?.locations) {
-      myElements = missions.task.locations.map((item) => ({ ...item, type: 'locPoint' }));
-    }
-    console.log(myBases);
-    console.log(myElements);
-    setMissionMarkers({ bases: myBases, elements: myElements });
-  }, [missions]);
 
   useAsyncTask(async () => {
     const response = await fetch(`/api/missions?id=${id}`);

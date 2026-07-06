@@ -1,5 +1,5 @@
 // SquareMove.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import { mapIconKey, mapIcons, frontIcons } from '../map/core/preloadImages';
@@ -99,7 +99,6 @@ const useStyles = makeStyles()(() => ({
 }));
 
 const SquareMove = ({
-  device,
   data = [10, 15, 11, 0, 12, 20],
   sensors = {
     down: [0, 15],
@@ -113,37 +112,34 @@ const SquareMove = ({
   test = false,
 }) => {
   const { classes } = useStyles();
-  const [left, setLeft] = useState(0);
-  const [right, setRight] = useState(0);
-  const [up, setUp] = useState(0);
-  const [down, setDown] = useState(0);
+  // Manual nudge applied on top of the sensor-derived position (only used in test mode).
+  const [testOffset, setTestOffset] = useState(0);
 
-  useEffect(() => {
-    if (front_view) {
-      sensors.hasOwnProperty('down') ? setDown(40 - (40 * data[0]) / sensors.down[1]) : null;
-      sensors.hasOwnProperty('left') ? setRight(40 - (40 * data[2]) / sensors.left[1]) : null;
-      sensors.hasOwnProperty('right') ? setLeft(40 - (40 * data[4]) / sensors.right[1]) : null;
-      sensors.hasOwnProperty('up') ? setUp(40 - (40 * data[5]) / sensors.up[1]) : null;
-    } else {
-      sensors.hasOwnProperty('front') ? setUp(40 - (40 * data[1]) / sensors.front[1]) : null;
-      sensors.hasOwnProperty('left') ? setLeft(40 - (40 * data[2]) / sensors.left[1]) : null;
-      sensors.hasOwnProperty('back') ? setDown(40 - (40 * data[3]) / sensors.down[1]) : null;
-      sensors.hasOwnProperty('right') ? setRight(40 - (50 * data[4]) / sensors.right[1]) : null;
-    }
-  }, [data, device, sensors, front_view]);
+  const sensorPosition = front_view
+    ? {
+        down: sensors.hasOwnProperty('down') ? 40 - (40 * data[0]) / sensors.down[1] : 0,
+        right: sensors.hasOwnProperty('left') ? 40 - (40 * data[2]) / sensors.left[1] : 0,
+        left: sensors.hasOwnProperty('right') ? 40 - (40 * data[4]) / sensors.right[1] : 0,
+        up: sensors.hasOwnProperty('up') ? 40 - (40 * data[5]) / sensors.up[1] : 0,
+      }
+    : {
+        up: sensors.hasOwnProperty('front') ? 40 - (40 * data[1]) / sensors.front[1] : 0,
+        left: sensors.hasOwnProperty('left') ? 40 - (40 * data[2]) / sensors.left[1] : 0,
+        down: sensors.hasOwnProperty('back') ? 40 - (40 * data[3]) / sensors.down[1] : 0,
+        right: sensors.hasOwnProperty('right') ? 40 - (50 * data[4]) / sensors.right[1] : 0,
+      };
+
+  const left = sensorPosition.left + testOffset;
+  const right = sensorPosition.right + testOffset;
+  const up = sensorPosition.up + testOffset;
+  const down = sensorPosition.down + testOffset;
 
   const handleMoveLeft = () => {
-    setLeft((prevLeft) => prevLeft - 10);
-    setRight((prevLeft) => prevLeft - 10);
-    setUp((prevLeft) => prevLeft - 10);
-    setDown((prevLeft) => prevLeft - 10);
+    setTestOffset((prev) => prev - 10);
   };
 
   const handleMoveRight = () => {
-    setLeft((prevLeft) => prevLeft + 10);
-    setRight((prevLeft) => prevLeft + 10);
-    setUp((prevLeft) => prevLeft + 10);
-    setDown((prevLeft) => prevLeft + 10);
+    setTestOffset((prev) => prev + 10);
   };
 
   return (

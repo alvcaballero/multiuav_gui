@@ -101,11 +101,12 @@ const DevicePage3D = () => {
 
   const { id } = useParams();
 
-  const [item, setItem] = useState();
-  const [thisDevice, setThisDevice] = useState({});
   const positions = useSelector((state) => state.session.positions);
   const devicelist = useSelector((state) => state.devices.items);
   const sessionmarkers = useSelector((state) => state.session.markers);
+
+  const item = id ? positions[id] : undefined;
+  const thisDevice = id ? devicelist[id] : {};
 
   const markersRef = useRef([]);
 
@@ -119,14 +120,17 @@ const DevicePage3D = () => {
     statuses: [],
     groups: [],
   });
-  const [currentSensorData, setCurrentSensorData] = useState({
-    front: 1,
-    back: 3,
-    left: 5,
-    right: 9,
-    up: 2,
-    down: 8,
-  });
+  const DEFAULT_SENSOR_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
+  const currentSensorData = item?.attributes?.obstacle_info
+    ? {
+        front: item.attributes.obstacle_info[1],
+        back: item.attributes.obstacle_info[3],
+        left: item.attributes.obstacle_info[4],
+        right: item.attributes.obstacle_info[2],
+        up: item.attributes.obstacle_info[5],
+        down: item.attributes.obstacle_info[0],
+      }
+    : DEFAULT_SENSOR_DATA;
 
   const [filterSort] = usePersistedState('filterSort', '');
   const [filterMap] = usePersistedState('filterMap', false);
@@ -144,31 +148,6 @@ const DevicePage3D = () => {
   useEffect(() => {
     markersRef.current = sessionmarkers;
   }, [sessionmarkers]);
-
-  useEffect(() => {
-    if (id) {
-      setItem(positions[id]);
-    }
-  }, [id, positions]);
-  useEffect(() => {
-    if (item?.attributes?.obstacle_info) {
-      setCurrentSensorData({
-        front: item.attributes.obstacle_info[1],
-        back: item.attributes.obstacle_info[3],
-        left: item.attributes.obstacle_info[4],
-        right: item.attributes.obstacle_info[2],
-        up: item.attributes.obstacle_info[5],
-        down: item.attributes.obstacle_info[0],
-      });
-    }
-  }, [item]);
-
-  useEffect(() => {
-    if (id) {
-      setThisDevice(devicelist[id]);
-      console.log(devicelist[id]);
-    }
-  }, [id, devicelist]);
 
   return (
     <div className={classes.root}>

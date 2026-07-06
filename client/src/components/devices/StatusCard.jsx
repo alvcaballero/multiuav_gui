@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -161,20 +161,10 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
   const [anchorEl, setAnchorEl] = useState(null);
   const [removing, setRemoving] = useState(false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
-  const [nullPosition, setNullPosition] = useState(false);
+  const nullPosition = !position;
   const disableActions = false;
-  const [mapFollow, setMapFollow] = useState(false);
-  const [deviceName, setDeviceName] = useState('');
-  useEffect(() => {
-    setNullPosition(!position);
-  }, [position]);
-  useEffect(() => {
-    setMapFollow(mapFollowstats);
-  }, [mapFollowstats]);
-
-  useEffect(() => {
-    setDeviceName(device.name);
-  }, [device]);
+  const mapFollow = mapFollowstats;
+  const deviceName = device.name;
 
   const handleOpenMenu = (e) => setAnchorEl(e.currentTarget);
   const handleSyncFiles = useCallback(() => serverCommand(deviceId, 'SincroniseFiles'), [deviceId]);

@@ -99,8 +99,6 @@ const PlanningPage = () => {
   const [showTitles, setShowTitles] = useState(true);
   const [showLines, setShowLines] = useState(false);
   const [moveMarkers, setMoveMarkers] = useState(false);
-  const [SelectMarkers, setSelectMarkers] = useState(false);
-  const [CreateMarkers, setCreateMarkers] = useState(false);
   const [requestPlanning, setRequestPlanning] = useState(100);
   const myhostname = `${window.location.hostname}`;
 
@@ -400,11 +398,9 @@ const PlanningPage = () => {
     dispatch(sessionActions.updatePlanning(myTask));
   }, [SendTask.objetivo, auxobjetive]);
 
-  useEffect(() => {
-    const isInPlanningTab = tabValue === TABS.PLANNING;
-    setSelectMarkers(isInPlanningTab && SendTask.objetivo.id !== 3);
-    setCreateMarkers(isInPlanningTab && SendTask.objetivo.id === 3);
-  }, [tabValue, SendTask.objetivo]);
+  const isInPlanningTab = tabValue === TABS.PLANNING;
+  const SelectMarkers = isInPlanningTab && SendTask.objetivo.id !== 3;
+  const CreateMarkers = isInPlanningTab && SendTask.objetivo.id === 3;
 
   useEffect(() => {
     const MAX_RETRIES = 12;

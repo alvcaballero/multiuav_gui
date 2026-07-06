@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -62,11 +62,7 @@ const MissionPage3D = () => {
   const routes = useSelector((state) => state.mission.route);
   const sessionmarkers = useSelector((state) => state.session.markers);
 
-  const [markers, setMarkers] = useState([]);
-
-  useEffect(() => {
-    setMarkers(sessionmarkers);
-  }, [sessionmarkers]);
+  const markers = sessionmarkers;
 
   const tabs = (
     <>

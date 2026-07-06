@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useModelLoader } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
@@ -69,7 +69,6 @@ const Marker = ({ item }) => {
 };
 
 const R3DMarkers = ({ elements }) => {
-  const [markers, setMarkers] = useState([]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const range = useSelector((state) => state.session.scene3d.range);
   const { invalidate } = useThree();
@@ -91,7 +90,7 @@ const R3DMarkers = ({ elements }) => {
     return waypoints;
   }
 
-  useEffect(() => {
+  const markers = useMemo(() => {
     const listelemnts = list2Points(elements);
     const pos = listelemnts.map(({ latitude, longitude }) => ({
       lng: longitude,
@@ -103,13 +102,15 @@ const R3DMarkers = ({ elements }) => {
       ...element,
       pos: [posxyz[index][0], posxyz[index][2], -posxyz[index][1]],
     }));
-    const result = elementxyz.filter(
+    return elementxyz.filter(
       (item) =>
         item.pos[0] > -range && item.pos[0] < range && item.pos[2] > -range && item.pos[2] < range,
     );
-    setMarkers(result);
+  }, [origin3d, elements, range]);
+
+  useEffect(() => {
     invalidate();
-  }, [origin3d, elements, range, invalidate]);
+  }, [markers, invalidate]);
 
   return (
     <>

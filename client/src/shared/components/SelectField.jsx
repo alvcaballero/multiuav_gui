@@ -16,18 +16,19 @@ const SelectField = ({
   titleGetter = (item) => item.name,
   getItems = (item) => item,
 }) => {
-  const [items, setItems] = useState(data);
+  const [fetchedItems, setFetchedItems] = useState(undefined);
+  const items = endpoint ? fetchedItems : data;
 
   useAsyncTask(async () => {
     if (endpoint) {
       const response = await fetch(endpoint);
       if (response.ok) {
-        setItems(await response.json());
+        setFetchedItems(await response.json());
       } else {
         throw Error(await response.text());
       }
     }
-  }, []);
+  }, [endpoint]);
 
   useEffect(() => {
     if (typeof items !== 'undefined' && value !== null) {
