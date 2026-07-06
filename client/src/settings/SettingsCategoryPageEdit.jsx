@@ -61,7 +61,10 @@ const SettingsCategoryPageEdit = () => {
       newItem.topics = {};
     }
     if (!newItem.topics[selectTypeMsgMenu]) {
-      newItem.topics[selectTypeMsgMenu] = { name: '', messageType: itemMsg.topics[selectTypeMsgMenu][0] };
+      newItem.topics[selectTypeMsgMenu] = {
+        name: '',
+        messageType: itemMsg.topics[selectTypeMsgMenu][0],
+      };
     }
     setItem(newItem);
     setSelectTypeMsgMenu(null);
@@ -74,7 +77,10 @@ const SettingsCategoryPageEdit = () => {
       newItem.services = {};
     }
     if (!newItem.services[selectTypeMsgMenu]) {
-      newItem.services[selectTypeMsgMenu] = { name: '', messageType: itemMsg.services[selectTypeMsgMenu][0] };
+      newItem.services[selectTypeMsgMenu] = {
+        name: '',
+        messageType: itemMsg.services[selectTypeMsgMenu][0],
+      };
     }
     setItem(newItem);
     setSelectTypeMsgMenu(null);

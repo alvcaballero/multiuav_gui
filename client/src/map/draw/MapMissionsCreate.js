@@ -95,13 +95,15 @@ export const MapMissionsCreate = () => {
     const auxselectpoint = testkeepValue.getSelectwp();
 
     // Dispatch directly to Redux with groupMode from ref (always current value)
-    dispatch(missionActions.moveWaypoint({
-      wp_id: auxselectpoint.id,
-      route_id: auxselectpoint.route_id,
-      lng: e.lngLat.lng,
-      lat: e.lngLat.lat,
-      groupMode: groupRouteModeRef.current,
-    }));
+    dispatch(
+      missionActions.moveWaypoint({
+        wp_id: auxselectpoint.id,
+        route_id: auxselectpoint.route_id,
+        lng: e.lngLat.lng,
+        lat: e.lngLat.lat,
+        groupMode: groupRouteModeRef.current,
+      }),
+    );
 
     testkeepValue.setSelecwp({ id: -1 });
     // Unbind mouse/touch events
@@ -130,8 +132,6 @@ export const MapMissionsCreate = () => {
     map.on('touchmove', onMove);
     map.once('touchend', onUp);
   };
-
- 
 
   useEffect(() => {
     if (true) {

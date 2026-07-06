@@ -120,19 +120,20 @@ const RouteOptions = ({ index, route, uavType }) => {
         <Typography sx={{ width: '53%', flexShrink: 0 }}>Route Attributes</Typography>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        {route.attributes && attrDefs.map((attrDef) => (
-          <div key={attrDef.id}>
-            <Typography variant="subtitle1" className={classes.attribute}>
-              {attrDef.name}
-            </Typography>
-            <AttributeField
-              attrDef={attrDef}
-              value={route.attributes[attrDef.id]}
-              uavType={resolvedUavType}
-              onChange={(value) => handleAttributeChange(attrDef.id, value)}
-            />
-          </div>
-        ))}
+        {route.attributes &&
+          attrDefs.map((attrDef) => (
+            <div key={attrDef.id}>
+              <Typography variant="subtitle1" className={classes.attribute}>
+                {attrDef.name}
+              </Typography>
+              <AttributeField
+                attrDef={attrDef}
+                value={route.attributes[attrDef.id]}
+                uavType={resolvedUavType}
+                onChange={(value) => handleAttributeChange(attrDef.id, value)}
+              />
+            </div>
+          ))}
       </AccordionDetails>
     </Accordion>
   );
@@ -151,7 +152,9 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
     if (myDevice) {
       setRouteUAV(myDevice.id);
       if (route.uav_type !== myDevice.category) {
-        dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: myDevice.category }));
+        dispatch(
+          missionActions.updateRoute({ index, field: 'uav_type', value: myDevice.category }),
+        );
         dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: myDevice.category }));
       }
     } else {
@@ -162,7 +165,9 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
   const handleAddWaypoint = (index_route, index_wp) => {
     let center = map.getCenter();
     const mywp = { pos: [center.lat, center.lng, 5], action: {} };
-    dispatch(missionActions.addWaypoint({ routeIndex: index_route, waypoint: mywp, insertAt: index_wp }));
+    dispatch(
+      missionActions.addWaypoint({ routeIndex: index_route, waypoint: mywp, insertAt: index_wp }),
+    );
   };
 
   const handleRecordWp = (index_route) => {

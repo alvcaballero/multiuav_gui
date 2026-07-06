@@ -49,7 +49,9 @@ export const RuteConvert = (route) => {
         };
         // Validación de lat/lon
         if (Math.abs(Number(wpSrc.pos[0])) > 90 || Math.abs(Number(wpSrc.pos[1])) > 90) {
-          console.log(`Error en latitud o longitud en UAV ${uavN + 1} WP ${wpN + 1} pos ${wpSrc.pos}`);
+          console.log(
+            `Error en latitud o longitud en UAV ${uavN + 1} WP ${wpN + 1} pos ${wpSrc.pos}`,
+          );
           latlongError = true;
         }
         if ('speed' in wpSrc) wpDst.speed = wpSrc.speed;

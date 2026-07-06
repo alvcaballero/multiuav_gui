@@ -1,5 +1,13 @@
 import React from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, Box, Button, Divider, Typography } from '@mui/material';
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Box,
+  Button,
+  Divider,
+  Typography,
+} from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
 import BaseList from './BaseList';
@@ -47,7 +55,12 @@ const ElementsTab = ({ markers, setMarkersBase, setMarkersElements, onSaveGlobal
         </AccordionDetails>
       </Accordion>
       <Box sx={{ textAlign: 'center' }}>
-        <Button variant="contained" size="large" className={classes.panelButton} onClick={onSaveGlobalMarkers}>
+        <Button
+          variant="contained"
+          size="large"
+          className={classes.panelButton}
+          onClick={onSaveGlobalMarkers}
+        >
           Save Global Markers
         </Button>
       </Box>

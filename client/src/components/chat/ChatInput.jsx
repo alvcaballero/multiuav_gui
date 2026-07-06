@@ -58,10 +58,7 @@ const ChatInput = ({
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setAttachedImages((prev) => [
-          ...prev,
-          { name: file.name, dataUrl: e.target.result },
-        ]);
+        setAttachedImages((prev) => [...prev, { name: file.name, dataUrl: e.target.result }]);
       };
       reader.readAsDataURL(file);
     });
@@ -194,7 +191,11 @@ const ChatInput = ({
             height: 40,
           }}
         >
-          {loading ? <CircularProgressIcon size={20} color="inherit" /> : <SendIcon fontSize="small" />}
+          {loading ? (
+            <CircularProgressIcon size={20} color="inherit" />
+          ) : (
+            <SendIcon fontSize="small" />
+          )}
         </IconButton>
       </Stack>
     </Box>

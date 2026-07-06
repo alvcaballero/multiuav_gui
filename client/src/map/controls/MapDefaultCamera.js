@@ -7,7 +7,8 @@ import { map } from '../core/MapView';
 
 // Rutas que renderizan una vista 3D (Scene3DCanvas) en vez de MainMap/MapDefaultCamera.
 const THREED_ROUTES = ['/3Dview', '/3Deditor', '/3Dmission'];
-const isThreeDPath = (pathname) => THREED_ROUTES.some((p) => pathname.startsWith(p)) || pathname.startsWith('/device3d');
+const isThreeDPath = (pathname) =>
+  THREED_ROUTES.some((p) => pathname.startsWith(p)) || pathname.startsWith('/device3d');
 
 // Viven fuera del componente: MapDefaultCamera se desmonta/remonta en cada
 // navegación entre páginas 2D (Main/Mission/Planning/Device), no solo al
@@ -62,7 +63,6 @@ const MapDefaultCamera = () => {
       center: [scene3dOrigin.lng, scene3dOrigin.lat],
       zoom: defaultZoom,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -97,7 +97,7 @@ const MapDefaultCamera = () => {
     if (coordinates.length > 1) {
       const bounds = coordinates.reduce(
         (bounds, item) => bounds.extend(item),
-        new maplibregl.LngLatBounds(coordinates[0], coordinates[1])
+        new maplibregl.LngLatBounds(coordinates[0], coordinates[1]),
       );
       const canvas = map.getCanvas();
       map.fitBounds(bounds, {
@@ -113,7 +113,15 @@ const MapDefaultCamera = () => {
       });
       markInitialized();
     }
-  }, [selectedDeviceId, initialized, defaultLatitude, defaultLongitude, defaultZoom, positions, scene3dOrigin]);
+  }, [
+    selectedDeviceId,
+    initialized,
+    defaultLatitude,
+    defaultLongitude,
+    defaultZoom,
+    positions,
+    scene3dOrigin,
+  ]);
 
   return null;
 };

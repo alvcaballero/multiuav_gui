@@ -49,7 +49,7 @@ const MapGeofenceEdit = ({ selectedGeofenceId }) => {
           },
         ],
       }),
-    []
+    [],
   );
 
   const geofences = useSelector((state) => state.geofences.items);
@@ -158,7 +158,7 @@ const MapGeofenceEdit = ({ selectedGeofenceId }) => {
       }
       const bounds = coordinates.reduce(
         (bounds, coordinate) => bounds.extend(coordinate),
-        new maplibregl.LngLatBounds(coordinates[0], coordinates[1])
+        new maplibregl.LngLatBounds(coordinates[0], coordinates[1]),
       );
       const canvas = map.getCanvas();
       map.fitBounds(bounds, { padding: Math.min(canvas.width, canvas.height) * 0.1 });

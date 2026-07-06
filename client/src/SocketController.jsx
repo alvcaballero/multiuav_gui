@@ -2,12 +2,17 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch, connect } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import alarm from './resources/alarm.mp3';
-import { devicesActions, missionActions, sessionActions, chatActions, activeMissionsActions } from './store';
+import store, {
+  devicesActions,
+  missionActions,
+  sessionActions,
+  chatActions,
+  activeMissionsActions,
+} from './store';
 import { eventsActions } from './store/events';
 import { loadMissionPlanToEditor } from './services/missionPlanLoader';
 import { Snackbar } from '@mui/material';
 import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
-import store from './store';
 
 const logoutCode = 4000;
 const snackBarDurationLongMs = 1000;
@@ -32,10 +37,10 @@ const SocketController = () => {
           type: event.type,
           message: event.attributes.message,
           show: true,
-        }))
+        })),
       );
     },
-    [dispatch, setNotifications]
+    [dispatch, setNotifications],
   );
 
   const connectSocket = () => {
@@ -118,11 +123,21 @@ const SocketController = () => {
         if (!known) {
           // Mission arrived before initial fetch or was created after page load — fetch it now
           Promise.all([
-            fetch(`/api/missions?id=${missionId}`).then((r) => r.ok ? r.json() : null),
-            fetch(`/api/missions/routes?missionId=${missionId}`).then((r) => r.ok ? r.json() : null),
+            fetch(`/api/missions?id=${missionId}`).then((r) => (r.ok ? r.json() : null)),
+            fetch(`/api/missions/routes?missionId=${missionId}`).then((r) =>
+              r.ok ? r.json() : null,
+            ),
           ]).then(([mission, routes]) => {
-            if (mission) dispatch(activeMissionsActions.upsertMission(Array.isArray(mission) ? mission[0] : mission));
-            if (routes) dispatch(activeMissionsActions.setRoutes(Array.isArray(routes) ? routes : Object.values(routes)));
+            if (mission)
+              dispatch(
+                activeMissionsActions.upsertMission(Array.isArray(mission) ? mission[0] : mission),
+              );
+            if (routes)
+              dispatch(
+                activeMissionsActions.setRoutes(
+                  Array.isArray(routes) ? routes : Object.values(routes),
+                ),
+              );
           });
         }
         dispatch(activeMissionsActions.updateProgress(data.missionProgress));
@@ -158,7 +173,7 @@ const SocketController = () => {
         // load its plan into the editor/map, same as clicking it manually would.
         if (missionList.length > 0) {
           const mostRecent = missionList.reduce((latest, m) =>
-            new Date(m.initTime) > new Date(latest.initTime) ? m : latest
+            new Date(m.initTime) > new Date(latest.initTime) ? m : latest,
           );
           dispatch(activeMissionsActions.selectMission(mostRecent.id));
           loadMissionPlanToEditor(mostRecent.id, dispatch);
@@ -222,7 +237,7 @@ export const sendChatMessage = (chatId, message) => {
       chatId: chatId,
       message: message,
       timestamp: new Date().toISOString(),
-    }
+    },
   };
 
   console.log('Sending chat message via WebSocket:', payload);

@@ -138,7 +138,11 @@ const ImageFull = ({ file, closecard }) => {
             title={file.name}
             subheader="date:September 14, 2016"
           />
-          <CardMedia component="img" alt={file.name} image={`/api/files/download/${file.path}${file.name}`} />
+          <CardMedia
+            component="img"
+            alt={file.name}
+            image={`/api/files/download/${file.path}${file.name}`}
+          />
           <CardContent>
             <Typography variant="body2" color="text.secondary">
               Result:{JSON.stringify(file.attributes)}
@@ -253,7 +257,10 @@ const MissionDetailReportPage = () => {
         if (deviceValue?.settings) {
           myData.settings = deviceValue.settings;
           if (deviceValue?.settings?.base) {
-            myBases.push({ latitude: deviceValue.settings.base[0], longitude: deviceValue.settings.base[1] });
+            myBases.push({
+              latitude: deviceValue.settings.base[0],
+              longitude: deviceValue.settings.base[1],
+            });
           }
         }
         data.push(myData);
@@ -296,7 +303,12 @@ const MissionDetailReportPage = () => {
   }, []);
 
   useEffectAsync(async () => {
-    if (missions && missions.hasOwnProperty('task') && missions.task && missions.task.hasOwnProperty('case')) {
+    if (
+      missions &&
+      missions.hasOwnProperty('task') &&
+      missions.task &&
+      missions.task.hasOwnProperty('case')
+    ) {
       const response = await fetch(`/api/planning/missionparam/${missions.task.case}`);
       if (response.ok) {
         const myParamSettings = await response.json();
@@ -465,7 +477,9 @@ const MissionDetailReportPage = () => {
                                 <Typography>Interest elements</Typography>
                               </AccordionSummary>
                               <AccordionDetails className={classes.details}>
-                                {missions.task.locations && <SelectList Data={missions.task.locations} />}
+                                {missions.task.locations && (
+                                  <SelectList Data={missions.task.locations} />
+                                )}
                               </AccordionDetails>
                             </Accordion>
                             <Divider />

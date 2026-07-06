@@ -104,7 +104,8 @@ const R3DMarkers = ({ elements }) => {
       pos: [posxyz[index][0], posxyz[index][2], -posxyz[index][1]],
     }));
     const result = elementxyz.filter(
-      (item) => item.pos[0] > -range && item.pos[0] < range && item.pos[2] > -range && item.pos[2] < range
+      (item) =>
+        item.pos[0] > -range && item.pos[0] < range && item.pos[2] > -range && item.pos[2] < range,
     );
     setmarkers(result);
     invalidate();

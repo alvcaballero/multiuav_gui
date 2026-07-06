@@ -2,7 +2,6 @@ import ReactSwipeButton from 'react-swipe-button';
 import React, { useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
-
 import { Card, CardContent, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 

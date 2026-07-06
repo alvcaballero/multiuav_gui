@@ -52,7 +52,7 @@ export const prepareIcon = (background, icon, color, border, boder_color) => {
       (canvas.width - imageWidth) / 2,
       (canvas.height - imageHeight) / 2,
       imageWidth,
-      imageHeight
+      imageHeight,
     );
   } else {
     if (color) {
@@ -88,7 +88,11 @@ export const geofenceToFeature = (theme, item) => {
       .trim()
       .split(/ +/);
     const options = { steps: 32, units: 'meters' };
-    const polygon = circle([Number(coordinates[1]), Number(coordinates[0])], Number(coordinates[2]), options);
+    const polygon = circle(
+      [Number(coordinates[1]), Number(coordinates[0])],
+      Number(coordinates[2]),
+      options,
+    );
     geometry = polygon.geometry;
   } else {
     geometry = reverseCoordinates(parse(item.area));

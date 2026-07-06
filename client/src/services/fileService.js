@@ -48,7 +48,7 @@ export const parseKmlElements = (kmlText) => {
     node.textContent
       .replace('\t1', '')
       .replace(/(\r\n|\n|\r|\t)/gm, '')
-      .split(',')
+      .split(','),
   );
 
   if (pointArray.length) {
@@ -67,7 +67,7 @@ export const parseKmlElements = (kmlText) => {
       .replace('\t1', '')
       .replace(/(\r\n|\n|\r|\t)/gm, '')
       .split(' ')
-      .map((pair) => pair.split(','))
+      .map((pair) => pair.split(',')),
   );
 
   if (coordGroups.length) {
@@ -147,7 +147,7 @@ const parseKmlMission = (data) => {
       .replace('\t1', '')
       .replace(/(\r\n|\n|\r|\t)/gm, '')
       .split(' ')
-      .map((point) => point.split(','))
+      .map((point) => point.split(',')),
   );
 
   const mission_yaml = { uav_n: routes.length };

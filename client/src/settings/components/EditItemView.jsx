@@ -14,7 +14,17 @@ import { useCatch, useEffectAsync } from '../../reactHelper';
 import PageLayout from '../../shared/components/PageLayout';
 import useSettingsStyles from '../common/useSettingsStyles';
 
-const EditItemView = ({ children, endpoint, item, setItem, defaultItem, validate, onItemSaved, menu, breadcrumbs }) => {
+const EditItemView = ({
+  children,
+  endpoint,
+  item,
+  setItem,
+  defaultItem,
+  validate,
+  onItemSaved,
+  menu,
+  breadcrumbs,
+}) => {
   const navigate = useNavigate();
   const { classes } = useSettingsStyles();
 
@@ -23,7 +33,7 @@ const EditItemView = ({ children, endpoint, item, setItem, defaultItem, validate
   useEffectAsync(async () => {
     if (!item) {
       if (id) {
-        let url = `/api/${endpoint}/${id}`
+        let url = `/api/${endpoint}/${id}`;
         if (endpoint === 'devices') {
           url += '?admin=true';
         }
@@ -83,7 +93,13 @@ const EditItemView = ({ children, endpoint, item, setItem, defaultItem, validate
           </Accordion>
         )}
         <div className={classes.buttons}>
-          <Button type="button" color="primary" variant="outlined" onClick={() => navigate(-1)} disabled={!item}>
+          <Button
+            type="button"
+            color="primary"
+            variant="outlined"
+            onClick={() => navigate(-1)}
+            disabled={!item}
+          >
             {'Cancel'}
           </Button>
           <Button

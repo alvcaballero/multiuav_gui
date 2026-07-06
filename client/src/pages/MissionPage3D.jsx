@@ -11,7 +11,6 @@ import MissionPanel from '../components/mission/MissionPanel';
 import MissionElevation from '../components/mission/MissionElevation';
 import SaveFile from '../components/ui/SaveFile';
 
-
 import R3FCanvas from '../scene3d/core/R3FCanvas';
 import R3FMission from '../scene3d/scene/R3FMission';
 import R3DMarkers from '../scene3d/scene/R3DMarkers';
@@ -64,18 +63,15 @@ const MissionPage3D = () => {
   const sessionmarkers = useSelector((state) => state.session.markers);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
 
-
   const [markers, setmarkers] = useState([]);
-
-
 
   const [filteredPositions, setFilteredPositions] = useState([]);
 
   const elements = [
-    { type: "windturbine", pos: [10, 10, 0] },
-    { type: "base", pos: [0, 0, 0] },
-    { type: "drone", pos: [1, 1, 1] }
-  ]
+    { type: 'windturbine', pos: [10, 10, 0] },
+    { type: 'base', pos: [0, 0, 0] },
+    { type: 'drone', pos: [1, 1, 1] },
+  ];
 
   useEffect(() => {
     setFilteredPositions(Object.values(positions));
@@ -87,7 +83,11 @@ const MissionPage3D = () => {
 
   const tabs = (
     <>
-      <Tabs value={tabIndex} onChange={(_, index) => navigate(`/robot/${id}/${index}`)} style={{ flexGrow: 1 }}>
+      <Tabs
+        value={tabIndex}
+        onChange={(_, index) => navigate(`/robot/${id}/${index}`)}
+        style={{ flexGrow: 1 }}
+      >
         <Tab label="Viz" />
         <Tab label="Imagery" />
         <Tab label="Stats" />
@@ -99,40 +99,39 @@ const MissionPage3D = () => {
   return (
     <div className={classes.root}>
       <RosControl notification={showToast}>
-          <Navbar2 tabs={tabs} />
-          <Menu />
-          <div
-            style={{
-              float: 'right',
-              width: 'calc(100% - 560px)',
-              height: 'calc(70vh - 95px)',
-              right: '0px',
-              margin: 'auto',
-            }}
-          >
-            <R3FCanvas>
-              <R3FMission routes={routes} />
-              <R3DMarkers elements={markers} />
-              <R3FDevices />
-            </R3FCanvas>
+        <Navbar2 tabs={tabs} />
+        <Menu />
+        <div
+          style={{
+            float: 'right',
+            width: 'calc(100% - 560px)',
+            height: 'calc(70vh - 95px)',
+            right: '0px',
+            margin: 'auto',
+          }}
+        >
+          <R3FCanvas>
+            <R3FMission routes={routes} />
+            <R3DMarkers elements={markers} />
+            <R3FDevices />
+          </R3FCanvas>
+        </div>
 
+        <div className={classes.sidebarStyle}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <MissionPanel SetOpenSave={setOpenSave} />
+            </Paper>
           </div>
-
-          <div className={classes.sidebarStyle}>
-            <div className={classes.middleStyle}>
-              <Paper square>
-                <MissionPanel SetOpenSave={setOpenSave} />
-              </Paper>
-            </div>
+        </div>
+        <div className={classes.panelElevation}>
+          <div className={classes.middleStyle}>
+            <Paper square sx={{ height: '100%' }}>
+              <MissionElevation />
+            </Paper>
           </div>
-          <div className={classes.panelElevation}>
-            <div className={classes.middleStyle}>
-              <Paper square sx={{ height: '100%' }}>
-                <MissionElevation />
-              </Paper>
-            </div>
-          </div>
-          {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
+        </div>
+        {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
       </RosControl>
     </div>
   );

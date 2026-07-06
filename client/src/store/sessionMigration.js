@@ -93,7 +93,7 @@ export const migratePlanning = (planning, markers) => {
   // Extraer configuración por defecto del primer elemento no vacío
   let defaultSettings = {};
   const firstValidBase = planning.bases.find(
-    (b) => b.devices && b.devices.id && b.devices.id !== ''
+    (b) => b.devices && b.devices.id && b.devices.id !== '',
   );
   if (firstValidBase && firstValidBase.settings) {
     defaultSettings = { ...firstValidBase.settings };

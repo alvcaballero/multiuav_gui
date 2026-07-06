@@ -30,12 +30,16 @@ import { forkConversation } from '../../store/chat';
 // --- Data transformation utils ---
 
 const convertMsg = (msg) => {
-  if (!msg || !msg.message) return { role: 'assistant', type: 'error', content: 'Invalid message', status: 'error' };
+  if (!msg || !msg.message)
+    return { role: 'assistant', type: 'error', content: 'Invalid message', status: 'error' };
 
   const status = msg.message.status || null;
 
   // Multipart content: array of input_text / input_image blocks (user messages with images)
-  if (Array.isArray(msg.message.content) && msg.message.content.some((b) => b.type === 'input_image')) {
+  if (
+    Array.isArray(msg.message.content) &&
+    msg.message.content.some((b) => b.type === 'input_image')
+  ) {
     return {
       role: msg.message.role,
       type: 'multipart',
@@ -44,7 +48,10 @@ const convertMsg = (msg) => {
     };
   }
 
-  if (typeof msg.message.content === 'string' && (msg.message.type === 'text' || !msg.message.type)) {
+  if (
+    typeof msg.message.content === 'string' &&
+    (msg.message.type === 'text' || !msg.message.type)
+  ) {
     return {
       role: msg.message.role,
       content: msg.message.content,
@@ -120,7 +127,10 @@ const convertMsg = (msg) => {
   return {
     role: msg.message.role,
     type: 'text',
-    content: typeof msg.message.content === 'string' ? msg.message.content : JSON.stringify(msg.message.content),
+    content:
+      typeof msg.message.content === 'string'
+        ? msg.message.content
+        : JSON.stringify(msg.message.content),
     status,
   };
 };
@@ -140,7 +150,11 @@ const formatMcpContent = (content) => {
       .map((item) => {
         let text = item.text;
         if (typeof text === 'string') {
-          text = text.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          text = text
+            .replace(/\\n/g, '\n')
+            .replace(/\\t/g, '\t')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\');
         }
         return text;
       });
@@ -151,7 +165,11 @@ const formatMcpContent = (content) => {
   }
 
   if (content.text && typeof content.text === 'string') {
-    return content.text.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    return content.text
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\');
   }
 
   return JSON.stringify(content, null, 2);
@@ -160,7 +178,10 @@ const formatMcpContent = (content) => {
 const detectContentLanguage = (content) => {
   if (typeof content === 'string') {
     const trimmed = content.trim();
-    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    if (
+      (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    ) {
       return 'json';
     }
     return 'text';
@@ -335,7 +356,12 @@ export const MessageBubble = memo(({ message, chatId }) => {
             <Typography
               variant="body2"
               component="div"
-              sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.8rem' }}
+              sx={{
+                color: 'text.secondary',
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'monospace',
+                fontSize: '0.8rem',
+              }}
             >
               {content}
             </Typography>
@@ -351,7 +377,8 @@ export const MessageBubble = memo(({ message, chatId }) => {
     const hasMissionDataResult = name === 'request_mission_plan' && content?.mission;
     const hasMissionDataXYZ = content?.missionDataXYZ;
     const isValidateMission = name === 'validate_mission_collisions' && content?.mission;
-    const isCreateMission = hasMissionData || hasMissionDataResult || hasMissionDataXYZ || isValidateMission;
+    const isCreateMission =
+      hasMissionData || hasMissionDataResult || hasMissionDataXYZ || isValidateMission;
 
     const handlShowMission = async () => {
       try {
@@ -374,7 +401,11 @@ export const MessageBubble = memo(({ message, chatId }) => {
             version: content.mission.version || '3',
             name: content.mission.name || 'Validated Mission',
             route: content.mission.route,
-            global_origin: content.mission.global_origin || { lat: 41.687222, lng: -8.8477450788, alt: 0 },
+            global_origin: content.mission.global_origin || {
+              lat: 41.687222,
+              lng: -8.8477450788,
+              alt: 0,
+            },
           };
         } else {
           return;
@@ -406,7 +437,12 @@ export const MessageBubble = memo(({ message, chatId }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
               <Typography
                 variant="caption"
-                sx={{ color: '#1976d2', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                sx={{
+                  color: '#1976d2',
+                  fontWeight: 'bold',
+                  fontFamily: 'monospace',
+                  fontSize: '0.85rem',
+                }}
               >
                 Run: {name}
               </Typography>
@@ -431,7 +467,11 @@ export const MessageBubble = memo(({ message, chatId }) => {
               {timestampLabel && (
                 <Typography
                   variant="caption"
-                  sx={{ color: 'text.disabled', fontSize: '0.65rem', ml: isCreateMission ? 1 : 'auto' }}
+                  sx={{
+                    color: 'text.disabled',
+                    fontSize: '0.65rem',
+                    ml: isCreateMission ? 1 : 'auto',
+                  }}
                 >
                   {timestampLabel}
                 </Typography>
@@ -556,7 +596,11 @@ export const MessageBubble = memo(({ message, chatId }) => {
               {timestampLabel && (
                 <Typography
                   variant="caption"
-                  sx={{ color: 'text.disabled', fontSize: '0.65rem', ml: isCreateMission ? 1 : 'auto' }}
+                  sx={{
+                    color: 'text.disabled',
+                    fontSize: '0.65rem',
+                    ml: isCreateMission ? 1 : 'auto',
+                  }}
                 >
                   {timestampLabel}
                 </Typography>
@@ -590,7 +634,11 @@ export const MessageBubble = memo(({ message, chatId }) => {
           cursor: 'context-menu',
         }}
       >
-        <Stack direction={isAI ? 'row' : 'row-reverse'} spacing={1} sx={{ alignItems: 'flex-start', width: '100%' }}>
+        <Stack
+          direction={isAI ? 'row' : 'row-reverse'}
+          spacing={1}
+          sx={{ alignItems: 'flex-start', width: '100%' }}
+        >
           {!isAI && (
             <Avatar sx={{ bgcolor: '#ed6c02', width: 32, height: 32, mt: 0.5 }}>
               <PersonIcon fontSize="small" />
@@ -617,7 +665,11 @@ export const MessageBubble = memo(({ message, chatId }) => {
                   code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline && match ? (
-                      <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} {...props} />
+                      <CodeBlock
+                        language={match[1]}
+                        value={String(children).replace(/\n$/, '')}
+                        {...props}
+                      />
                     ) : (
                       <code
                         className={className}
@@ -653,7 +705,12 @@ export const MessageBubble = memo(({ message, chatId }) => {
                         <img
                           src={block.image_url}
                           alt="attached"
-                          style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, display: 'block' }}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: 300,
+                            borderRadius: 8,
+                            display: 'block',
+                          }}
                         />
                       </Box>
                     );
@@ -688,7 +745,9 @@ export const MessageBubble = memo(({ message, chatId }) => {
         open={contextMenu !== null}
         onClose={handleCloseContextMenu}
         anchorReference="anchorPosition"
-        anchorPosition={contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined}
+        anchorPosition={
+          contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined
+        }
       >
         <MuiMenuItem onClick={handleFork} disabled={!chatId}>
           <CallSplitIcon fontSize="small" sx={{ mr: 1 }} />

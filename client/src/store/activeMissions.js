@@ -84,7 +84,15 @@ const { reducer: activeMissionsReducer, actions: activeMissionsActions } = creat
           initTime: null,
           endTime: null,
           routes: {
-            [deviceId]: { deviceId, status: routeStatus ?? 'running', currentWp, totalWp, anomalies, wpEstimate, confidence },
+            [deviceId]: {
+              deviceId,
+              status: routeStatus ?? 'running',
+              currentWp,
+              totalWp,
+              anomalies,
+              wpEstimate,
+              confidence,
+            },
           },
         };
         return;
@@ -102,7 +110,8 @@ const { reducer: activeMissionsReducer, actions: activeMissionsActions } = creat
       } else {
         mission.routes[deviceId].currentWp = currentWp;
         mission.routes[deviceId].totalWp = totalWp;
-        mission.routes[deviceId].status = routeStatus ?? (action.payload.completed ? 'completed' : 'running');
+        mission.routes[deviceId].status =
+          routeStatus ?? (action.payload.completed ? 'completed' : 'running');
         mission.routes[deviceId].anomalies = anomalies;
         mission.routes[deviceId].wpEstimate = wpEstimate;
         mission.routes[deviceId].confidence = confidence;
@@ -159,7 +168,8 @@ const isCommandable = (mission) => {
  */
 export const getCommandableMissionId = (state) => {
   const { items, selectedMissionId } = state.activeMissions;
-  if (selectedMissionId != null && isCommandable(items[selectedMissionId])) return selectedMissionId;
+  if (selectedMissionId != null && isCommandable(items[selectedMissionId]))
+    return selectedMissionId;
 
   return null;
 };

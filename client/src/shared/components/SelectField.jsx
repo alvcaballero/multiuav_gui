@@ -33,7 +33,11 @@ const SelectField = ({
     if (typeof items !== 'undefined' && value !== null) {
       getItems(items[value]);
     }
-    if (typeof items !== 'undefined' && emptyValue == null && (value === null || value === undefined)) {
+    if (
+      typeof items !== 'undefined' &&
+      emptyValue == null &&
+      (value === null || value === undefined)
+    ) {
       if (items && items.length && items.length > 0) {
         onChange({ target: { value: items[0] } });
       }
@@ -45,8 +49,15 @@ const SelectField = ({
       <FormControl fullWidth={fullWidth}>
         <InputLabel>{label}</InputLabel>
         {value !== null && value !== undefined && (
-          <Select label={label} multiple={multiple} value={value} onChange={(e) => onChange(e, items)}>
-            {!multiple && emptyValue !== null && emptyValue !== undefined && <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>}
+          <Select
+            label={label}
+            multiple={multiple}
+            value={value}
+            onChange={(e) => onChange(e, items)}
+          >
+            {!multiple && emptyValue !== null && emptyValue !== undefined && (
+              <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>
+            )}
             {items.map((item) => (
               <MenuItem key={keyGetter(item)} value={keyGetter(item)}>
                 {titleGetter(item)}

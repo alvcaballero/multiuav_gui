@@ -110,7 +110,9 @@ const haversineDistance2D = (lat1, lon1, lat2, lon2) => {
   const lat1Rad = toRad(lat1);
   const lat2Rad = toRad(lat2);
 
-  const a = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1Rad) * Math.cos(lat2Rad);
+  const a =
+    Math.pow(Math.sin(dLat / 2), 2) +
+    Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1Rad) * Math.cos(lat2Rad);
 
   return radiansToLength(2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)), 'meters');
 };
@@ -206,7 +208,6 @@ const getMaxtime = (time1, time2) => {
   return time2;
 };
 
-
 const MissionStats = () => {
   const { classes } = useStyles();
   const missionRoutes = useSelector((state) => state.mission.route);
@@ -245,7 +246,7 @@ const MissionStats = () => {
         totalWaypoints: acc.totalWaypoints + route.waypoints,
         totalTime: getMaxtime(acc.totalTime, route.time),
       }),
-      { totalDistance2D: 0, totalDistance3D: 0, totalWaypoints: 0, totalTime: 0 }
+      { totalDistance2D: 0, totalDistance3D: 0, totalWaypoints: 0, totalTime: 0 },
     );
 
     return {
@@ -262,7 +263,9 @@ const MissionStats = () => {
           <RouteIcon />
           <Typography variant="h6">Mission Statistics</Typography>
         </Box>
-        <Typography className={classes.noData}>No routes defined. Add waypoints to see statistics.</Typography>
+        <Typography className={classes.noData}>
+          No routes defined. Add waypoints to see statistics.
+        </Typography>
       </Box>
     );
   }
@@ -292,12 +295,16 @@ const MissionStats = () => {
           </Box>
           <Box className={classes.statItem}>
             <StraightenIcon color="primary" />
-            <Typography className={classes.statValue}>{formatDistance(stats.totalDistance2D)}</Typography>
+            <Typography className={classes.statValue}>
+              {formatDistance(stats.totalDistance2D)}
+            </Typography>
             <Typography className={classes.statLabel}>Distance 2D</Typography>
           </Box>
           <Box className={classes.statItem}>
             <StraightenIcon color="secondary" />
-            <Typography className={classes.statValue}>{formatDistance(stats.totalDistance3D)}</Typography>
+            <Typography className={classes.statValue}>
+              {formatDistance(stats.totalDistance3D)}
+            </Typography>
             <Typography className={classes.statLabel}>Distance 3D</Typography>
           </Box>
           <Tooltip title={`${Math.round(stats.totalTime)} s`} arrow>

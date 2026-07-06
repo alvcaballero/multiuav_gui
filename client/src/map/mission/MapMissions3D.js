@@ -25,7 +25,10 @@ export const MapMissions3D = () => {
   const modelRotate = [Math.PI / 2, 0, 0];
 
   //const sceneOrigin = new maplibregl.LngLat(-6.485616, 37.144592);
-  const modelAsMercatorCoordinate = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, modelAltitude);
+  const modelAsMercatorCoordinate = maplibregl.MercatorCoordinate.fromLngLat(
+    modelOrigin,
+    modelAltitude,
+  );
   function calculateDistanceMercatorToMeters(from, to) {
     const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
     // mercator x: 0=west, 1=east
@@ -65,14 +68,23 @@ export const MapMissions3D = () => {
         if (origen == null) {
           //origen = latLonToXYZ(wp['pos'][1], wp['pos'][0], 0);
           origen = [wp['pos'][1], wp['pos'][0], 0];
-          origen2 = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, 0);
-          let test2 = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, wp['pos'][2]);
+          origen2 = maplibregl.MercatorCoordinate.fromLngLat(
+            { lng: wp['pos'][1], lat: wp['pos'][0] },
+            0,
+          );
+          let test2 = maplibregl.MercatorCoordinate.fromLngLat(
+            { lng: wp['pos'][1], lat: wp['pos'][0] },
+            wp['pos'][2],
+          );
           let test3 = calculateDistanceMercatorToMeters(origen2, test2);
           console.log(origen2);
           console.log(test2);
           console.log(test3);
         }
-        let destino = maplibregl.MercatorCoordinate.fromLngLat({ lng: wp['pos'][1], lat: wp['pos'][0] }, wp['pos'][2]);
+        let destino = maplibregl.MercatorCoordinate.fromLngLat(
+          { lng: wp['pos'][1], lat: wp['pos'][0] },
+          wp['pos'][2],
+        );
         let distance = calculateDistanceMercatorToMeters(origen2, destino);
 
         // let destino = latLonToXYZ(wp['pos'][1], wp['pos'][0], wp['pos'][2]);
@@ -119,7 +131,10 @@ export const MapMissions3D = () => {
       let myrouteLines = preparelines();
       // do a for bucle to add the lines
       for (let i = 0; i < myrouteLines.length; i++) {
-        let material = new THREE.LineBasicMaterial({ linewidth: 10, color: palette.colors_devices[i] });
+        let material = new THREE.LineBasicMaterial({
+          linewidth: 10,
+          color: palette.colors_devices[i],
+        });
         let myline = new THREE.Line(myrouteLines[i], material);
         this.scene.add(myline);
       }
@@ -143,7 +158,10 @@ export const MapMissions3D = () => {
       const sceneOrigin = new maplibregl.LngLat(myorigin[0], myorigin[1]);
 
       const offsetFromCenterElevation = map.queryTerrainElevation(sceneOrigin) || 0;
-      const sceneOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(sceneOrigin, offsetFromCenterElevation);
+      const sceneOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(
+        sceneOrigin,
+        offsetFromCenterElevation,
+      );
 
       const sceneTransform = {
         translateX: sceneOriginMercator.x,
@@ -155,13 +173,26 @@ export const MapMissions3D = () => {
         scale: sceneOriginMercator.meterInMercatorCoordinateUnits(),
       };
 
-      const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), sceneTransform.rotateX);
-      const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), sceneTransform.rotateY);
-      const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 0, 1), sceneTransform.rotateZ);
+      const rotationX = new THREE.Matrix4().makeRotationAxis(
+        new THREE.Vector3(1, 0, 0),
+        sceneTransform.rotateX,
+      );
+      const rotationY = new THREE.Matrix4().makeRotationAxis(
+        new THREE.Vector3(0, 1, 0),
+        sceneTransform.rotateY,
+      );
+      const rotationZ = new THREE.Matrix4().makeRotationAxis(
+        new THREE.Vector3(0, 0, 1),
+        sceneTransform.rotateZ,
+      );
 
       const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
       const l = new THREE.Matrix4()
-        .makeTranslation(sceneTransform.translateX, sceneTransform.translateY, sceneTransform.translateZ)
+        .makeTranslation(
+          sceneTransform.translateX,
+          sceneTransform.translateY,
+          sceneTransform.translateZ,
+        )
         .scale(new THREE.Vector3(sceneTransform.scale, -sceneTransform.scale, sceneTransform.scale))
         .multiply(rotationX)
         .multiply(rotationY)

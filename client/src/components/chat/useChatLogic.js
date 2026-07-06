@@ -92,7 +92,9 @@ const useChatLogic = (open = true) => {
   }, [messages]);
 
   const handleSendMessage = async (messageToSend, fromAudio = false) => {
-    const isEmpty = Array.isArray(messageToSend) ? messageToSend.length === 0 : !messageToSend.trim();
+    const isEmpty = Array.isArray(messageToSend)
+      ? messageToSend.length === 0
+      : !messageToSend.trim();
     if (isEmpty || loading.sendingMessage) return;
 
     try {
@@ -106,7 +108,7 @@ const useChatLogic = (open = true) => {
             content: messageToSend,
             timestamp: new Date().toISOString(),
           },
-        })
+        }),
       );
       setShowOptions(false);
       sendChatMessage(activeChatId, messageToSend);
@@ -122,10 +124,11 @@ const useChatLogic = (open = true) => {
           chatId: chatIdForError,
           message: {
             role: 'assistant',
-            content: 'Error: No se pudo enviar el mensaje. Por favor verifica la conexión WebSocket.',
+            content:
+              'Error: No se pudo enviar el mensaje. Por favor verifica la conexión WebSocket.',
             timestamp: new Date().toISOString(),
           },
-        })
+        }),
       );
     } finally {
       dispatch(chatActions.setLoading({ key: 'sendingMessage', value: false }));
@@ -167,13 +170,17 @@ const useChatLogic = (open = true) => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const audioTracks = stream.getAudioTracks();
       if (audioTracks.length === 0) {
-        alert('No se detectó ningún micrófono. Por favor, conecta un micrófono e intenta de nuevo.');
+        alert(
+          'No se detectó ningún micrófono. Por favor, conecta un micrófono e intenta de nuevo.',
+        );
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
       const audioTrack = audioTracks[0];
       if (!audioTrack.enabled) {
-        alert('El micrófono está deshabilitado. Por favor, habilítalo en la configuración del sistema.');
+        alert(
+          'El micrófono está deshabilitado. Por favor, habilítalo en la configuración del sistema.',
+        );
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -188,7 +195,9 @@ const useChatLogic = (open = true) => {
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
         if (average < 1) {
-          console.warn('⚠️ No se detecta señal del micrófono. Puede estar desactivado o silenciado.');
+          console.warn(
+            '⚠️ No se detecta señal del micrófono. Puede estar desactivado o silenciado.',
+          );
         }
       }, 500);
       const recorder = new MediaRecorder(stream);
@@ -199,7 +208,9 @@ const useChatLogic = (open = true) => {
       recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         if (audioBlob.size < 100) {
-          alert('No se grabó ningún audio. Verifica que el micrófono esté habilitado y no silenciado.');
+          alert(
+            'No se grabó ningún audio. Verifica que el micrófono esté habilitado y no silenciado.',
+          );
           stream.getTracks().forEach((track) => track.stop());
           audioContext.close();
           return;
@@ -214,11 +225,17 @@ const useChatLogic = (open = true) => {
     } catch (error) {
       console.error('Error al acceder al micrófono:', error);
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        alert('Permiso denegado. Por favor, permite el acceso al micrófono en la configuración del navegador.');
+        alert(
+          'Permiso denegado. Por favor, permite el acceso al micrófono en la configuración del navegador.',
+        );
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        alert('No se encontró ningún micrófono. Por favor, conecta un micrófono e intenta de nuevo.');
+        alert(
+          'No se encontró ningún micrófono. Por favor, conecta un micrófono e intenta de nuevo.',
+        );
       } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-        alert('El micrófono está siendo usado por otra aplicación o está deshabilitado en el sistema.');
+        alert(
+          'El micrófono está siendo usado por otra aplicación o está deshabilitado en el sistema.',
+        );
       } else {
         alert('No se pudo acceder al micrófono: ' + error.message);
       }
@@ -243,7 +260,10 @@ const useChatLogic = (open = true) => {
       }
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
-      const transcriptionResponse = await fetch('/api/chat/stt', { method: 'POST', body: formData });
+      const transcriptionResponse = await fetch('/api/chat/stt', {
+        method: 'POST',
+        body: formData,
+      });
       const responseData = await transcriptionResponse.json();
       if (!transcriptionResponse.ok) {
         if (responseData.hallucination) {
@@ -263,7 +283,9 @@ const useChatLogic = (open = true) => {
       }
     } catch (error) {
       console.error('Error al procesar el audio:', error);
-      alert('Hubo un error al procesar el audio. Asegúrate de hablar claramente y cerca del micrófono.');
+      alert(
+        'Hubo un error al procesar el audio. Asegúrate de hablar claramente y cerca del micrófono.',
+      );
       dispatch(chatActions.setLoading({ key: 'sendingMessage', value: false }));
     }
   };

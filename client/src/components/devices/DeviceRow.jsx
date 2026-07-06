@@ -1,6 +1,14 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { IconButton, Tooltip, Avatar, ListItemAvatar, ListItemText, ListItemButton, Typography } from '@mui/material';
+import {
+  IconButton,
+  Tooltip,
+  Avatar,
+  ListItemAvatar,
+  ListItemText,
+  ListItemButton,
+  Typography,
+} from '@mui/material';
 import BatteryFullIcon from '@mui/icons-material/BatteryFull';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import Battery60Icon from '@mui/icons-material/Battery60';
@@ -11,7 +19,13 @@ import ErrorIcon from '@mui/icons-material/Error';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { devicesActions } from '../../store';
-import { formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusColor } from '../../shared/formatter';
+import {
+  formatAlarm,
+  formatBoolean,
+  formatPercentage,
+  formatStatus,
+  getStatusColor,
+} from '../../shared/formatter';
 import { mapIconKey, mapIcons } from '../../map/core/preloadImages';
 import EngineIcon from '../../resources/images/data/engine.svg';
 import { makeStyles } from 'tss-react/mui';
@@ -50,7 +64,7 @@ const PositionAlarm = React.memo(({ alarm, classes }) =>
         <ErrorIcon fontSize="small" className={classes.error} />
       </IconButton>
     </Tooltip>
-  ) : null
+  ) : null,
 );
 
 const PositionIgnition = React.memo(({ ignition, classes }) => (
@@ -135,7 +149,11 @@ const DeviceRow = ({ devices, index, style }) => {
   const secondaryText = (
     <>
       {uavStatus}
-      <Typography component="span" style={{ fontSize: 12 }} className={classes[getStatusColor(item.status)]}>
+      <Typography
+        component="span"
+        style={{ fontSize: 12 }}
+        className={classes[getStatusColor(item.status)]}
+      >
         {status}
       </Typography>
     </>
@@ -143,7 +161,11 @@ const DeviceRow = ({ devices, index, style }) => {
 
   return (
     <div style={style}>
-      <ListItemButton key={item.id} onClick={() => dispatch(devicesActions.selectId(item.id))} disabled={item.disabled}>
+      <ListItemButton
+        key={item.id}
+        onClick={() => dispatch(devicesActions.selectId(item.id))}
+        disabled={item.disabled}
+      >
         <ListItemAvatar>
           <Avatar>
             <img className={classes.icon} src={mapIcons[mapIconKey(item.category)]} alt="" />
@@ -162,11 +184,15 @@ const DeviceRow = ({ devices, index, style }) => {
             {/* Top row: Speed and Altitude */}
             <div style={{ display: 'flex', gap: '8px' }}>
               {position?.speed !== undefined && <PositionSpeed speed={position.speed} />}
-              {(position?.attributes?.localposition?.length ?? 0) > 2 && <PositionAltitude altitude={position.attributes.localposition[2]} />}
+              {(position?.attributes?.localposition?.length ?? 0) > 2 && (
+                <PositionAltitude altitude={position.attributes.localposition[2]} />
+              )}
             </div>
             {/* Bottom row: Alarm, Ignition, Battery */}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              {position.attributes?.alarm && <PositionAlarm alarm={position.attributes.alarm} classes={classes} />}
+              {position.attributes?.alarm && (
+                <PositionAlarm alarm={position.attributes.alarm} classes={classes} />
+              )}
               {position.attributes?.ignition !== undefined && (
                 <PositionIgnition ignition={position.attributes.ignition} classes={classes} />
               )}

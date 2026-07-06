@@ -205,7 +205,10 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
           <Button
             size="small"
             startIcon={<ModeEditIcon sx={{ fontSize: 13 }} />}
-            onClick={() => { handleClose(); navigate('/mission'); }}
+            onClick={() => {
+              handleClose();
+              navigate('/mission');
+            }}
             sx={{ fontSize: 11, textTransform: 'none' }}
           >
             Edit
@@ -214,7 +217,10 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
             size="small"
             color="error"
             startIcon={<DeleteForeverIcon sx={{ fontSize: 13 }} />}
-            onClick={() => { handleClose(); onClear(); }}
+            onClick={() => {
+              handleClose();
+              onClear();
+            }}
             sx={{ fontSize: 11, textTransform: 'none' }}
           >
             Clear

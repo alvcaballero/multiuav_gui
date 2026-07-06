@@ -5,13 +5,13 @@ import earcut from 'earcut';
 // Each layer gets a distinct Y offset to avoid z-fighting between coplanar meshes.
 const LAYER_CONFIG = {
   //           color       yOffset   allowedClasses (null = all)
-  landcover:      { color: 0xa8d878, y: 0.0,  classes: null },
-  landuse:        { color: 0xe8ddd0, y: 0.01, classes: new Set(['residential', 'commercial', 'retail']) },
-  park:           { color: 0x90d060, y: 0.02, classes: null },
-  water:          { color: 0x60a8e8, y: 0.03, classes: null },
-  waterway:       { color: 0x4488cc, y: 0.04, classes: null },
+  landcover: { color: 0xa8d878, y: 0.0, classes: null },
+  landuse: { color: 0xe8ddd0, y: 0.01, classes: new Set(['residential', 'commercial', 'retail']) },
+  park: { color: 0x90d060, y: 0.02, classes: null },
+  water: { color: 0x60a8e8, y: 0.03, classes: null },
+  waterway: { color: 0x4488cc, y: 0.04, classes: null },
   transportation: { color: 0xaaaaaa, y: 0.06, classes: null },
-  building:       { color: 0xc8bdb0, y: 0.08, classes: null },
+  building: { color: 0xc8bdb0, y: 0.08, classes: null },
 };
 
 const LAYER_ORDER = Object.keys(LAYER_CONFIG);
@@ -67,7 +67,16 @@ const accumulatePolygon = (rings, extent, tileOriginX, tileOriginZ, scale, yOffs
 };
 
 // Accumulates ribbon segments for all polylines of a layer into shared flat arrays.
-const accumulateLine = (points, scale, tileOriginX, tileOriginZ, hw, yOffset, posAccum, idxAccum) => {
+const accumulateLine = (
+  points,
+  scale,
+  tileOriginX,
+  tileOriginZ,
+  hw,
+  yOffset,
+  posAccum,
+  idxAccum,
+) => {
   for (let i = 0; i < points.length - 1; i++) {
     const ax = tileOriginX + points[i].x * scale;
     const az = tileOriginZ + points[i].y * scale;
@@ -138,7 +147,7 @@ export const buildTileGeometry = (vectorTile, tileOriginX, tileOriginZ, tileSize
         const rings = rawGeom.map((ring) => {
           const flat = new Array(ring.length * 2);
           for (let i = 0; i < ring.length; i++) {
-            flat[i * 2]     = ring[i].x;
+            flat[i * 2] = ring[i].x;
             flat[i * 2 + 1] = ring[i].y;
           }
           return flat;

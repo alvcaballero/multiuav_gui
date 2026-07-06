@@ -94,7 +94,7 @@ const MainPage = () => {
 
   const selectedPosition = useMemo(
     () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
-    [filteredPositions, selectedDeviceId]
+    [filteredPositions, selectedDeviceId],
   );
 
   const [keyword, setKeyword] = useState('');
@@ -105,7 +105,15 @@ const MainPage = () => {
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
   const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
 
-  useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
+  useFilter(
+    keyword,
+    filter,
+    filterSort,
+    filterMap,
+    positions,
+    setFilteredDevices,
+    setFilteredPositions,
+  );
 
   const commandableMissionId = useSelector(getCommandableMissionId);
   const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
@@ -120,7 +128,11 @@ const MainPage = () => {
 
   return (
     <div className={classes.root}>
-      <Navbar SetAddUAVOpen={SetAddUAVOpen} setconfirmMission={setconfirmMission} setChatOpen={setChatOpen} />
+      <Navbar
+        SetAddUAVOpen={SetAddUAVOpen}
+        setconfirmMission={setconfirmMission}
+        setChatOpen={setChatOpen}
+      />
       <RosControl>
         <Menu />
       </RosControl>

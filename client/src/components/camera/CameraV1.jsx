@@ -6,7 +6,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 import { makeStyles } from 'tss-react/mui';
 
-
 const useStyles = makeStyles()((theme) => ({
   card: {
     pointerEvents: 'auto',

@@ -106,7 +106,7 @@ export const getModel = async (type) => {
         console.error(`Error cargando modelo "${resolvedType}":`, error);
         loadingQueue.delete(resolvedType);
         reject(error);
-      }
+      },
     );
   });
   loadingQueue.set(resolvedType, loadPromise);

@@ -34,7 +34,7 @@ import PositionValue from '../components/ui/PositionValue';
 import usePersistedState from '../shared/usePersistedState';
 import SquareMove from './SquareMove';
 import SquareMove1 from './SquareMove1';
-import DroneSensorVisualizer from './DroneSensorVisualizer'
+import DroneSensorVisualizer from './DroneSensorVisualizer';
 import useFilter from '../shared/useFilter';
 import MainMap from '../map/MainMap';
 import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
@@ -142,9 +142,17 @@ const DevicePage = () => {
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
   const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
-  useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
+  useFilter(
+    keyword,
+    filter,
+    filterSort,
+    filterMap,
+    positions,
+    setFilteredDevices,
+    setFilteredPositions,
+  );
 
-  const onMarkerClick = () => { };
+  const onMarkerClick = () => {};
   useEffect(() => {
     setmarkers(sessionmarkers);
   }, [sessionmarkers]);
@@ -163,9 +171,9 @@ const DevicePage = () => {
         right: item.attributes.obstacle_info[2],
         up: item.attributes.obstacle_info[5],
         down: item.attributes.obstacle_info[0],
-      })
+      });
     }
-  }, [id, positions])
+  }, [id, positions]);
 
   useEffect(() => {
     if (id) {
@@ -185,7 +193,14 @@ const DevicePage = () => {
         </Toolbar>
       </AppBar>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div style={{ flex: 1, justifyContent: 'space-between', display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            flex: 1,
+            justifyContent: 'space-between',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div
             style={{
               height: '50vh',
@@ -201,7 +216,9 @@ const DevicePage = () => {
             />
           </div>
           <div style={{ padding: '15px', margin: '5px' }}>
-            {Object.keys(thisDevice).length > 0 && <RenderCamera device={thisDevice} myhostname={myhostname} />}
+            {Object.keys(thisDevice).length > 0 && (
+              <RenderCamera device={thisDevice} myhostname={myhostname} />
+            )}
           </div>
           <div style={{ padding: '15px', marginTop: 'auto' }}>
             <Paper>

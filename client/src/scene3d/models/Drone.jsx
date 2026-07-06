@@ -1,7 +1,12 @@
 import React from 'react';
 import * as THREE from 'three';
 
-export default function Drone({ position = [10, 5, 1], rotation = [0, 0, 0], scale = 1, color = 0x3287a8 }) {
+export default function Drone({
+  position = [10, 5, 1],
+  rotation = [0, 0, 0],
+  scale = 1,
+  color = 0x3287a8,
+}) {
   return (
     <group position={position} rotation={rotation} scale={scale}>
       {/* Cuerpo principal */}
@@ -41,4 +46,4 @@ export default function Drone({ position = [10, 5, 1], rotation = [0, 0, 0], sca
       ))}
     </group>
   );
-} 
+}

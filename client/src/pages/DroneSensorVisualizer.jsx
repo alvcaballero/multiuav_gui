@@ -96,37 +96,67 @@ const DroneSensorVisualizer = ({
   const gaugeW = ready ? w - topViewSize - 8 : 0;
 
   // Conos: proporcionales al panel cuadrado
-  const sensorConeLen  = Math.round(topViewSize * 0.38);
+  const sensorConeLen = Math.round(topViewSize * 0.38);
   const sensorConeWide = Math.round(topViewSize * 0.52);
-  const droneSize      = Math.round(topViewSize * 0.22);
+  const droneSize = Math.round(topViewSize * 0.22);
 
-  const { coneStyle: styleFrontCone, textStyle: styleFrontText } = getSensorStyle('front', sensorConeWide, sensorConeLen, topViewSize);
-  const { coneStyle: styleBackCone,  textStyle: styleBackText  } = getSensorStyle('back',  sensorConeWide, sensorConeLen, topViewSize);
-  const { coneStyle: styleLeftCone,  textStyle: styleLeftText  } = getSensorStyle('left',  sensorConeLen,  sensorConeWide, topViewSize);
-  const { coneStyle: styleRightCone, textStyle: styleRightText } = getSensorStyle('right', sensorConeLen,  sensorConeWide, topViewSize);
+  const { coneStyle: styleFrontCone, textStyle: styleFrontText } = getSensorStyle(
+    'front',
+    sensorConeWide,
+    sensorConeLen,
+    topViewSize,
+  );
+  const { coneStyle: styleBackCone, textStyle: styleBackText } = getSensorStyle(
+    'back',
+    sensorConeWide,
+    sensorConeLen,
+    topViewSize,
+  );
+  const { coneStyle: styleLeftCone, textStyle: styleLeftText } = getSensorStyle(
+    'left',
+    sensorConeLen,
+    sensorConeWide,
+    topViewSize,
+  );
+  const { coneStyle: styleRightCone, textStyle: styleRightText } = getSensorStyle(
+    'right',
+    sensorConeLen,
+    sensorConeWide,
+    topViewSize,
+  );
 
   return (
     // Wrapper: ocupa TODO el espacio del padre, sin overflow propio
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        overflow: 'hidden',
+      }}
     >
       {ready && (
         <>
           {/* ── Vista superior con conos ── */}
-          <div style={{
-            width: topViewSize,
-            height: topViewSize,
-            position: 'relative',
-            flexShrink: 0,
-          }}>
+          <div
+            style={{
+              width: topViewSize,
+              height: topViewSize,
+              position: 'relative',
+              flexShrink: 0,
+            }}
+          >
             <img
               src={mapIcons[mapIconKey('ArrowMap')]}
               alt=""
               style={{
                 width: droneSize,
                 position: 'absolute',
-                top: '50%', left: '50%',
+                top: '50%',
+                left: '50%',
                 transform: 'translate(-50%,-50%)',
                 zIndex: 2,
               }}
@@ -134,22 +164,44 @@ const DroneSensorVisualizer = ({
 
             <div style={styleFrontText}>{sensorData.front.toFixed(0)}m</div>
             <div style={styleFrontCone}>
-              <DistanceSensor distance={sensorData.front} limits={sensorConfig.front} width={sensorConeWide} height={sensorConeLen} />
+              <DistanceSensor
+                distance={sensorData.front}
+                limits={sensorConfig.front}
+                width={sensorConeWide}
+                height={sensorConeLen}
+              />
             </div>
 
             <div style={styleBackText}>{sensorData.back.toFixed(0)}m</div>
             <div style={styleBackCone}>
-              <DistanceSensor distance={sensorData.back} limits={sensorConfig.back} width={sensorConeWide} height={sensorConeLen} />
+              <DistanceSensor
+                distance={sensorData.back}
+                limits={sensorConfig.back}
+                width={sensorConeWide}
+                height={sensorConeLen}
+              />
             </div>
 
             <div style={styleLeftText}>{sensorData.left.toFixed(0)}m</div>
             <div style={styleLeftCone}>
-              <DistanceSensor distance={sensorData.left} limits={sensorConfig.left} width={sensorConeLen} height={sensorConeWide} orientation="h" />
+              <DistanceSensor
+                distance={sensorData.left}
+                limits={sensorConfig.left}
+                width={sensorConeLen}
+                height={sensorConeWide}
+                orientation="h"
+              />
             </div>
 
             <div style={styleRightText}>{sensorData.right.toFixed(0)}m</div>
             <div style={styleRightCone}>
-              <DistanceSensor distance={sensorData.right} limits={sensorConfig.right} width={sensorConeLen} height={sensorConeWide} orientation="h" />
+              <DistanceSensor
+                distance={sensorData.right}
+                limits={sensorConfig.right}
+                width={sensorConeLen}
+                height={sensorConeWide}
+                orientation="h"
+              />
             </div>
           </div>
 
@@ -171,11 +223,11 @@ const DroneSensorVisualizer = ({
 DroneSensorVisualizer.propTypes = {
   sensorData: PropTypes.shape({
     front: PropTypes.number.isRequired,
-    back:  PropTypes.number.isRequired,
-    left:  PropTypes.number.isRequired,
+    back: PropTypes.number.isRequired,
+    left: PropTypes.number.isRequired,
     right: PropTypes.number.isRequired,
-    up:    PropTypes.number.isRequired,
-    down:  PropTypes.number.isRequired,
+    up: PropTypes.number.isRequired,
+    down: PropTypes.number.isRequired,
   }).isRequired,
 };
 

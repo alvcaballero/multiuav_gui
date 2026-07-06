@@ -84,7 +84,7 @@ export default () => {
         title: 'mapCarto',
         style: styleCustom({
           tiles: ['a', 'b', 'c', 'd'].map(
-            (i) => `https://${i}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png`
+            (i) => `https://${i}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png`,
           ),
           maxZoom: 22,
           attribution:
@@ -97,7 +97,9 @@ export default () => {
         id: 'googleRoad',
         title: 'mapGoogleRoad',
         style: styleCustom({
-          tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga`),
+          tiles: [0, 1, 2, 3].map(
+            (i) => `https://mt${i}.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga`,
+          ),
           maxZoom: 20,
           attribution: '© Google',
           glyphs,
@@ -108,7 +110,9 @@ export default () => {
         id: 'googleSatellite',
         title: 'mapGoogleSatellite',
         style: styleCustom({
-          tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga`),
+          tiles: [0, 1, 2, 3].map(
+            (i) => `https://mt${i}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga`,
+          ),
           maxZoom: 20,
           attribution: '© Google',
           glyphs,
@@ -119,7 +123,9 @@ export default () => {
         id: 'googleHybrid',
         title: 'mapGoogleHybrid',
         style: styleCustom({
-          tiles: [0, 1, 2, 3].map((i) => `https://mt${i}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga`),
+          tiles: [0, 1, 2, 3].map(
+            (i) => `https://mt${i}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga`,
+          ),
           maxZoom: 20,
           attribution: '© Google',
           glyphs,
@@ -146,7 +152,7 @@ export default () => {
         style: styleCustom({
           tiles: [0, 1, 2, 3].map(
             (i) =>
-              `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=G,L&shading=hill&og=1885&n=z`
+              `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=G,L&shading=hill&og=1885&n=z`,
           ),
           maxZoom: 21,
           glyphs,
@@ -158,7 +164,9 @@ export default () => {
         id: 'bingAerial',
         title: 'mapBingAerial',
         style: styleCustom({
-          tiles: [0, 1, 2, 3].map((i) => `https://ecn.t${i}.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=12327`),
+          tiles: [0, 1, 2, 3].map(
+            (i) => `https://ecn.t${i}.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=12327`,
+          ),
           maxZoom: 19,
           glyphs,
         }),
@@ -171,7 +179,7 @@ export default () => {
         style: styleCustom({
           tiles: [0, 1, 2, 3].map(
             (i) =>
-              `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=A,G,L&og=1885&n=z`
+              `https://t${i}.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/{quadkey}?mkt=en-US&it=A,G,L&og=1885&n=z`,
           ),
           maxZoom: 19,
           glyphs,
@@ -199,7 +207,7 @@ export default () => {
         style: styleCustom({
           tiles: [1, 2, 3, 4].map(
             (i) =>
-              `https://${i}.aerial.maps.ls.hereapi.com/maptile/2.1/maptile/newest/hybrid.day/{z}/{x}/{y}/256/png8?apiKey=${hereKey}`
+              `https://${i}.aerial.maps.ls.hereapi.com/maptile/2.1/maptile/newest/hybrid.day/{z}/{x}/{y}/256/png8?apiKey=${hereKey}`,
           ),
           maxZoom: 20,
           glyphs,
@@ -213,7 +221,7 @@ export default () => {
         style: styleCustom({
           tiles: [1, 2, 3, 4].map(
             (i) =>
-              `https://${i}.aerial.maps.ls.hereapi.com/maptile/2.1/maptile/newest/satellite.day/{z}/{x}/{y}/256/png8?apiKey=${hereKey}`
+              `https://${i}.aerial.maps.ls.hereapi.com/maptile/2.1/maptile/newest/satellite.day/{z}/{x}/{y}/256/png8?apiKey=${hereKey}`,
           ),
           maxZoom: 19,
           glyphs,
@@ -226,7 +234,8 @@ export default () => {
         title: 'mapAutoNavi',
         style: styleCustom({
           tiles: [1, 2, 3, 4].map(
-            (i) => `https://webrd0${i}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}`
+            (i) =>
+              `https://webrd0${i}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}`,
           ),
           minZoom: 3,
           maxZoom: 18,
@@ -237,7 +246,8 @@ export default () => {
       {
         id: 'ordnanceSurvey',
         title: 'mapOrdnanceSurvey',
-        style: 'https://api.os.uk/maps/vector/v1/vts/resources/styles?key=EAZ8p83u72FTGiLjLC2MsTAl1ko6XQHC',
+        style:
+          'https://api.os.uk/maps/vector/v1/vts/resources/styles?key=EAZ8p83u72FTGiLjLC2MsTAl1ko6XQHC',
         transformRequest: (url) => ({
           url: `${url}&srs=3857`,
         }),
@@ -299,6 +309,15 @@ export default () => {
         available: true,
       },
     ],
-    [glyphs, myhostname, mapTilerKey, locationIqKey, bingMapsKey, tomTomKey, hereKey, mapboxAccessToken]
+    [
+      glyphs,
+      myhostname,
+      mapTilerKey,
+      locationIqKey,
+      bingMapsKey,
+      tomTomKey,
+      hereKey,
+      mapboxAccessToken,
+    ],
   );
 };

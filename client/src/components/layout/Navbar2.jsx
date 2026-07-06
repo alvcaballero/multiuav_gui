@@ -119,7 +119,7 @@ export const Navbar2 = ({ title, navIcon, tabs }) => {
               <Fragment key={'s1-' + index}>
                 <MenuItems items={menu} depthLevel={0} />
               </Fragment>
-            ))
+            )),
           )}
           {darkModeButton}
           {connectionIndicator}

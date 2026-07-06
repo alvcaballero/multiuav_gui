@@ -58,7 +58,10 @@ const DownloadYamlButton = () => {
 
     const filtered = elementxyz.filter(
       (item) =>
-        item.pos[0] > -perimeter && item.pos[0] < perimeter && item.pos[1] > -perimeter && item.pos[1] < perimeter
+        item.pos[0] > -perimeter &&
+        item.pos[0] < perimeter &&
+        item.pos[1] > -perimeter &&
+        item.pos[1] < perimeter,
     );
 
     // Build YAML Object

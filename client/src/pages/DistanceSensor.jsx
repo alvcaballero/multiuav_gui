@@ -11,10 +11,17 @@ import PropTypes from 'prop-types';
  * @param {number} distance - El valor de la distancia (entero entre 1 y 10).
  * @param {number} [width=150] - Ancho del SVG.
  * @param {number} [height=150] - Alto del SVG.
- * @param {Array} [limits=[0,10]] - Valores max - min del sensor . 
- * @param {String} [orientation="v"] - v to vertical and h to horizontal . 
-*/
-const DistanceSensor = ({ distance, width = 100, height = 100, limits = [0, 10], orientation = "v" }) => { // Default size adjusted for easier positioning
+ * @param {Array} [limits=[0,10]] - Valores max - min del sensor .
+ * @param {String} [orientation="v"] - v to vertical and h to horizontal .
+ */
+const DistanceSensor = ({
+  distance,
+  width = 100,
+  height = 100,
+  limits = [0, 10],
+  orientation = 'v',
+}) => {
+  // Default size adjusted for easier positioning
   const uniqueId = useId(); // Genera un ID único y estable para la máscara
   const maskId = `distanceMask-${uniqueId}`;
 
@@ -24,9 +31,8 @@ const DistanceSensor = ({ distance, width = 100, height = 100, limits = [0, 10],
   const fillY = fillRatio * height;
   const fillX = fillRatio * width;
 
-  const limitcolor1 = limits[0] + 0.75 * (limits[1] - limits[0])
-  const limitcolor2 = limits[0] + 0.3 * (limits[1] - limits[0])
-
+  const limitcolor1 = limits[0] + 0.75 * (limits[1] - limits[0]);
+  const limitcolor2 = limits[0] + 0.3 * (limits[1] - limits[0]);
 
   // Determinamos el color de relleno basado en rangos de distancia
   const fillColor = useMemo(() => {
@@ -50,13 +56,12 @@ const DistanceSensor = ({ distance, width = 100, height = 100, limits = [0, 10],
     }
   }, [orientation, width, height, fillX, fillY]);
 
-
   // Definimos los puntos del polígono que actuará como máscara.
   //const maskPoints = `0,${height} 0,${fillY} ${width},${fillY} ${width},${height}`;
   //const trianglePoints = `${width / 2},0 0,${height} ${width},${height}`
 
   return (
-    <svg width={width} height={height} >
+    <svg width={width} height={height}>
       <defs>
         {/* Definimos la máscara SVG. Las áreas blancas en la máscara revelan el contenido */}
         {/* Usamos el ID único */}

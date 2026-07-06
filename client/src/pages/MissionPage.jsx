@@ -95,7 +95,12 @@ const MissionPage = () => {
             <MapDefaultCamera />
             <MapMissionHome />
             <MapMissionsCreate />
-            <MapPositions positions={filteredPositions} onClick={null} selectedPosition={null} showStatus />
+            <MapPositions
+              positions={filteredPositions}
+              onClick={null}
+              selectedPosition={null}
+              showStatus
+            />
           </MapView>
           <MapScale />
         </div>
@@ -119,10 +124,24 @@ const MissionPage = () => {
               <Tab label="Elevation" sx={{ minHeight: 36, py: 0 }} />
             </Tabs>
             <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <Box sx={{ flex: 1, overflow: 'hidden', display: bottomTab === 0 ? 'flex' : 'none', flexDirection: 'column' }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  overflow: 'hidden',
+                  display: bottomTab === 0 ? 'flex' : 'none',
+                  flexDirection: 'column',
+                }}
+              >
                 <MissionStats />
               </Box>
-              <Box sx={{ flex: 1, overflow: 'hidden', display: bottomTab === 1 ? 'flex' : 'none', flexDirection: 'column' }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  overflow: 'hidden',
+                  display: bottomTab === 1 ? 'flex' : 'none',
+                  flexDirection: 'column',
+                }}
+              >
                 <MissionElevation />
               </Box>
             </Box>

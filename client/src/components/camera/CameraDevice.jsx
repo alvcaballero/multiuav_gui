@@ -146,7 +146,11 @@ const MediaMTXPlayer = ({ src, videoRef }) => {
 };
 
 const customEqual = (oldValue, newValue) => {
-  return oldValue?.camera === newValue?.camera && oldValue?.ip === newValue?.ip && oldValue?.name === newValue?.name;
+  return (
+    oldValue?.camera === newValue?.camera &&
+    oldValue?.ip === newValue?.ip &&
+    oldValue?.name === newValue?.name
+  );
 };
 
 const CameraDevice = React.memo(({ deviceId, onClose }) => {

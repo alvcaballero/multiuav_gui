@@ -45,7 +45,7 @@ export const MapMarkers3D = () => {
         },
         function (error) {
           console.log('An error happened:', error);
-        }
+        },
       );
 
       this.map = map;
@@ -69,7 +69,10 @@ export const MapMarkers3D = () => {
       const sceneOrigin = new maplibregl.LngLat(myorigin[0], myorigin[1]);
 
       const offsetFromCenterElevation = map.queryTerrainElevation(sceneOrigin) || 0;
-      const sceneOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(sceneOrigin, offsetFromCenterElevation);
+      const sceneOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(
+        sceneOrigin,
+        offsetFromCenterElevation,
+      );
 
       const sceneTransform = {
         translateX: sceneOriginMercator.x,
@@ -81,13 +84,26 @@ export const MapMarkers3D = () => {
         scale: sceneOriginMercator.meterInMercatorCoordinateUnits(),
       };
 
-      const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), sceneTransform.rotateX);
-      const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), sceneTransform.rotateY);
-      const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 0, 1), sceneTransform.rotateZ);
+      const rotationX = new THREE.Matrix4().makeRotationAxis(
+        new THREE.Vector3(1, 0, 0),
+        sceneTransform.rotateX,
+      );
+      const rotationY = new THREE.Matrix4().makeRotationAxis(
+        new THREE.Vector3(0, 1, 0),
+        sceneTransform.rotateY,
+      );
+      const rotationZ = new THREE.Matrix4().makeRotationAxis(
+        new THREE.Vector3(0, 0, 1),
+        sceneTransform.rotateZ,
+      );
 
       const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
       const l = new THREE.Matrix4()
-        .makeTranslation(sceneTransform.translateX, sceneTransform.translateY, sceneTransform.translateZ)
+        .makeTranslation(
+          sceneTransform.translateX,
+          sceneTransform.translateY,
+          sceneTransform.translateZ,
+        )
         .scale(new THREE.Vector3(sceneTransform.scale, -sceneTransform.scale, sceneTransform.scale))
         .multiply(rotationX)
         .multiply(rotationY)

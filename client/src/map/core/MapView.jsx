@@ -1,9 +1,14 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl';
-import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
+import React, { useRef, useLayoutEffect, useEffect, useState, use } from 'react';
 
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { MaplibreExportControl, Size, PageOrientation, Format, DPI } from '@watergis/maplibre-gl-export';
+import {
+  MaplibreExportControl,
+  Size,
+  PageOrientation,
+  Format,
+  DPI,
+} from '@watergis/maplibre-gl-export';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
 import { SwitcherControl } from '../switcher/switcher';
@@ -12,7 +17,6 @@ import usePersistedState, { savePersistedState } from '../../shared/usePersisted
 
 import { mapImages, imagesReady } from './preloadImages';
 import useMapStyles from './useMapStyles';
-import { use } from 'react';
 
 const element = document.createElement('div');
 element.style.width = '100%';
@@ -75,7 +79,7 @@ map.addControl(
     PrintableArea: true,
     Local: 'en',
   }),
-  'top-right'
+  'top-right',
 );
 
 const switcher = new SwitcherControl(
@@ -92,7 +96,7 @@ const switcher = new SwitcherControl(
       };
       waiting();
     });
-  }
+  },
 );
 
 map.addControl(switcher);

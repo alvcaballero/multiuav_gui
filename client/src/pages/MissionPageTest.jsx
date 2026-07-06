@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { Paper } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
-
 import MapView from '../map/core/MapView';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
@@ -76,43 +75,48 @@ const MissionPageTest = () => {
   return (
     <div className={classes.root}>
       <RosControl notification={showToast}>
-          <Navbar />
-          <Menu />
-          <div
-            style={{
-              float: 'right',
-              width: 'calc(100% - 560px)',
-              height: 'calc(70vh - 95px)',
-              right: '0px',
-              margin: 'auto',
-            }}
-          >
-            <MapView>
-              <MapMarkers markers={markers} />
-              <MapDefaultCamera />
-              <MapMissionsCreate />
-              <MapMissions3D />
-              <MapMarkers3D />
-              <MapPositions positions={filteredPositions} onClick={null} selectedPosition={null} showStatus />
-            </MapView>
-            <MapScale />
-          </div>
+        <Navbar />
+        <Menu />
+        <div
+          style={{
+            float: 'right',
+            width: 'calc(100% - 560px)',
+            height: 'calc(70vh - 95px)',
+            right: '0px',
+            margin: 'auto',
+          }}
+        >
+          <MapView>
+            <MapMarkers markers={markers} />
+            <MapDefaultCamera />
+            <MapMissionsCreate />
+            <MapMissions3D />
+            <MapMarkers3D />
+            <MapPositions
+              positions={filteredPositions}
+              onClick={null}
+              selectedPosition={null}
+              showStatus
+            />
+          </MapView>
+          <MapScale />
+        </div>
 
-          <div className={classes.sidebarStyle}>
-            <div className={classes.middleStyle}>
-              <Paper square>
-                <MissionPanel SetOpenSave={setOpenSave} />
-              </Paper>
-            </div>
+        <div className={classes.sidebarStyle}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <MissionPanel SetOpenSave={setOpenSave} />
+            </Paper>
           </div>
-          <div className={classes.panelElevation}>
-            <div className={classes.middleStyle}>
-              <Paper square>
-                <MissionElevation />
-              </Paper>
-            </div>
+        </div>
+        <div className={classes.panelElevation}>
+          <div className={classes.middleStyle}>
+            <Paper square>
+              <MissionElevation />
+            </Paper>
           </div>
-          {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
+        </div>
+        {Opensave && <SaveFile SetOpenSave={setOpenSave} />}
       </RosControl>
     </div>
   );

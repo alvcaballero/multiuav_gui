@@ -37,7 +37,8 @@ const useWaypoint = (routeIndex, wpIndex, uavType) => {
 
   const copy = () => dispatch(missionActions.copyWaypoint({ routeIndex, wpIndex }));
   const remove = () => dispatch(missionActions.deleteWaypoint({ routeIndex, wpIndex }));
-  const move = (direction) => dispatch(missionActions.moveWaypointOrder({ routeIndex, wpIndex, direction }));
+  const move = (direction) =>
+    dispatch(missionActions.moveWaypointOrder({ routeIndex, wpIndex, direction }));
 
   return { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move };
 };

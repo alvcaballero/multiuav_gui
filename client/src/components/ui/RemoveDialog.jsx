@@ -3,8 +3,6 @@ import Button from '@mui/material/Button';
 import { Snackbar } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
-
-
 const useStyles = makeStyles()((theme) => ({
   root: {
     [theme.breakpoints.down('md')]: {
@@ -19,15 +17,13 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const RemoveDialog = ({
-  open, endpoint, itemId, onResult,
-}) => {
+const RemoveDialog = ({ open, endpoint, itemId, onResult }) => {
   const { classes } = useStyles();
 
   const handleRemove = async () => {
     const response = await fetch(`/api/${endpoint}/${itemId}`, { method: 'DELETE' });
     if (response.ok) {
-      console.log("elemento eliminado")
+      console.log('elemento eliminado');
       onResult(true);
     } else {
       onResult(false);
@@ -41,11 +37,11 @@ const RemoveDialog = ({
       autoHideDuration={2750}
       onClose={() => onResult(false)}
       message="confirmar para eliminar"
-      action={(
+      action={
         <Button size="small" className={classes.button} onClick={handleRemove}>
           Eliminar
         </Button>
-      )}
+      }
     />
   );
 };

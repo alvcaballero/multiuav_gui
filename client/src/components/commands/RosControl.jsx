@@ -25,7 +25,7 @@ export const RosControl = ({ children }) => {
       confirmMission,
       setconfirmMission,
     }),
-    [rosState, confirmMission]
+    [rosState, confirmMission],
   );
 
   return <RosContext.Provider value={contextValue}>{children}</RosContext.Provider>;

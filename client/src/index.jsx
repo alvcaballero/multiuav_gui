@@ -29,5 +29,5 @@ root.render(
         </AppThemeProvider>
       </StyledEngineProvider>
     </Provider>{' '}
-  </ErrorBoundary>
+  </ErrorBoundary>,
 );

@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Billboard, Text, Circle, Box, Line } from '@react-three/drei';
-import { useRef, useState, useEffect } from 'react';
 
 const NumberedSphere = ({ position, properties, hideLabel = false }) => {
   return (

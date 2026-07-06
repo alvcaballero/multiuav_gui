@@ -41,4 +41,3 @@ const createWaterTexture = () => {
 
 export const waterTexture = createWaterTexture();
 export { groundTexture };
-

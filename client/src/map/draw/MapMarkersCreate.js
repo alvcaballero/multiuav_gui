@@ -54,8 +54,12 @@ const MapMarkersCreate = ({
 
   const setLocationsRef = useRef(setLocations);
   const setMarkersRef = useRef(setMarkers);
-  useEffect(() => { setLocationsRef.current = setLocations; }, [setLocations]);
-  useEffect(() => { setMarkersRef.current = setMarkers; }, [setMarkers]);
+  useEffect(() => {
+    setLocationsRef.current = setLocations;
+  }, [setLocations]);
+  useEffect(() => {
+    setMarkersRef.current = setMarkers;
+  }, [setMarkers]);
 
   const onMouseEnter = () => (map.getCanvas().style.cursor = 'move');
   const onMouseEnterPointer = () => (map.getCanvas().style.cursor = 'pointer');
@@ -92,8 +96,10 @@ const MapMarkersCreate = ({
           features: basesToFeatures(auxMarkers.bases),
         });
       } else if (auxselectpoint.type === 'element') {
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude = e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude = e.lngLat.lng;
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude =
+          e.lngLat.lat;
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude =
+          e.lngLat.lng;
         map.getSource(elementsSourceId)?.setData({
           type: 'FeatureCollection',
           features: elementsToFeatures(auxMarkers.elements),
@@ -113,8 +119,10 @@ const MapMarkersCreate = ({
         auxMarkers.bases[auxselectpoint.id].latitude = e.lngLat.lat;
         auxMarkers.bases[auxselectpoint.id].longitude = e.lngLat.lng;
       } else if (auxselectpoint.type === 'element') {
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude = e.lngLat.lat;
-        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude = e.lngLat.lng;
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].latitude =
+          e.lngLat.lat;
+        auxMarkers.elements[auxselectpoint.groupId].items[auxselectpoint.id].longitude =
+          e.lngLat.lng;
       }
     }
 
@@ -174,7 +182,7 @@ const MapMarkersCreate = ({
           image: group.type,
           title: item.name || `${groupIdx}-${itemIdx}`,
         },
-      }))
+      })),
     );
   }
 
@@ -251,10 +259,22 @@ const MapMarkersCreate = ({
   }
 
   useEffect(() => {
-    map.addSource(basesSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addSource(elementsSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addSource(linesMarkersId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addSource(selectMarkersId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addSource(basesSourceId, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+    map.addSource(elementsSourceId, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+    map.addSource(linesMarkersId, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+    map.addSource(selectMarkersId, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
 
     map.addLayer({
       id: selectMarkersId,

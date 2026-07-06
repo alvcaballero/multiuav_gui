@@ -16,7 +16,10 @@ const MARTIN_URL = `http://${window.location.hostname}:8080/tiles`;
 const MATERIAL_CACHE = new Map();
 const getMaterial = (color) => {
   if (!MATERIAL_CACHE.has(color)) {
-    MATERIAL_CACHE.set(color, new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, depthWrite: true }));
+    MATERIAL_CACHE.set(
+      color,
+      new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, depthWrite: true }),
+    );
   }
   return MATERIAL_CACHE.get(color);
 };
@@ -38,7 +41,10 @@ const tileToLngLat = (tx, ty, z) => {
 
 const tileNWOffset = (tx, ty, z, origin) => {
   const nw = tileToLngLat(tx, ty, z);
-  const originMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: origin.lng, lat: origin.lat }, 0);
+  const originMerc = maplibregl.MercatorCoordinate.fromLngLat(
+    { lng: origin.lng, lat: origin.lat },
+    0,
+  );
   const nwMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: nw.lng, lat: nw.lat }, 0);
   const d = calculateDistanceMercatorToMeters(originMerc, nwMerc);
   return { x: d.x, z: -d.y };
@@ -98,7 +104,12 @@ const TileGroup = ({ tx, ty, originLng, originLat }) => {
   return (
     <group>
       {meshes.map((m, i) => (
-        <mesh key={i} geometry={m.geometry} material={getMaterial(m.color)} renderOrder={m.renderOrder} />
+        <mesh
+          key={i}
+          geometry={m.geometry}
+          material={getMaterial(m.color)}
+          renderOrder={m.renderOrder}
+        />
       ))}
     </group>
   );

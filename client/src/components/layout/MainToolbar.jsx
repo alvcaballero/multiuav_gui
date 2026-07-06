@@ -71,7 +71,8 @@ const MainToolbar = React.memo(
     const [filterAnchorEl, setFilterAnchorEl] = useState(null);
     const [devicesAnchorEl, setDevicesAnchorEl] = useState(null);
 
-    const deviceStatusCount = (status) => Object.values(devices).filter((d) => d.status === status).length;
+    const deviceStatusCount = (status) =>
+      Object.values(devices).filter((d) => d.status === status).length;
 
     return (
       <Toolbar ref={toolbarRef} className={classes.toolbar}>
@@ -87,7 +88,11 @@ const MainToolbar = React.memo(
           onBlur={() => setDevicesAnchorEl(null)}
           endAdornment={
             <InputAdornment position="end">
-              <IconButton size="small" edge="end" onClick={() => setFilterAnchorEl(inputRef.current)}>
+              <IconButton
+                size="small"
+                edge="end"
+                onClick={() => setFilterAnchorEl(inputRef.current)}
+              >
                 <Badge color="info" variant="dot" invisible={!filter.statuses.length}>
                   <TuneIcon fontSize="small" />
                 </Badge>
@@ -144,7 +149,12 @@ const MainToolbar = React.memo(
             </FormControl>
             <FormControl>
               <InputLabel>{'Sort by'}</InputLabel>
-              <Select label={'Sort by'} value={filterSort} onChange={(e) => setFilterSort(e.target.value)} displayEmpty>
+              <Select
+                label={'Sort by'}
+                value={filterSort}
+                onChange={(e) => setFilterSort(e.target.value)}
+                displayEmpty
+              >
                 <MenuItem value="">{'\u00a0'}</MenuItem>
                 <MenuItem value="name">{'Name'}</MenuItem>
                 <MenuItem value="lastUpdate">{'Last update'}</MenuItem>
@@ -152,7 +162,9 @@ const MainToolbar = React.memo(
             </FormControl>
             <FormGroup>
               <FormControlLabel
-                control={<Checkbox checked={filterMap} onChange={(e) => setFilterMap(e.target.checked)} />}
+                control={
+                  <Checkbox checked={filterMap} onChange={(e) => setFilterMap(e.target.checked)} />
+                }
                 label={'Show on map only'}
               />
             </FormGroup>
@@ -170,6 +182,6 @@ const MainToolbar = React.memo(
         </IconButton>
       </Toolbar>
     );
-  }
+  },
 );
 export default MainToolbar;

@@ -9,7 +9,13 @@ import maplibregl from 'maplibre-gl';
 import { map } from '../core/MapView';
 import { findFonts } from '../core/mapUtil';
 import palette from '../../shared/palette';
-import { createFeature, textPopUp, routesToFeature, routeTowaypoints, cleanRoute } from '../transform/mission';
+import {
+  createFeature,
+  textPopUp,
+  routesToFeature,
+  routeTowaypoints,
+  cleanRoute,
+} from '../transform/mission';
 export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
   const id = useId();
   const routePoints = `${id}-points`;
@@ -27,12 +33,9 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
     const properties = JSON.parse(JSON.stringify(e.features[0].properties));
     const attributes = properties.attributes ? JSON.parse(properties.attributes) : null;
     const actions = properties.actions ? JSON.parse(properties.actions) : null;
-    const html = textPopUp({properties,attributes,actions});
+    const html = textPopUp({ properties, attributes, actions });
 
-    new maplibregl.Popup()
-      .setLngLat(e.lngLat)
-      .setHTML(html)
-      .addTo(map);
+    new maplibregl.Popup().setLngLat(e.lngLat).setHTML(html).addTo(map);
   };
 
   useEffect(() => {
@@ -145,14 +148,13 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
     }
   }, []);
 
-
   useEffect(() => {
     if (!routes) {
       return;
     }
     const myRoutes = cleanRoute(routes);
     const routerFiltered = myRoutes.filter(
-      (route) => filteredDeviceId < 0 || route.uav === devices[filteredDeviceId].name
+      (route) => filteredDeviceId < 0 || route.uav === devices[filteredDeviceId].name,
     );
     console.log('mission filtered');
     console.log(routerFiltered);

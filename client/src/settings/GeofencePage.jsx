@@ -69,7 +69,12 @@ const GeofencePage = () => {
                 control={
                   <Checkbox
                     checked={item.attributes.hide}
-                    onChange={(e) => setItem({ ...item, attributes: { ...item.attributes, hide: e.target.checked } })}
+                    onChange={(e) =>
+                      setItem({
+                        ...item,
+                        attributes: { ...item.attributes, hide: e.target.checked },
+                      })
+                    }
                   />
                 }
                 label={'sharedFilterMap'}

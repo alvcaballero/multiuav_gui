@@ -8,7 +8,7 @@ export const applyUavTypeDefaults = createAsyncThunk(
     if (!response.ok) throw new Error('Failed to fetch attribute defaults');
     const defaults = await response.json();
     return { routeIndex, defaults };
-  }
+  },
 );
 
 const { reducer: missionReducerBase, actions } = createSlice({
@@ -127,7 +127,11 @@ const { reducer: missionReducerBase, actions } = createSlice({
           pos: [0, 0, 10],
           action: {},
         };
-        if (insertAt !== undefined && insertAt >= 0 && insertAt <= state.route[routeIndex].wp.length) {
+        if (
+          insertAt !== undefined &&
+          insertAt >= 0 &&
+          insertAt <= state.route[routeIndex].wp.length
+        ) {
           state.route[routeIndex].wp.splice(insertAt, 0, newWp);
         } else {
           state.route[routeIndex].wp.push(newWp);
@@ -298,7 +302,7 @@ const { reducer: missionReducerBase, actions } = createSlice({
       // To keep both consistent, negate angleDeg when rotating yaw.
       // Normalize result to [-180, 180).
       const rotateYaw = (yawDeg) => {
-        const r = ((yawDeg - angleDeg) % 360 + 360) % 360;
+        const r = (((yawDeg - angleDeg) % 360) + 360) % 360;
         return r >= 180 ? r - 360 : r;
       };
 
@@ -336,8 +340,12 @@ const { reducer: missionReducerBase, actions } = createSlice({
     removeElevationRoute(state, action) {
       // Remove specific routes from elevation cache by indices
       const indicesToKeep = action.payload;
-      state.elevation.profile = indicesToKeep.map((i) => state.elevation.profile[i]).filter(Boolean);
-      state.elevation.location = indicesToKeep.map((i) => state.elevation.location[i]).filter(Boolean);
+      state.elevation.profile = indicesToKeep
+        .map((i) => state.elevation.profile[i])
+        .filter(Boolean);
+      state.elevation.location = indicesToKeep
+        .map((i) => state.elevation.location[i])
+        .filter(Boolean);
     },
   },
   extraReducers: (builder) => {

@@ -274,7 +274,8 @@ const Adduav = ({ SetAddUAVOpen }) => {
               </AccordionSummary>
               <AccordionDetails className={classes.details}>
                 <Typography variant="caption">
-                  The url format sftp://user:password@Ip:port It can be compatible for sftp or ftp protovol
+                  The url format sftp://user:password@Ip:port It can be compatible for sftp or ftp
+                  protovol
                 </Typography>
                 {item.files &&
                   item.files.map((action_key, index_ac, list_ac) => (

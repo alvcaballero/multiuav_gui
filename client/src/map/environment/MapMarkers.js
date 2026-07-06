@@ -12,7 +12,7 @@ const MapMarkers = ({ markers, showTitles }) => {
   // Set of type IDs that render as map images — skip icon rendering for these
   const mapImageTypes = useMemo(
     () => new Set(types.filter((t) => t.mapImage).map((t) => t.id)),
-    [types]
+    [types],
   );
 
   const iconScale = 0.8;
@@ -110,7 +110,7 @@ const MapMarkers = ({ markers, showTitles }) => {
               image: group.type || 'default-neutral',
               title: item.name || `${groupIdx}-${itemIdx}`,
             },
-          }))
+          })),
         ),
     });
   }, [showTitles, markers, mapImageTypes]);

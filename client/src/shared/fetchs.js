@@ -75,7 +75,7 @@ export const commandStopMission = async (devices) => {
       method: 'POST',
       body: JSON.stringify({ deviceId: id, type: 'StopMission' }),
       headers: { 'Content-Type': 'application/json' },
-    })
+    }),
   );
   await Promise.all(requests);
 };
@@ -87,7 +87,7 @@ export const commandPauseMission = async (devices) => {
       method: 'POST',
       body: JSON.stringify({ deviceId: id, type: 'Pausemission' }),
       headers: { 'Content-Type': 'application/json' },
-    })
+    }),
   );
   await Promise.all(requests);
 };
@@ -99,7 +99,7 @@ export const commandResumeMission = async (devices) => {
       method: 'POST',
       body: JSON.stringify({ deviceId: id, type: 'ResumeMission' }),
       headers: { 'Content-Type': 'application/json' },
-    })
+    }),
   );
   await Promise.all(requests);
 };

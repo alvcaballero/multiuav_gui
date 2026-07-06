@@ -111,7 +111,7 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
         //console.log(initwp.wp);
         if (initwp.wp.length) {
           let response = await fetch(
-            `/api/map/elevation?locations=[[${initwp.wp[0].pos[0]},${initwp.wp[0].pos[1]}]]`
+            `/api/map/elevation?locations=[[${initwp.wp[0].pos[0]},${initwp.wp[0].pos[1]}]]`,
           );
           if (response.ok) {
             let myresponse = await response.json();
@@ -230,19 +230,19 @@ const SaveFile = ({ SetOpenSave, OpenSave }) => {
     <div className={classes.root}>
       <Card elevation={3} className={classes.card}>
         <div className={classes.header}>
-          <Typography variant='body2' color='textSecondary'>
+          <Typography variant="body2" color="textSecondary">
             Save Mission
           </Typography>
-          <IconButton size='small' onClick={CloseSaveMission} onTouchStart={CloseSaveMission}>
-            <CloseIcon fontSize='small' />
+          <IconButton size="small" onClick={CloseSaveMission} onTouchStart={CloseSaveMission}>
+            <CloseIcon fontSize="small" />
           </IconButton>
         </div>
 
         <CardContent className={classes.content}>
           <TextField
             required
-            label='Name Mission'
-            variant='standard'
+            label="Name Mission"
+            variant="standard"
             value={fileName ? fileName : ' '}
             onChange={(event) => setFileName(event.target.value)}
             style={{ width: '300px', marginRight: '5px' }}

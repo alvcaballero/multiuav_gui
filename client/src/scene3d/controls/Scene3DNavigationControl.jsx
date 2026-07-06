@@ -70,7 +70,11 @@ const btnStyle = {
 
 const dividerStyle = { borderTop: '1px solid #ddd' };
 
-const Scene3DNavigationControl = ({ visualize_pitch = false, visualize_bearing = false, visualize_roll = false }) => {
+const Scene3DNavigationControl = ({
+  visualize_pitch = false,
+  visualize_bearing = false,
+  visualize_roll = false,
+}) => {
   const [cam, setCam] = useState({ bearing: 0, pitch: 0 });
 
   useEffect(() => {
@@ -94,23 +98,43 @@ const Scene3DNavigationControl = ({ visualize_pitch = false, visualize_bearing =
         perspective: '150px',
       }}
     >
-      <button type="button" title="Zoom in" style={btnStyle} onClick={() => dispatch('camera-zoom-in')}>
+      <button
+        type="button"
+        title="Zoom in"
+        style={btnStyle}
+        onClick={() => dispatch('camera-zoom-in')}
+      >
         {' '}
         <ZoomInIcon />{' '}
       </button>
       <div style={dividerStyle}>
-        <button type="button" title="Zoom out" style={btnStyle} onClick={() => dispatch('camera-zoom-out')}>
+        <button
+          type="button"
+          title="Zoom out"
+          style={btnStyle}
+          onClick={() => dispatch('camera-zoom-out')}
+        >
           {' '}
           <ZoomOutIcon />{' '}
         </button>
       </div>
       <div style={dividerStyle}>
-        <button type="button" title="Reset North" style={btnStyle} onClick={() => dispatch('camera-orient-north')}>
+        <button
+          type="button"
+          title="Reset North"
+          style={btnStyle}
+          onClick={() => dispatch('camera-orient-north')}
+        >
           <CompassIcon roll={cam.roll} bearing={cam.bearing} pitch={cam.pitch} />
         </button>
       </div>
       <div style={dividerStyle}>
-        <button type="button" title="Top view" style={btnStyle} onClick={() => dispatch('camera-top-view')}>
+        <button
+          type="button"
+          title="Top view"
+          style={btnStyle}
+          onClick={() => dispatch('camera-top-view')}
+        >
           {' '}
           <TopViewIcon />{' '}
         </button>

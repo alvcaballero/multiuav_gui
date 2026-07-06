@@ -11,8 +11,12 @@ import {
   TableFooter,
   FormControlLabel,
   Switch,
+  IconButton,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { IconButton, Menu, MenuItem, useMediaQuery, useTheme } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
@@ -90,7 +94,10 @@ const SettingsDevicesPage = () => {
                 <TableCell className={classes.columnAction} padding="none">
                   <div className={classes.row}>
                     <Tooltip title={'Edit'}>
-                      <IconButton size="small" onClick={() => navigate(`/settings/devices/${item.id}`)}>
+                      <IconButton
+                        size="small"
+                        onClick={() => navigate(`/settings/devices/${item.id}`)}
+                      >
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>

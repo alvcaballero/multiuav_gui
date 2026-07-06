@@ -18,7 +18,14 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-const PlanningToolbar = ({ onBack, onSave, onDelete, onReadFile, showMission, onToggleShowMission }) => {
+const PlanningToolbar = ({
+  onBack,
+  onSave,
+  onDelete,
+  onReadFile,
+  showMission,
+  onToggleShowMission,
+}) => {
   const { classes } = useStyles();
 
   return (

@@ -95,7 +95,10 @@ const ActionValueField = ({ payload, value, onCommit }) => {
       variant="standard"
       sx={{ flexGrow: 1 }}
       value={draft}
-      slotProps={{ htmlInput: { min, max, step }, input: unit ? { endAdornment: unit } : undefined }}
+      slotProps={{
+        htmlInput: { min, max, step },
+        input: unit ? { endAdornment: unit } : undefined,
+      }}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => onCommit(clamp(draft))}
     />
@@ -170,11 +173,8 @@ const WaypointRouteList = ({
   onAddWaypoint,
 }) => {
   const { classes } = useStyles();
-  const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } = useWaypoint(
-    routeIndex,
-    indexWp,
-    uavType
-  );
+  const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } =
+    useWaypoint(routeIndex, indexWp, uavType);
 
   const [newactionmenu, setnewactionmenu] = useState(true);
   const [newactionid, setnewactionid] = useState(0);
@@ -254,7 +254,10 @@ const WaypointRouteList = ({
           sx={{ py: 0, pr: 0, flexShrink: 0 }}
           onClick={(e) => {
             e.stopPropagation();
-            map.flyTo({ center: [waypoint.pos[1], waypoint.pos[0]], zoom: Math.max(map.getZoom(), 16) });
+            map.flyTo({
+              center: [waypoint.pos[1], waypoint.pos[0]],
+              zoom: Math.max(map.getZoom(), 16),
+            });
           }}
         >
           <MyLocationIcon />
@@ -339,7 +342,11 @@ const WaypointRouteList = ({
             <Box>
               <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
                 <Typography variant="subtitle1">Actions</Typography>
-                <IconButton size="small" onClick={() => setnewactionmenu((v) => !v)} title="Add action">
+                <IconButton
+                  size="small"
+                  onClick={() => setnewactionmenu((v) => !v)}
+                  title="Add action"
+                >
                   <AddCircleIcon fontSize="small" />
                 </IconButton>
               </Stack>
@@ -357,7 +364,11 @@ const WaypointRouteList = ({
                       titleGetter={(it) => it.description}
                     />
                   </Box>
-                  <Button size="small" variant="contained" onClick={() => addAction(newactionid, () => setnewactionmenu(true))}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={() => addAction(newactionid, () => setnewactionmenu(true))}
+                  >
                     Add
                   </Button>
                   <Button size="small" onClick={() => setnewactionmenu(true)}>

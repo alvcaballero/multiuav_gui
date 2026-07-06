@@ -59,7 +59,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         onClick();
       }
     },
-    [onClick]
+    [onClick],
   );
 
   const onMarkerClick = useCallback(
@@ -70,7 +70,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         onClick(feature.properties.id, feature.properties.deviceId);
       }
     },
-    [onClick]
+    [onClick],
   );
 
   const onClusterClick = useCallback(
@@ -89,7 +89,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         }
       });
     },
-    [clusters]
+    [clusters],
   );
 
   useEffect(() => {
@@ -177,6 +177,8 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
       map.off('click', id, onMarkerClick);
       map.off('click', clusters, onClusterClick);
       map.off('click', onMapClick);
+
+      if (!map.style) return;
 
       if (map.getLayer(id)) {
         map.removeLayer(id);

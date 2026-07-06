@@ -29,22 +29,26 @@ const Scene3DEditorPage = lazy(() => import('./pages/Scene3DEditorPage'));
 const DevicePage3D = lazy(() => import('./pages/DevicePage3D'));
 
 const PageLoader = () => (
-  <div style={{
-    position: 'fixed',
-    inset: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-  }}>
-    <div style={{
-      width: 48,
-      height: 48,
-      border: '4px solid #e0e0e0',
-      borderTopColor: '#1976d2',
-      borderRadius: '50%',
-      animation: 'page-spin 0.8s linear infinite',
-    }} />
+  <div
+    style={{
+      position: 'fixed',
+      inset: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        width: 48,
+        height: 48,
+        border: '4px solid #e0e0e0',
+        borderTopColor: '#1976d2',
+        borderRadius: '50%',
+        animation: 'page-spin 0.8s linear infinite',
+      }}
+    />
     <style>{`@keyframes page-spin { to { transform: rotate(360deg); } }`}</style>
   </div>
 );

@@ -140,7 +140,10 @@ const MissionReportRoutePage = () => {
                         <TableCell key={key}>{formatValue(item, key)}</TableCell>
                       ))}
                       <TableCell>
-                        <IconButton size="small" onClick={() => navigate(`/reports/mission/${item.id}`)}>
+                        <IconButton
+                          size="small"
+                          onClick={() => navigate(`/reports/mission/${item.id}`)}
+                        >
                           <OpenInNewIcon fontSize="small" />
                         </IconButton>
                       </TableCell>

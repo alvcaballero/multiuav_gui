@@ -64,7 +64,7 @@ const managePathObjectPoints = (locations, point) => {
 
   // Buscar si ya existe un elemento con el mismo groupId
   const existingRouteIndex = locations.findIndex(
-    (element) => element.items[0]?.groupId === point.groupId
+    (element) => element.items[0]?.groupId === point.groupId,
   );
 
   if (existingRouteIndex === -1) {
@@ -147,7 +147,7 @@ export const areValidLocations = (locations) => {
       typeof location === 'object' &&
       location.type &&
       Array.isArray(location.items) &&
-      location.items.every(isValidPoint)
+      location.items.every(isValidPoint),
   );
 };
 
@@ -174,9 +174,7 @@ export const transformLocationsForAPI = (locations) => {
  * @returns {Object} { isValid: boolean, duplicates: Array, errorMsg: string }
  */
 export const validateUniqueDevices = (assignments) => {
-  const deviceIds = assignments
-    .map((assignment) => assignment.device.id)
-    .filter((id) => id !== '');
+  const deviceIds = assignments.map((assignment) => assignment.device.id).filter((id) => id !== '');
 
   const hasDuplicates = deviceIds.some((id, index, list) => list.indexOf(id) !== index);
 

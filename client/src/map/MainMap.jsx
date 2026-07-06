@@ -29,7 +29,7 @@ const MainMap = ({
     (_, deviceId) => {
       dispatch(devicesActions.selectId(deviceId));
     },
-    [dispatch]
+    [dispatch],
   );
   return (
     <>

@@ -143,7 +143,15 @@ const DevicePage3D = () => {
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
   const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
-  useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
+  useFilter(
+    keyword,
+    filter,
+    filterSort,
+    filterMap,
+    positions,
+    setFilteredDevices,
+    setFilteredPositions,
+  );
 
   const onMarkerClick = () => {};
   useEffect(() => {
@@ -186,7 +194,15 @@ const DevicePage3D = () => {
         </Toolbar>
       </AppBar>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            minHeight: 0,
+          }}
+        >
           <div
             style={{
               height: '50vh',
@@ -194,7 +210,9 @@ const DevicePage3D = () => {
             }}
             className={classes.content}
           >
-            {Object.keys(thisDevice).length > 0 && <RenderCamera device={thisDevice} myhostname={myhostname} />}
+            {Object.keys(thisDevice).length > 0 && (
+              <RenderCamera device={thisDevice} myhostname={myhostname} />
+            )}
           </div>
           <div
             style={{
@@ -210,7 +228,13 @@ const DevicePage3D = () => {
           >
             <Container
               maxWidth="false"
-              style={{ flex: 1, padding: 0, overflow: 'auto', maxHeight: '100%', alignSelf: 'flex-start' }}
+              style={{
+                flex: 1,
+                padding: 0,
+                overflow: 'auto',
+                maxHeight: '100%',
+                alignSelf: 'flex-start',
+              }}
             >
               <Paper>
                 <Table aria-label="simple table" stickyHeader>
@@ -246,10 +270,22 @@ const DevicePage3D = () => {
               </Paper>
             </Container>
             {item?.attributes?.obstacle_info && (
-              <Paper style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Paper
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
                 <DroneSensorVisualizer
                   sensorData={currentSensorData}
-                  altitude={item.attributes?.home ? item.altitude - item.attributes.home[2] : (item.altitude ?? 0)}
+                  altitude={
+                    item.attributes?.home
+                      ? item.altitude - item.attributes.home[2]
+                      : (item.altitude ?? 0)
+                  }
                   altitudeASL={item.altitude ?? 0}
                 />
               </Paper>

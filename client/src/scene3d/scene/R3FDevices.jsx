@@ -56,7 +56,8 @@ const Device = ({ id, position, isSelected, category }) => {
         meshRef.current.rotation.y = -(loc.course * Math.PI) / 180;
       }
       if (camRef.current && loc.gimbalPitch !== undefined) {
-        const gimbalYawRad = loc.gimbalYaw !== undefined ? (-(loc.gimbalYaw - loc.course) * Math.PI) / 180 : 0;
+        const gimbalYawRad =
+          loc.gimbalYaw !== undefined ? (-(loc.gimbalYaw - loc.course) * Math.PI) / 180 : 0;
         const pitchRad = (loc.gimbalPitch * Math.PI) / 180;
         _qYaw.setFromAxisAngle(_axisY, gimbalYawRad);
         _qPitch.setFromAxisAngle(_axisX, pitchRad);

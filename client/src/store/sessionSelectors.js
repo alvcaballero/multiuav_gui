@@ -107,8 +107,7 @@ export const getBaseByIndex = (state, index) => {
 /**
  * Obtiene todos los grupos de inspection targets
  */
-export const getAllInspectionGroups = (state) =>
-  state.session.markers?.elements || [];
+export const getAllInspectionGroups = (state) => state.session.markers?.elements || [];
 
 /**
  * Obtiene los grupos filtrados por tipo (powerTower, windTurbine, solarPanel, etc.)
@@ -127,7 +126,7 @@ export const getFlatInspectionPoints = (state) =>
       groupName: group.name,
       groupIdx,
       itemIdx,
-    }))
+    })),
   );
 
 /**
@@ -142,16 +141,14 @@ export const getTotalInspectionPoints = (state) =>
  * Solo incluye items que tengan corners completos (4 puntos [lng, lat]).
  * Memoizado con createSelector para evitar re-renders innecesarios.
  */
-export const getMapImageItems = createSelector(
-  getAllInspectionGroups,
-  (groups) =>
-    groups.flatMap((group) =>
-      (group.items || [])
-        .filter((item) => Array.isArray(item.corners) && item.corners.length === 4)
-        .map((item, idx) => ({
-          key: `${group.type}-${idx}`,
-          url: `/api/markers/types/${group.type}/icon`,
-          coordinates: item.corners,
-        }))
-    )
+export const getMapImageItems = createSelector(getAllInspectionGroups, (groups) =>
+  groups.flatMap((group) =>
+    (group.items || [])
+      .filter((item) => Array.isArray(item.corners) && item.corners.length === 4)
+      .map((item, idx) => ({
+        key: `${group.type}-${idx}`,
+        url: `/api/markers/types/${group.type}/icon`,
+        coordinates: item.corners,
+      })),
+  ),
 );

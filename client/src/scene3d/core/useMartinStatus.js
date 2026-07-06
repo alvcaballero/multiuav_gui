@@ -15,7 +15,10 @@ const useMartinStatus = () => {
 
     const check = async () => {
       try {
-        const res = await fetch(MARTIN_HEALTH, { method: 'HEAD', signal: AbortSignal.timeout(2000) });
+        const res = await fetch(MARTIN_HEALTH, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(2000),
+        });
         if (!cancelled) setAvailable(res.ok);
       } catch {
         if (!cancelled) setAvailable(false);

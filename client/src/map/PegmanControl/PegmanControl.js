@@ -49,7 +49,8 @@ class Maplibre3DViewControl {
 
     // Create pegman container
     this.container = document.createElement('div');
-    this.container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibre-streetview-pegman-container';
+    this.container.className =
+      'maplibregl-ctrl maplibregl-ctrl-group maplibre-streetview-pegman-container';
 
     // Create pegman button element
     this.pegman = document.createElement('button');
@@ -114,7 +115,8 @@ class Maplibre3DViewControl {
 
       // Make the drag image transparent
       const emptyImg = new Image();
-      emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      emptyImg.src =
+        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
       e.dataTransfer.setDragImage(emptyImg, 0, 0);
       e.dataTransfer.effectAllowed = 'move';
 
@@ -142,7 +144,7 @@ class Maplibre3DViewControl {
 
     // Handle pegman drop on map
     this.map.getContainer().addEventListener('drop', (e) => {
-      console.log('drop')
+      console.log('drop');
       e.preventDefault();
 
       if (this.isDragging) {
@@ -154,12 +156,14 @@ class Maplibre3DViewControl {
         const lngLat = this.map.unproject([x, y]);
 
         // Dispatch Redux action to update 3D scene origin
-        if (this.dispatch ) {
-          this.dispatch(sessionActions.updateScene3dOrigin({
-            lat: lngLat.lat,
-            lng: lngLat.lng,
-            alt: this.defaultAltitude
-          }));
+        if (this.dispatch) {
+          this.dispatch(
+            sessionActions.updateScene3dOrigin({
+              lat: lngLat.lat,
+              lng: lngLat.lng,
+              alt: this.defaultAltitude,
+            }),
+          );
         }
 
         // Navigate to 3D view
@@ -209,82 +213,99 @@ class Maplibre3DViewControl {
 
     // MOBILE TOUCH SUPPORT
     // Handle touchstart on pegman for mobile drag
-    this.pegman.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    this.pegman.addEventListener(
+      'touchstart',
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-      // Track touch start to distinguish between tap and drag
-      this.touchStartTime = Date.now();
-      this.touchMoved = false;
-      this.isTouchInteraction = true;
-    }, { passive: false });
+        // Track touch start to distinguish between tap and drag
+        this.touchStartTime = Date.now();
+        this.touchMoved = false;
+        this.isTouchInteraction = true;
+      },
+      { passive: false },
+    );
 
     // Handle touchmove for updating pegman marker position
-    document.addEventListener('touchmove', (e) => {
-      if (this.isTouchInteraction) {
-        this.touchMoved = true;
+    document.addEventListener(
+      'touchmove',
+      (e) => {
+        if (this.isTouchInteraction) {
+          this.touchMoved = true;
 
-        // Start dragging if we haven't already
-        if (!this.isDragging) {
-          this.isDragging = true;
-          this.pegman.classList.add('dragging');
-          this.container.classList.add('dragging');
-          this.pegmanMarker.classList.add('active');
-        }
+          // Start dragging if we haven't already
+          if (!this.isDragging) {
+            this.isDragging = true;
+            this.pegman.classList.add('dragging');
+            this.container.classList.add('dragging');
+            this.pegmanMarker.classList.add('active');
+          }
 
-        // Prevent page scrolling while dragging
-        e.preventDefault();
+          // Prevent page scrolling while dragging
+          e.preventDefault();
 
-        const touch = e.touches[0];
-        if (touch) {
-          this._updatePegmanMarkerPosition(touch);
-        }
-      }
-    }, { passive: false });
-
-    // Handle touchend (drop) on map
-    document.addEventListener('touchend', (e) => {
-      if (this.isTouchInteraction) {
-        const touch = e.changedTouches[0];
-
-        // If it was a drag (not just a tap)
-        if (this.touchMoved && this.isDragging && touch) {
-          const mapContainer = this.map.getContainer();
-          const rect = mapContainer.getBoundingClientRect();
-
-          // Check if touch ended inside the map container
-          if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-              touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-
-            // Convert touch point to map coordinates
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-
-            // Convert to geographic coordinates
-            const lngLat = this.map.unproject([x, y]);
-
-            // Dispatch Redux action to update 3D scene origin
-            if (this.dispatch && this.sessionActions) {
-              this.dispatch(this.sessionActions.updateScene3dOrigin({
-                lat: lngLat.lat,
-                lng: lngLat.lng,
-                alt: this.defaultAltitude
-              }));
-            }
-
-            // Navigate to 3D view
-            if (this.navigate) {
-              this.navigate('/3Dview');
-            }
+          const touch = e.touches[0];
+          if (touch) {
+            this._updatePegmanMarkerPosition(touch);
           }
         }
+      },
+      { passive: false },
+    );
 
-        // Reset touch and drag states
-        this._endDragging();
-        this.touchMoved = false;
-        this.isTouchInteraction = false;
-      }
-    }, { passive: false });
+    // Handle touchend (drop) on map
+    document.addEventListener(
+      'touchend',
+      (e) => {
+        if (this.isTouchInteraction) {
+          const touch = e.changedTouches[0];
+
+          // If it was a drag (not just a tap)
+          if (this.touchMoved && this.isDragging && touch) {
+            const mapContainer = this.map.getContainer();
+            const rect = mapContainer.getBoundingClientRect();
+
+            // Check if touch ended inside the map container
+            if (
+              touch.clientX >= rect.left &&
+              touch.clientX <= rect.right &&
+              touch.clientY >= rect.top &&
+              touch.clientY <= rect.bottom
+            ) {
+              // Convert touch point to map coordinates
+              const x = touch.clientX - rect.left;
+              const y = touch.clientY - rect.top;
+
+              // Convert to geographic coordinates
+              const lngLat = this.map.unproject([x, y]);
+
+              // Dispatch Redux action to update 3D scene origin
+              if (this.dispatch && this.sessionActions) {
+                this.dispatch(
+                  this.sessionActions.updateScene3dOrigin({
+                    lat: lngLat.lat,
+                    lng: lngLat.lng,
+                    alt: this.defaultAltitude,
+                  }),
+                );
+              }
+
+              // Navigate to 3D view
+              if (this.navigate) {
+                this.navigate('/3Dview');
+              }
+            }
+          }
+
+          // Reset touch and drag states
+          this._endDragging();
+          this.touchMoved = false;
+          this.isTouchInteraction = false;
+        }
+      },
+      { passive: false },
+    );
   }
 
   /**
@@ -299,8 +320,8 @@ class Maplibre3DViewControl {
     const clientX = e.clientX !== undefined ? e.clientX : e.pageX;
     const clientY = e.clientY !== undefined ? e.clientY : e.pageY;
 
-    this.pegmanMarker.style.left = (clientX - 10) + 'px';
-    this.pegmanMarker.style.top = (clientY - 30) + 'px';
+    this.pegmanMarker.style.left = clientX - 10 + 'px';
+    this.pegmanMarker.style.top = clientY - 30 + 'px';
   }
 
   /**
@@ -322,22 +343,21 @@ class Maplibre3DViewControl {
   }
 }
 
-
 const PegmanControl = () => {
-    // Create the control instance once
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const control = useMemo(() => new Maplibre3DViewControl({ navigate, dispatch }), []);
+  // Create the control instance once
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const control = useMemo(() => new Maplibre3DViewControl({ navigate, dispatch }), []);
 
-    useEffect(() => {
-        map.addControl(control, 'top-right');
-        return () => { map.removeControl(control); };
-    }, [control]);
+  useEffect(() => {
+    map.addControl(control, 'top-right');
+    return () => {
+      map.removeControl(control);
+    };
+  }, [control]);
 
-    // Render the button into the control's container using a Portal
-    return null;
+  // Render the button into the control's container using a Portal
+  return null;
 };
 
 export default PegmanControl;
-
-

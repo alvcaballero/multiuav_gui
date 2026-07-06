@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { useSelector ,useDispatch} from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { sessionActions } from '../../store';
 
 const SelectDevice3D = () => {
@@ -15,7 +15,13 @@ const SelectDevice3D = () => {
 
   useEffect(() => {
     if (selectedDeviceId !== previousDeviceId.current && position?.latitude !== undefined) {
-      dispatch(sessionActions.updateScene3dOrigin({ lng: position.longitude, lat: position.latitude, alt: 400 }));
+      dispatch(
+        sessionActions.updateScene3dOrigin({
+          lng: position.longitude,
+          lat: position.latitude,
+          alt: 400,
+        }),
+      );
     }
     previousDeviceId.current = selectedDeviceId;
   }, [selectedDeviceId, position, dispatch]);

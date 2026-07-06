@@ -1,7 +1,15 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
-import { Box, IconButton, TextField, Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  TextField,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+} from '@mui/material';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -95,7 +103,10 @@ const BaseSettings = ({
               const assignment = assignmentIndex >= 0 ? data[assignmentIndex] : null;
 
               return (
-                <Accordion expanded={expanded === `wp ${base.id}`} onChange={handleChange(`wp ${base.id}`)}>
+                <Accordion
+                  expanded={expanded === `wp ${base.id}`}
+                  onChange={handleChange(`wp ${base.id}`)}
+                >
                   <AccordionSummary expandIcon={<ExpandMore />}>
                     <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
                       {`${type} ${baseIndex} - ${assignment?.device?.name || 'Sin asignar'}`}
@@ -145,7 +156,9 @@ const BaseSettings = ({
                                         // Crear o actualizar asignación
                                         const auxData = JSON.parse(JSON.stringify(data));
                                         const deviceId = e.target.value;
-                                        const selectedDevice = items.find((item) => +item.id === +deviceId);
+                                        const selectedDevice = items.find(
+                                          (item) => +item.id === +deviceId,
+                                        );
 
                                         if (assignmentIndex >= 0) {
                                           // Actualizar asignación existente
@@ -159,7 +172,8 @@ const BaseSettings = ({
                                             baseId: base.id,
                                             device: {
                                               id: deviceId,
-                                              name: deviceId === '' ? '' : selectedDevice?.name || '',
+                                              name:
+                                                deviceId === '' ? '' : selectedDevice?.name || '',
                                             },
                                             settings: defaultSettings,
                                           });
@@ -170,7 +184,7 @@ const BaseSettings = ({
                                     />
                                   )}
                                 </div>
-                              ))
+                              )),
                             )}
                         </div>
                         <div>
@@ -185,7 +199,10 @@ const BaseSettings = ({
                                 <div>
                                   {param.settings[actionKey].name && (
                                     <>
-                                      <Typography variant="subtitle1" className={classes.attributeName}>
+                                      <Typography
+                                        variant="subtitle1"
+                                        className={classes.attributeName}
+                                      >
                                         {param.settings[actionKey].name}
                                       </Typography>
                                       <div className={classes.actionValue}>
@@ -210,7 +227,7 @@ const BaseSettings = ({
                                     </>
                                   )}
                                 </div>
-                              ))
+                              )),
                             )}
                         </div>
                       </Box>
@@ -218,7 +235,7 @@ const BaseSettings = ({
                   </AccordionDetails>
                 </Accordion>
               );
-            })
+            }),
           )}
         </div>
       )}

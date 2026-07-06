@@ -142,9 +142,9 @@ export default function CameraControls({ controlsRef: externalRef }) {
     }
 
     _dir.current.set(0, 0, 0);
-    if (keys.current.w || keys.current.ArrowUp)    _dir.current.z -= moveSpeed;
-    if (keys.current.s || keys.current.ArrowDown)  _dir.current.z += moveSpeed;
-    if (keys.current.a || keys.current.ArrowLeft)  _dir.current.x -= moveSpeed;
+    if (keys.current.w || keys.current.ArrowUp) _dir.current.z -= moveSpeed;
+    if (keys.current.s || keys.current.ArrowDown) _dir.current.z += moveSpeed;
+    if (keys.current.a || keys.current.ArrowLeft) _dir.current.x -= moveSpeed;
     if (keys.current.d || keys.current.ArrowRight) _dir.current.x += moveSpeed;
     if (keys.current.q) _dir.current.y += moveSpeed;
     if (keys.current.e) _dir.current.y -= moveSpeed;
@@ -168,14 +168,18 @@ export default function CameraControls({ controlsRef: externalRef }) {
     }
 
     _offset.current.copy(camera.position).sub(controls.target);
-    const horizontalDist = Math.sqrt(_offset.current.x * _offset.current.x + _offset.current.z * _offset.current.z);
+    const horizontalDist = Math.sqrt(
+      _offset.current.x * _offset.current.x + _offset.current.z * _offset.current.z,
+    );
     const bearing = Math.atan2(_offset.current.x, -_offset.current.z) * (180 / Math.PI);
-    const pitch   = Math.atan2(_offset.current.y, horizontalDist) * (180 / Math.PI);
+    const pitch = Math.atan2(_offset.current.y, horizontalDist) * (180 / Math.PI);
 
     const prev = lastAzimuthRef.current;
     if (!prev || Math.abs(bearing - prev.bearing) > 0.3 || Math.abs(pitch - prev.pitch) > 0.3) {
       lastAzimuthRef.current = { bearing, pitch, roll: 0 };
-      window.dispatchEvent(new CustomEvent('camera-azimuth', { detail: { bearing, pitch, roll: 0 } }));
+      window.dispatchEvent(
+        new CustomEvent('camera-azimuth', { detail: { bearing, pitch, roll: 0 } }),
+      );
       didMove = true;
     }
 

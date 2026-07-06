@@ -136,12 +136,16 @@ const CameraPage = () => {
                           />
                         )}
                         {camera.type === 'Websocket' && (
-                          <CameraV1 deviceId={device.id} datacamera={null} onClose={() => console.log('cerrar ')} />
+                          <CameraV1
+                            deviceId={device.id}
+                            datacamera={null}
+                            onClose={() => console.log('cerrar ')}
+                          />
                         )}
                       </Grid>
                     ))}
                   </Fragment>
-                ))
+                )),
               )}
             </Grid>
           </Box>

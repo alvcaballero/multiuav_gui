@@ -22,7 +22,11 @@ import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
 import MapMissionHome from '../map/mission/MapMissionHome';
 import { useEffectAsync, useCatch } from '../reactHelper';
-import { manageLocationPoints, validateUniqueDevices, transformLocationsForAPI } from '../services/planningService';
+import {
+  manageLocationPoints,
+  validateUniqueDevices,
+  transformLocationsForAPI,
+} from '../services/planningService';
 
 import PlanningToolbar from '../components/planning/PlanningToolbar';
 import ElementsTab from '../components/planning/ElementsTab';
@@ -135,7 +139,7 @@ const PlanningPage = () => {
         .filter((a) => a.device.id !== '')
         .map((a) => mapAssignmentToTaskDevice(a, devices, markers))
         .filter(Boolean),
-    [mapAssignmentToTaskDevice]
+    [mapAssignmentToTaskDevice],
   );
 
   const buildTaskPayload = useCallback(
@@ -147,7 +151,7 @@ const PlanningPage = () => {
       locations: transformLocationsForAPI(legacyPlanning.loc),
       devices: taskDevices,
     }),
-    []
+    [],
   );
 
   // --- Acciones principales ---
@@ -203,17 +207,14 @@ const PlanningPage = () => {
     if (!response.ok) throw new Error(await response.text());
   });
 
-  const SavePlanning = useCallback(
-    (value) => {
-      const blob = new Blob([YAML.stringify(value)], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = `${value.name}.yaml`;
-      link.href = url;
-      link.click();
-    },
-    []
-  );
+  const SavePlanning = useCallback((value) => {
+    const blob = new Blob([YAML.stringify(value)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${value.name}.yaml`;
+    link.href = url;
+    link.click();
+  }, []);
 
   const setDefaultPlanning = useCatch(async (value) => {
     const response = await fetch('api/planning/setDefault', {
@@ -233,40 +234,46 @@ const PlanningPage = () => {
       if (meta.meth === 'del') {
         const baseIdToRemove = value[meta.index]?.id;
         if (baseIdToRemove) {
-          const newAssignments = (SendTask.assignments || []).filter((a) => a.baseId !== baseIdToRemove);
+          const newAssignments = (SendTask.assignments || []).filter(
+            (a) => a.baseId !== baseIdToRemove,
+          );
           dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
         }
       }
     },
-    [dispatch, markers, SendTask]
+    [dispatch, markers, SendTask],
   );
 
   const setMarkersElements = useCallback(
     (value) => dispatch(sessionActions.updateMarker({ ...markers, elements: value })),
-    [dispatch, markers]
+    [dispatch, markers],
   );
 
   const SetMapMarkers = useCallback(
     (value) => dispatch(sessionActions.updateMarker(value)),
-    [dispatch]
+    [dispatch],
   );
 
   const setLocations = useCallback(
     (value) => dispatch(sessionActions.updatePlanning({ ...SendTask, loc: value })),
-    [dispatch, SendTask]
+    [dispatch, SendTask],
   );
 
   const addLocations = useCallback(
     (value) => {
-      const newLoc = manageLocationPoints(JSON.parse(JSON.stringify(SendTask.loc)), value, SendTask.objetivo.type);
+      const newLoc = manageLocationPoints(
+        JSON.parse(JSON.stringify(SendTask.loc)),
+        value,
+        SendTask.objetivo.type,
+      );
       dispatch(sessionActions.updatePlanning({ ...SendTask, loc: newLoc }));
     },
-    [dispatch, SendTask]
+    [dispatch, SendTask],
   );
 
   const setBaseSettings = useCallback(
     (assignments) => dispatch(sessionActions.updatePlanning({ ...SendTask, assignments })),
-    [dispatch, SendTask]
+    [dispatch, SendTask],
   );
 
   const updateObjetive = useCallback(
@@ -276,7 +283,7 @@ const PlanningPage = () => {
       if (newObjetive.type !== SendTask.objetivo.type) myTask.loc = [];
       dispatch(sessionActions.updatePlanning(myTask));
     },
-    [dispatch, SendTask]
+    [dispatch, SendTask],
   );
 
   // --- Handlers de UI ---
@@ -294,22 +301,23 @@ const PlanningPage = () => {
             ...markers,
             bases: myTask.markersbase || markers.bases,
             elements: myTask.elements || markers.elements,
-          })
+          }),
         );
         delete myTask.markersbase;
         delete myTask.elements;
         dispatch(sessionActions.updatePlanning(myTask));
       };
     },
-    [dispatch, markers]
+    [dispatch, markers],
   );
 
   const goToBase = useCallback(
     (baseId) => {
       const base = markers.bases.find((b) => b.id === baseId);
-      if (base) map.flyTo({ center: [base.longitude, base.latitude], zoom: Math.max(map.getZoom(), 16) });
+      if (base)
+        map.flyTo({ center: [base.longitude, base.latitude], zoom: Math.max(map.getZoom(), 16) });
     },
-    [markers.bases]
+    [markers.bases],
   );
 
   const TabHandleChange = useCallback((_event, newTabValue) => {
@@ -323,32 +331,33 @@ const PlanningPage = () => {
 
   const handleSavePlanning = useCallback(
     () => SavePlanning({ ...SendTask, markersbase: markers.bases, elements: markers.elements }),
-    [SavePlanning, SendTask, markers.bases, markers.elements]
+    [SavePlanning, SendTask, markers.bases, markers.elements],
   );
 
   const handleSaveGlobalMarkers = useCallback(
-    () => setDefaultPlanning({ ...SendTask, markersbase: markers.bases, elements: markers.elements }),
-    [setDefaultPlanning, SendTask, markers.bases, markers.elements]
+    () =>
+      setDefaultPlanning({ ...SendTask, markersbase: markers.bases, elements: markers.elements }),
+    [setDefaultPlanning, SendTask, markers.bases, markers.elements],
   );
 
   const handleUpdatePlanningId = useCallback(
     (event) => dispatch(sessionActions.updatePlanning({ ...SendTask, id: event.target.value })),
-    [dispatch, SendTask]
+    [dispatch, SendTask],
   );
 
   const handleUpdatePlanningName = useCallback(
     (event) => dispatch(sessionActions.updatePlanning({ ...SendTask, name: event.target.value })),
-    [dispatch, SendTask]
+    [dispatch, SendTask],
   );
 
   const handleUpdateObjective = useCallback(
     (e, items) => updateObjetive(items[e.target.value]),
-    [updateObjetive]
+    [updateObjetive],
   );
 
   const handleGetItems = useCallback(
     (it) => dispatch(sessionActions.updatePlanning({ ...SendTask, objetivo: it })),
-    [dispatch, SendTask]
+    [dispatch, SendTask],
   );
 
   const handleResetPolling = useCallback(() => SetRequestPlanning(3), []);
@@ -372,7 +381,7 @@ const PlanningPage = () => {
     if (!paramsResponse.hasOwnProperty('settings')) return;
 
     const defaultConfig = Object.fromEntries(
-      Object.entries(paramsResponse.settings).map(([k, v]) => [k, v.default])
+      Object.entries(paramsResponse.settings).map(([k, v]) => [k, v.default]),
     );
 
     const myTask = JSON.parse(JSON.stringify(SendTask));

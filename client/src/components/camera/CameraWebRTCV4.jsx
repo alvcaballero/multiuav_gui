@@ -5,7 +5,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 import { makeStyles } from 'tss-react/mui';
 
-
 const useStyles = makeStyles()((theme) => ({
   card: {
     pointerEvents: 'auto',
@@ -91,7 +90,10 @@ export const CameraWebRTCV4 = ({
   return (
     <div className={rootclass} style={{ flex: 1 }}>
       {device && (
-        <Card className={btn_class} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Card
+          className={btn_class}
+          style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+        >
           <div>
             <div className={classes.tittle}>{'Id: ' + device.name}</div>
           </div>

@@ -2,7 +2,6 @@ import React from 'react';
 import { TextField, useTheme, useMediaQuery } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
-
 export const filterByKeyword = (keyword) => (item) =>
   !keyword || JSON.stringify(item).toLowerCase().includes(keyword.toLowerCase());
 

@@ -74,11 +74,17 @@ const MissionTrackingPanel = () => {
             <Collapse in={isSelected} unmountOnExit>
               <Box sx={{ bgcolor: 'action.hover', pb: 0.5 }}>
                 {routes.length === 0 ? (
-                  <Typography variant="caption" sx={{ px: 2, py: 0.5, display: 'block' }} color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    sx={{ px: 2, py: 0.5, display: 'block' }}
+                    color="text.secondary"
+                  >
                     No routes yet
                   </Typography>
                 ) : (
-                  routes.map((r) => <RouteTrackingRow key={r.deviceId} route={r} devicesMap={devicesMap} />)
+                  routes.map((r) => (
+                    <RouteTrackingRow key={r.deviceId} route={r} devicesMap={devicesMap} />
+                  ))
                 )}
               </Box>
             </Collapse>

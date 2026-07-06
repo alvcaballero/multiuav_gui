@@ -115,10 +115,14 @@ const R3FMission = ({ routes = [] }) => {
           });
           return (
             <Fragment key={'wp' + index}>
-              <NumberedSphere position={[wp.x, wp.y, wp.z]} properties={wp.properties} hideLabel={hideLabel} />
+              <NumberedSphere
+                position={[wp.x, wp.y, wp.z]}
+                properties={wp.properties}
+                hideLabel={hideLabel}
+              />
             </Fragment>
           );
-        })
+        }),
       )}
 
       {React.Children.toArray(
@@ -132,7 +136,7 @@ const R3FMission = ({ routes = [] }) => {
               linejoin={'round'}
             />
           </Fragment>
-        ))
+        )),
       )}
     </Fragment>
   );

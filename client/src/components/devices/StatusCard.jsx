@@ -131,23 +131,25 @@ const MemoCardActions = React.memo(
         <DeleteIcon />
       </IconButton>
     </CardActions>
-  )
+  ),
 );
-const MemoCardHeader = React.memo(({ classes, deviceName, onClose, changeMapFollow, mapFollow }) => {
-  return (
-    <div className={classes.header}>
-      <Typography variant="body2" color="textSecondary">
-        {deviceName}
-      </Typography>
-      <IconButton size="small" onClick={changeMapFollow}>
-        {mapFollow ? <GpsFixedIcon fontSize="small" /> : <GpsNotFixedIcon fontSize="small" />}
-      </IconButton>
-      <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
-        <CloseIcon fontSize="small" />
-      </IconButton>
-    </div>
-  );
-});
+const MemoCardHeader = React.memo(
+  ({ classes, deviceName, onClose, changeMapFollow, mapFollow }) => {
+    return (
+      <div className={classes.header}>
+        <Typography variant="body2" color="textSecondary">
+          {deviceName}
+        </Typography>
+        <IconButton size="small" onClick={changeMapFollow}>
+          {mapFollow ? <GpsFixedIcon fontSize="small" /> : <GpsNotFixedIcon fontSize="small" />}
+        </IconButton>
+        <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </div>
+    );
+  },
+);
 
 const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = false }) => {
   const { classes } = useStyles({ desktopPadding });
@@ -182,7 +184,10 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
   const handleOpenMenu = (e) => setAnchorEl(e.currentTarget);
   const handleSyncFiles = useCallback(() => serverCommand(deviceId, 'SincroniseFiles'), [deviceId]);
   const handleRemoving = () => setRemoving(true);
-  const changeMapFollow = useCallback(() => dispatch(devicesActions.updateFollow(!mapFollow)), [mapFollow, dispatch]);
+  const changeMapFollow = useCallback(
+    () => dispatch(devicesActions.updateFollow(!mapFollow)),
+    [mapFollow, dispatch],
+  );
 
   const openCommand = () => setOpenSendCommand(true);
   const navigateToDevice = useCallback(() => {
@@ -251,10 +256,19 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
                         name={'Position'}
                         content={
                           <a
-                            href={'https://www.google.com/maps?q=' + position.latitude + ',' + position.longitude}
+                            href={
+                              'https://www.google.com/maps?q=' +
+                              position.latitude +
+                              ',' +
+                              position.longitude
+                            }
                             target="_blank"
                           >
-                            {'[' + position.latitude.toFixed(6) + ',' + position.longitude.toFixed(6) + ']'}
+                            {'[' +
+                              position.latitude.toFixed(6) +
+                              ',' +
+                              position.longitude.toFixed(6) +
+                              ']'}
                           </a>
                         }
                       />
@@ -262,7 +276,10 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
 
                     {positionItems
                       .split(',')
-                      .filter((key) => position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key))
+                      .filter(
+                        (key) =>
+                          position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key),
+                      )
                       .map((key) => (
                         <StatusRow
                           key={key}
@@ -277,34 +294,35 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
                         />
                       ))}
 
-                    {position.attributes.hasOwnProperty('alarm') && device.category.includes('catec') && (
-                      <StatusRow
-                        key="alarm1"
-                        name={'Alarm ' + position.attributes.alarm}
-                        content={
-                          <div style={{ width: '100%' }}>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              color="primary"
-                              style={{ margin: '1px', display: 'inline-block' }}
-                              onClick={() => serverCommand(device.id, 'threat_confirmation')}
-                            >
-                              Validate
-                            </Button>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              color="secondary"
-                              style={{ margin: '1px', display: 'inline-block' }}
-                              onClick={() => serverCommand(device.id, 'threat_defuse')}
-                            >
-                              Dismiss
-                            </Button>
-                          </div>
-                        }
-                      />
-                    )}
+                    {position.attributes.hasOwnProperty('alarm') &&
+                      device.category.includes('catec') && (
+                        <StatusRow
+                          key="alarm1"
+                          name={'Alarm ' + position.attributes.alarm}
+                          content={
+                            <div style={{ width: '100%' }}>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                color="primary"
+                                style={{ margin: '1px', display: 'inline-block' }}
+                                onClick={() => serverCommand(device.id, 'threat_confirmation')}
+                              >
+                                Validate
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                color="secondary"
+                                style={{ margin: '1px', display: 'inline-block' }}
+                                onClick={() => serverCommand(device.id, 'threat_defuse')}
+                              >
+                                Dismiss
+                              </Button>
+                            </div>
+                          }
+                        />
+                      )}
                   </TableBody>
                 </Table>
               </CardContent>

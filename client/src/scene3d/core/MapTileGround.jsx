@@ -54,8 +54,14 @@ const tileSizeMeters = (tx, ty, zoom) => {
 // Computes XZ offset of a tile center relative to scene origin (in meters)
 const tileOffsetFromOrigin = (tx, ty, zoom, sceneOrigin) => {
   const center = tileCenterLngLat(tx, ty, zoom);
-  const originMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: sceneOrigin.lng, lat: sceneOrigin.lat }, 0);
-  const centerMerc = maplibregl.MercatorCoordinate.fromLngLat({ lng: center.lng, lat: center.lat }, 0);
+  const originMerc = maplibregl.MercatorCoordinate.fromLngLat(
+    { lng: sceneOrigin.lng, lat: sceneOrigin.lat },
+    0,
+  );
+  const centerMerc = maplibregl.MercatorCoordinate.fromLngLat(
+    { lng: center.lng, lat: center.lat },
+    0,
+  );
   const d = calculateDistanceMercatorToMeters(originMerc, centerMerc);
   return { x: d.x, z: -d.y }; // R3F: X=east, Z=-north
 };
@@ -96,7 +102,14 @@ const MapTileGround = () => {
   return (
     <>
       {tiles.map(({ url, offset, size, key }) => (
-        <TileMesh key={key} url={url} offsetX={offset.x} offsetZ={offset.z} width={size.width} height={size.height} />
+        <TileMesh
+          key={key}
+          url={url}
+          offsetX={offset.x}
+          offsetZ={offset.z}
+          width={size.width}
+          height={size.height}
+        />
       ))}
     </>
   );

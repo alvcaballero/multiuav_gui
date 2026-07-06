@@ -37,7 +37,12 @@ import {
   commandResumeMission,
 } from '../../shared/fetchs';
 import { useCatch } from '../../reactHelper';
-import { missionActions, activeMissionsActions, sessionActions, getCommandableMissionId } from '../../store';
+import {
+  missionActions,
+  activeMissionsActions,
+  sessionActions,
+  getCommandableMissionId,
+} from '../../store';
 import { getMissionCentroid } from '../../shared/util/missionGeo';
 import SwipeConfirm from '../../shared/components/SwipeConfirm';
 import MissionDetailPopover from './menu/MissionDetailPopover';
@@ -264,9 +269,16 @@ export const Menu = () => {
     <header className={classes.toolbar}>
       {/* ── LEFT: conexión · mapa · archivo ── */}
       <div className={classes.leftGroup}>
-        <Tooltip title={socketState ? 'WebSocket connected' : 'WebSocket disconnected'} placement="bottom">
+        <Tooltip
+          title={socketState ? 'WebSocket connected' : 'WebSocket disconnected'}
+          placement="bottom"
+        >
           <Chip
-            icon={<CircleIcon sx={{ fontSize: '7px !important', color: socketState ? green[500] : red[500] }} />}
+            icon={
+              <CircleIcon
+                sx={{ fontSize: '7px !important', color: socketState ? green[500] : red[500] }}
+              />
+            }
             label={socketState ? 'WS' : 'offline'}
             size="small"
             className={classes.rosChip}
@@ -283,7 +295,11 @@ export const Menu = () => {
         <RosContext.Consumer>
           {({ rosState }) => (
             <Chip
-              icon={<CircleIcon sx={{ fontSize: '7px !important', color: rosState ? green[500] : red[500] }} />}
+              icon={
+                <CircleIcon
+                  sx={{ fontSize: '7px !important', color: rosState ? green[500] : red[500] }}
+                />
+              }
               label={rosState ? 'ROS' : 'offline'}
               size="small"
               className={classes.rosChip}
@@ -360,7 +376,8 @@ export const Menu = () => {
                   padding: 0,
                   cursor: hasMission && !is3D ? 'pointer' : 'default',
                   color: hasMission && !is3D ? grey[600] : grey[400],
-                  '&:hover': hasMission && !is3D ? { backgroundColor: grey[100], color: grey[900] } : {},
+                  '&:hover':
+                    hasMission && !is3D ? { backgroundColor: grey[100], color: grey[900] } : {},
                 }}
               >
                 <MyLocationIcon sx={{ fontSize: 14 }} />
@@ -403,7 +420,9 @@ export const Menu = () => {
                 >
                   {hasMission ? missionName : 'No mission loaded'}
                 </Typography>
-                {hasMission && <ExpandMoreIcon sx={{ fontSize: 14, color: grey[400], flexShrink: 0 }} />}
+                {hasMission && (
+                  <ExpandMoreIcon sx={{ fontSize: 14, color: grey[400], flexShrink: 0 }} />
+                )}
               </Box>
             </span>
           </Tooltip>
@@ -483,7 +502,12 @@ export const Menu = () => {
 
         <Tooltip title="Pause mission" placement="bottom">
           <span>
-            <IconButton className={classes.pauseBtn} size="small" onClick={handlePauseMission} disabled={!isRunning}>
+            <IconButton
+              className={classes.pauseBtn}
+              size="small"
+              onClick={handlePauseMission}
+              disabled={!isRunning}
+            >
               <PauseIcon sx={{ fontSize: 17 }} />
             </IconButton>
           </span>
@@ -491,7 +515,12 @@ export const Menu = () => {
 
         <Tooltip title="Resume mission" placement="bottom">
           <span>
-            <IconButton className={classes.resumeBtn} size="small" onClick={handleResumeMission} disabled={!isRunning}>
+            <IconButton
+              className={classes.resumeBtn}
+              size="small"
+              onClick={handleResumeMission}
+              disabled={!isRunning}
+            >
               <PlayArrowIcon sx={{ fontSize: 17 }} />
             </IconButton>
           </span>
@@ -499,7 +528,12 @@ export const Menu = () => {
 
         <Tooltip title="Stop mission" placement="bottom">
           <span>
-            <IconButton className={classes.stopBtn} size="small" onClick={handleStopMission} disabled={!isRunning}>
+            <IconButton
+              className={classes.stopBtn}
+              size="small"
+              onClick={handleStopMission}
+              disabled={!isRunning}
+            >
               <StopIcon sx={{ fontSize: 17 }} />
             </IconButton>
           </span>
@@ -508,7 +542,11 @@ export const Menu = () => {
         <div className={classes.vDivider} />
 
         <Tooltip title="Planning" placement="bottom">
-          <IconButton className={classes.iconBtn} size="small" onClick={() => navigate('/planning')}>
+          <IconButton
+            className={classes.iconBtn}
+            size="small"
+            onClick={() => navigate('/planning')}
+          >
             <RouteIcon sx={{ fontSize: 17 }} />
           </IconButton>
         </Tooltip>
@@ -522,7 +560,9 @@ export const Menu = () => {
         <Tooltip title={is3D ? 'Switch to 2D map' : 'Switch to 3D view'} placement="bottom">
           <Button
             className={classes.toggleBtn}
-            startIcon={is3D ? <MapIcon sx={{ fontSize: 13 }} /> : <ViewInArIcon sx={{ fontSize: 13 }} />}
+            startIcon={
+              is3D ? <MapIcon sx={{ fontSize: 13 }} /> : <ViewInArIcon sx={{ fontSize: 13 }} />
+            }
             onClick={() => (is3D ? navigate('/') : goto3DView())}
           >
             {is3D ? '2D' : '3D'}
@@ -532,13 +572,25 @@ export const Menu = () => {
         <div className={classes.vDivider} />
 
         <Tooltip title="Active missions" placement="bottom">
-          <IconButton className={classes.iconBtn} size="small" onClick={(e) => setMissionsAnchor(e.currentTarget)}>
+          <IconButton
+            className={classes.iconBtn}
+            size="small"
+            onClick={(e) => setMissionsAnchor(e.currentTarget)}
+          >
             <AssignmentIcon sx={{ fontSize: 17 }} />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title={unseenErrors.length ? `${unseenErrors.length} new error(s)` : 'Events log'} placement="bottom">
-          <IconButton className={classes.iconBtn} size="small" onClick={openEvents} sx={{ position: 'relative' }}>
+        <Tooltip
+          title={unseenErrors.length ? `${unseenErrors.length} new error(s)` : 'Events log'}
+          placement="bottom"
+        >
+          <IconButton
+            className={classes.iconBtn}
+            size="small"
+            onClick={openEvents}
+            sx={{ position: 'relative' }}
+          >
             <NotificationsIcon sx={{ fontSize: 17 }} />
             {unseenErrors.length > 0 && (
               <Box

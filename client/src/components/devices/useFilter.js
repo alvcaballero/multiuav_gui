@@ -2,7 +2,15 @@ import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
 
-export default (keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions) => {
+export default (
+  keyword,
+  filter,
+  filterSort,
+  filterMap,
+  positions,
+  setFilteredDevices,
+  setFilteredPositions,
+) => {
   const devices = useSelector((state) => state.devices.items);
 
   useEffect(() => {
@@ -11,7 +19,7 @@ export default (keyword, filter, filterSort, filterMap, positions, setFilteredDe
       .filter((device) => {
         const lowerCaseKeyword = keyword.toLowerCase();
         return [device.name, device.uniqueId, device.phone, device.model, device.contact].some(
-          (s) => s && s.toLowerCase().includes(lowerCaseKeyword)
+          (s) => s && s.toLowerCase().includes(lowerCaseKeyword),
         );
       });
     switch (filterSort) {
@@ -30,7 +38,18 @@ export default (keyword, filter, filterSort, filterMap, positions, setFilteredDe
     }
     setFilteredDevices(filtered);
     setFilteredPositions(
-      filterMap ? filtered.map((device) => positions[device.id]).filter(Boolean) : Object.values(positions)
+      filterMap
+        ? filtered.map((device) => positions[device.id]).filter(Boolean)
+        : Object.values(positions),
     );
-  }, [keyword, filter, filterSort, filterMap, devices, positions, setFilteredDevices, setFilteredPositions]);
+  }, [
+    keyword,
+    filter,
+    filterSort,
+    filterMap,
+    devices,
+    positions,
+    setFilteredDevices,
+    setFilteredPositions,
+  ]);
 };

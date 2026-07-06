@@ -92,7 +92,9 @@ const SelectList = ({ Data, setData = () => null }) => {
                 onChange={handleChangeGroup(`Elements ${indexGroup}`)}
               >
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{`Group ${indexGroup}`}</Typography>
+                  <Typography
+                    sx={{ width: '33%', flexShrink: 0 }}
+                  >{`Group ${indexGroup}`}</Typography>
                   <IconButton
                     sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
                     onClick={(e) => {
@@ -106,7 +108,12 @@ const SelectList = ({ Data, setData = () => null }) => {
                 <AccordionDetails className={classes.details}>
                   {expandedGroup === `Elements ${indexGroup}` && (
                     <>
-                      <TextField required label="Name" variant="standard" value={group.name ? group.name : ''} />
+                      <TextField
+                        required
+                        label="Name"
+                        variant="standard"
+                        value={group.name ? group.name : ''}
+                      />
                       <div className={classes.details}>
                         {React.Children.toArray(
                           Object.values(group.items).map((element, index, list) => (
@@ -120,7 +127,9 @@ const SelectList = ({ Data, setData = () => null }) => {
                                     {`Element ${element.title}`}
                                   </Typography>
                                 ) : (
-                                  <Typography sx={{ width: '33%', flexShrink: 0 }}>{`Element ${index}`}</Typography>
+                                  <Typography
+                                    sx={{ width: '33%', flexShrink: 0 }}
+                                  >{`Element ${index}`}</Typography>
                                 )}
 
                                 <IconButton
@@ -163,14 +172,14 @@ const SelectList = ({ Data, setData = () => null }) => {
                                 )}
                               </AccordionDetails>
                             </Accordion>
-                          ))
+                          )),
                         )}
                       </div>
                     </>
                   )}
                 </AccordionDetails>
               </Accordion>
-            ))
+            )),
           )}
         </div>
       )}

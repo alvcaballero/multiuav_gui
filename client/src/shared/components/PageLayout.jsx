@@ -81,7 +81,11 @@ const PageLayout = ({ menu, breadcrumbs, children }) => {
 
   return desktop ? (
     <div className={classes.desktopRoot}>
-      <Drawer variant="permanent" className={classes.desktopDrawer} classes={{ paper: classes.desktopDrawer }}>
+      <Drawer
+        variant="permanent"
+        className={classes.desktopDrawer}
+        classes={{ paper: classes.desktopDrawer }}
+      >
         <Toolbar>
           <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => navigate('/')}>
             <ArrowBackIcon />
@@ -105,7 +109,12 @@ const PageLayout = ({ menu, breadcrumbs, children }) => {
       </Drawer>
       <AppBar className={classes.mobileToolbar} position="static" color="inherit">
         <Toolbar>
-          <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => setOpenDrawer(true)}>
+          <IconButton
+            color="inherit"
+            edge="start"
+            sx={{ mr: 2 }}
+            onClick={() => setOpenDrawer(true)}
+          >
             <MenuIcon />
           </IconButton>
           <PageTitle breadcrumbs={breadcrumbs} />

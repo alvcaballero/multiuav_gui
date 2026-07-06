@@ -57,7 +57,12 @@ const MissionTransformDialog = ({ open, onClose }) => {
 
   const isApplyDisabled = () => {
     if (mode === 'rotate') return angleDeg === '' || isNaN(parseFloat(angleDeg));
-    return deltaLat === '' || deltaLng === '' || isNaN(parseFloat(deltaLat)) || isNaN(parseFloat(deltaLng));
+    return (
+      deltaLat === '' ||
+      deltaLng === '' ||
+      isNaN(parseFloat(deltaLat)) ||
+      isNaN(parseFloat(deltaLng))
+    );
   };
 
   return (

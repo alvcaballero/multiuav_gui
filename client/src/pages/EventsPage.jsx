@@ -107,7 +107,11 @@ const EventsPage = () => {
                   {items &&
                     items.map((event) => (
                       <TableRow key={event.id} hover>
-                        <TableCell>{event.deviceId ? (devices[event.deviceId]?.name ?? event.deviceId) : 'GCS'}</TableCell>
+                        <TableCell>
+                          {event.deviceId
+                            ? (devices[event.deviceId]?.name ?? event.deviceId)
+                            : 'GCS'}
+                        </TableCell>
                         <TableCell>
                           <Chip label={event.type} size="small" variant="outlined" />
                         </TableCell>

@@ -9,12 +9,12 @@ const ANIM_DURATION = 0.4; // seconds
 
 // BoxGeometry material index order: +X, -X, +Y, -Y, +Z, -Z
 const BOX_FACE_ORDER = [
-  { label: 'E', normal: new THREE.Vector3( 1,  0,  0), color: '#3498db' },
-  { label: 'W', normal: new THREE.Vector3(-1,  0,  0), color: '#2980b9' },
-  { label: 'T', normal: new THREE.Vector3( 0,  1,  0), color: '#2ecc71' },
-  { label: 'B', normal: new THREE.Vector3( 0, -1,  0), color: '#27ae60' },
-  { label: 'S', normal: new THREE.Vector3( 0,  0,  1), color: '#e74c3c' },
-  { label: 'N', normal: new THREE.Vector3( 0,  0, -1), color: '#c0392b' },
+  { label: 'E', normal: new THREE.Vector3(1, 0, 0), color: '#3498db' },
+  { label: 'W', normal: new THREE.Vector3(-1, 0, 0), color: '#2980b9' },
+  { label: 'T', normal: new THREE.Vector3(0, 1, 0), color: '#2ecc71' },
+  { label: 'B', normal: new THREE.Vector3(0, -1, 0), color: '#27ae60' },
+  { label: 'S', normal: new THREE.Vector3(0, 0, 1), color: '#e74c3c' },
+  { label: 'N', normal: new THREE.Vector3(0, 0, -1), color: '#c0392b' },
 ];
 
 // ── label texture ──────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ export default function OrientationGizmo({ controlsRef }) {
     gizmoScene.add(dir);
 
     const materials = BOX_FACE_ORDER.map(
-      (f) => new THREE.MeshStandardMaterial({ map: makeLabelTexture(f.label, f.color) })
+      (f) => new THREE.MeshStandardMaterial({ map: makeLabelTexture(f.label, f.color) }),
     );
     const gizmoBox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials);
     gizmoScene.add(gizmoBox);
@@ -78,7 +78,7 @@ export default function OrientationGizmo({ controlsRef }) {
     }
 
     const fromPos = cam.position.clone();
-    const fromQ   = cam.quaternion.clone();
+    const fromQ = cam.quaternion.clone();
 
     const tempCam = cam.clone();
     tempCam.position.copy(toPos);
@@ -104,7 +104,7 @@ export default function OrientationGizmo({ controlsRef }) {
       const vy = h - GIZMO_SIZE;
       if (px < vx || py < vy) return;
 
-      const ndcX =  ((px - vx) / GIZMO_SIZE) * 2 - 1;
+      const ndcX = ((px - vx) / GIZMO_SIZE) * 2 - 1;
       const ndcY = -((py - vy) / GIZMO_SIZE) * 2 + 1;
 
       raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), gizmoCam);

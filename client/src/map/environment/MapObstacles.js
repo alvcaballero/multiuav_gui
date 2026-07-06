@@ -585,7 +585,7 @@ const createCircleFeature = (center, radiusMeters, properties = {}) => {
   const circleFeature = circle(
     [center.lng, center.lat],
     radiusMeters / 1000, // turf uses kilometers
-    { steps: 64, units: 'kilometers' }
+    { steps: 64, units: 'kilometers' },
   );
 
   return {
@@ -622,7 +622,7 @@ const MapObstacles = ({
       exclusion: `${id}-exclusion-zones`,
       points: `${id}-obstacle-points`,
     }),
-    [id]
+    [id],
   );
 
   const layerIds = useMemo(
@@ -634,7 +634,7 @@ const MapObstacles = ({
       points: `${id}-obstacle-points`,
       labels: `${id}-obstacle-labels`,
     }),
-    [id]
+    [id],
   );
 
   const processObstacles = useCallback(() => {
@@ -838,7 +838,7 @@ const MapObstacles = ({
         });
       }
     },
-    [sourceIds, layerIds, colors]
+    [sourceIds, layerIds, colors],
   );
 
   // Function to remove all sources and layers

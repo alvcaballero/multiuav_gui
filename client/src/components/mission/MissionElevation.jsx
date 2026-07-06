@@ -1,6 +1,15 @@
 import { useEffect, Fragment, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { CartesianGrid, Line, Legend, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  CartesianGrid,
+  Line,
+  Legend,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { FormControl, InputLabel, Select, Box, MenuItem, CircularProgress } from '@mui/material';
 import palette from '../../shared/palette';
 import { makeStyles } from 'tss-react/mui';
@@ -74,7 +83,8 @@ const MissionElevation = () => {
   const selectRT = useSelector((state) => state.mission.elevation.selectRT);
   const loading = useSelector((state) => state.mission.elevation.loading);
 
-  const items = selectRT === -1 ? elevProfile : elevProfile[selectRT] ? [elevProfile[selectRT]] : [];
+  const items =
+    selectRT === -1 ? elevProfile : elevProfile[selectRT] ? [elevProfile[selectRT]] : [];
 
   const routes = items.map((it) => it.data);
   const elevValues = routes.flat().map((it) => it['elevation']);
@@ -120,7 +130,10 @@ const MissionElevation = () => {
 
     if (currentLocation.length > location.length) {
       if (currentLocation[currentLocation.length - 1].length > 0) {
-        fetchElevation(currentLocation, missionRoute.map((el) => el.id));
+        fetchElevation(
+          currentLocation,
+          missionRoute.map((el) => el.id),
+        );
       } else {
         dispatch(missionActions.setElevationLocation(currentLocation));
       }
@@ -147,7 +160,10 @@ const MissionElevation = () => {
       const latloncur = currentLocation[i].map((wp) => [wp[0], wp[1]]);
 
       if (JSON.stringify(latlonloc) !== JSON.stringify(latloncur)) {
-        fetchElevation(currentLocation, missionRoute.map((el) => el.id));
+        fetchElevation(
+          currentLocation,
+          missionRoute.map((el) => el.id),
+        );
         return;
       }
 

@@ -1,15 +1,14 @@
-import React from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import React from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { makeStyles } from 'tss-react/mui';
 
-import { LinearProgress, useMediaQuery, useTheme } from "@mui/material";
-import SocketController from "./SocketController";
+import { LinearProgress, useMediaQuery, useTheme } from '@mui/material';
+import SocketController from './SocketController';
 
 import { useDispatch } from 'react-redux';
 
-import {  geofencesActions } from './store';
+import { geofencesActions } from './store';
 import { useEffectAsync } from './reactHelper';
-
 
 const useStyles = makeStyles()(() => ({
   page: {
@@ -27,14 +26,13 @@ const App = () => {
   const dispatch = useDispatch();
 
   useEffectAsync(async () => {
-      const response = await fetch('/api/geofences');
-      if (response.ok) {
-        dispatch(geofencesActions.refresh(await response.json()));
-      } else {
-        throw Error(await response.text());
-      }
+    const response = await fetch('/api/geofences');
+    if (response.ok) {
+      dispatch(geofencesActions.refresh(await response.json()));
+    } else {
+      throw Error(await response.text());
+    }
   }, []);
-
 
   return (
     <>

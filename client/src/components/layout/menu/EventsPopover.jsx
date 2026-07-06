@@ -60,8 +60,24 @@ const EventsPopover = ({ anchor, onClose }) => {
       PaperProps={{ sx: { width: 360, mt: 0.5 } }}
     >
       <Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1.5, py: 0.75 }}>
-          <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 1.5,
+            py: 0.75,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              textTransform: 'uppercase',
+              color: 'text.secondary',
+            }}
+          >
             Recent Events
           </Typography>
           <Typography variant="caption" sx={{ color: grey[400], fontSize: 10 }}>
@@ -89,9 +105,7 @@ const EventsPopover = ({ anchor, onClose }) => {
               <Typography className={classes.eventMsg}>
                 {ev.attributes?.message ?? ev.type}
               </Typography>
-              <Typography className={classes.eventTime}>
-                {relativeTime(ev.eventTime)}
-              </Typography>
+              <Typography className={classes.eventTime}>{relativeTime(ev.eventTime)}</Typography>
             </div>
           ))
         )}
@@ -101,7 +115,10 @@ const EventsPopover = ({ anchor, onClose }) => {
           <Button
             size="small"
             endIcon={<NotificationsIcon sx={{ fontSize: 13 }} />}
-            onClick={() => { onClose(); navigate('/reports/events'); }}
+            onClick={() => {
+              onClose();
+              navigate('/reports/events');
+            }}
             sx={{ fontSize: 11, textTransform: 'none', color: grey[600] }}
           >
             View all events

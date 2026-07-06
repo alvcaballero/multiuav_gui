@@ -160,7 +160,7 @@ const SquareMove = ({
             {right < 50 && <div className={classes.text_right}> {`${data[4]}m`}</div>}
             {up < 50 && <div className={classes.text_up}> {`${data[1]}m`}</div>}
             {down < 50 && <div className={classes.text_down}> {`${data[3]}m`}</div>}
-            <img className={classes.icon} src={mapIcons[mapIconKey('ArrowMap')]} alt='' />
+            <img className={classes.icon} src={mapIcons[mapIconKey('ArrowMap')]} alt="" />
           </>
         )}
         {front_view && (
@@ -169,12 +169,12 @@ const SquareMove = ({
             {right < 50 && <div className={classes.text_right}> {`${data[2]}m`}</div>}
             {up < 50 && <div className={classes.text_up}> {`${data[5]}m`}</div>}
             {down < 50 && <div className={classes.text_down}> {`${data[0]}m`}</div>}
-            <img className={classes.icon} src={frontIcons[mapIconKey('ArrowMap')]} alt='' />
+            <img className={classes.icon} src={frontIcons[mapIconKey('ArrowMap')]} alt="" />
           </>
         )}
       </div>
-      {!front_view && <Typography align='center'>Top view</Typography>}
-      {front_view && <Typography align='center'>Front view</Typography>}
+      {!front_view && <Typography align="center">Top view</Typography>}
+      {front_view && <Typography align="center">Front view</Typography>}
 
       {test && (
         <div>

@@ -82,7 +82,7 @@ const MainPage3D = () => {
 
   const selectedPosition = useMemo(
     () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
-    [filteredPositions, selectedDeviceId]
+    [filteredPositions, selectedDeviceId],
   );
 
   const [keyword, setKeyword] = useState('');
@@ -93,7 +93,15 @@ const MainPage3D = () => {
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');
   const [filterMap, setFilterMap] = usePersistedState('filterMap', false);
 
-  useFilter(keyword, filter, filterSort, filterMap, positions, setFilteredDevices, setFilteredPositions);
+  useFilter(
+    keyword,
+    filter,
+    filterSort,
+    filterMap,
+    positions,
+    setFilteredDevices,
+    setFilteredPositions,
+  );
 
   const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
 

@@ -1,5 +1,13 @@
 import React from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, Box, Divider, TextField, Typography } from '@mui/material';
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Box,
+  Divider,
+  TextField,
+  Typography,
+} from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
 import SelectField from '../../shared/components/SelectField';
@@ -19,7 +27,14 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const PlanningTab = ({ sendTask, onUpdateId, onUpdateName, onUpdateObjective, onGetItems, setLocations }) => {
+const PlanningTab = ({
+  sendTask,
+  onUpdateId,
+  onUpdateName,
+  onUpdateObjective,
+  onGetItems,
+  setLocations,
+}) => {
   const { classes } = useStyles();
 
   return (
@@ -74,11 +89,46 @@ const PlanningTab = ({ sendTask, onUpdateId, onUpdateName, onUpdateObjective, on
           <Typography>Meteo</Typography>
         </AccordionSummary>
         <AccordionDetails className={classes.details}>
-          <TextField required fullWidth label="wind speed" type="number" variant="standard" value={12} />
-          <TextField required fullWidth label="Wind direction" type="number" variant="standard" value={12} />
-          <TextField required fullWidth label="Temperature" type="number" variant="standard" value={12} />
-          <TextField required fullWidth label="Humidity" type="number" variant="standard" value={12} />
-          <TextField required fullWidth label="Pressure" type="number" variant="standard" value={12} />
+          <TextField
+            required
+            fullWidth
+            label="wind speed"
+            type="number"
+            variant="standard"
+            value={12}
+          />
+          <TextField
+            required
+            fullWidth
+            label="Wind direction"
+            type="number"
+            variant="standard"
+            value={12}
+          />
+          <TextField
+            required
+            fullWidth
+            label="Temperature"
+            type="number"
+            variant="standard"
+            value={12}
+          />
+          <TextField
+            required
+            fullWidth
+            label="Humidity"
+            type="number"
+            variant="standard"
+            value={12}
+          />
+          <TextField
+            required
+            fullWidth
+            label="Pressure"
+            type="number"
+            variant="standard"
+            value={12}
+          />
         </AccordionDetails>
       </Accordion>
     </Box>

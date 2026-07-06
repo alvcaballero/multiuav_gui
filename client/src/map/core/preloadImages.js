@@ -123,7 +123,7 @@ export default async () => {
               console.log('faild to load custom icon');
               // fallback: use default-neutral icon if asset missing
             }
-          })
+          }),
       );
     }
   } catch (_) {
@@ -134,7 +134,11 @@ export default async () => {
   Object.keys(palette.colors_devices).forEach((color) => {
     mapImages[`background-${color}`] = prepareIcon(background, null, colors[color]);
     mapImages[`mission-${color}`] = prepareIcon(backgroundBorder, null, colors[color]);
-    mapImages[`backgroundDirection-${color}`] = prepareIcon(backgroundDirection, null, colors[color]);
+    mapImages[`backgroundDirection-${color}`] = prepareIcon(
+      backgroundDirection,
+      null,
+      colors[color],
+    );
   });
   await Promise.all(
     Object.keys(mapIcons).map(async (category) => {
@@ -146,9 +150,13 @@ export default async () => {
         return;
       }
       ['info', 'success', 'error', 'neutral'].forEach((color) => {
-        mapImages[`${category}-${color}`] = prepareIcon(background, icon, theme.palette[color].main);
+        mapImages[`${category}-${color}`] = prepareIcon(
+          background,
+          icon,
+          theme.palette[color].main,
+        );
       });
-    })
+    }),
   );
   console.log('preload icon');
   console.log(mapImages);

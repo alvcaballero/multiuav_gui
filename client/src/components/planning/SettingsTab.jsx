@@ -62,10 +62,20 @@ const SettingsTab = ({
           />
         </div>
 
-        <Button variant="contained" size="large" className={classes.panelButton} onClick={onMissionTask}>
+        <Button
+          variant="contained"
+          size="large"
+          className={classes.panelButton}
+          onClick={onMissionTask}
+        >
           Planning with Global Setting
         </Button>
-        <Button variant="contained" size="large" className={classes.panelButton} onClick={onSaveGlobalMarkers}>
+        <Button
+          variant="contained"
+          size="large"
+          className={classes.panelButton}
+          onClick={onSaveGlobalMarkers}
+        >
           Save Global Settings
         </Button>
       </Box>

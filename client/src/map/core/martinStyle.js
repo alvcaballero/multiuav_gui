@@ -8,10 +8,20 @@ const backgroundWater = {
   //maxzoom: 6, // hide before the low-res coastline becomes visible
   paint: { 'fill-color': '#a0c8f0' },
 };
-const backgroundLand = { id: 'background', type: 'background', paint: { 'background-color': '#f8f4f0' } };
+const backgroundLand = {
+  id: 'background',
+  type: 'background',
+  paint: { 'background-color': '#f8f4f0' },
+};
 
 const water = [
-  { id: 'water', type: 'fill', source: 'martin', 'source-layer': 'water', paint: { 'fill-color': '#a0c8f0' } },
+  {
+    id: 'water',
+    type: 'fill',
+    source: 'martin',
+    'source-layer': 'water',
+    paint: { 'fill-color': '#a0c8f0' },
+  },
   {
     id: 'waterway',
     type: 'line',
@@ -107,7 +117,10 @@ const roads = [
     source: 'martin',
     'source-layer': 'transportation',
     filter: ['==', 'class', 'motorway'],
-    paint: { 'line-color': '#fc8f3f', 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.5, 14, 6] },
+    paint: {
+      'line-color': '#fc8f3f',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.5, 14, 6],
+    },
   },
   {
     id: 'road-trunk',
@@ -115,7 +128,10 @@ const roads = [
     source: 'martin',
     'source-layer': 'transportation',
     filter: ['==', 'class', 'trunk'],
-    paint: { 'line-color': '#fdc874', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 1, 14, 4] },
+    paint: {
+      'line-color': '#fdc874',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 7, 1, 14, 4],
+    },
   },
   {
     id: 'road-primary',
@@ -123,7 +139,10 @@ const roads = [
     source: 'martin',
     'source-layer': 'transportation',
     filter: ['==', 'class', 'primary'],
-    paint: { 'line-color': '#fdc874', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.8, 14, 3] },
+    paint: {
+      'line-color': '#fdc874',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.8, 14, 3],
+    },
   },
   {
     id: 'road-secondary',
@@ -131,7 +150,10 @@ const roads = [
     source: 'martin',
     'source-layer': 'transportation',
     filter: ['==', 'class', 'secondary'],
-    paint: { 'line-color': '#f0d080', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 14, 2.5] },
+    paint: {
+      'line-color': '#f0d080',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 14, 2.5],
+    },
   },
   {
     id: 'road-street',
@@ -139,7 +161,10 @@ const roads = [
     source: 'martin',
     'source-layer': 'transportation',
     filter: ['in', 'class', 'minor', 'service', 'tertiary'],
-    paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.4, 14, 1.5] },
+    paint: {
+      'line-color': '#ffffff',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.4, 14, 1.5],
+    },
   },
   {
     id: 'road-label',

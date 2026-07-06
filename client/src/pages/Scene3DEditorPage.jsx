@@ -51,13 +51,19 @@ import { useCatch } from '../reactHelper';
 // Helpers — mirrors convertion.js but inverse: XYZ (meters) → lat/lon
 // ---------------------------------------------------------------------------
 const mercatorPerMeterAt = (origin) => {
-  const ref = maplibregl.MercatorCoordinate.fromLngLat({ lng: origin.lng, lat: origin.lat }, origin.alt ?? 0);
+  const ref = maplibregl.MercatorCoordinate.fromLngLat(
+    { lng: origin.lng, lat: origin.lat },
+    origin.alt ?? 0,
+  );
   return ref.meterInMercatorCoordinateUnits();
 };
 
 /** Local XYZ (East, North, Up in metres) relative to origin → { lat, lng, alt } */
 const xyzToLatLon = (origin, x, y, z) => {
-  const ref = maplibregl.MercatorCoordinate.fromLngLat({ lng: origin.lng, lat: origin.lat }, origin.alt ?? 0);
+  const ref = maplibregl.MercatorCoordinate.fromLngLat(
+    { lng: origin.lng, lat: origin.lat },
+    origin.alt ?? 0,
+  );
   const mpu = ref.meterInMercatorCoordinateUnits();
   const mCoord = new maplibregl.MercatorCoordinate(ref.x + x * mpu, ref.y - y * mpu, ref.z);
   const lngLat = mCoord.toLngLat();
@@ -66,12 +72,15 @@ const xyzToLatLon = (origin, x, y, z) => {
 
 /** { lat, lng, alt } → local XYZ (East, North, Up in metres) relative to origin */
 const latLonToXyz = (origin, lat, lng, alt) => {
-  const ref = maplibregl.MercatorCoordinate.fromLngLat({ lng: origin.lng, lat: origin.lat }, origin.alt ?? 0);
+  const ref = maplibregl.MercatorCoordinate.fromLngLat(
+    { lng: origin.lng, lat: origin.lat },
+    origin.alt ?? 0,
+  );
   const pt = maplibregl.MercatorCoordinate.fromLngLat({ lng, lat }, alt ?? 0);
   const mpu = ref.meterInMercatorCoordinateUnits();
   return {
-    x: +(((pt.x - ref.x) / mpu).toFixed(2)),
-    y: +(((ref.y - pt.y) / mpu).toFixed(2)),
+    x: +((pt.x - ref.x) / mpu).toFixed(2),
+    y: +((ref.y - pt.y) / mpu).toFixed(2),
     z: +(alt ?? 0),
   };
 };
@@ -243,12 +252,12 @@ const OriginTab = () => {
     (lat, lng, alt) => {
       dispatch(sessionActions.updateScene3dOrigin({ lat: +lat, lng: +lng, alt: +alt }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const commitOrigin = useCallback(
     () => applyOrigin(latLocal, lngLocal, altLocal),
-    [applyOrigin, latLocal, lngLocal, altLocal]
+    [applyOrigin, latLocal, lngLocal, altLocal],
   );
 
   const handleKey = (e) => {
@@ -263,14 +272,14 @@ const OriginTab = () => {
       setAltLocal(String(alt));
       applyOrigin(base.latitude, base.longitude, alt);
     },
-    [applyOrigin, origin.alt]
+    [applyOrigin, origin.alt],
   );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
       <Typography variant="body2" color="text.secondary">
-        The origin is the reference point (0, 0, 0) of the 3D scene. All XYZ positions are expressed in metres
-        relative to it (X = East, Y = North, Z = Up).
+        The origin is the reference point (0, 0, 0) of the 3D scene. All XYZ positions are expressed
+        in metres relative to it (X = East, Y = North, Z = Up).
       </Typography>
 
       <TextField
@@ -316,7 +325,11 @@ const OriginTab = () => {
       {bases.length > 0 && (
         <>
           <Typography variant="subtitle2">Set origin from base</Typography>
-          <List dense disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+          <List
+            dense
+            disablePadding
+            sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}
+          >
             {bases.map((base, idx) => {
               const isActive =
                 Math.abs(origin.lat - base.latitude) < 1e-7 &&
@@ -339,7 +352,10 @@ const OriginTab = () => {
                       primary={base.name || `Base ${idx}`}
                       secondary={`(${base.latitude?.toFixed(5)}, ${base.longitude?.toFixed(5)})`}
                       primaryTypographyProps={{ variant: 'body2' }}
-                      secondaryTypographyProps={{ variant: 'caption', sx: { fontFamily: 'monospace' } }}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                        sx: { fontFamily: 'monospace' },
+                      }}
                     />
                   </ListItemButton>
                 </Tooltip>
@@ -381,7 +397,7 @@ const MarkersTab = () => {
       const xyz = latLonToXyz(origin, lat, lng, 0);
       return Math.abs(xyz.x) < range && Math.abs(xyz.y) < range;
     },
-    [origin, range]
+    [origin, range],
   );
 
   const [expandedBase, setExpandedBase] = useState(false);
@@ -410,7 +426,7 @@ const MarkersTab = () => {
       newBases[index].longitude = lng;
       dispatch(sessionActions.updateMarker({ ...markers, bases: newBases }));
     },
-    [dispatch, markers, origin]
+    [dispatch, markers, origin],
   );
 
   // -- Elements (items inside each group) --
@@ -422,7 +438,7 @@ const MarkersTab = () => {
       newElements[groupIdx].items[itemIdx].longitude = lng;
       dispatch(sessionActions.updateMarker({ ...markers, elements: newElements }));
     },
-    [dispatch, markers, origin]
+    [dispatch, markers, origin],
   );
 
   const updateElementHeading = useCallback(
@@ -431,7 +447,7 @@ const MarkersTab = () => {
       newElements[groupIdx].items[itemIdx].heading = Math.min(360, Math.max(0, +heading));
       dispatch(sessionActions.updateMarker({ ...markers, elements: newElements }));
     },
-    [dispatch, markers]
+    [dispatch, markers],
   );
 
   return (
@@ -492,14 +508,19 @@ const MarkersTab = () => {
 
       {/* ---- ELEMENTS ---- */}
       {(() => {
-        const groupsWithVisible = markers.elements.map((group) => ({
-          group,
-          visibleItems: (group.items ?? [])
-            .map((item, iIdx) => ({ item, iIdx }))
-            .filter(({ item }) => inRange(item.latitude, item.longitude)),
-        })).filter(({ visibleItems }) => visibleItems.length > 0);
+        const groupsWithVisible = markers.elements
+          .map((group) => ({
+            group,
+            visibleItems: (group.items ?? [])
+              .map((item, iIdx) => ({ item, iIdx }))
+              .filter(({ item }) => inRange(item.latitude, item.longitude)),
+          }))
+          .filter(({ visibleItems }) => visibleItems.length > 0);
 
-        const totalVisible = groupsWithVisible.reduce((acc, { visibleItems }) => acc + visibleItems.length, 0);
+        const totalVisible = groupsWithVisible.reduce(
+          (acc, { visibleItems }) => acc + visibleItems.length,
+          0,
+        );
         const totalAll = markers.elements.reduce((acc, g) => acc + (g.items?.length ?? 0), 0);
 
         return (
@@ -524,7 +545,12 @@ const MarkersTab = () => {
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography variant="body2" sx={{ flexGrow: 1 }} noWrap>
                       {group.name || `Group ${realGIdx}`}
-                      <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ ml: 1 }}
+                      >
                         ({group.type}) · {visibleItems.length} / {group.items?.length ?? 0} items
                       </Typography>
                     </Typography>
@@ -533,7 +559,10 @@ const MarkersTab = () => {
                     {visibleItems.map(({ item, iIdx }) => {
                       const xyz = latLonToXyz(origin, item.latitude, item.longitude, 0);
                       return (
-                        <Box key={item.id ?? iIdx} sx={{ pl: 1, borderLeft: '2px solid', borderColor: 'divider' }}>
+                        <Box
+                          key={item.id ?? iIdx}
+                          sx={{ pl: 1, borderLeft: '2px solid', borderColor: 'divider' }}
+                        >
                           <Typography variant="caption" color="text.secondary">
                             {item.name || `Item ${iIdx}`} · lat {item.latitude?.toFixed(5)} · lon{' '}
                             {item.longitude?.toFixed(5)}
@@ -603,7 +632,7 @@ const TransformDialog = ({ open, onClose, routes, origin }) => {
       const shifted = new maplibregl.MercatorCoordinate(
         ref.x + parseFloat(dx) * mpu,
         ref.y - parseFloat(dy) * mpu,
-        0
+        0,
       );
       const shiftedLL = shifted.toLngLat();
       const deltaLat = shiftedLL.lat - origin.lat;
@@ -642,7 +671,11 @@ const TransformDialog = ({ open, onClose, routes, origin }) => {
 
           <FormControl size="small" fullWidth>
             <InputLabel>Route</InputLabel>
-            <Select value={routeIndex} label="Route" onChange={(e) => setRouteIndex(e.target.value)}>
+            <Select
+              value={routeIndex}
+              label="Route"
+              onChange={(e) => setRouteIndex(e.target.value)}
+            >
               <MenuItem value={-1}>All routes</MenuItem>
               {routes.map((route, i) => (
                 <MenuItem key={route.id ?? i} value={i}>
@@ -727,10 +760,10 @@ const WaypointsTab = () => {
           routeIndex,
           wpIndex,
           pos: [geo.lat, geo.lng, geo.alt],
-        })
+        }),
       );
     },
-    [dispatch, origin]
+    [dispatch, origin],
   );
 
   const toggleWp = (rIdx, wIdx) => {
@@ -746,7 +779,11 @@ const WaypointsTab = () => {
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1 }}>
         <Tooltip title="Transform mission (rotate / translate)">
           <span>
-            <IconButton size="small" onClick={() => setTransformOpen(true)} disabled={routes.length === 0}>
+            <IconButton
+              size="small"
+              onClick={() => setTransformOpen(true)}
+              disabled={routes.length === 0}
+            >
               <HandymanIcon fontSize="small" />
             </IconButton>
           </span>
@@ -779,7 +816,10 @@ const WaypointsTab = () => {
               const xyz = latLonToXyz(origin, lat, lng, alt);
               const key = `${rIdx}-${wIdx}`;
               return (
-                <Box key={wIdx} sx={{ pl: 1, borderLeft: '2px solid', borderColor: 'primary.light' }}>
+                <Box
+                  key={wIdx}
+                  sx={{ pl: 1, borderLeft: '2px solid', borderColor: 'primary.light' }}
+                >
                   <Box
                     sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 1 }}
                     onClick={() => toggleWp(rIdx, wIdx)}
@@ -799,7 +839,11 @@ const WaypointsTab = () => {
                   </Box>
                   {expandedWp[key] && (
                     <Box sx={{ mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mb: 0.5 }}
+                      >
                         lat {lat.toFixed(6)} · lon {lng.toFixed(6)} · alt {alt} m
                       </Typography>
                       <XYZEditor

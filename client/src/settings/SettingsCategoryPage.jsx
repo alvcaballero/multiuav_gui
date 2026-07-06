@@ -11,8 +11,12 @@ import {
   TableFooter,
   FormControlLabel,
   Switch,
+  IconButton,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { IconButton, Menu, MenuItem, useMediaQuery, useTheme } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
@@ -28,7 +32,6 @@ import useSettingsStyles from './common/useSettingsStyles';
 import RemoveDialog from '../components/ui/RemoveDialog';
 
 const SettingsCategoryPage = () => {
-
   const { classes } = useSettingsStyles();
   const navigate = useNavigate();
 
@@ -57,19 +60,17 @@ const SettingsCategoryPage = () => {
 
   const handleEdit = (item) => {
     navigate(`/settings/category/${item}`);
-  }
+  };
 
   const handleRemove = (item) => {
     setMyCategory(item);
     setRemoving(true);
-  }
+  };
 
   const hamdleRemoveResult = (result) => {
     setMyCategory(null);
     setRemoving(false);
-  }
-
-
+  };
 
   return (
     <>
@@ -111,7 +112,14 @@ const SettingsCategoryPage = () => {
           </TableBody>
         </Table>
       </PageLayout>
-      {myCategory && <RemoveDialog open={removing} endpoint="category" ItemId={myCategory} onResult={hamdleRemoveResult} />}
+      {myCategory && (
+        <RemoveDialog
+          open={removing}
+          endpoint="category"
+          ItemId={myCategory}
+          onResult={hamdleRemoveResult}
+        />
+      )}
     </>
   );
 };
