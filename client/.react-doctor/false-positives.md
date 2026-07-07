@@ -1,5 +1,13 @@
 # React Doctor - False Positives
 
+## react-doctor/no-fetch-in-effect
+
+- `src/components/mission/WaypointRouteList.jsx:191` - `fetch` va con `AbortController` + cleanup correcto (`controller.abort()` en el return del efecto). El proyecto no adoptó react-query/swr; este es exactamente el caso de excepción documentado por la propia regla ("one-shot fetch with proper AbortController cleanup in a small project that has not adopted a data-fetching library").
+- `src/hooks/useMarkerTypes.js:9` - mismo patrón: `AbortController` + cleanup, más un cache a nivel de módulo (`cachedTypes`) que evita refetch en montajes posteriores.
+- `src/scene3d/core/useMartinStatus.js:13` - usa un flag `cancelled` (no AbortController, pero equivalente: evita `setState` tras desmontar) dentro de un polling de `setInterval` con cleanup que limpia el interval y marca `cancelled = true`.
+- `src/map/draw/MapGeofenceEdit.js:73,99,118` - el analizador ve un `fetch(...)` léxicamente dentro de un `useEffect`, pero en los tres casos el fetch vive dentro de un `listener` async que MapboxDraw invoca vía `map.on('draw.create'|'draw.delete'|'draw.update', listener)` - o sea, un callback de evento de una librería de terceros, no código que corre cuando el efecto se dispara. El efecto solo hace `map.on`/`map.off` (setup/cleanup del listener), el patrón textbook correcto para sincronizar con una librería imperativa.
+- `src/map/geocoder/MapGeocoder.js:12` - mismo patrón: el `fetch` está dentro de `forwardGeocode`, un callback que `MaplibreGeocoder` invoca cuando el usuario escribe en la caja de búsqueda del mapa. El efecto solo registra/desregistra el control (`map.addControl`/`map.removeControl`).
+
 ## react-doctor/rerender-state-only-in-handlers
 
 - `src/SocketController.jsx` `notifications` - leído dentro de `useEffect([notifications])` que dispara `enqueueSnackbar` (toast visible en pantalla); convertir a `useRef` rompería el disparo del efecto porque mutar `.current` no re-ejecuta efectos.
@@ -18,7 +26,7 @@
 
 - `src/store/mission.js:217` (`copyWaypoint` reducer) - `state.route[routeIndex].wp[wpIndex]` dentro de un reducer de Redux Toolkit (`createSlice`) es un draft/Proxy de Immer, no un objeto plano. Verificado con un test real: `structuredClone()` sobre un draft de Immer lanza `DOMException: could not be cloned` porque el algoritmo de clonado estructurado no puede serializar el Proxy. `JSON.parse(JSON.stringify(x))` funciona acá porque pasa por texto plano y escapa el proxy; `structuredClone` no tiene ese efecto secundario y por eso falla. No convertir sin antes envolver en algo que materialice el draft a un objeto plano primero (ej. `current(state.route[...])` de Immer).
 
-## react-doctor/no-derived-state + no-derived-state-effect
+## react-doctor/no-derived-state + no-derived-state-effect (alias visto también como `no-adjust-state-on-prop-change`, error severity, mismo caso)
 
 - `src/components/mission/WaypointRouteList.jsx:63,66` (`ActionValueField`) y `:113,116` (`WaypointParamField`) `draft`, y `:214` (componente principal) `posInput` - patrón deliberado de "buffer local editable con commit on blur": el usuario escribe en el input (`onChange` actualiza el buffer sin tocar el valor real todavía) y solo `onBlur`/`onCommit` sube el cambio. El `useEffect` que resincroniza el buffer existe para reflejar cambios EXTERNOS al valor mientras el campo no está siendo editado activamente (otro proceso actualiza el waypoint, o arrastrar el marcador en el mapa mientras el acordeón de edición está abierto - ver comentario en línea 211: "Keep posInput in sync when waypoint is updated externally"). Eliminar el state y computar inline rompería la posibilidad de escribir un valor intermedio/inválido temporalmente (ej. borrar el campo para reescribir) sin que se pise letra a letra por el valor externo. No es un simple espejo de prop - es el patrón estándar de input controlado con commit diferido.
 - `src/pages/Scene3DEditorPage.jsx:126` (`XYZEditor`) `local` y `:192` (`HeadingEditor`) `local` - mismo patrón de buffer editable con commit on blur/Enter (comentario explícito en línea 128: "keep local in sync when parent changes (e.g. tab switch)"). Igual que en `WaypointRouteList.jsx`: eliminar el state rompería la edición de coordenadas/heading letra a letra.
