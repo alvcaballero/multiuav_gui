@@ -2,6 +2,10 @@ import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useAsyncTask } from '../../reactHelper';
 
+const defaultKeyGetter = (item) => item.id;
+const defaultTitleGetter = (item) => item.name;
+const defaultGetItems = (item) => item;
+
 const SelectField = ({
   label,
   fullWidth,
@@ -12,9 +16,9 @@ const SelectField = ({
   onChange,
   endpoint,
   data,
-  keyGetter = (item) => item.id,
-  titleGetter = (item) => item.name,
-  getItems = (item) => item,
+  keyGetter = defaultKeyGetter,
+  titleGetter = defaultTitleGetter,
+  getItems = defaultGetItems,
 }) => {
   const [fetchedItems, setFetchedItems] = useState(undefined);
   const items = endpoint ? fetchedItems : data;
