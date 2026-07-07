@@ -411,6 +411,8 @@ const PlanningPage = () => {
 
     if (requestPlanning >= SUCCESS_CODE || requestPlanning >= MAX_RETRIES) return;
 
+    let cancelled = false;
+
     const fetchData = async () => {
       try {
         const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${SendTask.id}`);
@@ -418,6 +420,7 @@ const PlanningPage = () => {
 
         const data = await response.json();
         const planResult = data.results?.[SendTask.id];
+        if (cancelled) return;
         if (planResult?.hasOwnProperty('route')) {
           setRequestPlanning(SUCCESS_CODE);
           dispatch(missionActions.updateMission({ ...planResult, version: '3' }));
@@ -428,13 +431,16 @@ const PlanningPage = () => {
       } catch (error) {
         console.error('Error fetching planning data:', error);
       } finally {
-        setRequestPlanning((old) => old + 1);
+        if (!cancelled) setRequestPlanning((old) => old + 1);
       }
     };
 
     const intervalId = setInterval(fetchData, POLLING_INTERVAL);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
   }, [requestPlanning, SendTask.id, dispatch, myhostname]);
 
   return (
