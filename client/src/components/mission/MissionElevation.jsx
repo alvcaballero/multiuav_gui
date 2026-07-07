@@ -94,6 +94,8 @@ const MissionElevation = () => {
   const range = maxValue - minValue || 10;
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchElevation = async (listwp, ruteColor) => {
       dispatch(missionActions.setElevationLoading(true));
       dispatch(missionActions.setElevationLocation(listwp));
@@ -108,6 +110,7 @@ const MissionElevation = () => {
         if (!response.ok) throw new Error(response.status);
 
         const command = await response.json();
+        if (cancelled) return;
         if (command.status) {
           const elevationRoute = command.elevation.map((route, index_rt) => ({
             name: 'RT' + index_rt,
@@ -120,11 +123,11 @@ const MissionElevation = () => {
       } catch (error) {
         console.error('Error fetching elevation:', error);
       } finally {
-        dispatch(missionActions.setElevationLoading(false));
+        if (!cancelled) dispatch(missionActions.setElevationLoading(false));
       }
     };
 
-    if (missionRoute.length === 0) return;
+    if (missionRoute.length === 0) return () => (cancelled = true);
 
     const currentLocation = getWpList(missionRoute);
 
@@ -137,7 +140,7 @@ const MissionElevation = () => {
       } else {
         dispatch(missionActions.setElevationLocation(currentLocation));
       }
-      return;
+      return () => (cancelled = true);
     }
 
     if (currentLocation.length < location.length) {
@@ -149,7 +152,7 @@ const MissionElevation = () => {
       }, []);
       dispatch(missionActions.removeElevationRoute(indicesToKeep));
       dispatch(missionActions.setElevationLocation(currentLocation));
-      return;
+      return () => (cancelled = true);
     }
 
     // Same number of routes — check for changes
@@ -164,7 +167,7 @@ const MissionElevation = () => {
           currentLocation,
           missionRoute.map((el) => el.id),
         );
-        return;
+        return () => (cancelled = true);
       }
 
       // Only altitude changed — update profile in place without re-fetching
@@ -182,8 +185,10 @@ const MissionElevation = () => {
       }
       dispatch(missionActions.setElevationProfile(auxElevprofile));
       dispatch(missionActions.setElevationLocation(currentLocation));
-      return;
+      return () => (cancelled = true);
     }
+
+    return () => (cancelled = true);
   }, [missionRoute, location, dispatch, elevProfile]);
 
   const handleSelectChange = (event) => {
