@@ -60,6 +60,16 @@ const useStyles = makeStyles()((theme) => ({
     gap: theme.spacing(2),
     paddingBottom: theme.spacing(3),
   },
+  detailsRow: {
+    padding: '0px',
+    margin: '5px',
+    display: 'flex',
+    gap: '16px',
+    alignItems: 'stretch',
+    flex: 1,
+    overflow: 'hidden',
+    minHeight: 0,
+  },
 }));
 
 const RenderCamera = ({ device, myhostname }) => {
@@ -181,18 +191,7 @@ const DevicePage3D = () => {
               <RenderCamera device={thisDevice} myhostname={myhostname} />
             )}
           </div>
-          <div
-            style={{
-              padding: '0px',
-              margin: '5px',
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'stretch',
-              flex: 1,
-              overflow: 'hidden',
-              minHeight: 0,
-            }}
-          >
+          <div className={classes.detailsRow}>
             <Container
               maxWidth="false"
               style={{
