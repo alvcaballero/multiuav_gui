@@ -87,11 +87,6 @@ const MainPage = () => {
   const sessionMarkers = useSelector((state) => state.session.markers);
   const routes = useSelector((state) => state.mission.route);
 
-  const selectedPosition = useMemo(
-    () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
-    [filteredPositions, selectedDeviceId],
-  );
-
   const [keyword, setKeyword] = useState('');
   const [filter, setFilter] = usePersistedState('filter', {
     statuses: [],
@@ -106,6 +101,11 @@ const MainPage = () => {
     filterSort,
     filterMap,
     positions,
+  );
+
+  const selectedPosition = useMemo(
+    () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
+    [filteredPositions, selectedDeviceId],
   );
 
   const commandableMissionId = useSelector(getCommandableMissionId);

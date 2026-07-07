@@ -77,11 +77,6 @@ const MainPage3D = () => {
   const positions = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
 
-  const selectedPosition = useMemo(
-    () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
-    [filteredPositions, selectedDeviceId],
-  );
-
   const [keyword, setKeyword] = useState('');
   const [filter, setFilter] = usePersistedState('filter', {
     statuses: [],
@@ -96,6 +91,11 @@ const MainPage3D = () => {
     filterSort,
     filterMap,
     positions,
+  );
+
+  const selectedPosition = useMemo(
+    () => filteredPositions.find((p) => selectedDeviceId && p.deviceId === selectedDeviceId),
+    [filteredPositions, selectedDeviceId],
   );
 
   const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
