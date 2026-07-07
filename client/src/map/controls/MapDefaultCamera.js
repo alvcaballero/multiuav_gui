@@ -1,5 +1,5 @@
 import maplibregl from 'maplibre-gl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { usePreference } from '../../shared/preferences';
@@ -21,6 +21,9 @@ const isThreeDPath = (pathname) =>
 //   queremos pisar la posición donde el usuario dejó el mapa).
 let appliedDefaultCamera = false;
 let lastPathname = null;
+const markInitialized = () => {
+  appliedDefaultCamera = true;
+};
 
 const MapDefaultCamera = () => {
   const location = useLocation();
@@ -32,15 +35,9 @@ const MapDefaultCamera = () => {
   const defaultLongitude = usePreference('longitude');
   const defaultZoom = usePreference('zoom', 10);
 
-  const [initialized, setInitialized] = useState(appliedDefaultCamera);
-  const markInitialized = () => {
-    appliedDefaultCamera = true;
-    setInitialized(true);
-  };
-
   // Al volver de una vista 3D (remontaje precedido por una ruta 3D), la
   // cámara se recentra según lo que haya cambiado mientras se estuvo en 3D
-  // — independiente del flag "initialized" (que solo cubre el centrado
+  // — independiente de "appliedDefaultCamera" (que solo cubre el centrado
   // inicial único de arranque por drones/preferencia). Con UAV seleccionado
   // manda su posición; si no, manda el origen 3D (Pegman/misión).
   // Corre SOLO al montar (no reacciona a selecciones/deselecciones
@@ -74,7 +71,7 @@ const MapDefaultCamera = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (initialized) return;
+    if (appliedDefaultCamera) return;
     if (selectedDeviceId) {
       const position = positions[selectedDeviceId];
       if (position) {
@@ -114,15 +111,7 @@ const MapDefaultCamera = () => {
       });
       markInitialized();
     }
-  }, [
-    selectedDeviceId,
-    initialized,
-    defaultLatitude,
-    defaultLongitude,
-    defaultZoom,
-    positions,
-    scene3dOrigin,
-  ]);
+  }, [selectedDeviceId, defaultLatitude, defaultLongitude, defaultZoom, positions, scene3dOrigin]);
 
   return null;
 };
