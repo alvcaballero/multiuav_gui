@@ -8,6 +8,19 @@
 - `src/map/draw/MapGeofenceEdit.js:73,99,118` - el analizador ve un `fetch(...)` léxicamente dentro de un `useEffect`, pero en los tres casos el fetch vive dentro de un `listener` async que MapboxDraw invoca vía `map.on('draw.create'|'draw.delete'|'draw.update', listener)` - o sea, un callback de evento de una librería de terceros, no código que corre cuando el efecto se dispara. El efecto solo hace `map.on`/`map.off` (setup/cleanup del listener), el patrón textbook correcto para sincronizar con una librería imperativa.
 - `src/map/geocoder/MapGeocoder.js:12` - mismo patrón: el `fetch` está dentro de `forwardGeocode`, un callback que `MaplibreGeocoder` invoca cuando el usuario escribe en la caja de búsqueda del mapa. El efecto solo registra/desregistra el control (`map.addControl`/`map.removeControl`).
 
+## react-doctor/no-array-index-as-key
+
+- `src/pages/LinearGauge.jsx:89` (`i` en `for (let i = start; i <= end; i += tickInterval)`) - `i` es un valor de tick matemático (representa una altitud/medida), no una posición de array; ya es único por construcción y la lista se reconstruye completa desde valores calculados en cada render, nunca se reordena/filtra un array existente.
+- `src/components/mission/MissionElevation.jsx:213` (`elevProfile.map((_, index) => ...)`, `key={`sel${index}`}`) - `index` ES el identificador de negocio real (número de ruta), también usado como `value={index}` y como key de lookup (`elevProfile[selectRT]`) en el resto del componente.
+
+### DIFERIDO (requiere decisión de arquitectura) - ver `client/CLAUDE.md` sección "Known Issues Needing Architectural Decisions"
+
+- `src/components/mission/RouteRouteList.jsx:266` (`route.wp.map((waypoint, index_wp) => ...)`) - waypoints
+- `src/components/planning/BaseList.jsx:135` - bases
+- `src/components/planning/ElementList.jsx:115` - elements
+
+Los tres comparten la misma causa raíz: el schema de datos (`{ pos: [...] }` para waypoints, `{ latitude, longitude, name, ... }` para bases/elements) no tiene campo `id`, pero los reducers SÍ hacen `splice()` en tiempo real (`missionActions.addWaypoint` con `insertAt`, `deleteWaypoint`, `DeleteElement`) - no es solo append/clear. El index como key puede reasignar estado/DOM de React a la fila equivocada al insertar/borrar en el medio de la lista. El fix correcto (agregar `id` estable con `crypto.randomUUID()` en el momento de creación, en los reducers de `store/mission.js`) requiere decidir la estrategia de migración para misiones ya guardadas (toca `MissionConvert.js` y posiblemente el parser de misión del servidor) - deliberadamente no se tocó en este pase.
+
 ## react-doctor/rerender-state-only-in-handlers
 
 - `src/SocketController.jsx` `notifications` - leído dentro de `useEffect([notifications])` que dispara `enqueueSnackbar` (toast visible en pantalla); convertir a `useRef` rompería el disparo del efecto porque mutar `.current` no re-ejecuta efectos.
