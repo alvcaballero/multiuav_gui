@@ -24,7 +24,8 @@ const ServerProvider = ({ children }) => {
         setError(error.message);
       }
     }
-  }, [error]);
+    // dispatch is injected internally by useAsyncTask, see reactHelper.js
+  }, [error]); // eslint-disable-line @eslint-react/exhaustive-deps
 
   if (error) {
     return (

@@ -163,7 +163,7 @@ const MissionDetailReportPage = () => {
     } else {
       throw Error(await response.text());
     }
-  }, []);
+  }, [id]);
 
   useAsyncTask(async () => {
     if (

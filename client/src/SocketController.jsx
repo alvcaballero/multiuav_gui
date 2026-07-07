@@ -188,7 +188,9 @@ const SocketController = () => {
       };
     }
     return null;
-  }, []);
+    // connectSocket/socketState intentionally excluded: this must run once on
+    // mount only; dispatch is injected internally by useAsyncTask, see reactHelper.js
+  }, []); // eslint-disable-line @eslint-react/exhaustive-deps
 
   return (
     <>

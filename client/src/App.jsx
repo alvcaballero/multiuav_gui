@@ -30,7 +30,8 @@ const App = () => {
     } else {
       throw Error(await response.text());
     }
-  }, []);
+    // dispatch is injected internally by useAsyncTask, see reactHelper.js
+  }, []); // eslint-disable-line @eslint-react/exhaustive-deps
 
   return (
     <>

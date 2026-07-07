@@ -61,7 +61,7 @@ const Navigation = () => {
   useAsyncTask(async () => {
     if (!query.get('redirect')) return;
     navigate('/');
-  }, [query]);
+  }, [query, navigate]);
 
   return (
     <Suspense fallback={<PageLoader />}>

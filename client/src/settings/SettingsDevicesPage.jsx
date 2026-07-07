@@ -16,10 +16,8 @@ const SettingsDevicesPage = () => {
   const { classes } = useSettingsStyles();
   const navigate = useNavigate();
 
-  const [timestamp] = useState(() => Date.now());
   const [items, setItems] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [showAll] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useAsyncTask(async () => {
@@ -34,7 +32,7 @@ const SettingsDevicesPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [timestamp, showAll]);
+  }, []);
 
   return (
     <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>

@@ -240,7 +240,10 @@ const PlanningPage = () => {
       settings: { ...defaultConfig, ...a.settings },
     }));
     dispatch(sessionActions.updatePlanning(myTask));
-  }, [SendTask.objetivo, auxobjetive]);
+    // SendTask/dispatch intentionally excluded: this must only re-run when the
+    // objetivo (task type) changes, not on every SendTask field mutation this
+    // same effect causes via updatePlanning — auxobjetive guards re-entrancy
+  }, [SendTask.objetivo, auxobjetive]); // eslint-disable-line @eslint-react/exhaustive-deps
 
   const isInPlanningTab = tabValue === TABS.PLANNING;
   const SelectMarkers = isInPlanningTab && SendTask.objetivo.id !== 3;

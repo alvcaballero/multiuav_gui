@@ -17,10 +17,8 @@ const SettingsCategoryPage = () => {
   const { classes } = useSettingsStyles();
   const navigate = useNavigate();
 
-  const [timestamp] = useState(() => Date.now());
   const [items, setItems] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [showAll] = useState(false);
   const [loading, setLoading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [myCategory, setMyCategory] = useState(null);
@@ -37,7 +35,7 @@ const SettingsCategoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [timestamp, showAll]);
+  }, []);
 
   const handleEdit = (item) => {
     navigate(`/settings/category/${item}`);
