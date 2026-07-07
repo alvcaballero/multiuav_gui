@@ -87,15 +87,13 @@ const LinearGauge = ({
         labels.push(
           <div
             key={`l${i}`}
+            className="gauge-tick-label"
             style={{
-              position: 'absolute',
               top: y,
               left: TICK_MAJ + 3,
               fontSize: FONT,
               color: labelColor,
-              whiteSpace: 'nowrap',
               transform: 'translateY(-50%)',
-              lineHeight: 1,
             }}
           >
             {i}
@@ -217,29 +215,21 @@ const LinearGauge = ({
 
           {/* Labels sensor fuera del clip */}
           <div
+            className="gauge-sensor-label"
             style={{
-              position: 'absolute',
               top: Math.max(2, upH - FONT - 2),
-              left: 1,
               fontSize: FONT,
               color: labelColor,
-              whiteSpace: 'nowrap',
-              zIndex: 4,
-              pointerEvents: 'none',
             }}
           >
             {sensorValue[0].toFixed(0)}↑
           </div>
           <div
+            className="gauge-sensor-label"
             style={{
-              position: 'absolute',
               bottom: Math.max(2, downH - FONT - 2),
-              left: 1,
               fontSize: FONT,
               color: labelColor,
-              whiteSpace: 'nowrap',
-              zIndex: 4,
-              pointerEvents: 'none',
             }}
           >
             {sensorValue[1].toFixed(0)}↓
@@ -247,16 +237,8 @@ const LinearGauge = ({
 
           {/* ── Indicador: ícono + flecha + caja — todos centrados en indicatorY ── */}
           <div
-            style={{
-              position: 'absolute',
-              top: indicatorY,
-              left: SENSOR_W,
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
+            className="gauge-indicator"
+            style={{ top: indicatorY, left: SENSOR_W, transform: 'translateY(-50%)' }}
           >
             {/* Ícono dron vista frontal */}
             <img
@@ -277,16 +259,11 @@ const LinearGauge = ({
             />
             {/* Caja del valor */}
             <div
+              className="gauge-indicator-value"
               style={{
-                backgroundColor: 'white',
                 border: `1px solid ${indicatorColor}`,
-                padding: '1px 5px',
-                borderRadius: 3,
-                whiteSpace: 'nowrap',
                 fontSize: FONT + 1,
-                fontWeight: 'bold',
                 color: indicatorColor,
-                flexShrink: 0,
               }}
             >
               {value.toFixed(1)}&thinsp;{unit}
