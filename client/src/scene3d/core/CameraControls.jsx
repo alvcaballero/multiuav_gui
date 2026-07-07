@@ -130,8 +130,10 @@ export default function CameraControls({ controlsRef: externalRef }) {
   }, []);
 
   // Reusable vectors to avoid per-frame allocation.
-  const _dirRef = useRef(new THREE.Vector3());
-  const _offsetRef = useRef(new THREE.Vector3());
+  const _dirRef = useRef(null);
+  if (_dirRef.current === null) _dirRef.current = new THREE.Vector3();
+  const _offsetRef = useRef(null);
+  if (_offsetRef.current === null) _offsetRef.current = new THREE.Vector3();
 
   useFrame((_, delta) => {
     if (!controlsRef.current) return;

@@ -11,7 +11,8 @@ import { getMapImageItems } from '../../store/sessionSelectors';
 const MapElements = () => {
   const id = useId();
   const imageItems = useSelector(getMapImageItems);
-  const mountedKeysRef = useRef(new Set());
+  const mountedKeysRef = useRef(null);
+  if (mountedKeysRef.current === null) mountedKeysRef.current = new Set();
 
   useEffect(() => {
     const currentKeys = new Set(imageItems.map((i) => i.key));

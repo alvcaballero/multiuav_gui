@@ -19,8 +19,10 @@ const Device = ({ id, position, isSelected, category }) => {
   const camRef = useRef();
   const { invalidate } = useThree();
 
-  const currentPositionRef = useRef(new THREE.Vector3());
-  const nextPositionRef = useRef(new THREE.Vector3());
+  const currentPositionRef = useRef(null);
+  if (currentPositionRef.current === null) currentPositionRef.current = new THREE.Vector3();
+  const nextPositionRef = useRef(null);
+  if (nextPositionRef.current === null) nextPositionRef.current = new THREE.Vector3();
 
   const model = useGLTF(getModelPath(category));
 
