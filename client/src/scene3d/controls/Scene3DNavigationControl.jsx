@@ -68,6 +68,17 @@ const btnStyle = {
 
 const dividerStyle = { borderTop: '1px solid #ddd' };
 
+const containerStyle = {
+  position: 'absolute',
+  top: '100px',
+  right: '20px',
+  zIndex: 10,
+  background: '#fff',
+  borderRadius: '4px',
+  boxShadow: '0 0 0 2px rgba(0,0,0,0.1)',
+  perspective: '150px',
+};
+
 const dispatch = (event) => window.dispatchEvent(new CustomEvent(event));
 
 const Scene3DNavigationControl = () => {
@@ -80,18 +91,7 @@ const Scene3DNavigationControl = () => {
   }, []);
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: '100px',
-        right: '20px',
-        zIndex: 10,
-        background: '#fff',
-        borderRadius: '4px',
-        boxShadow: '0 0 0 2px rgba(0,0,0,0.1)',
-        perspective: '150px',
-      }}
-    >
+    <div style={containerStyle}>
       <button
         type="button"
         title="Zoom in"
