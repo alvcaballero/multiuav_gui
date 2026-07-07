@@ -9,10 +9,16 @@ import { LatLon2XYZ } from '../core/convertion';
 const headingToRotationY = (heading = 0) => -(heading * Math.PI) / 180;
 
 const Marker = ({ item }) => {
+  // react-doctor/no-event-handler false positive: useModelLoader's internal effect
+  // does an async GLTF fetch with a module-level cache, not something a click/submit
+  // handler could trigger directly — see ModelLoader.jsx's useModelLoader.
   const { model, error } = useModelLoader(item.type);
   const { invalidate } = useThree();
 
   // Clone is created inside useMemo so React owns the lifecycle — safe with Strict Mode.
+  // Position/rotation are set here too (not in a separate effect): `clone` is a plain
+  // JS object available immediately during render, not a ref that only exists post-commit,
+  // so there's no need to wait an extra render to place it correctly.
   const clone = useMemo(() => {
     if (!model) return null;
     const c = model.scene.clone();
@@ -35,6 +41,11 @@ const Marker = ({ item }) => {
     return c;
   }, [model]);
 
+  if (clone) {
+    clone.position.set(...item.pos);
+    clone.rotation.set(0, headingToRotationY(item.heading), 0);
+  }
+
   // Dispose the clone when it's replaced or the marker unmounts.
   useEffect(() => {
     return () => {
@@ -50,17 +61,9 @@ const Marker = ({ item }) => {
     };
   }, [clone]);
 
-  // Tell R3F to draw a frame when the model finishes loading.
+  // Tell R3F to draw a frame whenever the model, position, or heading change.
   useEffect(() => {
     if (clone) invalidate();
-  }, [clone, invalidate]);
-
-  // Sync position/rotation imperatively to avoid remounting the primitive.
-  useEffect(() => {
-    if (!clone) return;
-    clone.position.set(...item.pos);
-    clone.rotation.set(0, headingToRotationY(item.heading), 0);
-    invalidate();
   }, [clone, item.pos, item.heading, invalidate]);
 
   if (error || !clone) return null;

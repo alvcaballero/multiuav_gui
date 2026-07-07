@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
@@ -46,6 +46,10 @@ const Device = ({ id, position, isSelected, category }) => {
 
   const initializedRef = useRef(false);
 
+  // react-doctor/no-event-handler false positive: `position` is live telemetry
+  // pushed over WebSocket/Redux, not a value this component can react to from
+  // a click/submit handler. meshRef/camRef are also only attached after commit,
+  // so this mutation must run in an effect, not during render.
   useEffect(() => {
     const loc = position.find((item) => item.deviceId == id);
     if (loc) {
@@ -101,9 +105,8 @@ const R3FDevices = () => {
   const positions = useSelector((state) => state.session.positions);
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
-  const [positionxyz, setPositionxyz] = useState([]);
 
-  useEffect(() => {
+  const positionxyz = useMemo(() => {
     const pos = Object.values(positions).map((item) => ({
       ...item,
       lng: item.hasOwnProperty('longitude') ? item.longitude : origin3d.lng,
@@ -111,14 +114,13 @@ const R3FDevices = () => {
       alt: item.attributes?.home ? item.altitude - item.attributes.home[2] : (item.altitude ?? 0),
     }));
     const posxyz = LatLon2XYZObj(origin3d, pos, 1000);
-    const result = posxyz.map((item) => ({
+    return posxyz.map((item) => ({
       ...item,
       name: devices[item.deviceId]?.name,
       course: positions[item.deviceId]?.course,
       gimbalPitch: positions[item.deviceId]?.attributes?.gimbal?.[0] ?? 0,
       gimbalYaw: positions[item.deviceId]?.attributes?.gimbal?.[2] ?? 0,
     }));
-    setPositionxyz(result);
   }, [origin3d, positions, devices]);
 
   return (
