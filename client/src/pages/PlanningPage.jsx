@@ -9,7 +9,7 @@ import { TabPanel, TabList, TabContext } from '@mui/lab';
 import { makeStyles } from 'tss-react/mui';
 
 import { useNavigate } from 'react-router-dom';
-import { missionActions, sessionActions, activeMissionsActions, planningToLegacy } from '../store';
+import { sessionActions } from '../store';
 
 import MapView from '../map/core/MapView';
 import { map } from '../map/core/mapInstance';
@@ -22,17 +22,15 @@ import MapMarkersCreate from '../map/draw/MapMarkersCreate';
 import MapScale from '../map/controls/MapScale';
 import MapDefaultCamera from '../map/controls/MapDefaultCamera';
 import MapMissionHome from '../map/mission/MapMissionHome';
-import { useAsyncTask, useCatch } from '../reactHelper';
-import {
-  manageLocationPoints,
-  validateUniqueDevices,
-  transformLocationsForAPI,
-} from '../services/planningService';
+import { useAsyncTask } from '../reactHelper';
 
 import PlanningToolbar from '../components/planning/PlanningToolbar';
 import ElementsTab from '../components/planning/ElementsTab';
 import PlanningTab from '../components/planning/PlanningTab';
 import SettingsTab from '../components/planning/SettingsTab';
+import { usePlanningActions } from './planningPage/usePlanningActions';
+import { usePlanningReduxHandlers } from './planningPage/usePlanningReduxHandlers';
+import { usePlanningResultPolling } from './planningPage/usePlanningResultPolling';
 
 // Enums para las tabs
 const TABS = {
@@ -117,179 +115,23 @@ const PlanningPage = () => {
   const [notification, setNotification] = useState('');
   const [checked, setChecked] = useState(true);
 
-  // --- Helpers de planning ---
-
-  const fetchDevices = useCallback(async () => {
-    const response = await fetch('/api/devices');
-    if (!response.ok) throw new Error(await response.text());
-    return await response.json();
-  }, []);
-
-  const mapAssignmentToTaskDevice = useCallback((assignment, devices, markers) => {
-    const device = devices.find((d) => d.id === Number(assignment.device.id));
-    if (!device) return null;
-    const base = markers.bases.find((b) => b.id === assignment.baseId);
-    if (!base) return null;
-    return {
-      id: device.name,
-      category: device.category,
-      settings: { ...assignment.settings, base: Object.values(base), landing_mode: 2 },
-    };
-  }, []);
-
-  const mapAssignmentsToDevices = useCallback(
-    (assignments, devices, markers) =>
-      assignments.flatMap((a) => {
-        if (a.device.id === '') return [];
-        const taskDevice = mapAssignmentToTaskDevice(a, devices, markers);
-        return taskDevice ? [taskDevice] : [];
-      }),
-    [mapAssignmentToTaskDevice],
-  );
-
-  const buildTaskPayload = useCallback(
-    (legacyPlanning, taskDevices) => ({
-      id: legacyPlanning.id,
-      name: legacyPlanning.name,
-      case: legacyPlanning.objetivo.case,
-      meteo: legacyPlanning.meteo,
-      locations: transformLocationsForAPI(legacyPlanning.loc),
-      devices: taskDevices,
-    }),
-    [],
-  );
-
-  // --- Acciones principales ---
-
-  const SendPlanning = useCatch(async () => {
-    setNotification('');
-    const legacyPlanning = planningToLegacy(SendTask, markers);
-    const assignments = SendTask.assignments || [];
-
-    const validation = validateUniqueDevices(assignments);
-    if (!validation.isValid) {
-      setNotification(validation.errorMsg);
-      return null;
-    }
-
-    if (legacyPlanning.loc.length === 0) {
-      setNotification('No elements to inspection');
-      return null;
-    }
-
-    const devices = await fetchDevices();
-    const taskDevices = mapAssignmentsToDevices(assignments, devices, markers);
-    const taskPayload = buildTaskPayload(legacyPlanning, taskDevices);
-
-    const response = await fetch(`http://${myhostname}:8004/mission_request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(taskPayload),
-    });
-    if (!response.ok) throw new Error(await response.text());
-
-    setRequestPlanning(0);
-    return true;
+  const { SendPlanning, MissionTask, SavePlanning, setDefaultPlanning } = usePlanningActions({
+    SendTask,
+    markers,
+    myhostname,
+    setNotification,
+    setRequestPlanning,
   });
 
-  const MissionTask = useCatch(async () => {
-    const myTask = {
-      id: SendTask.id,
-      name: SendTask.name,
-      objetivo: SendTask.objetivo.id,
-      meteo: SendTask.meteo,
-      locations: SendTask.loc.map((group) => ({
-        name: group.name,
-        items: group.items.map(({ latitude, longitude }) => ({ latitude, longitude })),
-      })),
-    };
-
-    const response = await fetch('/api/missions/sendTask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(myTask),
-    });
-    if (!response.ok) throw new Error(await response.text());
-  });
-
-  const SavePlanning = useCallback((value) => {
-    const blob = new Blob([YAML.stringify(value)], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = `${value.name}.yaml`;
-    link.href = url;
-    link.click();
-  }, []);
-
-  const setDefaultPlanning = useCatch(async (value) => {
-    const response = await fetch('api/planning/setDefault', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(value),
-    });
-    if (!response.ok) throw new Error(await response.text());
-  });
-
-  // --- Handlers de Redux ---
-
-  const setMarkersBase = useCallback(
-    (value, meta = {}) => {
-      dispatch(sessionActions.updateMarker({ ...markers, bases: value }));
-
-      if (meta.meth === 'del') {
-        const baseIdToRemove = value[meta.index]?.id;
-        if (baseIdToRemove) {
-          const newAssignments = (SendTask.assignments || []).filter(
-            (a) => a.baseId !== baseIdToRemove,
-          );
-          dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
-        }
-      }
-    },
-    [dispatch, markers, SendTask],
-  );
-
-  const setMarkersElements = useCallback(
-    (value) => dispatch(sessionActions.updateMarker({ ...markers, elements: value })),
-    [dispatch, markers],
-  );
-
-  const SetMapMarkers = useCallback(
-    (value) => dispatch(sessionActions.updateMarker(value)),
-    [dispatch],
-  );
-
-  const setLocations = useCallback(
-    (value) => dispatch(sessionActions.updatePlanning({ ...SendTask, loc: value })),
-    [dispatch, SendTask],
-  );
-
-  const addLocations = useCallback(
-    (value) => {
-      const newLoc = manageLocationPoints(
-        structuredClone(SendTask.loc),
-        value,
-        SendTask.objetivo.type,
-      );
-      dispatch(sessionActions.updatePlanning({ ...SendTask, loc: newLoc }));
-    },
-    [dispatch, SendTask],
-  );
-
-  const setBaseSettings = useCallback(
-    (assignments) => dispatch(sessionActions.updatePlanning({ ...SendTask, assignments })),
-    [dispatch, SendTask],
-  );
-
-  const updateObjetive = useCallback(
-    (newObjetive) => {
-      const myTask = structuredClone(sendTaskRef.current);
-      myTask.objetivo = newObjetive;
-      if (newObjetive.type !== sendTaskRef.current.objetivo.type) myTask.loc = [];
-      dispatch(sessionActions.updatePlanning(myTask));
-    },
-    [dispatch],
-  );
+  const {
+    setMarkersBase,
+    setMarkersElements,
+    SetMapMarkers,
+    setLocations,
+    addLocations,
+    setBaseSettings,
+    updateObjetive,
+  } = usePlanningReduxHandlers({ dispatch, markers, SendTask, sendTaskRef });
 
   // --- Handlers de UI ---
 
@@ -404,44 +246,13 @@ const PlanningPage = () => {
   const SelectMarkers = isInPlanningTab && SendTask.objetivo.id !== 3;
   const CreateMarkers = isInPlanningTab && SendTask.objetivo.id === 3;
 
-  useEffect(() => {
-    const MAX_RETRIES = 12;
-    const POLLING_INTERVAL = 5000;
-    const SUCCESS_CODE = 100;
-
-    if (requestPlanning >= SUCCESS_CODE || requestPlanning >= MAX_RETRIES) return;
-
-    let cancelled = false;
-
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${SendTask.id}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-
-        const data = await response.json();
-        const planResult = data.results?.[SendTask.id];
-        if (cancelled) return;
-        if (planResult?.hasOwnProperty('route')) {
-          setRequestPlanning(SUCCESS_CODE);
-          dispatch(missionActions.updateMission({ ...planResult, version: '3' }));
-          // New plan replaces the editor — drop any active selection.
-          dispatch(activeMissionsActions.selectMission(null));
-          return;
-        }
-      } catch (error) {
-        console.error('Error fetching planning data:', error);
-      } finally {
-        if (!cancelled) setRequestPlanning((old) => old + 1);
-      }
-    };
-
-    const intervalId = setInterval(fetchData, POLLING_INTERVAL);
-
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
-  }, [requestPlanning, SendTask.id, dispatch, myhostname]);
+  usePlanningResultPolling({
+    requestPlanning,
+    setRequestPlanning,
+    sendTaskId: SendTask.id,
+    myhostname,
+    dispatch,
+  });
 
   return (
     <div className={classes.root}>
