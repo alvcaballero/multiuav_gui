@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   IconButton,
@@ -135,28 +135,34 @@ const DeviceRow = ({ devices, index, style }) => {
 
   const status = item.status === 'online' ? item.status : dayjs(item.lastUpdate).fromNow();
 
-  const uavStatus = position?.attributes?.navState ? (
-    <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
-      {position.attributes.armState}
-    </Typography>
-  ) : position?.attributes?.landed_state ? (
-    <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
-      {position.attributes.landed_state}
-    </Typography>
-  ) : null;
+  const navState = position?.attributes?.navState;
+  const armState = position?.attributes?.armState;
+  const landedState = position?.attributes?.landed_state;
 
-  const secondaryText = (
-    <>
-      {uavStatus}
-      <Typography
-        component="span"
-        style={{ fontSize: 12 }}
-        className={classes[getStatusColor(item.status)]}
-      >
-        {status}
+  const secondaryText = useMemo(() => {
+    const uavStatus = navState ? (
+      <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
+        {armState}
       </Typography>
-    </>
-  );
+    ) : landedState ? (
+      <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
+        {landedState}
+      </Typography>
+    ) : null;
+
+    return (
+      <>
+        {uavStatus}
+        <Typography
+          component="span"
+          style={{ fontSize: 12 }}
+          className={classes[getStatusColor(item.status)]}
+        >
+          {status}
+        </Typography>
+      </>
+    );
+  }, [navState, armState, landedState, classes, item.status, status]);
 
   return (
     <div style={style}>
