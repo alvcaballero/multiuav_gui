@@ -134,7 +134,7 @@ const MissionPage = () => {
                   flexDirection: 'column',
                 }}
               >
-                <MissionElevation />
+                <MissionElevation active={bottomTab === 1} />
               </Box>
             </Box>
           </Paper>

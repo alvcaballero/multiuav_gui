@@ -24,9 +24,6 @@ const { reducer: missionReducerBase, actions } = createSlice({
     // Elevation profile cache
     elevation: {
       profile: [], // Array of {name, data, color} for each route
-      location: [], // Cached waypoint locations [lat, lon, alt]
-      selectRT: -1, // Selected route filter (-1 = all)
-      loading: false, // Loading indicator
     },
   },
   reducers: {
@@ -69,9 +66,6 @@ const { reducer: missionReducerBase, actions } = createSlice({
       state.selectpoint = { id: -1 };
       // Clear elevation cache
       state.elevation.profile = [];
-      state.elevation.location = [];
-      state.elevation.selectRT = -1;
-      state.elevation.loading = false;
     },
 
     // New granular actions
@@ -244,15 +238,6 @@ const { reducer: missionReducerBase, actions } = createSlice({
     setElevationProfile(state, action) {
       state.elevation.profile = action.payload;
     },
-    setElevationLocation(state, action) {
-      state.elevation.location = action.payload;
-    },
-    setElevationSelectRT(state, action) {
-      state.elevation.selectRT = action.payload;
-    },
-    setElevationLoading(state, action) {
-      state.elevation.loading = action.payload;
-    },
     updateElevationProfile(state, action) {
       // For updating specific route elevation data (e.g., when altitude changes)
       const { routeIndex, data } = action.payload;
@@ -262,9 +247,6 @@ const { reducer: missionReducerBase, actions } = createSlice({
     },
     clearElevation(state) {
       state.elevation.profile = [];
-      state.elevation.location = [];
-      state.elevation.selectRT = -1;
-      state.elevation.loading = false;
     },
 
     // Rotate all waypoints around a center point (lat/lng in degrees)
@@ -335,18 +317,6 @@ const { reducer: missionReducerBase, actions } = createSlice({
           wp.pos[0] += deltaLat;
           wp.pos[1] += deltaLng;
         });
-      });
-    },
-    removeElevationRoute(state, action) {
-      // Remove specific routes from elevation cache by indices
-      const indicesToKeep = action.payload;
-      state.elevation.profile = indicesToKeep.flatMap((i) => {
-        const entry = state.elevation.profile[i];
-        return entry ? [entry] : [];
-      });
-      state.elevation.location = indicesToKeep.flatMap((i) => {
-        const entry = state.elevation.location[i];
-        return entry ? [entry] : [];
       });
     },
   },
