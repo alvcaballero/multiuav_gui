@@ -19,18 +19,21 @@ const SelectField = ({
   const [fetchedItems, setFetchedItems] = useState(undefined);
   const items = endpoint ? fetchedItems : data;
 
-  const autoSelectFirstItem = useCallback(
+  // Resolves the full item for the current `value` once `loadedItems` is available -
+  // either by auto-selecting the first one, or by notifying the parent of the item
+  // that was already selected externally (value set before this list finished loading).
+  const resolveCurrentItem = useCallback(
     (loadedItems) => {
-      if (
-        emptyValue == null &&
-        (value === null || value === undefined) &&
-        loadedItems &&
-        loadedItems.length > 0
-      ) {
-        onChange({ target: { value: loadedItems[0] } });
+      if (!loadedItems) return;
+      if (emptyValue == null && (value === null || value === undefined)) {
+        if (loadedItems.length > 0) onChange({ target: { value: loadedItems[0] } });
+        return;
+      }
+      if (value !== null && value !== undefined) {
+        getItems(loadedItems[value]);
       }
     },
-    [emptyValue, value, onChange],
+    [emptyValue, value, onChange, getItems],
   );
 
   useAsyncTask(async () => {
@@ -39,24 +42,18 @@ const SelectField = ({
       if (response.ok) {
         const loadedItems = await response.json();
         setFetchedItems(loadedItems);
-        autoSelectFirstItem(loadedItems);
+        resolveCurrentItem(loadedItems);
       } else {
         throw Error(await response.text());
       }
     }
-  }, [endpoint, autoSelectFirstItem]);
-
-  useEffect(() => {
-    if (typeof items !== 'undefined' && value !== null) {
-      getItems(items[value]);
-    }
-  }, [items, value, getItems]);
+  }, [endpoint, resolveCurrentItem]);
 
   useEffect(() => {
     if (!endpoint && typeof items !== 'undefined') {
-      autoSelectFirstItem(items);
+      resolveCurrentItem(items);
     }
-  }, [endpoint, items, autoSelectFirstItem]);
+  }, [endpoint, items, resolveCurrentItem]);
 
   if (items) {
     return (
