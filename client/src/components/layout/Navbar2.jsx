@@ -22,6 +22,9 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
+const INDICATE_CONNECTED = <Wifi />;
+const INDICATE_DISCONNECTED = <WifiOff color="disabled" />;
+
 export const Navbar2 = ({ title, navIcon, tabs }) => {
   // const ws = useContext(WebSocketContext);
   // const appContext = useContext(AppContext);
@@ -41,11 +44,9 @@ export const Navbar2 = ({ title, navIcon, tabs }) => {
     </Tooltip>
   );
 
-  const indicateConnected = <Wifi />;
-  const indicateDisconnected = <WifiOff color="disabled" />;
   const connectionIndicator = (
     <Tooltip arrow title={ws?.ws?.url ?? 'Server unknown'}>
-      <IconButton>{ws?.connected ? indicateConnected : indicateDisconnected}</IconButton>
+      <IconButton>{ws?.connected ? INDICATE_CONNECTED : INDICATE_DISCONNECTED}</IconButton>
     </Tooltip>
   );
 
