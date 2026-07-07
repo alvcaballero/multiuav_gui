@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { Billboard, Text, Circle, Box, Line } from '@react-three/drei';
 
 const WORD_FONT_PROPS = {
@@ -51,19 +51,22 @@ const NumberedSphere = ({ position, properties, hideLabel = false }) => {
 
 function Word({ children, position, color }) {
   const ref = useRef();
-  const [hovered, setHovered] = useState(false);
+  const hoveredRef = useRef(false);
+
+  const setHovered = (hovered) => {
+    hoveredRef.current = hovered;
+    document.body.style.cursor = hovered ? 'pointer' : 'auto';
+    if (ref.current) ref.current.material.color.set(hovered ? 'black' : 'white');
+  };
+
   const over = (e) => (e.stopPropagation(), setHovered(true));
   const out = () => setHovered(false);
 
   useEffect(() => {
-    document.body.style.cursor = hovered ? 'pointer' : 'auto';
-    return () => (document.body.style.cursor = 'auto');
-  }, [hovered]);
-
-  // Only update color imperatively when hover state changes, not every frame.
-  useEffect(() => {
-    if (ref.current) ref.current.material.color.set(hovered ? 'black' : 'white');
-  }, [hovered]);
+    return () => {
+      if (hoveredRef.current) document.body.style.cursor = 'auto';
+    };
+  }, []);
 
   return (
     <Billboard position={position}>

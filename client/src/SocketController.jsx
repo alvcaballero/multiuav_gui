@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useDispatch, connect } from 'react-redux';
 import { useAsyncTask } from './reactHelper';
 import alarm from './resources/alarm.mp3';
@@ -22,24 +22,21 @@ const SocketController = () => {
   const socketRef = useRef();
   const [socketState, setSocketState] = useState(true);
 
-  const [notifications, setNotifications] = useState([]);
-
   const handleEvents = useCallback(
     (events) => {
       dispatch(eventsActions.add(events));
       if (events.some((e) => e.type === 'error')) {
         new Audio(alarm).play();
       }
-      setNotifications(
-        events.map((event) => ({
-          id: event.id,
-          type: event.type,
-          message: event.attributes.message,
-          show: true,
-        })),
-      );
+      events.forEach((event) => {
+        enqueueSnackbar(event.attributes.message ? event.attributes.message : 'unknow error', {
+          variant: event.type,
+          autoHideDuration: 3000,
+          persist: false,
+        });
+      });
     },
-    [dispatch, setNotifications],
+    [dispatch],
   );
 
   const connectSocket = () => {
@@ -192,18 +189,6 @@ const SocketController = () => {
     }
     return null;
   }, []);
-
-  useEffect(() => {
-    console.log('notifications');
-    console.log(notifications);
-    for (let i = 0; i < notifications.length; i += 1) {
-      enqueueSnackbar(notifications[i].message ? notifications[i].message : 'unknow error', {
-        variant: notifications[i].type,
-        autoHideDuration: 3000,
-        persist: false,
-      });
-    }
-  }, [notifications]);
 
   return (
     <>
