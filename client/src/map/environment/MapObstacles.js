@@ -1,5 +1,5 @@
 import { useId, useEffect, useCallback, useMemo } from 'react';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import { circle } from '@turf/circle';
 

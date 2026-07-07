@@ -6,7 +6,7 @@ import { useId, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import maplibregl from 'maplibre-gl';
 
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import {
   createFeature,

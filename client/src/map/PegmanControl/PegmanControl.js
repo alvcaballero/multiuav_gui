@@ -8,7 +8,7 @@ import './styles.css';
 import { useEffect, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { map } from '../core/MapView'; // Access the global map instance
+import { map } from '../core/mapInstance'; // Access the global map instance
 import { sessionActions } from '../../store';
 
 /**

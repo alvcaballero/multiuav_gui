@@ -8,7 +8,8 @@ import { useAsyncTask } from '../reactHelper';
 import PageLayout from '../shared/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
 import TableShimmer from '../shared/components/TableShimmer';
-import SearchHeader, { filterByKeyword } from './components/SearchHeader';
+import SearchHeader from './components/SearchHeader';
+import { filterByKeyword } from './components/filterByKeyword';
 import useSettingsStyles from './common/useSettingsStyles';
 
 const SettingsDevicesPage = () => {

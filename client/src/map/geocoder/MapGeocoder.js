@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { errorsActions } from '../../store';
 
 const MapGeocoder = () => {

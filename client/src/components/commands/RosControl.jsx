@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-
-export const RosContext = React.createContext();
+import { RosContext } from './RosContext';
 
 export const RosControl = ({ children }) => {
   const [confirmMission, setConfirmMission] = useState(false);

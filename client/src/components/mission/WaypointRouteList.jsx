@@ -14,7 +14,7 @@ import {
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { makeStyles } from 'tss-react/mui';
 
-import { map } from '../../map/core/MapView';
+import { map } from '../../map/core/mapInstance';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../../shared/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';

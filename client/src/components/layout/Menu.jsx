@@ -25,8 +25,8 @@ import MyLocationIcon from '@mui/icons-material/MyLocation';
 
 import { Button, IconButton, Box, Chip, Tooltip, Typography } from '@mui/material';
 
-import { map } from '../../map/core/MapView';
-import { RosContext } from '../commands/RosControl';
+import { map } from '../../map/core/mapInstance';
+import { RosContext } from '../commands/RosContext';
 import { usePreference } from '../../shared/preferences';
 import { useMissionFile } from '../../services/useMissionFile';
 import {

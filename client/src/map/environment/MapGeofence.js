@@ -1,7 +1,7 @@
 import { useId, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@mui/material/styles';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { findFonts, geofenceToFeature } from '../core/mapUtil';
 import { useAttributePreference } from '../../shared/preferences';
 

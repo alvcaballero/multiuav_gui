@@ -1,5 +1,5 @@
 import { useId, useEffect, useRef, useState, useCallback } from 'react';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import palette from '../../shared/palette';
 

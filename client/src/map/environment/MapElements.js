@@ -1,6 +1,6 @@
 import { useId, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { getMapImageItems } from '../../store/sessionSelectors';
 
 /**

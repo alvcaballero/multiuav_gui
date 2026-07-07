@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { usePreference } from '../../shared/preferences';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 
 // Rutas que renderizan una vista 3D (Scene3DCanvas) en vez de MainMap/MapDefaultCamera.
 const THREED_ROUTES = ['/3Dview', '/3Deditor', '/3Dmission'];

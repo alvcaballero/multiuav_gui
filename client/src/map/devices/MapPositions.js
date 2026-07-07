@@ -1,6 +1,6 @@
 import { useId, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { formatTime, getStatusColor } from '../../shared/formatter';
 import { mapIconKey } from '../core/preloadImages';
 import { findFonts } from '../core/mapUtil';

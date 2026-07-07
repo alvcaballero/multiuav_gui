@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
 
 import { missionActions, sessionActions, activeMissionsActions } from '../../store';
-import { map } from '../../map/core/MapView';
+import { map } from '../../map/core/mapInstance';
 import MenuItems from './MenuItems';
 import { connectRos, commandLoadMission } from '../../shared/fetchs';
 import { useCatch } from '../../reactHelper';

@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import palette from '../../shared/palette';
 
 const modelOrigin = [-6.485616, 37.144592];

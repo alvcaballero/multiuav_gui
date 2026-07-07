@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import { useEffect, useMemo } from 'react';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 
 const MapScale = () => {
   const distanceUnit = 'km';

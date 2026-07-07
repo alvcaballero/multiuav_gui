@@ -15,7 +15,7 @@ import {
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
-import { map } from '../../map/core/MapView';
+import { map } from '../../map/core/mapInstance';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { usePreference } from '../../shared/preferences';
 
 // Centra el mapa en el home de la misión cuando se carga una nueva (state.mission.home

@@ -17,7 +17,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../../shared/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import palette from '../../shared/palette';
-import { map } from '../../map/core/MapView';
+import { map } from '../../map/core/mapInstance';
 import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';
 import { applyUavTypeDefaults } from '../../store/mission';

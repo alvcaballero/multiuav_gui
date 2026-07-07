@@ -7,7 +7,7 @@ import maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 
 const modelRotate = [Math.PI / 2, 0, 0];
 

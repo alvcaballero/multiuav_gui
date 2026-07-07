@@ -11,7 +11,8 @@ import { makeStyles } from 'tss-react/mui';
 import { useNavigate } from 'react-router-dom';
 import { missionActions, sessionActions, activeMissionsActions, planningToLegacy } from '../store';
 
-import MapView, { map } from '../map/core/MapView';
+import MapView from '../map/core/MapView';
+import { map } from '../map/core/mapInstance';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
 import { MapMissions } from '../map/mission/MapMissions';

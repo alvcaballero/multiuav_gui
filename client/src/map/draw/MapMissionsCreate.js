@@ -5,7 +5,7 @@
 //https://docs.maptiler.com/sdk-js/examples/elevation-profile/
 import { useId, useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import { missionActions } from '../../store';
 import { createFeature, routesToFeature, routeTowaypoints } from '../transform/mission';

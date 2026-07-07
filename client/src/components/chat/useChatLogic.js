@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { chatActions } from '../../store';
-import { sendChatMessage } from '../../SocketController';
+import { sendChatMessage } from '../../services/sendChatMessage';
 
 const EMPTY_MESSAGES = [];
 

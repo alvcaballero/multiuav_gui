@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import { useEffect } from 'react';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 
 const MapCurrentLocation = () => {
   useEffect(() => {

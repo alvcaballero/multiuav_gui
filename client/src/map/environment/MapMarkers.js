@@ -1,5 +1,5 @@
 import { useId, useEffect, useMemo, useCallback } from 'react';
-import { map } from '../core/MapView';
+import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 
