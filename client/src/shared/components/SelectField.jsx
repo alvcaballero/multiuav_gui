@@ -1,5 +1,5 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAsyncTask } from '../../reactHelper';
 
 const SelectField = ({
@@ -19,31 +19,44 @@ const SelectField = ({
   const [fetchedItems, setFetchedItems] = useState(undefined);
   const items = endpoint ? fetchedItems : data;
 
+  const autoSelectFirstItem = useCallback(
+    (loadedItems) => {
+      if (
+        emptyValue == null &&
+        (value === null || value === undefined) &&
+        loadedItems &&
+        loadedItems.length > 0
+      ) {
+        onChange({ target: { value: loadedItems[0] } });
+      }
+    },
+    [emptyValue, value, onChange],
+  );
+
   useAsyncTask(async () => {
     if (endpoint) {
       const response = await fetch(endpoint);
       if (response.ok) {
-        setFetchedItems(await response.json());
+        const loadedItems = await response.json();
+        setFetchedItems(loadedItems);
+        autoSelectFirstItem(loadedItems);
       } else {
         throw Error(await response.text());
       }
     }
-  }, [endpoint]);
+  }, [endpoint, autoSelectFirstItem]);
 
   useEffect(() => {
     if (typeof items !== 'undefined' && value !== null) {
       getItems(items[value]);
     }
-    if (
-      typeof items !== 'undefined' &&
-      emptyValue == null &&
-      (value === null || value === undefined)
-    ) {
-      if (items && items.length && items.length > 0) {
-        onChange({ target: { value: items[0] } });
-      }
+  }, [items, value, getItems]);
+
+  useEffect(() => {
+    if (!endpoint && typeof items !== 'undefined') {
+      autoSelectFirstItem(items);
     }
-  }, [items, value, emptyValue, getItems, onChange]);
+  }, [endpoint, items, autoSelectFirstItem]);
 
   if (items) {
     return (
