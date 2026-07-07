@@ -1,19 +1,11 @@
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
 
-export default (
-  keyword,
-  filter,
-  filterSort,
-  filterMap,
-  positions,
-  setFilteredDevices,
-  setFilteredPositions,
-) => {
+export default (keyword, filter, filterSort, filterMap, positions) => {
   const devices = useSelector((state) => state.devices.items);
 
-  useEffect(() => {
+  const filteredDevices = useMemo(() => {
     const filtered = Object.values(devices).filter((device) => {
       if (filter.statuses.length && !filter.statuses.includes(device.status)) return false;
       const lowerCaseKeyword = keyword.toLowerCase();
@@ -35,20 +27,16 @@ export default (
       default:
         break;
     }
-    setFilteredDevices(filtered);
-    setFilteredPositions(
+    return filtered;
+  }, [keyword, filter, filterSort, devices]);
+
+  const filteredPositions = useMemo(
+    () =>
       filterMap
-        ? filtered.flatMap((device) => (positions[device.id] ? [positions[device.id]] : []))
+        ? filteredDevices.flatMap((device) => (positions[device.id] ? [positions[device.id]] : []))
         : Object.values(positions),
-    );
-  }, [
-    keyword,
-    filter,
-    filterSort,
-    filterMap,
-    devices,
-    positions,
-    setFilteredDevices,
-    setFilteredPositions,
-  ]);
+    [filterMap, filteredDevices, positions],
+  );
+
+  return { filteredDevices, filteredPositions };
 };

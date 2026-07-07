@@ -25,9 +25,7 @@ import StopCircleIcon from '@mui/icons-material/StopCircle';
 
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../components/ui/PositionValue';
-import usePersistedState from '../shared/usePersistedState';
 import DroneSensorVisualizer from './DroneSensorVisualizer';
-import useFilter from '../shared/useFilter';
 import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
 import { CameraV1 } from '../components/camera/CameraV1';
 import CommandCard from '../components/commands/CommandCard';
@@ -123,15 +121,6 @@ const DevicePage3D = () => {
   const markersRef = useRef([]);
 
   const myhostname = `${window.location.hostname}`;
-  const [filteredPositions, setFilteredPositions] = useState([]);
-  void filteredPositions;
-  const [filteredDevices, setFilteredDevices] = useState([]);
-  void filteredDevices;
-  const [keyword] = useState('');
-  const [filter] = usePersistedState('filter', {
-    statuses: [],
-    groups: [],
-  });
   const currentSensorData = item?.attributes?.obstacle_info
     ? {
         front: item.attributes.obstacle_info[1],
@@ -143,18 +132,7 @@ const DevicePage3D = () => {
       }
     : DEFAULT_SENSOR_DATA;
 
-  const [filterSort] = usePersistedState('filterSort', '');
-  const [filterMap] = usePersistedState('filterMap', false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
-  useFilter(
-    keyword,
-    filter,
-    filterSort,
-    filterMap,
-    positions,
-    setFilteredDevices,
-    setFilteredPositions,
-  );
 
   useEffect(() => {
     markersRef.current = sessionmarkers;

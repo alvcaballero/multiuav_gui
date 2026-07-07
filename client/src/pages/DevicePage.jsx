@@ -31,7 +31,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../components/ui/PositionValue';
 import usePersistedState from '../shared/usePersistedState';
 import DroneSensorVisualizer from './DroneSensorVisualizer';
-import useFilter from '../shared/useFilter';
+import useFilter from '../components/devices/useFilter';
 import MainMap from '../map/MainMap';
 import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
 import { CameraV1 } from '../components/camera/CameraV1';
@@ -118,9 +118,6 @@ const DevicePage = () => {
   const markers = sessionmarkers;
 
   const myhostname = `${window.location.hostname}`;
-  const [filteredPositions, setFilteredPositions] = useState([]);
-  const [filteredDevices, setFilteredDevices] = useState([]);
-  void filteredDevices;
   const [keyword] = useState('');
   const [filter] = usePersistedState('filter', {
     statuses: [],
@@ -140,15 +137,7 @@ const DevicePage = () => {
   const [filterSort] = usePersistedState('filterSort', '');
   const [filterMap] = usePersistedState('filterMap', false);
   const [openSendCommand, setOpenSendCommand] = useState(false);
-  useFilter(
-    keyword,
-    filter,
-    filterSort,
-    filterMap,
-    positions,
-    setFilteredDevices,
-    setFilteredPositions,
-  );
+  const { filteredPositions } = useFilter(keyword, filter, filterSort, filterMap, positions);
 
   return (
     <div className={classes.root}>
