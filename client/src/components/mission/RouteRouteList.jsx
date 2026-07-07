@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
@@ -147,14 +147,14 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
   const idleVel = useSelector((state) => state.mission.route[index]?.attributes?.idle_vel);
   const matchedDevice = Object.values(devices).find((device) => device.name === route.uav);
   const routeUAV = matchedDevice ? matchedDevice.id : null;
-  const matchedCategory = matchedDevice?.category;
 
-  useEffect(() => {
-    if (matchedCategory && route.uav_type !== matchedCategory) {
-      dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: matchedCategory }));
-      dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: matchedCategory }));
+  const syncUavTypeToDevice = (uavName) => {
+    const device = Object.values(devices).find((d) => d.name === uavName);
+    if (device?.category && route.uav_type !== device.category) {
+      dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: device.category }));
+      dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: device.category }));
     }
-  }, [matchedCategory, index, route.uav_type, dispatch]);
+  };
 
   const handleAddWaypoint = (index_route, index_wp) => {
     let center = map.getCenter();
@@ -244,7 +244,10 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
               label="UAV id"
               variant="standard"
               value={route.uav || 'uav_'}
-              onChange={(e) => handleRouteFieldChange('uav', e.target.value)}
+              onChange={(e) => {
+                handleRouteFieldChange('uav', e.target.value);
+                syncUavTypeToDevice(e.target.value);
+              }}
             />
 
             <SelectField
