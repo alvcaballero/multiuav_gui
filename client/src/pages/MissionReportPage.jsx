@@ -107,6 +107,7 @@ const MissionReportPage = () => {
     const response = await fetch('/api/missions?all=true');
     if (response.ok) {
       const myMissions = await response.json();
+      myMissions.sort((a, b) => new Date(b.initTime) - new Date(a.initTime));
       setMissions(myMissions);
     } else {
       throw Error(await response.text());
