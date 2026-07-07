@@ -106,24 +106,17 @@ const SaveFile = ({ SetOpenSave }) => {
         xmlString += '</LineStyle>\n';
         xmlString += '</Style>\n';
       });
-      let initElev = [];
-      for (const initwp of mission.route) {
-        //console.log(initwp.wp);
-        if (initwp.wp.length) {
-          let response = await fetch(
+      const initElev = await Promise.all(
+        mission.route.map(async (initwp) => {
+          if (!initwp.wp.length) return 0;
+          const response = await fetch(
             `/api/map/elevation?locations=[[${initwp.wp[0].pos[0]},${initwp.wp[0].pos[1]}]]`,
           );
-          if (response.ok) {
-            let myresponse = await response.json();
-            //console.log(myresponse.results);
-            initElev.push(myresponse.results[0].elevation);
-          } else {
-            initElev.push(0);
-          }
-        } else {
-          initElev.push(0);
-        }
-      }
+          if (!response.ok) return 0;
+          const myresponse = await response.json();
+          return myresponse.results[0].elevation;
+        }),
+      );
 
       mission.route.map((elem, elem_n) => {
         xmlString += '<Placemark>\n';

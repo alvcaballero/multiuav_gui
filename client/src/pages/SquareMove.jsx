@@ -174,8 +174,12 @@ const SquareMove = ({
 
       {test && (
         <div>
-          <button onClick={handleMoveLeft}>Move Left</button>
-          <button onClick={handleMoveRight}>Move Right</button>
+          <button type="button" onClick={handleMoveLeft}>
+            Move Left
+          </button>
+          <button type="button" onClick={handleMoveRight}>
+            Move Right
+          </button>
         </div>
       )}
     </div>
