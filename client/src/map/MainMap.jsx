@@ -16,12 +16,16 @@ import MapGeocoder from './geocoder/MapGeocoder';
 import MapGeofence from './environment/MapGeofence';
 import PegmanControl from './PegmanControl/PegmanControl';
 import MapObstacles from './environment/MapObstacles';
+
+const EMPTY_MARKERS = [];
+const EMPTY_ROUTES = [];
+
 const MainMap = ({
   filteredPositions,
-  markers = [],
+  markers = EMPTY_MARKERS,
   selectedPosition,
   filteredMissiondeviceid = -1,
-  routes = [],
+  routes = EMPTY_ROUTES,
 }) => {
   const dispatch = useDispatch();
   const onMarkerClick = useCallback(

@@ -73,7 +73,9 @@ function routesToXYZ(origin, routes) {
   return routesXYZ;
 }
 
-const R3FMission = ({ routes = [] }) => {
+const EMPTY_ROUTES = [];
+
+const R3FMission = ({ routes = EMPTY_ROUTES }) => {
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const positions = useSelector((state) => state.session.positions);
 

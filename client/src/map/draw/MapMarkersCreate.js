@@ -103,9 +103,11 @@ function selectToPoints(myList) {
   return waypoints;
 }
 
+const EMPTY_SELECT_MARKERS = [];
+
 const MapMarkersCreate = ({
   markers,
-  selectMarkers = [],
+  selectMarkers = EMPTY_SELECT_MARKERS,
   showTitles,
   showLines,
   moveMarkers,

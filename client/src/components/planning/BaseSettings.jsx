@@ -17,6 +17,8 @@ import SelectField from '../../shared/components/SelectField';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
+const EMPTY_SETTINGS = {};
+
 const useStyles = makeStyles()((theme) => ({
   list: {
     maxHeight: '100%',
@@ -53,7 +55,7 @@ const BaseSettings = ({
   data,
   markers,
   param,
-  defaultSettings = {},
+  defaultSettings = EMPTY_SETTINGS,
   setData,
   type = 'Base',
   goToBase = () => null,

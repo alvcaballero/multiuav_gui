@@ -18,7 +18,9 @@ import {
 const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
 const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
-export const MapMissions = ({ filteredDeviceId = -1, routes = [] }) => {
+const EMPTY_ROUTES = [];
+
+export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) => {
   const id = useId();
   const routePoints = `${id}-points`;
   const clusters = `${id}-points-clusters`;
