@@ -2,31 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import {
-  Typography,
-  Container,
-  Paper,
-  AppBar,
-  Toolbar,
-  IconButton,
-  ImageList,
-  ImageListItem,
-  Card,
-  CardMedia,
-  CardHeader,
-  Divider,
-  CardContent,
-  Grid,
-  Chip,
-  Tab,
-  Box,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import { TabPanel, TabList, TabContext } from '@mui/lab';
-import CloseIcon from '@mui/icons-material/Close';
-import ExpandMore from '@mui/icons-material/ExpandMore';
+import { Typography, Container, Paper, AppBar, Toolbar, IconButton, Chip } from '@mui/material';
 
 import { makeStyles } from 'tss-react/mui';
 
@@ -36,13 +12,10 @@ import { formatTime } from '../shared/formatter';
 import { missionStyle, routeStyle } from '../shared/missionStatus';
 
 import { useAsyncTask } from '../reactHelper';
-import MapView from '../map/core/MapView';
-import { MapMissions } from '../map/mission/MapMissions';
-import MapMarkers from '../map/environment/MapMarkers';
-import RoutesList from '../components/mission/RoutesList';
-import SelectField from '../shared/components/SelectField';
-import SelectList from '../components/ui/SelectList';
-import BaseSettings from '../components/planning/BaseSettings';
+import ImageFull from './missionDetailReport/ImageFull';
+import MissionSummarySection from './missionDetailReport/MissionSummarySection';
+import MissionRoutesSection from './missionDetailReport/MissionRoutesSection';
+import MissionMapPanel from './missionDetailReport/MissionMapPanel';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -55,72 +28,11 @@ const useStyles = makeStyles()((theme) => ({
     paddingTop: theme.spacing(2),
     paddingBottom: theme.spacing(2),
   },
-  buttons: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-    display: 'flex',
-    justifyContent: 'space-evenly',
-    '& > *': {
-      flexBasis: '33%',
-    },
-  },
   details: {
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
     paddingBottom: theme.spacing(3),
-  },
-  card: {
-    pointerEvents: 'auto',
-  },
-  media: {
-    //height: theme.dimensions.popupImageHeight,
-    width: theme.dimensions.popupMaxWidth,
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    background: 'black',
-  },
-  media1: {
-    //height: theme.dimensions.popupImageHeight
-    width: '95vw',
-    height: '90vh',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    background: 'black',
-  },
-  gruopBtn: {
-    display: 'flex',
-    right: '5px',
-    height: '40px',
-    position: 'absolute',
-  },
-  mediaButton: {
-    color: theme.palette.colors.white,
-    mixBlendMode: 'difference',
-  },
-  tittle: {
-    display: 'block',
-    width: 'calc( 100% - 60pt )',
-    paddingLeft: '15pt',
-    paddingTop: '10pt',
-    paddingBottom: '10pt',
-    textAlign: 'left',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: theme.spacing(1, 1, 0, 2),
-  },
-  root_max: {
-    pointerEvents: 'none',
-    position: 'fixed',
-    zIndex: 6,
-    left: '50%',
-    top: '8vh',
-    transform: 'translateX(-50%)',
   },
   missionMapOverlay: {
     width: '500px',
@@ -133,36 +45,7 @@ const useStyles = makeStyles()((theme) => ({
     overflowY: 'auto',
   },
 }));
-const ImageFull = ({ file, closecard }) => {
-  const { classes } = useStyles();
-  return (
-    <div className={classes.root_max}>
-      {file && (
-        <Card elevation={3} className={classes.card}>
-          <CardHeader
-            action={
-              <IconButton aria-label="close" onClick={() => closecard()}>
-                <CloseIcon />
-              </IconButton>
-            }
-            title={file.name}
-            subheader="date:September 14, 2016"
-          />
-          <CardMedia
-            component="img"
-            alt={file.name}
-            image={`/api/files/download/${file.path}${file.name}`}
-          />
-          <CardContent>
-            <Typography variant="body2" color="text.secondary">
-              Result:{JSON.stringify(file.attributes)}
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
+
 const formatResult = (result) => {
   if (result && result.hasOwnProperty('measures') && result.measures.length > 0) {
     return result.measures.map((item, itemIndex) => (
@@ -224,8 +107,6 @@ const MissionDetailReportPage = () => {
   const handleTabChange = (event, newTabValue) => {
     setTabValue(newTabValue);
   };
-  const missionItems = 'id,initTime,endTime,status';
-  const routeItems = 'id,initTime,endTime,status,deviceId,result';
 
   // `axis` selects the status vocabulary: mission and route status share names
   // ('running', etc.) but mean different things, so each has its own color map.
@@ -323,157 +204,31 @@ const MissionDetailReportPage = () => {
         <Container maxWidth="xl">
           <Paper style={{ padding: 30 }}>
             {missions && (
-              <div>
-                <Typography variant="h4" gutterBottom>
-                  Resultado de la Misión
-                </Typography>
-                <Grid container spacing={2}>
-                  {missionItems
-                    .split(',')
-                    .filter((key) => missions.hasOwnProperty(key))
-                    .map((key) => (
-                      <Grid item xs={6} key={`ms${key}`}>
-                        <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                          {key}
-                        </Typography>
-                        {key === 'status' ? (
-                          formatValue(missions, key)
-                        ) : (
-                          <Typography variant="body1">{formatValue(missions, key)}</Typography>
-                        )}
-                      </Grid>
-                    ))}
-                  <Grid item xs={6} key={`msresult`}>
-                    <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                      Results
-                    </Typography>
-                    {missions.results.flatMap((item) => formatResult(item))}
-                  </Grid>
-                </Grid>
-              </div>
+              <MissionSummarySection
+                missions={missions}
+                formatValue={formatValue}
+                formatResult={formatResult}
+              />
             )}
-            {routes &&
-              routes.map((route, routeIndex) => (
-                <div key={`rt${routeIndex}`}>
-                  <Divider style={{ margin: '40px 0' }} />
-                  <Typography variant="h5" gutterBottom>
-                    {`Ruta-${routeIndex}`}
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {routeItems
-                      .split(',')
-                      .filter((key) => route.hasOwnProperty(key))
-                      .map((key) => (
-                        <Grid item xs={6} key={`rt${routeIndex}_${key}`}>
-                          <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                            {key}
-                          </Typography>
-                          {key === 'status' ? (
-                            formatValue(route, key, 'route')
-                          ) : (
-                            <Typography variant="body1">{formatValue(route, key)}</Typography>
-                          )}
-                        </Grid>
-                      ))}
-                  </Grid>
-                  {files && files.find((item) => item && item.routeId == route.id) && (
-                    <>
-                      <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
-                        Route files
-                      </Typography>
-                      <ImageList sx={{ width: '100%', height: 500 }} cols={3}>
-                        {files.flatMap((item) =>
-                          item.routeId == route.id && item.name.endsWith('.jpg')
-                            ? [
-                                <ImageListItem key={item.id}>
-                                  <img
-                                    src={`/api/files/download/${item.path}${item.name}`}
-                                    alt={item.name}
-                                    loading="lazy"
-                                    onClick={() => setSelectFile(item)}
-                                  />
-                                </ImageListItem>,
-                              ]
-                            : [],
-                        )}
-                      </ImageList>
-                    </>
-                  )}
-                </div>
-              ))}
+            {routes && (
+              <MissionRoutesSection
+                routes={routes}
+                files={files}
+                formatValue={formatValue}
+                onSelectFile={setSelectFile}
+              />
+            )}
             {dataMission && (
-              <div>
-                <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
-                  Mapa de mission
-                </Typography>
-                <div style={{ width: '100%', height: '500px', position: 'relative' }}>
-                  <MapView>
-                    <MapMissions filtereddeviceid={-1} routes={routePath} />
-                    <MapMarkers markers={missionMarkers} />
-                  </MapView>
-                  <Paper square elevation={3} className={classes.missionMapOverlay}>
-                    <TabContext value={tabValue}>
-                      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <TabList onChange={handleTabChange} aria-label="lab API tabs example">
-                          <Tab label="mission" value="1" />
-                          <Tab label="Planning" value="2" />
-                        </TabList>
-                      </Box>
-                      <TabPanel value="1">
-                        {routePath && (
-                          <RoutesList
-                            mission={missions.mission}
-                            setmission={() => null}
-                            setScrool={() => null}
-                            NoEdit={true}
-                          />
-                        )}
-                      </TabPanel>
-                      <TabPanel value="2">
-                        {missions.task && (
-                          <>
-                            <SelectField
-                              emptyValue={null}
-                              fullWidth
-                              label="objetive"
-                              value={missions.task.case}
-                              endpoint="/api/planning/missionstype"
-                              keyGetter={(it) => it.id}
-                              titleGetter={(it) => it.name}
-                            />
-                            <Accordion>
-                              <AccordionSummary expandIcon={<ExpandMore />}>
-                                <Typography>Interest elements</Typography>
-                              </AccordionSummary>
-                              <AccordionDetails className={classes.details}>
-                                {missions.task.locations && (
-                                  <SelectList Data={missions.task.locations} />
-                                )}
-                              </AccordionDetails>
-                            </Accordion>
-                            <Divider />
-                            <Accordion>
-                              <AccordionSummary expandIcon={<ExpandMore />}>
-                                <Typography>Devices</Typography>
-                              </AccordionSummary>
-                              <AccordionDetails className={classes.details}>
-                                {dataMission && dataParam && (
-                                  <BaseSettings
-                                    data={dataMission}
-                                    param={dataParam}
-                                    setData={() => null}
-                                    goToBase={() => null}
-                                  />
-                                )}
-                              </AccordionDetails>
-                            </Accordion>
-                          </>
-                        )}
-                      </TabPanel>
-                    </TabContext>
-                  </Paper>
-                </div>
-              </div>
+              <MissionMapPanel
+                classes={classes}
+                missions={missions}
+                routePath={routePath}
+                missionMarkers={missionMarkers}
+                dataMission={dataMission}
+                dataParam={dataParam}
+                tabValue={tabValue}
+                onTabChange={handleTabChange}
+              />
             )}
           </Paper>
         </Container>
