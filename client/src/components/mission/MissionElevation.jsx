@@ -1,4 +1,4 @@
-import { useEffect, Fragment, useState } from 'react';
+import { Fragment, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   CartesianGrid,
@@ -14,11 +14,22 @@ import { FormControl, InputLabel, Select, Box, MenuItem, CircularProgress } from
 import palette from '../../shared/palette';
 import { makeStyles } from 'tss-react/mui';
 import { missionActions } from '../../store';
+import { useAsyncTask } from '../../reactHelper';
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   chart: {
+    position: 'relative',
     flexGrow: 1,
     overflow: 'hidden',
+  },
+  chartOverlay: {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none',
+    color: 'rgba(0, 0, 0, 0.4)',
   },
   content: {
     height: '100%',
@@ -28,34 +39,51 @@ const useStyles = makeStyles()(() => ({
     flexDirection: 'column',
     overflowY: 'auto',
   },
-  loading: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100%',
+  tooltipContainer: {
+    background: theme.palette.background.paper,
+    padding: '8px',
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: '4px',
+    boxShadow: theme.shadows[2],
+  },
+  tooltipLabel: {
+    marginBottom: '6px',
+    fontWeight: 500,
+  },
+  tooltipRoute: {
+    fontSize: '14px',
+    marginTop: '4px',
   },
 }));
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-
+const buildTooltipItems = (payload) => {
   const list = [{ ...payload[0].payload, color: payload[0].color }];
-  payload.forEach((key) => {
-    if (list.every((listkey) => key.payload.rt !== listkey.rt)) {
-      list.push({ ...key.payload, color: key.color });
+  payload.forEach((item) => {
+    if (!list.some((existing) => item.payload.rt === existing.rt)) {
+      list.push({ ...item.payload, color: item.color });
     }
   });
+  return list;
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  const { classes } = useStyles();
+  if (!active || !payload?.length) return null;
+
+  const list = buildTooltipItems(payload);
 
   return (
-    <div style={{ background: '#FFFFFF', padding: '5px', border: '1px solid #ccc' }}>
-      <div>{`distancia ${label} m `}</div>
-      {list.map((key) => (
-        <Fragment key={'s-' + key.rt}>
-          <div style={{ color: key.color, fontSize: 16 }}>{`Ruta ${key.rt} - wp ${key.wp}`}</div>
-          <div style={{ color: key.color, fontSize: 16 }}>
-            {key.uavheight
-              ? `Terreno:${key.elevation} - UAV: ${key.uavheight}`
-              : `Terreno:${key.elevation}`}
+    <div className={classes.tooltipContainer}>
+      <div className={classes.tooltipLabel}>{`Distancia: ${label} m`}</div>
+      {list.map((item) => (
+        <Fragment key={`tooltip-${item.rt}`}>
+          <div className={classes.tooltipRoute} style={{ color: item.color }}>
+            {`Ruta ${item.rt} - WP ${item.wp}`}
+          </div>
+          <div className={classes.tooltipRoute} style={{ color: item.color }}>
+            {item.uavheight
+              ? `Terreno: ${item.elevation} m - UAV: ${item.uavheight} m`
+              : `Terreno: ${item.elevation} m`}
           </div>
         </Fragment>
       ))}
@@ -63,141 +91,135 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-const getWpList = (auxroute) =>
+const getWpListFromRoute = (auxroute) =>
   auxroute.map((route) => route.wp.map((wp) => [wp.pos[0], wp.pos[1], wp.pos[2]]));
 
-const MissionElevation = () => {
+const getCoordinatesFromProfile = (profile) =>
+  profile.map((route) =>
+    route.data
+      .filter((point) => point.wp !== undefined)
+      .map((point) => [point.lat, point.lng, point.uav])
+  );
+
+const hasGeometryChanged = (currentWaypoints, profileCoordinates) => {
+  if (currentWaypoints.length !== profileCoordinates.length) return true;
+
+  return currentWaypoints.some((currentRoute, i) => {
+    const prevRoute = profileCoordinates[i] || [];
+    if (currentRoute.length !== prevRoute.length) return true;
+
+    return currentRoute.some(
+      (wp, j) => wp[0] !== prevRoute[j]?.[0] || wp[1] !== prevRoute[j]?.[1]
+    );
+  });
+};
+
+const applyAltitudeDelta = (elevProfile, currentWaypoints, profileCoordinates) => {
+  const updated = structuredClone(elevProfile);
+  let changed = false;
+
+  currentWaypoints.forEach((currentRoute, i) => {
+    if (!updated[i]?.data) return;
+
+    const prevRoute = profileCoordinates[i] || [];
+    currentRoute.forEach((wp, j) => {
+      const prevAltitude = prevRoute[j]?.[2];
+      if (prevAltitude === undefined || wp[2] === prevAltitude) return;
+
+      changed = true;
+      updated[i].data.forEach((point) => {
+        if (point.wp === j) {
+          point.uavheight = +point.uavheight - +point.uav + wp[2];
+          point.uav = wp[2];
+        }
+      });
+    });
+  });
+
+  return changed ? updated : null;
+};
+
+const MissionElevation = ({ active = true }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
-
-  // Defer chart mount so ResponsiveContainer measures real DOM dimensions (React19 compat)
-  const [chartMounted, setChartMounted] = useState(false);
-  useEffect(() => {
-    setChartMounted(true);
-    return () => setChartMounted(false);
-  }, []);
+  const [selectRT, setSelectRT] = useState(-1);
+  const [loading, setLoading] = useState(false);
 
   const missionRoute = useSelector((state) => state.mission.route);
   const elevProfile = useSelector((state) => state.mission.elevation.profile);
-  const location = useSelector((state) => state.mission.elevation.location);
-  const selectRT = useSelector((state) => state.mission.elevation.selectRT);
-  const loading = useSelector((state) => state.mission.elevation.loading);
 
-  const items =
-    selectRT === -1 ? elevProfile : elevProfile[selectRT] ? [elevProfile[selectRT]] : [];
+  const missionGeometry = useMemo(
+    () => getWpListFromRoute(missionRoute),
+    [missionRoute]
+  );
 
-  const routes = items.map((it) => it.data);
-  const elevValues = routes.flat().map((it) => it['elevation']);
-  const uavValues = routes.flat().map((it) => (it['uavheight'] ? Number(it['uavheight']) : 0));
-  const minValue = elevValues.length > 0 ? Math.min(...elevValues) : 0;
-  const maxValue = uavValues.length > 0 ? Math.max(...uavValues) : 0;
-  const range = maxValue - minValue || 10;
+  const selectedItems = useMemo(
+    () => (selectRT === -1 ? elevProfile : elevProfile[selectRT] ? [elevProfile[selectRT]] : []),
+    [selectRT, elevProfile]
+  );
 
-  useEffect(() => {
-    let cancelled = false;
+  const chartData = useMemo(() => selectedItems.flatMap((item) => item.data), [selectedItems]);
 
-    const fetchElevation = async (listwp, ruteColor) => {
-      dispatch(missionActions.setElevationLoading(true));
-      dispatch(missionActions.setElevationLocation(listwp));
+  const { minValue, maxValue, range } = useMemo(() => {
+    const elevations = chartData.map((p) => Number(p.elevation));
+    const uavHeights = chartData.map((p) => (p.uavheight ? Number(p.uavheight) : 0));
 
+    const min = elevations.length > 0 ? Math.min(...elevations) : 0;
+    const max = uavHeights.length > 0 ? Math.max(...uavHeights) : 0;
+    const span = max - min || 10;
+
+    return { minValue: min, maxValue: max, range: span };
+  }, [chartData]);
+
+  useAsyncTask(
+    async ({ signal }) => {
+      if (missionRoute.length === 0) return;
+
+      const currentWaypoints = missionGeometry;
+      const profileCoordinates = elevProfile.length > 0 ? getCoordinatesFromProfile(elevProfile) : [];
+
+      const hasLastRouteWaypoints = currentWaypoints[currentWaypoints.length - 1]?.length > 0;
+      if (!hasLastRouteWaypoints) return;
+
+      if (!hasGeometryChanged(currentWaypoints, profileCoordinates)) {
+        const updatedProfile = applyAltitudeDelta(elevProfile, currentWaypoints, profileCoordinates);
+        if (updatedProfile) {
+          dispatch(missionActions.setElevationProfile(updatedProfile));
+        }
+        return;
+      }
+
+      setLoading(true);
       try {
         const response = await fetch('/api/map/elevation', {
           method: 'POST',
           headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ routes: listwp }),
+          body: JSON.stringify({ routes: currentWaypoints }),
+          signal,
         });
 
-        if (!response.ok) throw new Error(response.status);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const command = await response.json();
-        if (cancelled) return;
-        if (command.status) {
-          const elevationRoute = command.elevation.map((route, index_rt) => ({
-            name: 'RT' + index_rt,
+        const result = await response.json();
+        if (result.status && result.elevation) {
+          const elevationData = result.elevation.map((route, idx) => ({
+            name: `RT${idx}`,
             data: route,
-            color: palette.colors_devices[ruteColor[index_rt]],
+            color: palette.colors_devices[missionRoute[idx]?.id],
           }));
-          dispatch(missionActions.setElevationSelectRT(-1));
-          dispatch(missionActions.setElevationProfile(elevationRoute));
+          setSelectRT(-1);
+          dispatch(missionActions.setElevationProfile(elevationData));
         }
-      } catch (error) {
-        console.error('Error fetching elevation:', error);
       } finally {
-        if (!cancelled) dispatch(missionActions.setElevationLoading(false));
+        setLoading(false);
       }
-    };
-
-    if (missionRoute.length === 0) return () => (cancelled = true);
-
-    const currentLocation = getWpList(missionRoute);
-
-    if (currentLocation.length > location.length) {
-      if (currentLocation[currentLocation.length - 1].length > 0) {
-        fetchElevation(
-          currentLocation,
-          missionRoute.map((el) => el.id),
-        );
-      } else {
-        dispatch(missionActions.setElevationLocation(currentLocation));
-      }
-      return () => (cancelled = true);
-    }
-
-    if (currentLocation.length < location.length) {
-      const indicesToKeep = location.reduce((acc, key, index) => {
-        if (currentLocation.some((ckey) => JSON.stringify(key) === JSON.stringify(ckey))) {
-          acc.push(index);
-        }
-        return acc;
-      }, []);
-      dispatch(missionActions.removeElevationRoute(indicesToKeep));
-      dispatch(missionActions.setElevationLocation(currentLocation));
-      return () => (cancelled = true);
-    }
-
-    // Same number of routes — check for changes
-    for (let i = 0; i < currentLocation.length; i++) {
-      if (JSON.stringify(currentLocation[i]) === JSON.stringify(location[i])) continue;
-
-      const latlonloc = location[i]?.map((wp) => [wp[0], wp[1]]) || [];
-      const latloncur = currentLocation[i].map((wp) => [wp[0], wp[1]]);
-
-      if (JSON.stringify(latlonloc) !== JSON.stringify(latloncur)) {
-        fetchElevation(
-          currentLocation,
-          missionRoute.map((el) => el.id),
-        );
-        return () => (cancelled = true);
-      }
-
-      // Only altitude changed — update profile in place without re-fetching
-      const auxElevprofile = structuredClone(elevProfile);
-      for (let j = 0; j < (location[i]?.length || 0); j++) {
-        if (location[i][j][2] === currentLocation[i][j][2]) continue;
-        if (!auxElevprofile[i]?.data) continue;
-
-        auxElevprofile[i].data.forEach((point) => {
-          if (point.hasOwnProperty('wp') && point.wp === j) {
-            point.uavheight = +point.uavheight - +point.uav + +currentLocation[i][j][2];
-            point.uav = +currentLocation[i][j][2];
-          }
-        });
-      }
-      dispatch(missionActions.setElevationProfile(auxElevprofile));
-      dispatch(missionActions.setElevationLocation(currentLocation));
-      return () => (cancelled = true);
-    }
-
-    return () => (cancelled = true);
-  }, [missionRoute, location, dispatch, elevProfile]);
-
-  const handleSelectChange = (event) => {
-    dispatch(missionActions.setElevationSelectRT(event.target.value));
-  };
+    },
+    [missionGeometry]
+  );
 
   return (
     <div className={classes.content}>
-      <Box style={{ display: 'flex', margin: '10px', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', margin: '10px', alignItems: 'center' }}>
         <span style={{ marginInline: '20px' }}>Elevation Profile</span>
         <FormControl size="small">
           <InputLabel id="elevation-route-select-label">Route</InputLabel>
@@ -206,21 +228,23 @@ const MissionElevation = () => {
             id="elevation-route-select"
             value={selectRT}
             label="Route"
-            onChange={handleSelectChange}
+            onChange={(e) => setSelectRT(e.target.value)}
           >
             <MenuItem value={-1}>All Routes</MenuItem>
             {elevProfile.map((_, index) => (
-              <MenuItem key={`sel${index}`} value={index}>{`Route ${index}`}</MenuItem>
+              <MenuItem key={`route-${index}`} value={index}>
+                Route {index}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
         {loading && <CircularProgress size={20} sx={{ ml: 2 }} />}
       </Box>
 
-      {chartMounted && items.length > 0 && (
+      {active && (
         <div className={classes.chart}>
           <ResponsiveContainer>
-            <LineChart data={items} margin={{ top: 10, right: 40, left: 0, bottom: 10 }}>
+            <LineChart data={chartData} margin={{ top: 10, right: 40, left: 0, bottom: 10 }}>
               <XAxis dataKey="length" type="number" domain={['dataMin', 'dataMax']} />
               <YAxis
                 type="number"
@@ -230,30 +254,31 @@ const MissionElevation = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              {items.map((s, s_index) => (
-                <Fragment key={'s-' + s_index}>
+              {selectedItems.map((item, idx) => (
+                <Fragment key={`route-${idx}`}>
                   <Line
                     type="monotone"
                     dataKey="elevation"
-                    data={s.data}
-                    name={s.name}
-                    key={s.name}
-                    stroke={s.color}
+                    data={item.data}
+                    name={item.name}
+                    stroke={item.color}
                     activeDot={{ r: 8 }}
                   />
                   <Line
                     connectNulls
                     dataKey="uavheight"
-                    data={s.data}
-                    name={s.name + '-v'}
-                    key={s.name + '-v'}
-                    stroke={s.color}
+                    data={item.data}
+                    name={`${item.name}-v`}
+                    stroke={item.color}
                     strokeDasharray="5 5"
                   />
                 </Fragment>
               ))}
             </LineChart>
           </ResponsiveContainer>
+          {chartData.length === 0 && (
+            <div className={classes.chartOverlay}>Sin datos de elevación</div>
+          )}
         </div>
       )}
     </div>
