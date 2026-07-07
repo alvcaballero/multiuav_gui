@@ -64,7 +64,7 @@ const MapDefaultCamera = () => {
       zoom: defaultZoom,
     });
     // eslint-disable-next-line @eslint-react/exhaustive-deps -- intentional mount-only effect, see comment above
-  }, []);
+  }, []); // oxlint-disable-line react-doctor/exhaustive-deps -- intentional mount-only effect, see comment above
 
   useEffect(() => {
     lastPathname = location.pathname;

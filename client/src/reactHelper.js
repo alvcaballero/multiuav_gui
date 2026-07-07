@@ -28,8 +28,9 @@ export const useAsyncTask = (effect, deps) => {
       controller.abort();
       cleanup?.();
     };
+    // `effect` is intentionally excluded (caller passes inline functions), `deps` is caller-provided
     // eslint-disable-next-line @eslint-react/exhaustive-deps
-  }, [...deps, dispatch]);
+  }, [...deps, dispatch]); // oxlint-disable-line react-doctor/exhaustive-deps
 };
 
 export const useCatch = (method) => {
@@ -40,5 +41,12 @@ export const useCatch = (method) => {
 };
 
 export const useCatchCallback = (method, deps) => {
-  return useCallback(useCatch(method), deps);
+  const dispatch = useDispatch();
+  return useCallback(
+    (...parameters) =>
+      method(...parameters).catch((error) => dispatch(errorsActions.push(error.message))),
+    // `deps` is caller-provided, same pattern as useAsyncTask
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    [...deps, dispatch], // oxlint-disable-line react-doctor/exhaustive-deps
+  );
 };
