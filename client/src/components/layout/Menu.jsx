@@ -323,9 +323,20 @@ export const Menu = () => {
         </Tooltip>
 
         <Tooltip title="Open mission file" placement="bottom">
-          <IconButton className={classes.iconBtn} size="small" component="label">
+          <IconButton
+            aria-label="Open mission file"
+            className={classes.iconBtn}
+            size="small"
+            component="label"
+          >
             <FolderOpenIcon sx={{ fontSize: 17 }} />
-            <input type="file" multiple={false} style={{ display: 'none' }} onChange={readFile} />
+            <input
+              type="file"
+              multiple={false}
+              aria-label="Open mission file"
+              style={{ display: 'none' }}
+              onChange={readFile}
+            />
           </IconButton>
         </Tooltip>
 

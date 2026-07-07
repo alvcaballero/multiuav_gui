@@ -48,7 +48,7 @@ const RenderImages = ({ datacamera }) => {
   return <img src={cameraImage} alt="Device camera feed" style={{ width: '100%' }} />;
 };
 
-const MediaMTXPlayer = ({ src, videoRef }) => {
+const MediaMTXPlayer = ({ src, videoRef, label }) => {
   const [connection, setConnection] = useState({ src: null, status: 'loading', error: null });
   const loading = connection.src !== src || connection.status === 'loading';
   const error = connection.src === src ? connection.error : null;
@@ -121,6 +121,7 @@ const MediaMTXPlayer = ({ src, videoRef }) => {
       )}
       <video
         ref={videoRef}
+        aria-label={label}
         autoPlay
         muted
         playsInline
@@ -245,7 +246,11 @@ const CameraDevice = React.memo(({ deviceId, onClose }) => {
             {type === 'Websocket' ? (
               <RenderImages datacamera={datacamera} />
             ) : (
-              <MediaMTXPlayer src={`http://${srcIp}:8889/${cameraSrc}`} videoRef={videoRef} />
+              <MediaMTXPlayer
+                src={`http://${srcIp}:8889/${cameraSrc}`}
+                videoRef={videoRef}
+                label={`${device.name} camera feed`}
+              />
             )}
           </Box>
         </Card>

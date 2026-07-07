@@ -119,12 +119,14 @@ const ChatInput = ({
         type="file"
         accept="image/*"
         multiple
+        aria-label="Attach images"
         style={{ display: 'none' }}
         onChange={handleFileChange}
       />
 
       <Stack direction="row" spacing={1}>
         <IconButton
+          aria-label="Attach images"
           onClick={() => fileInputRef.current?.click()}
           disabled={loading || isRecording}
           sx={{
