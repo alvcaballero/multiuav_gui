@@ -122,6 +122,16 @@ const useStyles = makeStyles()((theme) => ({
     top: '8vh',
     transform: 'translateX(-50%)',
   },
+  missionMapOverlay: {
+    width: '500px',
+    height: '480px',
+    position: 'absolute',
+    top: '10px',
+    left: '10px',
+    flexDirection: 'column',
+    display: 'flex',
+    overflowY: 'auto',
+  },
 }));
 const ImageFull = ({ file, closecard }) => {
   const { classes } = useStyles();
@@ -401,20 +411,7 @@ const MissionDetailReportPage = () => {
                     <MapMissions filtereddeviceid={-1} routes={routePath} />
                     <MapMarkers markers={missionMarkers} />
                   </MapView>
-                  <Paper
-                    square
-                    elevation={3}
-                    style={{
-                      width: '500px',
-                      height: '480px',
-                      position: 'absolute',
-                      top: '10px',
-                      left: '10px',
-                      flexDirection: 'column',
-                      display: 'flex',
-                      overflowY: 'auto',
-                    }}
-                  >
+                  <Paper square elevation={3} className={classes.missionMapOverlay}>
                     <TabContext value={tabValue}>
                       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <TabList onChange={handleTabChange} aria-label="lab API tabs example">
