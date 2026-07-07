@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Paper, Tab, Tabs } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
@@ -64,15 +64,16 @@ const MissionPage3D = () => {
 
   const markers = sessionmarkers;
 
-  const tabs = (
-    <>
+  const tabs = useMemo(
+    () => (
       <Tabs value={tabIndex} onChange={(_, index) => setTabIndex(index)} style={{ flexGrow: 1 }}>
         <Tab label="Viz" />
         <Tab label="Imagery" />
         <Tab label="Stats" />
         <Tab label="Report" />
       </Tabs>
-    </>
+    ),
+    [tabIndex],
   );
 
   return (
