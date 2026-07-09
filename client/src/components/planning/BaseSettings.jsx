@@ -103,13 +103,14 @@ const BaseSettings = ({
                 expanded={expanded === `wp ${base.id}`}
                 onChange={handleChange(`wp ${base.id}`)}
               >
-                <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
-                    {`${type} ${baseIndex} - ${assignment?.device?.name || 'Sin asignar'}`}
-                  </Typography>
-
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AccordionSummary expandIcon={<ExpandMore />} sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
+                      {`${type} ${baseIndex} - ${assignment?.device?.name || 'Sin asignar'}`}
+                    </Typography>
+                  </AccordionSummary>
                   <IconButton
-                    sx={{ py: 0, pr: 0, flexShrink: 0 }}
+                    sx={{ mr: 1, flexShrink: 0 }}
                     onClick={(e) => {
                       e.stopPropagation();
                       goToBase(base.id);
@@ -117,7 +118,7 @@ const BaseSettings = ({
                   >
                     <MyLocationIcon />
                   </IconButton>
-                </AccordionSummary>
+                </Box>
                 <AccordionDetails className={classes.details}>
                   {expanded === `wp ${base.id}` && (
                     <Box

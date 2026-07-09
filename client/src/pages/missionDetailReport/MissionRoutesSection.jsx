@@ -41,6 +41,9 @@ const MissionRoutesSection = ({ routes, files, formatValue, onSelectFile }) => (
                           type="button"
                           onClick={() => onSelectFile(item)}
                           style={{
+                            display: 'block',
+                            width: '100%',
+                            height: '100%',
                             padding: 0,
                             border: 'none',
                             background: 'none',
@@ -51,6 +54,7 @@ const MissionRoutesSection = ({ routes, files, formatValue, onSelectFile }) => (
                             src={`/api/files/download/${item.path}${item.name}`}
                             alt={item.name}
                             loading="lazy"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                         </button>
                       </ImageListItem>,

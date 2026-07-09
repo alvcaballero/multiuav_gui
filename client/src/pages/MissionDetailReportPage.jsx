@@ -71,15 +71,13 @@ const MissionDetailReportPage = () => {
 
   const dataMission = useMemo(() => {
     if (!missions?.task?.devices) return null;
-    return Object.values(missions.task.devices).map((deviceValue) => {
-      const myData = { devices: {} };
-      myData.devices.name = deviceValue.id;
-      myData.devices.category = deviceValue.category;
-      if (deviceValue?.settings) {
-        myData.settings = deviceValue.settings;
-      }
-      return myData;
-    });
+    return Object.values(missions.task.devices)
+      .filter((deviceValue) => deviceValue?.settings?.base)
+      .map((deviceValue) => ({
+        baseId: deviceValue.id,
+        device: { id: deviceValue.id, name: deviceValue.id },
+        settings: deviceValue.settings ?? {},
+      }));
   }, [missions]);
 
   const missionMarkers = useMemo(() => {
@@ -88,6 +86,7 @@ const MissionDetailReportPage = () => {
       Object.values(missions.task.devices).forEach((deviceValue) => {
         if (deviceValue?.settings?.base) {
           myBases.push({
+            id: deviceValue.id,
             latitude: deviceValue.settings.base[0],
             longitude: deviceValue.settings.base[1],
           });

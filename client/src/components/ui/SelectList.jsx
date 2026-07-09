@@ -82,12 +82,14 @@ const SelectList = ({ Data, setData = () => null }) => {
               expanded={expandedGroup === `Elements ${indexGroup}`}
               onChange={handleChangeGroup(`Elements ${indexGroup}`)}
             >
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography
-                  sx={{ width: '33%', flexShrink: 0 }}
-                >{`Group ${indexGroup}`}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <AccordionSummary expandIcon={<ExpandMore />} sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{ width: '33%', flexShrink: 0 }}
+                  >{`Group ${indexGroup}`}</Typography>
+                </AccordionSummary>
                 <IconButton
-                  sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                  sx={{ mr: 1 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     DeleteGroup(indexGroup);
@@ -95,7 +97,7 @@ const SelectList = ({ Data, setData = () => null }) => {
                 >
                   <DeleteIcon />
                 </IconButton>
-              </AccordionSummary>
+              </Box>
               <AccordionDetails className={classes.details}>
                 {expandedGroup === `Elements ${indexGroup}` && (
                   <>
@@ -112,19 +114,23 @@ const SelectList = ({ Data, setData = () => null }) => {
                           expanded={expanded === `Elements ${index}`}
                           onChange={handleChange(`Elements ${index}`)}
                         >
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            {element.title ? (
-                              <Typography sx={{ width: '33%', flexShrink: 0 }}>
-                                {`Element ${element.title}`}
-                              </Typography>
-                            ) : (
-                              <Typography
-                                sx={{ width: '33%', flexShrink: 0 }}
-                              >{`Element ${index}`}</Typography>
-                            )}
-
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <AccordionSummary
+                              expandIcon={<ExpandMore />}
+                              sx={{ flexGrow: 1, minWidth: 0 }}
+                            >
+                              {element.title ? (
+                                <Typography sx={{ width: '33%', flexShrink: 0 }}>
+                                  {`Element ${element.title}`}
+                                </Typography>
+                              ) : (
+                                <Typography
+                                  sx={{ width: '33%', flexShrink: 0 }}
+                                >{`Element ${index}`}</Typography>
+                              )}
+                            </AccordionSummary>
                             <IconButton
-                              sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+                              sx={{ mr: 1 }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 DeleteElement(indexGroup, index);
@@ -132,7 +138,7 @@ const SelectList = ({ Data, setData = () => null }) => {
                             >
                               <DeleteIcon />
                             </IconButton>
-                          </AccordionSummary>
+                          </Box>
                           <AccordionDetails className={classes.details}>
                             {expanded === `Elements ${index}` && (
                               <Box
