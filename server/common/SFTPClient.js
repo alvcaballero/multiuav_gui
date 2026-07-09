@@ -54,6 +54,7 @@ export class SFTPClient {
       fileObjects = await this.client.list(remoteDir, fileGlob);
     } catch (err) {
       logger.error(`Failed to list directory: ${err.message}`);
+      return [];
     }
 
     if (order) {
