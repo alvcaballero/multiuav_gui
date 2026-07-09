@@ -12,7 +12,7 @@ const MissionSummarySection = ({ missions, formatValue, formatResult }) => (
       {MISSION_ITEMS.split(',')
         .filter((key) => missions.hasOwnProperty(key))
         .map((key) => (
-          <Grid item xs={6} key={`ms${key}`}>
+          <Grid size={6} key={`ms${key}`}>
             <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
               {key}
             </Typography>
@@ -23,7 +23,7 @@ const MissionSummarySection = ({ missions, formatValue, formatResult }) => (
             )}
           </Grid>
         ))}
-      <Grid item xs={6} key="msresult">
+      <Grid size={6} key="msresult">
         <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
           Results
         </Typography>

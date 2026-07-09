@@ -15,7 +15,7 @@ const MissionRoutesSection = ({ routes, files, formatValue, onSelectFile }) => (
           {ROUTE_ITEMS.split(',')
             .filter((key) => route.hasOwnProperty(key))
             .map((key) => (
-              <Grid item xs={6} key={`rt${routeIndex}_${key}`}>
+              <Grid size={6} key={`rt${routeIndex}_${key}`}>
                 <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
                   {key}
                 </Typography>

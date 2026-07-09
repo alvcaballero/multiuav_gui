@@ -73,7 +73,7 @@ const CameraPage = () => {
               {Object.values(devices).map((device) => (
                 <Fragment key={'dev' + device.id}>
                   {device.camera.map((camera, cam_index) => (
-                    <Grid item xs={12} sm={6} key={'card-' + device.id + '-' + cam_index}>
+                    <Grid size={{ xs: 12, sm: 6 }} key={'card-' + device.id + '-' + cam_index}>
                       {camera.type === 'WebRTC' && (
                         <CameraWebRTCV4
                           deviceId={device.id}
