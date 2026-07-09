@@ -59,7 +59,7 @@ const useStyles = makeStyles()((theme) => ({
 // (type/unit/min/max/step). Number inputs clamp to [min,max] on blur so the value
 // committed to the mission is always firmware-valid. Falls back to a plain field
 // when no payload metadata is available (boolean flag actions or metadata pending).
-const ActionValueField = ({ payload, value, onCommit }) => {
+const ActionValueField = ({ payload, value, onCommit, disabled = false }) => {
   const [draft, setDraft] = useState(value ?? payload?.default ?? 0);
 
   React.useEffect(() => {
@@ -71,6 +71,7 @@ const ActionValueField = ({ payload, value, onCommit }) => {
       <TextField
         size="small"
         variant="standard"
+        disabled={disabled}
         sx={{ flexGrow: 1 }}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -93,6 +94,7 @@ const ActionValueField = ({ payload, value, onCommit }) => {
       size="small"
       type="number"
       variant="standard"
+      disabled={disabled}
       sx={{ flexGrow: 1 }}
       value={draft}
       slotProps={{
@@ -108,7 +110,7 @@ const ActionValueField = ({ payload, value, onCommit }) => {
 // Renders a per-waypoint param (speed, gimbal, mode_turn...) from its catalog def
 // (type/min/max/step/unit/options). Number → clamped numeric field; select → dropdown.
 // Which params appear is driven entirely by the category profile's waypoint_params.
-const WaypointParamField = ({ def, value, onCommit }) => {
+const WaypointParamField = ({ def, value, onCommit, disabled = false }) => {
   const initial = value ?? def.default ?? 0;
   const [draft, setDraft] = useState(initial);
 
@@ -122,6 +124,7 @@ const WaypointParamField = ({ def, value, onCommit }) => {
         select
         label={def.name}
         variant="standard"
+        disabled={disabled}
         sx={{ width: '13ch' }}
         value={value ?? def.default ?? ''}
         onChange={(e) => onCommit(Number(e.target.value))}
@@ -150,6 +153,7 @@ const WaypointParamField = ({ def, value, onCommit }) => {
       label={def.name}
       type="number"
       variant="standard"
+      disabled={disabled}
       sx={{ width: '13ch' }}
       value={draft}
       slotProps={{
@@ -171,6 +175,7 @@ const WaypointRouteList = ({
   expanded,
   setExpanded,
   onAddWaypoint,
+  NoEdit = false,
 }) => {
   const { classes } = useStyles();
   const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } =
@@ -231,24 +236,28 @@ const WaypointRouteList = ({
     <Accordion expanded={isOpen} onChange={handleChange_wp}>
       <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
-        <IconButton
-          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            move(1);
-          }}
-        >
-          <ArrowDownwardIcon />
-        </IconButton>
-        <IconButton
-          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            move(-1);
-          }}
-        >
-          <ArrowUpwardIcon />
-        </IconButton>
+        {!NoEdit && (
+          <>
+            <IconButton
+              sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                move(1);
+              }}
+            >
+              <ArrowDownwardIcon />
+            </IconButton>
+            <IconButton
+              sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                move(-1);
+              }}
+            >
+              <ArrowUpwardIcon />
+            </IconButton>
+          </>
+        )}
         <IconButton
           sx={{ py: 0, pr: 0, flexShrink: 0 }}
           onClick={(e) => {
@@ -261,15 +270,17 @@ const WaypointRouteList = ({
         >
           <MyLocationIcon />
         </IconButton>
-        <IconButton
-          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            remove();
-          }}
-        >
-          <DeleteIcon />
-        </IconButton>
+        {!NoEdit && (
+          <IconButton
+            sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              remove();
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        )}
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
         {isOpen && (
@@ -282,6 +293,7 @@ const WaypointRouteList = ({
               </div>
               <TextField
                 required
+                disabled={NoEdit}
                 label="Latitud"
                 type="number"
                 sx={{ width: '15ch' }}
@@ -294,6 +306,7 @@ const WaypointRouteList = ({
               />
               <TextField
                 required
+                disabled={NoEdit}
                 label="Longitud"
                 type="number"
                 variant="standard"
@@ -306,6 +319,7 @@ const WaypointRouteList = ({
               />
               <TextField
                 required
+                disabled={NoEdit}
                 label="Altura"
                 type="number"
                 variant="standard"
@@ -320,6 +334,7 @@ const WaypointRouteList = ({
               {/* YAW is intrinsic to every aerial robot — always shown. */}
               <TextField
                 required
+                disabled={NoEdit}
                 label="YAW"
                 type="number"
                 variant="standard"
@@ -335,21 +350,24 @@ const WaypointRouteList = ({
                   def={p.id === 'speed' && idleVel != null ? { ...p, default: idleVel } : p}
                   value={waypoint[p.id]}
                   onCommit={(v) => updateField(p.id, v)}
+                  disabled={NoEdit}
                 />
               ))}
             </Box>
             <Box>
               <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
                 <Typography variant="subtitle1">Actions</Typography>
-                <IconButton
-                  size="small"
-                  onClick={() => setNewactionmenu((v) => !v)}
-                  title="Add action"
-                >
-                  <AddCircleIcon fontSize="small" />
-                </IconButton>
+                {!NoEdit && (
+                  <IconButton
+                    size="small"
+                    onClick={() => setNewactionmenu((v) => !v)}
+                    title="Add action"
+                  >
+                    <AddCircleIcon fontSize="small" />
+                  </IconButton>
+                )}
               </Stack>
-              {!newactionmenu && (
+              {!NoEdit && !newactionmenu && (
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <SelectField
@@ -386,36 +404,41 @@ const WaypointRouteList = ({
                         payload={actionDefs[action_key]?.payload}
                         value={waypoint.action[action_key]}
                         onCommit={(v) => updateAction(action_key, v)}
+                        disabled={NoEdit}
                       />
-                      <IconButton size="small" onClick={() => removeAction(action_key)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      {!NoEdit && (
+                        <IconButton size="small" onClick={() => removeAction(action_key)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
                     </Stack>
                     <Divider />
                   </Fragment>
                 ))}
             </Box>
-            <Box sx={{ textAlign: 'center' }}>
-              <Button
-                variant="contained"
-                size="large"
-                sx={{ width: '60%', flexShrink: 0 }}
-                style={{ marginTop: '15px' }}
-                onClick={() => onAddWaypoint(routeIndex, indexWp)}
-              >
-                Add new Waypoint
-              </Button>
-              <Button
-                variant="contained"
-                color="secondary"
-                size="large"
-                sx={{ width: '30%', flexShrink: 0 }}
-                style={{ marginTop: '15px' }}
-                onClick={copy}
-              >
-                Copy
-              </Button>
-            </Box>
+            {!NoEdit && (
+              <Box sx={{ textAlign: 'center' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{ width: '60%', flexShrink: 0 }}
+                  style={{ marginTop: '15px' }}
+                  onClick={() => onAddWaypoint(routeIndex, indexWp)}
+                >
+                  Add new Waypoint
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  sx={{ width: '30%', flexShrink: 0 }}
+                  style={{ marginTop: '15px' }}
+                  onClick={copy}
+                >
+                  Copy
+                </Button>
+              </Box>
+            )}
           </>
         )}
       </AccordionDetails>

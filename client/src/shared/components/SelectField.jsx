@@ -19,6 +19,7 @@ const SelectField = ({
   keyGetter = defaultKeyGetter,
   titleGetter = defaultTitleGetter,
   getItems = defaultGetItems,
+  disabled = false,
 }) => {
   const [fetchedItems, setFetchedItems] = useState(undefined);
   const items = endpoint ? fetchedItems : data;
@@ -61,7 +62,7 @@ const SelectField = ({
 
   if (items) {
     return (
-      <FormControl fullWidth={fullWidth}>
+      <FormControl fullWidth={fullWidth} disabled={disabled}>
         <InputLabel>{label}</InputLabel>
         {value !== null && value !== undefined && (
           <Select

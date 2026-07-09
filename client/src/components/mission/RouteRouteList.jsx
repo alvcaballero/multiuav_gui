@@ -56,7 +56,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const AttributeField = ({ attrDef, value, uavType, onChange }) => {
+const AttributeField = ({ attrDef, value, uavType, onChange, disabled = false }) => {
   const { classes } = useStyles();
 
   if (attrDef.type === 'number') {
@@ -71,6 +71,7 @@ const AttributeField = ({ attrDef, value, uavType, onChange }) => {
     return (
       <TextField
         fullWidth
+        disabled={disabled}
         type="number"
         className={classes.attributeValue}
         defaultValue={value ?? attrDef.default ?? 0}
@@ -88,6 +89,7 @@ const AttributeField = ({ attrDef, value, uavType, onChange }) => {
       <SelectField
         emptyValue={null}
         fullWidth={true}
+        disabled={disabled}
         value={value ?? attrDef.default ?? 0}
         onChange={(e) => onChange(e.target.value)}
         endpoint={`/api/category/atributesparam/${uavType}/${attrDef.id}`}
@@ -98,7 +100,7 @@ const AttributeField = ({ attrDef, value, uavType, onChange }) => {
   );
 };
 
-const RouteOptions = ({ index, route, uavType }) => {
+const RouteOptions = ({ index, route, uavType, NoEdit = false }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const [expand, setExpand] = useState(false);
@@ -131,6 +133,7 @@ const RouteOptions = ({ index, route, uavType }) => {
                 value={route.attributes[attrDef.id]}
                 uavType={resolvedUavType}
                 onChange={(value) => handleAttributeChange(attrDef.id, value)}
+                disabled={NoEdit}
               />
             </div>
           ))}
@@ -139,7 +142,7 @@ const RouteOptions = ({ index, route, uavType }) => {
   );
 };
 
-const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
+const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const devices = useSelector((state) => state.devices.items);
@@ -150,11 +153,12 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
   const matchedCategory = matchedDevice?.category;
 
   useEffect(() => {
+    if (NoEdit) return;
     if (matchedCategory && route.uav_type !== matchedCategory) {
       dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: matchedCategory }));
       dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: matchedCategory }));
     }
-  }, [matchedCategory, index, route.uav_type, dispatch]);
+  }, [NoEdit, matchedCategory, index, route.uav_type, dispatch]);
 
   const handleAddWaypoint = (index_route, index_wp) => {
     let center = map.getCenter();
@@ -218,21 +222,24 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
           {'Rute ' + index}
         </Typography>
         <Typography sx={{ color: 'text.secondary' }}>{route.name + '- ' + route.uav}</Typography>
-        <IconButton
-          sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleRemoveRoute(index);
-          }}
-        >
-          <DeleteIcon />
-        </IconButton>
+        {!NoEdit && (
+          <IconButton
+            sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemoveRoute(index);
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        )}
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
         {isRouteOpen && (
           <Fragment>
             <TextField
               required
+              disabled={NoEdit}
               label="Route Name"
               variant="standard"
               value={route.name || ''}
@@ -241,6 +248,7 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
 
             <TextField
               required
+              disabled={NoEdit}
               label="UAV id"
               variant="standard"
               value={route.uav || 'uav_'}
@@ -249,6 +257,7 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
 
             <SelectField
               emptyValue={null}
+              disabled={NoEdit}
               value={route.uav_type || ''}
               onChange={(e) => handleRouteFieldChange('uav_type', e.target.value)}
               endpoint="/api/category"
@@ -258,7 +267,7 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
               style={{ display: 'inline', width: '200px' }}
             />
 
-            <RouteOptions index={index} route={route} uavType={route.uav_type} />
+            <RouteOptions index={index} route={route} uavType={route.uav_type} NoEdit={NoEdit} />
 
             <Typography variant="subtitle1">Waypoints</Typography>
             {route.wp.map((waypoint, index_wp) => (
@@ -272,31 +281,34 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded }) => {
                 expanded={expanded}
                 setExpanded={setExpanded}
                 onAddWaypoint={handleAddWaypoint}
+                NoEdit={NoEdit}
               />
             ))}
 
-            <Box sx={{ textAlign: 'center' }}>
-              <Button
-                variant="contained"
-                size="large"
-                sx={{ width: '60%', flexShrink: 0 }}
-                style={{ marginTop: '15px' }}
-                onClick={() => handleAddWaypoint(index, -1)}
-              >
-                Add Waypoint
-              </Button>
-              <Button
-                variant="contained"
-                color="secondary"
-                size="large"
-                disabled={routeUAV == null}
-                sx={{ width: '30%', flexShrink: 0 }}
-                style={{ marginTop: '15px' }}
-                onClick={() => handleRecordWp(index)}
-              >
-                Record
-              </Button>
-            </Box>
+            {!NoEdit && (
+              <Box sx={{ textAlign: 'center' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{ width: '60%', flexShrink: 0 }}
+                  style={{ marginTop: '15px' }}
+                  onClick={() => handleAddWaypoint(index, -1)}
+                >
+                  Add Waypoint
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  disabled={routeUAV == null}
+                  sx={{ width: '30%', flexShrink: 0 }}
+                  style={{ marginTop: '15px' }}
+                  onClick={() => handleRecordWp(index)}
+                >
+                  Record
+                </Button>
+              </Box>
+            )}
           </Fragment>
         )}
       </AccordionDetails>

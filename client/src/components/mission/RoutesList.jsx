@@ -6,11 +6,12 @@ import { Divider, Box, Button, TextField } from '@mui/material';
 import { missionActions } from '../../store';
 import RouteRoutesList from './RouteRouteList';
 
-const RoutesList = ({ setScrool, NoEdit = false }) => {
+const RoutesList = ({ mission: missionProp, setScrool, NoEdit = false }) => {
   const dispatch = useDispatch();
 
-  // Read directly from Redux - single source of truth
-  const mission = useSelector((state) => state.mission);
+  // Read from Redux (live editor) unless a mission is supplied via props (e.g. read-only reports)
+  const reduxMission = useSelector((state) => state.mission);
+  const mission = missionProp ?? reduxMission;
   const selectwp = useSelector((state) => state.mission.selectpoint);
 
   const [expanded, setExpanded] = useState(null);
@@ -44,17 +45,19 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
   return (
     <Fragment>
       {!hasMission ? (
-        <Box sx={{ textAlign: 'center' }}>
-          <Button
-            variant="contained"
-            size="large"
-            sx={{ width: '80%', flexShrink: 0 }}
-            style={{ marginTop: '15px' }}
-            onClick={handleCreateNewMission}
-          >
-            Create New Mission
-          </Button>
-        </Box>
+        !NoEdit && (
+          <Box sx={{ textAlign: 'center' }}>
+            <Button
+              variant="contained"
+              size="large"
+              sx={{ width: '80%', flexShrink: 0 }}
+              style={{ marginTop: '15px' }}
+              onClick={handleCreateNewMission}
+            >
+              Create New Mission
+            </Button>
+          </Box>
+        )
       ) : (
         <Fragment>
           <Box
@@ -67,6 +70,7 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
           >
             <TextField
               required
+              disabled={NoEdit}
               label="Name Mission"
               variant="standard"
               value={mission.name || ''}
@@ -74,6 +78,7 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
             />
             <TextField
               required
+              disabled={NoEdit}
               label="Description of mission"
               variant="standard"
               value={mission.description || ''}
@@ -86,6 +91,7 @@ const RoutesList = ({ setScrool, NoEdit = false }) => {
                   route={item_route}
                   expanded={expanded}
                   setExpanded={setExpanded}
+                  NoEdit={NoEdit}
                 />
                 {index < list.length - 1 ? <Divider /> : null}
               </Fragment>
