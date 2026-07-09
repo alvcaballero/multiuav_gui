@@ -75,3 +75,7 @@ node_modules/
 # development files
 TODO.MD
 TODO.md
+
+# Python virtual environments (e.g. uv-managed thermal image processor)
+.venv/
+__pycache__/

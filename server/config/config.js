@@ -1,7 +1,11 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import logger from '../common/logger.js';
 
 dotenv.config();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const env = process.env.NODE_ENV || 'dev';
 export const port = Number(process.env.PORT) || 4000;
@@ -23,8 +27,13 @@ export const planningServer = process.env.PLANNING_SERVER === 'true';
 export const planningHost = process.env.PLANNING_HOST;
 export const missionDataPath = process.env.MISSION_DATA_PATH ?? '../data/';
 export const processThermalImg = process.env.PROCESS_THERMAL_IMG === 'true';
+// Absolute path so the invocation does not depend on the process CWD.
+// `uv run --project <dir>` resolves the pyproject.toml/.venv living next to the script.
+const thermalProjectDir = path.resolve(__dirname, '../utils/proccessThermalImg');
+const thermalScriptPath = path.join(thermalProjectDir, 'processThermalGen.py');
 export const processThermalScript =
-  process.env.PROCESS_THERMAL_IMG_SRC ?? 'uv run ./utils/proccessThermalImg/processThermalGen.py';
+  process.env.PROCESS_THERMAL_IMG_SRC ??
+  `uv run --project "${thermalProjectDir}" "${thermalScriptPath}"`;
 export const extApp = process.env.EXT_APP === 'true';
 export const extAppUrl = process.env.EXT_APP_URL || '';
 export const extAppUser = process.env.EXT_APP_USER || '';

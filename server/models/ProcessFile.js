@@ -67,8 +67,11 @@ export async function getMetadata(path) {
 }
 
 export async function ProcessThermalImage(input, output) {
-  logger.info(`ProcessThermalImage: ${input} -> ${output}`);
-  if (!processThermalImg) return false;
+  logger.info(`Processing ThermalImage: ${input} -> ${output}`);
+  if (!processThermalImg) {
+    logger.info('Thermal image processing is disabled');
+    return false;
+  }
   try {
     const { stdout, stderr } = await exec(` ${processThermalScript} -i "${input}" -o "${output}" `, {
       shell: '/bin/bash',
