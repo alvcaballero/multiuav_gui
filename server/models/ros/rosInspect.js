@@ -130,7 +130,7 @@ export async function getRosVersion(ros) {
   let servicemaster = new ROSLIB.Service({
     ros: ros,
     name: '/rosapi/get_ros_version',
-    serviceType: 'rosapi_msgs/srv/GetRosVersion',
+    serviceType: 'rosapi_msgs/srv/GetROSVersion',
   });
 
   let request = {};
@@ -138,7 +138,8 @@ export async function getRosVersion(ros) {
     servicemaster.callService(
       request,
       function (result) {
-        resolve(result.ros_version);
+        logger.debug(`get_ros_version result: ${JSON.stringify(result)}`);
+        resolve({ version: result.version, distro: result.distro });
       },
       function (error) {
         logger.error(`Error getting ros version: ${error.message}`);

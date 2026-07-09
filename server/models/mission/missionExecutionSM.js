@@ -126,7 +126,7 @@ const DownloadGCSPromise = (context) =>
   });
 
 // https://stately.ai/docs/invoke
-export const machine = createMachine(
+export const deviceSM = createMachine(
   {
     id: 'GCS-UAV',
     context: { uavId: 1, missionId: 1, routeId: 1 },

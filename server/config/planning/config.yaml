@@ -105,6 +105,7 @@ missionTypes:
               'dji_M210_noetic_rtk',
               'dji_M300',
               'dji_M300_rtk',
+              'px4_ros2',
             ]
       settings:
         base:

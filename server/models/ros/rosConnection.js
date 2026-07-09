@@ -4,6 +4,7 @@ import { ROS_RECONNECT_INTERVAL_MS, ROS_URL } from '../../config/config.js';
 
 var ros = null;
 const rosState = { state: 'disconnect', msg: 'init msg' };
+let rosVersionInfo = { version: 1, distro: null };
 
 var autoconectRos = null;
 var noTimerflag = true;
@@ -26,6 +27,17 @@ export function setRosState({ state, msg }) {
 
 export function serverStatus() {
   return rosState;
+}
+
+export function getRosVersionInfo() {
+  return rosVersionInfo;
+}
+
+export function setRosVersionInfo({ version, distro }) {
+  if (!version) {
+    throw new Error('Invalid version');
+  }
+  rosVersionInfo = { version, distro: distro ?? null };
 }
 
 function _connectRos() {

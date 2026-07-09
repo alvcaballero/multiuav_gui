@@ -68,13 +68,17 @@ const registry = new Map();
  * @param {object} [args.target]         - Human-readable goal summary stored for status queries
  * @param {number} [args.timeout]        - ms, default 120 000 (only applies when blocking=true)
  * @param {boolean} [args.blocking]      - If true, waits until the action completes before resolving
+ * @param {function} [args.onComplete]   - Called once with the final {state, msg, goalId} when the
+ *                                          action reaches a terminal state (succeeded/aborted), regardless
+ *                                          of blocking. Use this for non-blocking goals when the caller
+ *                                          isn't awaiting the returned promise.
  * @param {object} ros                   - Connected ROSLIB.Ros instance
  * @returns {Promise<{state, msg, goalId}>}
  */
 export async function sendRosActionGoal(args, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 
-  const { actionServerName, actionType, message, target = {}, timeout = 120_000, blocking = false } = args;
+  const { actionServerName, actionType, message, target = {}, timeout = 120_000, blocking = false, onComplete } = args;
 
   if (!actionServerName) throw new Error('Missing required arg: actionServerName');
   if (!actionType) throw new Error('Missing required arg: actionType');
@@ -119,11 +123,13 @@ export async function sendRosActionGoal(args, ros) {
           entry.msg = 'Action completed';
         }
 
-        resolve({
+        const actionResult = {
           state: 'success',
           msg: entry?.msg ?? 'Action completed',
           goalId,
-        });
+        };
+        resolve(actionResult);
+        _notifyComplete(onComplete, actionServerName, actionResult);
       },
       (feedback) => {
         logger.debug(`[ActionRegistry] Feedback on ${actionServerName}: ${JSON.stringify(feedback)}`);
@@ -141,7 +147,9 @@ export async function sendRosActionGoal(args, ros) {
         }
 
         // Nav2 abort/cancel is a valid action result, not a server error — resolve with state
-        resolve({ state: 'aborted', msg: String(error), code: error.code, goalId });
+        const result = { state: 'aborted', msg: String(error), code: error.code, goalId };
+        resolve(result);
+        _notifyComplete(onComplete, actionServerName, result);
       }
     );
 
@@ -163,6 +171,16 @@ export async function sendRosActionGoal(args, ros) {
   });
 
   return promise;
+}
+
+// Invokes the caller's onComplete without letting it crash the ROS event handler.
+function _notifyComplete(onComplete, actionServerName, result) {
+  if (!onComplete) return;
+  try {
+    onComplete(result);
+  } catch (e) {
+    logger.warn(`[ActionRegistry] onComplete callback threw for ${actionServerName}: ${e.message}`);
+  }
 }
 
 // Serializes a registry entry into the public status shape.
@@ -248,6 +266,7 @@ function _cancelEntry(key, entry) {
  * @param {object} [args.target]
  * @param {number} [args.timeout]
  * @param {boolean} [args.blocking]
+ * @param {function} [args.onComplete] - See sendRosActionGoal
  * @param {object} ros
  */
 export async function sendActionGoal({ name, category, type, message, ...rest }, ros) {

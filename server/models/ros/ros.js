@@ -2,7 +2,7 @@ import { devicesController } from '../../controllers/devices.js';
 import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
 import { decodeRosMsg } from './rosDecode.js';
-import logger from '../../common/logger.js';
+import { logger, rosLogger } from '../../common/logger.js';
 import {
   getRos,
   setRosState,
@@ -10,6 +10,8 @@ import {
   rosConnect,
   disconectRos as _disconectRos,
   initAutoConnect,
+  getRosVersionInfo as _getRosVersionInfo,
+  setRosVersionInfo,
 } from './rosConnection.js';
 import {
   subscribeDevice as _subscribeDevice,
@@ -113,6 +115,20 @@ export class rosModel {
     return rosInspect.getRosVersion(getRos());
   }
 
+  static getRosVersionInfo() {
+    return _getRosVersionInfo();
+  }
+
+  static async _resolveRosVersion() {
+    try {
+      const { version, distro } = await rosInspect.getRosVersion(getRos());
+      setRosVersionInfo({ version: version ?? 1, distro: distro ?? null });
+    } catch (error) {
+      logger.warn(`Could not resolve ROS version, defaulting to ROS1: ${error.message}`);
+      setRosVersionInfo({ version: 1, distro: null });
+    }
+  }
+
   static async getPublishers(topic) {
     return rosInspect.getPublishers(topic, getRos());
   }
@@ -128,6 +144,20 @@ export class rosModel {
   static GCSServicesMission() {
     // Business callbacks live here in the facade — rosServices only owns the
     // ROSLIB advertise/registry lifecycle and never touches missionController.
+    // serviceType differs between ROS1 and ROS2 bridges (request/response field
+    // names are the same, only the package/message name changed on the ROS2 port).
+    const { version } = _getRosVersionInfo();
+    const serviceTypes =
+      version === 2
+        ? {
+            finishMission: 'muav_gcs_interfaces/srv/FinishMission',
+            finishDownload: 'muav_gcs_interfaces/srv/FinishDownload',
+          }
+        : {
+            finishMission: 'aerialcore_common/finishMission',
+            finishDownload: 'aerialcore_common/finishGetFiles',
+          };
+
     const gcs_services = [
       {
         name: 'ServiceFinishMission',
@@ -159,6 +189,41 @@ export class rosModel {
           return true;
         },
       },
+      {
+        name: 'GCSCommand',
+        serviceName: '/GCS/GCSCommand',
+        serviceType: 'muav_gcs_interfaces/srv/GCSCommand',
+        callback: function (request, response) {
+          logger.debug(`Service get mission callback: ${JSON.stringify(request)}`);
+          if (request.hasOwnProperty('request') && request.request.hasOwnProperty('sender_ns')) {
+            const command = Number(request.request.command);
+            logger.debug(`GCSCommand received command "${command}" from ${request.request.sender_ns}`);
+            if (command === 16) {
+              missionController
+                .deviceFinishMission({ name: request.request.sender_ns })
+                .catch((err) => logger.error(`deviceFinishMission failed: ${err.message}`));
+            } else if (command === 17) {
+              missionController
+                .deviceFinishSyncFiles({ name: request.request.sender_ns })
+                .catch((err) => logger.error(`deviceFinishSyncFiles failed: ${err.message}`));
+            } else {
+              logger.debug(
+                `GCSCommand unhandled command "${request.request.command}" from ${request.request.sender_ns}`
+              );
+            }
+          }
+          Object.assign(response, {
+            reply: {
+              timestamp: Date.now() * 1000, // o el que corresponda, microsegundos
+              command: request.request.command,
+              result: 0,
+              result_param1: 0,
+              result_param2: 0,
+            },
+          });
+          return true;
+        },
+      },
     ];
     rosServices.GCSServicesMission(gcs_services, getRos());
   }
@@ -182,7 +247,22 @@ export class rosModel {
   // Device-layer actions: resolve the ROS action name/type from config by uav_id.
   static async sendActionGoal({ uav_id, type, ...rest }) {
     const { name, category } = await devicesController.getDevice(uav_id);
-    return actionRegistry.sendActionGoal({ name, category, type, ...rest }, getRos());
+
+    // CameraFileDownload finishing is a business event (mission state machine),
+    // not a ROS concern — inject it here like GCSServicesMission does for services,
+    // so actionRegistry/rosEncode stay unaware of missionController.
+    const onComplete =
+      type === 'CameraFileDownload'
+        ? (result) => {
+            rosLogger.debug(`sendActionGoal onComplete: ${JSON.stringify(result)}`);
+            if (result.state !== 'success') return;
+            missionController
+              .deviceFinishSyncFiles({ name })
+              .catch((err) => logger.error(`deviceFinishSyncFiles failed: ${err.message}`));
+          }
+        : rest.onComplete;
+
+    return actionRegistry.sendActionGoal({ name, category, type, ...rest, onComplete }, getRos());
   }
 
   static async getActionStatus({ uav_id, type }) {
@@ -230,6 +310,7 @@ export class rosModel {
 
 initAutoConnect(
   async () => {
+    await rosModel._resolveRosVersion();
     await rosModel.connectAllUAV();
     rosModel.GCSServicesMission();
   },
