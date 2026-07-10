@@ -1,7 +1,7 @@
-import sequelize from '../../common/sequelize.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { missionLogger as logger } from '../../common/logger.js';
-import { ROUTE_STATUS, MISSION_STATUS } from '../../config/status.js';
+import { ROUTE_STATUS } from '../../config/status.js';
+import { missionModel } from './mission.js';
 import {
   signalFlightState,
   signalAutopilotFeedback,
@@ -32,8 +32,9 @@ export class missionWpTracking {
 
     let missionRoute;
     try {
-      missionRoute = await sequelize.models.MissionRoute.findOne({
-        where: { deviceId, status: [ROUTE_STATUS.COMMANDED, ROUTE_STATUS.RUNNING] },
+      missionRoute = await missionModel.getRoutes({
+        deviceId,
+        status: [ROUTE_STATUS.COMMANDED, ROUTE_STATUS.RUNNING],
       });
     } catch (err) {
       logger.error(`WpTracking: DB error device=${deviceId}: ${err.message}`);
@@ -42,10 +43,10 @@ export class missionWpTracking {
 
     if (!missionRoute) return;
 
-    const mission = await sequelize.models.Mission.findOne({ where: { id: missionRoute.missionId } });
+    const mission = await missionModel.getMissionValue(missionRoute.missionId);
     if (!mission?.planId) return;
 
-    const plan = await sequelize.models.MissionPlan.findOne({ where: { id: mission.planId } });
+    const plan = await missionModel.getMissionPlan(mission.planId);
     if (!plan?.missionData?.route) return;
 
     const { devicesController } = await import('../../controllers/devices.js');
@@ -78,13 +79,14 @@ export class missionWpTracking {
     if (wpEstimate !== null && confidence === 'high' && wpEstimate > currentWp) {
       const jumpTarget = Math.min(wpEstimate, waypoints.length);
       const isLast = jumpTarget >= waypoints.length;
-      missionRoute.currentWp = jumpTarget;
-      missionRoute.status = isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING;
-      if (isLast) missionRoute.endTime = new Date();
-      await missionRoute.save();
+      missionRoute = await missionModel.editRoute({
+        id: missionRoute.id,
+        currentWp: jumpTarget,
+        status: isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING,
+        endTime: isLast ? new Date() : undefined,
+      });
       logger.info(`WpTracking device=${deviceId} autopilot feedback jump wp ${currentWp} → ${jumpTarget}`);
       this._emitProgress(missionRoute, deviceId, jumpTarget, anomalies);
-      if (isLast) await this._checkMissionComplete(missionRoute.missionId);
       return;
     }
 
@@ -93,17 +95,16 @@ export class missionWpTracking {
       const nextWp = currentWp + 1;
       const isLast = nextWp >= waypoints.length;
 
-      missionRoute.currentWp = nextWp;
-      missionRoute.status = isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING;
-      if (isLast) {
-        missionRoute.endTime = new Date();
-        clearDeviationHistory(deviceId);
-      }
-      await missionRoute.save();
+      if (isLast) clearDeviationHistory(deviceId);
+      missionRoute = await missionModel.editRoute({
+        id: missionRoute.id,
+        currentWp: nextWp,
+        status: isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING,
+        endTime: isLast ? new Date() : undefined,
+      });
 
       logger.info(`WpTracking device=${deviceId} wp reached ${currentWp} → ${nextWp} last=${isLast}`);
       this._emitProgress(missionRoute, deviceId, nextWp, anomalies);
-      if (isLast) await this._checkMissionComplete(missionRoute.missionId);
       return;
     }
 
@@ -134,27 +135,5 @@ export class missionWpTracking {
       if (device?.id === deviceId) return r;
     }
     return null;
-  }
-
-  static async _checkMissionComplete(missionId) {
-    const routes = await sequelize.models.MissionRoute.findAll({ where: { missionId } });
-
-    // A route in ERROR never flew — it doesn't block completion, but it means the
-    // mission finished with failures. Only the "active" (non-error) routes need to
-    // be COMPLETED for the mission to be considered done.
-    const active = routes.filter((r) => r.status !== ROUTE_STATUS.ERROR);
-    const hasErrors = active.length < routes.length;
-
-    // If every route errored there is nothing to complete (mission already ERROR).
-    if (active.length === 0) return;
-    if (!active.every((r) => r.status === ROUTE_STATUS.COMPLETED)) return;
-
-    const status = hasErrors ? MISSION_STATUS.COMPLETED_WITH_ERRORS : MISSION_STATUS.COMPLETED;
-    await sequelize.models.Mission.update(
-      { status, endTime: new Date() },
-      { where: { id: missionId } }
-    );
-    logger.info(`WpTracking: Mission ${missionId} finished status=${status} (errors=${hasErrors})`);
-    eventBus.emitSafe(EVENTS.MISSION_COMPLETED, { missionId, status });
   }
 }
