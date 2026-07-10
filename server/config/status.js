@@ -27,6 +27,15 @@ export const ROUTE_STATUS = Object.freeze({
   ERROR: 'error',
 });
 
+// Missions that are still "alive" (not in a terminal state). A re-sent external
+// task that maps to one of these is a duplicate; anything else (cancelled/error/
+// finished) is terminal and a re-send is treated as a fresh attempt.
+export const MISSION_ALIVE_STATUS = Object.freeze([
+  MISSION_STATUS.INIT,
+  MISSION_STATUS.PLANNING,
+  MISSION_STATUS.RUNNING,
+]);
+
 // --- PX4 / ROS navigation maps ---
 // Definimos el mapa de estados
 const navigationStates = {

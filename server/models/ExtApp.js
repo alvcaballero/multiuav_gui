@@ -40,8 +40,11 @@ export class ExtApp {
     }
   }
 
-  static async missionStart(missionId, mission) {
-    logger.info(`missionStart missionId=${missionId}`);
+  // `externalId` is the task id the external system assigned — it is what ExtApp
+  // must be addressed by, NOT our internal mission PK. Callers (missionModel)
+  // translate PK → externalId before invoking these methods.
+  static async missionStart(externalId, mission) {
+    logger.info(`missionStart externalId=${externalId}`);
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
@@ -61,7 +64,7 @@ export class ExtApp {
       myMission.push({ deviceId: myDevice.id, wp: myWP });
     }
 
-    logger.debug(`missionStart sending mission_id=${missionId} routes: ${JSON.stringify(myMission)}`);
+    logger.debug(`missionStart sending mission_id=${externalId} routes: ${JSON.stringify(myMission)}`);
 
     let sendResponse = await AppFetch(`${extAppUrl}/drones/mission/start`, {
       method: 'POST',
@@ -70,7 +73,7 @@ export class ExtApp {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        mission_id: Number(missionId),
+        mission_id: Number(externalId),
         routes: myMission,
       }),
     });
@@ -80,8 +83,8 @@ export class ExtApp {
       logger.error('error sending mission start to external application');
     }
   }
-  static async missionResult(missionId, resultCode) {
-    logger.info(`missionResult missionId=${missionId} resultCode=${resultCode}`);
+  static async missionResult(externalId, resultCode) {
+    logger.info(`missionResult externalId=${externalId} resultCode=${resultCode}`);
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
@@ -90,7 +93,7 @@ export class ExtApp {
       await this.UpdateToken();
     }
     let request = {
-      mission_id: missionId,
+      mission_id: externalId,
       resolution_code: resultCode,
     };
     logger.debug(`missionResult request: ${JSON.stringify(request)}`);
@@ -108,8 +111,8 @@ export class ExtApp {
       logger.error('error sending mission result to external application');
     }
   }
-  static async missionMedia(missionId, results) {
-    logger.info(`missionMedia missionId=${missionId}`);
+  static async missionMedia(externalId, results) {
+    logger.info(`missionMedia externalId=${externalId}`);
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
@@ -118,7 +121,7 @@ export class ExtApp {
       await this.UpdateToken();
     }
     let request = {
-      mission_id: missionId,
+      mission_id: externalId,
       files: results.files,
       result: results.data,
     };

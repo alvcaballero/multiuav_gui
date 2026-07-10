@@ -67,6 +67,8 @@ const migrations = [
   `ALTER TABLE MissionPlan ADD COLUMN name TEXT DEFAULT NULL`,
   `ALTER TABLE MissionPlan ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'`,
   `ALTER TABLE Mission ADD COLUMN errorMessage TEXT DEFAULT NULL`,
+  // externalId split: the external system's task id no longer lives in the PK.
+  `ALTER TABLE Mission ADD COLUMN externalId INTEGER DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {
@@ -78,6 +80,18 @@ for (const sql of migrations) {
       logger.error(`Migration failed: ${sql}`, e.message);
     }
   }
+}
+
+// Data backfill (idempotent via WHERE externalId IS NULL): historical automatic
+// missions stored the external task id AS their primary key. Copy it into the new
+// externalId column so ExtApp callbacks keep addressing them by the external id.
+// Manual missions (trigger='manual') have no external origin and stay NULL.
+try {
+  await sequelize.query(
+    `UPDATE Mission SET externalId = id WHERE trigger = 'automatic' AND externalId IS NULL`
+  );
+} catch (e) {
+  logger.error('Migration failed: backfill Mission.externalId', e.message);
 }
 
 export default sequelize;

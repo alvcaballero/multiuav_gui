@@ -1,6 +1,6 @@
 import { missionModel } from '../models/mission/mission.js';
 import {
-  validateMission,
+  validateMissionCollission,
   resolveCollisions as resolveCollisionsAlgo,
   formatMissionReport,
 } from '../models/collision/index.js';
@@ -96,8 +96,8 @@ class missionController {
     }
   };
 
-  static initMission = (mission_id, data) => {
-    missionModel.initMission(mission_id, data);
+  static initMission = (mission_id, data, opts) => {
+    return missionModel.initMission(mission_id, data, opts);
   };
   static editMission = (payload) => {
     return missionModel.editMission(payload);
@@ -116,9 +116,6 @@ class missionController {
   };
   static endRouteUAV = (missionId, uavId) => {
     return missionModel.UAVEnd(missionId, uavId);
-  };
-  static finishMissionProcessFiles = (missionId, deviceId, results) => {
-    return missionModel.FinishProcessFiles((missionId, deviceId, results));
   };
   static getMissionRoute = async (missionId) => {
     return await missionModel.getMissionValue(missionId);
@@ -208,7 +205,7 @@ class missionController {
         return res.status(400).json({ error: 'collision_objects array is required' });
       }
 
-      const result = validateMission(mission, collision_objects);
+      const result = validateMissionCollission(mission, collision_objects);
       const report = formatMissionReport(result);
 
       res.json({
@@ -242,7 +239,7 @@ class missionController {
       }
 
       // First validate
-      const validation = validateMission(mission, collision_objects);
+      const validation = validateMissionCollission(mission, collision_objects);
 
       if (validation.valid) {
         return res.json({
@@ -257,7 +254,7 @@ class missionController {
       const result = resolveCollisionsAlgo(mission, collision_objects);
 
       // Validate the corrected mission
-      const finalValidation = validateMission(result.mission, collision_objects);
+      const finalValidation = validateMissionCollission(result.mission, collision_objects);
 
       res.json({
         modified: true,

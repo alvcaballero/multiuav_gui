@@ -12,7 +12,7 @@ import { Op } from 'sequelize';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { convertMissionXYZToLatLong, convertMissionBriefingToXYZ } from './coordinateConverter.js';
 import { missionLogger as logger } from '../../common/logger.js';
-import { MISSION_STATUS, ROUTE_STATUS } from '../../config/status.js';
+import { MISSION_STATUS, ROUTE_STATUS, MISSION_ALIVE_STATUS } from '../../config/status.js';
 
 /**
  * @typedef Mission
@@ -43,12 +43,32 @@ export class missionModel {
     });
   }
 
-  static async getRoutes({ id, deviceId, missionId }) {
+  // Resolve a mission by the external system's task id (ExtApp dedup / addressing).
+  // Coerce to Number so a string-typed id ("118") still matches the INTEGER column.
+  static async getMissionByExternalId(externalId) {
+    if (externalId == null) return null;
+    const numId = Number(externalId);
+    if (Number.isNaN(numId)) return null;
+    return await sequelize.models.Mission.findOne({ where: { externalId: numId } });
+  }
+
+  // Translate an internal mission PK into the external system's task id for ExtApp
+  // callbacks. Falls back to the PK itself when the mission has no external origin
+  // (e.g. legacy rows or manual missions that somehow reach an ExtApp callback).
+  static async _resolveExternalId(missionId) {
+    const myMission = await this.getMissionValue(missionId);
+    return myMission?.externalId ?? missionId;
+  }
+
+  static async getRoutes({ id, deviceId, missionId, status }) {
     if (deviceId && missionId) {
       return await sequelize.models.MissionRoute.findOne({ where: { deviceId: deviceId, missionId: missionId } });
     }
     if (id) {
       return await sequelize.models.MissionRoute.findOne({ where: { id: id } });
+    }
+    if (deviceId && status) {
+      return await sequelize.models.MissionRoute.findOne({ where: { deviceId: deviceId, status: status } });
     }
     if (missionId) {
       return await sequelize.models.MissionRoute.findAll({ where: { missionId: missionId } });
@@ -65,7 +85,7 @@ export class missionModel {
   }
 
   static async createMission({
-    id,
+    externalId = null,
     name,
     planId = null,
     trigger = 'automatic',
@@ -79,18 +99,39 @@ export class missionModel {
     errorMessage = null,
   }) {
     if (name == null) name = `automatic_${initTime.getTime()}`;
-    // id is only provided by the automatic (ExtApp) flow — use findOrCreate for idempotency.
-    // Manual flow has no external id: use plain create and let autoIncrement assign one.
-    if (id != null) {
-      const [instance, created] = await sequelize.models.Mission.findOrCreate({
-        where: { id },
-        defaults: { name, planId, trigger, uav, status, initTime, endTime, task, mission, results, errorMessage },
+
+    // externalId is only provided by the automatic (ExtApp) flow. Dedup for
+    // idempotency, but ONLY against a mission that is still alive: a re-sent task
+    // whose previous attempt is terminal (cancelled/error/finished) must yield a
+    // FRESH mission so it re-plans. externalId has no DB UNIQUE constraint precisely
+    // to allow these successive attempts. The PK `id` ALWAYS autoincrements — the
+    // external id lives in its own column and never touches the PK. Manual flow has
+    // no externalId (null), so it skips dedup and always creates a fresh row.
+    if (externalId != null) {
+      const alive = await sequelize.models.Mission.findOne({
+        where: { externalId, status: { [Op.in]: MISSION_ALIVE_STATUS } },
       });
-      if (!created) logger.warn(`createMission: id=${id} already exists, returning existing record`);
-      return instance;
+      if (alive) {
+        logger.warn(`createMission: externalId=${externalId} already active as mission ${alive.id}, returning it`);
+        return alive;
+      }
     }
+
+    // Single build of the row: externalId defaults to null, so including it always is
+    // identical to omitting it for the manual flow — no need for two separate creates.
     return await sequelize.models.Mission.create({
-      name, planId, trigger, uav, status, initTime, endTime, task, mission, results, errorMessage,
+      externalId,
+      name,
+      planId,
+      trigger,
+      uav,
+      status,
+      initTime,
+      endTime,
+      task,
+      mission,
+      results,
+      errorMessage,
     });
   }
 
@@ -125,7 +166,7 @@ export class missionModel {
     endTime,
     task,
     mission,
-    results,
+    result,
     currentWp,
     totalWp,
   }) {
@@ -141,25 +182,31 @@ export class missionModel {
     if (endTime) myRoute.endTime = endTime;
     if (task) myRoute.task = task;
     if (mission) myRoute.mission = mission;
-    if (results) myRoute.results = results;
+    if (result) myRoute.result = result;
     if (currentWp !== undefined) myRoute.currentWp = currentWp;
     if (totalWp !== undefined) myRoute.totalWp = totalWp;
     await myRoute.save();
 
-    if (status === ROUTE_STATUS.COMPLETED) this.validateMission(missionId);
+    if (status === ROUTE_STATUS.COMPLETED) this._checkMissionComplete(missionId);
     return myRoute;
   }
 
-  static async validateMission(missionId) {
-    const myRoute = await this.getRoutes({ missionId: missionId });
-    const allFinish = myRoute.every((route) => route.status == ROUTE_STATUS.COMPLETED);
+  static async _checkMissionComplete(missionId) {
+    const routes = await this.getRoutes({ missionId: missionId });
+    // A route in ERROR never flew — it doesn't block completion, but it means the
+    // mission finished with failures. Only the "active" (non-error) routes need to
+    // be COMPLETED for the mission to be considered done.
+    const active = routes.filter((r) => r.status !== ROUTE_STATUS.ERROR);
+    const hasErrors = active.length < routes.length;
 
-    if (allFinish) {
-      let myMission = await sequelize.models.Mission.findOne({ where: { id: missionId } });
-      myMission.status = MISSION_STATUS.COMPLETED;
-      await myMission.save();
-      this.FinishProcessFiles(missionId);
-    }
+    // If every route errored there is nothing to complete (mission already ERROR).
+    if (active.length === 0) return;
+    if (!active.every((r) => r.status === ROUTE_STATUS.COMPLETED)) return;
+
+    const status = hasErrors ? MISSION_STATUS.COMPLETED_WITH_ERRORS : MISSION_STATUS.COMPLETED;
+    this.editMission({ id: missionId, status, endTime: new Date() });
+    logger.info(`WpTracking: Mission ${missionId} finished status=${status} (errors=${hasErrors})`);
+    eventBus.emitSafe(EVENTS.MISSION_COMPLETED, { missionId, status });
   }
 
   static async decodeTask({ id, name, objetivo, locations, meteo }) {
@@ -206,16 +253,11 @@ export class missionModel {
         continue;
       }
       // filter devices are free
-      let getRoutes = await this.getRoutes({ deviceId: myDevice.id });
-      if (
-        getRoutes.some(
-          (route) =>
-            route.status == ROUTE_STATUS.RUNNING ||
-            route.status == ROUTE_STATUS.COMMANDED ||
-            route.status == ROUTE_STATUS.LOADED ||
-            route.status == ROUTE_STATUS.INIT
-        )
-      ) {
+      const busyRoute = await this.getRoutes({
+        deviceId: myDevice.id,
+        status: [ROUTE_STATUS.RUNNING, ROUTE_STATUS.COMMANDED, ROUTE_STATUS.LOADED, ROUTE_STATUS.INIT],
+      });
+      if (busyRoute) {
         logger.info(`device ${myDevice.name} is busy`);
         continue;
       }
@@ -243,32 +285,79 @@ export class missionModel {
     return myTask;
   }
 
-  static async sendTask({ id, name, objetivo, locations, meteo }) {
+  // `externalId` is the task id assigned by the requesting external system (ExtApp).
+  // It is NOT our primary key: we create the Mission first (its PK autoincrements),
+  // then drive the planner and address ExtApp callbacks using the internal PK, while
+  // externalId is persisted on the row so we can translate back to ExtApp later.
+  static async sendTask({ id: rawExternalId, name, objetivo, locations, meteo }) {
     logger.info('command-sendtask');
 
-    const isPlanning = false;
-    if (isPlanning) {
-      let mission = readDataFile(`../config/mission/mission_1.yaml`);
-      await this.initMission(id, { ...mission, id: id });
-      return { response: myTask, status: 'OK' };
+    // Normalize the external id to a number at the boundary. The column is INTEGER but
+    // SQLite is loosely typed: if the external system posts the id as a string ("118"),
+    // an un-coerced value would be stored/queried as text and dedup (getMissionByExternalId)
+    // would silently miss a later numeric re-send. Coerce once here so every downstream
+    // use (dedup, persistence, ExtApp addressing) sees the same numeric value. Treat
+    // null/undefined/'' (Number('') is 0, not NaN) as "no external id".
+    const externalId =
+      rawExternalId != null && rawExternalId !== '' && !Number.isNaN(Number(rawExternalId))
+        ? Number(rawExternalId)
+        : null;
+
+    // Idempotency: the external system may re-send the same task (same externalId).
+    // Only dedup against a mission that is still ALIVE (init/planning/running): a
+    // re-send of an in-flight task must not spawn a duplicate row or a second
+    // planner poll. But a re-send AFTER a terminal state (cancelled/error — e.g. the
+    // first attempt cancelled because every UAV was busy) is a legitimate new attempt
+    // and must be allowed to re-plan, so we do NOT short-circuit on those.
+    if (externalId != null) {
+      const existing = await this.getMissionByExternalId(externalId);
+      if (existing && MISSION_ALIVE_STATUS.includes(existing.status)) {
+        logger.warn(`sendTask: externalId=${externalId} already active as mission ${existing.id}, ignoring re-send`);
+        return { response: existing.task, status: 'OK' };
+      }
     }
 
-    let myTask = await this.decodeTask({ id, name, objetivo, locations, meteo });
+    // decodeTask tags myTask with the EXTERNAL id only for logging/planner body
+    // parity; it's overwritten with the internal PK below before we drive planning.
+    let myTask = await this.decodeTask({ id: externalId, name, objetivo, locations, meteo });
     if (myTask == null) {
       logger.warn('myTask is null');
-      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask, errorMessage: 'No se pudo decodificar la tarea: datos de misión inválidos o incompletos' });
+      await this.createMission({
+        externalId,
+        name,
+        status: MISSION_STATUS.CANCELLED,
+        task: myTask,
+        errorMessage: 'No se pudo decodificar la tarea: datos de misión inválidos o incompletos',
+      });
       return { response: myTask, status: 'ERROR' };
     }
 
     if (myTask.devices.length == 0) {
       logger.warn('no devices to do the mission');
-      await this.createMission({ id, status: MISSION_STATUS.CANCELLED, task: myTask, errorMessage: 'No hay dispositivos disponibles para ejecutar esta misión' });
+      await this.createMission({
+        externalId,
+        name,
+        status: MISSION_STATUS.CANCELLED,
+        task: myTask,
+        errorMessage: 'No hay dispositivos disponibles para ejecutar esta misión',
+      });
       return { response: myTask, status: 'ERROR' };
     }
 
-    planningController.PlanningRequest({ id, myTask });
+    // Create the mission FIRST so we have the internal PK. The planner is polled by
+    // this PK and initMission() addresses the row by it — externalId stays on the row.
+    const mission = await this.createMission({ externalId, name, task: myTask });
+    const missionId = mission.id;
+    myTask.id = missionId;
 
-    await this.createMission({ id, name, task: myTask });
+    const isPlanning = false;
+    if (isPlanning) {
+      let fileMission = readDataFile(`../config/mission/mission_1.yaml`);
+      await this.initMission(missionId, { ...fileMission, id: missionId });
+      return { response: myTask, status: 'OK' };
+    }
+
+    planningController.PlanningRequest({ id: missionId, myTask });
 
     eventsController.addEvent({
       type: 'info',
@@ -279,61 +368,113 @@ export class missionModel {
     return { response: myTask, status: 'OK' };
   }
 
-  static async initMission(missionId, mission) {
+  /**
+   * Entry point from the planning flow. The planner NEVER edits missions itself: it
+   * hands whatever it has to initMission (a plan, or null on timeout) and this method
+   * — the owner of the mission lifecycle — decides the outcome. `opts.timedOut` tells
+   * apart "planner ran out of time" from "planner replied but the plan was unusable",
+   * so the persisted errorMessage reflects the real cause.
+   * @param {number} missionId
+   * @param {object|null} mission - planner result, or null when the wait timed out
+   * @param {{ timedOut?: boolean }} [opts]
+   */
+  static async initMission(missionId, mission, { timedOut = false } = {}) {
     logger.info('===== initMission =====');
     logger.debug(`initMission data: ${JSON.stringify(mission)}`);
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
-      await this.editMission({ id: missionId, status: MISSION_STATUS.ERROR, mission: mission, errorMessage: 'El planificador no devolvió rutas válidas para esta misión' });
-      logger.warn(`Mission ${missionId} cant planning`);
+      const errorMessage = timedOut
+        ? 'El planificador no respondió en el tiempo esperado'
+        : 'El planificador no devolvió rutas válidas para esta misión';
+      await this.editMission({
+        id: missionId,
+        status: MISSION_STATUS.ERROR,
+        mission: mission,
+        errorMessage,
+      });
+      logger.warn(`Mission ${missionId} cant planning (timedOut=${timedOut})`);
       return false;
     }
-    const listUAV = [];
-    for (const route of mission.route) {
-      let findDevice = await devicesController.getByName(route.uav);
-      logger.debug(`findDevice: ${JSON.stringify(findDevice.dataValues)}`);
-      listUAV.push(findDevice.id);
-    }
+    // From here on any unexpected failure (DB error, etc.) must NOT propagate: the
+    // planner calls this detached and has no business handling mission errors. Own the
+    // failure here and drive the mission to ERROR ourselves, so it never gets stuck in
+    // PLANNING and the caller never sees a rejected promise.
+    try {
+      // Resolve each planner route to its device, keeping the route↔device pairing so
+      // every UAV gets ITS OWN route's waypoint count below (not route[0]'s). Skip
+      // routes whose UAV is unknown/deleted instead of crashing on a null device.
+      const routeDevices = [];
+      for (const route of mission.route) {
+        const findDevice = await devicesController.getByName(route.uav);
+        if (!findDevice) {
+          logger.warn(`initMission: route UAV '${route.uav}' not found in DB, skipping route`);
+          continue;
+        }
+        logger.debug(`findDevice: ${JSON.stringify(findDevice.dataValues)}`);
+        routeDevices.push({ route, deviceId: findDevice.id });
+      }
+      const listUAV = routeDevices.map((rd) => rd.deviceId);
 
-    const plan = await this.createMissionPlan(mission, { source: 'automatic' });
-    logger.info(`MissionPlan created id=${plan.id} for automatic mission ${missionId}`);
+      // Every planner route pointed at an unknown UAV → nothing to fly. Don't leave the
+      // mission stuck in PLANNING with zero routes; fail it explicitly.
+      if (routeDevices.length === 0) {
+        await this.editMission({
+          id: missionId,
+          status: MISSION_STATUS.ERROR,
+          mission,
+          errorMessage: 'Ninguna ruta del planificador corresponde a un dispositivo conocido',
+        });
+        logger.warn(`initMission: mission ${missionId} has no resolvable UAVs, marking as ERROR`);
+        return false;
+      }
 
-    await this.editMission({
-      id: missionId,
-      uav: listUAV,
-      planId: plan.id,
-      status: MISSION_STATUS.PLANNING,
-      mission: mission,
-    });
-    for (const uavId of listUAV) {
-      const routeData = mission.route.find((r) => {
-        return true;
+      const plan = await this.createMissionPlan(mission, { source: 'automatic' });
+      logger.info(`MissionPlan created id=${plan.id} for automatic mission ${missionId}`);
+
+      await this.editMission({
+        id: missionId,
+        uav: listUAV,
+        planId: plan.id,
+        status: MISSION_STATUS.PLANNING,
+        mission: mission,
       });
-      const totalWp = routeData?.wp?.length ?? 0;
-      let myroute = await this.createRoute({
-        status: ROUTE_STATUS.INIT,
-        missionId: missionId,
-        deviceId: uavId,
-        initTime: new Date(),
-        endTime: null,
-        result: {},
-        currentWp: 0,
-        totalWp,
+      for (const { route, deviceId: uavId } of routeDevices) {
+        const totalWp = route?.wp?.length ?? 0;
+        let myroute = await this.createRoute({
+          status: ROUTE_STATUS.INIT,
+          missionId: missionId,
+          deviceId: uavId,
+          initTime: new Date(),
+          endTime: null,
+          result: {},
+          currentWp: 0,
+          totalWp,
+        });
+        missionSMModel.createActorMission(uavId, missionId, myroute.id);
+      }
+
+      const externalId = await this._resolveExternalId(missionId);
+      ExtAppController.missionReqStart(externalId, mission);
+
+      eventsController.addEvent({
+        type: 'info',
+        deviceId: null,
+        attributes: { message: `Init mission ${missionId}` },
       });
-      missionSMModel.createActorMission(uavId, missionId, myroute.id);
+
+      // Emitir evento al EventBus para que los subscribers lo manejen
+      eventBus.emitSafe(EVENTS.MISSION_INIT, { ...mission, name: 'name' });
+
+      return { response: mission, status: 'OK' };
+    } catch (err) {
+      logger.error(`initMission(${missionId}) failed: ${err.message}`, err.stack);
+      await this.editMission({
+        id: missionId,
+        status: MISSION_STATUS.ERROR,
+        mission,
+        errorMessage: `Fallo al inicializar la misión: ${err.message}`,
+      });
+      return false;
     }
-
-    ExtAppController.missionReqStart(missionId, mission);
-
-    eventsController.addEvent({
-      type: 'info',
-      deviceId: null,
-      attributes: { message: `Init mission ${missionId}` },
-    });
-
-    // Emitir evento al EventBus para que los subscribers lo manejen
-    eventBus.emitSafe(EVENTS.MISSION_INIT, { ...mission, name: 'name' });
-
-    return { response: mission, status: 'OK' };
   }
 
   static async deviceFinishSyncFiles({ name, id }) {
@@ -387,7 +528,8 @@ export class missionModel {
       attributes: { message: `Device end` },
     });
 
-    await ExtAppController.missionReqResult(missionId, resultCode);
+    const externalId = await this._resolveExternalId(missionId);
+    await ExtAppController.missionReqResult(externalId, resultCode);
     return true;
   }
 
@@ -395,7 +537,9 @@ export class missionModel {
     const myRoute = await this.getRoutes({ deviceId: uavId, missionId: missionId });
     const myMission = await this.getMissionValue(missionId);
     if (!myRoute || !myMission) {
-      logger.warn(`updateFiles: mission=${missionId} or route for uav=${uavId} not found in DB, skipping file download`);
+      logger.warn(
+        `updateFiles: mission=${missionId} or route for uav=${uavId} not found in DB, skipping file download`
+      );
       return false;
     }
     const results = await filesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
@@ -405,55 +549,73 @@ export class missionModel {
 
   static async UAVEnd(missionId, uavId) {
     logger.info('===== UAVEnd whole mission =====');
-    const myRoute = await this.getRoutes({ missionId, uavId }).id;
+    const myRoute = await this.getRoutes({ missionId, deviceId: uavId });
+    if (!myRoute) {
+      logger.warn(`UAVEnd: no route found for mission=${missionId} uav=${uavId}`);
+      return false;
+    }
     const routeId = myRoute.id;
     const listfiles = await filesController.getFilesInfo({ routeId });
     logger.debug(`UAVEnd listfiles: ${JSON.stringify(listfiles)}`);
-    const results = {};
+    const maxByMeasureName = {};
     let attributes = {};
     for (const file of listfiles) {
       if (file.attributes && file.attributes.hasOwnProperty('measures') && file.attributes.measures.length > 0) {
         for (const measure of file.attributes.measures) {
           if (measure.name && measure.value) {
-            if (!results.hasOwnProperty(measure.name)) {
-              results[measure.name] = measure.value;
-              attributes = file.attributes;
-            } else if (Number(results[measure.name]) < Number(measure.value)) {
-              results[measure.name] = measure.value;
+            const isNewMax =
+              !maxByMeasureName.hasOwnProperty(measure.name) ||
+              Number(maxByMeasureName[measure.name]) < Number(measure.value);
+            if (isNewMax) {
+              maxByMeasureName[measure.name] = measure.value;
               attributes = file.attributes;
             }
           }
         }
       }
     }
-    logger.debug(`UAVEnd results: ${JSON.stringify(results)} attributes: ${JSON.stringify(attributes)}`);
+    logger.debug(`UAVEnd attributes: ${JSON.stringify(attributes)}`);
     eventsController.addEvent({
       type: 'info',
       deviceId: uavId,
       attributes: { message: `device end ` },
     });
     await this.editRoute({ id: routeId, status: ROUTE_STATUS.END, result: attributes, endTime: new Date() });
+
+    if (attributes.hasOwnProperty('measures') && attributes.measures.length > 0) {
+      const myMission = await this.getMissionValue(missionId);
+      const existingResults = Array.isArray(myMission?.results) ? myMission.results : [];
+      await this.editMission({ id: missionId, results: [...existingResults, attributes] });
+    }
+
+    const allRoutes = await this.getRoutes({ missionId });
+    const active = allRoutes.filter((r) => r.status !== ROUTE_STATUS.ERROR);
+    if (active.length > 0 && active.every((r) => r.status === ROUTE_STATUS.END)) {
+      await this.notifyFinishProcessfiles(missionId);
+    }
     return true;
   }
 
-  static async FinishProcessFiles(missionId) {
-    logger.info('===== FinishProcessFiles whole mission =====');
+  static async notifyFinishProcessfiles(missionId) {
+    logger.info('===== notifyFinishProcessfiles whole mission =====');
     let code = 0;
     let result = { files: [], data: {} };
     let myfiles = await filesController.getFilesInfo({ missionId });
     result.files = myfiles.map((file) => `${file.route}${file.name}`);
-    const myMission = await this.getMissionValue(missionId);
-    result.data = myMission.results;
+    const routes = await this.getRoutes({ missionId });
+    result.data = routes.filter((r) => r.result).map((r) => ({ deviceId: r.deviceId, result: r.result }));
     eventsController.addEvent({
       type: 'info',
       deviceId: null,
       attributes: { message: `Finish mission ${missionId}` },
     });
-    ExtAppController.missionReqMedia(missionId, { code, files: result.files, data: result.data });
+    const externalId = await this._resolveExternalId(missionId);
+    ExtAppController.missionReqMedia(externalId, { code, files: result.files, data: result.data });
     return true;
   }
 
   static async updateMission({ device, mission, state }) {
+    logger.debug(`updateMission device: ${device} mission: ${mission} state: ${state}`);
     // await sequelize.models.Route.update(
     //   { status: state },
     //   {
@@ -485,7 +647,11 @@ export class missionModel {
         for (const route of listRoutes) {
           await this.editRoute({ id: route.id, status: ROUTE_STATUS.ERROR });
         }
-        await this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR, errorMessage: 'Misión interrumpida: el servidor se reinició mientras estaba activa' });
+        await this.editMission({
+          id: mission.id,
+          status: MISSION_STATUS.ERROR,
+          errorMessage: 'Misión interrumpida: el servidor se reinició mientras estaba activa',
+        });
       }
     }
   }
@@ -566,7 +732,11 @@ export class missionModel {
       try {
         // Pass the FULL mission; loadMissionToDevice extracts this drone's route.
         response = await withRetry(() =>
-          commandsController.sendCommandDevice({ deviceId: device.id, type: 'loadMission', attributes: normalizedMission })
+          commandsController.sendCommandDevice({
+            deviceId: device.id,
+            type: 'loadMission',
+            attributes: normalizedMission,
+          })
         );
       } catch (err) {
         response = { state: 'error', msg: err instanceof Error ? err.message : String(err) };

@@ -9,6 +9,13 @@ import { missionLogger as logger } from '../common/logger.js';
 
 const requestPlanning = {};
 
+// Planner polling cadence and timeout. We poll /get_plan every PLANNING_POLL_MS and
+// give up (mission → ERROR) after PLANNING_MAX_TICKS attempts. A MIP plan with
+// several UAVs + collision resolution can take a while, so the budget is 2 minutes.
+const PLANNING_POLL_MS = 10000;
+const PLANNING_TIMEOUT_S = 120;
+const PLANNING_MAX_TICKS = PLANNING_TIMEOUT_S / (PLANNING_POLL_MS / 1000); // 12 ticks
+
 const firstplanning = {
   id: 1234,
   name: 'no mission',
@@ -101,42 +108,78 @@ export class planningModel {
       requestPlanning[id]['count'] = 0;
       requestPlanning[id]['interval'] = setInterval(() => {
         logger.debug(`polling planning for id ${id}`);
-        this.fetchPlanning(id);
-      }, 10000);
+        // fetchPlanning runs detached in the interval: an unhandled rejection here
+        // would both crash the tick AND leave the interval running forever. Swallow
+        // it so a transient planner error just skips this tick and retries next one.
+        this.fetchPlanning(id).catch((err) => {
+          logger.error(`fetchPlanning(${id}) failed this tick: ${err.message}`);
+        });
+      }, PLANNING_POLL_MS);
     } else {
-      throw Error(await response.text());
+      throw Error(await response1.text());
     }
     return response2;
   }
 
+  // Stops the polling interval for a mission and removes its bookkeeping entry.
+  // Idempotent: safe to call even if a concurrent tick already resolved it.
+  static _stopPolling(mission_id) {
+    const entry = requestPlanning[mission_id];
+    if (!entry) return;
+    clearInterval(entry['interval']);
+    delete requestPlanning[mission_id];
+  }
+
   static async fetchPlanning(mission_id) {
     logger.info(`Fetch planning mission_id=${mission_id}`);
+    if (!requestPlanning[mission_id]) {
+      logger.debug(`fetchPlanning: mission ${mission_id} already resolved by a previous tick, skipping`);
+      return;
+    }
+    // The planner keys /get_plan results by the STRING form of the id (json[str(id)]
+    // in api.py), so look them up with String(mission_id) instead of the raw number.
+    const key = String(mission_id);
     let planningRoute = null;
     const response = await fetch(`${planningHost}/get_plan?IDs=${mission_id}`);
     if (response.ok) {
       const data = await response.json();
       logger.debug(`fetchPlanning response: ${JSON.stringify(data)}`);
-      if (data.results && Object.keys(data.results) > 0) {
-        if (data.results.hasOwnProperty(mission_id) && data.results[mission_id].hasOwnProperty('route')) {
-          logger.info(`got planning response for mission ${mission_id}`);
-          planningRoute = data.results[mission_id];
-          requestPlanning[mission_id]['count'] = 10;
-        }
+      if (data.results?.[key]?.hasOwnProperty('route')) {
+        logger.info(`got planning response for mission ${mission_id}`);
+        planningRoute = data.results[key];
       }
     } else {
-      logger.error(`error fetching planning for mission ${mission_id}`);
-      throw Error(await response.text());
+      // Do NOT throw: this runs in a setInterval tick. Log and treat it as a failed
+      // attempt so a persistently failing planner converges to the timeout→ERROR
+      // path below instead of polling forever.
+      logger.error(`error fetching planning for mission ${mission_id}: HTTP ${response.status}`);
     }
-    requestPlanning[mission_id]['count'] = requestPlanning[mission_id]['count'] + 1;
-    if (requestPlanning[mission_id]['count'] > 3) {
-      clearInterval(requestPlanning[mission_id]['interval']);
-      delete requestPlanning[mission_id];
-      if (planningRoute == null) {
-        logger.warn(`fetchPlanning: timeout waiting for plan mission=${mission_id}, marking as ERROR`);
-        missionController.editMission({ id: mission_id, status: 'error', errorMessage: 'El planificador no respondió en el tiempo esperado (timeout de 40 s)' });
-      } else {
-        missionController.initMission(mission_id, planningRoute);
-      }
+
+    // A concurrent tick may have resolved this mission while we awaited the fetch.
+    if (!requestPlanning[mission_id]) {
+      logger.debug(`fetchPlanning: mission ${mission_id} resolved by a concurrent tick while awaiting, skipping`);
+      return;
+    }
+
+    // The planner owns NO mission-editing logic: whatever the outcome, it just hands
+    // off to initMission, which decides the mission's fate. initMission is designed to
+    // never reject (it drives the mission to ERROR internally on any failure), so no
+    // .catch is needed here.
+
+    // Plan is ready → stop polling and hand it off.
+    if (planningRoute != null) {
+      this._stopPolling(mission_id);
+      missionController.initMission(mission_id, planningRoute);
+      return;
+    }
+
+    // No plan yet → count this attempt; once we run out of time, hand off a null plan
+    // with timedOut:true so initMission fails the mission with the right reason.
+    requestPlanning[mission_id]['count'] += 1;
+    if (requestPlanning[mission_id]['count'] >= PLANNING_MAX_TICKS) {
+      this._stopPolling(mission_id);
+      logger.warn(`fetchPlanning: timeout (${PLANNING_TIMEOUT_S}s) waiting for plan mission=${mission_id}`);
+      missionController.initMission(mission_id, null, { timedOut: true });
     }
   }
 
