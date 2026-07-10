@@ -95,6 +95,7 @@ export class filesModel {
     }
     if (status) file.status = status;
     if (attributes) file.attributes = attributes;
+    await file.save();
     if (status == FILE_STATUS.OK) {
       let myfiles = await this.getFiles({ routeId: file.routeId });
       let allFilesOk = myfiles.every((file) => file.status == FILE_STATUS.OK || file.status == FILE_STATUS.ERROR);
@@ -102,7 +103,6 @@ export class filesModel {
         await missionController.endRouteUAV(file.missionId, file.deviceId);
       }
     }
-    await file.save();
     return file;
   }
 
