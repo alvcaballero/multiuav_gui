@@ -28,15 +28,15 @@ const SIZE = { MIN: 'min', MED: 'med', MAX: 'max' };
 
 const SIZE_CONFIG = {
   [SIZE.MIN]: {
-    frame: { width: '320px', height: '16vh' },
+    frame: { width: '20vw', aspectRatio: '16 / 9' },
     root: { left: '360px', top: '96px', transform: 'translateX(1%)' },
   },
   [SIZE.MED]: {
-    frame: { width: '40vw', height: '59vh' },
+    frame: { width: '40vw', aspectRatio: '16 / 9' },
     root: { left: '360px', top: '96px', transform: 'translateX(1%)' },
   },
   [SIZE.MAX]: {
-    frame: { width: '95vw', height: '90vh' },
+    frame: { width: '95vw', aspectRatio: '16 / 9' },
     root: { left: '51%', top: '5%', transform: 'translateX(-50%)' },
   },
 };
@@ -45,7 +45,13 @@ const hostname = window.location.hostname;
 
 const RenderImages = ({ datacamera }) => {
   const cameraImage = datacamera != null ? 'data:image/jpeg;base64,' + datacamera.camera : novideo;
-  return <img src={cameraImage} alt="Device camera feed" style={{ width: '100%' }} />;
+  return (
+    <img
+      src={cameraImage}
+      alt="Device camera feed"
+      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+    />
+  );
 };
 
 const MediaMTXPlayer = ({ src, videoRef, label }) => {
@@ -55,6 +61,8 @@ const MediaMTXPlayer = ({ src, videoRef, label }) => {
 
   useEffect(() => {
     if (!src) return;
+
+    setConnection({ src, status: 'loading', error: null });
 
     const whepUrl = src.endsWith('/') ? `${src}whep` : `${src}/whep`;
     const videoEl = videoRef.current;
@@ -67,8 +75,11 @@ const MediaMTXPlayer = ({ src, videoRef, label }) => {
         }
       },
       onError: (err) => {
-        setConnection({ src, status: 'error', error: err });
-        console.error('MediaMTX Reader Error:', err);
+        setConnection((c) => {
+          if (c.src === src && c.status === 'error') return c;
+          console.error('MediaMTX Reader Error:', err);
+          return { src, status: 'error', error: err };
+        });
       },
     });
 
@@ -238,9 +249,10 @@ const CameraDevice = React.memo(({ deviceId, onClose }) => {
             sx={{
               ...frameSx,
               display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'flex-start',
+              justifyContent: 'center',
+              alignItems: 'center',
               background: 'black',
+              '& > *': { width: '100%', height: '100%' },
             }}
           >
             {type === 'Websocket' ? (
