@@ -166,7 +166,7 @@ export async function sendRosActionGoal(args, ros) {
     });
 
     if (!blocking) {
-      resolve({ state: 'goal_sent', msg: 'Goal sent, use get_agv_action_status to track progress', goalId });
+      resolve({ state: 'goal_sent', msg: `Goal sent to ${actionServerName}`, goalId });
     }
   });
 
