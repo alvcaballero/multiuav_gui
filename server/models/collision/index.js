@@ -6,10 +6,10 @@
  * @module collision
  *
  * @example
- * import { validateMission, resolveCollisions } from './collision/index.js';
+ * import { validateMissionCollission, resolveCollisions } from './collision/index.js';
  *
  * // Validate a mission
- * const validation = validateMission(mission, obstacles);
+ * const validation = validateMissionCollission(mission, obstacles);
  * if (!validation.valid) {
  *   console.log(`Found ${validation.totalCollisions} collisions`);
  * }
@@ -21,7 +21,7 @@
 // Collision Detection
 export {
   validateRoute,
-  validateMission,
+  validateMissionCollission,
   findCollidingObstacles,
   formatCollisionReport,
   formatRouteReport,
@@ -29,11 +29,7 @@ export {
 } from './collisionDetector.js';
 
 // Detour Generation
-export {
-  generateDetour,
-  applyDetoursToRoute,
-  resolveCollisions,
-} from './detourGenerator.js';
+export { generateDetour, applyDetoursToRoute, resolveCollisions } from './detourGenerator.js';
 
 // Geometry Utilities (for advanced use)
 export {

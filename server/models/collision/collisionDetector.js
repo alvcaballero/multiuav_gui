@@ -311,7 +311,7 @@ export function validateRoute(waypoints, obstacles) {
  * @param {Obstacle[]} obstacles - Array of obstacles
  * @returns {Object} Validation results per route
  */
-export function validateMission(mission, obstacles) {
+export function validateMissionCollission(mission, obstacles) {
   const results = {
     valid: true,
     routes: [],
@@ -429,7 +429,7 @@ export function formatRouteReport(routeResult) {
 
 /**
  * Format full mission validation report
- * @param {Object} missionResult - Result from validateMission()
+ * @param {Object} missionResult - Result from validateMissionCollission()
  * @returns {string}
  */
 export function formatMissionReport(missionResult) {
@@ -437,7 +437,9 @@ export function formatMissionReport(missionResult) {
   const status = missionResult.valid ? 'VALID (No collisions)' : 'INVALID (Collisions detected)';
 
   lines.push(`Status: ${status}`);
-  lines.push(`**Total Collisions:** ${missionResult.totalCollisions} | **Total Warnings:** ${missionResult.totalWarnings}`);
+  lines.push(
+    `**Total Collisions:** ${missionResult.totalCollisions} | **Total Warnings:** ${missionResult.totalWarnings}`
+  );
   lines.push(`- totalDistance: ${missionResult.totalDistance.toFixed(1)} (m)`);
 
   for (const route of missionResult.routes) {
