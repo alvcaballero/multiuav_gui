@@ -13,7 +13,7 @@ import {
   Payload,
   KNOWN_COMMAND_TYPES,
 } from '../config/commandCatalog.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 export class commandsModel {
   static getSaveCommands(deviceId) {

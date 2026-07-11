@@ -1,8 +1,8 @@
-import Sequelize, { Op } from 'sequelize';
+import { Sequelize, Op } from 'sequelize';
 
 import { useExternalDb, dbType, dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
 import { setupModels } from '../schemas/database/index.js';
-import logger from './logger.js';
+import { logger } from './logger.js';
 
 logger.info('useExternalDb is ' + useExternalDb);
 

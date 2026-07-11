@@ -2,7 +2,7 @@ import { positionsController } from '../controllers/positions.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
 import { getDatetime } from '../common/utils.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 /**
  * @typedef Event

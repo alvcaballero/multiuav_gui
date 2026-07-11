@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import logger from './logger.js';
+import { logger } from './logger.js';
 
 export class VideoUtils {
   static async captureFrame(rtspUrl) {

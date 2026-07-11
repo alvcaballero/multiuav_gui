@@ -2,7 +2,7 @@ import { devicesController } from './devices.js';
 import { rosController } from './ros.js';
 import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 import { WS_POSITIONS_INTERVAL_MS, WS_STATE_INTERVAL_MS } from '../config/config.js';
 
 let wsController = null;

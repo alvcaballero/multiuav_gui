@@ -1,6 +1,6 @@
 import { validateDevice, validatePartialDevice } from '../schemas/zod/devices.js';
 import { DevicesModel } from '../models/devices.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 class devicesController {
   static getAll = async (req, res) => {

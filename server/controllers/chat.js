@@ -1,5 +1,5 @@
 import { MessageOrchestrator } from '../models/chat/chat.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 export class chatController {
   static initializeLLMProvider(provider, apiKey) {

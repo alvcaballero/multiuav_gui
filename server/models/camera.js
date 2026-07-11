@@ -1,4 +1,4 @@
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 import { VideoUtils } from '../common/videoUtils.js';
 import { positionsModel } from './positions.js';
 

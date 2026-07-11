@@ -1,4 +1,4 @@
-import logger, { logHelpers } from '../common/logger.js';
+import { logger, logHelpers } from '../common/logger.js';
 import morgan from 'morgan'; // Renamed to avoid conflict with our logger
 
 // Middleware para logging de requests usando nuestro logger

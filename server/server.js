@@ -6,7 +6,7 @@ import { corsMiddleware } from './middlewares/cors.js';
 import { setupLogger } from './middlewares/logger.js';
 import { checkFile } from './common/utils.js';
 import { chatController } from './controllers/chat.js'; // LLM provider initialization
-import logger, { logHelpers } from './common/logger.js';
+import { logger, logHelpers } from './common/logger.js';
 import { getErrorPageHTML } from './views/errorPage.js';
 
 //ws - for client

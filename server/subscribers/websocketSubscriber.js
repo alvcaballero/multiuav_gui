@@ -1,5 +1,5 @@
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 /**
  * Subscriber que escucha eventos del EventBus y los envía a través de WebSocket

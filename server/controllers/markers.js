@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { markersModel } from '../models/markers.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ASSETS_DIR = path.resolve(__dirname, '../data/element-types');

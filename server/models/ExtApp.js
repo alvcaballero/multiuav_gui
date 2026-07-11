@@ -1,6 +1,6 @@
 import { devicesController } from '../controllers/devices.js';
 import { extApp, extAppUrl, extAppUser, extAppPWD } from '../config/config.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 const accessToken = { token: null, date: '' };
 

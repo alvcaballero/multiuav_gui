@@ -1,6 +1,6 @@
 import { rosModel } from '../models/ros/ros.js';
 import { RosEnable } from '../config/config.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 export class rosController {
   static async getTopics(req, res) {
     try {

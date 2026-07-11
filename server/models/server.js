@@ -1,7 +1,7 @@
 import { LocalGlyphs, mapLatitude, mapLongitude, mapZoom, LLM } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile, readDataFile } from '../common/utils.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 const buildingImages = readDataFile('../data/elements.json');
 export class serverModel {

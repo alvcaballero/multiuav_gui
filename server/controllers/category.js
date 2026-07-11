@@ -1,5 +1,5 @@
 import { categoryModel } from '../models/category.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 export class categoryController {
   static async getAll(req, res) {

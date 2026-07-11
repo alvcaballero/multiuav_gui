@@ -1,5 +1,5 @@
 import { filesModel } from '../models/files.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 class filesController {
   static getFiles = async (req, res) => {

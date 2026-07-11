@@ -3,7 +3,7 @@
  * Generates alternative waypoints to avoid obstacles
  */
 
-import logger from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 import {
   distance2D,
   distance3D,

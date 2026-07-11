@@ -1,5 +1,5 @@
 import * as ROSLIB from 'roslib';
-import logger from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 
 // Read-only introspection over the ROS computation graph.
 // Every function here queries rosapi (or the ROS bridge) to discover

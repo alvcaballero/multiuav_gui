@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 dotenv.config();
 

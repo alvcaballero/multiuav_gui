@@ -1,6 +1,6 @@
 import { positionsModel } from '../models/positions.js';
 import { missionWpTracking } from '../models/mission/missionWpTracking.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 export class positionsController {
   static async getAll(req, res) {

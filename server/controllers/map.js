@@ -1,5 +1,5 @@
 import { mapModel } from '../models/map.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 export class mapController {
   static async getElevation(req, res) {

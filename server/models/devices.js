@@ -9,7 +9,7 @@ import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
 import { object, set } from 'zod';
 import { positionsController } from '../controllers/positions.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 import { DEVICE_STATUS } from '../config/status.js';
 
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];

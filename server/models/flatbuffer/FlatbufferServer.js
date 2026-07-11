@@ -1,13 +1,13 @@
 import * as fb from 'fbmsglib';
 import * as flatbuffers from 'flatbuffers';
-import WebSocket, { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { parse } from 'url';
 import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { eventsController } from '../../controllers/events.js';
 import { decodeFbMsg, decodeServiceResponse, isServiceResponse, getNameFromTopic } from './fbDecode.js';
 import { encodeFbMsg } from './fbEncode.js';
-import logger from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 
 const SERVICE_TIMEOUT_MS = 5000;
 

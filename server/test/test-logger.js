@@ -5,7 +5,7 @@
  * Ejecuta: node test-logger.js
  */
 
-import logger, { logHelpers, wsLogger, deviceLogger, rosLogger, createCustomLogger, chalk } from '../common/logger.js';
+import { logger, logHelpers, wsLogger, deviceLogger, rosLogger, createCustomLogger, chalk } from '../common/logger.js';
 
 console.log('🚀 Iniciando pruebas del sistema de logging...\n');
 

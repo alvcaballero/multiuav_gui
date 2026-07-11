@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import logger from './logger.js';
+import { logger } from './logger.js';
 
 /**
  * Sistema centralizado de eventos para desacoplar la comunicación entre componentes.

@@ -1,6 +1,6 @@
 import * as turf from '@turf/turf';
 import { NoElevation } from '../config/config.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 // Constantes de configuración
 const ELEVATION_API_URL = 'https://api.opentopodata.org/v1/eudem25m';

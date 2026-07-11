@@ -1,5 +1,5 @@
 import { eventsModel } from '../models/events.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 export class eventsController {
   static async getAll(req, res) {

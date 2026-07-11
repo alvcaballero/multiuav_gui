@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import exif from 'exif-reader';
 import util from 'util';
 import { processThermalImg, processThermalScript } from '../config/config.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 const exec = util.promisify(child_process.exec);
 

@@ -1,7 +1,7 @@
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { devicesMsg, missionSchema, messagesTypes } from '../config/config.js';
 import { KNOWN_SERVICE_KEYS, KNOWN_TOPIC_KEYS } from '../config/deviceMsgCatalog.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 
 const devices_msg = readDataFile(devicesMsg);

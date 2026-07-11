@@ -3,7 +3,7 @@
  * Detects collisions between flight paths and obstacles
  */
 
-import logger from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 import {
   segmentIntersectsAABB,
   segmentIntersectsCylinder,

@@ -3,7 +3,7 @@ import { readDataFile } from '../../common/utils.js';
 import { encodeRosSrv } from './rosEncode.js';
 import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
 import { getServices, getServicesType, getServiceRequestDetails } from './rosInspect.js';
-import logger from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 
 const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 

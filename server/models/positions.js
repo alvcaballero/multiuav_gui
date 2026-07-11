@@ -1,7 +1,7 @@
 import { map } from 'zod';
 import { eventsController } from '../controllers/events.js';
 import { round } from '../common/utils.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 const positions = {};
 const history = {};
 const camera = {};

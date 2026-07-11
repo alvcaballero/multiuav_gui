@@ -15,7 +15,7 @@
 // Using ssh2-sftp-client v8.0.0
 
 import sftp from 'ssh2-sftp-client';
-import logger from './logger.js';
+import { logger } from './logger.js';
 
 export class SFTPClient {
   constructor() {

@@ -3,7 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { missionsConfigData } from '../config/config.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

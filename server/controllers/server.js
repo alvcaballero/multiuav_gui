@@ -1,5 +1,5 @@
 import { serverModel } from '../models/server.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 
 export class serverController {
   static async server(req, res) {

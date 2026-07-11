@@ -15,7 +15,7 @@
 // Compatible with Node.js >= v12
 // this is a emulation of format of the SFTPClient class
 import * as ftp from 'basic-ftp';
-import logger from './logger.js';
+import { logger } from './logger.js';
 
 function filterList(fileList, pattern = /.*/) {
   let newList = [];

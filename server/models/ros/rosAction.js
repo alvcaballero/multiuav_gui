@@ -1,6 +1,6 @@
 import * as ROSLIB from 'roslib';
 import { readDataFile } from '../../common/utils.js';
-import logger from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 import { getActionServer } from './rosInspect.js';
 import { encodeRosSrv } from './rosEncode.js';
 
