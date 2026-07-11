@@ -1,6 +1,6 @@
 //https://stately.ai/docs/editor-states-and-transitions
 // https://dev.to/davidkpiano/you-don-t-need-a-library-for-state-machines-k7h
-import { createMachine, createActor, fromPromise, assign } from 'xstate';
+import { createMachine, fromPromise, assign } from 'xstate';
 import { commandsController } from '../../controllers/commands.js';
 import { dateString, addTime, GetLocalTime, sleep } from '../../common/utils.js';
 import { missionSMModel } from './missionSM.js';
@@ -55,7 +55,7 @@ const CommandMissionSM = async (context) => {
 
 const CommandDownload = async (context) => {
   logger.info('service download files from Autopilot');
-  let resp = await missionController.finishMission(context.missionId, context.uavId);
+  await missionController.finishMission(context.missionId, context.uavId);
   let mymission = await missionController.getMissionRoute(context.missionId);
 
   logger.debug(`CommandDownload mission: ${JSON.stringify(mymission)}`);
@@ -82,7 +82,7 @@ const CommandDownload = async (context) => {
 
 const DownloadGCS = async (context) => {
   logger.info(`Download files from UAV id ${context.uavId}`);
-  let result = await missionController.updateFiles(context.missionId, context.uavId, context.routeId);
+  await missionController.updateFiles(context.missionId, context.uavId, context.routeId);
   return { state: 'success' };
 };
 
@@ -226,7 +226,7 @@ export const deviceSM = createMachine(
           missionId: event.value.missionId,
         };
       }),
-      DeleteSM: ({ context, event }, params) => {
+      DeleteSM: ({ context }, _params) => {
         logger.info(`delete state machine for uavId ${context.uavId}`);
         missionSMModel.DeleteActor(context.uavId);
       },

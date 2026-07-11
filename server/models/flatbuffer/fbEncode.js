@@ -123,7 +123,7 @@ function encodeMission({ topic, type, attributes }) {
   return fbb.asUint8Array();
 }
 
-function encodeCommandMission({ topic, type, attributes }) {
+function encodeCommandMission({ topic, type, attributes: _attributes }) {
   const fbb = new flatbuffers.Builder();
   const metadataOffset = fb.fb.MsgMetadata.createMsgMetadata(
     fbb,

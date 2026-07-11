@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import { Device } from './device.model.js';
 import { MissionRoute } from './missionRoute.model.js';
 import { Mission } from './mission.model.js';

@@ -33,7 +33,7 @@ export class eventsModel {
     return await sequelize.models.Event.findAll({ where, order: [['eventTime', 'DESC']] });
   }
 
-  static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId, attributes = {} }) {
+  static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId: _positionId, attributes = {} }) {
     logger.debug(
       `addEvent: type=${type} eventTime=${eventTime} deviceId=${deviceId} missionId=${missionId} attributes=${JSON.stringify(attributes)}`
     );

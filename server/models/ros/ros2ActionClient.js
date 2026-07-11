@@ -1,5 +1,3 @@
-import * as ROSLIB from 'roslib';
-
 export class ROS2GoalActionClient {
   constructor(ros, actionName, actionType, feedback = true) {
     this.ros = ros;

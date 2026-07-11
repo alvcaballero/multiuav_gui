@@ -1,4 +1,3 @@
-import { encode } from '@toon-format/toon';
 import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
@@ -312,7 +311,7 @@ export class MessageOrchestrator {
   /**
    * Ejecuta todas las llamadas a herramientas solicitadas por el LLM
    */
-  static async executeToolCalls(toolCalls, chatId) {
+  static async executeToolCalls(toolCalls, _chatId) {
     const results = [];
 
     for (const toolCall of toolCalls) {

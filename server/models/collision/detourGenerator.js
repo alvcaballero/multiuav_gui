@@ -4,16 +4,8 @@
  */
 
 import { logger } from '../../common/logger.js';
-import {
-  distance2D,
-  distance3D,
-  normalize,
-  perpendicular2D,
-  segmentIntersectsCylinder,
-  cylinderFromObstacleZone,
-  interpolateSegment,
-} from './geometry.js';
-import { validateRoute, findCollidingObstacles } from './collisionDetector.js';
+import { distance2D, normalize, perpendicular2D, cylinderFromObstacleZone, interpolateSegment } from './geometry.js';
+import { validateRoute } from './collisionDetector.js';
 
 /**
  * @typedef {import('./geometry.js').Point3D} Point3D
@@ -49,15 +41,6 @@ function normalizePos(pos) {
     return { x: pos[0], y: pos[1], z: pos[2] };
   }
   return pos;
-}
-
-/**
- * Convert Point3D to array format
- * @param {Point3D} pos
- * @returns {number[]}
- */
-function posToArray(pos) {
-  return [pos.x, pos.y, pos.z];
 }
 
 /**
@@ -103,7 +86,6 @@ function determineBestDetourStrategy(start, end, obstacle) {
 
   // Check if vertical detour is viable
   const canGoOver = obstacleHeight + CONFIG.ALTITUDE_BUFFER <= CONFIG.MAX_ALTITUDE;
-  const currentAltitude = Math.max(start.z, end.z);
 
   // Prefer lateral if possible (more energy efficient)
   // Go to the opposite side of where the obstacle is
@@ -157,10 +139,6 @@ function generateLateralDetour(start, end, obstacle, strategy) {
 
   // Calculate offset distance
   const offsetDist = radius + strategy.clearance;
-
-  // Entry point: before the obstacle
-  const distToObstacle = distance2D(start, obstaclePos);
-  const approachDist = Math.max(offsetDist, distToObstacle * 0.3);
 
   // Find point closest to obstacle on flight path
   const t = Math.max(

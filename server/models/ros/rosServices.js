@@ -121,7 +121,7 @@ export function serviceServer({ serviceName, serviceType, callback }, ros) {
         if (parsed.op === 'call_service' && parsed.service === serviceName) {
           logger.info(`[serviceServer] RAW call_service on '${serviceName}' id=${parsed.id}`);
         }
-      } catch (_) {}
+      } catch {}
       return _origOnMessage.call(this, evt);
     };
   }
@@ -150,7 +150,7 @@ export function GCSServicesMission(gcs_services, ros) {
     if (service_list[srv.name]) {
       try {
         service_list[srv.name].unadvertise();
-      } catch (_) {}
+      } catch {}
       delete service_list[srv.name];
     }
     service_list[srv.name] = serviceServer(

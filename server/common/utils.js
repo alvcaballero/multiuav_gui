@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'fs';
 import { writeFile } from 'fs/promises';
 import { parse, stringify } from 'yaml';
 import { fileURLToPath } from 'url';
-import { dirname, resolve, normalize } from 'path';
+import { dirname, resolve } from 'path';
 import { logger } from './logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

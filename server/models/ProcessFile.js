@@ -7,10 +7,6 @@ import { logger } from '../common/logger.js';
 
 const exec = util.promisify(child_process.exec);
 
-function getNormalSize({ width, height, orientation }) {
-  return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
-}
-
 /*
 / convert from DMS to DD
 */

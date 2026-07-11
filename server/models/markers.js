@@ -103,7 +103,7 @@ export class markersModel {
     return { result: true };
   }
 
-  static saveTypeIcon(id, filePath) {
+  static saveTypeIcon(id, _filePath) {
     logger.debug(`save icon for type: ${id}`);
     const customTypes = loadCustomTypes();
     const idx = customTypes.findIndex((t) => t.id === id);
@@ -114,7 +114,7 @@ export class markersModel {
     return customTypes[idx];
   }
 
-  static saveTypeModel(id, filePath) {
+  static saveTypeModel(id, _filePath) {
     logger.debug(`save 3d model for type: ${id}`);
     const customTypes = loadCustomTypes();
     const idx = customTypes.findIndex((t) => t.id === id);

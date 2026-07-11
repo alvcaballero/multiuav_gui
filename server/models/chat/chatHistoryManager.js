@@ -1,7 +1,6 @@
 import sequelize from '../../common/sequelize.js';
 import { Op } from 'sequelize';
 import { chatLogger } from '../../common/logger.js';
-import { Json } from 'sequelize/lib/utils';
 
 export class ChatHistoryManager {
   /**

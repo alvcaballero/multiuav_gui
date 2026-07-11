@@ -422,13 +422,13 @@ export class filesModel {
     logger.info(`process thermal images: ${JSON.stringify(src)}`);
     for (const file of src) {
       if (file.includes('THRM') || file.includes('.tiff')) {
-        let response = await ProcessThermalImage(`${file}`, `${file.split('.')[0]}_process.jpg`);
+        await ProcessThermalImage(`${file}`, `${file.split('.')[0]}_process.jpg`);
       }
     }
     return true;
   }
 
-  static async listFiles({ uavId, missionId }) {
+  static async listFiles({ uavId, missionId: _missionId }) {
     logger.debug(`listFiles for uavId ${uavId}`);
     return [];
   }

@@ -33,7 +33,7 @@ export function setupLogger(app) {
   );
 
   // Configurar manejo de errores con logging
-  app.use((err, req, res, next) => {
+  app.use((err, req, res, _next) => {
     logHelpers.api.error(req.method, req.url, err, {
       stack: err.stack,
       statusCode: err.status || 500,

@@ -11,7 +11,6 @@ import {
   pointInAABB,
   pointInCylinder,
   distance3D,
-  interpolateSegment,
 } from './geometry.js';
 
 /**

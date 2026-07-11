@@ -204,7 +204,7 @@ export function Getservicehost(nameService, ros) {
 
   let request = { service: nameService };
 
-  return new Promise((resolve, rejects) => {
+  return new Promise((resolve, _rejects) => {
     servicehost.callService(request, function (result) {
       resolve(result.host);
     });
@@ -220,7 +220,7 @@ export function getListMaster(ros) {
 
   let request = {};
 
-  return new Promise((resolve, rejects) => {
+  return new Promise((resolve, _rejects) => {
     servicemaster.callService(request, function (result) {
       logger.debug(`Master IPs found: ${result.length}`);
       resolve(result);

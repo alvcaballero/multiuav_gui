@@ -42,7 +42,7 @@ class MCPclient {
       if (this.client) {
         try {
           await this.client.close();
-        } catch (e) {
+        } catch {
           // Ignore errors when closing
         }
       }

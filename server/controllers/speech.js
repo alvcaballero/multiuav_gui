@@ -2,8 +2,6 @@ import OpenAI from 'openai';
 import { LLMApiKeys } from '../config/config.js';
 import { logger } from '../common/logger.js';
 import fs from 'fs';
-import path from 'path';
-import os from 'os';
 
 let openaiClient;
 

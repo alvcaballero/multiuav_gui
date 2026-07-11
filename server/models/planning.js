@@ -1,5 +1,5 @@
 import { readDataFile, writeDataFile, getRandomInt } from '../common/utils.js';
-import { missionsConfigData, planningServer, planningHost } from '../config/config.js';
+import { missionsConfigData, planningHost } from '../config/config.js';
 
 const configPlanning = readDataFile('../config/planning/config.yaml');
 var initPlanning = readDataFile(missionsConfigData);
@@ -182,7 +182,7 @@ export class planningModel {
     }
   }
 
-  static localPlanning({ mission_id, objectivo, loc, meteo }) {
+  static localPlanning({ mission_id: _mission_id, objectivo: _objectivo, loc, meteo: _meteo }) {
     let uav = 'uav_15';
 
     let home = [37.134092, -6.472401, 50];

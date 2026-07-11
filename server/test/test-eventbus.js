@@ -42,7 +42,7 @@ console.log('📊 Stats:', JSON.stringify(stats, null, 2));
 
 // Test 4: Error handling
 console.log('\nTest 4: Error handling in listeners');
-eventBus.onSafe(EVENTS.MISSION_UPDATED, (data) => {
+eventBus.onSafe(EVENTS.MISSION_UPDATED, (_data) => {
   throw new Error('This error should be caught');
 });
 

@@ -1,9 +1,7 @@
-import { map } from 'zod';
 import { eventsController } from '../controllers/events.js';
 import { round } from '../common/utils.js';
 import { logger } from '../common/logger.js';
 const positions = {};
-const history = {};
 const camera = {};
 
 export class positionsModel {
@@ -11,7 +9,7 @@ export class positionsModel {
     if (query) {
       if (Array.isArray(query)) {
         const asArray = Object.entries(positions);
-        const filtered = asArray.filter(([key, value]) => query.some((element) => key == element));
+        const filtered = asArray.filter(([key]) => query.some((element) => key == element));
         return Object.fromEntries(filtered);
       }
       if (!isNaN(query)) {

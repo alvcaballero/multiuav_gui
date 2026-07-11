@@ -44,7 +44,7 @@ class missionController {
       }
     }
     logger.debug(`sendTask id=${id}`);
-    let response = await missionModel.sendTask({ id, name, objetivo, locations, meteo });
+    await missionModel.sendTask({ id, name, objetivo, locations, meteo });
     res.status(200).json('all ok');
   };
 

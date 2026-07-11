@@ -28,7 +28,7 @@ export class BaseLLMHandler {
    * @param {string} options.instructions - Instrucciones del sistema (necesarias al usar previousResponseId)
    * @returns {Promise<Object>} Respuesta del LLM con formato { output: Array, responseId: string, model: string, status: string }
    */
-  async processMessage(message, tools = [], conversationHistory = [], options = {}) {
+  async processMessage(message, _tools = [], _conversationHistory = [], _options = {}) {
     throw new Error('processMessage() debe ser implementado por la clase derivada');
   }
 
@@ -38,7 +38,7 @@ export class BaseLLMHandler {
    * @param {Function} toolExecutor - Función para ejecutar la herramienta
    * @returns {Promise<Object>} Resultado de la ejecución
    */
-  async handleToolCall(toolCall, toolExecutor) {
+  async handleToolCall(_toolCall, _toolExecutor) {
     throw new Error('handleToolCall() debe ser implementado por la clase derivada');
   }
 
@@ -47,7 +47,7 @@ export class BaseLLMHandler {
    * @param {any} response - Respuesta del LLM
    * @returns {Object} Respuesta normalizada
    */
-  normalizeResponse(response) {
+  normalizeResponse(_response) {
     throw new Error('normalizeResponse() debe ser implementado por la clase derivada');
   }
 
@@ -67,7 +67,7 @@ export class BaseLLMHandler {
    * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
    * @returns {Promise<string|null>} Session ID or null if provider doesn't use sessions
    */
-  async ensureSession(chatId, persistence) {
+  async ensureSession(_chatId, _persistence) {
     return null;
   }
 
@@ -79,7 +79,7 @@ export class BaseLLMHandler {
    * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
    * @returns {Promise<boolean>} true if the session was recovered (caller should retry), false otherwise
    */
-  async handleSessionError(chatId, error, persistence) {
+  async handleSessionError(_chatId, _error, _persistence) {
     return false;
   }
 

@@ -2,7 +2,6 @@ import { GoogleGenAI } from '@google/genai';
 import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './agents/index.js';
 import { logger, chatLogger } from '../../common/logger.js';
-import { tr } from 'zod/v4/locales';
 
 // Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, gemini-3.1-pro-preview
 class GeminiHandler extends BaseLLMHandler {
@@ -61,7 +60,7 @@ class GeminiHandler extends BaseLLMHandler {
         let args = {};
         try {
           args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments || {};
-        } catch (e) {
+        } catch {
           /* keep empty */
         }
         const part = { functionCall: { name: item.name, args } };
@@ -87,14 +86,14 @@ class GeminiHandler extends BaseLLMHandler {
               typeof output.content?.[0]?.text === 'string'
                 ? JSON.parse(output.content[0].text)
                 : output.content?.[0]?.text || output.content || output;
-          } catch (e) {
+          } catch {
             response = { text: output.content?.[0]?.text || output.content?.[0] || output };
           }
 
           if (item.call_id) {
             args.call_id = item.call_id; // Preserve call_id for matching responses to tool calls
           }
-        } catch (e) {
+        } catch {
           /* keep empty */
         }
 

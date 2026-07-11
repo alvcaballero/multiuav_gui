@@ -6,7 +6,7 @@ import { planningController } from '../../controllers/planning.js';
 import { filesController } from '../../controllers/files.js';
 import { eventsController } from '../../controllers/events.js';
 import { commandsController } from '../../controllers/commands.js';
-import { readDataFile, writeJSON, sleep, withRetry } from '../../common/utils.js';
+import { readDataFile, sleep, withRetry } from '../../common/utils.js';
 import sequelize from '../../common/sequelize.js';
 import { Op } from 'sequelize';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
@@ -477,7 +477,7 @@ export class missionModel {
     }
   }
 
-  static async deviceFinishSyncFiles({ name, id }) {
+  static async deviceFinishSyncFiles({ name, id: _id }) {
     let mydevice = await devicesController.getByName(name);
     if (mydevice == null) {
       logger.warn(`mydevice name ${name} not found`);
@@ -496,7 +496,7 @@ export class missionModel {
     return true;
   }
 
-  static async deviceFinishMission({ name, id }) {
+  static async deviceFinishMission({ name, id: _id }) {
     logger.debug(`deviceFinishMission name: ${name}`);
     let mydevice = await devicesController.getByName(name);
     if (mydevice == null) {
@@ -542,7 +542,7 @@ export class missionModel {
       );
       return false;
     }
-    const results = await filesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
+    await filesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
     await sleep(5000);
     return true;
   }

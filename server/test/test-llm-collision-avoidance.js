@@ -35,7 +35,7 @@ process.env.LLM = 'true';
 const { MCPclient } = await import('../models/chat/mcpClient.js');
 const { LLMFactory } = await import('../models/chat/llmFactory.js');
 const { ChatHistoryManager } = await import('../models/chat/chatHistoryManager.js');
-const sequelize = (await import('../common/sequelize.js')).default;
+const _sequelize = (await import('../common/sequelize.js')).default;
 const { encode } = await import('@toon-format/toon');
 const { decode } = await import('@toon-format/toon');
 const { LLMApiKeys, LLMProvider } = await import('../config/config.js');
@@ -71,7 +71,7 @@ function assert(testName, condition, detail = '') {
 // Track data across the loop for assertions
 const toolCallLog = []; // { name, args, result }
 let firstValidationResult = null;
-let lastValidationResult = null;
+let _lastValidationResult = null;
 let finalAssistantText = '';
 
 async function runTest() {
@@ -236,7 +236,7 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
       // Track for assertions
       toolCallLog.push({ name: toolName, args: toolArgs, result: parsedResult });
       if (!firstValidationResult) firstValidationResult = parsedResult;
-      lastValidationResult = parsedResult;
+      _lastValidationResult = parsedResult;
 
       // Build function_call_output (same format as openaiHandler.handleToolCall)
       const toolOutput = {

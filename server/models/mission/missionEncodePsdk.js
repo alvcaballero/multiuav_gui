@@ -141,14 +141,6 @@ function setTriggers(waypointIndex, actionIndex) {
   };
 }
 
-function nullActuators() {
-  return {
-    waypoint_v2_camera_actuator: cameraActuator(0),
-    waypoint_v2_gimbal_actuator: gimbalActuator(0),
-    waypoint_v2_aircraft_control_actuator: aircraftActuator(),
-  };
-}
-
 // ─── Action resolvers (ACTION_TYPE → { waypoint_v2_action_actuator_type, actuators }) ─
 // ACTION_TYPE uses psdk_interfaces hardcoded values — no DB lookup needed
 
