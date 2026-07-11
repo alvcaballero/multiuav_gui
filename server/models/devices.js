@@ -176,7 +176,6 @@ export class DevicesModel {
         status: DEVICE_STATUS.OFFLINE,
         user: device.user,
         pwd: device.pwd,
-        ip: device.ip,
         camera: device.camera,
         files: device.files,
         protocol: protocol,

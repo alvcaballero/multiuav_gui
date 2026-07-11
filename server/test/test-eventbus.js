@@ -3,7 +3,7 @@
  * Ejecutar con: node test-eventbus.js
  */
 
-import { eventBus, EVENTS } from './common/eventBus.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
 
 console.log('\n🧪 Testing EventBus System\n');
 

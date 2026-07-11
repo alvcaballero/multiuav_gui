@@ -13,10 +13,6 @@ export class planningController {
     const response = await planningModel.getMissionTypes();
     res.json(response);
   }
-  static async getMissionTypes(req, res) {
-    const response = await planningModel.getMissionTypes();
-    res.json(response);
-  }
   static async getDefault(req, res) {
     let response = await planningModel.getDefault();
     res.json(response);

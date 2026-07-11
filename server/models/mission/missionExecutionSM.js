@@ -10,54 +10,46 @@ import { ROUTE_STATUS } from '../../config/status.js';
 
 const LoadMissionSM = async (context) => {
   logger.info('service load mission');
-  try {
-    let mission = await missionController.getMissionRoute(context.missionId);
-    let missionPlan = mission.mission;
-    logger.debug(`LoadMissionSM mission: ${JSON.stringify(missionPlan)}`);
-    // Pass the FULL mission; loadMissionToDevice extracts this UAV's own route.
-    let response = await commandsController.sendCommandDevice({
-      deviceId: context.uavId,
-      type: 'loadMission',
-      attributes: missionPlan,
-    });
+  let mission = await missionController.getMissionRoute(context.missionId);
+  let missionPlan = mission.mission;
+  logger.debug(`LoadMissionSM mission: ${JSON.stringify(missionPlan)}`);
+  // Pass the FULL mission; loadMissionToDevice extracts this UAV's own route.
+  let response = await commandsController.sendCommandDevice({
+    deviceId: context.uavId,
+    type: 'loadMission',
+    attributes: missionPlan,
+  });
 
-    logger.debug(`LoadMissionSM response: ${JSON.stringify(response)}`);
-    if (response.state == 'success') {
-      logger.info('LoadMissionSM success');
-      return response; // Resolve with the response
-    } else {
-      throw new Error('Problem send Mission');
-    }
-  } catch (error) {
-    throw error; // Reject with the error
+  logger.debug(`LoadMissionSM response: ${JSON.stringify(response)}`);
+  if (response.state == 'success') {
+    logger.info('LoadMissionSM success');
+    return response; // Resolve with the response
+  } else {
+    throw new Error('Problem send Mission');
   }
 };
 
 const CommandMissionSM = async (context) => {
   logger.info('service command mission');
-  try {
-    sleep(2000);
-    let response = await commandsController.sendCommandDevice({
-      deviceId: context.uavId,
-      type: 'commandMission',
-    });
+  sleep(2000);
+  let response = await commandsController.sendCommandDevice({
+    deviceId: context.uavId,
+    type: 'commandMission',
+  });
 
-    logger.debug(`CommandMissionSM response: ${JSON.stringify(response)}`);
-    if (response.state == 'success') {
-      logger.info('CommandMissionSM success');
-      // initMission creates the MissionRoute in INIT; promote it to COMMANDED so
-      // missionWpTracking.checkProgress starts tracking waypoint progress.
-      await missionController.editRoute({
-        missionId: context.missionId,
-        deviceId: context.uavId,
-        status: ROUTE_STATUS.COMMANDED,
-      });
-      return response; // Resolve with the response
-    } else {
-      throw new Error('Problem send Command ');
-    }
-  } catch (error) {
-    throw error; // Reject with the error
+  logger.debug(`CommandMissionSM response: ${JSON.stringify(response)}`);
+  if (response.state == 'success') {
+    logger.info('CommandMissionSM success');
+    // initMission creates the MissionRoute in INIT; promote it to COMMANDED so
+    // missionWpTracking.checkProgress starts tracking waypoint progress.
+    await missionController.editRoute({
+      missionId: context.missionId,
+      deviceId: context.uavId,
+      status: ROUTE_STATUS.COMMANDED,
+    });
+    return response; // Resolve with the response
+  } else {
+    throw new Error('Problem send Command ');
   }
 };
 
@@ -70,25 +62,21 @@ const CommandDownload = async (context) => {
   let myInitTime = dateString(GetLocalTime(mymission['initTime']));
   let myFinishTime = dateString(addTime(GetLocalTime(new Date()), 10));
   logger.debug(`CommandDownload time range: ${myInitTime} --- ${myFinishTime}`);
-  try {
-    let response = await commandsController.sendCommandDevice({
-      deviceId: context.uavId,
-      type: 'CameraFileDownload',
-      attributes: {
-        startDate: myInitTime,
-        endDate: myFinishTime,
-      },
-    });
-    logger.debug(`CommandDownload response: ${JSON.stringify(response)}`);
-    if (response.state == 'success') {
-      logger.info('CommandDownload success');
-      return response; // Resolve with the response
-    } else {
-      logger.warn('Problem download Mission');
-      //throw new Error('Problem download Mission');
-    }
-  } catch (error) {
-    throw error; // Reject with the error
+  let response = await commandsController.sendCommandDevice({
+    deviceId: context.uavId,
+    type: 'CameraFileDownload',
+    attributes: {
+      startDate: myInitTime,
+      endDate: myFinishTime,
+    },
+  });
+  logger.debug(`CommandDownload response: ${JSON.stringify(response)}`);
+  if (response.state == 'success') {
+    logger.info('CommandDownload success');
+    return response; // Resolve with the response
+  } else {
+    logger.warn('Problem download Mission');
+    //throw new Error('Problem download Mission');
   }
 };
 

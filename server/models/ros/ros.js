@@ -123,6 +123,7 @@ export class rosModel {
     try {
       const { version, distro } = await rosInspect.getRosVersion(getRos());
       setRosVersionInfo({ version: version ?? 1, distro: distro ?? null });
+      logger.info(`ROS version resolved: ROS${version ?? 1}${distro ? ` (${distro})` : ''}`);
     } catch (error) {
       logger.warn(`Could not resolve ROS version, defaulting to ROS1: ${error.message}`);
       setRosVersionInfo({ version: 1, distro: null });

@@ -1,5 +1,5 @@
 import * as ROSLIB from 'roslib';
-import logger, { logHelpers } from '../../common/logger.js';
+import { logHelpers } from '../../common/logger.js';
 import { ROS_RECONNECT_INTERVAL_MS, ROS_URL } from '../../config/config.js';
 
 var ros = null;
@@ -8,8 +8,6 @@ let rosVersionInfo = { version: 1, distro: null };
 
 var autoconectRos = null;
 var noTimerflag = true;
-
-logHelpers.system.info('roslib version:', ROSLIB.version || 'unknown');
 
 // Holds the disconnect handler injected by the facade (unsubscribeDevice + GCSunServicesMission)
 var _onDisconnect = null;

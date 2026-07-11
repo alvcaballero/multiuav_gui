@@ -109,7 +109,7 @@ export class rosController {
       res.status(500).json({ error: 'Failed to get action servers: ' + error });
     }
   }
-  static async sendActionGoal(req, res) {
+  static async sendActionGoalHandler(req, res) {
     try {
       const response = await rosModel.sendActionGoal(req.body);
       res.json(response);
@@ -228,7 +228,7 @@ export class rosController {
     return response;
   }
 
-  // Internal (non-HTTP) counterpart of sendActionGoal, used by commandsModel.standarCommand.
+  // Internal (non-HTTP) counterpart of sendActionGoalHandler, used by commandsModel.standarCommand.
   static async sendActionGoal({ uav_id, type, message, target, timeout, blocking }) {
     if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
     return await rosModel.sendActionGoal({ uav_id, type, message, target, timeout, blocking });

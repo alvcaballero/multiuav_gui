@@ -28,6 +28,7 @@ export default [
     },
     rules: {
       'no-prototype-builtins': 'off',
+      'no-empty': ['error', { allowEmptyCatch: true }],
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'import-x/no-unresolved': [
         'warn',

@@ -6,7 +6,7 @@ export function buildTypeMap(definitions) {
   return typeMap;
 }
 
-function validatePrimitiveType(val, fieldType, type) {
+function validatePrimitiveType(val, fieldType, type, fieldName) {
   switch (fieldType) {
     case 'double':
     case 'float':
@@ -95,7 +95,7 @@ export function validateRosMsg(typeMsg, msg, typeMap, Checkallparrams = true) {
         if (fieldType.includes('/')) {
           validateRosMsg(fieldType, item, typeMap, false);
         } else {
-          validatePrimitiveType(item, fieldType, type);
+          validatePrimitiveType(item, fieldType, type, fieldName);
         }
       }
     } else {
@@ -104,7 +104,7 @@ export function validateRosMsg(typeMsg, msg, typeMap, Checkallparrams = true) {
       if (fieldType.includes('/')) {
         validateRosMsg(fieldType, val, typeMap, false);
       } else {
-        validatePrimitiveType(val, fieldType, type);
+        validatePrimitiveType(val, fieldType, type, fieldName);
       }
     }
   }

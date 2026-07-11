@@ -126,31 +126,27 @@ export class SpeechController {
         textLength: text.length,
       });
 
-      try {
-        // Usar la API de TTS de OpenAI para generar audio
-        const mp3Response = await openaiClient.audio.speech.create({
-          model: 'tts-1',
-          voice: 'nova', // Voz femenina en español (opciones: alloy, echo, fable, onyx, nova, shimmer)
-          input: text,
-          speed: 1.0,
-        });
+      // Usar la API de TTS de OpenAI para generar audio
+      const mp3Response = await openaiClient.audio.speech.create({
+        model: 'tts-1',
+        voice: 'nova', // Voz femenina en español (opciones: alloy, echo, fable, onyx, nova, shimmer)
+        input: text,
+        speed: 1.0,
+      });
 
-        // Convertir la respuesta a buffer
-        const buffer = Buffer.from(await mp3Response.arrayBuffer());
+      // Convertir la respuesta a buffer
+      const buffer = Buffer.from(await mp3Response.arrayBuffer());
 
-        logger.info('Audio generado exitosamente', {
-          size: buffer.length,
-        });
+      logger.info('Audio generado exitosamente', {
+        size: buffer.length,
+      });
 
-        // Enviar el audio como respuesta
-        res.set({
-          'Content-Type': 'audio/mpeg',
-          'Content-Length': buffer.length,
-        });
-        res.send(buffer);
-      } catch (error) {
-        throw error;
-      }
+      // Enviar el audio como respuesta
+      res.set({
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': buffer.length,
+      });
+      res.send(buffer);
     } catch (error) {
       logger.error('Error en text-to-speech', {
         error: error.message,
