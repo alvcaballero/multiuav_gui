@@ -24,8 +24,7 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
   const dLat = (lat2 - lat1) * DEG_TO_RAD;
   const dLon = (lon2 - lon1) * DEG_TO_RAD;
   const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * DEG_TO_RAD) * Math.cos(lat2 * DEG_TO_RAD) * Math.sin(dLon / 2) ** 2;
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * DEG_TO_RAD) * Math.cos(lat2 * DEG_TO_RAD) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -132,7 +131,9 @@ export function signalTimeEstimate(waypoints, routeAttributes, initTime, current
   const gap = estimatedWp - currentWp;
   const anomaly = gap >= 2 ? 'TELEMETRY_GAP' : null;
 
-  logger.debug(`missionSignals[time] elapsed=${elapsedSec.toFixed(0)}s estimatedWp=${estimatedWp} currentWp=${currentWp} gap=${gap}`);
+  logger.debug(
+    `missionSignals[time] elapsed=${elapsedSec.toFixed(0)}s estimatedWp=${estimatedWp} currentWp=${currentWp} gap=${gap}`
+  );
 
   return {
     wpEstimate: estimatedWp,
@@ -148,15 +149,13 @@ export function signalTimeEstimate(waypoints, routeAttributes, initTime, current
 
 // Per-device rolling distance history: { [deviceId]: number[] }
 const _distHistory = {};
-const DEVIATION_WINDOW = 5;       // last N samples
+const DEVIATION_WINDOW = 5; // last N samples
 const DEVIATION_THRESHOLD_M = 30; // growing this much means diverging
 
 export function signalDeviation(deviceId, currentLat, currentLon, targetWp) {
   if (!targetWp) return { wpEstimate: null, confidence: null, anomaly: null };
 
-  const [tLat, tLon] = Array.isArray(targetWp.pos)
-    ? targetWp.pos
-    : [targetWp.pos.lat, targetWp.pos.lon];
+  const [tLat, tLon] = Array.isArray(targetWp.pos) ? targetWp.pos : [targetWp.pos.lat, targetWp.pos.lon];
 
   const dist = haversineMeters(currentLat, currentLon, tLat, tLon);
 
@@ -175,7 +174,9 @@ export function signalDeviation(deviceId, currentLat, currentLon, targetWp) {
 
   const anomaly = isGrowing && totalGrowth > DEVIATION_THRESHOLD_M ? 'DEVIATION' : null;
 
-  logger.debug(`missionSignals[deviation] device=${deviceId} dist=${dist.toFixed(1)}m growth=${totalGrowth.toFixed(1)}m anomaly=${anomaly}`);
+  logger.debug(
+    `missionSignals[deviation] device=${deviceId} dist=${dist.toFixed(1)}m growth=${totalGrowth.toFixed(1)}m anomaly=${anomaly}`
+  );
 
   return { wpEstimate: null, confidence: null, anomaly };
 }

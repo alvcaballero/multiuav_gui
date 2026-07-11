@@ -82,8 +82,7 @@ export function pointInAABB(point, aabb, margin = 0) {
 export function pointInCylinder(point, cylinder, margin = 0) {
   const horizontalDist = distance2D(point, cylinder.center);
   const inRadius = horizontalDist <= cylinder.radius + margin;
-  const inHeight = point.z >= cylinder.center.z - margin &&
-                   point.z <= cylinder.center.z + cylinder.height + margin;
+  const inHeight = point.z >= cylinder.center.z - margin && point.z <= cylinder.center.z + cylinder.height + margin;
   return inRadius && inHeight;
 }
 
@@ -203,11 +202,8 @@ export function closestPointOnSegment(point, segment) {
   }
 
   // Parametric value along segment
-  let t = (
-    (point.x - segment.start.x) * dx +
-    (point.y - segment.start.y) * dy +
-    (point.z - segment.start.z) * dz
-  ) / lengthSq;
+  let t =
+    ((point.x - segment.start.x) * dx + (point.y - segment.start.y) * dy + (point.z - segment.start.z) * dz) / lengthSq;
 
   // Clamp to [0, 1]
   t = Math.max(0, Math.min(1, t));
@@ -251,8 +247,7 @@ export function segmentIntersectsCylinder(segment, cylinder, margin = 0) {
 
   // Check if within cylinder bounds
   const inRadius = horizontalDist <= cylinder.radius + margin;
-  const inHeight = point3D.z >= cylinder.center.z - margin &&
-                   point3D.z <= cylinder.center.z + cylinder.height + margin;
+  const inHeight = point3D.z >= cylinder.center.z - margin && point3D.z <= cylinder.center.z + cylinder.height + margin;
 
   // Also check segment endpoints for cases where segment passes through
   const startInCylinder = pointInCylinder(segment.start, cylinder, margin);

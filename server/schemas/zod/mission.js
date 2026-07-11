@@ -13,7 +13,7 @@ export const MissionSchema = z.object({
   endTime: z.date().nullable(),
   task: z.record(z.any()).default({}),
   mission: z.record(z.any()).default({}),
-  results: z.array(z.record(z.any())).default([])
+  results: z.array(z.record(z.any())).default([]),
 });
 
 export const RouteSchema = z.object({
@@ -25,7 +25,7 @@ export const RouteSchema = z.object({
   endTime: z.date().nullable(),
   task: z.record(z.any()).default({}),
   mission: z.record(z.any()).default({}),
-  results: z.array(z.record(z.any())).default([])
+  results: z.array(z.record(z.any())).default([]),
 });
 
 export const TaskSchema = z.object({
@@ -33,5 +33,5 @@ export const TaskSchema = z.object({
   name: z.string().optional(),
   objetivo: z.string(),
   locations: z.array(z.record(z.any())),
-  meteo: z.record(z.any()).optional()
-}); 
+  meteo: z.record(z.any()).optional(),
+});

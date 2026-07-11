@@ -60,7 +60,9 @@ export class commandsModel {
 
     const command = commandDef(type);
     const categoryConfig = categoryModel.getCategory(myDevice.category);
-    const available = command.requires == null || Boolean(categoryConfig?.services?.[command.requires] ?? categoryConfig?.actions?.[command.requires]);
+    const available =
+      command.requires == null ||
+      Boolean(categoryConfig?.services?.[command.requires] ?? categoryConfig?.actions?.[command.requires]);
     if (!available) {
       return { state: 'error', msg: `Command '${type}' not supported by device ${myDevice.name}` };
     }

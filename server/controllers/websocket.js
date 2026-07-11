@@ -43,7 +43,7 @@ export class websocketController {
     } catch (error) {
       logger.error('Error in updateclient', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
     }
   }
@@ -55,7 +55,7 @@ export class websocketController {
     } catch (error) {
       logger.error('Error in updateserver', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
     }
   }

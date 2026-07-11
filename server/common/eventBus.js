@@ -31,7 +31,7 @@ class EventBus extends EventEmitter {
       logger.debug('EventBus emit', {
         eventName,
         hasData: args.length > 0,
-        listeners: this.listenerCount(eventName)
+        listeners: this.listenerCount(eventName),
       });
       return originalEmit(eventName, ...args);
     };
@@ -57,7 +57,7 @@ class EventBus extends EventEmitter {
       logger.error('EventBus emit error', {
         eventName,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       return false;
     }
@@ -76,7 +76,7 @@ class EventBus extends EventEmitter {
         logger.error('EventBus listener error', {
           eventName,
           error: error.message,
-          stack: error.stack
+          stack: error.stack,
         });
       }
     };
@@ -92,12 +92,12 @@ class EventBus extends EventEmitter {
     const events = this.eventNames();
     const stats = {
       totalEvents: events.length,
-      events: {}
+      events: {},
     };
 
-    events.forEach(eventName => {
+    events.forEach((eventName) => {
       stats.events[eventName] = {
-        listeners: this.listenerCount(eventName)
+        listeners: this.listenerCount(eventName),
       };
     });
 

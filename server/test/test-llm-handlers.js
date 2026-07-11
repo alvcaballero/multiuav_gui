@@ -211,7 +211,9 @@ describe('GeminiHandler', () => {
 
   it('handles tool call error gracefully', async () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const failExecutor = async () => { throw new Error('boom'); };
+    const failExecutor = async () => {
+      throw new Error('boom');
+    };
     const result = await handler.handleToolCall(mockToolCall, failExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.ok(JSON.parse(result.output).error.includes('boom'));
@@ -257,9 +259,7 @@ describe('GeminiHandler', () => {
 
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const history = [
-      { message: { type: 'text', content: 'Hello world', role: 'assistant' } },
-    ];
+    const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
     const msgs = handler.convertMsg(null, history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'model');
@@ -335,7 +335,9 @@ describe('AnthropicHandler', () => {
 
   it('handles tool call error gracefully', async () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const failExecutor = async () => { throw new Error('boom'); };
+    const failExecutor = async () => {
+      throw new Error('boom');
+    };
     const result = await handler.handleToolCall(mockToolCall, failExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.ok(JSON.parse(result.output).error.includes('boom'));
@@ -383,9 +385,7 @@ describe('AnthropicHandler', () => {
 
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const history = [
-      { message: { type: 'text', content: 'Hello world', role: 'assistant' } },
-    ];
+    const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
     const msgs = handler.convertMsg(null, history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
@@ -483,9 +483,7 @@ describe('OllamaHandler', () => {
 
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const history = [
-      { message: { type: 'text', content: 'Hello world', role: 'assistant' } },
-    ];
+    const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
     const msgs = handler.convertMsg(null, history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
@@ -503,7 +501,9 @@ describe('OllamaHandler', () => {
 
   it('handles tool call error gracefully', async () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const failExecutor = async () => { throw new Error('boom'); };
+    const failExecutor = async () => {
+      throw new Error('boom');
+    };
     const result = await handler.handleToolCall(mockToolCall, failExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.ok(JSON.parse(result.output).error.includes('boom'));
@@ -575,30 +575,34 @@ describe('Integration - real API smoke test', () => {
     assert.ok((textBlock.content || textBlock.text)?.length > 0, 'text should not be empty');
   });
 
-  it('Anthropic responds to a simple message', { skip: !realKeys.anthropic && 'LLM_ANTHROPIC_API_KEY not set' }, async (t) => {
-    const handler = LLMFactory.createHandler('anthropic', realKeys.anthropic);
-    await handler.initialize();
+  it(
+    'Anthropic responds to a simple message',
+    { skip: !realKeys.anthropic && 'LLM_ANTHROPIC_API_KEY not set' },
+    async (t) => {
+      const handler = LLMFactory.createHandler('anthropic', realKeys.anthropic);
+      await handler.initialize();
 
-    let result;
-    try {
-      result = await handler.processMessage(prompt, [], [], {});
-    } catch (err) {
-      // Skip on billing/quota errors — key is valid but account has no credits
-      if (err.message?.includes('credit balance') || err.message?.includes('rate limit') || err.status === 429) {
-        t.skip('Anthropic API billing/quota issue: ' + err.message.substring(0, 80));
-        return;
+      let result;
+      try {
+        result = await handler.processMessage(prompt, [], [], {});
+      } catch (err) {
+        // Skip on billing/quota errors — key is valid but account has no credits
+        if (err.message?.includes('credit balance') || err.message?.includes('rate limit') || err.status === 429) {
+          t.skip('Anthropic API billing/quota issue: ' + err.message.substring(0, 80));
+          return;
+        }
+        throw err;
       }
-      throw err;
+
+      assert.equal(result.status, 'completed');
+      assert.ok(Array.isArray(result.output), 'output should be an array');
+      assert.ok(result.output.length > 0, 'output should not be empty');
+
+      const textBlock = result.output.find((o) => o.type === 'text');
+      assert.ok(textBlock, 'should contain a text block');
+      assert.ok((textBlock.content || textBlock.text)?.length > 0, 'text should not be empty');
     }
-
-    assert.equal(result.status, 'completed');
-    assert.ok(Array.isArray(result.output), 'output should be an array');
-    assert.ok(result.output.length > 0, 'output should not be empty');
-
-    const textBlock = result.output.find((o) => o.type === 'text');
-    assert.ok(textBlock, 'should contain a text block');
-    assert.ok((textBlock.content || textBlock.text)?.length > 0, 'text should not be empty');
-  });
+  );
 
   it('Ollama responds to a simple message', { skip: !realKeys.ollama && 'LLM_OLLAMA_API_KEY not set' }, async (t) => {
     const handler = LLMFactory.createHandler('ollama', realKeys.ollama);

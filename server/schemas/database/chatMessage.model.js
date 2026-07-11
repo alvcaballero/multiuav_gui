@@ -66,10 +66,7 @@ class ChatMessage extends Model {
       tableName: ChatMessage_TABLE,
       modelName: 'ChatMessage',
       timestamps: false,
-      indexes: [
-        { fields: ['chatId'] },
-        { fields: ['chatId', 'timestamp'] },
-      ],
+      indexes: [{ fields: ['chatId'] }, { fields: ['chatId', 'timestamp'] }],
     };
   }
 }

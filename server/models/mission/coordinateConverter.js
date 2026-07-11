@@ -66,7 +66,7 @@ function geodeticToENU(lat, lng, alt, origin) {
   const y = dLat * (rM + (origin.alt || 0)); // North
   const z = dAlt; // Up
 
-  return { x:  Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, z: Math.round(z * 100) / 100 };
+  return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, z: Math.round(z * 100) / 100 };
 }
 
 /**

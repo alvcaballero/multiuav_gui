@@ -81,7 +81,10 @@ function encodeMission({ topic, type, attributes }) {
 
   const waypointsOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createWaypointVector(fbb, waypoints);
   const yawOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createYawVector(fbb, attributes.yaw);
-  const gimbalPitchOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createGimbalPitchVector(fbb, attributes.gimbalPitch);
+  const gimbalPitchOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createGimbalPitchVector(
+    fbb,
+    attributes.gimbalPitch
+  );
   const speedOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createSpeedVector(fbb, attributes.speed);
   const commandListOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createCommandListVector(
     fbb,

@@ -3,13 +3,12 @@ import { BaseLLMHandler } from './baseLLMhandler.js';
 import { SystemPrompts } from './agents/index.js';
 import { chatLogger } from '../../common/logger.js';
 
-
 // llama-px4  ,glm-4.7-flash,llama3.1:8b, etc.
 class OllamaHandler extends BaseLLMHandler {
   static CAPABILITY_MAP = {
-    low:    { model: 'glm-4.7-flash' },
+    low: { model: 'glm-4.7-flash' },
     medium: { model: 'glm-4.7-flash' },
-    high:   { model: 'glm-4.7-flash' },
+    high: { model: 'glm-4.7-flash' },
   };
 
   constructor(apiKey, model = 'glm-4.7-flash', systemPrompt = SystemPrompts.main) {
@@ -26,15 +25,15 @@ class OllamaHandler extends BaseLLMHandler {
 
     const fetchWithTimeout = (url, options = {}) => {
       const timeoutSignal = AbortSignal.timeout(OLLAMA_TIMEOUT_MS);
-      const signal = options.signal
-        ? AbortSignal.any([options.signal, timeoutSignal])
-        : timeoutSignal;
+      const signal = options.signal ? AbortSignal.any([options.signal, timeoutSignal]) : timeoutSignal;
       return fetch(url, { ...options, signal });
     };
 
     this.client = new Ollama({ host: this.apiKey, fetch: fetchWithTimeout });
     this.initialized = true;
-    chatLogger.info(`✓ Ollama client initialized (host: ${this.apiKey}, model: ${this.model}, timeout: ${OLLAMA_TIMEOUT_MS / 1000}s)`);
+    chatLogger.info(
+      `✓ Ollama client initialized (host: ${this.apiKey}, model: ${this.model}, timeout: ${OLLAMA_TIMEOUT_MS / 1000}s)`
+    );
   }
 
   /**
@@ -73,17 +72,21 @@ class OllamaHandler extends BaseLLMHandler {
       if (type === 'function_call') {
         let args = {};
         try {
-          args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : (item.arguments || {});
-        } catch { /* keep empty */ }
+          args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments || {};
+        } catch {
+          /* keep empty */
+        }
         messages.push({
           role: 'assistant',
           content: '',
-          tool_calls: [{
-            function: {
-              name: item.name,
-              arguments: args,
+          tool_calls: [
+            {
+              function: {
+                name: item.name,
+                arguments: args,
+              },
             },
-          }],
+          ],
         });
         continue;
       }
@@ -154,13 +157,7 @@ class OllamaHandler extends BaseLLMHandler {
       throw new Error('Ollama client not initialized');
     }
 
-    const {
-      instructions = null,
-      toolOutputs = null,
-      allowedTools = null,
-      forceFinish = false,
-      agent = null,
-    } = options;
+    const { instructions = null, toolOutputs = null, allowedTools = null, forceFinish = false, agent = null } = options;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
@@ -186,7 +183,8 @@ class OllamaHandler extends BaseLLMHandler {
       if (forceFinish) {
         messages.push({
           role: 'system',
-          content: 'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.',
+          content:
+            'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.',
         });
       }
     }
@@ -198,17 +196,24 @@ class OllamaHandler extends BaseLLMHandler {
     }
 
     // Build tools config
-    const ollamaTools = (tools.length > 0 && (!allowedTools || allowedTools.length > 0))
-      ? this.convertToolsForMCP(tools)
-      : undefined;
+    const ollamaTools =
+      tools.length > 0 && (!allowedTools || allowedTools.length > 0) ? this.convertToolsForMCP(tools) : undefined;
 
-    chatLogger.info('tools')
+    chatLogger.info('tools');
     for (const tool of tools) {
       chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
     }
     chatLogger.info(`✓ Message for Ollama`);
     for (const msg of messages) {
-      chatLogger.info(`- role: ${msg.role}, content: ${typeof msg.content === 'string' ? msg.content.replace(/\r?\n|\r/g, " ").substring(0, 100) + '...' : JSON.stringify(msg.content).replace(/\r?\n|\r/g, " ").substring(0, 100) + '...'}`);
+      chatLogger.info(
+        `- role: ${msg.role}, content: ${
+          typeof msg.content === 'string'
+            ? msg.content.replace(/\r?\n|\r/g, ' ').substring(0, 100) + '...'
+            : JSON.stringify(msg.content)
+                .replace(/\r?\n|\r/g, ' ')
+                .substring(0, 100) + '...'
+        }`
+      );
     }
     try {
       chatLogger.info(`→ Sending message to Ollama (model: ${modelId})...`);
@@ -222,8 +227,7 @@ class OllamaHandler extends BaseLLMHandler {
         options: {
           num_ctx: 16384,
           temperature: 0.2,
-          
-        }
+        },
       });
 
       const output = this._parseOllamaResponse(response);

@@ -138,7 +138,7 @@ export class ExtApp {
     if (sendResponse.ok) {
       logger.info('missionMedia sent to external application successfully');
     } else {
-      logger.error("error sending mission media to external application");
+      logger.error('error sending mission media to external application');
     }
   }
 }

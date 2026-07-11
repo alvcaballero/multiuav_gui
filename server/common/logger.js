@@ -63,34 +63,36 @@ const createLogger = ({ label = null, color = chalk.blue, level = null, filename
   const consoleFormat = winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.errors({ stack: true }),
-    winston.format.printf(({ timestamp, level: lvl, message, stack, label: msgLabel, deviceId, deviceName, topic, nodeId, ...meta }) => {
-      const colorizedLevel = colorizeLevel[lvl] ? colorizeLevel[lvl](lvl.toUpperCase()) : lvl.toUpperCase();
-      const colorizedTimestamp = chalk.gray(timestamp);
-      const colorizedMessage = lvl === 'error' ? chalk.red(message) : message;
+    winston.format.printf(
+      ({ timestamp, level: lvl, message, stack, label: msgLabel, deviceId, deviceName, topic, nodeId, ...meta }) => {
+        const colorizedLevel = colorizeLevel[lvl] ? colorizeLevel[lvl](lvl.toUpperCase()) : lvl.toUpperCase();
+        const colorizedTimestamp = chalk.gray(timestamp);
+        const colorizedMessage = lvl === 'error' ? chalk.red(message) : message;
 
-      let prefix = '';
-      if (label || msgLabel) {
-        prefix = color.bold(`[${label || msgLabel}] `);
+        let prefix = '';
+        if (label || msgLabel) {
+          prefix = color.bold(`[${label || msgLabel}] `);
+        }
+
+        // Campos contextuales opcionales (device, ros topic, etc.)
+        let contextInfo = '';
+        if (deviceId || deviceName) contextInfo += chalk.green(`[${deviceName || deviceId}] `);
+        if (nodeId) contextInfo += chalk.green(`[${nodeId}] `);
+        if (topic) contextInfo += chalk.blue(`[${topic}] `);
+
+        let logLine = `${colorizedTimestamp} ${prefix}[${colorizedLevel}]: ${contextInfo}${colorizedMessage}`;
+
+        if (Object.keys(meta).length > 0) {
+          logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
+        }
+
+        if (stack) {
+          logLine += `\n${chalk.red(stack)}`;
+        }
+
+        return logLine;
       }
-
-      // Campos contextuales opcionales (device, ros topic, etc.)
-      let contextInfo = '';
-      if (deviceId || deviceName) contextInfo += chalk.green(`[${deviceName || deviceId}] `);
-      if (nodeId) contextInfo += chalk.green(`[${nodeId}] `);
-      if (topic) contextInfo += chalk.blue(`[${topic}] `);
-
-      let logLine = `${colorizedTimestamp} ${prefix}[${colorizedLevel}]: ${contextInfo}${colorizedMessage}`;
-
-      if (Object.keys(meta).length > 0) {
-        logLine += ` ${chalk.gray(JSON.stringify(meta))}`;
-      }
-
-      if (stack) {
-        logLine += `\n${chalk.red(stack)}`;
-      }
-
-      return logLine;
-    })
+    )
   );
 
   const transports = [
@@ -306,7 +308,18 @@ const logHelpers = {
 };
 
 // Exportar loggers y utilidades
-export { logger, wsLogger, deviceLogger, rosLogger, chatLogger, missionLogger, logHelpers, createLogger, colorizeLevel, chalk };
+export {
+  logger,
+  wsLogger,
+  deviceLogger,
+  rosLogger,
+  chatLogger,
+  missionLogger,
+  logHelpers,
+  createLogger,
+  colorizeLevel,
+  chalk,
+};
 
 // createCustomLogger es alias de createLogger para backwards compatibility
 export const createCustomLogger = createLogger;

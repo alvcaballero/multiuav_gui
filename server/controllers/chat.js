@@ -146,7 +146,12 @@ export class chatController {
       return res.status(400).json({ error: 'mainChatId, agentType and userMessage are required.' });
     }
     try {
-      const result = await MessageOrchestrator.createSubAgent({ mainChatId, agentType, userMessage, contextInstructions });
+      const result = await MessageOrchestrator.createSubAgent({
+        mainChatId,
+        agentType,
+        userMessage,
+        contextInstructions,
+      });
       res.status(201).json(result);
     } catch (error) {
       logger.error('Error in chatController.createSubAgent:', error);
@@ -161,7 +166,13 @@ export class chatController {
       return res.status(400).json({ error: 'chatId and toolName are required.' });
     }
     try {
-      const result = await MessageOrchestrator.injectSubAgentResponse({ chatId, toolName, status, description, payload });
+      const result = await MessageOrchestrator.injectSubAgentResponse({
+        chatId,
+        toolName,
+        status,
+        description,
+        payload,
+      });
       res.json(result);
     } catch (error) {
       logger.error('Error in chatController.injectSubAgentResponse:', error);
@@ -184,5 +195,4 @@ export class chatController {
       res.status(500).json({ error: error.message });
     }
   }
-
 }

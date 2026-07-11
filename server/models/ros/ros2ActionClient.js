@@ -9,43 +9,42 @@ export class ROS2GoalActionClient {
     this.activeGoals = new Map();
     this.feedback = feedback || true;
   }
-  
+
   sendGoal(args, callbacks = {}) {
     const goalId = `${this.actionName}_goal_${++this.goalCounter}_${Date.now()}`;
-    
+
     const goalInfo = {
       id: goalId,
-      callbacks: callbacks
+      callbacks: callbacks,
     };
-    
-  const messageListener = (message) => {
-    // Aquí diferencias por el campo 'op' del mensaje
-    if (message.op === 'action_feedback') {
-      // Es feedback
-      if (callbacks.onFeedback) {
-        callbacks.onFeedback(message.values);
+
+    const messageListener = (message) => {
+      // Aquí diferencias por el campo 'op' del mensaje
+      if (message.op === 'action_feedback') {
+        // Es feedback
+        if (callbacks.onFeedback) {
+          callbacks.onFeedback(message.values);
+        }
+      } else if (message.op === 'action_result') {
+        // Es resultado final
+        if (callbacks.onResult) {
+          callbacks.onResult({
+            result: message.result,
+            status: message.status,
+            values: message.values,
+          });
+        }
+
+        // Limpiar cuando termine
+        this.ros.off(goalId, messageListener);
+        this.activeGoals.delete(goalId);
       }
-    } 
-    else if (message.op === 'action_result') {
-      // Es resultado final
-      if (callbacks.onResult) {
-        callbacks.onResult({
-          result: message.result,
-          status: message.status,
-          values: message.values
-        });
-      }
-      
-      // Limpiar cuando termine
-      this.ros.off(goalId, messageListener);
-      this.activeGoals.delete(goalId);
-    }
-  };
-  
-  // Registrar el listener
-  this.ros.on(goalId, messageListener);
+    };
+
+    // Registrar el listener
+    this.ros.on(goalId, messageListener);
     this.activeGoals.set(goalId, goalInfo);
-    
+
     // Enviar goal usando callOnConnection
     const message = {
       op: 'send_action_goal',
@@ -53,31 +52,31 @@ export class ROS2GoalActionClient {
       action_type: this.actionType,
       args: args,
       feedback: this.feedback,
-      id: goalId
+      id: goalId,
     };
-    
+
     this.ros.callOnConnection(message);
-    
+
     return {
       goalId: goalId,
-      cancel: () => this.cancelGoal(goalId)
+      cancel: () => this.cancelGoal(goalId),
     };
   }
-  
+
   cancelGoal(goalId) {
     const goalInfo = this.activeGoals.get(goalId);
     if (!goalInfo) return;
-    
+
     this.ros.callOnConnection({
       op: 'cancel_action_goal',
       action: this.actionName,
-      id: goalId
+      id: goalId,
     });
-    
+
     // Limpiar listeners (nota: necesitarás guardar referencias a los listeners)
     this.activeGoals.delete(goalId);
   }
-  
+
   cancelAll() {
     for (const [goalId, _] of this.activeGoals) {
       this.cancelGoal(goalId);

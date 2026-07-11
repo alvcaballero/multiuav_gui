@@ -2,7 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fb from 'fbmsglib';
 import * as flatbuffers from 'flatbuffers';
-import { decodeFbMsg, decodeServiceResponse, isServiceResponse, getNameFromTopic } from '../models/flatbuffer/fbDecode.js';
+import {
+  decodeFbMsg,
+  decodeServiceResponse,
+  isServiceResponse,
+  getNameFromTopic,
+} from '../models/flatbuffer/fbDecode.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -10,7 +15,7 @@ function makeNavSatFix({ latitude, longitude, altitude }) {
   const fbb = new flatbuffers.Builder();
 
   const topic = fbb.createString('/uav1/gps_position');
-  const type  = fbb.createString('sensor_msgs/NavSatFix');
+  const type = fbb.createString('sensor_msgs/NavSatFix');
   const metaOffset = fb.fb.MsgMetadata.createMsgMetadata(fbb, type, topic);
 
   const frameOffset = fbb.createString('map');
@@ -24,9 +29,7 @@ function makeNavSatFix({ latitude, longitude, altitude }) {
   fb.fb.sensor_msgs.NavSatStatus.addService(fbb, 0);
   const statusOffset = fb.fb.sensor_msgs.NavSatStatus.endNavSatStatus(fbb);
 
-  const covarianceOffset = fb.fb.sensor_msgs.NavSatFix.createPositionCovarianceVector(
-    fbb, [0, 0, 0, 0, 0, 0, 0, 0, 0]
-  );
+  const covarianceOffset = fb.fb.sensor_msgs.NavSatFix.createPositionCovarianceVector(fbb, [0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   fb.fb.sensor_msgs.NavSatFix.startNavSatFix(fbb);
   fb.fb.sensor_msgs.NavSatFix.add_Metadata(fbb, metaOffset);
@@ -44,8 +47,8 @@ function makeNavSatFix({ latitude, longitude, altitude }) {
 function makeSetBoolResponse({ success, topic = '/uav1/commandMission' }) {
   const fbb = new flatbuffers.Builder();
   const topicOffset = fbb.createString(topic);
-  const typeOffset  = fbb.createString('std_srvs/SetBool');
-  const metaOffset  = fb.fb.MsgMetadata.createMsgMetadata(fbb, typeOffset, topicOffset);
+  const typeOffset = fbb.createString('std_srvs/SetBool');
+  const metaOffset = fb.fb.MsgMetadata.createMsgMetadata(fbb, typeOffset, topicOffset);
 
   const msgOffset = fbb.createString(success ? 'ok' : 'fail');
   const responseOffset = fb.fb.std_srvs.SetBoolResponse.createSetBoolResponse(fbb, success, msgOffset);
@@ -80,9 +83,9 @@ test('decodeFbMsg: NavSatFix returns position', () => {
   const result = decodeFbMsg(metadata, buf, 42, 'dji_M210', 'uav1');
 
   assert.equal(result.deviceId, 42);
-  assert.ok(Math.abs(result.latitude  - 37.7749)   < 0.0001);
-  assert.ok(Math.abs(result.longitude - (-122.4194)) < 0.0001);
-  assert.ok(Math.abs(result.altitude  - 100.5)      < 0.01);
+  assert.ok(Math.abs(result.latitude - 37.7749) < 0.0001);
+  assert.ok(Math.abs(result.longitude - -122.4194) < 0.0001);
+  assert.ok(Math.abs(result.altitude - 100.5) < 0.01);
 });
 
 // ── decodeFbMsg: unknown type ─────────────────────────────────────────────────

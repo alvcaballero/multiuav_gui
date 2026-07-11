@@ -8,11 +8,11 @@ export class rosController {
       res.json(response);
     } catch (error) {
       logger.error(`Error getting topics: ${error}`);
-      res.status(500).json({ error:'Error getting topics: ' + error });
+      res.status(500).json({ error: 'Error getting topics: ' + error });
     }
   }
   static async getTopicType(req, res) {
-    const { topic } = req.query;  
+    const { topic } = req.query;
     if (!topic || typeof topic !== 'string') {
       return res.status(400).json({ error: 'El parámetro "topic" es obligatorio y debe ser una cadena' });
     }

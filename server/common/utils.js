@@ -97,7 +97,10 @@ export const sleep = (ms) => {
  * @param {() => Promise<any>} fn
  * @param {{ retries?: number, delayMs?: number, isError?: (res:any)=>boolean }} opts
  */
-export const withRetry = async (fn, { retries = 1, delayMs = 1000, isError = (res) => res?.state === 'error' } = {}) => {
+export const withRetry = async (
+  fn,
+  { retries = 1, delayMs = 1000, isError = (res) => res?.state === 'error' } = {}
+) => {
   let lastError;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {

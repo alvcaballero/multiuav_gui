@@ -6,9 +6,9 @@ import { chatLogger } from '../../common/logger.js';
 // Models: claude-opus-4-6, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929, etc.
 class AnthropicHandler extends BaseLLMHandler {
   static CAPABILITY_MAP = {
-    low:    { model: 'claude-haiku-4-5-20251001' },
+    low: { model: 'claude-haiku-4-5-20251001' },
     medium: { model: 'claude-sonnet-4-6' },
-    high:   { model: 'claude-sonnet-4-6', maxTokens: 8192 },
+    high: { model: 'claude-sonnet-4-6', maxTokens: 8192 },
   };
 
   constructor(apiKey, model = 'claude-haiku-4-5-20251001', systemPrompt = SystemPrompts.main) {
@@ -59,16 +59,20 @@ class AnthropicHandler extends BaseLLMHandler {
       if (type === 'function_call') {
         let input = {};
         try {
-          input = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : (item.arguments || {});
-        } catch { /* keep empty */ }
+          input = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments || {};
+        } catch {
+          /* keep empty */
+        }
         messages.push({
           role: 'assistant',
-          content: [{
-            type: 'tool_use',
-            id: item.call_id,
-            name: item.name,
-            input,
-          }],
+          content: [
+            {
+              type: 'tool_use',
+              id: item.call_id,
+              name: item.name,
+              input,
+            },
+          ],
         });
         continue;
       }
@@ -77,11 +81,13 @@ class AnthropicHandler extends BaseLLMHandler {
       if (type === 'function_call_output') {
         messages.push({
           role: 'user',
-          content: [{
-            type: 'tool_result',
-            tool_use_id: item.call_id,
-            content: item.output || '',
-          }],
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: item.call_id,
+              content: item.output || '',
+            },
+          ],
         });
         continue;
       }
@@ -142,13 +148,7 @@ class AnthropicHandler extends BaseLLMHandler {
       throw new Error('Anthropic client not initialized');
     }
 
-    const {
-      instructions = null,
-      toolOutputs = null,
-      allowedTools = null,
-      forceFinish = false,
-      agent = null,
-    } = options;
+    const { instructions = null, toolOutputs = null, allowedTools = null, forceFinish = false, agent = null } = options;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;

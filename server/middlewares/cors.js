@@ -10,10 +10,7 @@ const ACCEPTED_ORIGINS = [
 ];
 
 // Prefijos de subredes locales permitidas
-const ACCEPTED_ORIGIN_PREFIXES = [
-  'http://10.42.0.',
-  'http://192.168.1.',
-];
+const ACCEPTED_ORIGIN_PREFIXES = ['http://10.42.0.', 'http://192.168.1.'];
 
 export const corsMiddleware = ({ acceptedOrigins = ACCEPTED_ORIGINS } = {}) =>
   cors({

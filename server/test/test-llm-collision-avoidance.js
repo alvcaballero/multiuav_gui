@@ -69,7 +69,7 @@ function assert(testName, condition, detail = '') {
 }
 
 // Track data across the loop for assertions
-const toolCallLog = [];       // { name, args, result }
+const toolCallLog = []; // { name, args, result }
 let firstValidationResult = null;
 let lastValidationResult = null;
 let finalAssistantText = '';
@@ -202,9 +202,7 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
     iterations++;
 
     // Check if there are tool calls in the output
-    const toolCalls = currentOutput.filter(
-      (item) => item.type === 'function_call' || item.type === 'tool_call'
-    );
+    const toolCalls = currentOutput.filter((item) => item.type === 'function_call' || item.type === 'tool_call');
 
     if (toolCalls.length === 0) {
       // No tool calls — LLM gave a text response, we're done
@@ -339,14 +337,11 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
   if (collisionToolCalls.length >= 2) {
     const lastResult = collisionToolCalls[collisionToolCalls.length - 1].result;
     const improved =
-      lastResult &&
-      (lastResult.valid === true || lastResult.totalCollisions < firstValidationResult.totalCollisions);
+      lastResult && (lastResult.valid === true || lastResult.totalCollisions < firstValidationResult.totalCollisions);
     assert(
       'Test D: Re-validation shows improvement (valid or fewer collisions)',
       improved,
-      lastResult
-        ? `valid=${lastResult.valid}, totalCollisions=${lastResult.totalCollisions}`
-        : 'no result'
+      lastResult ? `valid=${lastResult.valid}, totalCollisions=${lastResult.totalCollisions}` : 'no result'
     );
   } else {
     console.log('  SKIPPED: Test D (no re-validation — only 1 tool call)');
@@ -354,20 +349,12 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
 
   // Test E: Messages persisted in DB
   const history = await ChatHistoryManager.loadHistory(chatId);
-  assert(
-    'Test E: Messages persisted in DB',
-    history.length > 0,
-    `${history.length} messages`
-  );
+  assert('Test E: Messages persisted in DB', history.length > 0, `${history.length} messages`);
 
   // Test F: Chat metadata has correct agentProfile and allowedTools
   const storedProfile = await ChatHistoryManager.getAgentProfile(chatId);
   const storedTools = await ChatHistoryManager.getAllowedTools(chatId);
-  assert(
-    'Test F: Chat metadata — agentProfile=planner',
-    storedProfile === 'planner',
-    `got: ${storedProfile}`
-  );
+  assert('Test F: Chat metadata — agentProfile=planner', storedProfile === 'planner', `got: ${storedProfile}`);
   assert(
     'Test F: Chat metadata — allowedTools includes validate_mission_collisions',
     Array.isArray(storedTools) && storedTools.includes('validate_mission_collisions'),
@@ -379,7 +366,9 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
   // ═══════════════════════════════════════════════════════════════
   console.log('\n--- Cleanup ---');
   console.log(`  Chat "${chatId}" preserved in DB for manual inspection.`);
-  console.log(`  Verify: sqlite3 data/sequelize.sqlite "SELECT role, type, content FROM ChatMessages WHERE chatId = '${chatId}' ORDER BY timestamp;"`);
+  console.log(
+    `  Verify: sqlite3 data/sequelize.sqlite "SELECT role, type, content FROM ChatMessages WHERE chatId = '${chatId}' ORDER BY timestamp;"`
+  );
 
   try {
     await mcpClient.disconnect();

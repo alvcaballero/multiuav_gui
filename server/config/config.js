@@ -32,8 +32,7 @@ export const processThermalImg = process.env.PROCESS_THERMAL_IMG === 'true';
 const thermalProjectDir = path.resolve(__dirname, '../utils/proccessThermalImg');
 const thermalScriptPath = path.join(thermalProjectDir, 'processThermalGen.py');
 export const processThermalScript =
-  process.env.PROCESS_THERMAL_IMG_SRC ??
-  `uv run --project "${thermalProjectDir}" "${thermalScriptPath}"`;
+  process.env.PROCESS_THERMAL_IMG_SRC ?? `uv run --project "${thermalProjectDir}" "${thermalScriptPath}"`;
 export const extApp = process.env.EXT_APP === 'true';
 export const extAppUrl = process.env.EXT_APP_URL || '';
 export const extAppUser = process.env.EXT_APP_USER || '';

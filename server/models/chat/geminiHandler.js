@@ -7,9 +7,9 @@ import { tr } from 'zod/v4/locales';
 // Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, gemini-3.1-pro-preview
 class GeminiHandler extends BaseLLMHandler {
   static CAPABILITY_MAP = {
-    low:    { model: 'gemini-2.5-flash' },
+    low: { model: 'gemini-2.5-flash' },
     medium: { model: 'gemini-2.5-pro' },
-    high:   { model: 'gemini-3-flash-preview' },
+    high: { model: 'gemini-3-flash-preview' },
   };
 
   constructor(apiKey, model = 'gemini-2.5-flash', systemPrompt = SystemPrompts.main) {
@@ -60,8 +60,10 @@ class GeminiHandler extends BaseLLMHandler {
       if (type === 'function_call') {
         let args = {};
         try {
-          args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : (item.arguments || {});
-        } catch (e) { /* keep empty */ }
+          args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments || {};
+        } catch (e) {
+          /* keep empty */
+        }
         const part = { functionCall: { name: item.name, args } };
         // Restore thoughtSignature for Gemini thinking models (required to avoid 400 errors)
         if (item.thoughtSignature) {
@@ -79,7 +81,7 @@ class GeminiHandler extends BaseLLMHandler {
         let response = {};
         let args = {};
         try {
-          let output = typeof item.output === 'string' ? JSON.parse(item.output) : (item.output || {});
+          let output = typeof item.output === 'string' ? JSON.parse(item.output) : item.output || {};
           try {
             response =
               typeof output.content?.[0]?.text === 'string'
@@ -142,7 +144,7 @@ class GeminiHandler extends BaseLLMHandler {
    */
   _parseGeminiResponse(response) {
     const output = [];
-     
+
     const usage = response.usageMetadata || {};
     chatLogger.info(`Thoughts tokens: ${usage.thoughtsTokenCount ?? 0}`);
     chatLogger.info(`Output tokens: ${usage.candidatesTokenCount ?? 0}`);
@@ -173,7 +175,8 @@ class GeminiHandler extends BaseLLMHandler {
         chatLogger.warn(`⚠ Gemini returned MALFORMED_FUNCTION_CALL — injecting fallback text response`);
         output.push({
           type: 'text',
-          content: 'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
+          content:
+            'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
           role: 'assistant',
         });
         continue;
@@ -228,26 +231,19 @@ class GeminiHandler extends BaseLLMHandler {
       throw new Error('Gemini client not initialized');
     }
 
-    const {
-      instructions = null,
-      toolOutputs = null,
-      allowedTools = null,
-      forceFinish = false,
-      agent = null,
-    } = options;
+    const { instructions = null, toolOutputs = null, allowedTools = null, forceFinish = false, agent = null } = options;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
 
     // Build config
-    const config = {temperature: 1}; // Adjust temperature as needed
-
+    const config = { temperature: 1 }; // Adjust temperature as needed
 
     // System instruction
     const systemText = instructions || this.systemPrompt;
     if (systemText) {
-     config.systemInstruction = systemText;
-     logger.info(`✓ Using system instruction: ${systemText.substring(0, 100)}...`);
+      config.systemInstruction = systemText;
+      logger.info(`✓ Using system instruction: ${systemText.substring(0, 100)}...`);
     }
     // Prepend system prompt only if not already present in conversation history
     // const systemText = instructions || this.systemPrompt;
@@ -255,7 +251,6 @@ class GeminiHandler extends BaseLLMHandler {
     // if (systemText && !hasSystemMessage) {
     //   messages.unshift({ role: 'system', content: systemText });
     // }
-
 
     // Add tools if available (empty allowedTools array = no tools for forced text response)
     if (tools.length > 0 && (!allowedTools || allowedTools.length > 0)) {
@@ -320,14 +315,16 @@ class GeminiHandler extends BaseLLMHandler {
     } else {
       contents = this.convertMsg(null, conversationHistory);
     }
-    
-    chatLogger.info('Tools')
+
+    chatLogger.info('Tools');
     for (const tool of tools) {
       chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
     }
     chatLogger.info(`✓ Message for Gemini`);
     for (const msg of contents) {
-      const summary = JSON.stringify(msg.parts || msg.content || '').replace(/\r?\n|\r/g, ' ').substring(0, 120);
+      const summary = JSON.stringify(msg.parts || msg.content || '')
+        .replace(/\r?\n|\r/g, ' ')
+        .substring(0, 120);
       chatLogger.info(`- role: ${msg.role}, parts: ${summary}...`);
     }
 

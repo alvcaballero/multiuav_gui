@@ -135,7 +135,9 @@ export class MessageOrchestrator {
 
       const sessionId = isUnseededFork ? null : await llmHandler.ensureSession(chatId, persistence);
       if (isUnseededFork) {
-        chatLogger.info(`[fork] First turn of forked chat ${chatId} — using full-history path to seed provider context`);
+        chatLogger.info(
+          `[fork] First turn of forked chat ${chatId} — using full-history path to seed provider context`
+        );
       }
 
       // Build system instructions (needed for first message of conversation)
@@ -634,7 +636,9 @@ export class MessageOrchestrator {
     const hidden = await ChatHistoryManager.hideAndReplaceToolResult(chatId, toolName, newOutput, newContent);
 
     if (!hidden) {
-      chatLogger.warn(`[injectSubAgentResponse] No ${toolName} tool_result found in chat ${chatId} — injecting as new message`);
+      chatLogger.warn(
+        `[injectSubAgentResponse] No ${toolName} tool_result found in chat ${chatId} — injecting as new message`
+      );
       await ChatHistoryManager.addMessage(chatId, 'assistant', {
         type: 'function_call_output',
         name: toolName,

@@ -3,7 +3,6 @@ import { Op } from 'sequelize';
 import { chatLogger } from '../../common/logger.js';
 import { Json } from 'sequelize/lib/utils';
 
-
 export class ChatHistoryManager {
   /**
    * Creates a chat item and persists to database
@@ -394,7 +393,6 @@ export class ChatHistoryManager {
     }
   }
 
-
   /**
    * Fork a conversation up to (and including) a specific message timestamp.
    * Creates a new chat and copies all messages up to that point.
@@ -414,7 +412,13 @@ export class ChatHistoryManager {
     const newChat = await sequelize.models.Chat.create({
       id: newChatId,
       name: name || null,
-      metadata: { ...sourceMetadata, sessionId: null, lastResponseId: null, forkedFrom: sourceChatId, forkedAt: now.toISOString() },
+      metadata: {
+        ...sourceMetadata,
+        sessionId: null,
+        lastResponseId: null,
+        forkedFrom: sourceChatId,
+        forkedAt: now.toISOString(),
+      },
       status: 'active',
       createdAt: now,
       updatedAt: now,

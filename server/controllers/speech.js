@@ -24,7 +24,7 @@ export class SpeechController {
       if (!openaiClient) {
         logger.error('OpenAI no está configurado para speech-to-text');
         return res.status(500).json({
-          error: 'El servicio de transcripción de audio no está disponible. Configure OpenAI como proveedor LLM.'
+          error: 'El servicio de transcripción de audio no está disponible. Configure OpenAI como proveedor LLM.',
         });
       }
 
@@ -61,9 +61,7 @@ export class SpeechController {
         let text = transcription.text.trim();
 
         // Verificar si el texto es una alucinación conocida (case insensitive)
-        const isHallucination = hallucinationPatterns.some(pattern =>
-          text.toLowerCase().includes(pattern)
-        );
+        const isHallucination = hallucinationPatterns.some((pattern) => text.toLowerCase().includes(pattern));
 
         // Si es una alucinación o el texto está vacío, devolver error
         if (isHallucination || !text) {
@@ -77,7 +75,7 @@ export class SpeechController {
 
           return res.status(400).json({
             error: 'No se detectó voz clara en el audio. Por favor, habla más cerca del micrófono o repite tu mensaje.',
-            hallucination: true
+            hallucination: true,
           });
         }
 
@@ -102,7 +100,7 @@ export class SpeechController {
         stack: error.stack,
       });
       res.status(500).json({
-        error: 'Error al procesar el audio: ' + error.message
+        error: 'Error al procesar el audio: ' + error.message,
       });
     }
   }
@@ -120,7 +118,7 @@ export class SpeechController {
       if (!openaiClient) {
         logger.error('OpenAI no está configurado para text-to-speech');
         return res.status(500).json({
-          error: 'El servicio de texto a voz no está disponible. Configure OpenAI como proveedor LLM.'
+          error: 'El servicio de texto a voz no está disponible. Configure OpenAI como proveedor LLM.',
         });
       }
 
@@ -159,7 +157,7 @@ export class SpeechController {
         stack: error.stack,
       });
       res.status(500).json({
-        error: 'Error al generar audio: ' + error.message
+        error: 'Error al generar audio: ' + error.message,
       });
     }
   }

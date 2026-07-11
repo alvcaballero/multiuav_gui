@@ -7,13 +7,20 @@ export class VideoUtils {
 
     return new Promise((resolve) => {
       const args = [
-        '-rtsp_transport', 'tcp',
-        '-i', rtspUrl,
-        '-vf', "select='eq(pict_type,I)',scale='min(1280,iw)':-2",
-        '-frames:v', '1',
-        '-q:v', '3',
-        '-update', '1',
-        '-f', 'image2',
+        '-rtsp_transport',
+        'tcp',
+        '-i',
+        rtspUrl,
+        '-vf',
+        "select='eq(pict_type,I)',scale='min(1280,iw)':-2",
+        '-frames:v',
+        '1',
+        '-q:v',
+        '3',
+        '-update',
+        '1',
+        '-f',
+        'image2',
         'pipe:1',
       ];
 

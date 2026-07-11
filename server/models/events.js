@@ -34,7 +34,9 @@ export class eventsModel {
   }
 
   static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId, attributes = {} }) {
-    logger.debug(`addEvent: type=${type} eventTime=${eventTime} deviceId=${deviceId} missionId=${missionId} attributes=${JSON.stringify(attributes)}`);
+    logger.debug(
+      `addEvent: type=${type} eventTime=${eventTime} deviceId=${deviceId} missionId=${missionId} attributes=${JSON.stringify(attributes)}`
+    );
     let device_id = deviceId || null;
     if (deviceId) {
       const deviceExists = await sequelize.models.Device.findByPk(deviceId);

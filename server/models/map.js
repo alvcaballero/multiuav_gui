@@ -173,12 +173,8 @@ export class mapModel {
 
         // Si el segmento es largo, interpolar puntos intermedios para mejor resolución de elevación
         if (segmentDistance > MIN_DISTANCE_FOR_INTERPOLATION_METERS) {
-          const { waypointCoords: interpolatedCoords, altitudeData: interpolatedAltitudes } = this.interpolateLongSegment(
-            previousWaypoint,
-            waypoint,
-            segmentDistance,
-            lastAccumulatedDistance
-          );
+          const { waypointCoords: interpolatedCoords, altitudeData: interpolatedAltitudes } =
+            this.interpolateLongSegment(previousWaypoint, waypoint, segmentDistance, lastAccumulatedDistance);
           waypointCoords.push(...interpolatedCoords);
           altitudeData.push(...interpolatedAltitudes);
         }

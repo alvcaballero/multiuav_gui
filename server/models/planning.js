@@ -1,9 +1,8 @@
 import { readDataFile, writeDataFile, getRandomInt } from '../common/utils.js';
-import { missionsConfigData } from '../config/config.js';
+import { missionsConfigData, planningServer, planningHost } from '../config/config.js';
 
 const configPlanning = readDataFile('../config/planning/config.yaml');
 var initPlanning = readDataFile(missionsConfigData);
-import { planningServer, planningHost } from '../config/config.js';
 import { missionController } from '../controllers/mission.js';
 import { missionLogger as logger } from '../common/logger.js';
 

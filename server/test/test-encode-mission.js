@@ -60,8 +60,8 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
 
   test('speed usa idle_vel en wp sin speed, y speed explícita en wp con speed', () => {
     const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
-    assert.equal(result.speed.data[0], 7);   // wp[0] sin speed → idle_vel
-    assert.equal(result.speed.data[1], 5);   // wp[1] speed: 5
+    assert.equal(result.speed.data[0], 7); // wp[0] sin speed → idle_vel
+    assert.equal(result.speed.data[1], 5); // wp[1] speed: 5
   });
 
   test('yaw se recoge del wp', () => {
@@ -173,8 +173,8 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
   test('speed per-waypoint: usa idle cuando no hay speed, explícita cuando la hay', () => {
     const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
     const mission = result.waypoint_v2_init_settings.mission;
-    assert.equal(mission[0].auto_flight_speed, 7);  // wp[0] sin speed → idle_vel
-    assert.equal(mission[1].auto_flight_speed, 5);  // wp[1] speed: 5
+    assert.equal(mission[0].auto_flight_speed, 7); // wp[0] sin speed → idle_vel
+    assert.equal(mission[1].auto_flight_speed, 5); // wp[1] speed: 5
     assert.equal(mission[1].config.use_local_cruise_vel, 1);
     assert.equal(mission[0].config.use_local_cruise_vel, 0);
   });
@@ -208,18 +208,18 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
 
   test('lanza RangeError si mode_yaw tiene valor inválido (sin símbolo en el catálogo)', () => {
     const badRoute = makeRoute('dji_M300_PSDK', { ...BASE_ATTRS, mode_yaw: 99 });
-    assert.throws(
-      () => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }),
-      { name: 'RangeError', message: /mode_yaw=99/ }
-    );
+    assert.throws(() => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }), {
+      name: 'RangeError',
+      message: /mode_yaw=99/,
+    });
   });
 
   test('lanza RangeError si mode_landing tiene valor inválido (sin símbolo en el catálogo)', () => {
     const badRoute = makeRoute('dji_M300_PSDK', { ...BASE_ATTRS, mode_landing: 99 });
-    assert.throws(
-      () => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }),
-      { name: 'RangeError', message: /mode_landing=99/ }
-    );
+    assert.throws(() => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }), {
+      name: 'RangeError',
+      message: /mode_landing=99/,
+    });
   });
 });
 
@@ -232,7 +232,11 @@ describe('encodeRosSrv — servicios no-misión', () => {
   });
 
   test('psdk_interfaces/srv/StartWaypointV2Mission devuelve {}', () => {
-    const result = encodeRosSrv({ type: 'commandMission', msg: { data: true }, msgType: 'psdk_interfaces/srv/StartWaypointV2Mission' });
+    const result = encodeRosSrv({
+      type: 'commandMission',
+      msg: { data: true },
+      msgType: 'psdk_interfaces/srv/StartWaypointV2Mission',
+    });
     assert.deepEqual(result, {});
   });
 

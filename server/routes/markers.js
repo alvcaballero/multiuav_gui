@@ -19,12 +19,22 @@ markersRouter.delete('/types/:id', markersController.deleteCustomType);
 markersRouter.get('/types/:id/icon', markersController.serveIcon);
 markersRouter.get('/types/:id/model', markersController.serveModel);
 
-markersRouter.post('/types/:id/icon', (req, res, next) => {
-  req.assetType = 'icon';
-  next();
-}, upload.single('file'), markersController.uploadIcon);
+markersRouter.post(
+  '/types/:id/icon',
+  (req, res, next) => {
+    req.assetType = 'icon';
+    next();
+  },
+  upload.single('file'),
+  markersController.uploadIcon
+);
 
-markersRouter.post('/types/:id/model', (req, res, next) => {
-  req.assetType = 'model';
-  next();
-}, upload.single('file'), markersController.uploadModel);
+markersRouter.post(
+  '/types/:id/model',
+  (req, res, next) => {
+    req.assetType = 'model';
+    next();
+  },
+  upload.single('file'),
+  markersController.uploadModel
+);

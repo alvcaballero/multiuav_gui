@@ -44,8 +44,10 @@ describe('mission_schema catalog — payloads', () => {
       if (a.payload.type === 'number') {
         assert.ok(typeof a.payload.default === 'number', `${name} payload missing numeric default`);
         assert.ok(a.payload.min <= a.payload.max, `${name} payload min>max`);
-        assert.ok(a.payload.default >= a.payload.min && a.payload.default <= a.payload.max,
-          `${name} payload default out of [min,max]`);
+        assert.ok(
+          a.payload.default >= a.payload.min && a.payload.default <= a.payload.max,
+          `${name} payload default out of [min,max]`
+        );
       }
     }
   });
@@ -70,7 +72,10 @@ describe('mission_schema catalog — profiles', () => {
   test('select defaults reference a real option value', () => {
     for (const [name, p] of Object.entries(schema.params)) {
       if (p.type !== 'select') continue;
-      assert.ok(p.options.some((o) => o.value === p.default), `${name} default ${p.default} not an option value`);
+      assert.ok(
+        p.options.some((o) => o.value === p.default),
+        `${name} default ${p.default} not an option value`
+      );
     }
   });
 });

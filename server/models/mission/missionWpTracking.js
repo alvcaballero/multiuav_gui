@@ -72,7 +72,7 @@ export class missionWpTracking {
 
     logger.debug(
       `WpTracking device=${deviceId} wp=${currentWp}/${waypoints.length} dist=${dist.toFixed(1)}m ` +
-      `signals={estimate:${wpEstimate},confidence:${confidence},anomalies:[${anomalies}]}`
+        `signals={estimate:${wpEstimate},confidence:${confidence},anomalies:[${anomalies}]}`
     );
 
     // If a high-confidence signal (autopilot feedback) gives a higher WP, advance directly
@@ -123,7 +123,7 @@ export class missionWpTracking {
       currentWp,
       totalWp: missionRoute.totalWp,
       completed: missionRoute.status === ROUTE_STATUS.COMPLETED,
-      anomalies,                          // e.g. ['DEVIATION', 'RTH_SUSPECTED']
+      anomalies, // e.g. ['DEVIATION', 'RTH_SUSPECTED']
       wpEstimate: signals.wpEstimate ?? null,
       confidence: signals.confidence ?? null,
     });

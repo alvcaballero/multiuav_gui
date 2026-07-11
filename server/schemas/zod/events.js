@@ -9,7 +9,7 @@ export const EVENT_TYPE = z.enum([
   'connection_lost',
   'mission_start',
   'mission_end',
-  'error'
+  'error',
 ]);
 
 export const EventSchema = z.object({
@@ -20,10 +20,10 @@ export const EventSchema = z.object({
   missionId: z.number().nullable(),
   positionId: z.array(z.number()).default([0, 0, 0]),
   attributes: z.record(z.any()).default({}),
-  createdAt: z.date().optional()
+  createdAt: z.date().optional(),
 });
 
-export const EventCreateSchema = EventSchema.omit({ 
+export const EventCreateSchema = EventSchema.omit({
   id: true,
-  createdAt: true 
-}); 
+  createdAt: true,
+});

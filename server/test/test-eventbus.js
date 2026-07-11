@@ -16,7 +16,7 @@ eventBus.on(EVENTS.MISSION_CREATED, (data) => {
 eventBus.emitSafe(EVENTS.MISSION_CREATED, {
   id: 1,
   name: 'Test Mission',
-  status: 'init'
+  status: 'init',
 });
 
 // Test 2: Múltiples listeners
@@ -32,7 +32,7 @@ eventBus.on(EVENTS.EVENT_CREATED, (data) => {
 eventBus.emitSafe(EVENTS.EVENT_CREATED, {
   type: 'info',
   deviceId: 1,
-  attributes: { message: 'Test event' }
+  attributes: { message: 'Test event' },
 });
 
 // Test 3: Estadísticas

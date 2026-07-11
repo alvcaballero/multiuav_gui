@@ -61,10 +61,7 @@ export class markersModel {
   static getAllTypes() {
     logger.debug('get all marker types');
     const custom = loadCustomTypes().map((t) => ({ ...t, custom: true }));
-    return [
-      ...staticTypes.map((t) => ({ ...t, custom: false })),
-      ...custom,
-    ];
+    return [...staticTypes.map((t) => ({ ...t, custom: false })), ...custom];
   }
 
   static getCustomTypes() {

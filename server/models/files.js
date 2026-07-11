@@ -83,7 +83,9 @@ export class filesModel {
       const myfile = await sequelize.models.File.create(newFile);
       return myfile;
     } catch (error) {
-      logger.error(`addFile FK constraint failed missionId=${missionId} routeId=${routeId} deviceId=${deviceId}: ${error.message}`);
+      logger.error(
+        `addFile FK constraint failed missionId=${missionId} routeId=${routeId} deviceId=${deviceId}: ${error.message}`
+      );
       return null;
     }
   }

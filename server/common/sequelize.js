@@ -87,9 +87,7 @@ for (const sql of migrations) {
 // externalId column so ExtApp callbacks keep addressing them by the external id.
 // Manual missions (trigger='manual') have no external origin and stay NULL.
 try {
-  await sequelize.query(
-    `UPDATE Mission SET externalId = id WHERE trigger = 'automatic' AND externalId IS NULL`
-  );
+  await sequelize.query(`UPDATE Mission SET externalId = id WHERE trigger = 'automatic' AND externalId IS NULL`);
 } catch (e) {
   logger.error('Migration failed: backfill Mission.externalId', e.message);
 }
