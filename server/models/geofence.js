@@ -12,7 +12,12 @@ export const geofenceModel = {
   async create(geofence) {
     const { attributes, name, description, area } = geofence;
 
-    return await await sequelize.models.Geofence.create({ attributes: {}, name, description: '', area });
+    return await sequelize.models.Geofence.create({
+      attributes: attributes || {},
+      name,
+      description: description || '',
+      area,
+    });
   },
 
   async update(id, geofence) {

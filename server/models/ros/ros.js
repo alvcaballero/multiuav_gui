@@ -145,20 +145,6 @@ export class rosModel {
   static GCSServicesMission() {
     // Business callbacks live here in the facade — rosServices only owns the
     // ROSLIB advertise/registry lifecycle and never touches missionController.
-    // serviceType differs between ROS1 and ROS2 bridges (request/response field
-    // names are the same, only the package/message name changed on the ROS2 port).
-    const { version } = _getRosVersionInfo();
-    const serviceTypes =
-      version === 2
-        ? {
-            finishMission: 'muav_gcs_interfaces/srv/FinishMission',
-            finishDownload: 'muav_gcs_interfaces/srv/FinishDownload',
-          }
-        : {
-            finishMission: 'aerialcore_common/finishMission',
-            finishDownload: 'aerialcore_common/finishGetFiles',
-          };
-
     const gcs_services = [
       {
         name: 'ServiceFinishMission',
