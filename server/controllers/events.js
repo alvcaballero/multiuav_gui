@@ -21,9 +21,4 @@ export class eventsController {
       logger.warn(`addEvent failed: ${err.message}`);
     }
   }
-
-  static async getByDeviceId(req, res) {
-    position = {};
-    res.json(position);
-  }
 }

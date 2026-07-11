@@ -55,7 +55,7 @@ export async function getMetadata(path) {
   );
   if (!dataexitf.Photo.hasOwnProperty('UserComment')) return { latitude, longitude, measures };
 
-  let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
+  let mystring = dataexitf.Photo.UserComment.toString('utf8').replaceAll('\u0000', '');
   let userdata = JSON.parse(mystring.slice(7).trim());
 
   if (userdata.hasOwnProperty('MinTemp')) measures.push({ name: 'TempMin', value: userdata.MinTemp });
