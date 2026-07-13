@@ -601,7 +601,7 @@ export class missionModel {
     let code = 0;
     let result = { files: [], data: {} };
     let myfiles = await filesController.getFilesInfo({ missionId });
-    result.files = myfiles.map((file) => `${file.route}${file.name}`);
+    result.files = myfiles.map((file) => `${file.path}${file.name}`);
     const routes = await this.getRoutes({ missionId });
     result.data = routes.filter((r) => r.result).map((r) => ({ deviceId: r.deviceId, result: r.result }));
     eventsController.addEvent({
