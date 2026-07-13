@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { dateString, GetLocalTime, readDataFile } from '../common/utils.js';
+import { missionFolderStamp, readDataFile } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
 import { devicesController } from '../controllers/devices.js';
@@ -269,7 +269,13 @@ export class filesModel {
 
     let pathFolder = myconfig.path;
     if (myconfig.type == 'specific') {
-      let myInitTime = dateString(GetLocalTime(initTime)).replace(/-|:|\s/g, '_');
+      // The remote folder name is derived from the mission's real initTime in the
+      // DB (the same UTC instant sent to the UAV as init_date), NOT from whatever
+      // the client passed in — a client-supplied local-time string would never
+      // match the folder the onboard computer actually created.
+      const mission = await missionController.getMissionRoute(missionId);
+      const dbInitTime = mission?.initTime ?? initTime;
+      let myInitTime = missionFolderStamp(dbInitTime);
       pathFolder = `${myconfig.path}mission_${myInitTime}/`;
     }
 

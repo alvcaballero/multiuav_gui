@@ -87,6 +87,19 @@ export const addTime = (date, minute) => {
 export const dateString = (date) => {
   return date.toISOString().slice(0, -8).replace('T', ' ');
 };
+
+// Folder-name stamp for the UAV's remote `mission_XXXX` directory. The onboard
+// computer derives the folder name from the UTC `init_date` the server sends in
+// the download action, so this MUST be UTC (never GetLocalTime) to match. Emits
+// `YYYY_MM_DD_HH_mm` (no seconds), e.g. 2026_07_13_14_30. Accepts a Date or any
+// value Date can parse; throws on an invalid/unparseable date.
+export const missionFolderStamp = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`missionFolderStamp: invalid date ${JSON.stringify(date)}`);
+  }
+  return d.toISOString().slice(0, -8).replace('T', ' ').replace(/[-:\s]/g, '_');
+};
 export const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };

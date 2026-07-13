@@ -8,6 +8,19 @@ function omitUndefined(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 }
 
+// The download service requires UTC 0 timestamps in full ISO 8601 with the
+// trailing `Z` (e.g. "2026-07-13T14:30:00.000Z"). Reject anything else early so
+// a malformed/local-time date never reaches the UAV as a silent bad range.
+const ISO_UTC_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
+function assertUtcIsoDate(value, field) {
+  if (typeof value !== 'string' || !ISO_UTC_RE.test(value) || Number.isNaN(Date.parse(value))) {
+    throw new Error(
+      `${field} must be a UTC ISO 8601 date ending in 'Z' (e.g. 2026-07-13T14:30:00.000Z), got: ${JSON.stringify(value)}`
+    );
+  }
+  return value;
+}
+
 // ─── Encoder: route crudo → aerialcore_common/ConfigMission (ROS1) ───────────
 
 function MissionToRos(route) {
@@ -109,16 +122,16 @@ export function encodeRosSrv({ type, msg, msgType }) {
   if (msgType === 'muav_gcs_interfaces/action/DownloadFilesByDateRange') {
     return {
       payload_index: msg.payload_index || 0,
-      init_date: msg.startDate || '',
-      finish_date: msg.endDate || '',
+      init_date: assertUtcIsoDate(msg.startDate, 'init_date'),
+      finish_date: assertUtcIsoDate(msg.endDate, 'finish_date'),
       file_type: msg.file_type || 'all',
       delete_after_download: msg.delete_after_download || false,
     };
   }
   if (msgType === 'dji_osdk_ros/DownloadMedia') {
     return {
-      initDate: msg.startDate || 0,
-      FinishDate: msg.endDate || 0,
+      initDate: assertUtcIsoDate(msg.startDate, 'initDate'),
+      FinishDate: assertUtcIsoDate(msg.endDate, 'finishDate'),
       downloadCnt: 0,
     };
   }

@@ -81,12 +81,12 @@ export default () =>
         {
           key: 'startDate',
           name: 'commandStartDate',
-          type: 'string',
+          type: 'datetime',
         },
         {
           key: 'endDate',
           name: 'commandEndDate',
-          type: 'string',
+          type: 'datetime',
         },
       ],
     }),

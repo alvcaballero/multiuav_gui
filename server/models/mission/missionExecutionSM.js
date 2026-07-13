@@ -2,7 +2,7 @@
 // https://dev.to/davidkpiano/you-don-t-need-a-library-for-state-machines-k7h
 import { createMachine, fromPromise, assign } from 'xstate';
 import { commandsController } from '../../controllers/commands.js';
-import { dateString, addTime, GetLocalTime, sleep } from '../../common/utils.js';
+import { addTime, sleep } from '../../common/utils.js';
 import { missionSMModel } from './missionSM.js';
 import { missionController } from '../../controllers/mission.js';
 import { missionLogger as logger } from '../../common/logger.js';
@@ -59,8 +59,11 @@ const CommandDownload = async (context) => {
   let mymission = await missionController.getMissionRoute(context.missionId);
 
   logger.debug(`CommandDownload mission: ${JSON.stringify(mymission)}`);
-  let myInitTime = dateString(GetLocalTime(mymission['initTime']));
-  let myFinishTime = dateString(addTime(GetLocalTime(new Date()), 10));
+  // The download service expects UTC 0 timestamps. `Date.toISOString()` emits
+  // UTC ISO 8601 with the trailing `Z` straight from the epoch — do NOT run it
+  // through GetLocalTime, which corrupts the epoch to fake a local-as-UTC time.
+  let myInitTime = new Date(mymission['initTime']).toISOString();
+  let myFinishTime = addTime(new Date(), 10).toISOString();
   logger.debug(`CommandDownload time range: ${myInitTime} --- ${myFinishTime}`);
   let response = await commandsController.sendCommandDevice({
     deviceId: context.uavId,

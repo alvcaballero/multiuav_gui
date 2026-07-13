@@ -23,6 +23,7 @@ if (useExternalDb) {
       host: dbHost,
       port: dbPort,
       logging: false,
+      dialectOptions: { useUTC: true, timezone: 'UTC' },
     };
   }
   if (dbType === 'mysql') {
@@ -34,6 +35,7 @@ if (useExternalDb) {
       host: dbHost,
       port: dbPort,
       logging: false,
+      timezone: '+00:00',
     };
   }
 }
