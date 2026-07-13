@@ -439,17 +439,20 @@ dji_M300_PSDK:
       serviceType: 'psdk_interfaces/srv/StartWaypointV2Mission'
     stopMission:
       name: '/psdk_ros2/waypointV2_stopMission'
-      serviceType: 'dji_osdk_ros/StopWaypointV2Mission'
+      serviceType: 'psdk_interfaces/srv/StopWaypointV2Mission'
     resumemission:
       name: '/psdk_ros2/waypointV2_resumeMission'
-      serviceType: 'dji_osdk_ros/ResumeWaypointV2Mission'
+      serviceType: 'psdk_interfaces/srv/ResumeWaypointV2Mission'
     pausemission:
       name: '/psdk_ros2/waypointV2_pauseMission'
-      serviceType: 'dji_osdk_ros/PauseWaypointV2Mission'
+      serviceType: 'psdk_interfaces/srv/PauseWaypointV2Mission'
+    Gimbal:
+      name: '/gimbal_task_control'
+      serviceType: 'dji_osdk_ros/GimbalAction'
   actions:
     CameraFileDownload:
-      name: '/camera_download_files'
-      actionType: 'muav_gcs_interfaces/DownloadMedia'
+      name: '/offboard/download_files_by_date_range'
+      actionType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 px4_mavros:
   topics:
     position:
