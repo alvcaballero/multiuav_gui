@@ -1,109 +1,76 @@
 import * as ROSLIB from 'roslib';
-import { readDataFile } from '../../common/utils.js';
 import { encodeRosSrv } from './rosEncode.js';
 import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
 import { getTopics, getMessageDetails, getPublishers } from './rosInspect.js';
-import { logger, logHelpers } from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 
-const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
-
-// Registry of active ROS topic subscriptions, indexed by device id.
-// Each entry is a map of topicKey -> ROSLIB.Topic, kept only so the
-// listeners can be unsubscribed later. Device metadata is NOT stored here.
-// activeSubscriptions[deviceId] = { position: ROSLIB.Topic, camera: ROSLIB.Topic, ... }
+// Registry of active ROS topic subscriptions, indexed by an opaque
+// subscription key (a String — a device uses its id, an ad-hoc user
+// subscription uses the topic name). Each entry is a map of
+// slot -> ROSLIB.Topic, kept only so the listeners can be unsubscribed
+// later. No device/category/topic-name knowledge lives here: the facade
+// (ros.js) resolves all of that and hands over already-built topics.
+// activeSubscriptions[key] = { position: ROSLIB.Topic, camera: ROSLIB.Topic, ... }
 const activeSubscriptions = {};
 
-// Subscribe a device topic and forward each message to onMessage. The
-// caller (the facade) supplies the effect callback, so position and camera
-// topics share the same subscription primitive — they only differ in which
-// onMessage they pass.
-export function RosSubscribe({ uav_id, uav_type, type, msgName, msgType, onMessage }, ros) {
-  // create listeners
-  activeSubscriptions[uav_id][type] = new ROSLIB.Topic({
-    ros: ros,
-    name: msgName,
-    messageType: msgType,
-  });
-  // subscribe devices
-  activeSubscriptions[uav_id][type].subscribe(function (msg) {
-    onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
-  });
-}
-
-export async function subscribeDevice(uavAdded, ros, rosState, { onPosition, onCamera }) {
+// Subscribe a set of already-resolved topics under one key and forward each
+// message to its per-topic onMessage. The caller (the facade) resolves names,
+// message types and effect callbacks, so this primitive stays free of any
+// devices_msg / category / camera business logic.
+//   key    — opaque String grouping these subscriptions for later unsubscribe
+//   topics — [{ slot, name, messageType, onMessage }]
+export function subscribeTopics({ key, topics }, ros, rosState) {
   if (!rosState || rosState.state != 'connect') {
     return { state: 'error', msg: 'ROS no conectado' };
   }
-  logHelpers.ros.subscribe(uavAdded.id, uavAdded.name, { category: uavAdded.category });
-
-  const { id, name, category, camera } = uavAdded;
   // Unsubscribe any stale listeners before re-subscribing so a reconnect
   // can't leave two live subscriptions feeding duplicate telemetry.
-  if (activeSubscriptions[id]) {
-    unsubscribeDevice(id);
+  if (activeSubscriptions[key]) {
+    unsubscribeKey(key);
   }
-  activeSubscriptions[id] = {};
-  let msgType = devices_msg[category]['subscribers'];
+  activeSubscriptions[key] = {};
 
-  // Only subscribe the camera topic when the device has a Websocket camera AND
-  // the category config defines its message type — otherwise skip it below.
-  const hasWebsocketCamera = camera.some((cam) => cam.type == 'Websocket');
-  const cameraMsgTypeDefined = Boolean(msgType['camera']?.['messageType']);
-  const shouldSubscribeCamera = hasWebsocketCamera && cameraMsgTypeDefined;
-
-  if (hasWebsocketCamera && !cameraMsgTypeDefined) {
-    logger.warn(`No message type found for camera subscription for ${name}`);
+  for (const { slot, name, messageType, onMessage } of topics) {
+    const topic = new ROSLIB.Topic({ ros, name, messageType });
+    topic.subscribe(function (msg) {
+      onMessage({ msg, key, slot, messageType });
+    });
+    activeSubscriptions[key][slot] = topic;
   }
-
-  // subscribe devices
-  Object.keys(devices_msg[category]['subscribers']).forEach((type) => {
-    if (type == 'camera' && !shouldSubscribeCamera) {
-      logger.debug(`Skipping camera subscription for ${name} as no websocket camera is present`);
-      return;
-    }
-    RosSubscribe(
-      {
-        uav_id: id,
-        uav_type: category,
-        type: type,
-        msgName: name + msgType[type]['name'],
-        msgType: msgType[type]['messageType'],
-        onMessage: type == 'camera' ? onCamera : onPosition,
-      },
-      ros
-    );
-  });
+  return { state: 'success', msg: `Subscribed ${topics.length} topic(s) under ${key}` };
 }
 
-// Unsubscribe one device's listeners and drop its registry entry.
-function unsubscribeOne(deviceId) {
-  const listeners = activeSubscriptions[deviceId];
+// Unsubscribe one key's listeners and drop its registry entry.
+function unsubscribeOne(key) {
+  const listeners = activeSubscriptions[key];
   if (!listeners) return;
   for (const topic of Object.values(listeners)) {
     topic.unsubscribe();
   }
-  delete activeSubscriptions[deviceId];
+  delete activeSubscriptions[key];
 }
 
-// Unsubscribe a single device by id, or ALL devices when id < 0
-// (id = -1 is used on every ROS disconnect to leave no orphaned subscriptions).
-export async function unsubscribeDevice(id) {
+// Unsubscribe every registered key (used on ROS disconnect to leave no
+// orphaned subscriptions).
+export async function unsubscribeAll() {
   if (Object.keys(activeSubscriptions).length === 0) {
-    return { state: 'success', msg: 'no quedan UAV de la lista' };
+    return { state: 'success', msg: 'no quedan suscripciones activas' };
   }
+  for (const key of Object.keys(activeSubscriptions)) {
+    unsubscribeOne(key);
+  }
+  return { state: 'success', msg: 'Se han desuscrito todas las suscripciones' };
+}
 
-  if (id < 0) {
-    for (const deviceId of Object.keys(activeSubscriptions)) {
-      unsubscribeOne(deviceId);
-    }
-    return { state: 'success', msg: 'Se han desuscrito todos los dispositivos' };
+// Unsubscribe a single key. Keys are compared as strings, so callers passing a
+// numeric device id and callers passing a topic name share one namespace.
+export async function unsubscribeKey(key) {
+  const strKey = String(key);
+  if (!activeSubscriptions[strKey]) {
+    return { state: 'warning', msg: `${strKey} no estaba suscrito` };
   }
-
-  if (!activeSubscriptions[id]) {
-    return { state: 'warning', msg: `device ${id} no estaba suscrito` };
-  }
-  unsubscribeOne(id);
-  return { state: 'success', msg: `Se ha eliminado el dispositivo ${id}` };
+  unsubscribeOne(strKey);
+  return { state: 'success', msg: `Se ha eliminado la suscripción ${strKey}` };
 }
 
 export async function PubRosMsg(params, ros) {

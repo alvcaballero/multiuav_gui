@@ -2,7 +2,8 @@ import { devicesController } from '../../controllers/devices.js';
 import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
 import { decodeRosMsg } from './rosDecode.js';
-import { logger, rosLogger } from '../../common/logger.js';
+import { readDataFile } from '../../common/utils.js';
+import { logger, rosLogger, logHelpers } from '../../common/logger.js';
 import {
   getRos,
   setRosState,
@@ -14,8 +15,9 @@ import {
   setRosVersionInfo,
 } from './rosConnection.js';
 import {
-  subscribeDevice as _subscribeDevice,
-  unsubscribeDevice as _unsubscribeDevice,
+  subscribeTopics as _subscribeTopics,
+  unsubscribeKey as _unsubscribeKey,
+  unsubscribeAll as _unsubscribeAll,
   PubRosMsg as _PubRosMsg,
   publishTopic as _publishTopic,
   subscribeOnce as _subscribeOnce,
@@ -23,6 +25,8 @@ import {
 import * as rosServices from './rosServices.js';
 import * as rosInspect from './rosInspect.js';
 import * as actionRegistry from './rosAction.js';
+
+const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 
 export class rosModel {
   static setrosState({ state, msg }) {
@@ -42,8 +46,6 @@ export class rosModel {
           name: device.name,
           category: device.category,
           camera: device.camera,
-          watch_bound: true,
-          bag: false,
         });
       }
     }
@@ -57,21 +59,78 @@ export class rosModel {
     rosConnect(null);
   }
 
-  static async subscribeDevice(uavAdded) {
-    return _subscribeDevice(uavAdded, getRos(), serverStatus(), {
-      onPosition: (args) => {
-        const decoded = decodeRosMsg(args);
-        if (decoded) positionsController.updatePosition(decoded);
-      },
-      onCamera: (args) => {
-        const decoded = decodeRosMsg(args);
-        if (decoded) positionsController.updateCamera(decoded);
-      },
-    });
+  // Resolve a device's subscriber topics from devices_msg config, wire the
+  // business effect (position vs camera) into each topic's onMessage, and hand
+  // the fully-built topic list to the transport primitive. All category/camera
+  // knowledge lives here — rosTopics stays business-agnostic.
+  static async subscribeDevice({ id, name, category, camera = [] }) {
+    logHelpers.ros.subscribe(id, name, { category });
+
+    const subscribers = devices_msg[category]?.['subscribers'];
+    if (!subscribers) {
+      logger.warn(`No subscribers config found for category ${category}`);
+      return { state: 'error', msg: `No subscribers config for ${category}` };
+    }
+
+    // Only subscribe the camera topic when the device has a Websocket camera AND
+    // the category config defines its message type — otherwise skip it.
+    const hasWebsocketCamera = camera.some((cam) => cam.type == 'Websocket');
+    const cameraMsgTypeDefined = Boolean(subscribers['camera']?.['messageType']);
+    const shouldSubscribeCamera = hasWebsocketCamera && cameraMsgTypeDefined;
+    if (hasWebsocketCamera && !cameraMsgTypeDefined) {
+      logger.warn(`No message type found for camera subscription for ${name}`);
+    }
+
+    // Position vs camera differ only in which controller effect they trigger.
+    // The closure captures deviceId + category so the transport never sees them.
+    const makeOnMessage = (effect) => (args) => {
+      const decoded = decodeRosMsg({
+        msg: args.msg,
+        deviceId: id,
+        uav_type: category,
+        type: args.slot,
+        msgType: args.messageType,
+      });
+      if (decoded) effect(decoded);
+    };
+    const onPosition = makeOnMessage((d) => positionsController.updatePosition(d));
+    const onCamera = makeOnMessage((d) => positionsController.updateCamera(d));
+
+    const topics = Object.entries(subscribers)
+      .filter(([slot]) => {
+        if (slot == 'camera' && !shouldSubscribeCamera) {
+          logger.debug(`Skipping camera subscription for ${name} as no websocket camera is present`);
+          return false;
+        }
+        return true;
+      })
+      .map(([slot, cfg]) => ({
+        slot,
+        name: name + cfg['name'],
+        messageType: cfg['messageType'],
+        onMessage: slot == 'camera' ? onCamera : onPosition,
+      }));
+
+    return _subscribeTopics({ key: id, topics }, getRos(), serverStatus());
   }
 
   static async unsubscribeDevice(id) {
-    return _unsubscribeDevice(id);
+    // id < 0 (e.g. -1 on disconnect) means "unsubscribe everything".
+    return id < 0 ? _unsubscribeAll() : _unsubscribeKey(id);
+  }
+
+  // Ad-hoc subscription to an arbitrary topic, independent of any device.
+  // Keyed by the topic name so it can be unsubscribed via unsubscribeTopic.
+  static async subscribeTopic({ topic, messageType, onMessage }) {
+    return _subscribeTopics(
+      { key: topic, topics: [{ slot: 'main', name: topic, messageType, onMessage }] },
+      getRos(),
+      serverStatus()
+    );
+  }
+
+  static async unsubscribeTopic(topic) {
+    return _unsubscribeKey(topic);
   }
 
   static async callRosService({ service, messageType, message }) {
