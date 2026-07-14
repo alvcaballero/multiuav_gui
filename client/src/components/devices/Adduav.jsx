@@ -1,25 +1,21 @@
-import React, { useState, Fragment } from 'react';
+import { useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
-  Divider,
   Card,
   IconButton,
-  MenuItem,
   Button,
-  Select,
   TextField,
-  FormControl,
-  InputLabel,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Typography,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import SelectField from '../../shared/components/SelectField';
+import DeviceCameraEditor from './DeviceCameraEditor';
+import DeviceFilesEditor from './DeviceFilesEditor';
 import { addDevice } from '../../shared/fetchs';
 import { useCatch } from '../../reactHelper';
 const useStyles = makeStyles()((theme) => ({
@@ -117,40 +113,6 @@ const Adduav = ({ SetAddUAVOpen }) => {
     handleAddDevice(item);
     SetAddUAVOpen(false);
   }
-  const removeCamera = (index) => {
-    let auxcamera = structuredClone(item.camera);
-    auxcamera.splice(index, 1);
-    setItem({ ...item, camera: auxcamera });
-  };
-  function addNewcamera() {
-    let auxcamera = structuredClone(item.camera);
-    auxcamera.push({ type: 'WebRTC', source: '' });
-    setItem({ ...item, camera: auxcamera });
-  }
-  const removeFile = (index) => {
-    let auxcamera = structuredClone(item.files);
-    auxcamera.splice(index, 1);
-    setItem({ ...item, files: auxcamera });
-  };
-  const addNewFile = () => {
-    let auxfile = structuredClone(item.files);
-    auxfile.push({ type: 'onboard_computer', url: '' });
-    setItem({ ...item, files: auxfile });
-  };
-  // Set/clear a single field on the file entry at `index`. An empty value removes
-  // the override so the server preset (devices.yaml) keeps applying for that field.
-  const setFileField = (index, field, value) => {
-    setItem({
-      ...item,
-      files: item.files.map((file, fileIndex) => {
-        if (fileIndex !== index) return file;
-        let myfile = structuredClone(file);
-        if (value === '' || value === undefined) delete myfile[field];
-        else myfile[field] = value;
-        return myfile;
-      }),
-    });
-  };
   return (
     <div className={classes.root}>
       <Card elevation={3} className={classes.card}>
@@ -207,245 +169,14 @@ const Adduav = ({ SetAddUAVOpen }) => {
         </Accordion>
         {item && (
           <>
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle1">Camera Stream</Typography>
-              </AccordionSummary>
-              <AccordionDetails className={classes.details}>
-                <Typography variant="caption">Source example:main</Typography>
-                {item.camera &&
-                  item.camera.map((action_key, index_ac) => (
-                    <Fragment key={'fragment-action-' + index_ac}>
-                      <Typography variant="subtitle1" className={classes.attributeName}>
-                        {'Camera ' + index_ac}
-                      </Typography>
-                      <div>
-                        <FormControl variant="outlined">
-                          <InputLabel id="demo-simple-select-outlined-label">CameraType</InputLabel>
-                          <Select
-                            labelId="demo-simple-select-outlined-label"
-                            id="demo-simple-select-outlined"
-                            value={action_key['type']}
-                            label="type"
-                            onChange={(e) =>
-                              setItem({
-                                ...item,
-                                camera: item.camera.map((cam, cam_ind) => {
-                                  let mycam = structuredClone(cam);
-                                  index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
-                                  return mycam;
-                                }),
-                              })
-                            }
-                          >
-                            <MenuItem value="WebRTC">WebRTC</MenuItem>
-                            <MenuItem value="WebRTC_env">WebRTCenv</MenuItem>
-                            <MenuItem value="Websocket">Websocket</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <div className={classes.actionValue}>
-                          <TextField
-                            required
-                            fullWidth={true}
-                            label="Source"
-                            value={action_key['source']}
-                            onChange={(e) =>
-                              setItem({
-                                ...item,
-                                camera: item.camera.map((cam, cam_ind) => {
-                                  let mycam = structuredClone(cam);
-                                  index_ac == cam_ind ? (mycam['source'] = e.target.value) : null;
-                                  return mycam;
-                                }),
-                              })
-                            }
-                          />
-                        </div>
-                        <IconButton
-                          sx={{
-                            py: 0,
-                            pr: 2,
-                            marginLeft: 'auto',
-                          }}
-                          onClick={() => removeCamera(index_ac)}
-                          className={classes.negative}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </div>
-                      <Divider></Divider>
-                    </Fragment>
-                  ))}
-
-                <Button variant="contained" onClick={addNewcamera}>
-                  Add camera source
-                </Button>
-              </AccordionDetails>
-            </Accordion>
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle1">Device Files Resurces</Typography>
-              </AccordionSummary>
-              <AccordionDetails className={classes.details}>
-                <Typography variant="caption">
-                  The url format sftp://user:password@Ip:port It can be compatible for sftp or ftp
-                  protovol
-                </Typography>
-                {item.files &&
-                  item.files.map((action_key, index_ac) => (
-                    <Fragment key={'fragment-action-file' + index_ac}>
-                      <Typography variant="subtitle1" className={classes.attributeName}>
-                        {'File ' + index_ac}
-                      </Typography>
-                      <div>
-                        <FormControl variant="outlined">
-                          <InputLabel id="demo-simple-select-outlined-label">CameraType</InputLabel>
-                          <Select
-                            labelId="demo-simple-select-outlined-label"
-                            id="demo-simple-select-outlined"
-                            value={action_key['type']}
-                            label="type"
-                            onChange={(e) =>
-                              setItem({
-                                ...item,
-                                files: item.files.map((cam, cam_ind) => {
-                                  let mycam = structuredClone(cam);
-                                  index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
-                                  return mycam;
-                                }),
-                              })
-                            }
-                          >
-                            <MenuItem value="onboard_computer">Onboard computer</MenuItem>
-                            <MenuItem value="wiris_pro">Wiris_pro</MenuItem>
-                            <MenuItem value="default">default</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <div className={classes.actionValue}>
-                          <TextField
-                            required
-                            fullWidth={true}
-                            label="URL"
-                            value={action_key['url']}
-                            onChange={(e) => setFileField(index_ac, 'url', e.target.value)}
-                          />
-                        </div>
-                        <IconButton
-                          sx={{
-                            py: 0,
-                            pr: 2,
-                            marginLeft: 'auto',
-                          }}
-                          onClick={() => removeFile(index_ac)}
-                          className={classes.negative}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </div>
-                      <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                          <Typography variant="caption">
-                            Advanced (override server preset)
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails className={classes.details}>
-                          <Typography variant="caption">
-                            Leave empty to use the server preset for this source type. Set a value
-                            only to override it for this device.
-                          </Typography>
-                          <TextField
-                            fullWidth={true}
-                            label="Custom path"
-                            placeholder="./uav_media/"
-                            value={action_key['path'] ?? ''}
-                            onChange={(e) => setFileField(index_ac, 'path', e.target.value)}
-                            helperText="Remote folder to read files from. Overrides the preset path."
-                          />
-                          <FormControl variant="outlined">
-                            <InputLabel id={'download-type-label-' + index_ac}>
-                              Download type
-                            </InputLabel>
-                            <Select
-                              labelId={'download-type-label-' + index_ac}
-                              label="Download type"
-                              value={action_key['downloadType'] ?? ''}
-                              onChange={(e) =>
-                                setFileField(index_ac, 'downloadType', e.target.value)
-                              }
-                            >
-                              <MenuItem value="">
-                                <em>Use preset</em>
-                              </MenuItem>
-                              <MenuItem value="all">all</MenuItem>
-                              <MenuItem value="lastFolder">lastFolder</MenuItem>
-                              <MenuItem value="specific">specific</MenuItem>
-                            </Select>
-                          </FormControl>
-                          <FormControl variant="outlined">
-                            <InputLabel id={'delete-label-' + index_ac}>
-                              Delete after download
-                            </InputLabel>
-                            <Select
-                              labelId={'delete-label-' + index_ac}
-                              label="Delete after download"
-                              value={
-                                action_key['delete'] === undefined
-                                  ? ''
-                                  : String(action_key['delete'])
-                              }
-                              onChange={(e) =>
-                                setFileField(
-                                  index_ac,
-                                  'delete',
-                                  e.target.value === '' ? '' : e.target.value === 'true',
-                                )
-                              }
-                            >
-                              <MenuItem value="">
-                                <em>Use preset</em>
-                              </MenuItem>
-                              <MenuItem value="true">true</MenuItem>
-                              <MenuItem value="false">false</MenuItem>
-                            </Select>
-                          </FormControl>
-                          <FormControl variant="outlined">
-                            <InputLabel id={'srv-download-label-' + index_ac}>
-                              Service download
-                            </InputLabel>
-                            <Select
-                              labelId={'srv-download-label-' + index_ac}
-                              label="Service download"
-                              value={
-                                action_key['srvDownload'] === undefined
-                                  ? ''
-                                  : String(action_key['srvDownload'])
-                              }
-                              onChange={(e) =>
-                                setFileField(
-                                  index_ac,
-                                  'srvDownload',
-                                  e.target.value === '' ? '' : e.target.value === 'true',
-                                )
-                              }
-                            >
-                              <MenuItem value="">
-                                <em>Use preset</em>
-                              </MenuItem>
-                              <MenuItem value="true">true</MenuItem>
-                              <MenuItem value="false">false</MenuItem>
-                            </Select>
-                          </FormControl>
-                        </AccordionDetails>
-                      </Accordion>
-                      <Divider />
-                    </Fragment>
-                  ))}
-
-                <Button variant="contained" onClick={addNewFile}>
-                  Add files source
-                </Button>
-              </AccordionDetails>
-            </Accordion>
+            <DeviceCameraEditor
+              value={item.camera}
+              onChange={(camera) => setItem({ ...item, camera })}
+            />
+            <DeviceFilesEditor
+              value={item.files}
+              onChange={(files) => setItem({ ...item, files })}
+            />
           </>
         )}
 
