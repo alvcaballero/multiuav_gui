@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { missionFolderStamp, readDataFile } from '../common/utils.js';
+import { missionFolderStamp } from '../common/utils.js';
 import { SFTPClient } from '../common/SFTPClient.js';
 import { FTPClient } from '../common/FTPClient.js';
 import { devicesController } from '../controllers/devices.js';
@@ -32,7 +32,6 @@ export const FILE_STATUS = Object.freeze({
   OK: 5,
 });
 
-const filesSetup = readDataFile('../config/devices/devices.yaml');
 const downloadQueue = []; // manage files to download
 const processQueue = []; // manage files to process
 
@@ -190,41 +189,27 @@ export class filesModel {
   / Show list of files in the drone, from folder uav_media,
   */
 
-  static async showFiles({ uavId, missionId, initTime, index = 0 }) {
-    let mydevice = await devicesController.getAccess(uavId);
-    let myconfig = filesSetup.files.default;
+  static async showFiles({ uavId, missionId, initTime }) {
+    logger.info(`show files api call ${uavId} ${missionId} ${initTime}`);
+    const configs = await devicesController.getFilesConfig(uavId);
+    if (configs.length === 0) {
+      return [];
+    }
+
     let listFiles = [];
-    logger.info(`show files api call ${uavId} ${missionId} ${initTime} index=${index}`);
-    if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
-      logger.warn('UAV no have files setup');
-      return [];
-    }
-    logger.debug(`device file config: ${JSON.stringify(mydevice.files[index])}`);
-
-    if (mydevice.files[index].hasOwnProperty('type')) {
-      myconfig = filesSetup.files.hasOwnProperty(mydevice.files[index].type)
-        ? filesSetup.files[mydevice.files[index].type]
-        : filesSetup.files.default;
-    }
-    logger.debug(`myconfig: ${JSON.stringify(myconfig)}`);
-    let params = this.paramsConnection({ mydevice: mydevice.files[index] });
-    const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
-    let status = await client.connect(params);
-    if (!status) {
-      logger.warn('cant connect to device');
-      return [];
-    }
-    logger.debug(`config files ${myconfig.path} ${myconfig.type}`);
-    listFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder' ? true : false);
-
-    await client.disconnect();
-
-    if (+index + 1 < mydevice.files.length) {
-      let otherFiles = await this.showFiles({ uavId, missionId, initTime, index: index + 1 });
-      logger.debug(`other files count: ${otherFiles.length}`);
-      otherFiles.forEach((file) => {
-        listFiles.push(file);
-      });
+    for (const myconfig of configs) {
+      logger.debug(`myconfig: ${JSON.stringify(myconfig)}`);
+      let params = this.paramsConnection({ mydevice: myconfig });
+      const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
+      let status = await client.connect(params);
+      if (!status) {
+        logger.warn('cant connect to device');
+        continue;
+      }
+      logger.debug(`config files ${myconfig.path} ${myconfig.type}`);
+      const sourceFiles = await this.mylistFiles(client, myconfig.path, myconfig.type == 'lastFolder');
+      await client.disconnect();
+      listFiles = listFiles.concat(sourceFiles);
     }
 
     return listFiles;
@@ -235,83 +220,71 @@ export class filesModel {
    / if the file is a thermal image, process the image and return the metadata
    / return a list of files, and a list of metadata 
    */
-  static async updateFiles(uavId, missionId, routeId, initTime, index = 0) {
-    logger.info(`update files api call uavId=${uavId} routeId=${routeId} missionId=${missionId} index=${index}`);
+  static async updateFiles(uavId, missionId, routeId, initTime) {
+    logger.info(`update files api call uavId=${uavId} routeId=${routeId} missionId=${missionId}`);
 
-    let mydevice = await devicesController.getAccess(uavId);
-    let myconfig = filesSetup.files.default;
-    let listFiles = [];
-
-    if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
-      logger.warn('UAV no have files setup');
+    const mydevice = await devicesController.getAccess(uavId);
+    const configs = await devicesController.getFilesConfig(uavId);
+    if (configs.length === 0) {
       return [];
     }
 
-    const deviceFile = JSON.parse(JSON.stringify(mydevice.files[index]));
-    logger.debug(`deviceFile: ${JSON.stringify(deviceFile)}`);
+    let queued = false;
+    for (const myconfig of configs) {
+      logger.debug(`config files ${myconfig.path} ${myconfig.type}`);
+      let params = this.paramsConnection({ mydevice: myconfig });
+      const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
 
-    if (deviceFile.hasOwnProperty('type')) {
-      myconfig = filesSetup.files.hasOwnProperty(deviceFile.type)
-        ? filesSetup.files[deviceFile.type]
-        : filesSetup.files.default;
+      let status = await client.connect(params);
+      if (!status) {
+        logger.warn('cant connect to device');
+        continue;
+      }
+
+      let pathFolder = myconfig.path;
+      if (myconfig.type == 'specific') {
+        // The remote folder name is derived from the mission's real initTime in the
+        // DB (the same UTC instant sent to the UAV as init_date), NOT from whatever
+        // the client passed in — a client-supplied local-time string would never
+        // match the folder the onboard computer actually created.
+        const mission = await missionController.getMissionRoute(missionId);
+        const dbInitTime = mission?.initTime ?? initTime;
+        let myInitTime = missionFolderStamp(dbInitTime);
+        pathFolder = `${myconfig.path}mission_${myInitTime}/`;
+      }
+
+      const listFiles = await this.mylistFiles(client, pathFolder, myconfig.type == 'lastFolder');
+      await client.disconnect();
+
+      if (listFiles.length == 0) {
+        logger.warn('no files to download');
+        continue;
+      }
+
+      let dir = `${missionDataPath}mission_${missionId}/${mydevice.name}`;
+      if (!fs.existsSync(dir)) {
+        logger.debug(`creating directory: ${dir}`);
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      for (let myfile of listFiles) {
+        let createFile = await this.addFile({
+          routeId: routeId,
+          missionId: missionId,
+          deviceId: uavId,
+          name: `${myfile.split('/').at(-1)}`,
+          path: `mission_${missionId}/${mydevice.name}/`,
+          source: myconfig,
+          path2: myfile,
+        });
+        if (createFile) {
+          downloadQueue.push(createFile.id);
+          queued = true;
+        }
+      }
     }
 
-    let params = this.paramsConnection({ mydevice: deviceFile });
-    const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
-
-    let status = await client.connect(params);
-    if (!status) {
-      logger.warn('cant connect to device');
-      return [];
-    }
-
-    logger.debug(`config files ${myconfig.path} ${myconfig.type}`);
-
-    let pathFolder = myconfig.path;
-    if (myconfig.type == 'specific') {
-      // The remote folder name is derived from the mission's real initTime in the
-      // DB (the same UTC instant sent to the UAV as init_date), NOT from whatever
-      // the client passed in — a client-supplied local-time string would never
-      // match the folder the onboard computer actually created.
-      const mission = await missionController.getMissionRoute(missionId);
-      const dbInitTime = mission?.initTime ?? initTime;
-      let myInitTime = missionFolderStamp(dbInitTime);
-      pathFolder = `${myconfig.path}mission_${myInitTime}/`;
-    }
-
-    listFiles = await this.mylistFiles(client, pathFolder, myconfig.type == 'lastFolder');
-
-    await client.disconnect();
-
-    if (listFiles.length == 0) {
-      logger.warn('no files to download');
-      return [];
-    }
-
-    let dir = `${missionDataPath}mission_${missionId}/${mydevice.name}`;
-    if (!fs.existsSync(dir)) {
-      logger.debug(`creating directory: ${dir}`);
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    for (let myfile of listFiles) {
-      let createFile = await this.addFile({
-        routeId: routeId,
-        missionId: missionId,
-        deviceId: uavId,
-        name: `${myfile.split('/').at(-1)}`,
-        path: `mission_${missionId}/${mydevice.name}/`,
-        source: deviceFile,
-        path2: myfile,
-      });
-      if (createFile) downloadQueue.push(createFile.id);
-    }
-
-    this.downloadFiles();
-
-    if (+index + 1 < mydevice.files.length) {
-      this.updateFiles({ uavId, missionId, initTime, index: index + 1 });
-    }
+    if (queued) this.downloadFiles();
 
     return true;
   }
@@ -343,21 +316,11 @@ export class filesModel {
     let myFileId = downloadQueue.shift();
     let myfile = await this.getFiles({ id: myFileId });
 
-    let mydevice = await devicesController.getAccess(myfile.deviceId);
-    let myconfig = filesSetup.files.default;
+    // `source` holds the already-resolved files config (url + delete + ...) that
+    // updateFiles stored — no need to re-read the YAML or re-resolve the preset.
+    const myconfig = myfile?.source ?? {};
 
-    if (!mydevice.hasOwnProperty('files') && mydevice.files.length == 0) {
-      logger.warn('UAV no have files setup');
-      return [];
-    }
-
-    if (myfile?.source?.hasOwnProperty('type')) {
-      myconfig = filesSetup.files.hasOwnProperty(myfile.source.type)
-        ? filesSetup.files[myfile.source.type]
-        : filesSetup.files.default;
-    }
-
-    let params = this.paramsConnection({ mydevice: { url: myfile.source.url } });
+    let params = this.paramsConnection({ mydevice: { url: myconfig.url } });
     const client = params.protocol == 'ftp:' ? new FTPClient() : new SFTPClient();
 
     let status = await client.connect(params);
@@ -366,7 +329,7 @@ export class filesModel {
       return [];
     }
 
-    await this.downloadFiles2(client, myfile.source.url, myfile.id, myconfig.delete);
+    await this.downloadFiles2(client, myconfig.url, myfile.id, myconfig.delete);
 
     client.disconnect();
 

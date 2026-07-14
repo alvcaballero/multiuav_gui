@@ -9,10 +9,28 @@ import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
 import { positionsController } from '../controllers/positions.js';
 import { logger } from '../common/logger.js';
+import { readDataFile } from '../common/utils.js';
 import { DEVICE_STATUS } from '../config/status.js';
 
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
+
+// File-download presets (path, folder type, delete, srvDownload) shared by every
+// installation. A device entry references one by `type` and may override any of
+// FILE_OVERRIDE_KEYS field-by-field (e.g. a custom `path`). Resolving the effective
+// config is the DEVICE's responsibility — `files.js` only consumes the result and
+// must not read this YAML nor know about presets.
+const filesSetup = readDataFile('../config/devices/devices.yaml');
+const FILE_OVERRIDE_KEYS = ['path', 'downloadType', 'delete', 'srvDownload'];
+
+// Remote folder paths must end in '/' so `files.js` can concatenate filenames.
+// Trims accidental whitespace and appends a trailing slash when missing.
+const normalizeFolderPath = (path) => {
+  if (typeof path !== 'string') return path;
+  const trimmed = path.trim();
+  if (trimmed === '' || trimmed.endsWith('/')) return trimmed;
+  return `${trimmed}/`;
+};
 
 const protocols = Object.freeze({
   ROS: 'ros',
@@ -159,6 +177,41 @@ export class DevicesModel {
     return await sequelize.models.Device.findOne({
       attributes: privateFields,
       where: { id: id, deletedAt: null },
+    });
+  }
+
+  /*
+   / Resolve the effective file-download config for every source of a device.
+   / Each `device.files` entry references a preset by `type`; the entry may then
+   / override any of FILE_OVERRIDE_KEYS. `downloadType` (device) maps onto the
+   / preset's `type` (folder mode: all/lastFolder/specific) so it doesn't collide
+   / with `type` (the preset key). Returns an array of self-contained configs —
+   / `files.js` iterates them and needs nothing else to connect/list/download.
+   */
+  static async getFilesConfig(uavId) {
+    const device = await this.getAccess(uavId);
+    const deviceFiles = device?.files ?? [];
+    if (deviceFiles.length === 0) {
+      logger.warn(`Device ${uavId} has no files setup`);
+      return [];
+    }
+
+    return deviceFiles.map((entry) => {
+      const preset = filesSetup.files?.[entry.type] ?? filesSetup.files?.default ?? {};
+      const config = { ...preset };
+      for (const key of FILE_OVERRIDE_KEYS) {
+        if (entry[key] === undefined) continue;
+        // `downloadType` overrides the folder mode, stored as `type` in the config.
+        if (key === 'downloadType') config.type = entry.downloadType;
+        else config[key] = entry[key];
+      }
+      // `files.js` concatenates `${path}${file}` assuming a trailing slash, so
+      // normalize it here — a hand-typed custom path (e.g. './uav_media/uav_1')
+      // would otherwise glue onto the filename ('./uav_media/uav_1foto.jpg').
+      config.path = normalizeFolderPath(config.path);
+      config.url = entry.url;
+      config.preset = entry.type;
+      return config;
     });
   }
 

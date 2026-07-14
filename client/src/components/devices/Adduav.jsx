@@ -137,6 +137,20 @@ const Adduav = ({ SetAddUAVOpen }) => {
     auxfile.push({ type: 'onboard_computer', url: '' });
     setItem({ ...item, files: auxfile });
   };
+  // Set/clear a single field on the file entry at `index`. An empty value removes
+  // the override so the server preset (devices.yaml) keeps applying for that field.
+  const setFileField = (index, field, value) => {
+    setItem({
+      ...item,
+      files: item.files.map((file, fileIndex) => {
+        if (fileIndex !== index) return file;
+        let myfile = structuredClone(file);
+        if (value === '' || value === undefined) delete myfile[field];
+        else myfile[field] = value;
+        return myfile;
+      }),
+    });
+  };
   return (
     <div className={classes.root}>
       <Card elevation={3} className={classes.card}>
@@ -313,16 +327,7 @@ const Adduav = ({ SetAddUAVOpen }) => {
                             fullWidth={true}
                             label="URL"
                             value={action_key['url']}
-                            onChange={(e) =>
-                              setItem({
-                                ...item,
-                                files: item.files.map((cam, cam_ind) => {
-                                  let mycam = structuredClone(cam);
-                                  index_ac == cam_ind ? (mycam['url'] = e.target.value) : null;
-                                  return mycam;
-                                }),
-                              })
-                            }
+                            onChange={(e) => setFileField(index_ac, 'url', e.target.value)}
                           />
                         </div>
                         <IconButton
@@ -337,6 +342,101 @@ const Adduav = ({ SetAddUAVOpen }) => {
                           <DeleteIcon />
                         </IconButton>
                       </div>
+                      <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                          <Typography variant="caption">
+                            Advanced (override server preset)
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails className={classes.details}>
+                          <Typography variant="caption">
+                            Leave empty to use the server preset for this source type. Set a value
+                            only to override it for this device.
+                          </Typography>
+                          <TextField
+                            fullWidth={true}
+                            label="Custom path"
+                            placeholder="./uav_media/"
+                            value={action_key['path'] ?? ''}
+                            onChange={(e) => setFileField(index_ac, 'path', e.target.value)}
+                            helperText="Remote folder to read files from. Overrides the preset path."
+                          />
+                          <FormControl variant="outlined">
+                            <InputLabel id={'download-type-label-' + index_ac}>
+                              Download type
+                            </InputLabel>
+                            <Select
+                              labelId={'download-type-label-' + index_ac}
+                              label="Download type"
+                              value={action_key['downloadType'] ?? ''}
+                              onChange={(e) =>
+                                setFileField(index_ac, 'downloadType', e.target.value)
+                              }
+                            >
+                              <MenuItem value="">
+                                <em>Use preset</em>
+                              </MenuItem>
+                              <MenuItem value="all">all</MenuItem>
+                              <MenuItem value="lastFolder">lastFolder</MenuItem>
+                              <MenuItem value="specific">specific</MenuItem>
+                            </Select>
+                          </FormControl>
+                          <FormControl variant="outlined">
+                            <InputLabel id={'delete-label-' + index_ac}>
+                              Delete after download
+                            </InputLabel>
+                            <Select
+                              labelId={'delete-label-' + index_ac}
+                              label="Delete after download"
+                              value={
+                                action_key['delete'] === undefined
+                                  ? ''
+                                  : String(action_key['delete'])
+                              }
+                              onChange={(e) =>
+                                setFileField(
+                                  index_ac,
+                                  'delete',
+                                  e.target.value === '' ? '' : e.target.value === 'true',
+                                )
+                              }
+                            >
+                              <MenuItem value="">
+                                <em>Use preset</em>
+                              </MenuItem>
+                              <MenuItem value="true">true</MenuItem>
+                              <MenuItem value="false">false</MenuItem>
+                            </Select>
+                          </FormControl>
+                          <FormControl variant="outlined">
+                            <InputLabel id={'srv-download-label-' + index_ac}>
+                              Service download
+                            </InputLabel>
+                            <Select
+                              labelId={'srv-download-label-' + index_ac}
+                              label="Service download"
+                              value={
+                                action_key['srvDownload'] === undefined
+                                  ? ''
+                                  : String(action_key['srvDownload'])
+                              }
+                              onChange={(e) =>
+                                setFileField(
+                                  index_ac,
+                                  'srvDownload',
+                                  e.target.value === '' ? '' : e.target.value === 'true',
+                                )
+                              }
+                            >
+                              <MenuItem value="">
+                                <em>Use preset</em>
+                              </MenuItem>
+                              <MenuItem value="true">true</MenuItem>
+                              <MenuItem value="false">false</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </AccordionDetails>
+                      </Accordion>
                       <Divider />
                     </Fragment>
                   ))}

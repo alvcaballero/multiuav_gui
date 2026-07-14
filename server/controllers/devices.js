@@ -29,6 +29,10 @@ class devicesController {
     return await DevicesModel.getAccess(id);
   };
 
+  static getFilesConfig = async (id) => {
+    return await DevicesModel.getFilesConfig(id);
+  };
+
   static getById = async (req, res) => {
     const { id } = req.params;
     const device = await DevicesModel.getById({ id });

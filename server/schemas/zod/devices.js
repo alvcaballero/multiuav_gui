@@ -8,9 +8,16 @@ export const CameraSchema = z.object({
   source: z.string(),
 });
 
+// `type` selects a server preset (devices.yaml → files.<type>). The optional
+// fields below override that preset per-device, field-by-field; omit one to keep
+// the preset value. `downloadType` maps onto the preset's folder mode (`type`).
 export const FileAccessSchema = z.object({
   url: z.string().url(),
-  type: z.literal('onboard_computer', 'wiris_pro', 'default'),
+  type: z.enum(['onboard_computer', 'wiris_pro', 'default']),
+  path: z.string().optional(),
+  downloadType: z.enum(['all', 'lastFolder', 'specific']).optional(),
+  delete: z.boolean().optional(),
+  srvDownload: z.boolean().optional(),
 });
 
 export const DeviceSchema = z.object({
