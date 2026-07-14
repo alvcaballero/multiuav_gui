@@ -17,7 +17,14 @@ const activeSubscriptions = {};
 // caller (the facade) supplies the effect callback, so position and camera
 // topics share the same subscription primitive — they only differ in which
 // onMessage they pass.
-export function RosSubscribe(uav_id, uav_type, type, msgType, onMessage) {
+export function RosSubscribe({ uav_id, uav_type, type, msgName, msgType, onMessage }, ros) {
+  // create listeners
+  activeSubscriptions[uav_id][type] = new ROSLIB.Topic({
+    ros: ros,
+    name: msgName,
+    messageType: msgType,
+  });
+  // subscribe devices
   activeSubscriptions[uav_id][type].subscribe(function (msg) {
     onMessage({ msg, deviceId: uav_id, uav_type, type, msgType });
   });
@@ -37,28 +44,35 @@ export async function subscribeDevice(uavAdded, ros, rosState, { onPosition, onC
   }
   activeSubscriptions[id] = {};
   let msgType = devices_msg[category]['subscribers'];
-  // create listeners
-  Object.keys(devices_msg[category]['subscribers']).forEach((element) => {
-    activeSubscriptions[id][element] = new ROSLIB.Topic({
-      ros: ros,
-      name: name + devices_msg[category]['subscribers'][element]['name'],
-      messageType: devices_msg[category]['subscribers'][element]['messageType'],
-    });
-  });
-  // subscribe devices
-  Object.keys(devices_msg[category]['subscribers']).forEach((element) => {
-    if (element !== 'camera') {
-      RosSubscribe(id, category, element, msgType[element]['messageType'], onPosition);
-    }
-  });
-  // subscribe camera
-  for (let i = 0; i < camera.length; i = i + 1) {
-    logger.debug(`Camera type: ${camera[i]['type']}`);
-    if (camera[i]['type'] == 'Websocket') {
-      logger.debug(`camera websocket for ${name}`);
-      RosSubscribe(id, category, 'camera', msgType['camera']['messageType'], onCamera);
-    }
+
+  // Only subscribe the camera topic when the device has a Websocket camera AND
+  // the category config defines its message type — otherwise skip it below.
+  const hasWebsocketCamera = camera.some((cam) => cam.type == 'Websocket');
+  const cameraMsgTypeDefined = Boolean(msgType['camera']?.['messageType']);
+  const shouldSubscribeCamera = hasWebsocketCamera && cameraMsgTypeDefined;
+
+  if (hasWebsocketCamera && !cameraMsgTypeDefined) {
+    logger.warn(`No message type found for camera subscription for ${name}`);
   }
+
+  // subscribe devices
+  Object.keys(devices_msg[category]['subscribers']).forEach((type) => {
+    if (type == 'camera' && !shouldSubscribeCamera) {
+      logger.debug(`Skipping camera subscription for ${name} as no websocket camera is present`);
+      return;
+    }
+    RosSubscribe(
+      {
+        uav_id: id,
+        uav_type: category,
+        type: type,
+        msgName: name + msgType[type]['name'],
+        msgType: msgType[type]['messageType'],
+        onMessage: type == 'camera' ? onCamera : onPosition,
+      },
+      ros
+    );
+  });
 }
 
 // Unsubscribe one device's listeners and drop its registry entry.
