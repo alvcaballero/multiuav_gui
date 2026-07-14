@@ -1,6 +1,6 @@
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { devicesMsg, missionSchema, messagesTypes } from '../config/config.js';
-import { KNOWN_SERVICE_KEYS, KNOWN_TOPIC_KEYS } from '../config/deviceMsgCatalog.js';
+import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS } from '../config/deviceMsgCatalog.js';
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 
@@ -8,17 +8,20 @@ const devices_msg = readDataFile(devicesMsg);
 const messages_types = readDataFile(messagesTypes);
 const _mission_schema = readDataFile(missionSchema);
 
-// Valida que cada key de los bloques topics/services/actions en devices_msg esté
-// registrada en su catálogo correspondiente. Una key huérfana significa que un UAV
-// declara una capacidad que el sistema no sabe manejar:
-//   - topics  → key sin entrada en deviceMsgCatalog (posible typo o topic no soportado)
-//   - services/actions → sin entrada en commandCatalog → comando invisible o roto
+// Valida que cada key de los bloques subscribers/publishers/services/actions en
+// devices_msg esté registrada en su catálogo correspondiente. Una key huérfana
+// significa que un UAV declara una capacidad que el sistema no sabe manejar:
+//   - subscribers → key sin entrada en deviceMsgCatalog (posible typo o topic no soportado)
+//   - publishers/services/actions → sin entrada en su catálogo → comando invisible o roto
 //
-// Cada bloque se valida contra SU SSOT (topics ≠ commands: naturalezas distintas).
+// Cada bloque se valida contra SU SSOT (telemetría ≠ comandos: naturalezas distintas).
+// subscribers → SubscriberKey (telemetría); publishers → PublisherKey (comandos que
+// publican, PascalCase); services/actions → ServiceKey.
 // warn por defecto; en modo debug (LOG_LEVEL=debug) lanza para forzar la alineación
 // temprano — un typo en el YAML no debe llegar silencioso a runtime.
 const DEVICES_MSG_BLOCKS = {
-  topics: KNOWN_TOPIC_KEYS,
+  subscribers: KNOWN_SUBSCRIBER_KEYS,
+  publishers: KNOWN_PUBLISHER_KEYS,
   services: KNOWN_SERVICE_KEYS,
   actions: KNOWN_SERVICE_KEYS,
 };

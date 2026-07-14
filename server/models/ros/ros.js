@@ -17,6 +17,7 @@ import {
   subscribeDevice as _subscribeDevice,
   unsubscribeDevice as _unsubscribeDevice,
   PubRosMsg as _PubRosMsg,
+  publishTopic as _publishTopic,
   subscribeOnce as _subscribeOnce,
 } from './rosTopics.js';
 import * as rosServices from './rosServices.js';
@@ -81,6 +82,12 @@ export class rosModel {
     const device = await devicesController.getDevice(uav_id);
     const { name, category } = device;
     return rosServices.callService({ name, category, type, request }, getRos());
+  }
+
+  static async publishTopic({ uav_id, type, message }) {
+    const device = await devicesController.getDevice(uav_id);
+    const { name, category } = device;
+    return _publishTopic({ name, category, type, message }, getRos());
   }
 
   static getTopics() {

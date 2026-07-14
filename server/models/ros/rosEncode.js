@@ -8,6 +8,12 @@ function omitUndefined(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 }
 
+// Degrees → radians. The UI/domain works in degrees (like mission_schema); the
+// PSDK gimbal message expects radians.
+function deg2rad(deg) {
+  return (deg * Math.PI) / 180;
+}
+
 // The download service requires UTC 0 timestamps in full ISO 8601 with the
 // trailing `Z` (e.g. "2026-07-13T14:30:00.000Z"). Reject anything else early so
 // a malformed/local-time date never reaches the UAV as a silent bad range.
@@ -119,9 +125,39 @@ export function encodeRosSrv({ type, msg, msgType }) {
   if (msgType === 'geometry_msgs/Twist') {
     return { linear: msg.linear || { x: 0, y: 0, z: 0 }, angular: msg.angular || { x: 0, y: 0, z: 0 } };
   }
+
+  // Gimbal (DJI OSDK, ROS1). Wire format de dji_osdk_ros/GimbalAction. El objeto
+  // de dominio llega neutro ({pitch, roll, yaw, reset} en grados); acá se traduce.
+  if (msgType === 'dji_osdk_ros/GimbalAction') {
+    return {
+      header: { seq: 0, stamp: { secs: 0, nsecs: 0 }, frame_id: '' },
+      is_reset: msg.reset ? true : false,
+      payload_index: 0,
+      // rotationMode 0 = ángulo relativo al punto de referencia previo, 1 = punto actual.
+      rotationMode: 0,
+      pitch: msg.pitch || 0.0,
+      roll: msg.roll || 0.0,
+      yaw: msg.yaw || 0.0,
+      time: 0.0,
+    };
+  }
+
+  // Gimbal (DJI PSDK, ROS2). Wire format de psdk_interfaces/msg/GimbalRotation.
+  // Mismo objeto de dominio neutro; PSDK espera RADIANES y rotation_mode
+  // (0=incremental, 1=absoluto ground, 2=velocidad). Default 1 (absoluto).
+  if (msgType === 'psdk_interfaces/msg/GimbalRotation') {
+    return {
+      payload_index: msg.payload_index || 1,
+      rotation_mode: msg.rotation_mode ?? 1,
+      pitch: deg2rad(msg.pitch || 0),
+      roll: deg2rad(msg.roll || 0),
+      yaw: deg2rad(msg.yaw || 0),
+      time: 0.0,
+    };
+  }
   if (msgType === 'muav_gcs_interfaces/action/DownloadFilesByDateRange') {
     return {
-      payload_index: msg.payload_index || 0,
+      payload_index: msg.payload_index || 1,
       init_date: assertUtcIsoDate(msg.startDate, 'init_date'),
       finish_date: assertUtcIsoDate(msg.endDate, 'finish_date'),
       file_type: msg.file_type || 'all',

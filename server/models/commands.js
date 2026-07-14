@@ -32,8 +32,13 @@ export class commandsModel {
     // Capacidades ROS de la categoría (keys de devices_msg.yaml). Cada command
     // cuyo `requires` matchea una capacidad se expone; typesForServiceKey hace el
     // lookup inverso. Una key sin command asociado devuelve [] (ya avisada por
-    // validateDevicesMsgKeys al cargar).
-    const available = [...Object.keys(categoryConfig?.services ?? {}), ...Object.keys(categoryConfig?.actions ?? {})];
+    // validateDevicesMsgKeys al cargar). Se incluyen publishers: un command
+    // (ej. Gimbal) puede satisfacerse por service, action o publisher.
+    const available = [
+      ...Object.keys(categoryConfig?.services ?? {}),
+      ...Object.keys(categoryConfig?.actions ?? {}),
+      ...Object.keys(categoryConfig?.publishers ?? {}),
+    ];
     for (const serviceKey of available) {
       types.push(...typesForServiceKey(serviceKey));
     }
@@ -62,7 +67,11 @@ export class commandsModel {
     const categoryConfig = categoryModel.getCategory(myDevice.category);
     const available =
       command.requires == null ||
-      Boolean(categoryConfig?.services?.[command.requires] ?? categoryConfig?.actions?.[command.requires]);
+      Boolean(
+        categoryConfig?.services?.[command.requires] ??
+        categoryConfig?.actions?.[command.requires] ??
+        categoryConfig?.publishers?.[command.requires]
+      );
     if (!available) {
       return { state: 'error', msg: `Command '${type}' not supported by device ${myDevice.name}` };
     }
@@ -102,15 +111,15 @@ export class commandsModel {
   }
 
   static async GimbalUAV(uav_id, attributes) {
+    // Objeto de dominio NEUTRO (grados). El wire format ROS lo arma rosEncode.js
+    // según el msgType de la categoría: dji_osdk_ros/GimbalAction (OSDK, service)
+    // o psdk_interfaces/msg/GimbalRotation (PSDK, publisher). standarCommand elige
+    // el transporte (service vs publisher) según lo que declara el devices_msg.
     let statuscommand = await this.standarCommand(uav_id, 'Gimbal', {
-      header: { seq: 0, stamp: { secs: 0, nsecs: 0 }, frame_id: '' },
-      is_reset: attributes.reset ? true : false,
-      payload_index: 0,
-      rotationMode: 0, // rotation cooradiration 0 = execute angle command based on the previously set reference point,1 = execute angle command based on the current point
+      reset: attributes.reset ? true : false,
       pitch: attributes.pitch ? attributes.pitch : 0.0,
       roll: attributes.roll ? attributes.roll : 0.0,
       yaw: attributes.yaw ? attributes.yaw : 0.0,
-      time: 0.0,
     });
     return statuscommand;
   }
@@ -120,13 +129,20 @@ export class commandsModel {
     //ros
     const myDevice = await devicesController.getDevice(uav_id);
     if (myDevice.protocol == 'ros') {
-      // Mismo `type` puede vivir en services: o actions: según la categoría del
-      // device (ej. CameraFileDownload es service en unas y action en otras) —
-      // services: gana si aparece en ambos bloques.
+      // Mismo `type` puede vivir en services:, actions: o publishers: según la
+      // categoría del device (ej. Gimbal es service en las OSDK y publisher en el
+      // PSDK; CameraFileDownload es service en unas y action en otras). Prioridad:
+      // services > actions > publishers.
       const categoryConfig = categoryModel.getCategory(myDevice.category);
-      const isAction = !categoryConfig?.services?.hasOwnProperty(type) && categoryConfig?.actions?.hasOwnProperty(type);
+      const hasService = categoryConfig?.services?.hasOwnProperty(type);
+      const hasAction = categoryConfig?.actions?.hasOwnProperty(type);
+      const isAction = !hasService && hasAction;
+      const isPublisher = !hasService && !hasAction && categoryConfig?.publishers?.hasOwnProperty(type);
       try {
-        if (isAction) {
+        if (isPublisher) {
+          logger.debug(`sending via ROS publisher uavId=${uav_id}`);
+          response = await rosController.publishTopic({ uav_id, type, message: attributes ?? {} });
+        } else if (isAction) {
           logger.debug(`sending via ROS action uavId=${uav_id}`);
           response = await rosController.sendActionGoal({ uav_id, type, message: attributes ?? {} });
         } else {

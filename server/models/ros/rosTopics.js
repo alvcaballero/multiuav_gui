@@ -36,17 +36,17 @@ export async function subscribeDevice(uavAdded, ros, rosState, { onPosition, onC
     unsubscribeDevice(id);
   }
   activeSubscriptions[id] = {};
-  let msgType = devices_msg[category]['topics'];
+  let msgType = devices_msg[category]['subscribers'];
   // create listeners
-  Object.keys(devices_msg[category]['topics']).forEach((element) => {
+  Object.keys(devices_msg[category]['subscribers']).forEach((element) => {
     activeSubscriptions[id][element] = new ROSLIB.Topic({
       ros: ros,
-      name: name + devices_msg[category]['topics'][element]['name'],
-      messageType: devices_msg[category]['topics'][element]['messageType'],
+      name: name + devices_msg[category]['subscribers'][element]['name'],
+      messageType: devices_msg[category]['subscribers'][element]['messageType'],
     });
   });
   // subscribe devices
-  Object.keys(devices_msg[category]['topics']).forEach((element) => {
+  Object.keys(devices_msg[category]['subscribers']).forEach((element) => {
     if (element !== 'camera') {
       RosSubscribe(id, category, element, msgType[element]['messageType'], onPosition);
     }
@@ -122,6 +122,30 @@ export async function PubRosMsg(params, ros) {
 
   pub.publish(rosMsg);
   return { topic: topic, msgType: messageType, msg: 'Message published successfully' };
+}
+
+// Device layer — resolve the publisher from devices_msg config, then delegate to
+// PubRosMsg (the primitive validates + encodes against the live rosbridge type).
+// Mirror of rosServices.callService: publishers[type] gives the topic suffix and
+// messageType; the final topic is `/${name}${suffix}`.
+export async function publishTopic({ name, category, type, message }, ros) {
+  if (!ros || !ros.isConnected) throw new Error('ROS not connected');
+
+  const publishers = devices_msg[category]?.publishers;
+  if (!publishers || !publishers.hasOwnProperty(type)) {
+    return { state: 'warning', msg: `${type} to ${name} dont have this publisher` };
+  }
+
+  const messageType = publishers[type]['messageType'];
+  const topic = `/${name}${publishers[type]['name']}`;
+  try {
+    await PubRosMsg({ topic, messageType, message }, ros);
+    return { state: 'success', msg: `${type} to ${name} ok` };
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    logger.error(`Error publishing topic: ${errMsg}`);
+    return { state: 'error', msg: 'Failed to publish topic: ' + errMsg };
+  }
 }
 
 export async function subscribeOnce({ topic, messageType, timeout = 2000 }, ros) {

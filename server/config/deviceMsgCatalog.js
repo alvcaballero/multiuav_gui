@@ -1,26 +1,34 @@
 // Device-msg catalog — SSOT de TODAS las keys válidas en devices_msg.yaml.
 //
-// Un device declara sus capacidades ROS en tres bloques: `topics:`, `services:`
-// y `actions:`. Las keys de esos bloques están FIJADAS por el lado ROS (el nombre
-// del topic/.srv/.action del UAV); no se renombran acá. Este módulo las enumera y
-// es el único lugar donde viven esos literales.
+// Un device declara sus capacidades ROS en cuatro bloques: `subscribers:`,
+// `publishers:`, `services:` y `actions:`. Las keys de esos bloques están FIJADAS
+// por el lado ROS (el nombre del topic/.srv/.action del UAV); no se renombran acá.
+// Este módulo las enumera y es el único lugar donde viven esos literales.
+//
+// subscribers → tópicos a los que el server se AUTOSUSCRIBE al arrancar (telemetría
+// entrante); sus keys son de telemetría (position, battery...) → SubscriberKey.
+// publishers → tópicos sobre los que el server PUBLICA bajo demanda como respuesta
+// a un COMANDO de usuario; sus keys son capacidades invocables (Gimbal...), misma
+// naturaleza que services/actions → PublisherKey (PascalCase).
 //
 // Es config del DEVICE, no de los comandos. La lógica de commands (qué acción
 // dispara el usuario, cómo se despacha) vive en commandCatalog.js, que IMPORTA
 // `ServiceKey` de acá — la relación es command → requires → serviceKey, no al revés.
 //
 // Bloques y su enum/validación:
-//   topics:            → TopicKey    → KNOWN_TOPIC_KEYS
-//   services:/actions: → ServiceKey  → KNOWN_SERVICE_KEYS
+//   subscribers:       → SubscriberKey → KNOWN_SUBSCRIBER_KEYS
+//   publishers:        → PublisherKey  → KNOWN_PUBLISHER_KEYS
+//   services:/actions: → ServiceKey    → KNOWN_SERVICE_KEYS
 //
 // category.js valida cada bloque del YAML contra su set de keys conocidas.
 
-// ─── Topics ───────────────────────────────────────────────────────────────────
+// ─── Subscribers ────────────────────────────────────────────────────────────────
 
-// topic keys — strings de `type` que circulan entre el YAML (keys de topics:),
-// rosTopics (suscripción) y rosDecode (comparación). Usalo en rosDecode.js:
-// `if (type == TopicKey.POSITION_GLOBAL)` en vez del literal 'position_global'.
-export const TopicKey = Object.freeze({
+// subscriber keys — strings de `type` que circulan entre el YAML (keys de
+// subscribers:), rosTopics (suscripción) y rosDecode (comparación). Usalo en
+// rosDecode.js:
+// `if (type == SubscriberKey.POSITION_GLOBAL)` en vez del literal 'position_global'.
+export const SubscriberKey = Object.freeze({
   POSITION: 'position',
   POSITION_GLOBAL: 'position_global',
   LOCAL_POSITION: 'local_position',
@@ -43,38 +51,51 @@ export const TopicKey = Object.freeze({
   VO_POSITION: 'vo_position',
 });
 
-// topicKey → { decoded }. Indexado por TopicKey (el enum es la fuente de los
-// literales).
+// subscriberKey → { decoded }. Indexado por SubscriberKey (el enum es la fuente de
+// los literales).
 //   decoded: true   → rosDecode.js tiene una rama `if (type == '<key>')`.
 //   decoded: false  → key válida y suscribible pero SIN decodificador (comentada
 //                     en el decoder, o de ciclo action). No es un error; el
 //                     mensaje se recibe pero no se consume.
-export const TOPIC_CATALOG = {
-  [TopicKey.POSITION]: { decoded: true },
-  [TopicKey.POSITION_GLOBAL]: { decoded: true },
-  [TopicKey.LOCAL_POSITION]: { decoded: true },
-  [TopicKey.VEHICLE_STATUS]: { decoded: true },
-  [TopicKey.VEHICLE_COMMAND_ACK]: { decoded: true },
-  [TopicKey.IMU]: { decoded: true },
-  [TopicKey.HDG]: { decoded: true },
-  [TopicKey.MISSION_STATE]: { decoded: true },
-  [TopicKey.SPEED]: { decoded: true },
-  [TopicKey.BATTERY]: { decoded: true },
-  [TopicKey.GIMBAL]: { decoded: true },
-  [TopicKey.OBSTACLE_INFO]: { decoded: true },
-  [TopicKey.CAMERA]: { decoded: true },
-  [TopicKey.FLIGHT_STATUS]: { decoded: true },
-  [TopicKey.ATTITUDE]: { decoded: true },
-  [TopicKey.SENSORS_HUMIDITY]: { decoded: true },
-  [TopicKey.THREAT]: { decoded: true },
-  [TopicKey.STATE_MACHINE]: { decoded: true },
+export const SUBSCRIBER_CATALOG = {
+  [SubscriberKey.POSITION]: { decoded: true },
+  [SubscriberKey.POSITION_GLOBAL]: { decoded: true },
+  [SubscriberKey.LOCAL_POSITION]: { decoded: true },
+  [SubscriberKey.VEHICLE_STATUS]: { decoded: true },
+  [SubscriberKey.VEHICLE_COMMAND_ACK]: { decoded: true },
+  [SubscriberKey.IMU]: { decoded: true },
+  [SubscriberKey.HDG]: { decoded: true },
+  [SubscriberKey.MISSION_STATE]: { decoded: true },
+  [SubscriberKey.SPEED]: { decoded: true },
+  [SubscriberKey.BATTERY]: { decoded: true },
+  [SubscriberKey.GIMBAL]: { decoded: true },
+  [SubscriberKey.OBSTACLE_INFO]: { decoded: true },
+  [SubscriberKey.CAMERA]: { decoded: true },
+  [SubscriberKey.FLIGHT_STATUS]: { decoded: true },
+  [SubscriberKey.ATTITUDE]: { decoded: true },
+  [SubscriberKey.SENSORS_HUMIDITY]: { decoded: true },
+  [SubscriberKey.THREAT]: { decoded: true },
+  [SubscriberKey.STATE_MACHINE]: { decoded: true },
   // Válidos/suscribibles pero sin decodificador (deshabilitados o de ciclo action).
-  [TopicKey.SENSOR_HEIGHT]: { decoded: false }, // decoder comentado — rosDecode.js:78
-  [TopicKey.VO_POSITION]: { decoded: false }, // decoder comentado — rosDecode.js:85
+  [SubscriberKey.SENSOR_HEIGHT]: { decoded: false }, // decoder comentado — rosDecode.js:78
+  [SubscriberKey.VO_POSITION]: { decoded: false }, // decoder comentado — rosDecode.js:85
 };
 
-// topicKeys conocidas — para validar el bloque topics: de devices_msg.
-export const KNOWN_TOPIC_KEYS = new Set(Object.values(TopicKey));
+// subscriberKeys conocidas — para validar el bloque subscribers: de devices_msg.
+export const KNOWN_SUBSCRIBER_KEYS = new Set(Object.values(SubscriberKey));
+
+// ─── Publishers ─────────────────────────────────────────────────────────────────
+
+// publisher keys — capacidades que el server PUBLICA como respuesta a un comando
+// de usuario (no telemetría). Su casing es PascalCase porque son keys de comando,
+// no de topic: matchean el `type` que despacha commandsModel (ej. 'Gimbal'). Un
+// mismo command puede resolverse por service, action o publisher según la categoría.
+export const PublisherKey = Object.freeze({
+  GIMBAL: 'Gimbal',
+});
+
+// publisherKeys conocidas — para validar el bloque publishers: de devices_msg.
+export const KNOWN_PUBLISHER_KEYS = new Set(Object.values(PublisherKey));
 
 // ─── Services / Actions ───────────────────────────────────────────────────────
 

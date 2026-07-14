@@ -234,6 +234,12 @@ export class rosController {
     return await rosModel.sendActionGoal({ uav_id, type, message, target, timeout, blocking });
   }
 
+  // Internal (non-HTTP) device-layer publish, used by commandsModel.standarCommand.
+  static async publishTopic({ uav_id, type, message }) {
+    if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
+    return await rosModel.publishTopic({ uav_id, type, message });
+  }
+
   static getServerStatus() {
     return rosModel.serverStatus();
   }

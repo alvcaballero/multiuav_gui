@@ -1,5 +1,5 @@
 agv:
-  topics:
+  subscribers:
     position:
       name: '/odom'
       messageType: 'nav_msgs/msg/Odometry'
@@ -11,7 +11,7 @@ agv:
       name: '/navigate_to_pose'
       actionType: 'nav2_msgs/action/NavigateToPose'
 sjtu:
-  topics:
+  subscribers:
     position:
       name: '/gps/nav'
       messageType: 'sensor_msgs/NavSatFix'
@@ -28,7 +28,7 @@ sjtu:
       name: '/sonar/out'
       messageType: 'sensor_msgs/Range'
 dji_M210_noetic:
-  topics:
+  subscribers:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -76,7 +76,7 @@ dji_M210_noetic:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
 dji_M210_melodic:
-  topics:
+  subscribers:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -124,7 +124,7 @@ dji_M210_melodic:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
 dji_M210_noetic_rtk:
-  topics:
+  subscribers:
     position:
       name: '/dji_osdk_ros/rtk_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -172,7 +172,7 @@ dji_M210_noetic_rtk:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
 dji_M210_melodic_rtk:
-  topics:
+  subscribers:
     position:
       name: '/dji_osdk_ros/rtk_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -220,7 +220,7 @@ dji_M210_melodic_rtk:
       name: '/gimbal_task_control'
       serviceType: 'dji_osdk_ros/GimbalAction'
 dji_M600:
-  topics:
+  subscribers:
     position:
       name: '/dji_sdk/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -256,7 +256,7 @@ dji_M600:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
 dji_M300:
-  topics:
+  subscribers:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -328,7 +328,7 @@ dji_M300:
       name: '/camera_download_filelist'
       serviceType: 'dji_osdk_ros/FileList'
 dji_M300_rtk:
-  topics:
+  subscribers:
     position:
       name: '/dji_osdk_ros/rtk_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -401,7 +401,7 @@ dji_M300_rtk:
       serviceType: 'dji_osdk_ros/FileList'
 
 dji_M300_PSDK:
-  topics:
+  subscribers:
     position:
       name: '/psdk_ros2/gps_position_fused'
       messageType: 'sensor_msgs/NavSatFix'
@@ -427,6 +427,11 @@ dji_M300_PSDK:
       name: '/psdk_ros2/relative_obstacle_info'
       messageType: 'psdk_interfaces/msg/RelativeObstacleInfo'
 
+  publishers:
+    Gimbal:
+      name: '/psdk_ros2/gimbal_rotation'
+      messageType: 'psdk_interfaces/msg/GimbalRotation'
+
   services:
     configureMission:
       name: '/psdk_ros2/waypointV2_initSetting'
@@ -446,15 +451,12 @@ dji_M300_PSDK:
     pausemission:
       name: '/psdk_ros2/waypointV2_pauseMission'
       serviceType: 'psdk_interfaces/srv/PauseWaypointV2Mission'
-    Gimbal:
-      name: '/gimbal_task_control'
-      serviceType: 'dji_osdk_ros/GimbalAction'
   actions:
     CameraFileDownload:
       name: '/offboard/download_files_by_date_range'
       actionType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 px4_mavros:
-  topics:
+  subscribers:
     position:
       name: '/mavros/global_position/global'
       messageType: 'sensor_msgs/NavSatFix'
@@ -493,7 +495,7 @@ px4_mavros:
       name: '/camera_download_files'
       serviceType: 'dji_osdk_ros/DownloadMedia'
 px4_mavros_slow:
-  topics:
+  subscribers:
     position:
       name: '/gcs/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -529,7 +531,7 @@ px4_mavros_slow:
       name: '/camera_download_files'
       serviceType: 'dji_osdk_ros/DownloadMedia'
 px4_ros2:
-  topics:
+  subscribers:
     position_global:
       name: '/fmu/out/vehicle_global_position'
       messageType: 'px4_msgs/msg/VehicleGlobalPosition'
@@ -560,7 +562,7 @@ px4_ros2:
       name: '/offboard/download_files_by_date_range'
       actionType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 fuvex:
-  topics:
+  subscribers:
     position:
       name: '/gps'
       messageType: 'sensor_msgs/NavSatFix'
@@ -578,7 +580,7 @@ fuvex:
       messageType: 'sensor_msgs/BatteryState'
   services: {}
 catec:
-  topics:
+  subscribers:
     position:
       name: '/gps'
       messageType: 'sensor_msgs/NavSatFix'
@@ -608,7 +610,7 @@ catec:
       name: '/threat_defuse'
       serviceType: 'std_srvs/Trigger'
 griffin:
-  topics:
+  subscribers:
     position:
       name: '/mavros/global_position/global'
       messageType: 'sensor_msgs/NavSatFix'
