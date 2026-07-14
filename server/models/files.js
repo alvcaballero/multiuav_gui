@@ -302,9 +302,15 @@ export class filesModel {
     } else {
       await this.editFile({ id: fileId, status: FILE_STATUS.FAIL });
     }
-    const checkUrl = await this.getFiles({ id: downloadQueue[0] });
-    if (downloadQueue.length > 0 && checkUrl.source.url === url) {
-      await this.downloadFiles2(client, url, downloadQueue.shift(), remove);
+    // Only continue on the same connection if the next queued file shares this
+    // URL. Guard the queue first: an empty queue would make getFiles({id:
+    // undefined}) fall through to findAll() (a wasted full-table scan whose
+    // array result has no `.source`).
+    if (downloadQueue.length > 0) {
+      const checkUrl = await this.getFiles({ id: downloadQueue[0] });
+      if (checkUrl?.source?.url === url) {
+        await this.downloadFiles2(client, url, downloadQueue.shift(), remove);
+      }
     }
   }
 
