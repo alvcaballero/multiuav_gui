@@ -1,0 +1,116 @@
+# Client CLAUDE.md
+
+## Directory Structure
+
+```
+client/
+├── index.html              # Vite entry point
+├── vite.config.js          # Vite configuration
+├── package.json            # Dependencies (React 19, MUI v7, MapLibre)
+├── .eslintrc.js            # ESLint configuration
+├── build/                  # Production build output
+├── public/                 # Static assets
+└── src/
+    ├── index.jsx           # React entry point
+    ├── App.jsx             # Main app component with routing
+    ├── AppThemeProvider.jsx # MUI theme configuration
+    ├── Navigation.jsx      # Route definitions
+    ├── ServerProvider.jsx  # Server initialization wrapper
+    ├── SocketController.jsx # WebSocket lifecycle manager
+    ├── reactHelper.js      # React utility functions
+    ├── store/              # Redux state management
+    ├── components/         # UI components grouped by domain
+    │   ├── chat/           # ChatDrawer, ChatInput, ChatMessages
+    │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav
+    │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Routes, Waypoints
+    │   ├── camera/         # CameraDevice, CameraV1, CameraWebRTCV4
+    │   ├── map/            # ElementList, BaseList, BaseSettings
+    │   ├── commands/       # CommandCard, SendCommand, RosControl
+    │   ├── layout/         # Navbar, MainToolbar, Menu, MenuItems, Footer
+    │   └── ui/             # Toast, RemoveDialog, SelectList, SaveFile, PositionValue
+    ├── pages/              # Page-level components (one per route)
+    ├── settings/           # Settings pages
+    ├── map/                # Map rendering (MapLibre GL)
+    ├── ThreeD/             # 3D visualization (React Three Fiber)
+    ├── services/           # Business logic services
+    ├── shared/             # Shared utilities, hooks, and base components
+    │   ├── components/     # ErrorHandler, PageLayout, SelectField, SwipeConfirm, etc.
+    │   ├── theme/          # MUI theme configuration
+    │   ├── attributes/     # Attribute hooks
+    │   └── util/           # Utility functions (duration, etc.)
+    └── resources/          # Static resources image assets
+        ├── images/             # Image assets
+        ├── 3d/                 # 3D model assets
+        └── lastimages/         # Recent images cache
+```
+
+## Architecture Overview
+
+### State Management
+
+**Client-side State (Redux):**
+
+- `devices`: Device list, selection, follow mode
+- `session`: Positions, camera feeds, markers, planning data, 3D scene
+- `mission`: Mission editing (waypoints, routes, attributes)
+- `chat`: LLM conversation histories
+- `events`, `geofences`, `errors`: Supporting state slices
+
+### Frontend Structure
+
+**Key Components:**
+
+- `client/src/map/`: Map rendering, device markers, route visualization
+- `client/src/components/`: UI components (ChatDrawer, device panels)
+- `client/src/store/`: Redux slices and selectors
+- `client/src/SocketController.jsx`: WebSocket lifecycle manager
+- `client/src/ServerProvider.jsx`: Server initialization wrapper
+
+**Map Integration:**
+
+- Uses MapLibre GL for rendering
+- OpenStreetMap tiles (configurable for offline use)
+- Real-time device position markers
+- Live route history tracking
+- Waypoint editing with drag-and-drop
+
+### Redux State Updates
+
+- Use immer-style mutations in Redux Toolkit reducers
+- Normalize data: Use maps `{ [id]: object }` for fast lookups
+- Use selectors for complex queries (`store/sessionSelectors.js`)
+
+### Migration Helpers
+
+When changing session state structure, add migration in `store/sessionMigration.js`:
+
+```javascript
+export const migrateNewFeature = (oldState) => {
+  // Transform old format to new format
+  return newState;
+};
+```
+
+## Known Issues Needing Architectural Decisions
+
+### Missing stable IDs on mission data (waypoints, bases, elements)
+
+`react-doctor`'s `no-array-index-as-key` flags array index as `key` in three editable list components:
+
+- `src/components/mission/RouteRouteList.jsx:266` — waypoints (`route.wp`)
+- `src/components/planning/BaseList.jsx:135` — bases (`markers`)
+- `src/components/planning/ElementList.jsx:115` — elements (`markers`)
+
+All three share the same root cause: the underlying data shape (`{ pos: [...] }` for waypoints,
+`{ latitude, longitude, name, ... }` for bases/elements) has no `id` field, yet the reducers
+genuinely `splice()` these arrays at runtime (`missionActions.addWaypoint` with `insertAt`,
+`deleteWaypoint`, `DeleteElement`, etc.) — not just append/clear. Using the array index as `key`
+means inserting or deleting a mid-list item can reassign React's DOM/state to the wrong row
+(an open accordion or in-progress edit jumping to a different waypoint/base).
+
+The correct fix is adding a stable id (e.g. `crypto.randomUUID()`) at creation time in the
+relevant Redux reducers (`store/mission.js` — `addWaypoint`, and the equivalent base/element
+creation actions), then keying off `waypoint.id` / `base.id` instead of the array index. This was
+deferred because it changes the mission data schema — it likely touches mission save/load format
+(`MissionConvert.js`) and possibly server-side mission parsing, so it needs a decision on
+migration strategy for existing saved missions before implementing.
