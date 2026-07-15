@@ -1,11 +1,8 @@
 import * as ROSLIB from 'roslib';
-import { readDataFile } from '../../common/utils.js';
 import { encodeRosSrv } from './rosEncode.js';
 import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
 import { getServices, getServicesType, getServiceRequestDetails } from './rosInspect.js';
 import { logger } from '../../common/logger.js';
-
-const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
 
 // Module-level registry used by GCSServicesMission / GCSunServicesMission.
 // Keyed by service name (e.g. 'ServiceMission') → ROSLIB.Service instance.
@@ -79,18 +76,22 @@ export async function callRosService({ service, messageType, message }, ros) {
   });
 }
 
-export async function callService({ name, category, type, request }, ros) {
+// Device-layer service call. The facade resolves the fully-built ROS service
+// name and its serviceType from the category config (categoryModel — the single
+// source of truth) and passes them in; this layer owns encoding + the actual ROS
+// call, never the config lookup nor name-building. `name`/`type` are kept only
+// for the result/log messages. A missing `service` means the category has no
+// such service.
+export async function callService({ name, type, service, serviceType, request }, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 
-  if (!devices_msg[category]['services'].hasOwnProperty(type)) {
+  if (!service) {
     return { state: 'warning', msg: type + ' to:' + name + ' dont have this service' };
   }
 
-  let msgType = devices_msg[category]['services'][type]['serviceType'];
-  let myRequest = encodeRosSrv({ type, msg: request, msgType: msgType });
-  const service = `/${name}${devices_msg[category]['services'][type]['name']}`;
+  let reqMsg = encodeRosSrv({ type, msg: request, msgType: serviceType });
   try {
-    const response = await callRosService({ service, messageType: msgType, message: myRequest }, ros);
+    const response = await callRosService({ service, messageType: serviceType, message: reqMsg }, ros);
     if (response.success || response.result) {
       return { state: 'success', msg: type + ' to ' + name + ' ok' };
     } else {

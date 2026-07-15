@@ -1,29 +1,8 @@
 import * as ROSLIB from 'roslib';
-import { readDataFile } from '../../common/utils.js';
 import { logger } from '../../common/logger.js';
 import { getActionServer } from './rosInspect.js';
 import { encodeRosSrv } from './rosEncode.js';
 
-const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
-
-/**
- * Resolve a device action from the config into the ROS action-server name and
- * type. Shared by send/cancel/status so they all key the registry identically.
- *
- * @param {string} name     - Device name, e.g. agv_1
- * @param {string} category - Device category, e.g. agv
- * @param {string} type     - Action key in devices_msg[category].actions, e.g. navigateToPose
- * @returns {{ actionServerName: string, actionType: string }}
- * @throws if the category has no such action
- */
-function resolveDeviceAction(name, category, type) {
-  const actions = devices_msg[category]?.actions;
-  if (!actions || !actions.hasOwnProperty(type)) {
-    throw new Error(`Action '${type}' not configured for category '${category}' (device ${name})`);
-  }
-  const cfg = actions[type];
-  return { actionServerName: `/${name}${cfg.name}`, actionType: cfg.actionType };
-}
 
 export const ActionStatus = Object.freeze({
   EXECUTING: 'executing',
@@ -251,47 +230,48 @@ function _cancelEntry(key, entry) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Device layer — resolve the action from devices_msg config, then delegate to
-// the primitives above. Parallel to callService in rosServices.js.
+// Device layer — receive the fully-built action-server name (and type) already
+// resolved by the facade from categoryModel, then delegate to the primitives
+// above. Parallel to callService in rosServices.js. No config lookup nor
+// name-building here — the facade owns both.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Sends an action goal to a device, resolving the ROS name/type from config.
+ * Sends an action goal to a device. The facade builds the action-server name and
+ * resolves the type from the category config; this layer only encodes the goal
+ * and delegates.
  *
  * @param {object} args
- * @param {string} args.name     - Device name, e.g. agv_1
- * @param {string} args.category - Device category, e.g. agv
- * @param {string} args.type     - Action config key, e.g. navigateToPose
- * @param {object} args.message  - Goal message
+ * @param {string} args.actionServerName - Full action server name, e.g. /agv_1/navigate_to_pose
+ * @param {string} args.actionType       - e.g. nav2_msgs/action/NavigateToPose
+ * @param {string} args.type             - Action config key (for encoding), e.g. navigateToPose
+ * @param {object} args.message          - Goal message
  * @param {object} [args.target]
  * @param {number} [args.timeout]
  * @param {boolean} [args.blocking]
  * @param {function} [args.onComplete] - See sendRosActionGoal
  * @param {object} ros
  */
-export async function sendActionGoal({ name, category, type, message, ...rest }, ros) {
-  const { actionServerName, actionType } = resolveDeviceAction(name, category, type);
+export async function sendActionGoal({ actionServerName, actionType, type, message, ...rest }, ros) {
   const goalMessage = encodeRosSrv({ type, msg: message, msgType: actionType });
   return sendRosActionGoal({ actionServerName, actionType, message: goalMessage, ...rest }, ros);
 }
 
 /**
  * Reads action status for a device.
- *  - { name, category }       → all actions registered for that device
- *  - { name, category, type } → status of that specific action
+ *  - { name }              → all actions registered for that device (prefix mode)
+ *  - { actionServerName }  → status of that specific action
  */
-export function getActionStatus({ name, category, type } = {}) {
-  if (name && !type) {
+export function getActionStatus({ name, actionServerName } = {}) {
+  if (name && !actionServerName) {
     return getRosActionStatus({ prefix: `/${name}/` });
   }
-  const { actionServerName } = resolveDeviceAction(name, category, type);
   return getRosActionStatus({ actionServerName });
 }
 
 /**
  * Cancels a device's active action goal.
  */
-export function cancelAction({ name, category, type } = {}) {
-  const { actionServerName } = resolveDeviceAction(name, category, type);
+export function cancelAction({ actionServerName } = {}) {
   return cancelRosAction({ actionServerName });
 }

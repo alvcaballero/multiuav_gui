@@ -105,30 +105,6 @@ export async function PubRosMsg(params, ros) {
   return { topic: topic, msgType: messageType, msg: 'Message published successfully' };
 }
 
-// Device layer — resolve the publisher from devices_msg config, then delegate to
-// PubRosMsg (the primitive validates + encodes against the live rosbridge type).
-// Mirror of rosServices.callService: publishers[type] gives the topic suffix and
-// messageType; the final topic is `/${name}${suffix}`.
-export async function publishTopic({ name, category, type, message }, ros) {
-  if (!ros || !ros.isConnected) throw new Error('ROS not connected');
-
-  const publishers = devices_msg[category]?.publishers;
-  if (!publishers || !publishers.hasOwnProperty(type)) {
-    return { state: 'warning', msg: `${type} to ${name} dont have this publisher` };
-  }
-
-  const messageType = publishers[type]['messageType'];
-  const topic = `/${name}${publishers[type]['name']}`;
-  try {
-    await PubRosMsg({ topic, messageType, message }, ros);
-    return { state: 'success', msg: `${type} to ${name} ok` };
-  } catch (error) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error publishing topic: ${errMsg}`);
-    return { state: 'error', msg: 'Failed to publish topic: ' + errMsg };
-  }
-}
-
 export async function subscribeOnce({ topic, messageType, timeout = 2000 }, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
 

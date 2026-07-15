@@ -186,11 +186,11 @@ free of business-controller imports.
 
 | File                | Responsibility                                                              |
 | ------------------- | -------------------------------------------------------------------------- |
-| `ros.js`            | Facade (`rosModel`). Resolves `uav_id → {name, category}`, injects business callbacks, delegates to primitives |
+| `ros.js`            | Facade (`rosModel`). Resolves `uav_id → {name, category}`, resolves per-category message config via `categoryModel` (`resolveCategoryConfig`), builds every ROS name (`buildDeviceName`), injects business callbacks, delegates to primitives |
 | `rosConnection.js`  | Connection lifecycle: connect, auto-reconnect (30s), inject connected/disconnect handlers |
-| `rosTopics.js`      | Topic transport primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/publish. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge |
-| `rosServices.js`    | ROS service calls: `callRosService` (primitive) + `callService` (device-layer, resolves config) |
-| `rosAction.js`      | ROS2 action lifecycle + registry (see below)                               |
+| `rosTopics.js`      | Topic transport primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/`PubRosMsg`. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge |
+| `rosServices.js`    | ROS service calls: `callRosService` (primitive) + `callService` (receives the already-built service name + type; no config lookup) |
+| `rosAction.js`      | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building |
 | `rosInspect.js`     | Read-only rosapi introspection (topics/services/types/action servers)      |
 | `rosDecode.js`      | ROS message → internal format                                              |
 | `rosEncode.js`      | Internal format → ROS service/message request                             |
@@ -198,13 +198,23 @@ free of business-controller imports.
 | `ros2ActionClient.js` | Alternative action client (`callOnConnection`); currently unused          |
 | `index.js`          | Module barrel exports                                                       |
 
-**Two-layer pattern (topics, services and actions).** Each has a pure primitive
-that takes already-resolved ROS names/types, and a device-layer wrapper (in the
-facade) that resolves them from `devices_msg[category]`:
+**Config resolution lives ONLY in the facade.** `categoryModel` (in
+`models/category.js`) is the single source of truth for `devices_msg.yaml` — it
+is the ONLY module that reads that file. No file under `models/ros/` reads it.
+The facade resolves per-category message config through one helper and builds
+every ROS name through another:
 
-- Topics: `subscribeTopics({key, topics})` ← `subscribeDevice({id, name, category, camera})`. The facade resolves the subscriber list from config, decides camera gating, and closes `deviceId`/`category`/`slot` into each topic's `onMessage`; the primitive only opens/closes ROSLIB listeners under an opaque key. `subscribeTopic({topic, messageType, onMessage})` reuses the same primitive for ad-hoc, device-less subscriptions keyed by topic name.
-- Services: `callRosService({service, messageType, message})` ← `callService({name, category, type, request})`
-- Actions: `sendRosActionGoal({actionServerName, actionType, message})` ← `sendActionGoal({name, category, type, message})`
+- `resolveCategoryConfig(category, block, type)` → `categoryModel.getCategory(category)?.[block]` (with `type`, the single entry). `block` is `'subscribers' | 'publishers' | 'services' | 'actions'`. Using `categoryModel` (not a frozen `readDataFile` snapshot) means a runtime category edit is picked up immediately.
+- `buildDeviceName(name, entry)` → `/${name}${entry.name}`. Device names are stored WITHOUT a leading slash and every config `name` starts with one, so every resulting topic/service/action name is absolute (`/agv_1/odom`). All four blocks use this one helper, so a device's topics, services and actions resolve identically.
+
+**Two-layer pattern (topics, services and actions).** Each has a pure primitive
+that takes already-resolved ROS names/types. The facade resolves the config +
+builds the name, so the primitives never touch `devices_msg`, `categoryModel`,
+or name-building:
+
+- Topics: `subscribeTopics({key, topics})` ← `subscribeDevice({id, name, category, camera})`. The facade resolves the subscriber list, decides camera gating, builds each topic name with `buildDeviceName`, and closes `deviceId`/`category`/`slot` into each topic's `onMessage`; the primitive only opens/closes ROSLIB listeners under an opaque key. `subscribeTopic({topic, messageType, onMessage})` reuses the same primitive for ad-hoc, device-less subscriptions keyed by topic name.
+- Services: `callRosService({service, messageType, message})` ← `callService({name, type, service, serviceType, request})` — the facade passes the built `service` name + `serviceType`; the primitive only encodes + calls.
+- Actions: `sendRosActionGoal({actionServerName, actionType, message})` ← `sendActionGoal({actionServerName, actionType, type, message})` — the facade builds `actionServerName`; the device-layer method only encodes + delegates.
 
 The facade exposes both layers; the device-layer resolves `uav_id` first.
 `unsubscribeDevice(id)` unsubscribes one key, or ALL keys when `id < 0`
@@ -290,7 +300,7 @@ When adding new device types:
 1. Add configuration to `devices_msg.yaml` (`topics`, `services`, and/or `actions` per category)
 2. Add decoder logic in `models/ros/rosDecode.js`
 3. Add encoder logic in `models/ros/rosEncode.js` (if sending commands)
-4. Subscriptions are created automatically by `models/ros/rosTopics.js` from the config — no per-device code needed
+4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosTopics.js`; no per-device code needed
 
 ### WebSocket Message Format
 
