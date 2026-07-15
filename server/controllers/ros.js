@@ -111,7 +111,7 @@ export class rosController {
   }
   static async sendActionGoalHandler(req, res) {
     try {
-      const response = await rosModel.sendActionGoal(req.body);
+      const response = await rosModel.sendActionGoalDevice(req.body);
       res.json(response);
     } catch (error) {
       logger.error(`Error calling action: ${error.message}`);
@@ -129,7 +129,7 @@ export class rosController {
     if (!uav_id) return res.status(400).json({ error: 'uav_id is required' });
     try {
       // type given → that specific action; otherwise every action of the device
-      res.json(await rosModel.getActionStatus({ uav_id, type }));
+      res.json(await rosModel.getActionStatusDevice({ uav_id, type }));
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -139,7 +139,7 @@ export class rosController {
     const { uav_id, type } = req.body;
     if (!uav_id || !type) return res.status(400).json({ error: 'uav_id and type are required' });
     try {
-      res.json(await rosModel.cancelAction({ uav_id, type }));
+      res.json(await rosModel.cancelActionDevice({ uav_id, type }));
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -222,22 +222,22 @@ export class rosController {
     logger.debug(`unsubscribeDevice id=${id}`);
     return RosEnable ? await rosModel.unsubscribeDevice(id) : null;
   }
-  static async callService(message) {
+  static async callServiceDevice(message) {
     if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
-    let response = await rosModel.callService(message);
+    let response = await rosModel.callServiceDevice(message);
     return response;
   }
 
   // Internal (non-HTTP) counterpart of sendActionGoalHandler, used by commandsModel.standarCommand.
-  static async sendActionGoal({ uav_id, type, message, target, timeout, blocking }) {
+  static async sendActionGoalDevice({ uav_id, type, message, target, timeout, blocking }) {
     if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
-    return await rosModel.sendActionGoal({ uav_id, type, message, target, timeout, blocking });
+    return await rosModel.sendActionGoalDevice({ uav_id, type, message, target, timeout, blocking });
   }
 
   // Internal (non-HTTP) device-layer publish, used by commandsModel.standarCommand.
-  static async publishTopic({ uav_id, type, message }) {
+  static async publishTopicDevice({ uav_id, type, message }) {
     if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
-    return await rosModel.publishTopic({ uav_id, type, message });
+    return await rosModel.publishTopicDevice({ uav_id, type, message });
   }
 
   static getServerStatus() {

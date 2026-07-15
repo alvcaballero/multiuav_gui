@@ -141,13 +141,13 @@ export class commandsModel {
       try {
         if (isPublisher) {
           logger.debug(`sending via ROS publisher uavId=${uav_id}`);
-          response = await rosController.publishTopic({ uav_id, type, message: attributes ?? {} });
+          response = await rosController.publishTopicDevice({ uav_id, type, message: attributes ?? {} });
         } else if (isAction) {
           logger.debug(`sending via ROS action uavId=${uav_id}`);
-          response = await rosController.sendActionGoal({ uav_id, type, message: attributes ?? {} });
+          response = await rosController.sendActionGoalDevice({ uav_id, type, message: attributes ?? {} });
         } else {
           logger.debug(`sending via ROS device uavId=${uav_id}`);
-          response = await rosController.callService({ uav_id, type, request: attributes });
+          response = await rosController.callServiceDevice({ uav_id, type, request: attributes });
         }
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);

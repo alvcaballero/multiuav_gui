@@ -216,9 +216,14 @@ or name-building:
 - Services: `callRosService({service, messageType, message})` ← `callService({name, type, service, serviceType, request})` — the facade passes the built `service` name + `serviceType`; the primitive only encodes + calls.
 - Actions: `sendRosActionGoal({actionServerName, actionType, message})` ← `sendActionGoal({actionServerName, actionType, type, message})` — the facade builds `actionServerName`; the device-layer method only encodes + delegates.
 
-The facade exposes both layers; the device-layer resolves `uav_id` first.
-`unsubscribeDevice(id)` unsubscribes one key, or ALL keys when `id < 0`
-(`-1` on disconnect).
+The facade exposes both layers; the device-layer resolves `uav_id` first. The
+device-layer facade methods carry a `Device` suffix to set them apart from the
+primitives and the `*Ros*` raw methods: `callServiceDevice`,
+`publishTopicDevice`, `sendActionGoalDevice`, `getActionStatusDevice`,
+`cancelActionDevice` (each takes `{uav_id, type, ...}`). `rosController` mirrors
+those names for its non-HTTP callers (e.g. `commandsModel.standarCommand`); the
+HTTP handlers keep the `*Handler` suffix. `unsubscribeDevice(id)` unsubscribes
+one key, or ALL keys when `id < 0` (`-1` on disconnect).
 
 **ROS2 Actions** (`rosAction.js`): unlike fire-and-forget topics/services,
 actions are long-running (goal → feedback → result/cancel), so their state lives

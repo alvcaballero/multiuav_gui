@@ -156,7 +156,7 @@ export class rosModel {
     return rosServices.callRosService({ service, messageType, message }, getRos());
   }
 
-  static async callService({ uav_id, type, request }) {
+  static async callServiceDevice({ uav_id, type, request }) {
     const { name, category } = await devicesController.getDevice(uav_id);
     const serviceDef = resolveCategoryConfig(category, 'services', type);
     const service = serviceDef ? buildDeviceName(name, serviceDef) : undefined;
@@ -170,7 +170,7 @@ export class rosModel {
   // (mirror of subscribeDevice / callService), then delegate the fully-resolved
   // topic + messageType to the pure PubRosMsg primitive. rosTopics owns no
   // devices_msg/category knowledge.
-  static async publishTopic({ uav_id, type, message }) {
+  static async publishTopicDevice({ uav_id, type, message }) {
     const { name, category } = await devicesController.getDevice(uav_id);
 
     const publisherDef = resolveCategoryConfig(category, 'publishers', type);
@@ -341,7 +341,7 @@ export class rosModel {
   // Device-layer actions: resolve the action config from categoryModel by uav_id,
   // build the ROS action-server name here (single source of name-building), and
   // hand the fully-resolved name + type to the primitive.
-  static async sendActionGoal({ uav_id, type, ...rest }) {
+  static async sendActionGoalDevice({ uav_id, type, ...rest }) {
     const { name, category } = await devicesController.getDevice(uav_id);
     const actionDef = resolveCategoryConfig(category, 'actions', type);
     if (!actionDef) throw new Error(`Action '${type}' not configured for device ${name}`);
@@ -367,7 +367,7 @@ export class rosModel {
     );
   }
 
-  static async getActionStatus({ uav_id, type }) {
+  static async getActionStatusDevice({ uav_id, type }) {
     const { name, category } = await devicesController.getDevice(uav_id);
     // no type → every action of the device (prefix mode, no config lookup)
     if (!type) return actionRegistry.getActionStatus({ name });
@@ -381,7 +381,7 @@ export class rosModel {
     return actionRegistry.getActionStatus({ name });
   }
 
-  static async cancelAction({ uav_id, type }) {
+  static async cancelActionDevice({ uav_id, type }) {
     const { name, category } = await devicesController.getDevice(uav_id);
     const actionDef = resolveCategoryConfig(category, 'actions', type);
     if (!actionDef) throw new Error(`Action '${type}' not configured for device ${name}`);
