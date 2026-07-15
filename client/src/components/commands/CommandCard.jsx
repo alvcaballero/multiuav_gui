@@ -22,7 +22,7 @@ const useStyles = makeStyles()((theme) => ({
   root: {
     pointerEvents: 'none',
     position: 'fixed',
-    zIndex: 6,
+    zIndex: 8,
     left: '50%',
     top: '20%',
     transform: 'translateX(-50%)',

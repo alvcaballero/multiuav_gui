@@ -161,7 +161,7 @@ const CameraDevice = React.memo(({ deviceId, onClose }) => {
   const device = useSelector((state) => state.devices.items[deviceId], customEqual);
   const datacamera = useSelector((state) => state.session.camera[deviceId]);
 
-  const [cardSize, setCardSize] = useState(SIZE.MED);
+  const [cardSize, setCardSize] = useState(SIZE.MIN);
   const videoRef = useRef(null);
 
   const { type, cameraSrc, srcIp } = useMemo(() => {
