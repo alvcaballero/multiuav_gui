@@ -71,6 +71,12 @@ const migrations = [
   `ALTER TABLE Mission ADD COLUMN errorMessage TEXT DEFAULT NULL`,
   // externalId split: the external system's task id no longer lives in the PK.
   `ALTER TABLE Mission ADD COLUMN externalId INTEGER DEFAULT NULL`,
+  // route-level error tracking: mirror Mission.errorMessage on each route so a
+  // per-UAV failure (load failed, SFTP download empty/unreachable) is persisted.
+  `ALTER TABLE MissionRoute ADD COLUMN errorMessage TEXT DEFAULT NULL`,
+  // file-level error tracking: a File that failed to download stays in FAIL with
+  // no human-readable reason. Persist why (connection lost, download failed, ...).
+  `ALTER TABLE File ADD COLUMN errorMessage TEXT DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

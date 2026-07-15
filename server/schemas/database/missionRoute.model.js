@@ -49,6 +49,10 @@ const MissionRouteSchema = {
   result: {
     type: DataTypes.JSON,
   },
+  errorMessage: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 };
 
 class MissionRoute extends Model {

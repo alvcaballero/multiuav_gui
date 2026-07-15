@@ -60,6 +60,10 @@ const FileSchema = {
   attributes: {
     type: DataTypes.JSON,
   },
+  errorMessage: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 };
 
 class File extends Model {

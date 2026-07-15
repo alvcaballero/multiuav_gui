@@ -169,6 +169,7 @@ export class missionModel {
     result,
     currentWp,
     totalWp,
+    errorMessage,
   }) {
     let myRoute = null;
     if (id) myRoute = await sequelize.models.MissionRoute.findOne({ where: { id: id } });
@@ -185,6 +186,7 @@ export class missionModel {
     if (result) myRoute.result = result;
     if (currentWp !== undefined) myRoute.currentWp = currentWp;
     if (totalWp !== undefined) myRoute.totalWp = totalWp;
+    if (errorMessage != null) myRoute.errorMessage = errorMessage;
     await myRoute.save();
 
     if (status === ROUTE_STATUS.COMPLETED) this._checkMissionComplete(missionId);
@@ -645,7 +647,11 @@ export class missionModel {
               route.status == ROUTE_STATUS.INIT)
         );
         for (const route of listRoutes) {
-          await this.editRoute({ id: route.id, status: ROUTE_STATUS.ERROR });
+          await this.editRoute({
+            id: route.id,
+            status: ROUTE_STATUS.ERROR,
+            errorMessage: 'Ruta interrumpida: el servidor se reinició mientras la misión estaba activa',
+          });
         }
         await this.editMission({
           id: mission.id,
@@ -749,6 +755,7 @@ export class missionModel {
         initTime: new Date(),
         currentWp: 0,
         totalWp,
+        errorMessage: ok ? null : `Fallo al cargar la ruta en el dispositivo: ${response.msg ?? 'error desconocido'}`,
       });
       results.push({ deviceId: device.id, name: device.name, state: response.state, msg: response.msg });
     }

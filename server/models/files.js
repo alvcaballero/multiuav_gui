@@ -26,11 +26,38 @@ import { missionLogger as logger } from '../common/logger.js';
 export const FILE_STATUS = Object.freeze({
   NO_DOWNLOAD: 0,
   DOWNLOAD: 1,
-  PROCESS: 2,
-  FAIL: 3,
-  ERROR: 4,
-  OK: 5,
+  PROCESS: 2, // For  thermal images, the processed image is created and metadata read. For other files, this state is skipped.
+  FAIL: 3, // Download failed (connection, missing file, etc.) or metadata read failed on a real image. Aligns with ROUTE_STATUS.ERROR / MISSION_STATUS.ERROR.
+  ERROR: 4, // Error Processing the file or reading metadata. Aligns with ROUTE_STATUS.ERROR / MISSION_STATUS.ERROR.
+  // Whole pipeline finished for this file: downloaded, processed and metadata read
+  // successfully. Aligns with ROUTE_STATUS.COMPLETED / MISSION_STATUS.COMPLETED.
+  COMPLETED: 5,
+  // Downloaded fine but metadata could not (or need not) be read — e.g. a video,
+  // which sharp can't parse. NOT an error: the file is intact. Appended at the end
+  // so existing numeric statuses already persisted in the DB keep their meaning.
+  DOWNLOAD_NO_METADATA: 6,
 });
+
+// File-name classification. Every check is CASE-INSENSITIVE: camera vendors emit
+// mixed cases (DJI → `.JPG`/`.MP4`/`THRM`, others may differ), so a case-sensitive
+// match would silently miss files. Extensions we attempt to read image metadata
+// from (sharp + exif); anything else (videos, rosbags, lidar, ...) is downloaded
+// but skipped for metadata reading.
+const METADATA_IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp'];
+
+const extOf = (name) => {
+  if (!name) return '';
+  const dot = name.lastIndexOf('.');
+  return dot === -1 ? '' : name.slice(dot).toLowerCase();
+};
+const isImageFile = (name) => METADATA_IMAGE_EXTS.includes(extOf(name));
+// Thermal images need the extra ProcessThermalImage pass. DJI tags them with a
+// `THRM` marker in the name; `.tif/.tiff` are treated as thermal too. Matched
+// case-insensitively so `.TIFF` / `thrm` variants are not missed.
+const isThermalFile = (name) => {
+  const lower = (name ?? '').toLowerCase();
+  return lower.includes('thrm') || lower.endsWith('.tif') || lower.endsWith('.tiff');
+};
 
 const downloadQueue = []; // manage files to download
 const processQueue = []; // manage files to process
@@ -89,18 +116,40 @@ export class filesModel {
     }
   }
 
-  static async editFile({ id, status, attributes }) {
+  static async editFile({ id, status, attributes, errorMessage }) {
     let file = await sequelize.models.File.findOne({ where: { id: id } });
     if (!file) {
       return null;
     }
     if (status) file.status = status;
     if (attributes) file.attributes = attributes;
+    if (errorMessage != null) file.errorMessage = errorMessage;
     await file.save();
-    if (status == FILE_STATUS.OK) {
+    // Close the route once every file for it has reached a TERMINAL state. A file
+    // never advances on its own from any of these, so leaving one out would keep the
+    // route open forever whenever that outcome occurs:
+    //   OK / DOWNLOAD_NO_METADATA → success (metadata read, or none to read)
+    //   FAIL (download failed) / ERROR (metadata read failed on a real image) → failure
+    const isTerminal = (s) =>
+      s == FILE_STATUS.COMPLETED ||
+      s == FILE_STATUS.DOWNLOAD_NO_METADATA ||
+      s == FILE_STATUS.FAIL ||
+      s == FILE_STATUS.ERROR;
+    const isFailure = (s) => s == FILE_STATUS.FAIL || s == FILE_STATUS.ERROR;
+    if (isTerminal(status)) {
       let myfiles = await this.getFiles({ routeId: file.routeId });
-      let allFilesOk = myfiles.every((file) => file.status == FILE_STATUS.OK || file.status == FILE_STATUS.ERROR);
-      if (allFilesOk) {
+      let allFilesDone = myfiles.every((f) => isTerminal(f.status));
+      if (allFilesDone) {
+        // Surface any per-file failures on the route so the reason isn't buried in
+        // the File rows only. DOWNLOAD_NO_METADATA is NOT a failure — a video with no
+        // metadata is a successful download. The route still ends (endRouteUAV) — a
+        // partial download is a finished-with-errors mission, not a stuck one.
+        const failed = myfiles.filter((f) => isFailure(f.status));
+        if (failed.length > 0) {
+          const errorMessage = `${failed.length}/${myfiles.length} archivo(s) no se descargaron o procesaron correctamente`;
+          logger.warn(`route ${file.routeId} finished with file errors — ${errorMessage}`);
+          await missionController.editRoute({ id: file.routeId, errorMessage });
+        }
         await missionController.endRouteUAV(file.missionId, file.deviceId);
       }
     }
@@ -230,6 +279,12 @@ export class filesModel {
     }
 
     let queued = false;
+    // Accumulate the reason each config produced no files so, if the WHOLE
+    // download yields nothing, we can persist a descriptive errorMessage on the
+    // route. Note: SFTPClient.listFiles swallows list errors and returns [], so
+    // "remote folder missing / SFTP list failed" and "folder present but empty"
+    // are indistinguishable here — both surface as an empty listing.
+    const downloadIssues = [];
     for (const myconfig of configs) {
       logger.debug(`config files ${myconfig.path} ${myconfig.type}`);
       let params = this.paramsConnection({ mydevice: myconfig });
@@ -238,6 +293,7 @@ export class filesModel {
       let status = await client.connect(params);
       if (!status) {
         logger.warn('cant connect to device');
+        downloadIssues.push(`no se pudo conectar a ${params.host ?? 'dispositivo'} (${myconfig.path})`);
         continue;
       }
 
@@ -258,6 +314,7 @@ export class filesModel {
 
       if (listFiles.length == 0) {
         logger.warn('no files to download');
+        downloadIssues.push(`sin archivos en ${pathFolder}`);
         continue;
       }
 
@@ -284,13 +341,33 @@ export class filesModel {
       }
     }
 
-    if (queued) this.downloadFiles();
+    if (queued) {
+      logger.info(`updateFiles: ${downloadQueue.length} file(s) queued for download (route=${routeId})`);
+      this.downloadFiles();
+    }
+
+    // Nothing got queued for download: either every config failed to connect or
+    // every remote folder came back empty. Persist the reason on the route so the
+    // failure is visible in the DB/UI instead of only in the logs. Only when we
+    // have a routeId to address (some callers invoke updateFiles route-less).
+    if (!queued && routeId) {
+      const errorMessage =
+        downloadIssues.length > 0
+          ? `No se descargaron archivos: ${downloadIssues.join('; ')}`
+          : 'No se descargaron archivos de la misión';
+      logger.warn(`updateFiles: no files downloaded for route ${routeId} — ${errorMessage}`);
+      await missionController.editRoute({ id: routeId, errorMessage });
+    }
 
     return true;
   }
 
   static async downloadFiles2(client, url, fileId, remove = false) {
     let myfile = await this.getFiles({ id: fileId });
+
+    // Progress: how many remain queued AFTER this one (this file is already shifted
+    // out of downloadQueue by the caller), so operators can follow the download.
+    logger.info(`downloadFiles2: downloading ${myfile.name} (${downloadQueue.length} remaining in queue)`);
 
     let response = await client.downloadFile(myfile.path2, `${missionDataPath}${myfile.path}${myfile.name}`);
     if (response.status) {
@@ -300,7 +377,11 @@ export class filesModel {
         await client.deleteFile(myfile.path2);
       }
     } else {
-      await this.editFile({ id: fileId, status: FILE_STATUS.FAIL });
+      // Persist WHY it failed so a not-downloaded file is traceable in the DB (the
+      // File row already keeps its origin: source.url + path2 to retry later).
+      const errorMessage = `Fallo al descargar desde ${myfile.path2}: ${response.data ?? 'error desconocido'}`;
+      logger.warn(`downloadFiles2: ${errorMessage}`);
+      await this.editFile({ id: fileId, status: FILE_STATUS.FAIL, errorMessage });
     }
     // Only continue on the same connection if the next queued file shares this
     // URL. Guard the queue first: an empty queue would make getFiles({id:
@@ -358,7 +439,7 @@ export class filesModel {
     }
     let myFileId = processQueue.shift();
     let myfile = await this.getFiles({ id: myFileId });
-    if (myfile.name.includes('THRM') && !myfile.name.includes('process')) {
+    if (isThermalFile(myfile.name) && !myfile.name.toLowerCase().includes('process')) {
       let response = await ProcessThermalImage(
         `${missionDataPath}${myfile.path}${myfile.name}`,
         `${missionDataPath}${myfile.path}${myfile.name.slice(0, -4)}_process.jpg`
@@ -376,17 +457,34 @@ export class filesModel {
           date: myfile.date,
         });
         processQueue.push(createFile.id);
-        await this.editFile({ id: myFileId, status: FILE_STATUS.OK });
+        await this.editFile({ id: myFileId, status: FILE_STATUS.COMPLETED });
       } else {
         await this.editFile({ id: myFileId, status: FILE_STATUS.ERROR });
       }
     }
-    try {
-      let attributes = await getMetadata(`${missionDataPath}${myfile.path}${myfile.name}`);
-      await this.editFile({ id: myFileId, status: FILE_STATUS.OK, attributes });
-    } catch (e) {
-      logger.error('error reading file metadata', e);
-      await this.editFile({ id: myFileId, status: FILE_STATUS.ERROR, attributes: {} });
+    // Only images carry readable metadata for our pipeline (sharp + exif). A video
+    // downloaded fine but has no image metadata — don't even try sharp on it (it
+    // throws "unsupported image format"), just mark it downloaded-without-metadata
+    // so it counts as a successful, terminal file instead of a false ERROR.
+    if (!isImageFile(myfile.name)) {
+      logger.info(`processFiles: ${myfile.name} downloaded, metadata skipped (not an image)`);
+      await this.editFile({ id: myFileId, status: FILE_STATUS.DOWNLOAD_NO_METADATA });
+    } else {
+      try {
+        let attributes = await getMetadata(`${missionDataPath}${myfile.path}${myfile.name}`);
+        const nMeasures = attributes?.measures?.length ?? 0;
+        logger.info(
+          `processFiles: metadata OK for ${myfile.name} ` +
+            `(gps=${attributes?.latitude != null ? 'yes' : 'no'}, measures=${nMeasures})`
+        );
+        await this.editFile({ id: myFileId, status: FILE_STATUS.COMPLETED, attributes });
+      } catch (e) {
+        // A real image whose metadata can't be read (corrupt / unexpected format).
+        // Persist the reason on the File so it's traceable, same as download errors.
+        const errorMessage = `No se pudieron leer los metadatos del archivo: ${e.message}`;
+        logger.error(`processFiles: ${errorMessage} (${myfile.name})`);
+        await this.editFile({ id: myFileId, status: FILE_STATUS.ERROR, attributes: {}, errorMessage });
+      }
     }
     // end process call other function for continuos the process of state machine
     if (processQueue.length > 0) this.processFiles();
@@ -396,7 +494,7 @@ export class filesModel {
     if (src.length == 0) return false;
     logger.info(`process thermal images: ${JSON.stringify(src)}`);
     for (const file of src) {
-      if (file.includes('THRM') || file.includes('.tiff')) {
+      if (isThermalFile(file)) {
         await ProcessThermalImage(`${file}`, `${file.split('.')[0]}_process.jpg`);
       }
     }
