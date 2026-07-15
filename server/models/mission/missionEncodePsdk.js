@@ -214,7 +214,7 @@ function pushAction(actions, trigger, resolver) {
 //
 function buildActionsForWaypoint(actions, wpIdx, item, isRecording) {
   const act = item.action;
-  const hasStay = Object.prototype.hasOwnProperty.call(act, 'stay');
+  const hasStay = Object.prototype.hasOwnProperty.call(act, 'stay') || true; // default is stay, even if not present
   const hasYaw = Object.prototype.hasOwnProperty.call(act, 'yaw');
   const hasGimbal = Object.prototype.hasOwnProperty.call(act, 'gimbal') && Number(act.gimbal) !== 0;
   const hasTakePhoto = Object.prototype.hasOwnProperty.call(act, 'photo');
@@ -303,9 +303,9 @@ function buildActionsForWaypoint(actions, wpIdx, item, isRecording) {
     pushAction(actions, resumeTrigger, ACTION_RESOLVERS[ACTION_TYPE.video_start]());
   }
 
-  // [8] StartFlying — always chains after flight_anchor, never after camera
+  // [8] StartFlying — always chains after the last action (yaw/gimbal/camera) or the waypoint if no actions
   if (hasStay) {
-    const startTrigger = flightAnchorId !== null ? setTriggers(null, flightAnchorId) : wpTrigger;
+    const startTrigger = cameraChainId !== null ? setTriggers(null, cameraChainId) : wpTrigger;
     pushAction(actions, startTrigger, ACTION_RESOLVERS[ACTION_TYPE.stay](AIRCRAFT_FLIGHT.START));
   }
 }
