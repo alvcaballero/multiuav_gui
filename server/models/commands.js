@@ -110,12 +110,12 @@ export class commandsModel {
     return response;
   }
 
-  static async GimbalUAV(uav_id, attributes) {
+  static async GimbalUAV(deviceId, attributes) {
     // Objeto de dominio NEUTRO (grados). El wire format ROS lo arma rosEncode.js
     // según el msgType de la categoría: dji_osdk_ros/GimbalAction (OSDK, service)
     // o psdk_interfaces/msg/GimbalRotation (PSDK, publisher). standarCommand elige
     // el transporte (service vs publisher) según lo que declara el devices_msg.
-    let statuscommand = await this.standarCommand(uav_id, 'Gimbal', {
+    let statuscommand = await this.standarCommand(deviceId, 'Gimbal', {
       reset: attributes.reset ? true : false,
       pitch: attributes.pitch ? attributes.pitch : 0.0,
       roll: attributes.roll ? attributes.roll : 0.0,
@@ -123,11 +123,11 @@ export class commandsModel {
     });
     return statuscommand;
   }
-  static async standarCommand(uav_id, type, attributes) {
-    logger.debug(`standarCommand uavId=${uav_id} type=${type}`);
+  static async standarCommand(deviceId, type, attributes) {
+    logger.debug(`standarCommand deviceId= type=${type}`);
     let response = {};
     //ros
-    const myDevice = await devicesController.getDevice(uav_id);
+    const myDevice = await devicesController.getDevice(deviceId);
     if (myDevice.protocol == 'ros') {
       // Mismo `type` puede vivir en services:, actions: o publishers: según la
       // categoría del device (ej. Gimbal es service en las OSDK y publisher en el
@@ -140,26 +140,26 @@ export class commandsModel {
       const isPublisher = !hasService && !hasAction && categoryConfig?.publishers?.hasOwnProperty(type);
       try {
         if (isPublisher) {
-          logger.debug(`sending via ROS publisher uavId=${uav_id}`);
-          response = await rosController.publishTopicDevice({ uav_id, type, message: attributes ?? {} });
+          logger.debug(`sending via ROS publisher deviceId=`);
+          response = await rosController.publishTopicDevice({ deviceId, type, message: attributes ?? {} });
         } else if (isAction) {
-          logger.debug(`sending via ROS action uavId=${uav_id}`);
-          response = await rosController.sendActionGoalDevice({ uav_id, type, message: attributes ?? {} });
+          logger.debug(`sending via ROS action deviceId=`);
+          response = await rosController.sendActionGoalDevice({ deviceId, type, message: attributes ?? {} });
         } else {
-          logger.debug(`sending via ROS device uavId=${uav_id}`);
-          response = await rosController.callServiceDevice({ uav_id, type, request: attributes });
+          logger.debug(`sending via ROS device deviceId=`);
+          response = await rosController.callServiceDevice({ deviceId, type, request: attributes });
         }
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);
-        logger.error(`standarCommand ROS error uavId=${uav_id} type=${type}: ${errMsg}`);
+        logger.error(`standarCommand ROS error deviceId= type=${type}: ${errMsg}`);
         response = { state: 'error', msg: errMsg };
       }
     }
     //robofleet
     if (myDevice.protocol == 'robofleet') {
-      logger.debug(`sending via robofleet device uavId=${uav_id}`);
+      logger.debug(`sending via robofleet device deviceId=`);
 
-      response = await getFlatbufferServer().sendCommand({ uav_id, type, attributes });
+      response = await getFlatbufferServer().sendCommand({ uav_id: deviceId, type, attributes });
       if (response == {}) {
         response = {
           state: 'success',
