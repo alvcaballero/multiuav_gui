@@ -1,9 +1,7 @@
 import * as fb from 'fbmsglib';
 import * as flatbuffers from 'flatbuffers';
 import { devicesController } from '../../controllers/devices.js';
-import { readDataFile } from '../../common/utils.js';
-
-const devices_msg = readDataFile('../config/devices/devices_msg.yaml');
+import { categoryModel } from '../category.js';
 
 function encodePositionStamped({ topic, type = 'geometry_msgs/PoseStamped', frame = 'map', x, y, theta }) {
   const fbb = new flatbuffers.Builder();
@@ -145,11 +143,14 @@ export async function encodeFbMsg({ uav_id, type, attributes }) {
   const device = await devicesController.getDevice(uav_id);
   const { name: uavName, category: uavCategory } = device;
 
-  if (!devices_msg[uavCategory]['services'].hasOwnProperty(type)) {
+  // categoryModel is the single source of truth for devices_msg — resolve the
+  // service definition through it instead of reading the YAML here.
+  const serviceDef = categoryModel.getCategory(uavCategory)?.services?.[type];
+  if (!serviceDef) {
     return null;
   }
 
-  const serviceType = devices_msg[uavCategory]['services'][type]['serviceType'];
+  const serviceType = serviceDef['serviceType'];
 
   if (type === 'position') {
     return encodePositionStamped({
