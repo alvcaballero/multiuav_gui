@@ -25,7 +25,7 @@ client/
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Routes, Waypoints
     │   ├── camera/         # CameraDevice, CameraV1, CameraWebRTCV4
     │   ├── map/            # ElementList, BaseList, BaseSettings
-    │   ├── commands/       # CommandCard, SendCommand, RosControl
+    │   ├── commands/       # CommandCard, SendCommand
     │   ├── layout/         # Navbar, MainToolbar, Menu, MenuItems, Footer
     │   └── ui/             # Toast, RemoveDialog, SelectList, SaveFile, PositionValue
     ├── pages/              # Page-level components (one per route)

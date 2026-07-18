@@ -42,7 +42,6 @@ import maplibregl from 'maplibre-gl';
 
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
-import { RosControl } from '../components/commands/RosControl';
 import Scene3DCanvas from '../scene3d/Scene3DCanvas';
 import { sessionActions, missionActions } from '../store';
 import { useCatch } from '../reactHelper';
@@ -877,10 +876,8 @@ const Scene3DEditorPage = () => {
 
   return (
     <div className={classes.root}>
-      <RosControl>
-        <Navbar />
-        <Menu />
-      </RosControl>
+      <Navbar />
+      <Menu />
 
       <Scene3DCanvas className={classes.canvas} style={{ position: 'fixed' }} />
 

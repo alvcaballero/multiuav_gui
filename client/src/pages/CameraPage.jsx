@@ -4,7 +4,6 @@ import { Menu } from '../components/layout/Menu';
 import MainToolbar from '../components/layout/MainToolbar';
 import { makeStyles } from 'tss-react/mui';
 
-import { RosControl } from '../components/commands/RosControl';
 import DeviceList from '../components/devices/DeviceList';
 import { Paper, Grid, Box } from '@mui/material';
 import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
@@ -48,77 +47,75 @@ const CameraPage = () => {
   const { classes } = useStyles();
   return (
     <div className={classes.root}>
-      <RosControl>
-        <Navbar />
-        <Menu />
-        <div
+      <Navbar />
+      <Menu />
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: `calc(100vh - 90px)`,
+        }}
+      >
+        <Box
+          component="div"
+          sx={{ overflow: 'auto' }}
           style={{
-            position: 'relative',
-            width: '100%',
-            height: `calc(100vh - 90px)`,
+            backgroundColor: '#000000',
+            width: `calc(100vw - 360px)`,
+            height: `calc(100vh - 90px`,
+            padding: '20px',
+            float: 'right',
           }}
         >
-          <Box
-            component="div"
-            sx={{ overflow: 'auto' }}
-            style={{
-              backgroundColor: '#000000',
-              width: `calc(100vw - 360px)`,
-              height: `calc(100vh - 90px`,
-              padding: '20px',
-              float: 'right',
-            }}
-          >
-            <Grid container spacing={2} justifyContent="space-around">
-              {Object.values(devices).map((device) => (
-                <Fragment key={'dev' + device.id}>
-                  {device.camera.map((camera, cam_index) => (
-                    <Grid size={{ xs: 12, sm: 6 }} key={'card-' + device.id + '-' + cam_index}>
-                      {camera.type === 'WebRTC' && (
-                        <CameraWebRTCV4
-                          deviceId={device.id}
-                          deviceIp={myhostname}
-                          devicename={device.name}
-                          camera_src={device.name + '_' + camera.source}
-                          onClose={() => {
-                            console.log('cerrar ');
-                          }}
-                        />
-                      )}
-                      {camera.type === 'WebRTC_env' && (
-                        <CameraWebRTCV4
-                          deviceId={device.id}
-                          deviceIp={device.ip}
-                          devicename={device.name}
-                          camera_src={camera.source}
-                          onClose={() => {
-                            console.log('cerrar ');
-                          }}
-                        />
-                      )}
-                      {camera.type === 'Websocket' && (
-                        <CameraV1
-                          deviceId={device.id}
-                          datacamera={null}
-                          onClose={() => console.log('cerrar ')}
-                        />
-                      )}
-                    </Grid>
-                  ))}
-                </Fragment>
-              ))}
-            </Grid>
-          </Box>
+          <Grid container spacing={2} justifyContent="space-around">
+            {Object.values(devices).map((device) => (
+              <Fragment key={'dev' + device.id}>
+                {device.camera.map((camera, cam_index) => (
+                  <Grid size={{ xs: 12, sm: 6 }} key={'card-' + device.id + '-' + cam_index}>
+                    {camera.type === 'WebRTC' && (
+                      <CameraWebRTCV4
+                        deviceId={device.id}
+                        deviceIp={myhostname}
+                        devicename={device.name}
+                        camera_src={device.name + '_' + camera.source}
+                        onClose={() => {
+                          console.log('cerrar ');
+                        }}
+                      />
+                    )}
+                    {camera.type === 'WebRTC_env' && (
+                      <CameraWebRTCV4
+                        deviceId={device.id}
+                        deviceIp={device.ip}
+                        devicename={device.name}
+                        camera_src={camera.source}
+                        onClose={() => {
+                          console.log('cerrar ');
+                        }}
+                      />
+                    )}
+                    {camera.type === 'Websocket' && (
+                      <CameraV1
+                        deviceId={device.id}
+                        datacamera={null}
+                        onClose={() => console.log('cerrar ')}
+                      />
+                    )}
+                  </Grid>
+                ))}
+              </Fragment>
+            ))}
+          </Grid>
+        </Box>
+      </div>
+      <div className={classes.sidebarStyle}>
+        <div className={classes.middleStyle}>
+          <Paper square className={classes.contentListStyle}>
+            <MainToolbar SetAddUAVOpen={setAddUAVOpen} />
+            <DeviceList devices={listdevices} />
+          </Paper>
         </div>
-        <div className={classes.sidebarStyle}>
-          <div className={classes.middleStyle}>
-            <Paper square className={classes.contentListStyle}>
-              <MainToolbar SetAddUAVOpen={setAddUAVOpen} />
-              <DeviceList devices={listdevices} />
-            </Paper>
-          </div>
-        </div>
-      </RosControl>
+      </div>
     </div>
   );
 };

@@ -16,7 +16,6 @@ import { map } from '../map/core/mapInstance';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
 import { MapMissions } from '../map/mission/MapMissions';
-import { RosControl } from '../components/commands/RosControl';
 import MissionElevation from '../components/mission/MissionElevation';
 import MapMarkersCreate from '../map/draw/MapMarkersCreate';
 import MapScale from '../map/controls/MapScale';
@@ -85,10 +84,6 @@ const useStyles = makeStyles()((theme) => ({
     margin: 'auto',
   },
 }));
-
-const showToast = (type, description) => {
-  console.log(type + description);
-};
 
 const PlanningPage = () => {
   const { classes } = useStyles();
@@ -259,93 +254,91 @@ const PlanningPage = () => {
 
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
-        <Navbar />
-        <Menu />
-        <div className={classes.mapContainer}>
-          <MapView>
-            {checked && <MapMissions routes={routeMission} />}
-            <MapMarkersCreate
-              markers={markers}
-              selectMarkers={SendTask.loc}
-              showTitles={showTitles}
-              showLines={showLines}
-              moveMarkers={moveMarkers}
-              setMarkers={SetMapMarkers}
-              SelectItems={SelectMarkers}
-              CreateItems={CreateMarkers}
-              setLocations={addLocations}
-            />
-            <MapDefaultCamera />
-            <MapMissionHome />
-          </MapView>
-          <MapScale />
-        </div>
+      <Navbar />
+      <Menu />
+      <div className={classes.mapContainer}>
+        <MapView>
+          {checked && <MapMissions routes={routeMission} />}
+          <MapMarkersCreate
+            markers={markers}
+            selectMarkers={SendTask.loc}
+            showTitles={showTitles}
+            showLines={showLines}
+            moveMarkers={moveMarkers}
+            setMarkers={SetMapMarkers}
+            SelectItems={SelectMarkers}
+            CreateItems={CreateMarkers}
+            setLocations={addLocations}
+          />
+          <MapDefaultCamera />
+          <MapMissionHome />
+        </MapView>
+        <MapScale />
+      </div>
 
-        <div className={classes.sidebarStyle}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <PlanningToolbar
-                onBack={handleNavigateBack}
-                onSave={handleSavePlanning}
-                onDelete={handleDeleteMission}
-                onReadFile={readFile}
-                showMission={checked}
-                onToggleShowMission={() => setChecked((prev) => !prev)}
-              />
-              <div className={classes.content}>
-                <TabContext value={tabValue}>
-                  <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <TabList onChange={TabHandleChange} aria-label="Planning tabs">
-                      <Tab label="Elements" value={TABS.ELEMENTS} />
-                      <Tab label="Planning" value={TABS.PLANNING} />
-                      <Tab label="Settings" value={TABS.SETTINGS} />
-                    </TabList>
-                  </Box>
-                  <TabPanel value={TABS.ELEMENTS} sx={{ padding: 0 }}>
-                    <ElementsTab
-                      markers={markers}
-                      setMarkersBase={setMarkersBase}
-                      setMarkersElements={setMarkersElements}
-                      onSaveGlobalMarkers={handleSaveGlobalMarkers}
-                    />
-                  </TabPanel>
-                  <TabPanel value={TABS.PLANNING} sx={{ padding: 0 }}>
-                    <PlanningTab
-                      sendTask={SendTask}
-                      onUpdateId={handleUpdatePlanningId}
-                      onUpdateName={handleUpdatePlanningName}
-                      onUpdateObjective={handleUpdateObjective}
-                      onGetItems={handleGetItems}
-                      setLocations={setLocations}
-                    />
-                  </TabPanel>
-                  <TabPanel value={TABS.SETTINGS} sx={{ padding: 0 }}>
-                    <SettingsTab
-                      sendTask={SendTask}
-                      markers={markers}
-                      notification={notification}
-                      onSetBaseSettings={setBaseSettings}
-                      onGoToBase={goToBase}
-                      onSendPlanning={SendPlanning}
-                      onResetPolling={handleResetPolling}
-                      onMissionTask={MissionTask}
-                      onSaveGlobalMarkers={handleSaveGlobalMarkers}
-                    />
-                  </TabPanel>
-                </TabContext>
-              </div>
-            </Paper>
-          </div>
+      <div className={classes.sidebarStyle}>
+        <div className={classes.middleStyle}>
+          <Paper square>
+            <PlanningToolbar
+              onBack={handleNavigateBack}
+              onSave={handleSavePlanning}
+              onDelete={handleDeleteMission}
+              onReadFile={readFile}
+              showMission={checked}
+              onToggleShowMission={() => setChecked((prev) => !prev)}
+            />
+            <div className={classes.content}>
+              <TabContext value={tabValue}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                  <TabList onChange={TabHandleChange} aria-label="Planning tabs">
+                    <Tab label="Elements" value={TABS.ELEMENTS} />
+                    <Tab label="Planning" value={TABS.PLANNING} />
+                    <Tab label="Settings" value={TABS.SETTINGS} />
+                  </TabList>
+                </Box>
+                <TabPanel value={TABS.ELEMENTS} sx={{ padding: 0 }}>
+                  <ElementsTab
+                    markers={markers}
+                    setMarkersBase={setMarkersBase}
+                    setMarkersElements={setMarkersElements}
+                    onSaveGlobalMarkers={handleSaveGlobalMarkers}
+                  />
+                </TabPanel>
+                <TabPanel value={TABS.PLANNING} sx={{ padding: 0 }}>
+                  <PlanningTab
+                    sendTask={SendTask}
+                    onUpdateId={handleUpdatePlanningId}
+                    onUpdateName={handleUpdatePlanningName}
+                    onUpdateObjective={handleUpdateObjective}
+                    onGetItems={handleGetItems}
+                    setLocations={setLocations}
+                  />
+                </TabPanel>
+                <TabPanel value={TABS.SETTINGS} sx={{ padding: 0 }}>
+                  <SettingsTab
+                    sendTask={SendTask}
+                    markers={markers}
+                    notification={notification}
+                    onSetBaseSettings={setBaseSettings}
+                    onGoToBase={goToBase}
+                    onSendPlanning={SendPlanning}
+                    onResetPolling={handleResetPolling}
+                    onMissionTask={MissionTask}
+                    onSaveGlobalMarkers={handleSaveGlobalMarkers}
+                  />
+                </TabPanel>
+              </TabContext>
+            </div>
+          </Paper>
         </div>
-        <div className={classes.panelElevation}>
-          <div className={classes.middleStyle}>
-            <Paper square sx={{ height: '100%' }}>
-              <MissionElevation />
-            </Paper>
-          </div>
+      </div>
+      <div className={classes.panelElevation}>
+        <div className={classes.middleStyle}>
+          <Paper square sx={{ height: '100%' }}>
+            <MissionElevation />
+          </Paper>
         </div>
-      </RosControl>
+      </div>
     </div>
   );
 };

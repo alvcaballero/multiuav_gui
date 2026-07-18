@@ -11,7 +11,6 @@ import { MapMissions3D } from '../map/mission/MapMissions3D';
 import MapPositions from '../map/devices/MapPositions';
 import MapMarkers from '../map/environment/MapMarkers';
 
-import { RosControl } from '../components/commands/RosControl';
 import MissionPanel from '../components/mission/MissionPanel';
 import MissionElevation from '../components/mission/MissionElevation';
 import SaveFile from '../components/ui/SaveFile';
@@ -51,11 +50,6 @@ const useStyles = makeStyles()((theme) => ({
     zIndex: 3,
   },
 }));
-const showToast = (type, description) => {
-  // Toast notification placeholder
-  console.log('Toast:', type, description);
-};
-
 const MissionPageTest = () => {
   const { classes } = useStyles();
   const [Opensave, setOpensave] = useState(false);
@@ -68,50 +62,48 @@ const MissionPageTest = () => {
 
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
-        <Navbar />
-        <Menu />
-        <div
-          style={{
-            float: 'right',
-            width: 'calc(100% - 560px)',
-            height: 'calc(70vh - 95px)',
-            right: '0px',
-            margin: 'auto',
-          }}
-        >
-          <MapView>
-            <MapMarkers markers={markers} />
-            <MapDefaultCamera />
-            <MapMissionsCreate />
-            <MapMissions3D />
-            <MapMarkers3D />
-            <MapPositions
-              positions={filteredPositions}
-              onClick={null}
-              selectedPosition={null}
-              showStatus
-            />
-          </MapView>
-          <MapScale />
-        </div>
+      <Navbar />
+      <Menu />
+      <div
+        style={{
+          float: 'right',
+          width: 'calc(100% - 560px)',
+          height: 'calc(70vh - 95px)',
+          right: '0px',
+          margin: 'auto',
+        }}
+      >
+        <MapView>
+          <MapMarkers markers={markers} />
+          <MapDefaultCamera />
+          <MapMissionsCreate />
+          <MapMissions3D />
+          <MapMarkers3D />
+          <MapPositions
+            positions={filteredPositions}
+            onClick={null}
+            selectedPosition={null}
+            showStatus
+          />
+        </MapView>
+        <MapScale />
+      </div>
 
-        <div className={classes.sidebarStyle}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <MissionPanel SetOpenSave={setOpensave} />
-            </Paper>
-          </div>
+      <div className={classes.sidebarStyle}>
+        <div className={classes.middleStyle}>
+          <Paper square>
+            <MissionPanel SetOpenSave={setOpensave} />
+          </Paper>
         </div>
-        <div className={classes.panelElevation}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <MissionElevation />
-            </Paper>
-          </div>
+      </div>
+      <div className={classes.panelElevation}>
+        <div className={classes.middleStyle}>
+          <Paper square>
+            <MissionElevation />
+          </Paper>
         </div>
-        {Opensave && <SaveFile SetOpenSave={setOpensave} />}
-      </RosControl>
+      </div>
+      {Opensave && <SaveFile SetOpenSave={setOpensave} />}
     </div>
   );
 };

@@ -10,7 +10,6 @@ import { MapMissionsCreate } from '../map/draw/MapMissionsCreate';
 import MapPositions from '../map/devices/MapPositions';
 import MapMarkers from '../map/environment/MapMarkers';
 
-import { RosControl } from '../components/commands/RosControl';
 import MissionPanel from '../components/mission/MissionPanel';
 import MissionElevation from '../components/mission/MissionElevation';
 import MissionStats from '../components/mission/MissionStats';
@@ -52,11 +51,6 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const showToast = (type, description) => {
-  // Toast notification placeholder
-  console.log('Toast:', type, description);
-};
-
 const MissionPage = () => {
   const { classes } = useStyles();
   const [Opensave, setOpensave] = useState(false);
@@ -70,77 +64,75 @@ const MissionPage = () => {
 
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
-        <Navbar />
-        <Menu />
-        <div
-          style={{
-            float: 'right',
-            width: 'calc(100% - 560px)',
-            height: 'calc(70vh - 95px)',
-            right: '0px',
-            margin: 'auto',
-          }}
-        >
-          <MapView>
-            <MapMarkers markers={markers} />
-            <MapDefaultCamera />
-            <MapMissionHome />
-            <MapMissionsCreate />
-            <MapPositions
-              positions={filteredPositions}
-              onClick={null}
-              selectedPosition={null}
-              showStatus
-            />
-          </MapView>
-          <MapScale />
-        </div>
+      <Navbar />
+      <Menu />
+      <div
+        style={{
+          float: 'right',
+          width: 'calc(100% - 560px)',
+          height: 'calc(70vh - 95px)',
+          right: '0px',
+          margin: 'auto',
+        }}
+      >
+        <MapView>
+          <MapMarkers markers={markers} />
+          <MapDefaultCamera />
+          <MapMissionHome />
+          <MapMissionsCreate />
+          <MapPositions
+            positions={filteredPositions}
+            onClick={null}
+            selectedPosition={null}
+            showStatus
+          />
+        </MapView>
+        <MapScale />
+      </div>
 
-        <div className={classes.sidebarStyle}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <MissionPanel SetOpenSave={setOpensave} />
-            </Paper>
-          </div>
-        </div>
-        <div className={classes.panelElevation}>
-          <Paper square sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Tabs
-              value={bottomTab}
-              onChange={(_, newValue) => setBottomTab(newValue)}
-              variant="fullWidth"
-              sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 36 }}
-            >
-              <Tab label="Statistics" sx={{ minHeight: 36, py: 0 }} />
-              <Tab label="Elevation" sx={{ minHeight: 36, py: 0 }} />
-            </Tabs>
-            <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <Box
-                sx={{
-                  flex: 1,
-                  overflow: 'hidden',
-                  display: bottomTab === 0 ? 'flex' : 'none',
-                  flexDirection: 'column',
-                }}
-              >
-                <MissionStats />
-              </Box>
-              <Box
-                sx={{
-                  flex: 1,
-                  overflow: 'hidden',
-                  display: bottomTab === 1 ? 'flex' : 'none',
-                  flexDirection: 'column',
-                }}
-              >
-                <MissionElevation active={bottomTab === 1} />
-              </Box>
-            </Box>
+      <div className={classes.sidebarStyle}>
+        <div className={classes.middleStyle}>
+          <Paper square>
+            <MissionPanel SetOpenSave={setOpensave} />
           </Paper>
         </div>
-        {Opensave && <SaveFile SetOpenSave={setOpensave} />}
-      </RosControl>
+      </div>
+      <div className={classes.panelElevation}>
+        <Paper square sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Tabs
+            value={bottomTab}
+            onChange={(_, newValue) => setBottomTab(newValue)}
+            variant="fullWidth"
+            sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 36 }}
+          >
+            <Tab label="Statistics" sx={{ minHeight: 36, py: 0 }} />
+            <Tab label="Elevation" sx={{ minHeight: 36, py: 0 }} />
+          </Tabs>
+          <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <Box
+              sx={{
+                flex: 1,
+                overflow: 'hidden',
+                display: bottomTab === 0 ? 'flex' : 'none',
+                flexDirection: 'column',
+              }}
+            >
+              <MissionStats />
+            </Box>
+            <Box
+              sx={{
+                flex: 1,
+                overflow: 'hidden',
+                display: bottomTab === 1 ? 'flex' : 'none',
+                flexDirection: 'column',
+              }}
+            >
+              <MissionElevation active={bottomTab === 1} />
+            </Box>
+          </Box>
+        </Paper>
+      </div>
+      {Opensave && <SaveFile SetOpenSave={setOpensave} />}
     </div>
   );
 };

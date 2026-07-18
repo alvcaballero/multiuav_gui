@@ -6,7 +6,6 @@ import { makeStyles } from 'tss-react/mui';
 import { Navbar2 } from '../components/layout/Navbar2';
 import { Menu } from '../components/layout/Menu';
 
-import { RosControl } from '../components/commands/RosControl';
 import MissionPanel from '../components/mission/MissionPanel';
 import MissionElevation from '../components/mission/MissionElevation';
 import SaveFile from '../components/ui/SaveFile';
@@ -48,11 +47,6 @@ const useStyles = makeStyles()((theme) => ({
     zIndex: 3,
   },
 }));
-const showToast = (type, description) => {
-  // Toast notification placeholder
-  console.log('Toast:', type, description);
-};
-
 const MissionPage3D = () => {
   const { classes } = useStyles();
   const [tabIndex, setTabIndex] = useState(0);
@@ -78,41 +72,39 @@ const MissionPage3D = () => {
 
   return (
     <div className={classes.root}>
-      <RosControl notification={showToast}>
-        <Navbar2 tabs={tabs} />
-        <Menu />
-        <div
-          style={{
-            float: 'right',
-            width: 'calc(100% - 560px)',
-            height: 'calc(70vh - 95px)',
-            right: '0px',
-            margin: 'auto',
-          }}
-        >
-          <R3FCanvas>
-            <R3FMission routes={routes} />
-            <R3DMarkers elements={markers} />
-            <R3FDevices />
-          </R3FCanvas>
-        </div>
+      <Navbar2 tabs={tabs} />
+      <Menu />
+      <div
+        style={{
+          float: 'right',
+          width: 'calc(100% - 560px)',
+          height: 'calc(70vh - 95px)',
+          right: '0px',
+          margin: 'auto',
+        }}
+      >
+        <R3FCanvas>
+          <R3FMission routes={routes} />
+          <R3DMarkers elements={markers} />
+          <R3FDevices />
+        </R3FCanvas>
+      </div>
 
-        <div className={classes.sidebarStyle}>
-          <div className={classes.middleStyle}>
-            <Paper square>
-              <MissionPanel SetOpenSave={setOpensave} />
-            </Paper>
-          </div>
+      <div className={classes.sidebarStyle}>
+        <div className={classes.middleStyle}>
+          <Paper square>
+            <MissionPanel SetOpenSave={setOpensave} />
+          </Paper>
         </div>
-        <div className={classes.panelElevation}>
-          <div className={classes.middleStyle}>
-            <Paper square sx={{ height: '100%' }}>
-              <MissionElevation />
-            </Paper>
-          </div>
+      </div>
+      <div className={classes.panelElevation}>
+        <div className={classes.middleStyle}>
+          <Paper square sx={{ height: '100%' }}>
+            <MissionElevation />
+          </Paper>
         </div>
-        {Opensave && <SaveFile SetOpenSave={setOpensave} />}
-      </RosControl>
+      </div>
+      {Opensave && <SaveFile SetOpenSave={setOpensave} />}
     </div>
   );
 };

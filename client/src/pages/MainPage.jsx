@@ -6,7 +6,6 @@ import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
 import Adduav from '../components/devices/Adduav';
-import { RosControl } from '../components/commands/RosControl';
 import { commandMission } from '../shared/fetchs';
 import { useCatch } from '../reactHelper';
 
@@ -126,9 +125,7 @@ const MainPage = () => {
         setconfirmMission={setConfirmMission}
         setChatOpen={setChatOpen}
       />
-      <RosControl>
-        <Menu />
-      </RosControl>
+      <Menu />
 
       <SwipeConfirm
         enable={confirmMission}

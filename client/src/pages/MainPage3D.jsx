@@ -6,7 +6,6 @@ import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
 import Adduav from '../components/devices/Adduav';
-import { RosControl } from '../components/commands/RosControl';
 import { commandMission } from '../shared/fetchs';
 import { useCatch } from '../reactHelper';
 
@@ -109,10 +108,8 @@ const MainPage3D = () => {
 
   return (
     <div className={classes.root}>
-      <RosControl>
-        <Navbar SetAddUAVOpen={setAddUAVOpen} setconfirmMission={setConfirmMission} />
-        <Menu />
-      </RosControl>
+      <Navbar SetAddUAVOpen={setAddUAVOpen} setconfirmMission={setConfirmMission} />
+      <Menu />
       <Scene3DCanvas className={classes.canvas} />
 
       <div className={classes.sidebar}>
