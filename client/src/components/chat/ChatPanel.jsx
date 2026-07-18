@@ -35,14 +35,18 @@ const ChatPanel = ({
   activeChatId,
   activeConversation,
   messages,
+  hasMoreOlder,
+  loadingOlderMessages,
   loading,
   availableChats,
   showOptions,
   isRecording,
   deleteDialogOpen,
   messagesEndRef,
+  messagesContainerRef,
   handleSendMessage,
   handleChatChange,
+  handleMessagesScroll,
   clearChat,
   handleDeleteClick,
   handleDeleteConfirm,
@@ -122,6 +126,8 @@ const ChatPanel = ({
 
     {/* Messages area */}
     <Box
+      ref={messagesContainerRef}
+      onScroll={handleMessagesScroll}
       sx={{
         flexGrow: 1,
         overflowY: 'auto',
@@ -135,8 +141,19 @@ const ChatPanel = ({
         <WelcomeMessage />
       ) : (
         <>
+          {(loadingOlderMessages || hasMoreOlder) && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+              {loadingOlderMessages ? (
+                <CircularProgress size={16} />
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  Scroll up to load earlier messages
+                </Typography>
+              )}
+            </Box>
+          )}
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} chatId={activeChatId} />
+            <MessageBubble key={msg.id || msg.timestamp} message={msg} chatId={activeChatId} />
           ))}
           {loading.sendingMessage && (
             <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>

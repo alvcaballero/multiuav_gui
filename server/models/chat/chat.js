@@ -426,15 +426,28 @@ export class MessageOrchestrator {
   }
 
   /**
-   * Obtiene el historial de conversación para un chat específico
+   * Obtiene una página del historial de conversación para un chat específico,
+   * la más reciente por defecto o la anterior a `before` (paginación por cursor).
    * @param {string} chatId - ID del chat
+   * @param {object} options
+   * @param {number} options.limit - Tamaño de página (default 100)
+   * @param {string|null} options.before - Cursor ISO timestamp; trae mensajes estrictamente anteriores
+   * @returns {Promise<{messages: Array, hasMore: boolean}>}
    */
-  static async getHistory(chatId) {
+  static async getHistory(chatId, { limit = 100, before = null } = {}) {
     try {
-      return await ChatHistoryManager.loadHistory(chatId, { all: true });
+      // Fetch one extra row to know whether older messages remain, then drop it.
+      const rows = await ChatHistoryManager.loadHistory(chatId, {
+        all: true,
+        limit: limit + 1,
+        before,
+        order: 'DESC',
+      });
+      const hasMore = rows.length > limit;
+      return { messages: hasMore ? rows.slice(1) : rows, hasMore };
     } catch (error) {
       chatLogger.error('Error loading history from DB:', error);
-      return [];
+      return { messages: [], hasMore: false };
     }
   }
 

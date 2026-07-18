@@ -14,6 +14,7 @@ const useChatLogic = (open = true) => {
     return state.chat.conversations['_pending'] || null;
   });
   const messages = activeConversation?.messages || EMPTY_MESSAGES;
+  const hasMoreOlder = activeConversation?.hasMoreOlder ?? false;
   const loading = useSelector((state) => state.chat.loading);
   const availableChats = useSelector((state) => state.chat.availableChats);
 
@@ -21,8 +22,11 @@ const useChatLogic = (open = true) => {
   const [isRecording, setIsRecording] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const skipAutoScrollRef = useRef(false);
 
   const fetchAvailableChats = useCallback(async () => {
     try {
@@ -46,7 +50,13 @@ const useChatLogic = (open = true) => {
       if (response.ok) {
         const data = await response.json();
         if (data.messages && data.messages.length > 0) {
-          dispatch(chatActions.setMessages({ chatId, messages: data.messages }));
+          dispatch(
+            chatActions.setMessages({
+              chatId,
+              messages: data.messages,
+              hasMore: data.hasMore ?? false,
+            }),
+          );
           setShowOptions(false);
         }
       }
@@ -56,6 +66,52 @@ const useChatLogic = (open = true) => {
       dispatch(chatActions.setLoading({ key: 'loadingHistory', value: false }));
     }
   };
+
+  // Fetch the page of messages just before the oldest one currently in memory
+  // (server DB is the source of truth — capped/trimmed messages are still
+  // there) and prepend it, preserving the user's scroll position.
+  const loadOlderMessages = useCallback(async () => {
+    if (!activeChatId || loadingOlderMessages || !hasMoreOlder) return;
+    const oldest = activeConversation?.messages?.[0];
+    if (!oldest) return;
+
+    const container = messagesContainerRef.current;
+    const previousScrollHeight = container?.scrollHeight ?? 0;
+    const previousScrollTop = container?.scrollTop ?? 0;
+
+    setLoadingOlderMessages(true);
+    try {
+      const response = await fetch(
+        `/api/chat/history/${activeChatId}?before=${encodeURIComponent(oldest.timestamp)}&limit=50`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        skipAutoScrollRef.current = true;
+        dispatch(
+          chatActions.prependMessages({
+            chatId: activeChatId,
+            messages: data.messages || [],
+            hasMore: data.hasMore ?? false,
+          }),
+        );
+        requestAnimationFrame(() => {
+          if (container) {
+            container.scrollTop = container.scrollHeight - previousScrollHeight + previousScrollTop;
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading older messages:', error);
+    } finally {
+      setLoadingOlderMessages(false);
+    }
+  }, [activeChatId, activeConversation, loadingOlderMessages, hasMoreOlder, dispatch]);
+
+  const handleMessagesScroll = useCallback(() => {
+    if (messagesContainerRef.current?.scrollTop < 80) {
+      loadOlderMessages();
+    }
+  }, [loadOlderMessages]);
 
   const handleChatChange = async (event) => {
     const newChatId = event.target.value;
@@ -89,6 +145,10 @@ const useChatLogic = (open = true) => {
   };
 
   useEffect(() => {
+    if (skipAutoScrollRef.current) {
+      skipAutoScrollRef.current = false;
+      return;
+    }
     scrollToBottom();
   }, [messages]);
 
@@ -296,15 +356,19 @@ const useChatLogic = (open = true) => {
     activeChatId,
     activeConversation,
     messages,
+    hasMoreOlder,
+    loadingOlderMessages,
     loading,
     availableChats,
     showOptions,
     isRecording,
     deleteDialogOpen,
     messagesEndRef,
+    messagesContainerRef,
     // Handlers
     handleSendMessage,
     handleChatChange,
+    handleMessagesScroll,
     clearChat,
     handleDeleteClick,
     handleDeleteConfirm,

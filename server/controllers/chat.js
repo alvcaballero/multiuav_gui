@@ -48,9 +48,13 @@ export class chatController {
 
   static async getChatHistory(req, res) {
     const { chatId } = req.params;
+    const { limit, before } = req.query;
 
     try {
-      const history = await MessageOrchestrator.getHistory(chatId);
+      const { messages: history, hasMore } = await MessageOrchestrator.getHistory(chatId, {
+        limit: limit ? parseInt(limit, 10) : undefined,
+        before: before || null,
+      });
 
       // Transform history to client format, excluding system messages
       const messages = history
@@ -61,7 +65,7 @@ export class chatController {
           timestamp: msg.timestamp || new Date().toISOString(),
         }));
 
-      res.json({ chatId, messages, count: messages.length });
+      res.json({ chatId, messages, count: messages.length, hasMore });
     } catch (error) {
       logger.error('Error getting chat history:', error);
       res.status(500).json({ error: error.message });

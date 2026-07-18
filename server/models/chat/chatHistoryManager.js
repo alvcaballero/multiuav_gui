@@ -196,27 +196,30 @@ export class ChatHistoryManager {
    * Load conversation history from database
    * @param {string} chatId - Chat identifier
    * @param {object} options - Pagination options
-   * @returns {Promise<Array>} Array of messages in internal format
+   * @param {number} options.limit - Max rows to return
+   * @param {number} options.offset - Rows to skip (ignored when `before` is set)
+   * @param {boolean} options.all - Include hidden messages (true) or only visible ones (false)
+   * @param {string|null} options.before - ISO timestamp cursor; only messages strictly older than this are returned
+   * @param {'ASC'|'DESC'} options.order - DB sort order. Result is always returned chronologically ascending regardless.
+   * @returns {Promise<Array>} Array of messages in internal format, oldest first
    */
-  static async loadHistory(chatId, { limit = 100, offset = 0, all = false } = {}) {
-    let messages = [];
-    if (all) {
-      messages = await sequelize.models.ChatMessage.findAll({
-        where: { chatId },
-        order: [['timestamp', 'ASC']],
-        limit,
-        offset,
-      });
-    } else {
-      messages = await sequelize.models.ChatMessage.findAll({
-        where: { chatId, hidden: false },
-        order: [['timestamp', 'ASC']],
-        limit,
-        offset,
-      });
-    }
+  static async loadHistory(chatId, { limit = 100, offset = 0, all = false, before = null, order = 'ASC' } = {}) {
+    const where = { chatId };
+    if (!all) where.hidden = false;
+    if (before) where.timestamp = { [Op.lt]: new Date(before) };
 
-    return messages.map((msg) => ({
+    const messages = await sequelize.models.ChatMessage.findAll({
+      where,
+      order: [['timestamp', order]],
+      limit,
+      offset,
+    });
+
+    // DB may be queried newest-first (for "most recent N" / "N before cursor"
+    // pagination) but callers always get chronological order back.
+    const ordered = order === 'DESC' ? messages.slice().reverse() : messages;
+
+    return ordered.map((msg) => ({
       chatId: msg.chatId,
       from: msg.from,
       timestamp: msg.timestamp.toISOString(),
