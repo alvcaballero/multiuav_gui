@@ -4,13 +4,19 @@ import svgr from 'vite-plugin-svgr';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => ({
   server: {
     port: 3000,
     proxy: {
       '/api/socket': 'ws://localhost:4000',
       '/api': 'http://localhost:4000',
     },
+  },
+  define: {
+    // Some deps (e.g. react-draggable, used by react-rnd) read
+    // process.env.NODE_ENV directly; Vite doesn't polyfill `process` in the
+    // browser, so without this it throws ReferenceError: process is not defined.
+    'process.env.NODE_ENV': JSON.stringify(mode),
   },
   build: {
     outDir: 'build',
