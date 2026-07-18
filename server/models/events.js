@@ -1,7 +1,6 @@
 import { positionsController } from '../controllers/positions.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import { getDatetime } from '../common/utils.js';
 import { logger } from '../common/logger.js';
 
 /**
@@ -9,9 +8,9 @@ import { logger } from '../common/logger.js';
  * @property {integer} id
  * @property {string} type
  * @property {integer} deviceId
- * @property {Array<number>} positionid
- * @property {string} attributes
- * @property {string} createdAt - date-time create by DB
+ * @property {Array<number>} positionId
+ * @property {object} attributes
+ * @property {string} eventTime - date-time, defaults to DB NOW() when omitted
  */
 
 export class eventsModel {
@@ -55,7 +54,7 @@ export class eventsModel {
     }
     let myEvent = await sequelize.models.Event.create({
       type: type,
-      eventTime: eventTime || getDatetime(),
+      eventTime: eventTime,
       deviceId: device_id,
       positionId: eventPosition2,
       missionId: missionId || null,

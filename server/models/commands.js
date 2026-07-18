@@ -103,7 +103,7 @@ export class commandsModel {
     eventsController.addEvent({
       type: response.state,
       deviceId: deviceId,
-      attributes: { message: response.msg },
+      attributes: { action: type, message: response.msg },
     });
 
     logger.debug(`sendCommand response: ${JSON.stringify(response)}`);

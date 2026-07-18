@@ -25,6 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../shared/formatter';
+import { eventColor } from '../shared/eventStyle';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -91,7 +92,7 @@ const EventsPage = () => {
         </Toolbar>
       </AppBar>
       <div className={classes.content}>
-        <Container maxWidth="sm">
+        <Container maxWidth="md">
           <Paper>
             <TableContainer>
               <Table size="small">
@@ -99,6 +100,7 @@ const EventsPage = () => {
                   <TableRow>
                     <TableCell>UAV</TableCell>
                     <TableCell>Type</TableCell>
+                    <TableCell>Action</TableCell>
                     <TableCell>Time</TableCell>
                     <TableCell>Message</TableCell>
                   </TableRow>
@@ -113,8 +115,13 @@ const EventsPage = () => {
                             : 'GCS'}
                         </TableCell>
                         <TableCell>
-                          <Chip label={event.type} size="small" variant="outlined" />
+                          <Chip
+                            label={event.type}
+                            size="small"
+                            sx={{ backgroundColor: eventColor(event.type), color: '#fff' }}
+                          />
                         </TableCell>
+                        <TableCell>{event.attributes?.action ?? '—'}</TableCell>
                         <TableCell>{formatTime(event.eventTime, 'minutes')}</TableCell>
                         <TableCell>{event.attributes?.message}</TableCell>
                       </TableRow>

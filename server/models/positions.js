@@ -165,7 +165,8 @@ export class positionsModel {
             type: 'warning',
             deviceId: payload.deviceId,
             attributes: {
-              message: 'Threat detected',
+              action: 'Thread',
+              message: 'Detected a threat',
               positions: { latitude: payload.latitude, longitude: payload.longitude, altitude: payload.altitude },
             },
           });
@@ -178,7 +179,8 @@ export class positionsModel {
               type: 'warning',
               deviceId: payload.deviceId,
               attributes: {
-                message: 'Threat confirmed',
+                action: 'Thread',
+                message: 'Confirmed a threat',
                 positions: { latitude: payload.latitude, longitude: payload.longitude, altitude: payload.altitude },
               },
             });

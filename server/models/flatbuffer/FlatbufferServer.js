@@ -127,7 +127,7 @@ export class FlatbufferServer {
     eventsController.addEvent({
       type: response.state,
       deviceId: uav_id,
-      attributes: { message: response.msg },
+      attributes: { action: type, message: response.msg },
     });
   }
 

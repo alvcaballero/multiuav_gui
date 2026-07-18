@@ -364,7 +364,7 @@ export class missionModel {
     eventsController.addEvent({
       type: 'info',
       deviceId: null,
-      attributes: { message: 'Ext APP send task' },
+      attributes: { action: 'RcvTask', message: 'Receive a task and sent to planner.' },
     });
 
     return { response: myTask, status: 'OK' };
@@ -460,7 +460,7 @@ export class missionModel {
       eventsController.addEvent({
         type: 'info',
         deviceId: null,
-        attributes: { message: `Init mission ${missionId}` },
+        attributes: { action: 'initMission', message: `Init mission ${missionId}` },
       });
 
       // Emitir evento al EventBus para que los subscribers lo manejen
@@ -492,7 +492,7 @@ export class missionModel {
     eventsController.addEvent({
       type: 'info',
       deviceId: mydevice.id,
-      attributes: { message: `Finish mission ${mydevice.name}` },
+      attributes: { action: 'SyncFiles', message: `Finish sync files from device${mydevice.name}` },
     });
     missionSMModel.DownloadFiles(mydevice.id);
     return true;
@@ -509,7 +509,7 @@ export class missionModel {
     eventsController.addEvent({
       type: 'info',
       deviceId: mydevice.id,
-      attributes: { message: `Finish mission ${mydevice.name}` },
+      attributes: { action: 'FinishMission', message: `Route complete successfully ${mydevice.name}` },
     });
     missionSMModel.UAVFinishMission(mydevice.id);
     return true;
@@ -527,7 +527,7 @@ export class missionModel {
     eventsController.addEvent({
       type: 'info',
       deviceId: uavId,
-      attributes: { message: `Device end` },
+      attributes: { action: 'MissionComplete', message: `Mission complete for UAV ${uavId}` },
     });
 
     const externalId = await this._resolveExternalId(missionId);
@@ -580,7 +580,7 @@ export class missionModel {
     eventsController.addEvent({
       type: 'info',
       deviceId: uavId,
-      attributes: { message: `device end ` },
+      attributes: { action: 'MissionEnd', message: `Mission ended for UAV ${uavId}` },
     });
     await this.editRoute({ id: routeId, status: ROUTE_STATUS.END, result: attributes, endTime: new Date() });
 
@@ -609,7 +609,7 @@ export class missionModel {
     eventsController.addEvent({
       type: 'info',
       deviceId: null,
-      attributes: { message: `Finish mission ${missionId}` },
+      attributes: { action: 'Mission', message: `Finish process files for mission ${missionId}` },
     });
     const externalId = await this._resolveExternalId(missionId);
     ExtAppController.missionReqMedia(externalId, { code, files: result.files, data: result.data });

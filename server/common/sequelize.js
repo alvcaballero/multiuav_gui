@@ -90,6 +90,47 @@ for (const sql of migrations) {
   }
 }
 
+// Column-type migration: `event.positionId` was declared INTEGER but the app has
+// always stored a [lat, lon, altitude] array in it. SQLite's INTEGER affinity
+// silently stored that as an unparseable comma-joined string (e.g. ",,"), which
+// DataTypes.JSON can't read back. SQLite has no ALTER COLUMN TYPE, so the table is
+// rebuilt; any existing row whose value isn't valid JSON is reset to NULL since the
+// original coordinates were never recoverable. Guarded so it only runs once.
+if (sequelize.getDialect() === 'sqlite') {
+  try {
+    const [[table]] = await sequelize.query(`SELECT sql FROM sqlite_master WHERE type='table' AND name='event'`);
+    if (table?.sql && /`positionId`\s+INTEGER/i.test(table.sql)) {
+      await sequelize.transaction(async (t) => {
+        await sequelize.query(
+          `CREATE TABLE \`event_new\` (
+             \`id\` INTEGER PRIMARY KEY AUTOINCREMENT,
+             \`type\` VARCHAR(255) NOT NULL,
+             \`eventTime\` DATETIME NOT NULL,
+             \`deviceId\` INTEGER REFERENCES \`Devices\` (\`id\`),
+             \`positionId\` JSON,
+             \`missionId\` INTEGER REFERENCES \`Mission\` (\`id\`),
+             \`attributes\` JSON
+           )`,
+          { transaction: t }
+        );
+        await sequelize.query(
+          `INSERT INTO \`event_new\` (id, type, eventTime, deviceId, positionId, missionId, attributes)
+           SELECT id, type, eventTime, deviceId,
+                  CASE WHEN json_valid(positionId) THEN positionId ELSE NULL END,
+                  missionId, attributes
+           FROM \`event\``,
+          { transaction: t }
+        );
+        await sequelize.query('DROP TABLE `event`', { transaction: t });
+        await sequelize.query('ALTER TABLE `event_new` RENAME TO `event`', { transaction: t });
+      });
+      logger.info('Migrated event.positionId column from INTEGER to JSON');
+    }
+  } catch (e) {
+    logger.error('Migration failed: event.positionId column type change', e.message);
+  }
+}
+
 // Data backfill (idempotent via WHERE externalId IS NULL): historical automatic
 // missions stored the external task id AS their primary key. Copy it into the new
 // externalId column so ExtApp callbacks keep addressing them by the external id.

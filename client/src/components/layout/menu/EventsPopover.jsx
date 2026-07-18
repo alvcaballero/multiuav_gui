@@ -1,20 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { grey, red, orange, blue } from '@mui/material/colors';
+import { grey } from '@mui/material/colors';
 import { Box, Button, Divider, Popover, Typography } from '@mui/material';
 import CircleIcon from '@mui/icons-material/Circle';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { makeStyles } from 'tss-react/mui';
-
-const EVENT_COLORS = {
-  error: red[600],
-  warning: orange[700],
-  info: blue[600],
-  default: grey[500],
-};
+import { eventColor } from '../../../shared/eventStyle';
 
 function relativeTime(ts) {
-  const diff = Math.floor((Date.now() - ts) / 1000);
+  const time = new Date(ts).getTime();
+  if (Number.isNaN(time)) return '';
+  const diff = Math.max(0, Math.floor((Date.now() - time) / 1000));
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   return `${Math.floor(diff / 3600)}h ago`;
@@ -35,6 +31,10 @@ const useStyles = makeStyles()(() => ({
     color: grey[800],
     flex: 1,
   },
+  eventSource: {
+    fontWeight: 700,
+    color: grey[900],
+  },
   eventTime: {
     fontSize: '11px',
     color: grey[500],
@@ -48,7 +48,11 @@ const EventsPopover = ({ anchor, onClose }) => {
   const navigate = useNavigate();
 
   const events = useSelector((state) => state.events.items);
+  const devicesMap = useSelector((state) => state.devices.items);
   const recentEvents = events.slice(0, 8);
+
+  const eventSource = (ev) =>
+    ev.deviceId != null ? (devicesMap[ev.deviceId]?.name ?? `Device ${ev.deviceId}`) : 'System';
 
   return (
     <Popover
@@ -99,10 +103,12 @@ const EventsPopover = ({ anchor, onClose }) => {
                   fontSize: 7,
                   mt: '4px',
                   flexShrink: 0,
-                  color: EVENT_COLORS[ev.type] ?? EVENT_COLORS.default,
+                  color: eventColor(ev.type),
                 }}
               />
               <Typography className={classes.eventMsg}>
+                <span className={classes.eventSource}>{eventSource(ev)}: </span>
+                {ev.attributes?.action && <>[{ev.attributes.action}] </>}
                 {ev.attributes?.message ?? ev.type}
               </Typography>
               <Typography className={classes.eventTime}>{relativeTime(ev.eventTime)}</Typography>
