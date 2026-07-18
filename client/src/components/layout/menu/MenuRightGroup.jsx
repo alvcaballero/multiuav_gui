@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { red } from '@mui/material/colors';
 
@@ -164,4 +165,4 @@ const MenuRightGroup = ({
   </div>
 );
 
-export default MenuRightGroup;
+export default memo(MenuRightGroup);

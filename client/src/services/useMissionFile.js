@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { missionActions, activeMissionsActions } from '../store';
 import { readTextFile, parseMissionFile } from './fileService';
@@ -11,16 +12,19 @@ import { readTextFile, parseMissionFile } from './fileService';
 export const useMissionFile = () => {
   const dispatch = useDispatch();
 
-  return (file) => {
-    readTextFile(file, ({ name, data }) => {
-      const result = parseMissionFile({ name, data });
-      if (!result) {
-        alert('Formato de archivo no soportado');
-        return;
-      }
-      dispatch(missionActions.updateMission({ ...result.mission, name: result.name }));
-      // Loading a mission from file replaces the editor — drop any active selection.
-      dispatch(activeMissionsActions.selectMission(null));
-    });
-  };
+  return useCallback(
+    (file) => {
+      readTextFile(file, ({ name, data }) => {
+        const result = parseMissionFile({ name, data });
+        if (!result) {
+          alert('Formato de archivo no soportado');
+          return;
+        }
+        dispatch(missionActions.updateMission({ ...result.mission, name: result.name }));
+        // Loading a mission from file replaces the editor — drop any active selection.
+        dispatch(activeMissionsActions.selectMission(null));
+      });
+    },
+    [dispatch],
+  );
 };

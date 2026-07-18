@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { grey } from '@mui/material/colors';
 import { Box, Tooltip, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -140,4 +141,4 @@ const MenuCenterStatus = ({
   </div>
 );
 
-export default MenuCenterStatus;
+export default memo(MenuCenterStatus);

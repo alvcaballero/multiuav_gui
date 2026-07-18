@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, useStore } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 import { grey, red, orange, green } from '@mui/material/colors';
 
@@ -14,7 +14,7 @@ import {
   commandPauseMission,
   commandResumeMission,
 } from '../../shared/fetchs';
-import { useCatch } from '../../reactHelper';
+import { useCatchCallback } from '../../reactHelper';
 import {
   missionActions,
   activeMissionsActions,
@@ -149,20 +149,19 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-export const Menu = () => {
+const MenuComponent = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const store = useStore();
   const location = useLocation();
   const is3D = location.pathname === '/3Dview';
 
   const handleMissionFile = useMissionFile();
 
-  const mission = useSelector((state) => state.mission);
   const missionName = useSelector((state) => state.mission.name);
   const missionHome = useSelector((state) => state.mission.home);
   const socketState = useSelector((state) => state.session.socket);
-  const devices = useSelector((state) => state.devices.items);
   const activeMissions = useSelector((state) => state.activeMissions.items);
   const selectedMissionId = useSelector((state) => state.activeMissions.selectedMissionId);
   const events = useSelector((state) => state.events.items);
@@ -176,22 +175,34 @@ export const Menu = () => {
   // which would create duplicate Mission/Plan/Route rows server-side and
   // re-send configureMission to the same drones for no reason.
   const [loadingMission, setLoadingMission] = useState(false);
-  const handleLoadMission = useCatch(async () => {
+  const handleLoadMission = useCatchCallback(async () => {
     if (loadingMission) return;
     setLoadingMission(true);
     try {
-      const res = await commandLoadMission(mission);
+      const res = await commandLoadMission(store.getState().mission);
       // Select the created mission so it becomes the one commandMission will command.
       if (res?.missionId != null) dispatch(activeMissionsActions.selectMission(res.missionId));
       return res;
     } finally {
       setLoadingMission(false);
     }
-  });
-  const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
-  const handleStopMission = useCatch(() => commandStopMission(devices));
-  const handlePauseMission = useCatch(() => commandPauseMission(devices));
-  const handleResumeMission = useCatch(() => commandResumeMission(devices));
+  }, [loadingMission, store, dispatch]);
+  const handleCommandMission = useCatchCallback(
+    () => commandMission(commandableMissionId),
+    [commandableMissionId],
+  );
+  const handleStopMission = useCatchCallback(
+    () => commandStopMission(store.getState().devices.items),
+    [store],
+  );
+  const handlePauseMission = useCatchCallback(
+    () => commandPauseMission(store.getState().devices.items),
+    [store],
+  );
+  const handleResumeMission = useCatchCallback(
+    () => commandResumeMission(store.getState().devices.items),
+    [store],
+  );
 
   const LOADED_NAMES = ['Mission no loaded', 'no load mission'];
   const hasMission = Boolean(missionName && !LOADED_NAMES.includes(missionName));
@@ -205,35 +216,35 @@ export const Menu = () => {
   const [eventsLastSeen, setEventsLastSeen] = useState(() => Date.now());
   const unseenErrors = events.filter((e) => e.type === 'error' && e.eventTime > eventsLastSeen);
 
-  const readFile = (e) => handleMissionFile(e.target.files[0]);
+  const readFile = useCallback((e) => handleMissionFile(e.target.files[0]), [handleMissionFile]);
 
-  function goHome() {
+  const goHome = useCallback(() => {
     if (is3D || !map) return;
     map.easeTo({
       center: [defaultLongitude, defaultLatitude],
       zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
-  }
+  }, [is3D, defaultLongitude, defaultLatitude, defaultZoom]);
 
-  function goToMission() {
+  const goToMission = useCallback(() => {
     if (is3D || !map || !missionHome) return;
     map.easeTo({
       center: [missionHome[1], missionHome[0]],
       zoom: Math.max(map.getZoom(), defaultZoom),
       offset: [0, -1 / 2],
     });
-  }
+  }, [is3D, missionHome, defaultZoom]);
 
   // Centra el origen 3D en el centroide de la misión actual antes de abrir la vista 3D,
   // igual que hace el Pegman al soltarse sobre un punto del mapa 2D.
-  function goto3DView() {
-    const centroid = getMissionCentroid(mission.route);
+  const goto3DView = useCallback(() => {
+    const centroid = getMissionCentroid(store.getState().mission.route);
     if (centroid) {
       dispatch(sessionActions.updateScene3dOrigin(centroid));
     }
     navigate('/3Dview');
-  }
+  }, [store, dispatch, navigate]);
 
   const [missionsAnchor, setMissionsAnchor] = useState(null);
   const [eventsAnchor, setEventsAnchor] = useState(null);
@@ -241,10 +252,21 @@ export const Menu = () => {
   const [confirmFly, setConfirmFly] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
-  function openEvents(e) {
+  const openEvents = useCallback((e) => {
     setEventsAnchor(e.currentTarget);
     setEventsLastSeen(Date.now());
-  }
+  }, []);
+
+  const openClearConfirm = useCallback(() => setConfirmClear(true), []);
+  const openMissionDetail = useCallback((e) => setMissionDetailAnchor(e.currentTarget), []);
+  const openFlyConfirm = useCallback(() => setConfirmFly(true), []);
+  const navigateToPlanning = useCallback(() => navigate('/planning'), [navigate]);
+  const navigateToMission = useCallback(() => navigate('/mission'), [navigate]);
+  const toggleView = useCallback(
+    () => (is3D ? navigate('/') : goto3DView()),
+    [is3D, navigate, goto3DView],
+  );
+  const openActiveMissions = useCallback((e) => setMissionsAnchor(e.currentTarget), []);
 
   return (
     <header className={classes.toolbar}>
@@ -255,7 +277,7 @@ export const Menu = () => {
         hasMission={hasMission}
         onGoHome={goHome}
         onOpenFile={readFile}
-        onClearMission={() => setConfirmClear(true)}
+        onClearMission={openClearConfirm}
       />
 
       <MenuCenterStatus
@@ -265,7 +287,7 @@ export const Menu = () => {
         missionName={missionName}
         currentStatus={currentStatus}
         onGoToMission={goToMission}
-        onOpenMissionDetail={(e) => setMissionDetailAnchor(e.currentTarget)}
+        onOpenMissionDetail={openMissionDetail}
       />
 
       <MenuRightGroup
@@ -276,14 +298,14 @@ export const Menu = () => {
         isRunning={isRunning}
         unseenErrorsCount={unseenErrors.length}
         onLoadMission={handleLoadMission}
-        onRequestFly={() => setConfirmFly(true)}
+        onRequestFly={openFlyConfirm}
         onPauseMission={handlePauseMission}
         onResumeMission={handleResumeMission}
         onStopMission={handleStopMission}
-        onNavigatePlanning={() => navigate('/planning')}
-        onNavigateMission={() => navigate('/mission')}
-        onToggleView={() => (is3D ? navigate('/') : goto3DView())}
-        onOpenActiveMissions={(e) => setMissionsAnchor(e.currentTarget)}
+        onNavigatePlanning={navigateToPlanning}
+        onNavigateMission={navigateToMission}
+        onToggleView={toggleView}
+        onOpenActiveMissions={openActiveMissions}
         onOpenEvents={openEvents}
       />
 
@@ -291,7 +313,7 @@ export const Menu = () => {
       <MissionDetailPopover
         anchor={missionDetailAnchor}
         onClose={() => setMissionDetailAnchor(null)}
-        onClear={() => setConfirmClear(true)}
+        onClear={openClearConfirm}
       />
       <ActiveMissionsPopover anchor={missionsAnchor} onClose={() => setMissionsAnchor(null)} />
       <EventsPopover anchor={eventsAnchor} onClose={() => setEventsAnchor(null)} />
@@ -316,3 +338,5 @@ export const Menu = () => {
     </header>
   );
 };
+
+export const Menu = memo(MenuComponent);

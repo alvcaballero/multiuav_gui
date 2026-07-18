@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useSelector } from 'react-redux';
 import { green, red } from '@mui/material/colors';
 import { Chip, IconButton, Tooltip } from '@mui/material';
@@ -104,4 +105,4 @@ const MenuLeftGroup = ({
   );
 };
 
-export default MenuLeftGroup;
+export default memo(MenuLeftGroup);
