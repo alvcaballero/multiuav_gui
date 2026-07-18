@@ -25,7 +25,9 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
   const routePoints = `${id}-points`;
   const clusters = `${id}-points-clusters`;
   //const routes = useSelector((state) => state.mission.route);
-  const devices = useSelector((state) => state.devices.items);
+  const filteredDeviceName = useSelector((state) =>
+    filteredDeviceId >= 0 ? state.devices.items[filteredDeviceId]?.name : null,
+  );
 
   const mapCluster = true;
   const iconScale = 0.6;
@@ -153,10 +155,8 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
     }
     const myRoutes = cleanRoute(routes);
     const routerFiltered = myRoutes.filter(
-      (route) => filteredDeviceId < 0 || route.uav === devices[filteredDeviceId].name,
+      (route) => filteredDeviceId < 0 || route.uav === filteredDeviceName,
     );
-    console.log('mission filtered');
-    console.log(routerFiltered);
     const waypointPosition = routeTowaypoints(routerFiltered);
 
     map.getSource(routePoints).setData({
@@ -175,7 +175,7 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
       type: 'FeatureCollection',
       features: routerFiltered.map((route) => routesToFeature(route)),
     });
-  }, [routes, devices, filteredDeviceId, id, routePoints]);
+  }, [routes, filteredDeviceName, filteredDeviceId, id, routePoints]);
 
   useEffect(() => {
     console.log('render');

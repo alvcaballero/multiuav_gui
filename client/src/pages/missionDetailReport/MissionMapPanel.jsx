@@ -68,7 +68,7 @@ const MissionMapPanel = ({
       </Typography>
       <div style={{ width: '100%', height: '500px', position: 'relative' }}>
         <MapView>
-          <MapMissions filtereddeviceid={-1} routes={routePath} />
+          <MapMissions filteredDeviceId={-1} routes={routePath} />
           <MapMarkers markers={missionMarkers} />
         </MapView>
         <Paper square elevation={3} className={classes.missionMapOverlay}>

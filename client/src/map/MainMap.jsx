@@ -38,7 +38,7 @@ const MainMap = ({
     <>
       <MapView>
         <MapMarkers markers={markers} showTitles={true} />
-        <MapMissions filtereddeviceid={filteredMissiondeviceid} routes={routes} />
+        <MapMissions filteredDeviceId={filteredMissiondeviceid} routes={routes} />
         <MapObstacles />
         <MapElements />
         <MapGeofence />
