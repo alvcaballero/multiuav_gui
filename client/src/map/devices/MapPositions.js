@@ -161,6 +161,8 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
       layout: {
         'icon-image': 'mission-{missionColor}',
         'icon-size': iconScale,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
       },
     });
 
