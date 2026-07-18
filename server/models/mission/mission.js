@@ -189,7 +189,7 @@ export class missionModel {
     if (errorMessage != null) myRoute.errorMessage = errorMessage;
     await myRoute.save();
 
-    if (status === ROUTE_STATUS.COMPLETED) this._checkMissionComplete(missionId);
+    if (status === ROUTE_STATUS.COMPLETED) this._checkMissionComplete(myRoute.missionId);
     return myRoute;
   }
 
