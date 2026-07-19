@@ -21,6 +21,7 @@ const MenuRightGroup = ({
   loadingMission,
   isRunning,
   unseenErrorsCount,
+  unseenMissionsCount,
   onLoadMission,
   onRequestFly,
   onPauseMission,
@@ -129,9 +130,31 @@ const MenuRightGroup = ({
 
     <div className={classes.vDivider} />
 
-    <Tooltip title="Active missions" placement="bottom">
-      <IconButton className={classes.iconBtn} size="small" onClick={onOpenActiveMissions}>
+    <Tooltip
+      title={unseenMissionsCount ? `${unseenMissionsCount} new mission(s)` : 'Active missions'}
+      placement="bottom"
+    >
+      <IconButton
+        className={classes.iconBtn}
+        size="small"
+        onClick={onOpenActiveMissions}
+        sx={{ position: 'relative' }}
+      >
         <AssignmentIcon sx={{ fontSize: 17 }} />
+        {unseenMissionsCount > 0 && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 3,
+              right: 3,
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              backgroundColor: red[500],
+              border: '1.5px solid #e4e7ec',
+            }}
+          />
+        )}
       </IconButton>
     </Tooltip>
 

@@ -1,16 +1,70 @@
 import React from 'react';
 import {
+  Chip,
   Divider,
   Grid,
   ImageList,
   ImageListItem,
   ImageListItemBar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { isImageFile, isVideoFile } from './fileKind';
+import { formatTime } from '../../shared/formatter';
+import { eventColor } from '../../shared/eventStyle';
 
 const ROUTE_ITEMS = 'id,initTime,endTime,status,deviceId,result';
+
+// Events carry deviceId + eventTime but no routeId, so a route's events are
+// whatever that device logged while the route was running (endTime unset ⇒ still running).
+const routeEvents = (events, route) => {
+  const start = new Date(route.initTime).getTime();
+  const end = route.endTime ? new Date(route.endTime).getTime() : Date.now();
+  return (events ?? [])
+    .filter((event) => event.deviceId === route.deviceId)
+    .filter((event) => {
+      const time = new Date(event.eventTime).getTime();
+      return time >= start && time <= end;
+    })
+    .sort((a, b) => new Date(a.eventTime) - new Date(b.eventTime));
+};
+
+const RouteEvents = ({ items }) => (
+  <TableContainer>
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          <TableCell>Type</TableCell>
+          <TableCell>Action</TableCell>
+          <TableCell>Time</TableCell>
+          <TableCell>Message</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {items.map((event) => (
+          <TableRow key={event.id} hover>
+            <TableCell>
+              <Chip
+                label={event.type}
+                size="small"
+                sx={{ backgroundColor: eventColor(event.type), color: '#fff' }}
+              />
+            </TableCell>
+            <TableCell>{event.attributes?.action ?? '—'}</TableCell>
+            <TableCell>{formatTime(event.eventTime, 'minutes')}</TableCell>
+            <TableCell>{event.attributes?.message}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </TableContainer>
+);
 
 const fileButtonStyle = {
   display: 'block',
@@ -58,12 +112,13 @@ const FileGrid = ({ items, onSelectFile }) => (
   </ImageList>
 );
 
-const MissionRoutesSection = ({ routes, files, formatValue, onSelectFile }) => (
+const MissionRoutesSection = ({ routes, files, events, formatValue, onSelectFile }) => (
   <>
     {routes.map((route, routeIndex) => {
       const routeFiles = (files ?? []).filter((item) => item && item.routeId == route.id);
       const images = routeFiles.filter((item) => isImageFile(item.name));
       const videos = routeFiles.filter((item) => isVideoFile(item.name));
+      const items = routeEvents(events, route);
 
       return (
         <div key={`rt${routeIndex}`}>
@@ -87,6 +142,15 @@ const MissionRoutesSection = ({ routes, files, formatValue, onSelectFile }) => (
                 </Grid>
               ))}
           </Grid>
+
+          {items.length > 0 && (
+            <>
+              <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
+                {`Eventos (${items.length})`}
+              </Typography>
+              <RouteEvents items={items} />
+            </>
+          )}
 
           {images.length > 0 && (
             <>

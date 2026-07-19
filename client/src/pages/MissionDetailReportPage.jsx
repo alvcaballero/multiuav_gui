@@ -66,6 +66,7 @@ const MissionDetailReportPage = () => {
 
   const [files, setFiles] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
+  const [events, setEvents] = useState(null);
 
   const routePath = missions?.mission?.route ?? null;
 
@@ -147,8 +148,9 @@ const MissionDetailReportPage = () => {
       throw Error(await response.text());
     }
     const response2 = await fetch(`/api/missions/routes?missionId=${id}`);
+    let myroutes = [];
     if (response2.ok) {
-      const myroutes = await response2.json();
+      myroutes = await response2.json();
       setRoutes(myroutes);
       console.log(myroutes);
     } else {
@@ -161,6 +163,28 @@ const MissionDetailReportPage = () => {
       console.log(myfiles);
     } else {
       throw Error(await response.text());
+    }
+
+    // Events carry no routeId of their own, only deviceId + eventTime, so we
+    // fetch every event across the mission's full time span once here and let
+    // MissionRoutesSection narrow it down per route (deviceId + time window).
+    const initTimes = myroutes
+      .map((route) => new Date(route.initTime).getTime())
+      .filter((time) => !Number.isNaN(time));
+    if (initTimes.length > 0) {
+      const endTimes = myroutes
+        .map((route) => (route.endTime ? new Date(route.endTime).getTime() : Date.now()))
+        .filter((time) => !Number.isNaN(time));
+      const params = new URLSearchParams({
+        from: new Date(Math.min(...initTimes)).toISOString(),
+        to: new Date(Math.max(...endTimes)).toISOString(),
+      });
+      const response4 = await fetch(`/api/events?${params}`);
+      if (response4.ok) {
+        setEvents(await response4.json());
+      } else {
+        throw Error(await response4.text());
+      }
     }
   }, [id]);
 
@@ -213,6 +237,7 @@ const MissionDetailReportPage = () => {
               <MissionRoutesSection
                 routes={routes}
                 files={files}
+                events={events}
                 formatValue={formatValue}
                 onSelectFile={setSelectFile}
               />

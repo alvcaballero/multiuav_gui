@@ -90,13 +90,16 @@ for (const sql of migrations) {
   }
 }
 
-// Column-type migration: `event.positionId` was declared INTEGER but the app has
-// always stored a [lat, lon, altitude] array in it. SQLite's INTEGER affinity
-// silently stored that as an unparseable comma-joined string (e.g. ",,"), which
-// DataTypes.JSON can't read back. SQLite has no ALTER COLUMN TYPE, so the table is
-// rebuilt; any existing row whose value isn't valid JSON is reset to NULL since the
-// original coordinates were never recoverable. Guarded so it only runs once.
+// SQLite has no ALTER TABLE ... ALTER COLUMN / ALTER CONSTRAINT, so column-type
+// and FK-reference fixes below rebuild the table (create the corrected shape,
+// copy data across, drop the old table, rename). Each is guarded on the stale
+// on-disk DDL so it only runs once.
 if (sequelize.getDialect() === 'sqlite') {
+  // `event.positionId` was declared INTEGER but the app has always stored a
+  // [lat, lon, altitude] array in it. SQLite's INTEGER affinity silently stored
+  // that as an unparseable comma-joined string (e.g. ",,"), which DataTypes.JSON
+  // can't read back. Any existing row whose value isn't valid JSON is reset to
+  // NULL since the original coordinates were never recoverable.
   try {
     const [[table]] = await sequelize.query(`SELECT sql FROM sqlite_master WHERE type='table' AND name='event'`);
     if (table?.sql && /`positionId`\s+INTEGER/i.test(table.sql)) {
@@ -128,6 +131,48 @@ if (sequelize.getDialect() === 'sqlite') {
     }
   } catch (e) {
     logger.error('Migration failed: event.positionId column type change', e.message);
+  }
+
+  // `File.routeId`'s FK was left pointing at the legacy `Route` table (pre-rename
+  // to `MissionRoute`), which is now empty/orphaned — so every insert with a
+  // non-null routeId permanently fails its FK check and addFile()'s try/catch
+  // silently swallows it (files download from the UAV via SFTP but are never
+  // recorded in the DB).
+  try {
+    const [[table]] = await sequelize.query(`SELECT sql FROM sqlite_master WHERE type='table' AND name='File'`);
+    if (table?.sql && /REFERENCES\s+`Route`\s*\(/i.test(table.sql)) {
+      await sequelize.transaction(async (t) => {
+        await sequelize.query(
+          `CREATE TABLE \`File_new\` (
+             \`id\` INTEGER PRIMARY KEY AUTOINCREMENT,
+             \`name\` VARCHAR(255) NOT NULL,
+             \`routeId\` INTEGER REFERENCES \`MissionRoute\` (\`id\`),
+             \`missionId\` INTEGER REFERENCES \`Mission\` (\`id\`),
+             \`deviceId\` INTEGER REFERENCES \`Devices\` (\`id\`),
+             \`status\` INTEGER NOT NULL DEFAULT 0,
+             \`type\` VARCHAR(255),
+             \`path\` VARCHAR(255),
+             \`path2\` VARCHAR(255),
+             \`source\` JSON,
+             \`date\` DATETIME NOT NULL,
+             \`attributes\` JSON,
+             errorMessage TEXT DEFAULT NULL
+           )`,
+          { transaction: t }
+        );
+        await sequelize.query(
+          `INSERT INTO \`File_new\` (id, name, routeId, missionId, deviceId, status, type, path, path2, source, date, attributes, errorMessage)
+           SELECT id, name, routeId, missionId, deviceId, status, type, path, path2, source, date, attributes, errorMessage
+           FROM \`File\``,
+          { transaction: t }
+        );
+        await sequelize.query('DROP TABLE `File`', { transaction: t });
+        await sequelize.query('ALTER TABLE `File_new` RENAME TO `File`', { transaction: t });
+      });
+      logger.info('Migrated File.routeId foreign key from legacy Route table to MissionRoute');
+    }
+  } catch (e) {
+    logger.error('Migration failed: File.routeId FK reference change', e.message);
   }
 }
 

@@ -214,7 +214,14 @@ const MenuComponent = () => {
   const isRunning = currentStatus === 'running';
 
   const [eventsLastSeen, setEventsLastSeen] = useState(() => Date.now());
-  const unseenErrors = events.filter((e) => e.type === 'error' && e.eventTime > eventsLastSeen);
+  const unseenErrors = events.filter(
+    (e) => e.type === 'error' && new Date(e.eventTime).getTime() > eventsLastSeen,
+  );
+
+  const [missionsLastSeen, setMissionsLastSeen] = useState(() => Date.now());
+  const unseenMissions = Object.values(activeMissions).filter(
+    (m) => m.initTime && new Date(m.initTime).getTime() > missionsLastSeen,
+  );
 
   const readFile = useCallback((e) => handleMissionFile(e.target.files[0]), [handleMissionFile]);
 
@@ -266,7 +273,10 @@ const MenuComponent = () => {
     () => (is3D ? navigate('/') : goto3DView()),
     [is3D, navigate, goto3DView],
   );
-  const openActiveMissions = useCallback((e) => setMissionsAnchor(e.currentTarget), []);
+  const openActiveMissions = useCallback((e) => {
+    setMissionsAnchor(e.currentTarget);
+    setMissionsLastSeen(Date.now());
+  }, []);
 
   return (
     <header className={classes.toolbar}>
@@ -297,6 +307,7 @@ const MenuComponent = () => {
         loadingMission={loadingMission}
         isRunning={isRunning}
         unseenErrorsCount={unseenErrors.length}
+        unseenMissionsCount={unseenMissions.length}
         onLoadMission={handleLoadMission}
         onRequestFly={openFlyConfirm}
         onPauseMission={handlePauseMission}
