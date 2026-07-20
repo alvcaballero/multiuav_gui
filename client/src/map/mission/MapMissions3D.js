@@ -12,6 +12,7 @@ import palette from '../../shared/palette';
 
 const modelOrigin = [-6.485616, 37.144592];
 const modelRotate = [Math.PI / 2, 0, 0];
+const WAYPOINT_MARKER_SIZE = 3; // meters, billboard diameter for the numbered wp marker
 
 function calculateDistanceMercatorToMeters(from, to) {
   const mercatorPerMeter = from.meterInMercatorCoordinateUnits();
@@ -22,6 +23,32 @@ function calculateDistanceMercatorToMeters(from, to) {
   const dNorth = to.y - from.y;
   const dNorthMeter = dNorth / mercatorPerMeter;
   return { dEastMeter, dNorthMeter };
+}
+
+// numbered circle marker for a waypoint, billboard-style (always faces the camera)
+function createWaypointMarker(number, color) {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${Math.round(size * 0.44)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(number), size / 2, size / 2);
+
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false }),
+  );
+  sprite.scale.set(WAYPOINT_MARKER_SIZE, WAYPOINT_MARKER_SIZE, 1);
+  return sprite;
 }
 
 export const MapMissions3D = () => {
@@ -42,59 +69,43 @@ export const MapMissions3D = () => {
     return origen;
   }, [routes]);
 
-  const preparelines = useCallback(() => {
-    let line = [];
+  const prepareAssets = useCallback(() => {
     let origen = null;
     let origen2 = null;
-    let lineVector3 = [];
-    let routeline = [];
-    let routelineVector3 = [];
+    let routeLines = [];
+    let routeWaypoints = [];
 
     routes.map((rt) => {
-      line = [];
-      rt.wp.map((wp) => {
+      let line = [];
+      let waypoints = [];
+      rt.wp.map((wp, index) => {
         if (origen == null) {
-          //origen = latLonToXYZ(wp['pos'][1], wp['pos'][0], 0);
           origen = [wp['pos'][1], wp['pos'][0], 0];
           origen2 = maplibregl.MercatorCoordinate.fromLngLat(
             { lng: wp['pos'][1], lat: wp['pos'][0] },
             0,
           );
-          let test2 = maplibregl.MercatorCoordinate.fromLngLat(
-            { lng: wp['pos'][1], lat: wp['pos'][0] },
-            wp['pos'][2],
-          );
-          let test3 = calculateDistanceMercatorToMeters(origen2, test2);
-          console.log(origen2);
-          console.log(test2);
-          console.log(test3);
         }
         let destino = maplibregl.MercatorCoordinate.fromLngLat(
           { lng: wp['pos'][1], lat: wp['pos'][0] },
           wp['pos'][2],
         );
         let distance = calculateDistanceMercatorToMeters(origen2, destino);
+        let point = [distance.dEastMeter, distance.dNorthMeter, wp['pos'][2] - origen[2]];
 
-        // let destino = latLonToXYZ(wp['pos'][1], wp['pos'][0], wp['pos'][2]);
-        // line.push([destino[0] - origen[0], destino[1] - origen[1], destino[2] - origen[2]]);
-        line.push([distance.dEastMeter, distance.dNorthMeter, wp['pos'][2] - origen[2]]);
+        line.push(point);
+        waypoints.push({ point, number: index + 1 });
       });
-      routeline.push(line);
+      routeLines.push(line);
+      routeWaypoints.push(waypoints);
     });
-    console.log(line);
-    routeline.map((line) => {
-      let mylineVector3 = [];
-      line.map((point) => {
-        mylineVector3.push(new THREE.Vector3(point[0], point[2], point[1]));
-      });
-      routelineVector3.push(new THREE.BufferGeometry().setFromPoints(mylineVector3));
+
+    let routeLineGeometry = routeLines.map((line) => {
+      let points = line.map((point) => new THREE.Vector3(point[0], point[2], point[1]));
+      return new THREE.BufferGeometry().setFromPoints(points);
     });
-    line.map((point) => {
-      lineVector3.push(new THREE.Vector3(point[0], point[2], point[1]));
-    });
-    //setRouteLines(new THREE.BufferGeometry().setFromPoints(lineVector3));
-    //setRouteLines(routelineVector3);
-    return routelineVector3;
+
+    return { lines: routeLineGeometry, waypoints: routeWaypoints };
   }, [routes]);
 
   // configuration of the custom layer for a 3D model per the CustomLayerInterface
@@ -117,15 +128,22 @@ export const MapMissions3D = () => {
         this.scene.add(directionalLight2);
 
         this.map = map;
-        let myrouteLines = preparelines();
-        // do a for bucle to add the lines
-        for (let i = 0; i < myrouteLines.length; i++) {
+        let assets = prepareAssets();
+        // do a for bucle to add the lines and their waypoint markers
+        for (let i = 0; i < assets.lines.length; i++) {
+          let color = palette.colors_devices[i];
           let material = new THREE.LineBasicMaterial({
-            linewidth: 10,
-            color: palette.colors_devices[i],
+            linewidth: 3,
+            color,
           });
-          let myline = new THREE.Line(myrouteLines[i], material);
+          let myline = new THREE.Line(assets.lines[i], material);
           this.scene.add(myline);
+
+          assets.waypoints[i].forEach(({ point, number }) => {
+            let marker = createWaypointMarker(number, color);
+            marker.position.set(point[0], point[2], point[1]);
+            this.scene.add(marker);
+          });
         }
 
         // use the MapLibre GL JS map canvas for three.js
@@ -195,7 +213,7 @@ export const MapMissions3D = () => {
         map.triggerRepaint();
       },
     }),
-    [getOrigin, preparelines],
+    [getOrigin, prepareAssets],
   );
 
   useEffect(() => {
