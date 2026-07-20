@@ -112,11 +112,14 @@ const SocketController = () => {
       if (data.chatCreated) {
         dispatch(chatActions.setActiveChat(data.chatCreated.chatId));
       }
-      if (data.missionProgress) {
-        const { missionId } = data.missionProgress;
+      if (data.missionUpdated) {
+        dispatch(activeMissionsActions.upsertMission(data.missionUpdated));
+      }
+      if (data.routeUpdated) {
+        const { missionId } = data.routeUpdated;
         const known = store.getState().activeMissions.items[missionId];
         if (!known) {
-          // Mission arrived before initial fetch or was created after page load — fetch it now
+          // Route arrived before initial fetch or before its missionUpdated — fetch it now
           Promise.all([
             fetch(`/api/missions?id=${missionId}`).then((r) => (r.ok ? r.json() : null)),
             fetch(`/api/missions/routes?missionId=${missionId}`).then((r) =>
@@ -135,10 +138,7 @@ const SocketController = () => {
               );
           });
         }
-        dispatch(activeMissionsActions.updateProgress(data.missionProgress));
-      }
-      if (data.missionCompleted) {
-        dispatch(activeMissionsActions.completeMission(data.missionCompleted));
+        dispatch(activeMissionsActions.upsertRoute(data.routeUpdated));
       }
     };
   };

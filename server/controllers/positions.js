@@ -1,6 +1,6 @@
 import { positionsModel } from '../models/positions/positions.js';
 import { PositionHistoryModel } from '../models/positions/positionHistory.js';
-import { missionWpTracking } from '../models/mission/missionWpTracking.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
 import { logger } from '../common/logger.js';
 
 export class positionsController {
@@ -72,9 +72,9 @@ export class positionsController {
   static updatePosition(payload) {
     positionsModel.updatePosition(payload);
     if (payload?.deviceId !== undefined && payload?.latitude !== undefined) {
-      missionWpTracking
-        .checkProgress(payload.deviceId, payload)
-        .catch((err) => logger.debug(`WpTracking error device=${payload.deviceId}: ${err.message}`));
+      // Raw, per-message signal — mission tracking (or any other interested module)
+      // subscribes independently; this controller doesn't know who's listening.
+      eventBus.emitSafe(EVENTS.POSITION_RECEIVED, payload);
     }
   }
   static updateCamera(payload) {

@@ -19,8 +19,8 @@ const OUTBOUND_MAP = {
   [EVENTS.MISSION_INIT]: (mission) => ({
     mission: { ...mission, name: mission.name || 'name' },
   }),
-  [EVENTS.MISSION_PROGRESS]: (data) => ({ missionProgress: data }),
-  [EVENTS.MISSION_COMPLETED]: (data) => ({ missionCompleted: data }),
+  [EVENTS.MISSION_UPDATED]: (data) => ({ missionUpdated: data }),
+  [EVENTS.ROUTE_UPDATED]: (data) => ({ routeUpdated: data }),
 
   // Telemetría periódica (emitida por el scheduler del websocketController)
   [EVENTS.POSITION_UPDATED]: (positions) =>

@@ -120,17 +120,16 @@ export const eventBus = new EventBus();
 export const EVENTS = Object.freeze({
   // Misiones
   MISSION_CREATED: 'mission:created',
-  MISSION_UPDATED: 'mission:updated',
   MISSION_INIT: 'mission:init',
-  MISSION_STATUS_CHANGED: 'mission:status:changed',
-  MISSION_PROGRESS: 'mission:progress',
-  MISSION_COMPLETED: 'mission:completed',
+  MISSION_UPDATED: 'mission:updated', // Mission DB row created/edited (status, endTime, etc.)
+  ROUTE_UPDATED: 'mission:route:updated', // MissionRoute DB row created/edited (status, currentWp, etc.)
 
   // Eventos del sistema
   EVENT_CREATED: 'event:created',
 
   // Posiciones
-  POSITION_UPDATED: 'position:updated',
+  POSITION_UPDATED: 'position:updated', // Throttled snapshot broadcast to clients (2s scheduler)
+  POSITION_RECEIVED: 'position:received', // Raw per-message signal, internal only (mission tracking)
   CAMERA_UPDATED: 'camera:updated',
   POSITION_HISTORY_WARNING: 'position:history:warning',
 

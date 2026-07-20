@@ -19,6 +19,7 @@ import { setupRoutes } from './routes/index.js';
 import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
 import { eventBus } from './common/eventBus.js';
 import { positionHistorySampler } from './models/positions/index.js';
+import { missionWpTracking } from './models/mission/missionWpTracking.js';
 
 // comunications with devices
 import { initFlatbufferServer } from './models/flatbuffer/index.js';
@@ -91,6 +92,13 @@ positionHistorySampler
     logger.error(`Position history preload/start failed: ${err.message}`);
     positionHistorySampler.start();
   });
+
+// Mission waypoint tracking: subscribes to ROUTE_UPDATED/POSITION_RECEIVED and
+// rehydrates its in-memory tracking registry from routes already in flight (so a
+// server restart mid-mission doesn't strand them untracked).
+missionWpTracking.init().catch((err) => {
+  logger.error(`missionWpTracking init failed: ${err.message}`);
+});
 
 // connect to  devices
 if (RosEnable) {

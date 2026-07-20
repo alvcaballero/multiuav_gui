@@ -76,6 +76,37 @@ export class missionModel {
     return await sequelize.models.MissionRoute.findAll();
   }
 
+  // All routes currently in a trackable state (COMMANDED/RUNNING). Used once at
+  // server startup to bootstrap missionWpTracking's in-memory registry — routes
+  // already in flight when the process restarts need to be picked up without
+  // waiting for their next DB write.
+  static async getActiveRoutes() {
+    return await sequelize.models.MissionRoute.findAll({
+      where: { status: { [Op.in]: [ROUTE_STATUS.COMMANDED, ROUTE_STATUS.RUNNING] } },
+    });
+  }
+
+  // Single emission point for Mission/MissionRoute row changes — called from
+  // create*/edit* right after persisting, so every write path (manual, automatic,
+  // state-machine-driven) notifies clients uniformly and payload shape can't drift.
+  static _emitMissionUpdated(mission) {
+    eventBus.emitSafe(EVENTS.MISSION_UPDATED, mission.get({ plain: true }));
+  }
+
+  // `signals` (anomalies/wpEstimate/confidence) are transient wpTracking diagnostics —
+  // never persisted, just merged into the outbound payload when provided.
+  static _emitRouteUpdated(route, signals = {}) {
+    eventBus.emitSafe(EVENTS.ROUTE_UPDATED, { ...route.get({ plain: true }), ...signals });
+  }
+
+  // Same ROUTE_UPDATED shape as _emitRouteUpdated, but for callers (missionWpTracking's
+  // in-memory registry) that already hold a plain cached route object instead of a
+  // Sequelize instance — lets the "signals only, nothing persisted" path emit without
+  // any DB round-trip.
+  static emitRouteSignals(route, signals = {}) {
+    eventBus.emitSafe(EVENTS.ROUTE_UPDATED, { ...route, ...signals });
+  }
+
   static async broadcastMission(mission) {
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
       return { success: false };
@@ -119,7 +150,7 @@ export class missionModel {
 
     // Single build of the row: externalId defaults to null, so including it always is
     // identical to omitting it for the manual flow — no need for two separate creates.
-    return await sequelize.models.Mission.create({
+    const myMission = await sequelize.models.Mission.create({
       externalId,
       name,
       planId,
@@ -133,10 +164,14 @@ export class missionModel {
       results,
       errorMessage,
     });
+    this._emitMissionUpdated(myMission);
+    return myMission;
   }
 
   static async createRoute(payload) {
-    return await sequelize.models.MissionRoute.create({ ...payload });
+    const myRoute = await sequelize.models.MissionRoute.create({ ...payload });
+    this._emitRouteUpdated(myRoute);
+    return myRoute;
   }
 
   static async editMission({ id, uav, planId, status, initTime, endTime, task, mission, results, errorMessage }) {
@@ -154,23 +189,14 @@ export class missionModel {
     if (results) myMission.results = results;
     if (errorMessage != null) myMission.errorMessage = errorMessage;
     await myMission.save();
+    this._emitMissionUpdated(myMission);
     return myMission;
   }
 
-  static async editRoute({
-    id,
-    deviceId,
-    missionId,
-    status,
-    initTime,
-    endTime,
-    task,
-    mission,
-    result,
-    currentWp,
-    totalWp,
-    errorMessage,
-  }) {
+  static async editRoute(
+    { id, deviceId, missionId, status, initTime, endTime, task, mission, result, currentWp, totalWp, errorMessage },
+    signals = {}
+  ) {
     let myRoute = null;
     if (id) myRoute = await sequelize.models.MissionRoute.findOne({ where: { id: id } });
     if (deviceId && missionId)
@@ -188,6 +214,7 @@ export class missionModel {
     if (totalWp !== undefined) myRoute.totalWp = totalWp;
     if (errorMessage != null) myRoute.errorMessage = errorMessage;
     await myRoute.save();
+    this._emitRouteUpdated(myRoute, signals);
 
     if (status === ROUTE_STATUS.COMPLETED) this._checkMissionComplete(myRoute.missionId);
     return myRoute;
@@ -206,9 +233,9 @@ export class missionModel {
     if (!active.every((r) => r.status === ROUTE_STATUS.COMPLETED)) return;
 
     const status = hasErrors ? MISSION_STATUS.COMPLETED_WITH_ERRORS : MISSION_STATUS.COMPLETED;
-    this.editMission({ id: missionId, status, endTime: new Date() });
+    // editMission() emits MISSION_UPDATED with the final status — no separate event needed.
+    await this.editMission({ id: missionId, status, endTime: new Date() });
     logger.info(`WpTracking: Mission ${missionId} finished status=${status} (errors=${hasErrors})`);
-    eventBus.emitSafe(EVENTS.MISSION_COMPLETED, { missionId, status });
   }
 
   static async decodeTask({ id, name, objetivo, locations, meteo }) {
@@ -768,26 +795,6 @@ export class missionModel {
       await this.editMission({ id: mission.id, status: finalStatus, errorMessage: 'Ninguna ruta se pudo cargar' });
     }
 
-    // The client only discovers new missions via the initial REST fetch or by
-    // seeing a missionProgress for an unknown missionId (SocketController auto-
-    // fetches it then). Emit one now so ActiveMissionsPopover picks up the mission
-    // right after load, without waiting for a page refresh.
-    for (const { deviceId, state } of results) {
-      if (deviceId == null) continue;
-      eventBus.emitSafe(EVENTS.MISSION_PROGRESS, {
-        missionId: mission.id,
-        deviceId,
-        currentWp: 0,
-        totalWp: routeDevices.find((rd) => rd.device?.id === deviceId)?.route.wp?.length ?? 0,
-        completed: false,
-        anomalies: [],
-        wpEstimate: null,
-        confidence: null,
-        missionStatus: finalStatus,
-        routeStatus: state === 'error' ? ROUTE_STATUS.ERROR : ROUTE_STATUS.LOADED,
-      });
-    }
-
     logger.info(`loadMissionManual finished mission=${mission.id} anyLoaded=${anyLoaded}`);
     return { missionId: mission.id, planId: plan.id, results };
   }
@@ -836,25 +843,6 @@ export class missionModel {
       await this.editMission({ id: missionId, status: finalStatus, errorMessage: 'Ninguna ruta se pudo comandar' });
     }
 
-    // Nudge the client so ActiveMissionsPopover reflects the new mission/route
-    // status right away (see loadMissionManual for why this is needed).
-    for (const route of routeList) {
-      const result = results.find((r) => r.deviceId === route.deviceId);
-      if (!result || result.state === 'warning') continue;
-      eventBus.emitSafe(EVENTS.MISSION_PROGRESS, {
-        missionId,
-        deviceId: route.deviceId,
-        currentWp: route.currentWp ?? 0,
-        totalWp: route.totalWp ?? 0,
-        completed: false,
-        anomalies: [],
-        wpEstimate: null,
-        confidence: null,
-        missionStatus: finalStatus,
-        routeStatus: result.state === 'error' ? route.status : ROUTE_STATUS.COMMANDED,
-      });
-    }
-
     logger.info(`commandMissionManual finished mission=${missionId} anyCommanded=${anyCommanded}`);
     return { missionId, results };
   }
@@ -879,28 +867,12 @@ export class missionModel {
       await this.editMission({ id: stale.id, status: MISSION_STATUS.CANCELLED });
       const routes = await this.getRoutes({ missionId: stale.id });
       const routeList = Array.isArray(routes) ? routes : Object.values(routes ?? {});
-      await sequelize.models.MissionRoute.update(
-        { status: ROUTE_STATUS.CANCELLED },
-        { where: { missionId: stale.id } }
-      );
-      logger.info(`_cancelStaleInitMissions: cancelled stale mission=${stale.id} (device overlap with new load)`);
-
-      // Nudge the client so ActiveMissionsPopover drops/updates the stale mission
-      // instead of showing it stuck in 'init' (same reasoning as loadMissionManual).
+      // Per-route edit (not a bulk update) so each row goes through editRoute()
+      // and emits ROUTE_UPDATED — stale-route volume is low, consistency wins.
       for (const route of routeList) {
-        eventBus.emitSafe(EVENTS.MISSION_PROGRESS, {
-          missionId: stale.id,
-          deviceId: route.deviceId,
-          currentWp: route.currentWp ?? 0,
-          totalWp: route.totalWp ?? 0,
-          completed: false,
-          anomalies: [],
-          wpEstimate: null,
-          confidence: null,
-          missionStatus: MISSION_STATUS.CANCELLED,
-          routeStatus: ROUTE_STATUS.CANCELLED,
-        });
+        await this.editRoute({ id: route.id, status: ROUTE_STATUS.CANCELLED });
       }
+      logger.info(`_cancelStaleInitMissions: cancelled stale mission=${stale.id} (device overlap with new load)`);
     }
   }
 

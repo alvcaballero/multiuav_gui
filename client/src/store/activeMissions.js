@@ -1,8 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// status values mirror server MISSION_STATUS / ROUTE_STATUS constants
-// Mission: 'init' | 'running' | 'completed'
-// Route:   'init' | 'commanded' | 'running' | 'completed'
+// status values mirror server MISSION_STATUS / ROUTE_STATUS constants exactly
+// (see server/config/status.js) — always the raw server string, never derived here.
+// Mission: init | planning | running | finish | finish_errors | done | cancelled | error
+// Route:   init | loaded | commanded | running | complete | end | cancelled | error
 
 const { reducer: activeMissionsReducer, actions: activeMissionsActions } = createSlice({
   name: 'activeMissions',
@@ -56,74 +57,48 @@ const { reducer: activeMissionsReducer, actions: activeMissionsActions } = creat
       };
     },
 
-    updateProgress(state, action) {
-      // From WS missionProgress: { missionId, deviceId, currentWp, totalWp, completed,
-      // anomalies, wpEstimate, confidence, missionStatus?, routeStatus? }.
-      // missionStatus/routeStatus are optional and carry the real server status (e.g.
-      // 'init'/'loaded' right after a manual load) — default to 'running' for the
-      // in-flight progress updates, which don't send them.
+    upsertRoute(state, action) {
+      // From WS routeUpdated: the MissionRoute DB row as-is — { missionId, deviceId,
+      // status, currentWp, totalWp, anomalies?, wpEstimate?, confidence?, ... }.
+      // status is always the real server ROUTE_STATUS value; no derivation needed here.
       const {
         missionId,
         deviceId,
         currentWp,
         totalWp,
+        status,
         anomalies = [],
         wpEstimate = null,
         confidence = null,
-        missionStatus,
-        routeStatus,
       } = action.payload;
       const mission = state.items[missionId];
-      // If mission is unknown, create a placeholder — SocketController will fetch full data
+      // If mission is unknown, create a placeholder — SocketController will fetch full data.
+      // Its own status isn't known yet (that arrives via a separate missionUpdated event);
+      // MISSION_UPDATED is emitted before ROUTE_UPDATED for a brand new mission, so this
+      // is only a fallback for a route arriving out of order.
       if (!mission) {
         state.items[missionId] = {
           id: missionId,
           name: `Mission ${missionId}`,
-          status: missionStatus ?? 'running',
+          status: 'running',
           uav: [],
           initTime: null,
           endTime: null,
           routes: {
-            [deviceId]: {
-              deviceId,
-              status: routeStatus ?? 'running',
-              currentWp,
-              totalWp,
-              anomalies,
-              wpEstimate,
-              confidence,
-            },
+            [deviceId]: { deviceId, status, currentWp, totalWp, anomalies, wpEstimate, confidence },
           },
         };
         return;
       }
-      if (!mission.routes[deviceId]) {
-        mission.routes[deviceId] = {
-          deviceId,
-          status: routeStatus ?? 'running',
-          currentWp,
-          totalWp,
-          anomalies,
-          wpEstimate,
-          confidence,
-        };
-      } else {
-        mission.routes[deviceId].currentWp = currentWp;
-        mission.routes[deviceId].totalWp = totalWp;
-        mission.routes[deviceId].status =
-          routeStatus ?? (action.payload.completed ? 'completed' : 'running');
-        mission.routes[deviceId].anomalies = anomalies;
-        mission.routes[deviceId].wpEstimate = wpEstimate;
-        mission.routes[deviceId].confidence = confidence;
-      }
-      mission.status = missionStatus ?? 'running';
-    },
-
-    completeMission(state, action) {
-      // From WS missionCompleted: { missionId, status? }. status carries the real
-      // server value ('finish' | 'finish_errors'); default to 'completed' if absent.
-      const mission = state.items[action.payload.missionId];
-      if (mission) mission.status = action.payload.status ?? 'completed';
+      mission.routes[deviceId] = {
+        deviceId,
+        status,
+        currentWp,
+        totalWp,
+        anomalies,
+        wpEstimate,
+        confidence,
+      };
     },
 
     selectMission(state, action) {
