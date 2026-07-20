@@ -67,6 +67,7 @@ const MissionDetailReportPage = () => {
   const [files, setFiles] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
   const [events, setEvents] = useState(null);
+  const [positions, setPositions] = useState(null);
 
   const routePath = missions?.mission?.route ?? null;
 
@@ -99,6 +100,34 @@ const MissionDetailReportPage = () => {
       : [];
     return { bases: myBases, elements: myElements };
   }, [missions]);
+
+  // The actually-flown path, one track per route: recorded positions for that
+  // route's device within its [initTime, endTime] window, kept with their
+  // fixTime so the playback slider can scrub through them.
+  const routeTracks = useMemo(() => {
+    if (!routes || !positions) return [];
+    return routes
+      .map((route, routeIndex) => {
+        const start = new Date(route.initTime).getTime();
+        const end = route.endTime ? new Date(route.endTime).getTime() : Date.now();
+        const trackPositions = positions
+          .filter((position) => position.deviceId === route.deviceId)
+          .filter((position) => position.longitude != null && position.latitude != null)
+          .filter((position) => {
+            const time = new Date(position.fixTime).getTime();
+            return time >= start && time <= end;
+          })
+          .sort((a, b) => new Date(a.fixTime) - new Date(b.fixTime));
+        return {
+          id: route.id ?? routeIndex,
+          deviceId: route.deviceId,
+          startTime: start,
+          endTime: end,
+          positions: trackPositions,
+        };
+      })
+      .filter((track) => track.positions.length > 1);
+  }, [routes, positions]);
 
   const devices = useSelector((state) => state.devices.items);
 
@@ -185,6 +214,15 @@ const MissionDetailReportPage = () => {
       } else {
         throw Error(await response4.text());
       }
+
+      // Positions carry no routeId either — same window, narrowed per route
+      // (deviceId + time window) once here, similar to events above.
+      const response5 = await fetch(`/api/positions?${params}`);
+      if (response5.ok) {
+        setPositions(await response5.json());
+      } else {
+        throw Error(await response5.text());
+      }
     }
   }, [id]);
 
@@ -242,12 +280,13 @@ const MissionDetailReportPage = () => {
                 onSelectFile={setSelectFile}
               />
             )}
-            {dataMission && (
+            {missions && (
               <MissionMapPanel
                 classes={classes}
                 missions={missions}
                 routePath={routePath}
                 missionMarkers={missionMarkers}
+                routeTracks={routeTracks}
                 dataMission={dataMission}
                 dataParam={dataParam}
                 tabValue={tabValue}
