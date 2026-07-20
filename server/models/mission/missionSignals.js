@@ -15,18 +15,9 @@
  *   'DISARMED'    — UAV disarmed mid-mission
  */
 
-import { positionsModel } from '../positions.js';
+import { positionsModel } from '../positions/positions.js';
 import { missionLogger as logger } from '../../common/logger.js';
-
-const DEG_TO_RAD = Math.PI / 180;
-function haversineMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * DEG_TO_RAD;
-  const dLon = (lon2 - lon1) * DEG_TO_RAD;
-  const a =
-    Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * DEG_TO_RAD) * Math.cos(lat2 * DEG_TO_RAD) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+import { haversineMeters } from '../../common/geo.js';
 
 // ---------------------------------------------------------------------------
 // Signal 1 — UAV flight state (armed / in-air / nav mode)

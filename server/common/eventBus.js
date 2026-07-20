@@ -132,6 +132,7 @@ export const EVENTS = Object.freeze({
   // Posiciones
   POSITION_UPDATED: 'position:updated',
   CAMERA_UPDATED: 'camera:updated',
+  POSITION_HISTORY_WARNING: 'position:history:warning',
 
   // Dispositivos
   DEVICE_UPDATED: 'device:updated',

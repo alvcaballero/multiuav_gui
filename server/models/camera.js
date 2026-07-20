@@ -1,6 +1,6 @@
 import { logger } from '../common/logger.js';
 import { VideoUtils } from '../common/videoUtils.js';
-import { positionsModel } from './positions.js';
+import { positionsController } from '../controllers/positions.js';
 
 const apiURL = 'http://localhost:9997/v3/config/paths';
 
@@ -12,8 +12,8 @@ export class cameraModel {
   static async getSnapshot(device) {
     if (!device) return null;
 
-    // 1. Prioridad: Caché de ROS (en positionsModel)
-    const cameraData = await positionsModel.getCamera();
+    // 1. Prioridad: Caché de ROS (via positionsController)
+    const cameraData = await positionsController.getCamera();
     const deviceCamera = cameraData[device.id];
 
     if (deviceCamera && deviceCamera.camera) {

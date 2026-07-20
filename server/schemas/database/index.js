@@ -8,6 +8,7 @@ import { Geofence, GeofenceSchema } from './geofence.model.js';
 import { Chat, ChatSchema } from './chat.model.js';
 import { ChatMessage, ChatMessageSchema } from './chatMessage.model.js';
 import { MissionPlan, MissionPlanSchema } from './missionPlan.model.js';
+import { PositionHistory, PositionHistorySchema } from './positionHistory.model.js';
 
 export function setupModels(sequelize) {
   User.init(UserSchema, User.config(sequelize));
@@ -20,8 +21,10 @@ export function setupModels(sequelize) {
   Geofence.init(GeofenceSchema, Geofence.config(sequelize));
   Chat.init(ChatSchema, Chat.config(sequelize));
   ChatMessage.init(ChatMessageSchema, ChatMessage.config(sequelize));
+  PositionHistory.init(PositionHistorySchema, PositionHistory.config(sequelize));
 
   // Associations
   Mission.belongsTo(MissionPlan, { foreignKey: 'planId', as: 'plan' });
   MissionPlan.hasMany(Mission, { foreignKey: 'planId', as: 'missions' });
+  PositionHistory.belongsTo(Device, { foreignKey: 'deviceId' });
 }

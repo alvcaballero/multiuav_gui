@@ -77,6 +77,9 @@ const migrations = [
   // file-level error tracking: a File that failed to download stays in FAIL with
   // no human-readable reason. Persist why (connection lost, download failed, ...).
   `ALTER TABLE File ADD COLUMN errorMessage TEXT DEFAULT NULL`,
+  // position history: device-reported timestamp alongside the server-side fixTime
+  // (may be missing/inconsistent per payload; kept for later reconciliation).
+  `ALTER TABLE PositionHistory ADD COLUMN deviceTime DATETIME DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

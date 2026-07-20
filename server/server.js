@@ -17,6 +17,7 @@ import { setupRoutes } from './routes/index.js';
 // EventBus and Subscribers
 import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
 import { eventBus } from './common/eventBus.js';
+import { positionHistorySampler } from './models/positions/index.js';
 
 // comunications with devices
 import { initFlatbufferServer } from './models/flatbuffer/index.js';
@@ -74,6 +75,17 @@ const wsSubscriber = new WebSocketSubscriber(websocketController);
 logger.info('EventBus system initialized', {
   subscribers: ['WebSocketSubscriber'],
 });
+
+// Muestreo del histórico de posiciones (SQLite es el default, arranca siempre).
+// Primero precarga la caché en RAM con la última posición de cada device desde el
+// histórico (para que el mapa no aparezca vacío), luego arranca el muestreo.
+positionHistorySampler
+  .preloadCache()
+  .then(() => positionHistorySampler.start())
+  .catch((err) => {
+    logger.error(`Position history preload/start failed: ${err.message}`);
+    positionHistorySampler.start();
+  });
 
 // connect to  devices
 if (RosEnable) {
@@ -139,6 +151,7 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM recibido, cerrando servidor gracefully');
 
+  positionHistorySampler.stop();
   wsSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();
@@ -152,6 +165,7 @@ process.on('SIGINT', () => {
   logger.info('SIGINT recibido, cerrando servidor gracefully');
   rosModel.GCSunServicesMission();
 
+  positionHistorySampler.stop();
   wsSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();

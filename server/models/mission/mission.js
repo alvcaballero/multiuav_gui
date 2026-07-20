@@ -268,12 +268,12 @@ export class missionModel {
       config.category = myDevice.category;
       config.settings.base = setting.base ? Object.values(setting.base) : [];
       config.settings.landing_mode = 2;
-      let uavData = await positionsController.getLastPositions(myDevice.id);
+      let uavData = await positionsController.getByDeviceId(myDevice.id);
       logger.debug(`uavData: ${JSON.stringify(uavData)}`);
-      if (uavData && uavData[0]?.attributes?.batteryLevel) {
-        if (!Number.isNaN(Number.parseFloat(uavData[0].attributes.batteryLevel))) {
-          logger.debug(`device ${myDevice.name} battery ${uavData[0].attributes.batteryLevel}`);
-          config.settings.battery_level = uavData[0].attributes.batteryLevel / 100;
+      if (uavData && uavData?.attributes?.batteryLevel) {
+        if (!Number.isNaN(Number.parseFloat(uavData.attributes.batteryLevel))) {
+          logger.debug(`device ${myDevice.name} battery ${uavData.attributes.batteryLevel}`);
+          config.settings.battery_level = uavData.attributes.batteryLevel / 100;
         }
       }
       devicesSettings.push(config);
