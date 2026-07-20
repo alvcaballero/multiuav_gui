@@ -56,26 +56,37 @@ server/
    - Binary FlatBuffer encoding via `WebsocketDevices.js`
    - Used for non-ROS devices or optimized network communication
 
-**EventBus Pattern:**
+**EventBus Pattern (outbound):**
 All state changes flow through a central EventBus (`common/eventBus.js`):
 
 ```
-Business Logic → eventBus.emitSafe() → WebSocketSubscriber →
-wsController.sendMessage() → Clients
+Business Logic / scheduler → eventBus.emitSafe() → WebSocketSubscriber
+(OUTBOUND_MAP: event → payload) → wsController.sendMessage() → Clients
 ```
 
-Key events: `MISSION_CREATED`, `POSITION_UPDATED`, `DEVICE_UPDATED`, `CHAT_USER_MESSAGE`
+The periodic scheduler (`websocketController.updateclient/updateserver`) is a plain
+event producer — it emits `POSITION_UPDATED`/`CAMERA_UPDATED`/`DEVICE_UPDATED`/`SERVER_UPDATED`
+and no longer touches the socket. The `WebSocketSubscriber` is the single outbound adapter.
+
+**Inbound routing:**
+Client messages are delegated raw by `WebsocketManager` to `WebsocketInboundRouter`
+(`INBOUND_MAP: type → handler`), which dispatches the command directly (e.g.
+`CHAT_USER_MESSAGE` → `chatController.processMessage`). The transport knows no
+business types. Any reply back to the client goes out via the EventBus → subscriber.
+
+Key events: `MISSION_CREATED`, `POSITION_UPDATED`, `DEVICE_UPDATED`, `CHAT_CREATED`
 
 ### Database Models
 
 Location: `server/schemas/database/`
 
 **Existing Models:**
-| Model | Table | Purpose |
-|-------|-------|---------|
-| Device | Devices | UAV registry |
+
+| Model   | Table   | Purpose          |
+| ------- | ------- | ---------------- |
+| Device  | Devices | UAV registry     |
 | Mission | Mission | Mission tracking |
-| ...
+| ...     |
 
 **Adding New Models:**
 
@@ -184,19 +195,19 @@ the business controllers (`devices`, `mission`, `positions`) and wires their
 effects into the pure transport primitives. The transport files below must stay
 free of business-controller imports.
 
-| File                | Responsibility                                                              |
-| ------------------- | -------------------------------------------------------------------------- |
-| `ros.js`            | Facade (`rosModel`). Resolves `uav_id → {name, category}`, resolves per-category message config via `categoryModel` (`resolveCategoryConfig`), builds every ROS name (`buildDeviceName`), injects business callbacks, delegates to primitives |
-| `rosConnection.js`  | Connection lifecycle: connect, auto-reconnect (30s), inject connected/disconnect handlers |
-| `rosTopics.js`      | Topic transport primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/`PubRosMsg`. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge |
-| `rosServices.js`    | ROS service calls: `callRosService` (primitive) + `callService` (receives the already-built service name + type; no config lookup) |
-| `rosAction.js`      | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building |
-| `rosInspect.js`     | Read-only rosapi introspection (topics/services/types/action servers)      |
-| `rosDecode.js`      | ROS message → internal format                                              |
-| `rosEncode.js`      | Internal format → ROS service/message request                             |
-| `rosValidateMSG.js` | Message structure validation against type maps                             |
-| `ros2ActionClient.js` | Alternative action client (`callOnConnection`); currently unused          |
-| `index.js`          | Module barrel exports                                                       |
+| File                  | Responsibility                                                                                                                                                                                                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ros.js`              | Facade (`rosModel`). Resolves `uav_id → {name, category}`, resolves per-category message config via `categoryModel` (`resolveCategoryConfig`), builds every ROS name (`buildDeviceName`), injects business callbacks, delegates to primitives |
+| `rosConnection.js`    | Connection lifecycle: connect, auto-reconnect (30s), inject connected/disconnect handlers                                                                                                                                                     |
+| `rosTopics.js`        | Topic transport primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/`PubRosMsg`. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge                                        |
+| `rosServices.js`      | ROS service calls: `callRosService` (primitive) + `callService` (receives the already-built service name + type; no config lookup)                                                                                                            |
+| `rosAction.js`        | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building                                                                                           |
+| `rosInspect.js`       | Read-only rosapi introspection (topics/services/types/action servers)                                                                                                                                                                         |
+| `rosDecode.js`        | ROS message → internal format                                                                                                                                                                                                                 |
+| `rosEncode.js`        | Internal format → ROS service/message request                                                                                                                                                                                                 |
+| `rosValidateMSG.js`   | Message structure validation against type maps                                                                                                                                                                                                |
+| `ros2ActionClient.js` | Alternative action client (`callOnConnection`); currently unused                                                                                                                                                                              |
+| `index.js`            | Module barrel exports                                                                                                                                                                                                                         |
 
 **Config resolution lives ONLY in the facade.** `categoryModel` (in
 `models/category.js`) is the single source of truth for `devices_msg.yaml` — it
@@ -262,9 +273,10 @@ The project includes an external MCP server as a git submodule (`mcp_server/`):
 - Tools: Mission planning, device control, sensor queries
 - Tool results fed back to LLM for context-aware responses
 
-**EventBus Integration:**
+**Inbound/EventBus Integration:**
 
-- `CHAT_USER_MESSAGE` → Triggers processing
+- `CHAT_USER_MESSAGE` (WS inbound) → `WebsocketInboundRouter` → `chatController.processMessage` (direct dispatch)
+- `CHAT_CREATED` → notifies the client a new chat was created (outbound via subscriber)
 - `CHAT_ASSISTANT_MESSAGE` → Broadcasts response to clients via WebSocket
 
 **MCP Reconnection System:**
@@ -342,7 +354,7 @@ Definidos en `server/config/planning/elementTypes.yaml`. Se distribuyen con el c
 ```yaml
 - id: windTurbine
   name: Wind Turbine
-  icon: /api/markers/types/windTurbine/icon   # URL servida por el servidor
+  icon: /api/markers/types/windTurbine/icon # URL servida por el servidor
   model3d: /api/markers/types/windTurbine/model
   height: 80
   color: green
@@ -385,20 +397,20 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
   height: 20
   color: blue
   icon: /api/markers/types/custom_123/icon
-  model3d: /api/markers/types/custom_123/model   # omitir si no hay modelo
+  model3d: /api/markers/types/custom_123/model # omitir si no hay modelo
 ```
 
 ### Endpoints disponibles
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/api/markers/types` | Lista todos los tipos (estáticos + custom) |
-| POST | `/api/markers/types` | Crea un tipo custom |
-| DELETE | `/api/markers/types/:id` | Elimina un tipo custom y sus assets |
-| GET | `/api/markers/types/:id/icon` | Sirve el ícono |
-| POST | `/api/markers/types/:id/icon` | Sube/reemplaza el ícono |
-| GET | `/api/markers/types/:id/model` | Sirve el modelo 3D |
-| POST | `/api/markers/types/:id/model` | Sube/reemplaza el modelo 3D |
+| Método | Ruta                           | Descripción                                |
+| ------ | ------------------------------ | ------------------------------------------ |
+| GET    | `/api/markers/types`           | Lista todos los tipos (estáticos + custom) |
+| POST   | `/api/markers/types`           | Crea un tipo custom                        |
+| DELETE | `/api/markers/types/:id`       | Elimina un tipo custom y sus assets        |
+| GET    | `/api/markers/types/:id/icon`  | Sirve el ícono                             |
+| POST   | `/api/markers/types/:id/icon`  | Sube/reemplaza el ícono                    |
+| GET    | `/api/markers/types/:id/model` | Sirve el modelo 3D                         |
+| POST   | `/api/markers/types/:id/model` | Sube/reemplaza el modelo 3D                |
 
 ### Archivos relevantes
 

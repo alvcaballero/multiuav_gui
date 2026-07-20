@@ -3,6 +3,7 @@ import { rosController } from './ros.js';
 import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
 import { logger } from '../common/logger.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
 import { WS_POSITIONS_INTERVAL_MS, WS_STATE_INTERVAL_MS } from '../config/config.js';
 
 let wsController = null;
@@ -33,12 +34,24 @@ export class websocketController {
     }
   }
 
+  /**
+   * Snapshot periódico de telemetría (positions + camera).
+   *
+   * El scheduler ya NO toca el socket: emite eventos de dominio y el
+   * WebSocketSubscriber es el único adaptador de salida (pipeline unificado).
+   * El shaping del mensaje de salida vive en el subscriber (OUTBOUND_MAP).
+   */
   async updateclient() {
     try {
-      const msg = await this.updateMessage();
-      // Solo enviar si hay datos
-      if (Object.keys(msg).length > 0) {
-        this.sendMessage(msg, null);
+      const positions = await positionsController.getLastPositions();
+      const camera = await positionsController.getCamera();
+
+      // Solo emitir si hay datos (idéntico al guard original)
+      if (Object.values(positions).length) {
+        eventBus.emitSafe(EVENTS.POSITION_UPDATED, positions);
+      }
+      if (Object.values(camera).length) {
+        eventBus.emitSafe(EVENTS.CAMERA_UPDATED, camera);
       }
     } catch (error) {
       logger.error('Error in updateclient', {
@@ -48,10 +61,16 @@ export class websocketController {
     }
   }
 
+  /**
+   * Snapshot periódico de estado (server + devices) — mismo pipeline por eventos.
+   */
   async updateserver() {
     try {
-      const msg = await this.serverUpdateMessage();
-      this.sendMessage(msg, null);
+      const devices = await devicesController.getAllDevices();
+      const server = await rosController.getServerStatus();
+
+      eventBus.emitSafe(EVENTS.SERVER_UPDATED, { rosState: server.state });
+      eventBus.emitSafe(EVENTS.DEVICE_UPDATED, devices);
     } catch (error) {
       logger.error('Error in updateserver', {
         error: error.message,
@@ -88,29 +107,6 @@ export class websocketController {
         settings: planning.settings,
         assignments: planning.assignments || [],
       },
-    };
-  }
-
-  async updateMessage() {
-    let currentsocket = {};
-    const positions = await positionsController.getLastPositions();
-    const camera = await positionsController.getCamera();
-    if (Object.values(positions).length) {
-      currentsocket['positions'] = positions;
-    }
-    if (Object.values(camera).length) {
-      currentsocket['camera'] = Object.values(camera);
-    }
-    return currentsocket;
-  }
-
-  async serverUpdateMessage() {
-    const devices = await devicesController.getAllDevices();
-    const server = await rosController.getServerStatus();
-
-    return {
-      server: { rosState: server.state },
-      devices: Object.values(devices),
     };
   }
 }

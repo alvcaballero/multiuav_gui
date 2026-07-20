@@ -12,7 +12,7 @@ import { logger } from './logger.js';
  * - 'position:updated' - Posición actualizada
  * - 'device:updated' - Dispositivo actualizado
  * - 'server:updated' - Estado del servidor actualizado
- * - 'chat:message' - Nuevo mensaje de chat del usuario
+ * - 'chat:created' - Chat nuevo creado por el server (notificación al cliente)
  * - 'chat:assistant_message' - Nuevo mensaje de chat del asistente
  */
 class EventBus extends EventEmitter {
@@ -140,7 +140,8 @@ export const EVENTS = Object.freeze({
   // Servidor
   SERVER_UPDATED: 'server:updated',
   // Chat
-  CHAT_USER_MESSAGE: 'chat:message',
+  CHAT_CREATED: 'chat:created',
+  CHAT_USER_MESSAGE: 'chat:user_message',
   CHAT_ASSISTANT_MESSAGE: 'chat:assistant_message',
   // Sistema
   SYSTEM_ERROR: 'system:error',

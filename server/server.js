@@ -11,6 +11,7 @@ import { getErrorPageHTML } from './views/errorPage.js';
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
+import { WebsocketInboundRouter } from './WebsocketInboundRouter.js';
 import { initWebsocketController } from './controllers/websocket.js';
 import { setupRoutes } from './routes/index.js';
 
@@ -69,6 +70,10 @@ setupRoutes(app);
 const server = createServer(app);
 const wsManager = new WebsocketManager(server, '/api/socket');
 const websocketController = initWebsocketController(wsManager);
+
+// Router de mensajes entrantes: el transporte delega el crudo, el router enruta por `type`
+const wsInboundRouter = new WebsocketInboundRouter();
+wsManager.onMessage((client, raw) => wsInboundRouter.handle(client, raw));
 
 // Initialize EventBus subscribers
 const wsSubscriber = new WebSocketSubscriber(websocketController);
