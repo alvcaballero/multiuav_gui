@@ -355,7 +355,7 @@ const WaypointRouteList = ({
               ))}
             </Box>
             <Box>
-              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
+              <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mb: 0.5 }}>
                 <Typography variant="subtitle1">Actions</Typography>
                 {!NoEdit && (
                   <IconButton
@@ -368,7 +368,7 @@ const WaypointRouteList = ({
                 )}
               </Stack>
               {!NoEdit && !newactionmenu && (
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <SelectField
                       label="Action"
@@ -396,7 +396,7 @@ const WaypointRouteList = ({
               {waypoint.action &&
                 Object.keys(waypoint.action).map((action_key, index_ac) => (
                   <Fragment key={'fragment-action-' + index_ac}>
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', py: 0.5 }}>
                       <Typography variant="body2" sx={{ width: '40%', flexShrink: 0 }}>
                         {action_key}
                       </Typography>
