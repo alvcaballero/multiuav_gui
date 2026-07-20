@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -146,7 +146,10 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const devices = useSelector((state) => state.devices.items);
-  const positions = useSelector((state) => state.session.positions);
+  // positions is only read inside handleRecordWp, a click handler — read it
+  // imperatively from the store there instead of subscribing via useSelector,
+  // so the 2s WS position broadcast doesn't re-render this whole accordion tree.
+  const store = useStore();
   const idleVel = useSelector((state) => state.mission.route[index]?.attributes?.idle_vel);
   const matchedDevice = Object.values(devices).find((device) => device.name === route.uav);
   const routeUAV = matchedDevice ? matchedDevice.id : null;
@@ -169,6 +172,7 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }
   };
 
   const handleRecordWp = (index_route) => {
+    const positions = store.getState().session.positions;
     if (positions[routeUAV]) {
       let altitude = positions[routeUAV].altitude;
       if (positions[routeUAV].attributes?.home) {
