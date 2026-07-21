@@ -111,7 +111,7 @@ export class missionModel {
     if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
       return { success: false };
     }
-    eventBus.emitSafe(EVENTS.MISSION_CREATED, { ...mission, name: mission.name ? mission.name : 'name' });
+    eventBus.emitSafe(EVENTS.MISSION_PLAN_SHOWN, { ...mission, name: mission.name ? mission.name : 'name' });
     return { success: true };
   }
 
@@ -491,7 +491,7 @@ export class missionModel {
       });
 
       // Emitir evento al EventBus para que los subscribers lo manejen
-      eventBus.emitSafe(EVENTS.MISSION_INIT, { ...mission, name: 'name' });
+      eventBus.emitSafe(EVENTS.MISSION_PLAN_SHOWN, { ...mission, name: 'name' });
 
       return { response: mission, status: 'OK' };
     } catch (err) {

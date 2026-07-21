@@ -74,7 +74,7 @@ Client messages are delegated raw by `WebsocketManager` to `WebsocketInboundRout
 `CHAT_USER_MESSAGE` → `chatController.processMessage`). The transport knows no
 business types. Any reply back to the client goes out via the EventBus → subscriber.
 
-Key events: `MISSION_CREATED`, `POSITION_UPDATED`, `DEVICE_UPDATED`, `CHAT_CREATED`
+Key events: `MISSION_PLAN_SHOWN`, `POSITION_UPDATED`, `DEVICE_UPDATED`, `CHAT_CREATED`
 
 ### Database Models
 

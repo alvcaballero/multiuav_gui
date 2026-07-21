@@ -119,8 +119,7 @@ export const eventBus = new EventBus();
 // Constantes de eventos para evitar typos
 export const EVENTS = Object.freeze({
   // Misiones
-  MISSION_CREATED: 'mission:created',
-  MISSION_INIT: 'mission:init',
+  MISSION_PLAN_SHOWN: 'mission:plan:shown', // Raw plan pushed to the client editor (manual/chat create, automatic planner init)
   MISSION_UPDATED: 'mission:updated', // Mission DB row created/edited (status, endTime, etc.)
   ROUTE_UPDATED: 'mission:route:updated', // MissionRoute DB row created/edited (status, currentWp, etc.)
 

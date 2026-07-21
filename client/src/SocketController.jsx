@@ -88,12 +88,6 @@ const SocketController = () => {
         const isRosConnected = data.server.rosState === 'connect';
         dispatch(sessionActions.updateServerROS(isRosConnected));
       }
-      if (data.mission) {
-        console.log(data.mission);
-        dispatch(missionActions.updateMission(data.mission));
-        // Server pushed a mission into the editor — drop any active selection.
-        dispatch(activeMissionsActions.selectMission(null));
-      }
       if (data.events) {
         handleEvents(data.events);
       }
@@ -108,6 +102,12 @@ const SocketController = () => {
       }
       if (data.chatCreated) {
         dispatch(chatActions.setActiveChat(data.chatCreated.chatId));
+      }
+      if (data.missionPlan) {
+        console.log(data.missionPlan);
+        dispatch(missionActions.updateMission(data.missionPlan));
+        // Server pushed a mission into the editor — drop any active selection.
+        dispatch(activeMissionsActions.selectMission(null));
       }
       if (data.missionUpdated) {
         dispatch(activeMissionsActions.upsertMission(data.missionUpdated));

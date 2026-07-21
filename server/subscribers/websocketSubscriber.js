@@ -13,18 +13,14 @@ import { logger } from '../common/logger.js';
  */
 const OUTBOUND_MAP = {
   // Misiones
-  [EVENTS.MISSION_CREATED]: (mission) => ({
-    mission: { ...mission, name: mission.name || 'unnamed_mission' },
-  }),
-  [EVENTS.MISSION_INIT]: (mission) => ({
-    mission: { ...mission, name: mission.name || 'name' },
+  [EVENTS.MISSION_PLAN_SHOWN]: (mission) => ({
+    missionPlan: { ...mission, name: mission.name || 'unnamed_mission' },
   }),
   [EVENTS.MISSION_UPDATED]: (data) => ({ missionUpdated: data }),
   [EVENTS.ROUTE_UPDATED]: (data) => ({ routeUpdated: data }),
 
   // Telemetría periódica (emitida por el scheduler del websocketController)
-  [EVENTS.POSITION_UPDATED]: (positions) =>
-    positions && Object.keys(positions).length ? { positions } : null,
+  [EVENTS.POSITION_UPDATED]: (positions) => (positions && Object.keys(positions).length ? { positions } : null),
   [EVENTS.CAMERA_UPDATED]: (camera) =>
     camera && Object.keys(camera).length ? { camera: Object.values(camera) } : null,
   [EVENTS.DEVICE_UPDATED]: (devices) => ({ devices: Object.values(devices) }),

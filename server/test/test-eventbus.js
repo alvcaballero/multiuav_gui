@@ -9,11 +9,11 @@ console.log('\n🧪 Testing EventBus System\n');
 
 // Test 1: Emisión básica
 console.log('Test 1: Basic event emission');
-eventBus.on(EVENTS.MISSION_CREATED, (data) => {
-  console.log('✅ MISSION_CREATED recibido:', data);
+eventBus.on(EVENTS.MISSION_PLAN_SHOWN, (data) => {
+  console.log('✅ MISSION_PLAN_SHOWN recibido:', data);
 });
 
-eventBus.emitSafe(EVENTS.MISSION_CREATED, {
+eventBus.emitSafe(EVENTS.MISSION_PLAN_SHOWN, {
   id: 1,
   name: 'Test Mission',
   status: 'init',
