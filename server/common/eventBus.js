@@ -127,7 +127,7 @@ export const EVENTS = Object.freeze({
   EVENT_CREATED: 'event:created',
 
   // Posiciones
-  POSITION_UPDATED: 'position:updated', // Throttled snapshot broadcast to clients (2s scheduler)
+  POSITION_UPDATED: 'position:updated', // Batched broadcast to clients: payload is the devices that changed since the last flush, sent every WS_POSITIONS_INTERVAL_MS
   POSITION_RECEIVED: 'position:received', // Raw per-message signal, internal only (mission tracking)
   CAMERA_RECEIVED: 'camera:received', // Raw per-message signal, internal only (camera stream subscriber)
   POSITION_HISTORY_WARNING: 'position:history:warning',

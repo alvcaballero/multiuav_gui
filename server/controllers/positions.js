@@ -1,5 +1,6 @@
 import { positionsModel } from '../models/positions/positions.js';
 import { PositionHistoryModel } from '../models/positions/positionHistory.js';
+import { positionBroadcastBatcher } from '../models/positions/positionBroadcastBatcher.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
 import { logger } from '../common/logger.js';
 
@@ -69,12 +70,21 @@ export class positionsController {
   static getByDeviceId(deviceId) {
     return positionsModel.getByDeviceId(deviceId);
   }
-  static updatePosition(payload) {
-    positionsModel.updatePosition(payload);
+  static async updatePosition(payload) {
+    const position = await positionsModel.updatePosition(payload);
     if (payload?.deviceId !== undefined && payload?.latitude !== undefined) {
       // Raw, per-message signal — mission tracking (or any other interested module)
       // subscribes independently; this controller doesn't know who's listening.
       eventBus.emitSafe(EVENTS.POSITION_RECEIVED, payload);
+    }
+    // No se emite acá directo: se apila en el batcher, que agrupa los devices
+    // que cambiaron y los manda juntos a WS_POSITIONS_INTERVAL_MS (2 Hz), en vez
+    // de un mensaje por device — evita re-renders del cliente por cada cambio
+    // individual cuando hay varios dispositivos activos a la vez. Se manda el
+    // estado YA mergeado (positionsModel.updatePosition), no el payload crudo,
+    // porque un mensaje puede traer solo un subconjunto de campos (ej: batería).
+    if (position) {
+      positionBroadcastBatcher.stage(position);
     }
   }
   static updateCamera(payload) {

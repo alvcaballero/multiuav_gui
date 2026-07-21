@@ -69,13 +69,38 @@ Business Logic / scheduler → eventBus.emitSafe() → WebSocketSubscriber
 (OUTBOUND_MAP: event → payload) → wsController.sendMessage() → Clients
 ```
 
-The periodic scheduler (`websocketController.updateclient/updateserver`) is a plain
-event producer — it emits `POSITION_UPDATED`/`DEVICE_UPDATED`/`SERVER_UPDATED`
-and no longer touches the socket. The `WebSocketSubscriber` is the single outbound
-adapter for JSON — its `OUTBOUND_MAP` transforms are pure `(data) => payload`, no
-binary payloads allowed there by design.
+The periodic scheduler (`websocketController.updateserver`, 10s) is a plain event
+producer for `DEVICE_UPDATED`/`SERVER_UPDATED` — it no longer touches the socket.
+The `WebSocketSubscriber` is the single outbound adapter for JSON — its
+`OUTBOUND_MAP` transforms are pure `(data) => payload`, no binary payloads allowed
+there by design.
 
-Camera is a parallel, binary-only path, not part of the polling scheduler:
+Positions are NOT polled from a full snapshot, but they ARE batched — one
+`POSITION_UPDATED` broadcast per tick with every device that changed since the
+last one, not a message per device and not the whole cache:
+
+```
+positionsController.updatePosition() → positionBroadcastBatcher.stage(position)  (every ROS/FlatBuffer message, up to 50 Hz/device)
+positionBroadcastBatcher timer (WS_POSITIONS_INTERVAL_MS) → eventBus.emitSafe(POSITION_UPDATED, [...changedDevices])
+→ WebSocketSubscriber → wsController.sendMessage() → Clients
+```
+
+`positionBroadcastBatcher` (`models/positions/positionBroadcastBatcher.js`,
+started/stopped from `server.js` like `positionHistorySampler`) holds a `Map`
+keyed by `deviceId`: `stage()` just overwrites that device's entry with its
+current merged state (from `positionsModel`, not the raw ROS message — a single
+message may carry only a subset of fields, e.g. battery-only). A fixed timer at
+`WS_POSITIONS_INTERVAL_MS` (default 500ms → 2 Hz) drains the whole map into one
+`POSITION_UPDATED` emit and clears it. This buffer does double duty: it caps each
+device to at most one broadcast per tick (dead-band by time, same idea as
+`positionHistorySampler`) AND groups whichever devices changed in that window into
+a single WS message/React re-render, instead of one per device. The client's
+`updatePositions` reducer upserts by `deviceId`, so a partial batch (not all
+devices) is fine. A client that just connected gets the full snapshot once via
+`WelcomeMessage`, which bypasses this event entirely (sent directly, not through
+`OUTBOUND_MAP`).
+
+Camera follows the same per-message shape, binary instead of JSON:
 
 ```
 positionsController.updateCamera() → eventBus.emitSafe(CAMERA_RECEIVED) → CameraStreamSubscriber
@@ -84,10 +109,11 @@ positionsController.updateCamera() → eventBus.emitSafe(CAMERA_RECEIVED) → Ca
 
 `CAMERA_RECEIVED` fires per-message, straight from the ROS ingestion callback
 (`models/ros/ros.js`'s `onCamera`) — same pattern as `POSITION_RECEIVED`, just for
-cámara. `CameraStreamSubscriber` (`subscribers/cameraStreamSubscriber.js`) is the
-only place that knows the wire format; `websocketController.setupWelcomeMessage()`
-reuses its `encodeCameraFrame()` to unicast whatever's cached to a client that just
-connected, so it doesn't wait for the next ROS frame to see something.
+cámara, and unbatched — every frame goes out immediately, no `positionBroadcastBatcher` equivalent. `CameraStreamSubscriber`
+(`subscribers/cameraStreamSubscriber.js`) is the only place that knows the wire
+format; `websocketController.setupWelcomeMessage()` reuses its `encodeCameraFrame()`
+to unicast whatever's cached to a client that just connected, so it doesn't wait for
+the next ROS frame to see something.
 
 **Inbound routing:**
 Client messages are delegated raw by `WebsocketManager` to `WebsocketInboundRouter`

@@ -214,6 +214,8 @@ export class positionsModel {
         }
       }
     }
+
+    return positions[payload.deviceId];
   }
   static convert_landed_state(protocol, landed_state) {
     let state_px4_stol = ['UNDEFINED', 'ON GROUND', 'IN AIR', 'TAKEOFF', 'LANDING'];

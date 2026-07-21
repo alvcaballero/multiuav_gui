@@ -19,7 +19,10 @@ const OUTBOUND_MAP = {
   [EVENTS.MISSION_UPDATED]: (data) => ({ missionUpdated: data }),
   [EVENTS.ROUTE_UPDATED]: (data) => ({ routeUpdated: data }),
 
-  // Telemetría periódica (emitida por el scheduler del websocketController)
+  // Telemetría batcheada: positionBroadcastBatcher agrupa los devices que
+  // cambiaron desde el último flush y emite esto cada WS_POSITIONS_INTERVAL_MS
+  // (ver positionBroadcastBatcher.js). El snapshot completo al conectar va
+  // aparte, por WelcomeMessage (no pasa por acá).
   [EVENTS.POSITION_UPDATED]: (positions) => (positions && Object.keys(positions).length ? { positions } : null),
   [EVENTS.DEVICE_UPDATED]: (devices) => ({ devices: Object.values(devices) }),
   [EVENTS.SERVER_UPDATED]: (serverState) => ({ server: serverState }),

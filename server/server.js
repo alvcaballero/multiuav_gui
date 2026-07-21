@@ -19,7 +19,7 @@ import { setupRoutes } from './routes/index.js';
 import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
 import { CameraStreamSubscriber } from './subscribers/cameraStreamSubscriber.js';
 import { eventBus } from './common/eventBus.js';
-import { positionHistorySampler } from './models/positions/index.js';
+import { positionHistorySampler, positionBroadcastBatcher } from './models/positions/index.js';
 import { missionWpTracking } from './models/mission/missionWpTracking.js';
 
 // comunications with devices
@@ -95,6 +95,10 @@ positionHistorySampler
     positionHistorySampler.start();
   });
 
+// Agrupa POSITION_UPDATED de varios devices en un solo broadcast por tick (ver
+// positionBroadcastBatcher.js) — arranca siempre, no depende de la DB.
+positionBroadcastBatcher.start();
+
 // Mission waypoint tracking: subscribes to ROUTE_UPDATED/POSITION_RECEIVED and
 // rehydrates its in-memory tracking registry from routes already in flight (so a
 // server restart mid-mission doesn't strand them untracked).
@@ -167,6 +171,7 @@ process.on('SIGTERM', () => {
   logger.info('SIGTERM recibido, cerrando servidor gracefully');
 
   positionHistorySampler.stop();
+  positionBroadcastBatcher.stop();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();
   websocketController.destroy();
@@ -182,6 +187,7 @@ process.on('SIGINT', () => {
   rosModel.GCSunServicesMission();
 
   positionHistorySampler.stop();
+  positionBroadcastBatcher.stop();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();
   websocketController.destroy();

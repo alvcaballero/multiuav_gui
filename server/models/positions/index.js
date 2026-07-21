@@ -4,3 +4,4 @@
 export { positionsModel } from './positions.js';
 export { PositionHistoryModel } from './positionHistory.js';
 export { positionHistorySampler } from './positionHistorySampler.js';
+export { positionBroadcastBatcher } from './positionBroadcastBatcher.js';

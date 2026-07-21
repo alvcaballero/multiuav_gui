@@ -4,7 +4,7 @@ import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
 import { logger } from '../common/logger.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import { WS_POSITIONS_INTERVAL_MS, WS_STATE_INTERVAL_MS } from '../config/config.js';
+import { WS_STATE_INTERVAL_MS } from '../config/config.js';
 import { encodeCameraFrame } from '../subscribers/cameraStreamSubscriber.js';
 
 let wsController = null;
@@ -13,7 +13,6 @@ export class websocketController {
   constructor(wsManager) {
     this.wsManager = wsManager;
 
-    this.interval_update = setInterval(this.updateclient.bind(this), WS_POSITIONS_INTERVAL_MS);
     this.interval_server = setInterval(this.updateserver.bind(this), WS_STATE_INTERVAL_MS);
     // wellcome msg
     this.setupWelcomeMessage();
@@ -53,33 +52,18 @@ export class websocketController {
   }
 
   /**
-   * Snapshot periódico de telemetría (positions).
+   * Snapshot periódico de estado (server + devices) — mismo pipeline por eventos.
    *
-   * Camera ya no pasa por acá: se empuja frame a frame por CameraStreamSubscriber
-   * apenas ROS publica uno nuevo (ver positionsController.updateCamera).
+   * Positions ya NO pasa por acá: `positionBroadcastBatcher` agrupa los devices
+   * que cambiaron (vía `positionsController.updatePosition`, llamado en cada
+   * mensaje ROS/FlatBuffer) y emite POSITION_UPDATED con el lote cada
+   * WS_POSITIONS_INTERVAL_MS (ver models/positions/positionBroadcastBatcher.js).
+   * Camera tampoco: se empuja frame a frame por CameraStreamSubscriber apenas ROS
+   * publica uno nuevo (ver positionsController.updateCamera).
    *
    * El scheduler ya NO toca el socket: emite eventos de dominio y el
    * WebSocketSubscriber es el único adaptador de salida (pipeline unificado).
    * El shaping del mensaje de salida vive en el subscriber (OUTBOUND_MAP).
-   */
-  async updateclient() {
-    try {
-      const positions = await positionsController.getLastPositions();
-
-      // Solo emitir si hay datos (idéntico al guard original)
-      if (Object.values(positions).length) {
-        eventBus.emitSafe(EVENTS.POSITION_UPDATED, positions);
-      }
-    } catch (error) {
-      logger.error('Error in updateclient', {
-        error: error.message,
-        stack: error.stack,
-      });
-    }
-  }
-
-  /**
-   * Snapshot periódico de estado (server + devices) — mismo pipeline por eventos.
    */
   async updateserver() {
     try {
@@ -101,7 +85,6 @@ export class websocketController {
    */
   destroy() {
     logger.info('websocketController cleanup');
-    clearInterval(this.interval_update);
     clearInterval(this.interval_server);
   }
 
