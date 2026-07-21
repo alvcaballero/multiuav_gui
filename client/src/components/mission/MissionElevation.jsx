@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo } from 'react';
+import { Fragment, memo, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   CartesianGrid,
@@ -139,7 +139,9 @@ const applyAltitudeDelta = (elevProfile, currentWaypoints, profileCoordinates) =
   return changed ? updated : null;
 };
 
-const MissionElevation = ({ active = true }) => {
+// Doesn't read `positions` - memoized so MissionPage's 500ms position-tick
+// re-render doesn't re-run the elevation-profile effect/recharts diff on every tick.
+const MissionElevation = memo(({ active = true }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const [selectRT, setSelectRT] = useState(-1);
@@ -283,6 +285,6 @@ const MissionElevation = ({ active = true }) => {
       )}
     </div>
   );
-};
+});
 
 export default MissionElevation;

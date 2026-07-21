@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Box,
@@ -207,7 +207,9 @@ const getMaxtime = (time1, time2) => {
   return time2;
 };
 
-const MissionStats = () => {
+// Doesn't read `positions` - memoized so MissionPage's 500ms position-tick
+// re-render doesn't force a full stats recompute pass on every tick.
+const MissionStats = memo(() => {
   const { classes } = useStyles();
   const missionRoutes = useSelector((state) => state.mission.route);
 
@@ -362,6 +364,6 @@ const MissionStats = () => {
       </TableContainer>
     </Box>
   );
-};
+});
 
 export default MissionStats;

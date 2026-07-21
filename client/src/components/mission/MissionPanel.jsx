@@ -1,4 +1,4 @@
-import { Fragment, useRef, useCallback, useState } from 'react';
+import { Fragment, memo, useRef, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import RoutesList from './RoutesList';
 import { Typography, IconButton, Toolbar, Switch } from '@mui/material';
@@ -33,7 +33,9 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-const MissionPanel = ({ SetOpenSave }) => {
+// Doesn't read `positions` - memoized so MissionPage's 500ms position-tick
+// re-render doesn't cascade into the whole route/waypoint editing tree below it.
+const MissionPanel = memo(({ SetOpenSave }) => {
   const { classes } = useStyles();
   const navigate = useNavigate();
   const scroolRef = useRef(null);
@@ -111,6 +113,6 @@ const MissionPanel = ({ SetOpenSave }) => {
       <MissionTransformDialog open={transformOpen} onClose={() => setTransformOpen(false)} />
     </Fragment>
   );
-};
+});
 
 export default MissionPanel;

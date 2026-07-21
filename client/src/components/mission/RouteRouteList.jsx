@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import { useDispatch, useSelector, useStore } from 'react-redux';
+import { useDispatch, useSelector, useStore, shallowEqual } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
 import {
@@ -145,13 +145,18 @@ const RouteOptions = ({ index, route, uavType, NoEdit = false }) => {
 const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
-  const devices = useSelector((state) => state.devices.items);
+  // Only re-render on id/name/category changes for the matched device - not on
+  // every `lastUpdate` telemetry tick, which rewrites the whole `devices.items`
+  // map reference every WS_STATE_INTERVAL_MS regardless of these fields.
+  const matchedDevice = useSelector((state) => {
+    const found = Object.values(state.devices.items).find((device) => device.name === route.uav);
+    return found ? { id: found.id, name: found.name, category: found.category } : null;
+  }, shallowEqual);
   // positions is only read inside handleRecordWp, a click handler — read it
   // imperatively from the store there instead of subscribing via useSelector,
   // so the 2s WS position broadcast doesn't re-render this whole accordion tree.
   const store = useStore();
   const idleVel = useSelector((state) => state.mission.route[index]?.attributes?.idle_vel);
-  const matchedDevice = Object.values(devices).find((device) => device.name === route.uav);
   const routeUAV = matchedDevice ? matchedDevice.id : null;
   const matchedCategory = matchedDevice?.category;
 

@@ -41,24 +41,24 @@ const SelectField = ({
     [emptyValue, value, onChange, getItems],
   );
 
+  // Fetching only depends on `endpoint` - callers often pass inline `onChange`/`getItems`,
+  // and keying this off `resolveCurrentItem` would re-fetch on every parent render.
   useAsyncTask(async () => {
     if (endpoint) {
       const response = await fetch(endpoint);
       if (response.ok) {
-        const loadedItems = await response.json();
-        setFetchedItems(loadedItems);
-        resolveCurrentItem(loadedItems);
+        setFetchedItems(await response.json());
       } else {
         throw Error(await response.text());
       }
     }
-  }, [endpoint, resolveCurrentItem]);
+  }, [endpoint]);
 
   useEffect(() => {
-    if (!endpoint && typeof items !== 'undefined') {
+    if (typeof items !== 'undefined') {
       resolveCurrentItem(items);
     }
-  }, [endpoint, items, resolveCurrentItem]);
+  }, [items, resolveCurrentItem]);
 
   if (items) {
     return (
