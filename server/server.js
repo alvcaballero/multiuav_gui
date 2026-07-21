@@ -17,6 +17,7 @@ import { setupRoutes } from './routes/index.js';
 
 // EventBus and Subscribers
 import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
+import { CameraStreamSubscriber } from './subscribers/cameraStreamSubscriber.js';
 import { eventBus } from './common/eventBus.js';
 import { positionHistorySampler } from './models/positions/index.js';
 import { missionWpTracking } from './models/mission/missionWpTracking.js';
@@ -78,8 +79,9 @@ wsManager.onMessage((client, raw) => wsInboundRouter.handle(client, raw));
 
 // Initialize EventBus subscribers
 const wsSubscriber = new WebSocketSubscriber(websocketController);
+const cameraSubscriber = new CameraStreamSubscriber(websocketController);
 logger.info('EventBus system initialized', {
-  subscribers: ['WebSocketSubscriber'],
+  subscribers: ['WebSocketSubscriber', 'CameraStreamSubscriber'],
 });
 
 // Muestreo del histórico de posiciones (SQLite es el default, arranca siempre).
@@ -166,6 +168,7 @@ process.on('SIGTERM', () => {
 
   positionHistorySampler.stop();
   wsSubscriber.cleanup();
+  cameraSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();
 
@@ -180,6 +183,7 @@ process.on('SIGINT', () => {
 
   positionHistorySampler.stop();
   wsSubscriber.cleanup();
+  cameraSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();
 

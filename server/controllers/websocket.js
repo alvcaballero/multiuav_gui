@@ -5,6 +5,7 @@ import { planningController } from './planning.js';
 import { logger } from '../common/logger.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
 import { WS_POSITIONS_INTERVAL_MS, WS_STATE_INTERVAL_MS } from '../config/config.js';
+import { encodeCameraFrame } from '../subscribers/cameraStreamSubscriber.js';
 
 let wsController = null;
 
@@ -22,6 +23,15 @@ export class websocketController {
     this.wsManager.onClientConnect = async (client) => {
       const msg = await this.WelcomeMessage();
       this.sendMessage(msg, client);
+
+      // Camera frames push on arrival now (see CameraStreamSubscriber), not on
+      // the polling interval — so a client connecting mid-session needs an
+      // explicit unicast of whatever's cached, or it sees nothing until the
+      // next ROS frame for that device.
+      const camera = await positionsController.getCamera();
+      Object.values(camera).forEach((payload) => {
+        this.sendBinary(encodeCameraFrame(payload), client);
+      });
     };
   }
 
@@ -34,8 +44,19 @@ export class websocketController {
     }
   }
 
+  sendBinary(buffer, client = null) {
+    if (client) {
+      client.send(buffer);
+    } else {
+      this.wsManager.broadcast(buffer);
+    }
+  }
+
   /**
-   * Snapshot periódico de telemetría (positions + camera).
+   * Snapshot periódico de telemetría (positions).
+   *
+   * Camera ya no pasa por acá: se empuja frame a frame por CameraStreamSubscriber
+   * apenas ROS publica uno nuevo (ver positionsController.updateCamera).
    *
    * El scheduler ya NO toca el socket: emite eventos de dominio y el
    * WebSocketSubscriber es el único adaptador de salida (pipeline unificado).
@@ -44,14 +65,10 @@ export class websocketController {
   async updateclient() {
     try {
       const positions = await positionsController.getLastPositions();
-      const camera = await positionsController.getCamera();
 
       // Solo emitir si hay datos (idéntico al guard original)
       if (Object.values(positions).length) {
         eventBus.emitSafe(EVENTS.POSITION_UPDATED, positions);
-      }
-      if (Object.values(camera).length) {
-        eventBus.emitSafe(EVENTS.CAMERA_UPDATED, camera);
       }
     } catch (error) {
       logger.error('Error in updateclient', {

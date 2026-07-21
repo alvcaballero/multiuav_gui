@@ -129,7 +129,7 @@ export const EVENTS = Object.freeze({
   // Posiciones
   POSITION_UPDATED: 'position:updated', // Throttled snapshot broadcast to clients (2s scheduler)
   POSITION_RECEIVED: 'position:received', // Raw per-message signal, internal only (mission tracking)
-  CAMERA_UPDATED: 'camera:updated',
+  CAMERA_RECEIVED: 'camera:received', // Raw per-message signal, internal only (camera stream subscriber)
   POSITION_HISTORY_WARNING: 'position:history:warning',
 
   // Dispositivos

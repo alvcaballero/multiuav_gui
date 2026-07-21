@@ -79,6 +79,11 @@ export class positionsController {
   }
   static updateCamera(payload) {
     positionsModel.updateCamera(payload);
+    if (payload?.deviceId !== undefined && payload?.camera !== undefined) {
+      // Raw, per-message signal — the camera stream subscriber pushes it to
+      // clients immediately; this controller doesn't know who's listening.
+      eventBus.emitSafe(EVENTS.CAMERA_RECEIVED, payload);
+    }
   }
   static async getCamera() {
     return await positionsModel.getCamera();

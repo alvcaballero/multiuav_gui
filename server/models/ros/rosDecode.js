@@ -166,13 +166,10 @@ export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
   if (type == 'obstacle_info' && msgType == 'sensor_msg/Range') {
     return { deviceId, obstacle_info: { down: msg.range } };
   }
-  if (
-    type == 'camera' &&
-    (msgType == 'sensor_msgs/CompressedImage' ||
-      msgType == 'sensor_msgs/msg/CompressedImage' ||
-      msgType == 'sensor_msgs/msg/Image')
-  ) {
-    return { deviceId, camera: msg.data }; // {deviceId:uav_id,camera:"data:image/jpg;base64," + msg.data};
+  if (type == 'camera' && (msgType == 'sensor_msgs/CompressedImage' || msgType == 'sensor_msgs/msg/CompressedImage')) {
+    // rosbridge serializes uint8[] fields as base64 — decode once here so the rest
+    // of the pipeline (cache, HTTP snapshot, WS broadcast) deals in real bytes.
+    return { deviceId, camera: Buffer.from(msg.data, 'base64') };
   }
   if (type == 'flight_status' && msgType == 'std_msgs/UInt8') {
     return {

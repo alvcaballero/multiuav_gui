@@ -43,6 +43,11 @@ server/
    - Broadcasts position updates (2s interval), server state (10s interval)
    - JSON message format with type-based Redux dispatch
    - Auto-reconnect with 60s retry interval
+   - Camera frames are the exception: they're raw **binary** WS messages, not JSON
+     (see `subscribers/cameraStreamSubscriber.js`) — pushed the moment ROS publishes
+     a new frame, not on the polling interval. Wire format: `[1 byte msgType][1 byte
+     len(deviceId)][deviceId UTF-8][JPEG bytes]`. The client (`SocketCameraCanvas.jsx`)
+     reads them straight off `window.websocket`, outside Redux.
 
 2. **ROS WebSocket** (`ws://127.0.0.1:9090`): ROS Bridge → Server
 
@@ -65,8 +70,24 @@ Business Logic / scheduler → eventBus.emitSafe() → WebSocketSubscriber
 ```
 
 The periodic scheduler (`websocketController.updateclient/updateserver`) is a plain
-event producer — it emits `POSITION_UPDATED`/`CAMERA_UPDATED`/`DEVICE_UPDATED`/`SERVER_UPDATED`
-and no longer touches the socket. The `WebSocketSubscriber` is the single outbound adapter.
+event producer — it emits `POSITION_UPDATED`/`DEVICE_UPDATED`/`SERVER_UPDATED`
+and no longer touches the socket. The `WebSocketSubscriber` is the single outbound
+adapter for JSON — its `OUTBOUND_MAP` transforms are pure `(data) => payload`, no
+binary payloads allowed there by design.
+
+Camera is a parallel, binary-only path, not part of the polling scheduler:
+
+```
+positionsController.updateCamera() → eventBus.emitSafe(CAMERA_RECEIVED) → CameraStreamSubscriber
+→ encodeCameraFrame() → wsController.sendBinary() → Clients
+```
+
+`CAMERA_RECEIVED` fires per-message, straight from the ROS ingestion callback
+(`models/ros/ros.js`'s `onCamera`) — same pattern as `POSITION_RECEIVED`, just for
+cámara. `CameraStreamSubscriber` (`subscribers/cameraStreamSubscriber.js`) is the
+only place that knows the wire format; `websocketController.setupWelcomeMessage()`
+reuses its `encodeCameraFrame()` to unicast whatever's cached to a client that just
+connected, so it doesn't wait for the next ROS frame to see something.
 
 **Inbound routing:**
 Client messages are delegated raw by `WebsocketManager` to `WebsocketInboundRouter`
@@ -74,7 +95,7 @@ Client messages are delegated raw by `WebsocketManager` to `WebsocketInboundRout
 `CHAT_USER_MESSAGE` → `chatController.processMessage`). The transport knows no
 business types. Any reply back to the client goes out via the EventBus → subscriber.
 
-Key events: `MISSION_PLAN_SHOWN`, `POSITION_UPDATED`, `DEVICE_UPDATED`, `CHAT_CREATED`
+Key events: `MISSION_PLAN_SHOWN`, `POSITION_UPDATED`, `CAMERA_RECEIVED`, `DEVICE_UPDATED`, `CHAT_CREATED`
 
 ### Database Models
 

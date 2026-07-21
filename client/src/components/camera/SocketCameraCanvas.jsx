@@ -3,9 +3,14 @@ import { Box } from '@mui/material';
 
 import novideo from '../../resources/images/placeholder.jpg';
 
+// Wire format sent by the server (see server/subscribers/cameraStreamSubscriber.js):
+// [1 byte msgType][1 byte len(deviceId)][deviceId UTF-8][JPEG bytes]
+const MSG_TYPE_CAMERA_FRAME = 1;
+
 // Reads camera frames straight off window.websocket, bypassing Redux entirely:
-// each JSON tick's base64 frame is decoded off the main thread (createImageBitmap)
-// and painted via requestAnimationFrame, so frame arrival never triggers a React render.
+// each frame arrives as a raw binary WS message, decoded off the main thread
+// (createImageBitmap) and painted via requestAnimationFrame, so frame arrival
+// never triggers a React render.
 export const SocketCameraCanvas = ({ deviceId, ref }) => {
   const latestBitmapRef = useRef(null);
   const [hasFrame, setHasFrame] = useState(false);
@@ -16,19 +21,16 @@ export const SocketCameraCanvas = ({ deviceId, ref }) => {
     let attachedSocket = null;
 
     const onMessage = (event) => {
-      if (typeof event.data !== 'string') return;
-      let data;
-      try {
-        data = JSON.parse(event.data);
-      } catch {
-        return;
-      }
-      const frame = data.camera?.find((c) => String(c.deviceId) === String(deviceId));
-      if (!frame) return;
+      if (!(event.data instanceof ArrayBuffer)) return;
+      const bytes = new Uint8Array(event.data);
+      if (bytes[0] !== MSG_TYPE_CAMERA_FRAME) return;
 
-      fetch(`data:image/jpeg;base64,${frame.camera}`)
-        .then((res) => res.blob())
-        .then((blob) => createImageBitmap(blob))
+      const idLen = bytes[1];
+      const frameDeviceId = new TextDecoder().decode(bytes.subarray(2, 2 + idLen));
+      if (frameDeviceId !== String(deviceId)) return;
+
+      const jpegBytes = bytes.subarray(2 + idLen);
+      createImageBitmap(new Blob([jpegBytes], { type: 'image/jpeg' }))
         .then((bitmap) => {
           if (cancelled) {
             bitmap.close();

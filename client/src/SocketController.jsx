@@ -44,6 +44,10 @@ const SocketController = () => {
     const socket = new WebSocket(`${protocol}//${window.location.host}/api/socket`);
     console.log(`${protocol}//${window.location.host}/api/socket`);
     //const socket = new WebSocket(`${protocol}//${window.location.host}`);
+    // Camera frames arrive as binary WS messages (see SocketCameraCanvas); this
+    // JSON handler ignores them via the type guard below, but binaryType still
+    // needs to be arraybuffer so those listeners get an ArrayBuffer, not a Blob.
+    socket.binaryType = 'arraybuffer';
     socketRef.current = socket;
     window.websocket = socket; // Store socket reference globally for sendChatMessage
     console.log('funcion web socket');
@@ -77,6 +81,8 @@ const SocketController = () => {
     };
 
     socket.onmessage = (event) => {
+      // Binary frames (camera) are handled by their own listeners; not JSON.
+      if (typeof event.data !== 'string') return;
       const data = JSON.parse(event.data);
       if (data.devices) {
         dispatch(devicesActions.update(data.devices));

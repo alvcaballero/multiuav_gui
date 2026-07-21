@@ -21,8 +21,6 @@ const OUTBOUND_MAP = {
 
   // Telemetría periódica (emitida por el scheduler del websocketController)
   [EVENTS.POSITION_UPDATED]: (positions) => (positions && Object.keys(positions).length ? { positions } : null),
-  [EVENTS.CAMERA_UPDATED]: (camera) =>
-    camera && Object.keys(camera).length ? { camera: Object.values(camera) } : null,
   [EVENTS.DEVICE_UPDATED]: (devices) => ({ devices: Object.values(devices) }),
   [EVENTS.SERVER_UPDATED]: (serverState) => ({ server: serverState }),
 

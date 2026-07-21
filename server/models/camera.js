@@ -18,8 +18,8 @@ export class cameraModel {
 
     if (deviceCamera && deviceCamera.camera) {
       return {
-        buffer: Buffer.from(deviceCamera.camera, 'base64'),
-        base64: deviceCamera.camera,
+        buffer: deviceCamera.camera,
+        base64: deviceCamera.camera.toString('base64'),
         mimeType: 'image/jpeg',
       };
     }
