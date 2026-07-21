@@ -116,11 +116,12 @@ params:
     default: 2
     description: 'What the aircraft does after reaching the last waypoint'
     options:
-      - { value: 0, key: MISSION_FINISHED_NO_ACTION, name: 'No action', description: 'hover at last waypoint' }
+      - { value: 0, key: MISSION_FINISHED_NO_ACTION, name: 'Hover', description: 'hover at last waypoint' }
       - { value: 1, key: MISSION_FINISHED_GO_HOME, name: 'Return to home' }
       - { value: 2, key: MISSION_FINISHED_AUTO_LANDING, name: 'Auto landing', description: 'land at last waypoint' }
       - { value: 3, key: MISSION_FINISHED_GO_TO_FIRST_WAYPOINT, name: 'Return to point 0' }
       - { value: 4, key: MISSION_FINISHED_CONTINUE_UNTIL_STOP, name: 'Infinite mode' }
+      - { value: 5, key: MISSION_FINISHED_VISUAL_LANDING, name: 'Visual landing', description: 'land at last waypoint' }
   mode_goto_first:
     Name: 'Go to first waypoint'
     id: 'mode_goto_first'

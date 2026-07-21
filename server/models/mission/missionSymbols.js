@@ -75,6 +75,7 @@ export const CONFIG_SYMBOLS = Object.freeze({
     MISSION_FINISHED_NO_ACTION: 0,
     MISSION_FINISHED_GO_HOME: 1,
     MISSION_FINISHED_AUTO_LANDING: 2,
+    MISSION_FINISHED_VISUAL_LANDING: 5, // supported by ConfigMission firmware
     // GO_TO_FIRST_WAYPOINT / CONTINUE_UNTIL_STOP not supported by ConfigMission firmware
   },
   actions: {
