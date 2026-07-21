@@ -14,7 +14,7 @@ import SwipeConfirm from '../shared/components/SwipeConfirm';
 import MainToolbar from '../components/layout/MainToolbar';
 import MainMap from '../map/MainMap';
 import StatusCard from '../components/devices/StatusCard';
-import CameraDevice from '../components/camera/CameraDevice';
+import CameraDevicePanel from '../components/camera/CameraDevicePanel';
 import { devicesActions, getCommandableMissionId } from '../store';
 import useFilter from '../components/devices/useFilter';
 import usePersistedState from '../shared/usePersistedState';
@@ -174,7 +174,7 @@ const MainPage = () => {
           <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
         </Suspense>
       )}
-      <CameraDevice deviceId={selectedDeviceId} onClose={unselectDevice} />
+      <CameraDevicePanel deviceId={selectedDeviceId} onClose={unselectDevice} />
       {AddUAVOpen && <Adduav SetAddUAVOpen={setAddUAVOpen} />}
     </div>
   );

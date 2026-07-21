@@ -6,8 +6,7 @@ import { makeStyles } from 'tss-react/mui';
 
 import DeviceList from '../components/devices/DeviceList';
 import { Paper, Grid, Box } from '@mui/material';
-import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
-import { CameraV1 } from '../components/camera/CameraV1';
+import CameraDevice from '../components/camera/CameraDevice';
 
 import { useSelector } from 'react-redux';
 const useStyles = makeStyles()((theme) => ({
@@ -42,7 +41,6 @@ const CameraPage = () => {
   void addUAVOpen;
   const devices = useSelector((state) => state.devices.items);
   let listdevices = Object.values(devices);
-  const myhostname = `${window.location.hostname}`;
 
   const { classes } = useStyles();
   return (
@@ -72,35 +70,7 @@ const CameraPage = () => {
               <Fragment key={'dev' + device.id}>
                 {device.camera.map((camera, cam_index) => (
                   <Grid size={{ xs: 12, sm: 6 }} key={'card-' + device.id + '-' + cam_index}>
-                    {camera.type === 'WebRTC' && (
-                      <CameraWebRTCV4
-                        deviceId={device.id}
-                        deviceIp={myhostname}
-                        devicename={device.name}
-                        camera_src={device.name + '_' + camera.source}
-                        onClose={() => {
-                          console.log('cerrar ');
-                        }}
-                      />
-                    )}
-                    {camera.type === 'WebRTC_env' && (
-                      <CameraWebRTCV4
-                        deviceId={device.id}
-                        deviceIp={device.ip}
-                        devicename={device.name}
-                        camera_src={camera.source}
-                        onClose={() => {
-                          console.log('cerrar ');
-                        }}
-                      />
-                    )}
-                    {camera.type === 'Websocket' && (
-                      <CameraV1
-                        deviceId={device.id}
-                        datacamera={null}
-                        onClose={() => console.log('cerrar ')}
-                      />
-                    )}
+                    <CameraDevice deviceId={device.id} cameraIndex={cam_index} />
                   </Grid>
                 ))}
               </Fragment>

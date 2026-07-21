@@ -84,9 +84,6 @@ const SocketController = () => {
       if (data.positions) {
         dispatch(sessionActions.updatePositions(data.positions));
       }
-      if (data.camera) {
-        dispatch(sessionActions.updateCamera(data.camera));
-      }
       if (data.server) {
         const isRosConnected = data.server.rosState === 'connect';
         dispatch(sessionActions.updateServerROS(isRosConnected));

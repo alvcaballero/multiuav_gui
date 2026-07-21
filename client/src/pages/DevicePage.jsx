@@ -33,8 +33,7 @@ import usePersistedState from '../shared/usePersistedState';
 import DroneSensorVisualizer from './DroneSensorVisualizer';
 import useFilter from '../components/devices/useFilter';
 import MainMap from '../map/MainMap';
-import { CameraWebRTCV4 } from '../components/camera/CameraWebRTCV4';
-import { CameraV1 } from '../components/camera/CameraV1';
+import CameraDevice from '../components/camera/CameraDevice';
 import CommandCard from '../components/commands/CommandCard';
 
 const useStyles = makeStyles()((theme) => ({
@@ -66,39 +65,6 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const RenderCamera = ({ device, myhostname }) => {
-  const camera = device.camera && device.camera.length > 0 ? device.camera[0] : { type: '' };
-  return (
-    <>
-      {camera.type === 'WebRTC' && (
-        <CameraWebRTCV4
-          deviceId={device.id}
-          deviceIp={myhostname}
-          devicename={device.name}
-          camera_src={device.name + '_' + camera.source}
-          onClose={() => {
-            console.log('cerrar ');
-          }}
-        />
-      )}
-      {camera.type === 'WebRTC_env' && (
-        <CameraWebRTCV4
-          deviceId={device.id}
-          deviceIp={device.ip}
-          devicename={device.name}
-          camera_src={camera.source}
-          onClose={() => {
-            console.log('cerrar ');
-          }}
-        />
-      )}
-      {camera.type === 'Websocket' && (
-        <CameraV1 deviceId={device.id} datacamera={null} onClose={() => console.log('cerrar ')} />
-      )}
-    </>
-  );
-};
-
 const DEFAULT_SENSOR_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
 
 const DevicePage = () => {
@@ -117,7 +83,6 @@ const DevicePage = () => {
   const thisDevice = id ? devicelist[id] : {};
   const markers = sessionmarkers;
 
-  const myhostname = `${window.location.hostname}`;
   const [keyword] = useState('');
   const [filter] = usePersistedState('filter', {
     statuses: [],
@@ -173,9 +138,7 @@ const DevicePage = () => {
             />
           </div>
           <div style={{ padding: '15px', margin: '5px' }}>
-            {Object.keys(thisDevice).length > 0 && (
-              <RenderCamera device={thisDevice} myhostname={myhostname} />
-            )}
+            {Object.keys(thisDevice).length > 0 && <CameraDevice deviceId={thisDevice.id} />}
           </div>
           <div style={{ padding: '15px', marginTop: 'auto' }}>
             <Paper>

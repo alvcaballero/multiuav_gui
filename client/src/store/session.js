@@ -12,7 +12,6 @@ const { reducer, actions } = createSlice({
     logs: [],
     positions: {},
     history: {},
-    camera: {},
     markers: {
       bases: [],
       elements: [],
@@ -137,13 +136,6 @@ const { reducer, actions } = createSlice({
     },
     updateSettingsSchema(state, action) {
       state.planning.settingsSchema = action.payload;
-    },
-    updateCamera(state, action) {
-      if (Object.keys(action.payload).length > 0) {
-        action.payload.forEach((camera) => {
-          state.camera[camera.deviceId] = camera;
-        });
-      }
     },
     updateScene3dOrigin(state, action) {
       state.scene3d.origin = action.payload;

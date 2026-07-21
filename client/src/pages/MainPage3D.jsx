@@ -13,7 +13,7 @@ import DeviceList from '../components/devices/DeviceList';
 import SwipeConfirm from '../shared/components/SwipeConfirm';
 import MainToolbar from '../components/layout/MainToolbar';
 import StatusCard from '../components/devices/StatusCard';
-import CameraDevice from '../components/camera/CameraDevice';
+import CameraDevicePanel from '../components/camera/CameraDevicePanel';
 
 import { devicesActions, getCommandableMissionId } from '../store';
 import useFilter from '../components/devices/useFilter';
@@ -147,7 +147,7 @@ const MainPage3D = () => {
         onClose={() => setConfirmMission(false)}
         onSucces={() => handleCommandMission()}
       />
-      <CameraDevice deviceId={selectedDeviceId} onClose={unselectDevice} />
+      <CameraDevicePanel deviceId={selectedDeviceId} onClose={unselectDevice} />
       {addUAVOpen && <Adduav SetAddUAVOpen={setAddUAVOpen} />}
     </div>
   );
