@@ -36,6 +36,7 @@ export default () => {
   const tomTomKey = 'myKey';
   const hereKey = 'myKey';
   const mapboxAccessToken = 'myKey';
+
   const myhostname = `${window.location.hostname}`;
   const port = 8484;
   const glyphsPreference = useAttributePreference('glyphs', false);
@@ -46,15 +47,9 @@ export default () => {
   return useMemo(
     () => [
       {
-        id: 'osm',
-        title: 'mapOsm',
-        style: styleCustom({
-          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-          maxZoom: 19,
-          attribution:
-            '© <a target="_top" rel="noopener" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          glyphs,
-        }),
+        id: 'openFreeMap',
+        title: 'mapOpenFreeMap',
+        style: 'https://tiles.openfreemap.org/styles/liberty',
         available: true,
       },
       {
@@ -67,6 +62,18 @@ export default () => {
         id: 'locationIqDark',
         title: 'mapLocationIqDark',
         style: `https://tiles.locationiq.com/v3/dark/vector.json?key=${locationIqKey}`,
+        available: true,
+      },
+      {
+        id: 'osm',
+        title: 'mapOsm',
+        style: styleCustom({
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          maxZoom: 19,
+          attribution:
+            '© <a target="_top" rel="noopener" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          glyphs,
+        }),
         available: true,
       },
       {
