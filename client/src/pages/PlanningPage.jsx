@@ -213,7 +213,15 @@ const PlanningPage = () => {
   useAsyncTask(async () => {
     const objetivoId = SendTask?.objetivo?.id;
     if (objetivoId === undefined || objetivoId === null) return;
-    if (auxobjetive === objetivoId) return;
+    // Re-fetch when the objetivo id actually changes, OR when it's still the
+    // same id but settingsSchema hasn't been populated yet — this covers the
+    // case where the initial render mounts with Redux's default objetivo
+    // (id:1, same shape as a real one) before the WelcomeMessage snapshot
+    // arrives: auxobjetive gets "used up" on the default, and a same-id real
+    // snapshot would otherwise never trigger the fetch that fills in
+    // settingsSchema/defaultSettings.
+    const schemaAlreadyLoaded = Object.keys(SendTask?.settingsSchema || {}).length > 0;
+    if (auxobjetive === objetivoId && schemaAlreadyLoaded) return;
 
     setAuxobjetive(objetivoId);
     const response = await fetch(`/api/planning/missionparam/${objetivoId}`);

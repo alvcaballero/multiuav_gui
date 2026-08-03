@@ -66,16 +66,19 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
     let center = map.getCenter();
     let auxMarkers = structuredClone(markers);
     auxMarkers.push({ latitude: center.lat, longitude: center.lng });
-    setMarkers(auxMarkers, { meth: 'add', index: -1 });
+    setMarkers(auxMarkers, { meth: 'add' });
   };
   const goToBase = (index) => {
     let base = markers[index];
     map.flyTo({ center: [base.longitude, base.latitude], zoom: Math.max(map.getZoom(), 18) });
   };
   const DeleteElement = (index) => {
+    // Capture the real id BEFORE the splice — the array `setMarkers` receives
+    // is post-delete, so an index into it no longer points at the removed row.
+    const deletedId = markers[index]?.id ?? markers[index]?.itemId;
     let auxMarkers = structuredClone(markers);
     auxMarkers.splice(index, 1);
-    setMarkers(auxMarkers, { meth: 'del', index: index });
+    setMarkers(auxMarkers, { meth: 'del', id: deletedId });
   };
 
   const changeLat = (index, value) => {
@@ -130,129 +133,132 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
         </Box>
       ) : (
         <div className={classes.details}>
-          {Object.values(markers).map((base, index) => (
-            <Accordion
-              key={index}
-              expanded={expanded === 'wp ' + index}
-              onChange={handleChange('wp ' + index)}
-            >
-              <AccordionSummary component="div" expandIcon={<ExpandMore />}>
-                <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
-                  {base.name || type + ' ' + index}
-                </Typography>
-                <IconButton
-                  sx={{ py: 0, pr: 0, flexShrink: 0 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    goToBase(index);
-                  }}
-                >
-                  <MyLocationIcon />
-                </IconButton>
+          {Object.values(markers).map((base, index) => {
+            const rowKey = base.id ?? base.itemId ?? index;
+            return (
+              <Accordion
+                key={rowKey}
+                expanded={expanded === 'wp ' + rowKey}
+                onChange={handleChange('wp ' + rowKey)}
+              >
+                <AccordionSummary component="div" expandIcon={<ExpandMore />}>
+                  <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
+                    {base.name || type + ' ' + index}
+                  </Typography>
+                  <IconButton
+                    sx={{ py: 0, pr: 0, flexShrink: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToBase(index);
+                    }}
+                  >
+                    <MyLocationIcon />
+                  </IconButton>
 
-                <IconButton
-                  sx={{ py: 0, pr: 0, flexShrink: 0 }}
-                  onClick={() => DeleteElement(index)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </AccordionSummary>
-              <AccordionDetails className={classes.details}>
-                {expanded === 'wp ' + index && (
-                  <Fragment>
-                    <Box
-                      component="form"
-                      sx={{
-                        '& .MuiTextField-root': { m: 1 },
-                      }}
-                    >
-                      {type === 'Element' && (
+                  <IconButton
+                    sx={{ py: 0, pr: 0, flexShrink: 0 }}
+                    onClick={() => DeleteElement(index)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </AccordionSummary>
+                <AccordionDetails className={classes.details}>
+                  {expanded === 'wp ' + rowKey && (
+                    <Fragment>
+                      <Box
+                        component="form"
+                        sx={{
+                          '& .MuiTextField-root': { m: 1 },
+                        }}
+                      >
+                        {type === 'Element' && (
+                          <TextField
+                            required
+                            label="Name"
+                            variant="standard"
+                            value={base.name ? base.name : ''}
+                            onChange={(e) => setName(index, e.target.value)}
+                          />
+                        )}
+                        <div>
+                          <Typography variant="subtitle1" style={{ display: 'inline' }}>
+                            Position
+                          </Typography>
+                        </div>
                         <TextField
                           required
-                          label="Name"
+                          label="Latitude "
+                          type="number"
+                          sx={{ width: '15ch' }}
                           variant="standard"
-                          value={base.name ? base.name : ''}
-                          onChange={(e) => setName(index, e.target.value)}
+                          slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
+                          defaultValue={base.latitude}
+                          onBlur={(e) => {
+                            changeLat(index, +e.target.value);
+                          }}
                         />
-                      )}
-                      <div>
-                        <Typography variant="subtitle1" style={{ display: 'inline' }}>
-                          Position
-                        </Typography>
-                      </div>
-                      <TextField
-                        required
-                        label="Latitude "
-                        type="number"
-                        sx={{ width: '15ch' }}
-                        variant="standard"
-                        slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
-                        defaultValue={base.latitude}
-                        onBlur={(e) => {
-                          changeLat(index, +e.target.value);
-                        }}
-                      />
-                      <TextField
-                        required
-                        label="Longitud "
-                        type="number"
-                        variant="standard"
-                        sx={{ width: '15ch' }}
-                        slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
-                        defaultValue={base.longitude}
-                        onBlur={(e) => {
-                          changeLng(index, +e.target.value);
-                        }}
-                      />
-                      {type === 'Element' && (
                         <TextField
-                          label="Heading (° from N)"
+                          required
+                          label="Longitud "
                           type="number"
                           variant="standard"
-                          sx={{ width: '18ch' }}
-                          slotProps={{ htmlInput: { min: 0, max: 360, step: 1 } }}
-                          defaultValue={base.heading ?? 0}
-                          onBlur={(e) => setHeading(index, e.target.value)}
+                          sx={{ width: '15ch' }}
+                          slotProps={{ htmlInput: { maxLength: 8, step: 0.0001 } }}
+                          defaultValue={base.longitude}
+                          onBlur={(e) => {
+                            changeLng(index, +e.target.value);
+                          }}
                         />
-                      )}
-                      {hasMapImage && (
-                        <>
-                          <div style={{ marginTop: '8px' }}>
-                            <Typography variant="subtitle1">
-                              Image corners (SW → SE → NE → NW)
-                            </Typography>
-                          </div>
-                          {CORNERS.map((label, cornerIdx) => (
-                            <div key={label}>
-                              <Typography variant="caption">{label}</Typography>
-                              <TextField
-                                label="Lat"
-                                type="number"
-                                variant="standard"
-                                sx={{ width: '15ch' }}
-                                slotProps={{ htmlInput: { step: 0.0001 } }}
-                                defaultValue={base.corners?.[cornerIdx]?.[1] ?? 0}
-                                onBlur={(e) => setCorner(index, cornerIdx, 'lat', e.target.value)}
-                              />
-                              <TextField
-                                label="Lng"
-                                type="number"
-                                variant="standard"
-                                sx={{ width: '15ch' }}
-                                slotProps={{ htmlInput: { step: 0.0001 } }}
-                                defaultValue={base.corners?.[cornerIdx]?.[0] ?? 0}
-                                onBlur={(e) => setCorner(index, cornerIdx, 'lng', e.target.value)}
-                              />
+                        {type === 'Element' && (
+                          <TextField
+                            label="Heading (° from N)"
+                            type="number"
+                            variant="standard"
+                            sx={{ width: '18ch' }}
+                            slotProps={{ htmlInput: { min: 0, max: 360, step: 1 } }}
+                            defaultValue={base.heading ?? 0}
+                            onBlur={(e) => setHeading(index, e.target.value)}
+                          />
+                        )}
+                        {hasMapImage && (
+                          <>
+                            <div style={{ marginTop: '8px' }}>
+                              <Typography variant="subtitle1">
+                                Image corners (SW → SE → NE → NW)
+                              </Typography>
                             </div>
-                          ))}
-                        </>
-                      )}
-                    </Box>
-                  </Fragment>
-                )}
-              </AccordionDetails>
-            </Accordion>
-          ))}
+                            {CORNERS.map((label, cornerIdx) => (
+                              <div key={label}>
+                                <Typography variant="caption">{label}</Typography>
+                                <TextField
+                                  label="Lat"
+                                  type="number"
+                                  variant="standard"
+                                  sx={{ width: '15ch' }}
+                                  slotProps={{ htmlInput: { step: 0.0001 } }}
+                                  defaultValue={base.corners?.[cornerIdx]?.[1] ?? 0}
+                                  onBlur={(e) => setCorner(index, cornerIdx, 'lat', e.target.value)}
+                                />
+                                <TextField
+                                  label="Lng"
+                                  type="number"
+                                  variant="standard"
+                                  sx={{ width: '15ch' }}
+                                  slotProps={{ htmlInput: { step: 0.0001 } }}
+                                  defaultValue={base.corners?.[cornerIdx]?.[0] ?? 0}
+                                  onBlur={(e) => setCorner(index, cornerIdx, 'lng', e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </Box>
+                    </Fragment>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
           <Box sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"

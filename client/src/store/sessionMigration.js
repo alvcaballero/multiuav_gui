@@ -10,15 +10,26 @@ export const generateBaseId = () => {
 };
 
 /**
- * Migra markers de estructura legacy a nueva estructura
- * Añade IDs a las bases si no los tienen
+ * Genera un ID local para un grupo/item de elementos creado en el cliente
+ * antes de guardarse. Prefijado con "local_" para distinguirlo de un id real
+ * de SQL (siempre numérico) sin ambigüedad.
+ */
+export const generateLocalId = () => {
+  return `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+/**
+ * Migra markers de estructura legacy a nueva estructura.
+ * Añade IDs a las bases y a los grupos/items de elements si no los tienen
+ * (el backend siempre los manda poblados; esto solo cubre un grupo/item
+ * recién creado en el cliente o un snapshot cargado desde un YAML local).
  */
 export const migrateMarkers = (markers) => {
-  if (!markers || !markers.bases) {
+  if (!markers) {
     return markers;
   }
 
-  const migratedBases = markers.bases.map((base, index) => {
+  const migratedBases = (markers.bases || []).map((base, index) => {
     // Si ya tiene ID, no hacer nada
     if (base.id) {
       return base;
@@ -31,9 +42,20 @@ export const migrateMarkers = (markers) => {
     };
   });
 
+  const migratedElements = (markers.elements || []).map((group) => {
+    const groupId = group.groupId ?? generateLocalId();
+    const items = (group.items || []).map((item) => ({
+      ...item,
+      itemId: item.itemId ?? generateLocalId(),
+      groupId: item.groupId ?? groupId,
+    }));
+    return { ...group, groupId, items };
+  });
+
   return {
     ...markers,
     bases: migratedBases,
+    elements: migratedElements,
   };
 };
 

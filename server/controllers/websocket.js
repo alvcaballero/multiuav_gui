@@ -92,7 +92,7 @@ export class websocketController {
     const devices = await devicesController.getAllDevices();
     const positions = await positionsController.getLastPositions();
     const server = await rosController.getServerStatus();
-    const planning = planningController.getDefaultPlanning();
+    const planning = await planningController.getDefaultPlanning();
     return {
       positions: positions,
       server: { rosState: server.state },

@@ -8,14 +8,9 @@ export const usePlanningReduxHandlers = ({ dispatch, markers, SendTask, sendTask
     (value, meta = {}) => {
       dispatch(sessionActions.updateMarker({ ...markers, bases: value }));
 
-      if (meta.meth === 'del') {
-        const baseIdToRemove = value[meta.index]?.id;
-        if (baseIdToRemove) {
-          const newAssignments = (SendTask.assignments || []).filter(
-            (a) => a.baseId !== baseIdToRemove,
-          );
-          dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
-        }
+      if (meta.meth === 'del' && meta.id) {
+        const newAssignments = (SendTask.assignments || []).filter((a) => a.baseId !== meta.id);
+        dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
       }
     },
     [dispatch, markers, SendTask],

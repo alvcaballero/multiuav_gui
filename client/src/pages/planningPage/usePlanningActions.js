@@ -23,10 +23,19 @@ export const usePlanningActions = ({
     if (!device) return null;
     const base = markers.bases.find((b) => b.id === assignment.baseId);
     if (!base) return null;
+    // The external planner (mission_request, port 8004) expects exactly
+    // [latitude, longitude, id] — build it explicitly instead of
+    // Object.values(base), whose order/length depends on the object's own
+    // shape (a base can now also carry typeId/name/corners since the SQL
+    // migration, which would silently break this contract).
     return {
       id: device.name,
       category: device.category,
-      settings: { ...assignment.settings, base: Object.values(base), landing_mode: 2 },
+      settings: {
+        ...assignment.settings,
+        base: [base.latitude, base.longitude, base.id],
+        landing_mode: 2,
+      },
     };
   }, []);
 

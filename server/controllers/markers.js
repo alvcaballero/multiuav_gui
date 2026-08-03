@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { markersModel } from '../models/markers.js';
+import { markersSnapshotModel } from '../models/markers/snapshot.js';
 import { logger } from '../common/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,27 +25,27 @@ export class markersController {
   // ─── Instances ────────────────────────────────────────────────────────────
 
   static async getMarkers(req, res) {
-    const response = markersModel.getMarkers();
+    const response = await markersSnapshotModel.getMarkers();
     res.json(response);
   }
 
   static async setMarkers(req, res) {
-    const response = markersModel.setMarkers(req.body);
+    const response = await markersSnapshotModel.setMarkers(req.body);
     res.json(response);
   }
 
   static async getBases(req, res) {
-    const response = markersModel.getBases();
-    res.json(response);
+    const { markersbase } = await markersSnapshotModel.getMarkers();
+    res.json(markersbase);
   }
 
   static async getElements(req, res) {
-    const response = markersModel.getElements();
-    res.json(response);
+    const { elements } = await markersSnapshotModel.getMarkers();
+    res.json(elements);
   }
 
   static async getBasesWithAssignments(req, res) {
-    const response = markersModel.getBaseswithAssignments();
+    const response = await markersSnapshotModel.getBaseswithAssignments();
     res.json(response);
   }
 

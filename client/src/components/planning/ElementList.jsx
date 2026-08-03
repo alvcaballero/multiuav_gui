@@ -17,6 +17,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../../shared/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BaseList from './BaseList';
+import { generateLocalId } from '../../store/sessionMigration';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
@@ -87,7 +88,13 @@ const ElementList = ({ markers, setMarkers }) => {
   const addList = () => {
     const defaultType = markerTypes[0]?.id || 'powerTower';
     let auxMarkers = structuredClone(markers);
-    auxMarkers.push({ type: defaultType, name: 'Elements', linea: true, items: [] });
+    auxMarkers.push({
+      groupId: generateLocalId(),
+      type: defaultType,
+      name: 'Elements',
+      linea: true,
+      items: [],
+    });
     setMarkers(auxMarkers);
   };
   const handleChange = (panel) => (event, isExpanded) => {
@@ -110,61 +117,67 @@ const ElementList = ({ markers, setMarkers }) => {
         </Box>
       ) : (
         <div className={classes.details}>
-          {Object.values(markers).map((base, index) => (
-            <Accordion
-              key={index}
-              expanded={expanded === 'Elements ' + index}
-              onChange={handleChange('Elements ' + index)}
-            >
-              <AccordionSummary component="div" expandIcon={<ExpandMore />}>
-                <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
-                  {base.name || 'Group ' + index} {base.type && `(${base.type})`}
-                </Typography>
-                <IconButton sx={{ py: 0, pr: 0, flexShrink: 0 }} onClick={() => DeleteList(index)}>
-                  <DeleteIcon />
-                </IconButton>
-              </AccordionSummary>
-              <AccordionDetails className={classes.details}>
-                {expanded === 'Elements ' + index && (
-                  <Fragment>
-                    <TextField
-                      required
-                      label="Name"
-                      variant="standard"
-                      value={base.name ? base.name : ''}
-                      onChange={(e) => setElementName(index, e.target.value)}
-                    />
-                    <TextField
-                      label="Description"
-                      variant="standard"
-                      multiline
-                      rows={2}
-                      fullWidth
-                      value={base.description ? base.description : ''}
-                      onChange={(e) => setElementDescription(index, e.target.value)}
-                      placeholder="Add a description for this group..."
-                    />
-                    <SelectField
-                      emptyValue={null}
-                      label="Type"
-                      value={base.type}
-                      data={markerTypes}
-                      onChange={(e) => setElementType(index, e.target.value)}
-                      keyGetter={(item) => item.id}
-                      titleGetter={(item) => item.name}
-                      style={{ display: 'inline', width: '200px' }}
-                    />
-                    <BaseList
-                      markers={base.items}
-                      setMarkers={(value) => setElement(index, value)}
-                      type="Element"
-                      hasMapImage={markerTypes.find((t) => t.id === base.type)?.mapImage === true}
-                    />
-                  </Fragment>
-                )}
-              </AccordionDetails>
-            </Accordion>
-          ))}
+          {Object.values(markers).map((base, index) => {
+            const rowKey = base.groupId ?? index;
+            return (
+              <Accordion
+                key={rowKey}
+                expanded={expanded === 'Elements ' + rowKey}
+                onChange={handleChange('Elements ' + rowKey)}
+              >
+                <AccordionSummary component="div" expandIcon={<ExpandMore />}>
+                  <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
+                    {base.name || 'Group ' + index} {base.type && `(${base.type})`}
+                  </Typography>
+                  <IconButton
+                    sx={{ py: 0, pr: 0, flexShrink: 0 }}
+                    onClick={() => DeleteList(index)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </AccordionSummary>
+                <AccordionDetails className={classes.details}>
+                  {expanded === 'Elements ' + rowKey && (
+                    <Fragment>
+                      <TextField
+                        required
+                        label="Name"
+                        variant="standard"
+                        value={base.name ? base.name : ''}
+                        onChange={(e) => setElementName(index, e.target.value)}
+                      />
+                      <TextField
+                        label="Description"
+                        variant="standard"
+                        multiline
+                        rows={2}
+                        fullWidth
+                        value={base.description ? base.description : ''}
+                        onChange={(e) => setElementDescription(index, e.target.value)}
+                        placeholder="Add a description for this group..."
+                      />
+                      <SelectField
+                        emptyValue={null}
+                        label="Type"
+                        value={base.type}
+                        data={markerTypes}
+                        onChange={(e) => setElementType(index, e.target.value)}
+                        keyGetter={(item) => item.id}
+                        titleGetter={(item) => item.name}
+                        style={{ display: 'inline', width: '200px' }}
+                      />
+                      <BaseList
+                        markers={base.items}
+                        setMarkers={(value) => setElement(index, value)}
+                        type="Element"
+                        hasMapImage={markerTypes.find((t) => t.id === base.type)?.mapImage === true}
+                      />
+                    </Fragment>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
           <Box sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"

@@ -9,6 +9,11 @@ import { Chat, ChatSchema } from './chat.model.js';
 import { ChatMessage, ChatMessageSchema } from './chatMessage.model.js';
 import { MissionPlan, MissionPlanSchema } from './missionPlan.model.js';
 import { PositionHistory, PositionHistorySchema } from './positionHistory.model.js';
+import { ElementType, ElementTypeSchema } from './elementType.model.js';
+import { ElementGroup, ElementGroupSchema } from './elementGroup.model.js';
+import { ElementItem, ElementItemSchema } from './elementItem.model.js';
+import { Base, BaseSchema } from './base.model.js';
+import { Assignment, AssignmentSchema } from './assignment.model.js';
 
 export function setupModels(sequelize) {
   User.init(UserSchema, User.config(sequelize));
@@ -22,9 +27,20 @@ export function setupModels(sequelize) {
   Chat.init(ChatSchema, Chat.config(sequelize));
   ChatMessage.init(ChatMessageSchema, ChatMessage.config(sequelize));
   PositionHistory.init(PositionHistorySchema, PositionHistory.config(sequelize));
+  ElementType.init(ElementTypeSchema, ElementType.config(sequelize));
+  ElementGroup.init(ElementGroupSchema, ElementGroup.config(sequelize));
+  ElementItem.init(ElementItemSchema, ElementItem.config(sequelize));
+  Base.init(BaseSchema, Base.config(sequelize));
+  Assignment.init(AssignmentSchema, Assignment.config(sequelize));
 
   // Associations
   Mission.belongsTo(MissionPlan, { foreignKey: 'planId', as: 'plan' });
   MissionPlan.hasMany(Mission, { foreignKey: 'planId', as: 'missions' });
   PositionHistory.belongsTo(Device, { foreignKey: 'deviceId' });
+  ElementGroup.belongsTo(ElementType, { foreignKey: 'typeId', as: 'type' });
+  ElementItem.belongsTo(ElementGroup, { foreignKey: 'groupId', as: 'group' });
+  ElementGroup.hasMany(ElementItem, { foreignKey: 'groupId', as: 'items' });
+  Base.belongsTo(ElementType, { foreignKey: 'typeId', as: 'type' });
+  Assignment.belongsTo(Base, { foreignKey: 'baseId', as: 'base' });
+  Assignment.belongsTo(Device, { foreignKey: 'deviceId', as: 'device' });
 }

@@ -1,5 +1,8 @@
 import { readDataFile, writeDataFile, getRandomInt } from '../common/utils.js';
 import { missionsConfigData, planningHost } from '../config/config.js';
+import { markersSnapshotModel } from './markers/snapshot.js';
+import { assignmentsModel } from './markers/assignments.js';
+import { basesModel } from './markers/bases.js';
 
 const configPlanning = readDataFile('../config/planning/config.yaml');
 var initPlanning = readDataFile(missionsConfigData);
@@ -43,17 +46,31 @@ export class planningModel {
       description: mission.description,
     }));
   }
-  static getParam(type) {
-    logger.debug(`Mission params type=${type}`);
-    return configPlanning.missionTypes[type]['data'];
+  static getParam(id) {
+    logger.debug(`Mission params id=${id}`);
+    // missionTypes ids are NOT guaranteed to match their array position (e.g.
+    // id:3 sits at index 3 but has case:1, same as the id:1 entry) — look up
+    // by real id instead of indexing the array by position.
+    return configPlanning.missionTypes.find((m) => m.id === Number(id))?.data;
   }
   static getMissionTypes() {
     logger.debug('Mission types all');
     return configPlanning.missionTypes;
   }
-  static getDefault() {
-    //console.log('Get default planning with markers');
-    return { ...initPlanning, id: getRandomInt(100000000) };
+  // markersbase/elements/assignments now live in SQL (ElementGroup/ElementItem/
+  // Base/Assignment) — this rebuilds the same legacy blob the client/planner
+  // expect, sourcing that portion from SQL and the rest (objetivo/loc/meteo/id)
+  // from the residual YAML.
+  static async getDefault() {
+    const { markersbase, elements } = await markersSnapshotModel.getMarkers();
+    const assignments = await markersSnapshotModel.getAssignments();
+    return {
+      ...initPlanning,
+      id: getRandomInt(100000000),
+      markersbase,
+      elements,
+      assignments,
+    };
   }
   static getPlanning() {
     //console.log('Get default planing ');
@@ -66,30 +83,26 @@ export class planningModel {
       settings: initPlanning.settings,
     };
   }
-  static getBasesSettings() {
+  static async getBasesSettings() {
     logger.debug('Get bases settings (from assignments)');
-    const assignments = initPlanning.assignments || [];
-    const markersbase = initPlanning.markersbase || [];
-    const basesMap = new Map(markersbase.map((b) => [b.id, b]));
-    return assignments.map((a) => ({
-      devices: a.device,
-      settings: a.settings,
-      base: basesMap.get(a.baseId) || null,
-    }));
+    return await assignmentsModel.getBasesSettings();
   }
 
-  static getBases() {
+  static async getBases() {
     logger.debug('get bases (landing sites)');
-    return initPlanning.markersbase;
+    return await basesModel.getAll();
   }
 
-  static setDefault(value) {
-    //console.log('Set default mission');
-    //console.log(value);
-    initPlanning = value;
-    let response = writeDataFile(missionsConfigData, value);
+  // `value` is the full legacy-shaped payload the client sends (objetivo/loc/
+  // meteo/id plus markersbase/elements/assignments). The SQL portion is
+  // upserted into the tables; the rest keeps being persisted to the residual
+  // YAML, same as before.
+  static async setDefault(value) {
+    const { markersbase, elements, assignments, ...residual } = value;
+    await markersSnapshotModel.setMarkers({ markersbase, elements, assignments });
+    initPlanning = { ...initPlanning, ...residual };
+    let response = await writeDataFile(missionsConfigData, initPlanning);
     return { result: response };
-    // modify the mission init
   }
 
   static async PlanningRequest({ id, myTask }) {

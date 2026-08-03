@@ -17,8 +17,8 @@ export class planningController {
     let response = await planningModel.getDefault();
     res.json(response);
   }
-  static getDefaultPlanning() {
-    return planningModel.getDefault();
+  static async getDefaultPlanning() {
+    return await planningModel.getDefault();
   }
 
   static async setDefault(req, res) {
@@ -29,11 +29,11 @@ export class planningController {
   static getConfigParam(obj) {
     return planningModel.getParam(obj);
   }
-  static getConfigBases() {
-    return planningModel.getBases();
+  static async getConfigBases() {
+    return await planningModel.getBases();
   }
-  static getBasesSettings() {
-    return planningModel.getBasesSettings();
+  static async getBasesSettings() {
+    return await planningModel.getBasesSettings();
   }
   static getCaseTypes() {
     return planningModel.getTypes();

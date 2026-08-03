@@ -93,49 +93,8 @@ const { reducer, actions } = createSlice({
         state.planning = migrated;
       }
     },
-    // Nuevas acciones para trabajar con la estructura mejorada
-    setBaseAssignment(state, action) {
-      const { baseId, device, settings } = action.payload;
-      const existingIndex = state.planning.assignments.findIndex((a) => a.baseId === baseId);
-
-      if (existingIndex >= 0) {
-        // Actualizar asignación existente
-        state.planning.assignments[existingIndex] = {
-          baseId,
-          device,
-          settings: settings || state.planning.assignments[existingIndex].settings,
-        };
-      } else {
-        // Crear nueva asignación
-        state.planning.assignments.push({
-          baseId,
-          device,
-          settings: settings || state.planning.defaultSettings,
-        });
-      }
-    },
-    removeBaseAssignment(state, action) {
-      const baseId = action.payload;
-      state.planning.assignments = state.planning.assignments.filter((a) => a.baseId !== baseId);
-    },
-    updateBaseSettings(state, action) {
-      const { baseId, settings } = action.payload;
-      const assignment = state.planning.assignments.find((a) => a.baseId === baseId);
-      if (assignment) {
-        assignment.settings = { ...assignment.settings, ...settings };
-      }
-    },
-    updateDefaultSettings(state, action) {
-      state.planning.defaultSettings = { ...state.planning.defaultSettings, ...action.payload };
-    },
     updatePlanningObjective(state, action) {
       state.planning.objetivo = action.payload;
-    },
-    updatePlanningLocations(state, action) {
-      state.planning.loc = action.payload;
-    },
-    updateSettingsSchema(state, action) {
-      state.planning.settingsSchema = action.payload;
     },
     updateScene3dOrigin(state, action) {
       state.scene3d.origin = action.payload;

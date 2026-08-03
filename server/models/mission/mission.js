@@ -255,7 +255,7 @@ export class missionModel {
     });
     logger.debug(`param devices: ${JSON.stringify(param['devices'])}`);
 
-    let baseSettings = planningController.getBasesSettings();
+    let baseSettings = await planningController.getBasesSettings();
     if (!baseSettings || baseSettings.length === 0) {
       logger.warn('no base assignments found');
       return null;
@@ -293,7 +293,13 @@ export class missionModel {
 
       config.id = myDevice.name;
       config.category = myDevice.category;
-      config.settings.base = setting.base ? Object.values(setting.base) : [];
+      // The external planner expects exactly [latitude, longitude, id] (see
+      // server/test/api/json/missionRequest*.json) — build it explicitly
+      // instead of Object.values(), whose order/length depends on the shape
+      // of `setting.base` (a Sequelize Base instance has more fields now).
+      config.settings.base = setting.base
+        ? [setting.base.latitude, setting.base.longitude, setting.base.id]
+        : [];
       config.settings.landing_mode = 2;
       let uavData = await positionsController.getByDeviceId(myDevice.id);
       logger.debug(`uavData: ${JSON.stringify(uavData)}`);
