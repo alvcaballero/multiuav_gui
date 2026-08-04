@@ -9,7 +9,7 @@ import { createFilesRouter } from './files.js';
 import { ExtAppRouter } from './ExtApp.js';
 import { serverRouter } from './server.js';
 import { planningRouter } from './planning.js';
-import { markersRouter } from './markers.js';
+import { markersRouter } from './markers/markers.js';
 import { geofenceRouter } from './geofence.js';
 import { chatRouter } from './chat.js';
 import { rosRouter } from './ros.js';
@@ -29,7 +29,6 @@ export function setupRoutes(app) {
   app.use('/api/missions', createMissionRouter());
   app.use('/api/files', createFilesRouter());
   app.use('/api/planning', planningRouter);
-  app.use('/api/markerslegacy', markersRouter);
   app.use('/api/ExtApp', ExtAppRouter);
   app.use('/api/server', serverRouter);
   app.use('/api/geofences', geofenceRouter);
@@ -40,4 +39,8 @@ export function setupRoutes(app) {
   app.use('/api/markers/items', elementItemsRouter);
   app.use('/api/markers/bases', basesRouter);
   app.use('/api/markers/assignments', assignmentsRouter);
+  // Root instances ({markersbase, elements}) — consumed by get_registered_objects
+  // in mcp_server. Mounted last so it never shadows the more specific
+  // /api/markers/{types,groups,items,bases,assignments} prefixes above.
+  app.use('/api/markers', markersRouter);
 }

@@ -1,15 +1,16 @@
-// Bridges the legacy YAML-shaped `{markersbase, elements, assignments}` blob
-// (still what the client/planner speak) with the new SQL tables. Reads build
-// that shape from ElementGroup/ElementItem/Base/Assignment; writes upsert the
-// same three collections back into those tables. This is the seam the legacy
-// `markersModel`/`planningModel` cut over to — the wire format they expose
-// does not change, only where the data actually lives.
+// Marker instances (bases + elements + assignments), backed by SQL
+// (ElementGroup/ElementItem/Base/Assignment). Exposes the legacy YAML-shaped
+// `{markersbase, elements}` blob — still what the client/planner speak — the
+// wire format doesn't change, only where the data actually lives.
 import sequelize from '../../common/sequelize.js';
 import { logger } from '../../common/logger.js';
 
 // Builds one `elements[]` entry (a group + its items) in the legacy shape,
-// adding `itemId`/`groupId` on each item (additive — every field the client
-// already reads is still there, in the same place).
+// adding `itemId`/`groupId`/`attributes` on each item and `attributes` on the
+// group (additive — every field the client already reads is still there, in
+// the same place). `attributes` is what lets get_registered_objects
+// (mcp_server) hand the LLM structured data instead of parsing `description`
+// free text.
 function groupToLegacy(group) {
   const items = (group.items || []).map((item) => ({
     latitude: item.latitude,
@@ -17,6 +18,7 @@ function groupToLegacy(group) {
     name: item.name,
     itemId: item.id,
     groupId: group.id,
+    attributes: item.attributes,
   }));
   return {
     groupId: group.id,
@@ -24,6 +26,7 @@ function groupToLegacy(group) {
     name: group.name,
     description: group.description,
     linea: group.linea,
+    attributes: group.attributes,
     items,
   };
 }
@@ -43,7 +46,9 @@ function assignmentToLegacy(assignment) {
   };
 }
 
-export const markersSnapshotModel = {
+export const markersModel = {
+  // ─── Marker instances (bases + elements) ─────────────────────────────────
+
   // Legacy shape: { markersbase: [...], elements: [...] }
   async getMarkers() {
     const [groups, bases] = await Promise.all([
@@ -57,24 +62,6 @@ export const markersSnapshotModel = {
       markersbase: bases.map(baseToLegacy),
       elements: groups.map(groupToLegacy),
     };
-  },
-
-  // Legacy shape: bases with their assigned device attached (markersModel.getBaseswithAssignments)
-  async getBaseswithAssignments() {
-    const [bases, assignments] = await Promise.all([
-      sequelize.models.Base.findAll(),
-      sequelize.models.Assignment.findAll({ include: [{ model: sequelize.models.Device, as: 'device' }] }),
-    ]);
-    const assignmentsMap = new Map(assignments.map((a) => [a.baseId, a.device]));
-    return bases.map((base) => ({ ...baseToLegacy(base), device: assignmentsMap.get(base.id) || null }));
-  },
-
-  // Legacy shape: assignments[] as stored in the YAML ({baseId, device:{id,name}, settings})
-  async getAssignments() {
-    const assignments = await sequelize.models.Assignment.findAll({
-      include: [{ model: sequelize.models.Device, as: 'device' }],
-    });
-    return assignments.map(assignmentToLegacy);
   },
 
   // Upserts markersbase/elements/assignments from a legacy-shaped payload
@@ -127,12 +114,22 @@ export const markersSnapshotModel = {
       elementGroup.linea = group.linea ?? false;
       await elementGroup.save();
 
-      for (const item of group.items || []) {
+      const items = group.items || [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        // The client lets a new item be created without a `name` (the field
+        // is optional in the UI) — Sequelize's `where` rejects `undefined`
+        // outright, which was silently aborting the rest of this loop (an
+        // unhandled rejection), leaving the group saved but every one of its
+        // items unsaved. Fall back to a positional placeholder so the lookup
+        // is always well-formed; the client's own placeholder for a nameless
+        // row follows the same "Type index" pattern (see BaseList.jsx).
+        const name = item.name || `Item ${i}`;
         const [elementItem] = await sequelize.models.ElementItem.findOrCreate({
-          where: { groupId: elementGroup.id, name: item.name },
+          where: { groupId: elementGroup.id, name },
           defaults: {
             groupId: elementGroup.id,
-            name: item.name,
+            name,
             latitude: item.latitude,
             longitude: item.longitude,
           },
@@ -163,5 +160,23 @@ export const markersSnapshotModel = {
       record.settings = assignment.settings || {};
       await record.save();
     }
+  },
+
+  // Legacy shape: bases with their assigned device attached
+  async getBaseswithAssignments() {
+    const [bases, assignments] = await Promise.all([
+      sequelize.models.Base.findAll(),
+      sequelize.models.Assignment.findAll({ include: [{ model: sequelize.models.Device, as: 'device' }] }),
+    ]);
+    const assignmentsMap = new Map(assignments.map((a) => [a.baseId, a.device]));
+    return bases.map((base) => ({ ...baseToLegacy(base), device: assignmentsMap.get(base.id) || null }));
+  },
+
+  // Legacy shape: assignments[] as stored in the YAML ({baseId, device:{id,name}, settings})
+  async getAssignments() {
+    const assignments = await sequelize.models.Assignment.findAll({
+      include: [{ model: sequelize.models.Device, as: 'device' }],
+    });
+    return assignments.map(assignmentToLegacy);
   },
 };

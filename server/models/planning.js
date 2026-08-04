@@ -1,6 +1,6 @@
 import { readDataFile, writeDataFile, getRandomInt } from '../common/utils.js';
 import { missionsConfigData, planningHost } from '../config/config.js';
-import { markersSnapshotModel } from './markers/snapshot.js';
+import { markersModel } from './markers/markers.js';
 import { assignmentsModel } from './markers/assignments.js';
 import { basesModel } from './markers/bases.js';
 
@@ -62,8 +62,8 @@ export class planningModel {
   // expect, sourcing that portion from SQL and the rest (objetivo/loc/meteo/id)
   // from the residual YAML.
   static async getDefault() {
-    const { markersbase, elements } = await markersSnapshotModel.getMarkers();
-    const assignments = await markersSnapshotModel.getAssignments();
+    const { markersbase, elements } = await markersModel.getMarkers();
+    const assignments = await markersModel.getAssignments();
     return {
       ...initPlanning,
       id: getRandomInt(100000000),
@@ -99,7 +99,7 @@ export class planningModel {
   // YAML, same as before.
   static async setDefault(value) {
     const { markersbase, elements, assignments, ...residual } = value;
-    await markersSnapshotModel.setMarkers({ markersbase, elements, assignments });
+    await markersModel.setMarkers({ markersbase, elements, assignments });
     initPlanning = { ...initPlanning, ...residual };
     let response = await writeDataFile(missionsConfigData, initPlanning);
     return { result: response };

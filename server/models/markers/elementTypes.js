@@ -1,4 +1,10 @@
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import sequelize from '../../common/sequelize.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ASSETS_DIR = path.resolve(__dirname, '../../data/element-types');
 
 export const elementTypesModel = {
   async getAll() {
@@ -41,5 +47,27 @@ export const elementTypesModel = {
 
   async delete(id) {
     return await sequelize.models.ElementType.destroy({ where: { id } });
+  },
+
+  // ─── Assets (icon/model files) ────────────────────────────────────────────
+  // Filesystem storage, not SQL — kept here (not in a separate module)
+  // because it's small and only ever used alongside the type catalog CRUD.
+
+  getAssetPath(id, assetType) {
+    const ext = assetType === 'icon' ? ['png', 'svg', 'jpg'] : ['glb', 'gltf'];
+    const dir = path.join(ASSETS_DIR, id);
+    if (!fs.existsSync(dir)) return null;
+
+    for (const e of ext) {
+      const p = path.join(dir, `${assetType}.${e}`);
+      if (fs.existsSync(p)) return p;
+    }
+    return null;
+  },
+
+  ensureAssetDir(id) {
+    const dir = path.join(ASSETS_DIR, id);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    return dir;
   },
 };

@@ -115,13 +115,13 @@ export default async () => {
       const types = await res.json();
       await Promise.all(
         types.flatMap((t) => {
-          if (!t.custom || !t.icon) return [];
+          if (!t.isCustom || !t.icon) return [];
           return [
             (async () => {
               try {
                 mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
-              } catch {
-                console.log('faild to load custom icon');
+              } catch (error) {
+                console.error(`Failed to load custom icon for type "${t.id}" (${t.icon}):`, error);
                 // fallback: use default-neutral icon if asset missing
               }
             })(),

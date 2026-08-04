@@ -22,8 +22,12 @@ export class planningController {
   }
 
   static async setDefault(req, res) {
-    let response = await planningModel.setDefault(req.body);
-    res.json(response);
+    try {
+      let response = await planningModel.setDefault(req.body);
+      res.json(response);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 
   static getConfigParam(obj) {
