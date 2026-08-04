@@ -120,6 +120,9 @@ class PositionHistorySampler {
         if (!pos) continue;
         // Sin fix de posición todavía: nada que guardar.
         if (pos.latitude === undefined || pos.longitude === undefined) continue;
+        // Sin telemetría reciente (dato hidratado del histórico o device caído):
+        // no hay nada que reportar, aunque el heartbeat esté vencido.
+        if (!this._isLive(pos, now)) continue;
         if (this._shouldSave(deviceId, pos, now)) {
           await this._save(deviceId, pos, now);
         }
@@ -160,6 +163,19 @@ class PositionHistorySampler {
     }
 
     return false;
+  }
+
+  /**
+   * Una posición solo es "viva" si su deviceTime (timestamp real reportado por
+   * el device) cayó dentro de HEARTBEAT_MS. Un dato hidratado desde el histórico
+   * al bootear el server, o una posición que dejó de actualizarse porque el
+   * device se desconectó, tiene un deviceTime viejo y no debe volver a grabarse
+   * solo porque pasó el intervalo de heartbeat.
+   */
+  _isLive(pos, now) {
+    const deviceTime = this._parseDeviceTime(pos.deviceTime);
+    if (!deviceTime) return false;
+    return now - deviceTime.getTime() <= HEARTBEAT_MS;
   }
 
   _deltaExceeds(a, b, threshold) {
