@@ -12,7 +12,7 @@ const Marker = ({ item, onPick }) => {
   // react-doctor/no-event-handler false positive: useModelLoader's internal effect
   // does an async GLTF fetch with a module-level cache, not something a click/submit
   // handler could trigger directly — see ModelLoader.jsx's useModelLoader.
-  const { model, error } = useModelLoader(item.type);
+  const { model } = useModelLoader(item.type);
   const { invalidate } = useThree();
 
   // Clone is created inside useMemo so React owns the lifecycle — safe with Strict Mode.
@@ -66,7 +66,7 @@ const Marker = ({ item, onPick }) => {
     if (clone) invalidate();
   }, [clone, item.pos, item.heading, invalidate]);
 
-  if (error || !clone) return null;
+  if (!clone) return null;
 
   // R3F hace el raycasting: `event.point` es la coordenada 3D del mundo donde el
   // rayo del mouse tocó la superficie del modelo. `stopPropagation` evita que un

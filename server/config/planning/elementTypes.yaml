@@ -5,7 +5,7 @@
 - id: powerTower
   name: Power Tower
   icon: /api/markers/types/powerTower/icon
-  model3d: null
+  model3d: /api/markers/types/powerTower/model
   height: 15
   color: blue
   description: 'height: 15 m'
@@ -21,7 +21,7 @@
 - id: solarPanel
   name: Solar Panel
   icon: /api/markers/types/solarPanel/icon
-  model3d: null
+  model3d: /api/markers/types/solarPanel/model
   height: 2
   color: green
   description: 'area: 20x20 m, height: 2 m'

@@ -6,7 +6,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 const BASE_PATH = window.location.origin;
 
 const modelPaths = {
-  windTurbine: `${BASE_PATH}/models/wind_turbine.glb`,
   base1: `${BASE_PATH}/models/base.glb`,
   base: `${BASE_PATH}/models/LandingPad.glb`,
   drone: `${BASE_PATH}/models/Drone.glb`,
@@ -38,10 +37,10 @@ const loadingQueue = new Map();
 
 const geometry = new THREE.BoxGeometry(2, 2, 2);
 const material = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Color inicial
-const defaultMesh = new THREE.Mesh(geometry, material);
-const group = new THREE.Group();
-group.add(defaultMesh);
-modelCache.set('default', { scene: group });
+const redCube = new THREE.Mesh(geometry, material);
+const defaultModel = new THREE.Group();
+defaultModel.add(redCube);
+modelCache.set('default', { scene: defaultModel });
 
 export const modelKey = (category) => {
   switch (category) {
@@ -123,8 +122,10 @@ export const useModelLoader = (type) => {
       try {
         const gltf = await getModel(type);
         setModel(gltf);
+        setError(null);
       } catch (err) {
         setError(err);
+        setModel(modelCache.get('default'));
       }
     };
     load();
