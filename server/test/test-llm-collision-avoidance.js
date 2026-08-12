@@ -4,7 +4,7 @@
  * E2E Test: LLM Collision Avoidance with MCP + DB Persistence
  *
  * Tests the LLM's ability to detect and resolve collisions in a UAV mission
- * using the real MCP server (validate_mission_collisions) and persisting
+ * using the real MCP server (validate_mission) and persisting
  * everything in the real SQLite DB.
  *
  * Follows the subAgentPlannerChat pattern from chat.js.
@@ -116,9 +116,9 @@ async function runTest() {
   const chatId = chat.id;
   console.log(`  Chat created: ${chatId}`);
 
-  await ChatHistoryManager.setAllowedTools(chatId, ['validate_mission_collisions']);
+  await ChatHistoryManager.setAllowedTools(chatId, ['validate_mission']);
   await ChatHistoryManager.setAgentProfile(chatId, 'planner');
-  console.log('  Metadata set: agentProfile=planner, allowedTools=[validate_mission_collisions]');
+  console.log('  Metadata set: agentProfile=planner, allowedTools=[validate_mission]');
 
   // ═══════════════════════════════════════════════════════════════
   // STEP 4: System prompt
@@ -128,7 +128,7 @@ async function runTest() {
 Session context:
 - chat_id: ${chatId}
 - coordinate_system: local XYZ (ENU - East/North/Up in meters)
-- IMPORTANT: You have ONE tool available: validate_mission_collisions
+- IMPORTANT: You have ONE tool available: validate_mission
 - After detecting collisions, modify the waypoints to avoid obstacles and re-validate.
 - When the mission is valid (valid: true), respond with the corrected mission JSON.`;
 
@@ -149,7 +149,7 @@ ${encode(collisionFixture.mission)}
 ## Collision Objects (Obstacles)
 ${encode(collisionFixture.collision_objects)}
 
-Use the validate_mission_collisions tool with the mission and collision_objects data. If collisions are detected, modify waypoints to create safe detours around obstacles and re-validate until the mission is safe.`;
+Use the validate_mission tool with the mission and collision_objects data. If collisions are detected, modify waypoints to create safe detours around obstacles and re-validate until the mission is safe.`;
 
   await ChatHistoryManager.addMessage(chatId, 'user', {
     role: 'user',
@@ -158,14 +158,14 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
   console.log('  User message persisted');
 
   // ═══════════════════════════════════════════════════════════════
-  // STEP 6: Get filtered tools (only validate_mission_collisions)
+  // STEP 6: Get filtered tools (only validate_mission)
   // ═══════════════════════════════════════════════════════════════
   const allTools = mcpClient.getTools();
-  const filteredTools = allTools.filter((t) => t.name === 'validate_mission_collisions');
+  const filteredTools = allTools.filter((t) => t.name === 'validate_mission');
   console.log(`  Tools available: ${filteredTools.map((t) => t.name).join(', ')} (filtered from ${allTools.length})`);
 
   if (filteredTools.length === 0) {
-    console.log('  FATAL: validate_mission_collisions tool not found in MCP server');
+    console.log('  FATAL: validate_mission tool not found in MCP server');
     await mcpClient.disconnect();
     process.exit(1);
   }
@@ -302,10 +302,10 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
   // ═══════════════════════════════════════════════════════════════
   console.log('\n--- Assertions ---');
 
-  // Test A: At least 1 tool call to validate_mission_collisions
-  const collisionToolCalls = toolCallLog.filter((tc) => tc.name === 'validate_mission_collisions');
+  // Test A: At least 1 tool call to validate_mission
+  const collisionToolCalls = toolCallLog.filter((tc) => tc.name === 'validate_mission');
   assert(
-    'Test A: LLM called validate_mission_collisions at least once',
+    'Test A: LLM called validate_mission at least once',
     collisionToolCalls.length >= 1,
     `${collisionToolCalls.length} call(s)`
   );
@@ -356,8 +356,8 @@ Use the validate_mission_collisions tool with the mission and collision_objects 
   const storedTools = await ChatHistoryManager.getAllowedTools(chatId);
   assert('Test F: Chat metadata — agentProfile=planner', storedProfile === 'planner', `got: ${storedProfile}`);
   assert(
-    'Test F: Chat metadata — allowedTools includes validate_mission_collisions',
-    Array.isArray(storedTools) && storedTools.includes('validate_mission_collisions'),
+    'Test F: Chat metadata — allowedTools includes validate_mission',
+    Array.isArray(storedTools) && storedTools.includes('validate_mission'),
     `got: ${JSON.stringify(storedTools)}`
   );
 

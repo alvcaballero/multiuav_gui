@@ -29,34 +29,24 @@
   },
   "obstacles": [
     {
-      "name": "T1",
-      "type": "windTurbine",
+      "obstacle_id": "T1",
+      "obstacle_name": "Wind turbine T1",
+      "geometry_type": "circle",
       "position": { "x": -730, "y": 300, "z": 0 },
-      "zones": {
-        "exclusion_zone": "Cilindro: radio 35m, altura 108m (z: 0→108).",
-        "caution_zone": "Cilindro: radio 50m, altura 108m (z: 0→108).",
-        "safe_zone": "Fuera de radio 50m o por encima de z>108m."
-      },
-      "safe_passages": [],
-      "aabb": {
-        "min_point": { "x": -765, "y": 265, "z": 0 },
-        "max_point": { "x": -695, "y": 335, "z": 108 }
-      }
+      "dimensions": { "radius": 35 },
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "T2",
-      "type": "windTurbine",
+      "obstacle_id": "T2",
+      "obstacle_name": "Wind turbine T2",
+      "geometry_type": "circle",
       "position": { "x": -730, "y": 400, "z": 0 },
-      "zones": {
-        "exclusion_zone": "Cilindro: radio 35m, altura 108m (z: 0→108).",
-        "caution_zone": "Cilindro: radio 50m, altura 108m (z: 0→108).",
-        "safe_zone": "Fuera de radio 50m o por encima de z>108m."
-      },
-      "safe_passages": [],
-      "aabb": {
-        "min_point": { "x": -765, "y": 365, "z": 0 },
-        "max_point": { "x": -695, "y": 435, "z": 108 }
-      }
+      "dimensions": { "radius": 35 },
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     }
   ]
 }

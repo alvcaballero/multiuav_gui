@@ -299,6 +299,85 @@ GET http://localhost:4000/api/markers/bases/assigned
 ### get bases
 GET http://localhost:4000/api/planning/getBases
 
+### get elements
+GET http://localhost:4000/api/markers/items
+
+###
+POST  http://localhost:4000/api/missions/convert/geodetic-to-xyz
+Content-Type: application/json
+
+{
+  "mission_strategy_description": "Perform a circular inspection around each wind turbine to get a general assessment. This involves 4 points around each element at 0°, 90°, 180°, and 270° from the frontal position, at the vertical midpoint of the element.",
+  "devices_available": [
+    {
+      "name": "uav_1",
+      "battery_level": 100,
+      "id": "2",
+      "category": "px4_ros2"
+    },
+    {
+      "category": "px4_ros2",
+      "id": "3",
+      "name": "uav_2",
+      "battery_level": 100
+    }
+  ],
+  "targets": [
+    {
+      "type": "windTurbine",
+      "group": "1",
+      "id": "1",
+      "name": "A1"
+    },
+    {
+      "id": "2",
+      "name": "A2",
+      "type": "windTurbine",
+      "group": "1"
+    },
+    {
+      "name": "A3",
+      "type": "windTurbine",
+      "id": "3",
+      "group": "1"
+    },
+    {
+      "name": "A4",
+      "type": "windTurbine",
+      "group": "1",
+      "id": "4"
+    },
+    {
+      "type": "windTurbine",
+      "group": "2",
+      "id": "5",
+      "name": "B1"
+    },
+    {
+      "id": "6",
+      "name": "B2",
+      "type": "windTurbine",
+      "group": "2"
+    },
+    {
+      "id": "7",
+      "type": "windTurbine",
+      "group": "2",
+      "name": "B3"
+    },
+    {
+      "id": "8",
+      "type": "windTurbine",
+      "name": "B4",
+      "group": "2"
+    }
+  ],
+  "targets_count": 8,
+  "user_request": "Inspect the entire wind farm using all available UAVs to get a general assessment of its condition",
+  "mission_strategy": "circular",
+  "chat_id": "chat_1786463606363_9gsvycd"
+}
+
 ### ============================================
 ### ROS API
 ### ============================================

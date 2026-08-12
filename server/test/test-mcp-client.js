@@ -169,18 +169,18 @@ async function runTests() {
     }
   }
 
-  // Test 11: Execute validate_mission_collisions tool (with collisions)
-  console.log('\nTest 11: Execute validate_mission_collisions (with collisions)...');
+  // Test 11: Execute validate_mission tool (with collisions)
+  console.log('\nTest 11: Execute validate_mission (with collisions)...');
   try {
     const collisionData = JSON.parse(readFileSync(join(jsonDir, 'mcp_validate_collision.json'), 'utf-8'));
-    const result = await mcpClient.executeTool('validate_mission_collisions', collisionData);
+    const result = await mcpClient.executeTool('validate_mission', collisionData);
     console.log('  Tool executed successfully, analyzing results...');
     console.log('  Result:', JSON.stringify(result, null, 2));
     const resultText = result.content?.[0]?.text || '';
     const parsed = decode(resultText);
 
     if (parsed.valid === false || parsed.totalCollisions > 0) {
-      console.log('  PASSED: validate_mission_collisions detected collisions');
+      console.log('  PASSED: validate_mission detected collisions');
       console.log(`  Collisions: ${parsed.totalCollisions}, Warnings: ${parsed.totalWarnings}`);
       passed++;
     } else {
@@ -193,18 +193,18 @@ async function runTests() {
     failed++;
   }
 
-  // Test 12: Execute validate_mission_collisions tool (safe route)
-  console.log('\nTest 12: Execute validate_mission_collisions (safe route)...');
+  // Test 12: Execute validate_mission tool (safe route)
+  console.log('\nTest 12: Execute validate_mission (safe route)...');
   try {
     const safeData = JSON.parse(readFileSync(join(jsonDir, 'mcp_validate_collision_safe.json'), 'utf-8'));
-    const result = await mcpClient.executeTool('validate_mission_collisions', safeData);
+    const result = await mcpClient.executeTool('validate_mission', safeData);
     console.log('  Tool executed successfully, analyzing results...');
     console.log('  Result:', JSON.stringify(result, null, 2));
     const resultText = result.content?.[0]?.text || '';
     const parsed = decode(resultText);
 
     if (parsed.valid === true || parsed.totalCollisions === 0) {
-      console.log('  PASSED: validate_mission_collisions confirmed safe route');
+      console.log('  PASSED: validate_mission confirmed safe route');
       console.log(`  Collisions: ${parsed.totalCollisions}, Warnings: ${parsed.totalWarnings}`);
       passed++;
     } else {
@@ -217,17 +217,17 @@ async function runTests() {
     failed++;
   }
 
-  // Test 13: Execute validate_mission_collisions tool (multi-route)
-  console.log('\nTest 13: Execute validate_mission_collisions (multi-route)...');
+  // Test 13: Execute validate_mission tool (multi-route)
+  console.log('\nTest 13: Execute validate_mission (multi-route)...');
   try {
     const multiData = JSON.parse(readFileSync(join(jsonDir, 'mcp_validate_collision_multi_route.json'), 'utf-8'));
-    const result = await mcpClient.executeTool('validate_mission_collisions', multiData);
+    const result = await mcpClient.executeTool('validate_mission', multiData);
     console.log('  Tool executed successfully, analyzing results...');
     console.log('  Result:', JSON.stringify(result, null, 2));
     const resultText = result.content?.[0]?.text || '';
     const parsed = decode(resultText);
 
-    console.log('  PASSED: validate_mission_collisions executed for multi-route');
+    console.log('  PASSED: validate_mission executed for multi-route');
     console.log(`  Routes validated: ${parsed.routes?.length || 'N/A'}`);
     console.log(`  Total collisions: ${parsed.totalCollisions}, Warnings: ${parsed.totalWarnings}`);
     if (parsed.routes) {

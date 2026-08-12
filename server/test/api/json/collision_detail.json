@@ -20,20 +20,32 @@
         "wp": [
           {
             "type": "takeoff",
-            "pos": [0, 0, 20],
+            "pos": [
+              0,
+              0,
+              20
+            ],
             "yaw": 0,
             "speed": 3,
             "gimbal": -10
           },
           {
             "type": "transit",
-            "pos": [0, 0, 115],
+            "pos": [
+              0,
+              0,
+              115
+            ],
             "yaw": 0,
             "speed": 6
           },
           {
             "type": "transit",
-            "pos": [-1217.832, -16.292, 115],
+            "pos": [
+              -1217.832,
+              -16.292,
+              115
+            ],
             "yaw": -90,
             "speed": 6,
             "notes": "Approach point east of B2 at safe standoff; begin descent"
@@ -41,7 +53,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1237.832, -16.292, 100],
+            "pos": [
+              -1237.832,
+              -16.292,
+              100
+            ],
             "yaw": -90,
             "speed": 3,
             "gimbal": -5,
@@ -50,7 +66,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, -76.292, 100],
+            "pos": [
+              -1297.832,
+              -76.292,
+              100
+            ],
             "yaw": 0,
             "speed": 3,
             "gimbal": -5,
@@ -59,7 +79,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1357.832, -16.292, 100],
+            "pos": [
+              -1357.832,
+              -16.292,
+              100
+            ],
             "yaw": 90,
             "speed": 3,
             "gimbal": -5,
@@ -68,7 +92,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, 43.708, 100],
+            "pos": [
+              -1297.832,
+              43.708,
+              100
+            ],
             "yaw": 180,
             "speed": 3,
             "gimbal": -5,
@@ -77,7 +105,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, 28.708, 85],
+            "pos": [
+              -1297.832,
+              28.708,
+              85
+            ],
             "yaw": 180,
             "speed": 2.5,
             "gimbal": -10,
@@ -86,7 +118,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1342.832, -16.292, 85],
+            "pos": [
+              -1342.832,
+              -16.292,
+              85
+            ],
             "yaw": 90,
             "speed": 2.5,
             "gimbal": -10,
@@ -95,7 +131,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, -61.292, 85],
+            "pos": [
+              -1297.832,
+              -61.292,
+              85
+            ],
             "yaw": 0,
             "speed": 2.5,
             "gimbal": -10,
@@ -104,7 +144,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1252.832, -16.292, 85],
+            "pos": [
+              -1252.832,
+              -16.292,
+              85
+            ],
             "yaw": -90,
             "speed": 2.5,
             "gimbal": -10,
@@ -113,7 +157,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1257.832, -16.292, 60],
+            "pos": [
+              -1257.832,
+              -16.292,
+              60
+            ],
             "yaw": -90,
             "speed": 3,
             "gimbal": -15,
@@ -122,7 +170,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, -56.292, 60],
+            "pos": [
+              -1297.832,
+              -56.292,
+              60
+            ],
             "yaw": 0,
             "speed": 3,
             "gimbal": -15,
@@ -131,7 +183,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1337.832, -16.292, 60],
+            "pos": [
+              -1337.832,
+              -16.292,
+              60
+            ],
             "yaw": 90,
             "speed": 3,
             "gimbal": -15,
@@ -140,7 +196,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, 23.708, 60],
+            "pos": [
+              -1297.832,
+              23.708,
+              60
+            ],
             "yaw": 180,
             "speed": 3,
             "gimbal": -15,
@@ -149,7 +209,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, 18.708, 15],
+            "pos": [
+              -1297.832,
+              18.708,
+              15
+            ],
             "yaw": 180,
             "speed": 2.5,
             "gimbal": -25,
@@ -158,7 +222,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1262.832, -16.292, 15],
+            "pos": [
+              -1262.832,
+              -16.292,
+              15
+            ],
             "yaw": -90,
             "speed": 2.5,
             "gimbal": -25,
@@ -167,7 +235,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, -51.292, 15],
+            "pos": [
+              -1297.832,
+              -51.292,
+              15
+            ],
             "yaw": 0,
             "speed": 2.5,
             "gimbal": -25,
@@ -176,7 +248,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1332.832, -16.292, 15],
+            "pos": [
+              -1332.832,
+              -16.292,
+              15
+            ],
             "yaw": 90,
             "speed": 2.5,
             "gimbal": -25,
@@ -185,7 +261,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1327.832, -16.292, 10],
+            "pos": [
+              -1327.832,
+              -16.292,
+              10
+            ],
             "yaw": 90,
             "speed": 2,
             "gimbal": -30,
@@ -193,7 +273,11 @@
           },
           {
             "type": "transit",
-            "pos": [-1327.832, -46.292, 10],
+            "pos": [
+              -1327.832,
+              -46.292,
+              10
+            ],
             "yaw": 45,
             "speed": 2,
             "notes": "Detour point (keeps segment outside 20m exclusion AABB)"
@@ -201,7 +285,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1297.832, -46.292, 10],
+            "pos": [
+              -1297.832,
+              -46.292,
+              10
+            ],
             "yaw": 0,
             "speed": 2,
             "gimbal": -30,
@@ -209,7 +297,11 @@
           },
           {
             "type": "transit",
-            "pos": [-1267.832, -46.292, 10],
+            "pos": [
+              -1267.832,
+              -46.292,
+              10
+            ],
             "yaw": -45,
             "speed": 2,
             "notes": "Detour point (keeps segment outside 20m exclusion AABB)"
@@ -217,7 +309,11 @@
           {
             "type": "inspection",
             "target_id": "B2",
-            "pos": [-1267.832, -16.292, 10],
+            "pos": [
+              -1267.832,
+              -16.292,
+              10
+            ],
             "yaw": -90,
             "speed": 2,
             "gimbal": -30,
@@ -225,26 +321,42 @@
           },
           {
             "type": "transit",
-            "pos": [-1217.832, -16.292, 115],
+            "pos": [
+              -1217.832,
+              -16.292,
+              115
+            ],
             "yaw": -90,
             "speed": 6,
             "notes": "Exit climb to safe transit altitude"
           },
           {
             "type": "transit",
-            "pos": [0, 0, 115],
+            "pos": [
+              0,
+              0,
+              115
+            ],
             "yaw": 90,
             "speed": 6
           },
           {
             "type": "transit",
-            "pos": [0, 0, 20],
+            "pos": [
+              0,
+              0,
+              20
+            ],
             "yaw": 0,
             "speed": 3
           },
           {
             "type": "landing",
-            "pos": [0, 0, 0],
+            "pos": [
+              0,
+              0,
+              0
+            ],
             "yaw": 0,
             "speed": 2
           }
@@ -254,508 +366,292 @@
   },
   "collision_objects": [
     {
-      "name": "B2",
-      "type": "windTurbine",
+      "obstacle_id": "B2",
+      "obstacle_name": "Wind turbine B2",
+      "geometry_type": "circle",
       "position": {
         "x": -1297.832,
         "y": -16.292,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=20m, height=108m",
-        "caution_zone": "cylinder: radius=70m, height=120m",
-        "safe_zone": "beyond 70m radius (except inspection waypoints)"
+      "dimensions": {
+        "radius": 20
       },
-      "safe_passages": ["Approach/exit from EAST at 115m AGL, then descend outside 20m radius"],
-      "aabb": {
-        "min_point": {
-          "x": -1317.832,
-          "y": -36.292,
-          "z": 0
-        },
-        "max_point": {
-          "x": -1277.832,
-          "y": 3.708,
-          "z": 108
-        }
-      },
-      "metadata": "Inspection target represented for collision checking (keep >=20m from center)."
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineB_B1",
-      "type": "windTurbine",
+      "obstacle_id": "LineB_B1",
+      "obstacle_name": "Line B turbine B1",
+      "geometry_type": "circle",
       "position": {
         "x": -1300.564,
         "y": -263.988,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1330.564,
-          "y": -293.988,
-          "z": 0
-        },
-        "max_point": {
-          "x": -1270.564,
-          "y": -233.988,
-          "z": 108
-        }
-      },
-      "metadata": "Line B turbine B1 (treat as obstacle for separation)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineB_B3",
-      "type": "windTurbine",
+      "obstacle_id": "LineB_B3",
+      "obstacle_name": "Line B turbine B3",
+      "geometry_type": "circle",
       "position": {
         "x": -1297.197,
         "y": 193.346,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1327.197,
-          "y": 163.346,
-          "z": 0
-        },
-        "max_point": {
-          "x": -1267.197,
-          "y": 223.346,
-          "z": 108
-        }
-      },
-      "metadata": "Line B turbine B3 (treat as obstacle for separation)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineB_B4",
-      "type": "windTurbine",
+      "obstacle_id": "LineB_B4",
+      "obstacle_name": "Line B turbine B4",
+      "geometry_type": "circle",
       "position": {
         "x": -1299.198,
         "y": 420.557,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1329.198,
-          "y": 390.557,
-          "z": 0
-        },
-        "max_point": {
-          "x": -1269.198,
-          "y": 450.557,
-          "z": 108
-        }
-      },
-      "metadata": "Line B turbine B4 (treat as obstacle for separation)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineB_B5",
-      "type": "windTurbine",
+      "obstacle_id": "LineB_B5",
+      "obstacle_name": "Line B turbine B5",
+      "geometry_type": "circle",
       "position": {
         "x": -1299.867,
         "y": 623.522,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1329.867,
-          "y": 593.522,
-          "z": 0
-        },
-        "max_point": {
-          "x": -1269.867,
-          "y": 653.522,
-          "z": 108
-        }
-      },
-      "metadata": "Line B turbine B5 (treat as obstacle for separation)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineB_B6",
-      "type": "windTurbine",
+      "obstacle_id": "LineB_B6",
+      "obstacle_name": "Line B turbine B6",
+      "geometry_type": "circle",
       "position": {
         "x": -1021.149,
         "y": 628.702,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1051.149,
-          "y": 598.702,
-          "z": 0
-        },
-        "max_point": {
-          "x": -991.149,
-          "y": 658.702,
-          "z": 108
-        }
-      },
-      "metadata": "Line B turbine B6 (treat as obstacle for separation)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineA_A1",
-      "type": "windTurbine",
+      "obstacle_id": "LineA_A1",
+      "obstacle_name": "Line A turbine A1",
+      "geometry_type": "circle",
       "position": {
         "x": -1006.862,
         "y": -259.905,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1036.862,
-          "y": -289.905,
-          "z": 0
-        },
-        "max_point": {
-          "x": -976.862,
-          "y": -229.905,
-          "z": 108
-        }
-      },
-      "metadata": "Line A turbine A1 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineA_A2",
-      "type": "windTurbine",
+      "obstacle_id": "LineA_A2",
+      "obstacle_name": "Line A turbine A2",
+      "geometry_type": "circle",
       "position": {
         "x": -1010.96,
         "y": -6.765,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL to clear this turbine while transiting to Line B"],
-      "aabb": {
-        "min_point": {
-          "x": -1040.96,
-          "y": -36.765,
-          "z": 0
-        },
-        "max_point": {
-          "x": -980.96,
-          "y": 23.235,
-          "z": 108
-        }
-      },
-      "metadata": "Line A turbine A2 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineA_A3",
-      "type": "windTurbine",
+      "obstacle_id": "LineA_A3",
+      "obstacle_name": "Line A turbine A3",
+      "geometry_type": "circle",
       "position": {
         "x": -1013.025,
         "y": 191.794,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1043.025,
-          "y": 161.794,
-          "z": 0
-        },
-        "max_point": {
-          "x": -983.025,
-          "y": 221.794,
-          "z": 108
-        }
-      },
-      "metadata": "Line A turbine A3 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineA_A4",
-      "type": "windTurbine",
+      "obstacle_id": "LineA_A4",
+      "obstacle_name": "Line A turbine A4",
+      "geometry_type": "circle",
       "position": {
         "x": -1012.45,
         "y": 421.414,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1042.45,
-          "y": 391.414,
-          "z": 0
-        },
-        "max_point": {
-          "x": -982.45,
-          "y": 451.414,
-          "z": 108
-        }
-      },
-      "metadata": "Line A turbine A4 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineA_A5",
-      "type": "windTurbine",
+      "obstacle_id": "LineA_A5",
+      "obstacle_name": "Line A turbine A5",
+      "geometry_type": "circle",
       "position": {
         "x": -745.321,
         "y": 424.782,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -775.321,
-          "y": 394.782,
-          "z": 0
-        },
-        "max_point": {
-          "x": -715.321,
-          "y": 454.782,
-          "z": 108
-        }
-      },
-      "metadata": "Line A turbine A5 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineA_A6",
-      "type": "windTurbine",
+      "obstacle_id": "LineA_A6",
+      "obstacle_name": "Line A turbine A6",
+      "geometry_type": "circle",
       "position": {
         "x": -748.703,
         "y": 195.719,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -778.703,
-          "y": 165.719,
-          "z": 0
-        },
-        "max_point": {
-          "x": -718.703,
-          "y": 225.719,
-          "z": 108
-        }
-      },
-      "metadata": "Line A turbine A6 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineC_C1",
-      "type": "windTurbine",
+      "obstacle_id": "LineC_C1",
+      "obstacle_name": "Line C turbine C1",
+      "geometry_type": "circle",
       "position": {
         "x": -1535.988,
         "y": -496.828,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1565.988,
-          "y": -526.828,
-          "z": 0
-        },
-        "max_point": {
-          "x": -1505.988,
-          "y": -466.828,
-          "z": 108
-        }
-      },
-      "metadata": "Line C turbine C1 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineC_C2",
-      "type": "windTurbine",
+      "obstacle_id": "LineC_C2",
+      "obstacle_name": "Line C turbine C2",
+      "geometry_type": "circle",
       "position": {
         "x": -1293.105,
         "y": -501.62,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1323.105,
-          "y": -531.62,
-          "z": 0
-        },
-        "max_point": {
-          "x": -1263.105,
-          "y": -471.62,
-          "z": 108
-        }
-      },
-      "metadata": "Line C turbine C2 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineC_C3",
-      "type": "windTurbine",
+      "obstacle_id": "LineC_C3",
+      "obstacle_name": "Line C turbine C3",
+      "geometry_type": "circle",
       "position": {
         "x": -995.543,
         "y": -494.882,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -1025.543,
-          "y": -524.882,
-          "z": 0
-        },
-        "max_point": {
-          "x": -965.543,
-          "y": -464.882,
-          "z": 108
-        }
-      },
-      "metadata": "Line C turbine C3 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineC_C4",
-      "type": "windTurbine",
+      "obstacle_id": "LineC_C4",
+      "obstacle_name": "Line C turbine C4",
+      "geometry_type": "circle",
       "position": {
         "x": -721.652,
         "y": -488.144,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -751.652,
-          "y": -518.144,
-          "z": 0
-        },
-        "max_point": {
-          "x": -691.652,
-          "y": -458.144,
-          "z": 108
-        }
-      },
-      "metadata": "Line C turbine C4 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineC_C5",
-      "type": "windTurbine",
+      "obstacle_id": "LineC_C5",
+      "obstacle_name": "Line C turbine C5",
+      "geometry_type": "circle",
       "position": {
         "x": -726.129,
         "y": -253.573,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL if crossing line-of-sight"],
-      "aabb": {
-        "min_point": {
-          "x": -756.129,
-          "y": -283.573,
-          "z": 0
-        },
-        "max_point": {
-          "x": -696.129,
-          "y": -223.573,
-          "z": 108
-        }
-      },
-      "metadata": "Line C turbine C5 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     },
     {
-      "name": "LineC_C6",
-      "type": "windTurbine",
+      "obstacle_id": "LineC_C6",
+      "obstacle_name": "Line C turbine C6",
+      "geometry_type": "circle",
       "position": {
         "x": -745.321,
         "y": -13.139,
         "z": 0
       },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=30m, height=108m",
-        "caution_zone": "cylinder: radius=60m, height=120m",
-        "safe_zone": "beyond 60m radius"
+      "dimensions": {
+        "radius": 30
       },
-      "safe_passages": ["Overfly at 115m AGL while transiting to Line B"],
-      "aabb": {
-        "min_point": {
-          "x": -775.321,
-          "y": -43.139,
-          "z": 0
-        },
-        "max_point": {
-          "x": -715.321,
-          "y": 16.861,
-          "z": 108
-        }
-      },
-      "metadata": "Line C turbine C6 (nearby)"
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     }
   ]
 }
