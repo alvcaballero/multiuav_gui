@@ -890,8 +890,8 @@ export class missionModel {
     return await sequelize.models.MissionPlan.findAll({ order: [['createdAt', 'DESC']] });
   }
 
-  static convertBriefingToXYZ(missionBriefing) {
-    return convertMissionBriefingToXYZ(missionBriefing);
+  static async convertBriefingToXYZ(missionBriefing) {
+    return await convertMissionBriefingToXYZ(missionBriefing);
   }
 
   static convertXYZToGeodetic(missionDataXYZ) {

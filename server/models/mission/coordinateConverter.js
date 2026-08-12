@@ -1,9 +1,22 @@
 import { chatLogger } from '../../common/logger.js';
+import { devicesController } from '../../controllers/devices.js';
+import { positionsController } from '../../controllers/positions.js';
+import { resolveInspectionTargets, resolveObstaclesInBounds } from '../markers/inspectionTargets.js';
 
 // Constants for geodetic calculations
 const EARTH_RADIUS_M = 6378137.0; // WGS84 equatorial radius in meters
 const DEG_TO_RAD = Math.PI / 180;
 const ECCENTRICITY_SQ = 0.00669438; // WGS84 first eccentricity squared
+
+// Targets/devices are anchored at their center point — without a margin, half of a
+// physically-sized object (turbine, tower) could sit outside the mission boundary.
+// Two margins, both in meters: TRAJECTORY is what's actually returned as the
+// mission's flight boundary (room between an object's edge and free space).
+// OBSTACLE_SEARCH is larger and internal-only — it widens the catalog lookup so an
+// obstacle whose center falls just outside the trajectory boundary, but whose body
+// would still reach into it, doesn't go unnoticed.
+const TRAJECTORY_MARGIN_M = 200;
+const OBSTACLE_SEARCH_MARGIN_M = 500;
 
 /**
  * Calculate the local origin based on device positions
@@ -103,6 +116,20 @@ function ENUToGeodetic(x, y, z, origin) {
 }
 
 /**
+ * Expand an ENU bounding box outward by a flat margin in meters, on the
+ * horizontal plane only (z is left untouched).
+ * @param {{min:{x:number,y:number,z:number}, max:{x:number,y:number,z:number}}} box
+ * @param {number} marginM
+ * @returns {{min:{x:number,y:number,z:number}, max:{x:number,y:number,z:number}}}
+ */
+function expandENUBox(box, marginM) {
+  return {
+    min: { x: box.min.x - marginM, y: box.min.y - marginM, z: box.min.z },
+    max: { x: box.max.x + marginM, y: box.max.y + marginM, z: box.max.z },
+  };
+}
+
+/**
  * Convert mission data from local XYZ (ENU) coordinates to geodetic coordinates (lat, lng, alt)
  * Input structure follows MissionSchemaXYZ
  * @param {Object} missionData - Mission with XYZ coordinates following MissionSchemaXYZ structure
@@ -158,83 +185,165 @@ function convertMissionXYZToLatLong(missionData) {
  * @param {Object} missionBriefing - Mission briefing with filteredMissionSchema structure
  * @returns {Object} Mission briefing with XYZ coordinates and global_origin
  */
-function convertMissionBriefingToXYZ(missionBriefing) {
+async function convertMissionBriefingToXYZ(missionBriefing) {
   if (!missionBriefing) {
-    throw new Error('Mission briefing is required');
+    throw Object.assign(new Error('Mission briefing is required'), { status: 400 });
+  }
+  const { devices_available, targets } = missionBriefing;
+
+  if (!devices_available || devices_available.length === 0) {
+    throw Object.assign(new Error('No devices available to calculate local origin'), { status: 400 });
   }
 
-  // Calculate local origin from device positions
-  const origin = calculateLocalOrigin(missionBriefing.drone_information);
+  // Resolve each LLM-supplied device against the DB by name (unique, and the
+  // field an LLM is least likely to misremember vs. the numeric id). id and
+  // category are cross-checked, not trusted blindly, so a hallucinated
+  // id/category is reported back instead of silently used. All mismatches are
+  // collected before throwing so the LLM can fix every bad entry in one retry.
+  const deviceErrors = [];
+  const devices = await Promise.all(
+    devices_available.map(async (requested) => {
+      const dbDevice = await devicesController.getByName(requested.name);
+      if (!dbDevice) {
+        deviceErrors.push(`Device "${requested.name}" not found.`);
+        return null;
+      }
+      if (String(dbDevice.id) !== String(requested.id) || dbDevice.category !== requested.category) {
+        deviceErrors.push(
+          `Device "${requested.name}" mismatch: expected id=${dbDevice.id}/category=${dbDevice.category}, got id=${requested.id}/category=${requested.category}.`
+        );
+        return null;
+      }
+
+      const position = await positionsController.getByDeviceId(dbDevice.id);
+      if (!position || position.latitude === undefined || position.longitude === undefined) {
+        deviceErrors.push(`Device "${requested.name}" has no known position.`);
+        return null;
+      }
+
+      return {
+        id: dbDevice.id,
+        name: dbDevice.name,
+        category: dbDevice.category,
+        batteryLevel: position.attributes?.batteryLevel,
+        location: {
+          lat: position.latitude,
+          lng: position.longitude,
+          alt: position.altitude || 0,
+        },
+      };
+    })
+  );
+
+  if (deviceErrors.length > 0) {
+    throw Object.assign(new Error(`Invalid devices_available:\n${deviceErrors.join('\n')}`), { status: 400 });
+  }
+
+  // Local origin from the resolved (real, DB-backed) device positions — needed
+  // before resolving targets, since target lat/lng gets converted into this
+  // same ENU frame.
+  const origin = calculateLocalOrigin(devices);
   chatLogger.info(`Local origin calculated: lat=${origin.lat}, lng=${origin.lng}, alt=${origin.alt}`);
 
-  // Deep clone to avoid mutating original
-  const converted = JSON.parse(JSON.stringify(missionBriefing));
+  if (!targets || targets.length === 0) {
+    throw Object.assign(new Error('No targets provided'), { status: 400 });
+  }
 
-  // Add origin to the converted mission
-  converted.global_origin = {
-    lat: origin.lat,
-    lng: origin.lng,
-    alt: origin.alt,
+  // Resolve each LLM-supplied target against the catalog by id (ElementItem.name
+  // isn't unique, unlike devices, so id is the only safe lookup key here).
+  // name/group/type are cross-checked against the catalog record for that id;
+  // a hallucinated id or a name/group/type that doesn't match its own id is
+  // reported back instead of silently used. No globalOrigin is passed, so
+  // position comes back raw geodetic — converted to XYZ further below, same
+  // as devices.
+  const {
+    targets: resolvedTargets,
+    notFound: targetsNotFound,
+    mismatched: targetsMismatched,
+  } = await resolveInspectionTargets(targets);
+
+  const targetErrors = [...targetsNotFound.map((id) => `Target id=${id} not found.`), ...targetsMismatched];
+  if (targetErrors.length > 0) {
+    throw Object.assign(new Error(`Invalid targets:\n${targetErrors.join('\n')}`), { status: 400 });
+  }
+
+  // Mission boundaries: bounding box (SW/NE corners) that contains every
+  // resolved device and target center point. Devices are constrained to
+  // operate within this box (once margined below).
+  const boundaryPoints = [
+    ...devices.map((device) => device.location),
+    ...resolvedTargets.map((target) => target.position),
+  ];
+  const boundaries = {
+    min: {
+      lat: Math.min(...boundaryPoints.map((point) => point.lat)),
+      lng: Math.min(...boundaryPoints.map((point) => point.lng)),
+    },
+    max: {
+      lat: Math.max(...boundaryPoints.map((point) => point.lat)),
+      lng: Math.max(...boundaryPoints.map((point) => point.lng)),
+    },
   };
 
-  // Convert device locations to XYZ (replace lat/lng with x/y/z)
-  if (converted.drone_information) {
-    for (const device of converted.drone_information) {
-      if (device.location) {
-        const enu = geodeticToENU(device.location.lat, device.location.lng, device.location.alt || 0, origin);
-        device.location = {
-          x: Number(enu.x.toFixed(3)),
-          y: Number(enu.y.toFixed(3)),
-          z: Number(0),
-        };
-      }
-    }
-  }
+  // convert device positions to XYZ coordinates
+  const devicesXYZ = devices.map((device) => ({
+    ...device,
+    location: geodeticToENU(device.location.lat, device.location.lng, device.location.alt, origin),
+  }));
 
-  // Convert target elements positions to XYZ (replace lat/lng with x/y/z)
-  if (converted.target_elements) {
-    for (const element of converted.target_elements) {
-      if (element.position) {
-        const enu = geodeticToENU(element.position.lat, element.position.lng, element.position.alt || 0, origin);
-        element.position = {
-          x: Number(enu.x.toFixed(3)),
-          y: Number(enu.y.toFixed(3)),
-          z: Number(enu.z.toFixed(3)),
-        };
-      }
-    }
-  }
+  // convert target positions to XYZ coordinates
+  const targetsXYZ = resolvedTargets.map((target) => ({
+    ...target,
+    position: geodeticToENU(target.position.lat, target.position.lng, target.position.alt, origin),
+  }));
 
-  // Convert points of interest positions to XYZ (replace lat/lng with x/y/z)
-  if (converted.points_of_interest) {
-    for (const poi of converted.points_of_interest) {
-      if (poi.lat !== undefined && poi.lng !== undefined) {
-        const enu = geodeticToENU(poi.lat, poi.lng, poi.alt || 0, origin);
-        // Replace lat/lng/alt with x/y/z
-        delete poi.lat;
-        delete poi.lng;
-        delete poi.alt;
-        poi.position = {
-          x: Number(enu.x.toFixed(3)),
-          y: Number(enu.y.toFixed(3)),
-          z: Number(0),
-        };
-      }
-    }
-  }
-  // convert obstacle elements positions to XYZ (replace lat/lng with x/y/z)
-  if (converted.obstacle_elements) {
-    for (const obstacle of converted.obstacle_elements) {
-      if (obstacle.position) {
-        const enu = geodeticToENU(obstacle.position.lat, obstacle.position.lng, obstacle.position.alt || 0, origin);
-        obstacle.position = {
-          x: Number(enu.x.toFixed(3)),
-          y: Number(enu.y.toFixed(3)),
-          z: Number(enu.z.toFixed(3)),
-        };
-      }
-    }
-  }
+  // convert boundary positions to XYZ coordinates, then apply both margins
+  const rawBoundariesXYZ = {
+    min: geodeticToENU(boundaries.min.lat, boundaries.min.lng, 0, origin),
+    max: geodeticToENU(boundaries.max.lat, boundaries.max.lng, 0, origin),
+  };
+  const trajectoryBoundariesXYZ = expandENUBox(rawBoundariesXYZ, TRAJECTORY_MARGIN_M);
+  const obstacleSearchBoundariesXYZ = expandENUBox(rawBoundariesXYZ, OBSTACLE_SEARCH_MARGIN_M);
+
+  // Obstacles: catalog elements inside the (wider) obstacle-search box that
+  // aren't already mission targets. There's no computed geometry for them
+  // yet, so they're handed to the LLM the same way targets are — it reasons
+  // over description/attributes itself. The search box is converted back to
+  // geodetic because ElementItems are queried by lat/lng in the DB, not ENU.
+  const obstacleSearchMin = ENUToGeodetic(
+    obstacleSearchBoundariesXYZ.min.x,
+    obstacleSearchBoundariesXYZ.min.y,
+    0,
+    origin
+  );
+  const obstacleSearchMax = ENUToGeodetic(
+    obstacleSearchBoundariesXYZ.max.x,
+    obstacleSearchBoundariesXYZ.max.y,
+    0,
+    origin
+  );
+  const obstacles = await resolveObstaclesInBounds(
+    {
+      minLat: Math.min(obstacleSearchMin.lat, obstacleSearchMax.lat),
+      maxLat: Math.max(obstacleSearchMin.lat, obstacleSearchMax.lat),
+      minLng: Math.min(obstacleSearchMin.lng, obstacleSearchMax.lng),
+      maxLng: Math.max(obstacleSearchMin.lng, obstacleSearchMax.lng),
+    },
+    resolvedTargets.map((target) => target.id),
+    origin
+  );
+
+  const converted = {
+    global_origin: {
+      lat: origin.lat,
+      lng: origin.lng,
+      alt: origin.alt,
+    },
+    devices: devicesXYZ,
+    targets: targetsXYZ,
+    boundaries: trajectoryBoundariesXYZ,
+    obstacles,
+  };
 
   chatLogger.info('Mission briefing converted to XYZ coordinates');
   return converted;
