@@ -23,6 +23,7 @@ export {
   validateRoute,
   validateMissionCollission,
   findCollidingObstacles,
+  findInterRouteCollisions,
   formatCollisionReport,
   formatRouteReport,
   formatMissionReport,
@@ -31,13 +32,22 @@ export {
 // Detour Generation
 export { generateDetour, applyDetoursToRoute, resolveCollisions } from './detourGenerator.js';
 
+// Inspection Coverage Validation
+export { validateInspectionCoverage, formatInspectionReport } from './inspectionValidator.js';
+
 // Geometry Utilities (for advanced use)
 export {
   distance3D,
   distance2D,
   pointInAABB,
   pointInCylinder,
+  pointInOBB,
   segmentIntersectsAABB,
   segmentIntersectsCylinder,
-  cylinderFromObstacleZone,
+  segmentIntersectsOBB,
+  closestPointsBetweenSegments,
+  obstacleCenter,
+  obstacleCylinder,
+  obstacleAABB,
+  obstacleOBB,
 } from './geometry.js';

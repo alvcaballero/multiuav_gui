@@ -6,31 +6,24 @@
 import { logger } from '../../common/logger.js';
 import {
   segmentIntersectsAABB,
-  segmentIntersectsCylinder,
-  cylinderFromObstacleZone,
   pointInAABB,
   pointInCylinder,
+  pointInOBB,
+  segmentIntersectsCylinder,
+  segmentIntersectsOBB,
+  obstacleAABB,
+  obstacleCylinder,
+  obstacleOBB,
+  obstacleCenter,
   distance3D,
+  closestPointsBetweenSegments,
 } from './geometry.js';
 
 /**
  * @typedef {import('./geometry.js').Point3D} Point3D
  * @typedef {import('./geometry.js').AABB} AABB
  * @typedef {import('./geometry.js').Segment} Segment
- */
-
-/**
- * @typedef {Object} Obstacle
- * @property {string} name - Obstacle identifier
- * @property {string} type - Obstacle type (e.g., 'windTurbine')
- * @property {Point3D} position - Center position
- * @property {Object} zones - Zone definitions
- * @property {string} zones.exclusion_zone - Exclusion zone description
- * @property {string} zones.caution_zone - Caution zone description
- * @property {string} zones.safe_zone - Safe zone description
- * @property {string[]} safe_passages - Pre-approved safe passages
- * @property {AABB} aabb - Axis-aligned bounding box
- * @property {string} [metadata] - Additional info
+ * @typedef {import('./geometry.js').Obstacle} Obstacle
  */
 
 /**
@@ -63,11 +56,29 @@ import {
  * @property {Object} summary - Summary statistics
  */
 
-// Safety margins (meters)
+/**
+ * @typedef {Object} InterRouteCollision
+ * @property {{id: number, name: string, uav: string, segmentIndex: number}} routeA
+ * @property {{id: number, name: string, uav: string, segmentIndex: number}} routeB
+ * @property {Point3D} point - Point of closest approach between the two segments
+ * @property {number} distance - Spatial distance at closest approach (meters)
+ * @property {number} timeA - Estimated time routeA's UAV reaches the point (seconds from mission start)
+ * @property {number} timeB - Estimated time routeB's UAV reaches the point (seconds from mission start)
+ * @property {number} timeDiff - |timeA - timeB| (seconds)
+ */
+
+// Safety margins (meters), applied on top of each obstacle's own safety_margin
 const SAFETY_MARGINS = {
-  EXCLUSION: 2.0, // Extra margin for exclusion zones
-  CAUTION: 0, // No extra margin for caution (it's already a buffer)
+  EXCLUSION: 0, // safety_margin already includes the required clearance
+  CAUTION_EXTRA: 5.0, // Extra margin beyond safety_margin that triggers a warning instead of a hard collision
   WAYPOINT: 1.0, // Margin for waypoint position checks
+};
+
+// Defaults for UAV-to-UAV route crossing checks (independent from obstacle margins above)
+const INTER_ROUTE_DEFAULTS = {
+  SPATIAL_THRESHOLD: 10, // meters - routes closer than this at closest approach are "the same point"
+  TIME_WINDOW: 10, // seconds - both UAVs reaching that point within this window is a collision risk
+  FALLBACK_SPEED: 5, // m/s - used when a route has neither idle_vel nor max_vel set
 };
 
 /**
@@ -91,38 +102,69 @@ function normalizePosition(pos) {
 function checkWaypointCollision(waypoint, obstacle) {
   const pos = normalizePosition(waypoint.pos);
 
-  // First check AABB (fast rejection)
-  if (!pointInAABB(pos, obstacle.aabb, SAFETY_MARGINS.WAYPOINT)) {
+  // First check AABB (fast rejection), expanded to the caution margin so we
+  // don't reject points that would only trigger a caution warning.
+  if (!pointInAABB(pos, obstacleAABB(obstacle, SAFETY_MARGINS.WAYPOINT), SAFETY_MARGINS.CAUTION_EXTRA)) {
     return null;
   }
 
-  // Check exclusion zone (cylinder)
-  const exclusionCylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-  if (exclusionCylinder && pointInCylinder(pos, exclusionCylinder, SAFETY_MARGINS.EXCLUSION)) {
+  if (obstacle.geometry_type === 'rectangle') {
+    const obb = obstacleOBB(obstacle, SAFETY_MARGINS.WAYPOINT);
+    if (pointInOBB(pos, obb)) {
+      const center = obstacleCenter(obstacle);
+      return {
+        hasCollision: true,
+        obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+        obstacleType: obstacle.geometry_type,
+        zoneType: 'exclusion',
+        segmentIndex: -1, // Single point, no segment
+        collisionPoint: pos,
+        penetrationDepth: distance3D(pos, center), // approximate: distance to obstacle center
+        obstacle,
+      };
+    }
+    const cautionObb = obstacleOBB(obstacle, SAFETY_MARGINS.WAYPOINT + SAFETY_MARGINS.CAUTION_EXTRA);
+    if (pointInOBB(pos, cautionObb)) {
+      const center = obstacleCenter(obstacle);
+      return {
+        hasCollision: false, // Caution is warning, not collision
+        obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+        obstacleType: obstacle.geometry_type,
+        zoneType: 'caution',
+        segmentIndex: -1,
+        collisionPoint: pos,
+        penetrationDepth: distance3D(pos, center),
+        obstacle,
+      };
+    }
+    return null;
+  }
+
+  const exclusionCylinder = obstacleCylinder(obstacle, SAFETY_MARGINS.WAYPOINT);
+  if (pointInCylinder(pos, exclusionCylinder, SAFETY_MARGINS.EXCLUSION)) {
     return {
       hasCollision: true,
-      obstacleName: obstacle.name,
-      obstacleType: obstacle.type,
+      obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+      obstacleType: obstacle.geometry_type,
       zoneType: 'exclusion',
       segmentIndex: -1, // Single point, no segment
       collisionPoint: pos,
       penetrationDepth: exclusionCylinder.radius - distance3D(pos, exclusionCylinder.center),
-      // obstacle,
+      obstacle,
     };
   }
 
-  // Check caution zone
-  const cautionCylinder = cylinderFromObstacleZone(obstacle, 'caution_zone');
-  if (cautionCylinder && pointInCylinder(pos, cautionCylinder, SAFETY_MARGINS.CAUTION)) {
+  const cautionCylinder = obstacleCylinder(obstacle, SAFETY_MARGINS.WAYPOINT + SAFETY_MARGINS.CAUTION_EXTRA);
+  if (pointInCylinder(pos, cautionCylinder, SAFETY_MARGINS.EXCLUSION)) {
     return {
       hasCollision: false, // Caution is warning, not collision
-      obstacleName: obstacle.name,
-      obstacleType: obstacle.type,
+      obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+      obstacleType: obstacle.geometry_type,
       zoneType: 'caution',
       segmentIndex: -1,
       collisionPoint: pos,
       penetrationDepth: cautionCylinder.radius - distance3D(pos, cautionCylinder.center),
-      // obstacle,
+      obstacle,
     };
   }
 
@@ -145,64 +187,76 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
   let collision = null;
   let warning = null;
 
-  // Quick AABB rejection test
-  // Use a larger margin to account for caution zone which may extend beyond AABB
-  // The AABB is typically sized for exclusion zone, but caution zone can be larger/taller
-  const cautionCylinder = cylinderFromObstacleZone(obstacle, 'caution_zone');
-  const exclusionCylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-
-  // Calculate expanded AABB margin: max of caution zone dimensions beyond AABB
-  let aabbMargin = SAFETY_MARGINS.EXCLUSION;
-  if (cautionCylinder && obstacle.aabb) {
-    // Caution zone may extend higher and wider than AABB
-    const heightDiff = cautionCylinder.center.z + cautionCylinder.height - obstacle.aabb.max_point.z;
-    const radiusDiff =
-      cautionCylinder.radius -
-      Math.max(
-        (obstacle.aabb.max_point.x - obstacle.aabb.min_point.x) / 2,
-        (obstacle.aabb.max_point.y - obstacle.aabb.min_point.y) / 2
-      );
-    aabbMargin = Math.max(aabbMargin, heightDiff, radiusDiff);
-  }
-
-  const aabbResult = segmentIntersectsAABB(segment, obstacle.aabb, aabbMargin);
+  // Quick AABB rejection test, expanded to the caution margin so we don't
+  // reject segments that would only trigger a caution warning.
+  const aabbResult = segmentIntersectsAABB(segment, obstacleAABB(obstacle, SAFETY_MARGINS.CAUTION_EXTRA));
   if (!aabbResult.intersects) {
     return { collision: null, warning: null };
   }
 
-  // Check exclusion zone (cylinder) - already parsed above for AABB margin calculation
-  if (exclusionCylinder) {
-    const exclusionResult = segmentIntersectsCylinder(segment, exclusionCylinder, SAFETY_MARGINS.EXCLUSION);
+  if (obstacle.geometry_type === 'rectangle') {
+    const obb = obstacleOBB(obstacle, SAFETY_MARGINS.EXCLUSION);
+    const exclusionResult = segmentIntersectsOBB(segment, obb);
 
     if (exclusionResult.intersects) {
       collision = {
         hasCollision: true,
-        obstacleName: obstacle.name,
-        obstacleType: obstacle.type,
+        obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+        obstacleType: obstacle.geometry_type,
         zoneType: 'exclusion',
         segmentIndex,
-        collisionPoint: exclusionResult.closestPoint,
-        penetrationDepth: exclusionCylinder.radius - exclusionResult.distance,
-        // obstacle,
+        collisionPoint: start,
+        penetrationDepth: obstacle.safety_margin,
+        obstacle,
       };
+    } else {
+      const cautionObb = obstacleOBB(obstacle, SAFETY_MARGINS.EXCLUSION + SAFETY_MARGINS.CAUTION_EXTRA);
+      const cautionResult = segmentIntersectsOBB(segment, cautionObb);
+      if (cautionResult.intersects) {
+        warning = {
+          hasCollision: false,
+          obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+          obstacleType: obstacle.geometry_type,
+          zoneType: 'caution',
+          segmentIndex,
+          collisionPoint: start,
+          penetrationDepth: obstacle.safety_margin,
+          obstacle,
+        };
+      }
     }
+
+    return { collision, warning };
   }
 
-  // Check caution zone (even if exclusion collision found, for complete reporting)
-  // cautionCylinder already parsed above for AABB margin calculation
-  if (cautionCylinder && !collision) {
-    const cautionResult = segmentIntersectsCylinder(segment, cautionCylinder, SAFETY_MARGINS.CAUTION);
+  const exclusionCylinder = obstacleCylinder(obstacle, SAFETY_MARGINS.EXCLUSION);
+  const exclusionResult = segmentIntersectsCylinder(segment, exclusionCylinder);
+
+  if (exclusionResult.intersects) {
+    collision = {
+      hasCollision: true,
+      obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+      obstacleType: obstacle.geometry_type,
+      zoneType: 'exclusion',
+      segmentIndex,
+      collisionPoint: exclusionResult.closestPoint,
+      penetrationDepth: exclusionCylinder.radius - exclusionResult.distance,
+      obstacle,
+    };
+  } else {
+    const cautionCylinder = obstacleCylinder(obstacle, SAFETY_MARGINS.EXCLUSION + SAFETY_MARGINS.CAUTION_EXTRA);
+    const cautionResult = segmentIntersectsCylinder(segment, cautionCylinder);
 
     if (cautionResult.intersects) {
       warning = {
         hasCollision: false,
-        obstacleName: obstacle.name,
-        obstacleType: obstacle.type,
+        obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
+        obstacleType: obstacle.geometry_type,
         zoneType: 'caution',
         segmentIndex,
         collisionPoint: cautionResult.closestPoint,
         penetrationDepth: cautionCylinder.radius - cautionResult.distance,
-        // obstacle,
+        obstacle,
       };
     }
   }
@@ -225,8 +279,16 @@ export function validateRoute(waypoints, obstacles) {
       valid: true,
       collisions: [],
       warnings: [],
-      summary: { totalWaypoints: 0, totalSegments: 0, collisionCount: 0, warningCount: 0 },
+      summary: { totalWaypoints: 0, totalSegments: 0, collisionCount: 0, warningCount: 0, totalDistance: 0 },
     };
+  }
+
+  // Total route distance (computed once, reused by every return path below)
+  let totalDistance = 0;
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const p1 = normalizePosition(waypoints[i].pos);
+    const p2 = normalizePosition(waypoints[i + 1].pos);
+    totalDistance += distance3D(p1, p2);
   }
 
   if (!obstacles || obstacles.length === 0) {
@@ -239,6 +301,7 @@ export function validateRoute(waypoints, obstacles) {
         totalSegments: waypoints.length - 1,
         collisionCount: 0,
         warningCount: 0,
+        totalDistance,
       },
     };
   }
@@ -277,14 +340,6 @@ export function validateRoute(waypoints, obstacles) {
     }
   }
 
-  // Calculate total route distance
-  let totalDistance = 0;
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const p1 = normalizePosition(waypoints[i].pos);
-    const p2 = normalizePosition(waypoints[i + 1].pos);
-    totalDistance += distance3D(p1, p2);
-  }
-
   // Sort by segment index
   collisions.sort((a, b) => a.segmentIndex - b.segmentIndex);
   warnings.sort((a, b) => a.segmentIndex - b.segmentIndex);
@@ -304,19 +359,110 @@ export function validateRoute(waypoints, obstacles) {
 }
 
 /**
- * Validate a complete mission (multiple routes) against obstacles
+ * Estimate cumulative arrival time (seconds from route start) at each waypoint.
+ * Speed is taken from the route's idle_vel (falls back to max_vel, then a fixed
+ * default) rather than per-waypoint speed, since idle_vel is the conservative
+ * inspection-pass speed shared across the whole route.
+ * @param {Object} route - Route object with wp[] and attributes
+ * @returns {number[]} times[i] = seconds to reach waypoint i (times[0] = 0)
+ */
+function computeRouteTimings(route) {
+  const wp = route.wp || [];
+  const speed = route.attributes?.idle_vel ?? route.attributes?.max_vel ?? INTER_ROUTE_DEFAULTS.FALLBACK_SPEED;
+
+  const times = [0];
+  for (let i = 0; i < wp.length - 1; i++) {
+    const a = normalizePosition(wp[i].pos);
+    const b = normalizePosition(wp[i + 1].pos);
+    const segDuration = speed > 0 ? distance3D(a, b) / speed : 0;
+    times.push(times[i] + segDuration);
+  }
+  return times;
+}
+
+/**
+ * Find UAV-to-UAV collision risks between routes: pairs of segments (from
+ * different UAVs) that pass close to each other in space AND whose estimated
+ * arrival times at that point are close together.
+ * @param {Object[]} routes - Array of route objects (mission.route)
+ * @param {Object} [options]
+ * @param {number} [options.spatialThreshold] - Meters; default INTER_ROUTE_DEFAULTS.SPATIAL_THRESHOLD
+ * @param {number} [options.timeWindow] - Seconds; default INTER_ROUTE_DEFAULTS.TIME_WINDOW
+ * @returns {InterRouteCollision[]} Sorted by timeDiff ascending (most dangerous first)
+ */
+export function findInterRouteCollisions(routes, options = {}) {
+  const spatialThreshold = options.spatialThreshold ?? INTER_ROUTE_DEFAULTS.SPATIAL_THRESHOLD;
+  const timeWindow = options.timeWindow ?? INTER_ROUTE_DEFAULTS.TIME_WINDOW;
+  const conflicts = [];
+
+  if (!Array.isArray(routes) || routes.length < 2) {
+    return conflicts;
+  }
+
+  const timings = routes.map(computeRouteTimings);
+
+  for (let i = 0; i < routes.length; i++) {
+    const routeA = routes[i];
+    const wpA = routeA.wp || [];
+    if (wpA.length < 2) continue;
+
+    for (let j = i + 1; j < routes.length; j++) {
+      const routeB = routes[j];
+      const wpB = routeB.wp || [];
+      if (wpB.length < 2) continue;
+      if (routeA.uav && routeB.uav && routeA.uav === routeB.uav) continue; // same UAV can't collide with itself
+
+      for (let a = 0; a < wpA.length - 1; a++) {
+        const segA = { start: normalizePosition(wpA[a].pos), end: normalizePosition(wpA[a + 1].pos) };
+
+        for (let b = 0; b < wpB.length - 1; b++) {
+          const segB = { start: normalizePosition(wpB[b].pos), end: normalizePosition(wpB[b + 1].pos) };
+
+          const closest = closestPointsBetweenSegments(segA, segB);
+          if (closest.distance > spatialThreshold) continue;
+
+          const timeA = timings[i][a] + closest.tA * (timings[i][a + 1] - timings[i][a]);
+          const timeB = timings[j][b] + closest.tB * (timings[j][b + 1] - timings[j][b]);
+          const timeDiff = Math.abs(timeA - timeB);
+
+          if (timeDiff <= timeWindow) {
+            conflicts.push({
+              routeA: { id: routeA.id, name: routeA.name, uav: routeA.uav, segmentIndex: a },
+              routeB: { id: routeB.id, name: routeB.name, uav: routeB.uav, segmentIndex: b },
+              point: closest.pointA,
+              distance: closest.distance,
+              timeA,
+              timeB,
+              timeDiff,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return conflicts.sort((x, y) => x.timeDiff - y.timeDiff);
+}
+
+/**
+ * Validate a complete mission (multiple routes) against obstacles, and check
+ * routes against each other for UAV-to-UAV collision risk (see
+ * findInterRouteCollisions).
  * @param {Object} mission - Mission object with routes
  * @param {Object[]} mission.route - Array of route objects
  * @param {Obstacle[]} obstacles - Array of obstacles
- * @returns {Object} Validation results per route
+ * @param {Object} [options]
+ * @param {Object} [options.interRoute] - Forwarded to findInterRouteCollisions
+ * @returns {Object} Validation results per route, plus interRouteCollisions
  */
-export function validateMissionCollission(mission, obstacles) {
+export function validateMissionCollission(mission, obstacles, options = {}) {
   const results = {
     valid: true,
     routes: [],
     totalCollisions: 0,
     totalWarnings: 0,
     totalDistance: 0,
+    interRouteCollisions: [],
   };
 
   if (!mission?.route || !Array.isArray(mission.route)) {
@@ -325,7 +471,7 @@ export function validateMissionCollission(mission, obstacles) {
   }
 
   for (const route of mission.route) {
-    const routeResult = validateRoute(route.wp || [], obstacles);
+    const routeResult = validateRoute(route.wp || [], obstacles || []);
 
     results.routes.push({
       routeId: route.id,
@@ -343,9 +489,15 @@ export function validateMissionCollission(mission, obstacles) {
     results.totalDistance += routeResult.summary.totalDistance;
   }
 
+  results.interRouteCollisions = findInterRouteCollisions(mission.route, options.interRoute);
+  if (results.interRouteCollisions.length > 0) {
+    results.valid = false;
+  }
+
   logger.info(
     `[CollisionDetector] Mission validation: valid=${results.valid}, ` +
       `collisions=${results.totalCollisions}, warnings=${results.totalWarnings}, ` +
+      `interRouteCollisions=${results.interRouteCollisions.length}, ` +
       `totalDistance=${results.totalDistance.toFixed(1)}m`
   );
 
@@ -365,16 +517,16 @@ export function findCollidingObstacles(start, end, obstacles) {
 
   for (const obstacle of obstacles) {
     // Quick AABB check
-    const aabbResult = segmentIntersectsAABB(segment, obstacle.aabb, SAFETY_MARGINS.EXCLUSION);
+    const aabbResult = segmentIntersectsAABB(segment, obstacleAABB(obstacle, SAFETY_MARGINS.EXCLUSION));
     if (!aabbResult.intersects) continue;
 
-    // Cylinder check
-    const cylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-    if (cylinder) {
-      const result = segmentIntersectsCylinder(segment, cylinder, SAFETY_MARGINS.EXCLUSION);
-      if (result.intersects) {
-        colliding.push(obstacle);
-      }
+    const intersects =
+      obstacle.geometry_type === 'rectangle'
+        ? segmentIntersectsOBB(segment, obstacleOBB(obstacle, SAFETY_MARGINS.EXCLUSION)).intersects
+        : segmentIntersectsCylinder(segment, obstacleCylinder(obstacle, SAFETY_MARGINS.EXCLUSION)).intersects;
+
+    if (intersects) {
+      colliding.push(obstacle);
     }
   }
 
@@ -427,6 +579,23 @@ export function formatRouteReport(routeResult) {
 }
 
 /**
+ * Format a single inter-route (UAV-to-UAV) collision alert
+ * @param {InterRouteCollision} c
+ * @returns {string}
+ */
+function formatInterRouteEntry(c) {
+  const point = `point=(${c.point.x.toFixed(1)}, ${c.point.y.toFixed(1)}, ${c.point.z.toFixed(1)})`;
+  const uavA = c.routeA.uav || c.routeA.name || `route ${c.routeA.id}`;
+  const uavB = c.routeB.uav || c.routeB.name || `route ${c.routeB.id}`;
+  return (
+    `  * ALERT: ${uavA} [seg ${c.routeA.segmentIndex}] and ${uavB} [seg ${c.routeB.segmentIndex}] ` +
+    `cross paths at ${point} (distance=${c.distance.toFixed(1)}m) - ` +
+    `${uavA}@${c.timeA.toFixed(1)}s vs ${uavB}@${c.timeB.toFixed(1)}s (Δt=${c.timeDiff.toFixed(1)}s) - ` +
+    `possible collision, generate a detour`
+  );
+}
+
+/**
  * Format full mission validation report
  * @param {Object} missionResult - Result from validateMissionCollission()
  * @returns {string}
@@ -437,9 +606,18 @@ export function formatMissionReport(missionResult) {
 
   lines.push(`Status: ${status}`);
   lines.push(
-    `**Total Collisions:** ${missionResult.totalCollisions} | **Total Warnings:** ${missionResult.totalWarnings}`
+    `**Total Collisions:** ${missionResult.totalCollisions} | **Total Warnings:** ${missionResult.totalWarnings}` +
+      ` | **Inter-UAV Conflicts:** ${missionResult.interRouteCollisions?.length ?? 0}`
   );
   lines.push(`- totalDistance: ${missionResult.totalDistance.toFixed(1)} (m)`);
+
+  if (missionResult.interRouteCollisions?.length > 0) {
+    lines.push('');
+    lines.push('#### [INTER-UAV ROUTE CONFLICTS]');
+    for (const c of missionResult.interRouteCollisions) {
+      lines.push(formatInterRouteEntry(c));
+    }
+  }
 
   for (const route of missionResult.routes) {
     lines.push('');

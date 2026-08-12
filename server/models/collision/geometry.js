@@ -263,6 +263,62 @@ export function segmentIntersectsCylinder(segment, cylinder, margin = 0) {
 }
 
 /**
+ * Find the closest points between two line segments in 3D (Ericson,
+ * "Real-Time Collision Detection", ClosestPtSegmentSegment).
+ * @param {Segment} seg1
+ * @param {Segment} seg2
+ * @returns {{pointA: Point3D, pointB: Point3D, tA: number, tB: number, distance: number}}
+ *          tA/tB are parametric values [0,1] along seg1/seg2 at closest approach
+ */
+export function closestPointsBetweenSegments(seg1, seg2) {
+  const EPS = 1e-10;
+  const p1 = seg1.start;
+  const p2 = seg2.start;
+  const d1 = { x: seg1.end.x - p1.x, y: seg1.end.y - p1.y, z: seg1.end.z - p1.z };
+  const d2 = { x: seg2.end.x - p2.x, y: seg2.end.y - p2.y, z: seg2.end.z - p2.z };
+  const r = { x: p1.x - p2.x, y: p1.y - p2.y, z: p1.z - p2.z };
+
+  const dot = (u, v) => u.x * v.x + u.y * v.y + u.z * v.z;
+
+  const a = dot(d1, d1);
+  const e = dot(d2, d2);
+  const f = dot(d2, r);
+
+  let s, t;
+
+  if (a <= EPS && e <= EPS) {
+    s = 0;
+    t = 0;
+  } else if (a <= EPS) {
+    s = 0;
+    t = Math.max(0, Math.min(1, f / e));
+  } else {
+    const c = dot(d1, r);
+    if (e <= EPS) {
+      t = 0;
+      s = Math.max(0, Math.min(1, -c / a));
+    } else {
+      const b = dot(d1, d2);
+      const denom = a * e - b * b;
+      s = denom !== 0 ? Math.max(0, Math.min(1, (b * f - c * e) / denom)) : 0;
+      t = (b * s + f) / e;
+      if (t < 0) {
+        t = 0;
+        s = Math.max(0, Math.min(1, -c / a));
+      } else if (t > 1) {
+        t = 1;
+        s = Math.max(0, Math.min(1, (b - c) / a));
+      }
+    }
+  }
+
+  const pointA = { x: p1.x + d1.x * s, y: p1.y + d1.y * s, z: p1.z + d1.z * s };
+  const pointB = { x: p2.x + d2.x * t, y: p2.y + d2.y * t, z: p2.z + d2.z * t };
+
+  return { pointA, pointB, tA: s, tB: t, distance: distance3D(pointA, pointB) };
+}
+
+/**
  * Interpolate a point along a segment
  * @param {Segment} segment
  * @param {number} t - Parametric value [0, 1]
@@ -277,44 +333,165 @@ export function interpolateSegment(segment, t) {
 }
 
 /**
- * Create a cylinder from obstacle data with zone information
- * Parses zone strings like:
- *   - Spanish: "Cilindro: radio 35m, altura 108m (z: 0→108)."
- *   - English: "cylinder: radius=30m, height=108m"
- * @param {Object} obstacle - Obstacle with position and zones
- * @param {string} zoneType - 'exclusion_zone' | 'caution_zone'
- * @returns {Cylinder|null}
+ * @typedef {Object} Obstacle
+ * @property {string} obstacle_id - Obstacle identifier
+ * @property {string} [obstacle_name] - Human-readable obstacle name, used in reports
+ * @property {'circle'|'rectangle'} geometry_type - Geometry used to model the obstacle
+ * @property {Point3D} position - Horizontal center (x, y) and base/ground level (z) of the obstacle. z is NOT the geometric centroid - height extends upward from z.
+ * @property {{radius:number}|{width:number, length:number}} dimensions - Real footprint size, before rotation by yaw and before safety_margin. radius (geometry_type: 'circle') or width (local West-East extent at yaw=0) + length (local North-South extent at yaw=0) (geometry_type: 'rectangle')
+ * @property {number} safety_margin - Extra clearance in meters to add around the obstacle's real geometry. Does NOT include the obstacle's own size.
+ * @property {number} height - Height in meters, extending up from position.z
+ * @property {number} yaw - Obstacle rotation in degrees, same convention as waypoint yaw: 0=North (+Y), 90=East (+X). Only meaningful for geometry_type 'rectangle' - a circle is rotationally symmetric.
  */
-export function cylinderFromObstacleZone(obstacle, zoneType = 'exclusion_zone') {
-  const zone = obstacle.zones?.[zoneType];
-  if (!zone) return null;
 
-  // Parse zone string for radius and height (supports Spanish and English formats)
-  // Spanish: "radio 35m" / English: "radius=30m" or "radius 30m"
-  const radiusMatch = zone.match(/(?:radio|radius)[=:\s]+(\d+(?:\.\d+)?)\s*m/i);
-  // Spanish: "altura 108m" / English: "height=108m" or "height 108m"
-  const heightMatch = zone.match(/(?:altura|height)[=:\s]+(\d+(?:\.\d+)?)\s*m/i);
+/**
+ * Derive the obstacle's horizontal center and base-level point (for cylinder checks and detour math).
+ * @param {Obstacle} obstacle
+ * @returns {Point3D}
+ */
+export function obstacleCenter(obstacle) {
+  return { x: obstacle.position?.x ?? 0, y: obstacle.position?.y ?? 0, z: obstacle.position?.z ?? 0 };
+}
 
-  if (!radiusMatch || !heightMatch) {
-    // Fallback to AABB dimensions if zone parsing fails
-    if (obstacle.aabb) {
-      const aabb = obstacle.aabb;
-      const radiusX = (aabb.max_point.x - aabb.min_point.x) / 2;
-      const radiusY = (aabb.max_point.y - aabb.min_point.y) / 2;
-      return {
-        center: obstacle.position,
-        radius: Math.max(radiusX, radiusY),
-        height: aabb.max_point.z - aabb.min_point.z,
-      };
-    }
-    return null;
+/**
+ * Rotate a point from world (ENU) coordinates into an obstacle's local frame,
+ * undoing the obstacle's yaw so its bounds can be checked as an axis-aligned box.
+ * Yaw convention matches waypoint yaw: 0deg=North(+Y), 90deg=East(+X), clockwise.
+ * @param {Point3D} point - World-space point
+ * @param {Point3D} center - Obstacle center (rotation origin)
+ * @param {number} yawDeg - Obstacle yaw in degrees (waypoint convention)
+ * @returns {Point3D} Point in the obstacle's local frame (z unchanged)
+ */
+export function worldToObstacleFrame(point, center, yawDeg) {
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  if (!yawDeg) return { x: dx, y: dy, z: point.z };
+
+  // Waypoint yaw is measured clockwise from +Y (North). To undo a clockwise
+  // rotation by yaw, rotate the point counter-clockwise by yaw about +Y->+X.
+  const rad = (yawDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return {
+    x: dx * cos - dy * sin,
+    y: dx * sin + dy * cos,
+    z: point.z,
+  };
+}
+
+/**
+ * Derive the exclusion cylinder for an obstacle, expanded by an extra margin
+ * on top of the obstacle's own safety_margin (e.g. to get a wider "caution"
+ * cylinder from the same geometry).
+ * For geometry_type 'rectangle' this is a conservative circumscribing cylinder
+ * (radius = half-diagonal), suitable for detour heuristics; use obstacleOBB
+ * for the precise oriented-box collision check.
+ * @param {Obstacle} obstacle
+ * @param {number} [margin=0] - Extra radius/height margin in meters, on top of safety_margin
+ * @returns {Cylinder}
+ */
+export function obstacleCylinder(obstacle, margin = 0) {
+  const center = obstacleCenter(obstacle);
+  const height = obstacle.height ?? 100;
+  const extra = obstacle.safety_margin + margin;
+
+  if (obstacle.geometry_type === 'rectangle') {
+    const halfW = (obstacle.dimensions?.width ?? 0) / 2;
+    const halfL = (obstacle.dimensions?.length ?? 0) / 2;
+    const radius = Math.sqrt(halfW * halfW + halfL * halfL) + extra;
+    return { center, radius, height: height + margin };
   }
 
+  return { center, radius: (obstacle.dimensions?.radius ?? 0) + extra, height: height + margin };
+}
+
+/**
+ * Derive the world-space AABB for an obstacle - a tight box for 'circle'
+ * geometry, or the rotated rectangle's world-space envelope for 'rectangle'
+ * geometry (used only for fast rejection; the precise check is obstacleOBB).
+ * Includes safety_margin so the box already covers the safety clearance.
+ * @param {Obstacle} obstacle
+ * @param {number} [margin=0] - Extra margin in meters, on top of safety_margin
+ * @returns {AABB}
+ */
+export function obstacleAABB(obstacle, margin = 0) {
+  const height = obstacle.height ?? 100;
+  const center = obstacleCenter(obstacle);
+  const extra = obstacle.safety_margin + margin;
+
+  if (obstacle.geometry_type === 'rectangle') {
+    const halfW = (obstacle.dimensions?.width ?? 0) / 2 + extra;
+    const halfL = (obstacle.dimensions?.length ?? 0) / 2 + extra;
+    // World-space envelope of the rotated rectangle: half-extents swap worst-case
+    // under rotation, so use the diagonal as a conservative radius for fast rejection.
+    const diag = Math.sqrt(halfW * halfW + halfL * halfL);
+    return {
+      min_point: { x: center.x - diag, y: center.y - diag, z: 0 - margin },
+      max_point: { x: center.x + diag, y: center.y + diag, z: height + margin },
+    };
+  }
+
+  const r = (obstacle.dimensions?.radius ?? 0) + extra;
   return {
-    center: { ...obstacle.position },
-    radius: parseFloat(radiusMatch[1]),
-    height: parseFloat(heightMatch[1]),
+    min_point: { x: center.x - r, y: center.y - r, z: center.z - margin },
+    max_point: { x: center.x + r, y: center.y + r, z: center.z + height + margin },
   };
+}
+
+/**
+ * Derive the oriented bounding box (OBB) parameters for a geometry_type
+ * 'rectangle' obstacle: its local-frame half-extents, center, yaw and height.
+ * Use with worldToObstacleFrame() to test points/segments precisely.
+ * @param {Obstacle} obstacle
+ * @param {number} [margin=0] - Extra margin in meters, on top of safety_margin
+ * @returns {{center: Point3D, halfExtent: {x:number,y:number}, height: number, yaw: number}}
+ */
+export function obstacleOBB(obstacle, margin = 0) {
+  const extra = obstacle.safety_margin + margin;
+  return {
+    center: obstacleCenter(obstacle),
+    halfExtent: {
+      x: (obstacle.dimensions?.width ?? 0) / 2 + extra,
+      y: (obstacle.dimensions?.length ?? 0) / 2 + extra,
+    },
+    height: (obstacle.height ?? 100) + margin,
+    yaw: obstacle.yaw ?? 0,
+  };
+}
+
+/**
+ * Check if a point is inside an obstacle's OBB (oriented bounding box).
+ * @param {Point3D} point - World-space point
+ * @param {{center: Point3D, halfExtent: {x:number,y:number}, height: number, yaw: number}} obb
+ * @returns {boolean}
+ */
+export function pointInOBB(point, obb) {
+  const local = worldToObstacleFrame(point, obb.center, obb.yaw);
+  return (
+    Math.abs(local.x) <= obb.halfExtent.x &&
+    Math.abs(local.y) <= obb.halfExtent.y &&
+    point.z >= 0 &&
+    point.z <= obb.height
+  );
+}
+
+/**
+ * Check if a line segment intersects an obstacle's OBB by rotating the
+ * segment into the obstacle's local frame and running the AABB slab test.
+ * @param {Segment} segment - World-space segment
+ * @param {{center: Point3D, halfExtent: {x:number,y:number}, height: number, yaw: number}} obb
+ * @returns {{intersects: boolean, tMin: number, tMax: number}}
+ */
+export function segmentIntersectsOBB(segment, obb) {
+  const localSegment = {
+    start: worldToObstacleFrame(segment.start, obb.center, obb.yaw),
+    end: worldToObstacleFrame(segment.end, obb.center, obb.yaw),
+  };
+  const localAABB = {
+    min_point: { x: -obb.halfExtent.x, y: -obb.halfExtent.y, z: 0 },
+    max_point: { x: obb.halfExtent.x, y: obb.halfExtent.y, z: obb.height },
+  };
+  return segmentIntersectsAABB(localSegment, localAABB);
 }
 
 /**
@@ -345,3 +522,4 @@ export function normalize(v) {
 export function perpendicular2D(v) {
   return { x: -v.y, y: v.x, z: 0 };
 }
+

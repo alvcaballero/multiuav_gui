@@ -4,7 +4,14 @@
  */
 
 import { logger } from '../../common/logger.js';
-import { distance2D, normalize, perpendicular2D, cylinderFromObstacleZone, interpolateSegment } from './geometry.js';
+import {
+  distance2D,
+  normalize,
+  perpendicular2D,
+  interpolateSegment,
+  obstacleCenter,
+  obstacleCylinder,
+} from './geometry.js';
 import { validateRoute } from './collisionDetector.js';
 
 /**
@@ -51,7 +58,7 @@ function normalizePos(pos) {
  * @returns {DetourStrategy}
  */
 function determineBestDetourStrategy(start, end, obstacle) {
-  const obstaclePos = obstacle.position;
+  const obstaclePos = obstacleCenter(obstacle);
 
   // Calculate flight direction vector
   const flightDir = normalize({
@@ -73,16 +80,13 @@ function determineBestDetourStrategy(start, end, obstacle) {
   // Dot product with perpendicular to determine which side obstacle is on
   const crossProduct = toObstacle.x * perpLeft.x + toObstacle.y * perpLeft.y;
 
-  // Get obstacle height from exclusion zone
-  const cylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-  const obstacleHeight = cylinder ? cylinder.height : 100;
-  const obstacleRadius = cylinder ? cylinder.radius : 30;
+  // Get obstacle dimensions from its exclusion geometry
+  const cylinder = obstacleCylinder(obstacle);
+  const obstacleHeight = cylinder.height;
+  const obstacleRadius = cylinder.radius;
 
-  // Determine clearance based on caution zone
-  const cautionCylinder = cylinderFromObstacleZone(obstacle, 'caution_zone');
-  const clearance = cautionCylinder
-    ? cautionCylinder.radius + CONFIG.MIN_CLEARANCE
-    : obstacleRadius + CONFIG.DEFAULT_CLEARANCE;
+  // Clearance beyond the exclusion radius (replaces the old separate caution-zone radius)
+  const clearance = obstacleRadius + CONFIG.MIN_CLEARANCE;
 
   // Check if vertical detour is viable
   const canGoOver = obstacleHeight + CONFIG.ALTITUDE_BUFFER <= CONFIG.MAX_ALTITUDE;
@@ -117,7 +121,7 @@ function determineBestDetourStrategy(start, end, obstacle) {
  */
 function generateLateralDetour(start, end, obstacle, strategy) {
   const waypoints = [];
-  const obstaclePos = obstacle.position;
+  const obstaclePos = obstacleCenter(obstacle);
 
   // Flight direction
   const flightDir = normalize({
@@ -133,9 +137,7 @@ function generateLateralDetour(start, end, obstacle, strategy) {
   }
 
   // Get cylinder for accurate dimensions
-  const cylinder =
-    cylinderFromObstacleZone(obstacle, 'caution_zone') || cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-  const radius = cylinder ? cylinder.radius : 30;
+  const radius = obstacleCylinder(obstacle).radius;
 
   // Calculate offset distance
   const offsetDist = radius + strategy.clearance;
@@ -190,11 +192,10 @@ function generateLateralDetour(start, end, obstacle, strategy) {
  */
 function generateVerticalDetour(start, end, obstacle, strategy) {
   const waypoints = [];
-  const obstaclePos = obstacle.position;
+  const obstaclePos = obstacleCenter(obstacle);
 
   // Get obstacle height
-  const cylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-  const obstacleHeight = cylinder ? cylinder.height : 100;
+  const obstacleHeight = obstacleCylinder(obstacle).height;
   const safeAltitude = Math.min(obstacleHeight + strategy.clearance, CONFIG.MAX_ALTITUDE);
 
   // Flight direction
@@ -262,7 +263,7 @@ export function generateDetour(start, end, obstacle) {
 
   logger.info(
     `[DetourGenerator] Generated ${strategy.type} detour (${strategy.direction}) ` +
-      `around ${obstacle.name} with ${waypoints.length} waypoints`
+      `around ${obstacle.obstacle_name ?? obstacle.obstacle_id} with ${waypoints.length} waypoints`
   );
 
   return { waypoints, strategy };
@@ -399,7 +400,7 @@ export function resolveCollisions(mission, obstacles) {
     report.push(`\n=== Route ${route.id}: ${route.name} (${route.uav}) ===`);
 
     // Validate route
-    const validation = validateRoute(route.wp || [], obstacles);
+    const validation = validateRoute(route.wp || [], obstacles || []);
 
     if (validation.valid) {
       report.push('No collisions detected');
@@ -409,14 +410,14 @@ export function resolveCollisions(mission, obstacles) {
     report.push(`Found ${validation.collisions.length} collisions, ${validation.warnings.length} warnings`);
 
     // Apply detours
-    const result = applyDetoursToRoute(route.wp, validation.collisions, obstacles);
+    const result = applyDetoursToRoute(route.wp, validation.collisions, obstacles || []);
 
     modifiedMission.route[i].wp = result.waypoints;
     totalDetoursApplied += result.detoursApplied;
     report.push(...result.report);
 
     // Final validation
-    const finalValidation = validateRoute(result.waypoints, obstacles);
+    const finalValidation = validateRoute(result.waypoints, obstacles || []);
     if (finalValidation.valid) {
       report.push(`Route ${route.id}: All collisions resolved successfully`);
     } else {
