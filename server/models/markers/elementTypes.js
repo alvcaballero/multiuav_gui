@@ -16,7 +16,7 @@ export const elementTypesModel = {
   },
 
   async create(elementType) {
-    const { id, name, description, icon, model3d, color, isCustom } = elementType;
+    const { id, name, description, icon, model3d, color, isCustom, attributes } = elementType;
 
     return await sequelize.models.ElementType.create({
       id,
@@ -26,11 +26,12 @@ export const elementTypesModel = {
       model3d: model3d ?? null,
       color: color ?? null,
       isCustom: isCustom ?? false,
+      attributes: attributes ?? null,
     });
   },
 
   async update(id, elementType) {
-    const { name, description, icon, model3d, color, isCustom } = elementType;
+    const { name, description, icon, model3d, color, isCustom, attributes } = elementType;
     const myType = await sequelize.models.ElementType.findOne({ where: { id } });
     if (!myType) {
       return null;
@@ -41,6 +42,7 @@ export const elementTypesModel = {
     if (model3d !== undefined) myType.model3d = model3d;
     if (color !== undefined) myType.color = color;
     if (isCustom !== undefined) myType.isCustom = isCustom;
+    if (attributes !== undefined) myType.attributes = attributes;
     await myType.save();
     return myType;
   },

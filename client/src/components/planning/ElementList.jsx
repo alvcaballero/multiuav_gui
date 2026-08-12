@@ -170,6 +170,7 @@ const ElementList = ({ markers, setMarkers }) => {
                         markers={base.items}
                         setMarkers={(value) => setElement(index, value)}
                         type="Element"
+                        elementTypeId={base.type}
                         hasMapImage={markerTypes.find((t) => t.id === base.type)?.mapImage === true}
                       />
                     </Fragment>

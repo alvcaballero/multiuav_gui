@@ -22,3 +22,10 @@ export const useMarkerTypes = () => {
 
   return { types, loading };
 };
+
+// Call after creating/editing/deleting an ElementType so the next mount of
+// useMarkerTypes() (e.g. navigating back to the map/3D view) refetches instead
+// of reusing the stale module-level cache.
+export function invalidateMarkerTypesCache() {
+  cachedTypes = null;
+}

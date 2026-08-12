@@ -1,5 +1,37 @@
 import { z } from 'zod';
 
+// Geometry defaults shared by ElementType (catalog defaults) and ElementItem
+// (per-item override, copied from its type on creation). Aligned with the
+// `Obstacle` typedef in models/collision/geometry.js (geometry_type/dimensions/
+// yaw) so this can feed the collision engine later without a translation layer.
+const CircleDimensionsSchema = z.object({
+  radius: z.number().positive(),
+  height: z.number().positive(),
+});
+const RectangleDimensionsSchema = z.object({
+  width: z.number().positive(),
+  length: z.number().positive(),
+  height: z.number().positive(),
+});
+export const GeometrySchema = z.discriminatedUnion('geometry_type', [
+  z.object({
+    geometry_type: z.literal('circle'),
+    dimensions: CircleDimensionsSchema,
+    yaw: z.number().optional(),
+  }),
+  z.object({
+    geometry_type: z.literal('rectangle'),
+    dimensions: RectangleDimensionsSchema,
+    yaw: z.number().optional(),
+  }),
+]);
+
+// `attributes` is a free-form bag (string|number) that can additionally carry a
+// typed `geometry` key.
+export const AttributesSchema = z
+  .object({ geometry: GeometrySchema.optional() })
+  .catchall(z.union([z.string(), z.number()]));
+
 export const ElementTypeSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -8,6 +40,7 @@ export const ElementTypeSchema = z.object({
   model3d: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
   isCustom: z.boolean().optional(),
+  attributes: AttributesSchema.nullable().optional(),
 });
 
 export const ElementGroupSchema = z.object({
@@ -24,7 +57,7 @@ export const ElementItemSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   description: z.string().nullable().optional(),
-  attributes: z.record(z.string(), z.union([z.string(), z.number()])).nullable().optional(),
+  attributes: AttributesSchema.nullable().optional(),
 });
 
 export const BaseSchema = z.object({

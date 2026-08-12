@@ -8,7 +8,7 @@ import { createSelector } from '@reduxjs/toolkit';
 /**
  * Obtiene todos los grupos de inspection targets
  */
-const getAllInspectionGroups = (state) => state.session.markers?.elements || [];
+export const getAllInspectionGroups = (state) => state.session.markers?.elements || [];
 
 /**
  * Obtiene los items con imagen georreferenciada (corners definidos) listos para MapLibre.

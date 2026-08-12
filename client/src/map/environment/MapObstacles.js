@@ -598,12 +598,52 @@ const createCircleFeature = (center, radiusMeters, properties = {}) => {
 };
 
 /**
+ * Creates a rectangle feature (footprint) centered on `center`, rotated by
+ * `yawDeg`. `widthMeters` runs along the local East-West axis and
+ * `lengthMeters` along the local North-South axis at yaw=0 — same convention
+ * as the `Obstacle` geometry (mcp_server/src/schemas/missions.ts) and
+ * `attributes.geometry` on ElementType/ElementItem. `yawDeg` is clockwise from
+ * North, matching this app's heading convention (0=North, 90=East).
+ */
+const createRectangleFeature = (center, widthMeters, lengthMeters, yawDeg = 0, properties = {}) => {
+  if (widthMeters <= 0 || lengthMeters <= 0) return null;
+
+  const halfWidth = widthMeters / 2;
+  const halfLength = lengthMeters / 2;
+  const localCorners = [
+    [-halfWidth, -halfLength],
+    [halfWidth, -halfLength],
+    [halfWidth, halfLength],
+    [-halfWidth, halfLength],
+  ];
+
+  const rad = (yawDeg * Math.PI) / 180;
+  const ring = localCorners.map(([dx, dy]) => {
+    const rx = dx * Math.cos(rad) + dy * Math.sin(rad);
+    const ry = -dx * Math.sin(rad) + dy * Math.cos(rad);
+    const { lat, lng } = xyzToLatLng(rx, ry, center);
+    return [lng, lat];
+  });
+  ring.push(ring[0]); // GeoJSON polygons must close the ring
+
+  return {
+    type: 'Feature',
+    geometry: { type: 'Polygon', coordinates: [ring] },
+    properties,
+  };
+};
+
+/**
  * MapObstacles Component
- * Renders obstacle zones (exclusion, caution, safe) on the map
+ * Renders obstacle footprints on the map. Accepts two obstacle shapes:
+ *  - Real elements: { name, type, latitude, longitude, geometry_type: 'circle'|'rectangle',
+ *    dimensions: {radius|{width,length}}, yaw } — drawn as a single "exclusion" boundary.
+ *  - Legacy demo data (default): { name, type, position: {x,y,z}, zones: {...} } — drawn as
+ *    three concentric zones (safe/caution/exclusion) using `origin` for XYZ→lat/lng conversion.
  *
  * @param {Object} props
- * @param {Array} props.obstacles - Array of obstacle objects with position, zones, etc.
- * @param {Object} props.origin - Origin coordinates { lat, lng, alt } for XYZ conversion
+ * @param {Array} props.obstacles - Array of obstacle objects (either shape above)
+ * @param {Object} props.origin - Origin coordinates { lat, lng, alt } for the legacy XYZ shape
  * @param {boolean} props.visible - Whether to show obstacles (default: true)
  * @param {Object} props.colors - Custom colors for zones
  */
@@ -653,6 +693,42 @@ const MapObstacles = ({
     const pointFeatures = [];
 
     obstacles.forEach((obstacle) => {
+      const baseProperties = {
+        name: obstacle.name,
+        type: obstacle.type,
+        metadata: obstacle.metadata,
+      };
+
+      // Real ElementItem/ElementType-derived obstacle: already carries lat/lng
+      // and a typed geometry (see attributes.geometry). No XYZ conversion, and
+      // — unlike the legacy demo data below — only a single footprint boundary
+      // is drawn (the "exclusion" layer); safe/caution margins are a distinct,
+      // unrelated concept (collision-avoidance zones) out of scope here.
+      if (obstacle.geometry_type) {
+        const center = { lat: obstacle.latitude, lng: obstacle.longitude };
+        const feature =
+          obstacle.geometry_type === 'circle'
+            ? createCircleFeature(center, obstacle.dimensions?.radius, {
+                ...baseProperties,
+                zone: 'exclusion',
+              })
+            : createRectangleFeature(
+                center,
+                obstacle.dimensions?.width,
+                obstacle.dimensions?.length,
+                obstacle.yaw || 0,
+                { ...baseProperties, zone: 'exclusion' },
+              );
+        if (feature) exclusionFeatures.push(feature);
+        pointFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [center.lng, center.lat] },
+          properties: baseProperties,
+        });
+        return;
+      }
+
+      // Legacy demo data (DEFAULT_OBSTACLES): XYZ position + free-text zones.
       // Convert XYZ to lat/lng
       const center = xyzToLatLng(obstacle.position.x, obstacle.position.y, origin);
 
@@ -660,12 +736,6 @@ const MapObstacles = ({
       const exclusionRadius = extractRadiusFromZone(obstacle.zones?.exclusion_zone || '');
       const cautionRadius = extractRadiusFromZone(obstacle.zones?.caution_zone || '');
       const safeRadius = extractSafeRadius(obstacle.zones?.safe_zone || '');
-
-      const baseProperties = {
-        name: obstacle.name,
-        type: obstacle.type,
-        metadata: obstacle.metadata,
-      };
 
       // Create safe zone circle
       if (safeRadius > 0) {

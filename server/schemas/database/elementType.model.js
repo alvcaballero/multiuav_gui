@@ -32,6 +32,10 @@ const ElementTypeSchema = {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  attributes: {
+    type: DataTypes.JSON,
+    allowNull: true,
+  },
 };
 
 class ElementType extends Model {

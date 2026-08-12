@@ -23,8 +23,13 @@ async function migrateElementTypes() {
   const staticTypes = readYaml('../config/planning/elementTypes.yaml') || [];
   const customTypes = readYaml('../data/markerTypes.yaml') || [];
 
+  // findOrCreate + backfill: creates rows that don't exist yet, and — for rows
+  // that already exist from a previous run — fills in `attributes` if it's
+  // still empty (e.g. this script ran before the field existed). A type whose
+  // attributes were customized via the admin UI is left untouched.
+  let backfilled = 0;
   for (const type of staticTypes) {
-    await sequelize.models.ElementType.findOrCreate({
+    const [elementType, created] = await sequelize.models.ElementType.findOrCreate({
       where: { id: type.id },
       defaults: {
         id: type.id,
@@ -34,11 +39,17 @@ async function migrateElementTypes() {
         model3d: type.model3d ?? null,
         color: type.color ?? null,
         isCustom: false,
+        attributes: type.attributes ?? null,
       },
     });
+    if (!created && !elementType.attributes && type.attributes) {
+      elementType.attributes = type.attributes;
+      await elementType.save();
+      backfilled += 1;
+    }
   }
   for (const type of customTypes) {
-    await sequelize.models.ElementType.findOrCreate({
+    const [elementType, created] = await sequelize.models.ElementType.findOrCreate({
       where: { id: type.id },
       defaults: {
         id: type.id,
@@ -48,10 +59,16 @@ async function migrateElementTypes() {
         model3d: type.model3d ?? null,
         color: type.color ?? null,
         isCustom: true,
+        attributes: type.attributes ?? null,
       },
     });
+    if (!created && !elementType.attributes && type.attributes) {
+      elementType.attributes = type.attributes;
+      await elementType.save();
+      backfilled += 1;
+    }
   }
-  logger.info(`Migrated ${staticTypes.length + customTypes.length} element types`);
+  logger.info(`Migrated ${staticTypes.length + customTypes.length} element types (${backfilled} backfilled)`);
 }
 
 async function migrateElementGroups(missionConfig) {

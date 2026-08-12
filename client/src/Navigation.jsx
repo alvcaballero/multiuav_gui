@@ -20,6 +20,8 @@ const SettingsCategoryPage = lazy(() => import('./settings/SettingsCategoryPage'
 const SettingsCategoryPageEdit = lazy(() => import('./settings/SettingsCategoryPageEdit'));
 const SettingsDevicesPage = lazy(() => import('./settings/SettingsDevicesPage'));
 const SettingsDevicesPageEdit = lazy(() => import('./settings/SettingsDevicesPageEdit'));
+const SettingsElementTypesPage = lazy(() => import('./settings/SettingsElementTypesPage'));
+const SettingsElementTypesPageEdit = lazy(() => import('./settings/SettingsElementTypesPageEdit'));
 const GeofencesPage = lazy(() => import('./pages/GeofencesPage'));
 const GeofencePage = lazy(() => import('./settings/GeofencePage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
@@ -92,6 +94,9 @@ const Navigation = () => {
             <Route path="devices/:id" element={<SettingsDevicesPageEdit />} />
             <Route path="category" element={<SettingsCategoryPage />} />
             <Route path="category/:id" element={<SettingsCategoryPageEdit />} />
+            <Route path="elementTypes" element={<SettingsElementTypesPage />} />
+            <Route path="elementTypes/new" element={<SettingsElementTypesPageEdit />} />
+            <Route path="elementTypes/:id" element={<SettingsElementTypesPageEdit />} />
             <Route path="geofence/:id" element={<GeofencePage />} />
           </Route>
 

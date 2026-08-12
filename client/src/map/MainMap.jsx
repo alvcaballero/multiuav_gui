@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { FormControlLabel, Switch } from '@mui/material';
 
 import MapView from './core/MapView';
 import { MapMissions } from './mission/MapMissions';
@@ -16,9 +17,40 @@ import MapGeocoder from './geocoder/MapGeocoder';
 import MapGeofence from './environment/MapGeofence';
 import PegmanControl from './PegmanControl/PegmanControl';
 import MapObstacles from './environment/MapObstacles';
+import { getAllInspectionGroups } from '../store/sessionSelectors';
+import { useMarkerTypes } from '../hooks/useMarkerTypes';
 
 const EMPTY_MARKERS = [];
 const EMPTY_ROUTES = [];
+
+/** ElementGroups/Items (state.session.markers.elements) → MapObstacles' real-data shape. */
+const useInspectionObstacles = () => {
+  const groups = useSelector(getAllInspectionGroups);
+  const { types: markerTypes } = useMarkerTypes();
+
+  return useMemo(
+    () =>
+      groups.flatMap((group) => {
+        const typeGeometry = markerTypes.find((t) => t.id === group.type)?.attributes?.geometry;
+        return (group.items || []).flatMap((item) => {
+          const geometry = item.attributes?.geometry || typeGeometry;
+          if (!geometry || item.latitude == null || item.longitude == null) return [];
+          return [
+            {
+              name: item.name,
+              type: group.type,
+              latitude: item.latitude,
+              longitude: item.longitude,
+              geometry_type: geometry.geometry_type,
+              dimensions: geometry.dimensions,
+              yaw: geometry.yaw || 0,
+            },
+          ];
+        });
+      }),
+    [groups, markerTypes],
+  );
+};
 
 const MainMap = ({
   filteredPositions,
@@ -28,6 +60,8 @@ const MainMap = ({
   routes = EMPTY_ROUTES,
 }) => {
   const dispatch = useDispatch();
+  const [showObstacles, setShowObstacles] = useState(true);
+  const obstacles = useInspectionObstacles();
   const onMarkerClick = useCallback(
     (_, deviceId) => {
       dispatch(devicesActions.selectId(deviceId));
@@ -39,7 +73,7 @@ const MainMap = ({
       <MapView>
         <MapMarkers markers={markers} showTitles={true} />
         <MapMissions filteredDeviceId={filteredMissiondeviceid} routes={routes} />
-        <MapObstacles />
+        <MapObstacles obstacles={obstacles} visible={showObstacles} />
         <MapElements />
         <MapGeofence />
         <MapLiveRoutes />
@@ -56,6 +90,26 @@ const MainMap = ({
       <MapScale />
       <MapGeocoder />
       <PegmanControl />
+      <FormControlLabel
+        sx={{
+          position: 'absolute',
+          bottom: 8,
+          left: 8,
+          zIndex: 1,
+          backgroundColor: 'background.paper',
+          borderRadius: 1,
+          px: 1,
+          m: 0,
+        }}
+        control={
+          <Switch
+            size="small"
+            checked={showObstacles}
+            onChange={(e) => setShowObstacles(e.target.checked)}
+          />
+        }
+        label="Bounding boxes"
+      />
     </>
   );
 };

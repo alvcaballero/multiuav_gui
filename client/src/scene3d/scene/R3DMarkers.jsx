@@ -3,17 +3,55 @@ import { useThree } from '@react-three/fiber';
 import { useModelLoader } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
+import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 
 // heading: degrees from North, clockwise (0=N, 90=E, 180=S, 270=W)
 // Three.js axes: X=East, Y=up, Z=-North → rotY = -heading_rad
 const headingToRotationY = (heading = 0) => -(heading * Math.PI) / 180;
 
-const Marker = ({ item, onPick }) => {
+// Used when neither the item nor its ElementType carry a geometry yet (not
+// migrated / never set) so the wireframe still renders something sane.
+const FALLBACK_GEOMETRY = { geometry_type: 'circle', dimensions: { radius: 2, height: 5 }, yaw: 0 };
+
+// Wireframe bounding box for an item's effective geometry (own attributes.geometry,
+// falling back to its ElementType's default). Horizontal center matches the
+// model's XZ position; the base sits on the ground (y=0) and extrudes upward
+// by dimensions.height — combining the "center = geometry center" requirement
+// (XY) with the real-world fact that objects sit on the ground, not float
+// centered on it (Z).
+const GeometryWireframe = ({ position, geometry }) => {
+  const { geometry_type: geometryType, dimensions, yaw = 0 } = geometry;
+  const height = dimensions?.height ?? FALLBACK_GEOMETRY.dimensions.height;
+  const meshPosition = [position[0], position[1] + height / 2, position[2]];
+  const rotationY = headingToRotationY(yaw);
+
+  if (geometryType === 'rectangle') {
+    const width = dimensions?.width ?? FALLBACK_GEOMETRY.dimensions.radius * 2;
+    const length = dimensions?.length ?? FALLBACK_GEOMETRY.dimensions.radius * 2;
+    return (
+      <mesh position={meshPosition} rotation={[0, rotationY, 0]}>
+        <boxGeometry args={[width, height, length]} />
+        <meshBasicMaterial color="#ff9800" wireframe />
+      </mesh>
+    );
+  }
+
+  const radius = dimensions?.radius ?? FALLBACK_GEOMETRY.dimensions.radius;
+  return (
+    <mesh position={meshPosition}>
+      <cylinderGeometry args={[radius, radius, height, 32]} />
+      <meshBasicMaterial color="#ff9800" wireframe />
+    </mesh>
+  );
+};
+
+const Marker = ({ item, onPick, showBoundingBox }) => {
   // react-doctor/no-event-handler false positive: useModelLoader's internal effect
   // does an async GLTF fetch with a module-level cache, not something a click/submit
   // handler could trigger directly — see ModelLoader.jsx's useModelLoader.
   const { model } = useModelLoader(item.type);
   const { invalidate } = useThree();
+  const { types: markerTypes } = useMarkerTypes();
 
   // Clone is created inside useMemo so React owns the lifecycle — safe with Strict Mode.
   // Position/rotation are set here too (not in a separate effect): `clone` is a plain
@@ -79,13 +117,22 @@ const Marker = ({ item, onPick }) => {
       }
     : undefined;
 
+  // Bases aren't ElementItems (item.type is the literal string 'base', not a
+  // real catalog id), so there's no ElementType to resolve geometry from.
+  const typeGeometry = markerTypes.find((t) => t.id === item.type)?.attributes?.geometry;
+  const geometry =
+    item.type !== 'base' ? item.attributes?.geometry || typeGeometry || FALLBACK_GEOMETRY : null;
+
   return (
-    <primitive
-      object={clone}
-      onClick={handleClick}
-      onPointerOver={onPick ? () => (document.body.style.cursor = 'pointer') : undefined}
-      onPointerOut={onPick ? () => (document.body.style.cursor = 'auto') : undefined}
-    />
+    <>
+      <primitive
+        object={clone}
+        onClick={handleClick}
+        onPointerOver={onPick ? () => (document.body.style.cursor = 'pointer') : undefined}
+        onPointerOut={onPick ? () => (document.body.style.cursor = 'auto') : undefined}
+      />
+      {showBoundingBox && geometry && <GeometryWireframe position={item.pos} geometry={geometry} />}
+    </>
   );
 };
 
@@ -114,7 +161,7 @@ const PickedSphere = ({ position }) => (
   </mesh>
 );
 
-const R3DMarkers = ({ elements }) => {
+const R3DMarkers = ({ elements, showBoundingBoxes = true }) => {
   const origin3d = useSelector((state) => state.session.scene3d.origin);
   const range = useSelector((state) => state.session.scene3d.range);
   const { invalidate } = useThree();
@@ -191,6 +238,7 @@ const R3DMarkers = ({ elements }) => {
           key={`${item.type}-${item.title}`}
           item={item}
           onPick={item.type === 'base' ? undefined : handlePick}
+          showBoundingBox={showBoundingBoxes}
         />
       ))}
       {pickedPoints.map((pick, index) => (

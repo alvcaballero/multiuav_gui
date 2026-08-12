@@ -80,6 +80,8 @@ const migrations = [
   // position history: device-reported timestamp alongside the server-side fixTime
   // (may be missing/inconsistent per payload; kept for later reconciliation).
   `ALTER TABLE PositionHistory ADD COLUMN deviceTime DATETIME DEFAULT NULL`,
+  // element type default attributes (geometry defaults inherited by ElementItems).
+  `ALTER TABLE ElementTypes ADD COLUMN attributes JSON DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

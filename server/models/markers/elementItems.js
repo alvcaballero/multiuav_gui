@@ -1,6 +1,16 @@
 import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
 
+/**
+ * Copies `defaultGeometry` (from the item's ElementType) into `attributes.geometry`
+ * when the item doesn't already carry its own geometry. Pure/no I/O so it's
+ * testable in isolation; other attribute keys are preserved either way.
+ */
+export function mergeDefaultGeometry(attributes, defaultGeometry) {
+  if (attributes?.geometry || !defaultGeometry) return attributes ?? null;
+  return { ...(attributes ?? {}), geometry: defaultGeometry };
+}
+
 export const elementItemsModel = {
   async getAll() {
     return await sequelize.models.ElementItem.findAll();
@@ -47,13 +57,21 @@ export const elementItemsModel = {
   async create(elementItem) {
     const { groupId, name, latitude, longitude, description, attributes } = elementItem;
 
+    let finalAttributes = attributes ?? null;
+    if (!finalAttributes?.geometry) {
+      const group = await sequelize.models.ElementGroup.findByPk(groupId, {
+        include: [{ model: sequelize.models.ElementType, as: 'type' }],
+      });
+      finalAttributes = mergeDefaultGeometry(finalAttributes, group?.type?.attributes?.geometry);
+    }
+
     return await sequelize.models.ElementItem.create({
       groupId,
       name,
       latitude,
       longitude,
       description: description ?? null,
-      attributes: attributes ?? null,
+      attributes: finalAttributes,
     });
   },
 

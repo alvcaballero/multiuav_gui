@@ -6,22 +6,41 @@
   name: Power Tower
   icon: /api/markers/types/powerTower/icon
   model3d: /api/markers/types/powerTower/model
-  height: 15
   color: blue
-  description: 'height: 15 m'
+  description: 'Torre eléctrica'
+  attributes:
+    geometry:
+      geometry_type: circle
+      dimensions:
+        radius: 1.5
+        height: 15
+      yaw: 0
 
 - id: windTurbine
   name: Wind Turbine
   icon: /api/markers/types/windTurbine/icon
   model3d: /api/markers/types/windTurbine/model
-  height: 80
   color: red
-  description: 'tower_height: 80 m, blade_length: 28 m'
+  description: 'Aerogenerador'
+  attributes:
+    geometry:
+      geometry_type: circle
+      dimensions:
+        radius: 28
+        height: 108
+      yaw: 0
 
 - id: solarPanel
   name: Solar Panel
   icon: /api/markers/types/solarPanel/icon
   model3d: /api/markers/types/solarPanel/model
-  height: 2
   color: green
-  description: 'area: 20x20 m, height: 2 m'
+  description: 'Panel solar'
+  attributes:
+    geometry:
+      geometry_type: rectangle
+      dimensions:
+        width: 20
+        length: 20
+        height: 2
+      yaw: 0

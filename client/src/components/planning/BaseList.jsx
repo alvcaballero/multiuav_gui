@@ -16,6 +16,11 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { map } from '../../map/core/mapInstance';
+import { useMarkerTypes } from '../../hooks/useMarkerTypes';
+import GeometryFields, {
+  describeGeometry,
+  DEFAULT_CIRCLE_GEOMETRY,
+} from '../../shared/components/GeometryFields';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
@@ -53,8 +58,16 @@ const useStyles = makeStyles()((theme) => ({
 
 const CORNERS = ['SW', 'SE', 'NE', 'NW'];
 
-const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) => {
+const BaseList = ({
+  markers,
+  setMarkers,
+  type = 'Base',
+  hasMapImage = false,
+  elementTypeId = null,
+}) => {
   const { classes } = useStyles();
+  const { types: markerTypes } = useMarkerTypes();
+  const typeDefaultGeometry = markerTypes.find((t) => t.id === elementTypeId)?.attributes?.geometry;
 
   const [expanded, setExpanded] = useState(false);
   const basesExist = !markers || markers.length === 0;
@@ -100,6 +113,21 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
   const setHeading = (index, value) => {
     let auxMarkers = structuredClone(markers);
     auxMarkers[index].heading = Math.min(360, Math.max(0, +value));
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
+  };
+
+  const setGeometry = (index, geometry) => {
+    let auxMarkers = structuredClone(markers);
+    auxMarkers[index].attributes = { ...(auxMarkers[index].attributes || {}), geometry };
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
+  };
+  const clearGeometryOverride = (index) => {
+    let auxMarkers = structuredClone(markers);
+    if (auxMarkers[index].attributes) {
+      const rest = { ...auxMarkers[index].attributes };
+      delete rest.geometry;
+      auxMarkers[index].attributes = rest;
+    }
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
 
@@ -219,6 +247,43 @@ const BaseList = ({ markers, setMarkers, type = 'Base', hasMapImage = false }) =
                             defaultValue={base.heading ?? 0}
                             onBlur={(e) => setHeading(index, e.target.value)}
                           />
+                        )}
+                        {type === 'Element' && (
+                          <div style={{ marginTop: '8px' }}>
+                            <Typography variant="subtitle1">Geometría</Typography>
+                            {base.attributes?.geometry ? (
+                              <>
+                                <GeometryFields
+                                  value={base.attributes.geometry}
+                                  onChange={(geometry) => setGeometry(index, geometry)}
+                                />
+                                {typeDefaultGeometry && (
+                                  <Button size="small" onClick={() => clearGeometryOverride(index)}>
+                                    Restablecer al valor por defecto del tipo
+                                  </Button>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <Typography variant="body2" color="text.secondary">
+                                  {typeDefaultGeometry
+                                    ? `Usando el valor por defecto del tipo: ${describeGeometry(typeDefaultGeometry)}`
+                                    : 'Este elemento todavía no tiene geometría.'}
+                                </Typography>
+                                <Button
+                                  size="small"
+                                  onClick={() =>
+                                    setGeometry(
+                                      index,
+                                      typeDefaultGeometry || DEFAULT_CIRCLE_GEOMETRY,
+                                    )
+                                  }
+                                >
+                                  Customizar geometría
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         )}
                         {hasMapImage && (
                           <>
