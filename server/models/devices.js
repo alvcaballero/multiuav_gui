@@ -132,6 +132,7 @@ export class DevicesModel {
         if (pos?.latitude !== undefined) {
           positionInfo.latitude = pos.latitude;
           positionInfo.longitude = pos.longitude;
+          positionInfo.altitude = pos.altitude;
         }
         if (pos?.attributes?.localposition !== undefined) {
           positionInfo.localposition = {
@@ -139,6 +140,9 @@ export class DevicesModel {
             y: pos.attributes.localposition[1],
             z: pos.attributes.localposition[2],
           };
+        }
+        if (pos?.attributes?.batteryLevel !== undefined) {
+          positionInfo.batteryLevel = pos.attributes.batteryLevel;
         }
 
         const actionsByKey = rosController.getActionStatusByName(device.name);
