@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
 
 export const elementItemsModel = {
@@ -7,6 +8,36 @@ export const elementItemsModel = {
 
   async getById(id) {
     return await sequelize.models.ElementItem.findOne({ where: { id } });
+  },
+
+  async getDetailById(id) {
+    return await sequelize.models.ElementItem.findOne({
+      where: { id },
+      include: [
+        {
+          model: sequelize.models.ElementGroup,
+          as: 'group',
+          include: [{ model: sequelize.models.ElementType, as: 'type' }],
+        },
+      ],
+    });
+  },
+
+  async getByIds(ids) {
+    return await sequelize.models.ElementItem.findAll({ where: { id: { [Op.in]: ids } } });
+  },
+
+  /**
+   * ElementItems whose lat/lng falls inside a geographic bounding box.
+   * @param {{minLat:number, maxLat:number, minLng:number, maxLng:number}} bounds
+   */
+  async getAllInBounds({ minLat, maxLat, minLng, maxLng }) {
+    return await sequelize.models.ElementItem.findAll({
+      where: {
+        latitude: { [Op.between]: [minLat, maxLat] },
+        longitude: { [Op.between]: [minLng, maxLng] },
+      },
+    });
   },
 
   async findByGroup(groupId) {

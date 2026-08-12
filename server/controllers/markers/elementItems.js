@@ -24,6 +24,19 @@ export const elementItemsController = {
     }
   },
 
+  async getDetailById(req, res) {
+    try {
+      const { id } = req.params;
+      const elementItem = await elementItemsModel.getDetailById(id);
+      if (!elementItem) {
+        return res.status(404).json({ error: 'Elemento no encontrado' });
+      }
+      res.json(elementItem);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
   async create(req, res) {
     try {
       const result = validateElementItem(req.body);
