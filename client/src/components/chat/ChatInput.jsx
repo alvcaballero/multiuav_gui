@@ -7,7 +7,10 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CloseIcon from '@mui/icons-material/Close';
 import CircularProgressIcon from '@mui/material/CircularProgress';
 
-const initialOptions = ['Which drones are available?'];
+const initialOptions = [
+  'Which drones are available?',
+  `Inspect the entire wind farm using all available UAVs to get a general assessment of its condition`,
+];
 
 const ChatInput = ({
   onSendMessage,

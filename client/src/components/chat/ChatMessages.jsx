@@ -375,7 +375,7 @@ export const MessageBubble = memo(({ message, chatId }) => {
     const hasMissionData = content?.missionData;
     const hasMissionDataResult = name === 'request_mission_plan' && content?.mission;
     const hasMissionDataXYZ = content?.missionDataXYZ;
-    const isValidateMission = name === 'validate_mission_collisions' && content?.mission;
+    const isValidateMission = name === 'validate_mission' && content?.mission;
     const isCreateMission =
       hasMissionData || hasMissionDataResult || hasMissionDataXYZ || isValidateMission;
 
