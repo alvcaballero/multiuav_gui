@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { BaseLLMHandler } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
 import { SystemPrompts } from './agents/index.js';
 import { chatLogger } from '../../common/logger.js';
 
@@ -108,29 +108,39 @@ class OpenAIHandler extends BaseLLMHandler {
   }
 
   /**
-   * Expands tool outputs by appending an input_image block when the tool result
-   * contains image_data (same convention as Gemini's inlineData support).
+   * Converts a single tool execution result to OpenAI's function_call_output item(s),
+   * appending an input_image block when the tool result contains image_data
+   * (same convention as Gemini's inlineData support).
+   * @returns {Array} [function_call_output] or [function_call_output, input_image]
+   */
+  convertToolOutput(output) {
+    const parts = [output];
+    try {
+      const raw = typeof output.output === 'string' ? JSON.parse(output.output) : output.output;
+      const inner = raw?.content?.[0]?.text;
+      const parsed = typeof inner === 'string' ? JSON.parse(inner) : inner;
+      if (parsed?.image_data) {
+        const mimeType = parsed.mime_type || 'image/jpeg';
+        parts.push({
+          role: 'user',
+          content: [{ type: 'input_image', image_url: `data:${mimeType};base64,${parsed.image_data}` }],
+        });
+      }
+    } catch {
+      // no image_data, skip
+    }
+    return parts;
+  }
+
+  /**
+   * Expands a list of tool outputs, appending input_image blocks where applicable.
    * @param {Array} toolOutputs
    * @returns {Array} Flat list of function_call_output items + optional input_image items
    */
   _expandToolOutputsWithImages(toolOutputs) {
     const expanded = [];
     for (const output of toolOutputs) {
-      expanded.push(output);
-      try {
-        const raw = typeof output.output === 'string' ? JSON.parse(output.output) : output.output;
-        const inner = raw?.content?.[0]?.text;
-        const parsed = typeof inner === 'string' ? JSON.parse(inner) : inner;
-        if (parsed?.image_data) {
-          const mimeType = parsed.mime_type || 'image/jpeg';
-          expanded.push({
-            role: 'user',
-            content: [{ type: 'input_image', image_url: `data:${mimeType};base64,${parsed.image_data}` }],
-          });
-        }
-      } catch {
-        // no image_data, skip
-      }
+      expanded.push(...this.convertToolOutput(output));
     }
     return expanded;
   }
@@ -258,8 +268,7 @@ class OpenAIHandler extends BaseLLMHandler {
 
     const profile = this.resolveModelConfig(agent);
 
-    const forceFinishInstructions =
-      'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools. Summarize what was accomplished and present the results to the user.';
+    const forceFinishInstructions = `${FORCE_FINISH_MESSAGE} Summarize what was accomplished and present the results to the user.`;
 
     // Parameters for the call — model and reasoning come from the agent profile
     const params = {

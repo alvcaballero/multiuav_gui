@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { BaseLLMHandler } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
 import { SystemPrompts } from './agents/index.js';
 import { logger, chatLogger } from '../../common/logger.js';
 
@@ -138,6 +138,47 @@ class GeminiHandler extends BaseLLMHandler {
   }
 
   /**
+   * Converts a single tool execution result to Gemini's message parts
+   * (functionResponse + optional inlineData for images).
+   */
+  convertToolOutput(output) {
+    const rawResponse = output.output;
+    const jsonresponse = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
+    let parsedResponse;
+    try {
+      parsedResponse =
+        typeof jsonresponse.content?.[0]?.text === 'string'
+          ? JSON.parse(jsonresponse.content[0].text)
+          : jsonresponse.content?.[0]?.text || jsonresponse.content || jsonresponse;
+    } catch {
+      parsedResponse = {
+        text: jsonresponse.content?.[0]?.text || jsonresponse.content?.[0] || jsonresponse,
+      };
+    }
+
+    const parts = [
+      {
+        functionResponse: {
+          name: output.name,
+          response: parsedResponse || {},
+        },
+      },
+    ];
+
+    // Soporte para imágenes en la continuación del tool loop
+    if (parsedResponse && parsedResponse.image_data) {
+      parts.push({
+        inlineData: {
+          mimeType: parsedResponse.mime_type || 'image/jpeg',
+          data: parsedResponse.image_data,
+        },
+      });
+    }
+
+    return parts;
+  }
+
+  /**
    * Parses Gemini response into the normalized output array format
    * that the orchestrator expects (matching OpenAI's output structure).
    */
@@ -266,47 +307,14 @@ class GeminiHandler extends BaseLLMHandler {
       // Convert tool outputs to Gemini FunctionResponse format
       const functionResponses = [];
       for (const output of toolOutputs) {
-        let rawResponse = output.output;
-        let parsedResponse = {};
-        let jsonresponse = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
-        try {
-          parsedResponse =
-            typeof jsonresponse.content?.[0]?.text === 'string'
-              ? JSON.parse(jsonresponse.content[0].text)
-              : jsonresponse.content?.[0]?.text || jsonresponse.content || jsonresponse;
-        } catch {
-          parsedResponse = {
-            text: jsonresponse.content?.[0]?.text || jsonresponse.content?.[0] || jsonresponse || parsedResponse,
-          };
-        }
-
-        functionResponses.push({
-          functionResponse: {
-            name: output.name,
-            response: parsedResponse || {},
-          },
-        });
-
-        // Soporte para imágenes en la continuación del tool loop
-        if (parsedResponse && parsedResponse.image_data) {
-          functionResponses.push({
-            inlineData: {
-              mimeType: parsedResponse.mime_type || 'image/jpeg',
-              data: parsedResponse.image_data,
-            },
-          });
-        }
+        functionResponses.push(...this.convertToolOutput(output));
       }
       contents.push({ role: 'user', parts: functionResponses });
 
       if (forceFinish) {
         contents.push({
           role: 'user',
-          parts: [
-            {
-              text: 'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.',
-            },
-          ],
+          parts: [{ text: FORCE_FINISH_MESSAGE }],
         });
       }
     } else if (message !== null) {

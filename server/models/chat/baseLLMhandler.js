@@ -1,3 +1,6 @@
+export const FORCE_FINISH_MESSAGE =
+  'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.';
+
 export class BaseLLMHandler {
   constructor(apiKey, model, systemPrompt = '') {
     this.apiKey = apiKey;

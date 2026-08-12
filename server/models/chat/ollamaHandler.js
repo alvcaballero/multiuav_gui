@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama';
-import { BaseLLMHandler } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
 import { SystemPrompts } from './agents/index.js';
 import { chatLogger } from '../../common/logger.js';
 
@@ -116,6 +116,14 @@ class OllamaHandler extends BaseLLMHandler {
   }
 
   /**
+   * Converts a single tool execution result to Ollama's tool-role message.
+   */
+  convertToolOutput(output) {
+    const content = typeof output.output === 'string' ? output.output : JSON.stringify(output.output || {});
+    return { role: 'tool', content };
+  }
+
+  /**
    * Parses Ollama chat response into normalized output array.
    */
   _parseOllamaResponse(response) {
@@ -174,17 +182,12 @@ class OllamaHandler extends BaseLLMHandler {
     if (toolOutputs && toolOutputs.length > 0) {
       // Append tool outputs as tool role messages
       for (const output of toolOutputs) {
-        const content = typeof output.output === 'string' ? output.output : JSON.stringify(output.output || {});
-        messages.push({
-          role: 'tool',
-          content,
-        });
+        messages.push(this.convertToolOutput(output));
       }
       if (forceFinish) {
         messages.push({
           role: 'system',
-          content:
-            'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.',
+          content: FORCE_FINISH_MESSAGE,
         });
       }
     }

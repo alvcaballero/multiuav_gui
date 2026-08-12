@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { BaseLLMHandler } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
 import { SystemPrompts } from './agents/index.js';
 import { chatLogger } from '../../common/logger.js';
 
@@ -111,6 +111,17 @@ class AnthropicHandler extends BaseLLMHandler {
   }
 
   /**
+   * Converts a single tool execution result to Anthropic's tool_result block.
+   */
+  convertToolOutput(output) {
+    return {
+      type: 'tool_result',
+      tool_use_id: output.call_id,
+      content: output.output,
+    };
+  }
+
+  /**
    * Parses Anthropic response into the normalized output array format
    * that the orchestrator expects (matching OpenAI's output structure).
    */
@@ -178,16 +189,12 @@ class AnthropicHandler extends BaseLLMHandler {
 
       // The last assistant message should contain the tool_use blocks.
       // Anthropic requires: assistant message with tool_use → user message with tool_result
-      const toolResultContent = toolOutputs.map((output) => ({
-        type: 'tool_result',
-        tool_use_id: output.call_id,
-        content: output.output,
-      }));
+      const toolResultContent = toolOutputs.map((output) => this.convertToolOutput(output));
 
       if (forceFinish) {
         toolResultContent.push({
           type: 'text',
-          text: 'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.',
+          text: FORCE_FINISH_MESSAGE,
         });
       }
 
