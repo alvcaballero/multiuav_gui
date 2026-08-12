@@ -283,7 +283,7 @@ export class MessageOrchestrator {
         chatId,
         sessionId,
         systemInstructions,
-        isLastIteration ? [] : allowedTools, // No tools on last iteration to force text response
+        allowedTools, //isLastIteration ? [] : allowedTools, // before  No tools on last iteration , now we allow tools on last iteration to let the LLM finish naturally
         isLastIteration, // forceFinish flag
         agent
       );
