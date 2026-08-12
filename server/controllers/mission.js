@@ -3,7 +3,10 @@ import {
   validateMissionCollission,
   resolveCollisions as resolveCollisionsAlgo,
   formatMissionReport,
+  validateInspectionCoverage,
+  formatInspectionReport,
 } from '../models/collision/index.js';
+import { resolveInspectionTargets } from '../models/markers/inspectionTargets.js';
 import { missionLogger as logger } from '../common/logger.js';
 
 class missionController {
@@ -130,15 +133,15 @@ class missionController {
 
   static convertGeodeticToXYZ = async (req, res) => {
     const missionBriefing = req.body;
-    if (!missionBriefing.target_elements || !missionBriefing.drone_information) {
-      return res.status(400).json({ error: 'target_elements and drone_information are required.' });
+    if (!missionBriefing.devices_available || !missionBriefing.targets) {
+      return res.status(400).json({ error: 'devices_available and targets are required.' });
     }
     try {
-      const missionDataXYZ = missionModel.convertBriefingToXYZ(missionBriefing);
+      const missionDataXYZ = await missionModel.convertBriefingToXYZ(missionBriefing);
       res.json(missionDataXYZ);
     } catch (error) {
       logger.error(`Error in convertGeodeticToXYZ: ${error.message}`);
-      res.status(500).json({ error: error.message });
+      res.status(error.status || 500).json({ error: error.message });
     }
   };
 
@@ -189,13 +192,17 @@ class missionController {
   };
 
   /**
-   * Validate mission for collisions without modifying it
+   * Validate mission for collisions without modifying it. Optionally also
+   * validates inspection coverage: pass target_ids (catalog ElementItem ids,
+   * NOT positions) and every waypoint gets checked against the target's real
+   * position/type resolved server-side from the SQL catalog - the LLM never
+   * gets to supply the position that's being checked against.
    * POST /missions/validate
-   * Body: { mission: MissionObject, collision_objects: ObstacleArray }
+   * Body: { mission: MissionObject, collision_objects: ObstacleArray, target_ids?: (number|string)[] }
    */
   static validateCollisions = async (req, res) => {
     try {
-      const { mission, collision_objects } = req.body;
+      const { mission, collision_objects, target_ids } = req.body;
 
       if (!mission) {
         return res.status(400).json({ error: 'Mission data is required' });
@@ -206,13 +213,32 @@ class missionController {
       }
 
       const result = validateMissionCollission(mission, collision_objects);
-      const report = formatMissionReport(result);
+      let report = formatMissionReport(result);
+
+      let inspection = null;
+      if (target_ids && Array.isArray(target_ids) && target_ids.length > 0) {
+        if (!mission.global_origin) {
+          return res.status(400).json({ error: 'mission.global_origin is required to validate target_ids' });
+        }
+
+        const { targets, notFound } = await resolveInspectionTargets(target_ids, mission.global_origin);
+        inspection = validateInspectionCoverage(mission, targets);
+        if (notFound.length > 0) {
+          inspection.valid = false;
+        }
+
+        report += '\n\n' + formatInspectionReport(inspection);
+        if (notFound.length > 0) {
+          report += `\n\n#### [UNKNOWN TARGET IDS]\n  * These ids don't exist in the catalog: ${notFound.join(', ')}`;
+        }
+      }
 
       res.json({
-        valid: result.valid,
+        valid: result.valid && (inspection?.valid ?? true),
         totalCollisions: result.totalCollisions,
         totalWarnings: result.totalWarnings,
         routes: result.routes,
+        inspection,
         report,
       });
     } catch (error) {
