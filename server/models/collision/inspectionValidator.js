@@ -174,10 +174,6 @@ export function validateInspectionCoverage(mission, targets, collisionObjects = 
       const wp = route.wp ?? [];
       for (let i = 0; i < wp.length; i++) {
         const result = checkWaypointCoverage(wp[i], target, radius, yawTolerance);
-        console.log(
-          `[InspectionValidator] Checking target ${target.name} (id=${target.id}) against route ${route.name} waypoint ${i}: ` +
-            `distance=${result.distance.toFixed(1)}m, radius=${radius.toFixed(1)}m, covered=${result.covered}`
-        );
         if (result.covered && (!bestMatch || result.distance < bestMatch.distance)) {
           bestMatch = {
             targetId: target.id,
