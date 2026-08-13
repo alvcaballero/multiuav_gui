@@ -17,6 +17,7 @@ chatRouter.patch('/chats/:chatId', chatController.renameChat);
 chatRouter.post('/chats/:chatId/fork', chatController.forkChat);
 
 chatRouter.post('/subagents', chatController.createSubAgent);
+chatRouter.get('/subagents/:parentChatId', chatController.getSubAgentsStatus);
 chatRouter.post('/subagents/:chatId/inject', chatController.injectSubAgentResponse);
 chatRouter.post('/test_mcp_tool', chatController.testMcpTool);
 // Ruta para speech-to-text (transcripción)

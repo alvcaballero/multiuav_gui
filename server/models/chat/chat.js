@@ -2,9 +2,10 @@ import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './handlers/llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
 import { LLM, MCPenable } from '../../config/config.js';
-import { resolveAgentForChat, setAgentForChat, resolveAgent } from './agents/index.js';
+import { resolveAgentForChat } from './agents/index.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
+import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
 
 let mcpClient = null;
 let llmHandler = null;
@@ -59,7 +60,7 @@ export class MessageOrchestrator {
    * Emits EventBus event for assistant messages (WebSocket broadcast to clients)
    * @param {object} chatItem - The chat item to potentially emit
    */
-  static _emitAssistantMessage(chatItem) {
+  static emitAssistantMessage(chatItem) {
     if (chatItem.from === 'assistant') {
       eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
     }
@@ -194,7 +195,7 @@ export class MessageOrchestrator {
           toolCallsFlag = true;
         }
         const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
-        this._emitAssistantMessage(chatItem);
+        this.emitAssistantMessage(chatItem);
       }
 
       // Handle tool calls with the current sessionId
@@ -311,13 +312,17 @@ export class MessageOrchestrator {
   /**
    * Ejecuta todas las llamadas a herramientas solicitadas por el LLM
    */
-  static async executeToolCalls(toolCalls, _chatId) {
+  static async executeToolCalls(toolCalls, chatId) {
     const results = [];
+    const contextParams = getContextParams(chatId);
+    const hasContext = Object.keys(contextParams).length > 0;
 
     for (const toolCall of toolCalls) {
       if (toolCall.type == 'function_call' || toolCall.type == 'tool_call') {
         const result = await llmHandler.handleToolCall(toolCall, async (name, args) => {
-          return await mcpClient.executeTool(name, args);
+          // Fixed context params win over whatever the LLM passes, so it can't
+          // override a subagent's injected context even if it hallucinates the same key.
+          return await mcpClient.executeTool(name, hasContext ? { ...args, ...contextParams } : args);
         });
         results.push(result);
       }
@@ -358,7 +363,7 @@ export class MessageOrchestrator {
     if (!skipPersist) {
       for (const res of toolResults) {
         const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
-        this._emitAssistantMessage(chatItem);
+        this.emitAssistantMessage(chatItem);
       }
     }
 
@@ -383,7 +388,7 @@ export class MessageOrchestrator {
     // Store assistant messages with new responseId and emit events
     for (const res of output) {
       const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
-      this._emitAssistantMessage(chatItem);
+      this.emitAssistantMessage(chatItem);
     }
 
     return { output, responseId };
@@ -494,6 +499,7 @@ export class MessageOrchestrator {
     } catch (error) {
       chatLogger.error('Error deleting chat from DB:', error);
     }
+    removeSubAgent(chatId);
     chatLogger.info(`Chat deleted: ${chatId}`);
   }
 
@@ -552,166 +558,6 @@ export class MessageOrchestrator {
       chatLogger.error('Error creating chat:', error);
       throw error;
     }
-  }
-
-  /**
-   * Processes a mission briefing from the main chat and creates a secondary background chat
-   * for mission planning in local XYZ coordinates.
-   *
-   * Flow:
-   * 1. Receives mission briefing from main chat (with geodetic coordinates)
-   * 2. Converts coordinates to local XYZ (ENU: East/North/Up in meters)
-   * 3. Creates a secondary chat dedicated to mission planning
-   * 4. Starts background processing with specialized mission planning prompt
-   * 5. Returns immediately - secondary chat processes asynchronously
-   *
-   * @param {Object} missionBriefing - Mission briefing from main chat (filteredMissionSchema structure)
-   * @param {string} missionBriefing.chat_id - ID of the main chat that initiated this request
-   * @param {Array} missionBriefing.devices - Available devices with lat/lng positions
-   * @param {Array} missionBriefing.inspection_elements - Elements to inspect with lat/lng positions
-   * @param {Object} missionBriefing.mission_requeriments - Mission requirements and constraints
-   * @param {Object} missionBriefing.user_context - Original user request context
-   * @returns {Promise<Object>} Object with secondaryChatId and converted mission data
-   */
-  /**
-   * Creates a subagent chat for background processing.
-   *
-   * @param {string} mainChatId - ID of the main chat that initiated this request
-   * @param {string} agentType  - Agent type to assign (e.g. 'planner')
-   * @param {string} userMessage - First message to send to the subagent
-   * @param {Object} context    - Optional extra context injected into system prompt
-   * @param {Object} context.global_origin - ENU origin {lat, lng} for coordinate reference
-   */
-  static async createSubAgent({ mainChatId, agentType, userMessage, contextInstructions = '' }) {
-    if (!userMessage) throw new Error('userMessage is required');
-    if (!mainChatId) throw new Error('mainChatId is required');
-    if (!agentType) throw new Error('agentType is required');
-
-    const secondaryChat = await this.createChat(`${agentType.toUpperCase()}-${mainChatId}`);
-    const secondaryChatId = secondaryChat.id;
-    chatLogger.info(`[createSubAgent] mainChat=${mainChatId} subAgent=${secondaryChatId} type=${agentType}`);
-
-    await setAgentForChat(secondaryChatId, agentType);
-
-    const agentDef = resolveAgent(agentType);
-    const baseContext = `- main_chat_id: ${mainChatId}\n- secondary_chat_id: ${secondaryChatId}`;
-    const fullContext = contextInstructions ? `${baseContext}\n${contextInstructions}` : baseContext;
-
-    const systemPromptContent = `${agentDef.systemPrompt}\n---\nSession_context:\n${fullContext}\nMandatory: Maintain all the session context data accurately and unchanged the session.`;
-
-    await ChatHistoryManager.addMessage(secondaryChatId, 'system', { role: 'system', content: systemPromptContent });
-
-    this.processMessage(secondaryChatId, userMessage).catch((error) => {
-      chatLogger.error(`[createSubAgent] Background processing failed for ${secondaryChatId}:`, error);
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-        chatId: mainChatId,
-        from: 'assistant',
-        timestamp: new Date().toISOString(),
-        message: {
-          role: 'assistant',
-          content: `Error en subagente ${agentType}: ${error.message}`,
-          type: 'text',
-          status: 'error',
-        },
-      });
-    });
-
-    return { secondaryChatId, msg: `Subagent ${agentType} started.` };
-  }
-
-  /**
-   * Injects the result of a subagent tool call into the main chat and resumes it.
-   * Replaces the placeholder tool_result for `toolName` in the main chat history,
-   * clears the provider session, and continues the conversation.
-   *
-   * @param {string} chatId       - Main chat ID
-   * @param {string} toolName     - MCP tool name whose placeholder to replace
-   * @param {string} status       - 'valid' | 'error' | 'incomplete'
-   * @param {string} description  - Human-readable summary
-   * @param {Object} payload      - Data to embed in the tool result output
-   */
-  static async injectSubAgentResponse({ chatId, toolName, status, description, payload = {} }) {
-    chatLogger.info(`[injectSubAgentResponse] chat=${chatId} tool=${toolName} status=${status}`);
-
-    const chatExists = await ChatHistoryManager.chatExists(chatId);
-    if (!chatExists) {
-      const err = new Error(`Chat not found: ${chatId}`);
-      err.statusCode = 404;
-      throw err;
-    }
-
-    const newOutput = JSON.stringify({
-      content: [{ type: 'text', text: JSON.stringify({ status, description, ...payload }) }],
-    });
-    const newContent = `Tool result [${toolName}] [${status}]: ${description}`;
-
-    const hidden = await ChatHistoryManager.hideAndReplaceToolResult(chatId, toolName, newOutput, newContent);
-
-    if (!hidden) {
-      chatLogger.warn(
-        `[injectSubAgentResponse] No ${toolName} tool_result found in chat ${chatId} — injecting as new message`
-      );
-      await ChatHistoryManager.addMessage(chatId, 'assistant', {
-        type: 'function_call_output',
-        name: toolName,
-        output: newOutput,
-      });
-    }
-
-    await ChatHistoryManager.clearSession(chatId);
-
-    const sessionId = await ChatHistoryManager.getSessionId(chatId);
-    const agent = await resolveAgentForChat(chatId);
-    const allowedTools = agent.allowedTools;
-    const systemInstructions = agent.systemPrompt;
-    chatLogger.info(`[injectSubAgentResponse] Agent: ${agent.name}, Tools: ${allowedTools?.join(', ')}`);
-
-    const history = await ChatHistoryManager.loadHistory(chatId);
-    const realToolResult = history.findLast(
-      (item) => item.message?.type === 'function_call_output' && item.message?.name === toolName
-    );
-    const toolResultForLLM = realToolResult?.message ?? {
-      type: 'function_call_output',
-      name: toolName,
-      output: newOutput,
-    };
-
-    // Emit the replaced function_call + tool_result via WebSocket
-    const callId = realToolResult?.message?.call_id;
-    if (callId) {
-      const pairedFunctionCall = history.findLast(
-        (item) =>
-          (item.message?.type === 'function_call' || item.message?.type === 'tool_call') &&
-          (item.message?.call_id === callId || item.message?.id === callId)
-      );
-      if (pairedFunctionCall) this._emitAssistantMessage(pairedFunctionCall);
-    }
-    if (realToolResult) this._emitAssistantMessage(realToolResult);
-
-    this.continueAfterTools([toolResultForLLM], chatId, sessionId, systemInstructions, allowedTools, false, agent, true)
-      .then(({ output }) => {
-        const hasToolCalls = output.some((item) => item.type === 'function_call' || item.type === 'tool_call');
-        if (hasToolCalls) {
-          const tools = this.getToolsForProvider(allowedTools);
-          return this.handleToolCallsLoop(output, tools, chatId, sessionId, systemInstructions, allowedTools, agent);
-        }
-      })
-      .catch((err) => {
-        chatLogger.error(`[injectSubAgentResponse] continueAfterTools failed for chat ${chatId}:`, err);
-        eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-          chatId,
-          from: 'assistant',
-          timestamp: new Date().toISOString(),
-          message: {
-            role: 'assistant',
-            content: `Error al procesar resultado del subagente: ${err.message}`,
-            type: 'text',
-            status: 'error',
-          },
-        });
-      });
-
-    return { ok: true, msg: 'Subagent response injected. Main chat processing resumed.' };
   }
 
   static async testMcpTool(toolName, toolArgs = {}) {

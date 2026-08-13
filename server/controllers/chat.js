@@ -1,4 +1,5 @@
 import { MessageOrchestrator } from '../models/chat/chat.js';
+import { SubAgentManager } from '../models/chat/subAgentManager.js';
 import { logger } from '../common/logger.js';
 
 export class chatController {
@@ -145,16 +146,18 @@ export class chatController {
     }
   }
   static async createSubAgent(req, res) {
-    const { mainChatId, agentType, userMessage, contextInstructions } = req.body;
-    if (!mainChatId || !agentType || !userMessage) {
-      return res.status(400).json({ error: 'mainChatId, agentType and userMessage are required.' });
+    const { parentChatId, agentType, userMessage, contextInstructions, contextParams, parentToolName } = req.body;
+    if (!parentChatId || !agentType || !userMessage || !parentToolName) {
+      return res.status(400).json({ error: 'parentChatId, agentType, userMessage and parentToolName are required.' });
     }
     try {
-      const result = await MessageOrchestrator.createSubAgent({
-        mainChatId,
+      const result = await SubAgentManager.createSubAgent({
+        parentChatId,
         agentType,
         userMessage,
         contextInstructions,
+        contextParams,
+        parentToolName,
       });
       res.status(201).json(result);
     } catch (error) {
@@ -164,23 +167,35 @@ export class chatController {
   }
 
   static async injectSubAgentResponse(req, res) {
-    const { toolName, status, description, payload } = req.body;
+    const { toolName, status, description, payload, subAgentChatId } = req.body;
     const { chatId } = req.params;
-    if (!chatId || !toolName) {
-      return res.status(400).json({ error: 'chatId and toolName are required.' });
+    if (!chatId || (!toolName && !subAgentChatId)) {
+      return res.status(400).json({ error: 'chatId and (toolName or subAgentChatId) are required.' });
     }
     try {
-      const result = await MessageOrchestrator.injectSubAgentResponse({
+      const result = await SubAgentManager.injectSubAgentResponse({
         chatId,
         toolName,
         status,
         description,
         payload,
+        subAgentChatId,
       });
       res.json(result);
     } catch (error) {
       logger.error('Error in chatController.injectSubAgentResponse:', error);
       res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+
+  static async getSubAgentsStatus(req, res) {
+    const { parentChatId } = req.params;
+    try {
+      const subagents = SubAgentManager.listSubAgents(parentChatId);
+      res.json({ subagents });
+    } catch (error) {
+      logger.error('Error in chatController.getSubAgentsStatus:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 
