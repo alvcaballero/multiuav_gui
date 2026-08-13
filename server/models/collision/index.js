@@ -21,11 +21,10 @@
 // Collision Detection
 export {
   validateRoute,
+  computeRouteDistance,
   validateMissionCollission,
   findCollidingObstacles,
   findInterRouteCollisions,
-  formatCollisionReport,
-  formatRouteReport,
   formatMissionReport,
 } from './collisionDetector.js';
 

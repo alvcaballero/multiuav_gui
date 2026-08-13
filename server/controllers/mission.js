@@ -9,6 +9,31 @@ import {
 import { resolveInspectionTargets } from '../models/markers/inspectionTargets.js';
 import { missionLogger as logger } from '../common/logger.js';
 
+/**
+ * Build a single unambiguous reason string for the OVERALL verdict, combining
+ * collision and inspection-coverage results so the caller doesn't have to
+ * infer it from separate per-section status lines.
+ */
+function buildOverallReason(result, inspection, unknownTargetIds) {
+  const reasons = [];
+  if (result.totalCollisions > 0) {
+    reasons.push(`${result.totalCollisions} collision(s) with obstacles`);
+  }
+  if (result.interRouteCollisions?.length > 0) {
+    reasons.push(`${result.interRouteCollisions.length} inter-UAV conflict(s)`);
+  }
+  if (inspection?.missing.length > 0) {
+    reasons.push(`${inspection.missing.length} target(s) not covered`);
+  }
+  if (unknownTargetIds.length > 0) {
+    reasons.push(`${unknownTargetIds.length} unknown target id(s)`);
+  }
+  if (reasons.length > 0) {
+    return reasons.join('; ');
+  }
+  return inspection ? 'no collisions, all targets inspected' : 'no collisions';
+}
+
 class missionController {
   static getMission = async (req, res) => {
     const response = await missionModel.getMissionValue(req.query.id, req.query.all === 'true');
@@ -213,28 +238,36 @@ class missionController {
       }
 
       const result = validateMissionCollission(mission, collision_objects);
-      let report = formatMissionReport(result);
 
       let inspection = null;
+      let unknownTargetIds = [];
       if (target_ids && Array.isArray(target_ids) && target_ids.length > 0) {
         if (!mission.global_origin) {
           return res.status(400).json({ error: 'mission.global_origin is required to validate target_ids' });
         }
 
         const { targets, notFound } = await resolveInspectionTargets(target_ids, mission.global_origin);
-        inspection = validateInspectionCoverage(mission, targets);
+        inspection = validateInspectionCoverage(mission, targets, collision_objects);
+        unknownTargetIds = notFound;
         if (notFound.length > 0) {
           inspection.valid = false;
         }
+      }
 
+      const overallValid = result.valid && (inspection?.valid ?? true);
+      const overallReason = buildOverallReason(result, inspection, unknownTargetIds);
+
+      let report =
+        `OVERALL: ${overallValid ? '✅ VALID' : '❌ INVALID'} — ${overallReason}\n\n` + formatMissionReport(result);
+      if (inspection) {
         report += '\n\n' + formatInspectionReport(inspection);
-        if (notFound.length > 0) {
-          report += `\n\n#### [UNKNOWN TARGET IDS]\n  * These ids don't exist in the catalog: ${notFound.join(', ')}`;
-        }
+      }
+      if (unknownTargetIds.length > 0) {
+        report += `\n\n#### [UNKNOWN TARGET IDS]\n  * These ids don't exist in the catalog: ${unknownTargetIds.join(', ')}`;
       }
 
       res.json({
-        valid: result.valid && (inspection?.valid ?? true),
+        valid: overallValid,
         totalCollisions: result.totalCollisions,
         totalWarnings: result.totalWarnings,
         routes: result.routes,

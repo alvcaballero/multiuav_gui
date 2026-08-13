@@ -265,6 +265,24 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
 }
 
 /**
+ * Compute the total 3D distance along a route's waypoints.
+ * Pure — independent of obstacles, does not participate in collision detection.
+ * @param {Waypoint[]} waypoints - Array of waypoints
+ * @returns {number} Total distance in meters
+ */
+export function computeRouteDistance(waypoints) {
+  if (!waypoints || waypoints.length === 0) return 0;
+
+  let totalDistance = 0;
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const p1 = normalizePosition(waypoints[i].pos);
+    const p2 = normalizePosition(waypoints[i + 1].pos);
+    totalDistance += distance3D(p1, p2);
+  }
+  return totalDistance;
+}
+
+/**
  * Validate a complete route against all obstacles
  * @param {Waypoint[]} waypoints - Array of waypoints
  * @param {Obstacle[]} obstacles - Array of obstacles
@@ -279,16 +297,8 @@ export function validateRoute(waypoints, obstacles) {
       valid: true,
       collisions: [],
       warnings: [],
-      summary: { totalWaypoints: 0, totalSegments: 0, collisionCount: 0, warningCount: 0, totalDistance: 0 },
+      summary: { totalWaypoints: 0, totalSegments: 0, collisionCount: 0, warningCount: 0 },
     };
-  }
-
-  // Total route distance (computed once, reused by every return path below)
-  let totalDistance = 0;
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const p1 = normalizePosition(waypoints[i].pos);
-    const p2 = normalizePosition(waypoints[i + 1].pos);
-    totalDistance += distance3D(p1, p2);
   }
 
   if (!obstacles || obstacles.length === 0) {
@@ -301,7 +311,6 @@ export function validateRoute(waypoints, obstacles) {
         totalSegments: waypoints.length - 1,
         collisionCount: 0,
         warningCount: 0,
-        totalDistance,
       },
     };
   }
@@ -353,7 +362,6 @@ export function validateRoute(waypoints, obstacles) {
       totalSegments: waypoints.length - 1,
       collisionCount: collisions.length,
       warningCount: warnings.length,
-      totalDistance, // meters
     },
   };
 }
@@ -472,11 +480,13 @@ export function validateMissionCollission(mission, obstacles, options = {}) {
 
   for (const route of mission.route) {
     const routeResult = validateRoute(route.wp || [], obstacles || []);
+    const distance = computeRouteDistance(route.wp || []);
 
     results.routes.push({
       routeId: route.id,
       routeName: route.name,
       uav: route.uav,
+      distance,
       ...routeResult,
     });
 
@@ -486,7 +496,7 @@ export function validateMissionCollission(mission, obstacles, options = {}) {
 
     results.totalCollisions += routeResult.collisions.length;
     results.totalWarnings += routeResult.warnings.length;
-    results.totalDistance += routeResult.summary.totalDistance;
+    results.totalDistance += distance;
   }
 
   results.interRouteCollisions = findInterRouteCollisions(mission.route, options.interRoute);
@@ -547,33 +557,31 @@ function formatCollisionEntry(c) {
 }
 
 /**
- * Format a per-route collision report section
- * @param {Object} routeResult - Route validation result with routeName, valid, collisions, warnings, summary
+ * Format a route's distance line for the ROUTE DISTANCES section
+ * @param {Object} routeResult
  * @returns {string}
  */
-export function formatRouteReport(routeResult) {
+function formatRouteDistanceEntry(routeResult) {
+  const name = routeResult.routeName || routeResult.uav || `Route ${routeResult.routeId}`;
+  return `[ROUTE: ${name}] Distance: ${routeResult.distance.toFixed(1)} m`;
+}
+
+/**
+ * Format a route's obstacle-collision entry for the OBSTACLE COLLISIONS section
+ * @param {Object} routeResult
+ * @returns {string}
+ */
+function formatRouteCollisionEntry(routeResult) {
   const lines = [];
   const name = routeResult.routeName || routeResult.uav || `Route ${routeResult.routeId}`;
 
-  lines.push(`#### [ROUTE: ${name}]`);
-  lines.push(`- **Status:** ${routeResult.valid ? 'VALID' : 'INVALID'}`);
-  lines.push(`- Distance: ${routeResult.summary.totalDistance.toFixed(1)} (m)`);
-
+  lines.push(`[ROUTE: ${name}] Collisions: ${routeResult.collisions.length}`);
   if (routeResult.collisions.length > 0) {
-    lines.push('');
     lines.push('- **Critical Segments to Fix:**');
     for (const c of routeResult.collisions) {
       lines.push(formatCollisionEntry(c));
     }
   }
-
-  // if (routeResult.warnings.length > 0) {
-  //   lines.push('');
-  //   lines.push('- **Warnings:**');
-  //   for (const w of routeResult.warnings) {
-  //     lines.push(formatCollisionEntry(w));
-  //   }
-  // }
 
   return lines.join('\n');
 }
@@ -591,7 +599,7 @@ function formatInterRouteEntry(c) {
     `  * ALERT: ${uavA} [seg ${c.routeA.segmentIndex}] and ${uavB} [seg ${c.routeB.segmentIndex}] ` +
     `cross paths at ${point} (distance=${c.distance.toFixed(1)}m) - ` +
     `${uavA}@${c.timeA.toFixed(1)}s vs ${uavB}@${c.timeB.toFixed(1)}s (Δt=${c.timeDiff.toFixed(1)}s) - ` +
-    `possible collision, generate a detour`
+    `possible collision, possible fixes: generate a detour for one of the UAVs, or reverse the order of way points for one of the UAVs`
   );
 }
 
@@ -602,36 +610,29 @@ function formatInterRouteEntry(c) {
  */
 export function formatMissionReport(missionResult) {
   const lines = [];
-  const status = missionResult.valid ? 'VALID (No collisions)' : 'INVALID (Collisions detected)';
 
-  lines.push(`Status: ${status}`);
-  lines.push(
-    `**Total Collisions:** ${missionResult.totalCollisions} | **Total Warnings:** ${missionResult.totalWarnings}` +
-      ` | **Inter-UAV Conflicts:** ${missionResult.interRouteCollisions?.length ?? 0}`
-  );
-  lines.push(`- totalDistance: ${missionResult.totalDistance.toFixed(1)} (m)`);
+  lines.push('--- ROUTE DISTANCES ---');
+  lines.push(`Total Distance: ${missionResult.totalDistance.toFixed(1)} m`);
+  for (const route of missionResult.routes) {
+    lines.push(formatRouteDistanceEntry(route));
+  }
 
+  lines.push('');
+  lines.push('--- OBSTACLE COLLISIONS ---');
+  lines.push(`Total: ${missionResult.totalCollisions} | Warnings: ${missionResult.totalWarnings}`);
+  for (const route of missionResult.routes) {
+    lines.push(formatRouteCollisionEntry(route));
+  }
+
+  lines.push('');
+  lines.push('--- INTER-UAV CONFLICTS ---');
+  lines.push(`Total: ${missionResult.interRouteCollisions?.length ?? 0}`);
   if (missionResult.interRouteCollisions?.length > 0) {
-    lines.push('');
-    lines.push('#### [INTER-UAV ROUTE CONFLICTS]');
     for (const c of missionResult.interRouteCollisions) {
       lines.push(formatInterRouteEntry(c));
     }
   }
 
-  for (const route of missionResult.routes) {
-    lines.push('');
-    lines.push(formatRouteReport(route));
-  }
-
   return lines.join('\n');
 }
 
-/**
- * Get detailed collision report as formatted string (legacy per-route format)
- * @param {RouteValidationResult} result
- * @returns {string}
- */
-export function formatCollisionReport(result) {
-  return formatRouteReport(result);
-}
