@@ -1,7 +1,7 @@
 import { Ollama } from 'ollama';
 import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
-import { SystemPrompts } from './agents/index.js';
-import { chatLogger } from '../../common/logger.js';
+import { SystemPrompts } from '../agents/index.js';
+import { chatLogger } from '../../../common/logger.js';
 
 // llama-px4  ,glm-4.7-flash,llama3.1:8b, etc.
 class OllamaHandler extends BaseLLMHandler {

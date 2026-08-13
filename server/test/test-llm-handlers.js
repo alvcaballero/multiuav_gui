@@ -1,11 +1,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import dotenv from 'dotenv';
-import { LLMFactory } from '../models/chat/llmFactory.js';
-import { OpenAIHandler } from '../models/chat/openaiHandler.js';
-import { GeminiHandler } from '../models/chat/geminiHandler.js';
-import { AnthropicHandler } from '../models/chat/antropicHandler.js';
-import { OllamaHandler } from '../models/chat/ollamaHandler.js';
+import { LLMFactory } from '../models/chat/handlers/llmFactory.js';
+import { OpenAIHandler } from '../models/chat/handlers/openaiHandler.js';
+import { GeminiHandler } from '../models/chat/handlers/geminiHandler.js';
+import { AnthropicHandler } from '../models/chat/handlers/antropicHandler.js';
+import { OllamaHandler } from '../models/chat/handlers/ollamaHandler.js';
 
 // Load .env from server root
 dotenv.config();

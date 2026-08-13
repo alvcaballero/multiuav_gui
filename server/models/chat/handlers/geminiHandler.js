@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
-import { SystemPrompts } from './agents/index.js';
-import { logger, chatLogger } from '../../common/logger.js';
+import { SystemPrompts } from '../agents/index.js';
+import { logger, chatLogger } from '../../../common/logger.js';
 
 // Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, gemini-3.1-pro-preview
 class GeminiHandler extends BaseLLMHandler {

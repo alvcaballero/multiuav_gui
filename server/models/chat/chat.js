@@ -1,5 +1,5 @@
 import { MCPclient } from './mcpClient.js';
-import { LLMFactory } from './llmFactory.js';
+import { LLMFactory } from './handlers/llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
 import { LLM, MCPenable } from '../../config/config.js';
 import { resolveAgentForChat, setAgentForChat, resolveAgent } from './agents/index.js';

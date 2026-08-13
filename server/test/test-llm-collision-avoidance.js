@@ -33,7 +33,7 @@ process.env.LLM = 'true';
 
 // Dynamic imports (config.js reads env vars at import time)
 const { MCPclient } = await import('../models/chat/mcpClient.js');
-const { LLMFactory } = await import('../models/chat/llmFactory.js');
+const { LLMFactory } = await import('../models/chat/handlers/llmFactory.js');
 const { ChatHistoryManager } = await import('../models/chat/chatHistoryManager.js');
 const _sequelize = (await import('../common/sequelize.js')).default;
 const { encode } = await import('@toon-format/toon');

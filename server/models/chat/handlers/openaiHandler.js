@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
-import { SystemPrompts } from './agents/index.js';
-import { chatLogger } from '../../common/logger.js';
+import { SystemPrompts } from '../agents/index.js';
+import { chatLogger } from '../../../common/logger.js';
 
 //suported roles= 'assistant', 'system', 'developer', and 'user'
 // models: gpt-4.1, gpt-4o, o4-mini, gpt-5, gpt-5-mini,, gpt-5-nano gpt-5.2,etc.

@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
-import { SystemPrompts } from './agents/index.js';
-import { chatLogger } from '../../common/logger.js';
+import { SystemPrompts } from '../agents/index.js';
+import { chatLogger } from '../../../common/logger.js';
 
 // Models: claude-opus-4-6, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929, etc.
 class AnthropicHandler extends BaseLLMHandler {
