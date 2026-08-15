@@ -21,7 +21,6 @@ server/data/element-types/*
 !server/data/element-types/windTurbine
 !server/data/element-types/solarPanel
 /devices/vtol/stream/build/
-**/package-lock.json
 .DS_Store
 Thumbs.db
 dji_executables
