@@ -1,10 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './handlers/llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
 import { LLM, MCPenable } from '../../config/config.js';
-import { resolveAgentForChat } from './agents/index.js';
-import { eventBus, EVENTS } from '../../common/eventBus.js';
+import { TurnContext } from './turnContext.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
+import { emitAssistantError, emitAssistantMessage } from './chatEvents.js';
 import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
 
 let mcpClient = null;
@@ -61,9 +62,7 @@ export class MessageOrchestrator {
    * @param {object} chatItem - The chat item to potentially emit
    */
   static emitAssistantMessage(chatItem) {
-    if (chatItem.from === 'assistant') {
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
-    }
+    emitAssistantMessage(chatItem);
   }
 
   /**
@@ -96,151 +95,131 @@ export class MessageOrchestrator {
   }
 
   /**
-   * Internal: processes a message (called under chatId mutex)
+   * Internal: processes a message (called under chatId mutex).
+   *
+   * Orchestration only: ask for context, persist the user turn, call the LLM,
+   * persist what comes back. Every "figure out what this turn needs" step
+   * lives in TurnContext.
    */
   static async _processMessage(chatId, message, options = {}) {
-    const { allowedTools: optionsAllowedTools = null } = options;
-    const msgPreview = Array.isArray(message)
-      ? `[${message.length} blocks: ${message.map((b) => b.type).join(', ')}]`
-      : `"${message.substring(0, 40)}${message.length > 40 ? '...' : ''}"`;
-    chatLogger.info(`📨 Chat: ${chatId} | Mensaje: ${msgPreview}`);
+    // Groups every LLM request triggered by this user message (initial call + tool loop
+    // iterations) so the real cost of one turn is a single GROUP BY away.
+    const turnId = randomUUID();
+    this._logIncomingMessage(chatId, message);
 
-    // Load history snapshot from DB (single source of truth)
-    let historySnapshot;
-    try {
-      historySnapshot = await ChatHistoryManager.loadHistory(chatId);
-      chatLogger.info(`📂 Loaded ${historySnapshot.length} messages from DB for chat: ${chatId}`);
-    } catch (error) {
-      chatLogger.error('Error loading history from DB:', error);
-      historySnapshot = [];
-    }
-
-    const persistence = ChatHistoryManager.getSessionPersistence();
-
-    const agent = await resolveAgentForChat(chatId);
-    const agentProfile = agent.name;
-    const allowedTools = optionsAllowedTools ?? agent.allowedTools;
-    chatLogger.debug(`Using agent '${agentProfile}' with tools: ${allowedTools ? allowedTools.join(', ') : 'all'}`);
+    const ctx = await TurnContext.build(chatId, {
+      allowedTools: options.allowedTools ?? null,
+      getTools: (allowed) => this.getToolsForProvider(allowed),
+      llmHandler,
+    });
 
     try {
-      // Get tools from MCP client, filtered by allowedTools
-      const tools = this.getToolsForProvider(allowedTools);
-
-      // Forked chats have copied history that the LLM provider doesn't know about.
-      // On the first turn of a fork, bypass the session so the full history snapshot
-      // is sent to the provider (CASE 3 in processMessage). After that turn the
-      // provider creates a real session seeded with the complete context.
-      const chatMeta = await ChatHistoryManager.getChatMetadata(chatId);
-      const isUnseededFork = !!(chatMeta.forkedFrom && !chatMeta.sessionId);
-
-      const sessionId = isUnseededFork ? null : await llmHandler.ensureSession(chatId, persistence);
-      if (isUnseededFork) {
-        chatLogger.info(
-          `[fork] First turn of forked chat ${chatId} — using full-history path to seed provider context`
-        );
-      }
-
-      // Build system instructions (needed for first message of conversation)
-      let systemInstructions = null;
-      if (agent.systemPrompt) {
-        systemInstructions = `${agent.systemPrompt}\n\n---\nSession context:\n- chat_id: ${chatId}`;
-      }
-
-      // Add system prompt to history if first message (for record keeping)
-      if (historySnapshot.length === 0 && systemInstructions) {
-        const systemItem = await ChatHistoryManager.addMessage(chatId, 'system', {
-          role: 'system',
-          content: systemInstructions,
-        });
-        historySnapshot.push(systemItem);
-      } else {
-        // Recover system prompt from history to maintain consistency (e.g. after server restarts)
-        const systemMsg = historySnapshot.find((item) => (item.message || item).role === 'system');
-        if (systemMsg) {
-          systemInstructions = (systemMsg.message || systemMsg).content;
-        }
-      }
-
-      // Agregar el mensaje del usuario a DB
       await ChatHistoryManager.addMessage(chatId, 'user', { role: 'user', content: message });
 
-      // Call LLM with session support (or fallback to full history)
-      // historySnapshot was taken BEFORE user message, so it serves as context for fallback
-      const result = await llmHandler.processMessage(message, tools, historySnapshot, {
-        sessionId,
-        instructions: systemInstructions,
-        agent,
+      // historySnapshot was taken BEFORE the user message, so it serves as
+      // full context on the no-session fallback path.
+      const result = await llmHandler.processMessage(message, ctx.tools, ctx.historySnapshot, {
+        sessionId: ctx.sessionId,
+        instructions: ctx.systemInstructions,
+        agent: ctx.agent,
       });
 
-      // Extract response data from result
-      const { output, responseId, model, sessionCleared } = result;
-      chatLogger.info(`✓ Parsed ${output.length} output parts from LLM response`);
-
-      // Let the handler recover from session errors (e.g., recreate expired conversation)
-      if (sessionCleared) {
-        await llmHandler.handleSessionError(chatId, result, persistence);
-      }
-      // Store metadata for this chat
-      else if (responseId) {
-        await ChatHistoryManager.updateChatMetadata(chatId, {
-          responseId,
-          provider: llmHandler.getProviderName(),
-          model,
-        });
-      }
-
-      let toolCallsFlag = false;
-      for (const res of output) {
-        if (res.type === 'function_call' || res.type === 'tool_call') {
-          toolCallsFlag = true;
-        }
-        const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
-        this.emitAssistantMessage(chatItem);
-      }
-
-      // Handle tool calls with the current sessionId
-      // Pass allowedTools and agentProfile to maintain consistency across iterations
-      if (toolCallsFlag) {
-        this.handleToolCallsLoop(output, tools, chatId, sessionId, systemInstructions, allowedTools, agent).catch(
-          (error) => {
-            chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
-            eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-              chatId,
-              from: 'assistant',
-              timestamp: new Date().toISOString(),
-              message: {
-                role: 'assistant',
-                content: `Error processing tool results: ${error.message}`,
-                type: 'text',
-                status: 'error',
-              },
-            });
-          }
-        );
-      }
+      await this._persistTurnResult(chatId, result, ctx, turnId);
 
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
-
       return llmHandler.normalizeResponse(result);
     } catch (error) {
       chatLogger.error('Error procesando mensaje:', error);
 
       // Let the handler handle session-related errors
-      await llmHandler.handleSessionError(chatId, error, persistence);
-
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-        chatId,
-        message: {
-          role: 'assistant',
-          content: error.userMessage || `Error: ${error.message}`,
-          type: 'text',
-          status: 'error',
-        },
-        timestamp: new Date().toISOString(),
-      });
+      await llmHandler.handleSessionError(chatId, error, ctx.persistence);
+      emitAssistantError(chatId, error.userMessage || `Error: ${error.message}`);
 
       throw error;
     }
+  }
+
+  /**
+   * Logs the incoming user message, collapsing multipart content to a summary
+   * so a base64 image never lands in the logs.
+   */
+  static _logIncomingMessage(chatId, message) {
+    const preview = Array.isArray(message)
+      ? `[${message.length} blocks: ${message.map((b) => b.type).join(', ')}]`
+      : `"${message.substring(0, 40)}${message.length > 40 ? '...' : ''}"`;
+    chatLogger.info(`📨 Chat: ${chatId} | Mensaje: ${preview}`);
+  }
+
+  /**
+   * Records usage, reconciles session state, persists every output part and
+   * kicks off the tool loop when the model asked for tools.
+   */
+  static async _persistTurnResult(chatId, result, ctx, turnId) {
+    const { output, responseId, model, sessionCleared, usage } = result;
+    chatLogger.info(`✓ Parsed ${output.length} output parts from LLM response`);
+
+    await ChatHistoryManager.recordUsage({
+      chatId,
+      turnId,
+      usage,
+      responseId,
+      provider: llmHandler.getProviderName(),
+      model,
+      agent: ctx.agent.name,
+      phase: 'initial',
+      iteration: 0,
+    });
+
+    // Let the handler recover from session errors (e.g., recreate expired conversation)
+    if (sessionCleared) {
+      await llmHandler.handleSessionError(chatId, result, ctx.persistence);
+    }
+    // Store metadata for this chat
+    else if (responseId) {
+      await ChatHistoryManager.updateChatMetadata(chatId, {
+        responseId,
+        provider: llmHandler.getProviderName(),
+        model,
+      });
+    }
+
+    let toolCallsFlag = false;
+    for (const res of output) {
+      if (res.type === 'function_call' || res.type === 'tool_call') {
+        toolCallsFlag = true;
+      }
+      const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
+      this.emitAssistantMessage(chatItem);
+    }
+
+    if (toolCallsFlag) {
+      this.runToolLoop(output, chatId, ctx, { turnId });
+    }
+  }
+
+  /**
+   * Fire-and-forget tool loop: the caller's turn returns as soon as the first
+   * response is persisted, and the loop keeps streaming over the EventBus.
+   *
+   * @param {Array} output - Response parts containing the tool calls
+   * @param {string} chatId
+   * @param {TurnContext|object} ctx - Needs { tools, sessionId, systemInstructions, allowedTools, agent }
+   * @param {object} usageCtx - Token accounting context, { turnId }
+   */
+  static runToolLoop(output, chatId, ctx, usageCtx = {}) {
+    return this.handleToolCallsLoop(
+      output,
+      ctx.tools,
+      chatId,
+      ctx.sessionId,
+      ctx.systemInstructions,
+      ctx.allowedTools,
+      ctx.agent,
+      usageCtx
+    ).catch((error) => {
+      chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
+      emitAssistantError(chatId, `Error processing tool results: ${error.message}`);
+    });
   }
 
   /**
@@ -252,6 +231,8 @@ export class MessageOrchestrator {
    * @param {string} systemInstructions - System instructions to re-send
    * @param {Array<string>} allowedTools - List of allowed tool names (null = all)
    * @param {Object} agent - Full agent definition from resolveAgentForChat
+   * @param {Object} usageCtx - Token accounting context, { turnId }. A fresh turnId is
+   *   generated when absent (e.g. a loop resumed from subAgentManager).
    */
   static async handleToolCallsLoop(
     response,
@@ -260,8 +241,10 @@ export class MessageOrchestrator {
     sessionId,
     systemInstructions,
     allowedTools = null,
-    agent = null
+    agent = null,
+    usageCtx = {}
   ) {
+    const turnId = usageCtx.turnId || randomUUID();
     let isToolCalling = true;
     let iterations = 0;
     chatLogger.debug('Starting tool calls loop...');
@@ -286,7 +269,9 @@ export class MessageOrchestrator {
         systemInstructions,
         allowedTools, //isLastIteration ? [] : allowedTools, // before  No tools on last iteration , now we allow tools on last iteration to let the LLM finish naturally
         isLastIteration, // forceFinish flag
-        agent
+        agent,
+        false,
+        { turnId, phase: 'tool_loop', iteration: iterations }
       );
       currentResponse = result.output;
 
@@ -340,6 +325,8 @@ export class MessageOrchestrator {
    * @param {Array<string>} allowedTools - List of allowed tool names (null = all, [] = none for final response)
    * @param {boolean} forceFinish - If true, adds a system message forcing final response
    * @param {Object} agent - Full agent definition from resolveAgentForChat
+   * @param {boolean} skipPersist - Skip persisting tool results already stored
+   * @param {Object} usageCtx - Token accounting context, { turnId, phase, iteration }
    * @returns {Promise<{output: Array, responseId: string}>} Response output and new responseId
    */
   static async continueAfterTools(
@@ -350,7 +337,8 @@ export class MessageOrchestrator {
     allowedTools = null,
     forceFinish = false,
     agent = null,
-    skipPersist = false
+    skipPersist = false,
+    usageCtx = {}
   ) {
     // Load history only if needed for fallback (no session)
     const conversationHistory = sessionId ? [] : await ChatHistoryManager.loadHistory(chatId);
@@ -384,6 +372,18 @@ export class MessageOrchestrator {
     );
 
     const { output, responseId } = result;
+
+    await ChatHistoryManager.recordUsage({
+      chatId,
+      turnId: usageCtx.turnId || randomUUID(),
+      usage: result.usage,
+      responseId,
+      provider: llmHandler.getProviderName(),
+      model: result.model,
+      agent: agent?.name ?? null,
+      phase: usageCtx.phase || 'tool_loop',
+      iteration: usageCtx.iteration ?? 0,
+    });
 
     // Store assistant messages with new responseId and emit events
     for (const res of output) {
@@ -454,6 +454,17 @@ export class MessageOrchestrator {
       chatLogger.error('Error loading history from DB:', error);
       return { messages: [], hasMore: false };
     }
+  }
+
+  /**
+   * Token usage of a chat: per-LLM-call detail, per-turn breakdown and totals.
+   * One turn = one user message, which can span many LLM requests
+   * (the initial call plus every tool loop iteration).
+   * @param {string} chatId
+   * @returns {Promise<{totals: object, turns: Array, requests: Array}>}
+   */
+  static async getUsage(chatId) {
+    return ChatHistoryManager.getUsageForChat(chatId);
   }
 
   /**

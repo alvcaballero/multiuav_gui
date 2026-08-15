@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -88,6 +88,12 @@ class OllamaHandler extends BaseLLMHandler {
             },
           ],
         });
+        continue;
+      }
+
+      // Async subagent result → plain user message (no tool pair to close)
+      if (type === 'subagent_result') {
+        messages.push({ role: 'user', content: renderSubagentResult(item) });
         continue;
       }
 
@@ -240,6 +246,7 @@ class OllamaHandler extends BaseLLMHandler {
         responseId: null,
         model: modelId,
         status: 'completed',
+        usage: this.normalizeUsage(response),
       };
     } catch (error) {
       chatLogger.error('Error in Ollama:', error);
@@ -276,6 +283,23 @@ class OllamaHandler extends BaseLLMHandler {
     }
   }
 
+  /**
+   * Ollama reports counts at the ROOT of the response, not under `usage`:
+   * prompt_eval_count (input) and eval_count (output). No cache or reasoning
+   * breakdown. Local inference, so these are for capacity/latency analysis
+   * rather than billing.
+   */
+  normalizeUsage(response) {
+    if (!response) return null;
+    const { prompt_eval_count, eval_count } = response;
+    if (prompt_eval_count === undefined && eval_count === undefined) return null;
+    return makeUsage({
+      input: prompt_eval_count,
+      output: eval_count,
+      raw: { prompt_eval_count, eval_count },
+    });
+  }
+
   normalizeResponse(response) {
     const output = Array.isArray(response) ? response : response.output;
 
@@ -284,6 +308,7 @@ class OllamaHandler extends BaseLLMHandler {
       content: output,
       model: response.model || this.model,
       responseId: null,
+      usage: response.usage || null,
       raw: response,
     };
   }

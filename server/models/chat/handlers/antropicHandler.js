@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -74,6 +74,12 @@ class AnthropicHandler extends BaseLLMHandler {
             },
           ],
         });
+        continue;
+      }
+
+      // Async subagent result → plain user message (no tool pair to close)
+      if (type === 'subagent_result') {
+        messages.push({ role: 'user', content: renderSubagentResult(item) });
         continue;
       }
 
@@ -230,6 +236,7 @@ class AnthropicHandler extends BaseLLMHandler {
         responseId: response.id || null,
         model: response.model || modelId,
         status: 'completed',
+        usage: this.normalizeUsage(response.usage),
       };
     } catch (error) {
       chatLogger.error('Error in Anthropic:', error);
@@ -267,6 +274,29 @@ class AnthropicHandler extends BaseLLMHandler {
     }
   }
 
+  /**
+   * Anthropic: usage = { input_tokens, output_tokens,
+   * cache_read_input_tokens, cache_creation_input_tokens }.
+   * Unlike OpenAI, cache tokens are reported ADDITIVELY — they are NOT part of
+   * input_tokens — so the prompt total is input + cache_read + cache_creation.
+   * There is no total_tokens field, we compute it.
+   */
+  normalizeUsage(rawUsage) {
+    if (!rawUsage) return null;
+    const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+    const cacheRead = n(rawUsage.cache_read_input_tokens);
+    const cacheWrite = n(rawUsage.cache_creation_input_tokens);
+    const input = n(rawUsage.input_tokens) + cacheRead + cacheWrite;
+    const output = n(rawUsage.output_tokens);
+    return makeUsage({
+      input,
+      output,
+      cached: cacheRead,
+      total: input + output,
+      raw: rawUsage,
+    });
+  }
+
   normalizeResponse(response) {
     const output = Array.isArray(response) ? response : response.output;
 
@@ -275,6 +305,7 @@ class AnthropicHandler extends BaseLLMHandler {
       content: output,
       model: response.model || this.model,
       responseId: response.responseId || null,
+      usage: response.usage || null,
       raw: response,
     };
   }

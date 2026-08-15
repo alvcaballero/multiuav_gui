@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { logger, chatLogger } from '../../../common/logger.js';
 
@@ -54,6 +54,12 @@ class GeminiHandler extends BaseLLMHandler {
 
       // Skip system messages — handled via systemInstruction
       if (role === 'system') continue;
+
+      // Async subagent result → plain user text part (no functionResponse to pair)
+      if (type === 'subagent_result') {
+        contents.push({ role: 'user', parts: [{ text: renderSubagentResult(item) }] });
+        continue;
+      }
 
       // Normalized function_call from DB → Gemini functionCall part (model role)
       if (type === 'function_call') {
@@ -195,18 +201,6 @@ class GeminiHandler extends BaseLLMHandler {
     chatLogger.info(`✓ Candidates: ${response.candidates ? response.candidates.length : 0}`);
     chatLogger.info(`✓ response text: ${response.text}`);
 
-    if (response.functionCalls && response.functionCalls.length > 0) {
-      for (const funcCall of response.functionCalls) {
-        chatLogger.info(`✓ Tool call request: ${funcCall.name}`);
-        // output.push({
-        //   type: 'function_call',
-        //   name: funcCall.name,
-        //   arguments: JSON.stringify(funcCall.args || {}),
-        //   call_id: `gemini_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        // });
-      }
-    }
-
     const candidates = response.candidates || [];
     for (const candidate of candidates) {
       // Handle MALFORMED_FUNCTION_CALL: model tried to call a tool but generated invalid JSON args.
@@ -285,13 +279,6 @@ class GeminiHandler extends BaseLLMHandler {
       config.systemInstruction = systemText;
       logger.info(`✓ Using system instruction: ${systemText.substring(0, 100)}...`);
     }
-    // Prepend system prompt only if not already present in conversation history
-    // const systemText = instructions || this.systemPrompt;
-    // const hasSystemMessage = messages.some((m) => m.role === 'system');
-    // if (systemText && !hasSystemMessage) {
-    //   messages.unshift({ role: 'system', content: systemText });
-    // }
-
     // Add tools if available (empty allowedTools array = no tools for forced text response)
     if (tools.length > 0 && (!allowedTools || allowedTools.length > 0)) {
       config.tools = this.convertToolsForMCP(tools);
@@ -351,6 +338,7 @@ class GeminiHandler extends BaseLLMHandler {
         responseId: null, // Gemini doesn't have persistent response IDs
         model: modelId,
         status: 'completed',
+        usage: this.normalizeUsage(response.usageMetadata),
       };
     } catch (error) {
       chatLogger.error('Error in Gemini:', error);
@@ -390,6 +378,31 @@ class GeminiHandler extends BaseLLMHandler {
     }
   }
 
+  /**
+   * Gemini: usageMetadata = { promptTokenCount, candidatesTokenCount,
+   * thoughtsTokenCount, cachedContentTokenCount, totalTokenCount }.
+   * promptTokenCount already includes image tokens (promptTokensDetails breaks
+   * them down by modality when present — kept in `raw`).
+   * Output is derived from the provider's own total so we don't have to guess
+   * whether thoughts are counted inside candidates or on top of them.
+   */
+  normalizeUsage(rawUsage) {
+    if (!rawUsage) return null;
+    const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+    const input = n(rawUsage.promptTokenCount);
+    const total = n(rawUsage.totalTokenCount);
+    const candidates = n(rawUsage.candidatesTokenCount);
+    const thoughts = n(rawUsage.thoughtsTokenCount);
+    return makeUsage({
+      input,
+      output: total > input ? total - input : candidates + thoughts,
+      cached: rawUsage.cachedContentTokenCount,
+      reasoning: thoughts,
+      total: total || undefined,
+      raw: rawUsage,
+    });
+  }
+
   normalizeResponse(response) {
     const output = Array.isArray(response) ? response : response.output;
 
@@ -398,6 +411,7 @@ class GeminiHandler extends BaseLLMHandler {
       content: output,
       model: response.model || this.model,
       responseId: null,
+      usage: response.usage || null,
       raw: response,
     };
   }

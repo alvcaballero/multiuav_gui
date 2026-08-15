@@ -1,8 +1,129 @@
 import sequelize from '../../common/sequelize.js';
 import { Op } from 'sequelize';
 import { chatLogger } from '../../common/logger.js';
+import { projectMessage } from './messageProjection.js';
 
 export class ChatHistoryManager {
+  /**
+   * Records the token usage of ONE LLM request.
+   *
+   * Never throws: token accounting must not be able to break a conversation.
+   * Failures are logged and swallowed, same policy as addMessage.
+   *
+   * @param {object} entry
+   * @param {string} entry.chatId
+   * @param {string} entry.turnId - Groups every request of one user turn
+   * @param {object|null} entry.usage - Canonical usage from handler.normalizeUsage()
+   * @param {string} [entry.responseId]
+   * @param {string} [entry.provider]
+   * @param {string} [entry.model]
+   * @param {string} [entry.agent]
+   * @param {string} [entry.phase] - 'initial' | 'tool_loop'
+   * @param {number} [entry.iteration]
+   */
+  static async recordUsage({
+    chatId,
+    turnId,
+    usage,
+    responseId = null,
+    provider = null,
+    model = null,
+    agent = null,
+    phase = null,
+    iteration = 0,
+  }) {
+    if (!usage) return null;
+    try {
+      const row = await sequelize.models.ChatUsage.create({
+        chatId,
+        turnId,
+        responseId,
+        provider,
+        model,
+        agent,
+        phase,
+        iteration,
+        inputTokens: usage.input,
+        cachedTokens: usage.cached,
+        outputTokens: usage.output,
+        reasoningTokens: usage.reasoning,
+        totalTokens: usage.total,
+        raw: usage.raw ?? null,
+        timestamp: new Date(),
+      });
+      chatLogger.debug(
+        `[usage] chat=${chatId} turn=${turnId} it=${iteration} ${phase} | ` +
+          `in=${usage.input} (cached=${usage.cached}) out=${usage.output} (reasoning=${usage.reasoning}) total=${usage.total}`
+      );
+      return row;
+    } catch (error) {
+      chatLogger.error('Error recording token usage:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Token usage for a chat at three levels of detail:
+   *  - requests: ONE ENTRY PER LLM CALL. This is the raw truth, everything else
+   *    is derived from it. Watch `input` climb across a turn — that is the
+   *    conversation context being re-sent on every tool loop iteration.
+   *  - turns: one entry per user message (a turn spans up to 25 requests).
+   *  - totals: the whole chat.
+   * @param {string} chatId
+   * @returns {Promise<{totals: object, turns: Array, requests: Array}>}
+   */
+  static async getUsageForChat(chatId) {
+    const empty = { input: 0, cached: 0, output: 0, reasoning: 0, total: 0, requests: 0 };
+    try {
+      const rows = await sequelize.models.ChatUsage.findAll({
+        where: { chatId },
+        order: [['timestamp', 'ASC']],
+        raw: true,
+      });
+
+      const totals = { ...empty };
+      const byTurn = new Map();
+      const requests = [];
+
+      for (const r of rows) {
+        const add = (acc) => {
+          acc.input += r.inputTokens || 0;
+          acc.cached += r.cachedTokens || 0;
+          acc.output += r.outputTokens || 0;
+          acc.reasoning += r.reasoningTokens || 0;
+          acc.total += r.totalTokens || 0;
+          acc.requests += 1;
+        };
+        add(totals);
+        if (!byTurn.has(r.turnId)) {
+          byTurn.set(r.turnId, { turnId: r.turnId, model: r.model, agent: r.agent, startedAt: r.timestamp, ...empty });
+        }
+        add(byTurn.get(r.turnId));
+
+        requests.push({
+          turnId: r.turnId,
+          phase: r.phase,
+          iteration: r.iteration,
+          provider: r.provider,
+          model: r.model,
+          agent: r.agent,
+          responseId: r.responseId,
+          input: r.inputTokens || 0,
+          cached: r.cachedTokens || 0,
+          output: r.outputTokens || 0,
+          reasoning: r.reasoningTokens || 0,
+          total: r.totalTokens || 0,
+          timestamp: r.timestamp,
+        });
+      }
+
+      return { totals, turns: [...byTurn.values()], requests };
+    } catch (error) {
+      chatLogger.error('Error reading token usage:', error);
+      return { totals: { ...empty }, turns: [], requests: [] };
+    }
+  }
+
   /**
    * Creates a chat item and persists to database
    * @param {string} chatId - Chat identifier
@@ -121,6 +242,7 @@ export class ChatHistoryManager {
   static async deleteChat(chatId, hardDelete = false) {
     if (hardDelete) {
       await sequelize.models.ChatMessage.destroy({ where: { chatId } });
+      await sequelize.models.ChatUsage.destroy({ where: { chatId } });
       await sequelize.models.Chat.destroy({ where: { id: chatId } });
     } else {
       await this.updateChat(chatId, { status: 'deleted' });
@@ -140,40 +262,12 @@ export class ChatHistoryManager {
 
       const { from, timestamp, message } = messageItem;
 
-      let role = message.role;
-      let type = message.type || 'text';
-      let content = null;
-
-      if (message.type === 'function_call' || message.type === 'tool_call') {
-        role = 'assistant';
-        type = 'tool_call';
-        content = `Tool call: ${message.name}`;
-      } else if (message.type === 'function_call_output') {
-        role = 'tool';
-        type = 'tool_result';
-        content = typeof message.output === 'string' ? message.output.slice(0, 500) : null;
-      } else if (message.type === 'message') {
-        role = message.role || 'assistant';
-        type = 'text';
-        if (Array.isArray(message.content)) {
-          const textBlocks = message.content.filter((b) => b.type === 'output_text' || b.type === 'text');
-          content = textBlocks.map((b) => b.text).join('\n');
-        } else if (typeof message.content === 'string') {
-          content = message.content;
-        }
-      } else if (message.type === 'reasoning') {
-        role = 'assistant';
-        type = 'reasoning';
-        if (Array.isArray(message.summary)) {
-          content = message.summary.map((s) => s.text || s).join('\n');
-        }
-      } else if (typeof message.content === 'string') {
-        content = message.content;
-      }
+      // role/type/content are DERIVED from messageData — never authored here.
+      const { role, type, content } = projectMessage(message);
 
       const dbMessage = await sequelize.models.ChatMessage.create({
         chatId,
-        role: role || 'unknown',
+        role: role,
         from: from,
         type: type,
         content: content,
@@ -487,6 +581,15 @@ export class ChatHistoryManager {
    * @returns {Promise<boolean>} true if a message was found and updated
    */
   /**
+   * @deprecated UNUSED since subagent results moved to append-only delivery.
+   * Kept for reference only; do not call it for new async-result flows.
+   *
+   * Subagent answers now arrive as `subagent_result` messages appended to the
+   * history (see SubAgentManager.injectSubAgentResponse), which removes the need
+   * to rewrite the past at all. This method anchored on `toolName` via findLast
+   * and hid EVERY message after the match, so two subagents in flight would
+   * clobber each other's results — the append path has no such failure mode.
+   *
    * Hides the last tool_result for a given tool name AND its paired function_call,
    * then re-inserts both at the end of the history with the corrected output.
    * Hidden messages remain in DB for the UI but are excluded from LLM history.

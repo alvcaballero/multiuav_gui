@@ -380,48 +380,48 @@ export function worldToObstacleFrame(point, center, yawDeg) {
 }
 
 /**
- * Derive the exclusion cylinder for an obstacle, expanded by an extra margin
- * on top of the obstacle's own safety_margin (e.g. to get a wider "caution"
- * cylinder from the same geometry).
+ * Derive a cylinder around an obstacle's real geometry, expanded by `margin`.
+ * Does NOT include the obstacle's own safety_margin - callers decide whether
+ * to fold it in (e.g. pass obstacle.safety_margin for the exclusion zone, or
+ * obstacle.safety_margin + extra for a wider "caution" zone).
  * For geometry_type 'rectangle' this is a conservative circumscribing cylinder
  * (radius = half-diagonal), suitable for detour heuristics; use obstacleOBB
  * for the precise oriented-box collision check.
  * @param {Obstacle} obstacle
- * @param {number} [margin=0] - Extra radius/height margin in meters, on top of safety_margin
+ * @param {number} [margin=0] - Extra radius/height margin in meters, around the real geometry
  * @returns {Cylinder}
  */
 export function obstacleCylinder(obstacle, margin = 0) {
   const center = obstacleCenter(obstacle);
   const height = obstacle.height ?? 100;
-  const extra = obstacle.safety_margin + margin;
 
   if (obstacle.geometry_type === 'rectangle') {
     const halfW = (obstacle.dimensions?.width ?? 0) / 2;
     const halfL = (obstacle.dimensions?.length ?? 0) / 2;
-    const radius = Math.sqrt(halfW * halfW + halfL * halfL) + extra;
+    const radius = Math.sqrt(halfW * halfW + halfL * halfL) + margin;
     return { center, radius, height: height + margin };
   }
 
-  return { center, radius: (obstacle.dimensions?.radius ?? 0) + extra, height: height + margin };
+  return { center, radius: (obstacle.dimensions?.radius ?? 0) + margin, height: height + margin };
 }
 
 /**
- * Derive the world-space AABB for an obstacle - a tight box for 'circle'
- * geometry, or the rotated rectangle's world-space envelope for 'rectangle'
- * geometry (used only for fast rejection; the precise check is obstacleOBB).
- * Includes safety_margin so the box already covers the safety clearance.
+ * Derive the world-space AABB around an obstacle's real geometry, expanded by
+ * `margin` - a tight box for 'circle' geometry, or the rotated rectangle's
+ * world-space envelope for 'rectangle' geometry (used only for fast
+ * rejection; the precise check is obstacleOBB). Does NOT include the
+ * obstacle's own safety_margin - callers decide whether to fold it in.
  * @param {Obstacle} obstacle
- * @param {number} [margin=0] - Extra margin in meters, on top of safety_margin
+ * @param {number} [margin=0] - Extra margin in meters, around the real geometry
  * @returns {AABB}
  */
 export function obstacleAABB(obstacle, margin = 0) {
   const height = obstacle.height ?? 100;
   const center = obstacleCenter(obstacle);
-  const extra = obstacle.safety_margin + margin;
 
   if (obstacle.geometry_type === 'rectangle') {
-    const halfW = (obstacle.dimensions?.width ?? 0) / 2 + extra;
-    const halfL = (obstacle.dimensions?.length ?? 0) / 2 + extra;
+    const halfW = (obstacle.dimensions?.width ?? 0) / 2 + margin;
+    const halfL = (obstacle.dimensions?.length ?? 0) / 2 + margin;
     // World-space envelope of the rotated rectangle: half-extents swap worst-case
     // under rotation, so use the diagonal as a conservative radius for fast rejection.
     const diag = Math.sqrt(halfW * halfW + halfL * halfL);
@@ -431,7 +431,7 @@ export function obstacleAABB(obstacle, margin = 0) {
     };
   }
 
-  const r = (obstacle.dimensions?.radius ?? 0) + extra;
+  const r = (obstacle.dimensions?.radius ?? 0) + margin;
   return {
     min_point: { x: center.x - r, y: center.y - r, z: center.z - margin },
     max_point: { x: center.x + r, y: center.y + r, z: center.z + height + margin },
@@ -440,19 +440,20 @@ export function obstacleAABB(obstacle, margin = 0) {
 
 /**
  * Derive the oriented bounding box (OBB) parameters for a geometry_type
- * 'rectangle' obstacle: its local-frame half-extents, center, yaw and height.
- * Use with worldToObstacleFrame() to test points/segments precisely.
+ * 'rectangle' obstacle's real geometry, expanded by `margin`: its local-frame
+ * half-extents, center, yaw and height. Does NOT include the obstacle's own
+ * safety_margin - callers decide whether to fold it in. Use with
+ * worldToObstacleFrame() to test points/segments precisely.
  * @param {Obstacle} obstacle
- * @param {number} [margin=0] - Extra margin in meters, on top of safety_margin
+ * @param {number} [margin=0] - Extra margin in meters, around the real geometry
  * @returns {{center: Point3D, halfExtent: {x:number,y:number}, height: number, yaw: number}}
  */
 export function obstacleOBB(obstacle, margin = 0) {
-  const extra = obstacle.safety_margin + margin;
   return {
     center: obstacleCenter(obstacle),
     halfExtent: {
-      x: (obstacle.dimensions?.width ?? 0) / 2 + extra,
-      y: (obstacle.dimensions?.length ?? 0) / 2 + extra,
+      x: (obstacle.dimensions?.width ?? 0) / 2 + margin,
+      y: (obstacle.dimensions?.length ?? 0) / 2 + margin,
     },
     height: (obstacle.height ?? 100) + margin,
     yaw: obstacle.yaw ?? 0,
@@ -495,6 +496,48 @@ export function segmentIntersectsOBB(segment, obb) {
 }
 
 /**
+ * Penetration depth of a world-space point inside an obstacle's OBB, split
+ * into horizontal (xy) and vertical (z) components rather than one blended
+ * distance - a route can be barely inside the footprint but deep inside the
+ * height range (or vice versa), and collapsing both into a single number
+ * hides which direction actually offers the shortest way out. Measured in
+ * the box's local (yaw-undone) frame. Only meaningful when the point is
+ * actually inside the box - callers must check pointInOBB first.
+ * @param {Point3D} point - World-space point
+ * @param {{center: Point3D, halfExtent: {x:number,y:number}, height: number, yaw: number}} obb
+ * @returns {{xy: number, z: number}} Distance to nearest side wall (xy) and to nearest floor/ceiling (z), in meters
+ */
+export function penetrationDepthOBB(point, obb) {
+  const local = worldToObstacleFrame(point, obb.center, obb.yaw);
+  const penX = obb.halfExtent.x - Math.abs(local.x);
+  const penY = obb.halfExtent.y - Math.abs(local.y);
+  const distToFloor = point.z - obb.center.z;
+  const distToCeiling = obb.center.z + obb.height - point.z;
+  return { xy: Math.min(penX, penY), z: Math.min(distToFloor, distToCeiling) };
+}
+
+/**
+ * Penetration depth of a world-space point inside a cylinder, split into
+ * horizontal (xy, distance to the radial wall) and vertical (z, distance to
+ * floor/ceiling) components rather than one blended distance - a route can
+ * be barely inside the radius but deep inside the height range (or vice
+ * versa), and collapsing both into a single number hides which direction
+ * actually offers the shortest way out. The cylinder's "center" is its base,
+ * not its centroid, so the z component is measured from there. Only
+ * meaningful when the point is actually inside the cylinder - callers must
+ * check pointInCylinder first.
+ * @param {Point3D} point - World-space point
+ * @param {Cylinder} cylinder
+ * @returns {{xy: number, z: number}} Distance to radial wall (xy) and to nearest floor/ceiling (z), in meters
+ */
+export function penetrationDepthCylinder(point, cylinder) {
+  const radialPen = cylinder.radius - distance2D(point, cylinder.center);
+  const distToFloor = point.z - cylinder.center.z;
+  const distToCeiling = cylinder.center.z + cylinder.height - point.z;
+  return { xy: radialPen, z: Math.min(distToFloor, distToCeiling) };
+}
+
+/**
  * Calculate segment length
  * @param {Segment} segment
  * @returns {number}
@@ -522,4 +565,3 @@ export function normalize(v) {
 export function perpendicular2D(v) {
   return { x: -v.y, y: v.x, z: 0 };
 }
-

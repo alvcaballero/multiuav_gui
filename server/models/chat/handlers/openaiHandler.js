@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE } from './baseLLMhandler.js';
+import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -162,6 +162,14 @@ class OpenAIHandler extends BaseLLMHandler {
         if (next && (next.type === 'message' || next.role === 'assistant')) {
           lastconversation.push({ ...m });
         }
+        continue;
+      }
+
+      // Async subagent result → plain user message (no tool pair to close).
+      // Intercepted before the VALID_ROLES filter: the stored payload carries no
+      // protocol `role`, so it would otherwise be dropped from the input.
+      if (m.type === 'subagent_result') {
+        lastconversation.push({ role: 'user', content: renderSubagentResult(m) });
         continue;
       }
 
@@ -407,6 +415,7 @@ class OpenAIHandler extends BaseLLMHandler {
         responseId: response.id,
         model: response.model || this.model,
         status: response.status,
+        usage: this.normalizeUsage(response.usage),
       };
     } catch (error) {
       chatLogger.error('Error in OpenAI:', error);
@@ -515,6 +524,24 @@ class OpenAIHandler extends BaseLLMHandler {
     }
   }
 
+  /**
+   * Responses API: usage = { input_tokens, output_tokens, total_tokens,
+   * input_tokens_details.cached_tokens, output_tokens_details.reasoning_tokens }.
+   * cached_tokens is a SUBSET of input_tokens (already counted, just billed cheaper).
+   * Image tokens are folded into input_tokens — there is no separate field.
+   */
+  normalizeUsage(rawUsage) {
+    if (!rawUsage) return null;
+    return makeUsage({
+      input: rawUsage.input_tokens,
+      output: rawUsage.output_tokens,
+      cached: rawUsage.input_tokens_details?.cached_tokens,
+      reasoning: rawUsage.output_tokens_details?.reasoning_tokens,
+      total: rawUsage.total_tokens,
+      raw: rawUsage,
+    });
+  }
+
   normalizeResponse(response) {
     // Handle both old format (array) and new format (object with output)
     const output = Array.isArray(response) ? response : response.output;
@@ -525,6 +552,7 @@ class OpenAIHandler extends BaseLLMHandler {
       content: output,
       model: response.model || this.model,
       responseId: responseId,
+      usage: response.usage || null,
       raw: response,
     };
   }

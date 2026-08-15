@@ -7,6 +7,7 @@ import { Event, EventSchema } from './event.model.js';
 import { Geofence, GeofenceSchema } from './geofence.model.js';
 import { Chat, ChatSchema } from './chat.model.js';
 import { ChatMessage, ChatMessageSchema } from './chatMessage.model.js';
+import { ChatUsage, ChatUsageSchema } from './chatUsage.model.js';
 import { MissionPlan, MissionPlanSchema } from './missionPlan.model.js';
 import { PositionHistory, PositionHistorySchema } from './positionHistory.model.js';
 import { ElementType, ElementTypeSchema } from './elementType.model.js';
@@ -26,6 +27,7 @@ export function setupModels(sequelize) {
   Geofence.init(GeofenceSchema, Geofence.config(sequelize));
   Chat.init(ChatSchema, Chat.config(sequelize));
   ChatMessage.init(ChatMessageSchema, ChatMessage.config(sequelize));
+  ChatUsage.init(ChatUsageSchema, ChatUsage.config(sequelize));
   PositionHistory.init(PositionHistorySchema, PositionHistory.config(sequelize));
   ElementType.init(ElementTypeSchema, ElementType.config(sequelize));
   ElementGroup.init(ElementGroupSchema, ElementGroup.config(sequelize));

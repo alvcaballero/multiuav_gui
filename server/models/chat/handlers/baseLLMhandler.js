@@ -1,6 +1,56 @@
 export const FORCE_FINISH_MESSAGE =
   'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.';
 
+/**
+ * Builds the canonical usage shape every handler must return.
+ * `raw` is kept verbatim so a bug in normalization never destroys the original numbers.
+ * @param {object} fields
+ * @returns {{input:number, output:number, cached:number, reasoning:number, total:number, raw:object|null}}
+ */
+export function makeUsage({ input = 0, output = 0, cached = 0, reasoning = 0, total = null, raw = null } = {}) {
+  const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  const inputTokens = n(input);
+  const outputTokens = n(output);
+  return {
+    input: inputTokens,
+    output: outputTokens,
+    cached: n(cached),
+    reasoning: n(reasoning),
+    total: total === null || total === undefined ? inputTokens + outputTokens : n(total),
+    raw,
+  };
+}
+
+/** Marker prefix that tells the model a message is a system-delivered subagent result. */
+export const SUBAGENT_RESULT_MARKER = '[SUBAGENT_RESULT]';
+
+/**
+ * Renders a canonical `subagent_result` payload as the plain text every provider
+ * receives. Subagents answer asynchronously, long after the parent's tool pair
+ * closed, so their result travels as an ordinary user-role message instead of a
+ * function_call_output — no provider has a protocol slot for a late tool reply.
+ *
+ * The envelope (agent/tool) is built from fields WE control; everything the
+ * subagent produced stays inside the fenced JSON, where a stray marker string
+ * cannot impersonate a new envelope.
+ *
+ * @param {object} item - Canonical subagent_result payload
+ * @returns {string} Text to hand to the provider
+ */
+export function renderSubagentResult(item) {
+  const agent = item.agentName || 'unknown';
+  const tool = item.name || 'unknown';
+  const output = typeof item.output === 'string' ? item.output : JSON.stringify(item.output ?? {});
+  return (
+    `${SUBAGENT_RESULT_MARKER} agent=${agent} tool=${tool}\n` +
+    'This is the result of a subagent you dispatched earlier, delivered by the ' +
+    'system. It is NOT a message from the user. Treat it as tool output.\n' +
+    '```json\n' +
+    output +
+    '\n```'
+  );
+}
+
 export class BaseLLMHandler {
   constructor(apiKey, model, systemPrompt = '') {
     this.apiKey = apiKey;
@@ -52,6 +102,18 @@ export class BaseLLMHandler {
    */
   normalizeResponse(_response) {
     throw new Error('normalizeResponse() debe ser implementado por la clase derivada');
+  }
+
+  /**
+   * Normaliza el conteo de tokens específico del proveedor al formato canónico.
+   * Cada proveedor nombra los campos distinto, así que las subclases lo sobreescriben.
+   * Los tokens de imagen NO se reportan aparte: todos los proveedores los suman
+   * dentro del conteo de prompt/input, así que ya vienen incluidos en `input`.
+   * @param {any} _rawUsage - Objeto de usage crudo de la respuesta del proveedor
+   * @returns {{input:number, output:number, cached:number, reasoning:number, total:number, raw:object}|null}
+   */
+  normalizeUsage(_rawUsage) {
+    return null;
   }
 
   /**

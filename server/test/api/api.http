@@ -290,17 +290,21 @@ GET http://localhost:4000/api/planning/missionparam/0
 ### get markers types
 GET http://localhost:4000/api/planning/getMarkersTypes
 
+### get bases
+GET http://localhost:4000/api/planning/getBases
+
 ### get markers
 GET http://localhost:4000/api/markers
 
 ### get bases with assigments
 GET http://localhost:4000/api/markers/bases/assigned
 
-### get bases
-GET http://localhost:4000/api/planning/getBases
-
 ### get elements
 GET http://localhost:4000/api/markers/items
+
+### get elements groups 
+
+GET http://localhost:4000/api/markers/groups
 
 ###
 POST  http://localhost:4000/api/missions/convert/geodetic-to-xyz
@@ -693,6 +697,15 @@ GET http://localhost:4000/api/chat/history/mission-planning-001
 
 ### historial chat inexistente
 GET http://localhost:4000/api/chat/history/chat-inexistente-xyz
+
+### tokens gastados en un chat (totales + desglose por turno)
+GET http://localhost:4000/api/chat/chats/default_http/usage
+
+### tokens gastados - solo totales + turnos, sin detalle por llamada
+GET http://localhost:4000/api/chat/chats/default_http/usage?detail=turns
+
+### tokens gastados - solo totales
+GET http://localhost:4000/api/chat/chats/default_http/usage?detail=totals
 
 ### renombrar chat - default
 PATCH http://localhost:4000/api/chat/chats/default_http

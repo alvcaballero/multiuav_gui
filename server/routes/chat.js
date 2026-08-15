@@ -15,6 +15,7 @@ chatRouter.post('/chats', chatController.createChat);
 chatRouter.delete('/chats/:chatId', chatController.deleteChat);
 chatRouter.patch('/chats/:chatId', chatController.renameChat);
 chatRouter.post('/chats/:chatId/fork', chatController.forkChat);
+chatRouter.get('/chats/:chatId/usage', chatController.getChatUsage);
 
 chatRouter.post('/subagents', chatController.createSubAgent);
 chatRouter.get('/subagents/:parentChatId', chatController.getSubAgentsStatus);

@@ -1,7 +1,22 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
+import { MESSAGE_ROLES, MESSAGE_TYPES } from '../../models/chat/messageProjection.js';
 
 const ChatMessage_TABLE = 'ChatMessage';
 
+/**
+ * A chat message row spans THREE independent layers. Read this before adding a
+ * column — most "we need a new field" questions are really "which layer is it?".
+ *
+ *  1. LLM PROTOCOL — how the provider (OpenAI/Anthropic/Gemini) sees the message.
+ *     `messageData` is the SOURCE OF TRUTH and the only thing replayed to the LLM.
+ *     `role` / `type` / `content` are DERIVED projections of it (messageProjection.js),
+ *     kept as flat columns solely so rows can be filtered in SQL and read by a human.
+ *  2. APPLICATION DOMAIN — `from`: who produced the message in OUR system
+ *     (main agent, a named sub-agent, the user, the system). Independent of `role`:
+ *     many distinct `from` values collapse onto the same protocol `role`, which is
+ *     exactly why the two cannot be merged.
+ *  3. LIFECYCLE / CONTEXT CONTROL — `status` and `hidden`.
+ */
 const ChatMessageSchema = {
   id: {
     allowNull: false,
@@ -15,27 +30,35 @@ const ChatMessageSchema = {
   },
   role: {
     allowNull: false,
-    type: DataTypes.STRING,
+    type: DataTypes.ENUM(...MESSAGE_ROLES),
+    defaultValue: 'unknown',
+    comment: 'DERIVED from messageData. LLM protocol vocabulary. Not the app-level sender — see `from`.',
   },
   from: {
     allowNull: false,
     type: DataTypes.STRING,
+    comment:
+      'SOURCE OF TRUTH for the application layer: who produced this message (user, main agent, a sub-agent id). Open vocabulary, N:1 onto `role`.',
   },
   type: {
-    type: DataTypes.STRING,
+    type: DataTypes.ENUM(...MESSAGE_TYPES),
     defaultValue: 'text',
+    comment: 'DERIVED from messageData.type. Exists to make payload kinds filterable in SQL (JSON columns are not).',
   },
   content: {
     type: DataTypes.TEXT,
     allowNull: true,
+    comment: 'DERIVED plain-text flattening of messageData, for search and human-readable debugging. Never replayed.',
   },
   messageData: {
     type: DataTypes.JSON,
     allowNull: true,
+    comment: 'SOURCE OF TRUTH: verbatim provider payload. This is what gets replayed to the LLM on history rebuild.',
   },
   status: {
     type: DataTypes.STRING,
     defaultValue: 'completed',
+    comment: 'Lifecycle of the message (completed, in_progress, error).',
   },
   timestamp: {
     allowNull: false,

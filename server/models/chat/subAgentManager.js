@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { chatLogger } from '../../common/logger.js';
-import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
 import { resolveAgentForChat, setAgentForChat, resolveAgent } from './agents/index.js';
 import { MessageOrchestrator } from './chat.js';
+import { buildSystemPrompt } from './turnContext.js';
+import { emitAssistantError } from './chatEvents.js';
 import { registerSubAgent, getSubAgent, updateSubAgentStatus, listSubAgentsForParent } from './subAgentRegistry.js';
 
 export class SubAgentManager {
@@ -45,51 +47,50 @@ export class SubAgentManager {
     });
 
     const agentDef = resolveAgent(agentType);
-    const baseContext = `- parent_chat_id: ${parentChatId}\n- secondary_chat_id: ${secondaryChatId}`;
-    const fullContext = contextInstructions ? `${baseContext}\n${contextInstructions}` : baseContext;
-
-    const systemPromptContent = `${agentDef.systemPrompt}\n---\nSession_context:\n${fullContext}\nMandatory: Maintain all the session context data accurately and unchanged the session.`;
+    const systemPromptContent = buildSystemPrompt({
+      systemPrompt: agentDef.systemPrompt,
+      contextLines: [`parent_chat_id: ${parentChatId}`],
+      // contextInstructions is free-form text the caller already formatted
+      extraContext: contextInstructions,
+      trailer: 'Mandatory: Maintain all the session context data accurately and unchanged the session.',
+    });
 
     await ChatHistoryManager.addMessage(secondaryChatId, 'system', { role: 'system', content: systemPromptContent });
 
     MessageOrchestrator.processMessage(secondaryChatId, userMessage).catch((error) => {
       chatLogger.error(`[createSubAgent] Background processing failed for ${secondaryChatId}:`, error);
       updateSubAgentStatus(secondaryChatId, 'error', { error: error.message });
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-        chatId: parentChatId,
-        from: 'assistant',
-        timestamp: new Date().toISOString(),
-        message: {
-          role: 'assistant',
-          content: `Error en subagente ${agentType}: ${error.message}`,
-          type: 'text',
-          status: 'error',
-        },
-      });
+      emitAssistantError(parentChatId, `Error en subagente ${agentType}: ${error.message}`);
     });
 
     return { secondaryChatId, msg: `Subagent ${agentType} started.` };
   }
 
   /**
-   * Injects the result of a subagent tool call into the main chat and resumes it.
-   * Replaces the placeholder tool_result for `toolName` in the main chat history,
-   * clears the provider session, and continues the conversation.
+   * Injects the result of a subagent into the parent chat and resumes it.
    *
-   * @param {string} chatId         - Main chat ID
-   * @param {string} toolName       - MCP tool name whose placeholder to replace (ignored if subAgentChatId resolves one)
+   * A subagent answers minutes after the parent's tool pair already closed, so the
+   * result is APPENDED as a new `subagent_result` message rather than back-patched
+   * into the original function_call_output. Appending keeps the history immutable
+   * (no hiding, no re-inserting, no rewriting the past) and makes N subagents in
+   * flight work for free — each one is just one more append.
+   *
+   * @param {string} chatId         - Parent chat ID
+   * @param {string} toolName       - MCP tool name this result answers to (ignored if subAgentChatId resolves one)
    * @param {string} status         - 'valid' | 'error' | 'incomplete'
    * @param {string} description    - Human-readable summary
-   * @param {Object} payload        - Data to embed in the tool result output
+   * @param {Object} payload        - Data to embed in the result output
    * @param {string} subAgentChatId - Subagent chat id; when given, its registered parentToolName
    *                                  is used instead of the explicit toolName, and its status is
    *                                  marked 'done'
    */
   static async injectSubAgentResponse({ chatId, toolName, status, description, payload = {}, subAgentChatId }) {
+    let agentName = null;
     if (subAgentChatId) {
       const subAgent = getSubAgent(subAgentChatId);
       if (subAgent?.parentToolName) {
         toolName = subAgent.parentToolName;
+        agentName = subAgent.agentType ?? null;
       } else {
         chatLogger.warn(
           `[injectSubAgentResponse] subAgentChatId ${subAgentChatId} not found in registry — falling back to passed toolName`
@@ -106,23 +107,20 @@ export class SubAgentManager {
       throw err;
     }
 
-    const newOutput = JSON.stringify({
-      content: [{ type: 'text', text: JSON.stringify({ status, description, ...payload }) }],
-    });
-    const newContent = `Tool result [${toolName}] [${status}]: ${description}`;
+    // Same convention as function_call_output: `output` is a JSON STRING, never an
+    // object. Everything the subagent controls (description, payload) lives inside
+    // that JSON, so it can never forge the envelope fields the handlers render.
+    const subagentResult = {
+      type: 'subagent_result',
+      from: 'subagent',
+      subAgentChatId: subAgentChatId ?? null,
+      agentName,
+      name: toolName,
+      output: JSON.stringify({ status, description, ...payload }),
+    };
 
-    const hidden = await ChatHistoryManager.hideAndReplaceToolResult(chatId, toolName, newOutput, newContent);
-
-    if (!hidden) {
-      chatLogger.warn(
-        `[injectSubAgentResponse] No ${toolName} tool_result found in chat ${chatId} — injecting as new message`
-      );
-      await ChatHistoryManager.addMessage(chatId, 'assistant', {
-        type: 'function_call_output',
-        name: toolName,
-        output: newOutput,
-      });
-    }
+    const chatItem = await ChatHistoryManager.addMessage(chatId, 'subagent', subagentResult);
+    MessageOrchestrator.emitAssistantMessage(chatItem);
 
     await ChatHistoryManager.clearSession(chatId);
 
@@ -132,71 +130,48 @@ export class SubAgentManager {
     const systemInstructions = agent.systemPrompt;
     chatLogger.info(`[injectSubAgentResponse] Agent: ${agent.name}, Tools: ${allowedTools?.join(', ')}`);
 
-    const history = await ChatHistoryManager.loadHistory(chatId);
-    const realToolResult = history.findLast(
-      (item) => item.message?.type === 'function_call_output' && item.message?.name === toolName
-    );
-    const toolResultForLLM = realToolResult?.message ?? {
-      type: 'function_call_output',
-      name: toolName,
-      output: newOutput,
-    };
-
-    // Emit the replaced function_call + tool_result via WebSocket
-    const callId = realToolResult?.message?.call_id;
-    if (callId) {
-      const pairedFunctionCall = history.findLast(
-        (item) =>
-          (item.message?.type === 'function_call' || item.message?.type === 'tool_call') &&
-          (item.message?.call_id === callId || item.message?.id === callId)
-      );
-      if (pairedFunctionCall) MessageOrchestrator.emitAssistantMessage(pairedFunctionCall);
-    }
-    if (realToolResult) MessageOrchestrator.emitAssistantMessage(realToolResult);
-
     if (subAgentChatId) updateSubAgentStatus(subAgentChatId, 'done');
 
+    // Resuming the parent chat is a new billable turn: everything the parent spends
+    // digesting the subagent's answer is grouped under this id.
+    const turnId = randomUUID();
+
+    // The result is already persisted above and replayed from history — passing it
+    // again as toolOutputs would deliver it twice to the provider.
     MessageOrchestrator.continueAfterTools(
-      [toolResultForLLM],
+      [],
       chatId,
       sessionId,
       systemInstructions,
       allowedTools,
       false,
       agent,
-      true
+      true,
+      { turnId, phase: 'subagent_resume', iteration: 0 }
     )
       .then(({ output }) => {
         const hasToolCalls = output.some((item) => item.type === 'function_call' || item.type === 'tool_call');
         if (hasToolCalls) {
-          const tools = MessageOrchestrator.getToolsForProvider(allowedTools);
-          return MessageOrchestrator.handleToolCallsLoop(
+          return MessageOrchestrator.runToolLoop(
             output,
-            tools,
             chatId,
-            sessionId,
-            systemInstructions,
-            allowedTools,
-            agent
+            {
+              tools: MessageOrchestrator.getToolsForProvider(allowedTools),
+              sessionId,
+              systemInstructions,
+              allowedTools,
+              agent,
+            },
+            { turnId }
           );
         }
       })
       .catch((err) => {
         chatLogger.error(`[injectSubAgentResponse] continueAfterTools failed for chat ${chatId}:`, err);
-        eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-          chatId,
-          from: 'assistant',
-          timestamp: new Date().toISOString(),
-          message: {
-            role: 'assistant',
-            content: `Error al procesar resultado del subagente: ${err.message}`,
-            type: 'text',
-            status: 'error',
-          },
-        });
+        emitAssistantError(chatId, `Error al procesar resultado del subagente: ${err.message}`);
       });
 
-    return { ok: true, msg: 'Subagent response injected. Main chat processing resumed.' };
+    return { ok: true, msg: 'Subagent response injected. Parent chat processing resumed.' };
   }
 
   /**

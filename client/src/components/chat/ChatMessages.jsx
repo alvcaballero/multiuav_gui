@@ -94,6 +94,31 @@ const convertMsg = (msg) => {
     };
   }
 
+  // Async subagent result appended to the chat. Rendered as its own kind so it
+  // never shows up as a user bubble — it arrives in the user turn, but the user
+  // did not write it.
+  if (msg.message.type === 'subagent_result') {
+    let output = msg.message.output;
+
+    if (typeof output === 'string') {
+      try {
+        output = JSON.parse(output);
+      } catch {
+        /* keep as string */
+      }
+    }
+
+    return {
+      role: 'assistant',
+      type: 'subagent_result',
+      content: output,
+      name: msg.message.name,
+      agentName: msg.message.agentName,
+      subAgentChatId: msg.message.subAgentChatId,
+      status: output?.status ?? status,
+    };
+  }
+
   if (msg.message.type === 'function_call_output') {
     let output = msg.message.output || msg.message.content;
 
@@ -309,7 +334,7 @@ const summaryStyle = {
 
 export const MessageBubble = memo(({ message, chatId }) => {
   const dispatch = useDispatch();
-  const { role, type, content, name, status } = convertMsg(message);
+  const { role, type, content, name, status, agentName } = convertMsg(message);
 
   const [contextMenu, setContextMenu] = useState(null);
 
@@ -485,6 +510,56 @@ export const MessageBubble = memo(({ message, chatId }) => {
               language="json"
               value={typeof content === 'object' ? JSON.stringify(content, null, 2) : content}
             />
+          </AccordionDetails>
+        </Accordion>
+      </ListItem>
+    );
+  }
+
+  // Async subagent result block. Same accordion vocabulary as a tool result —
+  // for the reader it IS a result — but labelled by the agent that produced it.
+  if (type === 'subagent_result') {
+    const subStatus = typeof content === 'object' ? content?.status : null;
+    const hasError = subStatus === 'error' || subStatus === 'incomplete';
+    const label = `Subagent: ${agentName || name || 'unknown'}${subStatus ? ` — ${subStatus}` : ''}`;
+
+    return (
+      <ListItem sx={{ mb: 1, display: 'block', px: 2 }}>
+        <Accordion sx={accordionStyle(hasError ? '#f44336' : '#7b1fa2')}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />} sx={summaryStyle}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: hasError ? '#d32f2f' : '#6a1b9a',
+                  fontWeight: 'bold',
+                  fontFamily: 'monospace',
+                  fontSize: '0.85rem',
+                }}
+              >
+                {label}
+              </Typography>
+              {timestampLabel && (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.disabled', fontSize: '0.65rem', ml: 'auto' }}
+                >
+                  {timestampLabel}
+                </Typography>
+              )}
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 1, pb: 1, pl: 2, pr: 1 }}>
+            {typeof content === 'object' && content?.description && (
+              <Typography variant="body2" sx={{ color: 'text.primary', mb: 1 }}>
+                {content.description}
+              </Typography>
+            )}
+            {(() => {
+              const formattedContent = formatMcpContent(content);
+              const language = detectContentLanguage(formattedContent);
+              return <CodeBlock language={language} value={formattedContent} />;
+            })()}
           </AccordionDetails>
         </Accordion>
       </ListItem>

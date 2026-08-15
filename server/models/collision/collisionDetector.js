@@ -14,9 +14,11 @@ import {
   obstacleAABB,
   obstacleCylinder,
   obstacleOBB,
-  obstacleCenter,
   distance3D,
   closestPointsBetweenSegments,
+  penetrationDepthOBB,
+  penetrationDepthCylinder,
+  interpolateSegment,
 } from './geometry.js';
 
 /**
@@ -44,7 +46,9 @@ import {
  * @property {string} zoneType - 'exclusion' | 'caution'
  * @property {number} segmentIndex - Index of colliding segment (start waypoint index)
  * @property {Point3D} collisionPoint - Approximate collision point
- * @property {number} penetrationDepth - How far into the zone (meters)
+ * @property {{xy: number, z: number}} penetrationDepth - How far into the zone, split into
+ *           horizontal (xy, distance to the nearest side wall) and vertical (z, distance to
+ *           the nearest floor/ceiling) so the shortest way out is clear (meters)
  * @property {Obstacle} obstacle - Full obstacle data
  */
 
@@ -71,7 +75,7 @@ import {
 const SAFETY_MARGINS = {
   EXCLUSION: 0, // safety_margin already includes the required clearance
   CAUTION_EXTRA: 5.0, // Extra margin beyond safety_margin that triggers a warning instead of a hard collision
-  WAYPOINT: 1.0, // Margin for waypoint position checks
+  WAYPOINT: 2.0, // Margin for waypoint position checks
 };
 
 // Defaults for UAV-to-UAV route crossing checks (independent from obstacle margins above)
@@ -94,6 +98,19 @@ function normalizePosition(pos) {
 }
 
 /**
+ * Margin to expand an obstacle's real geometry by for the CAUTION zone: its
+ * own safety_margin plus an extra buffer. The exclusion (hard collision) zone
+ * uses the real geometry alone - safety_margin is purely a caution/warning
+ * buffer, not part of what counts as a collision.
+ * @param {Obstacle} obstacle
+ * @param {number} extra - Additional margin on top of safety_margin (meters)
+ * @returns {number}
+ */
+function cautionMargin(obstacle, extra) {
+  return obstacle.safety_margin + extra;
+}
+
+/**
  * Check if a single waypoint collides with an obstacle
  * @param {Waypoint} waypoint
  * @param {Obstacle} obstacle
@@ -102,16 +119,16 @@ function normalizePosition(pos) {
 function checkWaypointCollision(waypoint, obstacle) {
   const pos = normalizePosition(waypoint.pos);
 
-  // First check AABB (fast rejection), expanded to the caution margin so we
-  // don't reject points that would only trigger a caution warning.
-  if (!pointInAABB(pos, obstacleAABB(obstacle, SAFETY_MARGINS.WAYPOINT), SAFETY_MARGINS.CAUTION_EXTRA)) {
+  // First check AABB (fast rejection), expanded to the full caution margin so
+  // we don't reject points that would only trigger a caution warning.
+  const maxCautionMargin = cautionMargin(obstacle, SAFETY_MARGINS.WAYPOINT + SAFETY_MARGINS.CAUTION_EXTRA);
+  if (!pointInAABB(pos, obstacleAABB(obstacle, maxCautionMargin))) {
     return null;
   }
 
   if (obstacle.geometry_type === 'rectangle') {
     const obb = obstacleOBB(obstacle, SAFETY_MARGINS.WAYPOINT);
     if (pointInOBB(pos, obb)) {
-      const center = obstacleCenter(obstacle);
       return {
         hasCollision: true,
         obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
@@ -119,13 +136,15 @@ function checkWaypointCollision(waypoint, obstacle) {
         zoneType: 'exclusion',
         segmentIndex: -1, // Single point, no segment
         collisionPoint: pos,
-        penetrationDepth: distance3D(pos, center), // approximate: distance to obstacle center
+        penetrationDepth: penetrationDepthOBB(pos, obb),
         obstacle,
       };
     }
-    const cautionObb = obstacleOBB(obstacle, SAFETY_MARGINS.WAYPOINT + SAFETY_MARGINS.CAUTION_EXTRA);
+    const cautionObb = obstacleOBB(
+      obstacle,
+      cautionMargin(obstacle, SAFETY_MARGINS.WAYPOINT + SAFETY_MARGINS.CAUTION_EXTRA)
+    );
     if (pointInOBB(pos, cautionObb)) {
-      const center = obstacleCenter(obstacle);
       return {
         hasCollision: false, // Caution is warning, not collision
         obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
@@ -133,7 +152,7 @@ function checkWaypointCollision(waypoint, obstacle) {
         zoneType: 'caution',
         segmentIndex: -1,
         collisionPoint: pos,
-        penetrationDepth: distance3D(pos, center),
+        penetrationDepth: penetrationDepthOBB(pos, cautionObb),
         obstacle,
       };
     }
@@ -141,7 +160,7 @@ function checkWaypointCollision(waypoint, obstacle) {
   }
 
   const exclusionCylinder = obstacleCylinder(obstacle, SAFETY_MARGINS.WAYPOINT);
-  if (pointInCylinder(pos, exclusionCylinder, SAFETY_MARGINS.EXCLUSION)) {
+  if (pointInCylinder(pos, exclusionCylinder)) {
     return {
       hasCollision: true,
       obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
@@ -149,13 +168,16 @@ function checkWaypointCollision(waypoint, obstacle) {
       zoneType: 'exclusion',
       segmentIndex: -1, // Single point, no segment
       collisionPoint: pos,
-      penetrationDepth: exclusionCylinder.radius - distance3D(pos, exclusionCylinder.center),
+      penetrationDepth: penetrationDepthCylinder(pos, exclusionCylinder),
       obstacle,
     };
   }
 
-  const cautionCylinder = obstacleCylinder(obstacle, SAFETY_MARGINS.WAYPOINT + SAFETY_MARGINS.CAUTION_EXTRA);
-  if (pointInCylinder(pos, cautionCylinder, SAFETY_MARGINS.EXCLUSION)) {
+  const cautionCylinder = obstacleCylinder(
+    obstacle,
+    cautionMargin(obstacle, SAFETY_MARGINS.WAYPOINT + SAFETY_MARGINS.CAUTION_EXTRA)
+  );
+  if (pointInCylinder(pos, cautionCylinder)) {
     return {
       hasCollision: false, // Caution is warning, not collision
       obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
@@ -163,7 +185,7 @@ function checkWaypointCollision(waypoint, obstacle) {
       zoneType: 'caution',
       segmentIndex: -1,
       collisionPoint: pos,
-      penetrationDepth: cautionCylinder.radius - distance3D(pos, cautionCylinder.center),
+      penetrationDepth: penetrationDepthCylinder(pos, cautionCylinder),
       obstacle,
     };
   }
@@ -187,9 +209,12 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
   let collision = null;
   let warning = null;
 
-  // Quick AABB rejection test, expanded to the caution margin so we don't
-  // reject segments that would only trigger a caution warning.
-  const aabbResult = segmentIntersectsAABB(segment, obstacleAABB(obstacle, SAFETY_MARGINS.CAUTION_EXTRA));
+  // Quick AABB rejection test, expanded to the full caution margin so we
+  // don't reject segments that would only trigger a caution warning.
+  const aabbResult = segmentIntersectsAABB(
+    segment,
+    obstacleAABB(obstacle, cautionMargin(obstacle, SAFETY_MARGINS.CAUTION_EXTRA))
+  );
   if (!aabbResult.intersects) {
     return { collision: null, warning: null };
   }
@@ -199,28 +224,37 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
     const exclusionResult = segmentIntersectsOBB(segment, obb);
 
     if (exclusionResult.intersects) {
+      // Deepest point along the segment's in-box span, used to measure how far
+      // the route actually cuts into the box rather than reporting a constant.
+      const deepestT = (exclusionResult.tMin + exclusionResult.tMax) / 2;
+      const deepestPoint = interpolateSegment(segment, deepestT);
       collision = {
         hasCollision: true,
         obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
         obstacleType: obstacle.geometry_type,
         zoneType: 'exclusion',
         segmentIndex,
-        collisionPoint: start,
-        penetrationDepth: obstacle.safety_margin,
+        collisionPoint: deepestPoint,
+        penetrationDepth: penetrationDepthOBB(deepestPoint, obb),
         obstacle,
       };
     } else {
-      const cautionObb = obstacleOBB(obstacle, SAFETY_MARGINS.EXCLUSION + SAFETY_MARGINS.CAUTION_EXTRA);
+      const cautionObb = obstacleOBB(
+        obstacle,
+        cautionMargin(obstacle, SAFETY_MARGINS.EXCLUSION + SAFETY_MARGINS.CAUTION_EXTRA)
+      );
       const cautionResult = segmentIntersectsOBB(segment, cautionObb);
       if (cautionResult.intersects) {
+        const deepestT = (cautionResult.tMin + cautionResult.tMax) / 2;
+        const deepestPoint = interpolateSegment(segment, deepestT);
         warning = {
           hasCollision: false,
           obstacleName: obstacle.obstacle_name ?? obstacle.obstacle_id,
           obstacleType: obstacle.geometry_type,
           zoneType: 'caution',
           segmentIndex,
-          collisionPoint: start,
-          penetrationDepth: obstacle.safety_margin,
+          collisionPoint: deepestPoint,
+          penetrationDepth: penetrationDepthOBB(deepestPoint, cautionObb),
           obstacle,
         };
       }
@@ -240,11 +274,14 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
       zoneType: 'exclusion',
       segmentIndex,
       collisionPoint: exclusionResult.closestPoint,
-      penetrationDepth: exclusionCylinder.radius - exclusionResult.distance,
+      penetrationDepth: penetrationDepthCylinder(exclusionResult.closestPoint, exclusionCylinder),
       obstacle,
     };
   } else {
-    const cautionCylinder = obstacleCylinder(obstacle, SAFETY_MARGINS.EXCLUSION + SAFETY_MARGINS.CAUTION_EXTRA);
+    const cautionCylinder = obstacleCylinder(
+      obstacle,
+      cautionMargin(obstacle, SAFETY_MARGINS.EXCLUSION + SAFETY_MARGINS.CAUTION_EXTRA)
+    );
     const cautionResult = segmentIntersectsCylinder(segment, cautionCylinder);
 
     if (cautionResult.intersects) {
@@ -255,7 +292,7 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
         zoneType: 'caution',
         segmentIndex,
         collisionPoint: cautionResult.closestPoint,
-        penetrationDepth: cautionCylinder.radius - cautionResult.distance,
+        penetrationDepth: penetrationDepthCylinder(cautionResult.closestPoint, cautionCylinder),
         obstacle,
       };
     }
@@ -550,10 +587,11 @@ export function findCollidingObstacles(start, end, obstacles) {
  */
 function formatCollisionEntry(c) {
   const point = `point=(${c.collisionPoint.x.toFixed(1)}, ${c.collisionPoint.y.toFixed(1)}, ${c.collisionPoint.z.toFixed(1)})`;
+  const penetration = `xy=${c.penetrationDepth.xy.toFixed(1)}m, z=${c.penetrationDepth.z.toFixed(1)}m`;
   if (c.zoneType === 'exclusion') {
-    return `  * Segment [${c.segmentIndex}]: Collision with ${c.obstacleName} at ${point} - Penetration: ${c.penetrationDepth.toFixed(1)}m`;
+    return `  * Segment [${c.segmentIndex}]: Collision with ${c.obstacleName} at ${point} - Penetration: ${penetration}`;
   }
-  return `  * Segment [${c.segmentIndex}]: Warning near ${c.obstacleName} at ${point} - Proximity: ${c.penetrationDepth.toFixed(1)}m`;
+  return `  * Segment [${c.segmentIndex}]: Warning near ${c.obstacleName} at ${point} - Proximity: ${penetration}`;
 }
 
 /**
@@ -635,4 +673,3 @@ export function formatMissionReport(missionResult) {
 
   return lines.join('\n');
 }
-

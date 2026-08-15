@@ -95,6 +95,33 @@ export class chatController {
     }
   }
 
+  /**
+   * GET /api/chat/chats/:chatId/usage
+   * Token usage at three levels: `requests` (one entry per LLM call — the raw
+   * numbers), `turns` (one per user message) and `totals` (whole chat).
+   * Query: ?detail=totals | turns | full (default). Use a narrower detail on
+   * long chats, where `requests` can be hundreds of entries.
+   */
+  static async getChatUsage(req, res) {
+    const { chatId } = req.params;
+    const { detail = 'full' } = req.query;
+
+    try {
+      const { totals, turns, requests } = await MessageOrchestrator.getUsage(chatId);
+      res.json({
+        chatId,
+        totals,
+        turnCount: turns.length,
+        requestCount: requests.length,
+        ...(detail === 'totals' ? {} : { turns }),
+        ...(detail === 'full' ? { requests } : {}),
+      });
+    } catch (error) {
+      logger.error('Error getting chat usage:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async deleteChat(req, res) {
     const { chatId } = req.params;
     const { hard } = req.query;

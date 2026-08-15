@@ -28,11 +28,11 @@ class EventBus extends EventEmitter {
     // Log de todos los eventos emitidos (útil para debugging)
     const originalEmit = this.emit.bind(this);
     this.emit = (eventName, ...args) => {
-      logger.debug('EventBus emit', {
-        eventName,
-        hasData: args.length > 0,
-        listeners: this.listenerCount(eventName),
-      });
+      // logger.debug('EventBus emit', {
+      //   eventName,
+      //   hasData: args.length > 0,
+      //   listeners: this.listenerCount(eventName),
+      // });
       return originalEmit(eventName, ...args);
     };
   }
