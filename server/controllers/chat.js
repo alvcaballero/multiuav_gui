@@ -194,10 +194,10 @@ export class chatController {
   }
 
   static async injectSubAgentResponse(req, res) {
-    const { toolName, status, description, payload, subAgentChatId } = req.body;
+    const { toolName, status, description, payload } = req.body;
     const { chatId } = req.params;
-    if (!chatId || (!toolName && !subAgentChatId)) {
-      return res.status(400).json({ error: 'chatId and (toolName or subAgentChatId) are required.' });
+    if (!chatId) {
+      return res.status(400).json({ error: 'chatId is required.' });
     }
     try {
       const result = await SubAgentManager.injectSubAgentResponse({
@@ -206,7 +206,6 @@ export class chatController {
         status,
         description,
         payload,
-        subAgentChatId,
       });
       res.json(result);
     } catch (error) {

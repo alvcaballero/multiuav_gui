@@ -179,16 +179,17 @@ export class ChatHistoryManager {
   /**
    * Create a new chat with server-generated UUID
    * @param {string} name - Optional chat name
+   * @param {Object} metadata - Optional initial metadata
    * @returns {Promise<object>} Created chat record
    */
-  static async createChat(name = null) {
+  static async createChat(name = null, metadata = {}) {
     const chatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const now = new Date();
 
     const chat = await sequelize.models.Chat.create({
       id: chatId,
       name: name,
-      metadata: {},
+      metadata,
       status: 'active',
       createdAt: now,
       updatedAt: now,

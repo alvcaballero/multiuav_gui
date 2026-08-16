@@ -559,11 +559,12 @@ export class MessageOrchestrator {
   /**
    * Crea un nuevo chat y devuelve su ID
    * @param {string} name - Nombre opcional del chat
+   * @param {Object} metadata - Metadata opcional inicial del chat
    * @returns {Promise<Object>} Chat creado con id, name, createdAt
    */
-  static async createChat(name = null) {
+  static async createChat(name = null, metadata = {}) {
     try {
-      const chat = await ChatHistoryManager.createChat(name);
+      const chat = await ChatHistoryManager.createChat(name, metadata);
       chatLogger.info(`Chat created: ${chat.id}`);
       return {
         id: chat.id,

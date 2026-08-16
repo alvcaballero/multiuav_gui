@@ -18,7 +18,14 @@ const registry = new Map();
  * @param {Object} [params.contextParams] - Fixed context data injected into the subagent's tool calls
  * @returns {Object} The registered record
  */
-export function registerSubAgent({ chatId, parentChatId, agentType, parentToolName, firstMessage, contextParams = {} }) {
+export function registerSubAgent({
+  chatId,
+  parentChatId,
+  agentType,
+  parentToolName,
+  firstMessage,
+  contextParams = {},
+}) {
   const now = new Date().toISOString();
   const record = {
     chatId,
@@ -42,7 +49,11 @@ export function registerSubAgent({ chatId, parentChatId, agentType, parentToolNa
  * @returns {Object|undefined}
  */
 export function getSubAgent(chatId) {
-  return registry.get(chatId);
+  let subAgent = registry.get(chatId);
+  if (!subAgent) {
+    chatLogger.warn(`[subAgentRegistry] getSubAgent: unknown chatId ${chatId}`);
+  }
+  return subAgent;
 }
 
 /**
