@@ -314,7 +314,6 @@ class OpenAIHandler extends BaseLLMHandler {
       }
 
       if (instructions) params.instructions = instructions;
-      if (forceFinish) params.input.push(forceFinishMessage());
     }
     // CASE 2: Using previous_response_id (legacy response chaining - backwards compatibility)
     else if (previousResponseId) {
@@ -334,7 +333,6 @@ class OpenAIHandler extends BaseLLMHandler {
       }
 
       if (instructions) params.instructions = instructions;
-      if (forceFinish) params.input.push(forceFinishMessage());
     }
     // CASE 3: First message or fallback (full history path)
     else {
@@ -350,8 +348,10 @@ class OpenAIHandler extends BaseLLMHandler {
       // Send system prompt as instructions (separate from input, like Gemini's systemInstruction)
       const systemText = instructions || this.systemPrompt;
       if (systemText) params.instructions = systemText;
-      if (forceFinish) params.input.push(forceFinishMessage());
     }
+
+    // Appended once regardless of which case built params.input above.
+    if (forceFinish) params.input.push(forceFinishMessage());
 
     chatLogger.info('tools');
     for (const tool of tools) {
