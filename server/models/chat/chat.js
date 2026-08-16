@@ -196,6 +196,14 @@ export class MessageOrchestrator {
   static async _runTurn(chatId, turnInput, ctx, meta) {
     const { turnId, phase, iteration, release } = meta;
 
+    // Read fresh HERE — before `_applyInput` persists this turn's own input below —
+    // so it never contains what this turn is about to write. That write travels
+    // separately via providerInput; reading it back from a later DB read would
+    // send it to the provider twice. (With a live session the provider keeps the
+    // conversation itself, so most handlers ignore this in the happy path — it
+    // only matters as their session-error fallback.)
+    const history = await ChatHistoryManager.loadHistory(chatId);
+
     const providerInput = await this._applyInput(chatId, turnInput);
 
     // forceFinish rides inside providerInput.items instead of a separate flag —
@@ -204,17 +212,6 @@ export class MessageOrchestrator {
     // _continueWithTools), so providerInput is always the 'tool_output' shape here.
     if (turnInput.forceFinish && providerInput?.type === 'tool_output') {
       providerInput.items = [...providerInput.items, forceFinishItem()];
-    }
-
-    // With a live session the provider keeps the conversation, so history is not
-    // resent. Without one it is the ONLY context the provider gets:
-    //  - 'user' uses the pre-message snapshot, because the message itself is sent
-    //    separately and would otherwise arrive twice;
-    //  - every other kind re-reads, since the snapshot predates the messages this
-    //    turn just wrote and replaying it would drop them.
-    let history = ctx.historySnapshot;
-    if (!ctx.sessionId && turnInput.kind !== 'user') {
-      history = await ChatHistoryManager.loadHistory(chatId);
     }
 
     const result = await llmHandler.processMessage(providerInput, ctx.tools, history, {
@@ -290,16 +287,17 @@ export class MessageOrchestrator {
     switch (turnInput.kind) {
       case 'user':
         await ChatHistoryManager.addMessage(chatId, 'user', { role: 'user', content: turnInput.content });
-        // historySnapshot was taken BEFORE this message, so it serves as full
-        // context on the no-session fallback path.
+        // The history _runTurn read is from BEFORE this message was persisted
+        // above, so it serves as full context on the no-session fallback path.
         return { type: 'message', content: turnInput.content };
 
       case 'subagent_result': {
         const chatItem = await ChatHistoryManager.addMessage(chatId, 'subagent', turnInput.message);
         this.emitAssistantMessage(chatItem);
-        // Replayed from history, never as an item: the parent's tool pair
-        // closed long ago, so there is no pending call for it to answer.
-        return null;
+        // Sent as its own turn item (like tool_output), not replayed from
+        // history: the parent's tool pair closed long ago, so there is no
+        // pending call for it to answer — it's a fresh user-role message.
+        return { type: 'subagent_result', message: turnInput.message };
       }
 
       case 'tool_output': {

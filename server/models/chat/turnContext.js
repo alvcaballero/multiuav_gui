@@ -36,9 +36,6 @@ export function buildSystemPrompt({ systemPrompt, contextLines = [], extraContex
  * Everything one turn needs to know, resolved once.
  *
  * This is a DTO, not a service: it holds data and has no business methods.
- * Resolution order matters and is encoded in `build()` — the system prompt
- * step both reads and seeds the history snapshot, so it must run after the
- * history is loaded and before the user message is persisted.
  */
 export class TurnContext {
   constructor(fields) {
@@ -57,7 +54,6 @@ export class TurnContext {
    * @returns {Promise<TurnContext>}
    */
   static async build(chatId, { allowedTools: optionsAllowedTools = null, getTools, llmHandler } = {}) {
-    const historySnapshot = await this._loadHistory(chatId);
     const persistence = ChatHistoryManager.getSessionPersistence();
 
     const agent = await resolveAgentForChat(chatId);
@@ -66,7 +62,7 @@ export class TurnContext {
 
     const tools = getTools(allowedTools);
     const sessionId = await this._resolveSession(chatId, persistence, llmHandler);
-    const systemInstructions = await this._resolveSystemPrompt(chatId, agent, historySnapshot);
+    const systemInstructions = await this._resolveSystemPrompt(chatId, agent);
 
     return new TurnContext({
       chatId,
@@ -75,25 +71,8 @@ export class TurnContext {
       tools,
       sessionId,
       systemInstructions,
-      historySnapshot,
       persistence,
     });
-  }
-
-  /**
-   * History snapshot taken BEFORE the user message is persisted, so it can
-   * serve as full context on the no-session fallback path.
-   * A DB failure degrades to an empty history rather than killing the turn.
-   */
-  static async _loadHistory(chatId) {
-    try {
-      const history = await ChatHistoryManager.loadHistory(chatId);
-      chatLogger.info(`📂 Loaded ${history.length} messages from DB for chat: ${chatId}`);
-      return history;
-    } catch (error) {
-      chatLogger.error('Error loading history from DB:', error);
-      return [];
-    }
   }
 
   /**
@@ -118,27 +97,32 @@ export class TurnContext {
    * Resolves the system instructions and keeps history and DB in sync.
    *
    * Two paths, mutually exclusive:
-   * - Empty history: the prompt is persisted and PUSHED INTO `historySnapshot`
-   *   (mutation is intentional — the caller's snapshot must contain it).
+   * - Empty history: this is a new chat, so the built prompt is persisted as
+   *   the first message.
    * - Existing history: the stored prompt wins, so a server restart or an
    *   agent definition edit can't silently change an ongoing conversation.
+   *
+   * A DB failure degrades to "treat as new chat" rather than killing the turn.
    */
-  static async _resolveSystemPrompt(chatId, agent, historySnapshot) {
+  static async _resolveSystemPrompt(chatId, agent) {
     let systemInstructions = buildSystemPrompt({
       systemPrompt: agent.systemPrompt,
       contextLines: [`session_chat_id: ${chatId}`],
     });
 
-    if (historySnapshot.length === 0 && systemInstructions) {
-      const systemItem = await ChatHistoryManager.addMessage(chatId, 'system', {
-        role: 'system',
-        content: systemInstructions,
-      });
-      historySnapshot.push(systemItem);
+    let history = [];
+    try {
+      history = await ChatHistoryManager.loadHistory(chatId);
+    } catch (error) {
+      chatLogger.error('Error loading history from DB:', error);
+    }
+
+    if (history.length === 0 && systemInstructions) {
+      await ChatHistoryManager.addMessage(chatId, 'system', { role: 'system', content: systemInstructions });
       return systemInstructions;
     }
 
-    const systemMsg = historySnapshot.find((item) => (item.message || item).role === 'system');
+    const systemMsg = history.find((item) => (item.message || item).role === 'system');
     if (systemMsg) {
       systemInstructions = (systemMsg.message || systemMsg).content;
     }
