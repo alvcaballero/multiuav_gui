@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { BaseLLMHandler, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -160,12 +160,15 @@ class AnthropicHandler extends BaseLLMHandler {
    * Processes a message following the same interface as OpenAIHandler.
    * Returns { output: Array, responseId: string|null, model: string, status: string }
    */
-  async processMessage(message = null, tools = [], conversationHistory = [], options = {}) {
+  async processMessage(turnInput = null, tools = [], conversationHistory = [], options = {}) {
     if (!this.client) {
       throw new Error('Anthropic client not initialized');
     }
 
-    const { instructions = null, toolOutputs = null, allowedTools = null, forceFinish = false, agent = null } = options;
+    const { instructions = null, allowedTools = null, agent = null } = options;
+    const message = turnInput?.type === 'message' ? turnInput.content : null;
+    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
@@ -200,8 +203,8 @@ class AnthropicHandler extends BaseLLMHandler {
       // Same user-role delivery as the other providers: Anthropic requires the
       // tool_result blocks and any accompanying text to share ONE user message,
       // so the directive rides along as a text block instead of its own entry.
-      if (forceFinish) {
-        toolResultContent.push({ type: 'text', text: FORCE_FINISH_MESSAGE });
+      if (directive) {
+        toolResultContent.push({ type: 'text', text: directive.content });
       }
 
       messages.push({ role: 'user', content: toolResultContent });

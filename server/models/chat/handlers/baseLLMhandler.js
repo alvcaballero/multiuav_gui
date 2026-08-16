@@ -19,13 +19,16 @@ export const FORCE_FINISH_MESSAGE =
   'Summarize what was accomplished and present the results to the user.';
 
 /**
- * The force-finish directive as a provider-agnostic message object.
- * Anthropic needs it as a content block instead — see its handler.
+ * The force-finish directive as a turn-input item, ready to be appended to a
+ * `tool_output` turnInput's `items` array by the orchestrator. Each handler
+ * picks it out of `items` (by `type`) and inserts it wherever its provider's
+ * API requires — merged into the same content array for Anthropic, as a
+ * separate message for the rest. See each handler's processMessage.
  *
- * @returns {{role: string, content: string}}
+ * @returns {{type: 'directive', role: string, content: string}}
  */
-export function forceFinishMessage() {
-  return { role: 'user', content: FORCE_FINISH_MESSAGE };
+export function forceFinishItem() {
+  return { type: 'directive', role: 'user', content: FORCE_FINISH_MESSAGE };
 }
 
 /**
@@ -99,8 +102,11 @@ export class BaseLLMHandler {
   }
 
   /**
-   * Procesa un mensaje y retorna la respuesta
-   * @param {string} message - Mensaje del usuario (null para continuación de tool calls)
+   * Procesa un turno y retorna la respuesta.
+   * @param {?{type: 'message', content: *}|{type: 'tool_output', items: Array}} turnInput - Contenido del
+   *   turno, o null para continuar puramente desde el historial persistido (p.ej. subagent_result).
+   *   Un item de `tool_output.items` con `type: 'directive'` es la instrucción de force-finish —
+   *   ver `forceFinishItem()` — y cada handler decide dónde insertarla según su API.
    * @param {Array} tools - Herramientas disponibles
    * @param {Array} conversationHistory - Historial de conversación
    * @param {Object} options - Opciones adicionales para el procesamiento
@@ -108,7 +114,7 @@ export class BaseLLMHandler {
    * @param {string} options.instructions - Instrucciones del sistema (necesarias al usar previousResponseId)
    * @returns {Promise<Object>} Respuesta del LLM con formato { output: Array, responseId: string, model: string, status: string }
    */
-  async processMessage(message, _tools = [], _conversationHistory = [], _options = {}) {
+  async processMessage(turnInput, _tools = [], _conversationHistory = [], _options = {}) {
     throw new Error('processMessage() debe ser implementado por la clase derivada');
   }
 

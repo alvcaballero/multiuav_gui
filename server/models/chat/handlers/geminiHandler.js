@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { BaseLLMHandler, forceFinishMessage, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { BaseLLMHandler, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { logger, chatLogger } from '../../../common/logger.js';
 
@@ -267,12 +267,15 @@ class GeminiHandler extends BaseLLMHandler {
    * Processes a message following the same interface as OpenAIHandler.
    * Returns { output: Array, responseId: string|null, model: string, status: string }
    */
-  async processMessage(message = null, tools = [], conversationHistory = [], options = {}) {
+  async processMessage(turnInput = null, tools = [], conversationHistory = [], options = {}) {
     if (!this.client) {
       throw new Error('Gemini client not initialized');
     }
 
-    const { instructions = null, toolOutputs = null, allowedTools = null, forceFinish = false, agent = null } = options;
+    const { instructions = null, allowedTools = null, agent = null } = options;
+    const message = turnInput?.type === 'message' ? turnInput.content : null;
+    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
@@ -305,8 +308,7 @@ class GeminiHandler extends BaseLLMHandler {
       }
       contents.push({ role: 'user', parts: functionResponses });
 
-      if (forceFinish) {
-        const directive = forceFinishMessage();
+      if (directive) {
         contents.push({ role: directive.role, parts: [{ text: directive.content }] });
       }
     } else if (message !== null) {

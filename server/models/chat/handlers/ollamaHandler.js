@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama';
-import { BaseLLMHandler, forceFinishMessage, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { BaseLLMHandler, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -166,12 +166,15 @@ class OllamaHandler extends BaseLLMHandler {
   /**
    * Processes a message following the same interface as the other handlers.
    */
-  async processMessage(message = null, tools = [], conversationHistory = [], options = {}) {
+  async processMessage(turnInput = null, tools = [], conversationHistory = [], options = {}) {
     if (!this.client) {
       throw new Error('Ollama client not initialized');
     }
 
-    const { instructions = null, toolOutputs = null, allowedTools = null, forceFinish = false, agent = null } = options;
+    const { instructions = null, allowedTools = null, agent = null } = options;
+    const message = turnInput?.type === 'message' ? turnInput.content : null;
+    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
@@ -190,8 +193,8 @@ class OllamaHandler extends BaseLLMHandler {
       for (const output of toolOutputs) {
         messages.push(this.convertToolOutput(output));
       }
-      if (forceFinish) {
-        messages.push(forceFinishMessage());
+      if (directive) {
+        messages.push({ role: directive.role, content: directive.content });
       }
     }
     // Prepend system prompt only if not already present in conversation history

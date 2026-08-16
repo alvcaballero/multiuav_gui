@@ -39,6 +39,7 @@ const _sequelize = (await import('../common/sequelize.js')).default;
 const { encode } = await import('@toon-format/toon');
 const { decode } = await import('@toon-format/toon');
 const { LLMApiKeys, LLMProvider } = await import('../config/config.js');
+const { forceFinishItem } = await import('../models/chat/handlers/baseLLMhandler.js');
 
 // ═══════════════════════════════════════════════════════════════════
 // Paths & fixtures
@@ -183,11 +184,16 @@ Use the validate_mission tool with the mission and collision_objects data. If co
   let historySnapshot = await ChatHistoryManager.loadHistory(chatId);
 
   // First LLM call with user message
-  let result = await llmHandler.processMessage(userMessage, filteredTools, historySnapshot, {
-    sessionId,
-    instructions: systemPromptContent,
-    agentProfile: 'planner',
-  });
+  let result = await llmHandler.processMessage(
+    { type: 'message', content: userMessage },
+    filteredTools,
+    historySnapshot,
+    {
+      sessionId,
+      instructions: systemPromptContent,
+      agentProfile: 'planner',
+    }
+  );
 
   // Persist assistant output
   for (const res of result.output) {
@@ -258,11 +264,13 @@ Use the validate_mission tool with the mission and collision_objects data. If co
     const continueHistory = sessionId ? [] : await ChatHistoryManager.loadHistory(chatId);
     const continueTools = isLastIteration ? [] : filteredTools;
 
-    result = await llmHandler.processMessage(null, continueTools, continueHistory, {
+    const toolOutputInput = {
+      type: 'tool_output',
+      items: isLastIteration ? [...toolResults, forceFinishItem()] : toolResults,
+    };
+    result = await llmHandler.processMessage(toolOutputInput, continueTools, continueHistory, {
       sessionId,
       instructions: systemPromptContent,
-      toolOutputs: toolResults,
-      forceFinish: isLastIteration,
       agentProfile: 'planner',
     });
 

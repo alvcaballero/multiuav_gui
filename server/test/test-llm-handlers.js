@@ -270,7 +270,7 @@ describe('GeminiHandler', () => {
     const handler = new GeminiHandler(FAKE_KEY);
     await handler.initialize();
     await assert.rejects(
-      () => handler.processMessage('test', [], [], {}),
+      () => handler.processMessage({ type: 'message', content: 'test' }, [], [], {}),
       (err) => err.message.includes('API key')
     );
   });
@@ -396,7 +396,7 @@ describe('AnthropicHandler', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
     await handler.initialize();
     await assert.rejects(
-      () => handler.processMessage('test', [], [], {}),
+      () => handler.processMessage({ type: 'message', content: 'test' }, [], [], {}),
       (err) => err.message.includes('authentication') || err.message.includes('api-key') || err.status === 401
     );
   });
@@ -534,7 +534,7 @@ describe('Integration - real API smoke test', () => {
 
     let result;
     try {
-      result = await handler.processMessage(prompt, [], [], {});
+      result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
     } catch (err) {
       if (err.message?.includes('credit') || err.message?.includes('quota') || err.status === 429) {
         t.skip('OpenAI API billing/quota issue: ' + err.message.substring(0, 80));
@@ -557,7 +557,7 @@ describe('Integration - real API smoke test', () => {
 
     let result;
     try {
-      result = await handler.processMessage(prompt, [], [], {});
+      result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
     } catch (err) {
       if (err.message?.includes('credit') || err.message?.includes('quota') || err.status === 429) {
         t.skip('Gemini API billing/quota issue: ' + err.message.substring(0, 80));
@@ -584,7 +584,7 @@ describe('Integration - real API smoke test', () => {
 
       let result;
       try {
-        result = await handler.processMessage(prompt, [], [], {});
+        result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
       } catch (err) {
         // Skip on billing/quota errors — key is valid but account has no credits
         if (err.message?.includes('credit balance') || err.message?.includes('rate limit') || err.status === 429) {
@@ -610,7 +610,7 @@ describe('Integration - real API smoke test', () => {
 
     let result;
     try {
-      result = await handler.processMessage(prompt, [], [], {});
+      result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
     } catch (err) {
       if (err.message?.includes('ECONNREFUSED') || err.message?.includes('fetch failed')) {
         t.skip('Ollama not reachable: ' + err.message.substring(0, 80));

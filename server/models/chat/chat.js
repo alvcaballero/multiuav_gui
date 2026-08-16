@@ -7,6 +7,7 @@ import { TurnContext } from './turnContext.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
 import { emitAssistantError, emitAssistantMessage, emitChatBusy } from './chatEvents.js';
 import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
+import { forceFinishItem } from './handlers/baseLLMhandler.js';
 
 let mcpClient = null;
 let llmHandler = null;
@@ -195,7 +196,15 @@ export class MessageOrchestrator {
   static async _runTurn(chatId, turnInput, ctx, meta) {
     const { turnId, phase, iteration, release } = meta;
 
-    const { message, toolOutputs } = await this._applyInput(chatId, turnInput);
+    const providerInput = await this._applyInput(chatId, turnInput);
+
+    // forceFinish rides inside providerInput.items instead of a separate flag —
+    // each handler picks the 'directive' item out and inserts it wherever its
+    // API requires. Only a tool_output turn ever sets forceFinish (see
+    // _continueWithTools), so providerInput is always the 'tool_output' shape here.
+    if (turnInput.forceFinish && providerInput?.type === 'tool_output') {
+      providerInput.items = [...providerInput.items, forceFinishItem()];
+    }
 
     // With a live session the provider keeps the conversation, so history is not
     // resent. Without one it is the ONLY context the provider gets:
@@ -208,12 +217,10 @@ export class MessageOrchestrator {
       history = await ChatHistoryManager.loadHistory(chatId);
     }
 
-    const result = await llmHandler.processMessage(message, ctx.tools, history, {
+    const result = await llmHandler.processMessage(providerInput, ctx.tools, history, {
       sessionId: ctx.sessionId,
       instructions: ctx.systemInstructions,
       agent: ctx.agent,
-      toolOutputs,
-      forceFinish: turnInput.forceFinish ?? false,
     });
 
     const { output, responseId } = await this._persistTurnResult(chatId, result, ctx, {
@@ -275,7 +282,9 @@ export class MessageOrchestrator {
    * what removed the old `skipPersist` flag, which existed only because the
    * subagent path wrote its message somewhere else first.
    *
-   * @returns {Promise<{message: *, toolOutputs: Array|null}>}
+   * @returns {Promise<?{type: 'message', content: *}|{type: 'tool_output', items: Array}>} What
+   *   `llmHandler.processMessage` receives as its first argument. `null` means "nothing new to
+   *   send — continue purely from the persisted history".
    */
   static async _applyInput(chatId, turnInput) {
     switch (turnInput.kind) {
@@ -283,14 +292,14 @@ export class MessageOrchestrator {
         await ChatHistoryManager.addMessage(chatId, 'user', { role: 'user', content: turnInput.content });
         // historySnapshot was taken BEFORE this message, so it serves as full
         // context on the no-session fallback path.
-        return { message: turnInput.content, toolOutputs: null };
+        return { type: 'message', content: turnInput.content };
 
       case 'subagent_result': {
         const chatItem = await ChatHistoryManager.addMessage(chatId, 'subagent', turnInput.message);
         this.emitAssistantMessage(chatItem);
-        // Replayed from history, never as toolOutputs: the parent's tool pair
+        // Replayed from history, never as an item: the parent's tool pair
         // closed long ago, so there is no pending call for it to answer.
-        return { message: null, toolOutputs: null };
+        return null;
       }
 
       case 'tool_output': {
@@ -298,7 +307,7 @@ export class MessageOrchestrator {
           const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
           this.emitAssistantMessage(chatItem);
         }
-        return { message: null, toolOutputs: turnInput.results };
+        return { type: 'tool_output', items: turnInput.results };
       }
 
       default:

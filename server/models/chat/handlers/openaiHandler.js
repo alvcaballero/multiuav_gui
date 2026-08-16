@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { BaseLLMHandler, forceFinishMessage, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { BaseLLMHandler, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -250,7 +250,7 @@ class OpenAIHandler extends BaseLLMHandler {
     return { msgType, responseMsg, toolCalls };
   }
 
-  async processMessage(message = null, tools = [], conversationHistory = [], options = {}) {
+  async processMessage(turnInput = null, tools = [], conversationHistory = [], options = {}) {
     if (!this.client) {
       throw new Error('OpenAI client not initialized');
     }
@@ -259,11 +259,12 @@ class OpenAIHandler extends BaseLLMHandler {
       sessionId = null, // Provider session ID (e.g., OpenAI conversation ID)
       previousResponseId = null, // DEPRECATED: Response chaining (kept for backwards compatibility)
       instructions = null,
-      toolOutputs = null,
       allowedTools = null, // list of allowed tool names for this call
-      forceFinish = false, // force final response with system message
       agent = null, // Full agent object from resolveAgentForChat
     } = options;
+    const message = turnInput?.type === 'message' ? turnInput.content : null;
+    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     chatLogger.info(
       `Processing message with OpenAIHandler (sessionId: ${sessionId ? sessionId.substring(0, 20) + '...' : 'none'}, previousResponseId: ${previousResponseId ? previousResponseId.substring(0, 20) + '...' : 'none'}, tools: ${tools.length}, conversationHistory: ${conversationHistory.length} messages)`
@@ -351,7 +352,7 @@ class OpenAIHandler extends BaseLLMHandler {
     }
 
     // Appended once regardless of which case built params.input above.
-    if (forceFinish) params.input.push(forceFinishMessage());
+    if (directive) params.input.push({ role: directive.role, content: directive.content });
 
     chatLogger.info('tools');
     for (const tool of tools) {
@@ -420,11 +421,10 @@ class OpenAIHandler extends BaseLLMHandler {
       // If sessionId fails (expired, not found, or missing tool outputs), try to recreate or fall back
       if (sessionId && (this._isConversationError(error) || this._isResponseIdError(error))) {
         chatLogger.warn(`sessionId failed (${error.message}), falling back to full history`);
-        const result = await this.processMessage(message, tools, conversationHistory, {
+        const result = await this.processMessage(turnInput, tools, conversationHistory, {
           sessionId: null,
           previousResponseId: null,
           instructions,
-          toolOutputs,
         });
         result.sessionCleared = true; // Signal for handleSessionError to recreate
         return result;
@@ -433,11 +433,10 @@ class OpenAIHandler extends BaseLLMHandler {
       // If previous_response_id fails (expired, not found, missing tool outputs), fall back to full history
       if (previousResponseId && this._isResponseIdError(error)) {
         chatLogger.warn(`previous_response_id failed (${error.message}), falling back to full history`);
-        const result = await this.processMessage(message, tools, conversationHistory, {
+        const result = await this.processMessage(turnInput, tools, conversationHistory, {
           sessionId: null,
           previousResponseId: null,
           instructions,
-          toolOutputs,
         });
         result.responseIdCleared = true; // Signal to clear stored responseId
         return result;
