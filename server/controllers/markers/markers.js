@@ -23,7 +23,14 @@ export class markersController {
   }
 
   static async getElements(req, res) {
-    const { elements } = await markersModel.getMarkers();
+    const { groupIds } = req.query;
+    const parsedGroupIds = groupIds
+      ? String(groupIds)
+          .split(',')
+          .map((id) => Number(id.trim()))
+          .filter((id) => !Number.isNaN(id))
+      : undefined;
+    const { elements } = await markersModel.getMarkers({ groupIds: parsedGroupIds });
     res.json(elements);
   }
 

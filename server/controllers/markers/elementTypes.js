@@ -18,6 +18,16 @@ const storage = multer.diskStorage({
 
 export const upload = multer({ storage });
 
+export function setIconAssetType(req, res, next) {
+  req.assetType = 'icon';
+  next();
+}
+
+export function setModelAssetType(req, res, next) {
+  req.assetType = 'model';
+  next();
+}
+
 export const elementTypesController = {
   async getAll(req, res) {
     try {

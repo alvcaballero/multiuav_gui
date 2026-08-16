@@ -2,6 +2,7 @@
 // (ElementGroup/ElementItem/Base/Assignment). Exposes the legacy YAML-shaped
 // `{markersbase, elements}` blob — still what the client/planner speak — the
 // wire format doesn't change, only where the data actually lives.
+import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
 import { logger } from '../../common/logger.js';
 
@@ -50,10 +51,17 @@ export const markersModel = {
   // ─── Marker instances (bases + elements) ─────────────────────────────────
 
   // Legacy shape: { markersbase: [...], elements: [...] }
-  async getMarkers() {
+  // `groupIds`, when given, restricts `elements` to those groups only —
+  // used by get_registered_objects (mcp_server) to avoid dumping every
+  // registered group into the LLM's context at once.
+  async getMarkers({ groupIds } = {}) {
+    const groupWhere = { deletedAt: null };
+    if (Array.isArray(groupIds) && groupIds.length > 0) {
+      groupWhere.id = { [Op.in]: groupIds };
+    }
     const [groups, bases] = await Promise.all([
       sequelize.models.ElementGroup.findAll({
-        where: { deletedAt: null },
+        where: groupWhere,
         include: [{ model: sequelize.models.ElementItem, as: 'items' }],
       }),
       sequelize.models.Base.findAll(),

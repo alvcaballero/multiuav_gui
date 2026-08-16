@@ -296,6 +296,12 @@ GET http://localhost:4000/api/planning/getBases
 ### get markers
 GET http://localhost:4000/api/markers
 
+### get markers
+GET http://localhost:4000/api/markers/elements?groupIds=1,2
+
+### get bases with assigments
+GET http://localhost:4000/api/markers/bases/
+
 ### get bases with assigments
 GET http://localhost:4000/api/markers/bases/assigned
 
