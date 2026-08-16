@@ -125,21 +125,36 @@ describe('mission_schema ↔ PSDK — symbol translation', () => {
   // value and the PSDK number need NOT coincide (e.g. mode_turn): the SYMBOL is the
   // bridge. We assert the catalog value resolves to its declared symbol, and that
   // symbol is mappable by the encoder.
-  for (const param of ['mode_yaw', 'mode_trace', 'mode_landing', 'mode_turn']) {
+  //
+  // NOTE: mode_turn is excluded here — its catalog AUTO symbol is intentionally not
+  // an identity mapping to a real firmware output (see the dedicated test below and
+  // 'a waypoint without turn falls back to the catalog default').
+  //
+  // We only assert over the options a PSDK category actually exposes (post
+  // per-family filtering via categoryModel), not the raw catalog: options a family
+  // doesn't support (e.g. mode_landing's MISSION_FINISHED_VISUAL_LANDING, which is
+  // ConfigMission-only) are filtered out before reaching the UI/encoder, so the
+  // PSDK encoder is never expected to map them.
+  const PSDK_CATEGORY = 'dji_M300_PSDK';
+  for (const param of ['mode_yaw', 'mode_trace', 'mode_landing']) {
     test(`${param}: value → symbol matches the catalog key, and symbol maps to a number`, () => {
-      for (const opt of modeDef(param).options) {
-        const symbol = categoryModel.symbolForValue(param, opt.value);
-        assert.equal(symbol, opt.key, `${param}=${opt.value} should resolve to ${opt.key}`);
+      const options = categoryModel.getAtributesParam({ type: PSDK_CATEGORY, param });
+      assert.ok(options.length > 0, `${param} should expose at least one PSDK option`);
+      for (const opt of options) {
+        const symbol = categoryModel.symbolForValue(param, opt.id);
+        assert.equal(symbol, modeDef(param).options.find((o) => o.value === opt.id).key);
         const firmwareNum = toPsdkValue(param, symbol);
         assert.ok(Number.isInteger(firmwareNum), `${param} ${symbol} should map to a firmware number`);
       }
     });
   }
 
-  test('every catalog mode symbol is mapped by the PSDK encoder', () => {
-    for (const param of ['mode_yaw', 'mode_trace', 'mode_landing', 'mode_turn']) {
-      for (const opt of modeDef(param).options) {
-        assert.doesNotThrow(() => toPsdkValue(param, opt.key), `encoder missing mapping for ${opt.key}`);
+  test('every PSDK-supported mode symbol is mapped by the PSDK encoder', () => {
+    for (const param of ['mode_yaw', 'mode_trace', 'mode_landing']) {
+      const options = categoryModel.getAtributesParam({ type: PSDK_CATEGORY, param });
+      for (const opt of options) {
+        const symbol = categoryModel.symbolForValue(param, opt.id);
+        assert.doesNotThrow(() => toPsdkValue(param, symbol), `encoder missing mapping for ${symbol}`);
       }
     }
   });
@@ -297,8 +312,17 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
       msg: route,
       msgType: 'psdk_interfaces/srv/InitWaypointV2Setting',
     });
+    // The catalog default resolves to the TURN_MODE_AUTO symbol, but AUTO is never
+    // itself a valid firmware output (see 'mode_turn is intentionally NOT identity'):
+    // the encoder auto-picks CW/CCW to minimize the turn arc. With no action.yaw and
+    // mode_yaw at its default (AUTO, not WAYPOINT_CUSTOM), no auto-resolution branch
+    // fires and the encoder's initial value (CW) is what's emitted.
     const defaultTurnSymbol = categoryModel.symbolForValue('mode_turn', schema.waypoint_params.mode_turn.default);
-    assert.equal(result.waypoint_v2_init_settings.mission[0].turn_mode, toPsdkValue('mode_turn', defaultTurnSymbol));
+    assert.equal(defaultTurnSymbol, 'TURN_MODE_AUTO');
+    assert.equal(
+      result.waypoint_v2_init_settings.mission[0].turn_mode,
+      toPsdkValue('mode_turn', 'TURN_MODE_CLOCKWISE')
+    );
   });
 });
 

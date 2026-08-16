@@ -171,12 +171,11 @@ describe('GeminiHandler', () => {
     assert.ok(handler.client);
   });
 
-  it('has agent profiles', () => {
+  it('resolves model config per capability tier', () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const def = handler.getAgentProfile('default');
-    const plan = handler.getAgentProfile('planner');
-    assert.equal(def.model, 'gemini-2.5-flash');
-    assert.equal(plan.model, 'gemini-2.5-flash');
+    assert.equal(handler.resolveModelConfig({ capability: 'low' }).model, 'gemini-2.5-flash');
+    assert.equal(handler.resolveModelConfig({ capability: 'medium' }).model, 'gemini-2.5-pro');
+    assert.equal(handler.resolveModelConfig({ capability: 'high' }).model, 'gemini-3-flash-preview');
   });
 
   it('converts tools to functionDeclarations with parametersJsonSchema', () => {
@@ -299,12 +298,12 @@ describe('AnthropicHandler', () => {
     assert.ok(handler.client);
   });
 
-  it('has agent profiles', () => {
+  it('resolves model config per capability tier', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const def = handler.getAgentProfile('default');
-    const plan = handler.getAgentProfile('planner');
-    assert.ok(def.model);
-    assert.ok(plan.maxTokens > 4096);
+    const low = handler.resolveModelConfig({ capability: 'low' });
+    const high = handler.resolveModelConfig({ capability: 'high' });
+    assert.ok(low.model);
+    assert.ok(high.maxTokens > 4096);
   });
 
   it('converts tools to Anthropic input_schema format', () => {
@@ -420,7 +419,7 @@ describe('OllamaHandler', () => {
 
   it('sets default model', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    assert.equal(handler.model, 'llama3.2');
+    assert.equal(handler.model, 'glm-4.7-flash');
   });
 
   it('initializes client', async () => {
@@ -430,12 +429,10 @@ describe('OllamaHandler', () => {
     assert.ok(handler.client);
   });
 
-  it('has agent profiles', () => {
+  it('resolves model config per capability tier', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const def = handler.getAgentProfile('default');
-    const plan = handler.getAgentProfile('planner');
-    assert.equal(def.model, 'llama3.2');
-    assert.equal(plan.model, 'llama3.2');
+    assert.equal(handler.resolveModelConfig({ capability: 'low' }).model, 'glm-4.7-flash');
+    assert.equal(handler.resolveModelConfig({ capability: 'high' }).model, 'glm-4.7-flash');
   });
 
   it('converts tools to OpenAI-compatible format', () => {

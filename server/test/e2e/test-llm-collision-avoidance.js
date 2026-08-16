@@ -14,7 +14,7 @@
  * - OpenAI API key in .env (LLM_OPENAI_API_KEY)
  * - SQLite DB accessible (data/sequelize.sqlite)
  *
- * Run: cd multiuav_gcs/server && node test/test-llm-collision-avoidance.js
+ * Run: cd multiuav_gcs/server && node test/e2e/test-llm-collision-avoidance.js
  */
 
 import { readFileSync } from 'fs';
@@ -35,6 +35,7 @@ process.env.LLM = 'true';
 const { MCPclient } = await import('../models/chat/mcpClient.js');
 const { LLMFactory } = await import('../models/chat/handlers/llmFactory.js');
 const { ChatHistoryManager } = await import('../models/chat/chatHistoryManager.js');
+const { setAgentForChat, resolveAgentForChat, resolveAgent } = await import('../models/chat/agents/index.js');
 const _sequelize = (await import('../common/sequelize.js')).default;
 const { encode } = await import('@toon-format/toon');
 const { decode } = await import('@toon-format/toon');
@@ -46,11 +47,10 @@ const { forceFinishItem } = await import('../models/chat/handlers/baseLLMhandler
 // ═══════════════════════════════════════════════════════════════════
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const jsonDir = join(__dirname, 'api', 'json');
-const promptsDir = join(__dirname, '..', 'models', 'chat', 'prompts');
+const jsonDir = join(__dirname, '..', 'api', 'json');
 
 const collisionFixture = JSON.parse(readFileSync(join(jsonDir, 'collision_validate.json'), 'utf-8'));
-const verificationPromptBase = readFileSync(join(promptsDir, 'verification-mission.md'), 'utf-8');
+const verificationPromptBase = resolveAgent('verification-mission').systemPrompt;
 
 // ═══════════════════════════════════════════════════════════════════
 // Test state
@@ -118,7 +118,7 @@ async function runTest() {
   console.log(`  Chat created: ${chatId}`);
 
   await ChatHistoryManager.setAllowedTools(chatId, ['validate_mission']);
-  await ChatHistoryManager.setAgentProfile(chatId, 'planner');
+  await setAgentForChat(chatId, 'planner');
   console.log('  Metadata set: agentProfile=planner, allowedTools=[validate_mission]');
 
   // ═══════════════════════════════════════════════════════════════
@@ -360,9 +360,9 @@ Use the validate_mission tool with the mission and collision_objects data. If co
   assert('Test E: Messages persisted in DB', history.length > 0, `${history.length} messages`);
 
   // Test F: Chat metadata has correct agentProfile and allowedTools
-  const storedProfile = await ChatHistoryManager.getAgentProfile(chatId);
+  const storedAgent = await resolveAgentForChat(chatId);
   const storedTools = await ChatHistoryManager.getAllowedTools(chatId);
-  assert('Test F: Chat metadata — agentProfile=planner', storedProfile === 'planner', `got: ${storedProfile}`);
+  assert('Test F: Chat metadata — agentProfile=planner', storedAgent.name === 'planner', `got: ${storedAgent.name}`);
   assert(
     'Test F: Chat metadata — allowedTools includes validate_mission',
     Array.isArray(storedTools) && storedTools.includes('validate_mission'),
