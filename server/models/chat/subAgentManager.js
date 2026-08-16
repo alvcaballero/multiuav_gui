@@ -1,7 +1,6 @@
-import { randomUUID } from 'node:crypto';
 import { chatLogger } from '../../common/logger.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
-import { resolveAgentForChat, setAgentForChat, resolveAgent } from './agents/index.js';
+import { setAgentForChat, resolveAgent } from './agents/index.js';
 import { MessageOrchestrator } from './chat.js';
 import { buildSystemPrompt } from './turnContext.js';
 import { emitAssistantError } from './chatEvents.js';
@@ -119,57 +118,17 @@ export class SubAgentManager {
       output: JSON.stringify({ status, description, ...payload }),
     };
 
-    const chatItem = await ChatHistoryManager.addMessage(chatId, 'subagent', subagentResult);
-    MessageOrchestrator.emitAssistantMessage(chatItem);
-
-    await ChatHistoryManager.clearSession(chatId);
-
-    const sessionId = await ChatHistoryManager.getSessionId(chatId);
-    const agent = await resolveAgentForChat(chatId);
-    const allowedTools = agent.allowedTools;
-    const systemInstructions = agent.systemPrompt;
-    chatLogger.info(`[injectSubAgentResponse] Agent: ${agent.name}, Tools: ${allowedTools?.join(', ')}`);
-
     if (subAgentChatId) updateSubAgentStatus(subAgentChatId, 'done');
 
-    // Resuming the parent chat is a new billable turn: everything the parent spends
-    // digesting the subagent's answer is grouped under this id.
-    const turnId = randomUUID();
-
-    // The result is already persisted above and replayed from history — passing it
-    // again as toolOutputs would deliver it twice to the provider.
-    MessageOrchestrator.continueAfterTools(
-      [],
-      chatId,
-      sessionId,
-      systemInstructions,
-      allowedTools,
-      false,
-      agent,
-      true,
-      { turnId, phase: 'subagent_resume', iteration: 0 }
-    )
-      .then(({ output }) => {
-        const hasToolCalls = output.some((item) => item.type === 'function_call' || item.type === 'tool_call');
-        if (hasToolCalls) {
-          return MessageOrchestrator.runToolLoop(
-            output,
-            chatId,
-            {
-              tools: MessageOrchestrator.getToolsForProvider(allowedTools),
-              sessionId,
-              systemInstructions,
-              allowedTools,
-              agent,
-            },
-            { turnId }
-          );
-        }
-      })
-      .catch((err) => {
-        chatLogger.error(`[injectSubAgentResponse] continueAfterTools failed for chat ${chatId}:`, err);
-        emitAssistantError(chatId, `Error al procesar resultado del subagente: ${err.message}`);
-      });
+    // Goes through the public entry point on purpose: this arrives asynchronously
+    // from outside (MCP over HTTP), so it must take the parent chat's lock and
+    // queue behind whatever turn is running instead of writing over it.
+    // Persisting the message, resuming the LLM and running any follow-up tools
+    // are all `processMessage`'s job — nothing to duplicate here.
+    MessageOrchestrator.processMessage(chatId, { kind: 'subagent_result', message: subagentResult }).catch((err) => {
+      chatLogger.error(`[injectSubAgentResponse] resume failed for chat ${chatId}:`, err);
+      emitAssistantError(chatId, `Error al procesar resultado del subagente: ${err.message}`);
+    });
 
     return { ok: true, msg: 'Subagent response injected. Parent chat processing resumed.' };
   }

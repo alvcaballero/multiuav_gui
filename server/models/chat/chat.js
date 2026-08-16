@@ -5,7 +5,7 @@ import { chatLogger } from '../../common/logger.js';
 import { LLM, MCPenable } from '../../config/config.js';
 import { TurnContext } from './turnContext.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
-import { emitAssistantError, emitAssistantMessage } from './chatEvents.js';
+import { emitAssistantError, emitAssistantMessage, emitChatBusy } from './chatEvents.js';
 import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
 
 let mcpClient = null;
@@ -66,15 +66,40 @@ export class MessageOrchestrator {
   }
 
   /**
-   * Procesa un mensaje con mutex por chatId.
+   * Normalizes whatever a caller passes as the turn input into the canonical
+   * `{kind, ...}` shape. Plain strings and multipart arrays are user messages,
+   * which keeps every existing `processMessage(chatId, "text")` call working.
+   *
+   * @param {string|Array|object} input
+   * @returns {{kind: string}} Canonical turn input
+   */
+  static _normalizeInput(input) {
+    if (typeof input === 'string' || Array.isArray(input)) {
+      return { kind: 'user', content: input };
+    }
+    if (input && typeof input === 'object' && input.kind) return input;
+    throw new Error('processMessage: input must be a string, a content array, or a {kind} object');
+  }
+
+  /**
+   * Procesa un turno con mutex por chatId.
    * Concurrent requests for the same chatId queue sequentially.
+   *
+   * The lock is held for the WHOLE turn, tool loop included. The turn itself is
+   * fire-and-forget past the first LLM response (the caller gets that response
+   * while the loop keeps streaming over the EventBus), so the lock cannot be
+   * released in this function's `finally` — that would free the chat while the
+   * loop is still writing to it. `_runTurn` releases it when the recursion ends.
+   *
    * @param {string} chatId - ID de la conversación
-   * @param {string} message - Mensaje del usuario
+   * @param {string|Array|object} input - User message, or a `{kind, ...}` turn input
    * @param {Object} options - Opciones adicionales
    * @param {Array<string>} options.allowedTools - Lista de herramientas permitidas (null = todas)
    * @returns {Promise<Object>} Respuesta final
    */
-  static async processMessage(chatId, message, options = {}) {
+  static async processMessage(chatId, input, options = {}) {
+    const turnInput = this._normalizeInput(input);
+
     const prev = chatLocks.get(chatId) || Promise.resolve();
     let resolve;
     const lock = new Promise((r) => {
@@ -82,30 +107,44 @@ export class MessageOrchestrator {
     });
     chatLocks.set(chatId, lock);
 
-    try {
-      await prev;
-      return await this._processMessage(chatId, message, options);
-    } finally {
+    const release = () => {
       resolve();
       // Clean up if no one else is queued behind us
       if (chatLocks.get(chatId) === lock) {
         chatLocks.delete(chatId);
       }
+      emitChatBusy(chatId, false);
+    };
+
+    await prev;
+    emitChatBusy(chatId, true);
+
+    try {
+      return await this._startTurn(chatId, turnInput, options, release);
+    } catch (error) {
+      release();
+      throw error;
     }
   }
 
   /**
-   * Internal: processes a message (called under chatId mutex).
+   * Internal: runs the first turn (called under chatId mutex).
    *
-   * Orchestration only: ask for context, persist the user turn, call the LLM,
-   * persist what comes back. Every "figure out what this turn needs" step
-   * lives in TurnContext.
+   * Orchestration only: ask for context, run the turn, hand the caller the first
+   * response. If the model asked for tools, `_runTurn` recursed into the loop
+   * before returning here, and `release` has already fired.
    */
-  static async _processMessage(chatId, message, options = {}) {
-    // Groups every LLM request triggered by this user message (initial call + tool loop
+  static async _startTurn(chatId, turnInput, options = {}, release = () => {}) {
+    // Groups every LLM request triggered by this input (initial call + tool loop
     // iterations) so the real cost of one turn is a single GROUP BY away.
     const turnId = randomUUID();
-    this._logIncomingMessage(chatId, message);
+    this._logIncomingMessage(chatId, turnInput);
+
+    // A subagent answer is appended to a conversation the provider's session
+    // never saw, so the session is dropped to force the full-history path.
+    if (turnInput.kind === 'subagent_result') {
+      await ChatHistoryManager.clearSession(chatId);
+    }
 
     const ctx = await TurnContext.build(chatId, {
       allowedTools: options.allowedTools ?? null,
@@ -114,20 +153,15 @@ export class MessageOrchestrator {
     });
 
     try {
-      await ChatHistoryManager.addMessage(chatId, 'user', { role: 'user', content: message });
-
-      // historySnapshot was taken BEFORE the user message, so it serves as
-      // full context on the no-session fallback path.
-      const result = await llmHandler.processMessage(message, ctx.tools, ctx.historySnapshot, {
-        sessionId: ctx.sessionId,
-        instructions: ctx.systemInstructions,
-        agent: ctx.agent,
+      const result = await this._runTurn(chatId, turnInput, ctx, {
+        turnId,
+        phase: 'initial',
+        iteration: 0,
+        release,
       });
 
-      await this._persistTurnResult(chatId, result, ctx, turnId);
-
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
-      return llmHandler.normalizeResponse(result);
+      return llmHandler.normalizeResponse(result.raw);
     } catch (error) {
       chatLogger.error('Error procesando mensaje:', error);
 
@@ -140,21 +174,166 @@ export class MessageOrchestrator {
   }
 
   /**
-   * Logs the incoming user message, collapsing multipart content to a summary
+   * One turn: persist the input, call the LLM, persist the output — then, if the
+   * model asked for tools, run them and recurse with their results.
+   *
+   * This single function replaces the old `_processMessage` / `continueAfterTools`
+   * pair, which were the same three steps with different inputs. What varies is
+   * ONLY how the input reaches the provider, and that lives in `_applyInput`.
+   *
+   * The recursion carries `iteration` as a parameter rather than tracking it per
+   * chat: the cap protects ONE turn from running away, and a turn already has an
+   * identity (`turnId`). A fresh user message is a fresh turn, so it starts at 0
+   * with nothing to reset.
+   *
+   * @param {string} chatId
+   * @param {object} turnInput - `{kind, ...}` canonical input
+   * @param {TurnContext} ctx
+   * @param {object} meta - `{turnId, phase, iteration, release}`
+   * @returns {Promise<{output: Array, responseId: string, raw: object}>}
+   */
+  static async _runTurn(chatId, turnInput, ctx, meta) {
+    const { turnId, phase, iteration, release } = meta;
+
+    const { message, toolOutputs } = await this._applyInput(chatId, turnInput);
+
+    // With a live session the provider keeps the conversation, so history is not
+    // resent. Without one it is the ONLY context the provider gets:
+    //  - 'user' uses the pre-message snapshot, because the message itself is sent
+    //    separately and would otherwise arrive twice;
+    //  - every other kind re-reads, since the snapshot predates the messages this
+    //    turn just wrote and replaying it would drop them.
+    let history = ctx.historySnapshot;
+    if (!ctx.sessionId && turnInput.kind !== 'user') {
+      history = await ChatHistoryManager.loadHistory(chatId);
+    }
+
+    const result = await llmHandler.processMessage(message, ctx.tools, history, {
+      sessionId: ctx.sessionId,
+      instructions: ctx.systemInstructions,
+      agent: ctx.agent,
+      toolOutputs,
+      forceFinish: turnInput.forceFinish ?? false,
+    });
+
+    const { output, responseId } = await this._persistTurnResult(chatId, result, ctx, {
+      turnId,
+      phase,
+      iteration,
+    });
+
+    const hasToolCalls = output.some((res) => res.type === 'function_call' || res.type === 'tool_call');
+    if (!hasToolCalls) {
+      release();
+      return { output, responseId, raw: result };
+    }
+
+    // Fire-and-forget from here on: the caller gets the first response while the
+    // loop keeps going and streams over the EventBus. The lock stays held until
+    // the recursion bottoms out, so a queued message cannot interleave with it.
+    this._continueWithTools(chatId, output, ctx, { turnId, iteration }).finally(release);
+
+    return { output, responseId, raw: result };
+  }
+
+  /**
+   * Executes the tool calls in `output` and recurses with their results.
+   * Split out of `_runTurn` so the fire-and-forget boundary is explicit: this is
+   * the part that outlives the caller's turn.
+   */
+  static async _continueWithTools(chatId, output, ctx, { turnId, iteration }) {
+    const maxIter = ctx.agent?.capability === 'high' ? maxIterations_planner : maxIterations;
+    const next = iteration + 1;
+    const isLastIteration = next >= maxIter;
+
+    if (isLastIteration) {
+      chatLogger.warn(`[ToolLoop: ${chatId}] Maximum iterations reached - forcing final response`);
+    }
+    chatLogger.debug(`[ToolLoop: ${chatId}] Iteration ${next} - Processing tools...`);
+
+    try {
+      const results = await this.executeToolCalls(output, chatId);
+
+      await this._runTurn(
+        chatId,
+        { kind: 'tool_output', results, forceFinish: isLastIteration },
+        ctx,
+        // The last iteration must not recurse again: `release` is a no-op here
+        // because THIS call's `.finally(release)` already owns it.
+        { turnId, phase: 'tool_loop', iteration: next, release: () => {} }
+      );
+    } catch (error) {
+      chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
+      emitAssistantError(chatId, `Error processing tool results: ${error.message}`);
+    }
+  }
+
+  /**
+   * Persists a turn's input and returns what the provider needs for it.
+   *
+   * Every kind writes its own input to history exactly once — that symmetry is
+   * what removed the old `skipPersist` flag, which existed only because the
+   * subagent path wrote its message somewhere else first.
+   *
+   * @returns {Promise<{message: *, toolOutputs: Array|null}>}
+   */
+  static async _applyInput(chatId, turnInput) {
+    switch (turnInput.kind) {
+      case 'user':
+        await ChatHistoryManager.addMessage(chatId, 'user', { role: 'user', content: turnInput.content });
+        // historySnapshot was taken BEFORE this message, so it serves as full
+        // context on the no-session fallback path.
+        return { message: turnInput.content, toolOutputs: null };
+
+      case 'subagent_result': {
+        const chatItem = await ChatHistoryManager.addMessage(chatId, 'subagent', turnInput.message);
+        this.emitAssistantMessage(chatItem);
+        // Replayed from history, never as toolOutputs: the parent's tool pair
+        // closed long ago, so there is no pending call for it to answer.
+        return { message: null, toolOutputs: null };
+      }
+
+      case 'tool_output': {
+        for (const res of turnInput.results) {
+          const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
+          this.emitAssistantMessage(chatItem);
+        }
+        return { message: null, toolOutputs: turnInput.results };
+      }
+
+      default:
+        throw new Error(`_applyInput: unknown turn input kind "${turnInput.kind}"`);
+    }
+  }
+
+  /**
+   * Logs the incoming turn input, collapsing multipart content to a summary
    * so a base64 image never lands in the logs.
    */
-  static _logIncomingMessage(chatId, message) {
-    const preview = Array.isArray(message)
-      ? `[${message.length} blocks: ${message.map((b) => b.type).join(', ')}]`
-      : `"${message.substring(0, 40)}${message.length > 40 ? '...' : ''}"`;
+  static _logIncomingMessage(chatId, turnInput) {
+    const { kind, content } = turnInput;
+    let preview;
+
+    if (kind !== 'user') {
+      preview = `[${kind}]`;
+    } else if (Array.isArray(content)) {
+      preview = `[${content.length} blocks: ${content.map((b) => b.type).join(', ')}]`;
+    } else {
+      preview = `"${String(content).substring(0, 40)}${String(content).length > 40 ? '...' : ''}"`;
+    }
+
     chatLogger.info(`📨 Chat: ${chatId} | Mensaje: ${preview}`);
   }
 
   /**
-   * Records usage, reconciles session state, persists every output part and
-   * kicks off the tool loop when the model asked for tools.
+   * Records usage, reconciles session state and persists every output part.
+   *
+   * Deciding what happens NEXT (tool loop or not) belongs to `_runTurn`; this
+   * one only writes down what came back.
+   *
+   * @returns {Promise<{output: Array, responseId: string}>}
    */
-  static async _persistTurnResult(chatId, result, ctx, turnId) {
+  static async _persistTurnResult(chatId, result, ctx, { turnId, phase, iteration }) {
     const { output, responseId, model, sessionCleared, usage } = result;
     chatLogger.info(`✓ Parsed ${output.length} output parts from LLM response`);
 
@@ -166,8 +345,8 @@ export class MessageOrchestrator {
       provider: llmHandler.getProviderName(),
       model,
       agent: ctx.agent.name,
-      phase: 'initial',
-      iteration: 0,
+      phase,
+      iteration,
     });
 
     // Let the handler recover from session errors (e.g., recreate expired conversation)
@@ -183,115 +362,12 @@ export class MessageOrchestrator {
       });
     }
 
-    let toolCallsFlag = false;
     for (const res of output) {
-      if (res.type === 'function_call' || res.type === 'tool_call') {
-        toolCallsFlag = true;
-      }
       const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
       this.emitAssistantMessage(chatItem);
     }
 
-    if (toolCallsFlag) {
-      this.runToolLoop(output, chatId, ctx, { turnId });
-    }
-  }
-
-  /**
-   * Fire-and-forget tool loop: the caller's turn returns as soon as the first
-   * response is persisted, and the loop keeps streaming over the EventBus.
-   *
-   * @param {Array} output - Response parts containing the tool calls
-   * @param {string} chatId
-   * @param {TurnContext|object} ctx - Needs { tools, sessionId, systemInstructions, allowedTools, agent }
-   * @param {object} usageCtx - Token accounting context, { turnId }
-   */
-  static runToolLoop(output, chatId, ctx, usageCtx = {}) {
-    return this.handleToolCallsLoop(
-      output,
-      ctx.tools,
-      chatId,
-      ctx.sessionId,
-      ctx.systemInstructions,
-      ctx.allowedTools,
-      ctx.agent,
-      usageCtx
-    ).catch((error) => {
-      chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
-      emitAssistantError(chatId, `Error processing tool results: ${error.message}`);
-    });
-  }
-
-  /**
-   * Maneja el loop de llamadas a herramientas
-   * @param {Array} response - Initial response with tool calls
-   * @param {Array} _tools - Available tools
-   * @param {string} chatId - Chat identifier
-   * @param {string} sessionId - Provider session ID for persistent state
-   * @param {string} systemInstructions - System instructions to re-send
-   * @param {Array<string>} allowedTools - List of allowed tool names (null = all)
-   * @param {Object} agent - Full agent definition from resolveAgentForChat
-   * @param {Object} usageCtx - Token accounting context, { turnId }. A fresh turnId is
-   *   generated when absent (e.g. a loop resumed from subAgentManager).
-   */
-  static async handleToolCallsLoop(
-    response,
-    _tools,
-    chatId,
-    sessionId,
-    systemInstructions,
-    allowedTools = null,
-    agent = null,
-    usageCtx = {}
-  ) {
-    const turnId = usageCtx.turnId || randomUUID();
-    let isToolCalling = true;
-    let iterations = 0;
-    chatLogger.debug('Starting tool calls loop...');
-    let currentResponse = response;
-
-    const maxIter = agent?.capability === 'high' ? maxIterations_planner : maxIterations;
-
-    while (isToolCalling && iterations < maxIter) {
-      iterations++;
-      chatLogger.debug(`Iteration ${iterations} - Processing tools...`);
-      isToolCalling = true;
-      const toolResults = await this.executeToolCalls(currentResponse, chatId);
-
-      // Check if this is the last iteration - force final response
-      const isLastIteration = iterations >= maxIter;
-
-      // Continue with the same session
-      const result = await this.continueAfterTools(
-        toolResults,
-        chatId,
-        sessionId,
-        systemInstructions,
-        allowedTools, //isLastIteration ? [] : allowedTools, // before  No tools on last iteration , now we allow tools on last iteration to let the LLM finish naturally
-        isLastIteration, // forceFinish flag
-        agent,
-        false,
-        { turnId, phase: 'tool_loop', iteration: iterations }
-      );
-      currentResponse = result.output;
-
-      // Update stored responseId for tracking (conversation persists automatically)
-      if (result.responseId) {
-        await ChatHistoryManager.updateChatMetadata(chatId, { responseId: result.responseId });
-      }
-
-      if (isLastIteration) {
-        chatLogger.warn('Maximum iterations reached - forced final response without tools');
-        break;
-      }
-
-      isToolCalling = currentResponse.some(
-        (content) => content.type === 'function_call' || content.type === 'tool_call'
-      );
-    }
-    chatLogger.debug('Tool calls loop finished.');
-
-    return currentResponse;
+    return { output, responseId };
   }
 
   /**
@@ -314,84 +390,6 @@ export class MessageOrchestrator {
     }
 
     return results;
-  }
-
-  /**
-   * Continúa la conversación después de ejecutar herramientas
-   * @param {Array} toolResults - Results from tool executions
-   * @param {string} chatId - Chat identifier
-   * @param {string} sessionId - Provider session ID for persistent state
-   * @param {string} systemInstructions - System instructions to re-send
-   * @param {Array<string>} allowedTools - List of allowed tool names (null = all, [] = none for final response)
-   * @param {boolean} forceFinish - If true, adds a system message forcing final response
-   * @param {Object} agent - Full agent definition from resolveAgentForChat
-   * @param {boolean} skipPersist - Skip persisting tool results already stored
-   * @param {Object} usageCtx - Token accounting context, { turnId, phase, iteration }
-   * @returns {Promise<{output: Array, responseId: string}>} Response output and new responseId
-   */
-  static async continueAfterTools(
-    toolResults,
-    chatId,
-    sessionId,
-    systemInstructions,
-    allowedTools = null,
-    forceFinish = false,
-    agent = null,
-    skipPersist = false,
-    usageCtx = {}
-  ) {
-    // Load history only if needed for fallback (no session)
-    const conversationHistory = sessionId ? [] : await ChatHistoryManager.loadHistory(chatId);
-
-    // Get tools filtered by allowedTools (empty array = no tools for forced text response)
-    const tools = this.getToolsForProvider(allowedTools);
-
-    // Persist tool results in DB before sending to LLM (single write point)
-    // skipPersist=true when the result is already stored (e.g. returnMissionPlanXYZ replaced it in-place)
-    if (!skipPersist) {
-      for (const res of toolResults) {
-        const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
-        this.emitAssistantMessage(chatItem);
-      }
-    }
-
-    // Continue conversation with tool outputs
-    // When skipPersist=true the tool result is already in DB history — don't pass it as
-    // toolOutputs or Gemini will receive it twice (once from history, once as functionResponse).
-    const result = await llmHandler.processMessage(
-      null, // No new user message
-      tools,
-      conversationHistory,
-      {
-        sessionId,
-        instructions: systemInstructions,
-        toolOutputs: skipPersist ? null : toolResults,
-        forceFinish, // Signal to add final response message
-        agent,
-      }
-    );
-
-    const { output, responseId } = result;
-
-    await ChatHistoryManager.recordUsage({
-      chatId,
-      turnId: usageCtx.turnId || randomUUID(),
-      usage: result.usage,
-      responseId,
-      provider: llmHandler.getProviderName(),
-      model: result.model,
-      agent: agent?.name ?? null,
-      phase: usageCtx.phase || 'tool_loop',
-      iteration: usageCtx.iteration ?? 0,
-    });
-
-    // Store assistant messages with new responseId and emit events
-    for (const res of output) {
-      const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
-      this.emitAssistantMessage(chatItem);
-    }
-
-    return { output, responseId };
   }
 
   /**

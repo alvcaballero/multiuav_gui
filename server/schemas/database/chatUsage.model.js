@@ -6,7 +6,8 @@ const ChatUsage_TABLE = 'ChatUsage';
  * One row per LLM request (NOT per ChatMessage).
  *
  * A single user message fans out into many requests: the initial call plus one
- * per iteration of MessageOrchestrator.handleToolCallsLoop. They all share a
+ * per recursion of MessageOrchestrator._runTurn while the model keeps asking for
+ * tools. They all share a
  * `turnId`, so `GROUP BY turnId` gives the real cost of answering the user,
  * `GROUP BY chatId` the cost of the whole conversation, and a single row the
  * cost of one request.

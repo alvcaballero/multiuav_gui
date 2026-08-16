@@ -32,6 +32,7 @@ const OUTBOUND_MAP = {
 
   // Chat
   [EVENTS.CHAT_CREATED]: (data) => ({ chatCreated: data }),
+  [EVENTS.CHAT_BUSY]: ({ chatId, busy }) => ({ chatBusy: { chatId, busy } }),
   [EVENTS.CHAT_ASSISTANT_MESSAGE]: ({ chatId, message }) => ({
     chat: {
       chatId,

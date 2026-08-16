@@ -141,6 +141,7 @@ export const EVENTS = Object.freeze({
   CHAT_CREATED: 'chat:created',
   CHAT_USER_MESSAGE: 'chat:user_message',
   CHAT_ASSISTANT_MESSAGE: 'chat:assistant_message',
+  CHAT_BUSY: 'chat:busy',
   // Sistema
   SYSTEM_ERROR: 'system:error',
   SYSTEM_SHUTDOWN: 'system:shutdown',

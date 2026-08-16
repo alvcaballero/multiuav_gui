@@ -26,13 +26,31 @@ export function emitAssistantError(chatId, content) {
 }
 
 /**
- * Emits a chat item to clients, but only when it comes from the assistant.
- * Mirrors the guard MessageOrchestrator.emitAssistantMessage applies.
+ * Emits a chat item to clients for every sender the UI renders on the assistant
+ * side of the conversation. `subagent` is included: those messages arrive in the
+ * user turn protocol-wise, but they are produced by the system, not typed by the
+ * user, so the client shows them as assistant-side output.
  *
  * @param {object} chatItem - Chat item as returned by ChatHistoryManager.addMessage
  */
+const BROADCAST_SENDERS = new Set(['assistant', 'subagent']);
+
 export function emitAssistantMessage(chatItem) {
-  if (chatItem?.from === 'assistant') {
+  if (BROADCAST_SENDERS.has(chatItem?.from)) {
     eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
   }
+}
+
+/**
+ * Signals whether a chat is mid-turn, so the UI can disable its input instead of
+ * letting the user fire a message into a chat that will just queue it behind a
+ * tool loop. Emitted when the per-chat lock is taken and again when it is fully
+ * released — which, for a turn with tool calls, is after the LAST iteration, not
+ * after the first response.
+ *
+ * @param {string} chatId
+ * @param {boolean} busy
+ */
+export function emitChatBusy(chatId, busy) {
+  eventBus.emitSafe(EVENTS.CHAT_BUSY, { chatId, busy });
 }
