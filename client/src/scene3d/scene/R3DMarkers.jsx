@@ -53,6 +53,13 @@ const Marker = ({ item, onPick, showBoundingBox }) => {
   const { invalidate } = useThree();
   const { types: markerTypes } = useMarkerTypes();
 
+  // Bases aren't ElementItems (item.type is the literal string 'base', not a
+  // real catalog id), so there's no ElementType to resolve geometry from.
+  const typeGeometry = markerTypes.find((t) => t.id === item.type)?.attributes?.geometry;
+  const geometry =
+    item.type !== 'base' ? item.attributes?.geometry || typeGeometry || FALLBACK_GEOMETRY : null;
+  const heading = geometry?.yaw ?? item.heading;
+
   // Clone is created inside useMemo so React owns the lifecycle — safe with Strict Mode.
   // Position/rotation are set here too (not in a separate effect): `clone` is a plain
   // JS object available immediately during render, not a ref that only exists post-commit,
@@ -81,7 +88,7 @@ const Marker = ({ item, onPick, showBoundingBox }) => {
 
   if (clone) {
     clone.position.set(...item.pos);
-    clone.rotation.set(0, headingToRotationY(item.heading), 0);
+    clone.rotation.set(0, headingToRotationY(heading), 0);
   }
 
   // Dispose the clone when it's replaced or the marker unmounts.
@@ -102,7 +109,7 @@ const Marker = ({ item, onPick, showBoundingBox }) => {
   // Tell R3F to draw a frame whenever the model, position, or heading change.
   useEffect(() => {
     if (clone) invalidate();
-  }, [clone, item.pos, item.heading, invalidate]);
+  }, [clone, item.pos, heading, invalidate]);
 
   if (!clone) return null;
 
@@ -116,12 +123,6 @@ const Marker = ({ item, onPick, showBoundingBox }) => {
         onPick(event.point, item, event);
       }
     : undefined;
-
-  // Bases aren't ElementItems (item.type is the literal string 'base', not a
-  // real catalog id), so there's no ElementType to resolve geometry from.
-  const typeGeometry = markerTypes.find((t) => t.id === item.type)?.attributes?.geometry;
-  const geometry =
-    item.type !== 'base' ? item.attributes?.geometry || typeGeometry || FALLBACK_GEOMETRY : null;
 
   return (
     <>
