@@ -145,7 +145,7 @@ class OpenAIHandler extends BaseLLMHandler {
     return expanded;
   }
 
-  convertMsg(message = null, conversationHistory) {
+  convertHistory(conversationHistory) {
     const VALID_ROLES = new Set(['assistant', 'developer', 'user']);
     const lastconversation = [];
 
@@ -199,11 +199,34 @@ class OpenAIHandler extends BaseLLMHandler {
       }
     }
 
-    if (message === null) {
-      return lastconversation;
+    return lastconversation;
+  }
+
+  /**
+   * Converts the new turn input (user message, or tool outputs) into OpenAI
+   * Responses API input items to append after the history. The directive (if
+   * any) is appended separately in processMessage, once, regardless of which
+   * case built the base input.
+   */
+  convertInputMessage(turnInput) {
+    if (!turnInput) return [];
+
+    if (turnInput.type === 'message') {
+      // message can be a string or an array of content blocks (input_text / input_image)
+      return [{ role: 'user', content: turnInput.content }];
     }
-    // message can be a string or an array of content blocks (input_text / input_image)
-    return [...lastconversation, { role: 'user', content: message }];
+
+    if (turnInput.type === 'subagent_result') {
+      // Async subagent result → plain user message (no tool pair to close)
+      return [{ role: 'user', content: renderSubagentResult(turnInput.message) }];
+    }
+
+    const toolOutputs = turnInput.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    if (toolOutputs && toolOutputs.length > 0) {
+      return this._expandToolOutputsWithImages(toolOutputs);
+    }
+
+    return [];
   }
 
   _parseAssistantResponse(assistantMessage) {
@@ -262,8 +285,6 @@ class OpenAIHandler extends BaseLLMHandler {
       allowedTools = null, // list of allowed tool names for this call
       agent = null, // Full agent object from resolveAgentForChat
     } = options;
-    const message = turnInput?.type === 'message' ? turnInput.content : null;
-    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
     const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     chatLogger.info(
@@ -300,51 +321,20 @@ class OpenAIHandler extends BaseLLMHandler {
     // CASE 1: Using sessionId (Conversations API - preferred, persistent 30 days)
     if (sessionId) {
       params.conversation = sessionId;
-
-      // Tool continuation - must send tool outputs in input
-      if (toolOutputs && toolOutputs.length > 0) {
-        params.input = this._expandToolOutputsWithImages(toolOutputs);
-      }
-      // New user message
-      else if (message !== null) {
-        params.input = [{ role: 'user', content: message }];
-      }
-      // Empty continuation (shouldn't happen normally)
-      else {
-        params.input = [];
-      }
+      params.input = this.convertInputMessage(turnInput);
 
       if (instructions) params.instructions = instructions;
     }
     // CASE 2: Using previous_response_id (legacy response chaining - backwards compatibility)
     else if (previousResponseId) {
       params.previous_response_id = previousResponseId;
-
-      // Tool continuation - must send tool outputs in input
-      if (toolOutputs && toolOutputs.length > 0) {
-        params.input = this._expandToolOutputsWithImages(toolOutputs);
-      }
-      // New user message
-      else if (message !== null) {
-        params.input = [{ role: 'user', content: message }];
-      }
-      // Empty continuation (shouldn't happen normally)
-      else {
-        params.input = [];
-      }
+      params.input = this.convertInputMessage(turnInput);
 
       if (instructions) params.instructions = instructions;
     }
     // CASE 3: First message or fallback (full history path)
     else {
-      const historyInput = this.convertMsg(message, conversationHistory);
-
-      if (toolOutputs && toolOutputs.length > 0) {
-        // Tool continuation without session: history + expanded tool outputs
-        params.input = [...historyInput, ...this._expandToolOutputsWithImages(toolOutputs)];
-      } else {
-        params.input = historyInput;
-      }
+      params.input = [...this.convertHistory(conversationHistory), ...this.convertInputMessage(turnInput)];
 
       // Send system prompt as instructions (separate from input, like Gemini's systemInstruction)
       const systemText = instructions || this.systemPrompt;

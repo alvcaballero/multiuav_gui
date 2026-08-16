@@ -41,7 +41,7 @@ class AnthropicHandler extends BaseLLMHandler {
    * Anthropic requires alternating user/assistant messages.
    * System messages are handled via the 'system' parameter.
    */
-  convertMsg(message = null, conversationHistory) {
+  convertHistory(conversationHistory) {
     const messages = [];
 
     for (const msg of conversationHistory) {
@@ -109,11 +109,39 @@ class AnthropicHandler extends BaseLLMHandler {
       }
     }
 
-    if (message !== null) {
-      messages.push({ role: 'user', content: message });
+    return messages;
+  }
+
+  /**
+   * Converts the new turn input (user message, or tool results + directive)
+   * into Anthropic messages to append after the history.
+   * Anthropic requires tool_result blocks and any accompanying text to share
+   * ONE user message, so the directive rides along as a text block instead of
+   * its own entry.
+   */
+  convertInputMessage(turnInput) {
+    if (!turnInput) return [];
+
+    if (turnInput.type === 'message') {
+      return [{ role: 'user', content: turnInput.content }];
     }
 
-    return messages;
+    if (turnInput.type === 'subagent_result') {
+      // Async subagent result → plain user message (no tool pair to close)
+      return [{ role: 'user', content: renderSubagentResult(turnInput.message) }];
+    }
+
+    const toolOutputs = turnInput.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    if (!toolOutputs || toolOutputs.length === 0) return [];
+
+    const toolResultContent = toolOutputs.map((output) => this.convertToolOutput(output));
+
+    const directive = turnInput.items.find((i) => i.type === 'directive');
+    if (directive) {
+      toolResultContent.push({ type: 'text', text: directive.content });
+    }
+
+    return [{ role: 'user', content: toolResultContent }];
   }
 
   /**
@@ -166,9 +194,6 @@ class AnthropicHandler extends BaseLLMHandler {
     }
 
     const { instructions = null, allowedTools = null, agent = null } = options;
-    const message = turnInput?.type === 'message' ? turnInput.content : null;
-    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
-    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
@@ -191,29 +216,10 @@ class AnthropicHandler extends BaseLLMHandler {
       params.tools = this.convertToolsForMCP(tools);
     }
 
-    // Build messages
-    if (toolOutputs && toolOutputs.length > 0) {
-      // Tool continuation: build history + tool results
-      const messages = this.convertMsg(null, conversationHistory);
-
-      // The last assistant message should contain the tool_use blocks.
-      // Anthropic requires: assistant message with tool_use → user message with tool_result
-      const toolResultContent = toolOutputs.map((output) => this.convertToolOutput(output));
-
-      // Same user-role delivery as the other providers: Anthropic requires the
-      // tool_result blocks and any accompanying text to share ONE user message,
-      // so the directive rides along as a text block instead of its own entry.
-      if (directive) {
-        toolResultContent.push({ type: 'text', text: directive.content });
-      }
-
-      messages.push({ role: 'user', content: toolResultContent });
-      params.messages = messages;
-    } else if (message !== null) {
-      params.messages = this.convertMsg(message, conversationHistory);
-    } else {
-      params.messages = this.convertMsg(null, conversationHistory);
-    }
+    // Build messages: history + new turn input (tool results, directive, or user message)
+    const messages = this.convertHistory(conversationHistory);
+    messages.push(...this.convertInputMessage(turnInput));
+    params.messages = messages;
 
     // Ensure we have at least one message
     if (!params.messages || params.messages.length === 0) {

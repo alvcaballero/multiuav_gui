@@ -191,7 +191,10 @@ describe('GeminiHandler', () => {
 
   it('converts history skipping system and mapping assistant → model', () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const msgs = handler.convertMsg('New msg', mockHistory);
+    const msgs = [
+      ...handler.convertHistory(mockHistory),
+      ...handler.convertInputMessage({ type: 'message', content: 'New msg' }),
+    ];
     // system skipped → user + model + new user = 3
     assert.equal(msgs.length, 3);
     assert.equal(msgs[0].role, 'user');
@@ -236,7 +239,7 @@ describe('GeminiHandler', () => {
     const history = [
       { message: { type: 'function_call', name: 'get_weather', arguments: '{"city":"Madrid"}', call_id: 'call_1' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'model');
     assert.ok(msgs[0].parts[0].functionCall);
@@ -249,7 +252,7 @@ describe('GeminiHandler', () => {
     const history = [
       { message: { type: 'function_call_output', name: 'get_weather', call_id: 'call_1', output: '{"temp":25}' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'user');
     assert.ok(msgs[0].parts[0].functionResponse);
@@ -260,7 +263,7 @@ describe('GeminiHandler', () => {
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new GeminiHandler(FAKE_KEY);
     const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'model');
     assert.deepEqual(msgs[0].parts, [{ text: 'Hello world' }]);
@@ -315,7 +318,10 @@ describe('AnthropicHandler', () => {
 
   it('converts history skipping system messages', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const msgs = handler.convertMsg('New msg', mockHistory);
+    const msgs = [
+      ...handler.convertHistory(mockHistory),
+      ...handler.convertInputMessage({ type: 'message', content: 'New msg' }),
+    ];
     // system skipped → user + assistant + new user = 3
     assert.equal(msgs.length, 3);
     assert.equal(msgs[0].role, 'user');
@@ -361,7 +367,7 @@ describe('AnthropicHandler', () => {
     const history = [
       { message: { type: 'function_call', name: 'get_weather', arguments: '{"city":"Madrid"}', call_id: 'call_1' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content[0].type, 'tool_use');
@@ -375,7 +381,7 @@ describe('AnthropicHandler', () => {
     const history = [
       { message: { type: 'function_call_output', name: 'get_weather', call_id: 'call_1', output: '{"temp":25}' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'user');
     assert.equal(msgs[0].content[0].type, 'tool_result');
@@ -386,7 +392,7 @@ describe('AnthropicHandler', () => {
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
     const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content, 'Hello world');
@@ -445,7 +451,10 @@ describe('OllamaHandler', () => {
 
   it('converts history keeping system messages inline', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const msgs = handler.convertMsg('New msg', mockHistory);
+    const msgs = [
+      ...handler.convertHistory(mockHistory),
+      ...handler.convertInputMessage({ type: 'message', content: 'New msg' }),
+    ];
     // system + user + assistant + new user = 4
     assert.equal(msgs.length, 4);
     assert.equal(msgs[0].role, 'system');
@@ -461,7 +470,7 @@ describe('OllamaHandler', () => {
     const history = [
       { message: { type: 'function_call', name: 'get_weather', arguments: '{"city":"Madrid"}', call_id: 'call_1' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content, '');
@@ -475,7 +484,7 @@ describe('OllamaHandler', () => {
     const history = [
       { message: { type: 'function_call_output', name: 'get_weather', call_id: 'call_1', output: '{"temp":25}' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'tool');
     assert.equal(msgs[0].content, '{"temp":25}');
@@ -484,7 +493,7 @@ describe('OllamaHandler', () => {
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new OllamaHandler(FAKE_HOST);
     const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content, 'Hello world');

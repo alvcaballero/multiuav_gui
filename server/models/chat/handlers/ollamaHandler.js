@@ -54,7 +54,7 @@ class OllamaHandler extends BaseLLMHandler {
    * Converts conversation history to Ollama's messages format.
    * Ollama supports system, user, assistant, and tool roles inline.
    */
-  convertMsg(message = null, conversationHistory) {
+  convertHistory(conversationHistory) {
     const messages = [];
 
     for (const msg of conversationHistory) {
@@ -114,8 +114,37 @@ class OllamaHandler extends BaseLLMHandler {
       }
     }
 
-    if (message !== null) {
-      messages.push({ role: 'user', content: message });
+    return messages;
+  }
+
+  /**
+   * Converts the new turn input (user message, or tool outputs + directive)
+   * into Ollama messages to append after the history.
+   */
+  convertInputMessage(turnInput) {
+    const messages = [];
+    if (!turnInput) return messages;
+
+    if (turnInput.type === 'message') {
+      messages.push({ role: 'user', content: turnInput.content });
+      return messages;
+    }
+
+    if (turnInput.type === 'subagent_result') {
+      // Async subagent result → plain user message (no tool pair to close)
+      messages.push({ role: 'user', content: renderSubagentResult(turnInput.message) });
+      return messages;
+    }
+
+    const toolOutputs = turnInput.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    if (toolOutputs && toolOutputs.length > 0) {
+      for (const output of toolOutputs) {
+        messages.push(this.convertToolOutput(output));
+      }
+      const directive = turnInput.items.find((i) => i.type === 'directive');
+      if (directive) {
+        messages.push({ role: directive.role, content: directive.content });
+      }
     }
 
     return messages;
@@ -172,31 +201,14 @@ class OllamaHandler extends BaseLLMHandler {
     }
 
     const { instructions = null, allowedTools = null, agent = null } = options;
-    const message = turnInput?.type === 'message' ? turnInput.content : null;
-    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
-    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
 
-    // Build messages from conversation history
-    let messages;
+    // Build messages from conversation history + new turn input
+    const messages = this.convertHistory(conversationHistory);
+    messages.push(...this.convertInputMessage(turnInput));
 
-    if (message !== null) {
-      messages = this.convertMsg(message, conversationHistory);
-    } else {
-      messages = this.convertMsg(null, conversationHistory);
-    }
-
-    if (toolOutputs && toolOutputs.length > 0) {
-      // Append tool outputs as tool role messages
-      for (const output of toolOutputs) {
-        messages.push(this.convertToolOutput(output));
-      }
-      if (directive) {
-        messages.push({ role: directive.role, content: directive.content });
-      }
-    }
     // Prepend system prompt only if not already present in conversation history
     const systemText = instructions || this.systemPrompt;
     const hasSystemMessage = messages.some((m) => m.role === 'system');

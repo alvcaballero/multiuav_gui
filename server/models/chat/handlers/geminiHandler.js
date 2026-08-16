@@ -47,24 +47,58 @@ class GeminiHandler extends BaseLLMHandler {
     ];
   }
 
+  convertInputMessage(turnInput) {
+    const contents = [];
+    if (!turnInput) return contents;
+
+    const message = turnInput?.type === 'message' ? turnInput.content : null;
+
+    if (message) {
+      // text message → Gemini text part (user role)
+      const geminiContent = this.encodeTextMessage(message);
+      return geminiContent ? [geminiContent] : [];
+    }
+
+    if (turnInput.type === 'subagent_result') {
+      // Async subagent result → plain user text part (no functionResponse to pair)
+      return [{ role: 'user', parts: [{ text: renderSubagentResult(turnInput.message) }] }];
+    }
+
+    const toolOutputs =
+      turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    if (toolOutputs && toolOutputs.length > 0) {
+      const functionResponses = [];
+      for (const output of toolOutputs) {
+        functionResponses.push(...this.encodeToolOutputMessage(output));
+      }
+      contents.push({ role: 'user', parts: functionResponses });
+    }
+
+    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
+    if (directive) {
+      contents.push({ role: directive.role, parts: [{ text: directive.content }] });
+    }
+
+    return contents;
+  }
   /**
    * Converts conversation history to Gemini's contents format.
    * Gemini uses 'user' and 'model' roles (not 'assistant').
    */
-  convertMsg(message = null, conversationHistory) {
+  convertHistory(conversationHistory) {
     const contents = [];
 
-    for (const msg of conversationHistory) {
-      const item = msg.message || msg;
-      const role = item.role;
-      const type = item.type;
+    for (const conversationItem of conversationHistory) {
+      const messageData = conversationItem.message || conversationItem;
+      const role = messageData.role; // system | user
+      const type = messageData.type; // text | function_call | function_call_output | subagent_result
 
       // Skip system messages — handled via systemInstruction
       if (role === 'system') continue;
 
       // Async subagent result → plain user text part (no functionResponse to pair)
       if (type === 'subagent_result') {
-        contents.push({ role: 'user', parts: [{ text: renderSubagentResult(item) }] });
+        contents.push({ role: 'user', parts: [{ text: renderSubagentResult(messageData) }] });
         continue;
       }
 
@@ -72,14 +106,15 @@ class GeminiHandler extends BaseLLMHandler {
       if (type === 'function_call') {
         let args = {};
         try {
-          args = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments || {};
+          args =
+            typeof messageData.arguments === 'string' ? JSON.parse(messageData.arguments) : messageData.arguments || {};
         } catch {
           /* keep empty */
         }
-        const part = { functionCall: { name: item.name, args } };
+        const part = { functionCall: { name: messageData.name, args } };
         // Restore thoughtSignature for Gemini thinking models (required to avoid 400 errors)
-        if (item.thoughtSignature) {
-          part.thoughtSignature = item.thoughtSignature;
+        if (messageData.thoughtSignature) {
+          part.thoughtSignature = messageData.thoughtSignature;
         }
         contents.push({
           role: 'model',
@@ -90,38 +125,7 @@ class GeminiHandler extends BaseLLMHandler {
 
       // Normalized function_call_output from DB → Gemini functionResponse part (user role)
       if (type === 'function_call_output') {
-        let response = {};
-        let args = {};
-        try {
-          let output = typeof item.output === 'string' ? JSON.parse(item.output) : item.output || {};
-          try {
-            response =
-              typeof output.content?.[0]?.text === 'string'
-                ? JSON.parse(output.content[0].text)
-                : output.content?.[0]?.text || output.content || output;
-          } catch {
-            response = { text: output.content?.[0]?.text || output.content?.[0] || output };
-          }
-
-          if (item.call_id) {
-            args.call_id = item.call_id; // Preserve call_id for matching responses to tool calls
-          }
-        } catch {
-          /* keep empty */
-        }
-
-        const parts = [{ functionResponse: { name: item.name, response } }];
-
-        // Si la respuesta contiene datos de imagen, añadimos una parte de imagen para que el VLM la analice
-        if (response && response.image_data) {
-          parts.push({
-            inlineData: {
-              mimeType: response.mime_type || 'image/jpeg',
-              data: response.image_data,
-            },
-          });
-        }
-
+        const parts = this.encodeToolOutputMessage(messageData);
         contents.push({
           role: 'user',
           parts: parts,
@@ -131,59 +135,61 @@ class GeminiHandler extends BaseLLMHandler {
       }
 
       // Text content (normalized format with `content` or legacy string)
-      const content = item.content;
-      const geminiRole = role === 'assistant' ? 'model' : 'user';
-
-      if (typeof content === 'string') {
-        const part = { text: content };
-        if (item.thoughtSignature) {
-          part.thoughtSignature = item.thoughtSignature;
-        }
-        contents.push({ role: geminiRole, parts: [part] });
+      const geminiContent = this.encodeTextMessage(messageData);
+      if (geminiContent) {
+        contents.push(geminiContent);
       }
     }
+    return contents;
+  }
 
-    if (message !== null) {
-      contents.push({ role: 'user', parts: [{ text: message }] });
+  encodeTextMessage(message) {
+    if (message && typeof message === 'object' && typeof message.content === 'string') {
+      const role = message.role === 'assistant' ? 'model' : 'user';
+      const part = { text: message.content };
+      if (message.thoughtSignature) {
+        part.thoughtSignature = message.thoughtSignature;
+      }
+      return { role: role, parts: [part] };
     }
 
-    return contents;
+    if (!message || typeof message == 'string') {
+      return { role: 'user', parts: [{ text: message }] };
+    }
+    return null;
   }
 
   /**
    * Converts a single tool execution result to Gemini's message parts
    * (functionResponse + optional inlineData for images).
    */
-  convertToolOutput(output) {
-    const rawResponse = output.output;
-    const jsonresponse = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
-    let parsedResponse;
+  encodeToolOutputMessage(toolResult) {
+    const output = typeof toolResult.output === 'string' ? JSON.parse(toolResult.output) : toolResult.output || {};
+    let response = {};
+    let args = {};
     try {
-      parsedResponse =
-        typeof jsonresponse.content?.[0]?.text === 'string'
-          ? JSON.parse(jsonresponse.content[0].text)
-          : jsonresponse.content?.[0]?.text || jsonresponse.content || jsonresponse;
+      response =
+        typeof output.content?.[0]?.text === 'string'
+          ? JSON.parse(output.content[0].text)
+          : output.content?.[0]?.text || output.content || output;
     } catch {
-      parsedResponse = {
-        text: jsonresponse.content?.[0]?.text || jsonresponse.content?.[0] || jsonresponse,
+      response = {
+        text: output.content?.[0]?.text || output.content?.[0] || output,
       };
     }
+    // Preserve call_id for matching responses to tool calls
+    // gemini generatecontent dont support call_id in functionResponse so we simulate by no adding it to the response but we keep it in the args for future use
+    if (toolResult.call_id) {
+      args.call_id = toolResult.call_id;
+    }
 
-    const parts = [
-      {
-        functionResponse: {
-          name: output.name,
-          response: parsedResponse || {},
-        },
-      },
-    ];
-
+    const parts = [{ functionResponse: { name: toolResult.name, response } }];
     // Soporte para imágenes en la continuación del tool loop
-    if (parsedResponse && parsedResponse.image_data) {
+    if (response && response.image_data) {
       parts.push({
         inlineData: {
-          mimeType: parsedResponse.mime_type || 'image/jpeg',
-          data: parsedResponse.image_data,
+          mimeType: response.mime_type || 'image/jpeg',
+          data: response.image_data,
         },
       });
     }
@@ -195,7 +201,7 @@ class GeminiHandler extends BaseLLMHandler {
    * Parses Gemini response into the normalized output array format
    * that the orchestrator expects (matching OpenAI's output structure).
    */
-  _parseGeminiResponse(response) {
+  decodeResponse(response) {
     const output = [];
 
     const usage = response.usageMetadata || {};
@@ -273,50 +279,23 @@ class GeminiHandler extends BaseLLMHandler {
     }
 
     const { instructions = null, allowedTools = null, agent = null } = options;
-    const message = turnInput?.type === 'message' ? turnInput.content : null;
-    const toolOutputs = turnInput?.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
-    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
 
     const profile = this.resolveModelConfig(agent);
     const modelId = profile.model || this.model;
 
     // Build config
-    const config = { temperature: 1 }; // Adjust temperature as needed
+    const config = { temperature: 1, systemInstruction: instructions || this.systemPrompt, tools: [] };
 
-    // System instruction
-    const systemText = instructions || this.systemPrompt;
-    if (systemText) {
-      config.systemInstruction = systemText;
-      logger.info(`✓ Using system instruction: ${systemText.substring(0, 100)}...`);
-    }
     // Add tools if available (empty allowedTools array = no tools for forced text response)
     if (tools.length > 0 && (!allowedTools || allowedTools.length > 0)) {
       config.tools = this.convertToolsForMCP(tools);
     }
 
     // Build contents (conversation history)
-    let contents;
+    let contents = this.convertHistory(conversationHistory);
+    contents.push(...this.convertInputMessage(turnInput));
 
-    if (toolOutputs && toolOutputs.length > 0) {
-      // Tool continuation: build history + function responses
-      contents = this.convertMsg(null, conversationHistory);
-
-      // Convert tool outputs to Gemini FunctionResponse format
-      const functionResponses = [];
-      for (const output of toolOutputs) {
-        functionResponses.push(...this.convertToolOutput(output));
-      }
-      contents.push({ role: 'user', parts: functionResponses });
-
-      if (directive) {
-        contents.push({ role: directive.role, parts: [{ text: directive.content }] });
-      }
-    } else if (message !== null) {
-      contents = this.convertMsg(message, conversationHistory);
-    } else {
-      contents = this.convertMsg(null, conversationHistory);
-    }
-
+    logger.info(`✓ Using system instruction: ${config.systemInstruction.substring(0, 100)}...`);
     chatLogger.info('Tools');
     for (const tool of tools) {
       chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
@@ -338,7 +317,7 @@ class GeminiHandler extends BaseLLMHandler {
         config,
       });
 
-      const output = this._parseGeminiResponse(response);
+      const output = this.decodeResponse(response);
 
       return {
         output,
