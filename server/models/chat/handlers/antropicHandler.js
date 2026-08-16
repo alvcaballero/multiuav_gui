@@ -197,11 +197,11 @@ class AnthropicHandler extends BaseLLMHandler {
       // Anthropic requires: assistant message with tool_use → user message with tool_result
       const toolResultContent = toolOutputs.map((output) => this.convertToolOutput(output));
 
+      // Same user-role delivery as the other providers: Anthropic requires the
+      // tool_result blocks and any accompanying text to share ONE user message,
+      // so the directive rides along as a text block instead of its own entry.
       if (forceFinish) {
-        toolResultContent.push({
-          type: 'text',
-          text: FORCE_FINISH_MESSAGE,
-        });
+        toolResultContent.push({ type: 'text', text: FORCE_FINISH_MESSAGE });
       }
 
       messages.push({ role: 'user', content: toolResultContent });

@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { BaseLLMHandler, forceFinishMessage, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -276,8 +276,6 @@ class OpenAIHandler extends BaseLLMHandler {
 
     const profile = this.resolveModelConfig(agent);
 
-    const forceFinishInstructions = `${FORCE_FINISH_MESSAGE} Summarize what was accomplished and present the results to the user.`;
-
     // Parameters for the call — model and reasoning come from the agent profile
     const params = {
       model: profile.model || this.model,
@@ -315,12 +313,8 @@ class OpenAIHandler extends BaseLLMHandler {
         params.input = [];
       }
 
-      // instructions override for this turn only — not persisted in OpenAI conversation history
-      if (forceFinish) {
-        params.instructions = forceFinishInstructions;
-      } else if (instructions) {
-        params.instructions = instructions;
-      }
+      if (instructions) params.instructions = instructions;
+      if (forceFinish) params.input.push(forceFinishMessage());
     }
     // CASE 2: Using previous_response_id (legacy response chaining - backwards compatibility)
     else if (previousResponseId) {
@@ -339,12 +333,8 @@ class OpenAIHandler extends BaseLLMHandler {
         params.input = [];
       }
 
-      // instructions override for this turn only — not persisted in response chain
-      if (forceFinish) {
-        params.instructions = forceFinishInstructions;
-      } else if (instructions) {
-        params.instructions = instructions;
-      }
+      if (instructions) params.instructions = instructions;
+      if (forceFinish) params.input.push(forceFinishMessage());
     }
     // CASE 3: First message or fallback (full history path)
     else {
@@ -353,18 +343,14 @@ class OpenAIHandler extends BaseLLMHandler {
       if (toolOutputs && toolOutputs.length > 0) {
         // Tool continuation without session: history + expanded tool outputs
         params.input = [...historyInput, ...this._expandToolOutputsWithImages(toolOutputs)];
-        if (forceFinish) {
-          params.input.push({ role: 'system', content: forceFinishInstructions });
-        }
       } else {
         params.input = historyInput;
       }
 
       // Send system prompt as instructions (separate from input, like Gemini's systemInstruction)
       const systemText = instructions || this.systemPrompt;
-      if (systemText && !forceFinish) {
-        params.instructions = systemText;
-      }
+      if (systemText) params.instructions = systemText;
+      if (forceFinish) params.input.push(forceFinishMessage());
     }
 
     chatLogger.info('tools');

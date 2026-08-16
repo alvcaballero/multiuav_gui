@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { BaseLLMHandler, forceFinishMessage, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { chatLogger } from '../../../common/logger.js';
 
@@ -191,10 +191,7 @@ class OllamaHandler extends BaseLLMHandler {
         messages.push(this.convertToolOutput(output));
       }
       if (forceFinish) {
-        messages.push({
-          role: 'system',
-          content: FORCE_FINISH_MESSAGE,
-        });
+        messages.push(forceFinishMessage());
       }
     }
     // Prepend system prompt only if not already present in conversation history

@@ -1,9 +1,16 @@
 import { GoogleGenAI } from '@google/genai';
-import { BaseLLMHandler, FORCE_FINISH_MESSAGE, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { BaseLLMHandler, forceFinishMessage, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
 import { SystemPrompts } from '../agents/index.js';
 import { logger, chatLogger } from '../../../common/logger.js';
 
-// Models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-3-flash-preview, gemini-3.1-pro-preview
+// Models:
+// gemini-3.1-pro-preview, thinking_level=[low, medium, high*] I2.0,O12.0
+// gemini-2.5-pro, thinking_level=[low, medium, high] I1.25,O10.0
+// gemini-3.6-flash, thinking_level=[minimal, low, medium*, high] I1.5,O7.50
+// gemini-3.5-flash, thinking_level=[minimal, low, medium, high*] I1.5,O9.0
+// gemini-3.1-flash-lite, thinking_level=[low, medium, high*] I0.25,O1.5
+// gemini-3-flash-preview, thinking_level=[minimal ,low, medium, high*] I0.5,O3.0
+// gemini-2.5-flash, thinking_level=[low, medium, high] I0.3,I2.5
 class GeminiHandler extends BaseLLMHandler {
   static CAPABILITY_MAP = {
     low: { model: 'gemini-2.5-flash' },
@@ -299,10 +306,8 @@ class GeminiHandler extends BaseLLMHandler {
       contents.push({ role: 'user', parts: functionResponses });
 
       if (forceFinish) {
-        contents.push({
-          role: 'user',
-          parts: [{ text: FORCE_FINISH_MESSAGE }],
-        });
+        const directive = forceFinishMessage();
+        contents.push({ role: directive.role, parts: [{ text: directive.content }] });
       }
     } else if (message !== null) {
       contents = this.convertMsg(message, conversationHistory);

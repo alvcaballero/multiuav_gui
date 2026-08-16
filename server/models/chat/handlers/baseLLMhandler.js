@@ -1,5 +1,32 @@
+/** Marker prefix that tells the model a message is a system directive, not user input. */
+export const SYSTEM_DIRECTIVE_MARKER = '[SYSTEM_DIRECTIVE]';
+
+/**
+ * Text sent when the tool loop hits its iteration cap.
+ *
+ * Delivered as a `user`-role message in EVERY provider, deliberately:
+ *  - Anthropic rejects `role: 'system'` inside `messages` (system is top-level);
+ *  - Gemini drops system-role history entries (they go via `systemInstruction`);
+ * so `user` is the only role all four replay mid-conversation. The marker is what
+ * carries the "this is the system talking" meaning that the role cannot.
+ *
+ * EPHEMERAL: built while assembling a request, never persisted. A stored copy
+ * would keep ordering the model to wrap up on every later turn.
+ */
 export const FORCE_FINISH_MESSAGE =
-  'Maximum tool iterations reached. You MUST provide your final response NOW using only the information gathered so far. Do NOT attempt to call any more tools.';
+  `${SYSTEM_DIRECTIVE_MARKER} Maximum tool iterations reached. You MUST provide your final response NOW ` +
+  'using only the information gathered so far. Do NOT attempt to call any more tools. ' +
+  'Summarize what was accomplished and present the results to the user.';
+
+/**
+ * The force-finish directive as a provider-agnostic message object.
+ * Anthropic needs it as a content block instead — see its handler.
+ *
+ * @returns {{role: string, content: string}}
+ */
+export function forceFinishMessage() {
+  return { role: 'user', content: FORCE_FINISH_MESSAGE };
+}
 
 /**
  * Builds the canonical usage shape every handler must return.
