@@ -75,8 +75,9 @@ export const markersModel = {
 
   // Upserts markersbase/elements/assignments from a legacy-shaped payload
   // (same one the client already sends via POST /api/planning/setDefault).
-  // Full-replace semantics per collection, matching today's "save everything
-  // at once" behavior — not a real diff/patch. Returns the fully-synced
+  // Full-replace semantics per collection: a group/item/base present in SQL
+  // but missing from the incoming payload is removed, matching what "Save
+  // Global Markers" is supposed to mean in the UI. Returns the fully-synced
   // state read back from SQL (including any id the server just assigned to
   // a newly-created base) so the caller can hand it back to the client.
   async setMarkers({ markersbase, elements, assignments }) {
@@ -125,25 +126,47 @@ export const markersModel = {
     }
   },
 
-  // Matches existing groups by name+type (same heuristic as the migration
-  // script) so re-saving the same YAML-shaped payload doesn't create
-  // duplicates; items are matched by name within their group.
+  // Matches existing groups by id when the payload has one (every group the
+  // server ever sent out carries its real `groupId`, per groupToLegacy
+  // above); falls back to name+type for a group created client-side and
+  // never saved yet. Items are matched the same way by `itemId`/name within
+  // their group. A group/item that exists in SQL but is missing from the
+  // payload was deleted client-side — it's soft-deleted (groups) / hard-deleted
+  // (items), same as the fine-grained DELETE endpoints already do, so "Save
+  // Global Markers" is a real full-replace instead of insert/update-only.
   async _upsertElements(elements) {
+    const existingGroups = await sequelize.models.ElementGroup.findAll({ where: { deletedAt: null } });
+    const seenGroupIds = new Set();
+
     for (const group of elements) {
       const name = (group.name || '').trim();
-      const [elementGroup] = await sequelize.models.ElementGroup.findOrCreate({
-        where: { name, typeId: group.type, deletedAt: null },
-        defaults: {
-          typeId: group.type,
-          name,
-          description: group.description || '',
-          linea: group.linea ?? false,
-          attributes: {},
-        },
-      });
+      const groupId = group.groupId != null ? Number(group.groupId) : null;
+      let elementGroup =
+        groupId != null && !Number.isNaN(groupId)
+          ? existingGroups.find((g) => g.id === groupId)
+          : null;
+
+      if (!elementGroup) {
+        [elementGroup] = await sequelize.models.ElementGroup.findOrCreate({
+          where: { name, typeId: group.type, deletedAt: null },
+          defaults: {
+            typeId: group.type,
+            name,
+            description: group.description || '',
+            linea: group.linea ?? false,
+            attributes: {},
+          },
+        });
+      }
+      seenGroupIds.add(elementGroup.id);
+
+      elementGroup.name = name;
       elementGroup.description = group.description || '';
       elementGroup.linea = group.linea ?? false;
       await elementGroup.save();
+
+      const existingItems = await sequelize.models.ElementItem.findAll({ where: { groupId: elementGroup.id } });
+      const seenItemIds = new Set();
 
       const items = group.items || [];
       for (let i = 0; i < items.length; i++) {
@@ -156,21 +179,43 @@ export const markersModel = {
         // is always well-formed; the client's own placeholder for a nameless
         // row follows the same "Type index" pattern (see BaseList.jsx).
         const name = item.name || `Item ${i}`;
-        const [elementItem] = await sequelize.models.ElementItem.findOrCreate({
-          where: { groupId: elementGroup.id, name },
-          defaults: {
-            groupId: elementGroup.id,
-            name,
-            latitude: item.latitude,
-            longitude: item.longitude,
-          },
-        });
+        const itemId = item.itemId != null ? Number(item.itemId) : null;
+        let elementItem =
+          itemId != null && !Number.isNaN(itemId) ? existingItems.find((it) => it.id === itemId) : null;
+
+        if (!elementItem) {
+          [elementItem] = await sequelize.models.ElementItem.findOrCreate({
+            where: { groupId: elementGroup.id, name },
+            defaults: {
+              groupId: elementGroup.id,
+              name,
+              latitude: item.latitude,
+              longitude: item.longitude,
+            },
+          });
+        }
+        seenItemIds.add(elementItem.id);
+
+        elementItem.name = name;
         elementItem.latitude = item.latitude;
         elementItem.longitude = item.longitude;
         await elementItem.save();
       }
 
+      const removedItemIds = existingItems.filter((it) => !seenItemIds.has(it.id)).map((it) => it.id);
+      if (removedItemIds.length > 0) {
+        await sequelize.models.ElementItem.destroy({ where: { id: { [Op.in]: removedItemIds } } });
+      }
+
       await elementGroupsModel.recalculateBounds(elementGroup.id);
+    }
+
+    const removedGroupIds = existingGroups.filter((g) => !seenGroupIds.has(g.id)).map((g) => g.id);
+    if (removedGroupIds.length > 0) {
+      await sequelize.models.ElementGroup.update(
+        { deletedAt: new Date() },
+        { where: { id: { [Op.in]: removedGroupIds }, deletedAt: null } }
+      );
     }
   },
 
