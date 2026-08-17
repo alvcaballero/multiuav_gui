@@ -12,13 +12,29 @@ export function mergeDefaultGeometry(attributes, defaultGeometry) {
   return { ...(attributes ?? {}), geometry: defaultGeometry };
 }
 
+// Excludes items whose parent group is soft-deleted — a deleted group keeps
+// its items in SQL (intentional, see elementGroupsModel.delete), but nothing
+// reading items for external use (REST, MCP tools, mission planning) should
+// ever see them. `required: true` makes this an inner join, so a mismatched/
+// deleted group filters the item out instead of returning it with `group:
+// null`.
+function groupFilter(sequelize) {
+  return {
+    model: sequelize.models.ElementGroup,
+    as: 'group',
+    attributes: [],
+    where: { deletedAt: null },
+    required: true,
+  };
+}
+
 export const elementItemsModel = {
   async getAll() {
-    return await sequelize.models.ElementItem.findAll();
+    return await sequelize.models.ElementItem.findAll({ include: [groupFilter(sequelize)] });
   },
 
   async getById(id) {
-    return await sequelize.models.ElementItem.findOne({ where: { id } });
+    return await sequelize.models.ElementItem.findOne({ where: { id }, include: [groupFilter(sequelize)] });
   },
 
   async getDetailById(id) {
@@ -28,6 +44,8 @@ export const elementItemsModel = {
         {
           model: sequelize.models.ElementGroup,
           as: 'group',
+          where: { deletedAt: null },
+          required: true,
           include: [{ model: sequelize.models.ElementType, as: 'type' }],
         },
       ],
@@ -35,7 +53,10 @@ export const elementItemsModel = {
   },
 
   async getByIds(ids) {
-    return await sequelize.models.ElementItem.findAll({ where: { id: { [Op.in]: ids } } });
+    return await sequelize.models.ElementItem.findAll({
+      where: { id: { [Op.in]: ids } },
+      include: [groupFilter(sequelize)],
+    });
   },
 
   /**
@@ -48,11 +69,15 @@ export const elementItemsModel = {
         latitude: { [Op.between]: [minLat, maxLat] },
         longitude: { [Op.between]: [minLng, maxLng] },
       },
+      include: [groupFilter(sequelize)],
     });
   },
 
   async findByGroup(groupId) {
-    return await sequelize.models.ElementItem.findAll({ where: { groupId } });
+    return await sequelize.models.ElementItem.findAll({
+      where: { groupId },
+      include: [groupFilter(sequelize)],
+    });
   },
 
   async create(elementItem) {
