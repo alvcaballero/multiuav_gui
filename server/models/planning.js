@@ -99,10 +99,16 @@ export class planningModel {
   // YAML, same as before.
   static async setDefault(value) {
     const { markersbase, elements, assignments, ...residual } = value;
-    await markersModel.setMarkers({ markersbase, elements, assignments });
+    const savedMarkers = await markersModel.setMarkers({ markersbase, elements, assignments });
     initPlanning = { ...initPlanning, ...residual };
     let response = await writeDataFile(missionsConfigData, initPlanning);
-    return { result: response };
+    const savedAssignments = await markersModel.getAssignments();
+    return {
+      result: response,
+      markersbase: savedMarkers.markersbase,
+      elements: savedMarkers.elements,
+      assignments: savedAssignments,
+    };
   }
 
   static async PlanningRequest({ id, myTask }) {

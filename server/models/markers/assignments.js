@@ -43,8 +43,8 @@ export const assignmentsModel = {
       sequelize.models.Base.findAll(),
       sequelize.models.Assignment.findAll({ include: [{ model: sequelize.models.Device, as: 'device' }] }),
     ]);
-    const assignmentsMap = new Map(assignments.map((a) => [a.baseId, a.device]));
-    return bases.map((base) => ({ ...base.dataValues, device: assignmentsMap.get(base.id) || null }));
+    const assignmentsMap = new Map(assignments.map((a) => [Number(a.baseId), a.device]));
+    return bases.map((base) => ({ ...base.dataValues, device: assignmentsMap.get(Number(base.id)) || null }));
   },
 
   // Replaces planningModel.getBasesSettings(): consumed by

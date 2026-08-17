@@ -5,8 +5,9 @@ const Base_TABLE = 'Bases';
 const BaseSchema = {
   id: {
     allowNull: false,
+    autoIncrement: true,
     primaryKey: true,
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
   },
   typeId: {
     type: DataTypes.STRING,

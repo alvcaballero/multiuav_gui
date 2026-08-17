@@ -3,13 +3,6 @@
  */
 
 /**
- * Genera un ID único para una base
- */
-export const generateBaseId = () => {
-  return `base_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-};
-
-/**
  * Genera un ID local para un grupo/item de elementos creado en el cliente
  * antes de guardarse. Prefijado con "local_" para distinguirlo de un id real
  * de SQL (siempre numérico) sin ambigüedad.
@@ -29,16 +22,18 @@ export const migrateMarkers = (markers) => {
     return markers;
   }
 
-  const migratedBases = (markers.bases || []).map((base, index) => {
-    // Si ya tiene ID, no hacer nada
-    if (base.id) {
+  // Una base con `id` (real, asignado por el servidor) se deja intacta. Una
+  // base recién creada en el cliente, todavía sin guardar, recibe un
+  // `tempId` (nunca `id`) para que React tenga una key estable sin que
+  // parezca jamás un id real persistido — se descarta antes de que la base
+  // exista en SQL, el servidor siempre asigna el `id` real en el primer guardado.
+  const migratedBases = (markers.bases || []).map((base) => {
+    if (base.id != null) {
       return base;
     }
-
-    // Generar ID basado en el índice para mantener consistencia
     return {
       ...base,
-      id: `base_${index}`,
+      tempId: base.tempId ?? generateLocalId(),
     };
   });
 

@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { migrateMarkers, migratePlanning, generateBaseId } from './sessionMigration';
+import { migrateMarkers, migratePlanning, generateLocalId } from './sessionMigration';
 
 const { reducer, actions } = createSlice({
   name: 'session',
@@ -79,10 +79,11 @@ const { reducer, actions } = createSlice({
       state.markers.elements.push(...action.payload);
     },
     addMarkerBase(state, action) {
-      // Asegurar que las nuevas bases tengan ID
+      // Las bases importadas (ej. desde KML) no tienen id real todavía — el
+      // servidor lo asigna recién en el primer guardado (ver sessionMigration.js).
       const newBases = action.payload.map((base) => {
-        if (base.id) return base;
-        return { ...base, id: generateBaseId() };
+        if (base.id != null) return base;
+        return { ...base, tempId: base.tempId ?? generateLocalId() };
       });
       state.markers.bases.push(...newBases);
     },

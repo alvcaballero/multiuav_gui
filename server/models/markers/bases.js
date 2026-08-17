@@ -10,10 +10,9 @@ export const basesModel = {
   },
 
   async create(base) {
-    const { id, typeId, name, latitude, longitude, corners } = base;
+    const { typeId, name, latitude, longitude, corners } = base;
 
     return await sequelize.models.Base.create({
-      id,
       typeId: typeId ?? null,
       name: name ?? null,
       latitude,

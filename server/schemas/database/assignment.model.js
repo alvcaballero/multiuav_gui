@@ -11,7 +11,7 @@ const AssignmentSchema = {
   },
   baseId: {
     allowNull: false,
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
   },
   deviceId: {
     allowNull: false,

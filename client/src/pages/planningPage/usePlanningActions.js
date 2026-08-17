@@ -128,6 +128,7 @@ export const usePlanningActions = ({
       body: JSON.stringify(value),
     });
     if (!response.ok) throw new Error(await response.text());
+    return await response.json();
   });
 
   return { SendPlanning, MissionTask, SavePlanning, setDefaultPlanning };

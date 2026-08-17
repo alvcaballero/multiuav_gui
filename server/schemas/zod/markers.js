@@ -43,12 +43,28 @@ export const ElementTypeSchema = z.object({
   attributes: AttributesSchema.nullable().optional(),
 });
 
+// Bounding box over the group's items' lat/lng — min/max corner points.
+// Derived and written only by elementGroupsModel.recalculateBounds(), never
+// sent by the client, but modeled here so `attributes` reflects what's
+// actually persisted.
+const GroupBoundsSchema = z
+  .object({
+    minLat: z.number(),
+    maxLat: z.number(),
+    minLng: z.number(),
+    maxLng: z.number(),
+  })
+  .nullable();
+
 export const ElementGroupSchema = z.object({
   typeId: z.string(),
   name: z.string(),
   description: z.string().optional(),
   linea: z.boolean().optional(),
-  attributes: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+  attributes: z
+    .object({ bounds: GroupBoundsSchema.optional() })
+    .catchall(z.union([z.string(), z.number()]))
+    .optional(),
 });
 
 export const ElementItemSchema = z.object({
@@ -61,7 +77,7 @@ export const ElementItemSchema = z.object({
 });
 
 export const BaseSchema = z.object({
-  id: z.string(),
+  id: z.coerce.number().int().positive().optional(),
   typeId: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   latitude: z.number(),
@@ -70,7 +86,7 @@ export const BaseSchema = z.object({
 });
 
 export const AssignmentSchema = z.object({
-  baseId: z.string(),
+  baseId: z.coerce.number().int().positive(),
   deviceId: z.coerce.number(),
   settings: z.record(z.string(), z.union([z.string(), z.number(), z.array(z.any())])).optional(),
 });

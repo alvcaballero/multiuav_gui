@@ -5,6 +5,7 @@
 import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
 import { logger } from '../../common/logger.js';
+import { elementGroupsModel } from './elementGroups.js';
 
 // Builds one `elements[]` entry (a group + its items) in the legacy shape,
 // adding `itemId`/`groupId`/`attributes` on each item and `attributes` on the
@@ -75,7 +76,9 @@ export const markersModel = {
   // Upserts markersbase/elements/assignments from a legacy-shaped payload
   // (same one the client already sends via POST /api/planning/setDefault).
   // Full-replace semantics per collection, matching today's "save everything
-  // at once" behavior — not a real diff/patch.
+  // at once" behavior — not a real diff/patch. Returns the fully-synced
+  // state read back from SQL (including any id the server just assigned to
+  // a newly-created base) so the caller can hand it back to the client.
   async setMarkers({ markersbase, elements, assignments }) {
     if (Array.isArray(markersbase)) {
       await this._upsertBases(markersbase);
@@ -86,19 +89,39 @@ export const markersModel = {
     if (Array.isArray(assignments)) {
       await this._upsertAssignments(assignments);
     }
-    return { result: true };
+    return await this.getMarkers();
   },
 
+  // A base is only updated in place when its `id` matches a row that
+  // actually exists in the table — never a blind upsert by whatever id the
+  // client happened to send. A base with no id, or an id that doesn't match
+  // any existing row (a client-side placeholder, a stale/deleted id), is
+  // always inserted as a new row and gets a real id from AUTOINCREMENT. This
+  // is what makes two different client-generated placeholder ids collide
+  // safely instead of overwriting each other's data.
   async _upsertBases(markersbase) {
+    const existing = await sequelize.models.Base.findAll();
+    const byId = new Map(existing.map((row) => [row.id, row]));
     for (const base of markersbase) {
-      if (!base.id) continue;
-      await sequelize.models.Base.upsert({
-        id: base.id,
-        name: base.name ?? null,
-        latitude: base.latitude,
-        longitude: base.longitude,
-        corners: base.corners ?? null,
-      });
+      const numericId = base.id != null ? Number(base.id) : null;
+      const row = numericId != null && !Number.isNaN(numericId) ? byId.get(numericId) : null;
+
+      if (row) {
+        row.name = base.name ?? null;
+        row.latitude = base.latitude;
+        row.longitude = base.longitude;
+        row.corners = base.corners ?? null;
+        if (base.typeId !== undefined) row.typeId = base.typeId;
+        await row.save();
+      } else {
+        await sequelize.models.Base.create({
+          typeId: base.typeId ?? null,
+          name: base.name ?? null,
+          latitude: base.latitude,
+          longitude: base.longitude,
+          corners: base.corners ?? null,
+        });
+      }
     }
   },
 
@@ -146,24 +169,27 @@ export const markersModel = {
         elementItem.longitude = item.longitude;
         await elementItem.save();
       }
+
+      await elementGroupsModel.recalculateBounds(elementGroup.id);
     }
   },
 
   async _upsertAssignments(assignments) {
     for (const assignment of assignments) {
+      const baseId = Number(assignment.baseId);
       const deviceRef = assignment.device || {};
       const device = await sequelize.models.Device.findOne({
         where: deviceRef.name ? { name: deviceRef.name } : { id: deviceRef.id },
       });
       if (!device) {
-        logger.warn(`setMarkers: skipping assignment for base ${assignment.baseId}, device not found`, {
+        logger.warn(`setMarkers: skipping assignment for base ${baseId}, device not found`, {
           deviceRef,
         });
         continue;
       }
       const [record] = await sequelize.models.Assignment.findOrCreate({
-        where: { baseId: assignment.baseId, deviceId: device.id },
-        defaults: { baseId: assignment.baseId, deviceId: device.id, settings: assignment.settings || {} },
+        where: { baseId, deviceId: device.id },
+        defaults: { baseId, deviceId: device.id, settings: assignment.settings || {} },
       });
       record.settings = assignment.settings || {};
       await record.save();
@@ -176,8 +202,8 @@ export const markersModel = {
       sequelize.models.Base.findAll(),
       sequelize.models.Assignment.findAll({ include: [{ model: sequelize.models.Device, as: 'device' }] }),
     ]);
-    const assignmentsMap = new Map(assignments.map((a) => [a.baseId, a.device]));
-    return bases.map((base) => ({ ...baseToLegacy(base), device: assignmentsMap.get(base.id) || null }));
+    const assignmentsMap = new Map(assignments.map((a) => [Number(a.baseId), a.device]));
+    return bases.map((base) => ({ ...baseToLegacy(base), device: assignmentsMap.get(Number(base.id)) || null }));
   },
 
   // Legacy shape: assignments[] as stored in the YAML ({baseId, device:{id,name}, settings})

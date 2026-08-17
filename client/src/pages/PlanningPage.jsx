@@ -176,11 +176,18 @@ const PlanningPage = () => {
     [SavePlanning, SendTask, markers.bases, markers.elements],
   );
 
-  const handleSaveGlobalMarkers = useCallback(
-    () =>
-      setDefaultPlanning({ ...SendTask, markersbase: markers.bases, elements: markers.elements }),
-    [setDefaultPlanning, SendTask, markers.bases, markers.elements],
-  );
+  const handleSaveGlobalMarkers = useCallback(async () => {
+    const response = await setDefaultPlanning({
+      ...SendTask,
+      markersbase: markers.bases,
+      elements: markers.elements,
+    });
+    if (response) {
+      dispatch(
+        sessionActions.updateMarker({ ...markers, bases: response.markersbase, elements: response.elements }),
+      );
+    }
+  }, [setDefaultPlanning, SendTask, markers, dispatch]);
 
   const handleUpdatePlanningId = useCallback(
     (event) => dispatch(sessionActions.updatePlanning({ ...SendTask, id: event.target.value })),

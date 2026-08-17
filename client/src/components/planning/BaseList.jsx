@@ -162,7 +162,7 @@ const BaseList = ({
       ) : (
         <div className={classes.details}>
           {Object.values(markers).map((base, index) => {
-            const rowKey = base.id ?? base.itemId ?? index;
+            const rowKey = base.id ?? base.tempId ?? base.itemId ?? index;
             return (
               <Accordion
                 key={rowKey}
@@ -199,15 +199,12 @@ const BaseList = ({
                           '& .MuiTextField-root': { m: 1 },
                         }}
                       >
-                        {type === 'Element' && (
-                          <TextField
-                            required
-                            label="Name"
-                            variant="standard"
-                            value={base.name ? base.name : ''}
-                            onChange={(e) => setName(index, e.target.value)}
-                          />
-                        )}
+                        <TextField
+                          label="Name"
+                          variant="standard"
+                          value={base.name ? base.name : ''}
+                          onChange={(e) => setName(index, e.target.value)}
+                        />
                         <div>
                           <Typography variant="subtitle1" style={{ display: 'inline' }}>
                             Position

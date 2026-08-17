@@ -35,9 +35,7 @@ export const useAsyncTask = (effect, deps) => {
 
 export const useCatch = (method) => {
   const dispatch = useDispatch();
-  return (...parameters) => {
-    method(...parameters).catch((error) => dispatch(errorsActions.push(error.message)));
-  };
+  return (...parameters) => method(...parameters).catch((error) => dispatch(errorsActions.push(error.message)));
 };
 
 export const useCatchCallback = (method, deps) => {
