@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
+import { elementGroupsModel } from './elementGroups.js';
 
 /**
  * Copies `defaultGeometry` (from the item's ElementType) into `attributes.geometry`
@@ -65,7 +66,7 @@ export const elementItemsModel = {
       finalAttributes = mergeDefaultGeometry(finalAttributes, group?.type?.attributes?.geometry);
     }
 
-    return await sequelize.models.ElementItem.create({
+    const created = await sequelize.models.ElementItem.create({
       groupId,
       name,
       latitude,
@@ -73,6 +74,8 @@ export const elementItemsModel = {
       description: description ?? null,
       attributes: finalAttributes,
     });
+    await elementGroupsModel.recalculateBounds(groupId);
+    return created;
   },
 
   async update(id, elementItem) {
@@ -81,6 +84,7 @@ export const elementItemsModel = {
     if (!myItem) {
       return null;
     }
+    const previousGroupId = myItem.groupId;
     if (groupId) myItem.groupId = groupId;
     if (name) myItem.name = name;
     if (latitude !== undefined) myItem.latitude = latitude;
@@ -88,10 +92,20 @@ export const elementItemsModel = {
     if (description !== undefined) myItem.description = description;
     if (attributes !== undefined) myItem.attributes = attributes;
     await myItem.save();
+
+    await elementGroupsModel.recalculateBounds(myItem.groupId);
+    if (groupId && groupId !== previousGroupId) {
+      await elementGroupsModel.recalculateBounds(previousGroupId);
+    }
     return myItem;
   },
 
   async delete(id) {
-    return await sequelize.models.ElementItem.destroy({ where: { id } });
+    const myItem = await sequelize.models.ElementItem.findOne({ where: { id } });
+    const result = await sequelize.models.ElementItem.destroy({ where: { id } });
+    if (myItem) {
+      await elementGroupsModel.recalculateBounds(myItem.groupId);
+    }
+    return result;
   },
 };

@@ -44,4 +44,38 @@ export const elementGroupsModel = {
       { where: { id, deletedAt: null } }
     );
   },
+
+  // Recomputes the group's lat/lng bounding box from its current items and
+  // persists it under attributes.bounds — the two corner points (min, max)
+  // covering every item in the group. Merged into the existing `attributes`
+  // JSON blob (same convention as mergeDefaultGeometry in elementItems.js:
+  // attributes is a free-form bag, other keys are preserved). Called after
+  // any write that adds/edits/removes an ElementItem. `null` when the group
+  // has no items.
+  async recalculateBounds(groupId) {
+    const group = await sequelize.models.ElementGroup.findByPk(groupId);
+    if (!group) return null;
+
+    const items = await sequelize.models.ElementItem.findAll({
+      where: { groupId },
+      attributes: ['latitude', 'longitude'],
+      raw: true,
+    });
+
+    const bounds = items.length
+      ? items.reduce(
+          (acc, { latitude, longitude }) => ({
+            minLat: Math.min(acc.minLat, latitude),
+            maxLat: Math.max(acc.maxLat, latitude),
+            minLng: Math.min(acc.minLng, longitude),
+            maxLng: Math.max(acc.maxLng, longitude),
+          }),
+          { minLat: items[0].latitude, maxLat: items[0].latitude, minLng: items[0].longitude, maxLng: items[0].longitude }
+        )
+      : null;
+
+    group.attributes = { ...(group.attributes ?? {}), bounds };
+    await group.save();
+    return bounds;
+  },
 };
