@@ -162,11 +162,17 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }
 
   useEffect(() => {
     if (NoEdit) return;
-    if (matchedCategory && route.uav_type !== matchedCategory) {
-      dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: matchedCategory }));
+    if (!matchedCategory || route.uav_type === matchedCategory) return;
+    dispatch(missionActions.updateRoute({ index, field: 'uav_type', value: matchedCategory }));
+    // uav_type is derived, never persisted, so it's always unset right after a route
+    // loads (LLM push, saved plan, file import). Only a genuinely new route (no
+    // attributes yet) needs server defaults fetched - a loaded route already has
+    // real attribute values that must not be treated as "nothing assigned yet".
+    const hasAttributes = Object.keys(route.attributes || {}).length > 0;
+    if (!hasAttributes) {
       dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: matchedCategory }));
     }
-  }, [NoEdit, matchedCategory, index, route.uav_type, dispatch]);
+  }, [NoEdit, matchedCategory, index, route.uav_type, route.attributes, dispatch]);
 
   const handleAddWaypoint = (index_route, index_wp) => {
     let center = map.getCenter();

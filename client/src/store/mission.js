@@ -324,7 +324,7 @@ const { reducer: missionReducerBase, actions } = createSlice({
     builder.addCase(applyUavTypeDefaults.fulfilled, (state, action) => {
       const { routeIndex, defaults } = action.payload;
       if (state.route[routeIndex]) {
-        state.route[routeIndex].attributes = { ...state.route[routeIndex].attributes, ...defaults };
+        state.route[routeIndex].attributes = { ...defaults, ...state.route[routeIndex].attributes };
       }
     });
   },
