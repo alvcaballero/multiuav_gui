@@ -513,7 +513,7 @@ export function penetrationDepthOBB(point, obb) {
   const penY = obb.halfExtent.y - Math.abs(local.y);
   const distToFloor = point.z - obb.center.z;
   const distToCeiling = obb.center.z + obb.height - point.z;
-  return { xy: Math.min(penX, penY), z: Math.min(distToFloor, distToCeiling) };
+  return { xy: Math.min(penX, penY), z: distToCeiling };
 }
 
 /**
@@ -534,7 +534,7 @@ export function penetrationDepthCylinder(point, cylinder) {
   const radialPen = cylinder.radius - distance2D(point, cylinder.center);
   const distToFloor = point.z - cylinder.center.z;
   const distToCeiling = cylinder.center.z + cylinder.height - point.z;
-  return { xy: radialPen, z: Math.min(distToFloor, distToCeiling) };
+  return { xy: radialPen, z: distToCeiling };
 }
 
 /**

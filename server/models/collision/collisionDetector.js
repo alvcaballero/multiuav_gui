@@ -12,6 +12,7 @@ import {
   segmentIntersectsCylinder,
   segmentIntersectsOBB,
   obstacleAABB,
+  obstacleCenter,
   obstacleCylinder,
   obstacleOBB,
   distance3D,
@@ -34,7 +35,9 @@ import {
  * @property {Point3D|number[]} pos - Position (object or [x, y, z] array)
  * @property {number} [yaw] - Heading in degrees
  * @property {number} [speed] - Speed in m/s
- * @property {string} [target_id] - Target being inspected
+ * @property {string} [target_id] - Catalog `obstacle_id` of the target being inspected - a
+ *           numeric-looking ID, not a display name; resolve it against `collision_objects`
+ *           (see `obstacleNameById` in {@link validateRoute}) before showing it to a human/LLM
  * @property {string} [notes] - Additional notes
  */
 
@@ -45,6 +48,11 @@ import {
  * @property {string} obstacleType - Type of obstacle
  * @property {string} zoneType - 'exclusion' | 'caution'
  * @property {number} segmentIndex - Index of colliding segment (start waypoint index)
+ * @property {string} label - Human-readable identity of the colliding waypoint(s): the
+ *           `target_id`/`type` of the single waypoint, or `"A -> B"` for a segment between
+ *           different groups, or `"intra-group A"` when both endpoints belong to the same
+ *           group - lets the caller tell a transit-leg collision from a chord crossing the
+ *           group's own object without re-deriving it from segmentIndex
  * @property {Point3D} collisionPoint - Approximate collision point
  * @property {{xy: number, z: number}} penetrationDepth - How far into the zone, split into
  *           horizontal (xy, distance to the nearest side wall) and vertical (z, distance to
@@ -73,7 +81,7 @@ import {
 
 // Safety margins (meters), applied on top of each obstacle's own safety_margin
 const SAFETY_MARGINS = {
-  EXCLUSION: 0, // safety_margin already includes the required clearance
+  EXCLUSION: 2.0, // safety_margin already includes the required clearance
   CAUTION_EXTRA: 5.0, // Extra margin beyond safety_margin that triggers a warning instead of a hard collision
   WAYPOINT: 2.0, // Margin for waypoint position checks
 };
@@ -107,16 +115,48 @@ function normalizePosition(pos) {
  * @returns {number}
  */
 function cautionMargin(obstacle, extra) {
-  return obstacle.safety_margin + extra;
+  return Math.max(obstacle.safety_margin, extra);
+}
+
+/**
+ * Identity label for a single waypoint: the display name of the inspection
+ * target it belongs to (resolved from `target_id`, a catalog ID, via
+ * `obstacleNameById`), or its type (transit/takeoff/landing) when it has no
+ * target. Falls back to the raw `target_id` if it has no matching obstacle -
+ * that itself signals a Step 1 gap (every target must get a collision_object).
+ * @param {Waypoint} waypoint
+ * @param {Map<string,string>} obstacleNameById - `obstacle_id -> obstacle_name`, from {@link validateRoute}
+ * @returns {string}
+ */
+function waypointLabel(waypoint, obstacleNameById) {
+  if (waypoint.target_id != null) {
+    return obstacleNameById.get(String(waypoint.target_id)) ?? waypoint.target_id;
+  }
+  return waypoint.type ?? 'unknown';
+}
+
+/**
+ * Identity label for a segment between two waypoints - see the `label` field
+ * of {@link CollisionResult} for what each shape means.
+ * @param {Waypoint} wp1
+ * @param {Waypoint} wp2
+ * @param {Map<string,string>} obstacleNameById
+ * @returns {string}
+ */
+function segmentLabel(wp1, wp2, obstacleNameById) {
+  const from = waypointLabel(wp1, obstacleNameById);
+  const to = waypointLabel(wp2, obstacleNameById);
+  return from === to ? `intra-group ${from}` : `${from} -> ${to}`;
 }
 
 /**
  * Check if a single waypoint collides with an obstacle
  * @param {Waypoint} waypoint
  * @param {Obstacle} obstacle
+ * @param {Map<string,string>} obstacleNameById
  * @returns {CollisionResult|null}
  */
-function checkWaypointCollision(waypoint, obstacle) {
+function checkWaypointCollision(waypoint, obstacle, obstacleNameById) {
   const pos = normalizePosition(waypoint.pos);
 
   // First check AABB (fast rejection), expanded to the full caution margin so
@@ -135,6 +175,7 @@ function checkWaypointCollision(waypoint, obstacle) {
         obstacleType: obstacle.geometry_type,
         zoneType: 'exclusion',
         segmentIndex: -1, // Single point, no segment
+        label: waypointLabel(waypoint, obstacleNameById),
         collisionPoint: pos,
         penetrationDepth: penetrationDepthOBB(pos, obb),
         obstacle,
@@ -151,6 +192,7 @@ function checkWaypointCollision(waypoint, obstacle) {
         obstacleType: obstacle.geometry_type,
         zoneType: 'caution',
         segmentIndex: -1,
+        label: waypointLabel(waypoint, obstacleNameById),
         collisionPoint: pos,
         penetrationDepth: penetrationDepthOBB(pos, cautionObb),
         obstacle,
@@ -167,6 +209,7 @@ function checkWaypointCollision(waypoint, obstacle) {
       obstacleType: obstacle.geometry_type,
       zoneType: 'exclusion',
       segmentIndex: -1, // Single point, no segment
+      label: waypointLabel(waypoint, obstacleNameById),
       collisionPoint: pos,
       penetrationDepth: penetrationDepthCylinder(pos, exclusionCylinder),
       obstacle,
@@ -184,6 +227,7 @@ function checkWaypointCollision(waypoint, obstacle) {
       obstacleType: obstacle.geometry_type,
       zoneType: 'caution',
       segmentIndex: -1,
+      label: waypointLabel(waypoint, obstacleNameById),
       collisionPoint: pos,
       penetrationDepth: penetrationDepthCylinder(pos, cautionCylinder),
       obstacle,
@@ -199,9 +243,10 @@ function checkWaypointCollision(waypoint, obstacle) {
  * @param {Waypoint} wp2 - End waypoint
  * @param {number} segmentIndex - Index of segment in route
  * @param {Obstacle} obstacle
+ * @param {Map<string,string>} obstacleNameById
  * @returns {{collision: CollisionResult|null, warning: CollisionResult|null}}
  */
-function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
+function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle, obstacleNameById) {
   const start = normalizePosition(wp1.pos);
   const end = normalizePosition(wp2.pos);
   const segment = { start, end };
@@ -234,8 +279,11 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
         obstacleType: obstacle.geometry_type,
         zoneType: 'exclusion',
         segmentIndex,
+        label: segmentLabel(wp1, wp2, obstacleNameById),
         collisionPoint: deepestPoint,
         penetrationDepth: penetrationDepthOBB(deepestPoint, obb),
+        segmentStart: start,
+        segmentEnd: end,
         obstacle,
       };
     } else {
@@ -253,6 +301,7 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
           obstacleType: obstacle.geometry_type,
           zoneType: 'caution',
           segmentIndex,
+          label: segmentLabel(wp1, wp2, obstacleNameById),
           collisionPoint: deepestPoint,
           penetrationDepth: penetrationDepthOBB(deepestPoint, cautionObb),
           obstacle,
@@ -273,8 +322,11 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
       obstacleType: obstacle.geometry_type,
       zoneType: 'exclusion',
       segmentIndex,
+      label: segmentLabel(wp1, wp2, obstacleNameById),
       collisionPoint: exclusionResult.closestPoint,
       penetrationDepth: penetrationDepthCylinder(exclusionResult.closestPoint, exclusionCylinder),
+      segmentStart: start,
+      segmentEnd: end,
       obstacle,
     };
   } else {
@@ -291,6 +343,7 @@ function checkSegmentCollision(wp1, wp2, segmentIndex, obstacle) {
         obstacleType: obstacle.geometry_type,
         zoneType: 'caution',
         segmentIndex,
+        label: segmentLabel(wp1, wp2, obstacleNameById),
         collisionPoint: cautionResult.closestPoint,
         penetrationDepth: penetrationDepthCylinder(cautionResult.closestPoint, cautionCylinder),
         obstacle,
@@ -352,12 +405,17 @@ export function validateRoute(waypoints, obstacles) {
     };
   }
 
+  // target_id on a waypoint is a catalog obstacle_id (e.g. "23"), not a display
+  // name - resolve it once here against the obstacle list (which includes an
+  // entry per inspection target, per Step 1) instead of showing the raw ID.
+  const obstacleNameById = new Map(obstacles.map((o) => [String(o.obstacle_id), o.obstacle_name ?? o.obstacle_id]));
+
   // Check each waypoint
   for (let i = 0; i < waypoints.length; i++) {
     const wp = waypoints[i];
 
     for (const obstacle of obstacles) {
-      const result = checkWaypointCollision(wp, obstacle);
+      const result = checkWaypointCollision(wp, obstacle, obstacleNameById);
       if (result) {
         result.segmentIndex = i;
         if (result.zoneType === 'exclusion') {
@@ -375,7 +433,7 @@ export function validateRoute(waypoints, obstacles) {
     const wp2 = waypoints[i + 1];
 
     for (const obstacle of obstacles) {
-      const { collision, warning } = checkSegmentCollision(wp1, wp2, i, obstacle);
+      const { collision, warning } = checkSegmentCollision(wp1, wp2, i, obstacle, obstacleNameById);
 
       if (collision) {
         collisions.push(collision);
@@ -581,17 +639,76 @@ export function findCollidingObstacles(start, end, obstacles) {
 }
 
 /**
- * Format a single collision/warning entry
- * @param {CollisionResult} c
+ * Horizontal distance from a segment's start to an obstacle's center - the
+ * rank key for the obstacles blocking one segment. The planner bypasses the
+ * closest one and defers the rest, so the ORDER is what this drives; printing
+ * it as `d=` alongside `from=` and `center=` also lets the reader check the
+ * ranking against the numbers on the same rows.
+ *
+ * Measured in XY, not 3D: obstacles rise from the ground, so folding in the
+ * altitude gap would rank a nearby obstacle behind a distant one purely
+ * because the route happens to fly high over it.
+ * @param {Point3D} start - Segment start
+ * @param {Obstacle} obstacle
+ * @returns {number} Distance in meters
+ */
+function distanceFromStart(start, obstacle) {
+  const c = obstacleCenter(obstacle);
+  return Math.hypot(c.x - start.x, c.y - start.y);
+}
+
+/**
+ * `1` -> `1st`, `2` -> `2nd`, ... - the rank prefix that tells the planner
+ * which obstacle on a blocked segment it must bypass first.
+ * @param {number} n - 1-based rank
  * @returns {string}
  */
-function formatCollisionEntry(c) {
-  const point = `point=(${c.collisionPoint.x.toFixed(1)}, ${c.collisionPoint.y.toFixed(1)}, ${c.collisionPoint.z.toFixed(1)})`;
-  const penetration = `xy=${c.penetrationDepth.xy.toFixed(1)}m, z=${c.penetrationDepth.z.toFixed(1)}m`;
-  if (c.zoneType === 'exclusion') {
-    return `  * Segment [${c.segmentIndex}]: Collision with ${c.obstacleName} at ${point} - Penetration: ${penetration}`;
-  }
-  return `  * Segment [${c.segmentIndex}]: Warning near ${c.obstacleName} at ${point} - Proximity: ${penetration}`;
+function ordinal(n) {
+  if (n === 1) return '1st';
+  if (n === 2) return '2nd';
+  if (n === 3) return '3rd';
+  return `${n}th`;
+}
+
+/**
+ * Format one blocking obstacle as a line under its segment.
+ *
+ * Reports the obstacle's own geometry (center, real size, height) rather than
+ * only the collision point: the planner needs the CENTER to generate bypass
+ * candidates at a radius around it, and without it here it has to look the
+ * obstacle back up in its own input - a step where it has been observed to
+ * invent coordinates. `r`/`w x l` is the real footprint the exclusion test
+ * actually uses (safety_margin is caution-only, see {@link cautionMargin}),
+ * so `depth_xy` is measured against it and the two numbers stay comparable.
+ * `h` is the raw obstacle height, NOT the cylinder's (which folds in the
+ * margin) - the planner adds its own clearance on top for a vertical hop.
+ * @param {CollisionResult} c
+ * @param {number} rank - 1-based position along the segment
+ * @returns {string}
+ */
+function formatObstacleEntry(c, rank) {
+  const o = c.obstacle ?? {};
+  const center = obstacleCenter(o);
+  const size =
+    o.geometry_type === 'rectangle'
+      ? `${o.dimensions?.width ?? 0}x${o.dimensions?.length ?? 0} yaw=${o.yaw ?? 0}`
+      : `r=${o.dimensions?.radius ?? 0}`;
+  const d = c.segmentStart ? `d=${distanceFromStart(c.segmentStart, o).toFixed(1)}m` : '';
+
+  // Filtered join, not interpolation: a waypoint hit has no `d`, and an empty
+  // slot left inline shows up as a run of spaces in the middle of the row.
+  return [
+    `   ${rank ? ordinal(rank) : '*'}`,
+    c.obstacleName,
+    o.geometry_type ?? 'circle',
+    `center=(${center.x.toFixed(1)}, ${center.y.toFixed(1)})`,
+    size,
+    `h=${o.height ?? 0}`,
+    d,
+    `depth_xy=${c.penetrationDepth.xy.toFixed(1)}m depth_z=${c.penetrationDepth.z.toFixed(1)}m`,
+  ]
+    .filter(Boolean)
+    .join('  ');
 }
 
 /**
@@ -605,23 +722,54 @@ function formatRouteDistanceEntry(routeResult) {
 }
 
 /**
- * Format a route's obstacle-collision entry for the OBSTACLE COLLISIONS section
+ * Format a route's blocked segments.
+ *
+ * Grouped by segment, with the obstacles ranked in the order the route meets
+ * them, because one segment cutting through three obstacles is ONE problem,
+ * not three: the planner bypasses the first and lets the rest come back as
+ * their own findings. Listed flat, it reads as three independent findings and
+ * invites a single waypoint placed to clear all of them at once - which only
+ * exists outside the formation, i.e. a perimeter detour.
  * @param {Object} routeResult
  * @returns {string}
  */
 function formatRouteCollisionEntry(routeResult) {
-  const lines = [];
   const name = routeResult.routeName || routeResult.uav || `Route ${routeResult.routeId}`;
+  if (routeResult.collisions.length === 0) return `[ROUTE: ${name}] clear`;
 
-  lines.push(`[ROUTE: ${name}] Collisions: ${routeResult.collisions.length}`);
-  if (routeResult.collisions.length > 0) {
-    lines.push('- **Critical Segments to Fix:**');
-    for (const c of routeResult.collisions) {
-      lines.push(formatCollisionEntry(c));
+  const blocks = [];
+  const bySegment = new Map();
+  const waypointHits = [];
+
+  for (const c of routeResult.collisions) {
+    // A waypoint collision has no segment endpoints - a point has no direction
+    // along which to be "first", so it cannot join the per-segment ranking.
+    if (!c.segmentStart || !c.segmentEnd) {
+      waypointHits.push(c);
+      continue;
     }
+    if (!bySegment.has(c.segmentIndex)) bySegment.set(c.segmentIndex, []);
+    bySegment.get(c.segmentIndex).push(c);
   }
 
-  return lines.join('\n');
+  for (const [segmentIndex, hits] of [...bySegment].sort((a, b) => a[0] - b[0])) {
+    hits.sort((a, b) => distanceFromStart(a.segmentStart, a.obstacle) - distanceFromStart(b.segmentStart, b.obstacle));
+    const { segmentStart: s, segmentEnd: e, label } = hits[0];
+    blocks.push(
+      [
+        `[ROUTE: ${name}] seg ${segmentIndex}  ${label ?? ''}`,
+        `   from=(${s.x.toFixed(1)}, ${s.y.toFixed(1)}, ${s.z.toFixed(1)})  ` +
+          `to=(${e.x.toFixed(1)}, ${e.y.toFixed(1)}, ${e.z.toFixed(1)})`,
+        ...hits.map((c, i) => formatObstacleEntry(c, i + 1)),
+      ].join('\n')
+    );
+  }
+
+  for (const c of waypointHits) {
+    blocks.push([`[ROUTE: ${name}] waypoint ${c.segmentIndex}  ${c.label ?? ''}`, formatObstacleEntry(c, null)].join('\n'));
+  }
+
+  return blocks.join('\n\n');
 }
 
 /**
@@ -637,7 +785,7 @@ function formatInterRouteEntry(c) {
     `  * ALERT: ${uavA} [seg ${c.routeA.segmentIndex}] and ${uavB} [seg ${c.routeB.segmentIndex}] ` +
     `cross paths at ${point} (distance=${c.distance.toFixed(1)}m) - ` +
     `${uavA}@${c.timeA.toFixed(1)}s vs ${uavB}@${c.timeB.toFixed(1)}s (Δt=${c.timeDiff.toFixed(1)}s) - ` +
-    `possible collision, possible fixes: generate a detour for one of the UAVs, or reverse the order of way points for one of the UAVs`
+    `possible collision, possible fixes: generate a detour for one of the UAVs near this point for avoide collision`
   );
 }
 
@@ -648,6 +796,17 @@ function formatInterRouteEntry(c) {
  */
 export function formatMissionReport(missionResult) {
   const lines = [];
+  const blocked = missionResult.routes.filter((r) => r.collisions.length > 0);
+  // Count real segments only: a waypoint collision carries the WAYPOINT index
+  // in `segmentIndex` (overwritten in validateRoute), so counting it here
+  // would inflate the segment tally with indices that name no segment.
+  const blockedSegments = new Set(
+    blocked.flatMap((r) =>
+      r.collisions
+        .filter((c) => c.segmentStart && c.segmentEnd)
+        .map((c) => `${r.routeName || r.uav || r.routeId}#${c.segmentIndex}`)
+    )
+  ).size;
 
   lines.push('--- ROUTE DISTANCES ---');
   lines.push(`Total Distance: ${missionResult.totalDistance.toFixed(1)} m`);
@@ -656,10 +815,21 @@ export function formatMissionReport(missionResult) {
   }
 
   lines.push('');
-  lines.push('--- OBSTACLE COLLISIONS ---');
-  lines.push(`Total: ${missionResult.totalCollisions} | Warnings: ${missionResult.totalWarnings}`);
-  for (const route of missionResult.routes) {
-    lines.push(formatRouteCollisionEntry(route));
+  lines.push('--- COLLISION OBJECT SEGMENTS ---');
+  // Warnings ride along as a subordinate clause on the collision count rather
+  // than getting a section of their own. They are caution-zone proximity, not
+  // a safety failure, so they must not read as peer findings - but a heading
+  // like "NOT ACTIONABLE" reads as a REGION marker, and everything below it
+  // (inter-UAV conflicts, inspection coverage) is very much actionable.
+  const warned = missionResult.totalWarnings
+    ? ` ${missionResult.totalWarnings} caution-zone warning(s) not listed: proximity only, never a collision - no action.`
+    : '';
+  if (missionResult.totalCollisions === 0) {
+    lines.push(`None.${warned}`);
+  } else {
+    lines.push(`${missionResult.totalCollisions} collision(s) on ${blockedSegments} segment(s).${warned}`);
+    lines.push('');
+    lines.push(blocked.map(formatRouteCollisionEntry).join('\n\n'));
   }
 
   lines.push('');
