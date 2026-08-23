@@ -7,7 +7,7 @@ import { TurnContext } from './turnContext.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
 import { emitAssistantError, emitAssistantMessage, emitChatBusy } from './chatEvents.js';
 import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
-import { forceFinishItem } from './handlers/baseLLMhandler.js';
+import { forceFinishItem, RETRY_AFTER_TOOL_ERROR_MESSAGE } from './handlers/baseLLMhandler.js';
 
 let mcpClient = null;
 let llmHandler = null;
@@ -227,17 +227,51 @@ export class MessageOrchestrator {
     });
 
     const hasToolCalls = output.some((res) => res.type === 'function_call' || res.type === 'tool_call');
-    if (!hasToolCalls) {
-      release();
+    if (hasToolCalls) {
+      // Fire-and-forget from here on: the caller gets the first response while the
+      // loop keeps going and streams over the EventBus. The lock stays held until
+      // the recursion bottoms out, so a queued message cannot interleave with it.
+      this._continueWithTools(chatId, output, ctx, { turnId, iteration }).finally(release);
       return { output, responseId, raw: result };
     }
 
-    // Fire-and-forget from here on: the caller gets the first response while the
-    // loop keeps going and streams over the EventBus. The lock stays held until
-    // the recursion bottoms out, so a queued message cannot interleave with it.
-    this._continueWithTools(chatId, output, ctx, { turnId, iteration }).finally(release);
+    // A provider can fail to emit a well-formed tool call (e.g. Gemini's
+    // MALFORMED_FUNCTION_CALL) yet still flag the turn as recoverable. There is
+    // no call_id to answer, so this can't join the tool loop above — instead it
+    // re-enters the same way a subagent result does: a synthetic message that
+    // gives the model another turn to retry on its own, without waiting on the user.
+    const isRetryable = output.some((res) => res.retryable);
+    const maxIter = ctx.agent?.capability === 'high' ? maxIterations_planner : maxIterations;
+    if (isRetryable && iteration + 1 < maxIter) {
+      this._continueAsRetry(chatId, ctx, { turnId, iteration }).finally(release);
+      return { output, responseId, raw: result };
+    }
 
+    release();
     return { output, responseId, raw: result };
+  }
+
+  /**
+   * Re-enters the turn after a provider-side recoverable failure (no tool call
+   * to answer). Mirrors `_continueWithTools`'s recursion shape but goes through
+   * `_applyInput`'s `system_message` path since there is no tool result to feed
+   * and this isn't a subagent's doing either.
+   */
+  static async _continueAsRetry(chatId, ctx, { turnId, iteration }) {
+    const next = iteration + 1;
+    chatLogger.debug(`[ToolLoop: ${chatId}] Iteration ${next} - Retrying after recoverable provider error...`);
+
+    try {
+      await this._runTurn(
+        chatId,
+        { kind: 'system_message', content: RETRY_AFTER_TOOL_ERROR_MESSAGE },
+        ctx,
+        { turnId, phase: 'tool_loop', iteration: next, release: () => {} }
+      );
+    } catch (error) {
+      chatLogger.error(`[ToolLoop: ${chatId}] Error retrying after provider error:`, error);
+      emitAssistantError(chatId, `Error retrying tool call: ${error.message}`);
+    }
   }
 
   /**
@@ -298,6 +332,24 @@ export class MessageOrchestrator {
         // history: the parent's tool pair closed long ago, so there is no
         // pending call for it to answer — it's a fresh user-role message.
         return { type: 'subagent_result', message: turnInput.message };
+      }
+
+      case 'system_message': {
+        // Orchestrator-authored nudge, not from a user or a subagent — e.g. a
+        // provider failed to emit a parseable tool call and this re-enters the
+        // turn on its own. Persisted with its own `type` so the client can hide
+        // it from the transcript (see ChatMessages.jsx), same idea as
+        // subagent_result never showing as a user bubble; sent to the provider
+        // as a plain 'message' (every handler already speaks that type), with
+        // the directive marker carrying the "system talking" meaning the
+        // transport role cannot.
+        const chatItem = await ChatHistoryManager.addMessage(chatId, 'system', {
+          type: 'system_directive',
+          role: 'system',
+          content: turnInput.content,
+        });
+        this.emitAssistantMessage(chatItem);
+        return { type: 'message', content: turnInput.content };
       }
 
       case 'tool_output': {

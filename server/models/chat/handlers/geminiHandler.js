@@ -219,12 +219,12 @@ class GeminiHandler extends BaseLLMHandler {
       // Handle MALFORMED_FUNCTION_CALL: model tried to call a tool but generated invalid JSON args.
       // Treat it as a recoverable error and return a text fallback so the orchestrator doesn't hang.
       if (candidate.finishReason === 'MALFORMED_FUNCTION_CALL') {
-        chatLogger.warn(`⚠ Gemini returned MALFORMED_FUNCTION_CALL — injecting fallback text response`);
+        chatLogger.warn(`⚠ Gemini returned MALFORMED_FUNCTION_CALL — injecting retryable fallback response`);
         output.push({
           type: 'text',
-          content:
-            'I encountered an internal error while trying to use a tool. Please rephrase your request or try again.',
+          content: 'Internal error generating the tool call. Retrying mission validation.',
           role: 'assistant',
+          retryable: true,
         });
         continue;
       }

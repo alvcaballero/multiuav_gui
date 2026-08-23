@@ -48,6 +48,12 @@ const convertMsg = (msg) => {
     };
   }
 
+  // Orchestrator-authored nudge (e.g. retry after a malformed tool call),
+  // not from the user or a subagent — never shown in the transcript.
+  if (msg.message.type === 'system_directive') {
+    return { role: 'system', type: 'system_directive', content: msg.message.content };
+  }
+
   if (
     typeof msg.message.content === 'string' &&
     (msg.message.type === 'text' || !msg.message.type)
@@ -745,6 +751,8 @@ export const MessageBubble = memo(({ message, chatId }) => {
   const timestampLabel = formatTimestamp(message.timestamp);
 
   switch (type) {
+    case 'system_directive':
+      return null;
     case 'reasoning':
       return <ReasoningBlock content={content} />;
     case 'function_call':

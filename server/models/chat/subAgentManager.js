@@ -133,6 +133,7 @@ export class SubAgentManager {
       name: toolName,
       output: JSON.stringify({ status, description, ...payload }),
     };
+    // output: { "content": [{ "type": "text", "text": "..." }] }
 
     updateSubAgentStatus(chatId, 'done');
 

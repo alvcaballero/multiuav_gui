@@ -32,6 +32,17 @@ export function forceFinishItem() {
 }
 
 /**
+ * Text sent when a provider fails to emit a well-formed tool call (e.g.
+ * Gemini's MALFORMED_FUNCTION_CALL) and the orchestrator re-enters the turn
+ * on its own, with no user or subagent involved. Same `user`-role delivery as
+ * FORCE_FINISH_MESSAGE, for the same cross-provider reason — the marker carries
+ * the "system talking" meaning the role cannot.
+ */
+export const RETRY_AFTER_TOOL_ERROR_MESSAGE =
+  `${SYSTEM_DIRECTIVE_MARKER} Your previous tool call could not be parsed due to an internal error. ` +
+  'This is not a message from the user. Retry the tool call now, with corrected arguments.';
+
+/**
  * Builds the canonical usage shape every handler must return.
  * `raw` is kept verbatim so a bug in normalization never destroys the original numbers.
  * @param {object} fields
