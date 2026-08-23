@@ -1,11 +1,11 @@
 {
   "mission": {
     "version": "3",
-    "name": "Test Collision Detection",
+    "name": "Safe Mission",
     "route": [
       {
-        "name": "inspection_route",
-        "uav": "px4_3",
+        "name": "safe_route",
+        "uav": "uav_1",
         "id": 0,
         "attributes": {
           "max_vel": 8,
@@ -16,11 +16,9 @@
           "mode_landing": 2
         },
         "wp": [
-          { "type": "takeoff", "pos": [0, 0, 50], "yaw": 0, "speed": 5 },
-          { "type": "transit", "pos": [-700, 400, 80], "yaw": -90, "speed": 5 },
-          { "type": "inspection", "pos": [-730, 411, 80], "yaw": -90, "speed": 3 },
-          { "type": "transit", "pos": [-760, 420, 80], "yaw": -90, "speed": 5 },
-          { "type": "landing", "pos": [0, 0, 50], "yaw": 0, "speed": 5 }
+          { "type": "takeoff", "pos": [0, 0, 50], "yaw": 0 },
+          { "type": "transit", "pos": [-500, 300, 120], "yaw": -90 },
+          { "type": "landing", "pos": [0, 0, 50], "yaw": 0 }
         ],
         "uav_type": "px4_ros2"
       }

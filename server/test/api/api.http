@@ -11,10 +11,10 @@ GET http://localhost:4000/api/devices/with-positions
 GET http://localhost:4000/api/devices/14
 
 ### Get devices
-GET http://localhost:4000/api/devices?id=1
+GET http://localhost:4000/api/devices?id=14
 
 ### Get devices
-GET http://localhost:4000/api/devices?id=1&id=2&id=3
+GET http://localhost:4000/api/devices?id=1,2,3
 
 ### Get positions
 GET http://localhost:4000/api/positions
@@ -23,7 +23,7 @@ GET http://localhost:4000/api/positions
 GET http://localhost:4000/api/positions?deviceId=4
 
 ### Get position
-GET http://localhost:4000/api/positions?deviceId=1&deviceId=2&deviceId=3
+GET http://localhost:4000/api/positions?deviceId=1,2,3
 
 ### Get camera snapshot
 GET http://localhost:4000/api/devices/12/snapshot
@@ -290,11 +290,16 @@ GET http://localhost:4000/api/planning/missionparam/0
 ### get markers types
 GET http://localhost:4000/api/planning/getMarkersTypes
 
+### get markers types
+GET http://localhost:4000/api/markers/types
 ### get bases
 GET http://localhost:4000/api/planning/getBases
 
 ### get markers
 GET http://localhost:4000/api/markers
+
+### get markers
+GET http://localhost:4000/api/markers/elements
 
 ### get markers
 GET http://localhost:4000/api/markers/elements?groupIds=1,2
@@ -318,7 +323,7 @@ Content-Type: application/json
 
 {
   "mission_strategy_description": "Perform a circular inspection around each wind turbine to get a general assessment. This involves 4 points around each element at 0°, 90°, 180°, and 270° from the frontal position, at the vertical midpoint of the element.",
-  "devices_available": [
+  "selected_devices": [
     {
       "name": "uav_1",
       "battery_level": 100,
@@ -335,31 +340,7 @@ Content-Type: application/json
   "targets": [
     {
       "type": "windTurbine",
-      "group": "1",
-      "id": "1",
-      "name": "A1"
-    },
-    {
-      "id": "2",
-      "name": "A2",
-      "type": "windTurbine",
-      "group": "1"
-    },
-    {
-      "name": "A3",
-      "type": "windTurbine",
-      "id": "3",
-      "group": "1"
-    },
-    {
-      "name": "A4",
-      "type": "windTurbine",
-      "group": "1",
-      "id": "4"
-    },
-    {
-      "type": "windTurbine",
-      "group": "2",
+      "group": "Line B",
       "id": "5",
       "name": "B1"
     },
@@ -367,19 +348,19 @@ Content-Type: application/json
       "id": "6",
       "name": "B2",
       "type": "windTurbine",
-      "group": "2"
+      "group": "Line B"
     },
     {
       "id": "7",
       "type": "windTurbine",
-      "group": "2",
+      "group": "Line B",
       "name": "B3"
     },
     {
       "id": "8",
       "type": "windTurbine",
       "name": "B4",
-      "group": "2"
+      "group": "Line B"
     }
   ],
   "targets_count": 8,
@@ -388,6 +369,33 @@ Content-Type: application/json
   "chat_id": "chat_1786463606363_9gsvycd"
 }
 
+###
+POST  http://localhost:4000/api/missions/convert/geodetic-to-xyz
+Content-Type: application/json
+
+{
+  "chat_id": "chat_1787328610324_ai5lqyr",
+  "mission_strategy": "detailed",
+  "selected_devices": [
+    {
+      "name": "uav_1",
+      "category": "px4_ros2",
+      "battery_level": 100,
+      "id": "2"
+    }
+  ],
+  "user_request": "Inspect wind turbine B3 with a high level of detail",
+  "targets_length": 1,
+  "mission_strategy_description": "Detailed inspection of wind turbine B3 using horizontal rings strategy. Divide the structure into N inspection rings, with at least 3 sections across the structure_height (108m). Each ring will have 4 points at 0°, 90°, 180°, 270° relative to the element's heading. Complete all 4 points of a ring clockwise before moving to the next ring. frame_extent will be 36m. Altitude range: from [top_z - camera_offset] down to [base_z + camera_offset].\nMISSION PARAMETERS\ncruise_speed: 5\ncamera_fov: 60",
+  "targets": [
+    {
+      "group": "Line B",
+      "id": "7",
+      "type": "windTurbine",
+      "name": "B3"
+    }
+  ]
+}
 ### ============================================
 ### ROS API
 ### ============================================
@@ -774,31 +782,38 @@ Content-Type: application/json
 POST http://localhost:4000/api/missions/validate
 Content-Type: application/json
 
-< ./json/collision_validate.json
+< ./json/llm_validate_mission/collision_validate.json
 
 ### validate mission - safe (no collisions)
 POST http://localhost:4000/api/missions/validate
 Content-Type: application/json
 
-< ./json/collision_validate_safe.json
+< ./json/llm_validate_mission/collision_validate_safe.json
+
+### validate mission - safe (no collisions)
+POST http://localhost:4000/api/missions/validate
+Content-Type: application/json
+
+< ./json/llm_validate_mission/collision_pass.json
+
 
 ### validate mission with collisions
 POST http://localhost:4000/api/missions/validate
 Content-Type: application/json
 
-< ./json/collision_detail.json
+< ./json/llm_validate_mission/collision_detail.json
 
 ### resolve collisions automatically
-POST http://localhost:4000/api/missions/resolve
+POST http://localhost:4000/api/missions/validate
 Content-Type: application/json
 
-< ./json/collision_resolve.json
+< ./json/llm_validate_mission/collision_resolve.json
 
 ### resolve with multiple obstacles
 POST http://localhost:4000/api/missions/resolve
 Content-Type: application/json
 
-< ./json/collision_resolve_multi.json
+< ./json/llm_validate_mission/collision_resolve_multi.json
 
 ### Error case: missing mission
 POST http://localhost:4000/api/missions/validate
@@ -888,53 +903,7 @@ Content-Type: application/json
 POST http://localhost:4000/api/chat/test_mcp_tool
 Content-Type: application/json
 
-{
-  "toolName": "show_mission_to_user",
-  "toolArgs": {
-    "missionData": {
-      "route": [
-        {
-          "uav": "px4_3",
-          "id": 0,
-          "uav_type": "px4_ros2",
-          "name": "Test Route 1",
-          "wp": [
-            {
-              "yaw": 0,
-              "pos": [
-                40.7128,
-                -74.006,
-                50
-              ],
-              "gimbal": -90,
-              "speed": 5
-            },
-            {
-              "yaw": 45,
-              "pos": [
-                40.7138,
-                -74.007,
-                60
-              ],
-              "gimbal": -80,
-              "speed": 5
-            }
-          ],
-          "attributes": {
-            "mode_yaw": 0,
-            "mode_trace": 0,
-            "mode_gimbal": 0,
-            "mode_landing": 0,
-            "idle_vel": 2,
-            "max_vel": 10
-          }
-        }
-      ],
-      "description": "This is a test mission created with invented data.",
-      "name": "Test Mission"
-    }
-  }
-}
+< ./json/mcp_tool_show_mission.json
 
 ### test MCP tool - show mission 
 POST http://localhost:4000/api/chat/test_mcp_tool
@@ -953,408 +922,4 @@ Content-Type: application/json
 POST http://localhost:4000/api/chat/return_mission_plan_xyz
 Content-Type: application/json
 
-{
-  "description": "Misión de inspección de parque eólico finalizada. 8 aerogeneradores, 2 drones asignados por líneas paralelas. Inspección circular (4 puntos por turbina) a media altura (54m). Misión validada sin colisiones tras optimización de trayectoria perimetral. Distancia total: 7277m.",
-  "chat_id": "chat_1772882285162_b5sx7g2",
-  "status": "valid",
-  "missionDataXYZ": {
-    "route": [
-      {
-        "attributes": {
-          "mode_yaw": 3,
-          "idle_vel": 5,
-          "mode_landing": 0,
-          "mode_trace": 0,
-          "mode_gimbal": 2,
-          "max_vel": 10
-        },
-        "uav_type": "px4_ros2",
-        "uav": "px4_1",
-        "id": 0,
-        "wp": [
-          {
-            "type": "takeoff",
-            "pos": [
-              5.99,
-              -41.46,
-              5
-            ]
-          },
-          {
-            "yaw": -90,
-            "pos": [
-              -956.34,
-              -277.73,
-              54
-            ],
-            "notes": "A1-E (Entrada)",
-            "type": "inspection"
-          },
-          {
-            "pos": [
-              -1004.34,
-              -325.73,
-              54
-            ],
-            "notes": "A1-S",
-            "type": "inspection",
-            "yaw": 0
-          },
-          {
-            "notes": "A1-W",
-            "type": "inspection",
-            "pos": [
-              -1052.34,
-              -277.73,
-              54
-            ],
-            "yaw": 90
-          },
-          {
-            "yaw": 180,
-            "notes": "A1-N (Salida)",
-            "type": "inspection",
-            "pos": [
-              -1004.34,
-              -229.73,
-              54
-            ]
-          },
-          {
-            "yaw": 0,
-            "notes": "A2-S (Entrada)",
-            "type": "inspection",
-            "pos": [
-              -1008.44,
-              -72.59,
-              54
-            ]
-          },
-          {
-            "yaw": -90,
-            "pos": [
-              -960.44,
-              -24.59,
-              54
-            ],
-            "notes": "A2-E",
-            "type": "inspection"
-          },
-          {
-            "yaw": 180,
-            "notes": "A2-N",
-            "type": "inspection",
-            "pos": [
-              -1008.44,
-              23.41,
-              54
-            ]
-          },
-          {
-            "notes": "A2-W (Salida)",
-            "type": "inspection",
-            "pos": [
-              -1056.44,
-              -24.59,
-              54
-            ],
-            "yaw": 90
-          },
-          {
-            "notes": "A3-S (Entrada)",
-            "type": "inspection",
-            "pos": [
-              -1010.5,
-              125.96,
-              54
-            ],
-            "yaw": 0
-          },
-          {
-            "pos": [
-              -962.5,
-              173.96,
-              54
-            ],
-            "notes": "A3-E",
-            "type": "inspection",
-            "yaw": -90
-          },
-          {
-            "yaw": 180,
-            "pos": [
-              -1010.5,
-              221.96,
-              54
-            ],
-            "notes": "A3-N",
-            "type": "inspection"
-          },
-          {
-            "yaw": 90,
-            "notes": "A3-W (Salida)",
-            "type": "inspection",
-            "pos": [
-              -1058.5,
-              173.96,
-              54
-            ]
-          },
-          {
-            "yaw": 0,
-            "notes": "A4-S (Entrada)",
-            "type": "inspection",
-            "pos": [
-              -1009.93,
-              355.58,
-              54
-            ]
-          },
-          {
-            "pos": [
-              -1057.93,
-              403.58,
-              54
-            ],
-            "notes": "A4-W",
-            "type": "inspection",
-            "yaw": 90
-          },
-          {
-            "yaw": 180,
-            "pos": [
-              -1009.93,
-              451.58,
-              54
-            ],
-            "notes": "A4-N",
-            "type": "inspection"
-          },
-          {
-            "yaw": -90,
-            "notes": "A4-E (Salida)",
-            "type": "inspection",
-            "pos": [
-              -961.93,
-              403.58,
-              54
-            ]
-          },
-          {
-            "type": "landing",
-            "pos": [
-              5.99,
-              -41.46,
-              5
-            ]
-          }
-        ],
-        "name": "Ruta Línea A (px4_1)"
-      },
-      {
-        "name": "Ruta Línea B (px4_2)",
-        "wp": [
-          {
-            "type": "takeoff",
-            "pos": [
-              -5.99,
-              41.46,
-              5
-            ]
-          },
-          {
-            "notes": "B1-E (Entrada)",
-            "type": "inspection",
-            "pos": [
-              -1250.04,
-              -281.82,
-              54
-            ],
-            "yaw": -90
-          },
-          {
-            "yaw": 0,
-            "notes": "B1-S",
-            "type": "inspection",
-            "pos": [
-              -1298.04,
-              -329.82,
-              54
-            ]
-          },
-          {
-            "pos": [
-              -1346.04,
-              -281.82,
-              54
-            ],
-            "notes": "B1-W",
-            "type": "inspection",
-            "yaw": 90
-          },
-          {
-            "yaw": 180,
-            "notes": "B1-N (Salida)",
-            "type": "inspection",
-            "pos": [
-              -1298.04,
-              -233.82,
-              54
-            ]
-          },
-          {
-            "yaw": 0,
-            "pos": [
-              -1295.31,
-              -82.12,
-              54
-            ],
-            "notes": "B2-S (Entrada)",
-            "type": "inspection"
-          },
-          {
-            "yaw": -90,
-            "pos": [
-              -1247.31,
-              -34.12,
-              54
-            ],
-            "notes": "B2-E",
-            "type": "inspection"
-          },
-          {
-            "yaw": 180,
-            "notes": "B2-N",
-            "type": "inspection",
-            "pos": [
-              -1295.31,
-              13.88,
-              54
-            ]
-          },
-          {
-            "pos": [
-              -1343.31,
-              -34.12,
-              54
-            ],
-            "notes": "B2-W (Salida)",
-            "type": "inspection",
-            "yaw": 90
-          },
-          {
-            "pos": [
-              -1294.67,
-              127.52,
-              54
-            ],
-            "notes": "B3-S (Entrada)",
-            "type": "inspection",
-            "yaw": 0
-          },
-          {
-            "pos": [
-              -1246.67,
-              175.52,
-              54
-            ],
-            "notes": "B3-E",
-            "type": "inspection",
-            "yaw": -90
-          },
-          {
-            "notes": "B3-N",
-            "type": "inspection",
-            "pos": [
-              -1294.67,
-              223.52,
-              54
-            ],
-            "yaw": 180
-          },
-          {
-            "notes": "B3-W (Salida)",
-            "type": "inspection",
-            "pos": [
-              -1342.67,
-              175.52,
-              54
-            ],
-            "yaw": 90
-          },
-          {
-            "yaw": 0,
-            "pos": [
-              -1296.67,
-              354.73,
-              54
-            ],
-            "notes": "B4-S (Entrada)",
-            "type": "inspection"
-          },
-          {
-            "notes": "B4-W",
-            "type": "inspection",
-            "pos": [
-              -1344.67,
-              402.73,
-              54
-            ],
-            "yaw": 90
-          },
-          {
-            "yaw": 180,
-            "pos": [
-              -1296.67,
-              450.73,
-              54
-            ],
-            "notes": "B4-N",
-            "type": "inspection"
-          },
-          {
-            "yaw": -90,
-            "notes": "B4-E (Salida)",
-            "type": "inspection",
-            "pos": [
-              -1248.67,
-              402.73,
-              54
-            ]
-          },
-          {
-            "pos": [
-              -5.99,
-              41.46,
-              5
-            ],
-            "type": "landing"
-          }
-        ],
-        "id": 1,
-        "uav": "px4_2",
-        "uav_type": "px4_ros2",
-        "attributes": {
-          "max_vel": 10,
-          "mode_gimbal": 2,
-          "idle_vel": 5,
-          "mode_yaw": 3,
-          "mode_trace": 0,
-          "mode_landing": 0
-        }
-      }
-    ],
-    "description": "Inspección de parque eólico con px4_1 (Línea A) y px4_2 (Línea B). Trayectoria de arco perimetral para evitar colisiones.",
-    "name": "Inspección Eólica Validada V2",
-    "global_origin": {
-      "lng": -8.84775720944032,
-      "lat": 41.6872618681162,
-      "alt": 0
-    }
-  }
-}
-
-
-
-###
-
+< ./json/mcp_tool_return_mission_plan_xyz.json

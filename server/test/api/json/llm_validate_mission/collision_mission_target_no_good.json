@@ -1,0 +1,797 @@
+{
+  "mission": {
+    "route": [
+      {
+        "wp": [
+          {
+            "type": "takeoff",
+            "pos": [-9.31, 65.96, 5],
+            "yaw": 0,
+            "notes": "takeoff base location"
+          },
+          {
+            "yaw": -90,
+            "target_name": "A4",
+            "type": "inspection",
+            "pos": [-958.89, 383.36, 80],
+            "notes": "A4 Frontal (East)"
+          },
+          {
+            "yaw": 180,
+            "target_name": "A4",
+            "notes": "A4 Left (North)",
+            "type": "inspection",
+            "pos": [-1007.39, 431.86, 80]
+          },
+          {
+            "target_name": "A4",
+            "notes": "A4 Back (West)",
+            "pos": [-1055.89, 383.36, 80],
+            "type": "inspection",
+            "yaw": 90
+          },
+          {
+            "pos": [-1007.39, 334.86, 80],
+            "target_name": "A4",
+            "type": "inspection",
+            "notes": "A4 Right (South)",
+            "yaw": 0
+          },
+          {
+            "notes": "A3 Frontal (East)",
+            "pos": [-959.47, 153.74, 80],
+            "type": "inspection",
+            "target_name": "A3",
+            "yaw": -90
+          },
+          {
+            "pos": [-1007.97, 202.24, 80],
+            "target_name": "A3",
+            "type": "inspection",
+            "notes": "A3 Left (North)",
+            "yaw": 180
+          },
+          {
+            "yaw": 90,
+            "pos": [-1056.47, 153.74, 80],
+            "notes": "A3 Back (West)",
+            "type": "inspection",
+            "target_name": "A3"
+          },
+          {
+            "target_name": "A3",
+            "notes": "A3 Right (South)",
+            "yaw": 0,
+            "pos": [-1007.97, 105.24, 80],
+            "type": "inspection"
+          },
+          {
+            "yaw": -90,
+            "target_name": "A2",
+            "notes": "A2 Frontal (East)",
+            "pos": [-957.41, 44.82, 80],
+            "type": "inspection"
+          },
+          {
+            "yaw": 180,
+            "notes": "A2 Left (North)",
+            "type": "inspection",
+            "pos": [-1005.91, 93.32, 80],
+            "target_name": "A2"
+          },
+          {
+            "pos": [-1054.41, 44.82, 80],
+            "type": "inspection",
+            "notes": "A2 Back (West)",
+            "yaw": 90,
+            "target_name": "A2"
+          },
+          {
+            "type": "inspection",
+            "notes": "A2 Right (South)",
+            "pos": [-1005.91, -3.68, 80],
+            "target_name": "A2",
+            "yaw": 0
+          },
+          {
+            "yaw": -90,
+            "notes": "A1 Frontal (East)",
+            "type": "inspection",
+            "target_name": "A1",
+            "pos": [-953.31, -297.96, 80]
+          },
+          {
+            "target_name": "A1",
+            "type": "inspection",
+            "notes": "A1 Left (North)",
+            "yaw": 180,
+            "pos": [-1001.81, -249.46, 80]
+          },
+          {
+            "pos": [-1050.31, -297.96, 80],
+            "type": "inspection",
+            "target_name": "A1",
+            "yaw": 90,
+            "notes": "A1 Back (West)"
+          },
+          {
+            "target_name": "A1",
+            "type": "inspection",
+            "pos": [-1001.81, -346.46, 80],
+            "yaw": 0,
+            "notes": "A1 Right (South)"
+          },
+          {
+            "notes": "landing at base location",
+            "pos": [-9.31, 65.96, 5],
+            "type": "landing",
+            "yaw": 0
+          }
+        ],
+        "uav": "uav_1",
+        "attributes": {
+          "idle_vel": 5,
+          "mode_yaw": 3
+        },
+        "description": "Inspection of Line A (A4, A3, A2, A1) starting from uav_1 base location.",
+        "name": "Route UAV 1"
+      },
+      {
+        "wp": [
+          {
+            "yaw": 0,
+            "type": "takeoff",
+            "pos": [-3.37, 21.17, 5],
+            "notes": "takeoff base location"
+          },
+          {
+            "pos": [-1245.64, 382.51, 80],
+            "target_name": "B4",
+            "type": "inspection",
+            "notes": "B4 Frontal (East)",
+            "yaw": -90
+          },
+          {
+            "notes": "B4 Left (North)",
+            "target_name": "B4",
+            "pos": [-1294.14, 431.01, 80],
+            "type": "inspection",
+            "yaw": 180
+          },
+          {
+            "notes": "B4 Back (West)",
+            "yaw": 90,
+            "type": "inspection",
+            "target_name": "B4",
+            "pos": [-1342.64, 382.51, 80]
+          },
+          {
+            "yaw": 0,
+            "notes": "B4 Right (South)",
+            "type": "inspection",
+            "pos": [-1294.14, 334.01, 80],
+            "target_name": "B4"
+          },
+          {
+            "notes": "B3 Frontal (East)",
+            "pos": [-1243.64, 155.3, 80],
+            "type": "inspection",
+            "target_name": "B3",
+            "yaw": -90
+          },
+          {
+            "type": "inspection",
+            "pos": [-1292.14, 203.8, 80],
+            "notes": "B3 Left (North)",
+            "target_name": "B3",
+            "yaw": 180
+          },
+          {
+            "target_name": "B3",
+            "yaw": 90,
+            "type": "inspection",
+            "pos": [-1340.64, 155.3, 80],
+            "notes": "B3 Back (West)"
+          },
+          {
+            "type": "inspection",
+            "yaw": 0,
+            "target_name": "B3",
+            "notes": "B3 Right (South)",
+            "pos": [-1292.14, 106.8, 80]
+          },
+          {
+            "pos": [-1244.28, -54.34, 80],
+            "target_name": "B2",
+            "notes": "B2 Frontal (East)",
+            "type": "inspection",
+            "yaw": -90
+          },
+          {
+            "pos": [-1292.78, -5.84, 80],
+            "type": "inspection",
+            "yaw": 180,
+            "notes": "B2 Left (North)",
+            "target_name": "B2"
+          },
+          {
+            "pos": [-1341.28, -54.34, 80],
+            "notes": "B2 Back (West)",
+            "type": "inspection",
+            "yaw": 90,
+            "target_name": "B2"
+          },
+          {
+            "pos": [-1292.78, -102.84, 80],
+            "target_name": "B2",
+            "type": "inspection",
+            "yaw": 0,
+            "notes": "B2 Right (South)"
+          },
+          {
+            "yaw": -90,
+            "target_name": "B1",
+            "notes": "B1 Frontal (East)",
+            "type": "inspection",
+            "pos": [-1247.01, -302.04, 80]
+          },
+          {
+            "pos": [-1295.51, -253.54, 80],
+            "yaw": 180,
+            "notes": "B1 Left (North)",
+            "target_name": "B1",
+            "type": "inspection"
+          },
+          {
+            "target_name": "B1",
+            "notes": "B1 Back (West)",
+            "type": "inspection",
+            "yaw": 90,
+            "pos": [-1344.01, -302.04, 80]
+          },
+          {
+            "pos": [-1295.51, -350.54, 80],
+            "type": "inspection",
+            "yaw": 0,
+            "target_name": "B1",
+            "notes": "B1 Right (South)"
+          },
+          {
+            "pos": [-3.37, 21.17, 5],
+            "yaw": 0,
+            "notes": "landing at base location",
+            "type": "landing"
+          }
+        ],
+        "uav": "uav_3",
+        "description": "Inspection of Line B (B4, B3, B2, B1) starting from uav_3 base location.",
+        "attributes": {
+          "idle_vel": 5,
+          "mode_yaw": 3
+        },
+        "name": "Route UAV 3"
+      },
+      {
+        "name": "Route UAV 4",
+        "attributes": {
+          "mode_yaw": 3,
+          "idle_vel": 5
+        },
+        "description": "Inspection of Line C (C4, C3, C2, C1) starting from uav_4 base location.",
+        "uav": "uav_4",
+        "wp": [
+          {
+            "type": "takeoff",
+            "yaw": 0,
+            "pos": [4.1, -25.45, 5],
+            "notes": "takeoff base location"
+          },
+          {
+            "yaw": -90,
+            "target_name": "C4",
+            "type": "inspection",
+            "pos": [-1534.53, 382.65, 80],
+            "notes": "C4 Frontal (East)"
+          },
+          {
+            "type": "inspection",
+            "pos": [-1583.03, 431.15, 80],
+            "notes": "C4 Left (North)",
+            "yaw": 180,
+            "target_name": "C4"
+          },
+          {
+            "yaw": 90,
+            "notes": "C4 Back (West)",
+            "type": "inspection",
+            "pos": [-1631.53, 382.65, 80],
+            "target_name": "C4"
+          },
+          {
+            "pos": [-1583.03, 334.15, 80],
+            "type": "inspection",
+            "notes": "C4 Right (South)",
+            "target_name": "C4",
+            "yaw": 0
+          },
+          {
+            "notes": "C3 Frontal (East)",
+            "pos": [-1536.58, 167.71, 80],
+            "yaw": -90,
+            "type": "inspection",
+            "target_name": "C3"
+          },
+          {
+            "target_name": "C3",
+            "pos": [-1585.08, 216.21, 80],
+            "notes": "C3 Left (North)",
+            "yaw": 180,
+            "type": "inspection"
+          },
+          {
+            "type": "inspection",
+            "pos": [-1633.58, 167.71, 80],
+            "notes": "C3 Back (West)",
+            "target_name": "C3",
+            "yaw": 90
+          },
+          {
+            "type": "inspection",
+            "pos": [-1585.08, 119.21, 80],
+            "notes": "C3 Right (South)",
+            "yaw": 0,
+            "target_name": "C3"
+          },
+          {
+            "notes": "C2 Frontal (East)",
+            "yaw": -90,
+            "pos": [-1537.5, -51.31, 80],
+            "type": "inspection",
+            "target_name": "C2"
+          },
+          {
+            "yaw": 180,
+            "type": "inspection",
+            "notes": "C2 Left (North)",
+            "pos": [-1586, 2.81, 80],
+            "target_name": "C2"
+          },
+          {
+            "type": "inspection",
+            "notes": "C2 Back (West)",
+            "pos": [-1634.5, -51.31, 80],
+            "target_name": "C2",
+            "yaw": 90
+          },
+          {
+            "pos": [-1586, -99.81, 80],
+            "type": "inspection",
+            "notes": "C2 Right (South)",
+            "yaw": 0,
+            "target_name": "C2"
+          },
+          {
+            "target_name": "C1",
+            "yaw": -90,
+            "pos": [-1542.66, -294.19, 80],
+            "notes": "C1 Frontal (East)",
+            "type": "inspection"
+          },
+          {
+            "type": "inspection",
+            "pos": [-1591.16, -245.69, 80],
+            "target_name": "C1",
+            "notes": "C1 Left (North)",
+            "yaw": 180
+          },
+          {
+            "type": "inspection",
+            "target_name": "C1",
+            "pos": [-1639.66, -294.19, 80],
+            "yaw": 90,
+            "notes": "C1 Back (West)"
+          },
+          {
+            "pos": [-1591.16, -342.69, 80],
+            "notes": "C1 Right (South)",
+            "type": "inspection",
+            "target_name": "C1",
+            "yaw": 0
+          },
+          {
+            "pos": [4.1, -25.45, 5],
+            "notes": "landing at base location",
+            "yaw": 0,
+            "type": "landing"
+          }
+        ]
+      },
+      {
+        "wp": [
+          {
+            "type": "takeoff",
+            "pos": [8.58, -61.67, 5],
+            "notes": "takeoff base location",
+            "yaw": 0
+          },
+          {
+            "type": "inspection",
+            "pos": [-1808.23, 172.21, 80],
+            "yaw": -90,
+            "target_name": "D4",
+            "notes": "D4 Frontal (East)"
+          },
+          {
+            "target_name": "D4",
+            "yaw": 180,
+            "type": "inspection",
+            "pos": [-1856.73, 220.71, 80],
+            "notes": "D4 Left (North)"
+          },
+          {
+            "yaw": 90,
+            "type": "inspection",
+            "pos": [-1905.23, 172.21, 80],
+            "target_name": "D4",
+            "notes": "D4 Back (West)"
+          },
+          {
+            "yaw": 0,
+            "type": "inspection",
+            "notes": "D4 Right (South)",
+            "pos": [-1856.73, 123.71, 80],
+            "target_name": "D4"
+          },
+          {
+            "pos": [-1804.12, -69.36, 80],
+            "notes": "D3 Frontal (East)",
+            "target_name": "D3",
+            "yaw": -90,
+            "type": "inspection"
+          },
+          {
+            "target_name": "D3",
+            "pos": [-1852.62, -20.86, 80],
+            "type": "inspection",
+            "notes": "D3 Left (North)",
+            "yaw": 180
+          },
+          {
+            "type": "inspection",
+            "notes": "D3 Back (West)",
+            "pos": [-1901.12, -69.36, 80],
+            "target_name": "D3",
+            "yaw": 90
+          },
+          {
+            "pos": [-1852.62, -117.86, 80],
+            "target_name": "D3",
+            "notes": "D3 Right (South)",
+            "type": "inspection",
+            "yaw": 0
+          },
+          {
+            "notes": "D2 Frontal (East)",
+            "type": "inspection",
+            "yaw": -90,
+            "target_name": "D2",
+            "pos": [-1813.53, -295.47, 80]
+          },
+          {
+            "yaw": 180,
+            "notes": "D2 Left (North)",
+            "type": "inspection",
+            "pos": [-1862.03, -246.97, 80],
+            "target_name": "D2"
+          },
+          {
+            "pos": [-1910.53, -295.47, 80],
+            "type": "inspection",
+            "notes": "D2 Back (West)",
+            "yaw": 90,
+            "target_name": "D2"
+          },
+          {
+            "target_name": "D2",
+            "type": "inspection",
+            "pos": [-1862.03, -343.97, 80],
+            "notes": "D2 Right (South)",
+            "yaw": 0
+          },
+          {
+            "pos": [-2021.19, -291.62, 80],
+            "target_name": "D1",
+            "type": "inspection",
+            "notes": "D1 Frontal (East)",
+            "yaw": -90
+          },
+          {
+            "notes": "D1 Left (North)",
+            "yaw": 180,
+            "target_name": "D1",
+            "pos": [-2069.69, -243.12, 80],
+            "type": "inspection"
+          },
+          {
+            "pos": [-2118.19, -291.62, 80],
+            "notes": "D1 Back (West)",
+            "type": "inspection",
+            "yaw": 90,
+            "target_name": "D1"
+          },
+          {
+            "yaw": 0,
+            "target_name": "D1",
+            "notes": "D1 Right (South),pos:[-2069.69,-340.12,80],target_name:",
+            "pos": [-2069.69, -340.12, 80],
+            "type": "inspection"
+          },
+          {
+            "yaw": 0,
+            "pos": [8.58, -61.67, 5],
+            "notes": "landing at base location",
+            "type": "landing"
+          }
+        ],
+        "description": "Inspection of Line D (D4, D3, D2, D1) starting from uav_2 base location.",
+        "attributes": {
+          "idle_vel": 5,
+          "mode_yaw": 3
+        },
+        "name": "Route UAV 2",
+        "uav": "uav_2"
+      }
+    ],
+    "description": "Inspection of a wind farm using 4 UAVs with a circular strategy (4 points per turbine at 80m altitude).",
+    "global_origin": {
+      "lat": 41.687443932383005,
+      "lng": -8.847787572578548,
+      "alt": 0
+    }
+  },
+  "target_ids": ["1", "2", "3", "4", "5", "6", "7", "8", "17", "18", "19", "20", "21", "22", "23", "24"],
+  "collision_objects": [
+    {
+      "geometry_type": "circle",
+      "yaw": 90,
+      "position": {
+        "y": -297.96,
+        "z": 0,
+        "x": -1001.81
+      },
+      "obstacle_name": "A1",
+      "safety_margin": 10,
+      "dimensions": {
+        "radius": 28
+      },
+      "height": 108
+    },
+    {
+      "safety_margin": 10,
+      "obstacle_name": "A2",
+      "height": 108,
+      "yaw": 90,
+      "position": {
+        "y": -44.82,
+        "x": -1005.91,
+        "z": 0
+      },
+      "geometry_type": "circle",
+      "dimensions": {
+        "radius": 28
+      }
+    },
+    {
+      "obstacle_name": "A3",
+      "geometry_type": "circle",
+      "dimensions": {
+        "radius": 28
+      },
+      "height": 108,
+      "yaw": 90,
+      "safety_margin": 10,
+      "position": {
+        "y": 153.74,
+        "z": 0,
+        "x": -1007.97
+      }
+    },
+    {
+      "obstacle_name": "A4",
+      "dimensions": {
+        "radius": 28
+      },
+      "yaw": 90,
+      "geometry_type": "circle",
+      "safety_margin": 10,
+      "height": 108,
+      "position": {
+        "x": -1007.39,
+        "z": 0,
+        "y": 383.36
+      }
+    },
+    {
+      "safety_margin": 10,
+      "height": 108,
+      "position": {
+        "y": -302.04,
+        "x": -1295.51,
+        "z": 0
+      },
+      "yaw": 90,
+      "geometry_type": "circle",
+      "obstacle_name": "B1",
+      "dimensions": {
+        "radius": 28
+      }
+    },
+    {
+      "obstacle_name": "B2",
+      "yaw": 90,
+      "dimensions": {
+        "radius": 28
+      },
+      "geometry_type": "circle",
+      "height": 108,
+      "position": {
+        "y": -54.34,
+        "z": 0,
+        "x": -1292.78
+      },
+      "safety_margin": 10
+    },
+    {
+      "obstacle_name": "B3",
+      "dimensions": {
+        "radius": 28
+      },
+      "position": {
+        "y": 155.3,
+        "x": -1292.14,
+        "z": 0
+      },
+      "geometry_type": "circle",
+      "yaw": 90,
+      "safety_margin": 10,
+      "height": 108
+    },
+    {
+      "dimensions": {
+        "radius": 28
+      },
+      "geometry_type": "circle",
+      "obstacle_name": "B4",
+      "yaw": 90,
+      "height": 108,
+      "safety_margin": 10,
+      "position": {
+        "y": 382.51,
+        "x": -1294.14,
+        "z": 0
+      }
+    },
+    {
+      "geometry_type": "circle",
+      "dimensions": {
+        "radius": 28
+      },
+      "yaw": 90,
+      "obstacle_name": "C1",
+      "safety_margin": 10,
+      "position": {
+        "x": -1591.16,
+        "z": 0,
+        "y": -294.19
+      },
+      "height": 108
+    },
+    {
+      "geometry_type": "circle",
+      "dimensions": {
+        "radius": 28
+      },
+      "obstacle_name": "C2",
+      "height": 108,
+      "safety_margin": 10,
+      "position": {
+        "y": -51.31,
+        "x": -1586,
+        "z": 0
+      },
+      "yaw": 90
+    },
+    {
+      "yaw": 90,
+      "geometry_type": "circle",
+      "position": {
+        "x": -1585.08,
+        "z": 0,
+        "y": 167.71
+      },
+      "dimensions": {
+        "radius": 28
+      },
+      "obstacle_name": "C3",
+      "safety_margin": 10,
+      "height": 108
+    },
+    {
+      "dimensions": {
+        "radius": 28
+      },
+      "position": {
+        "y": 382.65,
+        "z": 0,
+        "x": -1583.03
+      },
+      "yaw": 90,
+      "obstacle_name": "C4",
+      "height": 108,
+      "geometry_type": "circle",
+      "safety_margin": 10
+    },
+    {
+      "position": {
+        "z": 0,
+        "x": -2069.69,
+        "y": -291.62
+      },
+      "obstacle_name": "D1",
+      "geometry_type": "circle",
+      "dimensions": {
+        "radius": 28
+      },
+      "height": 108,
+      "safety_margin": 10,
+      "yaw": 90
+    },
+    {
+      "height": 108,
+      "obstacle_name": "D2",
+      "geometry_type": "circle",
+      "position": {
+        "z": 0,
+        "x": -1862.03,
+        "y": -295.47
+      },
+      "yaw": 90,
+      "dimensions": {
+        "radius": 28
+      },
+      "safety_margin": 10
+    },
+    {
+      "height": 108,
+      "yaw": 90,
+      "safety_margin": 10,
+      "position": {
+        "x": -1852.62,
+        "z": 0,
+        "y": -69.36
+      },
+      "obstacle_name": "D3",
+      "dimensions": {
+        "radius": 28
+      },
+      "geometry_type": "circle"
+    },
+    {
+      "height": 108,
+      "geometry_type": "circle",
+      "dimensions": {
+        "radius": 28
+      },
+      "yaw": 90,
+      "obstacle_name": "D4",
+      "safety_margin": 10,
+      "position": {
+        "z": 0,
+        "x": -1856.73,
+        "y": 172.21
+      }
+    }
+  ],
+  "is_final_attempt": false,
+  "chat_id": "chat_1787422049560_i4tnhz4"
+}
