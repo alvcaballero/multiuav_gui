@@ -7,6 +7,7 @@ import {
   formatInspectionReport,
 } from '../models/collision/index.js';
 import { resolveInspectionTargets } from '../models/markers/inspectionTargets.js';
+import { devicesController } from './devices.js';
 import { missionLogger as logger } from '../common/logger.js';
 
 /**
@@ -158,8 +159,8 @@ class missionController {
 
   static convertGeodeticToXYZ = async (req, res) => {
     const missionBriefing = req.body;
-    if (!missionBriefing.devices_available || !missionBriefing.targets) {
-      return res.status(400).json({ error: 'devices_available and targets are required.' });
+    if (!missionBriefing.selected_devices || !missionBriefing.targets) {
+      return res.status(400).json({ error: 'selected_devices and targets are required.' });
     }
     try {
       const missionDataXYZ = await missionModel.convertBriefingToXYZ(missionBriefing);
@@ -235,6 +236,13 @@ class missionController {
 
       if (!collision_objects || !Array.isArray(collision_objects)) {
         return res.status(400).json({ error: 'collision_objects array is required' });
+      }
+
+      for (const route of mission.route ?? []) {
+        const device = await devicesController.getByName(route.uav);
+        if (!device) {
+          return res.status(400).json({ error: `El UAV '${route.uav}' no existe. Por favor, intenta de nuevo.` });
+        }
       }
 
       const result = validateMissionCollission(mission, collision_objects);

@@ -15,8 +15,13 @@ const ECCENTRICITY_SQ = 0.00669438; // WGS84 first eccentricity squared
 // OBSTACLE_SEARCH is larger and internal-only — it widens the catalog lookup so an
 // obstacle whose center falls just outside the trajectory boundary, but whose body
 // would still reach into it, doesn't go unnoticed.
-const TRAJECTORY_MARGIN_M = 200;
-const OBSTACLE_SEARCH_MARGIN_M = 500;
+const TRAJECTORY_MARGIN_M = 150;
+const OBSTACLE_SEARCH_MARGIN_M = 200;
+
+// Above this separation between devices/targets, the mission area is
+// considered unreasonable (likely a bad LLM-supplied coordinate) rather than
+// a legitimately large inspection.
+const MAX_MISSION_SPAN_M = 10000;
 
 /**
  * Calculate the local origin based on device positions
@@ -189,20 +194,23 @@ async function convertMissionBriefingToXYZ(missionBriefing) {
   if (!missionBriefing) {
     throw Object.assign(new Error('Mission briefing is required'), { status: 400 });
   }
-  const { devices_available, targets } = missionBriefing;
+  const { selected_devices, targets } = missionBriefing;
 
-  if (!devices_available || devices_available.length === 0) {
+  if (!selected_devices || selected_devices.length === 0) {
     throw Object.assign(new Error('No devices available to calculate local origin'), { status: 400 });
   }
 
   // Resolve each LLM-supplied device against the DB by name (unique, and the
   // field an LLM is least likely to misremember vs. the numeric id). id and
   // category are cross-checked, not trusted blindly, so a hallucinated
-  // id/category is reported back instead of silently used. All mismatches are
-  // collected before throwing so the LLM can fix every bad entry in one retry.
+  // id/category is rejected rather than silently used. The mismatch error
+  // deliberately does NOT echo back the real device's id/category — the LLM
+  // would otherwise pick up an unrelated device's data from the error and
+  // treat it as required context. All mismatches are collected before
+  // throwing so the LLM can fix every bad entry in one retry.
   const deviceErrors = [];
   const devices = await Promise.all(
-    devices_available.map(async (requested) => {
+    selected_devices.map(async (requested) => {
       const dbDevice = await devicesController.getByName(requested.name);
       if (!dbDevice) {
         deviceErrors.push(`Device "${requested.name}" not found.`);
@@ -210,7 +218,7 @@ async function convertMissionBriefingToXYZ(missionBriefing) {
       }
       if (String(dbDevice.id) !== String(requested.id) || dbDevice.category !== requested.category) {
         deviceErrors.push(
-          `Device "${requested.name}" mismatch: expected id=${dbDevice.id}/category=${dbDevice.category}, got id=${requested.id}/category=${requested.category}.`
+          `Device "${requested.name}" is invalid: no device exists with that exact combination of name, id and category. Re-check the device list before retrying.`
         );
         return null;
       }
@@ -236,7 +244,7 @@ async function convertMissionBriefingToXYZ(missionBriefing) {
   );
 
   if (deviceErrors.length > 0) {
-    throw Object.assign(new Error(`Invalid devices_available:\n${deviceErrors.join('\n')}`), { status: 400 });
+    throw Object.assign(new Error(`Invalid selected_devices:\n${deviceErrors.join('\n')}`), { status: 400 });
   }
 
   // Local origin from the resolved (real, DB-backed) device positions — needed
@@ -298,10 +306,37 @@ async function convertMissionBriefingToXYZ(missionBriefing) {
   }));
 
   // convert boundary positions to XYZ coordinates, then apply both margins
+  const roundENU = ({ x, y, z }) => ({ x: Math.round(x), y: Math.round(y), z: Math.round(z) });
   const rawBoundariesXYZ = {
-    min: geodeticToENU(boundaries.min.lat, boundaries.min.lng, 0, origin),
-    max: geodeticToENU(boundaries.max.lat, boundaries.max.lng, 0, origin),
+    min: roundENU(geodeticToENU(boundaries.min.lat, boundaries.min.lng, 0, origin)),
+    max: roundENU(geodeticToENU(boundaries.max.lat, boundaries.max.lng, 0, origin)),
   };
+
+  // Per-device distance to its nearest target — a device far from every target
+  // is the actual failure mode (LLM picked a device outside the inspection
+  // area), which a single whole-mission bounding-box span can't identify.
+  const deviceDistances = devicesXYZ.map((device) => ({
+    device,
+    nearestTargetDistanceM: Math.min(
+      ...targetsXYZ.map((target) =>
+        Math.hypot(target.position.x - device.location.x, target.position.y - device.location.y)
+      )
+    ),
+  }));
+  const devicesOutOfRange = deviceDistances.filter(
+    ({ nearestTargetDistanceM }) => nearestTargetDistanceM > MAX_MISSION_SPAN_M
+  );
+
+  if (devicesOutOfRange.length > 0) {
+    const missionSpanM = Math.max(...devicesOutOfRange.map((d) => d.nearestTargetDistanceM));
+    throw Object.assign(
+      new Error(
+        `${devicesOutOfRange.length} of ${devicesXYZ.length} devices are too far from the targets to perform the inspection. The maximum separation found between a device and its nearest target is ${(missionSpanM / 1000).toFixed(2)} km, and the maximum allowed is ${MAX_MISSION_SPAN_M / 1000} km.`
+      ),
+      { status: 400 }
+    );
+  }
+
   const trajectoryBoundariesXYZ = expandENUBox(rawBoundariesXYZ, TRAJECTORY_MARGIN_M);
   const obstacleSearchBoundariesXYZ = expandENUBox(rawBoundariesXYZ, OBSTACLE_SEARCH_MARGIN_M);
 
