@@ -37,8 +37,19 @@ export const describeGeometry = (geometry) => {
 const GeometryFields = ({ value, onChange }) => {
   const geometry = value || DEFAULT_CIRCLE_GEOMETRY;
 
+  // Switching shape swaps the footprint keys (radius ↔ width/length) but keeps
+  // the values that mean the same thing in both shapes — height and yaw. Wiping
+  // them would silently reset an already-configured rotation.
   const handleTypeChange = (geometryType) => {
-    onChange(geometryType === 'circle' ? DEFAULT_CIRCLE_GEOMETRY : DEFAULT_RECTANGLE_GEOMETRY);
+    const base = geometryType === 'circle' ? DEFAULT_CIRCLE_GEOMETRY : DEFAULT_RECTANGLE_GEOMETRY;
+    onChange({
+      ...base,
+      dimensions: {
+        ...base.dimensions,
+        height: geometry.dimensions?.height ?? base.dimensions.height,
+      },
+      yaw: geometry.yaw ?? base.yaw,
+    });
   };
 
   const handleDimensionChange = (key, raw) => {

@@ -1,4 +1,4 @@
-import { useId, useEffect, useCallback, useMemo } from 'react';
+import { useId, useEffect, useCallback, useMemo, useRef } from 'react';
 import { map } from '../core/mapInstance';
 import { circle } from '@turf/circle';
 
@@ -155,45 +155,42 @@ const MapObstacles = ({ obstacles = [], visible = true, colors = DEFAULT_COLORS 
     return { exclusionFeatures };
   }, [obstacles]);
 
-  // Function to add all sources and layers
-  const addSourcesAndLayers = useCallback(
-    (data) => {
-      const { exclusionFeatures } = data;
+  // Creates the source (empty) and its layers. Data is never passed in here —
+  // the data effect below owns every update via setData, so creation and
+  // updates can't race each other.
+  const addSourcesAndLayers = useCallback(() => {
+    if (!map.getSource(sourceIds.exclusion)) {
+      map.addSource(sourceIds.exclusion, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+    }
 
-      if (!map.getSource(sourceIds.exclusion)) {
-        map.addSource(sourceIds.exclusion, {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: exclusionFeatures },
-        });
-      }
+    if (!map.getLayer(layerIds.exclusionFill)) {
+      map.addLayer({
+        id: layerIds.exclusionFill,
+        type: 'fill',
+        source: sourceIds.exclusion,
+        paint: {
+          'fill-color': colors.exclusion,
+          'fill-opacity': 0.35,
+        },
+      });
+    }
 
-      if (!map.getLayer(layerIds.exclusionFill)) {
-        map.addLayer({
-          id: layerIds.exclusionFill,
-          type: 'fill',
-          source: sourceIds.exclusion,
-          paint: {
-            'fill-color': colors.exclusion,
-            'fill-opacity': 0.35,
-          },
-        });
-      }
-
-      if (!map.getLayer(layerIds.exclusionBorder)) {
-        map.addLayer({
-          id: layerIds.exclusionBorder,
-          type: 'line',
-          source: sourceIds.exclusion,
-          paint: {
-            'line-color': '#D32F2F',
-            'line-width': 2,
-            'line-dasharray': [4, 2],
-          },
-        });
-      }
-    },
-    [sourceIds, layerIds, colors],
-  );
+    if (!map.getLayer(layerIds.exclusionBorder)) {
+      map.addLayer({
+        id: layerIds.exclusionBorder,
+        type: 'line',
+        source: sourceIds.exclusion,
+        paint: {
+          'line-color': '#D32F2F',
+          'line-width': 2,
+          'line-dasharray': [4, 2],
+        },
+      });
+    }
+  }, [sourceIds, layerIds, colors]);
 
   // Function to remove all sources and layers
   const removeSourcesAndLayers = useCallback(() => {
@@ -210,32 +207,38 @@ const MapObstacles = ({ obstacles = [], visible = true, colors = DEFAULT_COLORS 
     });
   }, [sourceIds, layerIds]);
 
-  // Function to update or create sources and layers
-  const updateMap = useCallback(() => {
-    if (!visible) return;
+  // Pushes the current footprints into the existing source. Safe to call at any
+  // time: a missing source (style still loading, layers not created yet) is a
+  // no-op, and the layer-lifecycle effect will re-sync right after creating it.
+  const syncData = useCallback(() => {
+    map.getSource(sourceIds.exclusion)?.setData({
+      type: 'FeatureCollection',
+      features: processObstacles().exclusionFeatures,
+    });
+  }, [sourceIds.exclusion, processObstacles]);
 
-    const data = processObstacles();
+  // The styledata listener below outlives any given `syncData` identity, so it
+  // reads the latest one through a ref instead of closing over a stale one.
+  const syncDataRef = useRef(syncData);
+  syncDataRef.current = syncData;
 
-    if (!map.getSource(sourceIds.exclusion)) {
-      addSourcesAndLayers(data);
-    } else {
-      map.getSource(sourceIds.exclusion)?.setData({
-        type: 'FeatureCollection',
-        features: data.exclusionFeatures,
-      });
-    }
-  }, [visible, processObstacles, sourceIds, addSourcesAndLayers]);
-
-  // Initialize and update map sources and layers
+  // Layer lifecycle: create source + layers once, tear them down on unmount or
+  // when visibility/colors change. Deliberately does NOT depend on `obstacles` —
+  // re-adding MapLibre layers on every geometry edit is what made yaw changes
+  // (and any other dimension change) fail to repaint.
   useEffect(() => {
-    updateMap();
+    if (!visible) return undefined;
 
-    // Listen for style changes to re-add layers
+    addSourcesAndLayers();
+    syncDataRef.current();
+
+    // A style reload drops custom sources/layers, so re-create and re-fill them.
     let styleDataTimeout;
     const onStyleData = () => {
       styleDataTimeout = setTimeout(() => {
-        if (visible && !map.getSource(sourceIds.exclusion)) {
-          updateMap();
+        if (!map.getSource(sourceIds.exclusion)) {
+          addSourcesAndLayers();
+          syncDataRef.current();
         }
       }, 100);
     };
@@ -247,7 +250,13 @@ const MapObstacles = ({ obstacles = [], visible = true, colors = DEFAULT_COLORS 
       clearTimeout(styleDataTimeout);
       removeSourcesAndLayers();
     };
-  }, [visible, obstacles, colors, updateMap, removeSourcesAndLayers, sourceIds.exclusion]);
+  }, [visible, addSourcesAndLayers, removeSourcesAndLayers, sourceIds.exclusion]);
+
+  // Data updates: the only path that repaints footprints once layers exist.
+  useEffect(() => {
+    if (!visible) return;
+    syncData();
+  }, [visible, syncData]);
 
   return null;
 };
