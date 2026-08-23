@@ -60,7 +60,7 @@ function itemToInspectionTarget(item, groupById, typeById, globalOrigin) {
     position,
     description: item.description,
     groupdescription: group?.description ?? null,
-    attributes: item.attributes,
+    // attributes: item.attributes,
   };
 }
 
@@ -74,7 +74,10 @@ function itemToInspectionTarget(item, groupById, typeById, globalOrigin) {
  * `entries` may be plain ids (legacy — trust nothing but the id) or full
  * `{id, name, group, type}` objects. When an entry carries name/group/type,
  * those are cross-checked against the catalog record for that id; a mismatch
- * is reported instead of silently using the LLM's value.
+ * is rejected with a generic message instead of silently using the LLM's
+ * value or echoing back the real record — leaking another catalog entry's
+ * name/group/type into the error would read to the LLM as a hint that entry
+ * is required/expected, when it's simply unrelated to the request.
  *
  * @param {(number|string|{id:(number|string), name?:string, group?:string, type?:string})[]} entries
  * @param {{lat:number,lng:number,alt:number}} [globalOrigin] - When given, position is converted to this frame's local ENU; otherwise raw geodetic {lat,lng,alt} is returned
@@ -110,8 +113,7 @@ export async function resolveInspectionTargets(entries, globalOrigin) {
       const typeOk = request.type === undefined || request.type === typeId;
       if (!nameOk || !groupOk || !typeOk) {
         mismatched.push(
-          `Target id=${request.id} mismatch: expected name="${item.name}"/group="${groupName}"/type="${typeId}", ` +
-            `got name="${request.name}"/group="${request.group}"/type="${request.type}".`
+          `Target id=${request.id} is invalid: no target exists with that exact combination of name, group and type. Re-check the target list before retrying.`
         );
         continue;
       }

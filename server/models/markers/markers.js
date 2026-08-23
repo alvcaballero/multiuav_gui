@@ -20,15 +20,15 @@ function groupToLegacy(group) {
     name: item.name,
     itemId: item.id,
     groupId: group.id,
-    attributes: item.attributes,
+    // attributes: item.attributes,
   }));
   return {
     groupId: group.id,
     type: group.typeId,
-    name: group.name,
+    Groupname: group.name,
     description: group.description,
-    linea: group.linea,
-    attributes: group.attributes,
+    // linea: group.linea,
+    // attributes: group.attributes,
     items,
   };
 }
@@ -142,9 +142,7 @@ export const markersModel = {
       const name = (group.name || '').trim();
       const groupId = group.groupId != null ? Number(group.groupId) : null;
       let elementGroup =
-        groupId != null && !Number.isNaN(groupId)
-          ? existingGroups.find((g) => g.id === groupId)
-          : null;
+        groupId != null && !Number.isNaN(groupId) ? existingGroups.find((g) => g.id === groupId) : null;
 
       if (!elementGroup) {
         [elementGroup] = await sequelize.models.ElementGroup.findOrCreate({
@@ -180,8 +178,7 @@ export const markersModel = {
         // row follows the same "Type index" pattern (see BaseList.jsx).
         const name = item.name || `Item ${i}`;
         const itemId = item.itemId != null ? Number(item.itemId) : null;
-        let elementItem =
-          itemId != null && !Number.isNaN(itemId) ? existingItems.find((it) => it.id === itemId) : null;
+        let elementItem = itemId != null && !Number.isNaN(itemId) ? existingItems.find((it) => it.id === itemId) : null;
 
         if (!elementItem) {
           [elementItem] = await sequelize.models.ElementItem.findOrCreate({
