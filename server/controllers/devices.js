@@ -4,7 +4,15 @@ import { logger } from '../common/logger.js';
 
 class devicesController {
   static getAll = async (req, res) => {
-    const devices = await DevicesModel.getAll();
+    const { id } = req.query;
+    // Soporta tanto `id=1&id=2` (Express arma un array) como `id=1,2,3` (CSV).
+    const parsedIds = id
+      ? (Array.isArray(id) ? id : [id])
+          .flatMap((value) => String(value).split(','))
+          .map((value) => Number(value.trim()))
+          .filter((value) => !Number.isNaN(value))
+      : undefined;
+    const devices = await DevicesModel.getAll(parsedIds);
     res.json(Object.values(devices));
   };
   static getAllDevices = async () => {

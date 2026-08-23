@@ -9,58 +9,65 @@ export class positionsController {
    * GET /api/positions
    *
    * Ramas según query params:
+   *  - Without any params, it returns a list of last known positions (CACHE)
+   *  - deviceID without from/to, returns last known position of DeviceIDs
    *  - `from` + `to` (+ opcional `deviceId`) → HISTORIA desde la DB (array plano
    *    de filas PositionHistory ordenadas por fixTime).
-   *  - `deviceId` SIN from/to → 400 (deviceId requiere rango, per spec).
-   *  - `id=31&id=42` (o sin params) → posiciones CACHEADAS en RAM (comportamiento
-   *    original), filtradas por esos ids o todas.
    */
   static async getAll(req, res) {
-    const { deviceId, from, to, id } = req.query;
+    const { deviceId, from, to } = req.query;
     const hasRange = from !== undefined || to !== undefined;
 
-    // --- Rama HISTORIA (DB) ---
-    if (hasRange || deviceId !== undefined) {
-      // deviceId exige from y to (per OpenAPI spec).
-      if (deviceId !== undefined && (from === undefined || to === undefined)) {
-        return res.status(400).json({ error: 'deviceId requires the from and to parameters' });
-      }
-      // from/to deben ser fechas ISO 8601 válidas.
-      const fromDate = from !== undefined ? new Date(from) : undefined;
-      const toDate = to !== undefined ? new Date(to) : undefined;
-      if ((from !== undefined && isNaN(fromDate)) || (to !== undefined && isNaN(toDate))) {
-        return res.status(400).json({ error: 'from and to must be valid ISO 8601 date-times' });
-      }
-
-      const parsedDeviceId = deviceId !== undefined ? Number(deviceId) : undefined;
-      if (parsedDeviceId !== undefined && isNaN(parsedDeviceId)) {
-        return res.status(400).json({ error: 'deviceId must be an integer' });
-      }
-
-      logger.debug(`Getting position history device=${deviceId ?? 'all'} from=${from} to=${to}`);
-      const { rows, truncated } = await PositionHistoryModel.getHistory({
-        deviceId: parsedDeviceId,
-        from: fromDate,
-        to: toDate,
-      });
-      if (truncated) {
-        res.set('X-Result-Truncated', 'true');
-        logger.warn(`Position history query truncated at limit (device=${deviceId ?? 'all'})`);
-      }
-      return res.json(rows);
+    // Without any params → SEND ALL CACHED POSITIONS (RAM)
+    if (deviceId === undefined && !hasRange) {
+      const positions = await positionsModel.getAll();
+      return res.json(Object.values(positions));
     }
 
-    // --- Rama CACHÉ (RAM) ---
-    if (id !== undefined) {
-      const ids = Array.isArray(id) ? id : [id];
-      logger.debug(`Getting cached positions ids=${ids.join(',')}`);
-      const cached = await positionsModel.getByDeviceIds(ids);
+    let deviceIds = null;
+    if (deviceId !== undefined && deviceId !== null) {
+      const rawIds = (Array.isArray(deviceId) ? deviceId : [deviceId]).flatMap((value) => String(value).split(','));
+      deviceIds = rawIds.map((value) => Number(value.trim()));
+      const invalidIds = rawIds.filter((value, i) => value.trim() === '' || isNaN(deviceIds[i]));
+      if (invalidIds.length > 0) {
+        return res.status(400).json({ error: `Invalid deviceId(s): ${invalidIds.join(', ')}` });
+      }
+    }
+
+    // deviceID without from/to → SEND CACHED POSITION for deviceIds (RAM)
+    if (!hasRange && deviceIds !== null) {
+      logger.debug(`Getting cached positions for deviceId(s): ${deviceIds.join(', ')}`);
+      const cached = await positionsModel.getByDeviceIds(deviceIds);
       return res.json(cached);
     }
 
-    logger.debug('Getting all cached positions');
-    const positions = await positionsModel.getAll();
-    return res.json(Object.values(positions));
+    // from/to + opcional `deviceId`) → send Positions from DB
+
+    // if from/to, return historical positions from the DB
+    if (deviceIds?.length > 1) {
+      return res.status(400).json({ error: 'Only one deviceId is allowed when querying history with from/to' });
+    }
+
+    // validate from/to
+    if ((from !== undefined && isNaN(Date.parse(from))) || (to !== undefined && isNaN(Date.parse(to)))) {
+      return res.status(400).json({ error: 'from and to must be valid ISO 8601 date-times' });
+    }
+
+    const parsedDeviceId = deviceIds === null ? undefined : deviceIds[0];
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    logger.debug(`Getting position history device=${parsedDeviceId ?? 'all'} from=${from} to=${to}`);
+    const { rows, truncated } = await PositionHistoryModel.getHistory({
+      deviceId: parsedDeviceId,
+      from: fromDate,
+      to: toDate,
+    });
+    if (truncated) {
+      res.set('X-Result-Truncated', 'true');
+      logger.warn(`Position history query truncated at limit (device=${parsedDeviceId ?? 'all'})`);
+    }
+    return res.json(rows);
   }
 
   static async getLastPositions() {

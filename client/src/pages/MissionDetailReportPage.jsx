@@ -215,14 +215,26 @@ const MissionDetailReportPage = () => {
         throw Error(await response4.text());
       }
 
-      // Positions carry no routeId either — same window, narrowed per route
-      // (deviceId + time window) once here, similar to events above.
-      const response5 = await fetch(`/api/positions?${params}`);
-      if (response5.ok) {
-        setPositions(await response5.json());
-      } else {
-        throw Error(await response5.text());
+      // Positions history requires a single deviceId per request (server-side
+      // constraint), so fetch one call per device involved in the mission and
+      // concatenate — MissionRoutesSection then narrows per route (deviceId +
+      // time window), similar to events above.
+      const deviceIds = [...new Set(myroutes.map((route) => route.deviceId))];
+      const positionResponses = await Promise.all(
+        deviceIds.map((deviceId) =>
+          fetch(
+            `/api/positions?${new URLSearchParams({ ...Object.fromEntries(params), deviceId })}`,
+          ),
+        ),
+      );
+      const failedResponse = positionResponses.find((response) => !response.ok);
+      if (failedResponse) {
+        throw Error(await failedResponse.text());
       }
+      const positionResults = await Promise.all(
+        positionResponses.map((response) => response.json()),
+      );
+      setPositions(positionResults.flat());
     }
   }, [id]);
 
