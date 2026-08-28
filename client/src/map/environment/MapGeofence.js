@@ -28,6 +28,7 @@ const MapGeofence = () => {
         id: 'geofences-fill',
         type: 'fill',
         filter: ['all', ['==', '$type', 'Polygon']],
+        metadata: { 'traccar:title': 'Geofences' },
         paint: {
           'fill-color': ['get', 'color'],
           'fill-outline-color': ['get', 'color'],
@@ -38,6 +39,7 @@ const MapGeofence = () => {
         source: id,
         id: 'geofences-line',
         type: 'line',
+        metadata: { 'traccar:title': 'Geofences' },
         paint: {
           'line-color': ['get', 'color'],
           'line-width': ['get', 'width'],
@@ -48,6 +50,7 @@ const MapGeofence = () => {
         source: id,
         id: 'geofences-title',
         type: 'symbol',
+        metadata: { 'traccar:title': 'Geofences' },
         layout: {
           'text-field': '{name}',
           'text-font': findFonts(map),

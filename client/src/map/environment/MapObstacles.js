@@ -171,6 +171,7 @@ const MapObstacles = ({ obstacles = [], visible = true, colors = DEFAULT_COLORS 
         id: layerIds.exclusionFill,
         type: 'fill',
         source: sourceIds.exclusion,
+        metadata: { 'traccar:title': 'ObstaclesRegions' },
         paint: {
           'fill-color': colors.exclusion,
           'fill-opacity': 0.35,
@@ -183,6 +184,7 @@ const MapObstacles = ({ obstacles = [], visible = true, colors = DEFAULT_COLORS 
         id: layerIds.exclusionBorder,
         type: 'line',
         source: sourceIds.exclusion,
+        metadata: { 'traccar:title': 'ObstaclesRegions' },
         paint: {
           'line-color': '#D32F2F',
           'line-width': 2,
