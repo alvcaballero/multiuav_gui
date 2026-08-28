@@ -4,9 +4,6 @@ import maplibregl from 'maplibre-gl';
 import { MaplibreExportControl, Size, PageOrientation, Format } from '@watergis/maplibre-gl-export';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
-import { SwitcherControl } from '../switcher/switcher';
-import { savePersistedState } from '../../shared/usePersistedState';
-
 import { mapImages, imagesReady } from './preloadImages';
 
 const element = document.createElement('div');
@@ -37,12 +34,12 @@ export const removeReadyListener = (listener) => {
   readyListeners.delete(listener);
 };
 
-const updateReadyValue = (value) => {
+export const updateReadyValue = (value) => {
   ready = value;
   readyListeners.forEach((listener) => listener(value));
 };
 
-const initMap = async () => {
+export const initMap = async () => {
   if (ready) return;
   await imagesReady;
   if (!map.hasImage('background')) {
@@ -74,22 +71,3 @@ map.addControl(
   }),
   'top-right',
 );
-
-export const switcher = new SwitcherControl(
-  () => updateReadyValue(false),
-  (styleId) => savePersistedState('selectedMapStyle', styleId),
-  () => {
-    map.once('styledata', () => {
-      const waiting = () => {
-        if (!map.loaded()) {
-          setTimeout(waiting, 33);
-        } else {
-          initMap();
-        }
-      };
-      waiting();
-    });
-  },
-);
-
-map.addControl(switcher);
