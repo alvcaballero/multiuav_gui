@@ -74,6 +74,29 @@ client/
 - Live route history tracking
 - Waypoint editing with drag-and-drop
 
+**Layer visibility toggling (`traccar:title` metadata):**
+
+`client/src/map/controls/MapSwitcher.jsx` builds its layer-visibility menu by scanning
+`map.getStyle().layers` for a `metadata['traccar:title']` string on each MapLibre layer, grouping
+layers that share the same title, and toggling their `visibility` layout property together. It
+re-scans on every `styledata` event, so newly added layers are picked up automatically.
+
+To make a layer group togglable from MapSwitcher, add matching metadata to every `map.addLayer()`
+call that belongs to that group:
+
+```javascript
+map.addLayer({
+  id: 'geofences-fill',
+  type: 'fill',
+  metadata: { 'traccar:title': 'Geofences' },
+  // ...
+});
+```
+
+All layers sharing the same title are shown/hidden as one unit — tag every layer in the group, not
+just one, or part of it will stay stuck visible. Existing examples: `map/environment/MapGeofence.js`
+(`'Geofences'`) and `map/environment/MapObstacles.js` (`'ObstaclesRegions'`).
+
 ### Redux State Updates
 
 - Use immer-style mutations in Redux Toolkit reducers
