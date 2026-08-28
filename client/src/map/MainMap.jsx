@@ -15,7 +15,7 @@ import MapDefaultCamera from './controls/MapDefaultCamera';
 import MapLiveRoutes from './devices/MapLiveRoutes';
 import MapGeocoder from './geocoder/MapGeocoder';
 import MapGeofence from './environment/MapGeofence';
-import PegmanControl from './PegmanControl/PegmanControl';
+import PegmanControl from './controls/PegmanControl/PegmanControl';
 import MapObstacles from './environment/MapObstacles';
 import { getAllInspectionGroups } from '../store/sessionSelectors';
 import { useMarkerTypes } from '../hooks/useMarkerTypes';

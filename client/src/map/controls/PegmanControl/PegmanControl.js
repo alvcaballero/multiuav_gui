@@ -8,8 +8,8 @@ import './styles.css';
 import { useEffect, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { map } from '../core/mapInstance'; // Access the global map instance
-import { sessionActions } from '../../store';
+import { map } from '../../core/mapInstance'; // Access the global map instance
+import { sessionActions } from '../../../store';
 
 /**
  * Maplibre3DViewControl class implementing IControl interface
