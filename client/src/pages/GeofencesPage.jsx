@@ -10,7 +10,7 @@ import MapView from '../map/core/MapView';
 import MapCurrentLocation from '../map/controls/MapCurrentLocation';
 import MapGeofenceEdit from '../map/draw/MapGeofenceEdit';
 import GeofencesList from './GeofencesList';
-import MapGeocoder from '../map/geocoder/MapGeocoder';
+import MapGeocoder from '../map/controls/MapGeocoder';
 import { errorsActions } from '../store';
 import MapScale from '../map/controls/MapScale';
 

@@ -13,7 +13,7 @@ import MapScale from './controls/MapScale';
 import { devicesActions } from '../store';
 import MapDefaultCamera from './controls/MapDefaultCamera';
 import MapLiveRoutes from './devices/MapLiveRoutes';
-import MapGeocoder from './geocoder/MapGeocoder';
+import MapGeocoder from './controls/MapGeocoder';
 import MapGeofence from './environment/MapGeofence';
 import PegmanControl from './controls/PegmanControl/PegmanControl';
 import MapObstacles from './environment/MapObstacles';
