@@ -4,13 +4,14 @@ import { Table, TableRow, TableCell, TableHead, TableBody, IconButton } from '@m
 import Tooltip from '@mui/material/Tooltip';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useAsyncTask } from '../reactHelper';
+import { useAsyncTask, useCatchCallback } from '../reactHelper';
 import PageLayout from '../shared/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
 import TableShimmer from '../shared/components/TableShimmer';
 import SearchHeader from './components/SearchHeader';
 import { filterByKeyword } from './components/filterByKeyword';
 import useSettingsStyles from './common/useSettingsStyles';
+import RemoveDialog from '../components/ui/RemoveDialog';
 
 const SettingsDevicesPage = () => {
   const { classes } = useSettingsStyles();
@@ -19,8 +20,10 @@ const SettingsDevicesPage = () => {
   const [items, setItems] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
-  useAsyncTask(async () => {
+  const loadItems = useCatchCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/devices`);
@@ -33,6 +36,21 @@ const SettingsDevicesPage = () => {
       setLoading(false);
     }
   }, []);
+
+  useAsyncTask(loadItems, [loadItems]);
+
+  const handleRemove = (id) => {
+    setRemovingId(id);
+    setRemoving(true);
+  };
+
+  const handleRemoveResult = (removed) => {
+    setRemoving(false);
+    setRemovingId(null);
+    if (removed) {
+      loadItems();
+    }
+  };
 
   return (
     <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>
@@ -72,7 +90,7 @@ const SettingsDevicesPage = () => {
                             </IconButton>
                           </Tooltip>
                           <Tooltip title={'Remove'}>
-                            <IconButton size="small" onClick={() => null}>
+                            <IconButton size="small" onClick={() => handleRemove(item.id)}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -87,6 +105,14 @@ const SettingsDevicesPage = () => {
           )}
         </TableBody>
       </Table>
+      {removingId && (
+        <RemoveDialog
+          open={removing}
+          endpoint="devices"
+          itemId={removingId}
+          onResult={handleRemoveResult}
+        />
+      )}
     </PageLayout>
   );
 };
