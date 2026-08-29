@@ -1,6 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { FormControlLabel, Switch } from '@mui/material';
 
 import MapView from './core/MapView';
 import { MapMissions } from './mission/MapMissions';
@@ -60,7 +59,6 @@ const MainMap = ({
   routes = EMPTY_ROUTES,
 }) => {
   const dispatch = useDispatch();
-  const [showObstacles, setShowObstacles] = useState(true);
   const obstacles = useInspectionObstacles();
   const onMarkerClick = useCallback(
     (_, deviceId) => {
@@ -73,7 +71,7 @@ const MainMap = ({
       <MapView>
         <MapMarkers markers={markers} showTitles={true} />
         <MapMissions filteredDeviceId={filteredMissiondeviceid} routes={routes} />
-        <MapObstacles obstacles={obstacles} visible={showObstacles} />
+        <MapObstacles obstacles={obstacles} />
         <MapElements />
         <MapGeofence />
         <MapLiveRoutes />
@@ -90,26 +88,6 @@ const MainMap = ({
       <MapScale />
       <MapGeocoder />
       <PegmanControl />
-      <FormControlLabel
-        sx={{
-          position: 'absolute',
-          bottom: 8,
-          left: 8,
-          zIndex: 1,
-          backgroundColor: 'background.paper',
-          borderRadius: 1,
-          px: 1,
-          m: 0,
-        }}
-        control={
-          <Switch
-            size="small"
-            checked={showObstacles}
-            onChange={(e) => setShowObstacles(e.target.checked)}
-          />
-        }
-        label="Bounding boxes"
-      />
     </>
   );
 };

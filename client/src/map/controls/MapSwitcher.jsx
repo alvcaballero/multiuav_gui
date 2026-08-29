@@ -56,7 +56,7 @@ const MapSwitcher = ({ styles, selectedId, onSelect }) => {
   const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const [hidden, setHidden] = usePersistedState('hiddenMapLayers', []);
+  const [hidden, setHidden] = usePersistedState('hiddenMapLayers', ['ObstaclesRegions']);
   const [titles, setTitles] = useState(collectTitles);
 
   const hiddenRef = useRef(hidden);
