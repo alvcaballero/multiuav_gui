@@ -3,7 +3,7 @@ import { Billboard, Text, Circle, Box, Line } from '@react-three/drei';
 
 const WORD_FONT_PROPS = {
   font: '/Inter-Bold.woff',
-  fontSize: 0.5,
+  fontSize: 1.8,
   letterSpacing: -0.05,
   lineHeight: 1,
   'material-toneMapped': false,
@@ -70,7 +70,7 @@ function Word({ children, position, color }) {
 
   return (
     <Billboard position={position}>
-      <Circle args={[0.5, 25]}>
+      <Circle args={[1.5, 25]}>
         <meshBasicMaterial attach="material" color={color} />
       </Circle>
       <Text
