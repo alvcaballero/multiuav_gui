@@ -9,13 +9,14 @@ import CircularProgressIcon from '@mui/material/CircularProgress';
 
 const initialOptions = [
   'Which drones are available?',
-  `Inspect the entire wind farm using all available UAVs to get a general assessment of its condition`,
-  'Use 2 UAVs to monitor the condition of the 4 wind turbines located in the north as soon as possible',
-  'Inspect wind turbine B3 with a high level of detail',
-  'Inspect the north face of the smaller building',
-  'Quickly inspect lighting towers without entering the work area',
-  'Inspect the crane tower in detail',
-  'Inspecciona la línea A y la línea B de la granja de aerogeneradores.',
+  `Inspect the entire wind farm`,
+  // `Inspect the entire wind farm using all available UAVs to get a general assessment of its condition`,
+  // 'Use 2 UAVs to monitor the condition of the 4 wind turbines located in the north as soon as possible',
+  // 'Inspect wind turbine B3 with a high level of detail',
+  // 'Inspect the north face of the smaller building',
+  // 'Quickly inspect lighting towers without entering the work area',
+  // 'Inspect the crane tower in detail',
+  // 'Inspecciona la línea A y la línea B de la granja de aerogeneradores.',
 ];
 
 const ChatInput = ({
@@ -153,7 +154,7 @@ const ChatInput = ({
           fullWidth
           multiline
           maxRows={3}
-          placeholder="Ask me anything about drones, missions, or commands..."
+          placeholder="Something to do or ask?"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyUp={handleKeyPress}
