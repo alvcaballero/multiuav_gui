@@ -31,7 +31,7 @@ client/
     ├── pages/              # Page-level components (one per route)
     ├── settings/           # Settings pages
     ├── map/                # Map rendering (MapLibre GL)
-    ├── ThreeD/             # 3D visualization (React Three Fiber)
+    ├── scene3d/            # 3D visualization (React Three Fiber)
     ├── services/           # Business logic services
     ├── shared/             # Shared utilities, hooks, and base components
     │   ├── components/     # ErrorHandler, PageLayout, SelectField, SwipeConfirm, etc.
@@ -96,6 +96,38 @@ map.addLayer({
 All layers sharing the same title are shown/hidden as one unit — tag every layer in the group, not
 just one, or part of it will stay stuck visible. Existing examples: `map/environment/MapGeofence.js`
 (`'Geofences'`) and `map/environment/MapObstacles.js` (`'ObstaclesRegions'`).
+
+**3D view controls & layers (`client/src/scene3d/`):**
+
+The 3D view (React Three Fiber) has no MapLibre `map` object to call `addControl` on, so
+`client/src/scene3d/controls/registry/` implements the same *convention* in plain React:
+
+- `Scene3DControlProvider` renders one absolutely-positioned `<div>` per corner
+  (`top-left`/`top-right`/`bottom-left`/`bottom-right`) that stacks its children via flexbox —
+  the 3D equivalent of MapLibre's per-corner control containers.
+- `<Scene3DControl corner="top-right">...</Scene3DControl>` portals its children into that
+  corner's container. Wrap any new control's JSX in it instead of hand-picking a
+  `position: absolute; top: <px>` offset — it stacks automatically below the existing controls
+  in that corner. See `Scene3DNavigationControl.jsx`, `DownloadYamlButton.jsx`,
+  `ScreenshotButton.jsx` for examples.
+- `Scene3DControlProvider` must wrap the `<R3FCanvas>` (and its sibling control components) in
+  `Scene3DCanvas.jsx`; controls themselves render as normal React siblings, not inside the canvas.
+
+Layer visibility toggling is the `scene3d` equivalent of `traccar:title`, implemented in
+`client/src/scene3d/layers/`:
+
+- `Scene3DLayerProvider` holds the set of currently mounted layer titles and which are hidden
+  (persisted via `usePersistedState('hiddenScene3DLayers', [])`).
+- `useSceneLayer('My Title')` self-registers a scene component under that title and returns
+  whether it should currently render. Multiple components can share a title to toggle together.
+- `Scene3DLayerSwitcher.jsx` (a `Scene3DControl`) lists every registered title in a menu with a
+  `Switch`, mirroring `MapSwitcher.jsx`.
+
+To add a new toggle: call `useSceneLayer('Title')` in the component and use its return value to
+mount conditionally — no changes needed in `Scene3DLayerSwitcher.jsx`, it picks up new titles
+automatically. `client/src/scene3d/controls/OrientationGizmo.jsx` is intentionally NOT part of
+this system — it renders directly into the WebGL canvas via `gl.setScissor`/`setViewport` inside
+`useFrame`, not as an HTML overlay, so it can't be portaled like the other controls.
 
 ### Redux State Updates
 

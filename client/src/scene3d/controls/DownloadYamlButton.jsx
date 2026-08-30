@@ -5,6 +5,8 @@ import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
 import { modelKey } from '../models/ModelLoader.jsx';
 import YAML from 'yaml';
+import Scene3DControl from './registry/Scene3DControl';
+import { controlSurfaceStyle } from './controlStyles';
 
 const DownloadYamlButton = () => {
   const elements = useSelector((state) => state.session.markers);
@@ -98,27 +100,13 @@ const DownloadYamlButton = () => {
   };
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: '300px',
-        right: '20px', // Right side placement
-        zIndex: 10,
-        pointerEvents: 'auto',
-      }}
-    >
+    <Scene3DControl corner="top-right">
       <Tooltip title="Download Scene YAML">
-        <IconButton
-          onClick={handleDownload}
-          style={{
-            backgroundColor: 'white',
-            boxShadow: '0 0 0 2px rgba(0,0,0,0.1)',
-          }}
-        >
+        <IconButton onClick={handleDownload} style={controlSurfaceStyle}>
           <DownloadIcon color="primary" />
         </IconButton>
       </Tooltip>
-    </div>
+    </Scene3DControl>
   );
 };
 

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import Scene3DControl from './registry/Scene3DControl';
+import { controlSurfaceStyle } from './controlStyles';
 
 const ZoomInIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" fill="#333" viewBox="0 0 29 29">
@@ -69,13 +71,7 @@ const btnStyle = {
 const dividerStyle = { borderTop: '1px solid #ddd' };
 
 const containerStyle = {
-  position: 'absolute',
-  top: '100px',
-  right: '20px',
-  zIndex: 10,
-  background: '#fff',
-  borderRadius: '4px',
-  boxShadow: '0 0 0 2px rgba(0,0,0,0.1)',
+  ...controlSurfaceStyle,
   perspective: '150px',
 };
 
@@ -91,49 +87,51 @@ const Scene3DNavigationControl = () => {
   }, []);
 
   return (
-    <div style={containerStyle}>
-      <button
-        type="button"
-        title="Zoom in"
-        style={btnStyle}
-        onClick={() => dispatch('camera-zoom-in')}
-      >
-        {' '}
-        <ZoomInIcon />{' '}
-      </button>
-      <div style={dividerStyle}>
+    <Scene3DControl corner="top-right">
+      <div style={containerStyle}>
         <button
           type="button"
-          title="Zoom out"
+          title="Zoom in"
           style={btnStyle}
-          onClick={() => dispatch('camera-zoom-out')}
+          onClick={() => dispatch('camera-zoom-in')}
         >
           {' '}
-          <ZoomOutIcon />{' '}
+          <ZoomInIcon />{' '}
         </button>
+        <div style={dividerStyle}>
+          <button
+            type="button"
+            title="Zoom out"
+            style={btnStyle}
+            onClick={() => dispatch('camera-zoom-out')}
+          >
+            {' '}
+            <ZoomOutIcon />{' '}
+          </button>
+        </div>
+        <div style={dividerStyle}>
+          <button
+            type="button"
+            title="Reset North"
+            style={btnStyle}
+            onClick={() => dispatch('camera-orient-north')}
+          >
+            <CompassIcon roll={cam.roll} bearing={cam.bearing} pitch={cam.pitch} />
+          </button>
+        </div>
+        <div style={dividerStyle}>
+          <button
+            type="button"
+            title="Top view"
+            style={btnStyle}
+            onClick={() => dispatch('camera-top-view')}
+          >
+            {' '}
+            <TopViewIcon />{' '}
+          </button>
+        </div>
       </div>
-      <div style={dividerStyle}>
-        <button
-          type="button"
-          title="Reset North"
-          style={btnStyle}
-          onClick={() => dispatch('camera-orient-north')}
-        >
-          <CompassIcon roll={cam.roll} bearing={cam.bearing} pitch={cam.pitch} />
-        </button>
-      </div>
-      <div style={dividerStyle}>
-        <button
-          type="button"
-          title="Top view"
-          style={btnStyle}
-          onClick={() => dispatch('camera-top-view')}
-        >
-          {' '}
-          <TopViewIcon />{' '}
-        </button>
-      </div>
-    </div>
+    </Scene3DControl>
   );
 };
 
