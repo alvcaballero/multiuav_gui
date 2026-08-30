@@ -41,6 +41,7 @@ const DeviceList = ({ devices }) => {
   return (
     <List
       className={classes.list}
+      style={{ height: '100%' }}
       rowComponent={DeviceRow}
       rowCount={devices.length}
       rowHeight={72}
