@@ -1,7 +1,7 @@
 import palette from '../../shared/palette';
 
 const createFeature = (myroute, point) => {
-  let myYaw = 0;
+  let myYaw = null;
   let mySpeed = 0;
   if (
     myroute[point.routeid].wp[point.id].hasOwnProperty('action') &&
@@ -20,9 +20,11 @@ const createFeature = (myroute, point) => {
     mySpeed = myroute[point.routeid].attributes.idle_vel;
   }
 
-  myYaw = Number(myYaw) ? Number(myYaw) : 0;
+  // null/undefined stays null (waypoint has no heading -> drawn as a plain point);
+  // any real number, including 0 (north), gets an oriented arrow icon.
+  myYaw = myYaw != null && Number.isFinite(Number(myYaw)) ? Number(myYaw) : null;
   mySpeed = Number(mySpeed) ? Number(mySpeed) : 0;
-  const myCategory = myYaw === 0 ? 'background' : 'backgroundDirection';
+  const myCategory = myYaw == null ? 'background' : 'backgroundDirection';
   return {
     id: point.id,
     route_id: point.routeid,
@@ -37,7 +39,7 @@ const createFeature = (myroute, point) => {
     actions: myroute[point.routeid].wp[point.id].action,
     attributes: myroute[point.routeid].attributes,
     category: myCategory,
-    rotation: myYaw,
+    rotation: myYaw ?? 0,
     color: point.routeid, //myroute[point.routeid]['id'],
   };
 };

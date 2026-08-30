@@ -166,6 +166,29 @@ const WaypointParamField = ({ def, value, onCommit, disabled = false }) => {
   );
 };
 
+// Controlled yaw field: empty draft commits `null` (no heading), never a stray 0.
+// Resyncs on external changes (e.g. map drag) via the value effect below.
+const YawField = ({ value, onCommit, disabled = false }) => {
+  const [draft, setDraft] = useState(value ?? '');
+
+  React.useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  return (
+    <TextField
+      disabled={disabled}
+      label="YAW"
+      type="number"
+      variant="standard"
+      sx={{ width: '13ch' }}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => onCommit(draft === '' ? null : Number(draft))}
+    />
+  );
+};
+
 const WaypointRouteList = ({
   routeIndex,
   indexWp,
@@ -331,16 +354,12 @@ const WaypointRouteList = ({
               />
             </Box>
             <Box component="form" sx={{ '& .MuiTextField-root': { m: 1 } }}>
-              {/* YAW is intrinsic to every aerial robot — always shown. */}
-              <TextField
-                required
+              {/* YAW is intrinsic to every aerial robot — always shown, but optional:
+                  empty means "no heading set", distinct from an explicit 0 (north). */}
+              <YawField
                 disabled={NoEdit}
-                label="YAW"
-                type="number"
-                variant="standard"
-                sx={{ width: '13ch' }}
-                defaultValue={waypoint.yaw ?? 0}
-                onBlur={(e) => updateField('yaw', +e.target.value)}
+                value={waypoint.yaw}
+                onCommit={(v) => updateField('yaw', v)}
               />
               {/* Speed / Gimbal / Turn (etc.) come from the catalog per-waypoint params. */}
               {wpParams.map((p) => (
