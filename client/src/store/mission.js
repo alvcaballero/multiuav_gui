@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { RuteConvert, RuteConvertlegacy } from '../map/MissionConvert';
+import { RuteConvert } from '../map/MissionConvert';
 
 export const applyUavTypeDefaults = createAsyncThunk(
   'mission/applyUavTypeDefaults',
@@ -49,11 +49,8 @@ const { reducer: missionReducerBase, actions } = createSlice({
       state.name = action.payload.name;
       state.description = action.payload.description || '';
 
-      if (action.payload.version == '3') {
-        state.route = RuteConvert(action.payload.route);
-      } else {
-        state.route = RuteConvertlegacy(action.payload);
-      }
+      state.route = RuteConvert(action.payload);
+
       if (state.route.length > 0) {
         state.home = state.route[0].wp[0].pos;
       }

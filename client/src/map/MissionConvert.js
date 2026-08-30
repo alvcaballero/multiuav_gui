@@ -8,7 +8,14 @@ const ROUTE_CONVERT_ATTRS = [
   'max_vel',
 ];
 
-export const RuteConvert = (route) => {
+export const RuteConvert = (data) => {
+  if (data.version == '3') {
+    return RuteConvertv3(data.route);
+  }
+  return RuteConvertlegacy(data);
+};
+
+export const RuteConvertv3 = (route) => {
   const rt = [];
   let latlongError = false;
 
@@ -67,7 +74,7 @@ export const RuteConvert = (route) => {
 
 const LEGACY_CONVERT_ATTRS = ['mode_landing', 'mode_yaw', 'idle_vel', 'max_vel'];
 
-export const RuteConvertlegacy = (mission) => {
+const RuteConvertlegacy = (mission) => {
   const rt = [];
 
   for (let uavN = 1; uavN <= mission['uav_n']; uavN++) {

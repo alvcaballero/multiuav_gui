@@ -8,7 +8,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlaceIcon from '@mui/icons-material/Place';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import DownloadIcon from '@mui/icons-material/Download';
 import { makeStyles } from 'tss-react/mui';
+import YAML from 'yaml';
 import { missionStyle } from '../../../shared/missionStatus';
 import RouteTrackingRow from '../../mission/RouteTrackingRow';
 
@@ -66,6 +68,24 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
   function handleClose() {
     setExpandedRoute(null);
     onClose();
+  }
+
+  function handleDownload() {
+    const yamlMission = {
+      version: '3',
+      name: mission.name,
+      description: mission.description,
+      route: mission.route,
+    };
+    const blob = new Blob([YAML.stringify(yamlMission)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${mission.name || 'mission'}.yaml`;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -212,6 +232,14 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
             sx={{ fontSize: 11, textTransform: 'none' }}
           >
             Edit
+          </Button>
+          <Button
+            size="small"
+            startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
+            onClick={handleDownload}
+            sx={{ fontSize: 11, textTransform: 'none' }}
+          >
+            Download
           </Button>
           <Button
             size="small"
