@@ -64,12 +64,20 @@ function loadAgent(filename) {
 const agents = {
   default: loadAgent('default.md'),
   planner: loadAgent('planner.md'),
+  defaultFast: loadAgent('defaultFast.md'),
+  plannerFast: loadAgent('plannerFast.md'),
   agv: loadAgent('agv.md'),
   other: loadAgent('other.md'),
   'verification-mission': loadAgent('verification-mission.md'),
 };
 
-export { agents };
+const userAgents = {
+  default: agents.default,
+  defaultFast: agents.defaultFast,
+  agv: agents.agv,
+};
+
+export { agents, userAgents };
 
 export const DEFAULT_AGENT = 'default';
 

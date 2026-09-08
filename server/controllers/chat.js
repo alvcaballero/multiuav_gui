@@ -1,5 +1,6 @@
 import { MessageOrchestrator } from '../models/chat/chat.js';
 import { SubAgentManager } from '../models/chat/subAgentManager.js';
+import { agents, setAgentForChat } from '../models/chat/agents/index.js';
 import { logger } from '../common/logger.js';
 
 export class chatController {
@@ -84,10 +85,17 @@ export class chatController {
   }
 
   static async createChat(req, res) {
-    const { name } = req.body;
+    const { name, agentProfile } = req.body;
 
     try {
       const chat = await MessageOrchestrator.createChat(name);
+      if (agentProfile) {
+        logger.info(`Setting agent profile '${agentProfile}' for chat ${chat.id}`);
+        if (!Object.keys(agents).includes(agentProfile)) {
+          return res.status(400).json({ error: `Invalid agentProfile '${agentProfile}'.` });
+        }
+        await setAgentForChat(chat.id, agentProfile);
+      }
       res.status(201).json(chat);
     } catch (error) {
       logger.error('Error creating chat:', error);
