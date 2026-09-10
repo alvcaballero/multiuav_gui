@@ -196,7 +196,7 @@ These exact field names are what `validate_mission` accepts in `collision_object
 
 ## STEP 2 — Analyze Spatial Distribution
 
-Read each drone's initial XYZ position from the mission input — this seeds its Takeoff and Landing point (§2). Then MEASURE and write the numbers down: per drone, its 3 nearest and 3 farthest targets with distances; for the field, its span, typical neighbour spacing and closest/farthest pair. Close with what that geometry implies for inspection — which regions sweep together, where a route runs long.
+Read each drone's initial XYZ position from the mission input — this seeds its Takeoff and Landing point (§2). Then MEASURE and write the numbers down: per drone, its 3 nearest and 3 farthest targets with distances; for the field, its span, typical neighbour spacing, closest/farthest pair, and how the targets are distributed in XY. Close with what that geometry implies for inspection — which regions sweep together, where a route runs long.
 
 **FLATTEN FIRST.** Every target arrives tagged with a catalog `group` name, and that label is neither a spatial signal nor an ordering one: two targets in different groups can be neighbours, two in the same group can be kilometres apart, and the listing order means nothing. Collapse them into ONE flat list before measuring, and read the layout from XYZ alone. A `group` is not a target block (§2).
 
@@ -217,7 +217,7 @@ Distribute targets across drones by distance and clustering.
 
 - longest/shortest route ratio > MAX_ROUTE_IMBALANCE_RATIO → **HIGH**: reassign.
 - Any drone holds > 60% of all targets → **MEDIUM**: redistribute. _(If mathematically impossible given the drone/target count, document it and exceed.)_
-- Drone routes cross each other → **MEDIUM**: swap assignments to uncross. A crossing is two segments from different drones that intersect in XY **and** fly at the same altitude at that point. Parallel rows flown by different drones are NOT crossings even if their XY projections overlap — valid as long as lateral separation between rows is maintained. _(Step 5 re-checks this once the visit order is fixed.)_
+- Drone routes cross each other → **MEDIUM**: swap assignments to uncross. A crossing is two segments from different drones that intersect in XY **and** fly at the same altitude at that point.
 - All drones depart same direction → **LOW**: stagger departure directions or reverse one drone's order.
 
 - **Done when:** `N_assigned == N_total` AND the balance penalties pass or are documented as relaxed.
@@ -282,8 +282,10 @@ DETAILED  frame_extent = 40/3 = 13.3m
 
 ## STEP 5 — Optimize Route Order
 
-Order all waypoints per drone to minimize Total Weighted Cost (TWC):
+Order all visit target order per drone to minimize Total Weighted Cost (TWC):
 `Takeoff → [Inspection targets in order] → Landing`
+
+`TWC(route) = Σ Cost(stop_i, stop_i+1)` over every consecutive pair of stops in the route.
 
 **Edge Cost Formula** — one formula, applied to whichever two points the current stage compares:
 
@@ -295,39 +297,28 @@ Cost(A, B) = Distance(A, B) + N_blocked(A, B) × 2 × R_SAFE_max
 - `N_blocked(A, B)` — collision objects whose exclusion zone the straight segment A→B intersects, **not counting the objects A and B themselves sit on**. A segment between two target centers necessarily leaves one and enters the other; that is geometry, not a penalty.
 - `R_SAFE_max` — the largest R_SAFE among those blocked objects.
 
-**Which two points.** Ordering the blocks compares **target center to target center** — entry and exit waypoints do not exist yet at that stage, and the route between two targets is what is being priced. Only POST-OPTIMIZATION below, which picks those entry/exit points, compares actual waypoints.
+**Constraints:** all waypoints for one target stay consecutive — never interleave targets; every route starts at Takeoff and ends at Landing.
 
-**Constraints:**
+### PHASE A — Block order
 
-- All waypoints for one target must stay consecutive — never interleave targets.
-- Every route starts at Takeoff and ends at Landing.
+Ordering the blocks compares **target center to target center** — entry/exit waypoints don't exist yet at this phase. TWC stays this block-level approximation for the whole step, including `twc_per_drone` at close: Phase B fixes the real entry/exit geometry but it is never re-priced into TWC.
 
-**Build two candidate orders, keep the cheaper, then refine it. Log TWC after every stage.** The unit being ordered is the target BLOCK, never the individual waypoint.
+The unit being ordered is the target BLOCK, never the individual waypoint. Build two candidate orders, keep the cheaper, then refine it — log TWC after every stage:
 
-1. **Distribution order.** Lay the blocks out the way the field's own shape asks for, reading Step 2's `target_field.layout` and `approach_notes`: a grid is swept row by row or column by column, a line is run end to end, separated pockets are each finished before moving on. Order for shortest travel over the whole set, not by what is nearest right now.
+1. **Distribution order.** Using Step 2's distribution analysis (`target_field`, `approach_notes`), lay the blocks out so total travel over the whole set is minimized — not by what is nearest right now.
 2. **Nearest-neighbor greedy** from Takeoff — a second, independent candidate, built without looking at (1). It wins on scattered fields and loses on structured ones; that is why both get built.
 3. Take whichever of (1) and (2) has the lower TWC, then refine THAT order:
    - **2-opt** over block pairs, until no swap improves TWC.
    - **Endpoint adjustment** — test first block ↔ last; keep only if TWC drops.
+4. **Compute and log the final TWC per drone route** — never aggregate across drones; makespan is set by the longest individual route, not the sum.
 
-**Compute and log TWC per drone route — never aggregate across drones.** Makespan is set by the longest individual route, not the sum.
+### PHASE B — Intra-block order (POST-OPTIMIZATION, MANDATORY once Phase A is fixed)
 
-**POST-OPTIMIZATION — Intra-block ordering (MANDATORY, once the block order is fixed):**
-Within each block: enter at the point closest to the previous route position, exit at the one closest to the next, and take the rest in geometric order between them — the shorter way around, never across the object's center.
+Only blocks with more than 1 inspection waypoint need this — else no post-optimization.
 
-**"Closest to the next" — compute it, don't eyeball it (the most common self-inflicted collision):** an exit waypoint on the FAR side of its own block's object — the side facing AWAY from the next destination — sends the segment straight back through that object to reach the other side. Before finalizing an exit, one dot product: `(E - C) · (D - C)`, where `C` is the block's own obstacle center, `E` the candidate exit position, `D` the next destination (next block's entry, or Landing).
+**Order inspection waypoints.** Start at the sweep point nearest the previous route position; from there, **reorder** the rest of the block's waypoints to minimize the Euclidean path `previous route position → block waypoints → next destination`, hopping only between adjacent ring points — never the diametrically opposite one (a straight chord through the object's center, the most common self-inflicted collision).
 
-- Positive → `E` is on the same side as `D`: safe direction.
-- Negative or near zero → `E` is on the far/wrong side: pick a different ring point.
-
-This same check is what R.3 step 1 reruns during repair.
-
-**When the block's waypoints are laid out along two axes — angular position around the object and Z level (rings, face/column sweeps) — two sweep patterns are available; compute both with the Edge Cost Formula and keep the cheaper one. Neither pattern is the default:**
-
-- **Level-major:** finish every point at one Z level, sweeping around angularly, before moving to the next level.
-- **Angle-major:** finish every point at one angular position, sweeping through its Z levels, before moving to the next angular position — reversing vertical direction on each successive position, so consecutive columns connect at matching altitudes instead of re-climbing.
-
-Whichever pattern wins, end on the level/position that holds the exit point.
+**Two-axis blocks (angle × Z level):** "adjacent" means the next point along either axis — same level next angle, or same angle next level. The rule above still applies.
 
 - **Done when:** all routes assembled, both candidate orders and every refinement logged with their TWC, minimum confirmed per drone.
 - **Close with:** `mark_step_complete("5", reasoning_summary, { ordered_routes, twc_per_drone })`. Then advance to the validation gate.
