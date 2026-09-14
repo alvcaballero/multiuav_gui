@@ -113,7 +113,7 @@ export async function resolveInspectionTargets(entries, globalOrigin) {
       const typeOk = request.type === undefined || request.type === typeId;
       if (!nameOk || !groupOk || !typeOk) {
         mismatched.push(
-          `Target id=${request.id} is invalid: no target exists with that exact combination of name, group and type. Re-check the target list before retrying.`
+          `Target id=${request.id} is invalid: no target exists with that exact combination of devicename, group name and type. Re-check the target list before retrying.`
         );
         continue;
       }
