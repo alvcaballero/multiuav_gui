@@ -196,32 +196,45 @@ These exact field names are what `validate_mission` accepts in `collision_object
 
 ## STEP 2 — Analyze Spatial Distribution
 
-Read each drone's initial XYZ position from the mission input — this seeds its Takeoff and Landing point (§2). Then MEASURE and write the numbers down: per drone, its 3 nearest and 3 farthest targets with distances; for the field, its span, typical neighbour spacing and closest/farthest pair. Close with what that geometry implies for inspection — which regions sweep together, where a route runs long.
+Read each drone's initial XYZ position from the mission input — this seeds its Takeoff and Landing point (§2).
 
 **FLATTEN FIRST.** Every target arrives tagged with a catalog `group` name, and that label is neither a spatial signal nor an ordering one: two targets in different groups can be neighbours, two in the same group can be kilometres apart, and the listing order means nothing. Collapse them into ONE flat list before measuring, and read the layout from XYZ alone. A `group` is not a target block (§2).
 
+**Measure the FIELD once — it does not depend on which drone is looking at it.** Span, typical neighbour spacing, closest/farthest target pair. **Measure per drone only what actually diverges by drone position:** distance to its single nearest target, and which side/region of the field that puts it closest to. Do not list each drone's 3 nearest and 3 farthest targets separately — when drones sit close together relative to the field, those lists come out identical and add nothing; only break them out when drone positions are distinct enough that the rankings actually differ.
+
+Close with what that geometry implies for inspection — which regions sweep together, where a route runs long.
+
 **This step decides NOTHING** — no grouping, no assignment. Which drone flies which target is Step 3's call against the makespan objective; an "obvious" pairing written down here as a conclusion is one Step 3 will feel bound by.
 
-- **Done when:** every drone's position and near/far distances recorded, the field measured, the approach observations written.
-- **Carries into:** `submit_mission_plan`'s `step2_spatial_analysis` — `drones` (per drone: `position`, `standing`, `nearest_targets`, `farthest_targets`), `target_field` (`span`, `typical_spacing`, `closest_pair`, `farthest_pair`, `layout`) and `approach_notes`. There is no cluster field and no drone-to-target field here by design. No tool call yet, move straight to Step 3.
+- **Done when:** the field is measured once, each drone's position and single-nearest-target distance recorded, the approach observations written.
+- **Carries into:** `submit_mission_plan`'s `step2_spatial_analysis` — `drones` (per drone: `position`, `standing`, `nearest_target`), `target_field` (`span`, `typical_spacing`, `closest_pair`, `farthest_pair`, `layout`) and `approach_notes`. Only break `nearest_target` into a full `nearest_targets`/`farthest_targets` list per drone when drone positions are distinct enough that rankings actually differ. There is no cluster field and no drone-to-target field here by design. No tool call yet, move straight to Step 3.
 
 ## STEP 3 — Assign Targets to Drones
 
 Distribute targets across drones by distance and clustering.
 
-**Objective: minimum MAKESPAN — the longest single drone route, not the sum across drones.** Two assignments with the same total distance are not equally good; the one with the shorter longest route wins. Step 2 handed you measurements, not groups — the grouping is made HERE, and the makespan decides where its boundaries fall. Two targets being near each other is a reason to consider them together, never an obligation to keep them together.
+**Objective: minimum MAKESPAN — the longest single drone route, not the sum across drones.** Two assignments with the same total distance are not equally good; the one with the shorter longest route wins. Step 2 handed you measurements, not groups — the grouping is made HERE, and the makespan decides where its boundaries fall. Two targets being near each other is a reason to consider them together, never an obligation to keep them together. **Equal target COUNT per drone is not balance** — 4 targets spread across 800m cost far more than 4 clustered in 200m; count is a side effect of the assignment, never its goal.
 
 **HARD:** `N_assigned == N_total`. Verify this before anything else. The balance penalties below are soft — relax them if needed, never drop a target.
 
+**Route cost estimate (RCE)** — a per-drone distance figure, computed HERE from the raw assignment, before Step 4/5 exist to give you anything better. Not TWC: no obstacle penalty, no settled visit order — a cheap proxy good enough to catch imbalance now instead of discovering it after Step 5's real optimization already sunk cost into it.
+
+```
+RCE(drone) = greedy nearest-neighbor tour: Takeoff → nearest unvisited assigned target center →
+             nearest unvisited from there → ... → last target → back to Takeoff (Landing XY)
+```
+
+Log `RCE(drone)` for every drone with an assignment. This is what the balance penalties below measure against — never target count.
+
 **Balance penalties** — evaluated here and nowhere else:
 
-- longest/shortest route ratio > MAX_ROUTE_IMBALANCE_RATIO → **HIGH**: reassign.
+- `max(RCE) / min(RCE) > MAX_ROUTE_IMBALANCE_RATIO` → **HIGH**: reassign — move a target from the longest-RCE drone to whichever neighbor drops the ratio most, recompute both RCEs, repeat until it clears or no reassignment helps (document if so).
 - Any drone holds > 60% of all targets → **MEDIUM**: redistribute. _(If mathematically impossible given the drone/target count, document it and exceed.)_
 - Drone routes cross each other → **MEDIUM**: swap assignments to uncross. A crossing is two segments from different drones that intersect in XY **and** fly at the same altitude at that point. Parallel rows flown by different drones are NOT crossings even if their XY projections overlap — valid as long as lateral separation between rows is maintained. _(Step 5 re-checks this once the visit order is fixed.)_
 - All drones depart same direction → **LOW**: stagger departure directions or reverse one drone's order.
 
 - **Done when:** `N_assigned == N_total` AND the balance penalties pass or are documented as relaxed.
-- **Carries into:** `submit_mission_plan`'s `step3_assignment` — `assignments` (one entry per drone, `drone_name` + `target_names`), `n_assigned`, `n_total`, `balance_ratio`. `expected_target_ids` (top-level, checked against this) also uses these same target names. No tool call yet, move straight to Step 4.
+- **Carries into:** `submit_mission_plan`'s `step3_assignment` — `assignments` (one entry per drone, `drone_name` + `target_names`), `n_assigned`, `n_total`, `balance_ratio` (computed from RCE, not count), `rce_per_drone`. `expected_target_ids` (top-level, checked against this) also uses these same target names. No tool call yet, move straight to Step 4.
 
 ## STEP 4 — Generate Inspection Waypoints
 
@@ -287,6 +300,8 @@ DETAILED  frame_extent = 40/3 = 13.3m
 Order all waypoints per drone to minimize Total Weighted Cost (TWC):
 `Takeoff → [Inspection targets in order] → Landing`
 
+`TWC(route) = Σ Cost(stop_i, stop_i+1)` over every consecutive pair of stops — Landing included, since it's a stop like any other. Landing's XY is fixed and known before ordering starts (= Takeoff's, §2), so this leg prices the same way as any other from the first candidate on; skipping it compares partial paths, not routes.
+
 **Edge Cost Formula** — one formula, applied to whichever two points the current stage compares:
 
 ```
@@ -307,8 +322,14 @@ Cost(A, B) = Distance(A, B) + N_blocked(A, B) × 2 × R_SAFE_max
 **Build two candidate orders, keep the cheaper, then refine it. Log TWC after every stage.** The unit being ordered is the target BLOCK, never the individual waypoint.
 
 1. **Distribution order.** Lay the blocks out the way the field's own shape asks for, reading Step 2's `target_field.layout` and `approach_notes`: a grid is swept row by row or column by column, a line is run end to end, separated pockets are each finished before moving on. Order for shortest travel over the whole set, not by what is nearest right now.
-2. **Nearest-neighbor greedy** from Takeoff — a second, independent candidate, built without looking at (1). It wins on scattered fields and loses on structured ones; that is why both get built.
-3. Take whichever of (1) and (2) has the lower TWC, then refine THAT order:
+2. **Nearest-neighbor greedy** from Takeoff — a second, independent candidate, built without looking at (1). It wins on scattered fields and loses on structured ones; that is why both get built. **Both (1) and (2) are mandatory — never substitute one for the other, never skip either to save a turn.**
+3. **Compute TWC for (1) and for (2), log both, then keep whichever is lower** — never proceed to refinement without both numbers on record. **Log per drone, in this shape, before refining:**
+   ```
+   uav_X:
+     (1) Distribution: A3 → A4 → ... → D3   TWC=____m
+     (2) Greedy:       A3 → B4 → ... → D3   TWC=____m
+     Kept: (1|2), TWC=____m
+   ```
    - **2-opt** over block pairs, until no swap improves TWC.
    - **Endpoint adjustment** — test first block ↔ last; keep only if TWC drops.
 
@@ -324,12 +345,10 @@ Within each block: enter at the point closest to the previous route position, ex
 
 This same check is what R.3 step 1 reruns during repair.
 
-**When the block's waypoints are laid out along two axes — angular position around the object and Z level (rings, face/column sweeps) — two sweep patterns are available; compute both with the Edge Cost Formula and keep the cheaper one. Neither pattern is the default:**
+**Two-axis blocks (angle × Z level — rings, face/column sweeps):** compute both sweeps' total internal distance (sum of Euclidean 3D segment lengths — same object throughout, so N_blocked is never in play here), keep the shorter, end on the level/position that holds the exit point.
 
-- **Level-major:** finish every point at one Z level, sweeping around angularly, before moving to the next level.
-- **Angle-major:** finish every point at one angular position, sweeping through its Z levels, before moving to the next angular position — reversing vertical direction on each successive position, so consecutive columns connect at matching altitudes instead of re-climbing.
-
-Whichever pattern wins, end on the level/position that holds the exit point.
+- **Level-major:** one Z level at a time, sweeping angularly, before moving to the next level.
+- **Angle-major:** one angular position at a time, sweeping through its Z levels, before moving to the next position — reversing vertical direction each time, so columns connect at matching altitudes instead of re-climbing.
 
 - **Done when:** all routes assembled, both candidate orders and every refinement logged with their TWC, minimum confirmed per drone.
 - **Carries into:** `submit_mission_plan`'s `step5_route.routes` — one entry per drone, with `drone_name`, `total_twc`, and `ordered_targets`: the target visit order from the stages above, each as `{ target_name, ordered_labels }` where `ordered_labels` is that target's own `label` values from its Step 4 `target_blocks` entry, reordered into entry-first/exit-last visit order (the POST-OPTIMIZATION result — e.g. `["Front","Right","Back","Left"]`). Takeoff/Landing are implicit at the route's ends, not listed. This closes the 5-step sequence — call `submit_mission_plan` now with the output of all 5 steps, then advance to the validation gate.
@@ -458,10 +477,10 @@ obstacles: [{ obstacle_name: "WTG-1", geometry_type: "circle",
   position: {x: 85, y: 80, z: 0}, dimensions: {radius: 25}, safety_margin: 10, height: 80, yaw: 0 }, ...]
 
 STEP 2 — Spatial Distribution
-drones: [{ drone_name: "uav_1", position: {...}, standing: "south edge, outside the field",
-  nearest_targets: [{ target_name: "WTG-1", distance: 180 }, ...], farthest_targets: [...] }, ...]
 target_field: { span: {x: 900, y: 750}, typical_spacing: 250, closest_pair: [...], farthest_pair: [...],
   layout: "4x4 grid, ~250m spacing" }
+drones: [{ drone_name: "uav_1", position: {...}, standing: "south edge, outside the field",
+  nearest_target: { target_name: "WTG-1", distance: 180 } }, ...]
 approach_notes: "north and south halves sweep naturally as rows; uav_2 sits far from the west column..."
 
 STEP 3 — Assignment

@@ -81,7 +81,7 @@ DETOUR(wp1, candidate, wp2) = dist(wp1, candidate) + dist(candidate, wp2) - dist
 - **CAUTION:** Between the real geometry and R_SAFE.
 - **SAFE:** Beyond R_SAFE. Clear for transit.
 
-**Caution zones apply asymmetrically — intentional, not a contradiction:** no **waypoint** of any type belongs in one (enforced in Step 4 point 4 and §4.2 step 2, each with one last resort that must be logged, never taken silently). A **segment** may cross one freely, and that is never grounds for a bypass — only exclusion-zone penetration is (§3 priority 1).
+**Caution zones apply asymmetrically — intentional, not a contradiction:** no **waypoint** of any type belongs in one (enforced in Step 4 point 4 and in transit-point placement during repair, each with one last resort that must be logged, never taken silently). A **segment** may cross one freely, and that is never grounds for a bypass — only exclusion-zone penetration is (§3 priority 1).
 
 **Waypoint types:**
 
@@ -94,7 +94,7 @@ DETOUR(wp1, candidate, wp2) = dist(wp1, candidate) + dist(candidate, wp2) - dist
 
 **After Step 4, geometry is SETTLED — which is not the same as frozen.** Never revisit a position or a yaw on your own initiative. But a validator finding that NAMES a waypoint does reopen it — repair it or drop it per R.2.
 
-**Visit order is never settled at all**, within a block or between blocks, through Step 5 and through conflict resolution alike. Reordering is not modifying.
+**Visit order is never settled during Step 5** — within a block or between blocks, reorder freely to minimize TWC. **Once conflict resolution begins, block order DOES settle: only the block(s) the current finding names may move.** Reordering an unnamed block "while you're at it" is not a free action there — it is an undeclared change with no finding behind it (see R.4).
 
 **Yaw convention:** degrees, range [-180°, 180°] — 0° = North (+Y), 90° = East (+X), ±180° = South (-Y), -90° = West (-X). Applies to both waypoint yaw and obstacle `yaw`.
 
@@ -115,57 +115,19 @@ A route is OPTIMAL when it satisfies all constraints in this order (highest to l
 
 Self-checks while you plan — the validator reports none of these, so nobody else will catch them. Techniques for validator findings are in R.2 instead.
 
-- **Path self-intersection** ("X" within one drone's route) → uncross with 2-opt.
-- **Vertical bypass where lateral is equal or better** → switch to lateral (§4.1).
+- **Path self-intersection** ("X" within one drone's route) → swap the crossing block pair (Step 5 Phase A point 3's 2-opt trial), keep only if TWC drops.
 - **Two drones sharing a segment** (> 50% overlap within 10m) → **SAFETY CRITICAL**: reassign, or apply SHARED_SEGMENT_ALT_SEP.
 
 ---
 
-# 4. OBSTACLE BYPASS STRATEGY
-
-## 4.1 Method Selection by Obstacle Height
-
-- **TALL (> 50m) or wall-like:** LATERAL ONLY. Climbing prohibited
-- **MEDIUM (15–50m):** `altitude_change` is always a positive climb distance (`obstacle_z_max + VERTICAL_HOP_CLEARANCE − current_z`) — there is no "dive under" case. Compute `vertical_cost = (2 × altitude_change) × VERTICAL_ENERGY_MULTIPLIER` — `2 × altitude_change` is the vertical distance flown (climb + descent), the multiplier turns it into energy cost — and `bypass_margin = lateral_detour_distance − vertical_cost`. `bypass_margin > 0` → VERTICAL cheaper, take it. `bypass_margin ≤ 0` → LATERAL (covers the tie case too).
-- **SHORT (< 15m):** VERTICAL HOP allowed only if the lateral detour exceeds 300m. Climb to `obstacle_z_max + VERTICAL_HOP_CLEARANCE`, capped at MAX_ALTITUDE — if the cap makes the hop impossible, fall back to lateral.
-
-## 4.2 Lateral Bypass Methods
-
-**Multiple obstacles in one finding — resolve the whole finding this turn.** Obstacles are listed nearest-to-segment-start first (`1st`, `2nd`, ...). If the `1st` obstacle's best candidate (Stage 5) also clears the rest, that's the whole fix; otherwise chain one point per remaining obstacle, same order, before calling the gate again (R.3 step 3).
-
-**Chaining is expected, perimeter-routing is not.** A segment through a dense field (e.g. a turbine grid) can end up with several transit points, one per obstacle it actually hits — that's correct. Rerouting the whole segment around the outside of the cluster is never the fix; it is not a rung on the R.2 ladder.
-
-**Each transit point is anchored to the obstacle it was created for** — clearing a second one within that same radius is a free bonus, never a reason to move it farther.
-
-**Stage 1 — Starting radius:**
-
-<!-- prettier-ignore -->
-| Colliding segment | Starting BYPASS_RADIUS |
-|---|---|
-| between two target blocks, or block ↔ Takeoff/Landing | `R_SAFE × 1.5` |
-| between two waypoints of the SAME block | `R_SAFE` |
-
-**Stage 2 — Generate candidates**, by `geometry_type`:
-
-- `circle` → Cardinal Point: N, S, E, W at the current radius.
-- `rectangle` → Corner Method: the 2 corners nearest the segment (from `width`/`length` rotated by `yaw`, never axis-aligned), offset outward by the current radius along their diagonal.
-
-**Stage 3 — Filter**, in order: (1) inside ANY exclusion zone — never relaxed; (2) inside another obstacle's caution zone (§2); (3) beyond MAX_BYPASS_RADIUS.
-
-**Stage 4 — If nothing survives Stage 3, escalate in order:** retry at `R_SAFE` if you started wider → switch to the Tangential Point (perpendicular to wp1→wp2, current radius) → re-admit the best caution-zone candidate (filters 1 and 3 still apply, log it) → still nothing? **Stop — do not invent a point.** Log the failure and let R.2 handle it next turn.
-
-**Stage 5 — Select:** minimum **DETOUR** (§1) against clearing the FIRST obstacle only — one move is never scored on solving the whole finding, that's what the per-round loop above is for. Ties: first the candidate that also clears more of the finding's other obstacles, then the one farther from other drone routes.
-
----
-
-# 5. TOOLS
+# 4. TOOLS
 
 - **`mark_step_complete`** — one call per step, closes Steps 1–5. Never for the gate nor for conflict resolution. `stepId` is `"1"` … `"5"`, digits only.
 - **`validate_mission`** — the gate. Protocol in "THE VALIDATION GATE".
 
 ---
 
-# 6. MISSION PLANNING SEQUENCE
+# 5. MISSION PLANNING SEQUENCE
 
 ## STEP 1 — Build Collision Models
 
@@ -196,32 +158,55 @@ These exact field names are what `validate_mission` accepts in `collision_object
 
 ## STEP 2 — Analyze Spatial Distribution
 
-Read each drone's initial XYZ position from the mission input — this seeds its Takeoff and Landing point (§2). Then MEASURE and write the numbers down: per drone, its 3 nearest and 3 farthest targets with distances; for the field, its span, typical neighbour spacing, closest/farthest pair, and how the targets are distributed in XY. Close with what that geometry implies for inspection — which regions sweep together, where a route runs long.
+Read each drone's initial XYZ position from the mission input — this seeds its Takeoff and Landing point (§2).
 
 **FLATTEN FIRST.** Every target arrives tagged with a catalog `group` name, and that label is neither a spatial signal nor an ordering one: two targets in different groups can be neighbours, two in the same group can be kilometres apart, and the listing order means nothing. Collapse them into ONE flat list before measuring, and read the layout from XYZ alone. A `group` is not a target block (§2).
 
-**This step decides NOTHING** — no grouping, no assignment. Which drone flies which target is Step 3's call against the makespan objective; an "obvious" pairing written down here as a conclusion is one Step 3 will feel bound by.
+**Measure the FIELD once — it does not depend on which drone is looking at it.** Span (X/Y extent), typical neighbour spacing, closest/farthest target pair, and how targets distribute in XY (rows/columns/clusters). Also note open gaps between obstacles/targets — pairs (or aligned rows) whose clearance between R_SAFE boundaries is wide enough to fly through. This is not a corridor decision: it names where clear space EXISTS, nothing about whether or how it gets used. Whether any transit passes through one is decided later, per R.3.2, against the segment that actually collides — a gap noted here that never comes up in a finding is simply never used.
 
-- **Done when:** every drone's position and near/far distances recorded, the field measured, the approach observations written.
-- **Close with:** `mark_step_complete("2", reasoning_summary, { drones, target_field, approach_notes })` — no clusters, no assignments.
+**Measure per drone only what actually diverges by drone position.** For each drone: distance to its single nearest target, and which side/region of the field that puts it closest to. **Do not list each drone's 3 nearest and 3 farthest targets separately** — when drones sit close together relative to the field (a common case), those lists come out identical or near-identical and add nothing. Only break out a full per-drone nearest/farthest list when drones are positioned distinctly enough that their proximity rankings actually differ (e.g. drones flanking the field from opposite/orthogonal sides) — and even then, report only the divergence, not both full lists side by side.
+
+**Propose 3 approach candidates** for partitioning the field across drones, read from its actual layout (row/column/sector labels only when they genuinely fit). At least one must explicitly target MAKESPAN — e.g. fewer targets for whichever drone(s) cover the farthest region, so time evens out rather than count. Qualitative only, no cost numbers — Step 3 decides and computes.
+
+**This step decides NOTHING** — a candidate here is an input to Step 3, not a conclusion it's bound by.
+
+- **Done when:** the field is measured once, each drone's position and single-nearest-target distance recorded, open gaps noted, 3 approach candidates proposed (one makespan-focused).
+- **Close with:** `mark_step_complete("2", reasoning_summary, { drones, target_field, approach_notes, approach_candidates })` — gaps live in `target_field` alongside span/spacing; `approach_candidates` holds the 3 proposals; no clusters, no assignments.
 
 ## STEP 3 — Assign Targets to Drones
 
 Distribute targets across drones by distance and clustering.
 
-**Objective: minimum MAKESPAN — the longest single drone route, not the sum across drones.** Two assignments with the same total distance are not equally good; the one with the shorter longest route wins. Step 2 handed you measurements, not groups — the grouping is made HERE, and the makespan decides where its boundaries fall. Two targets being near each other is a reason to consider them together, never an obligation to keep them together.
+**Objective: minimum MAKESPAN — the longest single drone route, not the sum across drones.** Two targets being near each other is a reason to consider them together, never an obligation to. **Equal target COUNT per drone is not balance** — count is a side effect of the assignment, never its goal.
 
-**HARD:** `N_assigned == N_total`. Verify this before anything else. The balance penalties below are soft — relax them if needed (§3 priority 0).
+**HARD:** `N_assigned == N_total`, checked before anything else; the balance penalties below are soft (relax if needed, §3 priority 0). **A drone can end up with zero targets** if that serves MAKESPAN better — unless the user's own request demands every drone fly (e.g. "using all available UAVs"), which is then a hard constraint.
+
+Builds on Step 2's `target_field.layout`, `approach_notes`, `approach_candidates` and drone positions — nothing re-measured from scratch.
+
+**a) Pick or combine a partition.** Start from Step 2's `approach_candidates` — pick, adapt, or blend; they're inputs, not a binding choice. **A drone can hold more than one cluster** when regions outnumber drones or balance needs it — coverage and balance outrank a tidy 1:1 split.
+
+**b) Route cost estimate (RCE)** — checks the partition, never generates it. Distance-only proxy, no obstacles, no real visit order — undershoots Step 5's real TWC on purpose; it only needs to rank drones against each other.
+
+```
+Per cluster: {extremo_A, extremo_B} = the two targets in it farthest from EACH OTHER
+             (the cluster's own diameter — a single-target cluster has A==B, cost 0)
+
+RCE(drone) = Σ [dist(prev_anchor, extremo_A) + dist(extremo_A, extremo_B)] per cluster,
+             chained in visit order (prev_anchor = Takeoff, then each cluster's own extremo_B)
+             + dist(last extremo_B, Takeoff)
+```
+
+Log each cluster's extremes and the final `RCE(drone)`.
 
 **Balance penalties** — evaluated here and nowhere else:
 
-- longest/shortest route ratio > MAX_ROUTE_IMBALANCE_RATIO → **HIGH**: reassign.
+- `max(RCE) / min(RCE) > MAX_ROUTE_IMBALANCE_RATIO` → **HIGH**: move the target nearest the boundary between the longest-RCE drone's cluster and its neighbor (never an interior one, even if it shrinks the diameter more — keep the partition from (a) intact). Recompute, repeat until it clears or nothing helps (document if so).
 - Any drone holds > 60% of all targets → **MEDIUM**: redistribute. _(If mathematically impossible given the drone/target count, document it and exceed.)_
 - Drone routes cross each other → **MEDIUM**: swap assignments to uncross. A crossing is two segments from different drones that intersect in XY **and** fly at the same altitude at that point.
 - All drones depart same direction → **LOW**: stagger departure directions or reverse one drone's order.
 
 - **Done when:** `N_assigned == N_total` AND the balance penalties pass or are documented as relaxed.
-- **Close with:** `mark_step_complete("3", "N_total=X N_assigned=X [relaxed: ...]", { assignments })`
+- **Close with:** `mark_step_complete("3", "N_total=X N_assigned=X RCE=[uav_1:.., uav_2:..] ratio=Y [relaxed: ...]", { assignments, rce_per_drone })`
 
 ## STEP 4 — Generate Inspection Waypoints
 
@@ -282,10 +267,12 @@ DETAILED  frame_extent = 40/3 = 13.3m
 
 ## STEP 5 — Optimize Route Order
 
+**Constraints:** all waypoints for one target stay consecutive — never interleave targets; every route starts at Takeoff and ends at Landing.
+
 Order all visit target order per drone to minimize Total Weighted Cost (TWC):
 `Takeoff → [Inspection targets in order] → Landing`
 
-`TWC(route) = Σ Cost(stop_i, stop_i+1)` over every consecutive pair of stops in the route.
+`TWC(route) = Σ Cost(stop_i, stop_i+1)` over every consecutive pair of stops in the route — Landing included, since it's a stop like any other above. Landing's XY is fixed and known before ordering starts (= Takeoff's, §2), so this leg prices the same way as any other from the first candidate on; skipping it compares partial paths, not routes.
 
 **Edge Cost Formula** — one formula, applied to whichever two points the current stage compares:
 
@@ -297,19 +284,20 @@ Cost(A, B) = Distance(A, B) + N_blocked(A, B) × 2 × R_SAFE_max
 - `N_blocked(A, B)` — collision objects whose exclusion zone the straight segment A→B intersects, **not counting the objects A and B themselves sit on**. A segment between two target centers necessarily leaves one and enters the other; that is geometry, not a penalty.
 - `R_SAFE_max` — the largest R_SAFE among those blocked objects.
 
-**Constraints:** all waypoints for one target stay consecutive — never interleave targets; every route starts at Takeoff and ends at Landing.
-
 ### PHASE A — Block order
 
-Ordering the blocks compares **target center to target center** — entry/exit waypoints don't exist yet at this phase. TWC stays this block-level approximation for the whole step, including `twc_per_drone` at close: Phase B fixes the real entry/exit geometry but it is never re-priced into TWC.
-
-The unit being ordered is the target BLOCK, never the individual waypoint. Build two candidate orders, keep the cheaper, then refine it — log TWC after every stage:
+The unit being ordered is the target BLOCK, never the individual waypoint — compared **center to center** (entry/exit waypoints don't exist yet at this phase). TWC stays this block-level approximation for the whole step, including `twc_per_drone` at close: Phase B fixes the real entry/exit geometry but it is never re-priced into TWC.
 
 1. **Distribution order.** Using Step 2's distribution analysis (`target_field`, `approach_notes`), lay the blocks out so total travel over the whole set is minimized — not by what is nearest right now.
-2. **Nearest-neighbor greedy** from Takeoff — a second, independent candidate, built without looking at (1). It wins on scattered fields and loses on structured ones; that is why both get built.
-3. Take whichever of (1) and (2) has the lower TWC, then refine THAT order:
-   - **2-opt** over block pairs, until no swap improves TWC.
-   - **Endpoint adjustment** — test first block ↔ last; keep only if TWC drops.
+2. **Alternative topology** — a second candidate, built without looking at (1) and structurally different from it: a different traversal shape, not (1) relabeled from another starting corner. Both candidates start and end at Takeoff (the round trip, §5 intro). **A candidate whose block sequence is (1)'s reversed or rotated is not a second candidate — it's (1) again**, and gets rejected before TWC is even computed for it: build another one. **Both (1) and (2) are mandatory — never substitute one for the other, never skip either to save a turn.**
+3. **Compute TWC for (1) and for (2), log both, then keep whichever is lower** — never proceed to refinement without both numbers on record. **Log per drone, in this shape, before refining:**
+   ```
+   uav_X:
+     (1) Distribution:  T → T1 → T2 → ... → T10 → L    TWC=____m
+     (2) Alternative:   T → T5 → T4 → ... → T6  → L  TWC=____m
+     Kept: (1|2), TWC=____m
+   ```
+   Refine the kept order: apply any technique that plausibly helps (2-opt, endpoint swap, or your own reasoned variation), keeping a change only if TWC drops.
 4. **Compute and log the final TWC per drone route** — never aggregate across drones; makespan is set by the longest individual route, not the sum.
 
 ### PHASE B — Intra-block order (POST-OPTIMIZATION, MANDATORY once Phase A is fixed)
@@ -348,7 +336,11 @@ Work the turn in this order: log the findings (R.1) → pick the technique (R.2)
 
 ## R.1 — Change log (MANDATORY, every remediation turn)
 
-Before any tool call, write a `CHANGES` block as plain text — one entry per validator finding:
+Before any tool call, write a `CHANGES` block as plain text — one entry per validator finding.
+
+**"Finding" means one `[ROUTE: ...] seg N` line** — its obstacle list (1st, 2nd, ...) stays inside that one entry (R.3.2 chaining), but a report with N such lines needs N entries. Never collapse multiple segments into one summarizing entry — `FINDING` quotes that segment's own coordinates, not a route-wide count.
+
+**BATCH LIMIT — 6 findings per repair turn, max.** A report with more than 6 gets only its first 6 worked this turn (nearest-to-worst first: prioritize by depth_xy, then by how many obstacles chain off it). Log exactly those, call the gate, and the untouched findings — still real collisions — come back in the next report to start the next batch. **Never try to fit all of them into one turn just to save an iteration**: that is what produced an ungoverned rewrite touching blocks no finding named (see the block-order scope note in R.4). A smaller, fully-verified batch beats a large one you can't hold consistent.
 
 ```
 CHANGES (gate call N of MAX_VALIDATION_ITERATIONS)
@@ -356,12 +348,12 @@ CHANGES (gate call N of MAX_VALIDATION_ITERATIONS)
   DIAGNOSIS: <why the plan produced it>
   TECHNIQUE: <which one, with its § or Step reference>
   DELTA:     <exact modification, in numbers: transit wp inserted/removed at (x,y,z),
-              T3 reassigned UAV-1 → UAV-2, order T1→T2→T3 changed to T1→T3→T2, ...>
-  DEFERRED:  <obstacles in this finding the repair does NOT address (§4.2), or "none">
-  EFFECT:    <what it resolves + cost paid: DETOUR=Xm, ΔTWC=+Ym>
+              A2 block's own waypoint order WP1→WP2→WP3→WP4 changed to WP1→WP3→WP2→WP4
+              (R.3.3 step 1, entry/exit swap within THIS finding's block — never another
+              block's order unless it is also named here), ...>
+  EFFECT:    <what it resolves + cost paid: DETOUR=Xm, ΔTWC=+Ym; note any obstacle in
+              THIS finding's own chain (R.3.2) still uncleared, or "fully cleared">
 ```
-
-- **`DEFERRED` must name any obstacle you didn't clear this turn** — leaving it empty while one remains claims a fix you did not make (§4.2).
 
 - **No silent fixes:** a modification absent from the block does not exist. Coordinates, drone names, waypoint ids — "adjusted the route" is worthless.
 - **No fabricated fixes:** every entry traces back to a literal finding in the report. A finding needing no change is still logged, with `DELTA: none` and a justification.
@@ -376,35 +368,58 @@ CHANGES (gate call N of MAX_VALIDATION_ITERATIONS)
 1. **Reorder** — free. Visit order only, no geometry touched.
 2. **Transit waypoint** — costs DETOUR (R.3).
 3. **Wider BYPASS_RADIUS** — same bypass, more detour, up to MAX_BYPASS_RADIUS.
-4. **Vertical hop** — only where §4.1 allows it; costs VERTICAL_ENERGY_MULTIPLIER.
+4. **Vertical hop** — only where R.3.1 allows it; costs VERTICAL_ENERGY_MULTIPLIER.
 5. **Altitude separation** — SHARED_SEGMENT_ALT_SEP, for two drones sharing a segment.
 6. **Reassignment** — rebuilds two routes. Last resort.
 
 A collision on one segment is a rung 1 or 2, never a fleet re-assignment. An imbalance or coverage finding is the reverse — rung 6 from the start, since no reorder redistributes workload. **Never reapply a rung the last gate call already rejected** — repeating a failed technique is how a mission burns every MAX_VALIDATION_ITERATIONS without converging. Name the move in the `CHANGES` block: which rung failed, which one you climbed to.
 
-**A rung is REJECTED only when the same segment still collides with the SAME obstacle you just bypassed.** A DIFFERENT obstacle — one that still needs its own fix (§4.2) — is a NEW finding, not a failed repair: stay on rung 2 and insert another transit waypoint for it, never move or widen the one already placed for the first obstacle. Climbing widens a radius that was never the problem.
+**A rung is REJECTED only when the same segment still collides with the SAME obstacle you just bypassed.** A DIFFERENT obstacle — one that still needs its own fix (R.3.2) — is a NEW finding, not a failed repair: stay on rung 2 and insert another transit waypoint for it, never move or widen the one already placed for the first obstacle. Climbing widens a radius that was never the problem.
 
 **Findings the ladder does not resolve on its own:**
 
 <!-- prettier-ignore -->
 | Validator finding | Technique | Defined in |
 |---|---|---|
-| Target uncovered or unassigned | Reassign — FULL COVERAGE overrides every soft penalty | §3 priority 0, Step 3 |
+| Target uncovered | Check your own records first: unassigned in Step 3 → Reassign. Assigned but its block is missing, partial, or exists yet frames the wrong spot → identify every waypoint that belongs to this target and regenerate the WHOLE block from its real position (Step 4 points 2–3), never hand-aim or patch a single waypoint into place. Replace, don't append: no leftover waypoint from the broken attempt survives inspecting nothing. | §3 priority 0, Step 3, Step 4 |
 | Inspection waypoint inside an exclusion or caution zone | Slide along the arc (Step 4 point 4), same ±45° cap; if no angle clears it, drop the waypoint — never the target's last one | Step 4, §3 priority 0 |
-| Transit waypoint in a caution zone or above MAX_ALTITUDE | Regenerate the bypass at a larger BYPASS_RADIUS / clamp Z; if the clamp kills a vertical hop, go lateral | §1, §4.1, §4.2 |
-| More than 3 transit waypoints on one obstacle | Replace the chain with a single tangential bypass | §4.2 |
+| Transit waypoint in a caution zone or above MAX_ALTITUDE | Regenerate the bypass at a larger BYPASS_RADIUS / clamp Z; if the clamp kills a vertical hop, go lateral | §1, R.3.1, R.3.2 |
+| More than 3 transit waypoints on one obstacle | Replace the chain with a single tangential bypass | R.3.2 |
 | Finding you cannot map to any of the above | Say so in the log, apply the most conservative technique, continue | — |
 
 ## R.3 — Bypass procedure (obstacle collision findings)
 
-For each segment colliding with a static obstacle (not inter-UAV finding — see R.3-bis for that), in turn:
+For each segment colliding with a static obstacle (not inter-UAV finding — see R.3-bis for that): pick the method (R.3.1 by height, R.3.2 by `geometry_type`), then execute it (R.3.3).
 
-1. **Try reordering first (R.2 rung 1).** A block's inspection waypoints ring the object, so ANY of them is a legal entry or exit. When a segment entering or leaving a block collides, it usually means the route enters the ring at the wrong point, and a different entry clears the obstacle for **zero added distance** — where a transit waypoint always costs DETOUR. Re-run the intra-block entry/exit choice (Step 5 POST-OPTIMIZATION) for the blocks at both ends of the segment, relaxing "closest to the previous position" to "clears the obstacle at the least added cost". If any order removes the collision, take it and skip steps 2–6. This pays off most on CIRCULAR blocks, where the ring offers a full turn of legal entry points.
-2. Declare scope: which segment, which obstacle(s) the finding names, which bypass method per obstacle (§4.1 by height, §4.2 by `geometry_type`).
-3. Generate candidates for the `1st` obstacle (§4.2 Stages 1–3); if the best one clears the rest too, that's the only point needed. Otherwise repeat Stages 1–3 per remaining obstacle, in report order, chaining the points — each anchored to its own obstacle (§4.2). Stage 4 dead-ends get logged as deferred; place the rest of the chain anyway.
-4. **Z, if method is LATERAL (§4.2 gives XY only):** interpolate Z linearly along the original wp1→wp2 segment at the candidate's position — never copy an inspection target's altitude. Clamp to MIN_TRANSIT_ALT/MAX_ALTITUDE. A transit on a climb-from-takeoff or descent-to-landing leg keeps climbing/descending through it, it does not jump to 80m (or whatever the nearest target's altitude is) just because that's the Z other waypoints in the plan happen to use. Vertical hop candidates already get their Z from §4.1 — this step doesn't apply to them.
+### R.3.1 — Method selection by obstacle height
+
+- **TALL (> 50m) or wall-like:** LATERAL ONLY, climbing prohibited — never traded off against detour distance.
+- **MEDIUM (15–50m):** climb is always positive (`obstacle_z_max + VERTICAL_HOP_CLEARANCE − current_z`), never a dive. `vertical_cost = 2 × altitude_change × VERTICAL_ENERGY_MULTIPLIER` vs. `lateral_detour_distance`: vertical wins only if strictly cheaper, lateral wins ties.
+- **SHORT (< 15m):** vertical hop only if lateral detour > 300m, climbing to `obstacle_z_max + VERTICAL_HOP_CLEARANCE` capped at MAX_ALTITUDE; cap blocks the hop → fall back to lateral.
+
+### R.3.2 — Lateral bypass methods
+
+**One finding, one turn, chained.** Run Stages 1–5 per obstacle, nearest-to-segment-start first (`1st`, `2nd`, ...); each point is anchored to its own obstacle — extending its reach to cover the next one is a free bonus, moving it farther to force that is not. **A corridor is legal chaining done right, not a shortcut around it:** it may only run BETWEEN the obstacles it threads (never past the first or last one in the chain), and it earns its width from those obstacles' own R_SAFE — never from an arbitrary "clear" coordinate picked for looking safe. Never one stretched point, never perimeter-routing around the cluster. A gap noted in Step 2's `target_field` is a hint for where to look, not a substitute for this check — an obstacle pair spans differently than it did when measured if Step 5 reordered blocks since, so re-verify the flanking R_SAFE distances now.
+
+**Stage 1 — Starting radius:** `R_SAFE × 1.5` between two target blocks or block↔Takeoff/Landing; `R_SAFE` within the same block. **Two obstacles flank the same stretch of segment (a corridor case)?** Use the midpoint between their two R_SAFE boundaries along the line connecting their centers instead — it clears both by construction and never overshoots either, which a Cardinal point picked for just one of them can do.
+
+**Stage 2 — Candidates** by `geometry_type`: `circle` → Cardinal (N/S/E/W) at the current radius, plus the flanking midpoint (Stage 1) when two obstacles bound the corridor. `rectangle` → the 2 corners nearest the segment (rotated by `yaw`), offset outward along their diagonal.
+
+**Stage 3 — Filter, in order:** inside any exclusion zone (never relaxed) → inside another obstacle's caution zone (§2) → beyond MAX_BYPASS_RADIUS **from the specific obstacle this stage's candidate is for** — a candidate with no obstacle in the chain within its own MAX_BYPASS_RADIUS has no anchor and is invalid regardless of how convenient its location looks (e.g. a "safe corridor" picked for being clear of everything, not close to anything — that clearing IS the disqualifier, not a virtue).
+
+**Stage 4 — Nothing survives? Escalate:** retry at `R_SAFE` if you started wider → Tangential Point (perpendicular to wp1→wp2, current radius) → best caution-zone candidate (filters 1/3 still apply, log it) → still nothing: stop, don't invent a point — log the failure for R.2 next turn.
+
+**Stage 5 — Select** minimum DETOUR (§1) scored against the obstacle this round is for, never the whole finding. Ties: clears more of the finding first, then farthest from other drones' routes.
+
+### R.3.3 — Procedure
+
+1. **Try reordering first (R.2 rung 1) — MANDATORY before step 2, not optional.** For EACH block at either end of the colliding segment that has MORE THAN ONE waypoint (a single-waypoint block, or a Takeoff/Landing point, offers no alternative entry/exit — skip it, there is nothing to reorder): try every OTHER waypoint already in that block as the entry or exit point instead, keeping the rest of the block's internal order unchanged. Recompute the segment against the obstacle for each substitution. The moment one clears the collision, take it, stop trying the rest, and skip straight to step 6 (no candidate, no insertion, no DETOUR — this rung is free). Only if NO substitution on either eligible block clears it, move on to step 2. **Never skip straight to a bypass candidate without having tried this.** This pays off most on CIRCULAR blocks, where the ring offers a full turn of legal entry points — a block's inspection waypoints ring the object, so ANY of them is already a legal entry or exit, at zero added distance, where a transit waypoint always costs DETOUR.
+2. Declare scope: which segment, which obstacle(s) the finding names, which bypass method per obstacle (R.3.1 by height, R.3.2 by `geometry_type`).
+3. Generate candidates for the `1st` obstacle (R.3.2 Stages 1–3); if the best one clears the rest too, that's the only point needed. Otherwise repeat Stages 1–3 per remaining obstacle, in report order, chaining the points — each anchored to its own obstacle (R.3.2). A Stage 4 dead-end gets named in EFFECT as still uncleared; place the rest of the chain anyway.
+4. **Z, if method is LATERAL (R.3.2 gives XY only):** interpolate Z linearly along the original wp1→wp2 segment at the candidate's position — never copy an inspection target's altitude. Clamp to MIN_TRANSIT_ALT/MAX_ALTITUDE. A transit on a climb-from-takeoff or descent-to-landing leg keeps climbing/descending through it, it does not jump to 80m (or whatever the nearest target's altitude is) just because that's the Z other waypoints in the plan happen to use. Vertical hop candidates already get their Z from R.3.1 — this step doesn't apply to them.
 5. Insert it, keeping ≥ MIN_SPACING from its neighboring waypoints — compute MIN_SPACING (§1) from the R_SAFE of the obstacle you are bypassing, and state both numbers in the log.
 6. Prune the whole chain on this segment, not just the new point: any transit waypoint whose removal (connecting its neighbors directly) stays collision-free is redundant — remove it.
+7. **Anchor check, per transit point, before logging DETOUR:** state its distance to the obstacle(s) it bypasses — one for a Cardinal/corner point, the two flanking it for a corridor midpoint (Stage 1) — and confirm every one of those distances is ≤ MAX_BYPASS_RADIUS for that obstacle. A point that clears this check against NO obstacle at all — placed for being clear of the whole field rather than close to the one(s) named — fails: discard it and place the chained points R.3.2 actually calls for instead, however many that takes.
 
 Never re-touch a segment you already fixed this turn. If a later report re-opens it: same obstacle → climb the R.2 ladder; different obstacle → re-run this procedure on it, still rung 2.
 
@@ -413,19 +428,19 @@ Never re-touch a segment you already fixed this turn. If a later report re-opens
 TIME-space conflict between two Routes or Drones or inter-UAV finding (R.3 doesn't apply — obstacle height/R_SAFE are irrelevant here).
 
 **Scope lock:** `SHARED_SEGMENT_ALT_SEP` is never an obstacle bypass, even when the
-altitude coincidentally clears one too — that obstacle still needs its own §4.2 fix.
+altitude coincidentally clears one too — that obstacle still needs its own R.3.2 fix.
 
 1. Move the lower-priority segment: INTRA-BLOCK outranks any other segment (never moves it). Tie → move the later-arriving UAV(higher `timeA`/`timeB`).
 2. Insert one transit waypoint at the reported `point`'s XY, moving the rerouted UAV to whichever nearest altitude layer clears it: `other_uav_z ± SHARED_SEGMENT_ALT_SEP`.
    - Discard a layer that breaches MAX_ALTITUDE (up) or MIN_TRANSIT_ALT (down).
    - Discard a layer already occupied by a THIRD drone's route at that point.
    - Nothing left → offset the transit point laterally in XY instead (minimum shift that separates the two routes at that time) — there is no target involved in this conflict, so Reassignment (rung 6) does not apply here.
-3. Prune per R.3 step 6.
+3. Prune per R.3.3 step 6.
 
 ## R.4 — Invariants no repair may break
 
 - Touch a waypoint's geometry ONLY when the report names it (§2) — never to polish, never preventively.
-- **Reordering is not moving.** Visit order, within a block and between blocks, is always yours to change — BUT **only for the block(s) the current finding names.** Never apply a reorder pattern to other blocks for consistency, however similar they look, and never as a fleet-wide rule derived from one finding (R.2 ladder: rung 1–2, never a fleet re-assignment).
+- **Reordering is not moving — but it is still scoped.** Visit order, within a block and between blocks, is yours to change ONLY for the block(s) the current finding names. Never apply a reorder pattern to other blocks for consistency, however similar they look, and never as a fleet-wide rule derived from one finding (R.2 ladder: rung 1–2, never a fleet re-assignment). **Before writing the DELTA, diff the full block sequence you are about to submit against the one from the last accepted state — every block that changed position must trace back to a finding in THIS turn's report, or revert it.**
 - No repair drops a target.
 - **One repair turn → one gate call** — never chained without validating in between.
 
@@ -446,7 +461,7 @@ altitude coincidentally clears one too — that obstacle still needs its own §4
    2nd  WTG-2  circle  center=(180.0, 80.0)  r=25  h=80  d=130.0m  depth_xy=27.0m depth_z=57.0m
 ```
 
-One segment, two obstacles — ONE finding. `1st`'s best candidate doesn't clear `2nd` either (still on the line at x=180), so both get chained this turn (§4.2).
+One segment, two obstacles — ONE finding. `1st`'s best candidate doesn't clear `2nd` either (still on the line at x=180), so both get chained this turn (R.3.2).
 
 **Turn 9:**
 
@@ -454,8 +469,8 @@ One segment, two obstacles — ONE finding. `1st`'s best candidate doesn't clear
 CHANGES (gate call 1 of 10)
 - FINDING:   "[route_uav_1] seg 0 (T1 -> T2): 1st WTG-1 d=35.0m depth_xy=27.0m · 2nd WTG-2 d=130.0m"
   DIAGNOSIS: T1 exit → T2 entry runs straight down y=80, through both turbine centres.
-  TECHNIQUE: Reorder tried first (R.3 step 1) — no T2 entry clears y=80. Chain of two lateral
-             bypasses (§4.2) — both TALL h=80m so lateral only (§4.1).
+  TECHNIQUE: Reorder tried first (R.3.3 step 1) — no T2 entry clears y=80. Chain of two lateral
+             bypasses (R.3.2) — both TALL h=80m so lateral only (R.3.1).
   DELTA:     (1) WTG-1: transit at (85,132.5,z) between (50,80,25) and (220,80,25).
              R_SAFE×1.5=52.5m from (85,80). N/S tie at DETOUR=38.0m, E/W still on y=80 →
              discarded. N wins (farther from UAV-2's route).
@@ -464,8 +479,8 @@ CHANGES (gate call 1 of 10)
              (180,80). N=16.2m DETOUR beats S=62.8m outright → N, same side as (1).
              Z interpolated per leg (both flat, z=25) → z=25 OK. Spacing 63.1m/95.0m/66.0m,
              all ≥ MIN_SPACING=10m OK. Prune: both kept, removing either reopens a collision.
-  DEFERRED:  none — both obstacles addressed this turn.
-  EFFECT:    Clears WTG-1 and WTG-2. Path 170m → 224.1m, ΔTWC=+54.1m (38.0m + 16.2m).
+  EFFECT:    Clears WTG-1 and WTG-2.
+             Path 170m → 224.1m, ΔTWC=+54.1m (38.0m + 16.2m).
 ```
 
 → `validate_mission(chat_id, target_ids, mission, collision_objects)` _(gate call 2 of 10)_ confirms the whole chain in one check.
