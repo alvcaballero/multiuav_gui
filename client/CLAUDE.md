@@ -34,7 +34,7 @@ client/
     ├── scene3d/            # 3D visualization (React Three Fiber)
     ├── services/           # Business logic services
     ├── shared/             # Shared utilities, hooks, and base components
-    │   ├── components/     # ErrorHandler, PageLayout, SelectField, SwipeConfirm, etc.
+    │   ├── components/     # ErrorHandler, PageLayout, SelectField, SwipeConfirm (see note below), etc.
     │   ├── theme/          # MUI theme configuration
     │   ├── attributes/     # Attribute hooks
     │   └── util/           # Utility functions (duration, etc.)
@@ -145,6 +145,19 @@ export const migrateNewFeature = (oldState) => {
   return newState;
 };
 ```
+
+## Notes
+
+### `SwipeConfirm` scope — not a chat/agent confirmation gate
+
+`shared/components/SwipeConfirm.jsx` is used ONLY for manual, human-initiated actions
+from the UI (loading a mission, in `Menu.jsx`/`MainPage.jsx`/`MainPage3D.jsx`). It has
+no relation to the LLM chat: there is currently **no user confirmation step for tool
+calls executed by the chat agents** (`server/models/chat/chat.js`'s tool loop runs
+`load_mission_to_uav`/`start_mission`/etc. straight through — the only "gate" is prose
+in the agent `.md` prompts, not a code-level HITL). Relevant when integrating
+`gcs_eevee_assistant` (eve), whose MCP tool config has a real `approval: "user-approval"`
+flag for flight tools — that has no existing equivalent in this codebase to hook into.
 
 ## Known Issues Needing Architectural Decisions
 
