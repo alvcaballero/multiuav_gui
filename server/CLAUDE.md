@@ -4,31 +4,36 @@
 
 ```
 server/
-├── server.js               # Main entry point (Express app initialization)
-├── package.json            # Dependencies (Express, Sequelize, ROSLIB, etc.)
-├── Dockerfile              # Docker container configuration
-├── .env                    # Environment configuration (PORT, DB, ROS, LLM, etc.)
-├── routes/                 # Express route definitions (API endpoints)
-├── controllers/            # Request handlers (business logic delegation)
-├── models/                 # Core business logic│
-├── schemas/                # Data schemas
-│   ├── database/           # Sequelize ORM models
-│   └── zod/                # Zod validation schemas
-├── common/                 # Shared utilities
-├── subscribers/            # EventBus subscribers
-├── middlewares/            # Express middlewares│
-├── config/                 # Configuration files
-├── WebsocketManager.js     # Client WebSocket server
-├── WebsocketDevices.js     # Device WebSocket (FlatBuffer)
-├── WebsocketDecode.js      # FlatBuffer message decoding
-├── WebsocketEncode.js      # FlatBuffer message encoding
-│
-├── fbmsglib/               # FlatBuffer message library
-├── test/                   # Test files│
-├── views/                  # Server-rendered views
-├── resources/              # Static resources
-├── logs/                   # Log file output
-└── data/                   # Runtime data storage
+├── server.js                    # Main entry point (Express app initialization)
+├── package.json                 # Dependencies (Express, Sequelize, ROSLIB, LLM SDKs, etc.)
+├── Dockerfile                   # Docker container configuration
+├── .env                         # Environment configuration (PORT, DB, ROS, LLM, etc.)
+├── WebsocketManager.js          # Client WebSocket transport (raw, no business logic)
+├── WebsocketInboundRouter.js    # INBOUND_MAP: routes client WS messages by `type` to controllers
+├── routes/                      # Express route definitions (API endpoints)
+├── controllers/                 # Request handlers (business logic delegation)
+├── models/                      # Core business logic, one subfolder per domain
+│   ├── ros/                     # ROS1/ROS2 integration (facade + transport primitives, see below)
+│   ├── flatbuffer/              # FlatBuffer device protocol (FlatbufferServer, fbEncode/fbDecode)
+│   ├── chat/                    # LLM chat orchestrator, provider handlers, agent profiles (see below)
+│   ├── mission/                 # Mission/route state machines, XYZ<->geodetic conversion, encoders
+│   ├── collision/                # UAV-to-UAV and obstacle collision detection/validation
+│   ├── markers/                 # Inspection element catalog: bases, groups, items, assignments
+│   └── positions/               # Position cache, history sampler, broadcast batcher
+├── schemas/                     # Data schemas
+│   ├── database/                # Sequelize ORM models (see Database Models below)
+│   └── zod/                     # Zod validation schemas
+├── subscribers/                 # EventBus subscribers (outbound WS adapters)
+├── common/                      # Shared utilities (eventBus, logger, sequelize, FTP/SFTP, geo)
+├── middlewares/                 # Express middlewares
+├── config/                      # Configuration files (config.js is the env-var SSOT)
+├── scripts/                     # One-off maintenance/migration scripts
+├── fbmsglib/                    # FlatBuffer message library (generated + schema)
+├── test/                        # Node test-runner suites, API fixtures, E2E scripts
+├── views/                       # Server-rendered views
+├── resources/                   # Static resources
+├── logs/                        # Log file output
+└── data/                        # Runtime data storage (SQLite DB, element-type assets, etc.)
 ```
 
 ## Architecture Overview
@@ -58,7 +63,7 @@ server/
 
 3. **Device WebSocket** (FlatBuffer protocol): Server → UAV Fleet
    - Alternative to ROS for direct fleet communication
-   - Binary FlatBuffer encoding via `WebsocketDevices.js`
+   - Binary FlatBuffer encoding via `models/flatbuffer/FlatbufferServer.js` (started from `server.js` via `initFlatbufferServer(8082)`; encode/decode live in `fbEncode.js`/`fbDecode.js`)
    - Used for non-ROS devices or optimized network communication
 
 **EventBus Pattern (outbound):**
@@ -127,13 +132,27 @@ Key events: `MISSION_PLAN_SHOWN`, `POSITION_UPDATED`, `CAMERA_RECEIVED`, `DEVICE
 
 Location: `server/schemas/database/`
 
-**Existing Models:**
+**Existing Models** (`schemas/database/index.js` is the barrel — register new ones there):
 
-| Model   | Table   | Purpose          |
-| ------- | ------- | ---------------- |
-| Device  | Devices | UAV registry     |
-| Mission | Mission | Mission tracking |
-| ...     |
+| Model            | Purpose                                                |
+| ---------------- | ------------------------------------------------------- |
+| User              | Auth/user registry                                     |
+| Device            | UAV registry                                           |
+| Mission           | Mission tracking                                       |
+| MissionRoute      | Per-UAV route within a mission                         |
+| MissionPlan       | LLM/MIP-planner-generated plan, pre-execution           |
+| PositionHistory   | Sampled position history for the map's time slider      |
+| File              | Downloaded mission artifacts (logs, images)             |
+| Event             | Device/mission event log                                |
+| Geofence          | Geofence polygons                                       |
+| Chat              | LLM chat session                                        |
+| ChatMessage       | Individual chat turn (user/assistant/tool)              |
+| ChatUsage         | Per-request/turn/chat LLM token usage                   |
+| ElementType       | Inspection element type catalog (icon + 3D model)       |
+| ElementGroup      | Group of inspection items (e.g. one wind turbine)       |
+| ElementItem       | Individual inspection viewpoint within a group          |
+| Base              | UAV base/landing-pad location                           |
+| Assignment        | UAV-to-target assignment produced by planning           |
 
 **Adding New Models:**
 
@@ -146,7 +165,7 @@ Location: `server/schemas/database/`
 **Server-side State:**
 
 - Device registry: SQLite database with periodic health checks (30s timeout for OFFLINE status)
-- Mission tracking: State machines using XState (`deviceSM.js`, `missionSM.js`)
+- Mission tracking: per-UAV XState actors (`models/mission/missionSM.js` spawns one `missionExecutionSM.js` machine per `uavId`, keyed in `listSM`)
 - Position updates: In-memory cache with EventBus broadcast
 
 **Redux Data Flow:**
@@ -158,15 +177,14 @@ Reducer updates state → useSelector triggers re-render
 
 ### Mission Planning System
 
-**Mission Structure:**
+**Mission Structure** (`missionDataXYZ`, produced by the LLM planner and/or `mip_planner`):
 
 ```javascript
 {
-  version: "3",
   route: [{
-    name: string,
-    uav: string,              // Device name
+    uav: string,              // Device name, e.g. "px4_1"
     id: number,               // Route index
+    uav_type: string,         // "px4_ros2", "px4_sitl", etc.
     attributes: {              // values + valid ranges come from config/devices/mission_schema.yaml (SSOT)
       max_vel: number,        // m/s
       idle_vel: number,       // m/s
@@ -176,16 +194,24 @@ Reducer updates state → useSelector triggers re-render
       mode_landing: 0-4       // MISSION_FINISHED_* (0=No action,1=Home,2=Land,3=First WP,4=Infinite)
     },
     wp: [{
-      pos: [lat, lon, alt],   // Altitude in meters from ground
+      type: string,           // "takeoff" | "inspection" | ... — first wp is usually "takeoff"
+      pos: [x, y, z],         // LOCAL ENU meters, NOT lat/lon — z is altitude AGL
       yaw: -180 to 180,       // 0=North, 90=East, -90=West (optional)
       gimbal: number,         // Pitch angle in degrees (optional)
       speed: number,          // m/s (optional)
+      notes: string,          // human-readable waypoint label (optional)
       action: {}              // Custom actions (optional)
-    }],
-    uav_type: string          // "px4_ros2", "px4_sitl", etc.
+    }]
   }]
 }
 ```
+
+Coordinates are XYZ local ENU end-to-end through planning (see `mip_planner/CLAUDE.md`
+and `models/mission/coordinateConverter.js`). Conversion to/from geodetic
+(`convertMissionXYZToLatLong`, `geodeticToENU`/`ENUToGeodetic`) happens only at the
+edges — when talking to ROS/PX4 (`missionEncodeConfig.js` maps `pos[0..2]` straight
+to `latitude/longitude/altitude` fields expected by the firmware bridge, so double-check
+which coordinate frame a given consumer expects) or when rendering on the geo map.
 
 **Mission Execution Flow:**
 
@@ -194,7 +220,7 @@ Reducer updates state → useSelector triggers re-render
 3. Start mission: State machine transitions to RUNNING
 4. Monitor execution: Position updates track waypoint progress
 5. Complete mission: Files downloaded via FTP/SFTP
-6. State machine: `init → loaded → commanded → running → complete → end`
+6. State machine: see `models/mission/missionExecutionSM.js` for the full XState definition (states include `LoadMission`, `Commadmission`, `RunningMission`, `UAVDownloadFiles`, `DownloadFilesGCS`, `resetUAV`, `return2home`, `stopMission`, `END` — not a simple linear pipeline)
 
 **Command Execution:**
 
@@ -293,13 +319,16 @@ never cancel by raw goalId outside it, or the registry goes stale. HTTP routes:
 
 ### LLM Chat Integration
 
-**Architecture:**
+**Architecture** (`models/chat/`):
 
-- **Message Orchestrator** (`models/chat/chat.js`): Central coordinator for LLM + MCP tools
-- **LLM Factory** (`llmFactory.js`): Pluggable provider pattern (OpenAI, extensible)
-- **OpenAI Handler** (`openaiHandler.js`): Wraps OpenAI client with tool calling
-- **MCP Client** (`mcpClient.js`): Optional Model Context Protocol for UAV-specific tools
-- **System Prompts** (`SystemPrompts.js`): Context instructions for multi-UAV control
+- **Message Orchestrator** (`chat.js`, `MessageOrchestrator`): central turn loop — builds context, calls the LLM, dispatches tool calls (MCP + local), recurses until the turn finishes or hits the iteration cap
+- **LLM Factory** (`handlers/llmFactory.js`, `LLMFactory`): picks a handler by `LLMProvider` (`config.js`) — `'openai'`, `'gemini'`, `'anthropic'`/`'claude'`, `'ollama'`
+- **Provider handlers** (`handlers/*Handler.js`): `openaiHandler.js`, `geminiHandler.js`, `antropicHandler.js`, `ollamaHandler.js`, each extending `baseLLMhandler.js` — normalize that provider's tool-calling/streaming quirks behind one interface
+- **Agent profiles** (`agents/*.md`): system prompts as Markdown files with YAML frontmatter, loaded by `agents/index.js`. Each `.md` is a distinct agent persona/tool-set (e.g. `default.md`/`default2.md` general chat, `defaultFast.md`/`plannerFast.md` lighter/faster profiles, `planner.md` the full mission-planning agent — see `mip_planner`/MCP `submit_mission_plan` flow, `verification-mission.md`, `agv.md` for ground vehicles). **`planner.md` is the source of truth; `plannerFast.md` must stay in sync with it** — see PR history for past drift bugs.
+- **Sub-agents** (`subAgentManager.js`, `subAgentRegistry.js`): a chat can spawn child agents (e.g. a verification pass) tracked in an in-memory registry keyed by parent `chatId`; `getContextParams`/`removeSubAgent` let the orchestrator resolve/clean them up
+- **Chat history** (`chatHistoryManager.js`, `messageProjection.js`, `turnContext.js`): persistence and per-provider message-shape projection, so history stored once in DB can be replayed into any provider's expected format
+- **MCP Client** (`mcpClient.js`): Model Context Protocol client for UAV-specific tools, backed by the `mcp_server/` submodule
+- **Usage tracking** (`chatEvents.js` + `ChatUsage` model): token usage tracked per request/turn/chat
 
 **MCP Server Integration:**
 The project includes an external MCP server as a git submodule (`mcp_server/`):
@@ -354,7 +383,7 @@ eventBus.emit('POSITION_UPDATED', data);
 
 When modifying mission flow, update both:
 
-1. State machine definition (`deviceSM.js` or `missionSM.js`)
+1. State machine definition (`models/mission/missionSM.js` / `missionExecutionSM.js`)
 2. Command handlers in `models/commands.js`
 
 ### ROS Message Handling
@@ -461,7 +490,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 
 ### Archivos relevantes
 
-- `server/models/markers.js` — lógica de negocio del catálogo
+- `server/models/markers/` — lógica de negocio del catálogo, separada por entidad: `elementTypes.js`, `elementGroups.js`, `elementItems.js`, `bases.js`, `assignments.js`, `inspectionTargets.js`, `markers.js` (barrel/orquestación)
 - `server/controllers/markers.js` — handlers HTTP + configuración Multer
 - `server/routes/markers.js` — definición de rutas
 - `server/config/planning/elementTypes.yaml` — tipos estáticos
@@ -472,16 +501,23 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 
 ## Configuration Files
 
-**Server Configuration** (`server/.env`):
+**Server Configuration** (`server/.env`, all read through `config/config.js` — that file is the SSOT, check it before assuming a var name):
 
 - `PORT`: Server port (default 4000)
-- `ROS_CONNECTION`: Enable/disable ROS bridge
-- `FB_CONNECTION`: Enable/disable FlatBuffer protocol
-- `DB`: Enable database persistence
-- `STREAM_SERVER`: Enable/disable video streaming
+- `ROS_CONNECTION`: Enable/disable ROS bridge (default true)
+- `FB_CONNECTION`: Enable/disable FlatBuffer protocol (default true)
+- `ROS_URL`: ROS bridge WS URL (default `ws://127.0.0.1:9090`)
+- `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
+- `STREAM_SERVER`: Enable/disable video streaming (MediaMTX)
 - `LLM`: Enable/disable chat features
+- `LLM_PROVIDER`: `openai` | `gemini` | `anthropic`/`claude` | `ollama` (default `openai`)
 - `MCP_ENABLE`: Enable/disable MCP server integration (default false)
 - `MCP_CONFIG`: JSON configuration for MCP transport (`{"transport":"stdio","url":"http://localhost:3000/mcp"}`)
+- `PLANNING_SERVER` / `PLANNING_HOST`: enable + point to the `mip_planner` FastAPI service (see root `CLAUDE.md`)
+- `PROCESS_THERMAL_IMG`: enable thermal image post-processing pipeline
+- `WS_PING_INTERVAL_MS` / `WS_POSITIONS_INTERVAL_MS` / `WS_STATE_INTERVAL_MS`: client WS timers (heartbeat, position-batch flush, server-state broadcast)
+- `DEVICE_CHECK_INTERVAL_MS` / `DEVICE_UPDATE_INTERVAL_MS` / `DEVICE_TIMEOUT_MS`: device health-check cadence and OFFLINE threshold
+- `MAP_LATITUDE` / `MAP_LONGITUDE` / `MAP_ZOOM`: default map center for the local-origin ENU conversion
 
 **Device Configuration** (`server/config/devices/devices_init.yaml`):
 
@@ -504,9 +540,11 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 
 ## Testing Strategy
 
-- Server tests: Node.js built-in test runner
+- Server tests: Node.js built-in test runner (`npm test` → `node --test test/*.js`)
+- API fixtures: `test/api/json/` holds real request/response payloads (mission plans, MCP tool calls, validation reports) used as golden files
+- E2E: `test/e2e/` (run individually, e.g. `npm run test:e2e:collision` for the LLM collision-avoidance scenario)
 - Integration tests: ROS message mocking, WebSocket simulation
-- Frontend: Manual testing via development server
+- Frontend: Manual testing via development server (no client test script configured)
 
 ## Common Gotchas
 
@@ -515,16 +553,18 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 3. **WebSocket Reconnection**: Clients auto-reconnect, but may miss events during disconnect
 4. **State Machine Transitions**: Mission state changes require explicit state machine events
 5. **Device Health Checks**: Devices marked OFFLINE after 30s without position updates
-6. **Coordinate Systems**: Frontend uses [lon, lat] (GeoJSON), backend uses [lat, lon] (ROS)
+6. **Coordinate Systems**: three frames in play, don't mix them up — GeoJSON/map UI uses `[lon, lat]`; mission planning (`missionDataXYZ`, `mip_planner`) uses local ENU `[x, y, z]` meters; `missionEncodeConfig.js` then maps those XYZ values straight into fields literally named `latitude`/`longitude`/`altitude` for the ROS/PX4 bridge — the field names are misleading, they don't hold geodetic degrees
 7. **Redux Migration**: Old planning format uses indexes, new format uses baseId references
 8. **Git Submodules**: Remember to initialize/update submodules after cloning (`git submodule update --init --recursive`)
 9. **MCP Server**: When developing MCP tools, the server auto-restarts may cause temporary disconnections (auto-reconnection handles this)
 
 ## External Dependencies
 
-- **ROS Noetic**: For UAV communication (optional, based on protocol)
+- **ROS Noetic / ROS2**: For UAV communication (optional, based on protocol — see `models/ros/` for the ROS1→ROS2 split)
+- **MIP Planner** (`mip_planner/`, sibling FastAPI service, port 8000): python-mip/CBC solver that replaces the LLM sub-agent for mission planning; enabled via `PLANNING_SERVER`/`PLANNING_HOST` (see root `CLAUDE.md`)
 - **PostgreSQL/SQLite**: Device and mission persistence (optional, based on DB config)
 - **MediaMTX**: Video streaming server
 - **OpenStreetMap**: Map tiles (can be self-hosted for offline use)
 - **Glyphserver**: Font rendering for maps (optional)
-- **MCP Server** (submodule): Model Context Protocol server for LLM tool integration (optional, based on LLM config)
+- **MCP Server** (submodule, `mcp_server/`): Model Context Protocol server for LLM tool integration (optional, based on LLM config)
+- **LLM providers**: OpenAI, Google Gemini, Anthropic Claude, or a local Ollama instance — selected via `LLM_PROVIDER`
