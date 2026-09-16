@@ -1,0 +1,112 @@
+import React, { useState, useMemo } from 'react';
+import { useSelector } from 'react-redux';
+import { Paper, Tab, Tabs } from '@mui/material';
+import { makeStyles } from 'tss-react/mui';
+
+import { Navbar2 } from '../components/layout/Navbar2';
+import { Menu } from '../components/layout/Menu';
+
+import MissionPanel from '../components/mission/MissionPanel';
+import MissionElevation from '../components/mission/MissionElevation';
+import SaveFile from '../components/ui/SaveFile';
+
+import R3FCanvas from '../scene3d/core/R3FCanvas';
+import R3FMission from '../scene3d/scene/R3FMission';
+import R3DMarkers from '../scene3d/scene/R3DMarkers';
+import R3FDevices from '../scene3d/scene/R3FDevices';
+
+const useStyles = makeStyles()((theme) => ({
+  root: {
+    margin: '0',
+    height: '100vh',
+  },
+  sidebarStyle: {
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
+    left: 0,
+    top: theme.dimensions.navbarHeight,
+    height: 'calc(100% - 95px)',
+    width: '560px',
+    margin: '0px',
+    zIndex: 3,
+  },
+  middleStyle: {
+    flex: 1,
+    display: 'grid',
+  },
+  panelElevation: {
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
+    right: 0,
+    bottom: 0,
+    height: '30vh',
+    width: 'calc(100% - 560px)',
+    margin: '0px',
+    zIndex: 3,
+  },
+}));
+const MissionPage3D = () => {
+  const { classes } = useStyles();
+  const [tabIndex, setTabIndex] = useState(0);
+
+  const [Opensave, setOpensave] = useState(false);
+
+  const routes = useSelector((state) => state.mission.route);
+  const sessionmarkers = useSelector((state) => state.session.markers);
+
+  const markers = sessionmarkers;
+
+  const tabs = useMemo(
+    () => (
+      <Tabs value={tabIndex} onChange={(_, index) => setTabIndex(index)} style={{ flexGrow: 1 }}>
+        <Tab label="Viz" />
+        <Tab label="Imagery" />
+        <Tab label="Stats" />
+        <Tab label="Report" />
+      </Tabs>
+    ),
+    [tabIndex],
+  );
+
+  return (
+    <div className={classes.root}>
+      <Navbar2 tabs={tabs} />
+      <Menu />
+      <div
+        style={{
+          float: 'right',
+          width: 'calc(100% - 560px)',
+          height: 'calc(70vh - 95px)',
+          right: '0px',
+          margin: 'auto',
+        }}
+      >
+        <R3FCanvas>
+          <R3FMission routes={routes} />
+          <R3DMarkers elements={markers} />
+          <R3FDevices />
+        </R3FCanvas>
+      </div>
+
+      <div className={classes.sidebarStyle}>
+        <div className={classes.middleStyle}>
+          <Paper square>
+            <MissionPanel SetOpenSave={setOpensave} />
+          </Paper>
+        </div>
+      </div>
+      <div className={classes.panelElevation}>
+        <div className={classes.middleStyle}>
+          <Paper square sx={{ height: '100%' }}>
+            <MissionElevation />
+          </Paper>
+        </div>
+      </div>
+      {Opensave && <SaveFile SetOpenSave={setOpensave} />}
+    </div>
+  );
+};
+
+export default MissionPage3D;

@@ -6,6 +6,7 @@ import { sessionReducer as session } from './session';
 import { eventsReducer as events } from './events';
 import { geofencesReducer as geofences } from './geofences';
 import { chatReducer as chat } from './chat';
+import { activeMissionsReducer as activeMissions } from './activeMissions';
 
 import throttleMiddleware from './throttleMiddleware';
 
@@ -17,6 +18,7 @@ const reducer = combineReducers({
   events,
   geofences,
   chat,
+  activeMissions,
 });
 
 export { errorsActions } from './errors';
@@ -26,6 +28,7 @@ export { missionActions } from './mission';
 export { sessionActions } from './session';
 export { geofencesActions } from './geofences';
 export { chatActions } from './chat';
+export { activeMissionsActions, getCommandableMissionId } from './activeMissions';
 
 // Export selectors
 export * as sessionSelectors from './sessionSelectors';
@@ -38,5 +41,4 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(throttleMiddleware),
 });
 
-export default store;
 export { store };

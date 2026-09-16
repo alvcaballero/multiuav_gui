@@ -9,6 +9,7 @@ import { createFilesRouter } from './files.js';
 import { ExtAppRouter } from './ExtApp.js';
 import { serverRouter } from './server.js';
 import { planningRouter } from './planning.js';
+import { markersRouter } from './markers.js';
 import { geofenceRouter } from './geofence.js';
 import { chatRouter } from './chat.js';
 import { rosRouter } from './ros.js';
@@ -28,4 +29,8 @@ export function setupRoutes(app) {
   app.use('/api/geofences', geofenceRouter);
   app.use('/api/ros', rosRouter);
   app.use('/api/chat', chatRouter);
+  // All /api/markers/* sub-resources (types, groups, items, bases,
+  // assignments, root instances) are unified inside markersRouter — see
+  // routes/markers.js for the full surface and mount order.
+  app.use('/api/markers', markersRouter);
 }

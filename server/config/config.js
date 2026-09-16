@@ -1,7 +1,11 @@
 import dotenv from 'dotenv';
-import logger from '../common/logger.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { logger } from '../common/logger.js';
 
 dotenv.config();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const env = process.env.NODE_ENV || 'dev';
 export const port = Number(process.env.PORT) || 4000;
@@ -21,13 +25,18 @@ export const dbName = process.env.DB_NAME;
 export const dbPort = process.env.DB_PORT;
 export const planningServer = process.env.PLANNING_SERVER === 'true';
 export const planningHost = process.env.PLANNING_HOST;
-export const filesPath = process.env.Files_PATH ? process.env.Files_PATH : './data/';
-export const processThermalImg = process.env.Process_Thermal_Img === 'true';
-export const processThermalsSrc = process.env.Process_Program_src;
+export const missionDataPath = process.env.MISSION_DATA_PATH ?? '../data/';
+export const processThermalImg = process.env.PROCESS_THERMAL_IMG === 'true';
+// Absolute path so the invocation does not depend on the process CWD.
+// `uv run --project <dir>` resolves the pyproject.toml/.venv living next to the script.
+const thermalProjectDir = path.resolve(__dirname, '../utils/proccessThermalImg');
+const thermalScriptPath = path.join(thermalProjectDir, 'processThermalGen.py');
+export const processThermalScript =
+  process.env.PROCESS_THERMAL_IMG_SRC ?? `uv run --project "${thermalProjectDir}" "${thermalScriptPath}"`;
 export const extApp = process.env.EXT_APP === 'true';
-export const extAppUrl = process.env.EXT_APP_url || '';
-export const extAppUser = process.env.EXT_APP_user || '';
-export const extAppPWD = process.env.EXT_APP_pwd || '';
+export const extAppUrl = process.env.EXT_APP_URL || '';
+export const extAppUser = process.env.EXT_APP_USER || '';
+export const extAppPWD = process.env.EXT_APP_PWD || '';
 export const LLM = process.env.LLM === 'true';
 export const LLMProvider = process.env.LLM_PROVIDER || 'openai';
 export const LLMApiKeys = {
@@ -38,26 +47,37 @@ export const LLMApiKeys = {
 };
 export const MCPenable = process.env.MCP_ENABLE === 'true'; // Model Context Protocol
 
+const VALID_MCP_TRANSPORTS = ['stdio', 'http', 'sse'];
 let _MCPconfig = {};
-try {
-  const raw = process.env.MCP_CONFIG;
-  _MCPconfig = raw ? JSON.parse(raw) : {};
-  logger.info('_MCPconfig', _MCPconfig);
-  if (typeof _MCPconfig.transport === 'undefined') {
-    throw new Error(`Unknown transport: ${_MCPconfig.transport}`);
+const raw = process.env.MCP_CONFIG;
+if (raw) {
+  try {
+    _MCPconfig = JSON.parse(raw);
+    if (!VALID_MCP_TRANSPORTS.includes(_MCPconfig.transport)) {
+      throw new Error(`Unknown transport '${_MCPconfig.transport}'. Valid: ${VALID_MCP_TRANSPORTS.join(', ')}`);
+    }
+    logger.info('MCP config loaded', _MCPconfig);
+  } catch (err) {
+    logger.error('Invalid MCP_CONFIG:', err.message);
+    _MCPconfig = {};
   }
-} catch (err) {
-  // invalid JSON in MCP_CONFIG env var — fallback to empty object
-  logger.error('Invalid MCP_CONFIG JSON:', err);
-  _MCPconfig = {};
 }
 export const MCPconfig = _MCPconfig; // MCP configuration file
-// data files
-export const filesData = '../data/files.json';
-export const devicesData = '../data/devices.json';
-export const routesData = '../data/routes.json';
-export const missionsData = '../data/missions.json';
+
 export const missionsConfigData = '../data/missionConfig.yaml';
+// intervals
+export const mapLatitude = Number(process.env.MAP_LATITUDE) || 37.19384681403371;
+export const mapLongitude = Number(process.env.MAP_LONGITUDE) || -6.702598762315071;
+export const mapZoom = Number(process.env.MAP_ZOOM) || 15;
+export const WS_PING_INTERVAL_MS = Number(process.env.WS_PING_INTERVAL_MS) || 30000;
+export const WS_POSITIONS_INTERVAL_MS = Number(process.env.WS_POSITIONS_INTERVAL_MS) || 500; // POSITION_UPDATED batch flush tick (see positionBroadcastBatcher.js)
+export const WS_STATE_INTERVAL_MS = Number(process.env.WS_STATE_INTERVAL_MS) || 10000;
+export const ROS_URL = process.env.ROS_URL || 'ws://127.0.0.1:9090';
+export const ROS_RECONNECT_INTERVAL_MS = Number(process.env.ROS_RECONNECT_INTERVAL_MS) || 30000;
+export const DEVICE_CHECK_INTERVAL_MS = Number(process.env.DEVICE_CHECK_INTERVAL_MS) || 5000;
+export const DEVICE_UPDATE_INTERVAL_MS = Number(process.env.DEVICE_UPDATE_INTERVAL_MS) || 2000;
+export const DEVICE_TIMEOUT_MS = Number(process.env.DEVICE_TIMEOUT_MS) || 30000;
 // config files
 export const devicesMsg = '../config/devices/devices_msg.yaml';
+export const missionSchema = '../config/devices/mission_schema.yaml';
 export const messagesTypes = '../config/devices/messages.yaml';

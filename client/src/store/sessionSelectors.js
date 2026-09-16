@@ -1,102 +1,33 @@
 /**
  * Selectors para acceder a los datos de session de forma segura y consistente
  */
+import { createSelector } from '@reduxjs/toolkit';
+
+// ─── Inspection targets (elements) ───────────────────────────────────────────
 
 /**
- * Obtiene todas las bases con sus asignaciones
+ * Obtiene todos los grupos de inspection targets
  */
-export const getAllBasesWithAssignments = (state) => {
-  const markers = state.session.markers;
-  const planning = state.session.planning;
-
-  if (!markers?.bases || !planning?.assignments) {
-    return [];
-  }
-
-  return markers.bases.map((base) => {
-    const assignment = planning.assignments.find((a) => a.baseId === base.id);
-    return {
-      ...base,
-      device: assignment?.device || null,
-      settings: assignment?.settings || planning.defaultSettings || {},
-    };
-  });
-};
+export const getAllInspectionGroups = (state) => state.session.markers?.elements || [];
 
 /**
- * Obtiene una base específica por ID
+ * Obtiene los items con imagen georreferenciada (corners definidos) listos para MapLibre.
+ * Formato: [{ key, url, coordinates }]
+ * Solo incluye items que tengan corners completos (4 puntos [lng, lat]).
+ * Memoizado con createSelector para evitar re-renders innecesarios.
  */
-export const getBaseById = (state, baseId) => {
-  const base = state.session.markers?.bases?.find((b) => b.id === baseId);
-  if (!base) return null;
-
-  const assignment = state.session.planning?.assignments?.find((a) => a.baseId === baseId);
-  return {
-    ...base,
-    device: assignment?.device || null,
-    settings: assignment?.settings || state.session.planning?.defaultSettings || {},
-  };
-};
-
-/**
- * Obtiene la asignación para una base específica
- */
-export const getAssignmentForBase = (state, baseId) => {
-  return state.session.planning?.assignments?.find((a) => a.baseId === baseId);
-};
-
-/**
- * Obtiene todas las bases que tienen dispositivos asignados
- */
-export const getAssignedBases = (state) => {
-  const assignments = state.session.planning?.assignments || [];
-  const bases = state.session.markers?.bases || [];
-
-  return assignments
-    .map((assignment) => {
-      const base = bases.find((b) => b.id === assignment.baseId);
-      if (!base) return null;
-      return {
-        ...base,
-        device: assignment.device,
-        settings: assignment.settings,
+export const getMapImageItems = createSelector(getAllInspectionGroups, (groups) =>
+  groups.flatMap((group) => {
+    let idx = 0;
+    return (group.items || []).flatMap((item) => {
+      if (!Array.isArray(item.corners) || item.corners.length !== 4) return [];
+      const result = {
+        key: `${group.type}-${idx}`,
+        url: `/api/markers/types/${group.type}/icon`,
+        coordinates: item.corners,
       };
-    })
-    .filter(Boolean);
-};
-
-/**
- * Obtiene las bases sin dispositivos asignados
- */
-export const getUnassignedBases = (state) => {
-  const assignments = state.session.planning?.assignments || [];
-  const bases = state.session.markers?.bases || [];
-
-  const assignedBaseIds = new Set(assignments.map((a) => a.baseId));
-
-  return bases.filter((base) => !assignedBaseIds.has(base.id));
-};
-
-/**
- * Verifica si un dispositivo ya está asignado a alguna base
- */
-export const isDeviceAssigned = (state, deviceId) => {
-  const assignments = state.session.planning?.assignments || [];
-  return assignments.some((a) => a.device?.id === deviceId);
-};
-
-/**
- * Obtiene el índice de una base dado su ID (útil para compatibilidad con código legacy)
- */
-export const getBaseIndexById = (state, baseId) => {
-  const bases = state.session.markers?.bases || [];
-  return bases.findIndex((b) => b.id === baseId);
-};
-
-/**
- * Obtiene una base por su índice (útil para compatibilidad con código legacy)
- */
-export const getBaseByIndex = (state, index) => {
-  const bases = state.session.markers?.bases || [];
-  return bases[index] || null;
-};
+      idx += 1;
+      return [result];
+    });
+  }),
+);

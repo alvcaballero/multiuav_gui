@@ -1,0 +1,17 @@
+# compose.ros2.yaml — ROS Bridge para ROS 2 Humble / Jazzy
+#
+# Requiere imagen construida localmente:
+#   docker build -t muavgcs:ros2 -f <repo-ros2-workspace>/Dockerfile .
+# Ver infra/README.md → ROS Bridge
+#
+# Uso:
+#   docker compose \
+#     -f infra/compose/compose.base.yaml \
+#     -f infra/compose/compose.ros2.yaml up
+
+services:
+  RosBridge:
+    image: 'muavgcs:ros2'
+    command: >
+      bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && ros2 launch rosbridge_server rosbridge_websocket_launch.xml"
+    network_mode: host

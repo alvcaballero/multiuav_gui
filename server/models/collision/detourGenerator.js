@@ -3,17 +3,16 @@
  * Generates alternative waypoints to avoid obstacles
  */
 
-import logger from '../../common/logger.js';
+import { logger } from '../../common/logger.js';
 import {
   distance2D,
-  distance3D,
   normalize,
   perpendicular2D,
-  segmentIntersectsCylinder,
-  cylinderFromObstacleZone,
   interpolateSegment,
+  obstacleCenter,
+  obstacleCylinder,
 } from './geometry.js';
-import { validateRoute, findCollidingObstacles } from './collisionDetector.js';
+import { validateRoute } from './collisionDetector.js';
 
 /**
  * @typedef {import('./geometry.js').Point3D} Point3D
@@ -31,12 +30,12 @@ import { validateRoute, findCollidingObstacles } from './collisionDetector.js';
 
 // Configuration
 const CONFIG = {
-  MIN_CLEARANCE: 10,        // Minimum clearance from obstacles (meters)
-  DEFAULT_CLEARANCE: 15,    // Default clearance
-  MAX_ALTITUDE: 120,        // Maximum flight altitude (meters)
-  ALTITUDE_BUFFER: 10,      // Buffer above obstacles for vertical detours
-  WAYPOINT_SPACING: 20,     // Minimum spacing between generated waypoints
-  MAX_DETOUR_WAYPOINTS: 4,  // Maximum waypoints per detour
+  MIN_CLEARANCE: 10, // Minimum clearance from obstacles (meters)
+  DEFAULT_CLEARANCE: 15, // Default clearance
+  MAX_ALTITUDE: 120, // Maximum flight altitude (meters)
+  ALTITUDE_BUFFER: 10, // Buffer above obstacles for vertical detours
+  WAYPOINT_SPACING: 20, // Minimum spacing between generated waypoints
+  MAX_DETOUR_WAYPOINTS: 4, // Maximum waypoints per detour
 };
 
 /**
@@ -52,15 +51,6 @@ function normalizePos(pos) {
 }
 
 /**
- * Convert Point3D to array format
- * @param {Point3D} pos
- * @returns {number[]}
- */
-function posToArray(pos) {
-  return [pos.x, pos.y, pos.z];
-}
-
-/**
  * Determine best detour direction based on obstacle position relative to flight path
  * @param {Point3D} start - Segment start
  * @param {Point3D} end - Segment end
@@ -68,7 +58,7 @@ function posToArray(pos) {
  * @returns {DetourStrategy}
  */
 function determineBestDetourStrategy(start, end, obstacle) {
-  const obstaclePos = obstacle.position;
+  const obstaclePos = obstacleCenter(obstacle);
 
   // Calculate flight direction vector
   const flightDir = normalize({
@@ -90,20 +80,16 @@ function determineBestDetourStrategy(start, end, obstacle) {
   // Dot product with perpendicular to determine which side obstacle is on
   const crossProduct = toObstacle.x * perpLeft.x + toObstacle.y * perpLeft.y;
 
-  // Get obstacle height from exclusion zone
-  const cylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-  const obstacleHeight = cylinder ? cylinder.height : 100;
-  const obstacleRadius = cylinder ? cylinder.radius : 30;
+  // Get obstacle dimensions from its exclusion geometry
+  const cylinder = obstacleCylinder(obstacle);
+  const obstacleHeight = cylinder.height;
+  const obstacleRadius = cylinder.radius;
 
-  // Determine clearance based on caution zone
-  const cautionCylinder = cylinderFromObstacleZone(obstacle, 'caution_zone');
-  const clearance = cautionCylinder
-    ? cautionCylinder.radius + CONFIG.MIN_CLEARANCE
-    : obstacleRadius + CONFIG.DEFAULT_CLEARANCE;
+  // Clearance beyond the exclusion radius (replaces the old separate caution-zone radius)
+  const clearance = obstacleRadius + CONFIG.MIN_CLEARANCE;
 
   // Check if vertical detour is viable
   const canGoOver = obstacleHeight + CONFIG.ALTITUDE_BUFFER <= CONFIG.MAX_ALTITUDE;
-  const currentAltitude = Math.max(start.z, end.z);
 
   // Prefer lateral if possible (more energy efficient)
   // Go to the opposite side of where the obstacle is
@@ -135,7 +121,7 @@ function determineBestDetourStrategy(start, end, obstacle) {
  */
 function generateLateralDetour(start, end, obstacle, strategy) {
   const waypoints = [];
-  const obstaclePos = obstacle.position;
+  const obstaclePos = obstacleCenter(obstacle);
 
   // Flight direction
   const flightDir = normalize({
@@ -151,22 +137,20 @@ function generateLateralDetour(start, end, obstacle, strategy) {
   }
 
   // Get cylinder for accurate dimensions
-  const cylinder = cylinderFromObstacleZone(obstacle, 'caution_zone') ||
-                   cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-  const radius = cylinder ? cylinder.radius : 30;
+  const radius = obstacleCylinder(obstacle).radius;
 
   // Calculate offset distance
   const offsetDist = radius + strategy.clearance;
 
-  // Entry point: before the obstacle
-  const distToObstacle = distance2D(start, obstaclePos);
-  const approachDist = Math.max(offsetDist, distToObstacle * 0.3);
-
   // Find point closest to obstacle on flight path
-  const t = Math.max(0, Math.min(1,
-    ((obstaclePos.x - start.x) * flightDir.x + (obstaclePos.y - start.y) * flightDir.y) /
-    (distance2D(start, end) || 1)
-  ));
+  const t = Math.max(
+    0,
+    Math.min(
+      1,
+      ((obstaclePos.x - start.x) * flightDir.x + (obstaclePos.y - start.y) * flightDir.y) /
+        (distance2D(start, end) || 1)
+    )
+  );
 
   const closestPoint = interpolateSegment({ start, end }, t);
 
@@ -208,15 +192,11 @@ function generateLateralDetour(start, end, obstacle, strategy) {
  */
 function generateVerticalDetour(start, end, obstacle, strategy) {
   const waypoints = [];
-  const obstaclePos = obstacle.position;
+  const obstaclePos = obstacleCenter(obstacle);
 
   // Get obstacle height
-  const cylinder = cylinderFromObstacleZone(obstacle, 'exclusion_zone');
-  const obstacleHeight = cylinder ? cylinder.height : 100;
-  const safeAltitude = Math.min(
-    obstacleHeight + strategy.clearance,
-    CONFIG.MAX_ALTITUDE
-  );
+  const obstacleHeight = obstacleCylinder(obstacle).height;
+  const safeAltitude = Math.min(obstacleHeight + strategy.clearance, CONFIG.MAX_ALTITUDE);
 
   // Flight direction
   const flightDir = normalize({
@@ -226,10 +206,14 @@ function generateVerticalDetour(start, end, obstacle, strategy) {
   });
 
   // Find closest point to obstacle on path
-  const t = Math.max(0, Math.min(1,
-    ((obstaclePos.x - start.x) * flightDir.x + (obstaclePos.y - start.y) * flightDir.y) /
-    (distance2D(start, end) || 1)
-  ));
+  const t = Math.max(
+    0,
+    Math.min(
+      1,
+      ((obstaclePos.x - start.x) * flightDir.x + (obstaclePos.y - start.y) * flightDir.y) /
+        (distance2D(start, end) || 1)
+    )
+  );
 
   // Climb waypoint (before obstacle)
   const climbT = Math.max(0.1, t - 0.15);
@@ -279,7 +263,7 @@ export function generateDetour(start, end, obstacle) {
 
   logger.info(
     `[DetourGenerator] Generated ${strategy.type} detour (${strategy.direction}) ` +
-    `around ${obstacle.name} with ${waypoints.length} waypoints`
+      `around ${obstacle.obstacle_name ?? obstacle.obstacle_id} with ${waypoints.length} waypoints`
   );
 
   return { waypoints, strategy };
@@ -324,11 +308,7 @@ export function applyDetoursToRoute(waypoints, collisions, obstacles) {
 
     // Handle the primary (first) collision for this segment
     const primaryCollision = segmentCollisions[0];
-    const { waypoints: detourPoints, strategy } = generateDetour(
-      start,
-      end,
-      primaryCollision.obstacle
-    );
+    const { waypoints: detourPoints, strategy } = generateDetour(start, end, primaryCollision.obstacle);
 
     // Validate detour doesn't create new collisions
     const detourWps = detourPoints.map((p, i) => ({
@@ -338,11 +318,7 @@ export function applyDetoursToRoute(waypoints, collisions, obstacles) {
     }));
 
     // Add start and end for validation
-    const fullPath = [
-      newWaypoints[segmentIndex],
-      ...detourWps,
-      newWaypoints[segmentIndex + 1],
-    ];
+    const fullPath = [newWaypoints[segmentIndex], ...detourWps, newWaypoints[segmentIndex + 1]];
 
     const validation = validateRoute(fullPath, obstacles);
 
@@ -352,18 +328,21 @@ export function applyDetoursToRoute(waypoints, collisions, obstacles) {
       detoursApplied++;
       report.push(
         `Segment ${segmentIndex}: Applied ${strategy.type} detour (${strategy.direction}) ` +
-        `around ${primaryCollision.obstacleName}, added ${detourPoints.length} waypoints`
+          `around ${primaryCollision.obstacleName}, added ${detourPoints.length} waypoints`
       );
     } else {
       // Try alternative strategy
-      report.push(
-        `Segment ${segmentIndex}: Primary detour invalid, trying alternative...`
-      );
+      report.push(`Segment ${segmentIndex}: Primary detour invalid, trying alternative...`);
 
       // Try vertical if lateral failed, or vice versa
-      const altStrategy = strategy.type === 'lateral'
-        ? { type: 'vertical', direction: 'over', clearance: CONFIG.ALTITUDE_BUFFER }
-        : { type: 'lateral', direction: strategy.direction === 'left' ? 'right' : 'left', clearance: strategy.clearance };
+      const altStrategy =
+        strategy.type === 'lateral'
+          ? { type: 'vertical', direction: 'over', clearance: CONFIG.ALTITUDE_BUFFER }
+          : {
+              type: 'lateral',
+              direction: strategy.direction === 'left' ? 'right' : 'left',
+              clearance: strategy.clearance,
+            };
 
       let altWaypoints;
       if (altStrategy.type === 'vertical') {
@@ -378,11 +357,7 @@ export function applyDetoursToRoute(waypoints, collisions, obstacles) {
         notes: `Detour ${altStrategy.type} around ${primaryCollision.obstacleName} (${i + 1}/${altWaypoints.length})`,
       }));
 
-      const altFullPath = [
-        newWaypoints[segmentIndex],
-        ...altDetourWps,
-        newWaypoints[segmentIndex + 1],
-      ];
+      const altFullPath = [newWaypoints[segmentIndex], ...altDetourWps, newWaypoints[segmentIndex + 1]];
 
       const altValidation = validateRoute(altFullPath, obstacles);
 
@@ -391,12 +366,12 @@ export function applyDetoursToRoute(waypoints, collisions, obstacles) {
         detoursApplied++;
         report.push(
           `Segment ${segmentIndex}: Applied alternative ${altStrategy.type} detour ` +
-          `around ${primaryCollision.obstacleName}`
+            `around ${primaryCollision.obstacleName}`
         );
       } else {
         report.push(
           `Segment ${segmentIndex}: WARNING - Could not find valid detour around ` +
-          `${primaryCollision.obstacleName}. Manual intervention required.`
+            `${primaryCollision.obstacleName}. Manual intervention required.`
         );
       }
     }
@@ -425,7 +400,7 @@ export function resolveCollisions(mission, obstacles) {
     report.push(`\n=== Route ${route.id}: ${route.name} (${route.uav}) ===`);
 
     // Validate route
-    const validation = validateRoute(route.wp || [], obstacles);
+    const validation = validateRoute(route.wp || [], obstacles || []);
 
     if (validation.valid) {
       report.push('No collisions detected');
@@ -435,27 +410,22 @@ export function resolveCollisions(mission, obstacles) {
     report.push(`Found ${validation.collisions.length} collisions, ${validation.warnings.length} warnings`);
 
     // Apply detours
-    const result = applyDetoursToRoute(route.wp, validation.collisions, obstacles);
+    const result = applyDetoursToRoute(route.wp, validation.collisions, obstacles || []);
 
     modifiedMission.route[i].wp = result.waypoints;
     totalDetoursApplied += result.detoursApplied;
     report.push(...result.report);
 
     // Final validation
-    const finalValidation = validateRoute(result.waypoints, obstacles);
+    const finalValidation = validateRoute(result.waypoints, obstacles || []);
     if (finalValidation.valid) {
       report.push(`Route ${route.id}: All collisions resolved successfully`);
     } else {
-      report.push(
-        `Route ${route.id}: WARNING - ${finalValidation.collisions.length} collisions remain`
-      );
+      report.push(`Route ${route.id}: WARNING - ${finalValidation.collisions.length} collisions remain`);
     }
   }
 
-  logger.info(
-    `[DetourGenerator] Mission collision resolution complete: ` +
-    `${totalDetoursApplied} detours applied`
-  );
+  logger.info(`[DetourGenerator] Mission collision resolution complete: ` + `${totalDetoursApplied} detours applied`);
 
   return {
     mission: modifiedMission,

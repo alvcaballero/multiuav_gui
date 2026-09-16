@@ -3,37 +3,54 @@
  */
 
 /**
- * Genera un ID único para una base
+ * Genera un ID local para un grupo/item de elementos creado en el cliente
+ * antes de guardarse. Prefijado con "local_" para distinguirlo de un id real
+ * de SQL (siempre numérico) sin ambigüedad.
  */
-export const generateBaseId = () => {
-  return `base_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+export const generateLocalId = () => {
+  return `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
 /**
- * Migra markers de estructura legacy a nueva estructura
- * Añade IDs a las bases si no los tienen
+ * Migra markers de estructura legacy a nueva estructura.
+ * Añade IDs a las bases y a los grupos/items de elements si no los tienen
+ * (el backend siempre los manda poblados; esto solo cubre un grupo/item
+ * recién creado en el cliente o un snapshot cargado desde un YAML local).
  */
 export const migrateMarkers = (markers) => {
-  if (!markers || !markers.bases) {
+  if (!markers) {
     return markers;
   }
 
-  const migratedBases = markers.bases.map((base, index) => {
-    // Si ya tiene ID, no hacer nada
-    if (base.id) {
+  // Una base con `id` (real, asignado por el servidor) se deja intacta. Una
+  // base recién creada en el cliente, todavía sin guardar, recibe un
+  // `tempId` (nunca `id`) para que React tenga una key estable sin que
+  // parezca jamás un id real persistido — se descarta antes de que la base
+  // exista en SQL, el servidor siempre asigna el `id` real en el primer guardado.
+  const migratedBases = (markers.bases || []).map((base) => {
+    if (base.id != null) {
       return base;
     }
-
-    // Generar ID basado en el índice para mantener consistencia
     return {
       ...base,
-      id: `base_${index}`,
+      tempId: base.tempId ?? generateLocalId(),
     };
+  });
+
+  const migratedElements = (markers.elements || []).map((group) => {
+    const groupId = group.groupId ?? generateLocalId();
+    const items = (group.items || []).map((item) => ({
+      ...item,
+      itemId: item.itemId ?? generateLocalId(),
+      groupId: item.groupId ?? groupId,
+    }));
+    return { ...group, groupId, items };
   });
 
   return {
     ...markers,
     bases: migratedBases,
+    elements: migratedElements,
   };
 };
 
@@ -93,37 +110,37 @@ export const migratePlanning = (planning, markers) => {
   // Extraer configuración por defecto del primer elemento no vacío
   let defaultSettings = {};
   const firstValidBase = planning.bases.find(
-    (b) => b.devices && b.devices.id && b.devices.id !== ''
+    (b) => b.devices && b.devices.id && b.devices.id !== '',
   );
   if (firstValidBase && firstValidBase.settings) {
     defaultSettings = { ...firstValidBase.settings };
   }
 
   // Crear assignments solo para bases que tienen dispositivos asignados
-  const assignments = planning.bases
-    .map((base, index) => {
-      // Saltar entradas vacías
-      if (!base.devices || !base.devices.id || base.devices.id === '') {
-        return null;
-      }
+  const assignments = planning.bases.flatMap((base, index) => {
+    // Saltar entradas vacías
+    if (!base.devices || !base.devices.id || base.devices.id === '') {
+      return [];
+    }
 
-      // Obtener el baseId correspondiente del array de markers
-      const baseId = markers.bases[index]?.id;
-      if (!baseId) {
-        console.warn(`No se encontró base en markers para índice ${index}`);
-        return null;
-      }
+    // Obtener el baseId correspondiente del array de markers
+    const baseId = markers.bases[index]?.id;
+    if (!baseId) {
+      console.warn(`No se encontró base en markers para índice ${index}`);
+      return [];
+    }
 
-      return {
+    return [
+      {
         baseId,
         device: {
           id: String(base.devices.id), // Normalizar a string
           name: base.devices.name || '',
         },
         settings: { ...base.settings },
-      };
-    })
-    .filter(Boolean); // Remover nulls
+      },
+    ];
+  });
 
   // Crear nueva estructura de planning
   const newPlanning = {
@@ -188,21 +205,5 @@ export const planningToLegacy = (planning, markers) => {
     meteo: planning.meteo || [],
     bases: legacyBases,
     settings: planning.settingsSchema || {},
-  };
-};
-
-/**
- * Migra datos completos de session
- */
-export const migrateSessionData = (session) => {
-  if (!session) return session;
-
-  const migratedMarkers = migrateMarkers(session.markers);
-  const migratedPlanning = migratePlanning(session.planning, migratedMarkers);
-
-  return {
-    ...session,
-    markers: migratedMarkers,
-    planning: migratedPlanning,
   };
 };

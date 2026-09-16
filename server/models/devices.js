@@ -1,95 +1,106 @@
-import { StreamServer } from '../config/config.js';
+import {
+  StreamServer,
+  DEVICE_CHECK_INTERVAL_MS,
+  DEVICE_UPDATE_INTERVAL_MS,
+  DEVICE_TIMEOUT_MS,
+} from '../config/config.js';
 import { rosController } from '../controllers/ros.js';
 import sequelize, { Op } from '../common/sequelize.js';
 import { cameraModel } from './camera.js';
-import { object, set } from 'zod';
 import { positionsController } from '../controllers/positions.js';
-import logger from '../common/logger.js';
-/* devices:
-/   id
-/   name  : name of uav
-/   category : model of uav registered
-/   ip : ip of uav
-/   protocol: ros, robofleet
-/   camera : array of camera devices 
-/       type: WebRTC, RTSP
-/       source: source of camera
-/   files: array of files access
-/        url: ftp://user:pwd@ip:port
-/        type: ftp
-/   lastUpdate:
-/   status:
-*/
+import { logger } from '../common/logger.js';
+import { readDataFile } from '../common/utils.js';
+import { DEVICE_STATUS } from '../config/status.js';
 
-const CHECK_INTERVAL = 5000;
-const UPDATE_INTERVAL = 2000;
-const DEVICE_TIMEOUT_MS = 30000; // 30 seconds - timeout for marking devices as offline
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
 
-const devicesStatus = Object.freeze({
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-});
+// File-download presets (path, folder type, delete, srvDownload) shared by every
+// installation. A device entry references one by `type` and may override any of
+// FILE_OVERRIDE_KEYS field-by-field (e.g. a custom `path`). Resolving the effective
+// config is the DEVICE's responsibility — `files.js` only consumes the result and
+// must not read this YAML nor know about presets.
+const filesSetup = readDataFile('../config/devices/devices.yaml');
+const FILE_OVERRIDE_KEYS = ['path', 'downloadType', 'delete', 'srvDownload'];
+
+// Remote folder paths must end in '/' so `files.js` can concatenate filenames.
+// Trims accidental whitespace and appends a trailing slash when missing.
+const normalizeFolderPath = (path) => {
+  if (typeof path !== 'string') return path;
+  const trimmed = path.trim();
+  if (trimmed === '' || trimmed.endsWith('/')) return trimmed;
+  return `${trimmed}/`;
+};
 
 const protocols = Object.freeze({
   ROS: 'ros',
   ROBOFLEET: 'robofleet',
 });
 
-// update device time every 1.5 seconds
-const updateDeviceTime = async () => {
-  const limitDate = new Date(Date.now() - DEVICE_TIMEOUT_MS);
-  try {
-    const updates = await positionsController.getLastPositions();
-    const validUpdates = updates.filter((update) => new Date(update.deviceTime) > limitDate);
+class DeviceHealthMonitor {
+  constructor() {
+    this._updateTimer = setInterval(() => this._updateDeviceTime(), DEVICE_UPDATE_INTERVAL_MS);
+    this._checkTimer = setInterval(() => this._checkDeviceOnline(), DEVICE_CHECK_INTERVAL_MS);
+    logger.info('DeviceHealthMonitor started');
 
-    if (validUpdates.length > 0) {
-      const transaction = await sequelize.transaction();
-      try {
-        await Promise.all(
-          validUpdates.map((update) =>
-            sequelize.models.Device.update(
-              { lastUpdate: update.deviceTime, status: devicesStatus.ONLINE },
-              {
-                where: { id: update.deviceId },
-                transaction,
-              }
-            )
-          )
-        );
-        await transaction.commit();
-      } catch (error) {
-        await transaction.rollback();
-        console.error('Error al actualizar dispositivos:', error);
-      }
-    }
-  } catch (error) {
-    console.error('Error en updateDeviceTime:', error);
-  } finally {
-    setTimeout(updateDeviceTime, UPDATE_INTERVAL);
+    process.on('SIGTERM', () => this.stop());
+    process.on('SIGINT', () => this.stop());
   }
-};
-setTimeout(updateDeviceTime, UPDATE_INTERVAL);
 
-//put device status to offline if not updated in 30 seconds
-const CheckDeviceOnline = async () => {
-  const cutoffTime = new Date(Date.now() - DEVICE_TIMEOUT_MS);
-  await sequelize.models.Device.update(
-    { status: devicesStatus.OFFLINE },
-    {
-      where: { lastUpdate: { [Op.lte]: cutoffTime }, deletedAt: null },
+  stop() {
+    clearInterval(this._updateTimer);
+    clearInterval(this._checkTimer);
+    this._updateTimer = null;
+    this._checkTimer = null;
+    logger.info('DeviceHealthMonitor stopped');
+  }
+
+  async _updateDeviceTime() {
+    const limitDate = new Date(Date.now() - DEVICE_TIMEOUT_MS);
+    try {
+      const updates = await positionsController.getLastPositions();
+      const validUpdates = updates.filter((update) => new Date(update.deviceTime) > limitDate);
+
+      if (validUpdates.length > 0) {
+        const transaction = await sequelize.transaction();
+        try {
+          await Promise.all(
+            validUpdates.map((update) =>
+              sequelize.models.Device.update(
+                { lastUpdate: update.deviceTime, status: DEVICE_STATUS.ONLINE },
+                { where: { id: update.deviceId }, transaction }
+              )
+            )
+          );
+          await transaction.commit();
+        } catch (error) {
+          await transaction.rollback();
+          logger.error('Error al actualizar dispositivos:', error);
+        }
+      }
+    } catch (error) {
+      logger.error('Error en updateDeviceTime:', error);
     }
-  );
+  }
 
-  setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
-};
-setTimeout(CheckDeviceOnline, CHECK_INTERVAL);
+  async _checkDeviceOnline() {
+    const cutoffTime = new Date(Date.now() - DEVICE_TIMEOUT_MS);
+    try {
+      await sequelize.models.Device.update(
+        { status: DEVICE_STATUS.OFFLINE },
+        { where: { lastUpdate: { [Op.lte]: cutoffTime }, deletedAt: null } }
+      );
+    } catch (error) {
+      logger.error('Error en checkDeviceOnline:', error);
+    }
+  }
+}
+
+export const deviceHealthMonitor = new DeviceHealthMonitor();
 
 export class DevicesModel {
   constructor() {
     // conect with ros and other things
-    console.log('constructor device model');
   }
 
   static async getAll(query) {
@@ -97,16 +108,61 @@ export class DevicesModel {
       attributes: publicFields,
       where: { deletedAt: null },
     });
+    const plain = mydevices.map((d) => d.dataValues);
     if (query) {
-      console.log(query);
       if (Array.isArray(query)) {
-        return mydevices.filter((device) => query.some((element) => device.id == element));
+        return plain.filter((device) => query.some((element) => device.id == element));
       }
       if (!isNaN(query)) {
-        return mydevices.filter((device) => device.id == query);
+        return plain.filter((device) => device.id == query);
       }
     }
-    return mydevices;
+    return plain;
+  }
+
+  static async getDevicesWithPositions() {
+    const [devices, positions] = await Promise.all([DevicesModel.getAll(), positionsController.getLastPositions()]);
+
+    const positionsByDeviceId = Object.fromEntries(positions.map((p) => [p.deviceId, p]));
+
+    return Promise.all(
+      devices.map(async (device) => {
+        const pos = positionsByDeviceId[device.id];
+        const positionInfo = { yaw: pos?.course };
+        if (pos?.latitude !== undefined) {
+          positionInfo.latitude = pos.latitude;
+          positionInfo.longitude = pos.longitude;
+          positionInfo.altitude = pos.altitude;
+        }
+        if (pos?.attributes?.localposition !== undefined) {
+          positionInfo.localposition = {
+            x: pos.attributes.localposition[0],
+            y: pos.attributes.localposition[1],
+            z: pos.attributes.localposition[2],
+          };
+        }
+        if (pos?.attributes?.batteryLevel !== undefined) {
+          positionInfo.batteryLevel = pos.attributes.batteryLevel;
+        }
+
+        const actionsByKey = rosController.getActionStatusByName(device.name);
+        const isBusy =
+          typeof actionsByKey.status === 'string'
+            ? actionsByKey.status === 'idle'
+              ? false
+              : actionsByKey.status === 'executing' || actionsByKey.status === 'canceling'
+            : Object.values(actionsByKey).some((a) => a.status === 'executing' || a.status === 'canceling');
+
+        return {
+          id: device.id,
+          name: device.name,
+          connection_status: device.status,
+          busy: isBusy,
+          lastUpdate: device.lastUpdate,
+          ...positionInfo,
+        };
+      })
+    );
   }
 
   static async getById({ id }) {
@@ -128,6 +184,41 @@ export class DevicesModel {
     });
   }
 
+  /*
+   / Resolve the effective file-download config for every source of a device.
+   / Each `device.files` entry references a preset by `type`; the entry may then
+   / override any of FILE_OVERRIDE_KEYS. `downloadType` (device) maps onto the
+   / preset's `type` (folder mode: all/lastFolder/specific) so it doesn't collide
+   / with `type` (the preset key). Returns an array of self-contained configs —
+   / `files.js` iterates them and needs nothing else to connect/list/download.
+   */
+  static async getFilesConfig(uavId) {
+    const device = await this.getAccess(uavId);
+    const deviceFiles = device?.files ?? [];
+    if (deviceFiles.length === 0) {
+      logger.warn(`Device ${uavId} has no files setup`);
+      return [];
+    }
+
+    return deviceFiles.map((entry) => {
+      const preset = filesSetup.files?.[entry.type] ?? filesSetup.files?.default ?? {};
+      const config = { ...preset };
+      for (const key of FILE_OVERRIDE_KEYS) {
+        if (entry[key] === undefined) continue;
+        // `downloadType` overrides the folder mode, stored as `type` in the config.
+        if (key === 'downloadType') config.type = entry.downloadType;
+        else config[key] = entry[key];
+      }
+      // `files.js` concatenates `${path}${file}` assuming a trailing slash, so
+      // normalize it here — a hand-typed custom path (e.g. './uav_media/uav_1')
+      // would otherwise glue onto the filename ('./uav_media/uav_1foto.jpg').
+      config.path = normalizeFolderPath(config.path);
+      config.url = entry.url;
+      config.preset = entry.type;
+      return config;
+    });
+  }
+
   static async create(device) {
     let myDevice = null;
     let serverState = rosController.getServerStatus();
@@ -138,10 +229,9 @@ export class DevicesModel {
         name: device.name,
         category: device.category,
         ip: device.ip,
-        status: devicesStatus.OFFLINE,
+        status: DEVICE_STATUS.OFFLINE,
         user: device.user,
         pwd: device.pwd,
-        ip: device.ip,
         camera: device.camera,
         files: device.files,
         protocol: protocol,
@@ -160,7 +250,7 @@ export class DevicesModel {
     }
 
     if (serverState.state === 'connect') {
-      console.log('suscribe devices ');
+      logger.debug('suscribe devices');
       await rosController.subscribeDevice({
         id: myDevice.id,
         name: myDevice.name,
@@ -170,17 +260,17 @@ export class DevicesModel {
         bag: false,
       });
 
-      console.log('success', device.name + ' added. Type: ' + device.category);
+      logger.info(`Device ${device.name} added. Type: ${device.category}`);
       return { state: 'success', msg: 'conectado Correctamente' };
     } else {
-      console.log('\nRos no está conectado.\n\n Por favor conéctelo primero.');
+      logger.warn('ROS not connected. Please connect first.');
       return { state: 'error', msg: 'Ros no está conectado' };
     }
   }
 
   static async delete({ id }) {
     let device = await this.getById({ id: id });
-    console.log('remove id' + id);
+    logger.info(`Removing device id=${id}`);
     await cameraModel.removeCameraWebRTC(device);
     await this.removedevice({ id: id });
     let response = await rosController.unsubscribeDevice(id);
@@ -190,11 +280,11 @@ export class DevicesModel {
   static async editDevice({ id, name, category, ip, user, pwd, camera, files, protocol }) {
     let myDevice = await sequelize.models.Device.findOne({ where: { id: id }, raw: false });
     if (protocol && protocol !== myDevice.protocol) {
-      console.log('change protocol');
+      logger.debug(`Device ${id}: changing protocol to ${protocol}`);
       myDevice.protocol = protocol;
     }
     if ((name && name !== myDevice.name) || (category && category !== myDevice.category)) {
-      console.log('change name');
+      logger.debug(`Device ${id}: changing name/category`);
       myDevice.name = name ? name : myDevice.name;
       myDevice.category = category ? category : myDevice.category;
       if (protocol === protocols.ROBOFLEET) {
@@ -209,7 +299,7 @@ export class DevicesModel {
           id: myDevice.id,
           name: myDevice.name,
           category: myDevice.category,
-          camera: myDevice.camerak,
+          camera: myDevice.camera,
         });
       }
     }
@@ -220,7 +310,7 @@ export class DevicesModel {
     }
 
     if (camera && JSON.stringify(camera) !== JSON.stringify(myDevice.camera)) {
-      console.log('change camera');
+      logger.debug(`Device ${id}: changing camera config`);
       myDevice.camera = camera;
       cameraModel.removeCameraWebRTC(myDevice);
       cameraModel.addCameraWebRTC({ ...myDevice, camera: camera });
@@ -247,8 +337,10 @@ export class DevicesModel {
   }
 
   static async addAllUAV() {
-    //console.log('---- init cameras of devices ------------');
-    const myDevices = await this.getAll();
+    const myDevices = await sequelize.models.Device.findAll({
+      attributes: ['id', 'name', 'category', 'ip', 'camera', 'status', 'protocol'],
+      where: { deletedAt: null },
+    });
     for (let device of myDevices) {
       if (StreamServer) {
         await cameraModel.addCameraWebRTC(device);

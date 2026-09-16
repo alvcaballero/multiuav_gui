@@ -1,25 +1,8 @@
 import { z } from 'zod';
+import { MISSION_STATUS as MISSION_STATUS_MAP, ROUTE_STATUS as ROUTE_STATUS_MAP } from '../../config/status.js';
 
-export const MISSION_STATUS = z.enum([
-  'init',
-  'planning',
-  'running',
-  'finish',
-  'done',
-  'cancelled',
-  'error'
-]);
-
-export const ROUTE_STATUS = z.enum([
-  'init',
-  'loaded',
-  'commanded',
-  'running',
-  'complete',
-  'end',
-  'cancelled',
-  'error'
-]);
+export const MISSION_STATUS = z.enum(Object.values(MISSION_STATUS_MAP));
+export const ROUTE_STATUS = z.enum(Object.values(ROUTE_STATUS_MAP));
 
 export const MissionSchema = z.object({
   id: z.string().optional(),
@@ -30,7 +13,7 @@ export const MissionSchema = z.object({
   endTime: z.date().nullable(),
   task: z.record(z.any()).default({}),
   mission: z.record(z.any()).default({}),
-  results: z.array(z.record(z.any())).default([])
+  results: z.array(z.record(z.any())).default([]),
 });
 
 export const RouteSchema = z.object({
@@ -42,7 +25,7 @@ export const RouteSchema = z.object({
   endTime: z.date().nullable(),
   task: z.record(z.any()).default({}),
   mission: z.record(z.any()).default({}),
-  results: z.array(z.record(z.any())).default([])
+  results: z.array(z.record(z.any())).default([]),
 });
 
 export const TaskSchema = z.object({
@@ -50,5 +33,5 @@ export const TaskSchema = z.object({
   name: z.string().optional(),
   objetivo: z.string(),
   locations: z.array(z.record(z.any())),
-  meteo: z.record(z.any()).optional()
-}); 
+  meteo: z.record(z.any()).optional(),
+});

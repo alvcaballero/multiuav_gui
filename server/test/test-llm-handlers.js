@@ -1,11 +1,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import dotenv from 'dotenv';
-import { LLMFactory } from '../models/chat/llmFactory.js';
-import { OpenAIHandler } from '../models/chat/openaiHandler.js';
-import { GeminiHandler } from '../models/chat/geminiHandler.js';
-import { AnthropicHandler } from '../models/chat/antropicHandler.js';
-import { OllamaHandler } from '../models/chat/ollamaHandler.js';
+import { LLMFactory } from '../models/chat/handlers/llmFactory.js';
+import { OpenAIHandler } from '../models/chat/handlers/openaiHandler.js';
+import { GeminiHandler } from '../models/chat/handlers/geminiHandler.js';
+import { AnthropicHandler } from '../models/chat/handlers/antropicHandler.js';
+import { OllamaHandler } from '../models/chat/handlers/ollamaHandler.js';
 
 // Load .env from server root
 dotenv.config();
@@ -171,12 +171,11 @@ describe('GeminiHandler', () => {
     assert.ok(handler.client);
   });
 
-  it('has agent profiles', () => {
+  it('resolves model config per capability tier', () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const def = handler.getAgentProfile('default');
-    const plan = handler.getAgentProfile('planner');
-    assert.equal(def.model, 'gemini-2.5-flash');
-    assert.equal(plan.model, 'gemini-2.5-flash');
+    assert.equal(handler.resolveModelConfig({ capability: 'low' }).model, 'gemini-2.5-flash');
+    assert.equal(handler.resolveModelConfig({ capability: 'medium' }).model, 'gemini-2.5-pro');
+    assert.equal(handler.resolveModelConfig({ capability: 'high' }).model, 'gemini-3-flash-preview');
   });
 
   it('converts tools to functionDeclarations with parametersJsonSchema', () => {
@@ -191,7 +190,10 @@ describe('GeminiHandler', () => {
 
   it('converts history skipping system and mapping assistant → model', () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const msgs = handler.convertMsg('New msg', mockHistory);
+    const msgs = [
+      ...handler.convertHistory(mockHistory),
+      ...handler.convertInputMessage({ type: 'message', content: 'New msg' }),
+    ];
     // system skipped → user + model + new user = 3
     assert.equal(msgs.length, 3);
     assert.equal(msgs[0].role, 'user');
@@ -211,7 +213,9 @@ describe('GeminiHandler', () => {
 
   it('handles tool call error gracefully', async () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const failExecutor = async () => { throw new Error('boom'); };
+    const failExecutor = async () => {
+      throw new Error('boom');
+    };
     const result = await handler.handleToolCall(mockToolCall, failExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.ok(JSON.parse(result.output).error.includes('boom'));
@@ -234,7 +238,7 @@ describe('GeminiHandler', () => {
     const history = [
       { message: { type: 'function_call', name: 'get_weather', arguments: '{"city":"Madrid"}', call_id: 'call_1' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'model');
     assert.ok(msgs[0].parts[0].functionCall);
@@ -247,7 +251,7 @@ describe('GeminiHandler', () => {
     const history = [
       { message: { type: 'function_call_output', name: 'get_weather', call_id: 'call_1', output: '{"temp":25}' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'user');
     assert.ok(msgs[0].parts[0].functionResponse);
@@ -257,10 +261,8 @@ describe('GeminiHandler', () => {
 
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new GeminiHandler(FAKE_KEY);
-    const history = [
-      { message: { type: 'text', content: 'Hello world', role: 'assistant' } },
-    ];
-    const msgs = handler.convertMsg(null, history);
+    const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'model');
     assert.deepEqual(msgs[0].parts, [{ text: 'Hello world' }]);
@@ -270,7 +272,7 @@ describe('GeminiHandler', () => {
     const handler = new GeminiHandler(FAKE_KEY);
     await handler.initialize();
     await assert.rejects(
-      () => handler.processMessage('test', [], [], {}),
+      () => handler.processMessage({ type: 'message', content: 'test' }, [], [], {}),
       (err) => err.message.includes('API key')
     );
   });
@@ -296,12 +298,12 @@ describe('AnthropicHandler', () => {
     assert.ok(handler.client);
   });
 
-  it('has agent profiles', () => {
+  it('resolves model config per capability tier', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const def = handler.getAgentProfile('default');
-    const plan = handler.getAgentProfile('planner');
-    assert.ok(def.model);
-    assert.ok(plan.maxTokens > 4096);
+    const low = handler.resolveModelConfig({ capability: 'low' });
+    const high = handler.resolveModelConfig({ capability: 'high' });
+    assert.ok(low.model);
+    assert.ok(high.maxTokens > 4096);
   });
 
   it('converts tools to Anthropic input_schema format', () => {
@@ -315,7 +317,10 @@ describe('AnthropicHandler', () => {
 
   it('converts history skipping system messages', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const msgs = handler.convertMsg('New msg', mockHistory);
+    const msgs = [
+      ...handler.convertHistory(mockHistory),
+      ...handler.convertInputMessage({ type: 'message', content: 'New msg' }),
+    ];
     // system skipped → user + assistant + new user = 3
     assert.equal(msgs.length, 3);
     assert.equal(msgs[0].role, 'user');
@@ -335,7 +340,9 @@ describe('AnthropicHandler', () => {
 
   it('handles tool call error gracefully', async () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const failExecutor = async () => { throw new Error('boom'); };
+    const failExecutor = async () => {
+      throw new Error('boom');
+    };
     const result = await handler.handleToolCall(mockToolCall, failExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.ok(JSON.parse(result.output).error.includes('boom'));
@@ -359,7 +366,7 @@ describe('AnthropicHandler', () => {
     const history = [
       { message: { type: 'function_call', name: 'get_weather', arguments: '{"city":"Madrid"}', call_id: 'call_1' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content[0].type, 'tool_use');
@@ -373,7 +380,7 @@ describe('AnthropicHandler', () => {
     const history = [
       { message: { type: 'function_call_output', name: 'get_weather', call_id: 'call_1', output: '{"temp":25}' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'user');
     assert.equal(msgs[0].content[0].type, 'tool_result');
@@ -383,10 +390,8 @@ describe('AnthropicHandler', () => {
 
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
-    const history = [
-      { message: { type: 'text', content: 'Hello world', role: 'assistant' } },
-    ];
-    const msgs = handler.convertMsg(null, history);
+    const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content, 'Hello world');
@@ -396,7 +401,7 @@ describe('AnthropicHandler', () => {
     const handler = new AnthropicHandler(FAKE_KEY);
     await handler.initialize();
     await assert.rejects(
-      () => handler.processMessage('test', [], [], {}),
+      () => handler.processMessage({ type: 'message', content: 'test' }, [], [], {}),
       (err) => err.message.includes('authentication') || err.message.includes('api-key') || err.status === 401
     );
   });
@@ -414,7 +419,7 @@ describe('OllamaHandler', () => {
 
   it('sets default model', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    assert.equal(handler.model, 'llama3.2');
+    assert.equal(handler.model, 'glm-4.7-flash');
   });
 
   it('initializes client', async () => {
@@ -424,12 +429,10 @@ describe('OllamaHandler', () => {
     assert.ok(handler.client);
   });
 
-  it('has agent profiles', () => {
+  it('resolves model config per capability tier', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const def = handler.getAgentProfile('default');
-    const plan = handler.getAgentProfile('planner');
-    assert.equal(def.model, 'llama3.2');
-    assert.equal(plan.model, 'llama3.2');
+    assert.equal(handler.resolveModelConfig({ capability: 'low' }).model, 'glm-4.7-flash');
+    assert.equal(handler.resolveModelConfig({ capability: 'high' }).model, 'glm-4.7-flash');
   });
 
   it('converts tools to OpenAI-compatible format', () => {
@@ -445,7 +448,10 @@ describe('OllamaHandler', () => {
 
   it('converts history keeping system messages inline', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const msgs = handler.convertMsg('New msg', mockHistory);
+    const msgs = [
+      ...handler.convertHistory(mockHistory),
+      ...handler.convertInputMessage({ type: 'message', content: 'New msg' }),
+    ];
     // system + user + assistant + new user = 4
     assert.equal(msgs.length, 4);
     assert.equal(msgs[0].role, 'system');
@@ -461,7 +467,7 @@ describe('OllamaHandler', () => {
     const history = [
       { message: { type: 'function_call', name: 'get_weather', arguments: '{"city":"Madrid"}', call_id: 'call_1' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content, '');
@@ -475,7 +481,7 @@ describe('OllamaHandler', () => {
     const history = [
       { message: { type: 'function_call_output', name: 'get_weather', call_id: 'call_1', output: '{"temp":25}' } },
     ];
-    const msgs = handler.convertMsg(null, history);
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'tool');
     assert.equal(msgs[0].content, '{"temp":25}');
@@ -483,10 +489,8 @@ describe('OllamaHandler', () => {
 
   it('convertMsg handles normalized text items with content field', () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const history = [
-      { message: { type: 'text', content: 'Hello world', role: 'assistant' } },
-    ];
-    const msgs = handler.convertMsg(null, history);
+    const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
+    const msgs = handler.convertHistory(history);
     assert.equal(msgs.length, 1);
     assert.equal(msgs[0].role, 'assistant');
     assert.equal(msgs[0].content, 'Hello world');
@@ -503,7 +507,9 @@ describe('OllamaHandler', () => {
 
   it('handles tool call error gracefully', async () => {
     const handler = new OllamaHandler(FAKE_HOST);
-    const failExecutor = async () => { throw new Error('boom'); };
+    const failExecutor = async () => {
+      throw new Error('boom');
+    };
     const result = await handler.handleToolCall(mockToolCall, failExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.ok(JSON.parse(result.output).error.includes('boom'));
@@ -534,7 +540,7 @@ describe('Integration - real API smoke test', () => {
 
     let result;
     try {
-      result = await handler.processMessage(prompt, [], [], {});
+      result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
     } catch (err) {
       if (err.message?.includes('credit') || err.message?.includes('quota') || err.status === 429) {
         t.skip('OpenAI API billing/quota issue: ' + err.message.substring(0, 80));
@@ -557,7 +563,7 @@ describe('Integration - real API smoke test', () => {
 
     let result;
     try {
-      result = await handler.processMessage(prompt, [], [], {});
+      result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
     } catch (err) {
       if (err.message?.includes('credit') || err.message?.includes('quota') || err.status === 429) {
         t.skip('Gemini API billing/quota issue: ' + err.message.substring(0, 80));
@@ -575,30 +581,34 @@ describe('Integration - real API smoke test', () => {
     assert.ok((textBlock.content || textBlock.text)?.length > 0, 'text should not be empty');
   });
 
-  it('Anthropic responds to a simple message', { skip: !realKeys.anthropic && 'LLM_ANTHROPIC_API_KEY not set' }, async (t) => {
-    const handler = LLMFactory.createHandler('anthropic', realKeys.anthropic);
-    await handler.initialize();
+  it(
+    'Anthropic responds to a simple message',
+    { skip: !realKeys.anthropic && 'LLM_ANTHROPIC_API_KEY not set' },
+    async (t) => {
+      const handler = LLMFactory.createHandler('anthropic', realKeys.anthropic);
+      await handler.initialize();
 
-    let result;
-    try {
-      result = await handler.processMessage(prompt, [], [], {});
-    } catch (err) {
-      // Skip on billing/quota errors — key is valid but account has no credits
-      if (err.message?.includes('credit balance') || err.message?.includes('rate limit') || err.status === 429) {
-        t.skip('Anthropic API billing/quota issue: ' + err.message.substring(0, 80));
-        return;
+      let result;
+      try {
+        result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
+      } catch (err) {
+        // Skip on billing/quota errors — key is valid but account has no credits
+        if (err.message?.includes('credit balance') || err.message?.includes('rate limit') || err.status === 429) {
+          t.skip('Anthropic API billing/quota issue: ' + err.message.substring(0, 80));
+          return;
+        }
+        throw err;
       }
-      throw err;
+
+      assert.equal(result.status, 'completed');
+      assert.ok(Array.isArray(result.output), 'output should be an array');
+      assert.ok(result.output.length > 0, 'output should not be empty');
+
+      const textBlock = result.output.find((o) => o.type === 'text');
+      assert.ok(textBlock, 'should contain a text block');
+      assert.ok((textBlock.content || textBlock.text)?.length > 0, 'text should not be empty');
     }
-
-    assert.equal(result.status, 'completed');
-    assert.ok(Array.isArray(result.output), 'output should be an array');
-    assert.ok(result.output.length > 0, 'output should not be empty');
-
-    const textBlock = result.output.find((o) => o.type === 'text');
-    assert.ok(textBlock, 'should contain a text block');
-    assert.ok((textBlock.content || textBlock.text)?.length > 0, 'text should not be empty');
-  });
+  );
 
   it('Ollama responds to a simple message', { skip: !realKeys.ollama && 'LLM_OLLAMA_API_KEY not set' }, async (t) => {
     const handler = LLMFactory.createHandler('ollama', realKeys.ollama);
@@ -606,7 +616,7 @@ describe('Integration - real API smoke test', () => {
 
     let result;
     try {
-      result = await handler.processMessage(prompt, [], [], {});
+      result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
     } catch (err) {
       if (err.message?.includes('ECONNREFUSED') || err.message?.includes('fetch failed')) {
         t.skip('Ollama not reachable: ' + err.message.substring(0, 80));

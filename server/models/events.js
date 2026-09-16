@@ -1,41 +1,46 @@
 import { positionsController } from '../controllers/positions.js';
-import sequelize from '../common/sequelize.js';
+import sequelize, { Op } from '../common/sequelize.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import { de } from 'zod/v4/locales';
+import { logger } from '../common/logger.js';
 
 /**
  * @typedef Event
  * @property {integer} id
  * @property {string} type
  * @property {integer} deviceId
- * @property {Array<number>} positionid
- * @property {string} attributes
- * @property {string} createdAt - date-time create by DB
+ * @property {Array<number>} positionId
+ * @property {object} attributes
+ * @property {string} eventTime - date-time, defaults to DB NOW() when omitted
  */
 
 export class eventsModel {
-  static async get({ id, missionId, deviceId, type, createdAt }) {
-    if (deviceId) {
-      return await sequelize.models.Event.findAll({ where: { deviceId: deviceId } });
-    }
+  static async get({ id, missionId, deviceId, type, from, to }) {
     if (id) {
       return await sequelize.models.Event.findByPk(id);
     }
-    return await sequelize.models.Event.findAll();
+
+    const where = {};
+    if (deviceId) where.deviceId = deviceId;
+    if (missionId) where.missionId = missionId;
+    if (type) where.type = type;
+    if (from || to) {
+      where.eventTime = {};
+      if (from) where.eventTime[Op.gte] = new Date(from);
+      if (to) where.eventTime[Op.lte] = new Date(to);
+    }
+
+    return await sequelize.models.Event.findAll({ where, order: [['eventTime', 'DESC']] });
   }
 
-  static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId, attributes = {} }) {
-    console.log('type:', type);
-    console.log('eventTime:', eventTime);
-    console.log('deviceId:', deviceId);
-    console.log('missionId:', missionId);
-    console.log('positionId:', positionId);
-    console.log('attributes:', attributes);
+  static async addEvent({ type = 'no', eventTime, deviceId, missionId, positionId: _positionId, attributes = {} }) {
+    logger.debug(
+      `addEvent: type=${type} eventTime=${eventTime} deviceId=${deviceId} missionId=${missionId} attributes=${JSON.stringify(attributes)}`
+    );
     let device_id = deviceId || null;
     if (deviceId) {
       const deviceExists = await sequelize.models.Device.findByPk(deviceId);
       if (!deviceExists) {
-        console.warn(`addEvent: deviceId ${deviceId} not found in DB, skipping event insert`);
+        logger.warn(`addEvent: deviceId ${deviceId} not found in DB, skipping event insert`);
         device_id = null;
       }
     }
@@ -49,7 +54,7 @@ export class eventsModel {
     }
     let myEvent = await sequelize.models.Event.create({
       type: type,
-      eventTime: eventTime || undefined,
+      eventTime: eventTime,
       deviceId: device_id,
       positionId: eventPosition2,
       missionId: missionId || null,

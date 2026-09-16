@@ -1,11 +1,12 @@
 import { devicesController } from '../controllers/devices.js';
 import { extApp, extAppUrl, extAppUser, extAppPWD } from '../config/config.js';
+import { logger } from '../common/logger.js';
 
 const accessToken = { token: null, date: '' };
 
 const AppFetch = async (url, attributes) => {
   if (!extApp) {
-    console.log('no thrid party application');
+    logger.debug('no third party application configured');
     const obj = { access_token: 'world' };
     const myBlob = new Blob([JSON.stringify(obj, null, 2)], {
       type: 'application/json',
@@ -18,29 +19,32 @@ const AppFetch = async (url, attributes) => {
 
 export class ExtApp {
   static async UpdateToken() {
-    console.log(extAppUrl + '---' + extAppUser + '---' + extAppPWD + '--');
+    logger.debug(`UpdateToken url=${extAppUrl} user=${extAppUser}`);
     let response = await AppFetch(`${extAppUrl}/token`, {
       method: 'POST',
       body: `username=${extAppUser}&password=${extAppPWD}`,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     if (response.ok) {
-      console.log('response of Tocken ------------');
+      logger.info('ExtApp token updated successfully');
       let data = await response.json();
-      console.log(data);
+      logger.debug(`UpdateToken response data: ${JSON.stringify(data)}`);
       if (data.access_token) {
         accessToken.token = data.access_token;
         accessToken.date = new Date();
       }
       return data.accessToken;
     } else {
-      console.log('Error in getting token');
+      logger.error('Error getting ExtApp token');
       throw new Error(`${response.status} ${response.statusText}`);
     }
   }
 
-  static async missionStart(missionId, mission) {
-    console.log('Mission Start');
+  // `externalId` is the task id the external system assigned — it is what ExtApp
+  // must be addressed by, NOT our internal mission PK. Callers (missionModel)
+  // translate PK → externalId before invoking these methods.
+  static async missionStart(externalId, mission) {
+    logger.info(`missionStart externalId=${externalId}`);
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
@@ -60,10 +64,7 @@ export class ExtApp {
       myMission.push({ deviceId: myDevice.id, wp: myWP });
     }
 
-    console.log('mission_id: ' + missionId);
-    console.log('routes');
-
-    console.log(myMission);
+    logger.debug(`missionStart sending mission_id=${externalId} routes: ${JSON.stringify(myMission)}`);
 
     let sendResponse = await AppFetch(`${extAppUrl}/drones/mission/start`, {
       method: 'POST',
@@ -72,21 +73,18 @@ export class ExtApp {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        mission_id: Number(missionId),
+        mission_id: Number(externalId),
         routes: myMission,
       }),
     });
     if (sendResponse.ok) {
-      console.log('response OK Send start to external applications');
-      //let command = await sendResponse.json();
-      //console.log(command);
+      logger.info('missionStart sent to external application successfully');
     } else {
-      console.log('error in sending mission start to external application');
-      //throw new Error(sendResponse.status);
+      logger.error('error sending mission start to external application');
     }
   }
-  static async missionResult(missionId, resultCode) {
-    console.log('======= send mission  Result to ext app ==================');
+  static async missionResult(externalId, resultCode) {
+    logger.info(`missionResult externalId=${externalId} resultCode=${resultCode}`);
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
@@ -95,10 +93,10 @@ export class ExtApp {
       await this.UpdateToken();
     }
     let request = {
-      mission_id: missionId,
+      mission_id: externalId,
       resolution_code: resultCode,
     };
-    console.log(request);
+    logger.debug(`missionResult request: ${JSON.stringify(request)}`);
     let sendResponse = await AppFetch(`${extAppUrl}/drones/mission/result`, {
       method: 'POST',
       headers: {
@@ -108,16 +106,13 @@ export class ExtApp {
       body: JSON.stringify(request),
     });
     if (sendResponse.ok) {
-      console.log('Response ok to send result of mission');
-      //let command = await sendResponse.json();
-      //console.log(command);
+      logger.info('missionResult sent to external application successfully');
     } else {
-      console.log('Error in sending mission result to external application');
-      //throw new Error(sendResponse.status);
+      logger.error('error sending mission result to external application');
     }
   }
-  static async missionMedia(missionId, results) {
-    console.log('Mission Media');
+  static async missionMedia(externalId, results) {
+    logger.info(`missionMedia externalId=${externalId}`);
     if (accessToken.token) {
       if (new Date() - accessToken.date > 10000) {
         await this.UpdateToken();
@@ -126,11 +121,11 @@ export class ExtApp {
       await this.UpdateToken();
     }
     let request = {
-      mission_id: missionId,
+      mission_id: externalId,
       files: results.files,
       result: results.data,
     };
-    console.log(request);
+    logger.debug(`missionMedia request: ${JSON.stringify(request)}`);
 
     let sendResponse = await AppFetch(`${extAppUrl}/drones/mission/media`, {
       method: 'POST',
@@ -141,11 +136,9 @@ export class ExtApp {
       body: JSON.stringify(request),
     });
     if (sendResponse.ok) {
-      console.log('Response ok to send media of mission -----');
-      //let command = await sendResponse.json();
+      logger.info('missionMedia sent to external application successfully');
     } else {
-      console.log("Error in sending mission's media to external application");
-      //throw new Error(sendResponse.status);
+      logger.error('error sending mission media to external application');
     }
   }
 }

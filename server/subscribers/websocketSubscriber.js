@@ -1,5 +1,47 @@
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
+
+/**
+ * Mapa declarativo evento → payload de salida.
+ *
+ * Cada entrada es una transformación pura `(data) => payload` que el dispatcher
+ * genérico (`forward`) envía por WebSocket. Agregar un broadcast nuevo es una
+ * línea acá, no un método más.
+ *
+ * El subscriber es 100% outbound: solo mapea eventos → mensajes WS. Los comandos
+ * entrantes los maneja el WebsocketInboundRouter, no este archivo.
+ */
+const OUTBOUND_MAP = {
+  // Misiones
+  [EVENTS.MISSION_PLAN_SHOWN]: (mission) => ({
+    missionPlan: { ...mission, name: mission.name || 'unnamed_mission' },
+  }),
+  [EVENTS.MISSION_UPDATED]: (data) => ({ missionUpdated: data }),
+  [EVENTS.ROUTE_UPDATED]: (data) => ({ routeUpdated: data }),
+
+  // Telemetría batcheada: positionBroadcastBatcher agrupa los devices que
+  // cambiaron desde el último flush y emite esto cada WS_POSITIONS_INTERVAL_MS
+  // (ver positionBroadcastBatcher.js). El snapshot completo al conectar va
+  // aparte, por WelcomeMessage (no pasa por acá).
+  [EVENTS.POSITION_UPDATED]: (positions) => (positions && Object.keys(positions).length ? { positions } : null),
+  [EVENTS.DEVICE_UPDATED]: (devices) => ({ devices: Object.values(devices) }),
+  [EVENTS.SERVER_UPDATED]: (serverState) => ({ server: serverState }),
+
+  // Sistema
+  [EVENTS.EVENT_CREATED]: (event) => ({ events: [event] }),
+
+  // Chat
+  [EVENTS.CHAT_CREATED]: (data) => ({ chatCreated: data }),
+  [EVENTS.CHAT_BUSY]: ({ chatId, busy }) => ({ chatBusy: { chatId, busy } }),
+  [EVENTS.CHAT_ASSISTANT_MESSAGE]: ({ chatId, message }) => ({
+    chat: {
+      chatId,
+      from: 'assistant',
+      message,
+      timestamp: new Date().toISOString(),
+    },
+  }),
+};
 
 /**
  * Subscriber que escucha eventos del EventBus y los envía a través de WebSocket
@@ -21,30 +63,13 @@ export class WebSocketSubscriber {
   }
 
   /**
-   * Configura todas las suscripciones a eventos
+   * Configura todas las suscripciones a eventos: cada entrada del `OUTBOUND_MAP`
+   * se registra como un broadcast declarativo. Sin handlers imperativos.
    */
   setupSubscriptions() {
-    // Eventos de misiones
-    this.subscribe(EVENTS.MISSION_CREATED, this.onMissionCreated.bind(this));
-    this.subscribe(EVENTS.MISSION_UPDATED, this.onMissionUpdated.bind(this));
-    this.subscribe(EVENTS.MISSION_INIT, this.onMissionInit.bind(this));
-
-    // Eventos del sistema
-    this.subscribe(EVENTS.EVENT_CREATED, this.onEventCreated.bind(this));
-
-    // Eventos de posiciones (opcional, para futuro)
-    this.subscribe(EVENTS.POSITION_UPDATED, this.onPositionUpdated.bind(this));
-    this.subscribe(EVENTS.CAMERA_UPDATED, this.onCameraUpdated.bind(this));
-
-    // Eventos de dispositivos
-    this.subscribe(EVENTS.DEVICE_UPDATED, this.onDeviceUpdated.bind(this));
-
-    // Eventos del servidor
-    this.subscribe(EVENTS.SERVER_UPDATED, this.onServerUpdated.bind(this));
-
-    // Eventos de chat
-    this.subscribe(EVENTS.CHAT_USER_MESSAGE, this.onUserMessage.bind(this));
-    this.subscribe(EVENTS.CHAT_ASSISTANT_MESSAGE, this.onMessageFromAssistant.bind(this));
+    for (const [eventName, transform] of Object.entries(OUTBOUND_MAP)) {
+      this.subscribe(eventName, (data) => this.forward(eventName, transform, data));
+    }
 
     logger.info('WebSocketSubscriber subscriptions ready', {
       subscriptions: this.listeners.length,
@@ -60,157 +85,16 @@ export class WebSocketSubscriber {
   }
 
   /**
-   * Maneja la creación de misiones
+   * Dispatcher genérico: aplica la transformación del mapa y envía el payload.
+   * Si la transformación devuelve algo vacío, no envía nada.
    */
-  onMissionCreated(mission) {
-    logger.debug('WebSocketSubscriber: mission created', {
-      missionId: mission.id,
-      name: mission.name,
-    });
+  forward(eventName, transform, data) {
+    logger.debug('WebSocketSubscriber → outbound', { event: eventName });
 
-    this.wsController.sendMessage({
-      mission: {
-        ...mission,
-        name: mission.name || 'unnamed_mission',
-      },
-    });
-  }
+    const payload = transform(data);
+    if (payload == null) return;
 
-  /**
-   * Maneja la actualización de misiones
-   */
-  onMissionUpdated(mission) {
-    logger.debug('WebSocketSubscriber: mission updated', {
-      missionId: mission.id,
-    });
-
-    this.wsController.sendMessage({
-      mission: mission,
-    });
-  }
-
-  /**
-   * Maneja la inicialización de misiones
-   */
-  onMissionInit(mission) {
-    logger.debug('WebSocketSubscriber: mission init', {
-      missionId: mission.id,
-    });
-
-    this.wsController.sendMessage({
-      mission: {
-        ...mission,
-        name: mission.name || 'name',
-      },
-    });
-  }
-
-  /**
-   * Maneja la creación de eventos
-   */
-  onEventCreated(event) {
-    logger.debug('WebSocketSubscriber: event created', {
-      eventType: event.type,
-      deviceId: event.deviceId,
-    });
-
-    this.wsController.sendMessage({
-      events: [event],
-    });
-  }
-
-  /**
-   * Maneja actualizaciones de posiciones
-   */
-  onPositionUpdated(positions) {
-    // Solo enviar si hay datos
-    if (positions && Object.keys(positions).length > 0) {
-      this.wsController.sendMessage({
-        positions: positions,
-      });
-    }
-  }
-
-  /**
-   * Maneja actualizaciones de cámara
-   */
-  onCameraUpdated(camera) {
-    // Solo enviar si hay datos
-    if (camera && Object.keys(camera).length > 0) {
-      this.wsController.sendMessage({
-        camera: Object.values(camera),
-      });
-    }
-  }
-
-  /**
-   * Maneja actualizaciones de dispositivos
-   */
-  onDeviceUpdated(devices) {
-    this.wsController.sendMessage({
-      devices: Object.values(devices),
-    });
-  }
-
-  /**
-   * Maneja actualizaciones del servidor
-   */
-  onServerUpdated(serverState) {
-    this.wsController.sendMessage({
-      server: serverState,
-    });
-  }
-  /**
-   * Maneja mensajes del usuario (trigger LLM processing)
-   */
-  async onUserMessage(data) {
-    const { chatController } = await import('../controllers/chat.js');
-
-    logger.debug('WebSocketSubscriber: chat user message', {
-      chatId: data.chatId,
-      messageLength: data.message.length,
-    });
-
-    try {
-      const result = await chatController.processMessage(data);
-
-      // If a new chat was created (chatId was empty), notify the client
-      if (!data.chatId && result.chatId) {
-        this.wsController.sendMessage({
-          chatCreated: {
-            chatId: result.chatId,
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-    } catch (error) {
-      logger.error('WebSocketSubscriber: Error in chatController.processMessage', {
-        chatId: data.chatId,
-        error: error.message,
-        stack: error.stack,
-      });
-    }
-  }
-
-  /**
-   * Maneja mensajes del asistente
-   */
-  onMessageFromAssistant(data) {
-    const { chatId, message } = data;
-
-    logger.debug('WebSocketSubscriber: chat message from assistant', {
-      chatId,
-      messageType: message.type || 'text',
-    });
-
-    this.wsController.sendMessage({
-      chat: {
-        chatId: chatId,
-        from: 'assistant',
-        message: message,
-        timestamp: new Date().toISOString(),
-      },
-    });
+    this.wsController.sendMessage(payload);
   }
 
   /**

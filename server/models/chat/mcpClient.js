@@ -4,7 +4,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import logger, { chatLogger } from '../../common/logger.js';
+import { logger, chatLogger } from '../../common/logger.js';
 
 import { MCPconfig } from '../../config/config.js';
 
@@ -23,7 +23,7 @@ class MCPclient {
   async connectStdio() {
     this.transport = new StdioClientTransport({
       command: 'npx',
-      args: ['-y', 'tsx', '/home/grvc/mcpServers/muav_gui_assistant/src/index.ts', 'stdio'],
+      args: ['-y', 'tsx', '/home/grvc/work/px4/llm_planner_gcs/mcp_server/src/index.ts', 'stdio'],
     });
   }
   async connectHttp() {
@@ -42,7 +42,7 @@ class MCPclient {
       if (this.client) {
         try {
           await this.client.close();
-        } catch (e) {
+        } catch {
           // Ignore errors when closing
         }
       }

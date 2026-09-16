@@ -9,8 +9,3 @@ planningRouter.get('/missionstype', planningController.getTypes);
 planningRouter.get('/missionparam/:type', planningController.getParam);
 planningRouter.get('/getDefault', planningController.getDefault);
 planningRouter.post('/setDefault', planningController.setDefault);
-planningRouter.post('/setMarkers', planningController.setMarkers);
-planningRouter.get('/getBases', planningController.getBases);
-planningRouter.get('/getMarkers', planningController.getElements);
-planningRouter.get('/getMarkersTypes', planningController.getMarkersTypes);
-planningRouter.get('/getBasesWithAssignments', planningController.getBasesWithAssignments);

@@ -2,13 +2,10 @@ import child_process from 'child_process';
 import sharp from 'sharp';
 import exif from 'exif-reader';
 import util from 'util';
-import { processThermalImg, processThermalsSrc } from '../config/config.js';
+import { processThermalImg, processThermalScript } from '../config/config.js';
+import { logger } from '../common/logger.js';
 
 const exec = util.promisify(child_process.exec);
-
-function getNormalSize({ width, height, orientation }) {
-  return (orientation || 0) >= 5 ? { width: height, height: width } : { width, height };
-}
 
 /*
 / convert from DMS to DD
@@ -27,7 +24,7 @@ function convertDMSToDD(degrees, minutes, seconds, direction) {
   */
 
 export async function getMetadata(path) {
-  console.log('metadata imagen');
+  logger.debug(`getMetadata: ${path}`);
   let latitude;
   let longitude;
   let measures = [];
@@ -54,7 +51,7 @@ export async function getMetadata(path) {
   );
   if (!dataexitf.Photo.hasOwnProperty('UserComment')) return { latitude, longitude, measures };
 
-  let mystring = dataexitf.Photo.UserComment.toString('utf8').replace(/\u0000/g, '');
+  let mystring = dataexitf.Photo.UserComment.toString('utf8').replaceAll('\u0000', '');
   let userdata = JSON.parse(mystring.slice(7).trim());
 
   if (userdata.hasOwnProperty('MinTemp')) measures.push({ name: 'TempMin', value: userdata.MinTemp });
@@ -66,21 +63,21 @@ export async function getMetadata(path) {
 }
 
 export async function ProcessThermalImage(input, output) {
-  console.log('process thermal image' + input);
-  if (!processThermalImg) return false;
-  //conda run -n DJIThermal
-  console.log('last images process');
-  console.log('process img' + input + ' ' + output);
-  try {
-    const { stdout, stderr } = await exec(
-      ` ${processThermalsSrc} -i "${input}" -o "${output}" `, { shell: '/bin/bash' }
-    );
-    console.log('stdout:', stdout);
-    console.log('stderr:', stderr);
-  } catch (e) {
-    console.error(e);
+  logger.info(`Processing ThermalImage: ${input} -> ${output}`);
+  if (!processThermalImg) {
+    logger.info('Thermal image processing is disabled');
     return false;
   }
-  console.log('finish process');
+  try {
+    const { stdout, stderr } = await exec(` ${processThermalScript} -i "${input}" -o "${output}" `, {
+      shell: '/bin/bash',
+    });
+    logger.debug(`stdout: ${stdout}`);
+    if (stderr) logger.debug(`stderr: ${stderr}`);
+  } catch (e) {
+    logger.error(e);
+    return false;
+  }
+  logger.info('ProcessThermalImage finished');
   return true;
 }

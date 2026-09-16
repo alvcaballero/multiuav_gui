@@ -9,9 +9,17 @@ const MissionPlanSchema = {
     primaryKey: true,
     type: DataTypes.INTEGER,
   },
+  name: {
+    type: DataTypes.STRING,
+  },
   missionData: {
     allowNull: false,
     type: DataTypes.JSON,
+  },
+  source: {
+    allowNull: false,
+    type: DataTypes.STRING,
+    defaultValue: 'manual',
   },
   createdAt: {
     allowNull: false,

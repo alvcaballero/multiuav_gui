@@ -8,18 +8,13 @@ windows:
       panes:
         - backend:
             - cd ~/work/px4/multiuav_gui/server
-            - nvm use 20
-            - npm run server
+            - nvm use && npm run server
         - glyphserver:
             - cd ~/work/px4/glyphserver
-            - nvm use 12
-            - sleep 3
-            - npm start
+            - nvm use 12 && npm start
         - frontend:
-            - cd ~/work/px4/multiuav_gui
-            - nvm use 20
-            - open -a "Google Chrome" http://127.0.0.1:3000
-            - sleep 2;npm run start
+            - cd ~/work/px4/multiuav_gui/client
+            - nvm use && npm run start
   - Docker:
       layout: tiled
       panes:

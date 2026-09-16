@@ -16,7 +16,7 @@ services:
     working_dir: /home/node/app
     volumes:
       - ./glyphserver/:/home/node/app
-    ports: # use if it is necessary to expose the container to the host machine
+    ports:
       - '8484:8484'
     command: 'npm run start'
 
@@ -37,15 +37,16 @@ services:
     network_mode: host
 
   RosBridge:
-    image: 'muavgcs:ros1'
+    image: '${ROSBRIDGE_IMAGE:-muavgcs:ros1}'
     command: >
-      bash -c "source /root/catkin_ws/devel/setup.bash && roslaunch aerialcore_gui connect_uas.launch"
+      bash -c "${ROSBRIDGE_CMD:-source /root/catkin_ws/devel/setup.bash && roslaunch aerialcore_gui connect_uas.launch}"
     network_mode: host
 
   Planner:
     image: 'muavgcs:planner'
     ports:
       - '8004:8004'
+
 volumes:
   osmOffline:
     external: true

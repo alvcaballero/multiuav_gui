@@ -1,26 +1,19 @@
-import React, { useState, Fragment } from 'react';
-import SelectField from '../common/components/SelectField';
+import { useState } from 'react';
+import SelectField from '../shared/components/SelectField';
 import {
-  Divider,
-  IconButton,
-  Button,
-  Select,
   TextField,
-  FormControl,
-  InputLabel,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Typography,
-  MenuItem,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
-import useQuery from '../common/useQuery';
+import useQuery from '../shared/useQuery';
 import EditItemView from './components/EditItemView';
-
+import DeviceCameraEditor from '../components/devices/DeviceCameraEditor';
+import DeviceFilesEditor from '../components/devices/DeviceFilesEditor';
 
 const SettingsDevicesPageEdit = () => {
   const { classes } = useSettingsStyles();
@@ -31,30 +24,6 @@ const SettingsDevicesPageEdit = () => {
   const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
 
   const validate = () => item && item.name && item.category && item.protocol && item.ip;
-
-  const Remove_camera = (index) => {
-    let auxcamera = JSON.parse(JSON.stringify(item.camera));
-    auxcamera.splice(index, 1);
-    setItem({ ...item, camera: auxcamera });
-  };
-  function addNewcamera() {
-    let auxcamera = JSON.parse(JSON.stringify(item.camera));
-    auxcamera.push({ type: 'WebRTC', source: '' });
-    setItem({ ...item, camera: auxcamera });
-  }
-  const Remove_file = (index) => {
-    let auxcamera = JSON.parse(JSON.stringify(item.files));
-    auxcamera.splice(index, 1);
-    setItem({ ...item, files: auxcamera });
-  };
-  const addNewFile = () => {
-    if (!item.files) {
-      item.files = [];
-    }
-    let auxfile = JSON.parse(JSON.stringify(item.files));
-    auxfile.push({ type: 'onboard_computer', url: '' });
-    setItem({ ...item, files: auxfile });
-  };
 
   return (
     <EditItemView
@@ -109,158 +78,11 @@ const SettingsDevicesPageEdit = () => {
             </AccordionDetails>
           </Accordion>
 
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Camera Stream</Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.details}>
-              <Typography variant="caption">Source example:main</Typography>
-              {item.camera &&
-                item.camera.map((action_key, index_ac, list_ac) => (
-                  <Fragment key={'fragment-action-' + index_ac}>
-                    <Typography variant="subtitle1" className={classes.attributeName}>
-                      {'Camera ' + index_ac}
-                    </Typography>
-                    <div>
-                      <FormControl variant="outlined">
-                        <InputLabel id="demo-simple-select-outlined-label">CameraType</InputLabel>
-                        <Select
-                          labelId="demo-simple-select-outlined-label"
-                          id="demo-simple-select-outlined"
-                          value={action_key['type']}
-                          label="type"
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              camera: item.camera.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
-                        >
-                          <MenuItem value="WebRTC">WebRTC</MenuItem>
-                          <MenuItem value="WebRTC_env">WebRTCenv</MenuItem>
-                          <MenuItem value="Websocket">Websocket</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <div className={classes.actionValue}>
-                        <TextField
-                          required
-                          fullWidth={true}
-                          label="Source"
-                          value={action_key['source']}
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              camera: item.camera.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['source'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
-                        />
-                      </div>
-                      <IconButton
-                        sx={{
-                          py: 0,
-                          pr: 2,
-                          marginLeft: 'auto',
-                        }}
-                        onClick={() => Remove_camera(index_ac)}
-                        className={classes.negative}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </div>
-                    <Divider></Divider>
-                  </Fragment>
-                ))}
-
-              <Button variant="contained" onClick={addNewcamera}>
-                Add camera source
-              </Button>
-            </AccordionDetails>
-          </Accordion>
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Device Files Resurces</Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.details}>
-              <Typography variant="caption">
-                The url format sftp://user:password@Ip:port It can be compatible for sftp or ftp protovol
-              </Typography>
-              {item.files &&
-                item.files.map((action_key, index_ac, list_ac) => (
-                  <Fragment key={'fragment-action-file' + index_ac}>
-                    <Typography variant="subtitle1" className={classes.attributeName}>
-                      {'File ' + index_ac}
-                    </Typography>
-                    <div>
-                      <FormControl variant="outlined">
-                        <InputLabel id="demo-simple-select-outlined-label">CameraType</InputLabel>
-                        <Select
-                          labelId="demo-simple-select-outlined-label"
-                          id="demo-simple-select-outlined"
-                          value={action_key['type']}
-                          label="type"
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              files: item.files.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['type'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
-                        >
-                          <MenuItem value="onboard_computer">Onboard computer</MenuItem>
-                          <MenuItem value="wiris_pro">Wiris_pro</MenuItem>
-                          <MenuItem value="default">default</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <div className={classes.actionValue}>
-                        <TextField
-                          required
-                          fullWidth={true}
-                          label="URL"
-                          value={action_key['url']}
-                          onChange={(e) =>
-                            setItem({
-                              ...item,
-                              files: item.files.map((cam, cam_ind) => {
-                                let mycam = JSON.parse(JSON.stringify(cam));
-                                index_ac == cam_ind ? (mycam['url'] = e.target.value) : null;
-                                return mycam;
-                              }),
-                            })
-                          }
-                        />
-                      </div>
-                      <IconButton
-                        sx={{
-                          py: 0,
-                          pr: 2,
-                          marginLeft: 'auto',
-                        }}
-                        onClick={() => Remove_file(index_ac)}
-                        className={classes.negative}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </div>
-                    <Divider></Divider>
-                  </Fragment>
-                ))}
-
-              <Button variant="contained" onClick={addNewFile}>
-                Add files source
-              </Button>
-            </AccordionDetails>
-          </Accordion>
+          <DeviceCameraEditor
+            value={item.camera}
+            onChange={(camera) => setItem({ ...item, camera })}
+          />
+          <DeviceFilesEditor value={item.files} onChange={(files) => setItem({ ...item, files })} />
         </>
       )}
     </EditItemView>

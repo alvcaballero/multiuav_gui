@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { migrateMarkers, migratePlanning, generateBaseId } from './sessionMigration';
+import { migrateMarkers, migratePlanning, generateLocalId } from './sessionMigration';
 
 const { reducer, actions } = createSlice({
   name: 'session',
@@ -12,7 +12,6 @@ const { reducer, actions } = createSlice({
     logs: [],
     positions: {},
     history: {},
-    camera: {},
     markers: {
       bases: [],
       elements: [],
@@ -47,7 +46,8 @@ const { reducer, actions } = createSlice({
     },
     updatePositions(state, action) {
       //console.log('Updating positions', action.payload);
-      const liveRoutes = state.user?.attributes?.mapLiveRoutes || state.server.attributes.mapLiveRoutes || 'none';
+      const liveRoutes =
+        state.user?.attributes?.mapLiveRoutes || state.server.attributes.mapLiveRoutes || 'none';
       const liveRoutesLimit =
         (state.user?.attributes && state.user?.attributes['web.liveRouteLength']) ||
         state.server.attributes['web.liveRouteLength'] ||
@@ -79,10 +79,11 @@ const { reducer, actions } = createSlice({
       state.markers.elements.push(...action.payload);
     },
     addMarkerBase(state, action) {
-      // Asegurar que las nuevas bases tengan ID
+      // Las bases importadas (ej. desde KML) no tienen id real todavía — el
+      // servidor lo asigna recién en el primer guardado (ver sessionMigration.js).
       const newBases = action.payload.map((base) => {
-        if (base.id) return base;
-        return { ...base, id: generateBaseId() };
+        if (base.id != null) return base;
+        return { ...base, tempId: base.tempId ?? generateLocalId() };
       });
       state.markers.bases.push(...newBases);
     },
@@ -93,56 +94,8 @@ const { reducer, actions } = createSlice({
         state.planning = migrated;
       }
     },
-    // Nuevas acciones para trabajar con la estructura mejorada
-    setBaseAssignment(state, action) {
-      const { baseId, device, settings } = action.payload;
-      const existingIndex = state.planning.assignments.findIndex((a) => a.baseId === baseId);
-
-      if (existingIndex >= 0) {
-        // Actualizar asignación existente
-        state.planning.assignments[existingIndex] = {
-          baseId,
-          device,
-          settings: settings || state.planning.assignments[existingIndex].settings,
-        };
-      } else {
-        // Crear nueva asignación
-        state.planning.assignments.push({
-          baseId,
-          device,
-          settings: settings || state.planning.defaultSettings,
-        });
-      }
-    },
-    removeBaseAssignment(state, action) {
-      const baseId = action.payload;
-      state.planning.assignments = state.planning.assignments.filter((a) => a.baseId !== baseId);
-    },
-    updateBaseSettings(state, action) {
-      const { baseId, settings } = action.payload;
-      const assignment = state.planning.assignments.find((a) => a.baseId === baseId);
-      if (assignment) {
-        assignment.settings = { ...assignment.settings, ...settings };
-      }
-    },
-    updateDefaultSettings(state, action) {
-      state.planning.defaultSettings = { ...state.planning.defaultSettings, ...action.payload };
-    },
     updatePlanningObjective(state, action) {
       state.planning.objetivo = action.payload;
-    },
-    updatePlanningLocations(state, action) {
-      state.planning.loc = action.payload;
-    },
-    updateSettingsSchema(state, action) {
-      state.planning.settingsSchema = action.payload;
-    },
-    updateCamera(state, action) {
-      if (Object.keys(action.payload).length > 0) {
-        action.payload.forEach((camera) => {
-          state.camera[camera.deviceId] = camera;
-        });
-      }
     },
     updateScene3dOrigin(state, action) {
       state.scene3d.origin = action.payload;

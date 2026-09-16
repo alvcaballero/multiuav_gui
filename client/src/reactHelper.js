@@ -10,31 +10,41 @@ export const usePrevious = (value) => {
   return ref.current;
 };
 
-/* eslint-disable */
-export const useEffectAsync = (effect, deps) => {
+export const useAsyncTask = (effect, deps) => {
   const dispatch = useDispatch();
-  const ref = useRef();
   useEffect(() => {
-    effect()
-      .then((result) => ref.current = result)
-      .catch((error) => dispatch(errorsActions.push(error.message)));
-      
+    const controller = new AbortController();
+    let cleanup;
+    effect({ signal: controller.signal })
+      .then((result) => {
+        cleanup = result;
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          dispatch(errorsActions.push(error.message));
+        }
+      });
     return () => {
-      const result = ref.current;
-      if (result) {
-        result();
-      }
+      controller.abort();
+      cleanup?.();
     };
-  }, [...deps, dispatch]);
+    // `effect` is intentionally excluded (caller passes inline functions), `deps` is caller-provided
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+  }, [...deps, dispatch]); // oxlint-disable-line react-doctor/exhaustive-deps
 };
 
 export const useCatch = (method) => {
   const dispatch = useDispatch();
-  return (...parameters) => {
-    method(...parameters).catch((error) => dispatch(errorsActions.push(error.message)));
-  };
+  return (...parameters) => method(...parameters).catch((error) => dispatch(errorsActions.push(error.message)));
 };
 
 export const useCatchCallback = (method, deps) => {
-  return useCallback(useCatch(method), deps);
+  const dispatch = useDispatch();
+  return useCallback(
+    (...parameters) =>
+      method(...parameters).catch((error) => dispatch(errorsActions.push(error.message))),
+    // `deps` is caller-provided, same pattern as useAsyncTask
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    [...deps, dispatch], // oxlint-disable-line react-doctor/exhaustive-deps
+  );
 };

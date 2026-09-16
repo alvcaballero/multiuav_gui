@@ -1,0 +1,119 @@
+import React, { Fragment, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+
+import { Divider, Box, Button, TextField } from '@mui/material';
+
+import { missionActions } from '../../store';
+import RouteRoutesList from './RouteRouteList';
+
+const RoutesList = ({ mission: missionProp, setScrool, NoEdit = false }) => {
+  const dispatch = useDispatch();
+
+  // Read from Redux (live editor) unless a mission is supplied via props (e.g. read-only reports)
+  const reduxMission = useSelector((state) => state.mission);
+  const mission = missionProp ?? reduxMission;
+  const selectwp = useSelector((state) => state.mission.selectpoint);
+
+  const [expanded, setExpanded] = useState(null);
+
+  const hasMission = mission.route.length > 0;
+
+  useEffect(() => {
+    if (selectwp.id >= 0) {
+      setExpanded(`r${selectwp.route_id}-wp${selectwp.id}`);
+      setScrool(500 + selectwp.route_id * 50 + selectwp.id * 50);
+    }
+  }, [selectwp, setScrool]);
+
+  const handleCreateNewMission = () => {
+    dispatch(missionActions.createNewMission({ name: 'new Mission' }));
+    dispatch(missionActions.addRoute());
+  };
+
+  const handleAddNewRoute = () => {
+    dispatch(missionActions.addRoute());
+  };
+
+  const handleNameChange = (event) => {
+    dispatch(missionActions.updateName(event.target.value));
+  };
+
+  const handleDescriptionChange = (event) => {
+    dispatch(missionActions.updateDescription(event.target.value));
+  };
+
+  return (
+    <Fragment>
+      {!hasMission ? (
+        !NoEdit && (
+          <Box sx={{ textAlign: 'center' }}>
+            <Button
+              variant="contained"
+              size="large"
+              sx={{ width: '80%', flexShrink: 0 }}
+              style={{ marginTop: '15px' }}
+              onClick={handleCreateNewMission}
+            >
+              Create New Mission
+            </Button>
+          </Box>
+        )
+      ) : (
+        <Fragment>
+          <Box
+            style={{
+              display: 'flex',
+              gap: '10px',
+              flexDirection: 'column',
+              margin: '20px',
+            }}
+          >
+            <TextField
+              required
+              disabled={NoEdit}
+              label="Name Mission"
+              variant="standard"
+              value={mission.name || ''}
+              onChange={handleNameChange}
+            />
+            <TextField
+              required
+              disabled={NoEdit}
+              label="Description of mission"
+              variant="standard"
+              value={mission.description || ''}
+              onChange={handleDescriptionChange}
+            />
+            {mission.route.map((item_route, index, list) => (
+              <Fragment key={'fragment-route-' + item_route.id}>
+                <RouteRoutesList
+                  index={index}
+                  route={item_route}
+                  expanded={expanded}
+                  setExpanded={setExpanded}
+                  NoEdit={NoEdit}
+                />
+                {index < list.length - 1 ? <Divider /> : null}
+              </Fragment>
+            ))}
+            {!NoEdit && (
+              <Box sx={{ textAlign: 'center' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{ width: '80%', flexShrink: 0 }}
+                  style={{ marginTop: '15px' }}
+                  onClick={handleAddNewRoute}
+                >
+                  Add new Route
+                </Button>
+              </Box>
+            )}
+          </Box>
+        </Fragment>
+      )}
+    </Fragment>
+  );
+};
+
+export default RoutesList;

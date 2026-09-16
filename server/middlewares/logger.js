@@ -1,4 +1,4 @@
-import logger, { logHelpers } from '../common/logger.js';
+import { logger, logHelpers } from '../common/logger.js';
 import morgan from 'morgan'; // Renamed to avoid conflict with our logger
 
 // Middleware para logging de requests usando nuestro logger
@@ -14,7 +14,7 @@ function requestLoggingMiddleware(req, res, next) {
   // Log del response cuando termine
   res.on('finish', () => {
     const duration = Date.now() - start;
-    logHelpers.api.response(req.method, req.url, res.statusCode, duration);
+    logHelpers.api.response(req.method, req.originalUrl, res.statusCode, duration);
   });
 
   next();
@@ -33,7 +33,7 @@ export function setupLogger(app) {
   );
 
   // Configurar manejo de errores con logging
-  app.use((err, req, res, next) => {
+  app.use((err, req, res, _next) => {
     logHelpers.api.error(req.method, req.url, err, {
       stack: err.stack,
       statusCode: err.status || 500,

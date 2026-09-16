@@ -1,0 +1,17 @@
+[project]
+name = "process-thermal-img"
+version = "0.1.0"
+description = "Process thermal images extracted from DJI M300 / WirisPro missions"
+requires-python = ">=3.9"
+dependencies = [
+    "opencv-python-headless",
+    "thermal-base @ git+https://github.com/detecttechnologies/thermal_base.git@main",
+    "numpy",
+    "Pillow",
+    "piexif",
+    "PyExifTool",
+    "requests",
+]
+
+[tool.uv]
+package = false

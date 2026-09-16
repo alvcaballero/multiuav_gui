@@ -17,13 +17,16 @@ export class ExtAppController {
     let response = await ExtApp.missionMedia(req.body.mission_id, req.body.results);
     res.json(response);
   }
-  static missionReqStart(missionId, mission) {
-    ExtApp.missionStart(missionId, mission);
+  // These *Req* methods are the internal (server → external) callbacks. They receive
+  // the EXTERNAL task id (already translated from the internal PK by missionModel),
+  // because ExtApp must address the external system by the id it assigned.
+  static missionReqStart(externalId, mission) {
+    ExtApp.missionStart(externalId, mission);
   }
-  static async missionReqResult(missionId, resultCode) {
-    return await ExtApp.missionResult(missionId, resultCode);
+  static async missionReqResult(externalId, resultCode) {
+    return await ExtApp.missionResult(externalId, resultCode);
   }
-  static missionReqMedia(missionId, attributes) {
-    ExtApp.missionMedia(missionId, attributes);
+  static missionReqMedia(externalId, attributes) {
+    ExtApp.missionMedia(externalId, attributes);
   }
 }

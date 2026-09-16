@@ -2,7 +2,10 @@ import { devicesController } from './devices.js';
 import { rosController } from './ros.js';
 import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
+import { WS_STATE_INTERVAL_MS } from '../config/config.js';
+import { encodeCameraFrame } from '../subscribers/cameraStreamSubscriber.js';
 
 let wsController = null;
 
@@ -10,8 +13,7 @@ export class websocketController {
   constructor(wsManager) {
     this.wsManager = wsManager;
 
-    this.interval_update = setInterval(this.updateclient.bind(this), 2000);
-    this.interval_server = setInterval(this.updateserver.bind(this), 10000);
+    this.interval_server = setInterval(this.updateserver.bind(this), WS_STATE_INTERVAL_MS);
     // wellcome msg
     this.setupWelcomeMessage();
   }
@@ -20,6 +22,15 @@ export class websocketController {
     this.wsManager.onClientConnect = async (client) => {
       const msg = await this.WelcomeMessage();
       this.sendMessage(msg, client);
+
+      // Camera frames push on arrival now (see CameraStreamSubscriber), not on
+      // the polling interval — so a client connecting mid-session needs an
+      // explicit unicast of whatever's cached, or it sees nothing until the
+      // next ROS frame for that device.
+      const camera = await positionsController.getCamera();
+      Object.values(camera).forEach((payload) => {
+        this.sendBinary(encodeCameraFrame(payload), client);
+      });
     };
   }
 
@@ -32,29 +43,39 @@ export class websocketController {
     }
   }
 
-  async updateclient() {
-    try {
-      const msg = await this.updateMessage();
-      // Solo enviar si hay datos
-      if (Object.keys(msg).length > 0) {
-        this.sendMessage(msg, null);
-      }
-    } catch (error) {
-      logger.error('Error in updateclient', {
-        error: error.message,
-        stack: error.stack
-      });
+  sendBinary(buffer, client = null) {
+    if (client) {
+      client.send(buffer);
+    } else {
+      this.wsManager.broadcast(buffer);
     }
   }
 
+  /**
+   * Snapshot periódico de estado (server + devices) — mismo pipeline por eventos.
+   *
+   * Positions ya NO pasa por acá: `positionBroadcastBatcher` agrupa los devices
+   * que cambiaron (vía `positionsController.updatePosition`, llamado en cada
+   * mensaje ROS/FlatBuffer) y emite POSITION_UPDATED con el lote cada
+   * WS_POSITIONS_INTERVAL_MS (ver models/positions/positionBroadcastBatcher.js).
+   * Camera tampoco: se empuja frame a frame por CameraStreamSubscriber apenas ROS
+   * publica uno nuevo (ver positionsController.updateCamera).
+   *
+   * El scheduler ya NO toca el socket: emite eventos de dominio y el
+   * WebSocketSubscriber es el único adaptador de salida (pipeline unificado).
+   * El shaping del mensaje de salida vive en el subscriber (OUTBOUND_MAP).
+   */
   async updateserver() {
     try {
-      const msg = await this.serverUpdateMessage();
-      this.sendMessage(msg, null);
+      const devices = await devicesController.getAllDevices();
+      const server = await rosController.getServerStatus();
+
+      eventBus.emitSafe(EVENTS.SERVER_UPDATED, { rosState: server.state });
+      eventBus.emitSafe(EVENTS.DEVICE_UPDATED, devices);
     } catch (error) {
       logger.error('Error in updateserver', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
     }
   }
@@ -64,7 +85,6 @@ export class websocketController {
    */
   destroy() {
     logger.info('websocketController cleanup');
-    clearInterval(this.interval_update);
     clearInterval(this.interval_server);
   }
 
@@ -72,7 +92,7 @@ export class websocketController {
     const devices = await devicesController.getAllDevices();
     const positions = await positionsController.getLastPositions();
     const server = await rosController.getServerStatus();
-    const planning = planningController.getDefaultPlanning();
+    const planning = await planningController.getDefaultPlanning();
     return {
       positions: positions,
       server: { rosState: server.state },
@@ -87,29 +107,6 @@ export class websocketController {
         settings: planning.settings,
         assignments: planning.assignments || [],
       },
-    };
-  }
-
-  async updateMessage() {
-    let currentsocket = {};
-    const positions = await positionsController.getLastPositions();
-    const camera = await positionsController.getCamera();
-    if (Object.values(positions).length) {
-      currentsocket['positions'] = positions;
-    }
-    if (Object.values(camera).length) {
-      currentsocket['camera'] = Object.values(camera);
-    }
-    return currentsocket;
-  }
-
-  async serverUpdateMessage() {
-    const devices = await devicesController.getAllDevices();
-    const server = await rosController.getServerStatus();
-
-    return {
-      server: { rosState: server.state },
-      devices: Object.values(devices),
     };
   }
 }

@@ -1,0 +1,49 @@
+<% gcs = File.expand_path('../..', __FILE__) %>
+# gcs-dev.yml — stack completo de desarrollo: GCS + ROS1 + Planner + MCP + rosbag
+# Uso: tmuxinator start -p infra/tmuxinator/gcs-dev.yml
+name: gcs-dev
+root: <%= gcs %>
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: main-vertical
+      panes:
+        - backend:
+            - cd <%= gcs %>/server
+            - nvm use 20
+            - sleep 3
+            - npm run server
+        - mcp:
+            - cd <%= gcs %>/mcp_server
+            - nvm use 22
+            - npm run dev:http
+        - frontend:
+            - cd <%= gcs %>/client
+            - nvm use 20
+            - sleep 3
+            - npm run start
+
+  - Docker:
+      layout: tiled
+      panes:
+        - rosbridge:
+            - docker compose \
+                -f <%= gcs %>/infra/compose/compose.base.yaml \
+                -f <%= gcs %>/infra/compose/compose.ros1.yaml up RosBridge
+        - planner:
+            - docker compose \
+                -f <%= gcs %>/infra/compose/compose.base.yaml \
+                -f <%= gcs %>/infra/compose/compose.planner.yaml up Planner
+        - video:
+            - docker compose -f <%= gcs %>/infra/compose/compose.base.yaml up VideoServer
+        - aux:
+            - sleep 8
+            - docker exec -it $(docker ps -qf "ancestor=muavgcs:ros1") bash
+
+  - Bags:
+      layout: tiled
+      panes:
+        - bag:
+            - sleep 10
+            - docker exec -it $(docker ps -qf "ancestor=muavgcs:ros1") bash -c "cd /home/user/bags && rosbag play -l <bag_file>.bag"

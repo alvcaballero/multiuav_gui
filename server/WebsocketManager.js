@@ -1,8 +1,9 @@
 //https://github.com/lukas8219/nodejs-design-patterns/blob/4a1d3cd4333a290e9461880ff2b060add40a1b45/13-messaging-and-integration-patterns/utils/websocket-manager.mjs#L4
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
 
-import WebSocket, { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { logHelpers } from './common/logger.js';
+import { WS_PING_INTERVAL_MS } from './config/config.js';
 
 function heartbeat() {
   this.isAlive = true;
@@ -12,39 +13,25 @@ export class WebsocketManager {
   constructor(server, path = '/api/socket') {
     this.ws = new WebSocketServer({ path: path, server: server });
 
-    this.onConnect(async (client) => {
-      client.onMessage(async (rawMessage) => {
-        try {
-          const messageStr = rawMessage.toString();
-          logHelpers.ws.message('client', messageStr);
+    // Handler externo para mensajes entrantes (lo setea el router vía onMessage).
+    // El transporte NO parsea ni conoce tipos de negocio: solo delega el crudo.
+    this.messageHandler = null;
 
-          // Parse JSON message
-          const message = JSON.parse(messageStr);
+    this.ws.on('connection', (client) => this._onConnection(client));
 
-          // Route based on message type
-          if (message.type === 'chat:user_message') {
-            // Import EventBus dynamically to avoid circular dependencies
-            const { eventBus, EVENTS } = await import('./common/eventBus.js');
-
-            // Emit to EventBus for processing
-            eventBus.emitSafe(EVENTS.CHAT_USER_MESSAGE, {
-              chatId: message.payload.chatId,
-              message: message.payload.message,
-              timestamp: message.payload.timestamp,
-              metadata: message.payload.metadata || {},
-            });
-          }
-        } catch (error) {
-          logHelpers.ws.error('Message parse error', error);
-        }
-      });
-    });
-
-    this.interval_ping = setInterval(this.ping.bind(this), 30000);
+    this.interval_ping = setInterval(this.ping.bind(this), WS_PING_INTERVAL_MS);
 
     this.ws.on('close', () => {
       this._clearIntervals();
     });
+  }
+
+  /**
+   * Registra el handler de mensajes entrantes. Recibe `(client, rawMessage)`,
+   * donde `client` es el wrapper WebsocketClient (para poder responder).
+   */
+  onMessage(handler) {
+    this.messageHandler = handler;
   }
 
   ping() {
@@ -76,28 +63,32 @@ export class WebsocketManager {
     clearInterval(this.interval_ping);
   }
 
-  onConnect(cb) {
-    this.ws.on('connection', (client) => {
-      client.isAlive = true;
-      logHelpers.ws.connect(this.ws.clients.size);
+  _onConnection(rawClient) {
+    rawClient.isAlive = true;
+    logHelpers.ws.connect(this.ws.clients.size);
 
-      client.on('error', (error) => {
-        logHelpers.ws.error('clientId', error);
-      });
+    const client = new WebsocketClient(this, { client: rawClient });
 
-      client.on('pong', heartbeat);
+    rawClient.on('error', (error) => {
+      logHelpers.ws.error('clientId', error);
+    });
 
-      client.on('close', () => {
-        logHelpers.ws.disconnect('Client disconnected');
-      });
+    rawClient.on('pong', heartbeat);
 
-      if (this.onClientConnect) {
-        this.onClientConnect(client);
-      }
-      if (cb) {
-        cb(new WebsocketClient(this, { client }));
+    rawClient.on('close', () => {
+      logHelpers.ws.disconnect('Client disconnected');
+    });
+
+    // Delega el mensaje crudo al router externo; el transporte no lo interpreta.
+    client.onMessage((rawMessage) => {
+      if (this.messageHandler) {
+        this.messageHandler(client, rawMessage);
       }
     });
+
+    if (this.onClientConnect) {
+      this.onClientConnect(rawClient);
+    }
   }
 }
 

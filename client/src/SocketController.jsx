@@ -1,23 +1,26 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch, connect } from 'react-redux';
-import { useEffectAsync } from './reactHelper';
+import React, { useState, useRef, useCallback } from 'react';
+import { useDispatch, connect } from 'react-redux';
+import { useAsyncTask } from './reactHelper';
 import alarm from './resources/alarm.mp3';
-import { devicesActions, missionActions, sessionActions, chatActions } from './store'; // here update device action with position of uav for update in map
+import {
+  store,
+  devicesActions,
+  missionActions,
+  sessionActions,
+  chatActions,
+  activeMissionsActions,
+} from './store';
 import { eventsActions } from './store/events';
-import { Snackbar } from '@mui/material';
-import { SnackbarProvider, enqueueSnackbar, useSnackbar } from 'notistack';
-import store from './store';
+import { loadMissionPlanToEditor } from './services/missionPlanLoader';
+import { SnackbarProvider, enqueueSnackbar } from 'notistack';
 
 const logoutCode = 4000;
-const snackBarDurationLongMs = 1000;
 
 const SocketController = () => {
   const dispatch = useDispatch();
 
   const socketRef = useRef();
-  const [socketState, setsocketState] = useState(true);
-
-  const [notifications, setNotifications] = useState([]);
+  const [socketState, setSocketState] = useState(true);
 
   const handleEvents = useCallback(
     (events) => {
@@ -25,16 +28,15 @@ const SocketController = () => {
       if (events.some((e) => e.type === 'error')) {
         new Audio(alarm).play();
       }
-      setNotifications(
-        events.map((event) => ({
-          id: event.id,
-          type: event.type,
-          message: event.attributes.message,
-          show: true,
-        }))
-      );
+      events.forEach((event) => {
+        enqueueSnackbar(event.attributes.message ? event.attributes.message : 'unknow error', {
+          variant: event.type,
+          autoHideDuration: 3000,
+          persist: false,
+        });
+      });
     },
-    [dispatch, setNotifications]
+    [dispatch],
   );
 
   const connectSocket = () => {
@@ -42,6 +44,10 @@ const SocketController = () => {
     const socket = new WebSocket(`${protocol}//${window.location.host}/api/socket`);
     console.log(`${protocol}//${window.location.host}/api/socket`);
     //const socket = new WebSocket(`${protocol}//${window.location.host}`);
+    // Camera frames arrive as binary WS messages (see SocketCameraCanvas); this
+    // JSON handler ignores them via the type guard below, but binaryType still
+    // needs to be arraybuffer so those listeners get an ArrayBuffer, not a Blob.
+    socket.binaryType = 'arraybuffer';
     socketRef.current = socket;
     window.websocket = socket; // Store socket reference globally for sendChatMessage
     console.log('funcion web socket');
@@ -67,7 +73,7 @@ const SocketController = () => {
           if (devicesResponse.status === 401 || positionsResponse.status === 401) {
             //navigate('/login');
           }
-        } catch (error) {
+        } catch {
           // ignore errors
         }
         setTimeout(() => connectSocket(), 60000);
@@ -75,6 +81,8 @@ const SocketController = () => {
     };
 
     socket.onmessage = (event) => {
+      // Binary frames (camera) are handled by their own listeners; not JSON.
+      if (typeof event.data !== 'string') return;
       const data = JSON.parse(event.data);
       if (data.devices) {
         dispatch(devicesActions.update(data.devices));
@@ -82,17 +90,9 @@ const SocketController = () => {
       if (data.positions) {
         dispatch(sessionActions.updatePositions(data.positions));
       }
-      if (data.camera) {
-        dispatch(sessionActions.updateCamera(data.camera));
-      }
       if (data.server) {
-        data.server.rosState === 'connect'
-          ? dispatch(sessionActions.updateServerROS(true))
-          : dispatch(sessionActions.updateServerROS(false));
-      }
-      if (data.mission) {
-        console.log(data.mission);
-        dispatch(missionActions.updateMission(data.mission));
+        const isRosConnected = data.server.rosState === 'connect';
+        dispatch(sessionActions.updateServerROS(isRosConnected));
       }
       if (data.events) {
         handleEvents(data.events);
@@ -107,22 +107,80 @@ const SocketController = () => {
         dispatch(chatActions.addMessage(data.chat));
       }
       if (data.chatCreated) {
-        // Server created a new chat, update the active chat ID
         dispatch(chatActions.setActiveChat(data.chatCreated.chatId));
+      }
+      if (data.missionPlan) {
+        console.log(data.missionPlan);
+        dispatch(missionActions.updateMission(data.missionPlan));
+        // Server pushed a mission into the editor — drop any active selection.
+        dispatch(activeMissionsActions.selectMission(null));
+      }
+      if (data.missionUpdated) {
+        dispatch(activeMissionsActions.upsertMission(data.missionUpdated));
+      }
+      if (data.routeUpdated) {
+        const { missionId } = data.routeUpdated;
+        const known = store.getState().activeMissions.items[missionId];
+        if (!known) {
+          // Route arrived before initial fetch or before its missionUpdated — fetch it now
+          Promise.all([
+            fetch(`/api/missions?id=${missionId}`).then((r) => (r.ok ? r.json() : null)),
+            fetch(`/api/missions/routes?missionId=${missionId}`).then((r) =>
+              r.ok ? r.json() : null,
+            ),
+          ]).then(([mission, routes]) => {
+            if (mission)
+              dispatch(
+                activeMissionsActions.upsertMission(Array.isArray(mission) ? mission[0] : mission),
+              );
+            if (routes)
+              dispatch(
+                activeMissionsActions.setRoutes(
+                  Array.isArray(routes) ? routes : Object.values(routes),
+                ),
+              );
+          });
+        }
+        dispatch(activeMissionsActions.upsertRoute(data.routeUpdated));
       }
     };
   };
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (socketState) {
-      setsocketState(false);
-      const response = await fetch('/api/devices');
-      if (response.ok) {
-        dispatch(devicesActions.refresh(await response.json()));
+      setSocketState(false);
+
+      const [devicesRes, missionsRes, routesRes] = await Promise.all([
+        fetch('/api/devices'),
+        fetch('/api/missions'),
+        fetch('/api/missions/routes'),
+      ]);
+
+      if (devicesRes.ok) {
+        dispatch(devicesActions.refresh(await devicesRes.json()));
       } else {
-        throw Error(await response.text());
+        throw Error(await devicesRes.text());
       }
-      console.log('Socket first connection');
+      if (missionsRes.ok) {
+        const missions = await missionsRes.json();
+        const missionList = Array.isArray(missions) ? missions : [missions].filter(Boolean);
+        dispatch(activeMissionsActions.setMissions(missionList));
+
+        // Pre-select the most recent active mission so the tracking panel opens
+        // showing something useful right away, instead of nothing selected — and
+        // load its plan into the editor/map, same as clicking it manually would.
+        if (missionList.length > 0) {
+          const mostRecent = missionList.reduce((latest, m) =>
+            new Date(m.initTime) > new Date(latest.initTime) ? m : latest,
+          );
+          dispatch(activeMissionsActions.selectMission(mostRecent.id));
+          loadMissionPlanToEditor(mostRecent.id, dispatch);
+        }
+      }
+      if (routesRes.ok) {
+        dispatch(activeMissionsActions.setRoutes(await routesRes.json()));
+      }
+
       connectSocket();
       return () => {
         const socket = socketRef.current;
@@ -132,19 +190,9 @@ const SocketController = () => {
       };
     }
     return null;
-  }, []);
-
-  useEffect(() => {
-    console.log('notifications');
-    console.log(notifications);
-    for (let i = 0; i < notifications.length; i += 1) {
-      enqueueSnackbar(notifications[i].message ? notifications[i].message : 'unknow error', {
-        variant: notifications[i].type,
-        autoHideDuration: 3000,
-        persist: false,
-      });
-    }
-  }, [notifications]);
+    // connectSocket/socketState intentionally excluded: this must run once on
+    // mount only; dispatch is injected internally by useAsyncTask, see reactHelper.js
+  }, []); // eslint-disable-line @eslint-react/exhaustive-deps
 
   return (
     <>
@@ -159,29 +207,6 @@ const SocketController = () => {
       />
     </>
   );
-};
-
-// Helper function to send chat messages via WebSocket
-export const sendChatMessage = (chatId, message) => {
-  // Get the socket from the store or window
-  const socket = window.websocket;
-
-  if (!socket || socket.readyState !== WebSocket.OPEN) {
-    console.error('WebSocket not connected');
-    throw new Error('WebSocket not connected');
-  }
-
-  const payload = {
-    type: 'chat:user_message',
-    payload: {
-      chatId: chatId,
-      message: message,
-      timestamp: new Date().toISOString(),
-    }
-  };
-
-  console.log('Sending chat message via WebSocket:', payload);
-  socket.send(JSON.stringify(payload));
 };
 
 export default connect()(SocketController);

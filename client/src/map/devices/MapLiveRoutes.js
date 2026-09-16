@@ -1,0 +1,87 @@
+import { useId, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { useTheme } from '@mui/material/styles';
+import { map } from '../core/mapInstance';
+import { useAttributePreference } from '../../shared/preferences';
+
+const MapLiveRoutes = () => {
+  const id = useId();
+
+  const theme = useTheme();
+
+  const type = useAttributePreference('mapLiveRoutes', 'none');
+
+  const devices = useSelector((state) => state.devices.items);
+  const selectedDeviceId = useSelector((state) => state.devices.selectedId);
+
+  const history = useSelector((state) => state.session.history);
+
+  useEffect(() => {
+    if (type !== 'none') {
+      map.addSource(id, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [],
+          },
+        },
+      });
+      map.addLayer({
+        source: id,
+        id,
+        type: 'line',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': 2,
+        },
+      });
+
+      return () => {
+        if (map.getLayer(id)) {
+          map.removeLayer(id);
+        }
+        if (map.getSource(id)) {
+          map.removeSource(id);
+        }
+      };
+    }
+    return () => {};
+  }, [type, id]);
+
+  useEffect(() => {
+    if (type !== 'none') {
+      const deviceIds = Object.values(devices).flatMap((device) => {
+        const deviceId = device.id;
+        if (type === 'selected' && deviceId !== selectedDeviceId) return [];
+        if (!history.hasOwnProperty(deviceId)) return [];
+        return [deviceId];
+      });
+
+      map.getSource(id)?.setData({
+        type: 'FeatureCollection',
+        features: deviceIds.map((deviceId) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: history[deviceId],
+          },
+          properties: {
+            color:
+              (devices[deviceId].attributes && devices[deviceId].attributes['web.reportColor']) ||
+              theme.palette.geometry.main,
+          },
+        })),
+      });
+    }
+  }, [theme, type, devices, selectedDeviceId, history, id]);
+
+  return null;
+};
+
+export default MapLiveRoutes;

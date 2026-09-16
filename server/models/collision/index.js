@@ -6,10 +6,10 @@
  * @module collision
  *
  * @example
- * import { validateMission, resolveCollisions } from './collision/index.js';
+ * import { validateMissionCollission, resolveCollisions } from './collision/index.js';
  *
  * // Validate a mission
- * const validation = validateMission(mission, obstacles);
+ * const validation = validateMissionCollission(mission, obstacles);
  * if (!validation.valid) {
  *   console.log(`Found ${validation.totalCollisions} collisions`);
  * }
@@ -21,19 +21,18 @@
 // Collision Detection
 export {
   validateRoute,
-  validateMission,
+  computeRouteDistance,
+  validateMissionCollission,
   findCollidingObstacles,
-  formatCollisionReport,
-  formatRouteReport,
+  findInterRouteCollisions,
   formatMissionReport,
 } from './collisionDetector.js';
 
 // Detour Generation
-export {
-  generateDetour,
-  applyDetoursToRoute,
-  resolveCollisions,
-} from './detourGenerator.js';
+export { generateDetour, applyDetoursToRoute, resolveCollisions } from './detourGenerator.js';
+
+// Inspection Coverage Validation
+export { validateInspectionCoverage, formatInspectionReport } from './inspectionValidator.js';
 
 // Geometry Utilities (for advanced use)
 export {
@@ -41,7 +40,13 @@ export {
   distance2D,
   pointInAABB,
   pointInCylinder,
+  pointInOBB,
   segmentIntersectsAABB,
   segmentIntersectsCylinder,
-  cylinderFromObstacleZone,
+  segmentIntersectsOBB,
+  closestPointsBetweenSegments,
+  obstacleCenter,
+  obstacleCylinder,
+  obstacleAABB,
+  obstacleOBB,
 } from './geometry.js';

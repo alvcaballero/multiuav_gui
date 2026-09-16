@@ -1,0 +1,30 @@
+.gauge-tick-label {
+  position: absolute;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.gauge-sensor-label {
+  position: absolute;
+  left: 1px;
+  white-space: nowrap;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.gauge-indicator {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.gauge-indicator-value {
+  background-color: white;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  font-weight: bold;
+  flex-shrink: 0;
+}

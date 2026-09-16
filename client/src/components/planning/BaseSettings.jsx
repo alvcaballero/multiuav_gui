@@ -1,0 +1,234 @@
+import { useState } from 'react';
+import { makeStyles } from 'tss-react/mui';
+
+import {
+  Box,
+  IconButton,
+  TextField,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+} from '@mui/material';
+
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import SelectField from '../../shared/components/SelectField';
+
+// https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
+
+const EMPTY_SETTINGS = {};
+
+const useStyles = makeStyles()((theme) => ({
+  list: {
+    maxHeight: '100%',
+    overflow: 'auto',
+  },
+  icon: {
+    width: '25px',
+    height: '25px',
+    filter: 'brightness(0) invert(1)',
+  },
+  details: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    paddingBottom: theme.spacing(3),
+  },
+  attributeName: {
+    display: 'inline-block',
+    width: '40%',
+    textAlign: 'left',
+    verticalAlign: 'middle',
+  },
+  attribute: {
+    display: 'inline-block',
+    width: '58%',
+  },
+  actionValue: {
+    display: 'inline-block',
+    width: '40%',
+  },
+}));
+
+const BaseSettings = ({
+  data,
+  markers,
+  param,
+  defaultSettings = EMPTY_SETTINGS,
+  setData,
+  type = 'Base',
+  goToBase = () => null,
+}) => {
+  const { classes } = useStyles();
+
+  const [expanded, setExpanded] = useState(false);
+  const dataExist = !(markers && markers.bases && markers.bases.length > 0);
+
+  const handleChange = (panel) => (event, isExpanded) => {
+    setExpanded(isExpanded ? panel : false);
+  };
+
+  const modifyData = (assignmentIndex, field, objvalue) => {
+    const auxData = structuredClone(data);
+    console.log(auxData);
+
+    if (field === 'device') {
+      // Actualizar el device
+      auxData[assignmentIndex].device = { ...auxData[assignmentIndex].device, ...objvalue };
+    } else if (field === 'settings') {
+      // Actualizar settings
+      auxData[assignmentIndex].settings = { ...auxData[assignmentIndex].settings, ...objvalue };
+    }
+
+    setData(auxData);
+  };
+
+  return (
+    <div>
+      {dataExist ? (
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography>No existen bases</Typography>
+        </Box>
+      ) : (
+        <div className={classes.details}>
+          {markers.bases.map((base, baseIndex) => {
+            // Buscar si existe una asignación para esta base
+            const assignmentIndex = data.findIndex((a) => a.baseId === base.id);
+            const assignment = assignmentIndex >= 0 ? data[assignmentIndex] : null;
+
+            return (
+              <Accordion
+                key={base.id}
+                expanded={expanded === `wp ${base.id}`}
+                onChange={handleChange(`wp ${base.id}`)}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AccordionSummary expandIcon={<ExpandMore />} sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
+                      {`${type} ${baseIndex} - ${assignment?.device?.name || 'Sin asignar'}`}
+                    </Typography>
+                  </AccordionSummary>
+                  <IconButton
+                    sx={{ mr: 1, flexShrink: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToBase(base.id);
+                    }}
+                  >
+                    <MyLocationIcon />
+                  </IconButton>
+                </Box>
+                <AccordionDetails className={classes.details}>
+                  {expanded === `wp ${base.id}` && (
+                    <Box
+                      component="form"
+                      sx={{
+                        '& .MuiTextField-root': { m: 1 },
+                      }}
+                    >
+                      <div>
+                        <Typography variant="subtitle1" style={{ display: 'inline' }}>
+                          Device params
+                        </Typography>
+                      </div>
+                      <div>
+                        {param.devices &&
+                          Object.keys(param.devices).map((actionKey) => (
+                            <div key={actionKey}>
+                              {actionKey === 'id' && (
+                                <SelectField
+                                  emptyValue={''}
+                                  fullWidth
+                                  label="device"
+                                  value={assignment?.device?.id || ''}
+                                  endpoint="/api/devices"
+                                  keyGetter={(it) => String(it.id)}
+                                  titleGetter={(it) => `${it.name} - ${it.category}`}
+                                  onChange={(e, items) => {
+                                    console.log(items);
+                                    console.log(e.target.value);
+
+                                    // Crear o actualizar asignación
+                                    const auxData = structuredClone(data);
+                                    const deviceId = e.target.value;
+                                    const selectedDevice = items.find(
+                                      (item) => +item.id === +deviceId,
+                                    );
+
+                                    if (assignmentIndex >= 0) {
+                                      // Actualizar asignación existente
+                                      auxData[assignmentIndex].device = {
+                                        id: deviceId,
+                                        name: deviceId === '' ? '' : selectedDevice?.name || '',
+                                      };
+                                    } else {
+                                      // Crear nueva asignación
+                                      auxData.push({
+                                        baseId: base.id,
+                                        device: {
+                                          id: deviceId,
+                                          name: deviceId === '' ? '' : selectedDevice?.name || '',
+                                        },
+                                        settings: defaultSettings,
+                                      });
+                                    }
+
+                                    setData(auxData);
+                                  }}
+                                />
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                      <div>
+                        <Typography variant="subtitle1" style={{ display: 'inline' }}>
+                          Settings
+                        </Typography>
+                      </div>
+                      <div>
+                        {param.settings &&
+                          Object.keys(param.settings).map((actionKey) => (
+                            <div key={actionKey}>
+                              {param.settings[actionKey].name && (
+                                <>
+                                  <Typography variant="subtitle1" className={classes.attributeName}>
+                                    {param.settings[actionKey].name}
+                                  </Typography>
+                                  <div className={classes.actionValue}>
+                                    <TextField
+                                      required
+                                      fullWidth
+                                      type="number"
+                                      defaultValue={
+                                        assignment?.settings?.[actionKey] !== undefined
+                                          ? assignment.settings[actionKey]
+                                          : param.settings[actionKey].default
+                                      }
+                                      onBlur={(e) => {
+                                        if (assignmentIndex >= 0) {
+                                          modifyData(assignmentIndex, 'settings', {
+                                            [actionKey]: +e.target.value,
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default BaseSettings;

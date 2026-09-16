@@ -27,20 +27,14 @@
   },
   "obstacles": [
     {
-      "name": "B6",
-      "type": "windTurbine",
+      "obstacle_id": "B6",
+      "obstacle_name": "Wind turbine B6",
+      "geometry_type": "circle",
       "position": { "x": -730.772, "y": 411.171, "z": 0 },
-      "zones": {
-        "exclusion_zone": "Cilindro: radio 35m, altura 108m (z: 0→108).",
-        "caution_zone": "Cilindro: radio 50m, altura 108m (z: 0→108).",
-        "safe_zone": "Fuera de radio 50m o por encima de z>108m + margen."
-      },
-      "safe_passages": ["North lateral passage at y=470m", "South lateral passage at y=350m"],
-      "aabb": {
-        "min_point": { "x": -765.772, "y": 376.171, "z": 0 },
-        "max_point": { "x": -695.772, "y": 446.171, "z": 108 }
-      },
-      "metadata": "Target turbine (Line B)"
+      "dimensions": { "radius": 35 },
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
     }
   ]
 }

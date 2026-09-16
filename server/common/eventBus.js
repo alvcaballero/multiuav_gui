@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import logger from './logger.js';
+import { logger } from './logger.js';
 
 /**
  * Sistema centralizado de eventos para desacoplar la comunicación entre componentes.
@@ -12,7 +12,7 @@ import logger from './logger.js';
  * - 'position:updated' - Posición actualizada
  * - 'device:updated' - Dispositivo actualizado
  * - 'server:updated' - Estado del servidor actualizado
- * - 'chat:message' - Nuevo mensaje de chat del usuario
+ * - 'chat:created' - Chat nuevo creado por el server (notificación al cliente)
  * - 'chat:assistant_message' - Nuevo mensaje de chat del asistente
  */
 class EventBus extends EventEmitter {
@@ -28,11 +28,11 @@ class EventBus extends EventEmitter {
     // Log de todos los eventos emitidos (útil para debugging)
     const originalEmit = this.emit.bind(this);
     this.emit = (eventName, ...args) => {
-      logger.debug('EventBus emit', {
-        eventName,
-        hasData: args.length > 0,
-        listeners: this.listenerCount(eventName)
-      });
+      // logger.debug('EventBus emit', {
+      //   eventName,
+      //   hasData: args.length > 0,
+      //   listeners: this.listenerCount(eventName),
+      // });
       return originalEmit(eventName, ...args);
     };
   }
@@ -57,7 +57,7 @@ class EventBus extends EventEmitter {
       logger.error('EventBus emit error', {
         eventName,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       return false;
     }
@@ -76,7 +76,7 @@ class EventBus extends EventEmitter {
         logger.error('EventBus listener error', {
           eventName,
           error: error.message,
-          stack: error.stack
+          stack: error.stack,
         });
       }
     };
@@ -92,12 +92,12 @@ class EventBus extends EventEmitter {
     const events = this.eventNames();
     const stats = {
       totalEvents: events.length,
-      events: {}
+      events: {},
     };
 
-    events.forEach(eventName => {
+    events.forEach((eventName) => {
       stats.events[eventName] = {
-        listeners: this.listenerCount(eventName)
+        listeners: this.listenerCount(eventName),
       };
     });
 
@@ -119,17 +119,18 @@ export const eventBus = new EventBus();
 // Constantes de eventos para evitar typos
 export const EVENTS = Object.freeze({
   // Misiones
-  MISSION_CREATED: 'mission:created',
-  MISSION_UPDATED: 'mission:updated',
-  MISSION_INIT: 'mission:init',
-  MISSION_STATUS_CHANGED: 'mission:status:changed',
+  MISSION_PLAN_SHOWN: 'mission:plan:shown', // Raw plan pushed to the client editor (manual/chat create, automatic planner init)
+  MISSION_UPDATED: 'mission:updated', // Mission DB row created/edited (status, endTime, etc.)
+  ROUTE_UPDATED: 'mission:route:updated', // MissionRoute DB row created/edited (status, currentWp, etc.)
 
   // Eventos del sistema
   EVENT_CREATED: 'event:created',
 
   // Posiciones
-  POSITION_UPDATED: 'position:updated',
-  CAMERA_UPDATED: 'camera:updated',
+  POSITION_UPDATED: 'position:updated', // Batched broadcast to clients: payload is the devices that changed since the last flush, sent every WS_POSITIONS_INTERVAL_MS
+  POSITION_RECEIVED: 'position:received', // Raw per-message signal, internal only (mission tracking)
+  CAMERA_RECEIVED: 'camera:received', // Raw per-message signal, internal only (camera stream subscriber)
+  POSITION_HISTORY_WARNING: 'position:history:warning',
 
   // Dispositivos
   DEVICE_UPDATED: 'device:updated',
@@ -137,8 +138,10 @@ export const EVENTS = Object.freeze({
   // Servidor
   SERVER_UPDATED: 'server:updated',
   // Chat
-  CHAT_USER_MESSAGE: 'chat:message',
+  CHAT_CREATED: 'chat:created',
+  CHAT_USER_MESSAGE: 'chat:user_message',
   CHAT_ASSISTANT_MESSAGE: 'chat:assistant_message',
+  CHAT_BUSY: 'chat:busy',
   // Sistema
   SYSTEM_ERROR: 'system:error',
   SYSTEM_SHUTDOWN: 'system:shutdown',

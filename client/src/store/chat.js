@@ -1,5 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// Cap on live messages kept per conversation in Redux (browser memory). Older
+// messages stay safely in the server DB and can be re-fetched via
+// prependMessages when the user scrolls up (see hasMoreOlder).
+const MAX_LIVE_MESSAGES = 300;
+
 const initialState = {
   // Map of chatId -> chat object
   conversations: {},
@@ -40,6 +45,7 @@ const chatSlice = createSlice({
         state.conversations[chatId] = {
           id: chatId,
           messages: [],
+          hasMoreOlder: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -67,6 +73,7 @@ const chatSlice = createSlice({
         state.conversations[chatId] = {
           id: chatId,
           messages: [],
+          hasMoreOlder: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -80,25 +87,47 @@ const chatSlice = createSlice({
         id: message.id || `msg_${Date.now()}_${Math.random()}`,
       };
 
-      state.conversations[chatId].messages.push(newMessage);
-      state.conversations[chatId].updatedAt = new Date().toISOString();
+      const conversation = state.conversations[chatId];
+      conversation.messages.push(newMessage);
+      // Keep only the most recent MAX_LIVE_MESSAGES in memory. The rest stay
+      // in the server DB — hasMoreOlder tells the UI it can page them back in.
+      if (conversation.messages.length > MAX_LIVE_MESSAGES) {
+        conversation.messages.splice(0, conversation.messages.length - MAX_LIVE_MESSAGES);
+        conversation.hasMoreOlder = true;
+      }
+      conversation.updatedAt = new Date().toISOString();
     },
 
-    // Add multiple messages (for loading history)
+    // Replace messages wholesale (initial history load for a chat)
     setMessages(state, action) {
-      const { chatId, messages } = action.payload;
+      const { chatId, messages, hasMore = false } = action.payload;
 
       if (!state.conversations[chatId]) {
         state.conversations[chatId] = {
           id: chatId,
           messages: [],
+          hasMoreOlder: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
       }
 
       state.conversations[chatId].messages = messages;
+      state.conversations[chatId].hasMoreOlder = hasMore;
       state.conversations[chatId].updatedAt = new Date().toISOString();
+    },
+
+    // Prepend an older page of messages (infinite-scroll-up pagination).
+    // Dedupes by timestamp in case the boundary message is fetched twice.
+    prependMessages(state, action) {
+      const { chatId, messages, hasMore = false } = action.payload;
+      const conversation = state.conversations[chatId];
+      if (!conversation) return;
+
+      const existingTimestamps = new Set(conversation.messages.map((m) => m.timestamp));
+      const olderOnes = messages.filter((m) => !existingTimestamps.has(m.timestamp));
+      conversation.messages = [...olderOnes, ...conversation.messages];
+      conversation.hasMoreOlder = hasMore;
     },
 
     // Create a new chat conversation
@@ -109,6 +138,7 @@ const chatSlice = createSlice({
         id: chatId,
         name: name || `Chat ${Object.keys(state.conversations).length + 1}`,
         messages: [],
+        hasMoreOlder: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -202,7 +232,13 @@ export const forkConversation = (sourceChatId, messageTimestamp) => async (dispa
     if (historyResponse.ok) {
       const data = await historyResponse.json();
       if (data.messages?.length > 0) {
-        dispatch(chatActions.setMessages({ chatId: newChat.id, messages: data.messages }));
+        dispatch(
+          chatActions.setMessages({
+            chatId: newChat.id,
+            messages: data.messages,
+            hasMore: data.hasMore ?? false,
+          }),
+        );
       }
     }
 

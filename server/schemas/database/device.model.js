@@ -1,7 +1,4 @@
-import { get } from 'http';
-import { type } from 'os';
 import { Model, DataTypes, Sequelize } from 'sequelize';
-import { set } from 'zod';
 
 const Device_TABLE = 'Devices';
 

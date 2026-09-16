@@ -1,34 +1,62 @@
-import { missionModel } from '../models/mission.js';
+import { missionModel } from '../models/mission/mission.js';
 import {
-  validateMission,
+  validateMissionCollission,
   resolveCollisions as resolveCollisionsAlgo,
   formatMissionReport,
+  validateInspectionCoverage,
+  formatInspectionReport,
 } from '../models/collision/index.js';
+import { resolveInspectionTargets } from '../models/markers/inspectionTargets.js';
+import { devicesController } from './devices.js';
+import { missionLogger as logger } from '../common/logger.js';
+
+/**
+ * Build a single unambiguous reason string for the OVERALL verdict, combining
+ * collision and inspection-coverage results so the caller doesn't have to
+ * infer it from separate per-section status lines.
+ */
+function buildOverallReason(result, inspection, unknownTargetIds) {
+  const reasons = [];
+  if (result.totalCollisions > 0) {
+    reasons.push(`${result.totalCollisions} collision(s) with obstacles`);
+  }
+  if (result.interRouteCollisions?.length > 0) {
+    reasons.push(`${result.interRouteCollisions.length} inter-UAV conflict(s)`);
+  }
+  if (inspection?.missing.length > 0) {
+    reasons.push(`${inspection.missing.length} target(s) not covered`);
+  }
+  if (unknownTargetIds.length > 0) {
+    reasons.push(`${unknownTargetIds.length} unknown target id(s)`);
+  }
+  if (reasons.length > 0) {
+    return reasons.join('; ');
+  }
+  return inspection ? 'no collisions, all targets inspected' : 'no collisions';
+}
 
 class missionController {
   static getMission = async (req, res) => {
-    const response = await missionModel.getMissionValue(req.query.id);
+    const response = await missionModel.getMissionValue(req.query.id, req.query.all === 'true');
     res.json(response);
   };
 
   static createMission = async (req, res) => {
-    const response = await missionModel.setMission(req.body);
+    const response = await missionModel.broadcastMission(req.body);
     res.json(response);
   };
 
   static getRoutes = async (req, res) => {
-    console.log('get routes');
+    logger.debug('getRoutes');
     const response = await missionModel.getRoutes(req.query);
     res.json(Object.values(response));
   };
   static sendTask = async (req, res) => {
-    console.log('======== send task ========');
-    console.log(req.body);
+    logger.info(`sendTask: ${JSON.stringify(req.body)}`);
     let id = req.body.id || req.body.mission_id;
     let name = req.body.name;
     let objetivo = req.body.objetivo;
     let locations = req.body.locations || req.body.loc;
-    console.log(locations);
     let meteo = []; // req.body.meteo;
     for (let i = 0; i < locations.length; i++) {
       locations[i].hasOwnProperty('items') ? null : (locations[i].items = []);
@@ -42,16 +70,15 @@ class missionController {
         locations[i].items[j].hasOwnProperty('lon')
           ? (locations[i].items[j].longitude = locations[i].items[j].lon)
           : null;
-        console.log(locations[i].items[j]);
       }
     }
-    console.log('id: ', id);
-    let response = await missionModel.sendTask({ id, name, objetivo, locations, meteo });
+    logger.debug(`sendTask id=${id}`);
+    await missionModel.sendTask({ id, name, objetivo, locations, meteo });
     res.status(200).json('all ok');
   };
 
   static showMission = async (mission_data) => {
-    let response = await missionModel.setMission(mission_data);
+    let response = await missionModel.broadcastMission(mission_data);
     return response;
   };
 
@@ -60,13 +87,52 @@ class missionController {
       const response = await missionModel.showMissionXYZ(req.body);
       res.json(response);
     } catch (error) {
-      console.error('Error in showMissionXYZ:', error);
+      logger.error(`Error in showMissionXYZ: ${error.message}`);
       res.status(500).json({ error: error.message || 'Failed to show mission XYZ.' });
     }
   };
 
-  static initMission = (mission_id, data) => {
-    missionModel.initMission(mission_id, data);
+  // Manual flow — load. Body: { route: [...] } (a mission's routes).
+  // Returns { missionId, planId, results }.
+  static loadMissionManual = async (req, res) => {
+    const missionData = req.body?.route ? req.body : { route: req.body?.mission?.route ?? [] };
+    if (!Array.isArray(missionData.route) || missionData.route.length === 0) {
+      return res.status(400).json({ error: 'route is required and must be a non-empty array.' });
+    }
+    try {
+      const response = await missionModel.loadMissionManual(missionData);
+      res.json(response);
+    } catch (error) {
+      logger.error(`Error in loadMissionManual: ${error.message}`);
+      res.status(500).json({ error: error.message || 'Failed to load mission.' });
+    }
+  };
+
+  // Manual flow — command. Body: { missionId }. Returns { missionId, results }.
+  static commandMissionManual = async (req, res) => {
+    const missionId = req.body?.missionId;
+    if (missionId == null) {
+      return res.status(400).json({ error: 'missionId is required.' });
+    }
+    try {
+      const mission = await missionModel.getMissionValue(missionId);
+      if (!mission) return res.status(404).json({ error: `Mission ${missionId} not found.` });
+      const response = await missionModel.commandMissionManual(missionId);
+      res.json(response);
+    } catch (error) {
+      logger.error(`Error in commandMissionManual: ${error.message}`);
+      res.status(500).json({ error: error.message || 'Failed to command mission.' });
+    }
+  };
+
+  static initMission = (mission_id, data, opts) => {
+    return missionModel.initMission(mission_id, data, opts);
+  };
+  static editMission = (payload) => {
+    return missionModel.editMission(payload);
+  };
+  static editRoute = (payload) => {
+    return missionModel.editRoute(payload);
   };
   static finishMission = (missionId, deviceId) => {
     return missionModel.UAVFinish(missionId, deviceId);
@@ -80,18 +146,57 @@ class missionController {
   static endRouteUAV = (missionId, uavId) => {
     return missionModel.UAVEnd(missionId, uavId);
   };
-  static finishMissionProcessFiles = (missionId, deviceId, results) => {
-    return missionModel.FinishProcessFiles((missionId, deviceId, results));
-  };
   static getMissionRoute = async (missionId) => {
     return await missionModel.getMissionValue(missionId);
   };
-  static updateFiles = (missionId, deviceId) => {
-    return missionModel.updateFiles(missionId, deviceId);
+  static updateFiles = (missionId, deviceId, routeId) => {
+    return missionModel.updateFiles(missionId, deviceId, routeId);
   };
   static updateMission = ({ device, mission, state }) => {
     missionModel.updateMission({ device, mission, state });
     return true;
+  };
+
+  static convertGeodeticToXYZ = async (req, res) => {
+    const missionBriefing = req.body;
+    if (!missionBriefing.selected_devices || !missionBriefing.targets) {
+      return res.status(400).json({ error: 'selected_devices and targets are required.' });
+    }
+    try {
+      const missionDataXYZ = await missionModel.convertBriefingToXYZ(missionBriefing);
+      res.json(missionDataXYZ);
+    } catch (error) {
+      logger.error(`Error in convertGeodeticToXYZ: ${error.message}`);
+      res.status(error.status || 500).json({ error: error.message });
+    }
+  };
+
+  static convertXYZToGeodetic = async (req, res) => {
+    const missionDataXYZ = req.body;
+    if (!missionDataXYZ.route) {
+      return res.status(400).json({ error: 'route is required.' });
+    }
+    try {
+      const missionGeodetic = missionModel.convertXYZToGeodetic(missionDataXYZ);
+      res.json(missionGeodetic);
+    } catch (error) {
+      logger.error(`Error in convertXYZToGeodetic: ${error.message}`);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  static createMissionPlan = async (req, res) => {
+    const { missionData, name, source } = req.body;
+    if (!missionData) {
+      return res.status(400).json({ error: 'missionData is required.' });
+    }
+    try {
+      const saved = await missionModel.createMissionPlan(missionData, { name, source });
+      res.status(201).json({ id: saved.id, name: saved.name, createdAt: saved.createdAt });
+    } catch (error) {
+      logger.error(`Error in createMissionPlan: ${error.message}`);
+      res.status(500).json({ error: error.message });
+    }
   };
 
   static getMissionPlans = async (req, res) => {
@@ -108,18 +213,22 @@ class missionController {
   static showMissionPlan = async (req, res) => {
     const plan = await missionModel.getMissionPlan(req.params.id);
     if (!plan) return res.status(404).json({ error: 'MissionPlan not found' });
-    await missionModel.setMission(plan.missionData);
+    await missionModel.broadcastMission(plan.missionData);
     res.json({ ok: true });
   };
 
   /**
-   * Validate mission for collisions without modifying it
+   * Validate mission for collisions without modifying it. Optionally also
+   * validates inspection coverage: pass target_ids (catalog ElementItem ids,
+   * NOT positions) and every waypoint gets checked against the target's real
+   * position/type resolved server-side from the SQL catalog - the LLM never
+   * gets to supply the position that's being checked against.
    * POST /missions/validate
-   * Body: { mission: MissionObject, collision_objects: ObstacleArray }
+   * Body: { mission: MissionObject, collision_objects: ObstacleArray, target_ids?: (number|string)[] }
    */
   static validateCollisions = async (req, res) => {
     try {
-      const { mission, collision_objects } = req.body;
+      const { mission, collision_objects, target_ids } = req.body;
 
       if (!mission) {
         return res.status(400).json({ error: 'Mission data is required' });
@@ -129,18 +238,52 @@ class missionController {
         return res.status(400).json({ error: 'collision_objects array is required' });
       }
 
-      const result = validateMission(mission, collision_objects);
-      const report = formatMissionReport(result);
+      for (const route of mission.route ?? []) {
+        const device = await devicesController.getByName(route.uav);
+        if (!device) {
+          return res.status(400).json({ error: `El UAV '${route.uav}' no existe. Por favor, intenta de nuevo.` });
+        }
+      }
+
+      const result = validateMissionCollission(mission, collision_objects);
+
+      let inspection = null;
+      let unknownTargetIds = [];
+      if (target_ids && Array.isArray(target_ids) && target_ids.length > 0) {
+        if (!mission.global_origin) {
+          return res.status(400).json({ error: 'mission.global_origin is required to validate target_ids' });
+        }
+
+        const { targets, notFound } = await resolveInspectionTargets(target_ids, mission.global_origin);
+        inspection = validateInspectionCoverage(mission, targets, collision_objects);
+        unknownTargetIds = notFound;
+        if (notFound.length > 0) {
+          inspection.valid = false;
+        }
+      }
+
+      const overallValid = result.valid && (inspection?.valid ?? true);
+      const overallReason = buildOverallReason(result, inspection, unknownTargetIds);
+
+      let report =
+        `OVERALL: ${overallValid ? '✅ VALID' : '❌ INVALID'} — ${overallReason}\n\n` + formatMissionReport(result);
+      if (inspection) {
+        report += '\n\n' + formatInspectionReport(inspection);
+      }
+      if (unknownTargetIds.length > 0) {
+        report += `\n\n#### [UNKNOWN TARGET IDS]\n  * These ids don't exist in the catalog: ${unknownTargetIds.join(', ')}`;
+      }
 
       res.json({
-        valid: result.valid,
+        valid: overallValid,
         totalCollisions: result.totalCollisions,
         totalWarnings: result.totalWarnings,
         routes: result.routes,
+        inspection,
         report,
       });
     } catch (error) {
-      console.error('Error validating collisions:', error);
+      logger.error(`Error validating collisions: ${error.message}`);
       res.status(500).json({ error: error.message || 'Failed to validate collisions' });
     }
   };
@@ -163,7 +306,7 @@ class missionController {
       }
 
       // First validate
-      const validation = validateMission(mission, collision_objects);
+      const validation = validateMissionCollission(mission, collision_objects);
 
       if (validation.valid) {
         return res.json({
@@ -178,7 +321,7 @@ class missionController {
       const result = resolveCollisionsAlgo(mission, collision_objects);
 
       // Validate the corrected mission
-      const finalValidation = validateMission(result.mission, collision_objects);
+      const finalValidation = validateMissionCollission(result.mission, collision_objects);
 
       res.json({
         modified: true,
@@ -188,7 +331,7 @@ class missionController {
         validation: finalValidation,
       });
     } catch (error) {
-      console.error('Error resolving collisions:', error);
+      logger.error(`Error resolving collisions: ${error.message}`);
       res.status(500).json({ error: error.message || 'Failed to resolve collisions' });
     }
   };

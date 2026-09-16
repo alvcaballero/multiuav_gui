@@ -1,39 +1,19 @@
-import { encode } from '@toon-format/toon';
+import { randomUUID } from 'node:crypto';
 import { MCPclient } from './mcpClient.js';
-import { LLMFactory } from './llmFactory.js';
+import { LLMFactory } from './handlers/llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
 import { LLM, MCPenable } from '../../config/config.js';
-import { SystemPrompts } from './prompts/index.js';
-import { eventBus, EVENTS } from '../../common/eventBus.js';
+import { TurnContext } from './turnContext.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
-import { convertMissionBriefingToXYZ, convertMissionXYZToLatLong } from './coordinateConverter.js';
-import { missionController } from '../../controllers/mission.js';
-import { missionModel } from '../mission.js';
+import { emitAssistantError, emitAssistantMessage, emitChatBusy } from './chatEvents.js';
+import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
+import { forceFinishItem, RETRY_AFTER_TOOL_ERROR_MESSAGE } from './handlers/baseLLMhandler.js';
 
 let mcpClient = null;
 let llmHandler = null;
 
-const maxIterations = 6; // Prevenir loops infinitos
+const maxIterations = 25; // Prevenir loops infinitos
 const maxIterations_planner = 18; // Prevenir loops infinitos
-
-// Default allowed tools per agent profile.
-// When processMessage receives no allowedTools and none are stored in metadata,
-// this map determines which tools are available based on the agent profile.
-// null = all tools (no filtering), [] = no tools, [...] = specific tools
-
-const AGENT_DEFAULT_TOOLS = {
-  default: [
-    'get_devices',
-    'get_fleet_telemetry',
-    'get_registered_objects',
-    'get_bases_with_assignments',
-    'show_mission_to_user',
-    'request_mission_plan',
-    'load_mission_to_uav',
-    'start_mission',
-  ],
-  planner: [ 'validate_mission_collisions', 'mark_step_complete', 'complete_mission'],
-};
 
 // Per-chatId mutex: ensures only one processMessage runs at a time per chat.
 // Concurrent requests for the same chatId queue behind the active one.
@@ -82,22 +62,45 @@ export class MessageOrchestrator {
    * Emits EventBus event for assistant messages (WebSocket broadcast to clients)
    * @param {object} chatItem - The chat item to potentially emit
    */
-  static _emitAssistantMessage(chatItem) {
-    if (chatItem.from === 'assistant') {
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, chatItem);
-    }
+  static emitAssistantMessage(chatItem) {
+    emitAssistantMessage(chatItem);
   }
 
   /**
-   * Procesa un mensaje con mutex por chatId.
+   * Normalizes whatever a caller passes as the turn input into the canonical
+   * `{kind, ...}` shape. Plain strings and multipart arrays are user messages,
+   * which keeps every existing `processMessage(chatId, "text")` call working.
+   *
+   * @param {string|Array|object} input
+   * @returns {{kind: string}} Canonical turn input
+   */
+  static _normalizeInput(input) {
+    if (typeof input === 'string' || Array.isArray(input)) {
+      return { kind: 'user', content: input };
+    }
+    if (input && typeof input === 'object' && input.kind) return input;
+    throw new Error('processMessage: input must be a string, a content array, or a {kind} object');
+  }
+
+  /**
+   * Procesa un turno con mutex por chatId.
    * Concurrent requests for the same chatId queue sequentially.
+   *
+   * The lock is held for the WHOLE turn, tool loop included. The turn itself is
+   * fire-and-forget past the first LLM response (the caller gets that response
+   * while the loop keeps streaming over the EventBus), so the lock cannot be
+   * released in this function's `finally` — that would free the chat while the
+   * loop is still writing to it. `_runTurn` releases it when the recursion ends.
+   *
    * @param {string} chatId - ID de la conversación
-   * @param {string} message - Mensaje del usuario
+   * @param {string|Array|object} input - User message, or a `{kind, ...}` turn input
    * @param {Object} options - Opciones adicionales
    * @param {Array<string>} options.allowedTools - Lista de herramientas permitidas (null = todas)
    * @returns {Promise<Object>} Respuesta final
    */
-  static async processMessage(chatId, message, options = {}) {
+  static async processMessage(chatId, input, options = {}) {
+    const turnInput = this._normalizeInput(input);
+
     const prev = chatLocks.get(chatId) || Promise.resolve();
     let resolve;
     const lock = new Promise((r) => {
@@ -105,242 +108,325 @@ export class MessageOrchestrator {
     });
     chatLocks.set(chatId, lock);
 
-    try {
-      await prev;
-      return await this._processMessage(chatId, message, options);
-    } finally {
+    const release = () => {
       resolve();
       // Clean up if no one else is queued behind us
       if (chatLocks.get(chatId) === lock) {
         chatLocks.delete(chatId);
       }
+      emitChatBusy(chatId, false);
+    };
+
+    await prev;
+    emitChatBusy(chatId, true);
+
+    try {
+      return await this._startTurn(chatId, turnInput, options, release);
+    } catch (error) {
+      release();
+      throw error;
     }
   }
 
   /**
-   * Internal: processes a message (called under chatId mutex)
+   * Internal: runs the first turn (called under chatId mutex).
+   *
+   * Orchestration only: ask for context, run the turn, hand the caller the first
+   * response. If the model asked for tools, `_runTurn` recursed into the loop
+   * before returning here, and `release` has already fired.
    */
-  static async _processMessage(chatId, message, options = {}) {
-    const { allowedTools: optionsAllowedTools = null } = options;
-    chatLogger.info(`📨 Chat: ${chatId} | Mensaje: "${message.substring(0, 40)}${message.length > 40 ? '...' : ''}"`);
+  static async _startTurn(chatId, turnInput, options = {}, release = () => {}) {
+    // Groups every LLM request triggered by this input (initial call + tool loop
+    // iterations) so the real cost of one turn is a single GROUP BY away.
+    const turnId = randomUUID();
+    this._logIncomingMessage(chatId, turnInput);
 
-    // Load history snapshot from DB (single source of truth)
-    let historySnapshot;
-    try {
-      historySnapshot = await ChatHistoryManager.loadHistory(chatId);
-      chatLogger.info(`📂 Loaded ${historySnapshot.length} messages from DB for chat: ${chatId}`);
-    } catch (error) {
-      chatLogger.error('Error loading history from DB:', error);
-      historySnapshot = [];
+    // A subagent answer is appended to a conversation the provider's session
+    // never saw, so the session is dropped to force the full-history path.
+    if (turnInput.kind === 'subagent_result') {
+      await ChatHistoryManager.clearSession(chatId);
     }
 
-    // Determinar allowedTools: usar opciones si se pasan, sino cargar de metadata
-    let allowedTools = optionsAllowedTools;
-    if (optionsAllowedTools !== null) {
-      // Si se pasan allowedTools en opciones, guardarlas en metadata para consistencia
-      await ChatHistoryManager.setAllowedTools(chatId, optionsAllowedTools);
-    } else {
-      // Si no se pasan, intentar cargar de metadata (para mantener consistencia en el chat)
-      const storedAllowedTools = await ChatHistoryManager.getAllowedTools(chatId);
-      if (storedAllowedTools !== undefined) {
-        allowedTools = storedAllowedTools;
-        chatLogger.debug(
-          `Using stored allowedTools for chat ${chatId}: ${allowedTools ? allowedTools.join(', ') : 'all'}`
-        );
-      }
-    }
-
-    const persistence = ChatHistoryManager.getSessionPersistence();
-
-    // Resolve agent profile from metadata (set by buildMissionPlanXYZ or defaults to 'default')
-    const agentProfile = await ChatHistoryManager.getAgentProfile(chatId);
-
-    // Fallback: if no allowedTools from options or metadata, use agent profile defaults
-    if (allowedTools === null && AGENT_DEFAULT_TOOLS[agentProfile]) {
-      allowedTools = AGENT_DEFAULT_TOOLS[agentProfile];
-      chatLogger.debug(`Using default tools for agent '${agentProfile}': ${allowedTools.join(', ')}`);
-    }
+    const ctx = await TurnContext.build(chatId, {
+      allowedTools: options.allowedTools ?? null,
+      getTools: (allowed) => this.getToolsForProvider(allowed),
+      llmHandler,
+    });
 
     try {
-      // Get tools from MCP client, filtered by allowedTools
-      const tools = this.getToolsForProvider(allowedTools);
-
-      // Let the handler manage its own session (OpenAI creates conversations, others may no-op)
-      const sessionId = await llmHandler.ensureSession(chatId, persistence);
-
-      // Build system instructions (needed for first message of conversation)
-      let systemInstructions = null;
-      if (SystemPrompts.main) {
-        systemInstructions = `${SystemPrompts.main}\n\n---\nSession context:\n- chat_id: ${chatId}`;
-      }
-
-      // Add system prompt to history if first message (for record keeping)
-      if (historySnapshot.length === 0 && systemInstructions) {
-        const systemItem = await ChatHistoryManager.addMessage(chatId, 'system', {
-          role: 'system',
-          content: systemInstructions,
-        });
-        historySnapshot.push(systemItem);
-      } else {
-        // Recover system prompt from history to maintain consistency (e.g. after server restarts)
-        const systemMsg = historySnapshot.find((item) => (item.message || item).role === 'system');
-        if (systemMsg) {
-          systemInstructions = (systemMsg.message || systemMsg).content;
-        }
-      }
-
-      // Agregar el mensaje del usuario a DB
-      await ChatHistoryManager.addMessage(chatId, 'user', { role: 'user', content: message });
-
-      // Call LLM with session support (or fallback to full history)
-      // historySnapshot was taken BEFORE user message, so it serves as context for fallback
-      const result = await llmHandler.processMessage(message, tools, historySnapshot, {
-        sessionId,
-        instructions: systemInstructions,
-        agentProfile,
+      const result = await this._runTurn(chatId, turnInput, ctx, {
+        turnId,
+        phase: 'initial',
+        iteration: 0,
+        release,
       });
 
-      // Extract response data from result
-      const { output, responseId, model, sessionCleared } = result;
-      chatLogger.info(`✓ Parsed ${output.length} output parts from Gemini response`);
-
-      // Let the handler recover from session errors (e.g., recreate expired conversation)
-      if (sessionCleared) {
-        await llmHandler.handleSessionError(chatId, result, persistence);
-      }
-      // Store metadata for this chat
-      else if (responseId) {
-        await ChatHistoryManager.updateChatMetadata(chatId, {
-          responseId,
-          provider: llmHandler.getProviderName(),
-          model,
-        });
-      }
-
-      let toolCallsFlag = false;
-      for (const res of output) {
-        if (res.type === 'function_call' || res.type === 'tool_call') {
-          toolCallsFlag = true;
-        }
-        const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
-        this._emitAssistantMessage(chatItem);
-      }
-
-      // Handle tool calls with the current sessionId
-      // Pass allowedTools and agentProfile to maintain consistency across iterations
-      if (toolCallsFlag) {
-        this.handleToolCallsLoop(
-          output,
-          tools,
-          chatId,
-          sessionId,
-          systemInstructions,
-          allowedTools,
-          agentProfile
-        ).catch((error) => {
-          chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
-          eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-            chatId,
-            from: 'assistant',
-            timestamp: new Date().toISOString(),
-            message: {
-              role: 'assistant',
-              content: `Error processing tool results: ${error.message}`,
-              type: 'text',
-              status: 'error',
-            },
-          });
-        });
-      }
-
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
-
-      return llmHandler.normalizeResponse(result);
+      return llmHandler.normalizeResponse(result.raw);
     } catch (error) {
       chatLogger.error('Error procesando mensaje:', error);
 
       // Let the handler handle session-related errors
-      await llmHandler.handleSessionError(chatId, error, persistence);
-
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-        chatId,
-        message: {
-          role: 'assistant',
-          content: error.userMessage || `Error: ${error.message}`,
-          type: 'text',
-          status: 'error',
-        },
-        timestamp: new Date().toISOString(),
-      });
+      await llmHandler.handleSessionError(chatId, error, ctx.persistence);
+      emitAssistantError(chatId, error.userMessage || `Error: ${error.message}`);
 
       throw error;
     }
   }
 
   /**
-   * Maneja el loop de llamadas a herramientas
-   * @param {Array} response - Initial response with tool calls
-   * @param {Array} _tools - Available tools
-   * @param {string} chatId - Chat identifier
-   * @param {string} sessionId - Provider session ID for persistent state
-   * @param {string} systemInstructions - System instructions to re-send
-   * @param {Array<string>} allowedTools - List of allowed tool names (null = all)
-   * @param {string} agentProfile - Agent profile name for model/reasoning selection
+   * One turn: persist the input, call the LLM, persist the output — then, if the
+   * model asked for tools, run them and recurse with their results.
+   *
+   * This single function replaces the old `_processMessage` / `continueAfterTools`
+   * pair, which were the same three steps with different inputs. What varies is
+   * ONLY how the input reaches the provider, and that lives in `_applyInput`.
+   *
+   * The recursion carries `iteration` as a parameter rather than tracking it per
+   * chat: the cap protects ONE turn from running away, and a turn already has an
+   * identity (`turnId`). A fresh user message is a fresh turn, so it starts at 0
+   * with nothing to reset.
+   *
+   * @param {string} chatId
+   * @param {object} turnInput - `{kind, ...}` canonical input
+   * @param {TurnContext} ctx
+   * @param {object} meta - `{turnId, phase, iteration, release}`
+   * @returns {Promise<{output: Array, responseId: string, raw: object}>}
    */
-  static async handleToolCallsLoop(
-    response,
-    _tools,
-    chatId,
-    sessionId,
-    systemInstructions,
-    allowedTools = null,
-    agentProfile = 'default'
-  ) {
-    let isToolCalling = true;
-    let iterations = 0;
-    chatLogger.debug('Starting tool calls loop...');
-    let currentResponse = response;
+  static async _runTurn(chatId, turnInput, ctx, meta) {
+    const { turnId, phase, iteration, release } = meta;
 
-    let maxIter = agentProfile === 'planner' ? maxIterations_planner : maxIterations;
+    // Read fresh HERE — before `_applyInput` persists this turn's own input below —
+    // so it never contains what this turn is about to write. That write travels
+    // separately via providerInput; reading it back from a later DB read would
+    // send it to the provider twice. (With a live session the provider keeps the
+    // conversation itself, so most handlers ignore this in the happy path — it
+    // only matters as their session-error fallback.)
+    const history = await ChatHistoryManager.loadHistory(chatId);
 
-    while (isToolCalling && iterations < maxIter) {
-      iterations++;
-      chatLogger.debug(`Iteration ${iterations} - Processing tools...`);
-      isToolCalling = true;
-      const toolResults = await this.executeToolCalls(currentResponse, chatId);
+    const providerInput = await this._applyInput(chatId, turnInput);
 
-      // Check if this is the last iteration - force final response
-      const isLastIteration = iterations >= maxIter;
-
-      // Continue with the same session
-      const result = await this.continueAfterTools(
-        toolResults,
-        chatId,
-        sessionId,
-        systemInstructions,
-        isLastIteration ? [] : allowedTools, // No tools on last iteration to force text response
-        isLastIteration, // forceFinish flag
-        agentProfile
-      );
-      currentResponse = result.output;
-
-      // Update stored responseId for tracking (conversation persists automatically)
-      if (result.responseId) {
-        await ChatHistoryManager.updateChatMetadata(chatId, { responseId: result.responseId });
-      }
-
-      if (isLastIteration) {
-        chatLogger.warn('Maximum iterations reached - forced final response without tools');
-        break;
-      }
-
-      isToolCalling = currentResponse.some(
-        (content) => content.type === 'function_call' || content.type === 'tool_call'
-      );
+    // forceFinish rides inside providerInput.items instead of a separate flag —
+    // each handler picks the 'directive' item out and inserts it wherever its
+    // API requires. Only a tool_output turn ever sets forceFinish (see
+    // _continueWithTools), so providerInput is always the 'tool_output' shape here.
+    if (turnInput.forceFinish && providerInput?.type === 'tool_output') {
+      providerInput.items = [...providerInput.items, forceFinishItem()];
     }
-    chatLogger.debug('Tool calls loop finished.');
 
-    return currentResponse;
+    const result = await llmHandler.processMessage(providerInput, ctx.tools, history, {
+      sessionId: ctx.sessionId,
+      instructions: ctx.systemInstructions,
+      agent: ctx.agent,
+    });
+
+    const { output, responseId } = await this._persistTurnResult(chatId, result, ctx, {
+      turnId,
+      phase,
+      iteration,
+    });
+
+    const hasToolCalls = output.some((res) => res.type === 'function_call' || res.type === 'tool_call');
+    if (hasToolCalls) {
+      // Fire-and-forget from here on: the caller gets the first response while the
+      // loop keeps going and streams over the EventBus. The lock stays held until
+      // the recursion bottoms out, so a queued message cannot interleave with it.
+      this._continueWithTools(chatId, output, ctx, { turnId, iteration }).finally(release);
+      return { output, responseId, raw: result };
+    }
+
+    // A provider can fail to emit a well-formed tool call (e.g. Gemini's
+    // MALFORMED_FUNCTION_CALL) yet still flag the turn as recoverable. There is
+    // no call_id to answer, so this can't join the tool loop above — instead it
+    // re-enters the same way a subagent result does: a synthetic message that
+    // gives the model another turn to retry on its own, without waiting on the user.
+    const isRetryable = output.some((res) => res.retryable);
+    const maxIter = ctx.agent?.capability === 'high' ? maxIterations_planner : maxIterations;
+    if (isRetryable && iteration + 1 < maxIter) {
+      this._continueAsRetry(chatId, ctx, { turnId, iteration }).finally(release);
+      return { output, responseId, raw: result };
+    }
+
+    release();
+    return { output, responseId, raw: result };
+  }
+
+  /**
+   * Re-enters the turn after a provider-side recoverable failure (no tool call
+   * to answer). Mirrors `_continueWithTools`'s recursion shape but goes through
+   * `_applyInput`'s `system_message` path since there is no tool result to feed
+   * and this isn't a subagent's doing either.
+   */
+  static async _continueAsRetry(chatId, ctx, { turnId, iteration }) {
+    const next = iteration + 1;
+    chatLogger.debug(`[ToolLoop: ${chatId}] Iteration ${next} - Retrying after recoverable provider error...`);
+
+    try {
+      await this._runTurn(
+        chatId,
+        { kind: 'system_message', content: RETRY_AFTER_TOOL_ERROR_MESSAGE },
+        ctx,
+        { turnId, phase: 'tool_loop', iteration: next, release: () => {} }
+      );
+    } catch (error) {
+      chatLogger.error(`[ToolLoop: ${chatId}] Error retrying after provider error:`, error);
+      emitAssistantError(chatId, `Error retrying tool call: ${error.message}`);
+    }
+  }
+
+  /**
+   * Executes the tool calls in `output` and recurses with their results.
+   * Split out of `_runTurn` so the fire-and-forget boundary is explicit: this is
+   * the part that outlives the caller's turn.
+   */
+  static async _continueWithTools(chatId, output, ctx, { turnId, iteration }) {
+    const maxIter = ctx.agent?.capability === 'high' ? maxIterations_planner : maxIterations;
+    const next = iteration + 1;
+    const isLastIteration = next >= maxIter;
+
+    if (isLastIteration) {
+      chatLogger.warn(`[ToolLoop: ${chatId}] Maximum iterations reached - forcing final response`);
+    }
+    chatLogger.debug(`[ToolLoop: ${chatId}] Iteration ${next} - Processing tools...`);
+
+    try {
+      const results = await this.executeToolCalls(output, chatId);
+
+      await this._runTurn(
+        chatId,
+        { kind: 'tool_output', results, forceFinish: isLastIteration },
+        ctx,
+        // The last iteration must not recurse again: `release` is a no-op here
+        // because THIS call's `.finally(release)` already owns it.
+        { turnId, phase: 'tool_loop', iteration: next, release: () => {} }
+      );
+    } catch (error) {
+      chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
+      emitAssistantError(chatId, `Error processing tool results: ${error.message}`);
+    }
+  }
+
+  /**
+   * Persists a turn's input and returns what the provider needs for it.
+   *
+   * Every kind writes its own input to history exactly once — that symmetry is
+   * what removed the old `skipPersist` flag, which existed only because the
+   * subagent path wrote its message somewhere else first.
+   *
+   * @returns {Promise<?{type: 'message', content: *}|{type: 'tool_output', items: Array}>} What
+   *   `llmHandler.processMessage` receives as its first argument. `null` means "nothing new to
+   *   send — continue purely from the persisted history".
+   */
+  static async _applyInput(chatId, turnInput) {
+    switch (turnInput.kind) {
+      case 'user':
+        await ChatHistoryManager.addMessage(chatId, 'user', { role: 'user', content: turnInput.content });
+        // The history _runTurn read is from BEFORE this message was persisted
+        // above, so it serves as full context on the no-session fallback path.
+        return { type: 'message', content: turnInput.content };
+
+      case 'subagent_result': {
+        const chatItem = await ChatHistoryManager.addMessage(chatId, 'subagent', turnInput.message);
+        this.emitAssistantMessage(chatItem);
+        // Sent as its own turn item (like tool_output), not replayed from
+        // history: the parent's tool pair closed long ago, so there is no
+        // pending call for it to answer — it's a fresh user-role message.
+        return { type: 'subagent_result', message: turnInput.message };
+      }
+
+      case 'system_message': {
+        // Orchestrator-authored nudge, not from a user or a subagent — e.g. a
+        // provider failed to emit a parseable tool call and this re-enters the
+        // turn on its own. Persisted with its own `type` so the client can hide
+        // it from the transcript (see ChatMessages.jsx), same idea as
+        // subagent_result never showing as a user bubble; sent to the provider
+        // as a plain 'message' (every handler already speaks that type), with
+        // the directive marker carrying the "system talking" meaning the
+        // transport role cannot.
+        const chatItem = await ChatHistoryManager.addMessage(chatId, 'system', {
+          type: 'system_directive',
+          role: 'system',
+          content: turnInput.content,
+        });
+        this.emitAssistantMessage(chatItem);
+        return { type: 'message', content: turnInput.content };
+      }
+
+      case 'tool_output': {
+        for (const res of turnInput.results) {
+          const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
+          this.emitAssistantMessage(chatItem);
+        }
+        return { type: 'tool_output', items: turnInput.results };
+      }
+
+      default:
+        throw new Error(`_applyInput: unknown turn input kind "${turnInput.kind}"`);
+    }
+  }
+
+  /**
+   * Logs the incoming turn input, collapsing multipart content to a summary
+   * so a base64 image never lands in the logs.
+   */
+  static _logIncomingMessage(chatId, turnInput) {
+    const { kind, content } = turnInput;
+    let preview;
+
+    if (kind !== 'user') {
+      preview = `[${kind}]`;
+    } else if (Array.isArray(content)) {
+      preview = `[${content.length} blocks: ${content.map((b) => b.type).join(', ')}]`;
+    } else {
+      preview = `"${String(content).substring(0, 40)}${String(content).length > 40 ? '...' : ''}"`;
+    }
+
+    chatLogger.info(`📨 Chat: ${chatId} | Mensaje: ${preview}`);
+  }
+
+  /**
+   * Records usage, reconciles session state and persists every output part.
+   *
+   * Deciding what happens NEXT (tool loop or not) belongs to `_runTurn`; this
+   * one only writes down what came back.
+   *
+   * @returns {Promise<{output: Array, responseId: string}>}
+   */
+  static async _persistTurnResult(chatId, result, ctx, { turnId, phase, iteration }) {
+    const { output, responseId, model, sessionCleared, usage } = result;
+    chatLogger.info(`✓ Parsed ${output.length} output parts from LLM response`);
+
+    await ChatHistoryManager.recordUsage({
+      chatId,
+      turnId,
+      usage,
+      responseId,
+      provider: llmHandler.getProviderName(),
+      model,
+      agent: ctx.agent.name,
+      phase,
+      iteration,
+    });
+
+    // Let the handler recover from session errors (e.g., recreate expired conversation)
+    if (sessionCleared) {
+      await llmHandler.handleSessionError(chatId, result, ctx.persistence);
+    }
+    // Store metadata for this chat
+    else if (responseId) {
+      await ChatHistoryManager.updateChatMetadata(chatId, {
+        responseId,
+        provider: llmHandler.getProviderName(),
+        model,
+      });
+    }
+
+    for (const res of output) {
+      const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
+      this.emitAssistantMessage(chatItem);
+    }
+
+    return { output, responseId };
   }
 
   /**
@@ -348,80 +434,21 @@ export class MessageOrchestrator {
    */
   static async executeToolCalls(toolCalls, chatId) {
     const results = [];
+    const contextParams = getContextParams(chatId);
+    const hasContext = Object.keys(contextParams).length > 0;
 
     for (const toolCall of toolCalls) {
       if (toolCall.type == 'function_call' || toolCall.type == 'tool_call') {
         const result = await llmHandler.handleToolCall(toolCall, async (name, args) => {
-          return await mcpClient.executeTool(name, args);
+          // Fixed context params win over whatever the LLM passes, so it can't
+          // override a subagent's injected context even if it hallucinates the same key.
+          return await mcpClient.executeTool(name, hasContext ? { ...args, ...contextParams } : args);
         });
         results.push(result);
       }
     }
 
     return results;
-  }
-
-  /**
-   * Continúa la conversación después de ejecutar herramientas
-   * @param {Array} toolResults - Results from tool executions
-   * @param {string} chatId - Chat identifier
-   * @param {string} sessionId - Provider session ID for persistent state
-   * @param {string} systemInstructions - System instructions to re-send
-   * @param {Array<string>} allowedTools - List of allowed tool names (null = all, [] = none for final response)
-   * @param {boolean} forceFinish - If true, adds a system message forcing final response
-   * @param {string} agentProfile - Agent profile name for model/reasoning selection
-   * @returns {Promise<{output: Array, responseId: string}>} Response output and new responseId
-   */
-  static async continueAfterTools(
-    toolResults,
-    chatId,
-    sessionId,
-    systemInstructions,
-    allowedTools = null,
-    forceFinish = false,
-    agentProfile = 'default',
-    skipPersist = false
-  ) {
-    // Load history only if needed for fallback (no session)
-    const conversationHistory = sessionId ? [] : await ChatHistoryManager.loadHistory(chatId);
-
-    // Get tools filtered by allowedTools (empty array = no tools for forced text response)
-    const tools = this.getToolsForProvider(allowedTools);
-
-    // Persist tool results in DB before sending to LLM (single write point)
-    // skipPersist=true when the result is already stored (e.g. returnMissionPlanXYZ replaced it in-place)
-    if (!skipPersist) {
-      for (const res of toolResults) {
-        const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res);
-        this._emitAssistantMessage(chatItem);
-      }
-    }
-
-    // Continue conversation with tool outputs
-    // When skipPersist=true the tool result is already in DB history — don't pass it as
-    // toolOutputs or Gemini will receive it twice (once from history, once as functionResponse).
-    const result = await llmHandler.processMessage(
-      null, // No new user message
-      tools,
-      conversationHistory,
-      {
-        sessionId,
-        instructions: systemInstructions,
-        toolOutputs: skipPersist ? null : toolResults,
-        forceFinish, // Signal to add final response message
-        agentProfile,
-      }
-    );
-
-    const { output, responseId } = result;
-
-    // Store assistant messages with new responseId and emit events
-    for (const res of output) {
-      const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
-      this._emitAssistantMessage(chatItem);
-    }
-
-    return { output, responseId };
   }
 
   /**
@@ -461,16 +488,40 @@ export class MessageOrchestrator {
   }
 
   /**
-   * Obtiene el historial de conversación para un chat específico
+   * Obtiene una página del historial de conversación para un chat específico,
+   * la más reciente por defecto o la anterior a `before` (paginación por cursor).
    * @param {string} chatId - ID del chat
+   * @param {object} options
+   * @param {number} options.limit - Tamaño de página (default 100)
+   * @param {string|null} options.before - Cursor ISO timestamp; trae mensajes estrictamente anteriores
+   * @returns {Promise<{messages: Array, hasMore: boolean}>}
    */
-  static async getHistory(chatId) {
+  static async getHistory(chatId, { limit = 100, before = null } = {}) {
     try {
-      return await ChatHistoryManager.loadHistory(chatId,{all:true});
+      // Fetch one extra row to know whether older messages remain, then drop it.
+      const rows = await ChatHistoryManager.loadHistory(chatId, {
+        all: true,
+        limit: limit + 1,
+        before,
+        order: 'DESC',
+      });
+      const hasMore = rows.length > limit;
+      return { messages: hasMore ? rows.slice(1) : rows, hasMore };
     } catch (error) {
       chatLogger.error('Error loading history from DB:', error);
-      return [];
+      return { messages: [], hasMore: false };
     }
+  }
+
+  /**
+   * Token usage of a chat: per-LLM-call detail, per-turn breakdown and totals.
+   * One turn = one user message, which can span many LLM requests
+   * (the initial call plus every tool loop iteration).
+   * @param {string} chatId
+   * @returns {Promise<{totals: object, turns: Array, requests: Array}>}
+   */
+  static async getUsage(chatId) {
+    return ChatHistoryManager.getUsageForChat(chatId);
   }
 
   /**
@@ -516,6 +567,7 @@ export class MessageOrchestrator {
     } catch (error) {
       chatLogger.error('Error deleting chat from DB:', error);
     }
+    removeSubAgent(chatId);
     chatLogger.info(`Chat deleted: ${chatId}`);
   }
 
@@ -559,11 +611,12 @@ export class MessageOrchestrator {
   /**
    * Crea un nuevo chat y devuelve su ID
    * @param {string} name - Nombre opcional del chat
+   * @param {Object} metadata - Metadata opcional inicial del chat
    * @returns {Promise<Object>} Chat creado con id, name, createdAt
    */
-  static async createChat(name = null) {
+  static async createChat(name = null, metadata = {}) {
     try {
-      const chat = await ChatHistoryManager.createChat(name);
+      const chat = await ChatHistoryManager.createChat(name, metadata);
       chatLogger.info(`Chat created: ${chat.id}`);
       return {
         id: chat.id,
@@ -576,168 +629,6 @@ export class MessageOrchestrator {
     }
   }
 
-  static async convertMissionBriefingToXYZ(missionBriefing) {
-    const missionDataXYZ = convertMissionBriefingToXYZ(missionBriefing);
-    return {
-      global_origin: missionDataXYZ.global_origin,
-      devices_info: missionDataXYZ.drone_information,
-      target_elements: missionDataXYZ.target_elements,
-      group_information: missionDataXYZ.group_information,
-      obstacle_elements: missionDataXYZ.obstacle_elements,
-      mission_requirements: missionDataXYZ.mission_requirements,
-      user_context: missionDataXYZ.user_context,
-    };
-  }
-
-  /**
-
-  /**
-   * Processes a mission briefing from the main chat and creates a secondary background chat
-   * for mission planning in local XYZ coordinates.
-   *
-   * Flow:
-   * 1. Receives mission briefing from main chat (with geodetic coordinates)
-   * 2. Converts coordinates to local XYZ (ENU: East/North/Up in meters)
-   * 3. Creates a secondary chat dedicated to mission planning
-   * 4. Starts background processing with specialized mission planning prompt
-   * 5. Returns immediately - secondary chat processes asynchronously
-   *
-   * @param {Object} missionBriefing - Mission briefing from main chat (filteredMissionSchema structure)
-   * @param {string} missionBriefing.chat_id - ID of the main chat that initiated this request
-   * @param {Array} missionBriefing.devices - Available devices with lat/lng positions
-   * @param {Array} missionBriefing.inspection_elements - Elements to inspect with lat/lng positions
-   * @param {Object} missionBriefing.mission_requeriments - Mission requirements and constraints
-   * @param {Object} missionBriefing.user_context - Original user request context
-   * @returns {Promise<Object>} Object with secondaryChatId and converted mission data
-   */
-  static async buildMissionPlanXYZ(missionBriefing) {
-    const mainChatId = missionBriefing.chat_id;
-    chatLogger.info(`[MainChat: ${mainChatId}] Starting mission plan XYZ generation`);
-
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 1: Convert geodetic coordinates to local XYZ (ENU)
-    // ═══════════════════════════════════════════════════════════════════
-    const missionDataXYZ = convertMissionBriefingToXYZ(missionBriefing);
-    const { global_origin } = missionDataXYZ;
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 4: Build the mission planning request message
-    // ═══════════════════════════════════════════════════════════════════
-    const userMessage = `Execute the MISSION PLANNING SEQUENCE with this data for ${missionDataXYZ.user_context.user_request} :
-
-## global_origin_coordinates
-${JSON.stringify(global_origin)}
-## Devices Information
-${encode(missionDataXYZ.drone_information)}
-## Elements to Inspect
-${encode(missionDataXYZ.target_elements)}
-## group Information
-${encode(missionDataXYZ.group_information)}
-## obstacles Information
-${encode(missionDataXYZ.obstacle_elements)}
-## Mission Requirements
-${encode(missionDataXYZ.mission_requirements)}`;
-
-    const secondaryChatId = `MP-XYZ-${mainChatId}`;
-    this.subAgentPlannerChat(mainChatId, userMessage, missionDataXYZ);
-    chatLogger.info(`[MainChat: ${mainChatId}] Background processing started in secondary chat: ${secondaryChatId}`);
-
-    // Return immediately - secondary chat continues processing in background
-    return { secondaryChatId, msg: 'Mission is processing.' };
-  }
-
-  static async subAgentPlannerChat(mainChatId, userMessage, missionDataXYZ) {
-    const { global_origin } = missionDataXYZ;
-    if (!userMessage) return null;
-    if (!mainChatId) {
-      mainChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      chatLogger.warn(`[subAgentPlannerChat] No mainChatId provided, generated: ${mainChatId}`);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 2: Create secondary chat for background mission planning
-    // ═══════════════════════════════════════════════════════════════════
-    const secondaryChat = await this.createChat(`MP-XYZ-${mainChatId}`);
-    const secondaryChatId = secondaryChat.id;
-    chatLogger.info(`[MainChat: ${mainChatId}] Secondary chat XYZ: ${secondaryChatId}`);
-
-    // Set allowed tools and agent profile in metadata for consistent config across all messages
-    await ChatHistoryManager.setAllowedTools(secondaryChatId, AGENT_DEFAULT_TOOLS['planner']);
-    await ChatHistoryManager.setAgentProfile(secondaryChatId, 'planner');
-
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 3: Configure secondary chat with mission-specific system prompt
-    // ═══════════════════════════════════════════════════════════════════
-    const systemPromptContent = `${SystemPrompts.mission_build_xyz}
----
-Session_context:
-- main_chat_id: ${mainChatId}
-- secondary_chat_id: ${secondaryChatId}
-- global_origin_coordinates: ${JSON.stringify(global_origin)} (lat, lng in decimal degrees)
-- coordinate_system: Cartesian coordinates (ENU - East/North/Up in meters)
-- yaw_reference: Angle in degrees, 0 degrees = North (+Y), 90° = East (+X), ±180° = South (-Y), -90° = West (-X). Range: [-180°, 180°]
-
-Mandatory: Maintain all the session context data accurately and unchanged the session.
-`;
-
-    await ChatHistoryManager.addMessage(secondaryChatId, 'system', { role: 'system', content: systemPromptContent });
-
-    // ═══════════════════════════════════════════════════════════════════
-    // STEP 5: Start background processing (non-blocking)
-    // ═══════════════════════════════════════════════════════════════════
-    // processMessage handles LLM interaction and tool calls asynchronously
-    // allowedTools and agentProfile already set in metadata — will be loaded automatically
-    this.processMessage(secondaryChatId, userMessage).catch((error) => {
-      chatLogger.error(`[MainChat: ${mainChatId}] Background mission planning failed:`, error);
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-        chatId: mainChatId,
-        from: 'assistant',
-        timestamp: new Date().toISOString(),
-        message: {
-          role: 'assistant',
-          content: `Error en planificación de misión: ${error.message}`,
-          type: 'text',
-          status: 'error',
-        },
-      });
-    });
-  }
-
-  /**
-   * Converts a mission briefing from geodetic coordinates to local XYZ (ENU)
-   * and returns the result as a plain JSON object — no LLM, no serialization.
-   * Intended for external consumers (e.g. the mission evaluator) that need the
-   * structured data directly instead of the text prompt built by buildMissionPlanXYZ.
-   *
-   * @param {Object} missionBriefing - filteredMissionSchema structure with geodetic coords
-   * @returns {Promise<Object>} Converted mission briefing with XYZ coordinates + global_origin
-   */
-  static async convertMissionBriefingToXYZ(missionBriefing) {
-    chatLogger.info('[convertMissionBriefingToXYZ] Converting mission briefing to XYZ');
-    return convertMissionBriefingToXYZ(missionBriefing);
-  }
-
-  /**
-   * Receives the real mission plan from the MCP `complete_mission` tool,
-   * converts its waypoints from local XYZ (ENU) to geodetic coordinates,
-   * replaces the placeholder tool_result for `request_mission_plan` in the
-   * MAIN chat history, and re-runs processMessage so the main agent can
-   * continue with the actual mission data.
-   *
-   * @param {Object} payload - Body from POST /chat/return_mission_plan_xyz
-   * @param {string} payload.chat_id       - Main chat ID (from completeMissionSchema)
-   * @param {string} payload.status        - 'valid' | 'error' | 'incomplete'
-   * @param {string} payload.description   - Human-readable summary of the result
-   * @param {Object} payload.missionDataXYZ - Mission in local XYZ coordinates (MissionSchemaXYZ)
-   * @returns {Promise<Object>}
-   */
-  /**
-   * Executes a MCP tool directly, bypassing the LLM.
-   * Useful for debugging/testing tool availability and responses.
-   *
-   * @param {string} toolName - Name of the MCP tool to execute
-   * @param {Object} toolArgs - Arguments to pass to the tool
-   * @returns {Promise<Object>} Raw result from the MCP tool
-   */
   static async testMcpTool(toolName, toolArgs = {}) {
     if (!mcpClient || !mcpClient.isReady()) {
       throw new Error('MCP client not connected or not ready');
@@ -752,175 +643,5 @@ Mandatory: Maintain all the session context data accurately and unchanged the se
     const result = await mcpClient.executeTool(toolName, toolArgs);
     chatLogger.info(`[testMcpTool] Tool "${toolName}" executed successfully`);
     return result;
-  }
-
-  static async returnMissionPlanXYZ({ chat_id, status, description, missionDataXYZ }) {
-    chatLogger.info(`[returnMissionPlanXYZ] Received mission result for main chat: ${chat_id} | status: ${status}`);
-
-    // ── 0. Verify the main chat exists ───────────────────────────────────────
-    const chatExists = await ChatHistoryManager.chatExists(chat_id);
-    if (!chatExists) {
-      const err = new Error(`Chat not found: ${chat_id}, please verify the chat_id is correct.`);
-      err.statusCode = 404;
-      throw err;
-    }
-
-    // ── 1. Convert waypoints XYZ → geodetic ─────────────────────────────────
-    let missionGeodetic = null;
-    try {
-      missionGeodetic = convertMissionXYZToLatLong(missionDataXYZ);
-      chatLogger.info(
-        `[returnMissionPlanXYZ] Converted mission to geodetic. Routes: ${missionGeodetic?.route?.length ?? 0}`
-      );
-    } catch (err) {
-      chatLogger.error('[returnMissionPlanXYZ] Coordinate conversion failed:', err);
-      throw err;
-    }
-
-    // ── 1b. Persist mission to MissionPlan table ─────────────────────────────
-    // Se guarda la misión geodética en DB antes de inyectarla al chat,
-    // para que el ID exista si se necesita referenciar desde otros sistemas.
-    let missionPlanId = null;
-    try {
-      const saved = await missionModel.createMissionPlan(missionGeodetic);
-      missionPlanId = saved.id;
-      chatLogger.info(`[returnMissionPlanXYZ] Mission persisted as MissionPlan ID: ${missionPlanId}`);
-    } catch (err) {
-      // No bloqueante: el chat sigue funcionando aunque falle el guardado en DB.
-      chatLogger.error('[returnMissionPlanXYZ] Failed to persist MissionPlan:', err);
-    }
-
-    // ── 2. Build the new output string ───────────────────────────────────────
-    // Preserve the exact output format the MCP handlers produce:
-    // a JSON string wrapping content[].text, same as other tool responses.
-    // const newOutput = JSON.stringify({
-    //   content: [{ type: 'text', text: JSON.stringify({ status, description, missionPlanId, mission: missionGeodetic }) }],
-    // });
-    const newOutput = JSON.stringify({
-      content: [{ type: 'text', text: JSON.stringify({ status, description ,missionPlanId }) }],
-    });
-    const newContent = `Mission plan result [${status}]: ${description}`;
-
-    // ── 3. Hide placeholder, insert new message with real data ───────────────
-    // Original message is marked hidden=true (UI sees it, LLM won't).
-    // New message clones original messageData and only replaces `output`,
-    // so call_id, type, name and all LLM-set fields are preserved.
-    // Se hace hide+replace en lugar de insertar un mensaje nuevo porque el LLM
-    // necesita que el tool_result conserve el mismo call_id del function_call original.
-    // Si se insertara un mensaje nuevo sin ese call_id, el provider lo rechazaría.
-    const hidden = await ChatHistoryManager.hideAndReplaceToolResult(
-      chat_id,
-      'request_mission_plan',
-      newOutput,
-      newContent
-    );
-
-    if (!hidden) {
-      // Edge case: el planner llamó complete_mission sin que hubiera un
-      // request_mission_plan previo en el historial (flujo fuera de orden).
-      // Se inyecta el resultado como mensaje standalone para no perder los datos.
-      chatLogger.warn(
-        `[returnMissionPlanXYZ] No request_mission_plan tool_result found in chat ${chat_id} — injecting as new message`
-      );
-      // Fallback: inject as a bare tool result message
-      await ChatHistoryManager.addMessage(chat_id, 'assistant', {
-        type: 'function_call_output',
-        name: 'request_mission_plan',
-        output: newOutput,
-      });
-    }
-
-    // ── 4. Clear provider session so next call rebuilds context from the
-    //      updated DB history (placeholder hidden, real result visible).
-    await ChatHistoryManager.clearSession(chat_id);
-
-    // ── 5. Continue the conversation with the real tool result.
-    //      continueAfterTools avoids persisting a spurious user message.
-    //      We need the actual messageData object for the LLM input, so we load
-    //      the last non-hidden tool_result for request_mission_plan from DB.
-    chatLogger.info(`[returnMissionPlanXYZ] Continuing main chat with real mission data: ${chat_id}`);
-
-    const sessionId = await ChatHistoryManager.getSessionId(chat_id);
-    chatLogger.info(`[returnMissionPlanXYZ] Loaded sessionId: ${sessionId} for chat: ${chat_id}`);
-    const agentProfile = await ChatHistoryManager.getAgentProfile(chat_id);
-    chatLogger.info(`[returnMissionPlanXYZ] Agent Profile: ${agentProfile}`);
-    let allowedTools = await ChatHistoryManager.getAllowedTools(chat_id);
-    if (allowedTools === undefined) {
-      allowedTools = AGENT_DEFAULT_TOOLS['default'];
-    }
-    chatLogger.info(`[returnMissionPlanXYZ] Allowed Tools: ${allowedTools.join(', ')}`);
-    const history = await ChatHistoryManager.loadHistory(chat_id);
-    const systemInstructions = SystemPrompts.main;
-
-    // Get the real messageData that was just inserted (last visible tool_result for this tool)
-    const realToolResult = history.findLast(
-      (item) => item.message?.type === 'function_call_output' && item.message?.name === 'request_mission_plan'
-    );
-    const toolResultForLLM = realToolResult?.message ?? {
-      type: 'function_call_output',
-      name: 'request_mission_plan',
-      output: newOutput,
-    };
-
-    // ── 5b. Emit the re-inserted function_call + new tool_result via WebSocket ─
-    // hideAndReplaceToolResult escribe directo a DB sin pasar por addMessage(),
-    // por lo que el WebSocket nunca emite esos mensajes. Se emiten manualmente aquí.
-    const callId = realToolResult?.message?.call_id;
-    if (callId) {
-      const pairedFunctionCall = history.findLast(
-        (item) =>
-          (item.message?.type === 'function_call' || item.message?.type === 'tool_call') &&
-          (item.message?.call_id === callId || item.message?.id === callId)
-      );
-      if (pairedFunctionCall) {
-        this._emitAssistantMessage(pairedFunctionCall);
-      }
-    }
-    if (realToolResult) {
-      this._emitAssistantMessage(realToolResult);
-    }
-
-    this.continueAfterTools(
-      [toolResultForLLM],
-      chat_id,
-        sessionId,
-      systemInstructions,
-      allowedTools,
-      false,
-        agentProfile,
-      true // skipPersist: new row already inserted at step 3
-    ).then(({ output }) => {
-      // Check if the LLM response contains tool calls that need execution
-      const hasToolCalls = output.some(
-        (item) => item.type === 'function_call' || item.type === 'tool_call'
-      );
-      if (hasToolCalls) {
-        const tools = this.getToolsForProvider(allowedTools);
-        return this.handleToolCallsLoop(
-          output,
-          tools,
-          chat_id,
-          sessionId,
-          systemInstructions,
-          allowedTools,
-          agentProfile
-        );
-      }
-    }).catch((err) => {
-      chatLogger.error(`[returnMissionPlanXYZ] continueAfterTools failed for chat ${chat_id}:`, err);
-      eventBus.emitSafe(EVENTS.CHAT_ASSISTANT_MESSAGE, {
-        chatId: chat_id,
-        from: 'assistant',
-        timestamp: new Date().toISOString(),
-        message: {
-          role: 'assistant',
-          content: `Error al procesar el plan de misión: ${err.message}`,
-          type: 'text',
-          status: 'error',
-        },
-      });
-    });
-
-    return { ok: true, msg: 'Mission plan received. Main chat processing resumed.' };
   }
 }

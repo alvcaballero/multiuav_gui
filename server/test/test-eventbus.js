@@ -3,20 +3,20 @@
  * Ejecutar con: node test-eventbus.js
  */
 
-import { eventBus, EVENTS } from './common/eventBus.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
 
 console.log('\n🧪 Testing EventBus System\n');
 
 // Test 1: Emisión básica
 console.log('Test 1: Basic event emission');
-eventBus.on(EVENTS.MISSION_CREATED, (data) => {
-  console.log('✅ MISSION_CREATED recibido:', data);
+eventBus.on(EVENTS.MISSION_PLAN_SHOWN, (data) => {
+  console.log('✅ MISSION_PLAN_SHOWN recibido:', data);
 });
 
-eventBus.emitSafe(EVENTS.MISSION_CREATED, {
+eventBus.emitSafe(EVENTS.MISSION_PLAN_SHOWN, {
   id: 1,
   name: 'Test Mission',
-  status: 'init'
+  status: 'init',
 });
 
 // Test 2: Múltiples listeners
@@ -32,7 +32,7 @@ eventBus.on(EVENTS.EVENT_CREATED, (data) => {
 eventBus.emitSafe(EVENTS.EVENT_CREATED, {
   type: 'info',
   deviceId: 1,
-  attributes: { message: 'Test event' }
+  attributes: { message: 'Test event' },
 });
 
 // Test 3: Estadísticas
@@ -42,7 +42,7 @@ console.log('📊 Stats:', JSON.stringify(stats, null, 2));
 
 // Test 4: Error handling
 console.log('\nTest 4: Error handling in listeners');
-eventBus.onSafe(EVENTS.MISSION_UPDATED, (data) => {
+eventBus.onSafe(EVENTS.MISSION_UPDATED, (_data) => {
   throw new Error('This error should be caught');
 });
 

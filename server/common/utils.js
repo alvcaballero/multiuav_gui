@@ -1,8 +1,9 @@
-import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
+import { writeFile } from 'fs/promises';
 import { parse, stringify } from 'yaml';
 import { fileURLToPath } from 'url';
-import { dirname, resolve, normalize } from 'path';
-import logger from './logger.js';
+import { dirname, resolve } from 'path';
+import { logger } from './logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -63,17 +64,16 @@ export const writeYAML = async (path, content) => {
   return await writeData(path, saveContent);
 };
 export const writeJSON = async (path, content) => {
-  console.log('write Json' + path);
   const saveContent = JSON.stringify(content, null, 2);
   return await writeData(path, saveContent);
 };
 
 const writeData = async (path, content) => {
   try {
-    await writeFileSync(resolve(__dirname, path), content);
+    await writeFile(resolve(__dirname, path), content);
     return true;
   } catch (err) {
-    console.log(err);
+    logger.error(`Error writing file ${path}: ${err.message}`);
     return false;
   }
 };
@@ -87,6 +87,43 @@ export const addTime = (date, minute) => {
 export const dateString = (date) => {
   return date.toISOString().slice(0, -8).replace('T', ' ');
 };
+
+// Folder-name stamp for the UAV's remote `mission_XXXX` directory. The onboard
+// computer derives the folder name from the UTC `init_date` the server sends in
+// the download action, so this MUST be UTC (never GetLocalTime) to match. Emits
+// `YYYY_MM_DD_HH_mm` (no seconds), e.g. 2026_07_13_14_30. Accepts a Date or any
+// value Date can parse; throws on an invalid/unparseable date.
+export const missionFolderStamp = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`missionFolderStamp: invalid date ${JSON.stringify(date)}`);
+  }
+  return d.toISOString().slice(0, -8).replace('T', ' ').replace(/[-:\s]/g, '_');
+};
 export const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+/**
+ * Runs an async fn and retries it once (by default) if it throws or resolves to
+ * a { state: 'error' } response. Returns the last result/throw after retries.
+ * @param {() => Promise<any>} fn
+ * @param {{ retries?: number, delayMs?: number, isError?: (res:any)=>boolean }} opts
+ */
+export const withRetry = async (
+  fn,
+  { retries = 1, delayMs = 1000, isError = (res) => res?.state === 'error' } = {}
+) => {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await fn();
+      if (!isError(result) || attempt === retries) return result;
+    } catch (err) {
+      lastError = err;
+      if (attempt === retries) throw err;
+    }
+    await sleep(delayMs);
+  }
+  throw lastError;
 };

@@ -13,55 +13,31 @@ export class planningController {
     const response = await planningModel.getMissionTypes();
     res.json(response);
   }
-  static async getMissionTypes(req, res) {
-    const response = await planningModel.getMissionTypes();
-    res.json(response);
-  }
   static async getDefault(req, res) {
     let response = await planningModel.getDefault();
     res.json(response);
   }
-  static getDefaultPlanning() {
-    return planningModel.getDefault();
+  static async getDefaultPlanning() {
+    return await planningModel.getDefault();
   }
 
   static async setDefault(req, res) {
-    let response = await planningModel.setDefault(req.body);
-    res.json(response);
+    try {
+      let response = await planningModel.setDefault(req.body);
+      res.json(response);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 
-  static async setMarkers(req, res) {
-    let response = await planningModel.setMarkers(req.body);
-    res.json(response);
-  }
-  static async getMarkers(req, res) {
-    let response = await planningModel.getMarkers();
-    res.json(response);
-  }
-  static async getMarkersTypes(req, res) {
-    let response = await planningModel.getMarkersTypes();
-    res.json(response);
-  }
-  static async getBases(req, res) {
-    let response = await planningModel.getBases(req.params);
-    res.json(response);
-  }
-  static async getElements(req, res) {
-    let response = await planningModel.getElements(req.params);
-    res.json(response);
-  }
-  static async getBasesWithAssignments(req, res) {
-    let response = await planningModel.getBaseswithAssignments();
-    res.json(response);
-  }
-  static getBasesSettings() {
-    return planningModel.getBasesSettings();
-  }
   static getConfigParam(obj) {
     return planningModel.getParam(obj);
   }
-  static getConfigBases() {
-    return planningModel.getBases();
+  static async getConfigBases() {
+    return await planningModel.getBases();
+  }
+  static async getBasesSettings() {
+    return await planningModel.getBasesSettings();
   }
   static getCaseTypes() {
     return planningModel.getTypes();

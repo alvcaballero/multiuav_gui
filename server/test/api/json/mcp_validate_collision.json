@@ -46,49 +46,34 @@
   },
   "collision_objects": [
     {
-      "name": "turbine_1",
-      "type": "windTurbine",
+      "obstacle_id": "turbine_1",
+      "obstacle_name": "Wind turbine 1",
+      "geometry_type": "circle",
       "position": { "x": 100, "y": 50, "z": 0 },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=15m, height=120m",
-        "caution_zone": "cylinder: radius=25m, height=130m",
-        "safe_zone": "beyond 30m radius"
-      },
-      "aabb": {
-        "min_point": { "x": 85, "y": 35, "z": 0 },
-        "max_point": { "x": 115, "y": 65, "z": 120 }
-      },
-      "metadata": "Wind turbine with 60m blade radius, hub height 80m"
+      "dimensions": { "radius": 15 },
+      "safety_margin": 0,
+      "height": 120,
+      "yaw": 0
     },
     {
-      "name": "building_A",
-      "type": "building",
+      "obstacle_id": "building_A",
+      "obstacle_name": "Building A",
+      "geometry_type": "rectangle",
       "position": { "x": 200, "y": 100, "z": 0 },
-      "zones": {
-        "exclusion_zone": "box: 40m x 30m x 50m",
-        "caution_zone": "box: 50m x 40m x 55m",
-        "safe_zone": "beyond 25m from walls"
-      },
-      "aabb": {
-        "min_point": { "x": 180, "y": 85, "z": 0 },
-        "max_point": { "x": 220, "y": 115, "z": 50 }
-      },
-      "metadata": "Control building for wind farm operations"
+      "dimensions": { "width": 40, "length": 30 },
+      "safety_margin": 0,
+      "height": 50,
+      "yaw": 0
     },
     {
-      "name": "power_line_1",
-      "type": "powerLine",
-      "position": { "x": 150, "y": 75, "z": 15 },
-      "zones": {
-        "exclusion_zone": "corridor: width=10m, height=30m",
-        "caution_zone": "corridor: width=20m, height=40m",
-        "safe_zone": "beyond 15m from cables"
-      },
-      "aabb": {
-        "min_point": { "x": 50, "y": 70, "z": 10 },
-        "max_point": { "x": 250, "y": 80, "z": 25 }
-      },
-      "metadata": "High voltage transmission line 132kV"
+      "obstacle_id": "power_line_1",
+      "obstacle_name": "Power line corridor 1",
+      "geometry_type": "rectangle",
+      "position": { "x": 150, "y": 75, "z": 10 },
+      "dimensions": { "width": 200, "length": 10 },
+      "safety_margin": 0,
+      "height": 15,
+      "yaw": 0
     }
   ]
 }

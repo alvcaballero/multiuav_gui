@@ -85,65 +85,44 @@
   },
   "collision_objects": [
     {
-      "name": "turbine_N1",
-      "type": "windTurbine",
+      "obstacle_id": "turbine_N1",
+      "obstacle_name": "North sector turbine 1",
+      "geometry_type": "circle",
       "position": { "x": 100, "y": 250, "z": 0 },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=20m, height=100m",
-        "caution_zone": "cylinder: radius=35m, height=110m",
-        "safe_zone": "beyond 40m radius"
-      },
-
-      "aabb": {
-        "min_point": { "x": 80, "y": 230, "z": 0 },
-        "max_point": { "x": 120, "y": 270, "z": 100 }
-      },
-      "metadata": "North sector turbine 1"
+      "dimensions": { "radius": 20 },
+      "safety_margin": 0,
+      "height": 100,
+      "yaw": 0
     },
     {
-      "name": "turbine_N2",
-      "type": "windTurbine",
+      "obstacle_id": "turbine_N2",
+      "obstacle_name": "North sector turbine 2",
+      "geometry_type": "circle",
       "position": { "x": 200, "y": 350, "z": 0 },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=20m, height=100m",
-        "caution_zone": "cylinder: radius=35m, height=110m",
-        "safe_zone": "beyond 40m radius"
-      },
-      "aabb": {
-        "min_point": { "x": 180, "y": 330, "z": 0 },
-        "max_point": { "x": 220, "y": 370, "z": 100 }
-      },
-      "metadata": "North sector turbine 2"
+      "dimensions": { "radius": 20 },
+      "safety_margin": 0,
+      "height": 100,
+      "yaw": 0
     },
     {
-      "name": "turbine_S1",
-      "type": "windTurbine",
+      "obstacle_id": "turbine_S1",
+      "obstacle_name": "South sector turbine 1",
+      "geometry_type": "circle",
       "position": { "x": 100, "y": -250, "z": 0 },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=20m, height=100m",
-        "caution_zone": "cylinder: radius=35m, height=110m",
-        "safe_zone": "beyond 40m radius"
-      },
-      "aabb": {
-        "min_point": { "x": 80, "y": -270, "z": 0 },
-        "max_point": { "x": 120, "y": -230, "z": 100 }
-      },
-      "metadata": "South sector turbine 1 - UAV2 enters caution zone"
+      "dimensions": { "radius": 20 },
+      "safety_margin": 0,
+      "height": 100,
+      "yaw": 0
     },
     {
-      "name": "turbine_S2",
-      "type": "windTurbine",
+      "obstacle_id": "turbine_S2",
+      "obstacle_name": "South sector turbine 2",
+      "geometry_type": "circle",
       "position": { "x": 200, "y": -350, "z": 0 },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=20m, height=100m",
-        "caution_zone": "cylinder: radius=35m, height=110m",
-        "safe_zone": "beyond 40m radius"
-      },
-      "aabb": {
-        "min_point": { "x": 180, "y": -370, "z": 0 },
-        "max_point": { "x": 220, "y": -330, "z": 100 }
-      },
-      "metadata": "South sector turbine 2 - UAV2 enters exclusion zone (COLLISION)"
+      "dimensions": { "radius": 20 },
+      "safety_margin": 0,
+      "height": 100,
+      "yaw": 0
     }
   ]
 }

@@ -1,83 +1,114 @@
-import React, { useState } from 'react';
-import { Route, Routes, useLocation, useNavigate, Link } from 'react-router-dom';
-import { useEffectAsync } from './reactHelper';
+import React, { Suspense, lazy } from 'react';
+import { Route, Routes, useNavigate } from 'react-router-dom';
+import { useAsyncTask } from './reactHelper';
 import App from './App';
-import useQuery from './common/useQuery';
-//import HelloWorld from './other/HelloWorld';
-import MainPage from './other/MainPage';
-import MissionPage from './other/MissionPage';
-import MissionPageTest from './other/MissionPageTest';
-import MissionPage3D from './other/MissionPage3D';
-import MainPage3D from './other/MainPage3D';
-import ReplayPage from './other/ReplayPage';
-import DevicePage from './other/DevicePage';
-import CameraPage from './other/CameraPage';
-import EventsPage from './other/EventsPage';
-import TopicsPage from './other/TopicsPage';
-import PlanningPage from './other/PlanningPage';
-import MissionReportPage from './other/MissionReportPage';
-import MissionReportRoutePage from './other/MissionReportRoutePage';
-import MissionDetailReportPage from './other/MissionDetailReportPage';
-import SettingsCategoryPage from './settings/SettingsCategoryPage';
-import SettingsCategoryPageEdit from './settings/SettingsCategoryPageEdit';
-import SettingsDevicesPage from './settings/SettingsDevicesPage';
-import SettingsDevicesPageEdit from './settings/SettingsDevicesPageEdit';
-import GeofencesPage from './other/GeofencesPage';
-import GeofencePage from './settings/GeofencePage';
-import ChatPage from './other/ChatPage';
-const padding = {
-  padding: 5,
-};
+import useQuery from './shared/useQuery';
+import MainPage from './pages/MainPage';
+
+const MissionPage = lazy(() => import('./pages/MissionPage'));
+const MissionPageTest = lazy(() => import('./pages/MissionPageTest'));
+const ReplayPage = lazy(() => import('./pages/ReplayPage'));
+const DevicePage = lazy(() => import('./pages/DevicePage'));
+const CameraPage = lazy(() => import('./pages/CameraPage'));
+const EventsPage = lazy(() => import('./pages/EventsPage'));
+const TopicsPage = lazy(() => import('./pages/TopicsPage'));
+const PlanningPage = lazy(() => import('./pages/PlanningPage'));
+const MissionReportPage = lazy(() => import('./pages/MissionReportPage'));
+const MissionReportRoutePage = lazy(() => import('./pages/MissionReportRoutePage'));
+const MissionDetailReportPage = lazy(() => import('./pages/MissionDetailReportPage'));
+const SettingsCategoryPage = lazy(() => import('./settings/SettingsCategoryPage'));
+const SettingsCategoryPageEdit = lazy(() => import('./settings/SettingsCategoryPageEdit'));
+const SettingsDevicesPage = lazy(() => import('./settings/SettingsDevicesPage'));
+const SettingsDevicesPageEdit = lazy(() => import('./settings/SettingsDevicesPageEdit'));
+const SettingsElementTypesPage = lazy(() => import('./settings/SettingsElementTypesPage'));
+const SettingsElementTypesPageEdit = lazy(() => import('./settings/SettingsElementTypesPageEdit'));
+const GeofencesPage = lazy(() => import('./pages/GeofencesPage'));
+const GeofencePage = lazy(() => import('./settings/GeofencePage'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
+const MainPage3D = lazy(() => import('./pages/MainPage3D'));
+const MissionPage3D = lazy(() => import('./pages/MissionPage3D'));
+const Scene3DEditorPage = lazy(() => import('./pages/Scene3DEditorPage'));
+const DevicePage3D = lazy(() => import('./pages/DevicePage3D'));
+
+const PageLoader = () => (
+  <div
+    style={{
+      position: 'fixed',
+      inset: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        width: 48,
+        height: 48,
+        border: '4px solid #e0e0e0',
+        borderTopColor: '#1976d2',
+        borderRadius: '50%',
+        animation: 'page-spin 0.8s linear infinite',
+      }}
+    />
+    <style>{`@keyframes page-spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 
 const Navigation = () => {
   const navigate = useNavigate();
 
-  const { pathname } = useLocation();
   const query = useQuery();
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     if (!query.get('redirect')) return;
     navigate('/');
-  }, [query]);
+  }, [query, navigate]);
+
   return (
-    <Routes>
-      <Route path="/" element={<App />}>
-        <Route index element={<MainPage />} />
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={<App />}>
+          <Route index element={<MainPage />} />
 
-        {/* This is a temporary route for testing purposes, can be removed later
-         */}
-         <Route path="chat" element={<ChatPage />} />
-        <Route path="3Dview" element={<MainPage3D />} />
-        <Route path="3Dmission" element={<MissionPage3D />} />
+          <Route path="chat" element={<ChatPage />} />
+          <Route path="3Dview" element={<MainPage3D />} />
+          <Route path="3Deditor" element={<Scene3DEditorPage />} />
+          <Route path="3Dmission" element={<MissionPage3D />} />
 
-        <Route path="mission" element={<MissionPage />} />
-        <Route path="missiontest" element={<MissionPageTest />} />
-        <Route path="planning" element={<PlanningPage />} />
-        <Route path="camera" element={<CameraPage />} />
-        <Route path="device/:id" element={<DevicePage />} />
+          <Route path="mission" element={<MissionPage />} />
+          <Route path="missiontest" element={<MissionPageTest />} />
+          <Route path="planning" element={<PlanningPage />} />
+          <Route path="camera" element={<CameraPage />} />
+          <Route path="device/:id" element={<DevicePage />} />
+          <Route path="device3d/:id" element={<DevicePage3D />} />
 
-        <Route path="replay" element={<ReplayPage />} />
-        <Route path="topics" element={<TopicsPage />} />
-        <Route path="geofences" element={<GeofencesPage />} />
+          <Route path="replay" element={<ReplayPage />} />
+          <Route path="topics" element={<TopicsPage />} />
+          <Route path="geofences" element={<GeofencesPage />} />
 
-        <Route path="event/:id" element={<EventsPage />} />
+          <Route path="event/:id" element={<EventsPage />} />
 
-        <Route path="settings">
-          <Route path="devices" element={<SettingsDevicesPage />} />
-          <Route path="devices/:id" element={<SettingsDevicesPageEdit />} />
-          <Route path="category" element={<SettingsCategoryPage />} />
-          <Route path="category/:id" element={<SettingsCategoryPageEdit />} />
-          <Route path="geofence/:id" element={<GeofencePage />} />
+          <Route path="settings">
+            <Route path="devices" element={<SettingsDevicesPage />} />
+            <Route path="devices/:id" element={<SettingsDevicesPageEdit />} />
+            <Route path="category" element={<SettingsCategoryPage />} />
+            <Route path="category/:id" element={<SettingsCategoryPageEdit />} />
+            <Route path="elementTypes" element={<SettingsElementTypesPage />} />
+            <Route path="elementTypes/new" element={<SettingsElementTypesPageEdit />} />
+            <Route path="elementTypes/:id" element={<SettingsElementTypesPageEdit />} />
+            <Route path="geofence/:id" element={<GeofencePage />} />
+          </Route>
+
+          <Route path="reports">
+            <Route path="events" element={<EventsPage />} />
+            <Route path="mission" element={<MissionReportPage />} />
+            <Route path="mission/:id" element={<MissionDetailReportPage />} />
+            <Route path="route" element={<MissionReportRoutePage />} />
+          </Route>
         </Route>
-
-        <Route path="reports">
-          <Route path="events" element={<EventsPage />} />
-          <Route path="mission" element={<MissionReportPage />} />
-          <Route path="mission/:id" element={<MissionDetailReportPage />} />
-          <Route path="route" element={<MissionReportRoutePage />} />
-        </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 };
 

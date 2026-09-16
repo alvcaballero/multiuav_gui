@@ -8,8 +8,7 @@ windows:
       panes:
         - backend:
             - cd ~/work/px4/multiuav_gui/server
-            - nvm use 20
-            - npm run server
+            - nvm use && npm run server
         - server:
             - cd ~/work/px4/multiuav_gui/tmuxinator
             - docker run --rm -it --network=host -v $PWD/../server/config/mediamtx.yml:/mediamtx.yml bluenviron/mediamtx

@@ -48,34 +48,24 @@
   },
   "collision_objects": [
     {
-      "name": "turbine_1",
-      "type": "windTurbine",
+      "obstacle_id": "turbine_1",
+      "obstacle_name": "Wind turbine 1",
+      "geometry_type": "circle",
       "position": { "x": 100, "y": 50, "z": 0 },
-      "zones": {
-        "exclusion_zone": "cylinder: radius=15m, height=120m",
-        "caution_zone": "cylinder: radius=25m, height=130m",
-        "safe_zone": "beyond 30m radius or above 130m altitude"
-      },
-      "aabb": {
-        "min_point": { "x": 85, "y": 35, "z": 0 },
-        "max_point": { "x": 115, "y": 65, "z": 120 }
-      },
-      "metadata": "Wind turbine - safe to fly over at 140m"
+      "dimensions": { "radius": 15 },
+      "safety_margin": 0,
+      "height": 120,
+      "yaw": 0
     },
     {
-      "name": "building_A",
-      "type": "building",
+      "obstacle_id": "building_A",
+      "obstacle_name": "Building A",
+      "geometry_type": "rectangle",
       "position": { "x": 200, "y": 100, "z": 0 },
-      "zones": {
-        "exclusion_zone": "box: 40m x 30m x 50m",
-        "caution_zone": "box: 50m x 40m x 60m",
-        "safe_zone": "above 60m altitude"
-      },
-      "aabb": {
-        "min_point": { "x": 180, "y": 85, "z": 0 },
-        "max_point": { "x": 220, "y": 115, "z": 50 }
-      },
-      "metadata": "Building - safe to fly over at 70m"
+      "dimensions": { "width": 40, "length": 30 },
+      "safety_margin": 0,
+      "height": 50,
+      "yaw": 0
     }
   ]
 }

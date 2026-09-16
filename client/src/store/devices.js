@@ -30,13 +30,13 @@ const { reducer, actions } = createSlice({
       state.selectedIds = action.payload;
       [state.selectedId] = state.selectedIds;
     },
-    updateFollow(state,action){
+    updateFollow(state, action) {
       state.follow = action.payload;
     },
     remove(state, action) {
       delete state.items[action.payload];
     },
-    clear(state, action) {
+    clear(state) {
       state.items = {};
     },
   },

@@ -1,4 +1,5 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
+import { MissionPlan } from './missionPlan.model.js';
 
 const Mission_TABLE = 'Mission';
 
@@ -12,6 +13,25 @@ const MissionSchema = {
   name: {
     allowNull: false,
     type: DataTypes.STRING,
+  },
+  // ID assigned by the external system (ExtApp) that requested the task.
+  // NOT our primary key — `id` always autoincrements internally. This is how we
+  // deduplicate incoming tasks and how we address the mission back to ExtApp.
+  // Null for manual missions (they have no external origin).
+  externalId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  planId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: MissionPlan,
+      key: 'id',
+    },
+  },
+  trigger: {
+    type: DataTypes.STRING,
+    defaultValue: 'automatic',
   },
   uav: {
     type: DataTypes.JSON,
@@ -37,6 +57,10 @@ const MissionSchema = {
   },
   mission: {
     type: DataTypes.JSON,
+  },
+  errorMessage: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
 };
 

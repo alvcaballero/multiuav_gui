@@ -8,7 +8,7 @@ export const ALARM_STATE = z.enum(['None', 'threat', 'confirm', 'UNDEFINED']);
 export const GimbalSchema = z.object({
   x: z.number(),
   y: z.number(),
-  z: z.number()
+  z: z.number(),
 });
 
 export const ObstacleInfoSchema = z.object({
@@ -17,7 +17,7 @@ export const ObstacleInfoSchema = z.object({
   right: z.number(),
   back: z.number(),
   left: z.number(),
-  up: z.number()
+  up: z.number(),
 });
 
 export const PositionAttributesSchema = z.object({
@@ -36,7 +36,7 @@ export const PositionAttributesSchema = z.object({
   MIC_3: z.number().optional(),
   Metano: z.number().optional(),
   Alcohol: z.number().optional(),
-  CO: z.number().optional()
+  CO: z.number().optional(),
 });
 
 export const PositionSchema = z.object({
@@ -48,16 +48,18 @@ export const PositionSchema = z.object({
   speed: z.number().default(0.0),
   course: z.number().default(0.0),
   deviceTime: z.date().optional(),
-  attributes: PositionAttributesSchema
+  attributes: PositionAttributesSchema,
 });
 
 export const CameraSchema = z.object({
   deviceId: z.number(),
   type: z.string(),
   source: z.string(),
-  resolution: z.object({
-    width: z.number(),
-    height: z.number()
-  }).optional(),
-  fps: z.number().optional()
-}); 
+  resolution: z
+    .object({
+      width: z.number(),
+      height: z.number(),
+    })
+    .optional(),
+  fps: z.number().optional(),
+});

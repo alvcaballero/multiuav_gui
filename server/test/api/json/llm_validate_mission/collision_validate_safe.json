@@ -1,0 +1,39 @@
+{
+  "mission": {
+    "version": "3",
+    "name": "Safe Mission",
+    "route": [
+      {
+        "name": "safe_route",
+        "uav": "uav_1",
+        "id": 0,
+        "attributes": {
+          "max_vel": 8,
+          "idle_vel": 5,
+          "mode_yaw": 3,
+          "mode_gimbal": 0,
+          "mode_trace": 0,
+          "mode_landing": 2
+        },
+        "wp": [
+          { "type": "takeoff", "pos": [0, 0, 50], "yaw": 0 },
+          { "type": "transit", "pos": [-500, 300, 120], "yaw": -90 },
+          { "type": "landing", "pos": [0, 0, 50], "yaw": 0 }
+        ],
+        "uav_type": "px4_ros2"
+      }
+    ]
+  },
+  "collision_objects": [
+    {
+      "obstacle_id": "B6",
+      "obstacle_name": "Wind turbine B6",
+      "geometry_type": "circle",
+      "position": { "x": -730.772, "y": 411.171, "z": 0 },
+      "dimensions": { "radius": 35 },
+      "safety_margin": 0,
+      "height": 108,
+      "yaw": 0
+    }
+  ]
+}

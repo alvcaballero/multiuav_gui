@@ -1,15 +1,13 @@
-import React from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import React from 'react';
+import { Outlet } from 'react-router-dom';
 import { makeStyles } from 'tss-react/mui';
 
-import { LinearProgress, useMediaQuery, useTheme } from "@mui/material";
-import SocketController from "./SocketController";
+import SocketController from './SocketController';
 
 import { useDispatch } from 'react-redux';
 
-import {  geofencesActions } from './store';
-import { useEffectAsync } from './reactHelper';
-
+import { geofencesActions } from './store';
+import { useAsyncTask } from './reactHelper';
 
 const useStyles = makeStyles()(() => ({
   page: {
@@ -23,18 +21,17 @@ const useStyles = makeStyles()(() => ({
 
 const App = () => {
   const { classes } = useStyles();
-  const theme = useTheme();
   const dispatch = useDispatch();
 
-  useEffectAsync(async () => {
-      const response = await fetch('/api/geofences');
-      if (response.ok) {
-        dispatch(geofencesActions.refresh(await response.json()));
-      } else {
-        throw Error(await response.text());
-      }
-  }, []);
-
+  useAsyncTask(async () => {
+    const response = await fetch('/api/geofences');
+    if (response.ok) {
+      dispatch(geofencesActions.refresh(await response.json()));
+    } else {
+      throw Error(await response.text());
+    }
+    // dispatch is injected internally by useAsyncTask, see reactHelper.js
+  }, []); // eslint-disable-line @eslint-react/exhaustive-deps
 
   return (
     <>

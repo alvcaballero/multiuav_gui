@@ -1,0 +1,41 @@
+# compose.map.yaml — MapServer OSM offline + glyphServer
+#
+# MapServer requiere volumen con datos pre-importados:
+#   docker volume create osm-data-andalucia
+#   Ver infra/Offline-map.md para importar datos de la región.
+#
+# Sin el volumen el MapServer arranca pero no sirve tiles.
+#
+# Activar en server/.env:
+#   LOCAL_GLYPHS=true   (para glyphServer)
+#
+# Uso:
+#   docker compose \
+#     -f infra/compose/compose.base.yaml \
+#     -f infra/compose/compose.map.yaml up
+
+services:
+  glyphServer:
+    image: 'node:12'
+    user: 'node'
+    working_dir: /home/node/app
+    volumes:
+      - ../../glyphserver/:/home/node/app
+    ports:
+      - '8484:8484'
+    command: 'npm run start'
+
+  MapServer:
+    image: 'overv/openstreetmap-tile-server'
+    command: 'run'
+    volumes:
+      - osm-data-andalucia:/data/database
+    ports:
+      - '8080:80'
+    environment:
+      - ALLOW_CORS=true
+
+volumes:
+  osm-data-andalucia:
+    external: true
+    name: osm-data-andalucia

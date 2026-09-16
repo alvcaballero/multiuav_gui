@@ -1,9 +1,129 @@
 import sequelize from '../../common/sequelize.js';
 import { Op } from 'sequelize';
 import { chatLogger } from '../../common/logger.js';
-import { Json } from 'sequelize/lib/utils';
+import { projectMessage } from './messageProjection.js';
 
 export class ChatHistoryManager {
+  /**
+   * Records the token usage of ONE LLM request.
+   *
+   * Never throws: token accounting must not be able to break a conversation.
+   * Failures are logged and swallowed, same policy as addMessage.
+   *
+   * @param {object} entry
+   * @param {string} entry.chatId
+   * @param {string} entry.turnId - Groups every request of one user turn
+   * @param {object|null} entry.usage - Canonical usage from handler.normalizeUsage()
+   * @param {string} [entry.responseId]
+   * @param {string} [entry.provider]
+   * @param {string} [entry.model]
+   * @param {string} [entry.agent]
+   * @param {string} [entry.phase] - 'initial' | 'tool_loop'
+   * @param {number} [entry.iteration]
+   */
+  static async recordUsage({
+    chatId,
+    turnId,
+    usage,
+    responseId = null,
+    provider = null,
+    model = null,
+    agent = null,
+    phase = null,
+    iteration = 0,
+  }) {
+    if (!usage) return null;
+    try {
+      const row = await sequelize.models.ChatUsage.create({
+        chatId,
+        turnId,
+        responseId,
+        provider,
+        model,
+        agent,
+        phase,
+        iteration,
+        inputTokens: usage.input,
+        cachedTokens: usage.cached,
+        outputTokens: usage.output,
+        reasoningTokens: usage.reasoning,
+        totalTokens: usage.total,
+        raw: usage.raw ?? null,
+        timestamp: new Date(),
+      });
+      chatLogger.debug(
+        `[usage] chat=${chatId} turn=${turnId} it=${iteration} ${phase} | ` +
+          `in=${usage.input} (cached=${usage.cached}) out=${usage.output} (reasoning=${usage.reasoning}) total=${usage.total}`
+      );
+      return row;
+    } catch (error) {
+      chatLogger.error('Error recording token usage:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Token usage for a chat at three levels of detail:
+   *  - requests: ONE ENTRY PER LLM CALL. This is the raw truth, everything else
+   *    is derived from it. Watch `input` climb across a turn — that is the
+   *    conversation context being re-sent on every tool loop iteration.
+   *  - turns: one entry per user message (a turn spans up to 25 requests).
+   *  - totals: the whole chat.
+   * @param {string} chatId
+   * @returns {Promise<{totals: object, turns: Array, requests: Array}>}
+   */
+  static async getUsageForChat(chatId) {
+    const empty = { input: 0, cached: 0, output: 0, reasoning: 0, total: 0, requests: 0 };
+    try {
+      const rows = await sequelize.models.ChatUsage.findAll({
+        where: { chatId },
+        order: [['timestamp', 'ASC']],
+        raw: true,
+      });
+
+      const totals = { ...empty };
+      const byTurn = new Map();
+      const requests = [];
+
+      for (const r of rows) {
+        const add = (acc) => {
+          acc.input += r.inputTokens || 0;
+          acc.cached += r.cachedTokens || 0;
+          acc.output += r.outputTokens || 0;
+          acc.reasoning += r.reasoningTokens || 0;
+          acc.total += r.totalTokens || 0;
+          acc.requests += 1;
+        };
+        add(totals);
+        if (!byTurn.has(r.turnId)) {
+          byTurn.set(r.turnId, { turnId: r.turnId, model: r.model, agent: r.agent, startedAt: r.timestamp, ...empty });
+        }
+        add(byTurn.get(r.turnId));
+
+        requests.push({
+          turnId: r.turnId,
+          phase: r.phase,
+          iteration: r.iteration,
+          provider: r.provider,
+          model: r.model,
+          agent: r.agent,
+          responseId: r.responseId,
+          input: r.inputTokens || 0,
+          cached: r.cachedTokens || 0,
+          output: r.outputTokens || 0,
+          reasoning: r.reasoningTokens || 0,
+          total: r.totalTokens || 0,
+          timestamp: r.timestamp,
+        });
+      }
+
+      return { totals, turns: [...byTurn.values()], requests };
+    } catch (error) {
+      chatLogger.error('Error reading token usage:', error);
+      return { totals: { ...empty }, turns: [], requests: [] };
+    }
+  }
+
   /**
    * Creates a chat item and persists to database
    * @param {string} chatId - Chat identifier
@@ -59,16 +179,17 @@ export class ChatHistoryManager {
   /**
    * Create a new chat with server-generated UUID
    * @param {string} name - Optional chat name
+   * @param {Object} metadata - Optional initial metadata
    * @returns {Promise<object>} Created chat record
    */
-  static async createChat(name = null) {
+  static async createChat(name = null, metadata = {}) {
     const chatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const now = new Date();
 
     const chat = await sequelize.models.Chat.create({
       id: chatId,
       name: name,
-      metadata: {},
+      metadata,
       status: 'active',
       createdAt: now,
       updatedAt: now,
@@ -122,6 +243,7 @@ export class ChatHistoryManager {
   static async deleteChat(chatId, hardDelete = false) {
     if (hardDelete) {
       await sequelize.models.ChatMessage.destroy({ where: { chatId } });
+      await sequelize.models.ChatUsage.destroy({ where: { chatId } });
       await sequelize.models.Chat.destroy({ where: { id: chatId } });
     } else {
       await this.updateChat(chatId, { status: 'deleted' });
@@ -141,40 +263,12 @@ export class ChatHistoryManager {
 
       const { from, timestamp, message } = messageItem;
 
-      let role = message.role;
-      let type = message.type || 'text';
-      let content = null;
-
-      if (message.type === 'function_call' || message.type === 'tool_call') {
-        role = 'assistant';
-        type = 'tool_call';
-        content = `Tool call: ${message.name}`;
-      } else if (message.type === 'function_call_output') {
-        role = 'tool';
-        type = 'tool_result';
-        content = typeof message.output === 'string' ? message.output.slice(0, 500) : null;
-      } else if (message.type === 'message') {
-        role = message.role || 'assistant';
-        type = 'text';
-        if (Array.isArray(message.content)) {
-          const textBlocks = message.content.filter((b) => b.type === 'output_text' || b.type === 'text');
-          content = textBlocks.map((b) => b.text).join('\n');
-        } else if (typeof message.content === 'string') {
-          content = message.content;
-        }
-      } else if (message.type === 'reasoning') {
-        role = 'assistant';
-        type = 'reasoning';
-        if (Array.isArray(message.summary)) {
-          content = message.summary.map((s) => s.text || s).join('\n');
-        }
-      } else if (typeof message.content === 'string') {
-        content = message.content;
-      }
+      // role/type/content are DERIVED from messageData — never authored here.
+      const { role, type, content } = projectMessage(message);
 
       const dbMessage = await sequelize.models.ChatMessage.create({
         chatId,
-        role: role || 'unknown',
+        role: role,
         from: from,
         type: type,
         content: content,
@@ -197,27 +291,30 @@ export class ChatHistoryManager {
    * Load conversation history from database
    * @param {string} chatId - Chat identifier
    * @param {object} options - Pagination options
-   * @returns {Promise<Array>} Array of messages in internal format
+   * @param {number} options.limit - Max rows to return
+   * @param {number} options.offset - Rows to skip (ignored when `before` is set)
+   * @param {boolean} options.all - Include hidden messages (true) or only visible ones (false)
+   * @param {string|null} options.before - ISO timestamp cursor; only messages strictly older than this are returned
+   * @param {'ASC'|'DESC'} options.order - DB sort order. Result is always returned chronologically ascending regardless.
+   * @returns {Promise<Array>} Array of messages in internal format, oldest first
    */
-  static async loadHistory(chatId, { limit = 100, offset = 0 ,all=false} = {}) {
-    
-    let messages = [];
-    if (all) {
-      messages = await sequelize.models.ChatMessage.findAll({
-      where: { chatId },
-      order: [['timestamp', 'ASC']],
+  static async loadHistory(chatId, { limit = 100, offset = 0, all = false, before = null, order = 'ASC' } = {}) {
+    const where = { chatId };
+    if (!all) where.hidden = false;
+    if (before) where.timestamp = { [Op.lt]: new Date(before) };
+
+    const messages = await sequelize.models.ChatMessage.findAll({
+      where,
+      order: [['timestamp', order]],
       limit,
       offset,
     });
-    }else{
-    messages = await sequelize.models.ChatMessage.findAll({
-      where: { chatId, hidden: false },
-      order: [['timestamp', 'ASC']],
-      limit,
-      offset,
-    });}
 
-    return messages.map((msg) => ({
+    // DB may be queried newest-first (for "most recent N" / "N before cursor"
+    // pagination) but callers always get chronological order back.
+    const ordered = order === 'DESC' ? messages.slice().reverse() : messages;
+
+    return ordered.map((msg) => ({
       chatId: msg.chatId,
       from: msg.from,
       timestamp: msg.timestamp.toISOString(),
@@ -259,6 +356,21 @@ export class ChatHistoryManager {
     } catch (error) {
       chatLogger.error('Error getting session ID:', error);
       return null;
+    }
+  }
+
+  /**
+   * Get the full metadata object for a chat.
+   * @param {string} chatId - Chat identifier
+   * @returns {Promise<object>} Metadata object (empty object if not found)
+   */
+  static async getChatMetadata(chatId) {
+    try {
+      const chat = await sequelize.models.Chat.findByPk(chatId);
+      return chat?.metadata || {};
+    } catch (error) {
+      chatLogger.error('Error getting chat metadata:', error);
+      return {};
     }
   }
 
@@ -311,7 +423,9 @@ export class ChatHistoryManager {
         await chat.save();
 
         const logRespId = responseId ? responseId.substring(0, 20) + '...' : 'null';
-        chatLogger.debug(`Updated chat ${chatId} metadata: responseId=${logRespId}, provider=${provider}, model=${model}`);
+        chatLogger.debug(
+          `Updated chat ${chatId} metadata: responseId=${logRespId}, provider=${provider}, model=${model}`
+        );
       }
     } catch (error) {
       chatLogger.error('Error updating chat metadata:', error);
@@ -377,42 +491,6 @@ export class ChatHistoryManager {
   }
 
   /**
-   * Set the agent profile for a chat (persists in metadata)
-   * @param {string} chatId - Chat identifier
-   * @param {string} agentProfile - Profile name ('default', 'planner', etc.)
-   */
-  static async setAgentProfile(chatId, agentProfile) {
-    try {
-      const chat = await sequelize.models.Chat.findByPk(chatId);
-      if (chat) {
-        const metadata = { ...(chat.metadata || {}), agentProfile };
-        chat.metadata = metadata;
-        chat.changed('metadata', true);
-        chat.updatedAt = new Date();
-        await chat.save();
-        chatLogger.info(`Set agentProfile for chat ${chatId}: ${agentProfile}`);
-      }
-    } catch (error) {
-      chatLogger.error('Error setting agentProfile:', error);
-    }
-  }
-
-  /**
-   * Get the agent profile for a chat from metadata
-   * @param {string} chatId - Chat identifier
-   * @returns {Promise<string>} Profile name or 'default'
-   */
-  static async getAgentProfile(chatId) {
-    try {
-      const chat = await sequelize.models.Chat.findByPk(chatId);
-      return chat?.metadata?.agentProfile || 'default';
-    } catch (error) {
-      chatLogger.error('Error getting agentProfile:', error);
-      return 'default';
-    }
-  }
-
-  /**
    * Fork a conversation up to (and including) a specific message timestamp.
    * Creates a new chat and copies all messages up to that point.
    * @param {string} sourceChatId - Source chat identifier
@@ -424,11 +502,20 @@ export class ChatHistoryManager {
     const newChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const now = new Date();
 
+    const sourceChat = await sequelize.models.Chat.findByPk(sourceChatId);
+    const sourceMetadata = sourceChat?.metadata || {};
+
     // Create the new chat
     const newChat = await sequelize.models.Chat.create({
       id: newChatId,
       name: name || null,
-      metadata: { forkedFrom: sourceChatId, forkedAt: now.toISOString() },
+      metadata: {
+        ...sourceMetadata,
+        sessionId: null,
+        lastResponseId: null,
+        forkedFrom: sourceChatId,
+        forkedAt: now.toISOString(),
+      },
       status: 'active',
       createdAt: now,
       updatedAt: now,
@@ -495,6 +582,15 @@ export class ChatHistoryManager {
    * @returns {Promise<boolean>} true if a message was found and updated
    */
   /**
+   * @deprecated UNUSED since subagent results moved to append-only delivery.
+   * Kept for reference only; do not call it for new async-result flows.
+   *
+   * Subagent answers now arrive as `subagent_result` messages appended to the
+   * history (see SubAgentManager.injectSubAgentResponse), which removes the need
+   * to rewrite the past at all. This method anchored on `toolName` via findLast
+   * and hid EVERY message after the match, so two subagents in flight would
+   * clobber each other's results — the append path has no such failure mode.
+   *
    * Hides the last tool_result for a given tool name AND its paired function_call,
    * then re-inserts both at the end of the history with the corrected output.
    * Hidden messages remain in DB for the UI but are excluded from LLM history.
@@ -522,7 +618,11 @@ export class ChatHistoryManager {
       if (!data) return false;
       if (typeof data === 'object') return data.name === toolName;
       if (typeof data === 'string') {
-        try { return JSON.parse(data).name === toolName; } catch { return false; }
+        try {
+          return JSON.parse(data).name === toolName;
+        } catch {
+          return false;
+        }
       }
       return false;
     });
@@ -533,27 +633,35 @@ export class ChatHistoryManager {
     }
 
     // hidden all messages after the original tool_result to prevent the LLM confused
-      await sequelize.models.ChatMessage.update({ hidden: true }, {
+    await sequelize.models.ChatMessage.update(
+      { hidden: true },
+      {
         where: {
           chatId,
           timestamp: {
             [Op.gt]: originalToolResult.timestamp,
           },
         },
-      });
-      chatLogger.info(`[hideAndReplaceToolResult] Hidden ${candidates.length - 1} messages after original tool_result for "${toolName}" in chat ${chatId}`);
+      }
+    );
+    chatLogger.info(
+      `[hideAndReplaceToolResult] Hidden ${candidates.length - 1} messages after original tool_result for "${toolName}" in chat ${chatId}`
+    );
 
     // Extract call_id from the placeholder tool_result to find its paired function_call
-    const originalData = typeof originalToolResult.messageData === 'object'
-      ? originalToolResult.messageData
-      : JSON.parse(originalToolResult.messageData);
+    const originalData =
+      typeof originalToolResult.messageData === 'object'
+        ? originalToolResult.messageData
+        : JSON.parse(originalToolResult.messageData);
     const callId = originalData.call_id;
 
     // ── Hide the originalToolResult tool_result placeholder ────────────────────────────
     originalToolResult.hidden = true;
     originalToolResult.changed('hidden', true);
     await originalToolResult.save();
-    chatLogger.info(`[hideAndReplaceToolResult] Hidden original tool_result for "${toolName}" in chat ${chatId} (id: ${originalToolResult.id})`);
+    chatLogger.info(
+      `[hideAndReplaceToolResult] Hidden original tool_result for "${toolName}" in chat ${chatId} (id: ${originalToolResult.id})`
+    );
 
     // ── Find and hide the paired function_call (tool_call) ───────────────────
     // It may have other messages between it and the tool_result (e.g. text
@@ -568,9 +676,16 @@ export class ChatHistoryManager {
       });
 
       originalToolCall = toolCallCandidates.find((m) => {
-        const data = typeof m.messageData === 'object' ? m.messageData : (() => {
-          try { return JSON.parse(m.messageData); } catch { return null; }
-        })();
+        const data =
+          typeof m.messageData === 'object'
+            ? m.messageData
+            : (() => {
+                try {
+                  return JSON.parse(m.messageData);
+                } catch {
+                  return null;
+                }
+              })();
         return data && (data.call_id === callId || data.id === callId);
       });
 
@@ -578,9 +693,13 @@ export class ChatHistoryManager {
         originalToolCall.hidden = true;
         originalToolCall.changed('hidden', true);
         await originalToolCall.save();
-        chatLogger.info(`[hideAndReplaceToolResult] Hidden original tool_call for "${toolName}" in chat ${chatId} (id: ${originalToolCall.id})`);
+        chatLogger.info(
+          `[hideAndReplaceToolResult] Hidden original tool_call for "${toolName}" in chat ${chatId} (id: ${originalToolCall.id})`
+        );
       } else {
-        chatLogger.warn(`[hideAndReplaceToolResult] No tool_call found with call_id "${callId}" for tool "${toolName}" in chat ${chatId}`);
+        chatLogger.warn(
+          `[hideAndReplaceToolResult] No tool_call found with call_id "${callId}" for tool "${toolName}" in chat ${chatId}`
+        );
       }
     }
 
@@ -588,9 +707,10 @@ export class ChatHistoryManager {
 
     // ── Re-insert the function_call at the end (1 ms before the result) ──────
     if (originalToolCall) {
-      const toolCallData = typeof originalToolCall.messageData === 'object'
-        ? originalToolCall.messageData
-        : JSON.parse(originalToolCall.messageData);
+      const toolCallData =
+        typeof originalToolCall.messageData === 'object'
+          ? originalToolCall.messageData
+          : JSON.parse(originalToolCall.messageData);
 
       await sequelize.models.ChatMessage.create({
         chatId,

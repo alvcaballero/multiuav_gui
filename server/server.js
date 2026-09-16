@@ -1,5 +1,4 @@
-import { port, RosEnable, FbEnable } from './config/config.js';
-import { LLMProvider, LLM, LLMApiKeys } from './config/config.js';
+import { port, RosEnable, FbEnable, LLMProvider, LLM, LLMApiKeys } from './config/config.js';
 
 import express, { json } from 'express';
 import { createServer } from 'http';
@@ -7,20 +6,24 @@ import { corsMiddleware } from './middlewares/cors.js';
 import { setupLogger } from './middlewares/logger.js';
 import { checkFile } from './common/utils.js';
 import { chatController } from './controllers/chat.js'; // LLM provider initialization
-import logger, { logHelpers } from './common/logger.js';
+import { logger, logHelpers } from './common/logger.js';
 import { getErrorPageHTML } from './views/errorPage.js';
 
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
+import { WebsocketInboundRouter } from './WebsocketInboundRouter.js';
 import { initWebsocketController } from './controllers/websocket.js';
 import { setupRoutes } from './routes/index.js';
 
 // EventBus and Subscribers
 import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
+import { CameraStreamSubscriber } from './subscribers/cameraStreamSubscriber.js';
 import { eventBus } from './common/eventBus.js';
+import { positionHistorySampler, positionBroadcastBatcher } from './models/positions/index.js';
+import { missionWpTracking } from './models/mission/missionWpTracking.js';
 
 // comunications with devices
-import { WebsocketDevices } from './WebsocketDevices.js'; // flatbuffer
+import { initFlatbufferServer } from './models/flatbuffer/index.js';
 import { rosModel } from './models/ros/ros.js'; // ros model
 
 // comunication with devices
@@ -70,10 +73,37 @@ const server = createServer(app);
 const wsManager = new WebsocketManager(server, '/api/socket');
 const websocketController = initWebsocketController(wsManager);
 
+// Router de mensajes entrantes: el transporte delega el crudo, el router enruta por `type`
+const wsInboundRouter = new WebsocketInboundRouter();
+wsManager.onMessage((client, raw) => wsInboundRouter.handle(client, raw));
+
 // Initialize EventBus subscribers
 const wsSubscriber = new WebSocketSubscriber(websocketController);
+const cameraSubscriber = new CameraStreamSubscriber(websocketController);
 logger.info('EventBus system initialized', {
-  subscribers: ['WebSocketSubscriber'],
+  subscribers: ['WebSocketSubscriber', 'CameraStreamSubscriber'],
+});
+
+// Muestreo del histórico de posiciones (SQLite es el default, arranca siempre).
+// Primero precarga la caché en RAM con la última posición de cada device desde el
+// histórico (para que el mapa no aparezca vacío), luego arranca el muestreo.
+positionHistorySampler
+  .preloadCache()
+  .then(() => positionHistorySampler.start())
+  .catch((err) => {
+    logger.error(`Position history preload/start failed: ${err.message}`);
+    positionHistorySampler.start();
+  });
+
+// Agrupa POSITION_UPDATED de varios devices en un solo broadcast por tick (ver
+// positionBroadcastBatcher.js) — arranca siempre, no depende de la DB.
+positionBroadcastBatcher.start();
+
+// Mission waypoint tracking: subscribes to ROUTE_UPDATED/POSITION_RECEIVED and
+// rehydrates its in-memory tracking registry from routes already in flight (so a
+// server restart mid-mission doesn't strand them untracked).
+missionWpTracking.init().catch((err) => {
+  logger.error(`missionWpTracking init failed: ${err.message}`);
 });
 
 // connect to  devices
@@ -83,7 +113,7 @@ if (RosEnable) {
   logger.warn('ROS deshabilitado en configuración');
 }
 if (FbEnable) {
-  var ws2 = new WebsocketDevices(8082);
+  initFlatbufferServer(8082);
 } else {
   logger.warn('FB communication disabled');
 }
@@ -140,8 +170,10 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM recibido, cerrando servidor gracefully');
 
-  // Cleanup EventBus and subscribers
+  positionHistorySampler.stop();
+  positionBroadcastBatcher.stop();
   wsSubscriber.cleanup();
+  cameraSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();
 
@@ -154,8 +186,10 @@ process.on('SIGINT', () => {
   logger.info('SIGINT recibido, cerrando servidor gracefully');
   rosModel.GCSunServicesMission();
 
-  // Cleanup EventBus and subscribers
+  positionHistorySampler.stop();
+  positionBroadcastBatcher.stop();
   wsSubscriber.cleanup();
+  cameraSubscriber.cleanup();
   websocketController.destroy();
   eventBus.cleanup();
 

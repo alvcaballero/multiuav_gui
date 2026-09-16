@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import SelectField from '../common/components/SelectField';
+import SelectField from '../shared/components/SelectField';
 import {
   IconButton,
   Button,
@@ -20,10 +18,10 @@ import {
 import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useEffectAsync } from '../reactHelper';
+import { useAsyncTask } from '../reactHelper';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
-import useQuery from '../common/useQuery';
+import useQuery from '../shared/useQuery';
 import EditItemView from './components/EditItemView';
 
 const SettingsCategoryPageEdit = () => {
@@ -35,11 +33,10 @@ const SettingsCategoryPageEdit = () => {
   const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
   const [itemMsg, setItemMsg] = useState(uniqueId ? { uniqueId } : null);
   const [loading, setLoading] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [typeMsgMenu, setTypeMsgMenu] = useState(true);
   const [selectTypeMsgMenu, setSelectTypeMsgMenu] = useState(true);
 
-  useEffectAsync(async () => {
+  useAsyncTask(async () => {
     setLoading(true);
     try {
       const response2 = await fetch('/api/category/messages');
@@ -53,15 +50,18 @@ const SettingsCategoryPageEdit = () => {
     } finally {
       setLoading(false);
     }
-  }, [showAll]);
+  }, []);
 
   const addnewTopic = () => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     if (!newItem.topics) {
       newItem.topics = {};
     }
     if (!newItem.topics[selectTypeMsgMenu]) {
-      newItem.topics[selectTypeMsgMenu] = { name: '', messageType: itemMsg.topics[selectTypeMsgMenu][0] };
+      newItem.topics[selectTypeMsgMenu] = {
+        name: '',
+        messageType: itemMsg.topics[selectTypeMsgMenu][0],
+      };
     }
     setItem(newItem);
     setSelectTypeMsgMenu(null);
@@ -69,12 +69,15 @@ const SettingsCategoryPageEdit = () => {
   };
 
   const addnewService = () => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     if (!newItem.services) {
       newItem.services = {};
     }
     if (!newItem.services[selectTypeMsgMenu]) {
-      newItem.services[selectTypeMsgMenu] = { name: '', messageType: itemMsg.services[selectTypeMsgMenu][0] };
+      newItem.services[selectTypeMsgMenu] = {
+        name: '',
+        messageType: itemMsg.services[selectTypeMsgMenu][0],
+      };
     }
     setItem(newItem);
     setSelectTypeMsgMenu(null);
@@ -82,13 +85,13 @@ const SettingsCategoryPageEdit = () => {
   };
 
   const changeMsgType = (value, key, type) => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     newItem[type][key].messageType = value;
     setItem(newItem);
   };
 
   const removeElement = (key, type) => {
-    const newItem = JSON.parse(JSON.stringify(item));
+    const newItem = structuredClone(item);
     delete newItem[type][key];
     setItem(newItem);
   };
@@ -149,7 +152,7 @@ const SettingsCategoryPageEdit = () => {
                 </TableBody>
               </Table>
 
-              <Box textAlign="center">
+              <Box sx={{ textAlign: 'center' }}>
                 {typeMsgMenu ? (
                   <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
                     add a telemetry
@@ -218,7 +221,7 @@ const SettingsCategoryPageEdit = () => {
                 </TableBody>
               </Table>
 
-              <Box textAlign="center">
+              <Box sx={{ textAlign: 'center' }}>
                 {typeMsgMenu ? (
                   <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
                     add a telemetry

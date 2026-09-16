@@ -1,5 +1,7 @@
 import { MessageOrchestrator } from '../models/chat/chat.js';
-import logger from '../common/logger.js';
+import { SubAgentManager } from '../models/chat/subAgentManager.js';
+import { agents, setAgentForChat } from '../models/chat/agents/index.js';
+import { logger } from '../common/logger.js';
 
 export class chatController {
   static initializeLLMProvider(provider, apiKey) {
@@ -48,9 +50,13 @@ export class chatController {
 
   static async getChatHistory(req, res) {
     const { chatId } = req.params;
+    const { limit, before } = req.query;
 
     try {
-      const history = await MessageOrchestrator.getHistory(chatId);
+      const { messages: history, hasMore } = await MessageOrchestrator.getHistory(chatId, {
+        limit: limit ? parseInt(limit, 10) : undefined,
+        before: before || null,
+      });
 
       // Transform history to client format, excluding system messages
       const messages = history
@@ -61,7 +67,7 @@ export class chatController {
           timestamp: msg.timestamp || new Date().toISOString(),
         }));
 
-      res.json({ chatId, messages, count: messages.length });
+      res.json({ chatId, messages, count: messages.length, hasMore });
     } catch (error) {
       logger.error('Error getting chat history:', error);
       res.status(500).json({ error: error.message });
@@ -79,13 +85,47 @@ export class chatController {
   }
 
   static async createChat(req, res) {
-    const { name } = req.body;
+    const { name, agentProfile } = req.body;
 
     try {
       const chat = await MessageOrchestrator.createChat(name);
+      if (agentProfile) {
+        logger.info(`Setting agent profile '${agentProfile}' for chat ${chat.id}`);
+        if (!Object.keys(agents).includes(agentProfile)) {
+          return res.status(400).json({ error: `Invalid agentProfile '${agentProfile}'.` });
+        }
+        await setAgentForChat(chat.id, agentProfile);
+      }
       res.status(201).json(chat);
     } catch (error) {
       logger.error('Error creating chat:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * GET /api/chat/chats/:chatId/usage
+   * Token usage at three levels: `requests` (one entry per LLM call — the raw
+   * numbers), `turns` (one per user message) and `totals` (whole chat).
+   * Query: ?detail=totals | turns | full (default). Use a narrower detail on
+   * long chats, where `requests` can be hundreds of entries.
+   */
+  static async getChatUsage(req, res) {
+    const { chatId } = req.params;
+    const { detail = 'full' } = req.query;
+
+    try {
+      const { totals, turns, requests } = await MessageOrchestrator.getUsage(chatId);
+      res.json({
+        chatId,
+        totals,
+        turnCount: turns.length,
+        requestCount: requests.length,
+        ...(detail === 'totals' ? {} : { turns }),
+        ...(detail === 'full' ? { requests } : {}),
+      });
+    } catch (error) {
+      logger.error('Error getting chat usage:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -140,65 +180,56 @@ export class chatController {
       res.status(500).json({ error: error.message });
     }
   }
-  static async convertMissionBriefingToXYZ(req, res) {
-    const missionBriefing = req.body;
-    if (!missionBriefing.target_elements || !missionBriefing.drone_information ) {
-      return res.status(400).json({ error: 'target_elements is required.' });
+  static async createSubAgent(req, res) {
+    const { parentChatId, agentType, userMessage, contextInstructions, contextParams, parentToolName } = req.body;
+    if (!parentChatId || !agentType || !userMessage || !parentToolName) {
+      return res.status(400).json({ error: 'parentChatId, agentType, userMessage and parentToolName are required.' });
     }
-
     try {
-      const missionDataXYZ = await MessageOrchestrator.convertMissionBriefingToXYZ(missionBriefing);
-      res.json(missionDataXYZ);
+      const result = await SubAgentManager.createSubAgent({
+        parentChatId,
+        agentType,
+        userMessage,
+        contextInstructions,
+        contextParams,
+        parentToolName,
+      });
+      res.status(201).json(result);
     } catch (error) {
-      logger.error('Error in chatController.convertMissionBriefingToXYZ:', error);
-      res.status(500).json({ error: error.message || 'Failed to convert mission briefing to XYZ.' });
-    }
-  }
-  static async buildMissionPlanXYZ(req, res) {
-    const { target_elements } = req.body;
-
-    if (!target_elements) {
-      return res.status(400).json({ error: 'target_elements is required.' });
-    }
-
-    try {
-      const aiResponse = await MessageOrchestrator.buildMissionPlanXYZ(req.body);
-      res.json({ ...aiResponse });
-    } catch (error) {
-      logger.error('Error in chatController.buildMissionPlanXYZ:', error);
-      res.status(500).json({ error: error.message || 'Failed to create mission plan.' });
+      logger.error('Error in chatController.createSubAgent:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 
-  static async verificationMission(req, res) {
-    const { global_origin, chat_id } = req.body;
-
-    if (!global_origin || !chat_id) {
-      return res.status(400).json({ error: 'Mission data with global_origin and chat_id are required.' });
+  static async injectSubAgentResponse(req, res) {
+    const { toolName, status, description, payload } = req.body;
+    const { chatId } = req.params;
+    if (!chatId) {
+      return res.status(400).json({ error: 'chatId is required.' });
     }
-
     try {
-      const aiResponse = await MessageOrchestrator.verificationMission(req.body);
-      res.json({ ...aiResponse });
-    } catch (error) {
-      logger.error('Error in chatController.verificationMission:', error);
-      res.status(500).json({ error: error.message || 'Failed to verify mission.' });
-    }
-  }
-
-  static async returnMissionPlanXYZ(req, res) {
-    const { chat_id, status, description, missionDataXYZ } = req.body;
-
-    if (!chat_id || !missionDataXYZ) {
-      return res.status(400).json({ error: 'chat_id and missionDataXYZ are required.' });
-    }
-
-    try {
-      const result = await MessageOrchestrator.returnMissionPlanXYZ({ chat_id, status, description, missionDataXYZ });
+      const result = await SubAgentManager.injectSubAgentResponse({
+        chatId,
+        toolName,
+        status,
+        description,
+        payload,
+      });
       res.json(result);
     } catch (error) {
-      logger.error('Error in chatController.returnMissionPlanXYZ:', error);
-      res.status(error.statusCode || 500).json({ error: error.message || 'Failed to process mission plan return.' });
+      logger.error('Error in chatController.injectSubAgentResponse:', error);
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+
+  static async getSubAgentsStatus(req, res) {
+    const { parentChatId } = req.params;
+    try {
+      const subagents = SubAgentManager.listSubAgents(parentChatId);
+      res.json({ subagents });
+    } catch (error) {
+      logger.error('Error in chatController.getSubAgentsStatus:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -215,22 +246,6 @@ export class chatController {
     } catch (error) {
       logger.error('Error in chatController.testMcpTool:', error);
       res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async subAgentPlannerChat(req, res) {
-    const { userMessage } = req.body;
-
-    if (!userMessage) {
-      return res.status(400).json({ error: 'userMessage is required.' });
-    }
-
-    try {
-      const aiResponse = await MessageOrchestrator.subAgentPlannerChat(null, userMessage);
-      res.json({ ...aiResponse });
-    } catch (error) {
-      logger.error('Error in chatController.subAgentPlannerChat:', error);
-      res.status(500).json({ error: error.message || 'Failed to process planner chat.' });
     }
   }
 }

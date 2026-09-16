@@ -1,9 +1,7 @@
 import OpenAI from 'openai';
 import { LLMApiKeys } from '../config/config.js';
-import logger from '../common/logger.js';
+import { logger } from '../common/logger.js';
 import fs from 'fs';
-import path from 'path';
-import os from 'os';
 
 let openaiClient;
 
@@ -24,7 +22,7 @@ export class SpeechController {
       if (!openaiClient) {
         logger.error('OpenAI no está configurado para speech-to-text');
         return res.status(500).json({
-          error: 'El servicio de transcripción de audio no está disponible. Configure OpenAI como proveedor LLM.'
+          error: 'El servicio de transcripción de audio no está disponible. Configure OpenAI como proveedor LLM.',
         });
       }
 
@@ -61,9 +59,7 @@ export class SpeechController {
         let text = transcription.text.trim();
 
         // Verificar si el texto es una alucinación conocida (case insensitive)
-        const isHallucination = hallucinationPatterns.some(pattern =>
-          text.toLowerCase().includes(pattern)
-        );
+        const isHallucination = hallucinationPatterns.some((pattern) => text.toLowerCase().includes(pattern));
 
         // Si es una alucinación o el texto está vacío, devolver error
         if (isHallucination || !text) {
@@ -77,7 +73,7 @@ export class SpeechController {
 
           return res.status(400).json({
             error: 'No se detectó voz clara en el audio. Por favor, habla más cerca del micrófono o repite tu mensaje.',
-            hallucination: true
+            hallucination: true,
           });
         }
 
@@ -102,7 +98,7 @@ export class SpeechController {
         stack: error.stack,
       });
       res.status(500).json({
-        error: 'Error al procesar el audio: ' + error.message
+        error: 'Error al procesar el audio: ' + error.message,
       });
     }
   }
@@ -120,7 +116,7 @@ export class SpeechController {
       if (!openaiClient) {
         logger.error('OpenAI no está configurado para text-to-speech');
         return res.status(500).json({
-          error: 'El servicio de texto a voz no está disponible. Configure OpenAI como proveedor LLM.'
+          error: 'El servicio de texto a voz no está disponible. Configure OpenAI como proveedor LLM.',
         });
       }
 
@@ -128,38 +124,34 @@ export class SpeechController {
         textLength: text.length,
       });
 
-      try {
-        // Usar la API de TTS de OpenAI para generar audio
-        const mp3Response = await openaiClient.audio.speech.create({
-          model: 'tts-1',
-          voice: 'nova', // Voz femenina en español (opciones: alloy, echo, fable, onyx, nova, shimmer)
-          input: text,
-          speed: 1.0,
-        });
+      // Usar la API de TTS de OpenAI para generar audio
+      const mp3Response = await openaiClient.audio.speech.create({
+        model: 'tts-1',
+        voice: 'nova', // Voz femenina en español (opciones: alloy, echo, fable, onyx, nova, shimmer)
+        input: text,
+        speed: 1.0,
+      });
 
-        // Convertir la respuesta a buffer
-        const buffer = Buffer.from(await mp3Response.arrayBuffer());
+      // Convertir la respuesta a buffer
+      const buffer = Buffer.from(await mp3Response.arrayBuffer());
 
-        logger.info('Audio generado exitosamente', {
-          size: buffer.length,
-        });
+      logger.info('Audio generado exitosamente', {
+        size: buffer.length,
+      });
 
-        // Enviar el audio como respuesta
-        res.set({
-          'Content-Type': 'audio/mpeg',
-          'Content-Length': buffer.length,
-        });
-        res.send(buffer);
-      } catch (error) {
-        throw error;
-      }
+      // Enviar el audio como respuesta
+      res.set({
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': buffer.length,
+      });
+      res.send(buffer);
     } catch (error) {
       logger.error('Error en text-to-speech', {
         error: error.message,
         stack: error.stack,
       });
       res.status(500).json({
-        error: 'Error al generar audio: ' + error.message
+        error: 'Error al generar audio: ' + error.message,
       });
     }
   }

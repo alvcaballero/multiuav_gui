@@ -1,0 +1,26 @@
+<% gcs = File.expand_path('../..', __FILE__) %>
+# gcs-mcp.yml — backend + frontend + MCP server (flujo LLM completo)
+# Requiere en server/.env: LLM=true, MCP_ENABLE=true
+# Uso: tmuxinator start -p infra/tmuxinator/gcs-mcp.yml
+name: gcs-mcp
+root: <%= gcs %>
+on_project_exit: tmux kill-server -t gcs-mcp
+
+windows:
+  - GCS:
+      layout: main-vertical
+      panes:
+        - backend:
+            - cd <%= gcs %>/server
+            - nvm use 20
+            - sleep 3
+            - npm run server
+        - mcp:
+            - cd <%= gcs %>/mcp_server
+            - nvm use 22
+            - npm run dev:http
+        - frontend:
+            - cd <%= gcs %>/client
+            - nvm use 20
+            - sleep 3
+            - npm run start

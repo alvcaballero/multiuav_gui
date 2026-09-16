@@ -11,13 +11,16 @@
     "server": "node ./server.js",
     "inspect": "node --inspect ./server.js",
     "test": "node --test test/*.js",
+    "test:e2e:collision": "node test/e2e/test-llm-collision-avoidance.js",
     "test-logger": "node test-logger.js",
-    "build": "tsc --module 'commonjs'  --target 'es5' --outDir fbmsglib/dist fbmsglib/src/schema_main.ts "
+    "build:fbmsglib": "tsup fbmsglib/src/schema_main.ts --format cjs --out-dir fbmsglib/dist --no-dts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
-    "@google/genai": "^1.43.0",
-    "@modelcontextprotocol/sdk": "^1.21.2",
+    "@google/genai": "^2.17.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@toon-format/toon": "^2.1.0",
     "@turf/turf": "^6.5.0",
     "basic-ftp": "^5.0.5",
@@ -25,8 +28,9 @@
     "cors": "2.8.5",
     "dotenv": "^16.4.5",
     "exif-reader": "^2.0.1",
-    "express": "^4.21.1",
+    "express": "^4.22.2",
     "express-ws": "^5.0.2",
+    "fbmsglib": "file:./fbmsglib",
     "flatbuffers": "^24.3.25",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
@@ -35,9 +39,9 @@
     "openai": "^6.8.1",
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",
-    "roslib": "^2.0.0",
+    "roslib": "^2.1.0",
     "sequelize": "^6.37.7",
-    "sharp": "^0.33.5",
+    "sharp": "^0.35.3",
     "sqlite3": "^5.1.7",
     "ssh2-sftp-client": "^8.1.0",
     "util": "^0.12.5",
@@ -49,8 +53,16 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/flatbuffers": "^1.10.3",
     "@types/node": "^20.16.11",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-prettier": "^5.5.6",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5",
+    "tsup": "^8.5.1",
     "typescript": "^5.6.3"
   }
 }

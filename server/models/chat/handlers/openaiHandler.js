@@ -1,0 +1,539 @@
+import OpenAI from 'openai';
+import { BaseLLMHandler, makeUsage, renderSubagentResult } from './baseLLMhandler.js';
+import { SystemPrompts } from '../agents/index.js';
+import { chatLogger } from '../../../common/logger.js';
+
+//suported roles= 'assistant', 'system', 'developer', and 'user'
+// models: gpt-4.1, gpt-4o, o4-mini, gpt-5, gpt-5-mini,, gpt-5-nano gpt-5.2,etc.
+class OpenAIHandler extends BaseLLMHandler {
+  static CAPABILITY_MAP = {
+    low: { model: 'gpt-5-mini-2025-08-07', reasoning: { effort: 'low' } },
+    medium: { model: 'gpt-5-mini-2025-08-07', reasoning: { effort: 'medium' } },
+    high: { model: 'gpt-5-2025-08-07', reasoning: { effort: 'high' } },
+  };
+
+  constructor(apiKey, model = 'gpt-5', systemPrompt = SystemPrompts.openai) {
+    //logger.info(`Apikey in handler ${apiKey}, ${model}`);
+    super(apiKey, model, systemPrompt);
+    if (!apiKey) {
+      throw new Error('OpenAI API Key is required for OpenAIHandler.');
+    }
+  }
+
+  async initialize() {
+    this.client = new OpenAI({
+      apiKey: this.apiKey,
+    });
+    this.initialized = true;
+    chatLogger.info(`✓ OpenAI client initialized (model: ${this.model})`);
+  }
+
+  /**
+   * Ensures an OpenAI conversation exists for the given chat.
+   * Creates one if it doesn't exist yet.
+   * @param {string} chatId - Internal chat identifier
+   * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
+   * @returns {Promise<string|null>} OpenAI conversation ID or null on failure
+   */
+  async ensureSession(chatId, persistence) {
+    let sessionId = await persistence.getSessionId(chatId);
+    if (sessionId) return sessionId;
+
+    try {
+      sessionId = await this._createConversation({ chatId });
+      await persistence.setSessionId(chatId, sessionId);
+      chatLogger.info(`Created OpenAI conversation for chat ${chatId}: ${sessionId}`);
+      return sessionId;
+    } catch (error) {
+      chatLogger.error('Failed to create OpenAI conversation, will use full history:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Handles session-related errors from processMessage.
+   * Clears invalid sessions and creates replacements.
+   * @param {string} chatId - Internal chat identifier
+   * @param {Error} error - The error from processMessage
+   * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
+   * @returns {Promise<boolean>} true if session was recovered (caller should clear sessionId for retry)
+   */
+  async handleSessionError(chatId, error, persistence) {
+    if (this._isConversationLockedError(error)) {
+      await persistence.clearSession(chatId);
+      chatLogger.warn(`Conversation locked for chat ${chatId}, cleared for next message`);
+      return false; // Not recoverable within this request
+    }
+
+    if (error.sessionCleared) {
+      // processMessage already fell back to full history, now recreate session for next message
+      await persistence.clearSession(chatId);
+      try {
+        const newSessionId = await this._createConversation({ chatId });
+        await persistence.setSessionId(chatId, newSessionId);
+        chatLogger.info(`Created replacement OpenAI conversation for chat ${chatId}: ${newSessionId}`);
+      } catch (recreateError) {
+        chatLogger.error('Failed to create replacement conversation:', recreateError);
+      }
+      return true; // The result is already good (fallback succeeded)
+    }
+
+    return false;
+  }
+
+  /**
+   * Creates a new OpenAI conversation (internal helper).
+   * @param {Object} metadata - Optional metadata
+   * @returns {Promise<string>} The conversation ID
+   * @private
+   */
+  async _createConversation(metadata = {}) {
+    if (!this.client) {
+      throw new Error('OpenAI client not initialized');
+    }
+    const conversation = await this.client.conversations.create({ metadata });
+    chatLogger.info(`✓ OpenAI conversation created: ${conversation.id}`);
+    return conversation.id;
+  }
+
+  convertToolsForMCP(tools) {
+    return tools.map((tool) => {
+      return {
+        type: 'function',
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.inputSchema,
+      };
+    });
+  }
+
+  /**
+   * Converts a single tool execution result to OpenAI's function_call_output item(s),
+   * appending an input_image block when the tool result contains image_data
+   * (same convention as Gemini's inlineData support).
+   * @returns {Array} [function_call_output] or [function_call_output, input_image]
+   */
+  convertToolOutput(output) {
+    const parts = [output];
+    try {
+      const raw = typeof output.output === 'string' ? JSON.parse(output.output) : output.output;
+      const inner = raw?.content?.[0]?.text;
+      const parsed = typeof inner === 'string' ? JSON.parse(inner) : inner;
+      if (parsed?.image_data) {
+        const mimeType = parsed.mime_type || 'image/jpeg';
+        parts.push({
+          role: 'user',
+          content: [{ type: 'input_image', image_url: `data:${mimeType};base64,${parsed.image_data}` }],
+        });
+      }
+    } catch {
+      // no image_data, skip
+    }
+    return parts;
+  }
+
+  /**
+   * Expands a list of tool outputs, appending input_image blocks where applicable.
+   * @param {Array} toolOutputs
+   * @returns {Array} Flat list of function_call_output items + optional input_image items
+   */
+  _expandToolOutputsWithImages(toolOutputs) {
+    const expanded = [];
+    for (const output of toolOutputs) {
+      expanded.push(...this.convertToolOutput(output));
+    }
+    return expanded;
+  }
+
+  convertHistory(conversationHistory) {
+    const VALID_ROLES = new Set(['assistant', 'developer', 'user']);
+    const lastconversation = [];
+
+    for (let i = 0; i < conversationHistory.length; i++) {
+      const m = conversationHistory[i].message;
+
+      // system goes as instructions, not in input
+      if (m.role === 'system') continue;
+
+      // reasoning must be sent together with its paired assistant message that follows.
+      // If the next item is not that message, skip the reasoning (dangling, e.g. at history boundary).
+      if (m.type === 'reasoning') {
+        const next = conversationHistory[i + 1]?.message;
+        if (next && (next.type === 'message' || next.role === 'assistant')) {
+          lastconversation.push({ ...m });
+        }
+        continue;
+      }
+
+      // Async subagent result → plain user message (no tool pair to close).
+      // Intercepted before the VALID_ROLES filter: the stored payload carries no
+      // protocol `role`, so it would otherwise be dropped from the input.
+      if (m.type === 'subagent_result') {
+        lastconversation.push({ role: 'user', content: renderSubagentResult(m) });
+        continue;
+      }
+
+      // function_call / function_call_output: Responses API format — no role field
+      if (m.type === 'function_call' || m.type === 'function_call_output') {
+        lastconversation.push({ ...m });
+      } else if (VALID_ROLES.has(m.role)) {
+        lastconversation.push(typeof m.content === 'string' ? { role: m.role, content: m.content } : { ...m });
+      }
+
+      // If this is a tool output with image_data, inject an input_image block right after
+      if (m.type === 'function_call_output') {
+        try {
+          const raw = typeof m.output === 'string' ? JSON.parse(m.output) : m.output;
+          const inner = raw?.content?.[0]?.text;
+          const parsed = typeof inner === 'string' ? JSON.parse(inner) : inner;
+          if (parsed?.image_data) {
+            const mimeType = parsed.mime_type || 'image/jpeg';
+            lastconversation.push({
+              role: 'user',
+              content: [{ type: 'input_image', image_url: `data:${mimeType};base64,${parsed.image_data}` }],
+            });
+          }
+        } catch {
+          // no image_data, skip
+        }
+      }
+    }
+
+    return lastconversation;
+  }
+
+  /**
+   * Converts the new turn input (user message, or tool outputs) into OpenAI
+   * Responses API input items to append after the history. The directive (if
+   * any) is appended separately in processMessage, once, regardless of which
+   * case built the base input.
+   */
+  convertInputMessage(turnInput) {
+    if (!turnInput) return [];
+
+    if (turnInput.type === 'message') {
+      // message can be a string or an array of content blocks (input_text / input_image)
+      return [{ role: 'user', content: turnInput.content }];
+    }
+
+    if (turnInput.type === 'subagent_result') {
+      // Async subagent result → plain user message (no tool pair to close)
+      return [{ role: 'user', content: renderSubagentResult(turnInput.message) }];
+    }
+
+    const toolOutputs = turnInput.type === 'tool_output' ? turnInput.items.filter((i) => i.type !== 'directive') : null;
+    if (toolOutputs && toolOutputs.length > 0) {
+      return this._expandToolOutputsWithImages(toolOutputs);
+    }
+
+    return [];
+  }
+
+  _parseAssistantResponse(assistantMessage) {
+    let msgType = 'text';
+    let responseMsg = {
+      role: 'assistant',
+      content: '',
+    };
+    let toolCalls = [];
+
+    for (const content of assistantMessage) {
+      if (content.type === 'reasoning') {
+        const summaryText = Array.isArray(content.summary)
+          ? content.summary.map((s) => s.text || '').join('\n')
+          : typeof content.summary === 'string'
+            ? content.summary
+            : JSON.stringify(content.summary || content, null, 2);
+        chatLogger.info(`[Reasoning]\n${summaryText}`);
+        content.content = summaryText; // normalizado para el cliente (msg.message.content)
+      }
+      if (content.type === 'function_call' || content.type === 'tool_call') {
+        chatLogger.info(`✓ Tool call request: ${content.name}`);
+        msgType = 'tool_calls';
+        toolCalls.push(content);
+        responseMsg.role = 'tool';
+        responseMsg.name = `execute_${content.name}`;
+      }
+      if (content.type === 'text' || content.type === 'message') {
+        chatLogger.info(`✓ Partial response: ${(content.text || content.content?.text || '').substring(0, 30)}...`);
+        responseMsg.role = 'assistant';
+        responseMsg.content += content.text || content.content?.text || '';
+        msgType = 'text';
+        if (Array.isArray(content.content)) {
+          for (const block of content.content) {
+            if (block.type === 'output_text') {
+              chatLogger.info(`✓ Output text block: ${block.text.substring(0, 30)}...`);
+              responseMsg.content = responseMsg.content === '' ? block.text : '';
+            }
+          }
+        }
+      }
+    }
+
+    return { msgType, responseMsg, toolCalls };
+  }
+
+  async processMessage(turnInput = null, tools = [], conversationHistory = [], options = {}) {
+    if (!this.client) {
+      throw new Error('OpenAI client not initialized');
+    }
+
+    const {
+      sessionId = null, // Provider session ID (e.g., OpenAI conversation ID)
+      previousResponseId = null, // DEPRECATED: Response chaining (kept for backwards compatibility)
+      instructions = null,
+      allowedTools = null, // list of allowed tool names for this call
+      agent = null, // Full agent object from resolveAgentForChat
+    } = options;
+    const directive = turnInput?.type === 'tool_output' ? turnInput.items.find((i) => i.type === 'directive') : null;
+
+    chatLogger.info(
+      `Processing message with OpenAIHandler (sessionId: ${sessionId ? sessionId.substring(0, 20) + '...' : 'none'}, previousResponseId: ${previousResponseId ? previousResponseId.substring(0, 20) + '...' : 'none'}, tools: ${tools.length}, conversationHistory: ${conversationHistory.length} messages)`
+    );
+    if (instructions) {
+      chatLogger.info(
+        `✓ Instructions provided: ${typeof instructions === 'string' ? instructions.substring(0, 30) + '...' : JSON.stringify(instructions).substring(0, 30) + '...'}`
+      );
+    }
+
+    const profile = this.resolveModelConfig(agent);
+
+    // Parameters for the call — model and reasoning come from the agent profile
+    const params = {
+      model: profile.model || this.model,
+      reasoning: profile.reasoning || { effort: 'medium' },
+    };
+
+    // Add tools if available
+    // If allowedTools is empty array, don't include tools (forces text-only response)
+    if (tools.length > 0 && (!allowedTools || allowedTools.length > 0)) {
+      params.tools = this.convertToolsForMCP(tools);
+      params.tool_choice = 'auto';
+      if (allowedTools && allowedTools.length > 0) {
+        params.tool_choice = {
+          type: 'allowed_tools',
+          mode: 'auto',
+          tools: allowedTools.map((toolName) => ({ type: 'function', name: toolName })),
+        };
+      }
+    }
+
+    // CASE 1: Using sessionId (Conversations API - preferred, persistent 30 days)
+    if (sessionId) {
+      params.conversation = sessionId;
+      params.input = this.convertInputMessage(turnInput);
+
+      if (instructions) params.instructions = instructions;
+    }
+    // CASE 2: Using previous_response_id (legacy response chaining - backwards compatibility)
+    else if (previousResponseId) {
+      params.previous_response_id = previousResponseId;
+      params.input = this.convertInputMessage(turnInput);
+
+      if (instructions) params.instructions = instructions;
+    }
+    // CASE 3: First message or fallback (full history path)
+    else {
+      params.input = [...this.convertHistory(conversationHistory), ...this.convertInputMessage(turnInput)];
+
+      // Send system prompt as instructions (separate from input, like Gemini's systemInstruction)
+      const systemText = instructions || this.systemPrompt;
+      if (systemText) params.instructions = systemText;
+    }
+
+    // Appended once regardless of which case built params.input above.
+    if (directive) params.input.push({ role: directive.role, content: directive.content });
+
+    chatLogger.info('tools');
+    for (const tool of tools) {
+      chatLogger.info(`✓ ${tool.name}: ${tool.description.substring(0, 100)}...`);
+    }
+    chatLogger.info(`✓ Message for OpenAI`);
+    for (const msg of Array.isArray(params.input) ? params.input : []) {
+      const raw = msg.content ?? msg.output ?? msg;
+      const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+      chatLogger.info(
+        `- role: ${msg.role ?? msg.type}, content: ${text.replace(/\r?\n|\r/g, ' ').substring(0, 100)}...`
+      );
+    }
+    try {
+      const logId = sessionId
+        ? `sessionId: ${sessionId.substring(0, 20)}...`
+        : previousResponseId
+          ? `previousResponseId: ${previousResponseId.substring(0, 20)}...`
+          : 'none';
+      chatLogger.info(`→ Sending message to OpenAI (${logId})...`);
+      if (Array.isArray(params.input) && params.input.length === 0 && !params.conversation) {
+        throw new Error('params.input is empty and no conversation/session — cannot send request to OpenAI');
+      }
+      const response = await this.client.responses.create(params);
+
+      // Verificar el estado de la respuesta
+      if (response.status !== 'completed') {
+        chatLogger.error(
+          `OpenAI response status: ${response.status} | ID: ${response.id || 'N/A'} | Model: ${response.model || this.model}`
+        );
+        if (response.status === 'failed' && response.error) {
+          chatLogger.error(`Error: [${response.error.code || 'unknown'}] ${response.error.message || 'No message'}`);
+        }
+        if (response.status === 'incomplete' && response.incomplete_details) {
+          chatLogger.error(`Incomplete reason: ${response.incomplete_details.reason || 'unknown'}`);
+        }
+      }
+
+      const assistantMessage = response.output;
+
+      // Parse response (result unused here, but parsing logs the response)
+      this._parseAssistantResponse(assistantMessage);
+
+      // Return extended result with response metadata
+      return {
+        output: assistantMessage,
+        responseId: response.id,
+        model: response.model || this.model,
+        status: response.status,
+        usage: this.normalizeUsage(response.usage),
+      };
+    } catch (error) {
+      chatLogger.error('Error in OpenAI:', error);
+
+      // If conversation_locked error (concurrent access), signal to continue without conversation
+      if (this._isConversationLockedError(error)) {
+        chatLogger.warn(`Conversation locked error, will continue without persistent conversation`);
+        const wrappedError = new Error(error.message);
+        wrappedError.code = 'conversation_locked';
+        wrappedError.recoverable = true;
+        wrappedError.userMessage =
+          'La conversación está siendo procesada por otra solicitud. Puedes continuar chateando, pero el historial de esta sesión no se mantendrá en el servidor.';
+        throw wrappedError;
+      }
+
+      // If sessionId fails (expired, not found, or missing tool outputs), try to recreate or fall back
+      if (sessionId && (this._isConversationError(error) || this._isResponseIdError(error))) {
+        chatLogger.warn(`sessionId failed (${error.message}), falling back to full history`);
+        const result = await this.processMessage(turnInput, tools, conversationHistory, {
+          sessionId: null,
+          previousResponseId: null,
+          instructions,
+        });
+        result.sessionCleared = true; // Signal for handleSessionError to recreate
+        return result;
+      }
+
+      // If previous_response_id fails (expired, not found, missing tool outputs), fall back to full history
+      if (previousResponseId && this._isResponseIdError(error)) {
+        chatLogger.warn(`previous_response_id failed (${error.message}), falling back to full history`);
+        const result = await this.processMessage(turnInput, tools, conversationHistory, {
+          sessionId: null,
+          previousResponseId: null,
+          instructions,
+        });
+        result.responseIdCleared = true; // Signal to clear stored responseId
+        return result;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Check if the error is related to an invalid/expired response ID or missing tool outputs
+   * @param {Error} error - The error object
+   * @returns {boolean} True if it's a response ID error that should trigger fallback
+   */
+  _isResponseIdError(error) {
+    const message = error.message?.toLowerCase() || '';
+    return (
+      (message.includes('response') &&
+        (message.includes('not found') || message.includes('expired') || message.includes('invalid'))) ||
+      message.includes('tool output') ||
+      message.includes('function call')
+    );
+  }
+
+  /**
+   * Check if the error is related to an invalid/expired conversation
+   * @param {Error} error - The error object
+   * @returns {boolean} True if it's a conversation error that should trigger fallback
+   */
+  _isConversationError(error) {
+    const message = error.message?.toLowerCase() || '';
+    return (
+      (message.includes('conversation') &&
+        (message.includes('not found') || message.includes('expired') || message.includes('invalid'))) ||
+      message.includes('conv_')
+    );
+  }
+
+  /**
+   * Check if the error is a conversation_locked error (concurrent access)
+   * @param {Error} error - The error object
+   * @returns {boolean} True if it's a conversation_locked error
+   */
+  _isConversationLockedError(error) {
+    return error.code === 'conversation_locked' || error.message?.toLowerCase().includes('conversation_locked');
+  }
+
+  async handleToolCall(toolCall, toolExecutor) {
+    chatLogger.info('Handling tool call:', JSON.stringify(toolCall, null, 2).substring(0, 30) + '...');
+    try {
+      const functionName = toolCall.name;
+      const functionArgs = JSON.parse(toolCall.arguments);
+
+      // Execute the tool through MCP
+      const result = await toolExecutor(functionName, functionArgs);
+      chatLogger.info(`✓ Tool ${functionName} response:`, JSON.stringify(result, null, 2).substring(0, 30) + '...');
+
+      // Response format for OpenAI Responses API (no 'name' field allowed)
+      return {
+        type: 'function_call_output',
+        call_id: toolCall.call_id,
+        output: JSON.stringify(result),
+      };
+    } catch (error) {
+      chatLogger.error('Error handling tool call:', error);
+      return {
+        type: 'function_call_output',
+        call_id: toolCall.call_id,
+        output: JSON.stringify({ error: error.message }),
+      };
+    }
+  }
+
+  /**
+   * Responses API: usage = { input_tokens, output_tokens, total_tokens,
+   * input_tokens_details.cached_tokens, output_tokens_details.reasoning_tokens }.
+   * cached_tokens is a SUBSET of input_tokens (already counted, just billed cheaper).
+   * Image tokens are folded into input_tokens — there is no separate field.
+   */
+  normalizeUsage(rawUsage) {
+    if (!rawUsage) return null;
+    return makeUsage({
+      input: rawUsage.input_tokens,
+      output: rawUsage.output_tokens,
+      cached: rawUsage.input_tokens_details?.cached_tokens,
+      reasoning: rawUsage.output_tokens_details?.reasoning_tokens,
+      total: rawUsage.total_tokens,
+      raw: rawUsage,
+    });
+  }
+
+  normalizeResponse(response) {
+    // Handle both old format (array) and new format (object with output)
+    const output = Array.isArray(response) ? response : response.output;
+    const responseId = response.responseId || null;
+
+    return {
+      provider: 'openai',
+      content: output,
+      model: response.model || this.model,
+      responseId: responseId,
+      usage: response.usage || null,
+      raw: response,
+    };
+  }
+
+  getProviderName() {
+    return 'openai';
+  }
+}
+export { OpenAIHandler };

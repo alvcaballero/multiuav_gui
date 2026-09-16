@@ -1,5 +1,4 @@
-import { area } from '@turf/turf';
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 
 const Geofence_TABLE = 'Geofence';
 

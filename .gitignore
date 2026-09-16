@@ -2,7 +2,9 @@
 logs/
 *.log
 
-# server files 
+# server files
+server/fbmsglib/src/
+data/*
 guides/Activities.md
 devices/init/vpn/login.text
 server/config/devices/devices_init.yaml
@@ -12,8 +14,13 @@ server/data/*
 server/data/*.json
 server/data/*.yaml
 server/data/*.kml
+# Track static element type assets but not custom ones
+!server/data/element-types
+server/data/element-types/*
+!server/data/element-types/powerTower
+!server/data/element-types/windTurbine
+!server/data/element-types/solarPanel
 /devices/vtol/stream/build/
-**/package-lock.json
 .DS_Store
 Thumbs.db
 dji_executables
@@ -30,7 +37,6 @@ yarn-debug.log*
 yarn-error.log*
 postgres_data
 
-CLAUDE.md
 # IDE and editor files
 .vscode/
 .claude/
@@ -49,6 +55,9 @@ ehthumbs.db
 Thumbs.db
 
 
+# Build artifacts
+client/build/
+
 # Dependencies
 node_modules/
 
@@ -58,3 +67,11 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# development files
+TODO.MD
+TODO.md
+
+# Python virtual environments (e.g. uv-managed thermal image processor)
+.venv/
+__pycache__/

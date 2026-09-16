@@ -1,0 +1,167 @@
+import palette from '../../shared/palette';
+import { createTheme } from '@mui/material';
+import { loadImage, prepareIcon } from './mapUtil';
+
+import { grey } from '@mui/material/colors';
+import backgroundSvg from '../../resources/images/background.svg';
+import directionSvg from '../../resources/images/direction.svg';
+import backgroundBorderSvg from '../../resources/images/background_border.svg';
+import backgroundDirectionSvg from '../../resources/images/background_direction.svg';
+
+import planeSvg from '../../resources/images/icon/plane.svg';
+import helicopterSvg from '../../resources/images/icon/helicopter.svg';
+import droneSvg from '../../resources/images/icon/drone1.svg';
+import birdSvg from '../../resources/images/icon/bird.svg';
+import dronedjiSvg from '../../resources/images/icon/drone2.svg';
+import dronePx4Svg from '../../resources/images/icon/drone3.svg';
+import triangleSvg from '../../resources/images/icon/triangle.svg';
+import locationPointSvg from '../../resources/images/icon/locationPoint.svg';
+import powerTowerSvg from '../../resources/images/icon/PowerTower1.svg';
+import windTurbineSvg from '../../resources/images/icon/windTurbine.svg';
+import solarPanelSvg from '../../resources/images/icon/SolarPanel.svg';
+import RectangleSvg from '../../resources/images/icon/Rectangle.svg';
+import ArrowMapSvg from '../../resources/images/icon/ArrowMap.svg';
+import ArrowMapFronSvg from '../../resources/images/icon/ArrowMap2.svg';
+
+import FrontDroneSvg from '../../resources/images/icon/drone-svgrepo.svg';
+
+const colors = {
+  0: '#F34C28',
+  1: '#F39A28',
+  2: '#1EC910',
+  3: '#1012C9',
+  4: '#C310C9',
+  5: '#1FDBF1',
+  6: '#387478',
+  7: '#808080',
+};
+
+export const mapIcons = {
+  helicopter: helicopterSvg,
+  plane: planeSvg,
+  drone: droneSvg,
+  dji_M210: dronedjiSvg,
+  dji_M300: dronedjiSvg,
+  dji_M600: FrontDroneSvg,
+  px4: planeSvg,
+  catec: dronePx4Svg,
+  fuvex: planeSvg,
+  griffin: birdSvg,
+  ArrowMap: ArrowMapSvg,
+  default: planeSvg,
+};
+
+export const frontIcons = {
+  helicopter: FrontDroneSvg,
+  plane: FrontDroneSvg,
+  drone: FrontDroneSvg,
+  dji_M210: FrontDroneSvg,
+  dji_M300: FrontDroneSvg,
+  dji_M600: FrontDroneSvg,
+  px4: FrontDroneSvg,
+  catec: FrontDroneSvg,
+  fuvex: FrontDroneSvg,
+  ArrowMap: ArrowMapFronSvg,
+  default: FrontDroneSvg,
+};
+
+export const mapIconKey = (category) => {
+  switch (category) {
+    case 'dji_M210_noetic':
+    case 'dji_M210_melodic_rtk':
+    case 'dji_M210_melodic':
+    case 'dji_M210_noetic_rtk':
+      return 'dji_M210';
+    case 'dji_M300':
+    case 'dji_M300_rtk':
+      return 'dji_M300';
+    default:
+      return mapIcons.hasOwnProperty(category) ? category : 'default';
+  }
+};
+
+export const mapImages = {};
+
+let imagesReadyResolve;
+export const imagesReady = new Promise((resolve) => {
+  imagesReadyResolve = resolve;
+});
+
+const theme = createTheme({
+  palette: {
+    neutral: { main: grey[500] },
+  },
+});
+
+export default async () => {
+  const background = await loadImage(backgroundSvg);
+  const backgroundBorder = await loadImage(backgroundBorderSvg);
+  const backgroundDirection = await loadImage(backgroundDirectionSvg);
+
+  mapImages.background = await prepareIcon(background);
+  mapImages.direction = await prepareIcon(await loadImage(directionSvg));
+
+  mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
+  mapImages.item = await prepareIcon(await loadImage(triangleSvg));
+  mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
+  mapImages.windTurbine = await prepareIcon(await loadImage(windTurbineSvg));
+  mapImages.solarPanel = await prepareIcon(await loadImage(solarPanelSvg));
+  mapImages.locPoint = await prepareIcon(await loadImage(locationPointSvg));
+
+  // Load icons from custom element type catalog
+  try {
+    const res = await fetch('/api/markers/types');
+    if (res.ok) {
+      const types = await res.json();
+      await Promise.all(
+        types.flatMap((t) => {
+          if (!t.isCustom || !t.icon) return [];
+          return [
+            (async () => {
+              try {
+                mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
+              } catch (error) {
+                console.error(`Failed to load custom icon for type "${t.id}" (${t.icon}):`, error);
+                // fallback: use default-neutral icon if asset missing
+              }
+            })(),
+          ];
+        }),
+      );
+    }
+  } catch {
+    console.log('fialt to make a call to get customs icons ');
+    // server unavailable — skip custom icons
+  }
+
+  Object.keys(palette.colors_devices).forEach((color) => {
+    mapImages[`background-${color}`] = prepareIcon(background, null, colors[color]);
+    mapImages[`mission-${color}`] = prepareIcon(backgroundBorder, null, colors[color]);
+    mapImages[`backgroundDirection-${color}`] = prepareIcon(
+      backgroundDirection,
+      null,
+      colors[color],
+    );
+  });
+  await Promise.all(
+    Object.keys(mapIcons).map(async (category) => {
+      let icon;
+      try {
+        icon = await loadImage(mapIcons[category]);
+      } catch (e) {
+        console.warn(`preloadImages: failed to load icon for "${category}"`, e);
+        return;
+      }
+      ['info', 'success', 'error', 'neutral'].forEach((color) => {
+        mapImages[`${category}-${color}`] = prepareIcon(
+          background,
+          icon,
+          theme.palette[color].main,
+        );
+      });
+    }),
+  );
+  console.log('preload icon');
+  console.log(mapImages);
+  imagesReadyResolve();
+};

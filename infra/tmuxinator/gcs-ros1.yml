@@ -1,0 +1,29 @@
+<% gcs = File.expand_path('../..', __FILE__) %>
+# gcs-ros1.yml — backend + frontend + ROS 1 Noetic via Docker
+# Uso: tmuxinator start -p infra/tmuxinator/gcs-ros1.yml
+name: gcs-ros1
+root: <%= gcs %>
+on_project_exit: tmux kill-window
+
+windows:
+  - GCS:
+      layout: main-vertical
+      panes:
+        - backend:
+            - cd <%= gcs %>/server
+            - nvm use 20
+            - npm run server
+        - frontend:
+            - cd <%= gcs %>/client
+            - nvm use 20
+            - sleep 3
+            - npm run start
+
+  - ROS:
+      layout: tiled
+      panes:
+        - rosbridge:
+            - docker compose -f <%= gcs %>/infra/compose/compose.base.yaml -f <%= gcs %>/infra/compose/compose.ros1.yaml up RosBridge
+        - aux:
+            - sleep 5
+            - docker exec -it $(docker ps -qf "ancestor=muavgcs:ros1") bash

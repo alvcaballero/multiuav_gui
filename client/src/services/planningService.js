@@ -8,7 +8,7 @@
 /**
  * Tipos de objetivo disponibles
  */
-export const OBJETIVO_TYPES = {
+const OBJETIVO_TYPES = {
   PATH_OBJECT: 'path-object',
   OBJECT: 'object',
   POINT: 'point',
@@ -64,7 +64,7 @@ const managePathObjectPoints = (locations, point) => {
 
   // Buscar si ya existe un elemento con el mismo groupId
   const existingRouteIndex = locations.findIndex(
-    (element) => element.items[0]?.groupId === point.groupId
+    (element) => element.items[0]?.groupId === point.groupId,
   );
 
   if (existingRouteIndex === -1) {
@@ -118,40 +118,6 @@ const createNewElement = (point) => {
 };
 
 /**
- * Valida que un punto tenga la estructura correcta
- *
- * @param {Object} point - Punto a validar
- * @returns {boolean} True si el punto es válido
- */
-export const isValidPoint = (point) => {
-  return (
-    point &&
-    typeof point === 'object' &&
-    typeof point.latitude === 'number' &&
-    typeof point.longitude === 'number'
-  );
-};
-
-/**
- * Valida que un array de locations tenga la estructura correcta
- *
- * @param {Array} locations - Array de locations a validar
- * @returns {boolean} True si todas las locations son válidas
- */
-export const areValidLocations = (locations) => {
-  if (!Array.isArray(locations)) return false;
-
-  return locations.every(
-    (location) =>
-      location &&
-      typeof location === 'object' &&
-      location.type &&
-      Array.isArray(location.items) &&
-      location.items.every(isValidPoint)
-  );
-};
-
-/**
  * Transforma locations a formato de API
  *
  * @param {Array} locations - Array de locations
@@ -174,9 +140,9 @@ export const transformLocationsForAPI = (locations) => {
  * @returns {Object} { isValid: boolean, duplicates: Array, errorMsg: string }
  */
 export const validateUniqueDevices = (assignments) => {
-  const deviceIds = assignments
-    .map((assignment) => assignment.device.id)
-    .filter((id) => id !== '');
+  const deviceIds = assignments.flatMap((assignment) =>
+    assignment.device.id !== '' ? [assignment.device.id] : [],
+  );
 
   const hasDuplicates = deviceIds.some((id, index, list) => list.indexOf(id) !== index);
 
