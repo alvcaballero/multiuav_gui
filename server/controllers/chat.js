@@ -1,4 +1,6 @@
 import { MessageOrchestrator } from '../models/chat/chat.js';
+import { EveOrchestrator } from '../models/chat/eveOrchestrator.js';
+import { ChatHistoryManager } from '../models/chat/chatHistoryManager.js';
 import { SubAgentManager } from '../models/chat/subAgentManager.js';
 import { agents, setAgentForChat } from '../models/chat/agents/index.js';
 import { logger } from '../common/logger.js';
@@ -8,12 +10,36 @@ export class chatController {
     MessageOrchestrator.initializeLLMProvider(provider, apiKey, options);
   }
 
+  /**
+   * Which orchestrator a chat runs on. Defaults to 'legacy' (MessageOrchestrator)
+   * unless the chat's metadata explicitly opted into 'eve' at creation
+   * (see `createChat`). A chat with no row yet (new chatId) is 'legacy'.
+   * @param {string} chatId
+   * @returns {Promise<'legacy'|'eve'>}
+   */
+  static async _resolveEngine(chatId) {
+    if (!chatId) return 'legacy';
+    const metadata = await ChatHistoryManager.getChatMetadata(chatId);
+    return metadata.engine === 'eve' ? 'eve' : 'legacy';
+  }
+
   static async sendMessage(req, res) {
     const { message, chatId } = req.body;
     const effectiveChatId = chatId || 'default_http'; // Default for HTTP requests
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required.' });
+    }
+
+    const engine = await chatController._resolveEngine(effectiveChatId);
+    if (engine === 'eve') {
+      try {
+        const result = await EveOrchestrator.processMessage(effectiveChatId, message);
+        return res.json(result);
+      } catch (error) {
+        logger.error('Error in chatController.sendMessage (eve):', error);
+        return res.status(500).json({ error: error.message || 'Failed to get eve response.' });
+      }
     }
 
     if (!MessageOrchestrator.isReady()) {
@@ -41,6 +67,12 @@ export class chatController {
       const newChat = await MessageOrchestrator.createChat();
       effectiveChatId = newChat.id;
       logger.info(`Created new chat for message: ${effectiveChatId}`);
+    }
+
+    const engine = await chatController._resolveEngine(effectiveChatId);
+    if (engine === 'eve') {
+      const result = await EveOrchestrator.processMessage(effectiveChatId, message);
+      return { ...result, chatId: effectiveChatId };
     }
 
     // Process message and return result with chatId
@@ -106,16 +138,24 @@ export class chatController {
   }
 
   static async createChat(req, res) {
-    const { name, agentProfile } = req.body;
+    const { name, agentProfile, engine } = req.body;
+
+    if (engine && engine !== 'eve') {
+      return res.status(400).json({ error: `Invalid engine '${engine}'. Only 'eve' is a valid opt-in.` });
+    }
 
     try {
-      const chat = await MessageOrchestrator.createChat(name);
+      const chat = await MessageOrchestrator.createChat(name, engine === 'eve' ? { engine: 'eve' } : {});
       if (agentProfile) {
-        logger.info(`Setting agent profile '${agentProfile}' for chat ${chat.id}`);
-        if (!Object.keys(agents).includes(agentProfile)) {
-          return res.status(400).json({ error: `Invalid agentProfile '${agentProfile}'.` });
+        if (engine === 'eve') {
+          logger.warn(`Ignoring agentProfile '${agentProfile}' for eve chat ${chat.id}: eve has no agent profiles.`);
+        } else {
+          logger.info(`Setting agent profile '${agentProfile}' for chat ${chat.id}`);
+          if (!Object.keys(agents).includes(agentProfile)) {
+            return res.status(400).json({ error: `Invalid agentProfile '${agentProfile}'.` });
+          }
+          await setAgentForChat(chat.id, agentProfile);
         }
-        await setAgentForChat(chat.id, agentProfile);
       }
       res.status(201).json(chat);
     } catch (error) {

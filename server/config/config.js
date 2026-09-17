@@ -68,6 +68,11 @@ export const LLMBaseURLs = {
 export const LLMModel = process.env.LLM_MODEL || '';
 export const MCPenable = process.env.MCP_ENABLE === 'true'; // Model Context Protocol
 
+// eve agent orchestrator (gcs_eevee_assistant) — opt-in per chat via metadata.engine === 'eve',
+// runs alongside the legacy MessageOrchestrator/mcpClient path, does not replace it.
+export const EveEnable = process.env.EVE_ENABLE === 'true';
+export const EveUrl = process.env.EVE_URL || 'http://127.0.0.1:2000';
+
 const VALID_MCP_TRANSPORTS = ['stdio', 'http', 'sse'];
 let _MCPconfig = {};
 const raw = process.env.MCP_CONFIG;
