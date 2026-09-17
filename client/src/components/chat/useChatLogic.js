@@ -5,6 +5,15 @@ import { sendChatMessage } from '../../services/sendChatMessage';
 
 const EMPTY_MESSAGES = [];
 
+/** How close to the bottom still counts as "following the conversation", in px. */
+const STICK_TO_BOTTOM_PX = 120;
+
+/**
+ * How long after a gesture its trailing scroll events still count as the user's.
+ * Covers wheel momentum and the frames between a drag and the scroll it produces.
+ */
+const USER_SCROLL_INTENT_MS = 400;
+
 const useChatLogic = (open = true) => {
   const dispatch = useDispatch();
 
@@ -24,9 +33,14 @@ const useChatLogic = (open = true) => {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const audioChunksRef = useRef([]);
-  const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const messagesContentRef = useRef(null);
   const skipAutoScrollRef = useRef(false);
+  const isAtBottomRef = useRef(true);
+  const settleFrameRef = useRef(0);
+  const isSettlingRef = useRef(false);
+  const userScrollIntentRef = useRef(false);
+  const intentTimerRef = useRef(0);
 
   const fetchAvailableChats = useCallback(async () => {
     try {
@@ -86,7 +100,12 @@ const useChatLogic = (open = true) => {
       );
       if (response.ok) {
         const data = await response.json();
+        // Reaching this point means the user scrolled up to the very top, so they
+        // are reading history, not following the tail: unpin explicitly, or the
+        // ResizeObserver would read the prepended page as growth worth chasing
+        // and yank them to the newest message they just scrolled away from.
         skipAutoScrollRef.current = true;
+        isAtBottomRef.current = false;
         dispatch(
           chatActions.prependMessages({
             chatId: activeChatId,
@@ -107,8 +126,43 @@ const useChatLogic = (open = true) => {
     }
   }, [activeChatId, activeConversation, loadingOlderMessages, hasMoreOlder, dispatch]);
 
+  /**
+   * Records that the scrolling about to happen is the user's doing.
+   *
+   * A `scroll` event does not say who caused it, and most of the ones this
+   * container sees are not the user: swapping in another chat's transcript makes
+   * the browser re-clamp scrollTop, and rows rendering out of their
+   * `contain-intrinsic-size` estimates move it again. Those land BEFORE the
+   * ResizeObserver that re-pins — per the rendering steps, scroll events fire,
+   * then rAF, then resize observations — so reading them as intent is exactly
+   * what leaves a freshly opened chat parked in the middle of itself.
+   *
+   * The gesture events below do say who caused it. Everything else is layout.
+   */
+  const handleUserScrollIntent = useCallback(() => {
+    userScrollIntentRef.current = true;
+    clearTimeout(intentTimerRef.current);
+    intentTimerRef.current = setTimeout(() => {
+      userScrollIntentRef.current = false;
+    }, USER_SCROLL_INTENT_MS);
+  }, []);
+
+  useEffect(() => () => clearTimeout(intentTimerRef.current), []);
+
   const handleMessagesScroll = useCallback(() => {
-    if (messagesContainerRef.current?.scrollTop < 80) {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    // Only a real gesture moves the view off the newest message — and never one
+    // of `scrollToBottom`'s own scrolls, which are this component's, not a mind
+    // being changed.
+    if (userScrollIntentRef.current && !isSettlingRef.current) {
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      isAtBottomRef.current = distanceFromBottom <= STICK_TO_BOTTOM_PX;
+    }
+
+    if (container.scrollTop < 80) {
       loadOlderMessages();
     }
   }, [loadOlderMessages]);
@@ -140,23 +194,76 @@ const useChatLogic = (open = true) => {
     }
   }, [activeChatId, availableChats, fetchAvailableChats]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Jumping straight to the bottom instead of animating there. A turn with a tool
+  // loop appends reasoning + tool_call + tool_result per iteration, so a smooth
+  // scrollIntoView per message queues a dozen overlapping animations, each of
+  // which forces layout on the whole transcript container every frame.
+  //
+  // The scroll events this emits are ours, not the user changing their mind, so
+  // it flags them for `handleMessagesScroll` to ignore until the next frame.
+  const scrollToBottom = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    isSettlingRef.current = true;
+    container.scrollTop = container.scrollHeight;
+
+    cancelAnimationFrame(settleFrameRef.current);
+    settleFrameRef.current = requestAnimationFrame(() => {
+      isSettlingRef.current = false;
+    });
+  }, []);
+
+  // Opening a transcript lands on the newest message, the way every chat behaves,
+  // and staying there is not a single scroll: the container grows for a while
+  // after the messages are committed. Rows are `content-visibility: auto`, so each
+  // one's real height only replaces its `contain-intrinsic-size` estimate once the
+  // browser actually renders it, and images, markdown and fonts settle later still
+  // — every one of those pushes the bottom further down. Chasing that with a fixed
+  // number of frames is a guess that a 300-message history loses. Watching the
+  // content box instead re-pins on each growth step, however long they take, and
+  // costs nothing while the transcript is idle.
+  useEffect(() => {
+    const content = messagesContentRef.current;
+    if (!content || typeof ResizeObserver === 'undefined') return undefined;
+
+    // Setting scrollTop never resizes anything, so this cannot feed itself.
+    const observer = new ResizeObserver(() => {
+      if (isAtBottomRef.current) scrollToBottom();
+    });
+
+    observer.observe(content);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(settleFrameRef.current);
+    };
+  }, [scrollToBottom]);
+
+  // Selecting another chat always opens it at the end, whatever the previous one
+  // was scrolled to. Runs before the effect below, so the messages that arrive
+  // with the switch are pinned rather than left wherever the old chat sat.
+  useEffect(() => {
+    isAtBottomRef.current = true;
+  }, [activeChatId]);
 
   useEffect(() => {
     if (skipAutoScrollRef.current) {
       skipAutoScrollRef.current = false;
       return;
     }
+    if (!isAtBottomRef.current) return;
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   const handleSendMessage = async (messageToSend, fromAudio = false) => {
     const isEmpty = Array.isArray(messageToSend)
       ? messageToSend.length === 0
       : !messageToSend.trim();
     if (isEmpty || loading.sendingMessage) return;
+
+    // Sending is an explicit "I want to see what happens next" — re-pin to the
+    // bottom even if the user had scrolled up to read something older.
+    isAtBottomRef.current = true;
 
     try {
       dispatch(chatActions.setLoading({ key: 'sendingMessage', value: true }));
@@ -363,12 +470,13 @@ const useChatLogic = (open = true) => {
     showOptions,
     isRecording,
     deleteDialogOpen,
-    messagesEndRef,
     messagesContainerRef,
+    messagesContentRef,
     // Handlers
     handleSendMessage,
     handleChatChange,
     handleMessagesScroll,
+    handleUserScrollIntent,
     clearChat,
     handleDeleteClick,
     handleDeleteConfirm,

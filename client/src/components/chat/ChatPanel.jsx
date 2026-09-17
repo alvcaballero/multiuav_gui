@@ -27,6 +27,29 @@ import Tooltip from '@mui/material/Tooltip';
 import { MessageBubble, WelcomeMessage } from './ChatMessages';
 import ChatInput from './ChatInput';
 
+/** The element that actually scrolls. */
+const messagesScrollerSx = {
+  flexGrow: 1,
+  overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  mb: 0,
+  pr: 1,
+};
+
+/**
+ * The scroller's single child, sized by the transcript inside it.
+ * `flexGrow` keeps it filling an empty chat so the welcome panel can still
+ * centre itself; `flexShrink: 0` stops the flex layout from compressing it back
+ * to the viewport height, which would leave nothing to scroll.
+ */
+const messagesContentSx = {
+  display: 'flex',
+  flexDirection: 'column',
+  flexGrow: 1,
+  flexShrink: 0,
+};
+
 const ChatPanel = ({
   // layout
   titleSlot,
@@ -42,11 +65,12 @@ const ChatPanel = ({
   showOptions,
   isRecording,
   deleteDialogOpen,
-  messagesEndRef,
   messagesContainerRef,
+  messagesContentRef,
   handleSendMessage,
   handleChatChange,
   handleMessagesScroll,
+  handleUserScrollIntent,
   clearChat,
   handleDeleteClick,
   handleDeleteConfirm,
@@ -128,49 +152,52 @@ const ChatPanel = ({
     <Box
       ref={messagesContainerRef}
       onScroll={handleMessagesScroll}
-      sx={{
-        flexGrow: 1,
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        mb: 0,
-        pr: 1,
-      }}
+      // Gestures, so the scroll handler can tell the user moving the view apart
+      // from the browser re-clamping it. onPointerDown covers dragging the
+      // scrollbar itself, which emits no wheel or touch event.
+      onWheel={handleUserScrollIntent}
+      onTouchMove={handleUserScrollIntent}
+      onPointerDown={handleUserScrollIntent}
+      sx={messagesScrollerSx}
     >
-      {messages.length === 0 ? (
-        <WelcomeMessage />
-      ) : (
-        <>
-          {(loadingOlderMessages || hasMoreOlder) && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-              {loadingOlderMessages ? (
-                <CircularProgress size={16} />
-              ) : (
-                <Typography variant="caption" color="text.secondary">
-                  Scroll up to load earlier messages
-                </Typography>
-              )}
-            </Box>
-          )}
-          {messages.map((msg) => (
-            <MessageBubble key={msg.id || msg.timestamp} message={msg} chatId={activeChatId} />
-          ))}
-          {loading.sendingMessage && (
-            <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>
-              <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32, mr: 1 }}>
-                <SmartToyIcon fontSize="small" />
-              </Avatar>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CircularProgress size={16} />
-                <Typography variant="body2" color="text.secondary">
-                  Thinking...
-                </Typography>
+      {/* Wraps everything that scrolls so a ResizeObserver can watch the content
+          box grow — that is what keeps the view pinned to the newest message
+          while rows, images and markdown settle into their real heights. */}
+      <Box ref={messagesContentRef} sx={messagesContentSx}>
+        {messages.length === 0 ? (
+          <WelcomeMessage />
+        ) : (
+          <>
+            {(loadingOlderMessages || hasMoreOlder) && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                {loadingOlderMessages ? (
+                  <CircularProgress size={16} />
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    Scroll up to load earlier messages
+                  </Typography>
+                )}
               </Box>
-            </ListItem>
-          )}
-        </>
-      )}
-      <div ref={messagesEndRef} />
+            )}
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id || msg.timestamp} message={msg} chatId={activeChatId} />
+            ))}
+            {loading.sendingMessage && (
+              <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>
+                <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32, mr: 1 }}>
+                  <SmartToyIcon fontSize="small" />
+                </Avatar>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={16} />
+                  <Typography variant="body2" color="text.secondary">
+                    Thinking...
+                  </Typography>
+                </Box>
+              </ListItem>
+            )}
+          </>
+        )}
+      </Box>
     </Box>
 
     <ChatInput

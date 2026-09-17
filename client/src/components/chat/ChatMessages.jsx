@@ -23,9 +23,27 @@ import Tooltip from '@mui/material/Tooltip';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
+import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
+import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+import vscDarkPlus from 'react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus';
 import { forkConversation } from '../../store/chat';
+
+// PrismLight ships no grammars: each one is opted into explicitly. The full
+// `Prism` build pulls refractor's ~594 languages and the 45-theme style barrel
+// into the bundle, to render what is in practice almost entirely JSON (tool
+// calls and tool results). Register only what the transcript can realistically
+// contain — an unregistered language degrades to plain text, it does not throw.
+SyntaxHighlighter.registerLanguage('json', json);
+SyntaxHighlighter.registerLanguage('yaml', yaml);
+SyntaxHighlighter.registerLanguage('bash', bash);
+SyntaxHighlighter.registerLanguage('python', python);
+SyntaxHighlighter.registerLanguage('javascript', javascript);
+SyntaxHighlighter.registerLanguage('markdown', markdown);
 
 // --- Data transformation utils ---
 
@@ -242,6 +260,130 @@ const formatTimestamp = (ts) => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
 
+// --- Derivation cache ---
+
+/**
+ * Memoises a pure unary derivation on the IDENTITY of its object argument.
+ *
+ * Every function above turns a message payload into something renderable, and
+ * all of them are expensive for what they are: `convertMsg` can run three nested
+ * `JSON.parse` passes, `formatMcpContent` runs four chained regex replacements
+ * over strings that reach ~145 KB in this codebase's own transcripts, and both
+ * finish with a `JSON.stringify(..., null, 2)`. React calls them again on every
+ * render, on payloads that never change — a message, once stored, is immutable.
+ *
+ * A WeakMap keyed on the payload object is the exact shape of that invariant:
+ * the derived value is valid for as long as the object it came from is alive,
+ * and it is collected with it, so switching chats or trimming a conversation to
+ * MAX_LIVE_MESSAGES cannot grow this cache without bound. Keying on a message id
+ * would not work here — the server sends no stable id, and the client-side
+ * fallback differs between a live message and the same message after a reload.
+ *
+ * Non-object arguments (a tool output that failed to parse stays a string) are
+ * passed straight through: they cannot key a WeakMap, and for them these
+ * derivations are already O(1).
+ */
+const memoizeByIdentity = (fn) => {
+  const cache = new WeakMap();
+  return (arg) => {
+    if (arg === null || typeof arg !== 'object') return fn(arg);
+    if (cache.has(arg)) return cache.get(arg);
+    const value = fn(arg);
+    cache.set(arg, value);
+    return value;
+  };
+};
+
+/**
+ * Placeholder height for a chat bubble the browser has not rendered yet.
+ *
+ * A bubble's height varies wildly with its text — across this codebase's own
+ * transcripts a text message runs 580 chars at the median, 4.1k at p75 and 39k
+ * at p99, so a single constant is wrong by more than an order of magnitude for
+ * most of them, and `contain-intrinsic-size` being wrong is exactly what makes a
+ * scrollbar jump. Counting wrapped lines gets within the right ballpark, which is
+ * all that is needed: once a row has been rendered the `auto` keyword makes the
+ * browser reuse its real height and the estimate stops mattering.
+ */
+const BUBBLE_CHARS_PER_LINE = 52; // ~400px of text column at body1 size
+const BUBBLE_LINE_HEIGHT = 24;
+const BUBBLE_CHROME = 56; // padding, timestamp row, row margin
+const BUBBLE_IMAGE_HEIGHT = 300; // matches the maxHeight on attached images
+const MAX_BUBBLE_ESTIMATE = 6000;
+
+const countWrappedLines = (text) =>
+  text
+    .split('\n')
+    .reduce(
+      (total, line) => total + Math.max(1, Math.ceil(line.length / BUBBLE_CHARS_PER_LINE)),
+      0,
+    );
+
+const estimateBubbleHeight = (content) => {
+  let lines = 0;
+  let images = 0;
+
+  if (typeof content === 'string') {
+    lines = countWrappedLines(content);
+  } else if (Array.isArray(content)) {
+    for (const block of content) {
+      if (block?.type === 'input_image') images += 1;
+      else if (typeof block?.text === 'string') lines += countWrappedLines(block.text);
+    }
+  } else if (content != null) {
+    lines = countWrappedLines(String(content));
+  }
+
+  const px = lines * BUBBLE_LINE_HEIGHT + images * BUBBLE_IMAGE_HEIGHT + BUBBLE_CHROME;
+  // Bucketed so near-identical messages share one placeholder value.
+  return Math.min(Math.ceil(px / 50) * 50, MAX_BUBBLE_ESTIMATE);
+};
+
+/**
+ * Kinds that render as an accordion row. Collapsed, all of them are the same
+ * height, so `accordionRowSx` carries one shared estimate and they need none of
+ * their own. Everything else — including `convertMsg`'s fallbacks for an invalid
+ * or unrecognised payload — falls through to a bubble, and a bubble under
+ * `content-visibility` MUST get a size or it collapses to nothing off screen.
+ * Mirrors the switch in MessageBubble; listing the closed set is what keeps a new
+ * fallthrough kind from silently shipping without one.
+ */
+const ACCORDION_TYPES = new Set([
+  'system_directive',
+  'reasoning',
+  'function_call',
+  'subagent_result',
+  'function_call_output',
+]);
+
+/** Full view model of a raw message: protocol conversion, timestamp, size hint. */
+const getMessageView = memoizeByIdentity((msg) => {
+  const converted = convertMsg(msg);
+  return {
+    ...converted,
+    timestampLabel: formatTimestamp(msg?.timestamp),
+    intrinsicSize: ACCORDION_TYPES.has(converted.type)
+      ? null
+      : `auto ${estimateBubbleHeight(converted.content)}px`,
+  };
+});
+
+/**
+ * Display form of a tool/subagent payload. Language detection is folded in
+ * because it inspects the FORMATTED string — computing it here avoids a
+ * `.trim()` copy of a six-figure-byte string on every render.
+ */
+const getFormattedResult = memoizeByIdentity((content) => {
+  const text = formatMcpContent(content);
+  return { text, language: detectContentLanguage(text) };
+});
+
+const getCachedResultSummary = memoizeByIdentity(getResultSummary);
+
+const getPrettyJson = memoizeByIdentity((content) =>
+  typeof content === 'object' ? JSON.stringify(content, null, 2) : content,
+);
+
 // --- Style constants ---
 
 const COLORS = {
@@ -274,34 +416,72 @@ const summaryStyle = {
 
 // --- Presentation primitives ---
 
+/**
+ * Characters handed to the highlighter before a payload is cut off behind an
+ * explicit "show everything" click.
+ *
+ * Tool results in this codebase's own transcripts average ~2.8 KB and peak near
+ * 146 KB — thousands of lines of JSON that no one reads in a <pre>; they get
+ * skimmed, then copied. Highlighting all of it turns every token into a DOM
+ * node, and since a collapsed accordion now unmounts its body, that cost is paid
+ * again on every open. Capping it bounds the worst case by design instead of by
+ * luck, while the copy button still puts the FULL payload on the clipboard.
+ */
+const MAX_HIGHLIGHT_CHARS = 2000;
+
+/** Cuts at the last line break inside the budget, so the preview ends on a whole line. */
+const truncateToLine = (text) => {
+  const slice = text.slice(0, MAX_HIGHLIGHT_CHARS);
+  const lastBreak = slice.lastIndexOf('\n');
+  return lastBreak > 0 ? slice.slice(0, lastBreak) : slice;
+};
+
+const codeBlockHeaderSx = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  bgcolor: '#1e1e1e',
+  color: '#e0e0e0',
+  px: 2,
+  py: 0.5,
+  fontSize: '0.75rem',
+  borderBottom: '1px solid #333',
+};
+
+const codeBlockFooterSx = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 1,
+  bgcolor: '#1e1e1e',
+  color: '#9e9e9e',
+  px: 2,
+  py: 0.5,
+  borderTop: '1px solid #333',
+};
+
 const CodeBlock = ({ language, value }) => {
   const [copied, setCopied] = useState(false);
+  const [showFull, setShowFull] = useState(false);
+
+  const text = typeof value === 'string' ? value : String(value ?? '');
+  const isTruncated = !showFull && text.length > MAX_HIGHLIGHT_CHARS;
+  const shown = isTruncated ? truncateToLine(text) : text;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(value);
+    // Always the full payload, never what happens to be on screen.
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', my: 1 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          bgcolor: '#1e1e1e',
-          color: '#e0e0e0',
-          px: 2,
-          py: 0.5,
-          fontSize: '0.75rem',
-          borderBottom: '1px solid #333',
-        }}
-      >
+      <Box sx={codeBlockHeaderSx}>
         <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
           {language || 'text'}
         </Typography>
-        <Tooltip title={copied ? 'Copiado!' : 'Copiar'}>
+        <Tooltip title={copied ? 'Copiado!' : 'Copiar todo'}>
           <IconButton onClick={handleCopy} size="small" sx={{ color: '#e0e0e0', p: 0.5 }}>
             {copied ? <CheckIcon fontSize="inherit" /> : <ContentCopyIcon fontSize="inherit" />}
           </IconButton>
@@ -310,26 +490,84 @@ const CodeBlock = ({ language, value }) => {
       <SyntaxHighlighter
         language={language || 'text'}
         style={vscDarkPlus}
-        customStyle={{ margin: 0, borderRadius: '0 0 4px 4px', fontSize: '0.85rem' }}
+        customStyle={{ margin: 0, borderRadius: 0, fontSize: '0.85rem' }}
       >
-        {value}
+        {shown}
       </SyntaxHighlighter>
+      {isTruncated && (
+        <Box sx={codeBlockFooterSx}>
+          <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+            {`${shown.length.toLocaleString()} de ${text.length.toLocaleString()} caracteres`}
+          </Typography>
+          <Button
+            size="small"
+            onClick={() => setShowFull(true)}
+            sx={{ color: '#90caf9', textTransform: 'none', minWidth: 0, py: 0 }}
+          >
+            Mostrar todo
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };
 
 const FormattedResult = ({ content }) => {
-  const formatted = formatMcpContent(content);
-  return <CodeBlock language={detectContentLanguage(formatted)} value={formatted} />;
+  const { text, language } = getFormattedResult(content);
+  return <CodeBlock language={language} value={text} />;
 };
 
+/**
+ * Off-screen transcript rows are skipped by the browser instead of laid out,
+ * styled and painted. `content-visibility: auto` is what buys that; the paired
+ * `contain-intrinsic-size` is what makes it safe, because a skipped row would
+ * otherwise collapse to zero height and wreck the scrollbar. Its `auto` keyword
+ * means the placeholder size is only a guess until the row has been rendered
+ * once — after that the browser reuses the real height it remembers, so scroll
+ * position stays put when a row leaves the viewport.
+ *
+ * Preferred over windowing here because the rows stay in the DOM: find-in-page,
+ * selecting and copying a whole conversation, and the existing scroll-anchoring
+ * in `loadOlderMessages` all keep working untouched.
+ */
+const OFFSCREEN_SKIP = { contentVisibility: 'auto' };
+
 // A message row that hosts a single accordion (reasoning / tool call / tool result).
-const MessageListItem = ({ children }) => (
-  <ListItem sx={{ mb: 1, display: 'block', px: 2 }}>{children}</ListItem>
-);
+// Collapsed, one is the 36px summary plus its margins.
+const accordionRowSx = {
+  mb: 1,
+  display: 'block',
+  px: 2,
+  ...OFFSCREEN_SKIP,
+  containIntrinsicSize: 'auto 68px',
+};
+
+const MessageListItem = ({ children }) => <ListItem sx={accordionRowSx}>{children}</ListItem>;
+
+// Chat bubble rows. Two frozen variants rather than one object built per render:
+// the side a bubble sits on is the only thing that varies, and an inline `sx`
+// literal makes Emotion re-serialise the whole style object on every render.
+// `contain-intrinsic-size` is NOT set here — it is per message, applied inline
+// from `intrinsicSize` on the view model.
+const textRowBaseSx = {
+  mb: 2,
+  alignItems: 'flex-start',
+  cursor: 'context-menu',
+  ...OFFSCREEN_SKIP,
+};
+const textRowAiSx = { ...textRowBaseSx, justifyContent: 'flex-start' };
+const textRowUserSx = { ...textRowBaseSx, justifyContent: 'flex-end' };
+
+// MUI's Accordion wraps its children in a <Collapse> that keeps them MOUNTED
+// when closed — it only animates height to 0. Every collapsed tool call and tool
+// result would therefore still run its payload through the syntax highlighter and
+// materialise the resulting token spans in the DOM. Tool payloads here average
+// ~3-4.5 KB and peak near 145 KB, so a long transcript builds tens of thousands
+// of invisible nodes. Unmounting on exit makes a closed accordion cost nothing.
+const collapseSlotProps = { transition: { unmountOnExit: true } };
 
 const AccordionBlock = ({ borderColor, header, detailsSx, children }) => (
-  <Accordion sx={accordionStyle(borderColor)}>
+  <Accordion sx={accordionStyle(borderColor)} slotProps={collapseSlotProps}>
     <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />} sx={summaryStyle}>
       {header}
     </AccordionSummary>
@@ -511,10 +749,7 @@ const FunctionCallBlock = ({ content, name, timestampLabel }) => {
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
           Parámetros de entrada:
         </Typography>
-        <CodeBlock
-          language="json"
-          value={typeof content === 'object' ? JSON.stringify(content, null, 2) : content}
-        />
+        <CodeBlock language="json" value={getPrettyJson(content)} />
       </AccordionBlock>
     </MessageListItem>
   );
@@ -551,7 +786,7 @@ const SubagentResultBlock = ({ content, name, agentName, timestampLabel }) => {
 };
 
 const FunctionCallOutputBlock = ({ content, name, timestampLabel }) => {
-  const { summary, hasError } = getResultSummary(content);
+  const { summary, hasError } = getCachedResultSummary(content);
   const imageData = content?.image_data;
   const imageMime = content?.mime_type || 'image/jpeg';
   const imageSrc = imageData ? `data:${imageMime};base64,${imageData}` : null;
@@ -640,13 +875,21 @@ const MultipartContent = ({ content }) => (
 );
 
 // Standard chat bubble (user or AI text/multipart), with a right-click "fork from here" menu.
-const TextMessageBlock = ({ message, chatId, role, type, content, status }) => {
+const TextMessageBlock = ({
+  message,
+  chatId,
+  role,
+  type,
+  content,
+  status,
+  timestampLabel,
+  intrinsicSize,
+}) => {
   const dispatch = useDispatch();
   const [contextMenu, setContextMenu] = useState(null);
 
   const isAI = role !== 'user';
   const isError = status === 'error';
-  const timestampLabel = formatTimestamp(message.timestamp);
 
   const handleContextMenu = (event) => {
     event.preventDefault();
@@ -669,12 +912,8 @@ const TextMessageBlock = ({ message, chatId, role, type, content, status }) => {
     <>
       <ListItem
         onContextMenu={handleContextMenu}
-        sx={{
-          justifyContent: isAI ? 'flex-start' : 'flex-end',
-          mb: 2,
-          alignItems: 'flex-start',
-          cursor: 'context-menu',
-        }}
+        sx={isAI ? textRowAiSx : textRowUserSx}
+        style={{ containIntrinsicSize: intrinsicSize }}
       >
         <Stack
           direction={isAI ? 'row' : 'row-reverse'}
@@ -747,8 +986,8 @@ const TextMessageBlock = ({ message, chatId, role, type, content, status }) => {
 };
 
 export const MessageBubble = memo(({ message, chatId }) => {
-  const { role, type, content, name, status, agentName } = convertMsg(message);
-  const timestampLabel = formatTimestamp(message.timestamp);
+  const { role, type, content, name, status, agentName, timestampLabel, intrinsicSize } =
+    getMessageView(message);
 
   switch (type) {
     case 'system_directive':
@@ -779,6 +1018,8 @@ export const MessageBubble = memo(({ message, chatId }) => {
           type={type}
           content={content}
           status={status}
+          timestampLabel={timestampLabel}
+          intrinsicSize={intrinsicSize}
         />
       );
   }
