@@ -385,6 +385,40 @@ Pending requests live in the DB, so they survive a reload and a server restart.
 - `CHAT_CREATED` → notifies the client a new chat was created (outbound via subscriber)
 - `CHAT_ASSISTANT_MESSAGE` → Broadcasts response to clients via WebSocket
 
+**eve Agent Bridge (`eveClient.js`, `eveOrchestrator.js`):**
+
+A second, parallel orchestrator that talks to the `eve` agent framework running
+as its own process (`gcs_eevee_assistant`, sibling repo at `../../gcs_eevee_assistant`
+relative to `llm_planner_gcs/`), over `eve`'s `/eve/v1/session` HTTP API. Opt-in
+per chat via `chat.metadata.engine === 'eve'` (set at creation, `POST /api/chat/chats
+{engine:"eve"}`) — everything else keeps using `MessageOrchestrator`/`mcpClient.js`
+unchanged; `chatController._resolveEngine` is the only branch point. eve is its own
+full orchestrator (tool loop, sub-agents, sandbox) — this bridge does not reimplement
+any of that, it only relays messages and projects the final assistant text back into
+the existing chat persistence/eventBus so history/listing/WS broadcast behave the same
+as the legacy path.
+
+**eve's stream is durable and replays from event 0 on every `GET .../stream` unless
+a `startIndex` is passed** — it is not a "tail -f", it's a full event log you page
+through. `EveOrchestrator` tracks the absolute count of events already consumed in
+`chat.metadata.eveStreamIndex` and passes it as `startIndex` on every read after the
+first; skipping this makes every follow-up message re-read the PREVIOUS turn's
+`session.waiting` boundary and return its (stale) answer instead of waiting for a new
+one — this bit us once, see git history on `eveOrchestrator.js`.
+
+Requires, for local dev: `mcp_server` running in `http` transport (`:3001/mcp`,
+`npx tsx src/index.ts http`) and `gcs_eevee_assistant` running (`eve dev --no-ui`,
+`:2000`, needs Node 24 — this repo's server runs on Node 20, so use a separate
+`nvm`/binary). Env: `EVE_ENABLE`, `EVE_URL` (default `http://127.0.0.1:2000`) in
+`config/config.js`.
+
+Not yet implemented: projecting `actions.requested`/`action.result` (tool-call
+visibility), `input.requested` (HITL approval — eve's MCP tool config has
+`approval: "user-approval"` on flight tools with no code-level gate to hook into on
+this side yet, see `client/CLAUDE.md`), or `subagent.called`/`childSessionId`
+(sub-agent progress) to the frontend. Currently server-only; no client UI wired to
+`engine: 'eve'` chats yet.
+
 **MCP Reconnection System:**
 The MCP client implements automatic reconnection:
 
