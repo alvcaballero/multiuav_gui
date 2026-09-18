@@ -44,37 +44,62 @@ const createFeature = (myroute, point) => {
   };
 };
 
-const textPopUp = ({ properties, attributes, actions }) => {
-  let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${properties.uav}</b>
-    <span><a href="https://www.google.com/maps?q=${properties.latitude},${properties.longitude}" target="_blank">
-    Point_${properties.id}</a></span></div>
-        <div><span>Route: ${properties.name}</span></div>
-        <div style="display:inline"><span> Height: </span><span>${properties.altitude.toFixed(1)}m </span></div>`;
-  html = properties.hasOwnProperty('speed')
-    ? `${html} <div style="display:inline"><span>Speed: </span><span>${properties.speed} m/s </span></div>`
-    : html;
-  html = properties.hasOwnProperty('yaw')
-    ? `${html} <div style="display:inline"><span>Yaw: </span><span>${properties.yaw}° </span></div>`
-    : html;
-  html = properties.hasOwnProperty('gimbal')
-    ? `${html} <div style="display:inline"><span>Gimbal: </span><span>${properties.gimbal}° </span></div>`
-    : html;
-  let htmlAction = '<div><b> Waypoint actions: </b></div>';
-  if (actions) {
-    htmlAction += Object.keys(actions)
-      .map((key) => {
-        const unit = key === 'idle_vel' ? 'm/s' : '';
-        return `<div style="display:inline"><span>${key}: </span><span>${actions[key]} ${unit} </span></div>`;
-      })
-      .join('');
-  }
-  let htmlAttributes = '<div><b> Attributes_mission: </b></div>';
-  htmlAttributes += Object.keys(attributes)
+/**
+ * Escapes a value for interpolation into popup markup.
+ *
+ * Popup content is NOT trusted: waypoint names, action keys and mission attributes
+ * travel with the mission, and missions in this system are produced by the LLM
+ * planner from tool output and operator text. The result is handed to
+ * `maplibregl.Popup().setHTML()`, whose sanitizer has a known bypass in the version
+ * pinned here — so escaping happens at the source instead of relying on it.
+ *
+ * @param {*} value
+ * @returns {string} HTML-safe text
+ */
+const escapeHtml = (value) =>
+  String(value ?? '').replace(
+    /[&<>"']/g,
+    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
+  );
+
+/** Renders `key: value unit` rows, escaping BOTH sides — the keys are data too. */
+const renderRows = (entries) =>
+  Object.keys(entries || {})
     .map((key) => {
       const unit = key === 'idle_vel' || key === 'max_vel' ? 'm/s' : '';
-      return `<div style="display:inline"><span>${key}: </span><span>${attributes[key]} ${unit} </span></div>`;
+      return `<div style="display:inline"><span>${escapeHtml(key)}: </span><span>${escapeHtml(
+        entries[key],
+      )} ${unit} </span></div>`;
     })
     .join('');
+
+const textPopUp = ({ properties, attributes, actions }) => {
+  // Coordinates land inside an href, where escaping alone would not stop an
+  // attribute break-out, so they are forced to finite numbers or dropped.
+  const lat = Number(properties.latitude);
+  const lon = Number(properties.longitude);
+  const mapsQuery = Number.isFinite(lat) && Number.isFinite(lon) ? `${lat},${lon}` : '';
+
+  let html = `<div style="color: #FF7A59;text-align: center" ><b>UAV: ${escapeHtml(properties.uav)}</b>
+    <span><a href="https://www.google.com/maps?q=${mapsQuery}" target="_blank">
+    Point_${escapeHtml(properties.id)}</a></span></div>
+        <div><span>Route: ${escapeHtml(properties.name)}</span></div>
+        <div style="display:inline"><span> Height: </span><span>${properties.altitude.toFixed(1)}m </span></div>`;
+  html = properties.hasOwnProperty('speed')
+    ? `${html} <div style="display:inline"><span>Speed: </span><span>${escapeHtml(properties.speed)} m/s </span></div>`
+    : html;
+  html = properties.hasOwnProperty('yaw')
+    ? `${html} <div style="display:inline"><span>Yaw: </span><span>${escapeHtml(properties.yaw)}° </span></div>`
+    : html;
+  html = properties.hasOwnProperty('gimbal')
+    ? `${html} <div style="display:inline"><span>Gimbal: </span><span>${escapeHtml(properties.gimbal)}° </span></div>`
+    : html;
+
+  // `attributes` is null for a route that carries none (see MapMissions.WaypointDetail),
+  // which used to throw inside Object.keys and take the whole popup down.
+  const htmlAction = `<div><b> Waypoint actions: </b></div>${actions ? renderRows(actions) : ''}`;
+  const htmlAttributes = `<div><b> Attributes_mission: </b></div>${renderRows(attributes)}`;
+
   return html + htmlAction + htmlAttributes;
 };
 
