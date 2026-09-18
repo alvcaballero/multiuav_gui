@@ -4,8 +4,8 @@ import { agents, setAgentForChat } from '../models/chat/agents/index.js';
 import { logger } from '../common/logger.js';
 
 export class chatController {
-  static initializeLLMProvider(provider, apiKey) {
-    MessageOrchestrator.initializeLLMProvider(provider, apiKey);
+  static initializeLLMProvider(provider, apiKey, options = {}) {
+    MessageOrchestrator.initializeLLMProvider(provider, apiKey, options);
   }
 
   static async sendMessage(req, res) {

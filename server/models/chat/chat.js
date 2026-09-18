@@ -33,9 +33,10 @@ const maxIterations_planner = 18; // Prevenir loops infinitos
 const chatLocks = new Map();
 
 export class MessageOrchestrator {
-  static initializeLLMProvider(provider, apiKey) {
+  static initializeLLMProvider(provider, apiKey, options = {}) {
     if (LLM && !llmHandler) {
-      llmHandler = LLMFactory.createHandler(provider, apiKey);
+      const { model = '', ...handlerOptions } = options;
+      llmHandler = LLMFactory.createHandler(provider, apiKey, model || undefined, handlerOptions);
       llmHandler
         .initialize()
         .then(() => {

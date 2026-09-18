@@ -322,8 +322,13 @@ never cancel by raw goalId outside it, or the registry goes stale. HTTP routes:
 **Architecture** (`models/chat/`):
 
 - **Message Orchestrator** (`chat.js`, `MessageOrchestrator`): central turn loop — builds context, calls the LLM, dispatches tool calls (MCP + local), recurses until the turn finishes or hits the iteration cap
-- **LLM Factory** (`handlers/llmFactory.js`, `LLMFactory`): picks a handler by `LLMProvider` (`config.js`) — `'openai'`, `'gemini'`, `'anthropic'`/`'claude'`, `'ollama'`
-- **Provider handlers** (`handlers/*Handler.js`): `openaiHandler.js`, `geminiHandler.js`, `antropicHandler.js`, `ollamaHandler.js`, each extending `baseLLMhandler.js` — normalize that provider's tool-calling/streaming quirks behind one interface
+- **LLM Factory** (`handlers/llmFactory.js`, `LLMFactory`): picks a handler by `LLMProvider` (`config.js`). Three transports, not one class per vendor:
+  - **Responses API** → `openaiHandler.js` (OpenAI only — no third party implements it, so it keeps server-side conversations, `reasoning` items and `allowed_tools`)
+  - **Chat Completions** → `openaiCompatibleHandler.js` (`ollama`, `llamacpp`, `openai-compatible`), parametrized by `baseURL` + a preset from `handlers/compatibleProviders.js`
+  - **Vendor APIs** → `geminiHandler.js`, `antropicHandler.js`
+- **Adding a local/compatible server** (vLLM, LM Studio, OpenRouter…) is an entry in `compatibleProviders.js`, NOT a new class.
+- **Capability rule** (`compatibleProviders.js`): `capabilities` may only shape the OUTGOING request. Parsing is unconditional and defensive, because a server can stop honouring a declared capability without notice (llama.cpp#20198 turned `arguments` into a parsed object). An `if (capabilities.x) parseA() else parseB()` is a subclass hiding in an object.
+- **Two parsing invariants** for compatible servers: detect tool calls by the PRESENCE of `tool_calls` (llama.cpp reports `finish_reason: "tool"`, not `"tool_calls"`), and accept `arguments` as string OR object.
 - **Agent profiles** (`agents/*.md`): system prompts as Markdown files with YAML frontmatter, loaded by `agents/index.js`. Each `.md` is a distinct agent persona/tool-set (e.g. `default.md`/`default2.md` general chat, `defaultFast.md`/`plannerFast.md` lighter/faster profiles, `planner.md` the full mission-planning agent — see `mip_planner`/MCP `submit_mission_plan` flow, `verification-mission.md`, `agv.md` for ground vehicles). **`planner.md` is the source of truth; `plannerFast.md` must stay in sync with it** — see PR history for past drift bugs.
 - **Sub-agents** (`subAgentManager.js`, `subAgentRegistry.js`): a chat can spawn child agents (e.g. a verification pass) tracked in an in-memory registry keyed by parent `chatId`; `getContextParams`/`removeSubAgent` let the orchestrator resolve/clean them up
 - **Chat history** (`chatHistoryManager.js`, `messageProjection.js`, `turnContext.js`): persistence and per-provider message-shape projection, so history stored once in DB can be replayed into any provider's expected format
@@ -535,7 +540,11 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
 - `STREAM_SERVER`: Enable/disable video streaming (MediaMTX)
 - `LLM`: Enable/disable chat features
-- `LLM_PROVIDER`: `openai` | `gemini` | `anthropic`/`claude` | `ollama` (default `openai`)
+- `LLM_PROVIDER`: `openai` | `gemini` | `anthropic`/`claude` | `ollama` | `llamacpp` | `openai-compatible` (default `openai`)
+- `LLM_MODEL`: optional model id override; empty uses the provider default
+- `LLM_OLLAMA_BASE_URL` / `LLM_LLAMACPP_BASE_URL` / `LLM_COMPATIBLE_BASE_URL`: Chat Completions endpoint (`/v1` appended if missing). The endpoint comes from these and ONLY these — the `LLM_*_API_KEY` vars are tokens, left empty for local servers. A URL found in a key var aborts startup with a message telling you which var to move it to.
+- **Ollama context window**: `num_ctx` CANNOT be set over the OpenAI-compatible endpoint — it is ignored silently. Set `OLLAMA_CONTEXT_LENGTH` on the Ollama server (or bake `PARAMETER num_ctx` into a Modelfile), otherwise long prompts are truncated with no error. The handler logs this warning on every boot.
+- **llama.cpp**: start `llama-server` with `--jinja` so tool calling uses a tool-enabled chat template.
 - `TOOL_APPROVAL_ENFORCE`: human-in-the-loop gate for flight tools. **Default ON** — set to `'false'` to disable (opt-out, so a missing var never silently removes the gate)
 - `TOOL_APPROVAL_REQUIRED`: comma-separated tools that need approval (default `load_mission_to_uav,start_mission`)
 - `TOOL_APPROVAL_TTL_MS` / `TOOL_APPROVAL_SWEEP_INTERVAL_MS`: how long an approval stays answerable (default 5 min) and how often expired ones are swept (default 30s)
@@ -595,4 +604,4 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - **OpenStreetMap**: Map tiles (can be self-hosted for offline use)
 - **Glyphserver**: Font rendering for maps (optional)
 - **MCP Server** (submodule, `mcp_server/`): Model Context Protocol server for LLM tool integration (optional, based on LLM config)
-- **LLM providers**: OpenAI, Google Gemini, Anthropic Claude, or a local Ollama instance — selected via `LLM_PROVIDER`
+- **LLM providers**: OpenAI, Google Gemini, Anthropic Claude, or any OpenAI-compatible server (Ollama, llama.cpp, vLLM, LM Studio…) — selected via `LLM_PROVIDER`

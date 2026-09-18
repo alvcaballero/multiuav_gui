@@ -43,8 +43,29 @@ export const LLMApiKeys = {
   openai: process.env.LLM_OPENAI_API_KEY || '',
   gemini: process.env.LLM_GEMINI_API_KEY || '',
   anthropic: process.env.LLM_ANTHROPIC_API_KEY || '',
-  ollama: process.env.LLM_OLLAMA_API_KEY || 'http://localhost:11434',
+  // Local servers authenticate nothing, but an entry must exist so the bootstrap's
+  // "key required" check can be satisfied without special-casing each provider.
+  ollama: process.env.LLM_OLLAMA_API_KEY || 'not-needed',
+  llamacpp: process.env.LLM_LLAMACPP_API_KEY || 'not-needed',
+  'openai-compatible': process.env.LLM_COMPATIBLE_API_KEY || 'not-needed',
 };
+
+/**
+ * Chat Completions endpoints for OpenAI-compatible providers.
+ * Empty means "use the preset default" from handlers/compatibleProviders.js.
+ * The `/v1` suffix is appended automatically when missing.
+ */
+export const LLMBaseURLs = {
+  // The endpoint lives here and nowhere else. `LLM_OLLAMA_API_KEY` used to carry the host
+  // for the native client; a URL left in it now aborts startup (server.js) instead of being
+  // silently ignored, which would strand a remote host on the localhost default.
+  ollama: process.env.LLM_OLLAMA_BASE_URL || '',
+  llamacpp: process.env.LLM_LLAMACPP_BASE_URL || '',
+  'openai-compatible': process.env.LLM_COMPATIBLE_BASE_URL || '',
+};
+
+/** Optional model override. Empty means "use the provider's default". */
+export const LLMModel = process.env.LLM_MODEL || '';
 export const MCPenable = process.env.MCP_ENABLE === 'true'; // Model Context Protocol
 
 const VALID_MCP_TRANSPORTS = ['stdio', 'http', 'sse'];
@@ -67,9 +88,7 @@ export const MCPconfig = _MCPconfig; // MCP configuration file
 // Tools the chat agent may not execute without an explicit human approval.
 // Default-deny would be safer but breaks every read-only tool, so this is an
 // explicit list of the tools that move a real aircraft.
-export const TOOL_APPROVAL_REQUIRED = (
-  process.env.TOOL_APPROVAL_REQUIRED ?? 'load_mission_to_uav,start_mission'
-)
+export const TOOL_APPROVAL_REQUIRED = (process.env.TOOL_APPROVAL_REQUIRED ?? 'load_mission_to_uav,start_mission')
   .split(',')
   .map((name) => name.trim())
   .filter(Boolean);

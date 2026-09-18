@@ -5,7 +5,8 @@ import { LLMFactory } from '../models/chat/handlers/llmFactory.js';
 import { OpenAIHandler } from '../models/chat/handlers/openaiHandler.js';
 import { GeminiHandler } from '../models/chat/handlers/geminiHandler.js';
 import { AnthropicHandler } from '../models/chat/handlers/antropicHandler.js';
-import { OllamaHandler } from '../models/chat/handlers/ollamaHandler.js';
+import { OpenAICompatibleHandler } from '../models/chat/handlers/openaiCompatibleHandler.js';
+import { normalizeBaseURL, COMPATIBLE_PROVIDERS } from '../models/chat/handlers/compatibleProviders.js';
 
 // Load .env from server root
 dotenv.config();
@@ -69,10 +70,27 @@ describe('LLMFactory', () => {
     assert.ok(handler instanceof AnthropicHandler);
   });
 
-  it('creates Ollama handler', () => {
-    const handler = LLMFactory.createHandler('ollama', 'http://localhost:11434');
+  it('creates Ollama handler on the compatible transport', () => {
+    const handler = LLMFactory.createHandler('ollama');
     assert.equal(handler.getProviderName(), 'ollama');
-    assert.ok(handler instanceof OllamaHandler);
+    assert.ok(handler instanceof OpenAICompatibleHandler);
+    assert.equal(handler.baseURL, 'http://localhost:11434/v1');
+  });
+
+  it('creates llama.cpp handler on the compatible transport', () => {
+    const handler = LLMFactory.createHandler('llamacpp');
+    assert.equal(handler.getProviderName(), 'llamacpp');
+    assert.ok(handler instanceof OpenAICompatibleHandler);
+    assert.equal(handler.baseURL, 'http://localhost:8080/v1');
+  });
+
+  it('creates a generic openai-compatible handler from an explicit baseURL', () => {
+    const handler = LLMFactory.createHandler('openai-compatible', 'sk-real-key', 'qwen3', {
+      baseURL: 'https://api.example.com/v1',
+    });
+    assert.equal(handler.baseURL, 'https://api.example.com/v1');
+    assert.equal(handler.apiKey, 'sk-real-key');
+    assert.equal(handler.model, 'qwen3');
   });
 
   it('creates Anthropic handler via "claude" alias', () => {
@@ -90,6 +108,8 @@ describe('LLMFactory', () => {
     assert.ok(providers.includes('gemini'));
     assert.ok(providers.includes('anthropic'));
     assert.ok(providers.includes('ollama'));
+    assert.ok(providers.includes('llamacpp'));
+    assert.ok(providers.includes('openai-compatible'));
   });
 });
 
@@ -135,11 +155,20 @@ describe('Config - API key per provider', () => {
     assert.equal(handler.apiKey, 'sk-ant-789');
   });
 
-  it('resolves Ollama host URL from LLM_OLLAMA_API_KEY', () => {
-    const provider = 'ollama';
-    const apiKey = 'http://localhost:11434';
-    const handler = LLMFactory.createHandler(provider, apiKey);
-    assert.equal(handler.apiKey, 'http://localhost:11434');
+  it('takes the endpoint from baseURL only, never from the API-key slot', () => {
+    // The endpoint lives in LLM_*_BASE_URL. A URL left in the key slot is rejected at
+    // boot (server.js) instead of being re-interpreted here, so this stays a pure token.
+    const handler = LLMFactory.createHandler('ollama', '', '', { baseURL: 'http://remote:11434' });
+    assert.equal(handler.baseURL, 'http://remote:11434/v1');
+    assert.equal(handler.apiKey, 'not-needed');
+  });
+
+  it('keeps a real token as a token when baseURL is given explicitly', () => {
+    const handler = LLMFactory.createHandler('openai-compatible', 'sk-groq-123', 'llama-3.3', {
+      baseURL: 'https://api.groq.com/openai/v1',
+    });
+    assert.equal(handler.apiKey, 'sk-groq-123');
+    assert.equal(handler.baseURL, 'https://api.groq.com/openai/v1');
   });
 
   it('detects missing API key for provider', () => {
@@ -408,97 +437,141 @@ describe('AnthropicHandler', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// Ollama Handler
+// OpenAI-compatible Handler (Ollama, llama.cpp, vLLM, LM Studio…)
 // ═══════════════════════════════════════════════════════════════════
-describe('OllamaHandler', () => {
-  const FAKE_HOST = 'http://localhost:11434';
+describe('OpenAICompatibleHandler', () => {
+  const BASE = 'http://localhost:11434/v1';
+  const make = (capabilities = {}) =>
+    new OpenAICompatibleHandler('not-needed', 'test-model', 'sys', {
+      baseURL: BASE,
+      providerName: 'ollama',
+      capabilities,
+    });
 
-  it('throws without host URL', () => {
-    assert.throws(() => new OllamaHandler(''), /host URL is required/);
+  /** Stubs the SDK so a processMessage call returns `reply` and records the params sent. */
+  const stubClient = (handler, reply = { choices: [{ message: { content: 'ok' } }] }) => {
+    const sent = {};
+    handler.client = {
+      chat: {
+        completions: {
+          create: async (params) => {
+            Object.assign(sent, params);
+            return reply;
+          },
+        },
+      },
+    };
+    return sent;
+  };
+
+  it('throws without baseURL', () => {
+    assert.throws(() => new OpenAICompatibleHandler('k', 'm', 'sys', {}), /baseURL is required/);
   });
 
-  it('sets default model', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
-    assert.equal(handler.model, 'glm-4.7-flash');
+  it('throws without model', () => {
+    assert.throws(() => new OpenAICompatibleHandler('k', '', 'sys', { baseURL: BASE }), /model is required/);
   });
 
-  it('initializes client', async () => {
-    const handler = new OllamaHandler(FAKE_HOST);
-    await handler.initialize();
-    assert.equal(handler.initialized, true);
-    assert.ok(handler.client);
+  it('normalizeBaseURL appends /v1 only when missing', () => {
+    assert.equal(normalizeBaseURL('http://localhost:11434'), 'http://localhost:11434/v1');
+    assert.equal(normalizeBaseURL('http://localhost:11434/'), 'http://localhost:11434/v1');
+    assert.equal(normalizeBaseURL('http://localhost:11434/v1'), 'http://localhost:11434/v1');
+    assert.equal(normalizeBaseURL(''), '');
   });
 
-  it('resolves model config per capability tier', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
-    assert.equal(handler.resolveModelConfig({ capability: 'low' }).model, 'glm-4.7-flash');
-    assert.equal(handler.resolveModelConfig({ capability: 'high' }).model, 'glm-4.7-flash');
-  });
-
-  it('converts tools to OpenAI-compatible format', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
-    const converted = handler.convertToolsForMCP(mockTools);
+  it('converts tools to Chat Completions shape (nested under function)', () => {
+    const converted = make().convertToolsForMCP(mockTools);
     assert.equal(converted.length, 1);
     assert.equal(converted[0].type, 'function');
     assert.equal(converted[0].function.name, 'get_weather');
-    assert.equal(converted[0].function.description, 'Get current weather');
-    assert.ok(converted[0].function.parameters);
     assert.equal(converted[0].function.parameters.type, 'object');
   });
 
   it('converts history keeping system messages inline', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
+    const handler = make();
     const msgs = [
       ...handler.convertHistory(mockHistory),
       ...handler.convertInputMessage({ type: 'message', content: 'New msg' }),
     ];
-    // system + user + assistant + new user = 4
     assert.equal(msgs.length, 4);
     assert.equal(msgs[0].role, 'system');
-    assert.equal(msgs[0].content, 'You are helpful.');
     assert.equal(msgs[1].role, 'user');
     assert.equal(msgs[2].role, 'assistant');
-    assert.equal(msgs[3].role, 'user');
     assert.equal(msgs[3].content, 'New msg');
   });
 
-  it('convertMsg handles function_call history items', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
+  it('emits assistant tool_calls with an id and STRING arguments', () => {
     const history = [
       { message: { type: 'function_call', name: 'get_weather', arguments: '{"city":"Madrid"}', call_id: 'call_1' } },
     ];
-    const msgs = handler.convertHistory(history);
-    assert.equal(msgs.length, 1);
+    const msgs = make().convertHistory(history);
     assert.equal(msgs[0].role, 'assistant');
-    assert.equal(msgs[0].content, '');
-    assert.ok(msgs[0].tool_calls);
-    assert.equal(msgs[0].tool_calls[0].function.name, 'get_weather');
-    assert.deepEqual(msgs[0].tool_calls[0].function.arguments, { city: 'Madrid' });
+    assert.equal(msgs[0].tool_calls[0].id, 'call_1');
+    assert.equal(msgs[0].tool_calls[0].type, 'function');
+    // Chat Completions requires a JSON string here, not an object.
+    assert.equal(typeof msgs[0].tool_calls[0].function.arguments, 'string');
+    assert.equal(msgs[0].tool_calls[0].function.arguments, '{"city":"Madrid"}');
   });
 
-  it('convertMsg handles function_call_output history items', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
+  it('pairs tool results back with tool_call_id (the native /api/chat path dropped it)', () => {
     const history = [
       { message: { type: 'function_call_output', name: 'get_weather', call_id: 'call_1', output: '{"temp":25}' } },
     ];
-    const msgs = handler.convertHistory(history);
-    assert.equal(msgs.length, 1);
+    const msgs = make().convertHistory(history);
     assert.equal(msgs[0].role, 'tool');
+    assert.equal(msgs[0].tool_call_id, 'call_1');
     assert.equal(msgs[0].content, '{"temp":25}');
   });
 
-  it('convertMsg handles normalized text items with content field', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
-    const history = [{ message: { type: 'text', content: 'Hello world', role: 'assistant' } }];
-    const msgs = handler.convertHistory(history);
-    assert.equal(msgs.length, 1);
-    assert.equal(msgs[0].role, 'assistant');
-    assert.equal(msgs[0].content, 'Hello world');
+  it('detects tool calls by presence, NOT by finish_reason (llama.cpp returns "tool")', () => {
+    const parsed = make()._parseResponse({
+      choices: [
+        {
+          finish_reason: 'tool',
+          message: { tool_calls: [{ id: 'c1', function: { name: 'get_weather', arguments: '{"city":"Madrid"}' } }] },
+        },
+      ],
+    });
+    assert.equal(parsed.length, 1);
+    assert.equal(parsed[0].type, 'function_call');
+    assert.equal(parsed[0].call_id, 'c1');
+  });
+
+  it('accepts arguments returned as a parsed object (llama.cpp#20198) and restores the string', () => {
+    const parsed = make()._parseResponse({
+      choices: [
+        { message: { tool_calls: [{ id: 'c1', function: { name: 'get_weather', arguments: { city: 'Madrid' } } }] } },
+      ],
+    });
+    assert.equal(typeof parsed[0].arguments, 'string');
+    assert.deepEqual(JSON.parse(parsed[0].arguments), { city: 'Madrid' });
+  });
+
+  it('synthesizes a call_id when the server omits one', () => {
+    const parsed = make()._parseResponse({
+      choices: [{ message: { tool_calls: [{ function: { name: 'get_weather', arguments: '{}' } }] } }],
+    });
+    assert.ok(parsed[0].call_id.startsWith('ollama_'), 'id should be synthesized with the provider prefix');
+  });
+
+  it('captures reasoning_content instead of dropping it', () => {
+    const parsed = make()._parseResponse({
+      choices: [{ message: { reasoning_content: 'thinking hard', content: 'done' } }],
+    });
+    assert.equal(parsed[0].type, 'reasoning');
+    assert.equal(parsed[0].content, 'thinking hard');
+    assert.equal(parsed[1].type, 'text');
+  });
+
+  it('normalizes Chat Completions usage field names', () => {
+    const usage = make().normalizeUsage({ prompt_tokens: 100, completion_tokens: 20, total_tokens: 120 });
+    assert.equal(usage.input, 100);
+    assert.equal(usage.output, 20);
+    assert.equal(usage.total, 120);
   });
 
   it('handles tool call and returns function_call_output with name', async () => {
-    const handler = new OllamaHandler(FAKE_HOST);
-    const result = await handler.handleToolCall(mockToolCall, mockExecutor);
+    const result = await make().handleToolCall(mockToolCall, mockExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.equal(result.call_id, 'call_123');
     assert.equal(result.name, 'get_weather');
@@ -506,25 +579,48 @@ describe('OllamaHandler', () => {
   });
 
   it('handles tool call error gracefully', async () => {
-    const handler = new OllamaHandler(FAKE_HOST);
     const failExecutor = async () => {
       throw new Error('boom');
     };
-    const result = await handler.handleToolCall(mockToolCall, failExecutor);
+    const result = await make().handleToolCall(mockToolCall, failExecutor);
     assert.equal(result.type, 'function_call_output');
     assert.ok(JSON.parse(result.output).error.includes('boom'));
   });
 
-  it('normalizes response with content field', () => {
-    const handler = new OllamaHandler(FAKE_HOST);
-    const norm = handler.normalizeResponse({
-      output: [{ type: 'text', content: 'Hello', role: 'assistant' }],
-      model: 'llama3.2',
-    });
+  it('normalizes response with the configured provider name', () => {
+    const norm = make().normalizeResponse({ output: [{ type: 'text', content: 'Hello' }], model: 'llama3.2' });
     assert.equal(norm.provider, 'ollama');
-    assert.equal(norm.responseId, null);
     assert.equal(norm.content[0].content, 'Hello');
-    assert.equal(norm.content[0].role, 'assistant');
+  });
+
+  // ── Capability rule: flags shape the REQUEST only ────────────────────────────
+  it('Ollama preset omits tool_choice and parallel_tool_calls (unsupported on its /v1)', async () => {
+    const handler = make(COMPATIBLE_PROVIDERS.ollama.capabilities);
+    const sent = stubClient(handler);
+    await handler.processMessage({ type: 'message', content: 'hi' }, mockTools, [], {});
+    assert.ok(sent.tools, 'tools should still be sent');
+    assert.equal(sent.tool_choice, undefined);
+    assert.equal(sent.parallel_tool_calls, undefined);
+    assert.equal(sent.reasoning_effort, 'none');
+  });
+
+  it('llama.cpp preset sends parallel_tool_calls explicitly (disabled by default there)', async () => {
+    const handler = new OpenAICompatibleHandler('not-needed', 'm', 'sys', {
+      baseURL: 'http://localhost:8080/v1',
+      providerName: 'llamacpp',
+      capabilities: COMPATIBLE_PROVIDERS.llamacpp.capabilities,
+    });
+    const sent = stubClient(handler);
+    await handler.processMessage({ type: 'message', content: 'hi' }, mockTools, [], {});
+    assert.equal(sent.parallel_tool_calls, true);
+    assert.equal(sent.tool_choice, 'auto');
+  });
+
+  it('omits tools entirely when allowedTools is empty (text-only turn)', async () => {
+    const handler = make();
+    const sent = stubClient(handler);
+    await handler.processMessage({ type: 'message', content: 'hi' }, mockTools, [], { allowedTools: [] });
+    assert.equal(sent.tools, undefined);
   });
 });
 
@@ -618,7 +714,11 @@ describe('Integration - real API smoke test', () => {
     try {
       result = await handler.processMessage({ type: 'message', content: prompt }, [], [], {});
     } catch (err) {
-      if (err.message?.includes('ECONNREFUSED') || err.message?.includes('fetch failed')) {
+      if (
+        err.message?.includes('ECONNREFUSED') ||
+        err.message?.includes('fetch failed') ||
+        err.message?.includes('Connection error')
+      ) {
         t.skip('Ollama not reachable: ' + err.message.substring(0, 80));
         return;
       }

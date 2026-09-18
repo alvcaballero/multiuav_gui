@@ -1,4 +1,4 @@
-import { port, RosEnable, FbEnable, LLMProvider, LLM, LLMApiKeys } from './config/config.js';
+import { port, RosEnable, FbEnable, LLMProvider, LLM, LLMApiKeys, LLMBaseURLs, LLMModel } from './config/config.js';
 
 import express, { json } from 'express';
 import { createServer } from 'http';
@@ -134,6 +134,19 @@ if (LLM) {
   const provider = LLMProvider.toLowerCase();
   const apiKey = LLMApiKeys[provider === 'claude' ? 'anthropic' : provider];
 
+  // The endpoint moved out of the API-key slot when Ollama went onto the OpenAI-compatible
+  // transport. A URL left in the old var must fail loudly: ignoring it would quietly fall
+  // back to the preset's localhost default and point the fleet's planner at the wrong host.
+  if (/^https?:\/\//i.test(apiKey)) {
+    const baseVar = `LLM_${provider.toUpperCase()}_BASE_URL`;
+    const error = new Error(
+      `LLM API key for provider "${provider}" looks like a URL. The endpoint is now configured ` +
+        `separately: move it to ${baseVar} and leave the API key empty for local servers.`
+    );
+    logger.error('Error de configuración LLM', { error: error.message, type: 'configuration' });
+    throw error;
+  }
+
   if (!apiKey) {
     const envVar = `LLM_${(provider === 'claude' ? 'ANTHROPIC' : provider).toUpperCase()}_API_KEY`;
     const error = new Error(
@@ -145,7 +158,10 @@ if (LLM) {
     });
     throw error;
   }
-  chatController.initializeLLMProvider(provider, apiKey);
+  chatController.initializeLLMProvider(provider, apiKey, {
+    model: LLMModel,
+    baseURL: LLMBaseURLs[provider] || '',
+  });
 } else {
   logger.warn('LLM deshabilitado, no se inicializará ningún proveedor');
 }
