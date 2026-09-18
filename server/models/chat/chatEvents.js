@@ -54,3 +54,26 @@ export function emitAssistantMessage(chatItem) {
 export function emitChatBusy(chatId, busy) {
   eventBus.emitSafe(EVENTS.CHAT_BUSY, { chatId, busy });
 }
+
+/**
+ * Announces tool calls parked waiting for a human decision.
+ *
+ * Only an announcement: the requests are already durable in the DB before this
+ * fires, so a client that misses the event still sees them after a reload.
+ *
+ * @param {string} chatId
+ * @param {Array<object>} requests - InputRequest shapes (toolApprovalStore.toInputRequest)
+ */
+export function emitToolApprovalRequested(chatId, requests) {
+  if (!requests?.length) return;
+  eventBus.emitSafe(EVENTS.CHAT_TOOL_APPROVAL_REQUESTED, { chatId, requests });
+}
+
+/**
+ * @param {string} chatId
+ * @param {Array<{requestId: string, outcome: string, responderPrincipalId: ?string}>} resolutions
+ */
+export function emitToolApprovalResolved(chatId, resolutions) {
+  if (!resolutions?.length) return;
+  eventBus.emitSafe(EVENTS.CHAT_TOOL_APPROVAL_RESOLVED, { chatId, resolutions });
+}

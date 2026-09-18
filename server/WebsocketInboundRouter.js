@@ -40,6 +40,21 @@ const INBOUND_MAP = {
       });
     }
   },
+
+  // The ONLY way a parked flight tool gets authorised. A chat message never
+  // approves anything, no matter what it says.
+  [EVENTS.CHAT_TOOL_APPROVAL_RESPONSE]: async (payload) => {
+    logger.info('WS inbound: tool approval response', {
+      chatId: payload.chatId,
+      count: payload.responses?.length ?? 0,
+    });
+
+    await chatController.respondToApproval({
+      chatId: payload.chatId,
+      responses: payload.responses,
+      responderPrincipalId: payload.responderPrincipalId ?? null,
+    });
+  },
 };
 
 export class WebsocketInboundRouter {

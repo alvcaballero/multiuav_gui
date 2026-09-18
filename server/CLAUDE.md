@@ -349,6 +349,31 @@ The project includes an external MCP server as a git submodule (`mcp_server/`):
 - Tools: Mission planning, device control, sensor queries
 - Tool results fed back to LLM for context-aware responses
 
+**Human-in-the-loop gate for flight tools** (`toolApproval.js`, `toolApprovalStore.js`,
+`approvalSweeper.js`, `ChatToolApproval` model):
+
+Tools in `TOOL_APPROVAL_REQUIRED` park the whole tool-call batch until an operator
+answers. The invariants, in order of how badly they break things if ignored:
+
+1. **The approval binds to the frozen, serialised input — never to the intent.** The
+   resolved input (context params already merged) is hashed at park time, and re-checked
+   against the value about to run. Resuming NEVER re-asks the model: a model asked twice
+   can answer twice, and the operator approved the first answer.
+2. **Free text approves nothing.** Only a structured `{requestId, optionId}` on
+   `chat:tool_approval_response` decides. With several requests open, no amount of
+   "yes, go ahead" disambiguates which one it meant.
+3. **A stale answer never re-opens a decision.** `resolve` is an atomic
+   `UPDATE ... WHERE status='pending'`, so with several operators the first write wins
+   and the rest are told. `claimExecution` is the same trick on `executedAt IS NULL`,
+   which is what stops a double click flying the mission twice.
+4. **Expiry is swept, not just recorded.** A parked turn holds a `function_call` with no
+   result, which providers reject on the NEXT request — so `approvalSweeper` expires and
+   then RESUMES the turn with rejected results, keeping history well-formed.
+5. `rejected` ≠ `failed`: a denied call never ran. Collapsing them destroys the audit trail.
+
+The parked turn releases the chat lock, so the operator can still talk (and answer).
+Pending requests live in the DB, so they survive a reload and a server restart.
+
 **Inbound/EventBus Integration:**
 
 - `CHAT_USER_MESSAGE` (WS inbound) → `WebsocketInboundRouter` → `chatController.processMessage` (direct dispatch)
@@ -511,6 +536,9 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `STREAM_SERVER`: Enable/disable video streaming (MediaMTX)
 - `LLM`: Enable/disable chat features
 - `LLM_PROVIDER`: `openai` | `gemini` | `anthropic`/`claude` | `ollama` (default `openai`)
+- `TOOL_APPROVAL_ENFORCE`: human-in-the-loop gate for flight tools. **Default ON** — set to `'false'` to disable (opt-out, so a missing var never silently removes the gate)
+- `TOOL_APPROVAL_REQUIRED`: comma-separated tools that need approval (default `load_mission_to_uav,start_mission`)
+- `TOOL_APPROVAL_TTL_MS` / `TOOL_APPROVAL_SWEEP_INTERVAL_MS`: how long an approval stays answerable (default 5 min) and how often expired ones are swept (default 30s)
 - `MCP_ENABLE`: Enable/disable MCP server integration (default false)
 - `MCP_CONFIG`: JSON configuration for MCP transport (`{"transport":"stdio","url":"http://localhost:3000/mcp"}`)
 - `PLANNING_SERVER` / `PLANNING_HOST`: enable + point to the `mip_planner` FastAPI service (see root `CLAUDE.md`)

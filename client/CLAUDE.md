@@ -152,14 +152,44 @@ export const migrateNewFeature = (oldState) => {
 
 `shared/components/SwipeConfirm.jsx` is used ONLY for manual, human-initiated actions
 from the UI (loading a mission, in `Menu.jsx`/`MainPage.jsx`/`MainPage3D.jsx`). It has
-no relation to the LLM chat: there is currently **no user confirmation step for tool
-calls executed by the chat agents** (`server/models/chat/chat.js`'s tool loop runs
-`load_mission_to_uav`/`start_mission`/etc. straight through — the only "gate" is prose
-in the agent `.md` prompts, not a code-level HITL). Relevant when integrating
-`gcs_eevee_assistant` (eve), whose MCP tool config has a real `approval: "user-approval"`
-flag for flight tools — that has no existing equivalent in this codebase to hook into.
+no relation to the LLM chat.
+
+The chat agents have their own, separate gate: `components/chat/ToolApprovalGate.jsx`.
+Tools listed in `TOOL_APPROVAL_REQUIRED` (default `load_mission_to_uav`, `start_mission`)
+park the server-side tool loop until an operator answers. Two rules that are load-bearing
+rather than cosmetic:
+
+- **A chat message never approves anything.** Only the structured response keyed by
+  `requestId` (`services/toolApproval.js`) decides. With several requests open there is
+  no way to tell which one free text meant, and guessing wrong arms an aircraft.
+- **What is shown is what executes.** The gate renders the frozen input verbatim; the
+  server re-checks its `sha256` before running it and refuses on any mismatch. The turn
+  is never resumed by re-asking the model what it wanted.
+
+Pending approvals live in the server DB (`ChatToolApproval`), so they survive a reload —
+`pendingApprovals` in the Redux chat slice is a projection of that, never the source of
+truth. Enforcement is behind `TOOL_APPROVAL_ENFORCE`.
+
+Design rationale and the rest of the protocol work this belongs to: `docs/ChatProtocol.md`.
 
 ## Known Issues Needing Architectural Decisions
+
+### Chat message contract (no stable id, three clocks, raw-JSON fallback)
+
+The chat wire format has no stable message id (the DB PK never leaves the backend), three
+different clocks stamp the same message's timestamp, images travel and are stored as inline
+base64, and an unrecognised message `type` falls through `convertMsg`
+(`components/chat/ChatMessages.jsx:175-184`) into a plain text bubble via `ReactMarkdown` —
+so a client-side artifact is visually indistinguishable from a real assistant message, and
+markdown-significant characters in the payload corrupt what is shown.
+
+These are symptoms of one root cause: `loadHistory` (REST) and the WebSocket emit are two
+separate pipelines producing different shapes.
+
+Full diagnosis, the proposed event-based contract, and the flight-safety requirements for
+human-in-the-loop tool approval are in `docs/ChatProtocol.md`. That document is **proposed,
+not accepted** — it needs a decision before implementation, since it changes the chat
+persistence schema.
 
 ### Missing stable IDs on mission data (waypoints, bases, elements)
 

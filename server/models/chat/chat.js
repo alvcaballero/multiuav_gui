@@ -2,10 +2,23 @@ import { randomUUID } from 'node:crypto';
 import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './handlers/llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
-import { LLM, MCPenable } from '../../config/config.js';
+import { LLM, MCPenable, TOOL_APPROVAL_ENFORCE } from '../../config/config.js';
+import {
+  requiresApproval,
+  assertApprovedInputMatches,
+  freezeToolCall,
+  ToolApprovalRequiredError,
+} from './toolApproval.js';
 import { TurnContext } from './turnContext.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
-import { emitAssistantError, emitAssistantMessage, emitChatBusy } from './chatEvents.js';
+import {
+  emitAssistantError,
+  emitAssistantMessage,
+  emitChatBusy,
+  emitToolApprovalRequested,
+  emitToolApprovalResolved,
+} from './chatEvents.js';
+import { ToolApprovalStore, toInputRequest } from './toolApprovalStore.js';
 import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
 import { forceFinishItem, RETRY_AFTER_TOOL_ERROR_MESSAGE } from './handlers/baseLLMhandler.js';
 
@@ -101,6 +114,21 @@ export class MessageOrchestrator {
   static async processMessage(chatId, input, options = {}) {
     const turnInput = this._normalizeInput(input);
 
+    const release = await this._acquireChatLock(chatId);
+
+    try {
+      return await this._startTurn(chatId, turnInput, options, release);
+    } catch (error) {
+      release();
+      throw error;
+    }
+  }
+
+  /**
+   * Takes the per-chat mutex, queueing behind whoever holds it.
+   * @returns {Promise<Function>} `release`, which the caller MUST eventually call
+   */
+  static async _acquireChatLock(chatId) {
     const prev = chatLocks.get(chatId) || Promise.resolve();
     let resolve;
     const lock = new Promise((r) => {
@@ -108,7 +136,12 @@ export class MessageOrchestrator {
     });
     chatLocks.set(chatId, lock);
 
+    // Idempotent: the resume path has both a `finally(release)` deep in the
+    // recursion and its own error handler, and neither can know about the other.
+    let released = false;
     const release = () => {
+      if (released) return;
+      released = true;
       resolve();
       // Clean up if no one else is queued behind us
       if (chatLocks.get(chatId) === lock) {
@@ -120,12 +153,7 @@ export class MessageOrchestrator {
     await prev;
     emitChatBusy(chatId, true);
 
-    try {
-      return await this._startTurn(chatId, turnInput, options, release);
-    } catch (error) {
-      release();
-      throw error;
-    }
+    return release;
   }
 
   /**
@@ -290,6 +318,11 @@ export class MessageOrchestrator {
     chatLogger.debug(`[ToolLoop: ${chatId}] Iteration ${next} - Processing tools...`);
 
     try {
+      // A gated call parks the WHOLE batch: running the read-only calls now and
+      // the flight call minutes later would hand the operator a decision based on
+      // telemetry that no longer holds.
+      if (await this._parkForApproval(chatId, output, ctx, { turnId, iteration: next })) return;
+
       const results = await this.executeToolCalls(output, chatId);
 
       await this._runTurn(
@@ -304,6 +337,42 @@ export class MessageOrchestrator {
       chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
       emitAssistantError(chatId, `Error processing tool results: ${error.message}`);
     }
+  }
+
+  /**
+   * Freezes every gated call in the batch and parks the turn.
+   *
+   * Returns true when the turn parked. The chat lock is released by the caller's
+   * `.finally(release)` as usual, so the operator can still talk to the chat —
+   * and, more to the point, still answer.
+   */
+  static async _parkForApproval(chatId, output, ctx, { turnId, iteration }) {
+    if (!TOOL_APPROVAL_ENFORCE) return false;
+
+    const toolCalls = output.filter((r) => r.type === 'function_call' || r.type === 'tool_call');
+    const contextParams = getContextParams(chatId);
+    const hasContext = Object.keys(contextParams).length > 0;
+
+    const gated = toolCalls.filter((call) => requiresApproval(call.name));
+    if (gated.length === 0) return false;
+
+    const resumeContext = { allowedTools: ctx.allowedTools ?? null, agent: ctx.agent?.name ?? null, toolCalls };
+
+    const requests = [];
+    for (const call of gated) {
+      const args = JSON.parse(call.arguments);
+      const frozen = freezeToolCall({
+        callId: call.call_id,
+        toolName: call.name,
+        input: hasContext ? { ...args, ...contextParams } : args,
+      });
+      const row = await ToolApprovalStore.createPending({ chatId, turnId, iteration, frozen, resumeContext });
+      requests.push(toInputRequest(row));
+    }
+
+    emitToolApprovalRequested(chatId, requests);
+    chatLogger.warn(`[ToolApproval] Turn ${turnId} parked on ${requests.length} pending approval(s)`);
+    return true;
   }
 
   /**
@@ -431,24 +500,218 @@ export class MessageOrchestrator {
 
   /**
    * Ejecuta todas las llamadas a herramientas solicitadas por el LLM
+   *
+   * @param {Array} toolCalls
+   * @param {string} chatId
+   * @param {object} [options]
+   * @param {Map<string, object>} [options.approvals] - Frozen approvals by call_id
    */
-  static async executeToolCalls(toolCalls, chatId) {
+  static async executeToolCalls(toolCalls, chatId, { approvals = null } = {}) {
     const results = [];
     const contextParams = getContextParams(chatId);
     const hasContext = Object.keys(contextParams).length > 0;
 
     for (const toolCall of toolCalls) {
       if (toolCall.type == 'function_call' || toolCall.type == 'tool_call') {
-        const result = await llmHandler.handleToolCall(toolCall, async (name, args) => {
+        const approval = approvals?.get(toolCall.call_id) ?? null;
+
+        // An approved call replays the input the operator actually saw. Resolving
+        // it again here would re-derive a value nobody authorised.
+        const call = approval?.status === 'approved' ? { ...toolCall, arguments: JSON.stringify(approval.input) } : toolCall;
+
+        // Handlers turn any throw from the executor into a generic error result,
+        // so the denial is captured here instead: a refused call never ran, and
+        // must not be reported as a tool that failed.
+        let denial = null;
+
+        const result = await llmHandler.handleToolCall(call, async (name, args) => {
           // Fixed context params win over whatever the LLM passes, so it can't
           // override a subagent's injected context even if it hallucinates the same key.
-          return await mcpClient.executeTool(name, hasContext ? { ...args, ...contextParams } : args);
+          const input = approval ? args : hasContext ? { ...args, ...contextParams } : args;
+
+          denial = await this._denyUnapprovedToolCall({ callId: toolCall.call_id, name, input, approval });
+          if (denial) throw new Error(denial.message);
+
+          return await mcpClient.executeTool(name, input);
         });
-        results.push(result);
+
+        results.push(denial ? { ...result, status: 'rejected', error: denial } : result);
       }
     }
 
     return results;
+  }
+
+  /**
+   * The approval gate. Returns a denial descriptor, or null to let the call run.
+   *
+   * `input` must be the exact value about to reach the tool, because that is what
+   * the operator had to have approved.
+   */
+  static async _denyUnapprovedToolCall({ callId, name, input, approval }) {
+    if (!TOOL_APPROVAL_ENFORCE || !requiresApproval(name)) return null;
+
+    try {
+      if (!approval) throw new ToolApprovalRequiredError({ callId, toolName: name });
+
+      if (approval.status === 'denied') {
+        return {
+          code: 'tool_approval_denied',
+          message: `"${name}" was denied by the operator${approval.denyReason ? `: ${approval.denyReason}` : ''}`,
+        };
+      }
+
+      if (approval.status !== 'approved') throw new ToolApprovalRequiredError({ callId, toolName: name });
+
+      assertApprovedInputMatches(approval, input);
+
+      // Claimed once and only once: a retried response or an overlapping resume
+      // must not fly the mission twice.
+      if (!(await ToolApprovalStore.claimExecution(approval.requestId))) {
+        return { code: 'tool_approval_already_executed', message: `"${name}" already ran for call ${callId}` };
+      }
+
+      return null;
+    } catch (error) {
+      chatLogger.error(`[ToolApproval] Refused ${name} (call ${callId}): ${error.message}`);
+      return { code: error.code, message: error.message };
+    }
+  }
+
+  /**
+   * Ages out approvals nobody answered, then unblocks the turns they parked.
+   *
+   * Resuming matters as much as expiring: a parked turn has a `function_call` in
+   * history with no result, and providers reject a conversation where a tool call
+   * is left unanswered. The resumed turn produces a rejected result for each
+   * expired call, which both keeps history well-formed and tells the model — in
+   * the only vocabulary it has — that nothing was authorised.
+   */
+  static async sweepExpiredApprovals() {
+    const expired = await ToolApprovalStore.listExpiredUnswept();
+    if (expired.length === 0) return 0;
+
+    await ToolApprovalStore.expireStale();
+
+    for (const { chatId, turnId } of ToolApprovalStore.distinctTurns(expired)) {
+      chatLogger.warn(`[ToolApproval] Turn ${turnId} resumed with expired approvals — nothing was authorised`);
+      await this._resumeParkedTurn(chatId, turnId);
+    }
+
+    return expired.length;
+  }
+
+  /**
+   * Pending approvals for a chat, as InputRequest shapes.
+   *
+   * There is no client-side store behind this: the requests live in the DB, so a
+   * reload re-reads them and a parked approval is still there, still answerable.
+   */
+  static async getPendingApprovals(chatId) {
+    const rows = await ToolApprovalStore.listPending(chatId);
+    return rows.map(toInputRequest);
+  }
+
+  /**
+   * Answers one or more pending approvals and, once none are left pending for
+   * that turn, resumes it.
+   *
+   * ONLY a structured answer decides. Free text never approves anything: with
+   * several requests open there is no way to know which one "yes, go ahead"
+   * refers to, and guessing wrong arms an aircraft.
+   *
+   * @param {string} chatId
+   * @param {Array<{requestId: string, optionId: string, text?: string}>} responses
+   * @param {object} [options]
+   * @param {string} [options.responderPrincipalId] - WHO is answering
+   * @returns {Promise<{resolutions: Array, stale: Array}>}
+   */
+  static async respondToApproval(chatId, responses, { responderPrincipalId = null } = {}) {
+    const resolutions = [];
+    const stale = [];
+
+    for (const { requestId, optionId, text } of responses ?? []) {
+      if (optionId !== 'approve' && optionId !== 'deny') {
+        stale.push({ requestId, reason: 'invalid_option' });
+        continue;
+      }
+
+      const row = await ToolApprovalStore.resolve(requestId, {
+        outcome: optionId === 'approve' ? 'approved' : 'denied',
+        responderPrincipalId,
+        denyReason: optionId === 'deny' ? (text ?? null) : null,
+      });
+
+      // Null means it was already answered, cancelled or aged out. A stale answer
+      // NEVER re-opens the decision — the model has to ask again.
+      if (!row) {
+        stale.push({ requestId, reason: 'stale' });
+        continue;
+      }
+
+      resolutions.push({
+        requestId,
+        callId: row.callId,
+        toolName: row.toolName,
+        outcome: row.status,
+        responderPrincipalId,
+        turnId: row.turnId,
+      });
+    }
+
+    emitToolApprovalResolved(chatId, resolutions);
+
+    for (const turnId of new Set(resolutions.map((r) => r.turnId))) {
+      await this._resumeParkedTurn(chatId, turnId);
+    }
+
+    return { resolutions, stale };
+  }
+
+  /**
+   * Resumes a turn once every approval it parked on has an answer.
+   *
+   * The model is NOT re-consulted: the approved calls run the frozen input, their
+   * results are appended, and only then does the loop continue. A model asked
+   * twice can answer twice, and the second answer was never approved.
+   */
+  static async _resumeParkedTurn(chatId, turnId) {
+    if ((await ToolApprovalStore.listPendingForTurn(chatId, turnId)).length > 0) return;
+
+    const decided = await ToolApprovalStore.listForTurn(chatId, turnId);
+    if (decided.length === 0) return;
+
+    const resumeContext = decided.find((row) => row.resumeContext)?.resumeContext;
+    if (!resumeContext?.toolCalls) {
+      chatLogger.error(`[ToolApproval] Cannot resume turn ${turnId}: no resumeContext persisted`);
+      return;
+    }
+
+    const release = await this._acquireChatLock(chatId);
+
+    try {
+      const ctx = await TurnContext.build(chatId, {
+        allowedTools: resumeContext.allowedTools ?? null,
+        getTools: (allowed) => this.getToolsForProvider(allowed),
+        llmHandler,
+      });
+
+      const approvals = new Map(decided.map((row) => [row.callId, row]));
+      const results = await this.executeToolCalls(resumeContext.toolCalls, chatId, { approvals });
+
+      chatLogger.info(`[ToolApproval] Resuming turn ${turnId} on chat ${chatId}`);
+
+      await this._runTurn(chatId, { kind: 'tool_output', results }, ctx, {
+        turnId,
+        phase: 'tool_loop',
+        iteration: decided[0].iteration,
+        release,
+      });
+    } catch (error) {
+      release();
+      chatLogger.error(`[ToolApproval] Error resuming turn ${turnId}:`, error);
+      emitAssistantError(chatId, `Error resuming after approval: ${error.message}`);
+    }
   }
 
   /**

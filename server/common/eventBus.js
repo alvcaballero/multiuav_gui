@@ -142,6 +142,9 @@ export const EVENTS = Object.freeze({
   CHAT_USER_MESSAGE: 'chat:user_message',
   CHAT_ASSISTANT_MESSAGE: 'chat:assistant_message',
   CHAT_BUSY: 'chat:busy',
+  CHAT_TOOL_APPROVAL_REQUESTED: 'chat:tool_approval_requested',
+  CHAT_TOOL_APPROVAL_RESOLVED: 'chat:tool_approval_resolved',
+  CHAT_TOOL_APPROVAL_RESPONSE: 'chat:tool_approval_response',
   // Sistema
   SYSTEM_ERROR: 'system:error',
   SYSTEM_SHUTDOWN: 'system:shutdown',

@@ -26,6 +26,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import { MessageBubble, WelcomeMessage } from './ChatMessages';
 import ChatInput from './ChatInput';
+import ToolApprovalGate from './ToolApprovalGate';
 
 /** The element that actually scrolls. */
 const messagesScrollerSx = {
@@ -199,6 +200,8 @@ const ChatPanel = ({
         )}
       </Box>
     </Box>
+
+    <ToolApprovalGate chatId={activeChatId} />
 
     <ChatInput
       onSendMessage={handleSendMessage}

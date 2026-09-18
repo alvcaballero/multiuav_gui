@@ -48,6 +48,27 @@ export class chatController {
     return { ...result, chatId: effectiveChatId };
   }
 
+  /**
+   * Answers pending tool approvals. Called from the WS inbound router.
+   *
+   * `responderPrincipalId` is recorded, not trusted: authorising WHO may approve
+   * belongs to auth middleware, which this codebase does not have on the socket
+   * yet — until it does, treat the value as an audit hint, not a permission.
+   */
+  static async respondToApproval({ chatId, responses, responderPrincipalId = null }) {
+    return MessageOrchestrator.respondToApproval(chatId, responses, { responderPrincipalId });
+  }
+
+  static async getPendingApprovals(req, res) {
+    const { chatId } = req.params;
+    try {
+      res.json({ requests: await MessageOrchestrator.getPendingApprovals(chatId) });
+    } catch (error) {
+      logger.error('Error in chatController.getPendingApprovals:', error);
+      res.status(500).json({ error: error.message || 'Failed to load pending approvals.' });
+    }
+  }
+
   static async getChatHistory(req, res) {
     const { chatId } = req.params;
     const { limit, before } = req.query;

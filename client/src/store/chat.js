@@ -18,6 +18,11 @@ const initialState = {
   // List of available chats from server (for selector)
   availableChats: [],
 
+  // Map of chatId -> pending tool-approval requests (flight tools parked on a
+  // human decision). Server-owned: this is a projection of the DB, never the
+  // source of truth, so a reload re-reads it instead of losing it.
+  pendingApprovals: {},
+
   // Loading states
   loading: {
     sendingMessage: false,
@@ -155,6 +160,31 @@ const chatSlice = createSlice({
       if (state.activeChatId === chatId) {
         state.activeChatId = state.defaultChatId;
       }
+    },
+
+    // Replaces the pending set for a chat — used when rehydrating from the server
+    // after a reload, where the server's answer is authoritative.
+    setPendingApprovals(state, action) {
+      const { chatId, requests } = action.payload;
+      state.pendingApprovals[chatId] = requests ?? [];
+    },
+
+    addPendingApprovals(state, action) {
+      const { chatId, requests } = action.payload;
+      const current = state.pendingApprovals[chatId] ?? [];
+      const known = new Set(current.map((r) => r.requestId));
+      state.pendingApprovals[chatId] = [
+        ...current,
+        ...requests.filter((r) => !known.has(r.requestId)),
+      ];
+    },
+
+    resolveApprovals(state, action) {
+      const { chatId, resolutions } = action.payload;
+      const resolved = new Set(resolutions.map((r) => r.requestId));
+      state.pendingApprovals[chatId] = (state.pendingApprovals[chatId] ?? []).filter(
+        (r) => !resolved.has(r.requestId),
+      );
     },
 
     // Update loading state

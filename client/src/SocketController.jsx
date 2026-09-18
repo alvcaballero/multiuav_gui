@@ -109,6 +109,14 @@ const SocketController = () => {
       if (data.chatCreated) {
         dispatch(chatActions.setActiveChat(data.chatCreated.chatId));
       }
+      if (data.chatToolApproval) {
+        const { chatId, kind, requests, resolutions } = data.chatToolApproval;
+        if (kind === 'requested') {
+          dispatch(chatActions.addPendingApprovals({ chatId, requests }));
+        } else if (kind === 'resolved') {
+          dispatch(chatActions.resolveApprovals({ chatId, resolutions }));
+        }
+      }
       if (data.missionPlan) {
         console.log(data.missionPlan);
         dispatch(missionActions.updateMission(data.missionPlan));

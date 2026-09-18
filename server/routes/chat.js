@@ -10,6 +10,7 @@ chatRouter.post('/', chatController.sendMessage);
 
 // Chat history management endpoints
 chatRouter.get('/history/:chatId', chatController.getChatHistory);
+chatRouter.get('/approvals/:chatId', chatController.getPendingApprovals);
 chatRouter.get('/chats', chatController.listChats);
 chatRouter.post('/chats', chatController.createChat);
 chatRouter.delete('/chats/:chatId', chatController.deleteChat);

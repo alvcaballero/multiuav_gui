@@ -20,6 +20,7 @@ import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
 import { CameraStreamSubscriber } from './subscribers/cameraStreamSubscriber.js';
 import { eventBus } from './common/eventBus.js';
 import { positionHistorySampler, positionBroadcastBatcher } from './models/positions/index.js';
+import { approvalSweeper } from './models/chat/approvalSweeper.js';
 import { missionWpTracking } from './models/mission/missionWpTracking.js';
 
 // comunications with devices
@@ -99,6 +100,10 @@ positionHistorySampler
 // positionBroadcastBatcher.js) — arranca siempre, no depende de la DB.
 positionBroadcastBatcher.start();
 
+// Vence las aprobaciones de herramientas de vuelo que nadie contestó y desbloquea
+// el turno que quedó esperándolas (ver approvalSweeper.js).
+approvalSweeper.start();
+
 // Mission waypoint tracking: subscribes to ROUTE_UPDATED/POSITION_RECEIVED and
 // rehydrates its in-memory tracking registry from routes already in flight (so a
 // server restart mid-mission doesn't strand them untracked).
@@ -172,6 +177,7 @@ process.on('SIGTERM', () => {
 
   positionHistorySampler.stop();
   positionBroadcastBatcher.stop();
+  approvalSweeper.stop();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();
   websocketController.destroy();
@@ -188,6 +194,7 @@ process.on('SIGINT', () => {
 
   positionHistorySampler.stop();
   positionBroadcastBatcher.stop();
+  approvalSweeper.stop();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();
   websocketController.destroy();

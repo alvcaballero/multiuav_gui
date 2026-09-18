@@ -64,6 +64,24 @@ if (raw) {
 }
 export const MCPconfig = _MCPconfig; // MCP configuration file
 
+// Tools the chat agent may not execute without an explicit human approval.
+// Default-deny would be safer but breaks every read-only tool, so this is an
+// explicit list of the tools that move a real aircraft.
+export const TOOL_APPROVAL_REQUIRED = (
+  process.env.TOOL_APPROVAL_REQUIRED ?? 'load_mission_to_uav,start_mission'
+)
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean);
+
+export const TOOL_APPROVAL_TTL_MS = Number(process.env.TOOL_APPROVAL_TTL_MS) || 300000;
+export const TOOL_APPROVAL_SWEEP_INTERVAL_MS = Number(process.env.TOOL_APPROVAL_SWEEP_INTERVAL_MS) || 30000;
+
+// ON by default, and opt-OUT rather than opt-in: a safety gate that a missing
+// env var silently disables is not a safety gate. Set to 'false' explicitly to
+// let the agent fly without asking — e.g. an automated simulation run.
+export const TOOL_APPROVAL_ENFORCE = process.env.TOOL_APPROVAL_ENFORCE !== 'false';
+
 export const missionsConfigData = '../data/missionConfig.yaml';
 // intervals
 export const mapLatitude = Number(process.env.MAP_LATITUDE) || 37.19384681403371;

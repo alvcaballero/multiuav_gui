@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { chatActions } from '../../store';
 import { sendChatMessage } from '../../services/sendChatMessage';
+import { fetchPendingApprovals } from '../../services/toolApproval';
 
 const EMPTY_MESSAGES = [];
 
@@ -78,6 +79,17 @@ const useChatLogic = (open = true) => {
       console.error('Error loading chat history:', error);
     } finally {
       dispatch(chatActions.setLoading({ key: 'loadingHistory', value: false }));
+    }
+
+    // A tool call parked on an approval lives in the server DB, so re-reading it
+    // here is what makes a pending approval survive a reload — and stay
+    // answerable, because the turn is still parked waiting for that requestId.
+    try {
+      dispatch(
+        chatActions.setPendingApprovals({ chatId, requests: await fetchPendingApprovals(chatId) }),
+      );
+    } catch (error) {
+      console.error('Error loading pending approvals:', error);
     }
   };
 

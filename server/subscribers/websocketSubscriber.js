@@ -41,6 +41,12 @@ const OUTBOUND_MAP = {
       timestamp: new Date().toISOString(),
     },
   }),
+  [EVENTS.CHAT_TOOL_APPROVAL_REQUESTED]: ({ chatId, requests }) => ({
+    chatToolApproval: { chatId, kind: 'requested', requests },
+  }),
+  [EVENTS.CHAT_TOOL_APPROVAL_RESOLVED]: ({ chatId, resolutions }) => ({
+    chatToolApproval: { chatId, kind: 'resolved', resolutions },
+  }),
 };
 
 /**
