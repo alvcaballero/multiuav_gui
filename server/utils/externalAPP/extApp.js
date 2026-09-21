@@ -3,6 +3,10 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 
 const PORT = process.env.PORT ?? 1234;
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable must be set');
+}
 
 const app = express();
 app.use(express.urlencoded({ extended: true })); // support encoded bodies
@@ -21,7 +25,7 @@ app.post('/token', (req, res) => {
     password: password,
   };
   //send abpve as payload
-  jwt.sign({ user }, 'secretkey', (err, token) => {
+  jwt.sign({ user }, JWT_SECRET, (err, token) => {
     res.json({ access_token: token, token_type: 'bearer' });
   });
   //res.send(username + ' ' + password);
@@ -38,7 +42,7 @@ app.post('/drones/mission/start', verifyToken, (req, res) => {
       console.log(route);
     });
   }
-  jwt.verify(req.token, 'secretkey', (err, authData) => {
+  jwt.verify(req.token, JWT_SECRET, (err, authData) => {
     if (err) res.sendStatus(403);
     else {
       console.log('login');
@@ -55,7 +59,7 @@ app.post('/drones/mission/result', verifyToken, (req, res) => {
   console.log('\x1b[43m%s\x1b[0m', 'mission result');
   const { mission_id, resolution_code } = req.body;
   console.log(`mission_id ${mission_id} resolution code ${resolution_code}`);
-  jwt.verify(req.token, 'secretkey', (err, authData) => {
+  jwt.verify(req.token, JWT_SECRET, (err, authData) => {
     if (err) res.sendStatus(403);
     else {
       console.log('login');
@@ -75,7 +79,7 @@ app.post('/drones/mission/media', verifyToken, (req, res) => {
   console.log(files);
   console.log('resultados');
   console.log(result);
-  jwt.verify(req.token, 'secretkey', (err, authData) => {
+  jwt.verify(req.token, JWT_SECRET, (err, authData) => {
     if (err) res.sendStatus(403);
     else {
       console.log('login');
