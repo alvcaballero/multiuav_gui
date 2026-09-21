@@ -104,6 +104,14 @@ export const geofenceToFeature = (theme, item) => {
     properties: {
       name: item.name,
       color: item.attributes?.color || theme.palette.colors.geometry,
+      // `geofences-line` reads width and opacity off the feature. Nothing ever wrote
+      // them, so the expression resolved to null: silently defaulted by v5, warned
+      // about on every style validation by v6. The defaults below are the values it
+      // was falling back to, so appearance is unchanged and an attribute set on a
+      // geofence now actually takes effect. `??` rather than `||` so an explicit 0
+      // (deliberately invisible) is honoured.
+      width: item.attributes?.width ?? 1,
+      opacity: item.attributes?.opacity ?? 1,
     },
   };
 };
