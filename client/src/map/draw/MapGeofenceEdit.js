@@ -148,10 +148,22 @@ const MapGeofenceEdit = ({ selectedGeofenceId }) => {
   }, [dispatch, geofences, refreshGeofences]);
 
   useEffect(() => {
-    draw.deleteAll();
-    Object.values(geofences).forEach((geofence) => {
-      draw.add(geofenceToFeature(theme, geofence));
-    });
+    const loadIntoDraw = () => {
+      draw.deleteAll();
+      Object.values(geofences).forEach((geofence) => {
+        draw.add(geofenceToFeature(theme, geofence));
+      });
+    };
+
+    loadIntoDraw();
+
+    // Under maplibre-gl v6 the features draw pushes before the style has settled are
+    // accepted by the source and then never turned into tiles: draw holds them, the
+    // source reports them, and nothing is ever drawn. Re-applying once the map goes
+    // idle re-sends the same data through a source that is ready to parse it.
+    if (map.loaded() && map.isStyleLoaded()) return undefined;
+    map.once('idle', loadIntoDraw);
+    return () => map.off('idle', loadIntoDraw);
   }, [geofences, draw, theme]);
 
   useEffect(() => {

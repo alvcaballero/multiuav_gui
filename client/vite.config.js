@@ -30,7 +30,11 @@ export default defineConfig(({ mode }) => ({
           if (/node_modules\/(@mui|@emotion|tss-react)\//.test(id)) {
             return 'vendor-mui';
           }
-          if (/node_modules\/(maplibre-gl|@maplibre|@mapbox\/mapbox-gl-draw|@mapbox\/mapbox-gl-rtl-text)\//.test(id)) {
+          if (
+            /node_modules\/(maplibre-gl|@maplibre|@mapbox\/mapbox-gl-draw|@mapbox\/mapbox-gl-rtl-text)\//.test(
+              id,
+            )
+          ) {
             return 'vendor-map';
           }
         },
@@ -41,6 +45,12 @@ export default defineConfig(({ mode }) => ({
     target: 'es2022',
   },
   optimizeDeps: {
+    // maplibre-gl v6 spawns its worker as a separate module file, resolved relative to
+    // `import.meta.url`. Pre-bundling rewrites that URL into node_modules/.vite/deps,
+    // where `maplibre-gl-worker.mjs` does not exist, so the worker silently never starts
+    // and every GeoJSON source stays unprocessed — data present, nothing ever rendered.
+    // Serving the package from its own directory keeps the worker URL resolvable.
+    exclude: ['maplibre-gl'],
     esbuildOptions: {
       target: 'es2022',
     },
@@ -75,7 +85,9 @@ export default defineConfig(({ mode }) => ({
       },
     }),
     viteStaticCopy({
-      targets: [{ src: 'node_modules/@mapbox/mapbox-gl-rtl-text/dist/mapbox-gl-rtl-text.js', dest: '' }],
+      targets: [
+        { src: 'node_modules/@mapbox/mapbox-gl-rtl-text/dist/mapbox-gl-rtl-text.js', dest: '' },
+      ],
     }),
   ],
 }));
