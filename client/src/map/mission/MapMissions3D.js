@@ -4,7 +4,7 @@
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 import { useEffect, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 
 import { map } from '../core/mapInstance';

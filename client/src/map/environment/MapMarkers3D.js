@@ -3,7 +3,7 @@
 // example 2
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 import { useEffect, useMemo } from 'react';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 

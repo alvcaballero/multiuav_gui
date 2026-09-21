@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { TextureLoader } from 'three';
 import { useLoader } from '@react-three/fiber';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import { calculateDistanceMercatorToMeters } from './convertion';
 
 const ZOOM = 17;

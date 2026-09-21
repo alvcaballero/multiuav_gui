@@ -4,7 +4,7 @@
 // https://maplibre.org/maplibre-gl-js/docs/examples/cluster-html/
 import { useId, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 
 import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
@@ -20,6 +20,28 @@ const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
 const EMPTY_ROUTES = [];
 
+/**
+ * Reads a nested object out of a GeoJSON feature's properties.
+ *
+ * MapLibre v5 flattened nested property objects to JSON strings, so this code used to
+ * JSON.parse them back. v6 encodes them with a `__$json__:` prefix and decodes them
+ * itself, handing back a real object — parsing that again throws. Accepting both shapes
+ * keeps the popup working across the upgrade and against any source that still sends
+ * strings.
+ *
+ * @param {*} value - Raw property value
+ * @returns {object|null}
+ */
+const asObject = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
 export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) => {
   const id = useId();
   const routePoints = `${id}-points`;
@@ -34,8 +56,8 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
 
   const WaypointDetail = (e) => {
     const properties = structuredClone(e.features[0].properties);
-    const attributes = properties.attributes ? JSON.parse(properties.attributes) : null;
-    const actions = properties.actions ? JSON.parse(properties.actions) : null;
+    const attributes = asObject(properties.attributes);
+    const actions = asObject(properties.actions);
     const html = textPopUp({ properties, attributes, actions });
 
     new maplibregl.Popup().setLngLat(e.lngLat).setHTML(html).addTo(map);

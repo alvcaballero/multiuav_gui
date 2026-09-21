@@ -1,7 +1,5 @@
 import { useRef, useLayoutEffect, useEffect, useState, useMemo } from 'react';
 
-import maplibregl from 'maplibre-gl';
-
 import { usePreference } from '../../shared/preferences';
 import usePersistedState from '../../shared/usePersistedState';
 
@@ -27,7 +25,6 @@ const MapView = ({ children }) => {
     'selectedMapStyle',
     usePreference('map', 'locationIqStreets'),
   );
-  const mapboxAccessToken = 'my tocken';
   const maxZoom = 21;
 
   useEffect(() => {
@@ -38,10 +35,6 @@ const MapView = ({ children }) => {
   useEffect(() => {
     console.log('Initializing map...');
   }, [mapReady]);
-
-  useEffect(() => {
-    maplibregl.accessToken = mapboxAccessToken;
-  }, [mapboxAccessToken]);
 
   const styles = useMemo(() => {
     const filtered = mapStyles.filter((s) => s.available && activeMapStyles.includes(s.id));

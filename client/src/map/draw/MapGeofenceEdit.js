@@ -1,5 +1,5 @@
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { useEffect, useMemo } from 'react';
 
@@ -12,6 +12,11 @@ import { errorsActions, geofencesActions } from '../../store';
 import { useCatchCallback } from '../../reactHelper';
 import drawTheme from './theme';
 
+// mapbox-gl-draw looks its DOM up by Mapbox's class names; these remap them onto
+// MapLibre's. CANVAS matters most - draw resolves the drawing surface through it.
+// Same set the official MapLibre v6 + draw example applies.
+MapboxDraw.constants.classes.CANVAS = 'maplibregl-canvas';
+MapboxDraw.constants.classes.ATTRIBUTION = 'maplibregl-ctrl-attrib';
 MapboxDraw.constants.classes.CONTROL_BASE = 'maplibregl-ctrl';
 MapboxDraw.constants.classes.CONTROL_PREFIX = 'maplibregl-ctrl-';
 MapboxDraw.constants.classes.CONTROL_GROUP = 'maplibregl-ctrl-group';

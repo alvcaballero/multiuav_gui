@@ -38,7 +38,7 @@ import HandymanIcon from '@mui/icons-material/Handyman';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
 import OpenWithIcon from '@mui/icons-material/OpenWith';
 
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';

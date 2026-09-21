@@ -1,5 +1,5 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 
 import { MaplibreExportControl, Size, PageOrientation, Format } from '@watergis/maplibre-gl-export';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
@@ -52,8 +52,10 @@ export const initMap = async () => {
   updateReadyValue(true);
 };
 
-map.on('styleimagemissing', (e) => {
-  const missingId = e.id;
+// Since v6 `styleimagemissing` only notifies — a listener can no longer supply the
+// image for the request that fired it. The resolver below is the hook that still can,
+// and MapLibre awaits it before deciding the image is really missing.
+map.setMissingStyleImageResolver((missingId) => {
   if (mapImages[missingId]) {
     map.addImage(missingId, mapImages[missingId], { pixelRatio: window.devicePixelRatio });
   }

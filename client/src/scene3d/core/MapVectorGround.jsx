@@ -4,7 +4,7 @@ import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import { buildTileGeometry } from './mvt/buildTileGeometry';
 import { calculateDistanceMercatorToMeters } from './convertion';
 
