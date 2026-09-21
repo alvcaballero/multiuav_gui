@@ -1,4 +1,4 @@
-import { LocalGlyphs, mapLatitude, mapLongitude, mapZoom, LLM } from '../config/config.js';
+import { LocalGlyphs, mapLatitude, mapLongitude, mapZoom, LLM, EveEnable } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile, readDataFile } from '../common/utils.js';
 import { logger } from '../common/logger.js';
@@ -51,6 +51,7 @@ export class serverModel {
       openIdEnabled: false,
       openIdForce: false,
       llmEnabled: LLM,
+      eveEnabled: EveEnable,
     };
   }
   static Protocol() {

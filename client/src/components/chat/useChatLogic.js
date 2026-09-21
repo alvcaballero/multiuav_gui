@@ -27,6 +27,15 @@ const useChatLogic = (open = true) => {
   const hasMoreOlder = activeConversation?.hasMoreOlder ?? false;
   const loading = useSelector((state) => state.chat.loading);
   const availableChats = useSelector((state) => state.chat.availableChats);
+  // Whether the eve agent orchestrator (gcs_eevee_assistant) is reachable at all —
+  // gates offering it in the UI, mirrors the server-side EveEnable check in
+  // chatController.createChat.
+  const eveEnabled = useSelector((state) => state.session.server?.eveEnabled ?? false);
+  // Which engine the active chat runs on. Looked up from availableChats (server
+  // is the source of truth for chat.metadata.engine) rather than duplicated into
+  // Redux conversation state — 'legacy' for a brand-new/not-yet-listed chat.
+  const activeEngine =
+    availableChats.find((c) => c.id === activeChatId)?.engine === 'eve' ? 'eve' : 'legacy';
 
   const [showOptions, setShowOptions] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
@@ -320,6 +329,40 @@ const useChatLogic = (open = true) => {
     setShowOptions(true);
   };
 
+  /**
+   * Starts a new chat on the eve agent orchestrator (`gcs_eevee_assistant`)
+   * instead of the legacy MessageOrchestrator. Unlike a legacy "new chat"
+   * (created lazily on the first WS message), this chat is created explicitly
+   * up front — `chatController._resolveEngine` only knows a chat is 'eve' from
+   * its DB row, so it has to exist before the first `chat:user_message` for
+   * that chatId lands.
+   */
+  const handleNewEveChat = async () => {
+    try {
+      dispatch(chatActions.setLoading({ key: 'creatingChat', value: true }));
+      const response = await fetch('/api/chat/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ engine: 'eve', name: 'Eve chat' }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to create eve chat');
+      }
+      const chat = await response.json();
+      // Refresh BEFORE switching so activeEngine (looked up from availableChats)
+      // reads 'eve' on the very first render of this chat, not one tick later.
+      await fetchAvailableChats();
+      dispatch(chatActions.setActiveChat(chat.id));
+      setShowOptions(false);
+    } catch (error) {
+      console.error('Error creating eve chat:', error);
+      dispatch(chatActions.setError(error.message));
+    } finally {
+      dispatch(chatActions.setLoading({ key: 'creatingChat', value: false }));
+    }
+  };
+
   const handleDeleteClick = () => {
     if (!activeChatId) return;
     setDeleteDialogOpen(true);
@@ -484,12 +527,15 @@ const useChatLogic = (open = true) => {
     deleteDialogOpen,
     messagesContainerRef,
     messagesContentRef,
+    eveEnabled,
+    activeEngine,
     // Handlers
     handleSendMessage,
     handleChatChange,
     handleMessagesScroll,
     handleUserScrollIntent,
     clearChat,
+    handleNewEveChat,
     handleDeleteClick,
     handleDeleteConfirm,
     handleDeleteCancel,

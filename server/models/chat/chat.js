@@ -805,6 +805,7 @@ export class MessageOrchestrator {
           lastUpdated: dbChat.updatedAt,
           createdAt: dbChat.createdAt,
           source: 'database',
+          engine: dbChat.metadata?.engine === 'eve' ? 'eve' : 'legacy',
         });
       }
 
@@ -886,6 +887,7 @@ export class MessageOrchestrator {
         id: chat.id,
         name: chat.name,
         createdAt: chat.createdAt,
+        engine: metadata.engine === 'eve' ? 'eve' : 'legacy',
       };
     } catch (error) {
       chatLogger.error('Error creating chat:', error);

@@ -212,7 +212,7 @@ export class ChatHistoryManager {
       where,
       order: [['updatedAt', 'DESC']],
       limit,
-      attributes: ['id', 'name', 'status', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'name', 'status', 'createdAt', 'updatedAt', 'metadata'],
     });
   }
 

@@ -17,8 +17,10 @@ import {
   DialogContentText,
   DialogTitle,
   Button,
+  Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReplayIcon from '@mui/icons-material/Replay';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -68,11 +70,14 @@ const ChatPanel = ({
   deleteDialogOpen,
   messagesContainerRef,
   messagesContentRef,
+  eveEnabled,
+  activeEngine,
   handleSendMessage,
   handleChatChange,
   handleMessagesScroll,
   handleUserScrollIntent,
   clearChat,
+  handleNewEveChat,
   handleDeleteClick,
   handleDeleteConfirm,
   handleDeleteCancel,
@@ -96,6 +101,16 @@ const ChatPanel = ({
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Chat Assistant
         </Typography>
+        {activeEngine === 'eve' && (
+          <Tooltip title="This chat runs on the eve agent orchestrator (beta) — flight-tool approval is not wired up on this path yet">
+            <Chip
+              icon={<AutoAwesomeIcon sx={{ color: 'inherit !important' }} />}
+              label="eve · beta"
+              size="small"
+              sx={{ mr: 1, bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}
+            />
+          </Tooltip>
+        )}
         {titleSlot}
         <IconButton size="small" color="inherit" onClick={clearChat} sx={{ mr: 0.5 }}>
           <ReplayIcon fontSize="small" />
@@ -131,6 +146,7 @@ const ChatPanel = ({
               const shortId = chat.id.replace('chat_', '').split('_')[0];
               return (
                 <MenuItem key={chat.id} value={chat.id}>
+                  {chat.engine === 'eve' ? '✨ ' : ''}
                   {chat.name || `Chat #${shortId}`}
                 </MenuItem>
               );
@@ -146,6 +162,17 @@ const ChatPanel = ({
             <AddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+        {eveEnabled && (
+          <Tooltip title="New chat on the eve agent orchestrator (beta)">
+            <IconButton
+              size="small"
+              onClick={handleNewEveChat}
+              sx={{ bgcolor: '#00897b', color: 'white', '&:hover': { bgcolor: '#00695c' } }}
+            >
+              <AutoAwesomeIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Stack>
     </Box>
 

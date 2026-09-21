@@ -4,6 +4,7 @@ import { ChatHistoryManager } from '../models/chat/chatHistoryManager.js';
 import { SubAgentManager } from '../models/chat/subAgentManager.js';
 import { agents, setAgentForChat } from '../models/chat/agents/index.js';
 import { logger } from '../common/logger.js';
+import { EveEnable } from '../config/config.js';
 
 export class chatController {
   static initializeLLMProvider(provider, apiKey, options = {}) {
@@ -142,6 +143,9 @@ export class chatController {
 
     if (engine && engine !== 'eve') {
       return res.status(400).json({ error: `Invalid engine '${engine}'. Only 'eve' is a valid opt-in.` });
+    }
+    if (engine === 'eve' && !EveEnable) {
+      return res.status(400).json({ error: "The eve engine is disabled (set EVE_ENABLE=true to allow it)." });
     }
 
     try {
