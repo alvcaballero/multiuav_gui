@@ -292,6 +292,8 @@ GET http://localhost:4000/api/planning/getMarkersTypes
 
 ### get markers types
 GET http://localhost:4000/api/markers/types
+### get markers types
+http://localhost:4000/api/markers/types/windTurbine/definition
 ### get bases
 GET http://localhost:4000/api/planning/getBases
 

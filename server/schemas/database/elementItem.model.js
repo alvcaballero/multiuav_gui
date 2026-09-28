@@ -23,6 +23,14 @@ const ElementItemSchema = {
   longitude: {
     type: DataTypes.FLOAT,
   },
+  altitude: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  azimFront: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
   description: {
     type: DataTypes.STRING,
     allowNull: true,

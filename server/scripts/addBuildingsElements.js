@@ -2,6 +2,14 @@
 // towerlight) with their items. Same findOrCreate pattern as
 // migrateMarkersToDb.js / addLineCD.js — idempotent, safe to re-run.
 //
+// NOTE: `group.geometry` here is NOT persisted anywhere — the ElementTypes
+// these groups reference (server/data/markerTypes.yaml) still use the old
+// flat `height` field, not `attributes.geometry`. Dimensions are only used
+// below to size the 3D wireframe fallback until those types are migrated to
+// carry their own `attributes.geometry`; they're intentionally NOT copied
+// onto each item (that's the per-item geometry override bug this catalog
+// rework removed — see server/schemas/zod/markers.js).
+//
 // Usage: node server/scripts/addBuildingsElements.js
 
 import sequelize from '../common/sequelize.js';
@@ -79,12 +87,6 @@ async function main() {
     for (const item of group.items) {
       itemIndex += 1;
       const name = item.name || `${group.type} ${itemIndex}`;
-      const attributes = {
-        geometry: {
-          ...group.geometry,
-          ...(item.heading !== undefined ? { yaw: item.heading } : {}),
-        },
-      };
 
       const [, created] = await sequelize.models.ElementItem.findOrCreate({
         where: { groupId: elementGroup.id, name },
@@ -93,8 +95,9 @@ async function main() {
           name,
           latitude: item.latitude,
           longitude: item.longitude,
+          azimFront: item.heading ?? null,
           description: null,
-          attributes,
+          attributes: null,
         },
       });
       if (created) itemCount += 1;

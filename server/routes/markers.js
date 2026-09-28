@@ -3,6 +3,7 @@ import { markersController } from '../controllers/markers/markers.js';
 import {
   elementTypesController,
   upload,
+  uploadDefinitionFile,
   setIconAssetType,
   setModelAssetType,
 } from '../controllers/markers/elementTypes.js';
@@ -24,11 +25,18 @@ markersRouter.post('/types/', elementTypesController.create);
 markersRouter.put('/types/:id', elementTypesController.update);
 markersRouter.delete('/types/:id', elementTypesController.delete);
 
-// Assets por tipo (icono 2D y modelo 3D)
+// Assets por tipo (icono 2D, modelo 3D y definición semántica/paramétrica YAML)
 markersRouter.get('/types/:id/icon', elementTypesController.serveIcon);
 markersRouter.get('/types/:id/model', elementTypesController.serveModel);
+markersRouter.get('/types/:id/definition', elementTypesController.serveDefinition);
+markersRouter.post('/types/:id/definition/model', elementTypesController.resolveDefinition);
 markersRouter.post('/types/:id/icon', setIconAssetType, upload.single('file'), elementTypesController.uploadIcon);
 markersRouter.post('/types/:id/model', setModelAssetType, upload.single('file'), elementTypesController.uploadModel);
+markersRouter.post(
+  '/types/:id/definition',
+  uploadDefinitionFile.single('file'),
+  elementTypesController.uploadDefinition
+);
 
 // ─── /api/markers/groups — element groups ──────────────────────────────────
 markersRouter.get('/groups/', elementGroupsController.getAll);

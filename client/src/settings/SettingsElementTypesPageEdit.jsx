@@ -15,6 +15,10 @@ import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
 import EditItemView from './components/EditItemView';
 import GeometryFields, { DEFAULT_CIRCLE_GEOMETRY } from '../shared/components/GeometryFields';
+import TypeParameterSchemaEditor from './TypeParameterSchemaEditor';
+import TypeDefinitionYamlEditor from './TypeDefinitionYamlEditor';
+import TypeModel3DViewer from './TypeModel3DViewer';
+import TypeYamlCompareViewer from './TypeYamlCompareViewer';
 import { invalidateMarkerTypesCache } from '../hooks/useMarkerTypes';
 
 const SettingsElementTypesPageEdit = () => {
@@ -23,6 +27,9 @@ const SettingsElementTypesPageEdit = () => {
   const isNew = !id;
 
   const [item, setItem] = useState(null);
+  // Mirror of TypeDefinitionYamlEditor's live content — lets "Comprobar YAML
+  // vs modelo 3D" check whatever is in the editor right now, saved or not.
+  const [yamlContent, setYamlContent] = useState('');
 
   const validate = () => item && item.id && item.name;
 
@@ -112,6 +119,48 @@ const SettingsElementTypesPageEdit = () => {
 
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1">Parámetros configurables</Typography>
+            </AccordionSummary>
+            <AccordionDetails className={classes.details}>
+              <TypeParameterSchemaEditor
+                value={item.attributes?.parameterDefs}
+                onChange={(parameterDefs) =>
+                  setItem({ ...item, attributes: { ...item.attributes, parameterDefs } })
+                }
+              />
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1">Definición YAML (wtsem)</Typography>
+            </AccordionSummary>
+            <AccordionDetails className={classes.details}>
+              <TypeDefinitionYamlEditor
+                typeId={item.id}
+                isNew={isNew}
+                onContentChange={setYamlContent}
+              />
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1">Comprobar YAML vs modelo 3D</Typography>
+            </AccordionSummary>
+            <AccordionDetails className={classes.details}>
+              {isNew ? (
+                <Typography variant="body2" color="text.secondary">
+                  Guardá el tipo primero.
+                </Typography>
+              ) : (
+                <TypeYamlCompareViewer item={item} yamlContent={yamlContent} />
+              )}
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="subtitle1">Ícono y modelo 3D</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
@@ -151,6 +200,7 @@ const SettingsElementTypesPageEdit = () => {
                       {item.model3d}
                     </Typography>
                   )}
+                  <TypeModel3DViewer item={item} />
                 </>
               )}
             </AccordionDetails>

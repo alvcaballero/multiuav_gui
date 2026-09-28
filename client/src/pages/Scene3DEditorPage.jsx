@@ -185,12 +185,12 @@ const XYZEditor = ({ label, xyz, onChange, showAlt = true }) => {
 };
 
 // ---------------------------------------------------------------------------
-// Heading editor (degrees from North, 0-360)
+// Orientation editor (azimFront, degrees from North, 0-360)
 // ---------------------------------------------------------------------------
-const HeadingEditor = ({ heading, onChange }) => {
-  const [local, setLocal] = useState(heading);
+const AzimFrontEditor = ({ azimFront, onChange }) => {
+  const [local, setLocal] = useState(azimFront);
 
-  React.useEffect(() => setLocal(heading), [heading]);
+  React.useEffect(() => setLocal(azimFront), [azimFront]);
 
   const commit = useCallback(() => {
     const clamped = ((+local % 360) + 360) % 360;
@@ -201,7 +201,7 @@ const HeadingEditor = ({ heading, onChange }) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
       <TextField
-        label="Heading (° from N)"
+        label="Orientación / azimut frente (° from N)"
         type="number"
         size="small"
         variant="outlined"
@@ -433,10 +433,10 @@ const MarkersTab = () => {
     [dispatch, markers, origin],
   );
 
-  const updateElementHeading = useCallback(
-    (groupIdx, itemIdx, heading) => {
+  const updateElementAzimFront = useCallback(
+    (groupIdx, itemIdx, azimFront) => {
       const newElements = structuredClone(markers.elements);
-      newElements[groupIdx].items[itemIdx].heading = Math.min(360, Math.max(0, +heading));
+      newElements[groupIdx].items[itemIdx].azimFront = Math.min(360, Math.max(0, +azimFront));
       dispatch(sessionActions.updateMarker({ ...markers, elements: newElements }));
     },
     [dispatch, markers],
@@ -562,9 +562,9 @@ const MarkersTab = () => {
                             showAlt={false}
                             onChange={(newXyz) => updateElement(realGIdx, iIdx, newXyz)}
                           />
-                          <HeadingEditor
-                            heading={item.heading ?? 0}
-                            onChange={(h) => updateElementHeading(realGIdx, iIdx, h)}
+                          <AzimFrontEditor
+                            azimFront={item.azimFront ?? 0}
+                            onChange={(value) => updateElementAzimFront(realGIdx, iIdx, value)}
                           />
                         </Box>
                       );

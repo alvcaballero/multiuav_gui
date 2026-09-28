@@ -14,12 +14,12 @@
       dimensions:
         radius: 1.5
         height: 15
-      yaw: 0
 
 - id: windTurbine
   name: Wind Turbine
   icon: /api/markers/types/windTurbine/icon
   model3d: /api/markers/types/windTurbine/model
+  definitionYaml: /api/markers/types/windTurbine/definition
   color: red
   description: 'Aerogenerador'
   attributes:
@@ -28,7 +28,20 @@
       dimensions:
         radius: 28
         height: 108
-      yaw: 0
+
+- id: goliathCrane
+  name: Goliath Crane
+  # No icon/model3d yet — nobody's uploaded 2D/3D assets for this one. No
+  # `attributes.geometry` either, and deliberately so: this is a multi-link
+  # structure (twin box girders, two legs, two trolleys/hoists) with no
+  # single natural bounding radius/box the way a tower or panel has — making
+  # one up would be a fabricated collision envelope for a 1000 t crane. A
+  # real bounding shape needs either a manual GeometryFields entry (a
+  # deliberately conservative box) or the parametric-geometry derivation
+  # this catalog defers to a later pass (see definitionYaml's `links`).
+  definitionYaml: /api/markers/types/goliathCrane/definition
+  color: purple
+  description: 'Grúa pórtico Goliath (doble viga, dique seco)'
 
 - id: solarPanel
   name: Solar Panel
@@ -43,4 +56,3 @@
         width: 20
         length: 20
         height: 2
-      yaw: 0

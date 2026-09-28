@@ -1,14 +1,23 @@
 import { Sequelize, Op } from 'sequelize';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { useExternalDb, dbType, dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
 import { setupModels } from '../schemas/database/index.js';
 import { logger } from './logger.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 logger.info('useExternalDb is ' + useExternalDb);
 
 let sequelizeConfig = {
   dialect: 'sqlite',
-  storage: 'data/sequelize.sqlite',
+  // Absolute path — a bare 'data/sequelize.sqlite' resolves against the
+  // process cwd, not this file. Any script run from outside server/ (e.g.
+  // `node server/scripts/foo.js` from the repo root) would silently create/
+  // open a SEPARATE, empty database at <cwd>/data/sequelize.sqlite instead
+  // of the real one, with no error — bit us once running a migration script.
+  storage: path.join(__dirname, '..', 'data', 'sequelize.sqlite'),
   logging: false,
   pool: { max: 1, idle: Infinity, maxUses: Infinity },
 };
@@ -82,6 +91,18 @@ const migrations = [
   `ALTER TABLE PositionHistory ADD COLUMN deviceTime DATETIME DEFAULT NULL`,
   // element type default attributes (geometry defaults inherited by ElementItems).
   `ALTER TABLE ElementTypes ADD COLUMN attributes JSON DEFAULT NULL`,
+  // catalog data model: geometry (dimensions) stays type-only; per-instance
+  // universal state (position/orientation/report caption) gets its own
+  // columns instead of living inside the shared `attributes` geometry blob.
+  `ALTER TABLE ElementItems ADD COLUMN altitude FLOAT DEFAULT NULL`,
+  `ALTER TABLE ElementItems ADD COLUMN azimFront FLOAT DEFAULT NULL`,
+  `ALTER TABLE Bases ADD COLUMN altitude FLOAT DEFAULT NULL`,
+  `ALTER TABLE Bases ADD COLUMN azimFront FLOAT DEFAULT NULL`,
+  `ALTER TABLE Bases ADD COLUMN attributes JSON DEFAULT NULL`,
+  // Per-type semantic/parametric model file (e.g. a wtsem-format .type.yaml),
+  // stored the same way as icon/model3d — a URL pointing at the asset on
+  // disk, not the content itself.
+  `ALTER TABLE ElementTypes ADD COLUMN definitionYaml TEXT DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {
@@ -204,10 +225,10 @@ if (sequelize.getDialect() === 'sqlite') {
         // constraint holds again and the commit succeeds.
         await sequelize.query('PRAGMA defer_foreign_keys = ON', { transaction: t });
 
-        const oldBases = await sequelize.query(
-          `SELECT id, typeId, name, latitude, longitude, corners FROM \`Bases\``,
-          { transaction: t, type: sequelize.QueryTypes.SELECT }
-        );
+        const oldBases = await sequelize.query(`SELECT id, typeId, name, latitude, longitude, corners FROM \`Bases\``, {
+          transaction: t,
+          type: sequelize.QueryTypes.SELECT,
+        });
 
         // Preserve the existing `base_N` ordering as the new integer id when
         // possible; anything that doesn't match the pattern gets a fresh id

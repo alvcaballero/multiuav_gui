@@ -23,6 +23,18 @@ const BaseSchema = {
   longitude: {
     type: DataTypes.FLOAT,
   },
+  altitude: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  azimFront: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  attributes: {
+    type: DataTypes.JSON,
+    allowNull: true,
+  },
   corners: {
     type: DataTypes.JSON,
     allowNull: true,

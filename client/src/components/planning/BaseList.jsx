@@ -17,10 +17,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { map } from '../../map/core/mapInstance';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
-import GeometryFields, {
-  describeGeometry,
-  DEFAULT_CIRCLE_GEOMETRY,
-} from '../../shared/components/GeometryFields';
+import { describeGeometry } from '../../shared/components/GeometryFields';
+import ItemParametersFields from '../../shared/components/ItemParametersFields';
+import OrientationFields from '../../shared/components/OrientationFields';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 
@@ -67,7 +66,10 @@ const BaseList = ({
 }) => {
   const { classes } = useStyles();
   const { types: markerTypes } = useMarkerTypes();
-  const typeDefaultGeometry = markerTypes.find((t) => t.id === elementTypeId)?.attributes?.geometry;
+  // Elements share one type across the whole group (`elementTypeId`); bases
+  // each carry their own `typeId` — resolve per-row rather than once.
+  const resolveType = (base) =>
+    markerTypes.find((t) => t.id === (type === 'Element' ? elementTypeId : base.typeId));
 
   const [expanded, setExpanded] = useState(false);
   const basesExist = !markers || markers.length === 0;
@@ -110,24 +112,14 @@ const BaseList = ({
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
 
-  const setHeading = (index, value) => {
+  const setAzimFront = (index, value) => {
     let auxMarkers = structuredClone(markers);
-    auxMarkers[index].heading = Math.min(360, Math.max(0, +value));
+    auxMarkers[index].azimFront = Math.min(360, Math.max(0, +value));
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
-
-  const setGeometry = (index, geometry) => {
+  const setAttributes = (index, attributes) => {
     let auxMarkers = structuredClone(markers);
-    auxMarkers[index].attributes = { ...(auxMarkers[index].attributes || {}), geometry };
-    setMarkers(auxMarkers, { meth: 'mod', index: index });
-  };
-  const clearGeometryOverride = (index) => {
-    let auxMarkers = structuredClone(markers);
-    if (auxMarkers[index].attributes) {
-      const rest = { ...auxMarkers[index].attributes };
-      delete rest.geometry;
-      auxMarkers[index].attributes = rest;
-    }
+    auxMarkers[index].attributes = attributes;
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
 
@@ -163,6 +155,9 @@ const BaseList = ({
         <div className={classes.details}>
           {Object.values(markers).map((base, index) => {
             const rowKey = base.id ?? base.tempId ?? base.itemId ?? index;
+            const resolvedType = resolveType(base);
+            const typeDefaultGeometry = resolvedType?.attributes?.geometry;
+            const parameterDefs = resolvedType?.attributes?.parameterDefs;
             return (
               <Accordion
                 key={rowKey}
@@ -234,52 +229,30 @@ const BaseList = ({
                             changeLng(index, +e.target.value);
                           }}
                         />
-                        {type === 'Element' && (
-                          <TextField
-                            label="Heading (° from N)"
-                            type="number"
-                            variant="standard"
-                            sx={{ width: '18ch' }}
-                            slotProps={{ htmlInput: { min: 0, max: 360, step: 1 } }}
-                            defaultValue={base.heading ?? 0}
-                            onBlur={(e) => setHeading(index, e.target.value)}
+                        <div style={{ marginTop: '8px' }}>
+                          <Typography variant="subtitle1">Geometría (del tipo)</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {typeDefaultGeometry
+                              ? describeGeometry(typeDefaultGeometry)
+                              : 'Este tipo todavía no tiene geometría definida.'}
+                          </Typography>
+                        </div>
+
+                        <div style={{ marginTop: '8px' }}>
+                          <Typography variant="subtitle1">Orientación</Typography>
+                          <OrientationFields
+                            azimFront={base.azimFront}
+                            onChangeAzimFront={(value) => setAzimFront(index, value)}
                           />
-                        )}
-                        {type === 'Element' && (
+                        </div>
+
+                        {parameterDefs && parameterDefs.length > 0 && (
                           <div style={{ marginTop: '8px' }}>
-                            <Typography variant="subtitle1">Geometría</Typography>
-                            {base.attributes?.geometry ? (
-                              <>
-                                <GeometryFields
-                                  value={base.attributes.geometry}
-                                  onChange={(geometry) => setGeometry(index, geometry)}
-                                />
-                                {typeDefaultGeometry && (
-                                  <Button size="small" onClick={() => clearGeometryOverride(index)}>
-                                    Restablecer al valor por defecto del tipo
-                                  </Button>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                <Typography variant="body2" color="text.secondary">
-                                  {typeDefaultGeometry
-                                    ? `Usando el valor por defecto del tipo: ${describeGeometry(typeDefaultGeometry)}`
-                                    : 'Este elemento todavía no tiene geometría.'}
-                                </Typography>
-                                <Button
-                                  size="small"
-                                  onClick={() =>
-                                    setGeometry(
-                                      index,
-                                      typeDefaultGeometry || DEFAULT_CIRCLE_GEOMETRY,
-                                    )
-                                  }
-                                >
-                                  Customizar geometría
-                                </Button>
-                              </>
-                            )}
+                            <ItemParametersFields
+                              parameterDefs={parameterDefs}
+                              attributes={base.attributes}
+                              onChange={(attributes) => setAttributes(index, attributes)}
+                            />
                           </div>
                         )}
                         {hasMapImage && (

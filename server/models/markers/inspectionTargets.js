@@ -47,7 +47,7 @@ function itemToInspectionTarget(item, groupById, typeById, globalOrigin) {
   const type = group ? typeById.get(group.typeId) : null;
   const groupName = group?.name ?? null;
   const typeId = type?.id ?? group?.typeId ?? null;
-  const alt = item.attributes?.altitude ?? item.attributes?.alt ?? 0;
+  const alt = item.altitude ?? 0;
   const position = globalOrigin
     ? geodeticToENU(item.latitude, item.longitude, alt, globalOrigin)
     : { lat: item.latitude, lng: item.longitude, alt };

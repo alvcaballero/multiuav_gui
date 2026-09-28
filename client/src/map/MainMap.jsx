@@ -30,9 +30,8 @@ const useInspectionObstacles = () => {
   return useMemo(
     () =>
       groups.flatMap((group) => {
-        const typeGeometry = markerTypes.find((t) => t.id === group.type)?.attributes?.geometry;
+        const geometry = markerTypes.find((t) => t.id === group.type)?.attributes?.geometry;
         return (group.items || []).flatMap((item) => {
-          const geometry = item.attributes?.geometry || typeGeometry;
           if (!geometry || item.latitude == null || item.longitude == null) return [];
           return [
             {
@@ -42,7 +41,7 @@ const useInspectionObstacles = () => {
               longitude: item.longitude,
               geometry_type: geometry.geometry_type,
               dimensions: geometry.dimensions,
-              yaw: geometry.yaw || 0,
+              yaw: item.azimFront || 0,
             },
           ];
         });

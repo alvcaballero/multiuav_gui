@@ -20,6 +20,7 @@ server/data/element-types/*
 !server/data/element-types/powerTower
 !server/data/element-types/windTurbine
 !server/data/element-types/solarPanel
+!server/data/element-types/goliathCrane
 /devices/vtol/stream/build/
 .DS_Store
 Thumbs.db

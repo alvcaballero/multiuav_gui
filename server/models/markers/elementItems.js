@@ -1,15 +1,25 @@
 import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
+import { logger } from '../../common/logger.js';
 import { elementGroupsModel } from './elementGroups.js';
+import { resolveEffectiveParameterDefs } from './elementTypes.js';
 
 /**
- * Copies `defaultGeometry` (from the item's ElementType) into `attributes.geometry`
- * when the item doesn't already carry its own geometry. Pure/no I/O so it's
- * testable in isolation; other attribute keys are preserved either way.
+ * Warns (never rejects) when an item's attribute keys aren't declared on its
+ * ElementType's `parameterDefs`. Soft check on purpose: unlike `geometry`
+ * (an invariant — same type, same dimensions, enforced at the zod layer),
+ * an unknown parameter key isn't a violation, just a heads-up — and this
+ * path's sibling, `_upsertElements`, doesn't validate against the type's
+ * schema at parse time either.
  */
-export function mergeDefaultGeometry(attributes, defaultGeometry) {
-  if (attributes?.geometry || !defaultGeometry) return attributes ?? null;
-  return { ...(attributes ?? {}), geometry: defaultGeometry };
+export function warnUnknownParameterKeys(attributes, parameterDefs) {
+  if (!attributes) return;
+  const knownKeys = new Set((parameterDefs || []).map((def) => def.key));
+  for (const key of Object.keys(attributes)) {
+    if (!knownKeys.has(key)) {
+      logger.warn(`ElementItem attributes: key "${key}" is not defined in its ElementType's parameterDefs`);
+    }
+  }
 }
 
 // Excludes items whose parent group is soft-deleted — a deleted group keeps
@@ -81,14 +91,13 @@ export const elementItemsModel = {
   },
 
   async create(elementItem) {
-    const { groupId, name, latitude, longitude, description, attributes } = elementItem;
+    const { groupId, name, latitude, longitude, altitude, azimFront, description, attributes } = elementItem;
 
-    let finalAttributes = attributes ?? null;
-    if (!finalAttributes?.geometry) {
+    if (attributes) {
       const group = await sequelize.models.ElementGroup.findByPk(groupId, {
         include: [{ model: sequelize.models.ElementType, as: 'type' }],
       });
-      finalAttributes = mergeDefaultGeometry(finalAttributes, group?.type?.attributes?.geometry);
+      warnUnknownParameterKeys(attributes, resolveEffectiveParameterDefs(group?.type));
     }
 
     const created = await sequelize.models.ElementItem.create({
@@ -96,15 +105,17 @@ export const elementItemsModel = {
       name,
       latitude,
       longitude,
+      altitude: altitude ?? null,
+      azimFront: azimFront ?? null,
       description: description ?? null,
-      attributes: finalAttributes,
+      attributes: attributes ?? null,
     });
     await elementGroupsModel.recalculateBounds(groupId);
     return created;
   },
 
   async update(id, elementItem) {
-    const { groupId, name, latitude, longitude, description, attributes } = elementItem;
+    const { groupId, name, latitude, longitude, altitude, azimFront, description, attributes } = elementItem;
     const myItem = await sequelize.models.ElementItem.findOne({ where: { id } });
     if (!myItem) {
       return null;
@@ -114,8 +125,16 @@ export const elementItemsModel = {
     if (name) myItem.name = name;
     if (latitude !== undefined) myItem.latitude = latitude;
     if (longitude !== undefined) myItem.longitude = longitude;
+    if (altitude !== undefined) myItem.altitude = altitude;
+    if (azimFront !== undefined) myItem.azimFront = azimFront;
     if (description !== undefined) myItem.description = description;
-    if (attributes !== undefined) myItem.attributes = attributes;
+    if (attributes !== undefined) {
+      const group = await sequelize.models.ElementGroup.findByPk(myItem.groupId, {
+        include: [{ model: sequelize.models.ElementType, as: 'type' }],
+      });
+      warnUnknownParameterKeys(attributes, resolveEffectiveParameterDefs(group?.type));
+      myItem.attributes = attributes;
+    }
     await myItem.save();
 
     await elementGroupsModel.recalculateBounds(myItem.groupId);

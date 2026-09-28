@@ -1,0 +1,305 @@
+# =====================================================================
+#  INSEM 0.2 — Grúa pórtico Goliath de gran tonelaje sobre dique seco
+#  Ejemplo genérico (dimensiones orientativas de una grúa ~1000 t).
+#
+#  Marco del activo: x = a lo largo de las vigas (luz), y = a lo largo de
+#  los carriles del dique, z = arriba. Origen en el centro del pórtico a
+#  nivel de carril. Pata rígida en x = -span/2, pata flexible en x = +span/2.
+# =====================================================================
+format: insem/0.2
+
+asset:
+  id: GC-01
+  class: goliath_gantry_crane
+  name: Grúa pórtico Goliath 1000 t (genérica)
+  description: >
+    Pórtico de doble viga cajón sobre dique seco. Pata rígida (A) y pata
+    flexible articulada (rótula en cabeza). Carro superior sobre las vigas y
+    carro inferior entre ellas, para volteo e integración de bloques, módulos
+    offshore y subestaciones de parques eólicos marinos.
+  geo: {lat: 36.5200, lon: -6.2000, alt_msl: 3.0}
+  plot: {azim_front: -90, front_title: "Alzado (mirando a lo largo del dique)"}
+
+parameters:
+  span: 120.0                 # luz entre ejes de patas
+  girder_bottom_z: 72.0       # cara inferior de las vigas
+  girder_height: 9.0
+  girder_width: 3.5
+  girder_spacing: 14.0        # entre ejes de las dos vigas
+  girder_overhang: 8.0        # voladizo más allá de las patas
+  rigid_base_half: 20.0       # semiapertura de la pata rígida en la base (eje y)
+  rigid_section: 3.2
+  flex_base_half: 13.0
+  flex_section: 2.6
+  sill_z: 3.0                 # eje de las vigas carrileras inferiores
+  sill_section: 3.0
+  upper_trolley_len: 16.0
+  upper_trolley_wid: 20.0
+  upper_trolley_hgt: 7.0
+  lower_trolley_len: 10.0
+  lower_trolley_wid: 9.0
+  lower_trolley_hgt: 6.0
+  rope_radius: 0.8
+
+state:
+  gantry_position_m:
+    value: 0
+    unit: " m"
+    limits: [-30, 30]
+    adjustable: true
+    suggest_samples: 7
+    description: Posición del pórtico a lo largo de los carriles del dique
+  upper_trolley_x:
+    value: -20
+    unit: " m"
+    limits: [-52, 52]
+    adjustable: true
+    suggest_samples: 9
+    description: Posición del carro superior sobre las vigas
+  lower_trolley_x:
+    value: 15
+    unit: " m"
+    limits: [-50, 50]
+    adjustable: true
+    suggest_samples: 9
+    description: Posición del carro inferior entre las vigas
+  upper_hook_height_m:
+    value: 60
+    unit: " m"
+    limits: [20, 74]
+    adjustable: true
+    suggest_samples: 5
+  lower_hook_height_m:
+    value: 46
+    unit: " m"
+    limits: [44, 68]
+    adjustable: true
+    suggest_samples: 5
+  operational_status: parked
+
+derived:
+  girder_top_z: "girder_bottom_z + girder_height"
+  girder_length: "span + 2*girder_overhang"
+  gy: "girder_spacing/2"
+
+# ---------------------------------------------------------------------
+girder_insp: &girder_insp
+  recommended: {gsd_mm: 2.0}
+  zones:
+    rigid_end: {range: [0.0, 0.2], description: Unión con pata rígida}
+    midspan:   {range: [0.35, 0.65], description: Centro de vano (máximo momento)}
+    flex_end:  {range: [0.8, 1.0], description: Unión con pata flexible}
+
+links:
+  # ================= PÓRTICO (móvil sobre carriles) ====================
+  - name: gantry
+    class: frame
+    inspectable: false
+    joint: {type: prismatic, axis: [0, 1, 0], value: "gantry_position_m"}
+
+  # ---------------- vigas principales -------------------------------
+  - name: girder_north
+    class: box_girder
+    parent: gantry
+    joint: {type: fixed, origin: {xyz: [0, "gy", "girder_bottom_z"]}}
+    semantic: &girder_sem
+      material: acero S355/S460, viga cajón soldada con diafragmas
+      description: Viga principal cajón. Soporta el carril del carro superior en su cara superior.
+      typical_defects: [fisuras por fatiga en soldaduras de diafragmas, corrosión, pintura, deformación de alas, tornillería del carril]
+    geometry:
+      - {id: box, type: box, size: ["girder_length", "girder_width", "girder_height"], pose: {xyz: [0, 0, "girder_height/2"]}}
+    inspection:
+      <<: *girder_insp
+      surfaces:
+        - {id: top,    pattern: face_grid, prim: box, face: "+z", description: Cara superior y carril}
+        - {id: outer,  pattern: face_grid, prim: box, face: "+y", description: Alma exterior}
+        - {id: inner,  pattern: face_grid, prim: box, face: "-y", description: Alma interior (hueco entre vigas)}
+        - {id: bottom, pattern: face_grid, prim: box, face: "-z", description: Ala inferior}
+        - {id: rail,   pattern: sweep, axis: [["-girder_length/2", 0, "girder_height"], ["girder_length/2", 0, "girder_height"]], direction: [0, 0, 1], offset: 0.3, description: Carril del carro superior}
+      features:
+        - {id: weld_rigid_N_out, class: critical_weld, position: ["-span/2 - rigid_section/2 - 0.3", 0, 0], views: [[-1, 0, -0.8], [0, 1, -0.8]], description: Unión viga-pata rígida, cordón exterior}
+        - {id: weld_rigid_N_in,  class: critical_weld, position: ["-span/2 + rigid_section/2 + 0.3", 0, 0], views: [[1, 0, -0.8], [0, 1, -0.8]], description: Unión viga-pata rígida, cordón interior}
+        - {id: weld_flex_N,      class: critical_weld, position: ["span/2 - flex_section/2 - 0.3", 0, 0],  views: [[1, 0, -0.8], [0, 1, -0.8]], description: Unión viga-rótula pata flexible}
+        - {id: midspan_N,    class: fatigue_hotspot, position: [0, 0, 0], views: [[0, 0, -1]], description: Ala inferior en centro de vano}
+        - {id: light_W,      class: aviation_light, position: ["-girder_length/2 + 1", 0, "girder_height + 0.6"], views: [[0, 0, 1]]}
+        - {id: light_E,      class: aviation_light, position: ["girder_length/2 - 1", 0, "girder_height + 0.6"], views: [[0, 0, 1]]}
+        - {id: anemometer,   class: anemometer, position: ["-span/2", 0, "girder_height + 2"], views: [[0, 0, 1], [-1, 0, 0.3]]}
+
+  - name: girder_south
+    class: box_girder
+    parent: gantry
+    joint: {type: fixed, origin: {xyz: [0, "-gy", "girder_bottom_z"]}}
+    semantic: *girder_sem
+    geometry:
+      - {id: box, type: box, size: ["girder_length", "girder_width", "girder_height"], pose: {xyz: [0, 0, "girder_height/2"]}}
+    inspection:
+      <<: *girder_insp
+      surfaces:
+        - {id: top,    pattern: face_grid, prim: box, face: "+z"}
+        - {id: outer,  pattern: face_grid, prim: box, face: "-y"}
+        - {id: inner,  pattern: face_grid, prim: box, face: "+y"}
+        - {id: bottom, pattern: face_grid, prim: box, face: "-z"}
+        - {id: rail,   pattern: sweep, axis: [["-girder_length/2", 0, "girder_height"], ["girder_length/2", 0, "girder_height"]], direction: [0, 0, 1], offset: 0.3}
+      features:
+        - {id: weld_rigid_S_out, class: critical_weld, position: ["-span/2 - rigid_section/2 - 0.3", 0, 0], views: [[-1, 0, -0.8], [0, -1, -0.8]]}
+        - {id: weld_rigid_S_in,  class: critical_weld, position: ["-span/2 + rigid_section/2 + 0.3", 0, 0], views: [[1, 0, -0.8], [0, -1, -0.8]]}
+        - {id: weld_flex_S,      class: critical_weld, position: ["span/2 - flex_section/2 - 0.3", 0, 0],  views: [[1, 0, -0.8], [0, -1, -0.8]]}
+        - {id: midspan_S,    class: fatigue_hotspot, position: [0, 0, 0], views: [[0, 0, -1]]}
+
+  - name: end_ties
+    class: cross_beam
+    parent: gantry
+    joint: {type: fixed}
+    semantic: {description: Riostras transversales en los extremos que unen las dos vigas}
+    geometry:
+      - {id: tie_W, type: beam, a: ["-span/2 - 4", "-gy", "girder_top_z - 1.5"], b: ["-span/2 - 4", "gy", "girder_top_z - 1.5"], width: 2.5, depth: 3.0}
+      - {id: tie_E, type: beam, a: ["span/2 + 4", "-gy", "girder_top_z - 1.5"], b: ["span/2 + 4", "gy", "girder_top_z - 1.5"], width: 2.5, depth: 3.0}
+    inspection:
+      surfaces:
+        - {id: tie_W_top, pattern: sweep, prim: tie_W, direction: "+x", offset: half_depth}
+        - {id: tie_E_top, pattern: sweep, prim: tie_E, direction: "+x", offset: half_depth}
+
+  # ---------------- pata rígida -------------------------------------
+  - name: rigid_leg
+    class: gantry_leg
+    parent: gantry
+    joint: {type: fixed, origin: {xyz: ["-span/2", 0, 0]}}
+    semantic:
+      material: acero S355, columnas cajón
+      description: Pata rígida en A. Empotrada a las vigas; absorbe esfuerzos longitudinales.
+      typical_defects: [fisuras en nudos, corrosión en base, abolladuras por impacto, tornillería de bogies]
+    geometry:
+      - {id: col_N, type: beam, a: [0, "rigid_base_half", "sill_z + sill_section/2"], b: [0, "gy", "girder_bottom_z"], width: "rigid_section", depth: "rigid_section"}
+      - {id: col_S, type: beam, a: [0, "-rigid_base_half", "sill_z + sill_section/2"], b: [0, "-gy", "girder_bottom_z"], width: "rigid_section", depth: "rigid_section"}
+      - {id: sill,  type: beam, a: [0, "-rigid_base_half - 4", "sill_z"], b: [0, "rigid_base_half + 4", "sill_z"], width: "sill_section", depth: "sill_section"}
+      - {id: bogies_N, type: box, size: [5, 8, 2], pose: {xyz: [0, "rigid_base_half + 1", 1]}}
+      - {id: bogies_S, type: box, size: [5, 8, 2], pose: {xyz: [0, "-rigid_base_half - 1", 1]}}
+    inspection:
+      recommended: {gsd_mm: 2.0}
+      zones:
+        base: {range: [0.0, 0.15]}
+        shaft: {range: [0.15, 0.85]}
+        head: {range: [0.85, 1.0], description: Nudo con las vigas}
+      surfaces:
+        - {id: col_N_west,  pattern: sweep, prim: col_N, direction: "-x", offset: half_depth}
+        - {id: col_N_east,  pattern: sweep, prim: col_N, direction: "+x", offset: half_depth}
+        - {id: col_N_outer, pattern: sweep, prim: col_N, direction: "+y", offset: half_width}
+        - {id: col_S_west,  pattern: sweep, prim: col_S, direction: "-x", offset: half_depth}
+        - {id: col_S_east,  pattern: sweep, prim: col_S, direction: "+x", offset: half_depth}
+        - {id: col_S_outer, pattern: sweep, prim: col_S, direction: "+y", offset: half_width}
+        - {id: sill_top,    pattern: sweep, prim: sill,  direction: "+x", offset: half_depth}
+      features:
+        - {id: base_node_N, class: critical_weld, position: [0, "rigid_base_half", "sill_z + 2"], views: [[1, 0, 0.6], [-1, 0, 0.6]], description: Nudo columna-viga carrilera}
+        - {id: base_node_S, class: critical_weld, position: [0, "-rigid_base_half", "sill_z + 2"], views: [[1, 0, 0.6], [-1, 0, 0.6]]}
+
+  # ---------------- pata flexible -----------------------------------
+  - name: flex_leg
+    class: gantry_leg
+    parent: gantry
+    joint: {type: fixed, origin: {xyz: ["span/2", 0, 0]}}
+    semantic:
+      material: acero S355
+      description: Pata flexible con rótula en cabeza; absorbe dilataciones de las vigas.
+      typical_defects: [desgaste y juego en rótula, falta de engrase, fisuras en orejetas, corrosión]
+    geometry:
+      - {id: col_N, type: beam, a: [0, "flex_base_half", "sill_z + sill_section/2"], b: [0, "gy", "girder_bottom_z - 1.5"], width: "flex_section", depth: "flex_section"}
+      - {id: col_S, type: beam, a: [0, "-flex_base_half", "sill_z + sill_section/2"], b: [0, "-gy", "girder_bottom_z - 1.5"], width: "flex_section", depth: "flex_section"}
+      - {id: sill,  type: beam, a: [0, "-flex_base_half - 4", "sill_z"], b: [0, "flex_base_half + 4", "sill_z"], width: "sill_section", depth: "sill_section"}
+      - {id: bogies_N, type: box, size: [5, 8, 2], pose: {xyz: [0, "flex_base_half + 1", 1]}}
+      - {id: bogies_S, type: box, size: [5, 8, 2], pose: {xyz: [0, "-flex_base_half - 1", 1]}}
+    inspection:
+      recommended: {gsd_mm: 2.0}
+      surfaces:
+        - {id: col_N_west,  pattern: sweep, prim: col_N, direction: "-x", offset: half_depth}
+        - {id: col_N_east,  pattern: sweep, prim: col_N, direction: "+x", offset: half_depth}
+        - {id: col_S_west,  pattern: sweep, prim: col_S, direction: "-x", offset: half_depth}
+        - {id: col_S_east,  pattern: sweep, prim: col_S, direction: "+x", offset: half_depth}
+        - {id: sill_top,    pattern: sweep, prim: sill,  direction: "+x", offset: half_depth}
+      features:
+        - {id: hinge_N, class: hinge, position: [0, "gy", "girder_bottom_z - 0.8"], views: [[1, 0, 0], [-1, 0, 0], [0, 1, -0.4]], offset: 1.5, description: Rótula de cabeza (bulón y orejetas)}
+        - {id: hinge_S, class: hinge, position: [0, "-gy", "girder_bottom_z - 0.8"], views: [[1, 0, 0], [-1, 0, 0], [0, -1, -0.4]], offset: 1.5}
+
+  # ---------------- cabina ------------------------------------------
+  - name: operator_cab
+    class: cab
+    parent: gantry
+    joint: {type: fixed, origin: {xyz: ["-span/2 + 5", "-gy - 5", "girder_bottom_z - 5"]}}
+    semantic: {description: Cabina de operador colgada bajo la viga sur, typical_defects: [cristales, anclajes, corrosión]}
+    geometry:
+      - {id: box, type: box, size: [4, 3, 3.5]}
+    inspection:
+      surfaces:
+        - {id: outer, pattern: face_grid, prim: box, face: "-y"}
+        - {id: front, pattern: face_grid, prim: box, face: "+x"}
+
+  # ================= CARROS Y POLIPASTOS (móviles) ======================
+  - name: upper_trolley
+    class: trolley
+    parent: gantry
+    joint: {type: prismatic, origin: {xyz: [0, 0, "girder_top_z"]}, axis: [1, 0, 0], value: "upper_trolley_x"}
+    semantic: {description: Carro superior sobre las dos vigas con caseta de maquinaria y tambores de elevación, typical_defects: [ruedas, topes, carcasa, cables de alimentación]}
+    geometry:
+      - {id: body, type: box, size: ["upper_trolley_len", "upper_trolley_wid", "upper_trolley_hgt"], pose: {xyz: [0, 0, "upper_trolley_hgt/2"]}}
+    inspection:
+      surfaces:
+        - {id: roof,  pattern: face_grid, prim: body, face: "+z"}
+        - {id: west,  pattern: face_grid, prim: body, face: "-x"}
+        - {id: east,  pattern: face_grid, prim: body, face: "+x"}
+
+  - name: upper_hoist
+    class: hoist
+    parent: upper_trolley
+    joint: {type: fixed}
+    semantic: {description: Cables de elevación y aparejo del carro superior, typical_defects: [hilos rotos, deformación de cable, desgaste de poleas, gancho]}
+    geometry:
+      - {id: ropes, type: capsule, a: [0, 0, 0], b: [0, 0, "upper_hook_height_m - girder_top_z + 2.5"], radius: "rope_radius"}
+      - {id: block, type: box, size: [3, 5, 4], pose: {xyz: [0, 0, "upper_hook_height_m - girder_top_z"]}}
+    inspection:
+      recommended: {gsd_mm: 1.0}
+      surfaces:
+        - {id: ropes_W, pattern: sweep, prim: ropes, direction: [-1, 0, 0], offset: radius}
+        - {id: ropes_E, pattern: sweep, prim: ropes, direction: [1, 0, 0], offset: radius}
+      features:
+        - {id: hook_U, class: hook_block, position: [0, 0, "upper_hook_height_m - girder_top_z"], offset: 2.5, views: [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0]]}
+
+  - name: lower_trolley
+    class: trolley
+    parent: gantry
+    joint: {type: prismatic, origin: {xyz: [0, 0, "girder_bottom_z"]}, axis: [1, 0, 0], value: "lower_trolley_x"}
+    semantic: {description: Carro inferior que rueda por carriles interiores entre las vigas}
+    geometry:
+      - {id: body, type: box, size: ["lower_trolley_len", "lower_trolley_wid", "lower_trolley_hgt"], pose: {xyz: [0, 0, "lower_trolley_hgt/2"]}}
+    inspection:
+      surfaces:
+        - {id: underside, pattern: face_grid, prim: body, face: "-z"}
+
+  - name: lower_hoist
+    class: hoist
+    parent: lower_trolley
+    joint: {type: fixed}
+    semantic: {description: Cables y aparejo del carro inferior}
+    geometry:
+      - {id: ropes, type: capsule, a: [0, 0, 0], b: [0, 0, "lower_hook_height_m - girder_bottom_z + 2.5"], radius: "rope_radius"}
+      - {id: block, type: box, size: [3, 4, 4], pose: {xyz: [0, 0, "lower_hook_height_m - girder_bottom_z"]}}
+    inspection:
+      recommended: {gsd_mm: 1.0}
+      surfaces:
+        - {id: ropes_W, pattern: sweep, prim: ropes, direction: [-1, 0, 0], offset: radius}
+        - {id: ropes_E, pattern: sweep, prim: ropes, direction: [1, 0, 0], offset: radius}
+
+  # ================= ENTORNO (solo obstáculos) ==========================
+  - name: offshore_substation
+    class: environment
+    joint: {type: fixed}
+    semantic: {description: Topside de subestación offshore en integración bajo el pórtico}
+    geometry:
+      - {type: box, size: [30, 24, 40], pose: {xyz: [15, 0, 20]}}
+
+  - name: tower_crane
+    class: environment
+    joint: {type: fixed}
+    semantic: {description: Grúa torre auxiliar junto a la pata rígida; su pluma pasa cerca de la pata}
+    geometry:
+      - {type: cylinder, radius: 1.5, length: 64, pose: {xyz: [-78, 24, 0]}}
+      - {type: beam, a: [-78, 24, 62], b: [-38, 24, 62], width: 2.0, depth: 2.0}
+      - {type: beam, a: [-78, 24, 62], b: [-92, 24, 62], width: 2.5, depth: 2.5}

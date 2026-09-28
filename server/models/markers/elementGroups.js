@@ -39,17 +39,13 @@ export const elementGroupsModel = {
   // Soft-delete: same pattern as Device (server/models/devices.js) — hides the
   // group from every getAll/getById query without losing its data or its items.
   async delete(id) {
-    return await sequelize.models.ElementGroup.update(
-      { deletedAt: new Date() },
-      { where: { id, deletedAt: null } }
-    );
+    return await sequelize.models.ElementGroup.update({ deletedAt: new Date() }, { where: { id, deletedAt: null } });
   },
 
   // Recomputes the group's lat/lng bounding box from its current items and
   // persists it under attributes.bounds — the two corner points (min, max)
   // covering every item in the group. Merged into the existing `attributes`
-  // JSON blob (same convention as mergeDefaultGeometry in elementItems.js:
-  // attributes is a free-form bag, other keys are preserved). Called after
+  // JSON blob (it's a free-form bag; other keys are preserved). Called after
   // any write that adds/edits/removes an ElementItem. `null` when the group
   // has no items.
   async recalculateBounds(groupId) {
@@ -70,7 +66,12 @@ export const elementGroupsModel = {
             minLng: Math.min(acc.minLng, longitude),
             maxLng: Math.max(acc.maxLng, longitude),
           }),
-          { minLat: items[0].latitude, maxLat: items[0].latitude, minLng: items[0].longitude, maxLng: items[0].longitude }
+          {
+            minLat: items[0].latitude,
+            maxLat: items[0].latitude,
+            minLng: items[0].longitude,
+            maxLng: items[0].longitude,
+          }
         )
       : null;
 

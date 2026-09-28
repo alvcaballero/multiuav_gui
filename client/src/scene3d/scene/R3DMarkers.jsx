@@ -9,21 +9,22 @@ import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 // Three.js axes: X=East, Y=up, Z=-North → rotY = -heading_rad
 const headingToRotationY = (heading = 0) => -(heading * Math.PI) / 180;
 
-// Used when neither the item nor its ElementType carry a geometry yet (not
-// migrated / never set) so the wireframe still renders something sane.
-const FALLBACK_GEOMETRY = { geometry_type: 'circle', dimensions: { radius: 2, height: 5 }, yaw: 0 };
+// Used when the ElementType doesn't carry a geometry yet (not migrated /
+// never set) so the wireframe still renders something sane.
+const FALLBACK_GEOMETRY = { geometry_type: 'circle', dimensions: { radius: 2, height: 5 } };
 
-// Wireframe bounding box for an item's effective geometry (own attributes.geometry,
-// falling back to its ElementType's default). Horizontal center matches the
+// Wireframe bounding box for an item's ElementType geometry (dimensions are
+// catalog-only, never a per-item override). Horizontal center matches the
 // model's XZ position; the base sits on the ground (y=0) and extrudes upward
 // by dimensions.height — combining the "center = geometry center" requirement
 // (XY) with the real-world fact that objects sit on the ground, not float
-// centered on it (Z).
-const GeometryWireframe = ({ position, geometry }) => {
-  const { geometry_type: geometryType, dimensions, yaw = 0 } = geometry;
+// centered on it (Z). Rotation comes from the item's own `azimFront`, not
+// from the (now dimensions-only) geometry.
+const GeometryWireframe = ({ position, geometry, azimFront = 0 }) => {
+  const { geometry_type: geometryType, dimensions } = geometry;
   const height = dimensions?.height ?? FALLBACK_GEOMETRY.dimensions.height;
   const meshPosition = [position[0], position[1] + height / 2, position[2]];
-  const rotationY = headingToRotationY(yaw);
+  const rotationY = headingToRotationY(azimFront);
 
   if (geometryType === 'rectangle') {
     const width = dimensions?.width ?? FALLBACK_GEOMETRY.dimensions.radius * 2;
@@ -56,9 +57,8 @@ const Marker = ({ item, onPick, showBoundingBox }) => {
   // Bases aren't ElementItems (item.type is the literal string 'base', not a
   // real catalog id), so there's no ElementType to resolve geometry from.
   const typeGeometry = markerTypes.find((t) => t.id === item.type)?.attributes?.geometry;
-  const geometry =
-    item.type !== 'base' ? item.attributes?.geometry || typeGeometry || FALLBACK_GEOMETRY : null;
-  const heading = geometry?.yaw ?? item.heading;
+  const geometry = item.type !== 'base' ? typeGeometry || FALLBACK_GEOMETRY : null;
+  const heading = item.azimFront ?? 0;
 
   // Clone is created inside useMemo so React owns the lifecycle — safe with Strict Mode.
   // Position/rotation are set here too (not in a separate effect): `clone` is a plain
@@ -132,7 +132,9 @@ const Marker = ({ item, onPick, showBoundingBox }) => {
         onPointerOver={onPick ? () => (document.body.style.cursor = 'pointer') : undefined}
         onPointerOut={onPick ? () => (document.body.style.cursor = 'auto') : undefined}
       />
-      {showBoundingBox && geometry && <GeometryWireframe position={item.pos} geometry={geometry} />}
+      {showBoundingBox && geometry && (
+        <GeometryWireframe position={item.pos} geometry={geometry} azimFront={heading} />
+      )}
     </>
   );
 };
@@ -199,7 +201,7 @@ const R3DMarkers = ({ elements, showBoundingBoxes = true }) => {
         {
           // Punto 3D del mundo
           pos: [point.x, point.y, point.z],
-          // El item de dominio al que pertenece (type, title, lat/lon, heading…)
+          // El item de dominio al que pertenece (type, title, lat/lon, azimFront…)
           owner: item,
           // Distancia del click (útil para depurar / ordenar por cercanía)
           distance: event.distance,

@@ -6,6 +6,8 @@ import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
 import { logger } from '../../common/logger.js';
 import { elementGroupsModel } from './elementGroups.js';
+import { warnUnknownParameterKeys } from './elementItems.js';
+import { resolveEffectiveParameterDefs } from './elementTypes.js';
 
 // Builds one `elements[]` entry (a group + its items) in the legacy shape,
 // adding `itemId`/`groupId`/`attributes` on each item and `attributes` on the
@@ -17,10 +19,12 @@ function groupToLegacy(group) {
   const items = (group.items || []).map((item) => ({
     latitude: item.latitude,
     longitude: item.longitude,
+    altitude: item.altitude,
+    azimFront: item.azimFront,
     name: item.name,
     itemId: item.id,
     groupId: group.id,
-    // attributes: item.attributes,
+    attributes: item.attributes,
   }));
   return {
     groupId: group.id,
@@ -37,6 +41,9 @@ function baseToLegacy(base) {
   const legacy = { latitude: base.latitude, longitude: base.longitude, id: base.id };
   if (base.name) legacy.name = base.name;
   if (base.corners) legacy.corners = base.corners;
+  if (base.altitude != null) legacy.altitude = base.altitude;
+  if (base.azimFront != null) legacy.azimFront = base.azimFront;
+  if (base.attributes) legacy.attributes = base.attributes;
   return legacy;
 }
 
@@ -103,14 +110,32 @@ export const markersModel = {
   async _upsertBases(markersbase) {
     const existing = await sequelize.models.Base.findAll();
     const byId = new Map(existing.map((row) => [row.id, row]));
+    const typeCache = new Map();
+    const resolveType = async (typeId) => {
+      if (!typeId) return null;
+      if (!typeCache.has(typeId)) {
+        typeCache.set(typeId, await sequelize.models.ElementType.findByPk(typeId));
+      }
+      return typeCache.get(typeId);
+    };
+
     for (const base of markersbase) {
       const numericId = base.id != null ? Number(base.id) : null;
       const row = numericId != null && !Number.isNaN(numericId) ? byId.get(numericId) : null;
+      const typeId = base.typeId !== undefined ? base.typeId : row?.typeId;
+
+      if (base.attributes) {
+        const type = await resolveType(typeId);
+        warnUnknownParameterKeys(base.attributes, resolveEffectiveParameterDefs(type));
+      }
 
       if (row) {
         row.name = base.name ?? null;
         row.latitude = base.latitude;
         row.longitude = base.longitude;
+        row.altitude = base.altitude ?? null;
+        row.azimFront = base.azimFront ?? null;
+        row.attributes = base.attributes ?? null;
         row.corners = base.corners ?? null;
         if (base.typeId !== undefined) row.typeId = base.typeId;
         await row.save();
@@ -120,6 +145,9 @@ export const markersModel = {
           name: base.name ?? null,
           latitude: base.latitude,
           longitude: base.longitude,
+          altitude: base.altitude ?? null,
+          azimFront: base.azimFront ?? null,
+          attributes: base.attributes ?? null,
           corners: base.corners ?? null,
         });
       }
@@ -163,6 +191,8 @@ export const markersModel = {
       elementGroup.linea = group.linea ?? false;
       await elementGroup.save();
 
+      const elementType = elementGroup.typeId ? await sequelize.models.ElementType.findByPk(elementGroup.typeId) : null;
+
       const existingItems = await sequelize.models.ElementItem.findAll({ where: { groupId: elementGroup.id } });
       const seenItemIds = new Set();
 
@@ -180,6 +210,10 @@ export const markersModel = {
         const itemId = item.itemId != null ? Number(item.itemId) : null;
         let elementItem = itemId != null && !Number.isNaN(itemId) ? existingItems.find((it) => it.id === itemId) : null;
 
+        if (item.attributes) {
+          warnUnknownParameterKeys(item.attributes, resolveEffectiveParameterDefs(elementType));
+        }
+
         if (!elementItem) {
           [elementItem] = await sequelize.models.ElementItem.findOrCreate({
             where: { groupId: elementGroup.id, name },
@@ -196,6 +230,9 @@ export const markersModel = {
         elementItem.name = name;
         elementItem.latitude = item.latitude;
         elementItem.longitude = item.longitude;
+        elementItem.altitude = item.altitude ?? null;
+        elementItem.azimFront = item.azimFront ?? null;
+        elementItem.attributes = item.attributes ?? null;
         await elementItem.save();
       }
 

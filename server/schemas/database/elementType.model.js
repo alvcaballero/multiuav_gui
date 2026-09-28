@@ -24,6 +24,10 @@ const ElementTypeSchema = {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  definitionYaml: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   color: {
     type: DataTypes.STRING,
     allowNull: true,

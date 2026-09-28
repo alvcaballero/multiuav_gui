@@ -24,11 +24,12 @@ async function migrateElementTypes() {
   const customTypes = readYaml('../data/markerTypes.yaml') || [];
 
   // findOrCreate + backfill: creates rows that don't exist yet, and — for rows
-  // that already exist from a previous run — fills in `attributes` if it's
-  // still empty (e.g. this script ran before the field existed). A type whose
-  // attributes were customized via the admin UI is left untouched.
+  // that already exist from a previous run — fills in `attributes`/
+  // `definitionYaml` if still empty (e.g. this script ran before the field
+  // existed). A type customized via the admin UI/asset upload is left
+  // untouched — this only fills in what's missing, never overwrites.
   let backfilled = 0;
-  for (const type of staticTypes) {
+  async function upsertType(type, isCustom) {
     const [elementType, created] = await sequelize.models.ElementType.findOrCreate({
       where: { id: type.id },
       defaults: {
@@ -37,36 +38,32 @@ async function migrateElementTypes() {
         description: type.description || '',
         icon: type.icon ?? null,
         model3d: type.model3d ?? null,
+        definitionYaml: type.definitionYaml ?? null,
         color: type.color ?? null,
-        isCustom: false,
+        isCustom,
         attributes: type.attributes ?? null,
       },
     });
-    if (!created && !elementType.attributes && type.attributes) {
+    if (created) return;
+    let changed = false;
+    if (!elementType.attributes && type.attributes) {
       elementType.attributes = type.attributes;
+      changed = true;
+    }
+    if (!elementType.definitionYaml && type.definitionYaml) {
+      elementType.definitionYaml = type.definitionYaml;
+      changed = true;
+    }
+    if (changed) {
       await elementType.save();
       backfilled += 1;
     }
   }
+  for (const type of staticTypes) {
+    await upsertType(type, false);
+  }
   for (const type of customTypes) {
-    const [elementType, created] = await sequelize.models.ElementType.findOrCreate({
-      where: { id: type.id },
-      defaults: {
-        id: type.id,
-        name: type.name,
-        description: type.description || '',
-        icon: type.icon ?? null,
-        model3d: type.model3d ?? null,
-        color: type.color ?? null,
-        isCustom: true,
-        attributes: type.attributes ?? null,
-      },
-    });
-    if (!created && !elementType.attributes && type.attributes) {
-      elementType.attributes = type.attributes;
-      await elementType.save();
-      backfilled += 1;
-    }
+    await upsertType(type, true);
   }
   logger.info(`Migrated ${staticTypes.length + customTypes.length} element types (${backfilled} backfilled)`);
 }
@@ -142,9 +139,7 @@ async function migrateAssignments(missionConfig) {
       where: deviceRef.name ? { name: deviceRef.name } : { id: deviceRef.id },
     });
     if (!device) {
-      logger.warn(
-        `Skipping assignment for base ${assignment.baseId}: device ${JSON.stringify(deviceRef)} not found`
-      );
+      logger.warn(`Skipping assignment for base ${assignment.baseId}: device ${JSON.stringify(deviceRef)} not found`);
       skipped += 1;
       continue;
     }

@@ -56,8 +56,9 @@ const createCircleFeature = (center, radiusMeters, properties = {}) => {
  * `yawDeg`. `widthMeters` runs along the local East-West axis and
  * `lengthMeters` along the local North-South axis at yaw=0 — same convention
  * as the `Obstacle` geometry (mcp_server/src/schemas/missions.ts) and
- * `attributes.geometry` on ElementType/ElementItem. `yawDeg` is clockwise from
- * North, matching this app's heading convention (0=North, 90=East).
+ * `attributes.geometry` on ElementType (dimensions; catalog-only, never a
+ * per-item override). `yawDeg` is clockwise from North, matching this app's
+ * heading convention (0=North, 90=East).
  */
 const createRectangleFeature = (center, widthMeters, lengthMeters, yawDeg = 0, properties = {}) => {
   if (widthMeters <= 0 || lengthMeters <= 0) return null;

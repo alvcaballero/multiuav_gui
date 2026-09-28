@@ -4,13 +4,11 @@ import { TextField, MenuItem, Grid } from '@mui/material';
 export const DEFAULT_CIRCLE_GEOMETRY = {
   geometry_type: 'circle',
   dimensions: { radius: 1, height: 1 },
-  yaw: 0,
 };
 
 export const DEFAULT_RECTANGLE_GEOMETRY = {
   geometry_type: 'rectangle',
   dimensions: { width: 1, length: 1, height: 1 },
-  yaw: 0,
 };
 
 const toNumber = (raw) => {
@@ -30,16 +28,16 @@ export const describeGeometry = (geometry) => {
 };
 
 /**
- * Controlled editor for an `attributes.geometry` object
- * ({ geometry_type: 'circle'|'rectangle', dimensions: {...}, yaw }).
- * Used both for an ElementType's default geometry and for a per-item override.
+ * Controlled editor for an ElementType's default geometry
+ * ({ geometry_type: 'circle'|'rectangle', dimensions: {...} }). Dimensions are
+ * catalog-only — this never edits a per-item value. Orientation lives on the
+ * item itself (`azimFront`, see OrientationFields.jsx), not here.
  */
 const GeometryFields = ({ value, onChange }) => {
   const geometry = value || DEFAULT_CIRCLE_GEOMETRY;
 
   // Switching shape swaps the footprint keys (radius ↔ width/length) but keeps
-  // the values that mean the same thing in both shapes — height and yaw. Wiping
-  // them would silently reset an already-configured rotation.
+  // height — wiping it would silently reset an already-configured height.
   const handleTypeChange = (geometryType) => {
     const base = geometryType === 'circle' ? DEFAULT_CIRCLE_GEOMETRY : DEFAULT_RECTANGLE_GEOMETRY;
     onChange({
@@ -48,16 +46,11 @@ const GeometryFields = ({ value, onChange }) => {
         ...base.dimensions,
         height: geometry.dimensions?.height ?? base.dimensions.height,
       },
-      yaw: geometry.yaw ?? base.yaw,
     });
   };
 
   const handleDimensionChange = (key, raw) => {
     onChange({ ...geometry, dimensions: { ...geometry.dimensions, [key]: toNumber(raw) } });
-  };
-
-  const handleYawChange = (raw) => {
-    onChange({ ...geometry, yaw: toNumber(raw) });
   };
 
   return (
@@ -115,16 +108,6 @@ const GeometryFields = ({ value, onChange }) => {
           label="Altura (m)"
           value={geometry.dimensions.height ?? ''}
           onChange={(event) => handleDimensionChange('height', event.target.value)}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 12, sm: 4 }}>
-        <TextField
-          fullWidth
-          type="number"
-          label="Rotación / yaw (°)"
-          value={geometry.yaw ?? 0}
-          onChange={(event) => handleYawChange(event.target.value)}
         />
       </Grid>
     </Grid>
