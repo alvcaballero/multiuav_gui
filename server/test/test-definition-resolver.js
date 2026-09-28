@@ -124,20 +124,54 @@ describe('resolveDefinitionModel — prismatic joint (synthetic, mirrors goliath
   });
 });
 
-describe('resolveDefinitionModel — goliathCrane (real stored file)', () => {
-  test('fails with a clear "unsupported primitive" error — capsule/beam are out of scope this pass', () => {
-    // goliathCrane's real file uses `beam` (end_ties, legs) and `capsule`
-    // (hoist ropes), neither implemented yet (see resolveGeometryItem).
-    // This documents that on purpose, per the "no best-effort, fail loud"
-    // design — not a bug in the resolver.
-    assert.throws(
-      () => resolveDefinitionModel('goliathCrane'),
-      (err) => {
-        assert.ok(err instanceof DefinitionResolveError);
-        assert.match(err.message, /Unsupported primitive type "(beam|capsule)"/);
-        return true;
-      }
-    );
+describe('resolveDefinitionModel — goliathCrane (real stored file, beam/capsule)', () => {
+  test('resolves every link, including ones built entirely from beam/capsule', () => {
+    const model = resolveDefinitionModel('goliathCrane');
+    assert.ok(model);
+    const names = model.links.map((l) => l.name).sort();
+    assert.ok(names.includes('end_ties'));
+    assert.ok(names.includes('rigid_leg'));
+    assert.ok(names.includes('upper_hoist'));
+    assert.ok(names.includes('lower_hoist'));
+  });
+
+  test('end_ties beams resolve position/quaternion/length/size as finite numbers', () => {
+    const model = resolveDefinitionModel('goliathCrane');
+    const endTies = model.links.find((l) => l.name === 'end_ties');
+    for (const beam of endTies.geometry) {
+      assert.equal(beam.type, 'beam');
+      assert.equal(beam.position.length, 3);
+      assert.ok(beam.position.every(Number.isFinite));
+      assert.equal(beam.quaternion.length, 4);
+      assert.ok(beam.quaternion.every(Number.isFinite));
+      const [qx, qy, qz, qw] = beam.quaternion;
+      assert.ok(Math.abs(Math.hypot(qx, qy, qz, qw) - 1) < 1e-9); // must stay a unit quaternion
+      assert.ok(Number.isFinite(beam.length) && beam.length > 0);
+      assert.deepEqual(beam.size, [3.0, 2.5]); // [depth, width] from `width: 2.5, depth: 3.0`
+    }
+  });
+
+  test('a beam with no explicit depth falls back to width (square section)', () => {
+    // rigid_leg's columns only set `width`, matching insem.py's
+    // `g.get("depth", g["width"])` default.
+    const model = resolveDefinitionModel('goliathCrane');
+    const rigidLeg = model.links.find((l) => l.name === 'rigid_leg');
+    const col = rigidLeg.geometry.find((g) => g.id === 'col_N');
+    assert.deepEqual(col.size, [3.2, 3.2]); // rigid_section = 3.2
+  });
+
+  test('upper_hoist/lower_hoist ropes resolve as capsules with the configured radius', () => {
+    const model = resolveDefinitionModel('goliathCrane');
+    for (const linkName of ['upper_hoist', 'lower_hoist']) {
+      const hoist = model.links.find((l) => l.name === linkName);
+      const ropes = hoist.geometry.find((g) => g.id === 'ropes');
+      assert.equal(ropes.type, 'capsule');
+      assert.equal(ropes.radius, 0.8); // rope_radius
+      assert.ok(Number.isFinite(ropes.length) && ropes.length > 0);
+      assert.deepEqual(ropes.position, [0, 0, 0]); // a = [0, 0, 0]
+      const [qx, qy, qz, qw] = ropes.quaternion;
+      assert.ok(Math.abs(Math.hypot(qx, qy, qz, qw) - 1) < 1e-9);
+    }
   });
 });
 

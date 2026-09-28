@@ -43,14 +43,38 @@ const SweptBox = ({ segments }) => (
   </>
 );
 
+// `capsule`/`beam` run from the primitive's own origin along local +Z by
+// `length`, same base-at-origin convention as Cylinder above — same Y-up ->
+// Z-up-from-base fix applies.
+const Capsule = ({ radius, length }) => (
+  <group rotation={[Math.PI / 2, 0, 0]} position={[0, 0, length / 2]}>
+    <mesh>
+      <capsuleGeometry args={[radius, Math.max(length - 2 * radius, 0), 4, SEGMENTS]} />
+      <meshBasicMaterial color={WIRE_COLOR} wireframe />
+    </mesh>
+  </group>
+);
+
+const Beam = ({ size, length }) => (
+  <mesh position={[0, 0, length / 2]}>
+    <boxGeometry args={[size[0], size[1], length]} />
+    <meshBasicMaterial color={WIRE_COLOR} wireframe />
+  </mesh>
+);
+
 /**
  * Renders one resolved primitive (see server/models/markers/
- * definitionResolver.js) at its own pose within its link. `capsule`/`beam`
- * aren't resolved server-side yet (goliathCrane only, not windTurbine) —
- * nothing to render for those here, matching the resolver's scope.
+ * definitionResolver.js) at its own pose within its link. `box`/`sphere`/
+ * `cylinder`/`swept_box` carry `rotationEuler` (from a `pose`); `capsule`/
+ * `beam` carry `quaternion` instead (from `frameFromAxis`, a->b) — a
+ * <group> takes either.
  */
 const PrimitiveMesh = ({ primitive }) => (
-  <group position={primitive.position} rotation={primitive.rotationEuler}>
+  <group
+    position={primitive.position}
+    rotation={primitive.rotationEuler}
+    quaternion={primitive.quaternion}
+  >
     {primitive.type === 'box' && <Box size={primitive.size} />}
     {primitive.type === 'sphere' && <Sphere radius={primitive.radius} />}
     {primitive.type === 'cylinder' && (
@@ -61,6 +85,10 @@ const PrimitiveMesh = ({ primitive }) => (
       />
     )}
     {primitive.type === 'swept_box' && <SweptBox segments={primitive.segments} />}
+    {primitive.type === 'capsule' && (
+      <Capsule radius={primitive.radius} length={primitive.length} />
+    )}
+    {primitive.type === 'beam' && <Beam size={primitive.size} length={primitive.length} />}
   </group>
 );
 

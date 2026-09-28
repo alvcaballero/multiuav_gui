@@ -71,6 +71,72 @@ function evalPose(pose, ns) {
   return { position, rotationEuler };
 }
 
+function vecSub(a, b) {
+  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+
+function vecLength(v) {
+  return Math.hypot(v[0], v[1], v[2]);
+}
+
+function unitVec(v) {
+  const len = vecLength(v) || 1;
+  return [v[0] / len, v[1] / len, v[2] / len];
+}
+
+function dot(a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+function cross(a, b) {
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+
+// A `capsule`/`beam` primitive runs from point `a` to point `b` (its own
+// local Z axis), not a fixed `pose` — this builds the rotation that aligns
+// canonical +Z with that direction, with `up` fixing the twist around it
+// (defaults matching insem.py's `frame_from_axis`: world +Z, or +X if the
+// segment is nearly vertical). Verified 1:1 against insem.py lines 112-119.
+function frameFromAxis(a, b, up) {
+  const z = unitVec(vecSub(b, a));
+  const upVec = up ?? (Math.abs(z[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0]);
+  const x = unitVec(
+    vecSub(
+      upVec,
+      z.map((v) => v * dot(upVec, z))
+    )
+  );
+  const y = cross(z, x);
+  // Rotation matrix with columns [x, y, z] — m[row][col].
+  return [
+    [x[0], y[0], z[0]],
+    [x[1], y[1], z[1]],
+    [x[2], y[2], z[2]],
+  ];
+}
+
+// Standard (Shepperd) rotation-matrix -> quaternion conversion — numerically
+// stable across all rotations, unlike a matrix -> Euler decomposition (no
+// gimbal-lock edge case to worry about). Returns [x, y, z, w].
+function matrixToQuaternion(m) {
+  const [[m00, m01, m02], [m10, m11, m12], [m20, m21, m22]] = m;
+  const trace = m00 + m11 + m22;
+  if (trace > 0) {
+    const s = 0.5 / Math.sqrt(trace + 1);
+    return [(m21 - m12) * s, (m02 - m20) * s, (m10 - m01) * s, 0.25 / s];
+  }
+  if (m00 > m11 && m00 > m22) {
+    const s = 2 * Math.sqrt(1 + m00 - m11 - m22);
+    return [0.25 * s, (m01 + m10) / s, (m02 + m20) / s, (m21 - m12) / s];
+  }
+  if (m11 > m22) {
+    const s = 2 * Math.sqrt(1 + m11 - m00 - m22);
+    return [(m01 + m10) / s, 0.25 * s, (m12 + m21) / s, (m02 - m20) / s];
+  }
+  const s = 2 * Math.sqrt(1 + m22 - m00 - m11);
+  return [(m02 + m20) / s, (m12 + m21) / s, 0.25 * s, (m10 - m01) / s];
+}
+
 function linterp(f, xs, ys) {
   if (f <= xs[0]) return ys[0];
   if (f >= xs[xs.length - 1]) return ys[ys.length - 1];
@@ -137,15 +203,31 @@ function buildNamespace(doc) {
   return ns;
 }
 
+// `capsule`/`beam` don't have a `pose` at all — they run from point `a` to
+// point `b`, so their position/orientation comes from `frameFromAxis`
+// instead of `evalPose`. Mirrors insem.py's `build_prim` (`T = H(frame_from_axis(a, b, g.get("up")), a)`).
+function resolveAxisPrimitive(g, ns) {
+  const a = evalArray(g.a, ns);
+  const b = evalArray(g.b, ns);
+  const up = g.up ? evalArray(g.up, ns) : undefined;
+  const quaternion = matrixToQuaternion(frameFromAxis(a, b, up));
+  const length = vecLength(vecSub(b, a));
+  return { position: a, quaternion, length };
+}
+
 function resolveGeometryItem(g, index, ns, resolvedTables) {
   const id = g.id ?? `p${index}`;
-  const { position, rotationEuler } = evalPose(g.pose, ns);
   switch (g.type) {
-    case 'box':
+    case 'box': {
+      const { position, rotationEuler } = evalPose(g.pose, ns);
       return { id, type: 'box', size: evalArray(g.size, ns), position, rotationEuler };
-    case 'sphere':
+    }
+    case 'sphere': {
+      const { position, rotationEuler } = evalPose(g.pose, ns);
       return { id, type: 'sphere', radius: evalScalar(g.radius, ns), position, rotationEuler };
+    }
     case 'cylinder': {
+      const { position, rotationEuler } = evalPose(g.pose, ns);
       const radiusBottom = evalScalar(g.radius_bottom ?? g.radius, ns);
       const radiusTop = evalScalar(g.radius_top ?? g.radius, ns);
       return {
@@ -159,6 +241,7 @@ function resolveGeometryItem(g, index, ns, resolvedTables) {
       };
     }
     case 'swept_box': {
+      const { position, rotationEuler } = evalPose(g.pose, ns);
       const length = evalScalar(g.length, ns);
       const segmentCount = Math.max(1, Math.round(evalScalar(g.segments ?? 20, ns)));
       const widthTable = buildTable(g.width, ns, resolvedTables);
@@ -173,8 +256,18 @@ function resolveGeometryItem(g, index, ns, resolvedTables) {
       }
       return { id, type: 'swept_box', position, rotationEuler, segments };
     }
+    case 'capsule': {
+      const { position, quaternion, length } = resolveAxisPrimitive(g, ns);
+      return { id, type: 'capsule', radius: evalScalar(g.radius, ns), length, position, quaternion };
+    }
+    case 'beam': {
+      const { position, quaternion, length } = resolveAxisPrimitive(g, ns);
+      const width = evalScalar(g.width, ns);
+      const depth = evalScalar(g.depth ?? g.width, ns);
+      return { id, type: 'beam', size: [depth, width], length, position, quaternion };
+    }
     default:
-      throw new DefinitionResolveError(`Unsupported primitive type "${g.type}" (capsule/beam not implemented yet)`);
+      throw new DefinitionResolveError(`Unsupported primitive type "${g.type}"`);
   }
 }
 
