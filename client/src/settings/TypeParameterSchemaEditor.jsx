@@ -21,6 +21,26 @@ const emptyDef = () => ({
   default: '',
 });
 
+// A TextField's onChange always hands back a string — cast it to match
+// dataType so `default` is stored as the real type (a number stored as
+// "240" still passes ItemAttributesSchema/ParameterDefSchema, since both
+// accept string|number|boolean, but it's not what a `dataType: 'number'`
+// consumer expects). Left as-is while unparseable/mid-edit (e.g. "-" or "")
+// so typing isn't fought.
+const castDefault = (raw, dataType) => {
+  if (raw === '' || raw == null) return raw;
+  if (dataType === 'number') {
+    const num = Number(raw);
+    return Number.isFinite(num) ? num : raw;
+  }
+  if (dataType === 'boolean') {
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return raw;
+  }
+  return raw;
+};
+
 /**
  * Form-builder for an ElementType's `parameterDefs` — the set of
  * configurable state parameters every item of that type will expose (e.g. a
@@ -88,7 +108,10 @@ const TypeParameterSchemaEditor = ({ value, onChange }) => {
                   fullWidth
                   label="Tipo de dato"
                   value={def.dataType}
-                  onChange={(event) => updateDef(index, { dataType: event.target.value })}
+                  onChange={(event) => {
+                    const dataType = event.target.value;
+                    updateDef(index, { dataType, default: castDefault(def.default, dataType) });
+                  }}
                 >
                   {DATA_TYPES.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
@@ -136,7 +159,7 @@ const TypeParameterSchemaEditor = ({ value, onChange }) => {
                   fullWidth
                   label="Valor por defecto"
                   value={def.default ?? ''}
-                  onChange={(event) => updateDef(index, { default: event.target.value })}
+                  onChange={(event) => updateDef(index, { default: castDefault(event.target.value, def.dataType) })}
                 />
               </Grid>
             </Grid>

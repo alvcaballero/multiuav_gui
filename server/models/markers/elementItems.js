@@ -22,6 +22,28 @@ export function warnUnknownParameterKeys(attributes, parameterDefs) {
   }
 }
 
+/**
+ * Merges an ElementType's parameterDefs.default values into `attributes` for
+ * any key not already present. Used ONLY at creation time — an item/base's
+ * `attributes` must be a real, persisted snapshot of its parameter values,
+ * never relying on a client form silently falling back to the type's current
+ * default for display (that let the DB and what the UI showed diverge: a
+ * form could show `nacelle_heading_deg: 240` from the type's default while
+ * the item's own `attributes` stayed `null`, and a GET would return nothing).
+ * A def with no `default` contributes no key. Not applied on update — an
+ * edit is a deliberate full-replace of `attributes`, not a place to
+ * resurrect defaults for keys the form omitted.
+ */
+export function applyParameterDefaults(attributes, parameterDefs) {
+  if (!parameterDefs || parameterDefs.length === 0) return attributes ?? null;
+  const merged = { ...(attributes || {}) };
+  for (const def of parameterDefs) {
+    if (def.default === undefined) continue;
+    if (!(def.key in merged)) merged[def.key] = def.default;
+  }
+  return Object.keys(merged).length > 0 ? merged : null;
+}
+
 // Excludes items whose parent group is soft-deleted — a deleted group keeps
 // its items in SQL (intentional, see elementGroupsModel.delete), but nothing
 // reading items for external use (REST, MCP tools, mission planning) should
@@ -93,11 +115,12 @@ export const elementItemsModel = {
   async create(elementItem) {
     const { groupId, name, latitude, longitude, altitude, azimFront, description, attributes } = elementItem;
 
+    const group = await sequelize.models.ElementGroup.findByPk(groupId, {
+      include: [{ model: sequelize.models.ElementType, as: 'type' }],
+    });
+    const parameterDefs = resolveEffectiveParameterDefs(group?.type);
     if (attributes) {
-      const group = await sequelize.models.ElementGroup.findByPk(groupId, {
-        include: [{ model: sequelize.models.ElementType, as: 'type' }],
-      });
-      warnUnknownParameterKeys(attributes, resolveEffectiveParameterDefs(group?.type));
+      warnUnknownParameterKeys(attributes, parameterDefs);
     }
 
     const created = await sequelize.models.ElementItem.create({
@@ -108,7 +131,7 @@ export const elementItemsModel = {
       altitude: altitude ?? null,
       azimFront: azimFront ?? null,
       description: description ?? null,
-      attributes: attributes ?? null,
+      attributes: applyParameterDefaults(attributes, parameterDefs),
     });
     await elementGroupsModel.recalculateBounds(groupId);
     return created;

@@ -1,5 +1,5 @@
 import sequelize from '../../common/sequelize.js';
-import { warnUnknownParameterKeys } from './elementItems.js';
+import { warnUnknownParameterKeys, applyParameterDefaults } from './elementItems.js';
 import { resolveEffectiveParameterDefs } from './elementTypes.js';
 
 export const basesModel = {
@@ -14,9 +14,10 @@ export const basesModel = {
   async create(base) {
     const { typeId, name, latitude, longitude, altitude, azimFront, attributes, corners } = base;
 
-    if (attributes && typeId) {
-      const type = await sequelize.models.ElementType.findByPk(typeId);
-      warnUnknownParameterKeys(attributes, resolveEffectiveParameterDefs(type));
+    const type = typeId ? await sequelize.models.ElementType.findByPk(typeId) : null;
+    const parameterDefs = resolveEffectiveParameterDefs(type);
+    if (attributes) {
+      warnUnknownParameterKeys(attributes, parameterDefs);
     }
 
     return await sequelize.models.Base.create({
@@ -26,7 +27,7 @@ export const basesModel = {
       longitude,
       altitude: altitude ?? null,
       azimFront: azimFront ?? null,
-      attributes: attributes ?? null,
+      attributes: applyParameterDefaults(attributes, parameterDefs),
       corners: corners ?? null,
     });
   },

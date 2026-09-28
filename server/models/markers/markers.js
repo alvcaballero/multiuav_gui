@@ -6,7 +6,7 @@ import { Op } from 'sequelize';
 import sequelize from '../../common/sequelize.js';
 import { logger } from '../../common/logger.js';
 import { elementGroupsModel } from './elementGroups.js';
-import { warnUnknownParameterKeys } from './elementItems.js';
+import { warnUnknownParameterKeys, applyParameterDefaults } from './elementItems.js';
 import { resolveEffectiveParameterDefs } from './elementTypes.js';
 
 // Builds one `elements[]` entry (a group + its items) in the legacy shape,
@@ -123,10 +123,11 @@ export const markersModel = {
       const numericId = base.id != null ? Number(base.id) : null;
       const row = numericId != null && !Number.isNaN(numericId) ? byId.get(numericId) : null;
       const typeId = base.typeId !== undefined ? base.typeId : row?.typeId;
+      const type = typeId ? await resolveType(typeId) : null;
+      const parameterDefs = resolveEffectiveParameterDefs(type);
 
       if (base.attributes) {
-        const type = await resolveType(typeId);
-        warnUnknownParameterKeys(base.attributes, resolveEffectiveParameterDefs(type));
+        warnUnknownParameterKeys(base.attributes, parameterDefs);
       }
 
       if (row) {
@@ -147,7 +148,7 @@ export const markersModel = {
           longitude: base.longitude,
           altitude: base.altitude ?? null,
           azimFront: base.azimFront ?? null,
-          attributes: base.attributes ?? null,
+          attributes: applyParameterDefaults(base.attributes, parameterDefs),
           corners: base.corners ?? null,
         });
       }
@@ -209,13 +210,19 @@ export const markersModel = {
         const name = item.name || `Item ${i}`;
         const itemId = item.itemId != null ? Number(item.itemId) : null;
         let elementItem = itemId != null && !Number.isNaN(itemId) ? existingItems.find((it) => it.id === itemId) : null;
+        const parameterDefs = resolveEffectiveParameterDefs(elementType);
 
         if (item.attributes) {
-          warnUnknownParameterKeys(item.attributes, resolveEffectiveParameterDefs(elementType));
+          warnUnknownParameterKeys(item.attributes, parameterDefs);
         }
 
+        // Tracks a genuine INSERT (vs. matching an existing row by name
+        // fallback below) so defaults are only ever merged in for a row that
+        // didn't exist yet — never resurrected on top of an existing row's
+        // edit, which is a deliberate full-replace of `attributes`.
+        let wasCreated = false;
         if (!elementItem) {
-          [elementItem] = await sequelize.models.ElementItem.findOrCreate({
+          [elementItem, wasCreated] = await sequelize.models.ElementItem.findOrCreate({
             where: { groupId: elementGroup.id, name },
             defaults: {
               groupId: elementGroup.id,
@@ -232,7 +239,9 @@ export const markersModel = {
         elementItem.longitude = item.longitude;
         elementItem.altitude = item.altitude ?? null;
         elementItem.azimFront = item.azimFront ?? null;
-        elementItem.attributes = item.attributes ?? null;
+        elementItem.attributes = wasCreated
+          ? applyParameterDefaults(item.attributes, parameterDefs)
+          : (item.attributes ?? null);
         await elementItem.save();
       }
 
