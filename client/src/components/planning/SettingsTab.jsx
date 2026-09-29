@@ -24,14 +24,14 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 const SettingsTab = ({
-  sendTask,
+  missionRequest,
   markers,
   notification,
   onSetBaseSettings,
   onGoToBase,
   onSendPlanning,
   onResetPolling,
-  onMissionTask,
+  onRequestMission,
   onSaveGlobalMarkers,
 }) => {
   const { classes } = useStyles();
@@ -39,10 +39,10 @@ const SettingsTab = ({
   return (
     <div className={`${classes.details} ${classes.tabPanelContent}`}>
       <BaseSettings
-        data={sendTask.assignments || []}
+        data={missionRequest.assignments || []}
         markers={markers}
-        param={sendTask.settingsSchema}
-        defaultSettings={sendTask.defaultSettings}
+        param={missionRequest.settingsSchema}
+        defaultSettings={missionRequest.defaultSettings}
         setData={onSetBaseSettings}
         goToBase={onGoToBase}
       />
@@ -66,7 +66,7 @@ const SettingsTab = ({
           variant="contained"
           size="large"
           className={classes.panelButton}
-          onClick={onMissionTask}
+          onClick={onRequestMission}
         >
           Planning with Global Setting
         </Button>

@@ -23,7 +23,7 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../shared/formatter';
-import { routeStyle } from '../shared/missionStatus';
+import { taskStyle } from '../shared/missionStatus';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -66,9 +66,18 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const COLUMNS_ARRAY = ['id', 'initTime', 'endTime', 'deviceId', 'status'];
+const COLUMNS_ARRAY = [
+  'id',
+  'missionId',
+  'taskKey',
+  'action',
+  'initTime',
+  'endTime',
+  'deviceId',
+  'status',
+];
 
-const MissionReportRoutePage = () => {
+const MissionReportTaskPage = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
 
@@ -79,14 +88,14 @@ const MissionReportRoutePage = () => {
     const value = item[key];
     switch (key) {
       case 'deviceId':
-        return devices[value].name;
+        return devices[value]?.name ?? '—';
       case 'initTime':
         return formatTime(value, 'minutes');
       case 'endTime':
         return formatTime(value, 'minutes');
 
       case 'status': {
-        const style = routeStyle(value);
+        const style = taskStyle(value);
         return (
           <Chip
             label={style.label.toUpperCase()}
@@ -100,7 +109,7 @@ const MissionReportRoutePage = () => {
   };
 
   useAsyncTask(async () => {
-    const response = await fetch('/api/missions/routes');
+    const response = await fetch('/api/missions/tasks');
     if (response.ok) {
       const myMissions = await response.json();
       setMissions(myMissions);
@@ -116,7 +125,7 @@ const MissionReportRoutePage = () => {
           <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6">Routes</Typography>
+          <Typography variant="h6">Tasks</Typography>
         </Toolbar>
       </AppBar>
       <div className={classes.content}>
@@ -158,4 +167,4 @@ const MissionReportRoutePage = () => {
   );
 };
 
-export default MissionReportRoutePage;
+export default MissionReportTaskPage;

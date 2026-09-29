@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { RuteConvert } from '../map/MissionConvert';
+import { RuteConvert, nextTaskId } from '../map/MissionConvert';
 
 export const applyUavTypeDefaults = createAsyncThunk(
   'mission/applyUavTypeDefaults',
@@ -87,6 +87,8 @@ const { reducer: missionReducerBase, actions } = createSlice({
         name: '',
         uav: '',
         id: newId,
+        task_id: nextTaskId(state.route),
+        depends_on: [],
         // Defaults se traen del server (SSOT) vía applyUavTypeDefaults una vez
         // que se asigna un UAV y se conoce su categoría.
         attributes: {},
@@ -96,7 +98,13 @@ const { reducer: missionReducerBase, actions } = createSlice({
     deleteRoute(state, action) {
       const routeIndex = action.payload;
       if (routeIndex >= 0 && routeIndex < state.route.length) {
-        state.route.splice(routeIndex, 1);
+        const [removed] = state.route.splice(routeIndex, 1);
+        // Nothing may keep depending on a task that no longer exists: the server
+        // would reject the whole plan and the dangling id isn't visible to fix.
+        for (const route of state.route) {
+          if (route.depends_on)
+            route.depends_on = route.depends_on.filter((id) => id !== removed.task_id);
+        }
       }
     },
     updateRoute(state, action) {

@@ -12,7 +12,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { makeStyles } from 'tss-react/mui';
 import YAML from 'yaml';
 import { missionStyle } from '../../../shared/missionStatus';
-import RouteTrackingRow from '../../mission/RouteTrackingRow';
+import TaskTrackingRow from '../../mission/TaskTrackingRow';
 
 const useStyles = makeStyles()(() => ({
   panelHeader: {
@@ -59,9 +59,9 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
   const runningMission = activeMissionsList.find((m) => m.status === 'running');
   const currentStatus = selectedMission?.status ?? runningMission?.status ?? null;
 
-  // Live route tracking (WP progress, status, anomalies) for the selected mission,
+  // Live task tracking (WP progress, status, anomalies) for the selected mission,
   // same data ActiveMissionsPopover shows. Empty until a mission is selected/loaded.
-  const trackedRoutes = Object.values(selectedMission?.routes ?? {});
+  const trackedTasks = Object.values(selectedMission?.tasks ?? {});
 
   const [expandedRoute, setExpandedRoute] = useState(null);
 
@@ -121,15 +121,15 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
           </Typography>
         )}
 
-        {trackedRoutes.length > 0 && (
+        {trackedTasks.length > 0 && (
           <>
             <Divider />
             <Typography className={classes.panelTitle} sx={{ px: 1.5, pt: 0.75 }}>
               Live tracking
             </Typography>
             <Box sx={{ pb: 0.5 }}>
-              {trackedRoutes.map((r) => (
-                <RouteTrackingRow key={r.deviceId} route={r} devicesMap={devicesMap} />
+              {trackedTasks.map((t) => (
+                <TaskTrackingRow key={t.id} task={t} devicesMap={devicesMap} />
               ))}
             </Box>
           </>

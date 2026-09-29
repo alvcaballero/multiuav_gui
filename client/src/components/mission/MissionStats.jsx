@@ -229,7 +229,7 @@ const MissionStats = memo(() => {
 
       return {
         id: route.id ?? index,
-        name: route.name || `Route ${index}`,
+        name: route.name || route.task_id || `Route ${index}`,
         uav: route.uav || '-',
         distance2D,
         distance3D,

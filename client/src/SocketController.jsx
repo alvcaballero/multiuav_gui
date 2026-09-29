@@ -126,30 +126,25 @@ const SocketController = () => {
       if (data.missionUpdated) {
         dispatch(activeMissionsActions.upsertMission(data.missionUpdated));
       }
-      if (data.routeUpdated) {
-        const { missionId } = data.routeUpdated;
+      if (data.taskUpdated) {
+        const { missionId } = data.taskUpdated;
         const known = store.getState().activeMissions.items[missionId];
         if (!known) {
-          // Route arrived before initial fetch or before its missionUpdated — fetch it now
+          // Task arrived before initial fetch or before its missionUpdated — fetch it now
           Promise.all([
             fetch(`/api/missions?id=${missionId}`).then((r) => (r.ok ? r.json() : null)),
-            fetch(`/api/missions/routes?missionId=${missionId}`).then((r) =>
+            fetch(`/api/missions/tasks?missionId=${missionId}`).then((r) =>
               r.ok ? r.json() : null,
             ),
-          ]).then(([mission, routes]) => {
+          ]).then(([mission, tasks]) => {
             if (mission)
               dispatch(
                 activeMissionsActions.upsertMission(Array.isArray(mission) ? mission[0] : mission),
               );
-            if (routes)
-              dispatch(
-                activeMissionsActions.setRoutes(
-                  Array.isArray(routes) ? routes : Object.values(routes),
-                ),
-              );
+            if (tasks) dispatch(activeMissionsActions.setTasks(tasks));
           });
         }
-        dispatch(activeMissionsActions.upsertRoute(data.routeUpdated));
+        dispatch(activeMissionsActions.upsertTask(data.taskUpdated));
       }
     };
   };
@@ -158,10 +153,10 @@ const SocketController = () => {
     if (socketState) {
       setSocketState(false);
 
-      const [devicesRes, missionsRes, routesRes] = await Promise.all([
+      const [devicesRes, missionsRes, tasksRes] = await Promise.all([
         fetch('/api/devices'),
         fetch('/api/missions'),
-        fetch('/api/missions/routes'),
+        fetch('/api/missions/tasks'),
       ]);
 
       if (devicesRes.ok) {
@@ -185,8 +180,8 @@ const SocketController = () => {
           loadMissionPlanToEditor(mostRecent.id, dispatch);
         }
       }
-      if (routesRes.ok) {
-        dispatch(activeMissionsActions.setRoutes(await routesRes.json()));
+      if (tasksRes.ok) {
+        dispatch(activeMissionsActions.setTasks(await tasksRes.json()));
       }
 
       connectSocket();

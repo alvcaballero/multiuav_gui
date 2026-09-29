@@ -28,7 +28,7 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 const PlanningTab = ({
-  sendTask,
+  missionRequest,
   onUpdateId,
   onUpdateName,
   onUpdateObjective,
@@ -45,7 +45,7 @@ const PlanningTab = ({
         label="id"
         type="number"
         variant="standard"
-        defaultValue={sendTask.id ? sendTask.id : 123}
+        defaultValue={missionRequest.id ? missionRequest.id : 123}
         onBlur={onUpdateId}
       />
       <TextField
@@ -53,14 +53,14 @@ const PlanningTab = ({
         fullWidth
         label="Name Mission"
         variant="standard"
-        value={sendTask.name ? sendTask.name : ' '}
+        value={missionRequest.name ? missionRequest.name : ' '}
         onChange={onUpdateName}
       />
       <SelectField
         emptyValue={null}
         fullWidth
         label="objetive"
-        value={sendTask.objetivo.hasOwnProperty('id') ? sendTask.objetivo.id : 1}
+        value={missionRequest.objetivo.hasOwnProperty('id') ? missionRequest.objetivo.id : 1}
         endpoint="/api/planning/missionstype"
         keyGetter={(it) => it.id}
         titleGetter={(it) => it.name}
@@ -74,12 +74,12 @@ const PlanningTab = ({
         </AccordionSummary>
         <AccordionDetails className={classes.details}>
           <div className={classes.details}>
-            {sendTask.objetivo.hasOwnProperty('description') ? (
-              <Typography>{sendTask.objetivo.description}</Typography>
+            {missionRequest.objetivo.hasOwnProperty('description') ? (
+              <Typography>{missionRequest.objetivo.description}</Typography>
             ) : (
               <Typography>select doing click in the map</Typography>
             )}
-            <SelectList Data={sendTask.loc} setData={setLocations} />
+            <SelectList Data={missionRequest.loc} setData={setLocations} />
           </div>
         </AccordionDetails>
       </Accordion>

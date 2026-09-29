@@ -4,7 +4,12 @@ import { sessionActions } from '../../store';
 import { manageLocationPoints } from '../../services/planningService';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 
-export const usePlanningReduxHandlers = ({ dispatch, markers, SendTask, sendTaskRef }) => {
+export const usePlanningReduxHandlers = ({
+  dispatch,
+  markers,
+  missionRequest,
+  missionRequestRef,
+}) => {
   const { types: markerTypes } = useMarkerTypes();
   // 'Power Tower' is the default type for a line drawn via addLocations
   // (path-object/object/point) — resolved by name since the catalog's PK is
@@ -19,11 +24,13 @@ export const usePlanningReduxHandlers = ({ dispatch, markers, SendTask, sendTask
       dispatch(sessionActions.updateMarker({ ...markers, bases: value }));
 
       if (meta.meth === 'del' && meta.id) {
-        const newAssignments = (SendTask.assignments || []).filter((a) => a.baseId !== meta.id);
-        dispatch(sessionActions.updatePlanning({ ...SendTask, assignments: newAssignments }));
+        const newAssignments = (missionRequest.assignments || []).filter(
+          (a) => a.baseId !== meta.id,
+        );
+        dispatch(sessionActions.updatePlanning({ ...missionRequest, assignments: newAssignments }));
       }
     },
-    [dispatch, markers, SendTask],
+    [dispatch, markers, missionRequest],
   );
 
   const setMarkersElements = useCallback(
@@ -37,36 +44,36 @@ export const usePlanningReduxHandlers = ({ dispatch, markers, SendTask, sendTask
   );
 
   const setLocations = useCallback(
-    (value) => dispatch(sessionActions.updatePlanning({ ...SendTask, loc: value })),
-    [dispatch, SendTask],
+    (value) => dispatch(sessionActions.updatePlanning({ ...missionRequest, loc: value })),
+    [dispatch, missionRequest],
   );
 
   const addLocations = useCallback(
     (value) => {
       const newLoc = manageLocationPoints(
-        structuredClone(SendTask.loc),
+        structuredClone(missionRequest.loc),
         value,
-        SendTask.objetivo.type,
+        missionRequest.objetivo.type,
         powerTowerTypeId,
       );
-      dispatch(sessionActions.updatePlanning({ ...SendTask, loc: newLoc }));
+      dispatch(sessionActions.updatePlanning({ ...missionRequest, loc: newLoc }));
     },
-    [dispatch, SendTask, powerTowerTypeId],
+    [dispatch, missionRequest, powerTowerTypeId],
   );
 
   const setBaseSettings = useCallback(
-    (assignments) => dispatch(sessionActions.updatePlanning({ ...SendTask, assignments })),
-    [dispatch, SendTask],
+    (assignments) => dispatch(sessionActions.updatePlanning({ ...missionRequest, assignments })),
+    [dispatch, missionRequest],
   );
 
   const updateObjetive = useCallback(
     (newObjetive) => {
-      const myTask = structuredClone(sendTaskRef.current);
-      myTask.objetivo = newObjetive;
-      if (newObjetive.type !== sendTaskRef.current.objetivo.type) myTask.loc = [];
-      dispatch(sessionActions.updatePlanning(myTask));
+      const nextRequest = structuredClone(missionRequestRef.current);
+      nextRequest.objetivo = newObjetive;
+      if (newObjetive.type !== missionRequestRef.current.objetivo.type) nextRequest.loc = [];
+      dispatch(sessionActions.updatePlanning(nextRequest));
     },
-    [dispatch, sendTaskRef],
+    [dispatch, missionRequestRef],
   );
 
   return {

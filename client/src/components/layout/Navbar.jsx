@@ -11,6 +11,7 @@ import { useCatch } from '../../reactHelper';
 import { usePreference } from '../../shared/preferences';
 import { readTextFile, parseKmlElements } from '../../services/fileService';
 import { useMissionFile } from '../../services/useMissionFile';
+import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 import { getMissionCentroid } from '../../shared/util/missionGeo';
 
 const Navbar = React.memo(
@@ -86,7 +87,7 @@ const Navbar = React.memo(
         title: 'Report',
         submenu: [
           { title: 'Missions', action: () => navigate('/reports/mission') },
-          { title: 'Routes', action: () => navigate('/reports/route') },
+          { title: 'Tasks', action: () => navigate('/reports/task') },
           { title: 'events', action: () => navigate('/reports/events') },
         ],
       },
@@ -103,10 +104,15 @@ const Navbar = React.memo(
 
     const readFile = (e) => handleMissionFile(e.target.files[0]);
 
+    // KML <coordinates> are imported as 'Power Tower' elements — resolved by name
+    // since the catalog's PK is an opaque autoincrement id, not a stable slug.
+    const { types: markerTypes } = useMarkerTypes();
+
     const loadElements = (e) => {
       const file = e.target.files[0];
       readTextFile(file, ({ data }) => {
-        const result = parseKmlElements(data);
+        const towerTypeId = markerTypes.find((type) => type.name === 'Power Tower')?.id;
+        const result = parseKmlElements(data, towerTypeId);
         if (!result) return;
         if (result.kind === 'bases') {
           dispatch(sessionActions.addMarkerBase(result.markers));

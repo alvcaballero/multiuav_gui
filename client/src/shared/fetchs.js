@@ -1,6 +1,8 @@
-// Command an already-loaded mission by its id. The mission + routes were created
-// by commandLoadMission; the server commands each LOADED route. Returns
-// { missionId, results: [{ deviceId, state, msg }] }.
+import { routesToTasks } from '../map/MissionConvert';
+
+// Command an already-loaded mission by its id. The mission + tasks were created
+// by commandLoadMission; the server commands each LOADED root task and the
+// scheduler runs the rest. Returns { missionId, results: [{ deviceId, taskKey, state, msg }] }.
 export const commandMission = async (missionId) => {
   if (missionId == null) {
     throw new Error('No hay misión cargada: cargá o seleccioná una misión antes de comandar');
@@ -21,10 +23,12 @@ export const commandMission = async (missionId) => {
   throw new Error('Error in commandMission: ' + (await response.text()));
 };
 
-// Load a mission: creates MissionPlan + Mission + Routes (LOADED) and loads each
-// drone. Returns { missionId, planId, results: [{ deviceId, name, state, msg }] }.
+// Load a mission: creates MissionPlan + Mission + every task, and loads the root
+// tasks (no dependencies) on their devices. The editor's routes are sent as tasks[]
+// so dependencies of a plan loaded from a task graph survive the round trip.
+// Returns { missionId, planId, results: [{ deviceId, name, taskKey, state, msg }] }.
 export const commandLoadMission = async (missions) => {
-  const data = { route: missions.route };
+  const data = { name: missions.name, tasks: routesToTasks(missions.route) };
 
   const response = await fetch('/api/missions/load', {
     method: 'POST',
@@ -38,7 +42,15 @@ export const commandLoadMission = async (missions) => {
     }
     return myresponse;
   }
-  throw new Error(await response.text());
+  // An invalid task graph comes back as 400 { error, errors }: show the message, not raw JSON.
+  const body = await response.text();
+  let message = body;
+  try {
+    message = JSON.parse(body).error ?? body;
+  } catch {
+    // not JSON — show the body as is
+  }
+  throw new Error(message);
 };
 
 export const addDevice = async (device) => {

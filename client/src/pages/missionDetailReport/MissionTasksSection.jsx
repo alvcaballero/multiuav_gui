@@ -14,20 +14,30 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { isImageFile, isVideoFile } from './fileKind';
 import { formatTime } from '../../shared/formatter';
 import { eventColor } from '../../shared/eventStyle';
 
-const ROUTE_ITEMS = 'id,initTime,endTime,status,deviceId,result';
+const TASK_ITEMS = [
+  'id',
+  'taskKey',
+  'action',
+  'dependsOn',
+  'initTime',
+  'endTime',
+  'status',
+  'deviceId',
+  'errorMessage',
+  'result',
+];
 
-// Events carry deviceId + eventTime but no routeId, so a route's events are
-// whatever that device logged while the route was running (endTime unset ⇒ still running).
-const routeEvents = (events, route) => {
-  const start = new Date(route.initTime).getTime();
-  const end = route.endTime ? new Date(route.endTime).getTime() : Date.now();
+// Events carry deviceId + eventTime but no taskId, so a task's events are
+// whatever that device logged while the task was running (endTime unset ⇒ still running).
+const taskEvents = (events, task) => {
+  const start = new Date(task.initTime).getTime();
+  const end = task.endTime ? new Date(task.endTime).getTime() : Date.now();
   return (events ?? [])
-    .filter((event) => event.deviceId === route.deviceId)
+    .filter((event) => event.deviceId === task.deviceId)
     .filter((event) => {
       const time = new Date(event.eventTime).getTime();
       return time >= start && time <= end;
@@ -35,7 +45,7 @@ const routeEvents = (events, route) => {
     .sort((a, b) => new Date(a.eventTime) - new Date(b.eventTime));
 };
 
-const RouteEvents = ({ items }) => (
+const TaskEvents = ({ items }) => (
   <TableContainer>
     <Table size="small">
       <TableHead>
@@ -112,35 +122,36 @@ const FileGrid = ({ items, onSelectFile }) => (
   </ImageList>
 );
 
-const MissionRoutesSection = ({ routes, files, events, formatValue, onSelectFile }) => (
+const taskValue = (task, key, formatValue) => {
+  if (key === 'status') return formatValue(task, key, 'task');
+  const text =
+    key === 'dependsOn' ? (task.dependsOn ?? []).join(', ') || '—' : formatValue(task, key);
+  return <Typography variant="body1">{text}</Typography>;
+};
+
+const MissionTasksSection = ({ tasks, files, events, formatValue, onSelectFile }) => (
   <>
-    {routes.map((route, routeIndex) => {
-      const routeFiles = (files ?? []).filter((item) => item && item.routeId == route.id);
-      const images = routeFiles.filter((item) => isImageFile(item.name));
-      const videos = routeFiles.filter((item) => isVideoFile(item.name));
-      const items = routeEvents(events, route);
+    {tasks.map((task) => {
+      const taskFiles = (files ?? []).filter((item) => item && item.taskId == task.id);
+      const images = taskFiles.filter((item) => isImageFile(item.name));
+      const videos = taskFiles.filter((item) => isVideoFile(item.name));
+      const items = taskEvents(events, task);
 
       return (
-        <div key={`rt${routeIndex}`}>
+        <div key={task.id}>
           <Divider style={{ margin: '40px 0' }} />
           <Typography variant="h5" gutterBottom>
-            {`Ruta-${routeIndex}`}
+            {task.action ? `${task.taskKey} · ${task.action}` : task.taskKey}
           </Typography>
           <Grid container spacing={2}>
-            {ROUTE_ITEMS.split(',')
-              .filter((key) => route.hasOwnProperty(key))
-              .map((key) => (
-                <Grid size={6} key={`rt${routeIndex}_${key}`}>
-                  <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                    {key}
-                  </Typography>
-                  {key === 'status' ? (
-                    formatValue(route, key, 'route')
-                  ) : (
-                    <Typography variant="body1">{formatValue(route, key)}</Typography>
-                  )}
-                </Grid>
-              ))}
+            {TASK_ITEMS.filter((key) => task.hasOwnProperty(key)).map((key) => (
+              <Grid size={6} key={`${task.id}_${key}`}>
+                <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
+                  {key}
+                </Typography>
+                {taskValue(task, key, formatValue)}
+              </Grid>
+            ))}
           </Grid>
 
           {items.length > 0 && (
@@ -148,7 +159,7 @@ const MissionRoutesSection = ({ routes, files, events, formatValue, onSelectFile
               <Typography variant="h6" gutterBottom style={{ marginTop: '20px' }}>
                 {`Eventos (${items.length})`}
               </Typography>
-              <RouteEvents items={items} />
+              <TaskEvents items={items} />
             </>
           )}
 
@@ -175,4 +186,4 @@ const MissionRoutesSection = ({ routes, files, events, formatValue, onSelectFile
   </>
 );
 
-export default MissionRoutesSection;
+export default MissionTasksSection;

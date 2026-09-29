@@ -6,7 +6,7 @@ import { useCatch } from '../../reactHelper';
 import { validateUniqueDevices, transformLocationsForAPI } from '../../services/planningService';
 
 export const usePlanningActions = ({
-  SendTask,
+  missionRequest,
   markers,
   myhostname,
   setNotification,
@@ -63,8 +63,8 @@ export const usePlanningActions = ({
 
   const SendPlanning = useCatch(async () => {
     setNotification('');
-    const legacyPlanning = planningToLegacy(SendTask, markers);
-    const assignments = SendTask.assignments || [];
+    const legacyPlanning = planningToLegacy(missionRequest, markers);
+    const assignments = missionRequest.assignments || [];
 
     const validation = validateUniqueDevices(assignments);
     if (!validation.isValid) {
@@ -92,22 +92,22 @@ export const usePlanningActions = ({
     return true;
   });
 
-  const MissionTask = useCatch(async () => {
-    const myTask = {
-      id: SendTask.id,
-      name: SendTask.name,
-      objetivo: SendTask.objetivo.id,
-      meteo: SendTask.meteo,
-      locations: SendTask.loc.map((group) => ({
+  const requestMission = useCatch(async () => {
+    const payload = {
+      id: missionRequest.id,
+      name: missionRequest.name,
+      objetivo: missionRequest.objetivo.id,
+      meteo: missionRequest.meteo,
+      locations: missionRequest.loc.map((group) => ({
         name: group.name,
         items: group.items.map(({ latitude, longitude }) => ({ latitude, longitude })),
       })),
     };
 
-    const response = await fetch('/api/missions/sendTask', {
+    const response = await fetch('/api/missions/requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(myTask),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) throw new Error(await response.text());
   });
@@ -131,5 +131,5 @@ export const usePlanningActions = ({
     return await response.json();
   });
 
-  return { SendPlanning, MissionTask, SavePlanning, setDefaultPlanning };
+  return { SendPlanning, requestMission, SavePlanning, setDefaultPlanning };
 };

@@ -9,12 +9,12 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { formatTime } from '../shared/formatter';
-import { missionStyle, routeStyle } from '../shared/missionStatus';
+import { missionStyle, taskStyle } from '../shared/missionStatus';
 
 import { useAsyncTask } from '../reactHelper';
 import ImageFull from './missionDetailReport/ImageFull';
 import MissionSummarySection from './missionDetailReport/MissionSummarySection';
-import MissionRoutesSection from './missionDetailReport/MissionRoutesSection';
+import MissionTasksSection from './missionDetailReport/MissionTasksSection';
 import MissionMapPanel from './missionDetailReport/MissionMapPanel';
 
 const useStyles = makeStyles()((theme) => ({
@@ -62,18 +62,19 @@ const MissionDetailReportPage = () => {
 
   const [missions, setMissions] = useState(null);
   const [dataParam, setDataParam] = useState(null);
-  const [routes, setRoutes] = useState(null);
+  const [tasks, setTasks] = useState(null);
 
   const [files, setFiles] = useState(null);
   const [selectFile, setSelectFile] = useState(null);
   const [events, setEvents] = useState(null);
   const [positions, setPositions] = useState(null);
 
-  const routePath = missions?.mission?.route ?? null;
+  // Planned path: legacy plans carry route[], task-graph plans tasks[] — both with wp[].
+  const routePath = missions?.mission?.route ?? missions?.mission?.tasks ?? null;
 
   const dataMission = useMemo(() => {
-    if (!missions?.task?.devices) return null;
-    return Object.values(missions.task.devices)
+    if (!missions?.request?.devices) return null;
+    return Object.values(missions.request.devices)
       .filter((deviceValue) => deviceValue?.settings?.base)
       .map((deviceValue) => ({
         baseId: deviceValue.id,
@@ -84,8 +85,8 @@ const MissionDetailReportPage = () => {
 
   const missionMarkers = useMemo(() => {
     const myBases = [];
-    if (missions?.task?.devices) {
-      Object.values(missions.task.devices).forEach((deviceValue) => {
+    if (missions?.request?.devices) {
+      Object.values(missions.request.devices).forEach((deviceValue) => {
         if (deviceValue?.settings?.base) {
           myBases.push({
             id: deviceValue.id,
@@ -95,23 +96,23 @@ const MissionDetailReportPage = () => {
         }
       });
     }
-    const myElements = missions?.task?.locations
-      ? missions.task.locations.map((item) => ({ ...item, type: 'locPoint' }))
+    const myElements = missions?.request?.locations
+      ? missions.request.locations.map((item) => ({ ...item, type: 'locPoint' }))
       : [];
     return { bases: myBases, elements: myElements };
   }, [missions]);
 
-  // The actually-flown path, one track per route: recorded positions for that
-  // route's device within its [initTime, endTime] window, kept with their
+  // The actually-flown path, one track per task: recorded positions for that
+  // task's device within its [initTime, endTime] window, kept with their
   // fixTime so the playback slider can scrub through them.
   const routeTracks = useMemo(() => {
-    if (!routes || !positions) return [];
-    return routes
-      .map((route, routeIndex) => {
-        const start = new Date(route.initTime).getTime();
-        const end = route.endTime ? new Date(route.endTime).getTime() : Date.now();
+    if (!tasks || !positions) return [];
+    return tasks
+      .map((task, taskIndex) => {
+        const start = new Date(task.initTime).getTime();
+        const end = task.endTime ? new Date(task.endTime).getTime() : Date.now();
         const trackPositions = positions
-          .filter((position) => position.deviceId === route.deviceId)
+          .filter((position) => position.deviceId === task.deviceId)
           .filter((position) => position.longitude != null && position.latitude != null)
           .filter((position) => {
             const time = new Date(position.fixTime).getTime();
@@ -119,15 +120,15 @@ const MissionDetailReportPage = () => {
           })
           .sort((a, b) => new Date(a.fixTime) - new Date(b.fixTime));
         return {
-          id: route.id ?? routeIndex,
-          deviceId: route.deviceId,
+          id: task.id ?? taskIndex,
+          deviceId: task.deviceId,
           startTime: start,
           endTime: end,
           positions: trackPositions,
         };
       })
       .filter((track) => track.positions.length > 1);
-  }, [routes, positions]);
+  }, [tasks, positions]);
 
   const devices = useSelector((state) => state.devices.items);
 
@@ -137,7 +138,7 @@ const MissionDetailReportPage = () => {
     setTabValue(newTabValue);
   };
 
-  // `axis` selects the status vocabulary: mission and route status share names
+  // `axis` selects the status vocabulary: mission and task status share names
   // ('running', etc.) but mean different things, so each has its own color map.
   const formatValue = (item, key, axis = 'mission') => {
     const value = item[key];
@@ -146,9 +147,9 @@ const MissionDetailReportPage = () => {
     }
     switch (key) {
       case 'deviceId':
-        return devices[value].name;
+        return devices[value]?.name ?? '—';
       case 'uav': {
-        const uavsName = value.map((uav) => devices[uav].name);
+        const uavsName = value.map((uav) => devices[uav]?.name ?? uav);
         return uavsName.join(', ');
       }
       case 'initTime':
@@ -157,7 +158,7 @@ const MissionDetailReportPage = () => {
         return formatTime(value, 'minutes');
 
       case 'status': {
-        const style = axis === 'route' ? routeStyle(value) : missionStyle(value);
+        const style = axis === 'task' ? taskStyle(value) : missionStyle(value);
         return <Chip label={style.label} sx={{ backgroundColor: style.color, color: '#fff' }} />;
       }
       case 'result':
@@ -176,12 +177,11 @@ const MissionDetailReportPage = () => {
     } else {
       throw Error(await response.text());
     }
-    const response2 = await fetch(`/api/missions/routes?missionId=${id}`);
-    let myroutes = [];
+    const response2 = await fetch(`/api/missions/tasks?missionId=${id}`);
+    let mytasks = [];
     if (response2.ok) {
-      myroutes = await response2.json();
-      setRoutes(myroutes);
-      console.log(myroutes);
+      mytasks = await response2.json();
+      setTasks(mytasks);
     } else {
       throw Error(await response.text());
     }
@@ -194,15 +194,15 @@ const MissionDetailReportPage = () => {
       throw Error(await response.text());
     }
 
-    // Events carry no routeId of their own, only deviceId + eventTime, so we
+    // Events carry no taskId of their own, only deviceId + eventTime, so we
     // fetch every event across the mission's full time span once here and let
-    // MissionRoutesSection narrow it down per route (deviceId + time window).
-    const initTimes = myroutes
-      .map((route) => new Date(route.initTime).getTime())
+    // MissionTasksSection narrow it down per task (deviceId + time window).
+    const initTimes = mytasks
+      .map((task) => new Date(task.initTime).getTime())
       .filter((time) => !Number.isNaN(time));
     if (initTimes.length > 0) {
-      const endTimes = myroutes
-        .map((route) => (route.endTime ? new Date(route.endTime).getTime() : Date.now()))
+      const endTimes = mytasks
+        .map((task) => (task.endTime ? new Date(task.endTime).getTime() : Date.now()))
         .filter((time) => !Number.isNaN(time));
       const params = new URLSearchParams({
         from: new Date(Math.min(...initTimes)).toISOString(),
@@ -217,9 +217,9 @@ const MissionDetailReportPage = () => {
 
       // Positions history requires a single deviceId per request (server-side
       // constraint), so fetch one call per device involved in the mission and
-      // concatenate — MissionRoutesSection then narrows per route (deviceId +
+      // concatenate — MissionTasksSection then narrows per task (deviceId +
       // time window), similar to events above.
-      const deviceIds = [...new Set(myroutes.map((route) => route.deviceId))];
+      const deviceIds = [...new Set(mytasks.map((task) => task.deviceId).filter((d) => d != null))];
       const positionResponses = await Promise.all(
         deviceIds.map((deviceId) =>
           fetch(
@@ -242,10 +242,10 @@ const MissionDetailReportPage = () => {
     if (
       missions &&
       missions.hasOwnProperty('task') &&
-      missions.task &&
-      missions.task.hasOwnProperty('case')
+      missions.request &&
+      missions.request.hasOwnProperty('case')
     ) {
-      const response = await fetch(`/api/planning/missionparam/${missions.task.case}`);
+      const response = await fetch(`/api/planning/missionparam/${missions.request.case}`);
       if (response.ok) {
         const myParamSettings = await response.json();
         console.log(myParamSettings);
@@ -283,9 +283,9 @@ const MissionDetailReportPage = () => {
                 formatResult={formatResult}
               />
             )}
-            {routes && (
-              <MissionRoutesSection
-                routes={routes}
+            {tasks && (
+              <MissionTasksSection
+                tasks={tasks}
                 files={files}
                 events={events}
                 formatValue={formatValue}

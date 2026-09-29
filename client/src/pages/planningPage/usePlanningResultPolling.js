@@ -9,7 +9,7 @@ const SUCCESS_CODE = 100;
 export const usePlanningResultPolling = ({
   requestPlanning,
   setRequestPlanning,
-  sendTaskId,
+  missionRequestId,
   myhostname,
   dispatch,
 }) => {
@@ -20,11 +20,11 @@ export const usePlanningResultPolling = ({
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${sendTaskId}`);
+        const response = await fetch(`http://${myhostname}:8004/get_plan?IDs=${missionRequestId}`);
         if (!response.ok) throw new Error('Network response was not ok');
 
         const data = await response.json();
-        const planResult = data.results?.[sendTaskId];
+        const planResult = data.results?.[missionRequestId];
         if (cancelled) return;
         if (planResult?.hasOwnProperty('route')) {
           setRequestPlanning(SUCCESS_CODE);
@@ -46,5 +46,5 @@ export const usePlanningResultPolling = ({
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, [requestPlanning, sendTaskId, dispatch, myhostname, setRequestPlanning]);
+  }, [requestPlanning, missionRequestId, dispatch, myhostname, setRequestPlanning]);
 };

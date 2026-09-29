@@ -3,6 +3,7 @@ import { useDispatch, useSelector, useStore, shallowEqual } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
 import {
+  Autocomplete,
   Box,
   Button,
   IconButton,
@@ -22,7 +23,7 @@ import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';
 import { applyUavTypeDefaults } from '../../store/mission';
 import { useAsyncTask } from '../../reactHelper';
-import { DEFAULT_UAV_TYPE } from './missionDefaults';
+import { DEFAULT_UAV_TYPE, TASK_ACTION_SUGGESTIONS } from './missionDefaults';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -100,6 +101,44 @@ const AttributeField = ({ attrDef, value, uavType, onChange, disabled = false })
   );
 };
 
+// Task-graph fields: the route is a task of the mission (see server taskGraph.js).
+// Graph rules (cycles, two unordered tasks on one UAV) are validated by the server on
+// load; here the UI only offers the OTHER routes, so a task can't depend on itself.
+const TaskFields = ({ route, taskOptions, onChange, disabled }) => {
+  const others = taskOptions.filter((o) => o.id !== route.task_id);
+  const labelOf = (id) => others.find((o) => o.id === id)?.label ?? id;
+
+  return (
+    <Fragment>
+      <TextField disabled label="Task ID" variant="standard" value={route.task_id ?? ''} />
+      <Autocomplete
+        freeSolo
+        disabled={disabled}
+        options={TASK_ACTION_SUGGESTIONS}
+        inputValue={route.action ?? ''}
+        onInputChange={(_, value) => onChange('action', value)}
+        renderInput={(params) => <TextField {...params} label="Action" variant="standard" />}
+      />
+      <Autocomplete
+        multiple
+        disabled={disabled}
+        options={others.map((o) => o.id)}
+        value={route.depends_on ?? []}
+        getOptionLabel={labelOf}
+        onChange={(_, value) => onChange('depends_on', value)}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Depends on"
+            variant="standard"
+            helperText="Starts once these tasks reach their last waypoint"
+          />
+        )}
+      />
+    </Fragment>
+  );
+};
+
 const RouteOptions = ({ index, route, uavType, NoEdit = false }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
@@ -142,7 +181,14 @@ const RouteOptions = ({ index, route, uavType, NoEdit = false }) => {
   );
 };
 
-const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }) => {
+const RouteRoutesList = ({
+  index,
+  route,
+  taskOptions = [],
+  expanded,
+  setExpanded,
+  NoEdit = false,
+}) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   // Only re-render on id/name/category changes for the matched device - not on
@@ -229,14 +275,19 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }
       <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography
           sx={{
-            width: '33%',
+            minWidth: '33%',
+            mr: 1,
             flexShrink: 0,
+            whiteSpace: 'nowrap',
             color: palette.colors_devices[route.id],
           }}
         >
-          {'Rute ' + index}
+          {(route.task_id ?? 'Rute ' + index) + (route.action ? ' · ' + route.action : '')}
         </Typography>
-        <Typography sx={{ color: 'text.secondary' }}>{route.name + '- ' + route.uav}</Typography>
+        <Typography sx={{ color: 'text.secondary' }}>
+          {route.name + '- ' + route.uav}
+          {route.depends_on?.length > 0 && ` ← ${route.depends_on.join(', ')}`}
+        </Typography>
         {!NoEdit && (
           <IconButton
             sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
@@ -280,6 +331,13 @@ const RouteRoutesList = ({ index, route, expanded, setExpanded, NoEdit = false }
               titleGetter={(it) => it}
               label={'Type UAV mission'}
               style={{ display: 'inline', width: '200px' }}
+            />
+
+            <TaskFields
+              route={route}
+              taskOptions={taskOptions}
+              onChange={handleRouteFieldChange}
+              disabled={NoEdit}
             />
 
             <RouteOptions index={index} route={route} uavType={route.uav_type} NoEdit={NoEdit} />

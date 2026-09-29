@@ -205,7 +205,7 @@ const MissionElevation = memo(({ active = true }) => {
         const result = await response.json();
         if (result.status && result.elevation) {
           const elevationData = result.elevation.map((route, idx) => ({
-            name: `RT${idx}`,
+            name: missionRoute[idx]?.task_id ?? `RT${idx}`,
             data: route,
             color: palette.colors_devices[missionRoute[idx]?.id],
           }));

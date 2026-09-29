@@ -97,21 +97,21 @@ const PlanningPage = () => {
   const myhostname = `${window.location.hostname}`;
 
   const markers = useSelector((state) => state.session.markers);
-  const SendTask = useSelector((state) => state.session.planning);
+  const missionRequest = useSelector((state) => state.session.planning);
   const routeMission = useSelector((state) => state.mission.route);
 
-  const sendTaskRef = useRef(SendTask);
+  const missionRequestRef = useRef(missionRequest);
   useEffect(() => {
-    sendTaskRef.current = SendTask;
-  }, [SendTask]);
+    missionRequestRef.current = missionRequest;
+  }, [missionRequest]);
 
   const [auxobjetive, setAuxobjetive] = useState(-1);
   const [tabValue, setTabValue] = useState(TABS.PLANNING);
   const [notification, setNotification] = useState('');
   const [checked, setChecked] = useState(true);
 
-  const { SendPlanning, MissionTask, SavePlanning, setDefaultPlanning } = usePlanningActions({
-    SendTask,
+  const { SendPlanning, requestMission, SavePlanning, setDefaultPlanning } = usePlanningActions({
+    missionRequest,
     markers,
     myhostname,
     setNotification,
@@ -126,7 +126,7 @@ const PlanningPage = () => {
     addLocations,
     setBaseSettings,
     updateObjetive,
-  } = usePlanningReduxHandlers({ dispatch, markers, SendTask, sendTaskRef });
+  } = usePlanningReduxHandlers({ dispatch, markers, missionRequest, missionRequestRef });
 
   // --- Handlers de UI ---
 
@@ -137,17 +137,17 @@ const PlanningPage = () => {
       const fileReader = new FileReader();
       fileReader.readAsText(file);
       fileReader.onload = () => {
-        let myTask = YAML.parse(fileReader.result);
+        let nextRequest = YAML.parse(fileReader.result);
         dispatch(
           sessionActions.updateMarker({
             ...markers,
-            bases: myTask.markersbase || markers.bases,
-            elements: myTask.elements || markers.elements,
+            bases: nextRequest.markersbase || markers.bases,
+            elements: nextRequest.elements || markers.elements,
           }),
         );
-        delete myTask.markersbase;
-        delete myTask.elements;
-        dispatch(sessionActions.updatePlanning(myTask));
+        delete nextRequest.markersbase;
+        delete nextRequest.elements;
+        dispatch(sessionActions.updatePlanning(nextRequest));
       };
     },
     [dispatch, markers],
@@ -172,31 +172,38 @@ const PlanningPage = () => {
   const handleNavigateBack = useCallback(() => navigate(-1), [navigate]);
 
   const handleSavePlanning = useCallback(
-    () => SavePlanning({ ...SendTask, markersbase: markers.bases, elements: markers.elements }),
-    [SavePlanning, SendTask, markers.bases, markers.elements],
+    () =>
+      SavePlanning({ ...missionRequest, markersbase: markers.bases, elements: markers.elements }),
+    [SavePlanning, missionRequest, markers.bases, markers.elements],
   );
 
   const handleSaveGlobalMarkers = useCallback(async () => {
     const response = await setDefaultPlanning({
-      ...SendTask,
+      ...missionRequest,
       markersbase: markers.bases,
       elements: markers.elements,
     });
     if (response) {
       dispatch(
-        sessionActions.updateMarker({ ...markers, bases: response.markersbase, elements: response.elements }),
+        sessionActions.updateMarker({
+          ...markers,
+          bases: response.markersbase,
+          elements: response.elements,
+        }),
       );
     }
-  }, [setDefaultPlanning, SendTask, markers, dispatch]);
+  }, [setDefaultPlanning, missionRequest, markers, dispatch]);
 
   const handleUpdatePlanningId = useCallback(
-    (event) => dispatch(sessionActions.updatePlanning({ ...SendTask, id: event.target.value })),
-    [dispatch, SendTask],
+    (event) =>
+      dispatch(sessionActions.updatePlanning({ ...missionRequest, id: event.target.value })),
+    [dispatch, missionRequest],
   );
 
   const handleUpdatePlanningName = useCallback(
-    (event) => dispatch(sessionActions.updatePlanning({ ...SendTask, name: event.target.value })),
-    [dispatch, SendTask],
+    (event) =>
+      dispatch(sessionActions.updatePlanning({ ...missionRequest, name: event.target.value })),
+    [dispatch, missionRequest],
   );
 
   const handleUpdateObjective = useCallback(
@@ -218,7 +225,7 @@ const PlanningPage = () => {
   // --- Effects ---
 
   useAsyncTask(async () => {
-    const objetivoId = SendTask?.objetivo?.id;
+    const objetivoId = missionRequest?.objetivo?.id;
     if (objetivoId === undefined || objetivoId === null) return;
     // Re-fetch when the objetivo id actually changes, OR when it's still the
     // same id but settingsSchema hasn't been populated yet — this covers the
@@ -227,7 +234,7 @@ const PlanningPage = () => {
     // arrives: auxobjetive gets "used up" on the default, and a same-id real
     // snapshot would otherwise never trigger the fetch that fills in
     // settingsSchema/defaultSettings.
-    const schemaAlreadyLoaded = Object.keys(SendTask?.settingsSchema || {}).length > 0;
+    const schemaAlreadyLoaded = Object.keys(missionRequest?.settingsSchema || {}).length > 0;
     if (auxobjetive === objetivoId && schemaAlreadyLoaded) return;
 
     setAuxobjetive(objetivoId);
@@ -241,28 +248,28 @@ const PlanningPage = () => {
       Object.entries(paramsResponse.settings).map(([k, v]) => [k, v.default]),
     );
 
-    const myTask = structuredClone(SendTask);
-    myTask.settingsSchema = paramsResponse;
-    myTask.defaultSettings = defaultConfig;
-    if (!myTask.assignments) myTask.assignments = [];
-    myTask.assignments = myTask.assignments.map((a) => ({
+    const nextRequest = structuredClone(missionRequest);
+    nextRequest.settingsSchema = paramsResponse;
+    nextRequest.defaultSettings = defaultConfig;
+    if (!nextRequest.assignments) nextRequest.assignments = [];
+    nextRequest.assignments = nextRequest.assignments.map((a) => ({
       ...a,
       settings: { ...defaultConfig, ...a.settings },
     }));
-    dispatch(sessionActions.updatePlanning(myTask));
-    // SendTask/dispatch intentionally excluded: this must only re-run when the
-    // objetivo (task type) changes, not on every SendTask field mutation this
+    dispatch(sessionActions.updatePlanning(nextRequest));
+    // missionRequest/dispatch intentionally excluded: this must only re-run when the
+    // objetivo (mission type) changes, not on every missionRequest field mutation this
     // same effect causes via updatePlanning — auxobjetive guards re-entrancy
-  }, [SendTask.objetivo, auxobjetive]); // eslint-disable-line @eslint-react/exhaustive-deps
+  }, [missionRequest.objetivo, auxobjetive]); // eslint-disable-line @eslint-react/exhaustive-deps
 
   const isInPlanningTab = tabValue === TABS.PLANNING;
-  const SelectMarkers = isInPlanningTab && SendTask.objetivo.id !== 3;
-  const CreateMarkers = isInPlanningTab && SendTask.objetivo.id === 3;
+  const SelectMarkers = isInPlanningTab && missionRequest.objetivo.id !== 3;
+  const CreateMarkers = isInPlanningTab && missionRequest.objetivo.id === 3;
 
   usePlanningResultPolling({
     requestPlanning,
     setRequestPlanning,
-    sendTaskId: SendTask.id,
+    missionRequestId: missionRequest.id,
     myhostname,
     dispatch,
   });
@@ -276,7 +283,7 @@ const PlanningPage = () => {
           {checked && <MapMissions routes={routeMission} />}
           <MapMarkersCreate
             markers={markers}
-            selectMarkers={SendTask.loc}
+            selectMarkers={missionRequest.loc}
             showTitles={showTitles}
             showLines={showLines}
             moveMarkers={moveMarkers}
@@ -321,7 +328,7 @@ const PlanningPage = () => {
                 </TabPanel>
                 <TabPanel value={TABS.PLANNING} sx={{ padding: 0 }}>
                   <PlanningTab
-                    sendTask={SendTask}
+                    missionRequest={missionRequest}
                     onUpdateId={handleUpdatePlanningId}
                     onUpdateName={handleUpdatePlanningName}
                     onUpdateObjective={handleUpdateObjective}
@@ -331,14 +338,14 @@ const PlanningPage = () => {
                 </TabPanel>
                 <TabPanel value={TABS.SETTINGS} sx={{ padding: 0 }}>
                   <SettingsTab
-                    sendTask={SendTask}
+                    missionRequest={missionRequest}
                     markers={markers}
                     notification={notification}
                     onSetBaseSettings={setBaseSettings}
                     onGoToBase={goToBase}
                     onSendPlanning={SendPlanning}
                     onResetPolling={handleResetPolling}
-                    onMissionTask={MissionTask}
+                    onRequestMission={requestMission}
                     onSaveGlobalMarkers={handleSaveGlobalMarkers}
                   />
                 </TabPanel>

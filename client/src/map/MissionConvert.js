@@ -9,11 +9,57 @@ const ROUTE_CONVERT_ATTRS = [
 ];
 
 export const RuteConvert = (data) => {
-  if (data.version == '3') {
-    return RuteConvertv3(data.route);
+  if (Array.isArray(data.tasks)) {
+    return withTaskIds(RuteConvertv3(tasksToEditorRoutes(data.tasks)));
   }
-  return RuteConvertlegacy(data);
+  if (data.version == '3') {
+    return withTaskIds(RuteConvertv3(data.route));
+  }
+  return withTaskIds(RuteConvertlegacy(data));
 };
+
+// First free `T<n>`. A task id is assigned once and kept: deriving it from the route's
+// position would rename a task (and break every depends_on pointing at it) whenever
+// an earlier route is deleted.
+export const nextTaskId = (routes) => {
+  const used = new Set(routes.map((r) => r.task_id));
+  let n = 1;
+  while (used.has(`T${n}`)) n += 1;
+  return `T${n}`;
+};
+
+// Routes from legacy plans/files have no task_id: give each a stable one so it can be
+// referenced in depends_on. In order, so a legacy route[] gets the same T1..Tn the
+// server's route[] adapter would assign.
+const withTaskIds = (routes) => {
+  const assigned = routes.map((r) => ({ ...r }));
+  for (const r of assigned) {
+    if (!r.task_id) r.task_id = nextTaskId(assigned);
+  }
+  return assigned;
+};
+
+// The editor edits a task-graph plan (v4) as routes. Each route keeps its task's
+// task_id/depends_on/action so sending it back (routesToTasks) keeps the dependencies.
+const TASK_META = ['task_id', 'depends_on', 'action'];
+
+const tasksToEditorRoutes = (tasks) =>
+  tasks.map(({ device, params, ...rest }) => ({ ...rest, uav: device, attributes: params ?? {} }));
+
+// Editor routes → task-graph wire format (server taskGraph.js).
+export const routesToTasks = (routes) =>
+  withTaskIds(routes).map((route) => {
+    const { uav, attributes, task_id, depends_on, action, ...rest } = route;
+    delete rest.id; // the editor's list index, not part of the wire format
+    return {
+      ...rest,
+      task_id,
+      device: uav,
+      action: action || 'ROUTE',
+      depends_on: depends_on ?? [],
+      params: attributes ?? {},
+    };
+  });
 
 export const RuteConvertv3 = (route) => {
   const rt = [];
@@ -28,6 +74,9 @@ export const RuteConvertv3 = (route) => {
       attributes: {},
     };
     if ('uav' in src) dst.uav = src.uav;
+    TASK_META.forEach((key) => {
+      if (key in src) dst[key] = src[key];
+    });
 
     // Waypoints
     if (Array.isArray(src.wp)) {

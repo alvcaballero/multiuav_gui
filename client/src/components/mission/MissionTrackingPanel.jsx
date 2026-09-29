@@ -4,13 +4,13 @@ import { Box, Chip, Collapse, List, ListItemButton, ListItemText, Typography } f
 import { activeMissionsActions } from '../../store';
 import { missionStyle } from '../../shared/missionStatus';
 import { loadMissionPlanToEditor } from '../../services/missionPlanLoader';
-import RouteTrackingRow from './RouteTrackingRow';
+import TaskTrackingRow from './TaskTrackingRow';
 
-// One mission row, extracted (like RouteTrackingRow) so it only re-renders
+// One mission row, extracted (like TaskTrackingRow) so it only re-renders
 // when its own mission/selection data changes, not on every telemetry tick
 // that touches a sibling mission in the list.
 const MissionTrackingRow = React.memo(({ mission, isSelected, devicesMap, onSelect }) => {
-  const routes = Object.values(mission.routes);
+  const tasks = Object.values(mission.tasks);
 
   return (
     <Box>
@@ -36,18 +36,16 @@ const MissionTrackingRow = React.memo(({ mission, isSelected, devicesMap, onSele
 
       <Collapse in={isSelected} unmountOnExit>
         <Box sx={{ bgcolor: 'action.hover', pb: 0.5 }}>
-          {routes.length === 0 ? (
+          {tasks.length === 0 ? (
             <Typography
               variant="caption"
               sx={{ px: 2, py: 0.5, display: 'block' }}
               color="text.secondary"
             >
-              No routes yet
+              No tasks yet
             </Typography>
           ) : (
-            routes.map((r) => (
-              <RouteTrackingRow key={r.deviceId} route={r} devicesMap={devicesMap} />
-            ))
+            tasks.map((t) => <TaskTrackingRow key={t.id} task={t} devicesMap={devicesMap} />)
           )}
         </Box>
       </Collapse>

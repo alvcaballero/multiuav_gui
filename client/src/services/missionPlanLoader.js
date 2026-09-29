@@ -2,7 +2,7 @@ import { missionActions } from '../store';
 import { map } from '../map/core/mapInstance';
 
 const flyToMission = (missionData) => {
-  const firstWp = missionData?.route?.[0]?.wp?.[0];
+  const firstWp = (missionData?.route ?? missionData?.tasks)?.[0]?.wp?.[0];
   if (!firstWp || !map) return;
   const [lat, lon] = Array.isArray(firstWp.pos) ? firstWp.pos : [firstWp.pos.lat, firstWp.pos.lon];
   map.easeTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), 14) });
@@ -31,9 +31,10 @@ export const loadMissionPlanToEditor = async (missionId, dispatch) => {
     const missionData = plan.missionData;
     if (!missionData) return;
 
-    // Manual/plan missionData uses the current route format; force version '3'
-    // so updateMission parses it with RuteConvert (not the legacy parser).
-    dispatch(missionActions.updateMission({ ...missionData, version: '3', name: mission?.name }));
+    // Plans are either task graphs (tasks[], v4) or the current route format; tag
+    // route[] plans '3' so updateMission parses them with RuteConvert, not the legacy parser.
+    const version = missionData.tasks ? '4' : '3';
+    dispatch(missionActions.updateMission({ ...missionData, version, name: mission?.name }));
     flyToMission(missionData);
   } catch {
     // fetch failed — silently skip map load

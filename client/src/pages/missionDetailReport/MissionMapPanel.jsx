@@ -76,6 +76,7 @@ const MissionMapPanel = ({
       routeTracks.map((track) => ({
         id: track.id,
         deviceId: track.deviceId,
+        routeKey: track.routeKey,
         points: track.positions.map((position) => [position.longitude, position.latitude]),
       })),
     [routeTracks],
@@ -153,14 +154,14 @@ const MissionMapPanel = ({
               )}
             </TabPanel>
             <TabPanel value="2" sx={{ p: 1 }}>
-              {missions.task && (
+              {missions.request && (
                 <>
                   <SelectField
                     emptyValue={null}
                     fullWidth
                     disabled
                     label="objetive"
-                    value={missions.task.case}
+                    value={missions.request.case}
                     onChange={noop}
                     endpoint="/api/planning/missionstype"
                     keyGetter={(it) => it.id}
@@ -171,7 +172,9 @@ const MissionMapPanel = ({
                       <Typography>Interest elements</Typography>
                     </AccordionSummary>
                     <AccordionDetails className={classes.details}>
-                      {missions.task.locations && <SelectList Data={missions.task.locations} />}
+                      {missions.request.locations && (
+                        <SelectList Data={missions.request.locations} />
+                      )}
                     </AccordionDetails>
                   </Accordion>
                   <Divider />

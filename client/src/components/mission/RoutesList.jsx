@@ -17,6 +17,11 @@ const RoutesList = ({ mission: missionProp, setScrool, NoEdit = false }) => {
   const [expanded, setExpanded] = useState(null);
 
   const hasMission = mission.route.length > 0;
+  // What each route can depend on: the other routes, by their task id.
+  const taskOptions = mission.route.map((r) => ({
+    id: r.task_id,
+    label: `${r.task_id} · ${r.name || 'sin nombre'} · ${r.uav || 'sin UAV'}`,
+  }));
 
   useEffect(() => {
     if (selectwp.id >= 0) {
@@ -89,6 +94,7 @@ const RoutesList = ({ mission: missionProp, setScrool, NoEdit = false }) => {
                 <RouteRoutesList
                   index={index}
                   route={item_route}
+                  taskOptions={taskOptions}
                   expanded={expanded}
                   setExpanded={setExpanded}
                   NoEdit={NoEdit}
