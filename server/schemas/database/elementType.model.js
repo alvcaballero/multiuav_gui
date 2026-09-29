@@ -5,8 +5,9 @@ const ElementType_TABLE = 'ElementTypes';
 const ElementTypeSchema = {
   id: {
     allowNull: false,
+    autoIncrement: true,
     primaryKey: true,
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
   },
   name: {
     allowNull: false,

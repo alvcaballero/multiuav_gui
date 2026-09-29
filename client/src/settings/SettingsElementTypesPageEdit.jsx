@@ -31,7 +31,7 @@ const SettingsElementTypesPageEdit = () => {
   // vs modelo 3D" check whatever is in the editor right now, saved or not.
   const [yamlContent, setYamlContent] = useState('');
 
-  const validate = () => item && item.id && item.name;
+  const validate = () => item && item.name;
 
   const handleUploadIcon = useCatch(async (file) => {
     const body = new FormData();
@@ -57,7 +57,6 @@ const SettingsElementTypesPageEdit = () => {
       item={item}
       setItem={setItem}
       defaultItem={{
-        id: '',
         name: '',
         description: '',
         color: '#1976d2',
@@ -75,14 +74,9 @@ const SettingsElementTypesPageEdit = () => {
               <Typography variant="subtitle1">Datos generales</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
-              <TextField
-                required
-                label="Id"
-                value={item.id}
-                disabled={!isNew}
-                helperText={isNew ? 'Identificador único, no editable luego de creado' : undefined}
-                onChange={(event) => setItem({ ...item, id: event.target.value.trim() })}
-              />
+              {!isNew && (
+                <TextField label="Id" value={item.id} disabled helperText="Asignado automáticamente" />
+              )}
               <TextField
                 required
                 label="Name"

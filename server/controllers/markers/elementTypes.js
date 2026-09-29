@@ -8,8 +8,8 @@ import { validateElementType, validatePartialElementType } from '../../schemas/z
 import { logger } from '../../common/logger.js';
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = elementTypesModel.ensureAssetDir(req.params.id);
+  destination: async (req, file, cb) => {
+    const dir = await elementTypesModel.ensureAssetDir(req.params.id);
     cb(null, dir);
   },
   filename: (req, file, cb) => {
@@ -184,7 +184,7 @@ export const elementTypesController = {
         return res.status(400).json({ error: `Invalid YAML: ${parseError.message}` });
       }
       const { id } = req.params;
-      const dir = elementTypesModel.ensureAssetDir(id);
+      const dir = await elementTypesModel.ensureAssetDir(id);
       // Always stored as .yaml — clear a stale .yml sibling so getAssetPath
       // can't pick up an older extension after re-uploading with a new one.
       fs.rmSync(path.join(dir, 'definition.yml'), { force: true });

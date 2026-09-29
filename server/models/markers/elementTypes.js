@@ -7,6 +7,28 @@ import sequelize from '../../common/sequelize.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ASSETS_DIR = path.resolve(__dirname, '../../data/element-types');
 
+// Asset folders are named `<id>-<slug>` (e.g. `12-wind-turbine`) — the id
+// prefix is what code ever resolves by, the slug suffix exists purely so a
+// human browsing server/data/element-types/ can tell what's in each folder
+// without cross-referencing the DB. Never parsed back into anything.
+function slugify(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // strip accents (á -> a)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Finds the existing asset folder for `id` regardless of its slug suffix.
+// Bounded match (`(-.*)?$`) so id 1 can't accidentally match a folder named
+// 10-something/11-something/etc.
+function findAssetDirName(id) {
+  if (!fs.existsSync(ASSETS_DIR)) return null;
+  const boundary = new RegExp(`^${id}(-.*)?$`);
+  return fs.readdirSync(ASSETS_DIR).find((entry) => boundary.test(entry)) ?? null;
+}
+
 // A type's stored semantic/parametric model file carries its adjustable
 // state in one of two shapes, depending on which generation produced it:
 //   - wtsem-type/0.2, key `state_defaults`: flat {key: scalar}, e.g.
@@ -112,10 +134,12 @@ export const elementTypesModel = {
   },
 
   async create(elementType) {
-    const { id, name, description, icon, model3d, definitionYaml, color, isCustom, attributes } = elementType;
+    // `id` is autoincrement now — any id the caller sends (e.g. a stale
+    // client re-sending a fetched object) is ignored, never honored, so
+    // there's no path to an id collision or a client picking its own PK.
+    const { name, description, icon, model3d, definitionYaml, color, isCustom, attributes } = elementType;
 
     return await sequelize.models.ElementType.create({
-      id,
       name,
       description: description || '',
       icon: icon ?? null,
@@ -133,6 +157,7 @@ export const elementTypesModel = {
     if (!myType) {
       return null;
     }
+    const nameChanged = name && name !== myType.name;
     if (name) myType.name = name;
     if (description !== undefined) myType.description = description;
     if (icon !== undefined) myType.icon = icon;
@@ -142,6 +167,9 @@ export const elementTypesModel = {
     if (isCustom !== undefined) myType.isCustom = isCustom;
     if (attributes !== undefined) myType.attributes = attributes;
     await myType.save();
+    // Keep the asset folder's human-readable suffix in sync with the type's
+    // current name — a no-op when there's no folder yet (nothing to rename).
+    if (nameChanged) await this.ensureAssetDir(id, myType.name);
     return myType;
   },
 
@@ -156,8 +184,9 @@ export const elementTypesModel = {
   getAssetPath(id, assetType) {
     const ext =
       assetType === 'icon' ? ['png', 'svg', 'jpg'] : assetType === 'definition' ? ['yaml', 'yml'] : ['glb', 'gltf'];
-    const dir = path.join(ASSETS_DIR, id);
-    if (!fs.existsSync(dir)) return null;
+    const dirName = findAssetDirName(id);
+    if (!dirName) return null;
+    const dir = path.join(ASSETS_DIR, dirName);
 
     for (const e of ext) {
       const p = path.join(dir, `${assetType}.${e}`);
@@ -166,9 +195,33 @@ export const elementTypesModel = {
     return null;
   },
 
-  ensureAssetDir(id) {
-    const dir = path.join(ASSETS_DIR, id);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    return dir;
+  // Async now — resolving/keeping the `<id>-<slug>` suffix in sync needs the
+  // type's current `name`, looked up here when the caller doesn't already
+  // have it (e.g. multer's destination callback only has the route's raw
+  // id). Renames an existing folder whose slug has drifted from `name`
+  // (see update() above); creates a fresh one otherwise. Falls back to a
+  // bare `<id>` folder if `name` can't be resolved (no matching DB row —
+  // shouldn't happen outside a race, but asset storage must never throw).
+  async ensureAssetDir(id, name) {
+    let resolvedName = name;
+    if (resolvedName === undefined) {
+      const type = await sequelize.models.ElementType.findByPk(id);
+      resolvedName = type?.name;
+    }
+    const expected = resolvedName ? `${id}-${slugify(resolvedName)}` : String(id);
+    const existing = findAssetDirName(id);
+
+    if (!existing) {
+      const dir = path.join(ASSETS_DIR, expected);
+      fs.mkdirSync(dir, { recursive: true });
+      return dir;
+    }
+    if (existing !== expected && resolvedName) {
+      const oldDir = path.join(ASSETS_DIR, existing);
+      const newDir = path.join(ASSETS_DIR, expected);
+      fs.renameSync(oldDir, newDir);
+      return newDir;
+    }
+    return path.join(ASSETS_DIR, existing);
   },
 };

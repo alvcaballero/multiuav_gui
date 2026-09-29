@@ -10,7 +10,7 @@ const BaseSchema = {
     type: DataTypes.INTEGER,
   },
   typeId: {
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
     allowNull: true,
   },
   name: {

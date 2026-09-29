@@ -1,9 +1,19 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { sessionActions } from '../../store';
 import { manageLocationPoints } from '../../services/planningService';
+import { useMarkerTypes } from '../../hooks/useMarkerTypes';
 
 export const usePlanningReduxHandlers = ({ dispatch, markers, SendTask, sendTaskRef }) => {
+  const { types: markerTypes } = useMarkerTypes();
+  // 'Power Tower' is the default type for a line drawn via addLocations
+  // (path-object/object/point) — resolved by name since the catalog's PK is
+  // an opaque autoincrement id, not a stable slug.
+  const powerTowerTypeId = useMemo(
+    () => markerTypes.find((type) => type.name === 'Power Tower')?.id,
+    [markerTypes],
+  );
+
   const setMarkersBase = useCallback(
     (value, meta = {}) => {
       dispatch(sessionActions.updateMarker({ ...markers, bases: value }));
@@ -37,10 +47,11 @@ export const usePlanningReduxHandlers = ({ dispatch, markers, SendTask, sendTask
         structuredClone(SendTask.loc),
         value,
         SendTask.objetivo.type,
+        powerTowerTypeId,
       );
       dispatch(sessionActions.updatePlanning({ ...SendTask, loc: newLoc }));
     },
-    [dispatch, SendTask],
+    [dispatch, SendTask, powerTowerTypeId],
   );
 
   const setBaseSettings = useCallback(

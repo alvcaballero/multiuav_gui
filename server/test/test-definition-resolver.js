@@ -1,10 +1,26 @@
-import { test, describe } from 'node:test';
+import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
+import sequelize from '../common/sequelize.js';
 import { resolveDefinitionModel, DefinitionResolveError } from '../models/markers/definitionResolver.js';
+
+// ElementType.id is an autoincrement PK now (see
+// migrateElementTypeIdToInteger.js) — no longer a stable 'windTurbine'
+// string, so a test that reads the real stored file has to look its id up
+// by name first. Tests using an inline `content` override never touch
+// filesystem/DB for `id`, so they keep passing a literal placeholder.
+let windTurbineId;
+let goliathCraneId;
+
+before(async () => {
+  const windTurbine = await sequelize.models.ElementType.findOne({ where: { name: 'Wind Turbine' } });
+  const goliathCrane = await sequelize.models.ElementType.findOne({ where: { name: 'Goliath Crane' } });
+  windTurbineId = windTurbine?.id;
+  goliathCraneId = goliathCrane?.id;
+});
 
 describe('resolveDefinitionModel — windTurbine (real stored file)', () => {
   test('resolves without error, one entry per link', () => {
-    const model = resolveDefinitionModel('windTurbine');
+    const model = resolveDefinitionModel(windTurbineId);
     assert.ok(model);
     assert.equal(model.format, 'insem/0.2');
     const names = model.links.map((l) => l.name).sort();
@@ -12,7 +28,7 @@ describe('resolveDefinitionModel — windTurbine (real stored file)', () => {
   });
 
   test('tower is a cylinder with numeric, non-NaN dimensions', () => {
-    const model = resolveDefinitionModel('windTurbine');
+    const model = resolveDefinitionModel(windTurbineId);
     const tower = model.links.find((l) => l.name === 'tower');
     assert.equal(tower.parent, 'world');
     assert.equal(tower.joint.type, 'fixed');
@@ -24,7 +40,7 @@ describe('resolveDefinitionModel — windTurbine (real stored file)', () => {
   });
 
   test('nacelle is revolute around Z with angle derived from nacelle_heading_deg=240', () => {
-    const model = resolveDefinitionModel('windTurbine');
+    const model = resolveDefinitionModel(windTurbineId);
     const nacelle = model.links.find((l) => l.name === 'nacelle');
     assert.equal(nacelle.parent, 'tower');
     assert.equal(nacelle.joint.type, 'revolute');
@@ -34,7 +50,7 @@ describe('resolveDefinitionModel — windTurbine (real stored file)', () => {
   });
 
   test('blade_A/B/C each resolve a swept_box into N box segments', () => {
-    const model = resolveDefinitionModel('windTurbine');
+    const model = resolveDefinitionModel(windTurbineId);
     for (const name of ['blade_A', 'blade_B', 'blade_C']) {
       const blade = model.links.find((l) => l.name === name);
       assert.equal(blade.parent, 'hub');
@@ -126,7 +142,7 @@ describe('resolveDefinitionModel — prismatic joint (synthetic, mirrors goliath
 
 describe('resolveDefinitionModel — goliathCrane (real stored file, beam/capsule)', () => {
   test('resolves every link, including ones built entirely from beam/capsule', () => {
-    const model = resolveDefinitionModel('goliathCrane');
+    const model = resolveDefinitionModel(goliathCraneId);
     assert.ok(model);
     const names = model.links.map((l) => l.name).sort();
     assert.ok(names.includes('end_ties'));
@@ -136,7 +152,7 @@ describe('resolveDefinitionModel — goliathCrane (real stored file, beam/capsul
   });
 
   test('end_ties beams resolve position/quaternion/length/size as finite numbers', () => {
-    const model = resolveDefinitionModel('goliathCrane');
+    const model = resolveDefinitionModel(goliathCraneId);
     const endTies = model.links.find((l) => l.name === 'end_ties');
     for (const beam of endTies.geometry) {
       assert.equal(beam.type, 'beam');
@@ -154,14 +170,14 @@ describe('resolveDefinitionModel — goliathCrane (real stored file, beam/capsul
   test('a beam with no explicit depth falls back to width (square section)', () => {
     // rigid_leg's columns only set `width`, matching insem.py's
     // `g.get("depth", g["width"])` default.
-    const model = resolveDefinitionModel('goliathCrane');
+    const model = resolveDefinitionModel(goliathCraneId);
     const rigidLeg = model.links.find((l) => l.name === 'rigid_leg');
     const col = rigidLeg.geometry.find((g) => g.id === 'col_N');
     assert.deepEqual(col.size, [3.2, 3.2]); // rigid_section = 3.2
   });
 
   test('upper_hoist/lower_hoist ropes resolve as capsules with the configured radius', () => {
-    const model = resolveDefinitionModel('goliathCrane');
+    const model = resolveDefinitionModel(goliathCraneId);
     for (const linkName of ['upper_hoist', 'lower_hoist']) {
       const hoist = model.links.find((l) => l.name === linkName);
       const ropes = hoist.geometry.find((g) => g.id === 'ropes');

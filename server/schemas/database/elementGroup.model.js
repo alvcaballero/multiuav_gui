@@ -11,7 +11,7 @@ const ElementGroupSchema = {
   },
   typeId: {
     allowNull: false,
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
   },
   name: {
     allowNull: false,

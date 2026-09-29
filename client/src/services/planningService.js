@@ -15,34 +15,27 @@ const OBJETIVO_TYPES = {
 };
 
 /**
- * Tipos de elementos que se pueden crear
- */
-export const ELEMENT_TYPES = {
-  POWER_TOWER: 'powerTower',
-  WIND_TURBINE: 'windTurbine',
-};
-
-/**
  * Gestiona la adición de puntos a la lista de localizaciones según el tipo de objetivo.
  *
  * @param {Array} locations - Array actual de localizaciones (no se muta)
  * @param {Object} point - Punto a agregar con {latitude, longitude, groupId?}
  * @param {string} objetivoType - Tipo de objetivo ('path-object', 'object', 'point')
+ * @param {number} powerTowerTypeId - id del ElementType 'Power Tower' (catálogo dinámico, ver useMarkerTypes)
  * @returns {Array} Nuevo array de localizaciones con el punto agregado
  */
-export const manageLocationPoints = (locations, point, objetivoType) => {
+export const manageLocationPoints = (locations, point, objetivoType, powerTowerTypeId) => {
   // Crear copia para no mutar el original
   const newLocations = [...locations];
 
   switch (objetivoType) {
     case OBJETIVO_TYPES.PATH_OBJECT:
-      return managePathObjectPoints(newLocations, point);
+      return managePathObjectPoints(newLocations, point, powerTowerTypeId);
 
     case OBJETIVO_TYPES.OBJECT:
-      return manageObjectPoints(newLocations, point);
+      return manageObjectPoints(newLocations, point, powerTowerTypeId);
 
     case OBJETIVO_TYPES.POINT:
-      return managePointPoints(newLocations, point);
+      return managePointPoints(newLocations, point, powerTowerTypeId);
 
     default:
       console.warn(`Unknown objetivo type: ${objetivoType}`);
@@ -56,10 +49,10 @@ export const manageLocationPoints = (locations, point, objetivoType) => {
  *
  * @private
  */
-const managePathObjectPoints = (locations, point) => {
+const managePathObjectPoints = (locations, point, powerTowerTypeId) => {
   // Si no hay localizaciones, crear la primera
   if (locations.length === 0) {
-    return [createNewElement(point)];
+    return [createNewElement(point, powerTowerTypeId)];
   }
 
   // Buscar si ya existe un elemento con el mismo groupId
@@ -69,7 +62,7 @@ const managePathObjectPoints = (locations, point) => {
 
   if (existingRouteIndex === -1) {
     // No existe, crear nuevo elemento
-    return [...locations, createNewElement(point)];
+    return [...locations, createNewElement(point, powerTowerTypeId)];
   } else {
     // Ya existe, agregar punto al elemento existente
     const updatedLocations = [...locations];
@@ -87,8 +80,8 @@ const managePathObjectPoints = (locations, point) => {
  *
  * @private
  */
-const manageObjectPoints = (locations, point) => {
-  return [...locations, createNewElement(point)];
+const manageObjectPoints = (locations, point, powerTowerTypeId) => {
+  return [...locations, createNewElement(point, powerTowerTypeId)];
 };
 
 /**
@@ -97,20 +90,21 @@ const manageObjectPoints = (locations, point) => {
  *
  * @private
  */
-const managePointPoints = (locations, point) => {
-  return [...locations, createNewElement(point)];
+const managePointPoints = (locations, point, powerTowerTypeId) => {
+  return [...locations, createNewElement(point, powerTowerTypeId)];
 };
 
 /**
- * Crea un nuevo elemento de tipo powerTower
+ * Crea un nuevo elemento de tipo Power Tower
  *
  * @private
  * @param {Object} point - Punto inicial del elemento
+ * @param {number} powerTowerTypeId - id del ElementType 'Power Tower'
  * @returns {Object} Nuevo elemento con estructura estándar
  */
-const createNewElement = (point) => {
+const createNewElement = (point, powerTowerTypeId) => {
   return {
-    type: ELEMENT_TYPES.POWER_TOWER,
+    type: powerTowerTypeId,
     name: 'Elements',
     linea: true,
     items: [point],

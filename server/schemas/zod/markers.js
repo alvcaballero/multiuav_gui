@@ -98,7 +98,11 @@ export const TypeAttributesSchema = z
 export const ItemAttributesSchema = z.object({}).catchall(z.union([z.string(), z.number(), z.boolean()]));
 
 export const ElementTypeSchema = z.object({
-  id: z.string(),
+  // Autoincrement PK — the server assigns it on create; a client-sent id is
+  // ignored there (see elementTypesModel.create). Accepted here only so a
+  // GET-then-PUT roundtrip (the type editor re-saving its own fetched item)
+  // doesn't fail validation.
+  id: z.coerce.number().int().positive().optional(),
   name: z.string(),
   description: z.string().optional(),
   icon: z.string().nullable().optional(),
@@ -127,7 +131,7 @@ const GroupBoundsSchema = z
   .nullable();
 
 export const ElementGroupSchema = z.object({
-  typeId: z.string(),
+  typeId: z.coerce.number().int().positive(),
   name: z.string(),
   description: z.string().optional(),
   linea: z.boolean().optional(),
@@ -157,7 +161,7 @@ export const ElementItemSchema = z.object({
 
 export const BaseSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
-  typeId: z.string().nullable().optional(),
+  typeId: z.coerce.number().int().positive().nullable().optional(),
   name: z.string().nullable().optional(),
   latitude: z.number(),
   longitude: z.number(),

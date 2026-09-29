@@ -126,7 +126,6 @@ describe('ParameterDefSchema', () => {
 describe('ElementType attributes validation', () => {
   test('ElementType accepts attributes.geometry alongside free-form keys', () => {
     const result = validateElementType({
-      id: 'windTurbine',
       name: 'Wind Turbine',
       attributes: {
         geometry: { geometry_type: 'circle', dimensions: { radius: 35, height: 80 } },
@@ -139,7 +138,6 @@ describe('ElementType attributes validation', () => {
 
   test('ElementType accepts a parameterDefs schema', () => {
     const result = validateElementType({
-      id: 'windTurbine',
       name: 'Wind Turbine',
       attributes: {
         parameterDefs: [
@@ -158,7 +156,6 @@ describe('ElementType attributes validation', () => {
 
   test('ElementType rejects duplicate parameterDefs keys', () => {
     const result = validateElementType({
-      id: 'windTurbine',
       name: 'Wind Turbine',
       attributes: {
         parameterDefs: [
@@ -225,7 +222,7 @@ describe('ElementItem/Base attributes and instance-state validation', () => {
 
   test('Base now accepts attributes/altitude/azimFront too', () => {
     const result = validateBase({
-      typeId: 'windTurbine',
+      typeId: 1,
       latitude: 1,
       longitude: 2,
       altitude: 10,

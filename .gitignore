@@ -14,13 +14,21 @@ server/data/*
 server/data/*.json
 server/data/*.yaml
 server/data/*.kml
-# Track static element type assets but not custom ones
+# Track static element type assets but not custom ones.
+# ElementType.id is an autoincrement integer now (migrateElementTypeIdToInteger.js)
+# instead of a hand-typed slug, and each asset folder is named `<id>-<slug>`
+# (elementTypesModel.ensureAssetDir/slugify — the slug suffix tracks `name`
+# and is resynced/renamed on every update, so match by id PREFIX, not the
+# full folder name). 9/12/10/5 ARE powerTower/windTurbine/solarPanel/
+# goliathCrane respectively (SELECT id, name FROM ElementTypes to confirm on
+# any given DB; a re-run from a fresh/reordered DB can assign different
+# numbers, in which case this list needs updating to match).
 !server/data/element-types
 server/data/element-types/*
-!server/data/element-types/powerTower
-!server/data/element-types/windTurbine
-!server/data/element-types/solarPanel
-!server/data/element-types/goliathCrane
+!server/data/element-types/9-*
+!server/data/element-types/12-*
+!server/data/element-types/10-*
+!server/data/element-types/5-*
 /devices/vtol/stream/build/
 .DS_Store
 Thumbs.db

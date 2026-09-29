@@ -6,8 +6,8 @@ import { elementTypesModel, resolveEffectiveParameterDefs } from '../models/mark
 
 const TEST_TYPE_ID = 'test_definition_yaml_type';
 
-after(() => {
-  const dir = path.join(elementTypesModel.ensureAssetDir(TEST_TYPE_ID), '..');
+after(async () => {
+  const dir = path.join(await elementTypesModel.ensureAssetDir(TEST_TYPE_ID), '..');
   fs.rmSync(path.join(dir, TEST_TYPE_ID), { recursive: true, force: true });
 });
 
@@ -23,8 +23,8 @@ describe('resolveEffectiveParameterDefs', () => {
     assert.equal(result, undefined);
   });
 
-  test('derives parameterDefs from state_defaults in a stored .type.yaml when DB is empty', () => {
-    const dir = elementTypesModel.ensureAssetDir(TEST_TYPE_ID);
+  test('derives parameterDefs from state_defaults in a stored .type.yaml when DB is empty', async () => {
+    const dir = await elementTypesModel.ensureAssetDir(TEST_TYPE_ID);
     fs.writeFileSync(
       path.join(dir, 'definition.yaml'),
       ['format: wtsem-type/0.2', 'state_defaults:', '  nacelle_heading_deg: 240', '  operational_status: parked'].join(
@@ -48,8 +48,8 @@ describe('resolveEffectiveParameterDefs', () => {
     ]);
   });
 
-  test('derives parameterDefs from insem/0.2 `state` — structured entries mixed with bare scalars', () => {
-    const dir = elementTypesModel.ensureAssetDir(TEST_TYPE_ID);
+  test('derives parameterDefs from insem/0.2 `state` — structured entries mixed with bare scalars', async () => {
+    const dir = await elementTypesModel.ensureAssetDir(TEST_TYPE_ID);
     fs.writeFileSync(
       path.join(dir, 'definition.yaml'),
       [
@@ -80,8 +80,8 @@ describe('resolveEffectiveParameterDefs', () => {
     ]);
   });
 
-  test('a malformed definition file yields undefined instead of throwing', () => {
-    const dir = elementTypesModel.ensureAssetDir(TEST_TYPE_ID);
+  test('a malformed definition file yields undefined instead of throwing', async () => {
+    const dir = await elementTypesModel.ensureAssetDir(TEST_TYPE_ID);
     fs.writeFileSync(path.join(dir, 'definition.yaml'), '::: not valid yaml :::\n\tbad indent');
 
     assert.doesNotThrow(() => {
