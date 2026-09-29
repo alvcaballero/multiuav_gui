@@ -73,7 +73,21 @@ export class rosModel {
     _disconectRos(null);
   }
 
+  // Registers the connect/disconnect handlers, arms the auto-reconnect timer and
+  // attempts the first connection. Called from startup only when ROS is enabled,
+  // so importing this module never opens a socket or leaves a timer running.
   static async rosConnect() {
+    initAutoConnect(
+      async () => {
+        await rosModel._resolveRosVersion();
+        await rosModel.connectAllUAV();
+        rosModel.GCSServicesMission();
+      },
+      () => {
+        rosModel.unsubscribeDevice(-1);
+        rosModel.GCSunServicesMission();
+      }
+    );
     rosConnect(null);
   }
 
@@ -93,7 +107,7 @@ export class rosModel {
 
     // Only subscribe the camera topic when the device has a Websocket camera AND
     // the category config defines its message type — otherwise skip it.
-    const hasWebsocketCamera = camera.some((cam) => cam.type == 'Websocket');
+    const hasWebsocketCamera = (camera ?? []).some((cam) => cam.type == 'Websocket');
     const cameraMsgTypeDefined = Boolean(subscribers['camera']?.['messageType']);
     const shouldSubscribeCamera = hasWebsocketCamera && cameraMsgTypeDefined;
     if (hasWebsocketCamera && !cameraMsgTypeDefined) {
@@ -411,15 +425,3 @@ export class rosModel {
     return rosInspect.getListMaster(getRos());
   }
 }
-
-initAutoConnect(
-  async () => {
-    await rosModel._resolveRosVersion();
-    await rosModel.connectAllUAV();
-    rosModel.GCSServicesMission();
-  },
-  () => {
-    rosModel.unsubscribeDevice(-1);
-    rosModel.GCSunServicesMission();
-  }
-);
