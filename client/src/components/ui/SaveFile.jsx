@@ -18,7 +18,7 @@ import { makeStyles } from 'tss-react/mui';
 
 import YAML from 'yaml';
 
-import palette from '../../shared/palette';
+import { routeColor, routeColorKey, toKmlColor } from '../../shared/routeColors';
 
 const useStyles = makeStyles()((theme) => ({
   card: {
@@ -101,7 +101,7 @@ const SaveFile = ({ SetOpenSave }) => {
       mission.route.map((elem, elem_n) => {
         xmlString += `<Style id="sn_ylw-pushpin1${elem_n}">\n`;
         xmlString += '<LineStyle>\n';
-        xmlString += `<color>ff${palette.colors_devices[elem_n].substr(-6)}</color>\n`;
+        xmlString += `<color>${toKmlColor(routeColor(routeColorKey(elem, elem_n)))}</color>\n`;
         xmlString += '<width>3</width>\n';
         xmlString += '</LineStyle>\n';
         xmlString += '</Style>\n';

@@ -86,7 +86,7 @@ const ElementList = ({ markers, setMarkers }) => {
     setMarkers(auxMarkers);
   };
   const addList = () => {
-    const defaultType = markerTypes[0]?.id || 'powerTower';
+    const defaultType = markerTypes[0]?.id;
     let auxMarkers = structuredClone(markers);
     auxMarkers.push({
       groupId: generateLocalId(),

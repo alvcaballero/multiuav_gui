@@ -1,4 +1,4 @@
-import palette from '../../shared/palette';
+import { routeColor, routeColorKey } from '../../shared/routeColors';
 
 const createFeature = (myroute, point) => {
   let myYaw = null;
@@ -40,7 +40,9 @@ const createFeature = (myroute, point) => {
     attributes: myroute[point.routeid].attributes,
     category: myCategory,
     rotation: myYaw ?? 0,
-    color: point.routeid, //myroute[point.routeid]['id'],
+    // The route's own key, not point.routeid: that is its position in a possibly
+    // filtered list, and the waypoints would take another route's color.
+    color: routeColorKey(myroute[point.routeid], point.routeid),
   };
 };
 
@@ -115,7 +117,7 @@ function routesToFeature(item) {
     },
     properties: {
       name: item.uav, //name,
-      color: palette.colors_devices[+item.id % Object.keys(palette.colors_devices).length],
+      color: routeColor(item.id),
     },
   };
 }

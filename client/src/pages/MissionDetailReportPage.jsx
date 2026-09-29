@@ -16,6 +16,7 @@ import ImageFull from './missionDetailReport/ImageFull';
 import MissionSummarySection from './missionDetailReport/MissionSummarySection';
 import MissionTasksSection from './missionDetailReport/MissionTasksSection';
 import MissionMapPanel from './missionDetailReport/MissionMapPanel';
+import { routeColorKey } from '../shared/routeColors';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -119,16 +120,22 @@ const MissionDetailReportPage = () => {
             return time >= start && time <= end;
           })
           .sort((a, b) => new Date(a.fixTime) - new Date(b.fixTime));
+        // Drawn in its planned route's color. A legacy route[] has no task_id: the
+        // server named its tasks T1..Tn in order.
+        const routeIndex = (routePath ?? []).findIndex(
+          (route, index) => (route.task_id ?? `T${index + 1}`) === task.taskKey,
+        );
         return {
           id: task.id ?? taskIndex,
           deviceId: task.deviceId,
+          routeKey: routeIndex < 0 ? null : routeColorKey(routePath[routeIndex], routeIndex),
           startTime: start,
           endTime: end,
           positions: trackPositions,
         };
       })
       .filter((track) => track.positions.length > 1);
-  }, [tasks, positions]);
+  }, [tasks, positions, routePath]);
 
   const devices = useSelector((state) => state.devices.items);
 

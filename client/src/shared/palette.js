@@ -12,17 +12,6 @@ const colors = {
   geometry: '#3bb2d0',
 };
 
-const colors_devices = {
-  0: '#F34C28',
-  1: '#F39A28',
-  2: '#1EC910',
-  3: '#1012C9',
-  4: '#C310C9',
-  5: '#1FDBF1',
-  6: '#F6FD04',
-  7: '#808080',
-};
-
 export default {
   background: {
     default: colors.background,
@@ -38,5 +27,4 @@ export default {
     main: grey[500],
   },
   colors,
-  colors_devices,
 };

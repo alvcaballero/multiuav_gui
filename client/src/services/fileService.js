@@ -37,9 +37,10 @@ export const readTextFile = (file, onLoad, onError) => {
  * El KML puede contener <Point> (bases) o <coordinates> (torres/líneas).
  *
  * @param {string} kmlText - Contenido XML en texto
+ * @param {number} [towerTypeId] - id del ElementType asignado a las torres (catálogo dinámico)
  * @returns {KmlElementsResult | null} null si el KML no contiene datos reconocibles
  */
-export const parseKmlElements = (kmlText) => {
+export const parseKmlElements = (kmlText, towerTypeId) => {
   const xmlDocument = new DOMParser().parseFromString(kmlText, 'text/xml');
 
   // --- Caso 1: <Point> → marcadores de base ---
@@ -72,7 +73,7 @@ export const parseKmlElements = (kmlText) => {
 
   if (coordGroups.length) {
     const markers = coordGroups.map((group) => ({
-      type: 'powerTower',
+      type: towerTypeId,
       items: group.flatMap((coords) =>
         coords.length > 1
           ? [

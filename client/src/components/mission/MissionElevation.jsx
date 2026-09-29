@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { FormControl, InputLabel, Select, Box, MenuItem, CircularProgress } from '@mui/material';
-import palette from '../../shared/palette';
+import { routeColor, routeColorKey } from '../../shared/routeColors';
 import { makeStyles } from 'tss-react/mui';
 import { missionActions } from '../../store';
 import { useAsyncTask } from '../../reactHelper';
@@ -207,7 +207,7 @@ const MissionElevation = memo(({ active = true }) => {
           const elevationData = result.elevation.map((route, idx) => ({
             name: missionRoute[idx]?.task_id ?? `RT${idx}`,
             data: route,
-            color: palette.colors_devices[missionRoute[idx]?.id],
+            color: routeColor(routeColorKey(missionRoute[idx], idx)),
           }));
           setSelectRT(-1);
           dispatch(missionActions.setElevationProfile(elevationData));

@@ -4,7 +4,13 @@ import * as maplibregl from 'maplibre-gl';
 import { MaplibreExportControl, Size, PageOrientation, Format } from '@watergis/maplibre-gl-export';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
-import { mapImages, imagesReady } from './preloadImages';
+import {
+  mapImages,
+  imagesReady,
+  resolveRouteImage,
+  resolveTargetImage,
+  TARGET_IMAGE_PREFIX,
+} from './preloadImages';
 
 const element = document.createElement('div');
 element.style.width = '100%';
@@ -55,8 +61,28 @@ export const initMap = async () => {
 // Since v6 `styleimagemissing` only notifies — a listener can no longer supply the
 // image for the request that fired it. The resolver below is the hook that still can,
 // and MapLibre awaits it before deciding the image is really missing.
-map.setMissingStyleImageResolver((missingId) => {
-  if (mapImages[missingId]) {
+// Two namespaces are generated on first use: target images (`target-<type>`, see
+// resolveTargetImage — they never stay missing) and route images (`<shape>-<routeKey>`,
+// see resolveRouteImage). Several tiles can miss the same id at once, so in-flight
+// loads are shared. Any other missing id is left missing, so a bug in another layer
+// still shows up as MapLibre's missing-image warning.
+const resolveImage = (imageId) =>
+  imageId.startsWith(TARGET_IMAGE_PREFIX)
+    ? resolveTargetImage(imageId)
+    : resolveRouteImage(imageId);
+const pendingImages = new Map();
+
+map.setMissingStyleImageResolver(async (missingId) => {
+  if (!mapImages[missingId]) {
+    if (!pendingImages.has(missingId)) {
+      pendingImages.set(
+        missingId,
+        resolveImage(missingId).finally(() => pendingImages.delete(missingId)),
+      );
+    }
+    await pendingImages.get(missingId);
+  }
+  if (mapImages[missingId] && !map.hasImage(missingId)) {
     map.addImage(missingId, mapImages[missingId], { pixelRatio: window.devicePixelRatio });
   }
 });

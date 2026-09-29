@@ -1,6 +1,6 @@
-import palette from '../../shared/palette';
 import { createTheme } from '@mui/material';
 import { loadImage, prepareIcon } from './mapUtil';
+import { routeColor } from '../../shared/routeColors';
 
 import { grey } from '@mui/material/colors';
 import backgroundSvg from '../../resources/images/background.svg';
@@ -24,17 +24,6 @@ import ArrowMapSvg from '../../resources/images/icon/ArrowMap.svg';
 import ArrowMapFronSvg from '../../resources/images/icon/ArrowMap2.svg';
 
 import FrontDroneSvg from '../../resources/images/icon/drone-svgrepo.svg';
-
-const colors = {
-  0: '#F34C28',
-  1: '#F39A28',
-  2: '#1EC910',
-  3: '#1012C9',
-  4: '#C310C9',
-  5: '#1FDBF1',
-  6: '#387478',
-  7: '#808080',
-};
 
 export const mapIcons = {
   helicopter: helicopterSvg,
@@ -87,6 +76,56 @@ export const imagesReady = new Promise((resolve) => {
   imagesReadyResolve = resolve;
 });
 
+// Targets (inspection elements) have their own image namespace, separate from the
+// devices' `{category}-{color}`: a target layer asks for `target-<type>`, and the
+// map's missing-image resolver (mapInstance.js) resolves it with resolveTargetImage.
+// A type that can't be resolved falls back to TARGET_DEFAULT_IMAGE — a missing
+// device image, instead, still surfaces as an error.
+export const TARGET_IMAGE_PREFIX = 'target-';
+export const TARGET_DEFAULT_IMAGE = `${TARGET_IMAGE_PREFIX}default`;
+
+export const targetImageId = (type) =>
+  type == null || type === '' ? TARGET_DEFAULT_IMAGE : `${TARGET_IMAGE_PREFIX}${type}`;
+
+// `type` is either a fixed image name (e.g. 'locPoint') or an ElementType id, whose
+// icon is fetched the first time a layer asks for it (so a type created after
+// startup gets its icon without a reload). The result is cached under `imageId`,
+// the default included, so a type without an icon isn't refetched on every render.
+export const resolveTargetImage = async (imageId) => {
+  await imagesReady;
+  const type = imageId.slice(TARGET_IMAGE_PREFIX.length);
+  if (mapImages[type]) {
+    mapImages[imageId] = mapImages[type];
+  } else if (/^\d+$/.test(type)) {
+    try {
+      mapImages[imageId] = await prepareIcon(await loadImage(`/api/markers/types/${type}/icon`));
+    } catch {
+      console.warn(`No icon for element type "${type}", using the default target icon`);
+      mapImages[imageId] = mapImages[TARGET_DEFAULT_IMAGE];
+    }
+  } else {
+    console.warn(`Unknown target type "${type}", using the default target icon`);
+    mapImages[imageId] = mapImages[TARGET_DEFAULT_IMAGE];
+  }
+  return mapImages[imageId];
+};
+
+// Route images are `<shape>-<routeKey>`, tinted with routeColor(routeKey): the
+// waypoint (`background`), the oriented waypoint (`backgroundDirection`) and the
+// ring around a device flying that route (`mission`). They are generated the first
+// time a layer asks for them, so there is no limit on the number of routes.
+const ROUTE_IMAGE_ID = /^(background|backgroundDirection|mission)-(\d+)$/;
+const routeImageShapes = {};
+
+export const resolveRouteImage = async (imageId) => {
+  const match = ROUTE_IMAGE_ID.exec(imageId);
+  if (!match) return undefined;
+  await imagesReady;
+  const [, shape, routeKey] = match;
+  mapImages[imageId] = prepareIcon(routeImageShapes[shape], null, routeColor(routeKey));
+  return mapImages[imageId];
+};
+
 const theme = createTheme({
   palette: {
     neutral: { main: grey[500] },
@@ -97,52 +136,21 @@ export default async () => {
   const background = await loadImage(backgroundSvg);
   const backgroundBorder = await loadImage(backgroundBorderSvg);
   const backgroundDirection = await loadImage(backgroundDirectionSvg);
+  routeImageShapes.background = background;
+  routeImageShapes.backgroundDirection = backgroundDirection;
+  routeImageShapes.mission = backgroundBorder;
 
   mapImages.background = await prepareIcon(background);
   mapImages.direction = await prepareIcon(await loadImage(directionSvg));
 
   mapImages.base = await prepareIcon(await loadImage(RectangleSvg));
   mapImages.item = await prepareIcon(await loadImage(triangleSvg));
+  mapImages[TARGET_DEFAULT_IMAGE] = mapImages.item;
   mapImages.powerTower = await prepareIcon(await loadImage(powerTowerSvg));
   mapImages.windTurbine = await prepareIcon(await loadImage(windTurbineSvg));
   mapImages.solarPanel = await prepareIcon(await loadImage(solarPanelSvg));
   mapImages.locPoint = await prepareIcon(await loadImage(locationPointSvg));
 
-  // Load icons from custom element type catalog
-  try {
-    const res = await fetch('/api/markers/types');
-    if (res.ok) {
-      const types = await res.json();
-      await Promise.all(
-        types.flatMap((t) => {
-          if (!t.isCustom || !t.icon) return [];
-          return [
-            (async () => {
-              try {
-                mapImages[t.id] = await prepareIcon(await loadImage(t.icon));
-              } catch (error) {
-                console.error(`Failed to load custom icon for type "${t.id}" (${t.icon}):`, error);
-                // fallback: use default-neutral icon if asset missing
-              }
-            })(),
-          ];
-        }),
-      );
-    }
-  } catch {
-    console.log('fialt to make a call to get customs icons ');
-    // server unavailable — skip custom icons
-  }
-
-  Object.keys(palette.colors_devices).forEach((color) => {
-    mapImages[`background-${color}`] = prepareIcon(background, null, colors[color]);
-    mapImages[`mission-${color}`] = prepareIcon(backgroundBorder, null, colors[color]);
-    mapImages[`backgroundDirection-${color}`] = prepareIcon(
-      backgroundDirection,
-      null,
-      colors[color],
-    );
-  });
   await Promise.all(
     Object.keys(mapIcons).map(async (category) => {
       let icon;

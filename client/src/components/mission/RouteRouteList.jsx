@@ -17,7 +17,7 @@ import {
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SelectField from '../../shared/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
-import palette from '../../shared/palette';
+import { routeColor, routeColorKey } from '../../shared/routeColors';
 import { map } from '../../map/core/mapInstance';
 import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';
@@ -279,7 +279,7 @@ const RouteRoutesList = ({
             mr: 1,
             flexShrink: 0,
             whiteSpace: 'nowrap',
-            color: palette.colors_devices[route.id],
+            color: routeColor(routeColorKey(route, index)),
           }}
         >
           {(route.task_id ?? 'Rute ' + index) + (route.action ? ' · ' + route.action : '')}

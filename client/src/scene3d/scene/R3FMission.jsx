@@ -1,7 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
-import palette from '../../shared/palette';
+import { routeColor, routeColorKey } from '../../shared/routeColors';
 import { Line } from '@react-three/drei';
 
 import NumberedSphere from '../primitives/NumberedSphere';
@@ -36,7 +36,7 @@ function createFeature(myroute, point) {
     name: myroute[point.routeid].name,
     yaw: myYaw,
     gimbal_pitch: gimbal_pitch,
-    color: palette.colors_devices[point.routeid],
+    color: routeColor(routeColorKey(myroute[point.routeid], point.routeid)),
   };
 }
 
@@ -126,7 +126,7 @@ const R3FMission = ({ routes = EMPTY_ROUTES }) => {
         <Fragment key={'line' + index}>
           <Line
             points={line}
-            color={palette.colors_devices[index]}
+            color={routeColor(routeColorKey(routes[index], index))}
             linewidth={3}
             linecap={'round'}
             linejoin={'round'}

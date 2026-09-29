@@ -18,7 +18,7 @@ import RouteIcon from '@mui/icons-material/Route';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import PlaceIcon from '@mui/icons-material/Place';
-import palette from '../../shared/palette';
+import { routeColor } from '../../shared/routeColors';
 
 const useStyles = makeStyles()((theme) => ({
   container: {
@@ -344,7 +344,7 @@ const MissionStats = memo(() => {
                   <Box className={classes.routeColorCell}>
                     <Box
                       className={classes.colorDot}
-                      sx={{ backgroundColor: palette.colors_devices[route.id] || '#808080' }}
+                      sx={{ backgroundColor: routeColor(route.id) }}
                     />
                     {route.name}
                   </Box>

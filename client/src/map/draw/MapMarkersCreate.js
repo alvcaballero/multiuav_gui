@@ -1,7 +1,8 @@
 import { useId, useEffect, useRef, useState, useCallback } from 'react';
 import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
-import palette from '../../shared/palette';
+import { targetImageId } from '../core/preloadImages';
+import { routeColor } from '../../shared/routeColors';
 
 class keepMarkers {
   constructor() {
@@ -61,7 +62,7 @@ function elementsToFeatures(elements) {
         type: 'element',
         groupId: groupIdx,
         id: itemIdx,
-        image: group.type,
+        image: targetImageId(group.type),
         title: item.name || `${groupIdx}-${itemIdx}`,
       },
     })),
@@ -79,7 +80,7 @@ function markerstolines(item, index) {
     },
     properties: {
       name: item.name,
-      color: palette.colors_devices[index % 7],
+      color: routeColor(index),
     },
   };
 }
@@ -92,9 +93,9 @@ function selectToPoints(myList) {
         waypoints.push({
           ...items,
           type: 'element',
-          groupId: index_cj % 7,
+          groupId: index_cj,
           id: itemIndex,
-          image: conjunto.type,
+          image: targetImageId(conjunto.type),
           title: `${index_cj}-${itemIndex}`,
         });
       });

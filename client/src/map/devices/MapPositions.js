@@ -4,6 +4,7 @@ import { map } from '../core/mapInstance';
 import { formatTime, getStatusColor } from '../../shared/formatter';
 import { mapIconKey } from '../core/preloadImages';
 import { findFonts } from '../core/mapUtil';
+import { deviceRouteColorKey } from '../../shared/routeColors';
 //import { useAttributePreference, usePreference } from '../../shared/preferences';
 
 const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
@@ -38,8 +39,8 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
           showDirection = selectedPositionId === position.id;
           break;
       }
-      let thismission = routes.find((element) => element.uav == device.name);
-      let missionColor = thismission ? thismission.id : null;
+      // A device can run several routes of the plan: it takes the color of the first.
+      const missionColor = deviceRouteColorKey(routes, device.name);
       return {
         id: position.id,
         deviceId: position.deviceId,
@@ -49,7 +50,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         color: showStatus ? getStatusColor(device.status) : 'neutral',
         rotation: position.course,
         direction: showDirection,
-        mission: thismission ? true : false,
+        mission: missionColor != null,
         missionColor: missionColor,
       };
     },

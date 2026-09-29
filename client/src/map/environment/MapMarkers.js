@@ -2,6 +2,7 @@ import { useId, useEffect, useMemo, useCallback } from 'react';
 import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
+import { targetImageId } from '../core/preloadImages';
 
 const MapMarkers = ({ markers, showTitles }) => {
   const id = useId();
@@ -109,7 +110,7 @@ const MapMarkers = ({ markers, showTitles }) => {
             coordinates: [item.longitude, item.latitude],
           },
           properties: {
-            image: group.type || 'default-neutral',
+            image: targetImageId(group.type),
             title: item.name || `${groupIdx}-${itemIdx}`,
           },
         }));

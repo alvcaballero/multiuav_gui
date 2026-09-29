@@ -1,13 +1,13 @@
 import { useId, useEffect } from 'react';
 
 import { map } from '../core/mapInstance';
-import palette from '../../shared/palette';
+import { routeColor } from '../../shared/routeColors';
 
 const EMPTY_TRACKS = [];
-const deviceColorCount = Object.keys(palette.colors_devices).length;
 
 // Draws the actually-flown path (from recorded position history) as a dashed
-// line, distinct from the planned mission line drawn by MapMissions.
+// line, distinct from the planned mission line drawn by MapMissions, in the same
+// color as the planned route it flew (track.routeKey).
 const MapFlightPath = ({ tracks = EMPTY_TRACKS }) => {
   const id = useId();
 
@@ -45,7 +45,7 @@ const MapFlightPath = ({ tracks = EMPTY_TRACKS }) => {
         type: 'Feature',
         geometry: { type: 'LineString', coordinates: track.points },
         properties: {
-          color: palette.colors_devices[track.deviceId % deviceColorCount],
+          color: routeColor(track.routeKey),
         },
       })),
     });

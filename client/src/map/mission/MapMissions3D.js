@@ -8,7 +8,7 @@ import * as maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 
 import { map } from '../core/mapInstance';
-import palette from '../../shared/palette';
+import { routeColor, routeColorKey } from '../../shared/routeColors';
 
 const modelOrigin = [-6.485616, 37.144592];
 const modelRotate = [Math.PI / 2, 0, 0];
@@ -131,7 +131,7 @@ export const MapMissions3D = () => {
         let assets = prepareAssets();
         // do a for bucle to add the lines and their waypoint markers
         for (let i = 0; i < assets.lines.length; i++) {
-          let color = palette.colors_devices[i];
+          let color = routeColor(routeColorKey(routes[i], i));
           let material = new THREE.LineBasicMaterial({
             linewidth: 3,
             color,
@@ -213,7 +213,7 @@ export const MapMissions3D = () => {
         map.triggerRepaint();
       },
     }),
-    [getOrigin, prepareAssets],
+    [getOrigin, prepareAssets, routes],
   );
 
   useEffect(() => {
