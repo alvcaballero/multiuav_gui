@@ -52,7 +52,8 @@ client/
 
 - `devices`: Device list, selection, follow mode
 - `session`: Positions, camera feeds, markers, planning data, 3D scene
-- `mission`: Mission editing (waypoints, routes, attributes)
+- `mission`: Mission editing — the plan being edited, as routes (each route = one task of the server's task graph, see below)
+- `activeMissions`: Live tracking of missions and their tasks, fed by `GET /api/missions/tasks` + WS `taskUpdated`
 - `chat`: LLM conversation histories
 - `events`, `geofences`, `errors`: Supporting state slices
 
@@ -128,6 +129,32 @@ mount conditionally — no changes needed in `Scene3DLayerSwitcher.jsx`, it pick
 automatically. `client/src/scene3d/controls/OrientationGizmo.jsx` is intentionally NOT part of
 this system — it renders directly into the WebGL canvas via `gl.setScissor`/`setViewport` inside
 `useFrame`, not as an HTML overlay, so it can't be portaled like the other controls.
+
+### Missions as task graphs
+
+The server runs a mission as a graph of tasks (one device per task, `depends_on` between
+them — see `server/CLAUDE.md` › Mission Planning System). The client side:
+
+- **Editor (`/mission`, `store/mission.js`, `components/mission/RouteRouteList.jsx`)** still
+  edits `route[]`, but every route carries its task fields: `task_id`, `depends_on`, `action`
+  (`params` are the existing "Route Attributes"). Rules that keep it consistent:
+  - `task_id` is assigned **once** and never derived from the list position (`nextTaskId`:
+    first free `T<n>`), both in `addRoute` and when a plan is loaded (`RuteConvert`). A
+    position-derived id would rename a task — and break every `depends_on` pointing at
+    it — whenever an earlier route is deleted.
+  - `deleteRoute` removes the deleted `task_id` from every other route's `depends_on`.
+    A dangling dependency makes the server reject the whole plan.
+  - The "Depends on" field only offers the OTHER routes. Everything else about the graph
+    (cycles, two unordered tasks on one UAV) is validated by the server on load; its `400`
+    message is shown to the user — don't duplicate those rules here.
+- **Wire format:** `commandLoadMission` always sends `{ tasks }` built by `routesToTasks`
+  (`map/MissionConvert.js`); `RuteConvert` reads `tasks[]` (v4), `route[]` (v3) and legacy.
+- **Tracking (`store/activeMissions.js`)**: tasks are keyed by **task id**, never by
+  `deviceId` — a device can run several tasks of one mission. `upsertTask` merges: the
+  diagnostics-only updates from the server's waypoint tracking carry no
+  `taskKey`/`action`/`dependsOn`, and replacing the task would erase them.
+- Task status styles live in `shared/missionStatus.js` (`taskStyle`); `init` is shown as
+  "Waiting" (for its dependencies), `skipped` means it never ran because a dependency failed.
 
 ### Redux State Updates
 

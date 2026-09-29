@@ -126,7 +126,7 @@ Client messages are delegated raw by `WebsocketManager` to `WebsocketInboundRout
 `CHAT_USER_MESSAGE` → `chatController.processMessage`). The transport knows no
 business types. Any reply back to the client goes out via the EventBus → subscriber.
 
-Key events: `MISSION_PLAN_SHOWN`, `POSITION_UPDATED`, `CAMERA_RECEIVED`, `DEVICE_UPDATED`, `CHAT_CREATED`
+Key events: `MISSION_PLAN_SHOWN`, `MISSION_UPDATED`, `TASK_UPDATED` (WS `taskUpdated`; also consumed by `missionWpTracking` and `taskScheduler`), `POSITION_UPDATED`, `CAMERA_RECEIVED`, `DEVICE_UPDATED`, `CHAT_CREATED`
 
 ### Database Models
 
@@ -138,11 +138,11 @@ Location: `server/schemas/database/`
 | ---------------- | ------------------------------------------------------- |
 | User              | Auth/user registry                                     |
 | Device            | UAV registry                                           |
-| Mission           | Mission tracking                                       |
-| MissionRoute      | Per-UAV route within a mission                         |
+| Mission           | Mission tracking (`request` = the originating mission request) |
+| MissionTask       | One node of the mission's task graph (`taskKey`, `dependsOn`, `action`) |
 | MissionPlan       | LLM/MIP-planner-generated plan, pre-execution           |
 | PositionHistory   | Sampled position history for the map's time slider      |
-| File              | Downloaded mission artifacts (logs, images)             |
+| File              | Downloaded mission artifacts (logs, images), `taskId` → MissionTask |
 | Event             | Device/mission event log                                |
 | Geofence          | Geofence polygons                                       |
 | Chat              | LLM chat session                                        |
@@ -165,7 +165,7 @@ Location: `server/schemas/database/`
 **Server-side State:**
 
 - Device registry: SQLite database with periodic health checks (30s timeout for OFFLINE status)
-- Mission tracking: per-UAV XState actors (`models/mission/missionSM.js` spawns one `missionExecutionSM.js` machine per `uavId`, keyed in `listSM`)
+- Mission tracking: one XState actor per TASK (`models/mission/missionSM.js` spawns one `missionExecutionSM.js` machine per `taskId`, keyed in `listSM`), dispatched by `taskScheduler` — see Mission Planning System
 - Position updates: In-memory cache with EventBus broadcast
 
 **Redux Data Flow:**
@@ -175,17 +175,29 @@ WebSocket → SocketController.onmessage → dispatch(action) →
 Reducer updates state → useSelector triggers re-render
 ```
 
-### Mission Planning System
+### Mission Planning System (task-dependency graph)
 
-**Mission Structure** (`missionDataXYZ`, produced by the LLM planner and/or `mip_planner`):
+A mission is a DAG of **tasks**. Each task runs on ONE device, as waypoints, once the
+tasks it depends on have completed (e.g. USV navigates → UAV takes off and surveys →
+USV navigates back). `models/mission/taskGraph.js` is the SSOT for the format and its
+validation (pure functions, tested in `test/test-task-graph.js`).
+
+> Naming: "task" means a node of this graph. What the external system (ExtApp) or the
+> planning UI sends to ask for a mission is a **mission request** (`Mission.request`,
+> `requestMission`, `POST /missions/requests`) — it used to be called "task".
+
+**Mission format v4** (what planners/the editor send and what is stored in `MissionPlan`):
 
 ```javascript
 {
-  route: [{
-    uav: string,              // Device name, e.g. "px4_1"
-    id: number,               // Route index
-    uav_type: string,         // "px4_ros2", "px4_sitl", etc.
-    attributes: {              // values + valid ranges come from config/devices/mission_schema.yaml (SSOT)
+  version: '4',
+  name, description, global_origin,   // mission-level, unchanged
+  tasks: [{
+    task_id: 'T1',            // unique within the mission; what depends_on refers to
+    device: 'usv_1',          // device name (was route.uav)
+    action: 'NAVIGATE',       // SEMANTIC only (UI, logs, LLM): every task flies as wp[] + configureMission
+    depends_on: ['T0'],       // task_ids; satisfied when they reach COMPLETED (last waypoint)
+    params: {                 // was route.attributes; values + ranges from config/devices/mission_schema.yaml (SSOT, which calls them `params`)
       max_vel: number,        // m/s
       idle_vel: number,       // m/s
       mode_yaw: 0-5,          // HEADING_MODE_* (0=Auto,1=Fixed,2=RC,3=Waypoint custom,4=POI,5=Gimbal yaw)
@@ -193,6 +205,7 @@ Reducer updates state → useSelector triggers re-render
       mode_trace: 0-3,        // FLIGHT_PATH_MODE_* (0=Curve,1=Curve+stop,2=Straight+stop,3=Coordinate turn)
       mode_landing: 0-4       // MISSION_FINISHED_* (0=No action,1=Home,2=Land,3=First WP,4=Infinite)
     },
+    uav_type, name,           // optional
     wp: [{
       type: string,           // "takeoff" | "inspection" | ... — first wp is usually "takeoff"
       pos: [x, y, z],         // LOCAL ENU meters, NOT lat/lon — z is altitude AGL
@@ -200,11 +213,42 @@ Reducer updates state → useSelector triggers re-render
       gimbal: number,         // Pitch angle in degrees (optional)
       speed: number,          // m/s (optional)
       notes: string,          // human-readable waypoint label (optional)
-      action: {}              // Custom actions (optional)
+      action: {}              // Custom per-waypoint actions (optional)
     }]
   }]
 }
 ```
+
+- **Legacy `route[]` is still accepted everywhere** through `normalizeMission`: route *i*
+  becomes task `T{i+1}` with no dependencies, `attributes` → `params`, `uav` → `device`,
+  action `ROUTE`. The task_id comes from the array index, not `route.id` (planners emit
+  duplicate ids). The planners (`mip_planner`, `planner.md`/MCP `MissionSchemaXYZ`) still
+  emit `route[]`, so **the automatic flow gets no dependencies until they emit `tasks[]`**.
+- A task carrying `attributes` but no `params` is rejected: it would silently fly on defaults.
+- `validateTaskGraph` rejects: duplicate/missing ids, unknown or self dependencies, cycles,
+  and **two tasks of the same device not ordered by the graph**. That last rule is the
+  invariant the whole execution relies on: **a device has at most one active task**, which
+  is what lets device-only ROS signals resolve to a task. Errors are returned all at once;
+  over HTTP they are a `400 { error, errors }`.
+
+**Persistence:** `Mission` (1) → `MissionTask` (N, `taskKey` unique per mission, `dependsOn`,
+`action`, `status`, `currentWp`/`totalWp`) → `File.taskId`. `MissionPlan.missionData` is
+stored as received (`route[]` tagged `'3'`, `tasks[]` `'4'`); server code always reads it
+through `normalizeMission`. The schema migration (`MissionRoute`→`MissionTask`,
+`File.routeId`→`taskId`, `Mission.task`→`request`) lives in
+`common/migrations/missionTaskGraph.js` and runs at startup **before** `sequelize.sync()` —
+otherwise sync creates an empty `MissionTask` next to the old table and the rename can
+never happen. It is idempotent and uses SQLite's native `RENAME COLUMN` (Sequelize's
+SQLite `renameColumn` rebuilds the table and can drop FK `REFERENCES`).
+
+**Task status** (`TASK_STATUS`, `config/status.js`): `init` (waiting for dependencies) →
+`loaded` → `commanded` → `running` → `complete` (last waypoint: satisfies dependents) →
+`end` (closed, files handled); plus `cancelled`, `error`, and `skipped` (never ran: a
+dependency failed). Sets: `TASK_ACTIVE_STATUS` (holds its device), `TASK_TERMINAL_STATUS`,
+`TASK_FAILED_STATUS`. `skipped` ≠ `error`: a skipped task never flew, collapsing them
+loses why the mission degraded. A mission closes when every task is terminal: `finish`, `finish_errors`
+(some failed/skipped) or `error` (none completed). Only an **alive** mission is closed
+automatically, so a mission already `cancelled`/`error` keeps its status and message.
 
 Coordinates are XYZ local ENU end-to-end through planning (see `mip_planner/CLAUDE.md`
 and `models/mission/coordinateConverter.js`). Conversion to/from geodetic
@@ -215,12 +259,67 @@ which coordinate frame a given consumer expects) or when rendering on the geo ma
 
 **Mission Execution Flow:**
 
-1. Plan mission in UI → Create mission via API
-2. Load mission: `commandsController.sendCommandDevice('loadMission')` → ROS service call
-3. Start mission: State machine transitions to RUNNING
-4. Monitor execution: Position updates track waypoint progress
-5. Complete mission: Files downloaded via FTP/SFTP
-6. State machine: see `models/mission/missionExecutionSM.js` for the full XState definition (states include `LoadMission`, `Commadmission`, `RunningMission`, `UAVDownloadFiles`, `DownloadFilesGCS`, `resetUAV`, `return2home`, `stopMission`, `END` — not a simple linear pipeline)
+Both flows create **every** task (`init`) first and then let the scheduler dispatch them.
+Order matters: marking a task `error` skips its dependents, so they must already exist.
+A task whose device doesn't exist is still created (`deviceId` null) and then failed, so
+its dependents are skipped instead of waiting forever.
+
+- **Automatic** (ExtApp → `POST /missions/requests` → planner → `initMission`): validate the
+  graph **before** persisting anything (invalid plan → mission `error`, no `MissionPlan`
+  left behind) → create plan → mission `running` → create tasks → `taskScheduler.dispatchReady`.
+- **Manual** (editor → `POST /missions/load`, then `POST /missions/command`): `load`
+  validates, creates all tasks and loads only the **roots** (no `depends_on`); a root that
+  fails to load goes to `error`. `command` commands the `loaded` roots, attaches a state
+  machine already in `RunningMission` to each (`AttachRunning`, so manual roots also
+  download files and free their device), sets the mission `running` and hands over to the
+  scheduler. A repeated `command` on a mission that is not `init` is a no-op warning.
+- **After a restart** (`failInterruptedMissions`): alive missions go to `error` first (so
+  closing their tasks can't re-close them), then `init` tasks → `skipped`, active → `error`.
+  No resume.
+
+**Scheduler** (`models/mission/taskScheduler.js`, tested in `test/test-task-scheduler.js`):
+- Event-driven: `TASK_UPDATED` (any task reaching a terminal status) and the internal
+  `TASK_DEVICE_RELEASED` (a task's state machine reached `END`).
+- A task is dispatched when its mission is `running` (the gate that keeps manual missions
+  still until commanded), every `depends_on` is `complete`/`end`, **and its device is free**:
+  no state machine in flight and no other `loaded`/`commanded`/`running` task in ANY
+  mission. Dependencies are satisfied at the last waypoint, but the device may still be
+  running its end-of-mission action (RTL/land) until its machine ends — this is what stops
+  two consecutive tasks of one device from overlapping.
+- A failed/cancelled/skipped task skips its whole downstream (transitively, `init` only).
+- Every read-decide-dispatch runs in a **per-mission serialized queue**: that, not a DB
+  claim, is what prevents a child from being dispatched twice when two parents complete
+  together. Single-process assumption.
+
+**State machines** (`missionSM.js` registry + `missionExecutionSM.js` definition):
+- **One actor per task**, keyed by `taskId` in `listSM`. Creating an actor immediately
+  sends `configureMission` to the device, so only the scheduler and the flows create them.
+- The device is loaded with a **one-task mission** (`missionForTask`, dependencies
+  stripped). `loadMissionToDevice` accepts any mission shape (incl. the bare `route[]` the
+  MCP `load_mission_to_uav` tool posts) and loads the device's single task; a payload with
+  several tasks for that device is rejected rather than guessed.
+- ROS end-of-mission signals carry only the device: `deviceFinishedMission` /
+  `deviceSyncedFiles` resolve them through the actor in `RunningMission` /
+  `UAVDownloadFiles`, **not the DB** — wpTracking may already have marked the task `complete`.
+- A load/command failure (`resetUAV`) marks the task `error` with the reason; left in
+  `init` it would be re-dispatched forever.
+- **Files are downloaded once per device**, by its last open task: `DecideDownload` asks
+  `shouldDownloadFiles` when the task *finishes* (not when dispatched), so if a later task
+  of the device got skipped meanwhile, this one downloads. Earlier tasks go through
+  `FinishWithoutDownload`. The download window is the mission's `initTime` → now.
+- Full XState definition: states `LoadMission`, `Commadmission`, `RunningMission`,
+  `DecideDownload`, `UAVDownloadFiles`, `FinishWithoutDownload`, `DownloadFilesGCS`,
+  `resetUAV`, `return2home`, `stopMission`, `END` — not a simple linear pipeline.
+
+**Endpoints:** `GET /missions/tasks` (tasks, filters `id`/`missionId`/`deviceId`/`status`),
+`POST /missions/requests`, `/load`, `/command`. Deprecated aliases kept for external
+systems: `GET /missions/routes` (MCP `resources.ts`) and `POST /missions/sendTask`
+(ExtApp) — remove them once those callers migrate.
+
+**Known gaps:** planners still emit `route[]` (no dependencies in the automatic flow);
+`validateMissionCollission` treats tasks ordered by the graph as concurrent (possible
+false inter-UAV conflicts); `MissionTask.initTime` is the creation time, not the start
+time, so per-task report windows (events, flown track) of two tasks on one device overlap.
 
 **Command Execution:**
 
@@ -445,10 +544,12 @@ eventBus.emit('POSITION_UPDATED', data);
 
 ### State Machine Updates
 
-When modifying mission flow, update both:
+When modifying mission flow, check all of:
 
 1. State machine definition (`models/mission/missionSM.js` / `missionExecutionSM.js`)
 2. Command handlers in `models/commands.js`
+3. The scheduler's readiness rules (`models/mission/taskScheduler.js`) and the two flows in `models/mission/mission.js` (`initMission`, `loadMissionManual`/`commandMissionManual`)
+4. Every task must end in a terminal status on every path (success, failure, cancel, restart): a task left in `init` of a dead mission keeps its device "busy" for new mission requests forever
 
 ### ROS Message Handling
 
@@ -572,6 +673,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `FB_CONNECTION`: Enable/disable FlatBuffer protocol (default true)
 - `ROS_URL`: ROS bridge WS URL (default `ws://127.0.0.1:9090`)
 - `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
+- `DB_STORAGE`: local SQLite file (default `server/data/sequelize.sqlite`). `npm test` runs with `DB=false DB_STORAGE=:memory:` so tests never open — or run startup migrations on — the real database. Tests that need catalog data read the git-tracked files under `data/`, not DB rows.
 - `STREAM_SERVER`: Enable/disable video streaming (MediaMTX)
 - `LLM`: Enable/disable chat features
 - `LLM_PROVIDER`: `openai` | `gemini` | `anthropic`/`claude` | `ollama` | `llamacpp` | `openai-compatible` (default `openai`)
@@ -628,6 +730,8 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 7. **Redux Migration**: Old planning format uses indexes, new format uses baseId references
 8. **Git Submodules**: Remember to initialize/update submodules after cloning (`git submodule update --init --recursive`)
 9. **MCP Server**: When developing MCP tools, the server auto-restarts may cause temporary disconnections (auto-reconnection handles this)
+10. **Controller statics share one namespace**: controllers mix HTTP handlers (`(req, res)`) and facade methods for other models as `static` fields of the same class. A second `static` with the same name silently replaces the first — a facade `getMission(missionId)` once overrode the `GET /api/missions` handler and broke the mission list with no error. Give facades distinct names (`getMissionById`), and grep for the name before adding one.
+11. **Tests and the real database**: always run tests through `npm test` (it sets `DB=false DB_STORAGE=:memory:`). A plain `node --test` of any file that imports `common/sequelize.js` opens — and runs startup migrations on — `data/sequelize.sqlite`. `--test-force-exit` is there because importing `models/devices.js` starts the `DeviceHealthMonitor` timers at import time, which would keep a test process alive.
 
 ## External Dependencies
 
