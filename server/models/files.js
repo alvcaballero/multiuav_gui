@@ -11,7 +11,7 @@ import { missionLogger as logger } from '../common/logger.js';
 
 /* files:
 /    id
-/    routeId
+/    taskId
 /    missionId
 /    deviceId
 /    name
@@ -27,10 +27,10 @@ export const FILE_STATUS = Object.freeze({
   NO_DOWNLOAD: 0,
   DOWNLOAD: 1,
   PROCESS: 2, // For  thermal images, the processed image is created and metadata read. For other files, this state is skipped.
-  FAIL: 3, // Download failed (connection, missing file, etc.) or metadata read failed on a real image. Aligns with ROUTE_STATUS.ERROR / MISSION_STATUS.ERROR.
-  ERROR: 4, // Error Processing the file or reading metadata. Aligns with ROUTE_STATUS.ERROR / MISSION_STATUS.ERROR.
+  FAIL: 3, // Download failed (connection, missing file, etc.) or metadata read failed on a real image. Aligns with TASK_STATUS.ERROR / MISSION_STATUS.ERROR.
+  ERROR: 4, // Error Processing the file or reading metadata. Aligns with TASK_STATUS.ERROR / MISSION_STATUS.ERROR.
   // Whole pipeline finished for this file: downloaded, processed and metadata read
-  // successfully. Aligns with ROUTE_STATUS.COMPLETED / MISSION_STATUS.COMPLETED.
+  // successfully. Aligns with TASK_STATUS.COMPLETED / MISSION_STATUS.COMPLETED.
   COMPLETED: 5,
   // Downloaded fine but metadata could not (or need not) be read — e.g. a video,
   // which sharp can't parse. NOT an error: the file is intact. Appended at the end
@@ -63,15 +63,15 @@ const downloadQueue = []; // manage files to download
 const processQueue = []; // manage files to process
 
 export class filesModel {
-  static async getFiles({ id, deviceId, missionId, routeId }) {
+  static async getFiles({ id, deviceId, missionId, taskId }) {
     if (deviceId) {
       return await sequelize.models.File.findAll({ where: { deviceId: deviceId } });
     }
     if (missionId) {
       return await sequelize.models.File.findAll({ where: { missionId: missionId } });
     }
-    if (routeId) {
-      return await sequelize.models.File.findAll({ where: { routeId: routeId } });
+    if (taskId) {
+      return await sequelize.models.File.findAll({ where: { taskId: taskId } });
     }
     if (id) {
       return sequelize.models.File.findOne({ where: { id: id } });
@@ -81,7 +81,7 @@ export class filesModel {
 
   static async addFile({
     name,
-    routeId,
+    taskId,
     missionId,
     deviceId,
     status = FILE_STATUS.NO_DOWNLOAD,
@@ -94,7 +94,7 @@ export class filesModel {
   }) {
     const newFile = {
       name,
-      routeId,
+      taskId,
       missionId,
       deviceId,
       status,
@@ -110,7 +110,7 @@ export class filesModel {
       return myfile;
     } catch (error) {
       logger.error(
-        `addFile FK constraint failed missionId=${missionId} routeId=${routeId} deviceId=${deviceId}: ${error.message}`
+        `addFile FK constraint failed missionId=${missionId} taskId=${taskId} deviceId=${deviceId}: ${error.message}`
       );
       return null;
     }
@@ -137,20 +137,20 @@ export class filesModel {
       s == FILE_STATUS.ERROR;
     const isFailure = (s) => s == FILE_STATUS.FAIL || s == FILE_STATUS.ERROR;
     if (isTerminal(status)) {
-      let myfiles = await this.getFiles({ routeId: file.routeId });
+      let myfiles = await this.getFiles({ taskId: file.taskId });
       let allFilesDone = myfiles.every((f) => isTerminal(f.status));
       if (allFilesDone) {
         // Surface any per-file failures on the route so the reason isn't buried in
         // the File rows only. DOWNLOAD_NO_METADATA is NOT a failure — a video with no
-        // metadata is a successful download. The route still ends (endRouteUAV) — a
+        // metadata is a successful download. The route still ends (endTask) — a
         // partial download is a finished-with-errors mission, not a stuck one.
         const failed = myfiles.filter((f) => isFailure(f.status));
         if (failed.length > 0) {
           const errorMessage = `${failed.length}/${myfiles.length} archivo(s) no se descargaron o procesaron correctamente`;
-          logger.warn(`route ${file.routeId} finished with file errors — ${errorMessage}`);
-          await missionController.editRoute({ id: file.routeId, errorMessage });
+          logger.warn(`route ${file.taskId} finished with file errors — ${errorMessage}`);
+          await missionController.editTask({ id: file.taskId, errorMessage });
         }
-        await missionController.endRouteUAV(file.missionId, file.deviceId);
+        await missionController.endTask(file.taskId);
       }
     }
     return file;
@@ -269,8 +269,8 @@ export class filesModel {
    / if the file is a thermal image, process the image and return the metadata
    / return a list of files, and a list of metadata 
    */
-  static async updateFiles(uavId, missionId, routeId, initTime) {
-    logger.info(`update files api call uavId=${uavId} routeId=${routeId} missionId=${missionId}`);
+  static async updateFiles(uavId, missionId, taskId, initTime) {
+    logger.info(`update files api call uavId=${uavId} taskId=${taskId} missionId=${missionId}`);
 
     const mydevice = await devicesController.getAccess(uavId);
     const configs = await devicesController.getFilesConfig(uavId);
@@ -303,7 +303,7 @@ export class filesModel {
         // DB (the same UTC instant sent to the UAV as init_date), NOT from whatever
         // the client passed in — a client-supplied local-time string would never
         // match the folder the onboard computer actually created.
-        const mission = await missionController.getMissionRoute(missionId);
+        const mission = await missionController.getMissionById(missionId);
         const dbInitTime = mission?.initTime ?? initTime;
         let myInitTime = missionFolderStamp(dbInitTime);
         pathFolder = `${myconfig.path}mission_${myInitTime}/`;
@@ -326,7 +326,7 @@ export class filesModel {
 
       for (let myfile of listFiles) {
         let createFile = await this.addFile({
-          routeId: routeId,
+          taskId: taskId,
           missionId: missionId,
           deviceId: uavId,
           name: `${myfile.split('/').at(-1)}`,
@@ -342,21 +342,21 @@ export class filesModel {
     }
 
     if (queued) {
-      logger.info(`updateFiles: ${downloadQueue.length} file(s) queued for download (route=${routeId})`);
+      logger.info(`updateFiles: ${downloadQueue.length} file(s) queued for download (route=${taskId})`);
       this.downloadFiles();
     }
 
     // Nothing got queued for download: either every config failed to connect or
     // every remote folder came back empty. Persist the reason on the route so the
     // failure is visible in the DB/UI instead of only in the logs. Only when we
-    // have a routeId to address (some callers invoke updateFiles route-less).
-    if (!queued && routeId) {
+    // have a taskId to address (some callers invoke updateFiles route-less).
+    if (!queued && taskId) {
       const errorMessage =
         downloadIssues.length > 0
           ? `No se descargaron archivos: ${downloadIssues.join('; ')}`
           : 'No se descargaron archivos de la misión';
-      logger.warn(`updateFiles: no files downloaded for route ${routeId} — ${errorMessage}`);
-      await missionController.editRoute({ id: routeId, errorMessage });
+      logger.warn(`updateFiles: no files downloaded for route ${taskId} — ${errorMessage}`);
+      await missionController.editTask({ id: taskId, errorMessage });
     }
 
     return true;
@@ -446,7 +446,7 @@ export class filesModel {
       );
       if (response) {
         let createFile = await this.addFile({
-          routeId: myfile.routeId,
+          taskId: myfile.taskId,
           missionId: myfile.missionId,
           deviceId: myfile.deviceId,
           name: `${myfile.name.split('.')[0]}_process.jpg`,

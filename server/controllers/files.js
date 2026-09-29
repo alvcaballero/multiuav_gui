@@ -26,13 +26,13 @@ class filesController {
     let response = await filesModel.ProcessThermalImages(req.body.src);
     res.json(response);
   };
-  static updateFiles = async (uavId, missionId, routeId, initTime) => {
-    return await filesModel.updateFiles(uavId, missionId, routeId, initTime);
+  static updateFiles = async (uavId, missionId, taskId, initTime) => {
+    return await filesModel.updateFiles(uavId, missionId, taskId, initTime);
   };
   static updateFilesAPI = async (req, res) => {
     logger.info('Updating files');
-    const { uavId, missionId, routeId, initTime } = req.params;
-    let response = await filesModel.updateFiles(uavId, missionId, routeId, initTime);
+    const { uavId, missionId, taskId, initTime } = req.params;
+    let response = await filesModel.updateFiles(uavId, missionId, taskId, initTime);
     res.json(response);
   };
   static showFiles = async (req, res) => {

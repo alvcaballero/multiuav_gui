@@ -1,23 +1,16 @@
 import { Sequelize, Op } from 'sequelize';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-import { useExternalDb, dbType, dbName, dbHost, dbPort, dbUser, dbPassword } from '../config/config.js';
+import { useExternalDb, dbType, dbName, dbHost, dbPort, dbUser, dbPassword, dbStorage } from '../config/config.js';
 import { setupModels } from '../schemas/database/index.js';
 import { logger } from './logger.js';
+import { migrateMissionTaskGraph } from './migrations/missionTaskGraph.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 logger.info('useExternalDb is ' + useExternalDb);
 
 let sequelizeConfig = {
   dialect: 'sqlite',
-  // Absolute path — a bare 'data/sequelize.sqlite' resolves against the
-  // process cwd, not this file. Any script run from outside server/ (e.g.
-  // `node server/scripts/foo.js` from the repo root) would silently create/
-  // open a SEPARATE, empty database at <cwd>/data/sequelize.sqlite instead
-  // of the real one, with no error — bit us once running a migration script.
-  storage: path.join(__dirname, '..', 'data', 'sequelize.sqlite'),
+  storage: dbStorage,
   logging: false,
   pool: { max: 1, idle: Infinity, maxUses: Infinity },
 };
@@ -61,6 +54,12 @@ try {
 setupModels(sequelize);
 
 try {
+  await migrateMissionTaskGraph(sequelize, logger);
+} catch (error) {
+  logger.error('Migration failed: mission task graph schema', error.message);
+}
+
+try {
   await sequelize.sync({ force: false });
   logger.info('DB  models were synchronized successfully.');
 } catch (error) {
@@ -82,7 +81,7 @@ const migrations = [
   `ALTER TABLE Mission ADD COLUMN externalId INTEGER DEFAULT NULL`,
   // route-level error tracking: mirror Mission.errorMessage on each route so a
   // per-UAV failure (load failed, SFTP download empty/unreachable) is persisted.
-  `ALTER TABLE MissionRoute ADD COLUMN errorMessage TEXT DEFAULT NULL`,
+  `ALTER TABLE MissionTask ADD COLUMN errorMessage TEXT DEFAULT NULL`,
   // file-level error tracking: a File that failed to download stays in FAIL with
   // no human-readable reason. Persist why (connection lost, download failed, ...).
   `ALTER TABLE File ADD COLUMN errorMessage TEXT DEFAULT NULL`,
@@ -159,11 +158,11 @@ if (sequelize.getDialect() === 'sqlite') {
     logger.error('Migration failed: event.positionId column type change', e.message);
   }
 
-  // `File.routeId`'s FK was left pointing at the legacy `Route` table (pre-rename
-  // to `MissionRoute`), which is now empty/orphaned — so every insert with a
-  // non-null routeId permanently fails its FK check and addFile()'s try/catch
-  // silently swallows it (files download from the UAV via SFTP but are never
-  // recorded in the DB).
+  // `File.taskId` (formerly routeId)'s FK was left pointing at the legacy `Route`
+  // table, which is now empty/orphaned — so every insert with a non-null taskId
+  // permanently fails its FK check and addFile()'s try/catch silently swallows it
+  // (files download from the UAV via SFTP but are never recorded in the DB).
+  // Runs after migrateMissionTaskGraph, so the column is already named taskId here.
   try {
     const [[table]] = await sequelize.query(`SELECT sql FROM sqlite_master WHERE type='table' AND name='File'`);
     if (table?.sql && /REFERENCES\s+`Route`\s*\(/i.test(table.sql)) {
@@ -172,7 +171,7 @@ if (sequelize.getDialect() === 'sqlite') {
           `CREATE TABLE \`File_new\` (
              \`id\` INTEGER PRIMARY KEY AUTOINCREMENT,
              \`name\` VARCHAR(255) NOT NULL,
-             \`routeId\` INTEGER REFERENCES \`MissionRoute\` (\`id\`),
+             \`taskId\` INTEGER REFERENCES \`MissionTask\` (\`id\`),
              \`missionId\` INTEGER REFERENCES \`Mission\` (\`id\`),
              \`deviceId\` INTEGER REFERENCES \`Devices\` (\`id\`),
              \`status\` INTEGER NOT NULL DEFAULT 0,
@@ -187,18 +186,18 @@ if (sequelize.getDialect() === 'sqlite') {
           { transaction: t }
         );
         await sequelize.query(
-          `INSERT INTO \`File_new\` (id, name, routeId, missionId, deviceId, status, type, path, path2, source, date, attributes, errorMessage)
-           SELECT id, name, routeId, missionId, deviceId, status, type, path, path2, source, date, attributes, errorMessage
+          `INSERT INTO \`File_new\` (id, name, taskId, missionId, deviceId, status, type, path, path2, source, date, attributes, errorMessage)
+           SELECT id, name, taskId, missionId, deviceId, status, type, path, path2, source, date, attributes, errorMessage
            FROM \`File\``,
           { transaction: t }
         );
         await sequelize.query('DROP TABLE `File`', { transaction: t });
         await sequelize.query('ALTER TABLE `File_new` RENAME TO `File`', { transaction: t });
       });
-      logger.info('Migrated File.routeId foreign key from legacy Route table to MissionRoute');
+      logger.info('Migrated File.taskId foreign key from legacy Route table to MissionTask');
     }
   } catch (e) {
-    logger.error('Migration failed: File.routeId FK reference change', e.message);
+    logger.error('Migration failed: File.taskId FK reference change', e.message);
   }
 
   // `Bases.id` was a client-generated STRING (`base_N`), not guaranteed unique

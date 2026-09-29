@@ -25,7 +25,7 @@ function configParamFromValue(group, value) {
 }
 
 // Defaults come from the mission_schema YAML, resolved per robot category (SSOT).
-// route.attributes overrides any default the user explicitly set.
+// task.params overrides any default the user explicitly set.
 function extractRouteAttributes(routeAttributes, uavType) {
   const defaults = categoryModel.getAttributesDefaults(uavType);
   return { ...defaults, ...routeAttributes };
@@ -89,19 +89,19 @@ function transformWaypoints(waypoints, idle_vel, categoryActions) {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-// Decodes a raw route object into the internal normalized mission format.
-// route.uav_type must be present so categoryModel can resolve action IDs.
-export function decodeMissionRoute(route) {
+// Decodes a raw task (see taskGraph.js) into the internal normalized mission format.
+// task.uav_type must be present so categoryModel can resolve action IDs.
+export function decodeMissionTask(task) {
   const { idle_vel, max_vel, mode_yaw, mode_gimbal, mode_trace, mode_landing } = extractRouteAttributes(
-    route.attributes ?? {},
-    route.uav_type
+    task.params ?? {},
+    task.uav_type
   );
 
   // categoryModel.getActions is synchronous — reads from in-memory YAML
-  const categoryActions = categoryModel.getActions({ type: route.uav_type });
+  const categoryActions = categoryModel.getActions({ type: task.uav_type });
 
   const { wp_command, yaw_pos, speed_pos, gimbal_pos, action_matrix, param_matrix } = transformWaypoints(
-    route.wp,
+    task.wp,
     idle_vel,
     categoryActions
   );

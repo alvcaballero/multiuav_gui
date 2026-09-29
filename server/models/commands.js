@@ -14,6 +14,7 @@ import {
   KNOWN_COMMAND_TYPES,
 } from '../config/commandCatalog.js';
 import { logger } from '../common/logger.js';
+import { normalizeMission } from './mission/taskGraph.js';
 
 export class commandsModel {
   static getSaveCommands(deviceId) {
@@ -174,33 +175,42 @@ export class commandsModel {
   }
 
   /**
-   * Loads a mission to a SINGLE device: receives the FULL mission and internally
-   * extracts the route that belongs to `deviceId` (matched by UAV name), then
-   * sends it via the ROS `configureMission` service.
-   * Fleet fan-out + plan/mission/route persistence live in missionModel (manual)
-   * or initMission + missionExecutionSM (automatic).
+   * Loads a mission to a SINGLE device via the ROS `configureMission` service.
+   * Accepts any mission shape normalizeMission does (tasks[], route[], or a bare
+   * route array — what the MCP load_mission_to_uav tool posts) and loads the one
+   * task that belongs to `deviceId`. The mission flows pass missionForTask(), so
+   * that task is always unambiguous; a mission with several tasks for this device
+   * is rejected rather than guessing which one to fly.
+   * Fleet fan-out + plan/mission/task persistence live in missionModel.
    * @param {number} deviceId
-   * @param {object} missionData - full mission ({ route: [...], version })
+   * @param {object|object[]} missionData
    */
   static async loadMissionToDevice(deviceId, missionData) {
     logger.info(`loadMissionToDevice deviceId=${deviceId}`);
-    const routes = missionData?.route ?? missionData;
-    if (!Array.isArray(routes) || routes.length === 0) {
+    if (missionData == null || (Array.isArray(missionData) && missionData.length === 0)) {
       return { state: 'info', msg: 'no mission' };
     }
     const myDevice = await devicesController.getDevice(deviceId);
     if (!myDevice) {
       return { state: 'warning', msg: `device ${deviceId} not found` };
     }
-    const route = routes.find((r) => r.uav === myDevice.name);
-    if (!route) {
-      return { state: 'warning', msg: `device ${myDevice.name} not found in mission route` };
+
+    let mission;
+    try {
+      mission = normalizeMission(Array.isArray(missionData) ? { route: missionData } : missionData);
+    } catch (err) {
+      return { state: 'error', msg: err.message };
     }
-    if (!route.wp || Object.values(route.wp).length === 0) {
-      return { state: 'warning', msg: `route for ${route.uav} has no waypoints` };
+    const deviceTasks = mission.tasks.filter((t) => t.device === myDevice.name);
+    if (deviceTasks.length === 0) {
+      return { state: 'warning', msg: `device ${myDevice.name} has no task in this mission` };
     }
-    const rawRoute = { ...route, uav_type: myDevice.category };
-    return await this.standarCommand(deviceId, 'configureMission', rawRoute);
+    if (deviceTasks.length > 1) {
+      const ids = deviceTasks.map((t) => t.task_id).join(', ');
+      return { state: 'error', msg: `device ${myDevice.name} has several tasks (${ids}); load one task at a time` };
+    }
+    const task = { ...deviceTasks[0], uav_type: myDevice.category };
+    return await this.standarCommand(deviceId, 'configureMission', task);
   }
 
   /**

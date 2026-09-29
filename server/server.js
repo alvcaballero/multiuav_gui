@@ -22,6 +22,7 @@ import { eventBus } from './common/eventBus.js';
 import { positionHistorySampler, positionBroadcastBatcher } from './models/positions/index.js';
 import { approvalSweeper } from './models/chat/approvalSweeper.js';
 import { missionWpTracking } from './models/mission/missionWpTracking.js';
+import { taskScheduler } from './models/mission/taskScheduler.js';
 
 // comunications with devices
 import { initFlatbufferServer } from './models/flatbuffer/index.js';
@@ -104,12 +105,16 @@ positionBroadcastBatcher.start();
 // el turno que quedó esperándolas (ver approvalSweeper.js).
 approvalSweeper.start();
 
-// Mission waypoint tracking: subscribes to ROUTE_UPDATED/POSITION_RECEIVED and
+// Mission waypoint tracking: subscribes to TASK_UPDATED/POSITION_RECEIVED and
 // rehydrates its in-memory tracking registry from routes already in flight (so a
 // server restart mid-mission doesn't strand them untracked).
 missionWpTracking.init().catch((err) => {
   logger.error(`missionWpTracking init failed: ${err.message}`);
 });
+
+// Task-graph scheduler: dispatches a task once its dependencies completed and its
+// device is free; skips the dependents of a task that failed.
+taskScheduler.init();
 
 // connect to  devices
 if (RosEnable) {

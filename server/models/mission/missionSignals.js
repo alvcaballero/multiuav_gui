@@ -84,10 +84,10 @@ export function signalAutopilotFeedback(deviceId, totalWp) {
 // Works for any UAV type as long as speed and waypoints are known.
 // Useful to detect missed WP detections due to telemetry gaps.
 // ---------------------------------------------------------------------------
-export function signalTimeEstimate(waypoints, routeAttributes, initTime, currentWp, totalWp) {
+export function signalTimeEstimate(waypoints, params, initTime, currentWp, totalWp) {
   if (!initTime || !waypoints?.length) return { wpEstimate: null, confidence: null, anomaly: null };
 
-  const speed = routeAttributes?.max_vel ?? routeAttributes?.idle_vel ?? 5; // m/s fallback
+  const speed = params?.max_vel ?? params?.idle_vel ?? 5; // m/s fallback
   if (speed <= 0) return { wpEstimate: null, confidence: null, anomaly: null };
 
   // Build per-segment durations

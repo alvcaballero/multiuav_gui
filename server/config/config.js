@@ -23,6 +23,11 @@ export const dbPassword = process.env.DB_PASSWORD;
 export const dbHost = process.env.DB_HOST;
 export const dbName = process.env.DB_NAME;
 export const dbPort = process.env.DB_PORT;
+// Local SQLite file (used when DB !== 'true'). Absolute by default: a bare
+// 'data/sequelize.sqlite' resolves against the process cwd, and a script run from
+// outside server/ would silently open a separate, empty database. The test script
+// sets ':memory:' so tests never touch (or migrate) the real one.
+export const dbStorage = process.env.DB_STORAGE || path.join(__dirname, '..', 'data', 'sequelize.sqlite');
 export const planningServer = process.env.PLANNING_SERVER === 'true';
 export const planningHost = process.env.PLANNING_HOST;
 export const missionDataPath = process.env.MISSION_DATA_PATH ?? '../data/';

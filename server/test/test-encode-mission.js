@@ -27,7 +27,7 @@ const BASE_ATTRS = {
 };
 
 function makeRoute(uav_type, attrs = BASE_ATTRS, wp = BASE_WP) {
-  return { uav: 'uav1', uav_type, attributes: attrs, wp };
+  return { uav: 'uav1', uav_type, params: attrs, wp };
 }
 
 // ─── ROS1: aerialcore_common/ConfigMission ────────────────────────────────────
@@ -52,7 +52,7 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
     assert.equal(result.waypoint[0].altitude, 9);
   });
 
-  test('velocidades: idleVel y maxVel de attributes', () => {
+  test('velocidades: idleVel y maxVel de params', () => {
     const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
     assert.equal(result.idleVel, 7);
     assert.equal(result.maxVel, 12);
@@ -76,14 +76,14 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
     assert.equal(result.commandParameter.data.length, 20);
   });
 
-  test('modos de vuelo de attributes', () => {
+  test('modos de vuelo de params', () => {
     const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
     assert.equal(result.yawMode, 2);
     assert.equal(result.finishAction, 2);
     assert.equal(result.traceMode, 2);
   });
 
-  test('atributos con defaults del YAML cuando attributes está vacío (SSOT)', () => {
+  test('atributos con defaults del YAML cuando params está vacío (SSOT)', () => {
     // 'default' profile exposes mode_yaw/mode_trace/mode_landing/idle_vel (no max_vel).
     const emptyRoute = makeRoute('dji_M210_noetic', {});
     const result = encodeRosSrv({ type: 'configureMission', msg: emptyRoute, msgType });
@@ -179,7 +179,7 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
     assert.equal(mission[0].config.use_local_cruise_vel, 0);
   });
 
-  test('modos de vuelo de attributes: finished_action, max_flight_speed', () => {
+  test('modos de vuelo de params: finished_action, max_flight_speed', () => {
     const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
     const init = result.waypoint_v2_init_settings;
     assert.equal(init.finished_action, 2);

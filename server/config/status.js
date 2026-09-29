@@ -4,7 +4,7 @@ export const DEVICE_STATUS = Object.freeze({
   OFFLINE: 'offline',
 });
 
-// --- Mission / Route status ---
+// --- Mission / Task status ---
 export const MISSION_STATUS = Object.freeze({
   INIT: 'init',
   PLANNING: 'planning',
@@ -16,15 +16,16 @@ export const MISSION_STATUS = Object.freeze({
   ERROR: 'error',
 });
 
-export const ROUTE_STATUS = Object.freeze({
-  INIT: 'init',
+export const TASK_STATUS = Object.freeze({
+  INIT: 'init', // created, waiting for its dependencies
   LOADED: 'loaded',
   COMMANDED: 'commanded',
   RUNNING: 'running',
-  COMPLETED: 'complete', // UAV finished but files not yet downloaded
+  COMPLETED: 'complete', // device reached the last waypoint (satisfies dependents)
   END: 'end', // UAV finished and files downloaded
   CANCELLED: 'cancelled',
   ERROR: 'error',
+  SKIPPED: 'skipped', // never ran: an upstream dependency failed or was cancelled
 });
 
 // Missions that are still "alive" (not in a terminal state). A re-sent external
@@ -35,6 +36,23 @@ export const MISSION_ALIVE_STATUS = Object.freeze([
   MISSION_STATUS.PLANNING,
   MISSION_STATUS.RUNNING,
 ]);
+
+// A task holding its device: loaded on it or flying. The task graph guarantees at
+// most one per device, which is what lets a device-only ROS signal resolve its task.
+export const TASK_ACTIVE_STATUS = Object.freeze([TASK_STATUS.LOADED, TASK_STATUS.COMMANDED, TASK_STATUS.RUNNING]);
+
+// A task that will never change again on its own; the mission is over once every
+// task is in one of these.
+export const TASK_TERMINAL_STATUS = Object.freeze([
+  TASK_STATUS.COMPLETED,
+  TASK_STATUS.END,
+  TASK_STATUS.CANCELLED,
+  TASK_STATUS.ERROR,
+  TASK_STATUS.SKIPPED,
+]);
+
+// Terminal tasks that never flew to completion: they make a finished mission "with errors".
+export const TASK_FAILED_STATUS = Object.freeze([TASK_STATUS.CANCELLED, TASK_STATUS.ERROR, TASK_STATUS.SKIPPED]);
 
 // --- PX4 / ROS navigation maps ---
 // Definimos el mapa de estados

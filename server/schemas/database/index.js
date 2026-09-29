@@ -1,7 +1,7 @@
 import { User, UserSchema } from './user.model.js';
 import { Device, DeviceSchema } from './device.model.js';
 import { Mission, MissionSchema } from './mission.model.js';
-import { MissionRoute, MissionRouteSchema } from './missionRoute.model.js';
+import { MissionTask, MissionTaskSchema } from './missionTask.model.js';
 import { File, FileSchema } from './file.model.js';
 import { Event, EventSchema } from './event.model.js';
 import { Geofence, GeofenceSchema } from './geofence.model.js';
@@ -22,7 +22,7 @@ export function setupModels(sequelize) {
   Device.init(DeviceSchema, Device.config(sequelize));
   MissionPlan.init(MissionPlanSchema, MissionPlan.config(sequelize));
   Mission.init(MissionSchema, Mission.config(sequelize));
-  MissionRoute.init(MissionRouteSchema, MissionRoute.config(sequelize));
+  MissionTask.init(MissionTaskSchema, MissionTask.config(sequelize));
   File.init(FileSchema, File.config(sequelize));
   Event.init(EventSchema, Event.config(sequelize));
   Geofence.init(GeofenceSchema, Geofence.config(sequelize));

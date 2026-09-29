@@ -46,13 +46,12 @@ class missionController {
     res.json(response);
   };
 
-  static getRoutes = async (req, res) => {
-    logger.debug('getRoutes');
-    const response = await missionModel.getRoutes(req.query);
-    res.json(Object.values(response));
+  static getTasks = async (req, res) => {
+    const { id, missionId, deviceId, status } = req.query;
+    res.json(await missionModel.getTasks({ id, missionId, deviceId, status }));
   };
-  static sendTask = async (req, res) => {
-    logger.info(`sendTask: ${JSON.stringify(req.body)}`);
+  static requestMission = async (req, res) => {
+    logger.info(`requestMission: ${JSON.stringify(req.body)}`);
     let id = req.body.id || req.body.mission_id;
     let name = req.body.name;
     let objetivo = req.body.objetivo;
@@ -72,8 +71,8 @@ class missionController {
           : null;
       }
     }
-    logger.debug(`sendTask id=${id}`);
-    await missionModel.sendTask({ id, name, objetivo, locations, meteo });
+    logger.debug(`requestMission id=${id}`);
+    await missionModel.requestMission({ id, name, objetivo, locations, meteo });
     res.status(200).json('all ok');
   };
 
@@ -92,19 +91,17 @@ class missionController {
     }
   };
 
-  // Manual flow — load. Body: { route: [...] } (a mission's routes).
-  // Returns { missionId, planId, results }.
+  // Manual flow — load. Body: the mission ({ tasks: [...] } or legacy { route: [...] }),
+  // or wrapped as { mission: {...} }. Returns { missionId, planId, results }.
   static loadMissionManual = async (req, res) => {
-    const missionData = req.body?.route ? req.body : { route: req.body?.mission?.route ?? [] };
-    if (!Array.isArray(missionData.route) || missionData.route.length === 0) {
-      return res.status(400).json({ error: 'route is required and must be a non-empty array.' });
-    }
+    const missionData = req.body?.tasks || req.body?.route ? req.body : (req.body?.mission ?? {});
     try {
       const response = await missionModel.loadMissionManual(missionData);
       res.json(response);
     } catch (error) {
       logger.error(`Error in loadMissionManual: ${error.message}`);
-      res.status(500).json({ error: error.message || 'Failed to load mission.' });
+      // TaskGraphError carries status 400 and every validation error.
+      res.status(error.status || 500).json({ error: error.message || 'Failed to load mission.', errors: error.errors });
     }
   };
 
@@ -131,11 +128,17 @@ class missionController {
   static editMission = (payload) => {
     return missionModel.editMission(payload);
   };
-  static editRoute = (payload) => {
-    return missionModel.editRoute(payload);
+  static shouldDownloadFiles = (taskId) => {
+    return missionModel.shouldDownloadFiles(taskId);
   };
-  static finishMission = (missionId, deviceId) => {
-    return missionModel.UAVFinish(missionId, deviceId);
+  static getTask = (taskId) => {
+    return missionModel.getTask(taskId);
+  };
+  static editTask = (payload) => {
+    return missionModel.editTask(payload);
+  };
+  static finishTask = (taskId) => {
+    return missionModel.finishTask(taskId);
   };
   static deviceFinishMission = ({ name, id }) => {
     return missionModel.deviceFinishMission({ name, id });
@@ -143,14 +146,14 @@ class missionController {
   static deviceFinishSyncFiles = ({ name, id }) => {
     return missionModel.deviceFinishSyncFiles({ name, id });
   };
-  static endRouteUAV = (missionId, uavId) => {
-    return missionModel.UAVEnd(missionId, uavId);
+  static endTask = (taskId) => {
+    return missionModel.endTask(taskId);
   };
-  static getMissionRoute = async (missionId) => {
+  static getMissionById = async (missionId) => {
     return await missionModel.getMissionValue(missionId);
   };
-  static updateFiles = (missionId, deviceId, routeId) => {
-    return missionModel.updateFiles(missionId, deviceId, routeId);
+  static updateTaskFiles = (taskId) => {
+    return missionModel.updateTaskFiles(taskId);
   };
   static updateMission = ({ device, mission, state }) => {
     missionModel.updateMission({ device, mission, state });

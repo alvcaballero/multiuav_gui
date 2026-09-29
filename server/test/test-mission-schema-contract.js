@@ -263,7 +263,7 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
     // v1 (M210) has no max_vel nor mode_gimbal — they must be absent, not sent as undefined.
     const v1 = encodeRosSrv({
       type: 'configureMission',
-      msg: { uav: 'u', uav_type: 'dji_M210_noetic', attributes: {}, wp: [{ pos: [38, -3, 10] }] },
+      msg: { uav: 'u', uav_type: 'dji_M210_noetic', params: {}, wp: [{ pos: [38, -3, 10] }] },
       msgType: 'aerialcore_common/ConfigMission',
     });
     assert.ok(!('maxVel' in v1), 'maxVel should be omitted on v1');
@@ -271,7 +271,7 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
     // v2 (M300) does expose them.
     const v2 = encodeRosSrv({
       type: 'configureMission',
-      msg: { uav: 'u', uav_type: 'dji_M300', attributes: {}, wp: [{ pos: [38, -3, 10] }] },
+      msg: { uav: 'u', uav_type: 'dji_M300', params: {}, wp: [{ pos: [38, -3, 10] }] },
       msgType: 'aerialcore_common/ConfigMission',
     });
     assert.ok('maxVel' in v2 && 'gimbalPitchMode' in v2, 'v2 should include both');
@@ -283,7 +283,7 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
     const route = {
       uav: 'u',
       uav_type: 'dji_M300_PSDK',
-      attributes: {},
+      params: {},
       wp: [
         { pos: [38.1, -3.1, 10], mode_turn: 1 },
         { pos: [38.2, -3.2, 10], mode_turn: 2 },
@@ -304,7 +304,7 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
     const route = {
       uav: 'u',
       uav_type: 'dji_M300_PSDK',
-      attributes: {},
+      params: {},
       wp: [{ pos: [38.1, -3.1, 10] }], // no turn
     };
     const result = encodeRosSrv({
@@ -330,7 +330,7 @@ describe('encoder value-transform — gimbal -90 differs by family', () => {
   const wp = [{ pos: [38.1, -3.1, 10], action: { gimbal: -90 } }];
 
   test('PSDK encodes gimbal -90 as y = -900 (×10, 0.1° units)', () => {
-    const route = { uav: 'u', uav_type: 'dji_M300_PSDK', attributes: {}, wp };
+    const route = { uav: 'u', uav_type: 'dji_M300_PSDK', params: {}, wp };
     const result = encodeRosSrv({
       type: 'configureMission',
       msg: route,
@@ -344,7 +344,7 @@ describe('encoder value-transform — gimbal -90 differs by family', () => {
 
   test('ConfigMission encodes gimbal -90 raw (no transform)', () => {
     // dji_M300 is v2 (exposes gimbal action) but uses the ConfigMission encoder.
-    const route = { uav: 'u', uav_type: 'dji_M300', attributes: {}, wp };
+    const route = { uav: 'u', uav_type: 'dji_M300', params: {}, wp };
     const result = encodeRosSrv({
       type: 'configureMission',
       msg: route,

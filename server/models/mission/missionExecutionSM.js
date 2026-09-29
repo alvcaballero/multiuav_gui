@@ -6,23 +6,27 @@ import { addTime, sleep } from '../../common/utils.js';
 import { missionSMModel } from './missionSM.js';
 import { missionController } from '../../controllers/mission.js';
 import { missionLogger as logger } from '../../common/logger.js';
-import { ROUTE_STATUS } from '../../config/status.js';
+import { TASK_STATUS } from '../../config/status.js';
+import { normalizeMission, missionForTask } from './taskGraph.js';
 
 const LoadMissionSM = async (context) => {
   logger.info('service load mission');
-  let mission = await missionController.getMissionRoute(context.missionId);
-  let missionPlan = mission.mission;
-  logger.debug(`LoadMissionSM mission: ${JSON.stringify(missionPlan)}`);
-  // Pass the FULL mission; loadMissionToDevice extracts this UAV's own route.
+  const mission = await missionController.getMissionById(context.missionId);
+  const task = await missionController.getTask(context.taskId);
+  // Only this task goes to the device: ordering between tasks is the GCS's job.
+  const taskMission = missionForTask(normalizeMission(mission.mission), task.taskKey);
+  if (!taskMission) throw new Error(`task ${task.taskKey} not found in mission ${context.missionId} plan`);
+  logger.debug(`LoadMissionSM task mission: ${JSON.stringify(taskMission)}`);
   let response = await commandsController.sendCommandDevice({
     deviceId: context.uavId,
     type: 'loadMission',
-    attributes: missionPlan,
+    attributes: taskMission,
   });
 
   logger.debug(`LoadMissionSM response: ${JSON.stringify(response)}`);
   if (response.state == 'success') {
     logger.info('LoadMissionSM success');
+    await missionController.editTask({ id: context.taskId, status: TASK_STATUS.LOADED });
     return response; // Resolve with the response
   } else {
     throw new Error('Problem send Mission');
@@ -40,13 +44,9 @@ const CommandMissionSM = async (context) => {
   logger.debug(`CommandMissionSM response: ${JSON.stringify(response)}`);
   if (response.state == 'success') {
     logger.info('CommandMissionSM success');
-    // initMission creates the MissionRoute in INIT; promote it to COMMANDED so
+    // initMission creates the task in INIT; promote it to COMMANDED so
     // missionWpTracking.checkProgress starts tracking waypoint progress.
-    await missionController.editRoute({
-      missionId: context.missionId,
-      deviceId: context.uavId,
-      status: ROUTE_STATUS.COMMANDED,
-    });
+    await missionController.editTask({ id: context.taskId, status: TASK_STATUS.COMMANDED });
     return response; // Resolve with the response
   } else {
     throw new Error('Problem send Command ');
@@ -55,8 +55,8 @@ const CommandMissionSM = async (context) => {
 
 const CommandDownload = async (context) => {
   logger.info('service download files from Autopilot');
-  await missionController.finishMission(context.missionId, context.uavId);
-  let mymission = await missionController.getMissionRoute(context.missionId);
+  await missionController.finishTask(context.taskId);
+  let mymission = await missionController.getMissionById(context.missionId);
 
   logger.debug(`CommandDownload mission: ${JSON.stringify(mymission)}`);
   // The download service expects UTC 0 timestamps. `Date.toISOString()` emits
@@ -83,9 +83,26 @@ const CommandDownload = async (context) => {
   }
 };
 
+// A task that is not its device's last open one: close it without downloading, the
+// device's last task downloads the whole mission time window at once.
+const FinishWithoutDownloadSM = async (context) => {
+  await missionController.finishTask(context.taskId);
+  await missionController.endTask(context.taskId);
+};
+
+// A task whose load/command failed never flew: ERROR, so the scheduler skips its
+// dependents instead of leaving it in INIT (where it would be re-dispatched).
+const MarkTaskFailedSM = async (context) => {
+  await missionController.editTask({
+    id: context.taskId,
+    status: TASK_STATUS.ERROR,
+    errorMessage: `No se pudo ejecutar la tarea en el dispositivo: ${context.failure ?? 'error desconocido'}`,
+  });
+};
+
 const DownloadGCS = async (context) => {
   logger.info(`Download files from UAV id ${context.uavId}`);
-  await missionController.updateFiles(context.missionId, context.uavId, context.routeId);
+  await missionController.updateTaskFiles(context.taskId);
   return { state: 'success' };
 };
 
@@ -120,7 +137,7 @@ const DownloadGCSPromise = (context) =>
 export const deviceSM = createMachine(
   {
     id: 'GCS-UAV',
-    context: { uavId: 1, missionId: 1, routeId: 1 },
+    context: { uavId: 1, missionId: 1, taskId: 1, failure: null },
     initial: 'Initial state',
     states: {
       'Initial state': {
@@ -129,15 +146,21 @@ export const deviceSM = createMachine(
             target: 'LoadMission',
             actions: assign(({ event }) => event.value),
           },
+          AttachRunning: {
+            target: 'RunningMission',
+            actions: assign(({ event }) => event.value),
+          },
           loadMission: { target: 'LoadMission' },
         },
       },
       LoadMission: {
         invoke: {
           src: fromPromise(({ input }) => LoadMissionSMPromise(input)),
-          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
+          input: ({ context: { uavId, missionId, taskId } }) => ({ uavId, missionId, taskId }),
           onDone: [{ target: 'Commadmission' }],
-          onError: [{ target: 'resetUAV' }],
+          onError: [
+            { target: 'resetUAV', actions: assign({ failure: ({ event }) => `load: ${event.error?.message}` }) },
+          ],
         },
         on: {
           commandMission: { target: 'Commadmission' },
@@ -147,9 +170,11 @@ export const deviceSM = createMachine(
       Commadmission: {
         invoke: {
           src: fromPromise(({ input }) => CommandMissionSMPromise(input)),
-          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
+          input: ({ context: { uavId, missionId, taskId } }) => ({ uavId, missionId, taskId }),
           onDone: [{ target: 'RunningMission' }],
-          onError: [{ target: 'resetUAV' }],
+          onError: [
+            { target: 'resetUAV', actions: assign({ failure: ({ event }) => `command: ${event.error?.message}` }) },
+          ],
         },
         on: {
           'response ok': { target: 'RunningMission' },
@@ -157,6 +182,10 @@ export const deviceSM = createMachine(
         },
       },
       resetUAV: {
+        invoke: {
+          src: fromPromise(({ input }) => MarkTaskFailedSM(input)),
+          input: ({ context: { taskId, failure } }) => ({ taskId, failure }),
+        },
         on: {
           'confirm reset': { target: 'UAVready' },
         },
@@ -166,7 +195,7 @@ export const deviceSM = createMachine(
       },
       RunningMission: {
         on: {
-          downloadFilesUAV: { target: 'UAVDownloadFiles' },
+          downloadFilesUAV: { target: 'DecideDownload' },
           cancelMission: { target: 'return2home' },
           stopMission: { target: 'stopMission' },
         },
@@ -179,15 +208,33 @@ export const deviceSM = createMachine(
       UAVDownloadFiles: {
         invoke: {
           src: fromPromise(({ input }) => CommandDownloadPromise(input)),
-          input: ({ context: { uavId, missionId } }) => ({ uavId, missionId }),
+          input: ({ context: { uavId, missionId, taskId } }) => ({ uavId, missionId, taskId }),
         },
         on: {
           downloadFilesGCS: { target: 'DownloadFilesGCS' },
         },
       },
+      // Decided when the task finishes, not when it was dispatched: if a later task of
+      // this device got skipped meanwhile, this one is now the last and must download.
+      DecideDownload: {
+        invoke: {
+          src: fromPromise(({ input }) => missionController.shouldDownloadFiles(input.taskId)),
+          input: ({ context: { taskId } }) => ({ taskId }),
+          onDone: [{ guard: ({ event }) => event.output, target: 'UAVDownloadFiles' }, { target: 'FinishWithoutDownload' }],
+          onError: [{ target: 'UAVDownloadFiles' }],
+        },
+      },
+      FinishWithoutDownload: {
+        invoke: {
+          src: fromPromise(({ input }) => FinishWithoutDownloadSM(input)),
+          input: ({ context: { taskId } }) => ({ taskId }),
+          onDone: [{ target: 'END' }],
+          onError: [{ target: 'END' }],
+        },
+      },
       return2home: {
         on: {
-          landing: { target: 'UAVDownloadFiles' },
+          landing: { target: 'DecideDownload' },
         },
       },
       stopMission: {
@@ -199,7 +246,7 @@ export const deviceSM = createMachine(
       DownloadFilesGCS: {
         invoke: {
           src: fromPromise(({ input }) => DownloadGCSPromise(input)),
-          input: ({ context: { uavId, missionId, routeId } }) => ({ uavId, missionId, routeId }),
+          input: ({ context: { uavId, missionId, taskId } }) => ({ uavId, missionId, taskId }),
           onDone: [{ target: 'END' }],
         },
         after: {
@@ -213,7 +260,7 @@ export const deviceSM = createMachine(
         after: {
           6000: {
             actions: ({ context }) => {
-              missionSMModel.DeleteActor(context.uavId);
+              missionSMModel.DeleteActor(context.taskId);
             },
           },
         },
@@ -230,8 +277,8 @@ export const deviceSM = createMachine(
         };
       }),
       DeleteSM: ({ context }, _params) => {
-        logger.info(`delete state machine for uavId ${context.uavId}`);
-        missionSMModel.DeleteActor(context.uavId);
+        logger.info(`delete state machine for task ${context.taskId}`);
+        missionSMModel.DeleteActor(context.taskId);
       },
     },
     actors: {},

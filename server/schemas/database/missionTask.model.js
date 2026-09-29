@@ -1,10 +1,11 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 import { Device } from './device.model.js';
 import { Mission } from './mission.model.js';
+import { LEGACY_ROUTE_ACTION } from '../../models/mission/taskGraph.js';
 
-const MissionRoute_TABLE = 'MissionRoute';
+const MissionTask_TABLE = 'MissionTask';
 
-const MissionRouteSchema = {
+const MissionTaskSchema = {
   id: {
     allowNull: false,
     autoIncrement: true,
@@ -24,6 +25,21 @@ const MissionRouteSchema = {
       model: Device,
       key: 'id',
     },
+  },
+  // The plan's task_id ("T1"...): unique within a mission, referenced by dependsOn.
+  taskKey: {
+    allowNull: false,
+    type: DataTypes.STRING,
+  },
+  dependsOn: {
+    allowNull: false,
+    type: DataTypes.JSON,
+    defaultValue: [],
+  },
+  action: {
+    allowNull: false,
+    type: DataTypes.STRING,
+    defaultValue: LEGACY_ROUTE_ACTION,
   },
   status: {
     allowNull: false,
@@ -55,17 +71,18 @@ const MissionRouteSchema = {
   },
 };
 
-class MissionRoute extends Model {
+class MissionTask extends Model {
   static associate() {}
 
   static config(sequelize) {
     return {
       sequelize,
-      tableName: MissionRoute_TABLE,
-      modelName: 'MissionRoute',
+      tableName: MissionTask_TABLE,
+      modelName: 'MissionTask',
       timestamps: false,
+      indexes: [{ name: 'mission_task_mission_id_task_key', unique: true, fields: ['missionId', 'taskKey'] }],
     };
   }
 }
 
-export { MissionRoute_TABLE, MissionRouteSchema, MissionRoute };
+export { MissionTask_TABLE, MissionTaskSchema, MissionTask };

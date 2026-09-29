@@ -6,8 +6,12 @@ export const createMissionRouter = () => {
 
   missionRouter.get('/', missionController.getMission);
   missionRouter.post('/', missionController.createMission);
-  missionRouter.get('/routes', missionController.getRoutes);
-  missionRouter.post('/sendTask', missionController.sendTask);
+  missionRouter.get('/tasks', missionController.getTasks);
+  // Deprecated alias: the MCP server (resources.ts) still reads here. Remove once it uses /tasks.
+  missionRouter.get('/routes', missionController.getTasks);
+  missionRouter.post('/requests', missionController.requestMission);
+  // Deprecated alias: the external ExtApp still posts here. Remove once it uses /requests.
+  missionRouter.post('/sendTask', missionController.requestMission);
   missionRouter.post('/showXYZ', missionController.showMissionXYZ);
 
   // Manual mission execution: load creates Plan+Mission+Routes and loads each

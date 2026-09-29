@@ -12,7 +12,16 @@ import { Op } from 'sequelize';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { convertMissionXYZToLatLong, convertMissionBriefingToXYZ } from './coordinateConverter.js';
 import { missionLogger as logger } from '../../common/logger.js';
-import { MISSION_STATUS, ROUTE_STATUS, MISSION_ALIVE_STATUS } from '../../config/status.js';
+import {
+  MISSION_STATUS,
+  TASK_STATUS,
+  MISSION_ALIVE_STATUS,
+  TASK_ACTIVE_STATUS,
+  TASK_TERMINAL_STATUS,
+  TASK_FAILED_STATUS,
+} from '../../config/status.js';
+import { normalizeMission, missionForTask, TASK_GRAPH_VERSION } from './taskGraph.js';
+import { taskScheduler } from './taskScheduler.js';
 
 /**
  * @typedef Mission
@@ -21,7 +30,7 @@ import { MISSION_STATUS, ROUTE_STATUS, MISSION_ALIVE_STATUS } from '../../config
  * @property {string} initTime
  * @property {string} FinishTime
  * @property {Array<number>} uav
- * @property {object} task - task planning
+ * @property {object} request - mission request (ExtApp or planning UI) that originated it
  * @property {object} mission - mission planning
  * @property {Array<object>} results
  */
@@ -43,7 +52,7 @@ export class missionModel {
     });
   }
 
-  // Resolve a mission by the external system's task id (ExtApp dedup / addressing).
+  // Resolve a mission by the external system's request id (ExtApp dedup / addressing).
   // Coerce to Number so a string-typed id ("118") still matches the INTEGER column.
   static async getMissionByExternalId(externalId) {
     if (externalId == null) return null;
@@ -52,7 +61,7 @@ export class missionModel {
     return await sequelize.models.Mission.findOne({ where: { externalId: numId } });
   }
 
-  // Translate an internal mission PK into the external system's task id for ExtApp
+  // Translate an internal mission PK into the external system's request id for ExtApp
   // callbacks. Falls back to the PK itself when the mission has no external origin
   // (e.g. legacy rows or manual missions that somehow reach an ExtApp callback).
   static async _resolveExternalId(missionId) {
@@ -60,33 +69,36 @@ export class missionModel {
     return myMission?.externalId ?? missionId;
   }
 
-  static async getRoutes({ id, deviceId, missionId, status }) {
-    if (deviceId && missionId) {
-      return await sequelize.models.MissionRoute.findOne({ where: { deviceId: deviceId, missionId: missionId } });
-    }
-    if (id) {
-      return await sequelize.models.MissionRoute.findOne({ where: { id: id } });
-    }
-    if (deviceId && status) {
-      return await sequelize.models.MissionRoute.findOne({ where: { deviceId: deviceId, status: status } });
-    }
-    if (missionId) {
-      return await sequelize.models.MissionRoute.findAll({ where: { missionId: missionId } });
-    }
-    return await sequelize.models.MissionRoute.findAll();
+  static async getTask(id) {
+    return await sequelize.models.MissionTask.findByPk(id);
   }
 
-  // All routes currently in a trackable state (COMMANDED/RUNNING). Used once at
-  // server startup to bootstrap missionWpTracking's in-memory registry — routes
-  // already in flight when the process restarts need to be picked up without
-  // waiting for their next DB write.
-  static async getActiveRoutes() {
-    return await sequelize.models.MissionRoute.findAll({
-      where: { status: { [Op.in]: [ROUTE_STATUS.COMMANDED, ROUTE_STATUS.RUNNING] } },
+  // Every filter is optional and they combine (AND). A device can hold several tasks
+  // in one mission, so (missionId, deviceId) is a list, never a single task.
+  static async getTasks({ id, missionId, deviceId, status } = {}) {
+    const where = {};
+    if (id != null) where.id = id;
+    if (missionId != null) where.missionId = missionId;
+    if (deviceId != null) where.deviceId = deviceId;
+    if (status != null) where.status = Array.isArray(status) ? { [Op.in]: status } : status;
+    return await sequelize.models.MissionTask.findAll({ where, order: [['id', 'ASC']] });
+  }
+
+  static async getActiveTaskForDevice(deviceId) {
+    return await sequelize.models.MissionTask.findOne({
+      where: { deviceId, status: { [Op.in]: TASK_ACTIVE_STATUS } },
+      order: [['id', 'DESC']],
     });
   }
 
-  // Single emission point for Mission/MissionRoute row changes — called from
+  // Tasks in flight (COMMANDED/RUNNING). Used once at server startup to bootstrap
+  // missionWpTracking's in-memory registry, so tasks already flying when the process
+  // restarts are picked up without waiting for their next DB write.
+  static async getTrackableTasks() {
+    return await this.getTasks({ status: [TASK_STATUS.COMMANDED, TASK_STATUS.RUNNING] });
+  }
+
+  // Single emission point for Mission/MissionTask row changes — called from
   // create*/edit* right after persisting, so every write path (manual, automatic,
   // state-machine-driven) notifies clients uniformly and payload shape can't drift.
   static _emitMissionUpdated(mission) {
@@ -95,20 +107,21 @@ export class missionModel {
 
   // `signals` (anomalies/wpEstimate/confidence) are transient wpTracking diagnostics —
   // never persisted, just merged into the outbound payload when provided.
-  static _emitRouteUpdated(route, signals = {}) {
-    eventBus.emitSafe(EVENTS.ROUTE_UPDATED, { ...route.get({ plain: true }), ...signals });
+  static _emitTaskUpdated(task, signals = {}) {
+    eventBus.emitSafe(EVENTS.TASK_UPDATED, { ...task.get({ plain: true }), ...signals });
   }
 
-  // Same ROUTE_UPDATED shape as _emitRouteUpdated, but for callers (missionWpTracking's
-  // in-memory registry) that already hold a plain cached route object instead of a
-  // Sequelize instance — lets the "signals only, nothing persisted" path emit without
-  // any DB round-trip.
-  static emitRouteSignals(route, signals = {}) {
-    eventBus.emitSafe(EVENTS.ROUTE_UPDATED, { ...route, ...signals });
+  // Same shape as _emitTaskUpdated, but for callers (missionWpTracking's in-memory
+  // registry) that already hold a plain cached task object instead of a Sequelize
+  // instance — lets the "signals only, nothing persisted" path emit without any DB
+  // round-trip.
+  static emitTaskSignals(task, signals = {}) {
+    eventBus.emitSafe(EVENTS.TASK_UPDATED, { ...task, ...signals });
   }
 
   static async broadcastMission(mission) {
-    if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
+    const hasPlan = (mission?.route?.length ?? 0) > 0 || (mission?.tasks?.length ?? 0) > 0;
+    if (!hasPlan) {
       return { success: false };
     }
     eventBus.emitSafe(EVENTS.MISSION_PLAN_SHOWN, { ...mission, name: mission.name ? mission.name : 'name' });
@@ -124,7 +137,7 @@ export class missionModel {
     status = MISSION_STATUS.INIT,
     initTime = new Date(),
     endTime = null,
-    task = {},
+    request = {},
     mission = {},
     results = [],
     errorMessage = null,
@@ -132,7 +145,7 @@ export class missionModel {
     if (name == null) name = `automatic_${initTime.getTime()}`;
 
     // externalId is only provided by the automatic (ExtApp) flow. Dedup for
-    // idempotency, but ONLY against a mission that is still alive: a re-sent task
+    // idempotency, but ONLY against a mission that is still alive: a re-sent request
     // whose previous attempt is terminal (cancelled/error/finished) must yield a
     // FRESH mission so it re-plans. externalId has no DB UNIQUE constraint precisely
     // to allow these successive attempts. The PK `id` ALWAYS autoincrements — the
@@ -159,7 +172,7 @@ export class missionModel {
       status,
       initTime,
       endTime,
-      task,
+      request,
       mission,
       results,
       errorMessage,
@@ -168,13 +181,13 @@ export class missionModel {
     return myMission;
   }
 
-  static async createRoute(payload) {
-    const myRoute = await sequelize.models.MissionRoute.create({ ...payload });
-    this._emitRouteUpdated(myRoute);
-    return myRoute;
+  static async createTask(payload) {
+    const task = await sequelize.models.MissionTask.create({ ...payload });
+    this._emitTaskUpdated(task);
+    return task;
   }
 
-  static async editMission({ id, uav, planId, status, initTime, endTime, task, mission, results, errorMessage }) {
+  static async editMission({ id, uav, planId, status, initTime, endTime, request, mission, results, errorMessage }) {
     let myMission = await sequelize.models.Mission.findOne({ where: { id: id } });
     if (!myMission) {
       return null;
@@ -184,7 +197,7 @@ export class missionModel {
     if (planId != null) myMission.planId = planId;
     if (initTime) myMission.initTime = initTime;
     if (endTime) myMission.endTime = endTime;
-    if (task) myMission.task = task;
+    if (request) myMission.request = request;
     if (mission) myMission.mission = mission;
     if (results) myMission.results = results;
     if (errorMessage != null) myMission.errorMessage = errorMessage;
@@ -193,61 +206,62 @@ export class missionModel {
     return myMission;
   }
 
-  static async editRoute(
-    { id, deviceId, missionId, status, initTime, endTime, task, mission, result, currentWp, totalWp, errorMessage },
-    signals = {}
-  ) {
-    let myRoute = null;
-    if (id) myRoute = await sequelize.models.MissionRoute.findOne({ where: { id: id } });
-    if (deviceId && missionId)
-      myRoute = await sequelize.models.MissionRoute.findOne({ where: { deviceId: deviceId, missionId: missionId } });
-    if (!myRoute) {
+  static async editTask({ id, status, initTime, endTime, result, currentWp, totalWp, errorMessage }, signals = {}) {
+    const task = await this.getTask(id);
+    if (!task) {
       return null;
     }
-    if (status) myRoute.status = status;
-    if (initTime) myRoute.initTime = initTime;
-    if (endTime) myRoute.endTime = endTime;
-    if (task) myRoute.task = task;
-    if (mission) myRoute.mission = mission;
-    if (result) myRoute.result = result;
-    if (currentWp !== undefined) myRoute.currentWp = currentWp;
-    if (totalWp !== undefined) myRoute.totalWp = totalWp;
-    if (errorMessage != null) myRoute.errorMessage = errorMessage;
-    await myRoute.save();
-    this._emitRouteUpdated(myRoute, signals);
+    if (status) task.status = status;
+    if (initTime) task.initTime = initTime;
+    if (endTime) task.endTime = endTime;
+    if (result) task.result = result;
+    if (currentWp !== undefined) task.currentWp = currentWp;
+    if (totalWp !== undefined) task.totalWp = totalWp;
+    if (errorMessage != null) task.errorMessage = errorMessage;
+    await task.save();
+    this._emitTaskUpdated(task, signals);
 
-    if (status === ROUTE_STATUS.COMPLETED) this._checkMissionComplete(myRoute.missionId);
-    return myRoute;
+    if (TASK_TERMINAL_STATUS.includes(status)) await this._checkMissionComplete(task.missionId);
+    return task;
   }
 
+  // The mission is over once every task is terminal. Only an alive mission is closed
+  // here: one already CANCELLED/ERROR by its own flow keeps that status and message.
   static async _checkMissionComplete(missionId) {
-    const routes = await this.getRoutes({ missionId: missionId });
-    // A route in ERROR never flew — it doesn't block completion, but it means the
-    // mission finished with failures. Only the "active" (non-error) routes need to
-    // be COMPLETED for the mission to be considered done.
-    const active = routes.filter((r) => r.status !== ROUTE_STATUS.ERROR);
-    const hasErrors = active.length < routes.length;
+    const mission = await this.getMissionValue(missionId);
+    if (!mission || !MISSION_ALIVE_STATUS.includes(mission.status)) return;
 
-    // If every route errored there is nothing to complete (mission already ERROR).
-    if (active.length === 0) return;
-    if (!active.every((r) => r.status === ROUTE_STATUS.COMPLETED)) return;
+    const tasks = await this.getTasks({ missionId });
+    if (tasks.length === 0 || !tasks.every((t) => TASK_TERMINAL_STATUS.includes(t.status))) return;
 
-    const status = hasErrors ? MISSION_STATUS.COMPLETED_WITH_ERRORS : MISSION_STATUS.COMPLETED;
+    const failed = tasks.filter((t) => TASK_FAILED_STATUS.includes(t.status));
+    if (failed.length === tasks.length) {
+      await this.editMission({
+        id: missionId,
+        status: MISSION_STATUS.ERROR,
+        endTime: new Date(),
+        errorMessage: 'Ninguna tarea de la misión se completó',
+      });
+      logger.info(`Mission ${missionId} finished status=${MISSION_STATUS.ERROR} (no task completed)`);
+      return;
+    }
+
+    const status = failed.length > 0 ? MISSION_STATUS.COMPLETED_WITH_ERRORS : MISSION_STATUS.COMPLETED;
     // editMission() emits MISSION_UPDATED with the final status — no separate event needed.
     await this.editMission({ id: missionId, status, endTime: new Date() });
-    logger.info(`WpTracking: Mission ${missionId} finished status=${status} (errors=${hasErrors})`);
+    logger.info(`Mission ${missionId} finished status=${status} (failedTasks=${failed.length})`);
   }
 
-  static async decodeTask({ id, name, objetivo, locations, meteo }) {
-    let myTask = {};
-    myTask.id = id;
-    myTask.name = name ? name : 'automatic';
-    myTask.locations = locations;
-    myTask.case = planningController.getCaseTypes()[objetivo].case;
-    myTask.meteo = meteo;
+  static async decodeMissionRequest({ id, name, objetivo, locations, meteo }) {
+    let missionRequest = {};
+    missionRequest.id = id;
+    missionRequest.name = name ? name : 'automatic';
+    missionRequest.locations = locations;
+    missionRequest.case = planningController.getCaseTypes()[objetivo].case;
+    missionRequest.meteo = meteo;
 
     let devices = await devicesController.getAllDevices();
-    // get setting of the task
+    // get settings of the requested objective
     let param = planningController.getConfigParam(objetivo);
     let auxconfig = {};
     Object.keys(param['settings']).forEach((key1) => {
@@ -282,11 +296,12 @@ export class missionModel {
         continue;
       }
       // filter devices are free
-      const busyRoute = await this.getRoutes({
+      // INIT counts as busy: the device is already committed to a task of a live mission.
+      const busyTasks = await this.getTasks({
         deviceId: myDevice.id,
-        status: [ROUTE_STATUS.RUNNING, ROUTE_STATUS.COMMANDED, ROUTE_STATUS.LOADED, ROUTE_STATUS.INIT],
+        status: [TASK_STATUS.INIT, ...TASK_ACTIVE_STATUS],
       });
-      if (busyRoute) {
+      if (busyTasks.length > 0) {
         logger.info(`device ${myDevice.name} is busy`);
         continue;
       }
@@ -311,21 +326,21 @@ export class missionModel {
       }
       devicesSettings.push(config);
     }
-    myTask.devices = devicesSettings.filter((item) => item != null);
+    missionRequest.devices = devicesSettings.filter((item) => item != null);
     logger.info(
-      `Task ${myTask.id} ${myTask.name} ${myTask.case} devices: ${myTask.devices.map((item) => item.id).flat()}`
+      `MissionRequest ${missionRequest.id} ${missionRequest.name} ${missionRequest.case} devices: ${missionRequest.devices.map((item) => item.id).flat()}`
     );
-    logger.debug(`task devices: ${JSON.stringify(myTask.devices)}`);
-    logger.debug(`task locations: ${JSON.stringify(myTask.locations)}`);
-    return myTask;
+    logger.debug(`missionRequest devices: ${JSON.stringify(missionRequest.devices)}`);
+    logger.debug(`missionRequest locations: ${JSON.stringify(missionRequest.locations)}`);
+    return missionRequest;
   }
 
-  // `externalId` is the task id assigned by the requesting external system (ExtApp).
+  // `externalId` is the request id assigned by the requesting external system (ExtApp).
   // It is NOT our primary key: we create the Mission first (its PK autoincrements),
   // then drive the planner and address ExtApp callbacks using the internal PK, while
   // externalId is persisted on the row so we can translate back to ExtApp later.
-  static async sendTask({ id: rawExternalId, name, objetivo, locations, meteo }) {
-    logger.info('command-sendtask');
+  static async requestMission({ id: rawExternalId, name, objetivo, locations, meteo }) {
+    logger.info('requestMission');
 
     // Normalize the external id to a number at the boundary. The column is INTEGER but
     // SQLite is loosely typed: if the external system posts the id as a string ("118"),
@@ -338,69 +353,69 @@ export class missionModel {
         ? Number(rawExternalId)
         : null;
 
-    // Idempotency: the external system may re-send the same task (same externalId).
+    // Idempotency: the external system may re-send the same request (same externalId).
     // Only dedup against a mission that is still ALIVE (init/planning/running): a
-    // re-send of an in-flight task must not spawn a duplicate row or a second
+    // re-send of an in-flight request must not spawn a duplicate row or a second
     // planner poll. But a re-send AFTER a terminal state (cancelled/error — e.g. the
     // first attempt cancelled because every UAV was busy) is a legitimate new attempt
     // and must be allowed to re-plan, so we do NOT short-circuit on those.
     if (externalId != null) {
       const existing = await this.getMissionByExternalId(externalId);
       if (existing && MISSION_ALIVE_STATUS.includes(existing.status)) {
-        logger.warn(`sendTask: externalId=${externalId} already active as mission ${existing.id}, ignoring re-send`);
-        return { response: existing.task, status: 'OK' };
+        logger.warn(`requestMission: externalId=${externalId} already active as mission ${existing.id}, ignoring re-send`);
+        return { response: existing.request, status: 'OK' };
       }
     }
 
-    // decodeTask tags myTask with the EXTERNAL id only for logging/planner body
+    // decodeMissionRequest tags missionRequest with the EXTERNAL id only for logging/planner body
     // parity; it's overwritten with the internal PK below before we drive planning.
-    let myTask = await this.decodeTask({ id: externalId, name, objetivo, locations, meteo });
-    if (myTask == null) {
-      logger.warn('myTask is null');
+    let missionRequest = await this.decodeMissionRequest({ id: externalId, name, objetivo, locations, meteo });
+    if (missionRequest == null) {
+      logger.warn('missionRequest is null');
       await this.createMission({
         externalId,
         name,
         status: MISSION_STATUS.CANCELLED,
-        task: myTask,
-        errorMessage: 'No se pudo decodificar la tarea: datos de misión inválidos o incompletos',
+        request: missionRequest,
+        errorMessage: 'No se pudo decodificar la solicitud de misión: datos inválidos o incompletos',
       });
-      return { response: myTask, status: 'ERROR' };
+      return { response: missionRequest, status: 'ERROR' };
     }
 
-    if (myTask.devices.length == 0) {
+    if (missionRequest.devices.length == 0) {
       logger.warn('no devices to do the mission');
       await this.createMission({
         externalId,
         name,
         status: MISSION_STATUS.CANCELLED,
-        task: myTask,
+        request: missionRequest,
         errorMessage: 'No hay dispositivos disponibles para ejecutar esta misión',
       });
-      return { response: myTask, status: 'ERROR' };
+      return { response: missionRequest, status: 'ERROR' };
     }
 
     // Create the mission FIRST so we have the internal PK. The planner is polled by
     // this PK and initMission() addresses the row by it — externalId stays on the row.
-    const mission = await this.createMission({ externalId, name, task: myTask });
+    const mission = await this.createMission({ externalId, name, request: missionRequest });
     const missionId = mission.id;
-    myTask.id = missionId;
+    missionRequest.id = missionId;
 
     const isPlanning = false;
     if (isPlanning) {
       let fileMission = readDataFile(`../config/mission/mission_1.yaml`);
       await this.initMission(missionId, { ...fileMission, id: missionId });
-      return { response: myTask, status: 'OK' };
+      return { response: missionRequest, status: 'OK' };
     }
 
-    planningController.PlanningRequest({ id: missionId, myTask });
+    planningController.PlanningRequest({ id: missionId, missionRequest });
 
     eventsController.addEvent({
       type: 'info',
       deviceId: null,
-      attributes: { action: 'RcvTask', message: 'Receive a task and sent to planner.' },
+      attributes: { action: 'RcvTask', message: 'Received a mission request and sent it to the planner.' },
     });
 
-    return { response: myTask, status: 'OK' };
+    return { response: missionRequest, status: 'OK' };
   }
 
   /**
@@ -416,10 +431,11 @@ export class missionModel {
   static async initMission(missionId, mission, { timedOut = false } = {}) {
     logger.info('===== initMission =====');
     logger.debug(`initMission data: ${JSON.stringify(mission)}`);
-    if (mission == null || !mission?.hasOwnProperty('route') || mission?.route?.length == 0) {
+    const hasPlan = (mission?.route?.length ?? 0) > 0 || (mission?.tasks?.length ?? 0) > 0;
+    if (!hasPlan) {
       const errorMessage = timedOut
         ? 'El planificador no respondió en el tiempo esperado'
-        : 'El planificador no devolvió rutas válidas para esta misión';
+        : 'El planificador no devolvió tareas válidas para esta misión';
       await this.editMission({
         id: missionId,
         status: MISSION_STATUS.ERROR,
@@ -434,31 +450,21 @@ export class missionModel {
     // failure here and drive the mission to ERROR ourselves, so it never gets stuck in
     // PLANNING and the caller never sees a rejected promise.
     try {
-      // Resolve each planner route to its device, keeping the route↔device pairing so
-      // every UAV gets ITS OWN route's waypoint count below (not route[0]'s). Skip
-      // routes whose UAV is unknown/deleted instead of crashing on a null device.
-      const routeDevices = [];
-      for (const route of mission.route) {
-        const findDevice = await devicesController.getByName(route.uav);
-        if (!findDevice) {
-          logger.warn(`initMission: route UAV '${route.uav}' not found in DB, skipping route`);
-          continue;
-        }
-        logger.debug(`findDevice: ${JSON.stringify(findDevice.dataValues)}`);
-        routeDevices.push({ route, deviceId: findDevice.id });
-      }
-      const listUAV = routeDevices.map((rd) => rd.deviceId);
+      // Validate the graph before persisting anything: an invalid plan fails the
+      // mission (catch below) without leaving a MissionPlan behind.
+      const { tasks } = normalizeMission(mission);
+      const devices = await this._resolveDevices(tasks);
 
-      // Every planner route pointed at an unknown UAV → nothing to fly. Don't leave the
-      // mission stuck in PLANNING with zero routes; fail it explicitly.
-      if (routeDevices.length === 0) {
+      // Every task pointed at an unknown device → nothing to fly. Fail it explicitly
+      // instead of leaving it alive with nothing that can ever run.
+      if (devices.size === 0) {
         await this.editMission({
           id: missionId,
           status: MISSION_STATUS.ERROR,
           mission,
-          errorMessage: 'Ninguna ruta del planificador corresponde a un dispositivo conocido',
+          errorMessage: 'Ninguna tarea del planificador corresponde a un dispositivo conocido',
         });
-        logger.warn(`initMission: mission ${missionId} has no resolvable UAVs, marking as ERROR`);
+        logger.warn(`initMission: mission ${missionId} has no resolvable devices, marking as ERROR`);
         return false;
       }
 
@@ -467,25 +473,13 @@ export class missionModel {
 
       await this.editMission({
         id: missionId,
-        uav: listUAV,
+        uav: [...devices.values()].map((d) => d.id),
         planId: plan.id,
-        status: MISSION_STATUS.PLANNING,
+        status: MISSION_STATUS.RUNNING,
         mission: mission,
       });
-      for (const { route, deviceId: uavId } of routeDevices) {
-        const totalWp = route?.wp?.length ?? 0;
-        let myroute = await this.createRoute({
-          status: ROUTE_STATUS.INIT,
-          missionId: missionId,
-          deviceId: uavId,
-          initTime: new Date(),
-          endTime: null,
-          result: {},
-          currentWp: 0,
-          totalWp,
-        });
-        missionSMModel.createActorMission(uavId, missionId, myroute.id);
-      }
+      await this._createTasks(missionId, tasks, devices);
+      await taskScheduler.dispatchReady(missionId);
 
       const externalId = await this._resolveExternalId(missionId);
       ExtAppController.missionReqStart(externalId, mission);
@@ -512,6 +506,49 @@ export class missionModel {
     }
   }
 
+  // Device rows by name, for the devices of `tasks` that exist.
+  static async _resolveDevices(tasks) {
+    const devices = new Map();
+    for (const name of new Set(tasks.map((t) => t.device))) {
+      const device = await devicesController.getByName(name);
+      if (device) devices.set(name, device);
+      else logger.warn(`Task device '${name}' not found in DB`);
+    }
+    return devices;
+  }
+
+  // Every task is created (INIT) before any is marked failed: marking one ERROR makes
+  // the scheduler skip its dependents, which therefore must already exist. A task whose
+  // device doesn't exist is still created, then failed, so its dependents get skipped
+  // instead of waiting forever. Returns task rows by task_id.
+  static async _createTasks(missionId, tasks, devices) {
+    const created = new Map();
+    for (const t of tasks) {
+      const row = await this.createTask({
+        missionId,
+        deviceId: devices.get(t.device)?.id ?? null,
+        taskKey: t.task_id,
+        dependsOn: t.depends_on,
+        action: t.action,
+        status: TASK_STATUS.INIT,
+        initTime: new Date(),
+        result: {},
+        currentWp: 0,
+        totalWp: t.wp.length,
+      });
+      created.set(t.task_id, row);
+    }
+    for (const t of tasks) {
+      if (devices.has(t.device)) continue;
+      await this.editTask({
+        id: created.get(t.task_id).id,
+        status: TASK_STATUS.ERROR,
+        errorMessage: `El dispositivo '${t.device}' no existe`,
+      });
+    }
+    return created;
+  }
+
   static async deviceFinishSyncFiles({ name, id: _id }) {
     let mydevice = await devicesController.getByName(name);
     if (mydevice == null) {
@@ -527,7 +564,7 @@ export class missionModel {
       deviceId: mydevice.id,
       attributes: { action: 'SyncFiles', message: `Finish sync files from device${mydevice.name}` },
     });
-    missionSMModel.DownloadFiles(mydevice.id);
+    missionSMModel.deviceSyncedFiles(mydevice.id);
     return true;
   }
 
@@ -544,54 +581,58 @@ export class missionModel {
       deviceId: mydevice.id,
       attributes: { action: 'FinishMission', message: `Route complete successfully ${mydevice.name}` },
     });
-    missionSMModel.UAVFinishMission(mydevice.id);
+    missionSMModel.deviceFinishedMission(mydevice.id);
     return true;
   }
 
-  static async UAVFinish(missionId, uavId) {
-    let resultCode = 0;
-    await this.editRoute({
-      missionId: missionId,
-      deviceId: uavId,
-      status: ROUTE_STATUS.COMPLETED,
-      endTime: new Date(),
-    });
+  // Files are downloaded once per device, by its last task in the mission. Same-device
+  // tasks are ordered by the graph, so any other open task of this device runs later.
+  static async shouldDownloadFiles(taskId) {
+    const task = await this.getTask(taskId);
+    const deviceTasks = await this.getTasks({ missionId: task.missionId, deviceId: task.deviceId });
+    return !deviceTasks.some((t) => t.id !== task.id && !TASK_TERMINAL_STATUS.includes(t.status));
+  }
+
+  static async finishTask(taskId) {
+    const task = await this.editTask({ id: taskId, status: TASK_STATUS.COMPLETED, endTime: new Date() });
+    if (!task) {
+      logger.warn(`finishTask: task ${taskId} not found`);
+      return false;
+    }
 
     eventsController.addEvent({
       type: 'info',
-      deviceId: uavId,
-      attributes: { action: 'MissionComplete', message: `Mission complete for UAV ${uavId}` },
+      deviceId: task.deviceId,
+      attributes: { action: 'MissionComplete', message: `Task ${task.taskKey} complete for UAV ${task.deviceId}` },
     });
 
-    const externalId = await this._resolveExternalId(missionId);
-    await ExtAppController.missionReqResult(externalId, resultCode);
+    const externalId = await this._resolveExternalId(task.missionId);
+    await ExtAppController.missionReqResult(externalId, 0);
     return true;
   }
 
-  static async updateFiles(missionId, uavId) {
-    const myRoute = await this.getRoutes({ deviceId: uavId, missionId: missionId });
-    const myMission = await this.getMissionValue(missionId);
-    if (!myRoute || !myMission) {
-      logger.warn(
-        `updateFiles: mission=${missionId} or route for uav=${uavId} not found in DB, skipping file download`
-      );
+  static async updateTaskFiles(taskId) {
+    const task = await this.getTask(taskId);
+    const mission = task && (await this.getMissionValue(task.missionId));
+    if (!task || !mission) {
+      logger.warn(`updateTaskFiles: task ${taskId} or its mission not found in DB, skipping file download`);
       return false;
     }
-    await filesController.updateFiles(uavId, missionId, myRoute.id, myMission.initTime);
+    await filesController.updateFiles(task.deviceId, task.missionId, task.id, mission.initTime);
     await sleep(5000);
     return true;
   }
 
-  static async UAVEnd(missionId, uavId) {
-    logger.info('===== UAVEnd whole mission =====');
-    const myRoute = await this.getRoutes({ missionId, deviceId: uavId });
-    if (!myRoute) {
-      logger.warn(`UAVEnd: no route found for mission=${missionId} uav=${uavId}`);
+  static async endTask(taskId) {
+    logger.info(`===== endTask ${taskId} =====`);
+    const task = await this.getTask(taskId);
+    if (!task) {
+      logger.warn(`endTask: task ${taskId} not found`);
       return false;
     }
-    const routeId = myRoute.id;
-    const listfiles = await filesController.getFilesInfo({ routeId });
-    logger.debug(`UAVEnd listfiles: ${JSON.stringify(listfiles)}`);
+    const { missionId, deviceId: uavId } = task;
+    const listfiles = await filesController.getFilesInfo({ taskId });
+    logger.debug(`endTask listfiles: ${JSON.stringify(listfiles)}`);
     const maxByMeasureName = {};
     let attributes = {};
     for (const file of listfiles) {
@@ -609,13 +650,13 @@ export class missionModel {
         }
       }
     }
-    logger.debug(`UAVEnd attributes: ${JSON.stringify(attributes)}`);
+    logger.debug(`endTask attributes: ${JSON.stringify(attributes)}`);
     eventsController.addEvent({
       type: 'info',
       deviceId: uavId,
-      attributes: { action: 'MissionEnd', message: `Mission ended for UAV ${uavId}` },
+      attributes: { action: 'MissionEnd', message: `Task ${task.taskKey} ended for UAV ${uavId}` },
     });
-    await this.editRoute({ id: routeId, status: ROUTE_STATUS.END, result: attributes, endTime: new Date() });
+    await this.editTask({ id: taskId, status: TASK_STATUS.END, result: attributes, endTime: new Date() });
 
     if (attributes.hasOwnProperty('measures') && attributes.measures.length > 0) {
       const myMission = await this.getMissionValue(missionId);
@@ -623,9 +664,9 @@ export class missionModel {
       await this.editMission({ id: missionId, results: [...existingResults, attributes] });
     }
 
-    const allRoutes = await this.getRoutes({ missionId });
-    const active = allRoutes.filter((r) => r.status !== ROUTE_STATUS.ERROR);
-    if (active.length > 0 && active.every((r) => r.status === ROUTE_STATUS.END)) {
+    const tasks = await this.getTasks({ missionId });
+    const flown = tasks.filter((t) => !TASK_FAILED_STATUS.includes(t.status));
+    if (flown.length > 0 && flown.every((t) => t.status === TASK_STATUS.END)) {
       await this.notifyFinishProcessfiles(missionId);
     }
     return true;
@@ -637,8 +678,8 @@ export class missionModel {
     let result = { files: [], data: {} };
     let myfiles = await filesController.getFilesInfo({ missionId });
     result.files = myfiles.map((file) => `${file.path}${file.name}`);
-    const routes = await this.getRoutes({ missionId });
-    result.data = routes.filter((r) => r.result).map((r) => ({ deviceId: r.deviceId, result: r.result }));
+    const tasks = await this.getTasks({ missionId });
+    result.data = tasks.filter((t) => t.result).map((t) => ({ deviceId: t.deviceId, result: t.result }));
     eventsController.addEvent({
       type: 'info',
       deviceId: null,
@@ -662,34 +703,25 @@ export class missionModel {
     // );
     return true;
   }
-  static async CheckLastMissionRoute() {
-    let listMission = await this.getMissionValue();
-    let listRoute = await this.getRoutes({});
-    for (const mission of listMission) {
-      if (
-        mission.status == MISSION_STATUS.RUNNING ||
-        mission.status == MISSION_STATUS.PLANNING ||
-        mission.status == MISSION_STATUS.INIT
-      ) {
-        let listRoutes = listRoute.filter(
-          (route) =>
-            route.missionId == mission.id &&
-            (route.status == ROUTE_STATUS.RUNNING ||
-              route.status == ROUTE_STATUS.COMMANDED ||
-              route.status == ROUTE_STATUS.LOADED ||
-              route.status == ROUTE_STATUS.INIT)
-        );
-        for (const route of listRoutes) {
-          await this.editRoute({
-            id: route.id,
-            status: ROUTE_STATUS.ERROR,
-            errorMessage: 'Ruta interrumpida: el servidor se reinició mientras la misión estaba activa',
-          });
-        }
-        await this.editMission({
-          id: mission.id,
-          status: MISSION_STATUS.ERROR,
-          errorMessage: 'Misión interrumpida: el servidor se reinició mientras estaba activa',
+  static async failInterruptedMissions() {
+    const aliveMissions = await this.getMissionValue();
+    for (const mission of aliveMissions) {
+      // Mission first: once it is no longer alive, closing its tasks below can't
+      // trigger _checkMissionComplete into overwriting this status/message.
+      await this.editMission({
+        id: mission.id,
+        status: MISSION_STATUS.ERROR,
+        errorMessage: 'Misión interrumpida: el servidor se reinició mientras estaba activa',
+      });
+      const openTasks = await this.getTasks({ missionId: mission.id, status: [TASK_STATUS.INIT, ...TASK_ACTIVE_STATUS] });
+      for (const task of openTasks) {
+        const neverStarted = task.status === TASK_STATUS.INIT;
+        await this.editTask({
+          id: task.id,
+          status: neverStarted ? TASK_STATUS.SKIPPED : TASK_STATUS.ERROR,
+          errorMessage: neverStarted
+            ? 'Tarea no iniciada: el servidor se reinició antes de que se ejecutara'
+            : 'Tarea interrumpida: el servidor se reinició mientras estaba activa',
         });
       }
     }
@@ -716,37 +748,31 @@ export class missionModel {
   }
 
   /**
-   * MANUAL flow — load. Mirrors initMission (automatic): creates MissionPlan +
-   * Mission + one MissionRoute per device, and loads each drone's route via the
-   * per-device command primitive. Persists the plan explicitly (no side-effect).
-   * Routes that fail after one retry are left in ROUTE_STATUS.ERROR so `command`
-   * can skip them. Returns { missionId, planId, results }.
-   * @param {object} missionData - { route: [...], version }
+   * MANUAL flow — load. Validates the task graph, creates MissionPlan + Mission +
+   * every task, and loads only the ROOT tasks (no depends_on), each with its one-task
+   * mission. Dependents stay INIT: the scheduler loads them once the mission runs.
+   * A root that fails to load (after one retry) goes to ERROR, which skips its
+   * dependents. Returns { missionId, planId, results } (one result per root).
+   * Throws TaskGraphError (status 400) on an invalid graph.
+   * @param {object} missionData - { tasks: [...] } or legacy { route: [...] }
    */
   static async loadMissionManual(missionData) {
     logger.info('===== loadMissionManual =====');
-    if (missionData == null || !Array.isArray(missionData.route) || missionData.route.length === 0) {
-      return { missionId: null, planId: null, results: [], state: 'info', msg: 'no mission' };
-    }
+    const graph = normalizeMission(missionData);
 
-    // Persist with version:'3' so consumers (client RuteConvert) parse it as the
-    // current route format instead of falling back to the legacy parser.
-    const normalizedMission = { ...missionData, version: '3' };
-    const plan = await this.createMissionPlan(normalizedMission, { source: 'manual' });
+    // Persisted as received, tagged with its format: consumers (client RuteConvert)
+    // parse route[] as '3' and tasks[] as '4'.
+    const storedMission = { ...missionData, version: missionData.tasks ? TASK_GRAPH_VERSION : '3' };
+    const plan = await this.createMissionPlan(storedMission, { source: 'manual' });
     logger.info(`loadMissionManual: MissionPlan created id=${plan.id}`);
 
-    // Resolve devices for the mission (skip routes whose UAV is unknown).
-    const routeDevices = [];
-    for (const route of normalizedMission.route) {
-      const device = await devicesController.getByName(route.uav);
-      routeDevices.push({ route, device });
-    }
-    const listUAV = routeDevices.filter((rd) => rd.device).map((rd) => rd.device.id);
+    const devices = await this._resolveDevices(graph.tasks);
+    const listUAV = [...devices.values()].map((d) => d.id);
 
     // Idempotency: a drone can't have two not-yet-commanded missions at once.
     // Cancel any INIT mission that overlaps with this load's devices before
     // creating the new one, so double-clicks / repeated loads don't pile up
-    // orphaned Mission/Route rows or re-send configureMission redundantly.
+    // orphaned Mission/Task rows or re-send configureMission redundantly.
     await this._cancelStaleInitMissions(listUAV);
 
     const mission = await this.createMission({
@@ -756,49 +782,45 @@ export class missionModel {
       uav: listUAV,
       // Loaded, not yet commanded: INIT until commandMissionManual promotes it.
       status: MISSION_STATUS.INIT,
-      mission: normalizedMission,
+      mission: storedMission,
     });
     logger.info(`loadMissionManual: Mission created id=${mission.id} devices=[${listUAV.join(',')}]`);
 
+    const created = await this._createTasks(mission.id, graph.tasks, devices);
+
     const results = [];
-    for (const { route, device } of routeDevices) {
+    for (const task of graph.tasks.filter((t) => t.depends_on.length === 0)) {
+      const device = devices.get(task.device);
       if (!device) {
-        results.push({ deviceId: null, name: route.uav, state: 'warning', msg: `device ${route.uav} not found` });
+        results.push({ deviceId: null, name: task.device, taskKey: task.task_id, state: 'warning', msg: `device ${task.device} not found` });
         continue;
       }
-      const totalWp = route.wp?.length ?? 0;
       let response;
       try {
-        // Pass the FULL mission; loadMissionToDevice extracts this drone's route.
         response = await withRetry(() =>
           commandsController.sendCommandDevice({
             deviceId: device.id,
             type: 'loadMission',
-            attributes: normalizedMission,
+            attributes: missionForTask(graph, task.task_id),
           })
         );
       } catch (err) {
         response = { state: 'error', msg: err instanceof Error ? err.message : String(err) };
       }
       const ok = response.state !== 'error';
-      await this.createRoute({
-        missionId: mission.id,
-        deviceId: device.id,
-        status: ok ? ROUTE_STATUS.LOADED : ROUTE_STATUS.ERROR,
-        initTime: new Date(),
-        currentWp: 0,
-        totalWp,
-        errorMessage: ok ? null : `Fallo al cargar la ruta en el dispositivo: ${response.msg ?? 'error desconocido'}`,
+      await this.editTask({
+        id: created.get(task.task_id).id,
+        status: ok ? TASK_STATUS.LOADED : TASK_STATUS.ERROR,
+        errorMessage: ok ? null : `Fallo al cargar la tarea en el dispositivo: ${response.msg ?? 'error desconocido'}`,
       });
-      results.push({ deviceId: device.id, name: device.name, state: response.state, msg: response.msg });
+      results.push({ deviceId: device.id, name: device.name, taskKey: task.task_id, state: response.state, msg: response.msg });
     }
 
-    // If no route loaded (e.g. the only drone failed), the mission is unusable → ERROR.
-    // Otherwise it stays INIT and command will handle the routes that did load.
+    // If no root loaded (e.g. the only drone failed), the mission is unusable → ERROR.
+    // Otherwise it stays INIT and command will start the roots that did load.
     const anyLoaded = results.some((r) => r.state !== 'error' && r.deviceId != null);
-    const finalStatus = anyLoaded ? MISSION_STATUS.INIT : MISSION_STATUS.ERROR;
     if (!anyLoaded) {
-      await this.editMission({ id: mission.id, status: finalStatus, errorMessage: 'Ninguna ruta se pudo cargar' });
+      await this.editMission({ id: mission.id, status: MISSION_STATUS.ERROR, errorMessage: 'Ninguna tarea se pudo cargar' });
     }
 
     logger.info(`loadMissionManual finished mission=${mission.id} anyLoaded=${anyLoaded}`);
@@ -806,47 +828,56 @@ export class missionModel {
   }
 
   /**
-   * MANUAL flow — command. Mission + routes already exist (created in load).
-   * Commands each LOADED route (skips ERROR ones) and promotes LOADED → COMMANDED
-   * so missionWpTracking.checkProgress picks it up. Returns { missionId, results }.
+   * MANUAL flow — command. Tasks already exist (created in load). Commands each
+   * LOADED root and promotes it to COMMANDED (so missionWpTracking picks it up), with
+   * a state machine attached in RunningMission so it downloads files and frees its
+   * device like any dispatched task. A root that can't be commanded goes to ERROR
+   * (skipping its dependents). The mission then runs and the scheduler takes over
+   * the dependents. Returns { missionId, results } (one result per loaded root).
    * @param {number} missionId
    */
   static async commandMissionManual(missionId) {
     logger.info(`===== commandMissionManual mission=${missionId} =====`);
-    const routes = await this.getRoutes({ missionId });
-    const routeList = Array.isArray(routes) ? routes : Object.values(routes ?? {});
-    if (routeList.length === 0) {
-      return { missionId, results: [], state: 'warning', msg: `mission ${missionId} has no routes` };
+    // A repeated command (double click) must not touch a mission already running.
+    const mission = await this.getMissionValue(missionId);
+    if (mission?.status !== MISSION_STATUS.INIT) {
+      return { missionId, results: [], state: 'warning', msg: `mission ${missionId} is not awaiting command (status=${mission?.status})` };
+    }
+    const loaded = await this.getTasks({ missionId, status: TASK_STATUS.LOADED });
+    if (loaded.length === 0) {
+      await this.editMission({ id: missionId, status: MISSION_STATUS.ERROR, errorMessage: 'Ninguna tarea cargada para comandar' });
+      return { missionId, results: [], state: 'warning', msg: `mission ${missionId} has no loaded tasks` };
     }
 
     const results = [];
-    for (const route of routeList) {
-      if (route.status !== ROUTE_STATUS.LOADED) {
-        results.push({ deviceId: route.deviceId, state: 'warning', msg: `route not loaded (status=${route.status})` });
-        continue;
-      }
+    for (const task of loaded) {
       let response;
       try {
         response = await withRetry(() =>
-          commandsController.sendCommandDevice({ deviceId: route.deviceId, type: 'commandMission' })
+          commandsController.sendCommandDevice({ deviceId: task.deviceId, type: 'commandMission' })
         );
       } catch (err) {
         response = { state: 'error', msg: err instanceof Error ? err.message : String(err) };
       }
       if (response.state !== 'error') {
-        await this.editRoute({ id: route.id, status: ROUTE_STATUS.COMMANDED });
+        await this.editTask({ id: task.id, status: TASK_STATUS.COMMANDED });
+        missionSMModel.createActorMission(task.deviceId, missionId, task.id, { alreadyRunning: true });
+      } else {
+        await this.editTask({
+          id: task.id,
+          status: TASK_STATUS.ERROR,
+          errorMessage: `Fallo al comandar la tarea en el dispositivo: ${response.msg ?? 'error desconocido'}`,
+        });
       }
-      results.push({ deviceId: route.deviceId, state: response.state, msg: response.msg });
+      results.push({ deviceId: task.deviceId, taskKey: task.taskKey, state: response.state, msg: response.msg });
     }
 
-    // RUNNING if at least one route was commanded OK; ERROR if none could be
-    // (all failed or none were in LOADED to begin with).
-    const anyCommanded = results.some((r) => r.state !== 'error' && r.state !== 'warning');
-    const finalStatus = anyCommanded ? MISSION_STATUS.RUNNING : MISSION_STATUS.ERROR;
+    const anyCommanded = results.some((r) => r.state !== 'error');
     if (anyCommanded) {
-      await this.editMission({ id: missionId, status: finalStatus });
+      await this.editMission({ id: missionId, status: MISSION_STATUS.RUNNING });
+      await taskScheduler.dispatchReady(missionId);
     } else {
-      await this.editMission({ id: missionId, status: finalStatus, errorMessage: 'Ninguna ruta se pudo comandar' });
+      await this.editMission({ id: missionId, status: MISSION_STATUS.ERROR, errorMessage: 'Ninguna tarea se pudo comandar' });
     }
 
     logger.info(`commandMissionManual finished mission=${missionId} anyCommanded=${anyCommanded}`);
@@ -871,12 +902,12 @@ export class missionModel {
       if (!overlaps) continue;
 
       await this.editMission({ id: stale.id, status: MISSION_STATUS.CANCELLED });
-      const routes = await this.getRoutes({ missionId: stale.id });
-      const routeList = Array.isArray(routes) ? routes : Object.values(routes ?? {});
-      // Per-route edit (not a bulk update) so each row goes through editRoute()
-      // and emits ROUTE_UPDATED — stale-route volume is low, consistency wins.
-      for (const route of routeList) {
-        await this.editRoute({ id: route.id, status: ROUTE_STATUS.CANCELLED });
+      // Per-task edit (not a bulk update) so each row goes through editTask() and
+      // emits its update — stale-task volume is low, consistency wins. Terminal tasks
+      // (e.g. ERROR on load) keep their status: overwriting it would erase why they failed.
+      const openTasks = await this.getTasks({ missionId: stale.id, status: [TASK_STATUS.INIT, ...TASK_ACTIVE_STATUS] });
+      for (const task of openTasks) {
+        await this.editTask({ id: task.id, status: TASK_STATUS.CANCELLED });
       }
       logger.info(`_cancelStaleInitMissions: cancelled stale mission=${stale.id} (device overlap with new load)`);
     }
@@ -916,4 +947,4 @@ export class missionModel {
   }
 }
 
-missionModel.CheckLastMissionRoute();
+missionModel.failInterruptedMissions();

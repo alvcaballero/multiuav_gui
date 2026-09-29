@@ -48,7 +48,7 @@ export const assignmentsModel = {
   },
 
   // Replaces planningModel.getBasesSettings(): consumed by
-  // server/models/mission/mission.js decodeTask() — keep the {devices, settings,
+  // server/models/mission/mission.js decodeMissionRequest() — keep the {devices, settings,
   // base} shape exactly as before, since the field is called `devices` (not
   // `device`) on the legacy side despite being a single object.
   async getBasesSettings() {

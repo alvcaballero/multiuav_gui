@@ -111,12 +111,12 @@ export class planningModel {
     };
   }
 
-  static async PlanningRequest({ id, myTask }) {
+  static async PlanningRequest({ id, missionRequest }) {
     let response2;
     const response1 = await fetch(`${planningHost}/mission_request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(myTask),
+      body: JSON.stringify(missionRequest),
     });
     if (response1.ok) {
       response2 = await response1.json();

@@ -1,8 +1,9 @@
 import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { missionLogger as logger } from '../../common/logger.js';
-import { ROUTE_STATUS } from '../../config/status.js';
+import { TASK_STATUS } from '../../config/status.js';
 import { haversineMeters } from '../../common/geo.js';
 import { missionModel } from './mission.js';
+import { normalizeMission } from './taskGraph.js';
 import {
   signalFlightState,
   signalAutopilotFeedback,
@@ -13,7 +14,7 @@ import {
 } from './missionSignals.js';
 
 const WP_REACHED_THRESHOLD_M = 2;
-const TRACKABLE_STATUSES = [ROUTE_STATUS.COMMANDED, ROUTE_STATUS.RUNNING];
+const TRACKABLE_STATUSES = [TASK_STATUS.COMMANDED, TASK_STATUS.RUNNING];
 
 // Diagnostics-only updates (no WP/status change) are capped to this interval per
 // device. Anomalies/estimates can hold steady for many consecutive ticks and the
@@ -22,7 +23,7 @@ const TRACKABLE_STATUSES = [ROUTE_STATUS.COMMANDED, ROUTE_STATUS.RUNNING];
 const SIGNAL_EMIT_MIN_INTERVAL_MS = 1500;
 
 // In-memory registry of routes currently being tracked, keyed by deviceId. Populated
-// reactively from ROUTE_UPDATED — mission.js never calls into this module directly,
+// reactively from TASK_UPDATED — mission.js never calls into this module directly,
 // it just emits (as it already does for every create/edit); this module listens.
 // That keeps the dependency one-directional (missionWpTracking → mission.js) and
 // avoids a circular import. Bootstrapped once at startup from the DB (see init()) so
@@ -36,59 +37,66 @@ export class missionWpTracking {
    * Call once at server startup (see server.js), after the DB is ready.
    */
   static async init() {
-    eventBus.onSafe(EVENTS.ROUTE_UPDATED, (route) => this._onRouteUpdated(route));
+    eventBus.onSafe(EVENTS.TASK_UPDATED, (task) => this._onTaskUpdated(task));
     eventBus.onSafe(EVENTS.POSITION_RECEIVED, (position) => this.checkProgress(position.deviceId, position));
 
-    const routes = await missionModel.getActiveRoutes();
-    for (const route of routes) {
-      await this._track(route.get({ plain: true }));
+    const tasks = await missionModel.getTrackableTasks();
+    for (const task of tasks) {
+      await this._track(task.get({ plain: true }));
     }
-    logger.info(`missionWpTracking: bootstrap tracked ${routes.length} active route(s)`);
+    logger.info(`missionWpTracking: bootstrap tracked ${tasks.length} active task(s)`);
   }
 
-  static async _onRouteUpdated(route) {
-    if (TRACKABLE_STATUSES.includes(route.status)) {
-      await this._track(route);
-    } else {
-      this._untrack(route.deviceId);
+  // A device can own several tasks of one mission, so an update for one of its OTHER
+  // tasks (e.g. a later task being skipped) must not untrack the one in flight.
+  static async _onTaskUpdated(task) {
+    if (TRACKABLE_STATUSES.includes(task.status)) {
+      await this._track(task);
+    } else if (_tracked.get(task.deviceId)?.taskId === task.id) {
+      this._untrack(task.deviceId);
     }
   }
 
   // Refreshes the cheap fields (currentWp/totalWp/initTime/status) when the same
-  // route is already tracked. Resolves mission → plan → waypoints ONCE per route
-  // lifecycle — when a device starts being tracked or switches to a different route —
+  // task is already tracked. Resolves mission → plan → waypoints ONCE per task
+  // lifecycle — when a device starts being tracked or switches to a different task —
   // instead of on every position tick.
-  static async _track(route) {
-    const existing = _tracked.get(route.deviceId);
-    if (existing && existing.routeId === route.id) {
-      existing.status = route.status;
-      existing.currentWp = route.currentWp ?? existing.currentWp;
-      existing.totalWp = route.totalWp ?? existing.totalWp;
-      existing.initTime = route.initTime ?? existing.initTime;
+  static async _track(task) {
+    const existing = _tracked.get(task.deviceId);
+    if (existing && existing.taskId === task.id) {
+      existing.status = task.status;
+      existing.currentWp = task.currentWp ?? existing.currentWp;
+      existing.totalWp = task.totalWp ?? existing.totalWp;
+      existing.initTime = task.initTime ?? existing.initTime;
       return;
     }
 
-    const mission = await missionModel.getMissionValue(route.missionId);
+    const mission = await missionModel.getMissionValue(task.missionId);
     if (!mission?.planId) return;
     const plan = await missionModel.getMissionPlan(mission.planId);
-    if (!plan?.missionData?.route) return;
+    if (!plan?.missionData) return;
 
-    const { devicesController } = await import('../../controllers/devices.js');
-    const devRoute = await this._findRouteForDevice(plan.missionData, route.deviceId, devicesController);
-    if (!devRoute?.wp?.length) return;
+    let taskDef;
+    try {
+      taskDef = normalizeMission(plan.missionData).tasks.find((t) => t.task_id === task.taskKey);
+    } catch (err) {
+      logger.warn(`WpTracking: plan ${plan.id} is not a valid task graph, not tracking task ${task.id}: ${err.message}`);
+      return;
+    }
+    if (!taskDef?.wp?.length) return;
 
-    _tracked.set(route.deviceId, {
-      routeId: route.id,
-      missionId: route.missionId,
-      deviceId: route.deviceId,
-      status: route.status,
-      currentWp: route.currentWp ?? 0,
-      totalWp: route.totalWp ?? devRoute.wp.length,
-      initTime: route.initTime,
-      waypoints: devRoute.wp,
-      attributes: devRoute.attributes,
+    _tracked.set(task.deviceId, {
+      taskId: task.id,
+      missionId: task.missionId,
+      deviceId: task.deviceId,
+      status: task.status,
+      currentWp: task.currentWp ?? 0,
+      totalWp: task.totalWp ?? taskDef.wp.length,
+      initTime: task.initTime,
+      waypoints: taskDef.wp,
+      params: taskDef.params,
     });
-    logger.debug(`WpTracking: now tracking device=${route.deviceId} route=${route.id}`);
+    logger.debug(`WpTracking: now tracking device=${task.deviceId} task=${task.id} (${task.taskKey})`);
   }
 
   static _untrack(deviceId) {
@@ -100,7 +108,7 @@ export class missionWpTracking {
 
   /**
    * Called on every position update that has lat/lon (via POSITION_RECEIVED). Pure
-   * in-memory lookup — no DB access for devices without an active route (the common
+   * in-memory lookup — no DB access for devices without an active task (the common
    * case), and none for the diagnostics-only path either (see below).
    */
   static async checkProgress(deviceId, position) {
@@ -109,7 +117,7 @@ export class missionWpTracking {
     const tracked = _tracked.get(deviceId);
     if (!tracked) return;
 
-    const { waypoints, attributes, currentWp, totalWp, initTime, routeId, missionId, status } = tracked;
+    const { waypoints, params, currentWp, totalWp, initTime, taskId, missionId, status } = tracked;
     if (currentWp >= waypoints.length) return;
 
     const target = waypoints[currentWp];
@@ -120,7 +128,7 @@ export class missionWpTracking {
     const signals = [
       signalFlightState(deviceId),
       signalAutopilotFeedback(deviceId, totalWp),
-      signalTimeEstimate(waypoints, attributes, initTime, currentWp, totalWp),
+      signalTimeEstimate(waypoints, params, initTime, currentWp, totalWp),
       signalDeviation(deviceId, position.latitude, position.longitude, target),
     ];
     const { wpEstimate, confidence, anomalies } = combineSignals(signals);
@@ -134,11 +142,11 @@ export class missionWpTracking {
     if (wpEstimate !== null && confidence === 'high' && wpEstimate > currentWp) {
       const jumpTarget = Math.min(wpEstimate, waypoints.length);
       const isLast = jumpTarget >= waypoints.length;
-      await missionModel.editRoute(
+      await missionModel.editTask(
         {
-          id: routeId,
+          id: taskId,
           currentWp: jumpTarget,
-          status: isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING,
+          status: isLast ? TASK_STATUS.COMPLETED : TASK_STATUS.RUNNING,
           endTime: isLast ? new Date() : undefined,
         },
         { anomalies, wpEstimate, confidence }
@@ -152,11 +160,11 @@ export class missionWpTracking {
       const nextWp = currentWp + 1;
       const isLast = nextWp >= waypoints.length;
 
-      await missionModel.editRoute(
+      await missionModel.editTask(
         {
-          id: routeId,
+          id: taskId,
           currentWp: nextWp,
-          status: isLast ? ROUTE_STATUS.COMPLETED : ROUTE_STATUS.RUNNING,
+          status: isLast ? TASK_STATUS.COMPLETED : TASK_STATUS.RUNNING,
           endTime: isLast ? new Date() : undefined,
         },
         { anomalies, wpEstimate, confidence }
@@ -176,17 +184,10 @@ export class missionWpTracking {
     if (Date.now() - lastEmit < SIGNAL_EMIT_MIN_INTERVAL_MS) return;
     _lastSignalEmit.set(deviceId, Date.now());
 
-    missionModel.emitRouteSignals(
-      { id: routeId, missionId, deviceId, status, currentWp, totalWp },
+    missionModel.emitTaskSignals(
+      { id: taskId, missionId, deviceId, status, currentWp, totalWp },
       { anomalies, wpEstimate, confidence }
     );
   }
 
-  static async _findRouteForDevice(missionData, deviceId, devicesController) {
-    for (const r of missionData.route ?? []) {
-      const device = await devicesController.getByName(r.uav);
-      if (device?.id === deviceId) return r;
-    }
-    return null;
-  }
 }

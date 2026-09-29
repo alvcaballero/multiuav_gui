@@ -1,4 +1,4 @@
-import { decodeMissionRoute } from '../mission/missionEncodeConfig.js';
+import { decodeMissionTask } from '../mission/missionEncodeConfig.js';
 import { MissionToPsdkV2 } from '../mission/missionEncodePsdk.js';
 
 // Drops keys whose value is undefined, so a param the profile doesn't expose
@@ -27,9 +27,9 @@ function assertUtcIsoDate(value, field) {
   return value;
 }
 
-// ─── Encoder: route crudo → aerialcore_common/ConfigMission (ROS1) ───────────
+// ─── Encoder: task crudo → aerialcore_common/ConfigMission (ROS1) ────────────
 
-function MissionToRos(route) {
+function MissionToRos(task) {
   const {
     waypoint,
     yaw,
@@ -43,7 +43,7 @@ function MissionToRos(route) {
     traceMode,
     gimbalPitchMode,
     finishAction,
-  } = decodeMissionRoute(route);
+  } = decodeMissionTask(task);
 
   return omitUndefined({
     type: 'waypoint',

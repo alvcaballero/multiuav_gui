@@ -121,7 +121,8 @@ export const EVENTS = Object.freeze({
   // Misiones
   MISSION_PLAN_SHOWN: 'mission:plan:shown', // Raw plan pushed to the client editor (manual/chat create, automatic planner init)
   MISSION_UPDATED: 'mission:updated', // Mission DB row created/edited (status, endTime, etc.)
-  ROUTE_UPDATED: 'mission:route:updated', // MissionRoute DB row created/edited (status, currentWp, etc.)
+  TASK_UPDATED: 'mission:task:updated', // MissionTask DB row created/edited (status, currentWp, etc.)
+  TASK_DEVICE_RELEASED: 'mission:task:device_released', // Internal: a task's state machine ended, its device is free for the next task
 
   // Eventos del sistema
   EVENT_CREATED: 'event:created',

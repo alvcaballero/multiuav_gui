@@ -17,7 +17,7 @@ const OUTBOUND_MAP = {
     missionPlan: { ...mission, name: mission.name || 'unnamed_mission' },
   }),
   [EVENTS.MISSION_UPDATED]: (data) => ({ missionUpdated: data }),
-  [EVENTS.ROUTE_UPDATED]: (data) => ({ routeUpdated: data }),
+  [EVENTS.TASK_UPDATED]: (data) => ({ taskUpdated: data }),
 
   // Telemetría batcheada: positionBroadcastBatcher agrupa los devices que
   // cambiaron desde el último flush y emite esto cada WS_POSITIONS_INTERVAL_MS

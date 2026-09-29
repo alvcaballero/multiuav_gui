@@ -1,6 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
 import { Device } from './device.model.js';
-import { MissionRoute } from './missionRoute.model.js';
+import { MissionTask } from './missionTask.model.js';
 import { Mission } from './mission.model.js';
 const File_TABLE = 'File';
 
@@ -15,10 +15,10 @@ const FileSchema = {
     allowNull: false,
     type: DataTypes.STRING,
   },
-  routeId: {
+  taskId: {
     type: DataTypes.INTEGER,
     references: {
-      model: MissionRoute,
+      model: MissionTask,
       key: 'id',
     },
   },

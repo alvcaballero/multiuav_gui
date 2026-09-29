@@ -54,7 +54,7 @@ const AIRCRAFT_FLIGHT = { STOP: 0, START: 1 };
 // ─── Route attribute defaults ─────────────────────────────────────────────────
 
 // Defaults come from the mission_schema YAML, resolved per robot category (SSOT).
-// route.attributes overrides any default the user explicitly set.
+// task.params overrides any default the user explicitly set.
 function extractRouteAttributes(routeAttributes, uavType) {
   const defaults = categoryModel.getAttributesDefaults(uavType);
   return { ...defaults, ...routeAttributes };
@@ -329,12 +329,12 @@ function buildPsdkActions(waypoints) {
 // All modes (mode_yaw/mode_trace/mode_landing/mode_turn) are validated implicitly
 // by psdkParamFromValue — an unmapped or unknown symbol throws RangeError.
 
-// ─── Encoder: route crudo → psdk_interfaces/srv/InitWaypointV2Setting ────────
+// ─── Encoder: task crudo → psdk_interfaces/srv/InitWaypointV2Setting ─────────
 
-export function MissionToPsdkV2(route, { missionId = 1 } = {}) {
+export function MissionToPsdkV2(task, { missionId = 1 } = {}) {
   const { idle_vel, max_vel, mode_yaw, mode_trace, mode_landing } = extractRouteAttributes(
-    route.attributes ?? {},
-    route.uav_type
+    task.params ?? {},
+    task.uav_type
   );
 
   // Resolve each route mode from its wire number to the PSDK firmware number,
@@ -345,9 +345,9 @@ export function MissionToPsdkV2(route, { missionId = 1 } = {}) {
 
   // mode_turn is per-waypoint: each wp may carry its own wp.mode_turn (wire number);
   // fall back to the catalog default when absent. Resolved via symbol like the rest.
-  const defaultTurn = categoryModel.getWaypointDefault(route.uav_type, 'mode_turn');
+  const defaultTurn = categoryModel.getWaypointDefault(task.uav_type, 'mode_turn');
 
-  const waypoints = Object.values(route.wp);
+  const waypoints = Object.values(task.wp);
 
   // Wire value for TURN_MODE_AUTO is 0 (mission_schema.yaml — NOT the PSDK firmware number);
   // when a waypoint carries this value we pick CW or CCW at encode-time to minimise the arc.

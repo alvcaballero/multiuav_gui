@@ -49,7 +49,8 @@ const MissionSchema = {
   endTime: {
     type: DataTypes.DATE,
   },
-  task: {
+  // The mission request (from ExtApp or the planning UI) that originated this mission.
+  request: {
     type: DataTypes.JSON,
   },
   results: {
