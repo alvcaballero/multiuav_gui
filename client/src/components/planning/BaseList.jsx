@@ -112,6 +112,12 @@ const BaseList = ({
     setMarkers(auxMarkers, { meth: 'mod', index: index });
   };
 
+  const setDescription = (index, value) => {
+    let auxMarkers = structuredClone(markers);
+    auxMarkers[index].description = value;
+    setMarkers(auxMarkers, { meth: 'mod', index: index });
+  };
+
   const setAzimFront = (index, value) => {
     let auxMarkers = structuredClone(markers);
     auxMarkers[index].azimFront = Math.min(360, Math.max(0, +value));
@@ -200,6 +206,18 @@ const BaseList = ({
                           value={base.name ? base.name : ''}
                           onChange={(e) => setName(index, e.target.value)}
                         />
+                        {type === 'Element' && (
+                          <TextField
+                            label="Description"
+                            variant="standard"
+                            multiline
+                            rows={2}
+                            fullWidth
+                            value={base.description ? base.description : ''}
+                            onChange={(e) => setDescription(index, e.target.value)}
+                            placeholder="Add a description for this element..."
+                          />
+                        )}
                         <div>
                           <Typography variant="subtitle1" style={{ display: 'inline' }}>
                             Position

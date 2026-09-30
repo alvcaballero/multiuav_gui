@@ -22,6 +22,7 @@ function groupToLegacy(group) {
     altitude: item.altitude,
     azimFront: item.azimFront,
     name: item.name,
+    description: item.description,
     itemId: item.id,
     groupId: group.id,
     attributes: item.attributes,
@@ -29,6 +30,9 @@ function groupToLegacy(group) {
   return {
     groupId: group.id,
     type: group.typeId,
+    // `name` is what the client reads/writes; `Groupname` stays because the
+    // agent prompts (default.md/defaultFast.md) refer to it.
+    name: group.name,
     Groupname: group.name,
     description: group.description,
     // linea: group.linea,
@@ -239,6 +243,8 @@ export const markersModel = {
         elementItem.longitude = item.longitude;
         elementItem.altitude = item.altitude ?? null;
         elementItem.azimFront = item.azimFront ?? null;
+        // Callers that don't know about descriptions (older payloads) must not wipe it.
+        if (item.description !== undefined) elementItem.description = item.description || null;
         elementItem.attributes = wasCreated
           ? applyParameterDefaults(item.attributes, parameterDefs)
           : (item.attributes ?? null);

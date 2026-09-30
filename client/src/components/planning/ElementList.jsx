@@ -127,7 +127,9 @@ const ElementList = ({ markers, setMarkers }) => {
               >
                 <AccordionSummary component="div" expandIcon={<ExpandMore />}>
                   <Typography sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }} noWrap>
-                    {base.name || 'Group ' + index} {base.type && `(${base.type})`}
+                    {base.name || 'Group ' + index}{' '}
+                    {base.type &&
+                      `(${markerTypes.find((t) => t.id === base.type)?.name ?? base.type})`}
                   </Typography>
                   <IconButton
                     sx={{ py: 0, pr: 0, flexShrink: 0 }}
