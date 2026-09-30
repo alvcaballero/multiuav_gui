@@ -8,7 +8,7 @@ import { geodeticToENU } from '../mission/coordinateConverter.js';
  * @property {number} id - ElementItem id (catalog primary key)
  * @property {string} name - Element name
  * @property {string} groupName - Owning ElementGroup name
- * @property {string} type - ElementType id (e.g. 'windTurbine')
+ * @property {string} type - ElementType name (e.g. 'Wind Turbine')
  * @property {{x:number,y:number,z:number}|{lat:number,lng:number,alt:number}} position - Local ENU position when globalOrigin is given, raw geodetic otherwise
  * @property {string} description - ElementItem description
  * @property {string} groupdescription - Owning ElementGroup description
@@ -34,6 +34,16 @@ async function resolveGroupsAndTypes(items) {
 }
 
 /**
+ * Canonical form for comparing catalog labels against caller-provided ones:
+ * all whitespace removed, lowercased ("Wind Turbine" === "windTurbine").
+ * @param {*} value
+ * @returns {string}
+ */
+function normalizeLabel(value) {
+  return String(value ?? '').replace(/\s+/g, '').toLowerCase();
+}
+
+/**
  * Shape a catalog ElementItem (plus its resolved group/type) into an
  * InspectionTarget. Every field comes from the catalog, never from a caller.
  * @param {Object} item - ElementItem row
@@ -46,7 +56,7 @@ function itemToInspectionTarget(item, groupById, typeById, globalOrigin) {
   const group = groupById.get(item.groupId);
   const type = group ? typeById.get(group.typeId) : null;
   const groupName = group?.name ?? null;
-  const typeId = type?.id ?? group?.typeId ?? null;
+  const typeName = type?.name ?? null;
   const alt = item.altitude ?? 0;
   const position = globalOrigin
     ? geodeticToENU(item.latitude, item.longitude, alt, globalOrigin)
@@ -56,7 +66,7 @@ function itemToInspectionTarget(item, groupById, typeById, globalOrigin) {
     id: item.id,
     name: item.name,
     groupName,
-    type: typeId,
+    type: typeName,
     position,
     description: item.description,
     groupdescription: group?.description ?? null,
@@ -104,13 +114,13 @@ export async function resolveInspectionTargets(entries, globalOrigin) {
 
     const group = groupById.get(item.groupId);
     const groupName = group?.name ?? null;
-    const typeId = group ? (typeById.get(group.typeId)?.id ?? group.typeId) : null;
+    const typeName = group ? (typeById.get(group.typeId)?.name ?? null) : null;
 
     const wantsCrossCheck = request.name !== undefined || request.group !== undefined || request.type !== undefined;
     if (wantsCrossCheck) {
-      const nameOk = request.name === undefined || request.name === item.name;
-      const groupOk = request.group === undefined || request.group === groupName;
-      const typeOk = request.type === undefined || request.type === typeId;
+      const nameOk = request.name === undefined || normalizeLabel(request.name) === normalizeLabel(item.name);
+      const groupOk = request.group === undefined || normalizeLabel(request.group) === normalizeLabel(groupName);
+      const typeOk = request.type === undefined || normalizeLabel(request.type) === normalizeLabel(typeName);
       if (!nameOk || !groupOk || !typeOk) {
         mismatched.push(
           `Target id=${request.id} is invalid: no target exists with that exact combination of devicename, group name and type. Re-check the target list before retrying.`
