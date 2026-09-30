@@ -70,6 +70,15 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
     assert.equal(result.yaw.data[1], 0); // wp[1] sin yaw → 0
   });
 
+  test('campos del wp en null (como los emite el MIP planner) toman el default', () => {
+    const wp = [{ pos: [1, 2, 3], yaw: null, gimbal: null, speed: null, action: null }];
+    const result = encodeRosSrv({ type: 'configureMission', msg: makeRoute('dji_M210_noetic', BASE_ATTRS, wp), msgType });
+    assert.equal(result.yaw.data[0], 0);
+    assert.equal(result.speed.data[0], 7); // idle_vel
+    assert.equal(result.gimbalPitch.data[0], 0);
+    assert.deepEqual(result.commandList.data, Array(10).fill(0));
+  });
+
   test('commandList y commandParameter son arrays aplanados de longitud 20 (2 wp × 10)', () => {
     const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
     assert.equal(result.commandList.data.length, 20);

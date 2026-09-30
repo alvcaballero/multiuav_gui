@@ -66,13 +66,14 @@ function transformWaypoints(waypoints, idle_vel, categoryActions) {
       longitude: item.pos[1],
       altitude: item.pos[2],
     };
-    const yaw = item.hasOwnProperty('yaw') ? item.yaw : 0;
-    const speed = item.hasOwnProperty('speed') ? item.speed : idle_vel;
-    const gimbal = item.hasOwnProperty('gimbal') ? item.gimbal : 0;
+    // Planners emit explicit nulls for unset fields: check the value, not the key.
+    const yaw = item.yaw ?? 0;
+    const speed = item.speed ?? idle_vel;
+    const gimbal = item.gimbal ?? 0;
 
     let action_array = Array(10).fill(0);
     let param_array = Array(10).fill(0);
-    if (item.hasOwnProperty('action')) {
+    if (item.action != null) {
       ({ action_array, param_array } = buildWaypointActions(item.action, categoryActions));
     }
 
