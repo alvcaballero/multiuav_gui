@@ -287,15 +287,16 @@ GET http://localhost:4000/api/planning/missionstype
 ### get planning mission param
 GET http://localhost:4000/api/planning/missionparam/0
 
-### get markers types
-GET http://localhost:4000/api/planning/getMarkersTypes
+### ============================================
+### Markers API
+### ============================================
 
 ### get markers types
 GET http://localhost:4000/api/markers/types
+
 ### get markers types
-http://localhost:4000/api/markers/types/windTurbine/definition
-### get bases
-GET http://localhost:4000/api/planning/getBases
+GET http://localhost:4000/api/markers/types/12/definition
+
 
 ### get markers
 GET http://localhost:4000/api/markers
@@ -315,6 +316,7 @@ GET http://localhost:4000/api/markers/bases/assigned
 ### get elements
 GET http://localhost:4000/api/markers/items
 
+
 ### get elements groups 
 
 GET http://localhost:4000/api/markers/groups
@@ -333,9 +335,9 @@ Content-Type: application/json
       "category": "px4_ros2"
     },
     {
-      "category": "px4_ros2",
-      "id": "3",
       "name": "uav_2",
+      "id": "3",
+      "category": "px4_ros2",
       "battery_level": 100
     }
   ],
@@ -365,7 +367,7 @@ Content-Type: application/json
       "group": "Line B"
     }
   ],
-  "targets_count": 8,
+  "targets_count": 4,
   "user_request": "Inspect the entire wind farm using all available UAVs to get a general assessment of its condition",
   "mission_strategy": "circular",
   "chat_id": "chat_1786463606363_9gsvycd"

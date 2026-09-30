@@ -72,7 +72,7 @@ blade_template: &blade
     zones:
       root: {range: [0.00, 0.15], description: Raíz y sellado de pitch}
       mid:  {range: [0.15, 0.70]}
-      tip:  {range: [0.70, 1.00], description: Punta, máxima erosión}
+      tip:  {range: [0.70, 1.00], description: "Punta, máxima erosión"}
     surfaces:
       - {id: leading_edge,  pattern: sweep, prim: body, direction: "-y", offset: half_width, description: Borde de ataque}
       - {id: pressure_side, pattern: sweep, prim: body, direction: "+x", offset: half_depth, description: Intradós}

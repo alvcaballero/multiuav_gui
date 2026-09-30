@@ -40,7 +40,9 @@ async function resolveGroupsAndTypes(items) {
  * @returns {string}
  */
 function normalizeLabel(value) {
-  return String(value ?? '').replace(/\s+/g, '').toLowerCase();
+  return String(value ?? '')
+    .replace(/\s+/g, '')
+    .toLowerCase();
 }
 
 /**
@@ -58,6 +60,7 @@ function itemToInspectionTarget(item, groupById, typeById, globalOrigin) {
   const groupName = group?.name ?? null;
   const typeName = type?.name ?? null;
   const alt = item.altitude ?? 0;
+  const azimFront = item.azimFront ?? 0;
   const position = globalOrigin
     ? geodeticToENU(item.latitude, item.longitude, alt, globalOrigin)
     : { lat: item.latitude, lng: item.longitude, alt };
@@ -68,9 +71,10 @@ function itemToInspectionTarget(item, groupById, typeById, globalOrigin) {
     groupName,
     type: typeName,
     position,
+    azimFront,
+    attributes: item.attributes,
     description: item.description,
     groupdescription: group?.description ?? null,
-    // attributes: item.attributes,
   };
 }
 
