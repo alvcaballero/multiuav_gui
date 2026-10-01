@@ -75,15 +75,16 @@ const MissionReportPage = () => {
   const [missions, setMissions] = useState(null);
   const devices = useSelector((state) => state.devices.items);
 
+  // Missions are historical: they can reference devices that no longer exist in the store.
+  const deviceName = (id) => devices[id]?.name ?? `#${id}`;
+
   const formatValue = (item, key) => {
     const value = item[key];
     switch (key) {
       case 'deviceId':
-        return devices[value].name;
-      case 'uav': {
-        const uavsName = value.map((uav) => devices[uav].name);
-        return uavsName.join(', ');
-      }
+        return deviceName(value);
+      case 'uav':
+        return (value ?? []).map(deviceName).join(', ');
       case 'initTime':
         return formatTime(value, 'minutes');
       case 'endTime':
