@@ -15,6 +15,7 @@ const TopicsPage = lazy(() => import('./pages/TopicsPage'));
 const PlanningPage = lazy(() => import('./pages/PlanningPage'));
 const MissionReportPage = lazy(() => import('./pages/MissionReportPage'));
 const MissionReportTaskPage = lazy(() => import('./pages/MissionReportTaskPage'));
+const MissionPlanReportPage = lazy(() => import('./pages/MissionPlanReportPage'));
 const MissionDetailReportPage = lazy(() => import('./pages/MissionDetailReportPage'));
 const SettingsCategoryPage = lazy(() => import('./settings/SettingsCategoryPage'));
 const SettingsCategoryPageEdit = lazy(() => import('./settings/SettingsCategoryPageEdit'));
@@ -105,6 +106,7 @@ const Navigation = () => {
             <Route path="mission" element={<MissionReportPage />} />
             <Route path="mission/:id" element={<MissionDetailReportPage />} />
             <Route path="task" element={<MissionReportTaskPage />} />
+            <Route path="plans" element={<MissionPlanReportPage />} />
           </Route>
         </Route>
       </Routes>

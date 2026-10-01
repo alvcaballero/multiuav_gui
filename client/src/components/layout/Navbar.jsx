@@ -88,6 +88,7 @@ const Navbar = React.memo(
         submenu: [
           { title: 'Missions', action: () => navigate('/reports/mission') },
           { title: 'Tasks', action: () => navigate('/reports/task') },
+          { title: 'Plans', action: () => navigate('/reports/plans') },
           { title: 'events', action: () => navigate('/reports/events') },
         ],
       },
