@@ -10,15 +10,15 @@ asset:
   class: wind_turbine
   name: Aerogenerador genérico 3 MW
   description: Tripala, eje horizontal, rotor a barlovento, torre tubular de acero.
-  geo: {lat: 37.4100, lon: -6.0000, alt_msl: 25.0}
-  plot: {azim_front: 210, front_title: "Vista frontal (desde barlovento)"}
+  geo: { lat: 37.4100, lon: -6.0000, alt_msl: 0.0 }
+  plot: { azim_front: 210, front_title: 'Vista frontal (desde barlovento)' }
 
 parameters:
-  hub_height: 90.0
-  rotor_diameter: 120.0
+  hub_height: 80.0
+  rotor_diameter: 56.0
   hub_radius: 1.8
-  tower_base_diameter: 4.5
-  tower_top_diameter: 3.0
+  tower_base_diameter: 6.0
+  tower_top_diameter: 4.5
   nacelle_length: 11.0
   nacelle_width: 4.0
   nacelle_height: 4.0
@@ -32,31 +32,32 @@ parameters:
 
 state:
   nacelle_heading_deg:
-    value: 240
-    unit: "°"
+    value: 90
+    unit: '°'
     description: Rumbo de brújula hacia donde mira el rotor
   rotor_azimuth_deg:
-    value: 180
-    unit: "°"
+    value: 0
+    unit: '°'
     limits: [0, 360]
     periodic: true
-    adjustable: true          # el operador puede girar y bloquear el rotor
+    adjustable: true # el operador puede girar y bloquear el rotor
     description: 0 = pala A vertical hacia arriba
-  blade_pitch_deg: {value: 90, unit: "°", description: 90 = bandera}
+  blade_pitch_deg: { value: 2, unit: '°', description: 90 = bandera }
+  rotor_speed_rpm: { value: 0, unit: rpm }
   operational_status: parked
 
 derived:
-  tower_height: "hub_height - nacelle_height/2 - overhang*sin(radians(shaft_tilt_deg))"
-  rotor_radius: "rotor_diameter/2"
-  blade_length: "rotor_diameter/2 - hub_radius"
+  tower_height: 'hub_height - nacelle_height/2 - overhang*sin(radians(shaft_tilt_deg))'
+  rotor_radius: 'rotor_diameter/2'
+  blade_length: 'rotor_diameter/2 - hub_radius'
 
 tables:
   chord:
-    stations: [0.0, 0.05, "blade_max_chord_pos", 1.0]
-    values: ["blade_root_chord", "blade_root_chord", "blade_max_chord", "blade_tip_chord"]
+    stations: [0.0, 0.05, 'blade_max_chord_pos', 1.0]
+    values: ['blade_root_chord', 'blade_root_chord', 'blade_max_chord', 'blade_tip_chord']
   thickness:
-    stations: [0.0, 0.05, "blade_max_chord_pos", 1.0]
-    values: ["blade_root_chord", "blade_root_chord", "0.35*blade_max_chord", "0.12*blade_tip_chord"]
+    stations: [0.0, 0.05, 'blade_max_chord_pos', 1.0]
+    values: ['blade_root_chord', 'blade_root_chord', '0.35*blade_max_chord', '0.12*blade_tip_chord']
 
 # ---------------------------------------------------------------------
 blade_template: &blade
@@ -66,100 +67,169 @@ blade_template: &blade
     description: Pala aerodinámica; raíz circular atornillada al rodamiento de pitch.
     typical_defects: [erosión de borde de ataque, grietas en borde de salida, daño por rayo, fisuras en raíz]
   geometry:
-    - {id: body, type: swept_box, length: "blade_length", width: {table: chord}, depth: {table: thickness}, segments: 24}
+    - {
+        id: body,
+        type: swept_box,
+        length: 'blade_length',
+        width: { table: chord },
+        depth: { table: thickness },
+        segments: 24,
+      }
   inspection:
-    recommended: {gsd_mm: 1.5}
+    recommended: { gsd_mm: 1.5 }
     zones:
-      root: {range: [0.00, 0.15], description: Raíz y sellado de pitch}
-      mid:  {range: [0.15, 0.70]}
-      tip:  {range: [0.70, 1.00], description: "Punta, máxima erosión"}
+      root: { range: [0.00, 0.15], description: Raíz y sellado de pitch }
+      mid: { range: [0.15, 0.70] }
+      tip: { range: [0.70, 1.00], description: 'Punta, máxima erosión' }
     surfaces:
-      - {id: leading_edge,  pattern: sweep, prim: body, direction: "-y", offset: half_width, description: Borde de ataque}
-      - {id: pressure_side, pattern: sweep, prim: body, direction: "+x", offset: half_depth, description: Intradós}
-      - {id: trailing_edge, pattern: sweep, prim: body, direction: "+y", offset: half_width, description: Borde de salida}
-      - {id: suction_side,  pattern: sweep, prim: body, direction: "-x", offset: half_depth, description: Extradós}
+      - {
+          id: leading_edge,
+          pattern: sweep,
+          prim: body,
+          direction: '-y',
+          offset: half_width,
+          description: Borde de ataque,
+        }
+      - { id: pressure_side, pattern: sweep, prim: body, direction: '+x', offset: half_depth, description: Intradós }
+      - {
+          id: trailing_edge,
+          pattern: sweep,
+          prim: body,
+          direction: '+y',
+          offset: half_width,
+          description: Borde de salida,
+        }
+      - { id: suction_side, pattern: sweep, prim: body, direction: '-x', offset: half_depth, description: Extradós }
     features:
-      - {id: lpr_tip, class: lightning_receptor, on_surface: [pressure_side, suction_side], at: 0.98}
-      - {id: lpr_mid, class: lightning_receptor, on_surface: [pressure_side, suction_side], at: 0.80}
-      - {id: le_protection, class: leading_edge_protection, on_surface: [leading_edge], at: [0.70, 1.00]}
-      - {id: vortex_generators, class: vortex_generators, on_surface: [suction_side], at: [0.05, 0.30]}
+      - { id: lpr_tip, class: lightning_receptor, on_surface: [pressure_side, suction_side], at: 0.98 }
+      - { id: lpr_mid, class: lightning_receptor, on_surface: [pressure_side, suction_side], at: 0.80 }
+      - { id: le_protection, class: leading_edge_protection, on_surface: [leading_edge], at: [0.70, 1.00] }
+      - { id: vortex_generators, class: vortex_generators, on_surface: [suction_side], at: [0.05, 0.30] }
 
 links:
   - name: tower
     class: tower
-    joint: {type: fixed}
+    joint: { type: fixed }
     semantic:
       material: acero S355, 3 tramos embridados
       typical_defects: [corrosión, pintura, fugas de aceite, pernos de brida]
     geometry:
-      - {id: shell, type: cylinder, radius_bottom: "tower_base_diameter/2", radius_top: "tower_top_diameter/2", length: "tower_height"}
+      - {
+          id: shell,
+          type: cylinder,
+          radius_bottom: 'tower_base_diameter/2',
+          radius_top: 'tower_top_diameter/2',
+          length: 'tower_height',
+        }
     inspection:
-      recommended: {gsd_mm: 2.0}
+      recommended: { gsd_mm: 2.0 }
       surfaces:
-        - {id: shell, pattern: orbit, prim: shell, offset: radius}
+        - { id: shell, pattern: orbit, prim: shell, offset: radius }
       zones:
-        base: {range: [0.0, 0.17]}
-        middle: {range: [0.17, 0.89]}
-        top: {range: [0.89, 1.0]}
+        base: { range: [0.0, 0.17] }
+        middle: { range: [0.17, 0.89] }
+        top: { range: [0.89, 1.0] }
       features:
-        - {id: flange_1, class: flange, on_surface: [shell], at: 0.30}
-        - {id: flange_2, class: flange, on_surface: [shell], at: 0.62}
-        - {id: flange_top, class: flange, on_surface: [shell], at: 0.99}
+        - { id: flange_1, class: flange, on_surface: [shell], at: 0.30 }
+        - { id: flange_2, class: flange, on_surface: [shell], at: 0.62 }
+        - { id: flange_top, class: flange, on_surface: [shell], at: 0.99 }
 
   - name: nacelle
     class: nacelle
     parent: tower
-    joint: {type: revolute, origin: {xyz: [0, 0, "tower_height"]}, axis: [0, 0, 1], value: "90 - nacelle_heading_deg"}
+    joint:
+      { type: revolute, origin: { xyz: [0, 0, 'tower_height'] }, axis: [0, 0, 1], value: '90 - nacelle_heading_deg' }
     semantic:
       material: carcasa GFRP
       description: Góndola. +x local apunta al rotor.
       typical_defects: [grietas en carcasa, paneles sueltos, restos de aceite, sensores dañados]
     geometry:
-      - {id: housing, type: box, size: ["nacelle_length", "nacelle_width", "nacelle_height"],
-         pose: {xyz: ["nacelle_front_offset - nacelle_length/2", 0, "nacelle_height/2"]}}
+      - {
+          id: housing,
+          type: box,
+          size: ['nacelle_length', 'nacelle_width', 'nacelle_height'],
+          pose: { xyz: ['nacelle_front_offset - nacelle_length/2', 0, 'nacelle_height/2'] },
+        }
     inspection:
       surfaces:
-        - {id: top,   pattern: face_grid, prim: housing, face: "+z"}
-        - {id: left,  pattern: face_grid, prim: housing, face: "+y"}
-        - {id: right, pattern: face_grid, prim: housing, face: "-y"}
-        - {id: rear,  pattern: face_grid, prim: housing, face: "-x"}
+        - { id: top, pattern: face_grid, prim: housing, face: '+z' }
+        - { id: left, pattern: face_grid, prim: housing, face: '+y' }
+        - { id: right, pattern: face_grid, prim: housing, face: '-y' }
+        - { id: rear, pattern: face_grid, prim: housing, face: '-x' }
       features:
-        - {id: met_mast, class: anemometer_vane, position: ["nacelle_front_offset - nacelle_length + 1.5", 0, "nacelle_height + 0.8"], views: [[0, 0, 1], [-1, 0, 0.3]]}
-        - {id: aviation_light, class: aviation_light, position: ["nacelle_front_offset - nacelle_length + 1.0", 1.2, "nacelle_height + 0.5"], views: [[0, 0, 1]]}
+        - {
+            id: met_mast,
+            class: anemometer_vane,
+            position: ['nacelle_front_offset - nacelle_length + 1.5', 0, 'nacelle_height + 0.8'],
+            views: [[0, 0, 1], [-1, 0, 0.3]],
+          }
+        - {
+            id: aviation_light,
+            class: aviation_light,
+            position: ['nacelle_front_offset - nacelle_length + 1.0', 1.2, 'nacelle_height + 0.5'],
+            views: [[0, 0, 1]],
+          }
 
   - name: hub
     class: hub
     parent: nacelle
     joint:
       type: revolute
-      origin: {xyz: ["overhang", 0, "nacelle_height/2"], rpy_deg: [0, "-shaft_tilt_deg", 0]}
+      origin: { xyz: ['overhang', 0, 'nacelle_height/2'], rpy_deg: [0, '-shaft_tilt_deg', 0] }
       axis: [1, 0, 0]
-      value: "rotor_azimuth_deg"
+      value: 'rotor_azimuth_deg'
     semantic:
       material: fundición + spinner GFRP
       typical_defects: [grietas en spinner, tornillería, daño por rayo]
     geometry:
-      - {id: spinner, type: sphere, radius: "hub_radius", pose: {xyz: [0.5, 0, 0]}}
+      - { id: spinner, type: sphere, radius: 'hub_radius', pose: { xyz: [0.5, 0, 0] } }
     inspection:
       surfaces:
         - id: spinner
           pattern: point
           position: [0.5, 0, 0]
-          offset: "hub_radius"
+          offset: 'hub_radius'
           views: [[1, 0, 0], [0.707, 0.707, 0], [0.707, -0.707, 0], [0.707, 0, 0.707], [0.707, 0, -0.707]]
 
   - <<: *blade
     name: blade_A
     parent: hub
-    semantic: {serial: BL-7731-A, material: GFRP con larguero de carbono, typical_defects: [erosión de borde de ataque, grietas en borde de salida, daño por rayo, fisuras en raíz]}
-    joint: {type: revolute, origin: {xyz: [0, 0, "hub_radius"]}, axis: [0, 0, 1], value: "blade_pitch_deg"}
+    semantic:
+      {
+        serial: BL-7731-A,
+        material: GFRP con larguero de carbono,
+        typical_defects: [erosión de borde de ataque, grietas en borde de salida, daño por rayo, fisuras en raíz],
+      }
+    joint: { type: revolute, origin: { xyz: [0, 0, 'hub_radius'] }, axis: [0, 0, 1], value: 'blade_pitch_deg' }
   - <<: *blade
     name: blade_B
     parent: hub
-    semantic: {serial: BL-7731-B, material: GFRP con larguero de carbono, typical_defects: [erosión de borde de ataque, grietas en borde de salida, daño por rayo, fisuras en raíz]}
-    joint: {type: revolute, origin: {xyz: [0, "-hub_radius*sin(radians(120))", "hub_radius*cos(radians(120))"], rpy_deg: [120, 0, 0]}, axis: [0, 0, 1], value: "blade_pitch_deg"}
+    semantic:
+      {
+        serial: BL-7731-B,
+        material: GFRP con larguero de carbono,
+        typical_defects: [erosión de borde de ataque, grietas en borde de salida, daño por rayo, fisuras en raíz],
+      }
+    joint:
+      {
+        type: revolute,
+        origin: { xyz: [0, '-hub_radius*sin(radians(120))', 'hub_radius*cos(radians(120))'], rpy_deg: [120, 0, 0] },
+        axis: [0, 0, 1],
+        value: 'blade_pitch_deg',
+      }
   - <<: *blade
     name: blade_C
     parent: hub
-    semantic: {serial: BL-7731-C, material: GFRP con larguero de carbono, typical_defects: [erosión de borde de ataque, grietas en borde de salida, daño por rayo, fisuras en raíz]}
-    joint: {type: revolute, origin: {xyz: [0, "-hub_radius*sin(radians(240))", "hub_radius*cos(radians(240))"], rpy_deg: [240, 0, 0]}, axis: [0, 0, 1], value: "blade_pitch_deg"}
+    semantic:
+      {
+        serial: BL-7731-C,
+        material: GFRP con larguero de carbono,
+        typical_defects: [erosión de borde de ataque, grietas en borde de salida, daño por rayo, fisuras en raíz],
+      }
+    joint:
+      {
+        type: revolute,
+        origin: { xyz: [0, '-hub_radius*sin(radians(240))', 'hub_radius*cos(radians(240))'], rpy_deg: [240, 0, 0] },
+        axis: [0, 0, 1],
+        value: 'blade_pitch_deg',
+      }
