@@ -176,8 +176,8 @@ class missionController {
 
   static convertXYZToGeodetic = async (req, res) => {
     const missionDataXYZ = req.body;
-    if (!missionDataXYZ.route) {
-      return res.status(400).json({ error: 'route is required.' });
+    if (!Array.isArray(missionDataXYZ.tasks) && !Array.isArray(missionDataXYZ.route)) {
+      return res.status(400).json({ error: 'tasks (or legacy route) is required.' });
     }
     try {
       const missionGeodetic = missionModel.convertXYZToGeodetic(missionDataXYZ);
@@ -198,7 +198,8 @@ class missionController {
       res.status(201).json({ id: saved.id, name: saved.name, createdAt: saved.createdAt });
     } catch (error) {
       logger.error(`Error in createMissionPlan: ${error.message}`);
-      res.status(500).json({ error: error.message });
+      // TaskGraphError carries status 400 and every validation error.
+      res.status(error.status || 500).json({ error: error.message, errors: error.errors });
     }
   };
 

@@ -233,8 +233,10 @@ validation (pure functions, tested in `test/test-task-graph.js`).
 
 **Persistence:** `Mission` (1) → `MissionTask` (N, `taskKey` unique per mission, `dependsOn`,
 `action`, `status`, `currentWp`/`totalWp`) → `File.taskId`. `MissionPlan.missionData` is
-stored as received (`route[]` tagged `'3'`, `tasks[]` `'4'`); server code always reads it
-through `normalizeMission`. The schema migration (`MissionRoute`→`MissionTask`,
+stored as received (`route[]` tagged `'3'`, `tasks[]` `'4'`), and `createMissionPlan` rejects
+an invalid graph on every path, `POST /missions/plans` included; server code always reads it
+through `normalizeMission`. `POST /missions/convert/xyz-to-geodetic` converts the `wp` of
+`tasks[]` or `route[]` and keeps every other field. The schema migration (`MissionRoute`→`MissionTask`,
 `File.routeId`→`taskId`, `Mission.task`→`request`) lives in
 `common/migrations/missionTaskGraph.js` and runs at startup **before** `sequelize.sync()` —
 otherwise sync creates an empty `MissionTask` next to the old table and the rename can

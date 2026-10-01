@@ -158,29 +158,31 @@ function convertMissionXYZToLatLong(missionData) {
   // Remove global_origin from converted mission (not needed in lat/lng format)
   delete converted.global_origin;
 
-  // Convert waypoints in each route from XYZ to lat/lng/alt
-  if (converted.route && Array.isArray(converted.route)) {
-    for (const route of converted.route) {
-      if (route.wp && Array.isArray(route.wp)) {
-        for (const waypoint of route.wp) {
-          if (waypoint.pos && Array.isArray(waypoint.pos) && waypoint.pos.length === 3) {
-            // pos is [x, y, z] in XYZ format
-            const [x, y, z] = waypoint.pos;
-            const geodetic = ENUToGeodetic(x, y, z, origin);
+  // Convert waypoints from XYZ to lat/lng/alt. Task graphs (tasks[], v4) and the
+  // route format (route[], v3) carry wp[] the same way; every other field is kept as is.
+  const plans = [...(Array.isArray(converted.route) ? converted.route : []), ...(Array.isArray(converted.tasks) ? converted.tasks : [])];
+  for (const plan of plans) {
+    if (plan.wp && Array.isArray(plan.wp)) {
+      for (const waypoint of plan.wp) {
+        if (waypoint.pos && Array.isArray(waypoint.pos) && waypoint.pos.length === 3) {
+          // pos is [x, y, z] in XYZ format
+          const [x, y, z] = waypoint.pos;
+          const geodetic = ENUToGeodetic(x, y, z, origin);
 
-            // Convert to [lat, lng, alt] format
-            waypoint.pos = [
-              Number(geodetic.lat.toFixed(10)),
-              Number(geodetic.lng.toFixed(10)),
-              Number(geodetic.alt.toFixed(2)),
-            ];
-          }
+          // Convert to [lat, lng, alt] format
+          waypoint.pos = [
+            Number(geodetic.lat.toFixed(10)),
+            Number(geodetic.lng.toFixed(10)),
+            Number(geodetic.alt.toFixed(2)),
+          ];
         }
       }
     }
   }
 
-  chatLogger.info(`Mission converted from XYZ to lat/lng coordinates. Routes: ${converted.route?.length || 0}`);
+  chatLogger.info(
+    `Mission converted from XYZ to lat/lng coordinates. Routes: ${converted.route?.length || 0}, tasks: ${converted.tasks?.length || 0}`
+  );
   return converted;
 }
 

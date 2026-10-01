@@ -23,6 +23,13 @@ import {
 import { normalizeMission, missionForTask, TASK_GRAPH_VERSION } from './taskGraph.js';
 import { taskScheduler } from './taskScheduler.js';
 
+// Plans are stored as received, tagged with their format: consumers (client RuteConvert)
+// parse route[] as '3' and tasks[] as '4'.
+const withFormatVersion = (missionData) => ({
+  ...missionData,
+  version: missionData.tasks ? TASK_GRAPH_VERSION : '3',
+});
+
 /**
  * @typedef Mission
  * @property {integer} id
@@ -727,8 +734,14 @@ export class missionModel {
     }
   }
 
+  /**
+   * Every stored plan is a valid task graph (tasks[] or legacy route[]): validated here
+   * so a plan saved straight over HTTP can't fail only later, when it is executed.
+   * Throws TaskGraphError (status 400) on an invalid graph.
+   */
   static async createMissionPlan(missionData, { name = null, source = 'manual' } = {}) {
-    return await sequelize.models.MissionPlan.create({ missionData, name, source });
+    normalizeMission(missionData);
+    return await sequelize.models.MissionPlan.create({ missionData: withFormatVersion(missionData), name, source });
   }
 
   static async createMissionFromPlan(planId, { trigger = 'manual', uav = [] } = {}) {
@@ -760,9 +773,7 @@ export class missionModel {
     logger.info('===== loadMissionManual =====');
     const graph = normalizeMission(missionData);
 
-    // Persisted as received, tagged with its format: consumers (client RuteConvert)
-    // parse route[] as '3' and tasks[] as '4'.
-    const storedMission = { ...missionData, version: missionData.tasks ? TASK_GRAPH_VERSION : '3' };
+    const storedMission = withFormatVersion(missionData);
     const plan = await this.createMissionPlan(storedMission, { source: 'manual' });
     logger.info(`loadMissionManual: MissionPlan created id=${plan.id}`);
 

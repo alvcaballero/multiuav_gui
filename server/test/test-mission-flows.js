@@ -221,3 +221,20 @@ describe('automatic flow (initMission)', () => {
     assert.equal(m.planId, null);
   });
 });
+
+describe('mission plans (POST /missions/plans)', () => {
+  test('a tasks[] plan is stored as received with its dependencies, tagged v4', async () => {
+    const { id } = await missionModel.createMissionPlan(maritime(), { source: 'agent' });
+    const { missionData } = await missionModel.getMissionPlan(id);
+    assert.equal(missionData.version, '4');
+    assert.deepEqual(missionData.tasks.map((t) => t.depends_on), [[], ['T1'], ['T2']]);
+  });
+
+  test('an invalid graph is rejected with a 400 and nothing is stored', async () => {
+    const plansBefore = (await missionModel.getAllMissionPlans()).length;
+    const bad = maritime();
+    bad.tasks[1].depends_on = ['T9'];
+    await assert.rejects(missionModel.createMissionPlan(bad), (err) => err instanceof TaskGraphError && err.status === 400);
+    assert.equal((await missionModel.getAllMissionPlans()).length, plansBefore);
+  });
+});
