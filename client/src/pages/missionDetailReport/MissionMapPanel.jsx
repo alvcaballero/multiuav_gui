@@ -22,6 +22,7 @@ import MapFlightPath from '../../map/mission/MapFlightPath';
 import MapMarkers from '../../map/environment/MapMarkers';
 import MapPositions from '../../map/devices/MapPositions';
 import RoutesList from '../../components/mission/RoutesList';
+import { RuteConvert } from '../../map/MissionConvert';
 import SelectField from '../../shared/components/SelectField';
 import SelectList from '../../components/ui/SelectList';
 import BaseSettings from '../../components/planning/BaseSettings';
@@ -70,6 +71,13 @@ const MissionMapPanel = ({
   onTabChange,
 }) => {
   const devices = useSelector((state) => state.devices.items);
+
+  // RoutesList edits `route[]`; missions stored as a task graph only carry `tasks[]`.
+  const editorMission = useMemo(() => {
+    const stored = missions?.mission;
+    if (!stored || Array.isArray(stored.route)) return stored;
+    return { ...stored, route: Array.isArray(stored.tasks) ? RuteConvert(stored) : [] };
+  }, [missions]);
 
   const flightTracks = useMemo(
     () =>
@@ -146,7 +154,7 @@ const MissionMapPanel = ({
             <TabPanel value="1" sx={{ p: 1 }}>
               {routePath && (
                 <RoutesList
-                  mission={missions.mission}
+                  mission={editorMission}
                   setmission={noop}
                   setScrool={noop}
                   NoEdit={true}
