@@ -7,6 +7,8 @@ import MapMarkers from './environment/MapMarkers';
 import MapElements from './environment/MapElements';
 import MapPositions from './devices/MapPositions';
 import MapSelectedDevice from './devices/MapSelectedDevice';
+import MapAccuracy from './devices/MapAccuracy';
+import MapCollisionSensor from './devices/MapCollisionSensor';
 import MapMissionHome from './mission/MapMissionHome';
 import MapScale from './controls/MapScale';
 import { devicesActions } from '../store';
@@ -74,6 +76,8 @@ const MainMap = ({
         <MapElements />
         <MapGeofence />
         <MapLiveRoutes />
+        <MapAccuracy positions={filteredPositions} />
+        <MapCollisionSensor mode="selected" />
         <MapPositions
           positions={filteredPositions}
           onClick={onMarkerClick}

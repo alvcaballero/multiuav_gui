@@ -75,6 +75,21 @@ client/
 - Live route history tracking
 - Waypoint editing with drag-and-drop
 
+**Origin: traccar-web.** The map layer (`client/src/map/`) is based on
+[traccar-web](https://github.com/traccar/traccar-web) (`src/map/main/`, `src/map/core/`). That is why
+layers carry `metadata['traccar:title']` and why components follow its pattern: a component adds its
+own source + layer in a `useEffect` (cleanup removes both), and a second `useEffect` pushes data with
+`map.getSource(id).setData(...)`. When you need a new map layer, check whether traccar-web already has
+one (e.g. `MapAccuracy`, `MapRoutes`, `MapGeofence`) and port it instead of inventing a new pattern.
+Adaptations vs. upstream: `map` comes from `core/mapInstance`, no `toMapCoordinates`/`useTranslation`.
+
+**Collision sensor arcs (`map/devices/MapCollisionSensor.js`):** draws one arc per side
+(front/right/back/left) around the UAV from `position.attributes.obstacle_info`
+(`[down, front, right, back, left, up]`, meters, 100 = no reading) rotated by `position.course`.
+Closer obstacle → arc closer to the icon, more opaque, green→yellow→red; beyond `MAX_RANGE` nothing
+is drawn. Radius is in screen pixels (recomputed on `zoom`), not real meters. `mode="selected"`
+(default) draws only the selected device, `mode="all"` draws every UAV with a position.
+
 **Layer visibility toggling (`traccar:title` metadata):**
 
 `client/src/map/controls/MapSwitcher.jsx` builds its layer-visibility menu by scanning
