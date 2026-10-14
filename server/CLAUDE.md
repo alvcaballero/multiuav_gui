@@ -349,12 +349,24 @@ dji_M210_noetic:
       serviceType: 'aerialcore_common/ConfigMission'
 ```
 
-**Message Decoding** (`models/ros/rosDecode.js`):
+**Message Decoding** (`models/ros/rosDecode.js`): a registry, not an if-chain. A decoder is
+picked by `(slot, messageType)` — the `subscribers` key plus the `messageType` that entry
+declares — and returns a `TelemetryPatch` (typedef in `models/positions/positionReducers.js`),
+which `positionsModel.updatePosition` merges through ordered reducers.
 
 - `sensor_msgs/NavSatFix` → GPS position
 - `px4_msgs/VehicleStatus` → Arming state, navigation state, failsafe
 - `sensor_msgs/Imu` → Heading from quaternion
-- `sensor_msgs/BatteryState` → Battery percentage
+- `sensor_msgs/BatteryState` (and its `*/BatteryState*` look-alikes) → Battery percentage
+
+**What differs per category is a param, never a branch on the category name.** `ros.js` hands the
+decoder the category's own subscriber entry as `params`; the decoder reads, with defaults:
+`battery.scale` (× to percent, default 1 — `100` when the message is 0-1), `gimbal.unit`
+(`rad` → degrees), `IMU.heading_offset` (default 90). A 0-1 battery WITHOUT `scale: 100` is
+rounded to 0 or 1 by the position cache and also reaches the external planner as
+`battery_level` (`mission.js`) ~100× too low. At boot, `categoryModel` checks every
+subscriber's `(slot, messageType)` against the registry (`hasDecoder`); `LOG_LEVEL=debug` makes
+a gap throw. A slot declared in the YAML that nothing consumes gets an explicit `ignore(...)`.
 
 **Message Encoding** (`models/ros/rosEncode.js`):
 
@@ -557,8 +569,8 @@ When modifying mission flow, check all of:
 
 When adding new device types:
 
-1. Add configuration to `devices_msg.yaml` (`topics`, `services`, and/or `actions` per category)
-2. Add decoder logic in `models/ros/rosDecode.js`
+1. Add configuration to `devices_msg.yaml` (`subscribers`, `services`, and/or `actions` per category); put any per-category scale/unit/offset on the subscriber entry itself
+2. Register a decoder for the `(slot, messageType)` pair in `models/ros/rosDecode.js` (or `ignore(...)` it) — boot validation and `test/test-devices-msg.js` fail on a pair with none
 3. Add encoder logic in `models/ros/rosEncode.js` (if sending commands)
 4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosTopics.js`; no per-device code needed
 

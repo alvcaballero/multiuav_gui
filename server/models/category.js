@@ -3,6 +3,7 @@ import { devicesMsg, missionSchema, messagesTypes } from '../config/config.js';
 import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS } from '../config/deviceMsgCatalog.js';
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
+import { hasDecoder } from './ros/rosDecode.js';
 
 const devices_msg = readDataFile(devicesMsg);
 const messages_types = readDataFile(messagesTypes);
@@ -26,18 +27,28 @@ const DEVICES_MSG_BLOCKS = {
   actions: KNOWN_SERVICE_KEYS,
 };
 
+// Además de la key, cada subscriber valida el PAR (slot, messageType) contra el registry
+// de rosDecode: un messageType mal escrito en el YAML (o en el decoder) dejaría el topic
+// suscripto y mudo, sin ningún error.
 function validateDevicesMsgKeys(catalog) {
   const strict = process.env.LOG_LEVEL === 'debug';
   const orphans = [];
+  const undecoded = [];
   for (const [category, def] of Object.entries(catalog)) {
     for (const [block, knownKeys] of Object.entries(DEVICES_MSG_BLOCKS)) {
       for (const key of Object.keys(def?.[block] ?? {})) {
         if (!knownKeys.has(key)) orphans.push(`${category}.${block}.${key}`);
       }
     }
+    for (const [slot, entry] of Object.entries(def?.subscribers ?? {})) {
+      if (!hasDecoder(slot, entry?.messageType)) undecoded.push(`${category}.subscribers.${slot} (${entry?.messageType})`);
+    }
   }
-  if (orphans.length === 0) return;
-  const msg = `devices_msg: ${orphans.length} unknown key(s) not in catalog: ${orphans.join(', ')}`;
+  const problems = [];
+  if (orphans.length) problems.push(`${orphans.length} unknown key(s) not in catalog: ${orphans.join(', ')}`);
+  if (undecoded.length) problems.push(`${undecoded.length} subscriber(s) with no decoder for their messageType: ${undecoded.join(', ')}`);
+  if (problems.length === 0) return;
+  const msg = `devices_msg: ${problems.join('; ')}`;
   if (strict) throw new Error(msg);
   logger.warn(msg);
 }

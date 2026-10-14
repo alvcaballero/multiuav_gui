@@ -115,19 +115,20 @@ export class rosModel {
     }
 
     // Position vs camera differ only in which controller effect they trigger.
-    // The closure captures deviceId + category so the transport never sees them.
-    const makeOnMessage = (effect) => (args) => {
+    // The closure captures deviceId + the topic's own config entry (`params`: scale,
+    // unit, ...) so the transport never sees them and the decoder never sees the category.
+    const makeOnMessage = (effect, params) => (args) => {
       const decoded = decodeRosMsg({
         msg: args.msg,
         deviceId: id,
-        uav_type: category,
         type: args.slot,
         msgType: args.messageType,
+        params,
       });
       if (decoded) effect(decoded);
     };
-    const onPosition = makeOnMessage((d) => positionsController.updatePosition(d));
-    const onCamera = makeOnMessage((d) => positionsController.updateCamera(d));
+    const toPosition = (d) => positionsController.updatePosition(d);
+    const toCamera = (d) => positionsController.updateCamera(d);
 
     const topics = Object.entries(subscribers)
       .filter(([slot]) => {
@@ -141,7 +142,7 @@ export class rosModel {
         slot,
         name: buildDeviceName(name, cfg),
         messageType: cfg['messageType'],
-        onMessage: slot == 'camera' ? onCamera : onPosition,
+        onMessage: makeOnMessage(slot == 'camera' ? toCamera : toPosition, cfg),
       }));
 
     return _subscribeTopics({ key: id, topics }, getRos(), serverStatus());

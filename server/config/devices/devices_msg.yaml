@@ -21,6 +21,7 @@ sjtu:
     IMU:
       name: '/imu/out'
       messageType: 'sensor_msgs/Imu'
+      heading_offset: -90
     flight_status:
       name: '/joint_states'
       messageType: 'sensor_msgs/JointState'
@@ -417,12 +418,14 @@ dji_M300_PSDK:
     battery:
       name: '/psdk_ros2/battery'
       messageType: 'sensor_msgs/msg/BatteryState'
+      scale: 100 # percentage arrives as 0-1
     camera:
       name: '/video_stream_compress'
       messageType: 'sensor_msgs/CompressedImage'
     gimbal:
       name: '/psdk_ros2/gimbal_angles'
       messageType: 'geometry_msgs/msg/Vector3Stamped'
+      unit: rad
     obstacle_info:
       name: '/psdk_ros2/relative_obstacle_info'
       messageType: 'psdk_interfaces/msg/RelativeObstacleInfo'
@@ -472,6 +475,7 @@ px4_mavros:
     battery:
       name: '/mavros/battery'
       messageType: 'aerialcore_common/BatteryState'
+      scale: 100 # percentage arrives as 0-1
     state_machine:
       name: '/muav_sm/uavstate'
       messageType: 'muav_state_machine/UAVState'
@@ -511,6 +515,7 @@ px4_mavros_slow:
     battery:
       name: '/gcs/battery'
       messageType: 'multiuav_interfaces/BatteryState'
+      scale: 100 # percentage arrives as 0-1
     camera:
       name: '/gcs/video_stream_compress'
       messageType: 'sensor_msgs/CompressedImage'
@@ -550,6 +555,9 @@ px4_ros2:
     camera:
       name: '/camera/image/compressed'
       messageType: 'sensor_msgs/CompressedImage'
+    obstacle_info:
+      name: '/obstacle_info'
+      messageType: 'muav_gcs_interfaces/msg/ObstacleInfo'
   services:
     configureMission:
       name: '/offboard/mission_load'
@@ -578,6 +586,7 @@ fuvex:
     battery:
       name: '/battery'
       messageType: 'sensor_msgs/BatteryState'
+      scale: 100 # percentage arrives as 0-1
   services: {}
 catec:
   subscribers:
@@ -596,6 +605,7 @@ catec:
     battery:
       name: '/battery'
       messageType: 'aerialcore_common/BatteryState'
+      scale: 100 # percentage arrives as 0-1
     state_machine:
       name: '/fligh_state'
       messageType: 'std_msgs/String'
@@ -626,6 +636,7 @@ griffin:
     battery:
       name: '/mavros/battery'
       messageType: 'aerialcore_common/BatteryState'
+      scale: 100 # percentage arrives as 0-1
     sensors_humidity:
       name: '/serial2ros/result'
       messageType: 'std_msgs/Int32MultiArray'

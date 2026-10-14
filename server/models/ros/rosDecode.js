@@ -1,233 +1,242 @@
 import { getDatetime, round } from '../../common/utils.js';
 import { getDroneStatus, getArmingStatus, getVehicleCommand, getVehicleCmdResult } from '../../config/status.js';
 
+// ROS message -> internal telemetry patch (`TelemetryPatch`, models/positions/positionReducers.js).
+//
+// A decoder is picked by (slot, messageType): the slot is the key under `subscribers` in
+// devices_msg.yaml and the messageType is what that entry declares. What differs between
+// CATEGORIES (a scale, a unit, an offset) is NOT code: it is a param on the category's own
+// subscriber entry, and arrives here as `params`. Never branch on the category name.
+//
+//   battery.scale        multiplier that turns `percentage` into percent (default 1)
+//   gimbal.unit          'rad' converts the angles to degrees (default: already degrees)
+//   IMU.heading_offset   degrees added to the yaw to get the course (default 90)
+
 const toDeg = (rad) => (rad * 180) / Math.PI;
+const norm3 = ({ x, y, z }) => Math.sqrt(x * x + y * y + z * z);
 
-export function decodeRosMsg({ msg, deviceId, uav_type, type, msgType }) {
-  // console.log(`Decoding ROS message: ${type} ${msgType} for device ${deviceId}`);
-  if (type == 'position' && msgType == 'sensor_msgs/NavSatFix') {
-    return {
-      id: msg.header.seq,
-      deviceId,
-      latitude: msg.latitude,
-      longitude: msg.longitude,
-      altitude: round(msg.altitude, 1),
-      deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
-    };
-  }
-  if (type == 'position_global' && msgType == 'px4_msgs/msg/VehicleGlobalPosition') {
-    return {
-      id: 0,
-      deviceId,
-      latitude: msg.lat,
-      longitude: msg.lon,
-      altitude: round(msg.alt, 1),
-      deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
-    };
-  }
-  if (type == 'local_position' && msgType == 'psdk_interfaces/msg/PositionFused') {
-    return {
-      id: 0,
-      deviceId,
-      localposition: {
-        x: msg.position.x,
-        y: msg.position.y,
-        z: msg.position.z,
-      },
-    };
-  }
-  if (type == 'local_position' && msgType == 'geometry_msgs/PointStamped') {
-    return {
-      id: 0,
-      deviceId,
-      localposition: {
-        x: msg.point.x,
-        y: msg.point.y,
-        z: msg.point.z,
-      },
-    };
-  }
-  if (type == 'local_position' && msgType == 'px4_msgs/msg/VehicleLocalPosition') {
-    const speed = Math.sqrt(msg.vx * msg.vx + msg.vy * msg.vy + msg.vz * msg.vz);
-    return {
-      id: 0,
-      deviceId,
-      localposition: {
-        x: msg.x,
-        y: msg.y,
-        z: msg.z,
-      },
-      course: msg.heading * 57.2958, // radians to degrees
-      speed: round(speed, 1),
-      deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
-    };
-  }
+const ANY = '*';
+const decoders = new Map(); // `${slot}|${messageType}` -> ({ msg, deviceId, params }) => patch | null
+const keyOf = (slot, msgType) => `${slot}|${msgType}`;
 
-  if (type == 'vehicle_status' && msgType == 'px4_msgs/msg/VehicleStatus') {
-    return {
-      deviceId,
-      armState: getArmingStatus(msg.arming_state),
-      navState: getDroneStatus(msg.nav_state),
-      failsafe: msg.failsafe,
-      flightCheck: msg.pre_flight_checks_pass,
-    };
+function register(slot, msgTypes, decode) {
+  for (const msgType of [msgTypes].flat()) {
+    const key = keyOf(slot, msgType);
+    if (decoders.has(key)) throw new Error(`rosDecode: duplicate decoder for ${key}`);
+    decoders.set(key, decode);
   }
-  if (type == 'vehicle_command_ack' && msgType == 'px4_msgs/msg/VehicleCommandAck') {
-    return { deviceId, commandAck: getVehicleCommand(msg.command), resultCmdAck: getVehicleCmdResult(msg.result) };
-  }
-  //if (type == 'sensor_height' && msgType == 'mavros_msgs/Altitude') {
-  //  return null;
-  //}
-
-  //if (type == 'sensor_height' && msgType == 'std_msgs/Float32') {
-  //  return null; // return {deviceId:uav_id,altitude:msg.data};
-  //}
-  //if (type == 'vo_position' && msgType == 'dji_osdk_ros/VOPosition') {
-  //  return null; // return {id:msg.header.seq,deviceId:uav_id,latitude:msg.x,longitude:msg.y,altitude:msg.z,course:0,deviceTime:"2023-03-09T22:12:44.000+00:00"};
-  //}
-  if (type == 'IMU' && msgType == 'sensor_msgs/Imu' && uav_type == 'sjtu') {
-    // dji sdk
-    //https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
-    // float yaw   = atan2(2.0 * (q.q3 * q.q0 + q.q1 * q.q2) , - 1.0 + 2.0 * (q.q0 * q.q0 + q.q1 * q.q1));
-    //  q0, q1, q2, q3 corresponds to w,x,y,z
-    let q = msg.orientation;
-    let yaw = Math.atan2(2.0 * (q.z * q.w + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z)) * -1;
-
-    return {
-      deviceId,
-      course: Math.round(-90 + yaw * 57.295),
-      orientation: { yaw: yaw, pitch: msg.orientation.x, roll: msg.orientation.y },
-    };
-  }
-  if (type == 'IMU' && msgType == 'sensor_msgs/Imu') {
-    // dji sdk
-    //https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
-    // float yaw   = atan2(2.0 * (q.q3 * q.q0 + q.q1 * q.q2) , - 1.0 + 2.0 * (q.q0 * q.q0 + q.q1 * q.q1));
-    //  q0, q1, q2, q3 corresponds to w,x,y,z
-    let q = msg.orientation;
-    let yaw = Math.atan2(2.0 * (q.z * q.w + q.x * q.y), -1 + +2 * (q.w * q.w + q.x * q.x)) * -1;
-
-    return { deviceId, course: Math.round(90 + yaw * 57.295) };
-  }
-  if (type == 'hdg' && (msgType == 'std_msgs/Float64' || msgType == 'std_msgs/Float32')) {
-    return { deviceId, course: msg.data };
-  }
-  if (type == 'mission_state' && msgType == 'dji_osdk_ros/WaypointV2MissionStatePush') {
-    return { deviceId, speed: round(msg.velocity * 0.01, 1) };
-  }
-
-  if (type == 'speed' && (msgType == 'geometry_msgs/Vector3Stamped' || msgType == 'geometry_msgs/msg/Vector3Stamped')) {
-    return {
-      deviceId,
-      speed: round(Math.sqrt(Math.pow(msg.vector.x, 2) + Math.pow(msg.vector.y, 2) + Math.pow(msg.vector.z, 2)), 1),
-    };
-  }
-  if (type == 'speed' && msgType == 'geometry_msgs/TwistStamped') {
-    return {
-      deviceId,
-      speed: round(
-        Math.sqrt(Math.pow(msg.twist.linear.x, 2) + Math.pow(msg.twist.linear.y, 2) + +Math.pow(msg.twist.linear.z, 2)),
-        1
-      ),
-    };
-  }
-
-  if (type == 'battery' && uav_type == 'px4_mavros') {
-    return {
-      deviceId,
-      batteryLevel: Math.round(msg.percentage * 100),
-    };
-  }
-  if (type == 'battery' && msgType == 'px4_msgs/msg/BatteryStatus') {
-    return { deviceId, batteryLevel: msg.remaining * 100 };
-  }
-  if (type == 'battery' && uav_type == 'dji_M300_PSDK') {
-    return { deviceId, batteryLevel: msg.percentage * 100 };
-  }
-  if (type == 'battery') {
-    return { deviceId, batteryLevel: msg.percentage };
-  }
-  if (type == 'gimbal' && msgType == 'geometry_msgs/Vector3Stamped') {
-    return { deviceId, gimbal: msg.vector };
-  }
-  if (type == 'gimbal' && msgType == 'geometry_msgs/msg/Vector3Stamped' && uav_type == 'dji_M300_PSDK') {
-    const gimbal = msg.vector;
-    return {
-      deviceId,
-      gimbal: { x: toDeg(gimbal.x), y: toDeg(gimbal.y), z: toDeg(gimbal.z) },
-    };
-  }
-  if (
-    type == 'obstacle_info' &&
-    (msgType == 'dji_osdk_ros/ObstacleInfo' || msgType == 'psdk_interfaces/msg/RelativeObstacleInfo')
-  ) {
-    return { deviceId, obstacle_info: msg };
-  }
-  if (type == 'obstacle_info' && msgType == 'sensor_msg/Range') {
-    return { deviceId, obstacle_info: { down: msg.range } };
-  }
-  if (type == 'camera' && (msgType == 'sensor_msgs/CompressedImage' || msgType == 'sensor_msgs/msg/CompressedImage')) {
-    // rosbridge serializes uint8[] fields as base64 — decode once here so the rest
-    // of the pipeline (cache, HTTP snapshot, WS broadcast) deals in real bytes.
-    return { deviceId, camera: Buffer.from(msg.data, 'base64') };
-  }
-  if (type == 'flight_status' && msgType == 'std_msgs/UInt8') {
-    return {
-      deviceId,
-      protocol: 'dji',
-      landed_state: msg.data,
-    };
-  }
-  if (type == 'position' && msgType == 'nav_msgs/msg/Odometry') {
-    return {
-      deviceId,
-      localposition: { x: msg.pose.pose.position.x, y: msg.pose.pose.position.y, z: msg.pose.pose.position.z },
-    };
-  }
-  if (type == 'attitude' && msgType == 'geometry_msgs/msg/QuaternionStamped') {
-    const q = msg.quaternion;
-    // 1. Calcular el yaw en radianes
-    const siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
-    const cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
-    const yaw_rad = Math.atan2(siny_cosp, cosy_cosp);
-
-    let yaw = (yaw_rad * 180) / Math.PI; // [-180, 180]
-    yaw = 90 - yaw; // Convertir a un sistema donde 0 es hacia el norte, 90 hacia el este
-
-    // 3. Opcional: Normalizar el ángulo entre -180 y 180 grados (estándar en ROS)
-    if (yaw > 180) yaw -= 360;
-    if (yaw < -180) yaw += 360;
-    return {
-      deviceId,
-      course: round(yaw, 1),
-    };
-  }
-  if (type == 'sensors_humidity') {
-    return { deviceId, sensors_humidity: msg.data };
-  }
-  if (type == 'threat') {
-    return { deviceId, threat: msg.data };
-  }
-  if (type == 'state_machine' && msgType == 'std_msgs/String') {
-    return {
-      deviceId,
-      protocol: 'catec',
-      mission_state: '0',
-      wp_reached: '0',
-      uav_state: 'ok',
-      landed_state: msg.data,
-    };
-  }
-  if (type == 'state_machine' && msgType == 'muav_state_machine/UAVState') {
-    return {
-      deviceId,
-      protocol: msg.airframe_type,
-      mission_state: msg.mission_state,
-      wp_reached: msg.wp_reached,
-      uav_state: msg.uav_state,
-      landed_state: msg.landed_state,
-    };
-  }
-  // console.log(`Unknown message type: ${type} ${msgType} for device ${deviceId}`);
-  return null;
 }
+
+// Declared in devices_msg.yaml on purpose, but nothing consumes it: say so instead of
+// leaving a hole that looks like a typo.
+const ignore = (slot, msgTypes) => register(slot, msgTypes, () => null);
+
+/** True when (slot, msgType) has a decoder, an explicit `ignore` included. */
+export function hasDecoder(slot, msgType) {
+  return decoders.has(keyOf(slot, msgType)) || decoders.has(keyOf(slot, ANY));
+}
+
+/**
+ * @param {object} ctx
+ * @param {object} ctx.msg - ROS message as rosbridge delivers it
+ * @param {number|string} ctx.deviceId
+ * @param {string} ctx.type - subscriber slot (`position`, `battery`, ...)
+ * @param {string} ctx.msgType - messageType declared by the category for that slot
+ * @param {object} [ctx.params] - the category's subscriber entry (scale, unit, heading_offset, ...)
+ * @returns {object|null} a TelemetryPatch, or null when there is nothing to apply
+ */
+export function decodeRosMsg({ msg, deviceId, type, msgType, params = {} }) {
+  const decode = decoders.get(keyOf(type, msgType)) ?? decoders.get(keyOf(type, ANY));
+  return decode ? decode({ msg, deviceId, params }) : null;
+}
+
+// ─── position ──────────────────────────────────────────────────────────────────
+
+register('position', 'sensor_msgs/NavSatFix', ({ msg, deviceId }) => ({
+  id: msg.header.seq,
+  deviceId,
+  latitude: msg.latitude,
+  longitude: msg.longitude,
+  altitude: round(msg.altitude, 1),
+  deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
+}));
+
+register('position', 'nav_msgs/msg/Odometry', ({ msg, deviceId }) => ({
+  deviceId,
+  localposition: { x: msg.pose.pose.position.x, y: msg.pose.pose.position.y, z: msg.pose.pose.position.z },
+}));
+
+register('position_global', 'px4_msgs/msg/VehicleGlobalPosition', ({ msg, deviceId }) => ({
+  id: 0,
+  deviceId,
+  latitude: msg.lat,
+  longitude: msg.lon,
+  altitude: round(msg.alt, 1),
+  deviceTime: getDatetime(),
+}));
+
+register('local_position', 'psdk_interfaces/msg/PositionFused', ({ msg, deviceId }) => ({
+  id: 0,
+  deviceId,
+  localposition: { x: msg.position.x, y: msg.position.y, z: msg.position.z },
+}));
+
+register('local_position', 'geometry_msgs/PointStamped', ({ msg, deviceId }) => ({
+  id: 0,
+  deviceId,
+  localposition: { x: msg.point.x, y: msg.point.y, z: msg.point.z },
+}));
+
+register('local_position', 'px4_msgs/msg/VehicleLocalPosition', ({ msg, deviceId }) => ({
+  id: 0,
+  deviceId,
+  localposition: { x: msg.x, y: msg.y, z: msg.z },
+  course: msg.heading * 57.2958, // radians to degrees
+  speed: round(norm3({ x: msg.vx, y: msg.vy, z: msg.vz }), 1),
+  deviceTime: getDatetime(),
+}));
+
+// ─── px4 status ────────────────────────────────────────────────────────────────
+
+register('vehicle_status', 'px4_msgs/msg/VehicleStatus', ({ msg, deviceId }) => ({
+  deviceId,
+  armState: getArmingStatus(msg.arming_state),
+  navState: getDroneStatus(msg.nav_state),
+  failsafe: msg.failsafe,
+  flightCheck: msg.pre_flight_checks_pass,
+}));
+
+register('vehicle_command_ack', 'px4_msgs/msg/VehicleCommandAck', ({ msg, deviceId }) => ({
+  deviceId,
+  commandAck: getVehicleCommand(msg.command),
+  resultCmdAck: getVehicleCmdResult(msg.result),
+}));
+
+// ─── heading ───────────────────────────────────────────────────────────────────
+
+register('IMU', 'sensor_msgs/Imu', ({ msg, deviceId, params }) => {
+  // https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
+  const q = msg.orientation;
+  const yaw = Math.atan2(2.0 * (q.z * q.w + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z)) * -1;
+  return { deviceId, course: Math.round((params.heading_offset ?? 90) + yaw * 57.295) };
+});
+
+register('hdg', ['std_msgs/Float64', 'std_msgs/Float32'], ({ msg, deviceId }) => ({ deviceId, course: msg.data }));
+
+register('attitude', 'geometry_msgs/msg/QuaternionStamped', ({ msg, deviceId }) => {
+  const q = msg.quaternion;
+  const yawRad = Math.atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z));
+  // 0 is north and 90 is east, normalised to [-180, 180] like ROS does.
+  let yaw = 90 - toDeg(yawRad);
+  if (yaw > 180) yaw -= 360;
+  if (yaw < -180) yaw += 360;
+  return { deviceId, course: round(yaw, 1) };
+});
+
+// ─── speed ─────────────────────────────────────────────────────────────────────
+
+register('speed', ['geometry_msgs/Vector3Stamped', 'geometry_msgs/msg/Vector3Stamped'], ({ msg, deviceId }) => ({
+  deviceId,
+  speed: round(norm3(msg.vector), 1),
+}));
+
+register('speed', 'geometry_msgs/TwistStamped', ({ msg, deviceId }) => ({
+  deviceId,
+  speed: round(norm3(msg.twist.linear), 1),
+}));
+
+register('mission_state', 'dji_osdk_ros/WaypointV2MissionStatePush', ({ msg, deviceId }) => ({
+  deviceId,
+  speed: round(msg.velocity * 0.01, 1),
+}));
+
+// ─── battery ───────────────────────────────────────────────────────────────────
+
+register('battery', 'px4_msgs/msg/BatteryStatus', ({ msg, deviceId }) => ({
+  deviceId,
+  batteryLevel: msg.remaining * 100,
+}));
+
+// Every other battery message is sensor_msgs/BatteryState-shaped (`percentage`), whatever
+// its package is called; whether that is 0-1 or 0-100 is the category's `scale`.
+register('battery', ANY, ({ msg, deviceId, params }) => ({
+  deviceId,
+  batteryLevel: msg.percentage * (params.scale ?? 1),
+}));
+
+// ─── gimbal and obstacles ──────────────────────────────────────────────────────
+
+register(
+  'gimbal',
+  ['geometry_msgs/Vector3Stamped', 'geometry_msgs/msg/Vector3Stamped'],
+  ({ msg, deviceId, params }) => {
+    const v = msg.vector;
+    return { deviceId, gimbal: params.unit === 'rad' ? { x: toDeg(v.x), y: toDeg(v.y), z: toDeg(v.z) } : v };
+  }
+);
+
+register(
+  'obstacle_info',
+  ['dji_osdk_ros/ObstacleInfo', 'psdk_interfaces/msg/RelativeObstacleInfo'],
+  ({ msg, deviceId }) => ({ deviceId, obstacle_info: msg })
+);
+
+register('obstacle_info', 'sensor_msgs/Range', ({ msg, deviceId }) => ({
+  deviceId,
+  obstacle_info: { down: msg.range },
+}));
+
+register('obstacle_info', 'muav_gcs_interfaces/msg/ObstacleInfo', ({ msg, deviceId }) => {
+  const obstacle_info = {
+    front: msg.front.distance,
+    back: msg.back.distance,
+    left: msg.left.distance,
+    right: msg.right.distance,
+    up: msg.up.distance,
+    down: msg.down.distance,
+  };
+  return { deviceId, obstacle_info };
+});
+// ─── camera, flight status, state machine ──────────────────────────────────────
+
+register('camera', ['sensor_msgs/CompressedImage', 'sensor_msgs/msg/CompressedImage'], ({ msg, deviceId }) => ({
+  // rosbridge serializes uint8[] fields as base64 — decode once here so the rest
+  // of the pipeline (cache, HTTP snapshot, WS broadcast) deals in real bytes.
+  deviceId,
+  camera: Buffer.from(msg.data, 'base64'),
+}));
+
+register('flight_status', 'std_msgs/UInt8', ({ msg, deviceId }) => ({
+  deviceId,
+  protocol: 'dji',
+  landed_state: msg.data,
+}));
+
+register('state_machine', 'std_msgs/String', ({ msg, deviceId }) => ({
+  deviceId,
+  protocol: 'catec',
+  mission_state: '0',
+  wp_reached: '0',
+  uav_state: 'ok',
+  landed_state: msg.data,
+}));
+
+register('state_machine', 'muav_state_machine/UAVState', ({ msg, deviceId }) => ({
+  deviceId,
+  protocol: msg.airframe_type,
+  mission_state: msg.mission_state,
+  wp_reached: msg.wp_reached,
+  uav_state: msg.uav_state,
+  landed_state: msg.landed_state,
+}));
+
+// ─── slots whose payload does not depend on the message type ───────────────────
+
+register('sensors_humidity', ANY, ({ msg, deviceId }) => ({ deviceId, sensors_humidity: msg.data }));
+register('threat', ANY, ({ msg, deviceId }) => ({ deviceId, threat: msg.data }));
+
+// ─── declared in devices_msg.yaml, nothing consumes them ───────────────────────
+
+ignore('sensor_height', ['std_msgs/Float32', 'mavros_msgs/Altitude']);
+ignore('vo_position', 'dji_osdk_ros/VOPosition');
+ignore('flight_status', 'sensor_msgs/JointState');
