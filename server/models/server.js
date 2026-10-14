@@ -58,6 +58,7 @@ export class serverModel {
     let protocol = [];
     ServerSetting.RosEnable ? protocol.push('ros') : null;
     ServerSetting.FbEnable ? protocol.push('robofleet') : null;
+    ServerSetting.MqttEnable ? protocol.push('mqtt') : null;
     return protocol;
   }
 

@@ -13,6 +13,9 @@ export const CorsEnable = process.env.CORS_ENABLE === 'true';
 export const RosEnable =
   typeof process.env.ROS_CONNECTION === 'undefined' ? true : process.env.ROS_CONNECTION !== 'false';
 export const FbEnable = typeof process.env.FB_CONNECTION === 'undefined' ? true : process.env.FB_CONNECTION !== 'false';
+// MQTT is opt-in: it needs a broker (mosquitto) that most installs do not have.
+export const MqttEnable = process.env.MQTT_CONNECTION === 'true';
+export const MqttUrl = process.env.MQTT_URL || 'mqtt://127.0.0.1:1883';
 export const StreamServer = process.env.STREAM_SERVER === 'true'; //if use mediamtx server in local host
 export const LocalGlyphs = process.env.LOCAL_GLYPHS === 'true'; // if local server have a glyphs server
 export const NoElevation = process.env.NO_ELEVATION === 'true'; // if local server have a glyphs server

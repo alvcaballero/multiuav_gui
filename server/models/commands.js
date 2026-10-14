@@ -1,7 +1,6 @@
 import { devicesController } from '../controllers/devices.js';
 import { eventsController } from '../controllers/events.js';
-import { rosController } from '../controllers/ros.js';
-import { getFlatbufferServer } from './flatbuffer/index.js';
+import { getGateway } from './gateways/index.js';
 import { positionsController } from '../controllers/positions.js';
 import { categoryModel } from './category.js';
 import {
@@ -126,52 +125,15 @@ export class commandsModel {
   }
   static async standarCommand(deviceId, type, attributes) {
     logger.debug(`standarCommand deviceId=${deviceId} type=${type}`);
-    let response = {};
-    //ros
-    const myDevice = await devicesController.getDevice(deviceId);
-    if (myDevice.protocol == 'ros') {
-      // Mismo `type` puede vivir en services:, actions: o publishers: según la
-      // categoría del device (ej. Gimbal es service en las OSDK y publisher en el
-      // PSDK; CameraFileDownload es service en unas y action en otras). Prioridad:
-      // services > actions > publishers.
-      const categoryConfig = categoryModel.getCategory(myDevice.category);
-      const hasService = categoryConfig?.services?.hasOwnProperty(type);
-      const hasAction = categoryConfig?.actions?.hasOwnProperty(type);
-      const isAction = !hasService && hasAction;
-      const isPublisher = !hasService && !hasAction && categoryConfig?.publishers?.hasOwnProperty(type);
-      try {
-        if (isPublisher) {
-          logger.debug(`sending via ROS publisher deviceId=${deviceId}`);
-          response = await rosController.publishTopicDevice({ deviceId, type, message: attributes ?? {} });
-        } else if (isAction) {
-          logger.debug(`sending via ROS action deviceId=${deviceId}`);
-          response = await rosController.sendActionGoalDevice({ deviceId, type, message: attributes ?? {} });
-        } else {
-          logger.debug(`sending via ROS device deviceId=${deviceId}`);
-          response = await rosController.callServiceDevice({ deviceId, type, request: attributes });
-        }
-      } catch (error) {
-        const errMsg = error instanceof Error ? error.message : String(error);
-        logger.error(`standarCommand ROS error deviceId=${deviceId} type=${type}: ${errMsg}`);
-        response = { state: 'error', msg: errMsg };
-      }
+    const device = await devicesController.getDevice(deviceId);
+    if (!device) return { state: 'error', msg: `device ${deviceId} not found` };
+    // A device without a stored protocol is a ROS one: same default as DeviceSchema and devices.create.
+    const protocol = device.protocol ?? 'ros';
+    const gateway = getGateway(protocol);
+    if (!gateway) {
+      return { state: 'error', msg: `No gateway for protocol '${protocol}' (device ${device.name})` };
     }
-    //robofleet
-    if (myDevice.protocol == 'robofleet') {
-      logger.debug(`sending via robofleet device deviceId=${deviceId}`);
-
-      response = await getFlatbufferServer().sendCommand({ uav_id: deviceId, type, attributes });
-      if (response == {}) {
-        response = {
-          state: 'success',
-          msg: type + ' to websocket ok',
-        };
-      }
-    }
-    //mavlink
-    // other
-
-    return response;
+    return gateway.sendCommand({ device, type, attributes });
   }
 
   /**

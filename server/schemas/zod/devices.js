@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const DEVICE_STATUS = z.enum(['online', 'offline']);
-export const DEVICE_PROTOCOL = z.enum(['ros', 'robofleet']);
+export const DEVICE_PROTOCOL = z.enum(['ros', 'robofleet', 'mqtt']);
 
 export const CameraSchema = z.object({
   type: z.enum(['WebRTC', 'RTSP', 'Websocket']),

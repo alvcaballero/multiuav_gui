@@ -1,4 +1,4 @@
-import { port, RosEnable, FbEnable, LLMProvider, LLM, LLMApiKeys, LLMBaseURLs, LLMModel } from './config/config.js';
+import { port, RosEnable, FbEnable, MqttEnable, MqttUrl, LLMProvider, LLM, LLMApiKeys, LLMBaseURLs, LLMModel } from './config/config.js';
 
 import express, { json } from 'express';
 import { createServer } from 'http';
@@ -26,6 +26,7 @@ import { taskScheduler } from './models/mission/taskScheduler.js';
 
 // comunications with devices
 import { initFlatbufferServer } from './models/flatbuffer/index.js';
+import { initMqttServer } from './models/mqtt/index.js';
 import { rosModel } from './models/ros/ros.js'; // ros model
 
 // comunication with devices
@@ -126,6 +127,11 @@ if (FbEnable) {
   initFlatbufferServer(8082);
 } else {
   logger.warn('FB communication disabled');
+}
+if (MqttEnable) {
+  initMqttServer(MqttUrl);
+} else {
+  logger.warn('MQTT communication disabled');
 }
 
 // Initialize the LLM provider if enabled.

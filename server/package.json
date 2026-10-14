@@ -34,6 +34,7 @@
     "flatbuffers": "^24.3.25",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "mqtt": "^5.16.0",
     "multer": "^2.0.2",
     "openai": "^6.8.1",
     "pg": "^8.13.0",

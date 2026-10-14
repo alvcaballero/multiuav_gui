@@ -586,6 +586,15 @@ dispatch(sessionActions.updatePositions(data.positions));
 
 ## Device Communication Protocols
 
+**Command routing** (`models/gateways/`): `commandsModel.standarCommand` picks a gateway by
+`device.protocol` (a missing protocol means `ros`) and calls `gateway.sendCommand({ device, type,
+attributes })`. One gateway per protocol (`rosGateway`, `flatbufferGateway`, `mqttGateway`),
+registered in `gateways/index.js`; the caller never branches on the protocol. A new protocol is a
+new gateway plus an entry in `DEVICE_PROTOCOL` (`schemas/zod/devices.js`) — `test/test-gateways.js`
+fails if the two drift apart. Gateways resolve their controller/server when a command is SENT, not
+at registration: `controllers/ros.js` reaches `commands.js` through its imports, so a default
+evaluated at registration hits a circular-import TDZ.
+
 **ROS Protocol** (`protocol: 'ros'`):
 
 - Requires ROS bridge running on `ws://127.0.0.1:9090`
@@ -597,6 +606,15 @@ dispatch(sessionActions.updatePositions(data.positions));
 - Direct WebSocket connection to fleet
 - Binary encoding for bandwidth efficiency
 - Used for non-ROS devices or optimized deployments
+
+**MQTT Protocol** (`protocol: 'mqtt'`, opt-in with `MQTT_CONNECTION=true`, broker at `MQTT_URL`, default `mqtt://127.0.0.1:1883`):
+
+- `models/mqtt/MqttServer.js` (started from `server.js` via `initMqttServer`), mirror of `FlatbufferServer`. Plan and open risks: `MQTT_PLAN.md`.
+- Topic contract lives ONLY in `models/mqtt/mqttTopics.js`: `muav/<device>/pub/<slot>` (telemetry), `muav/<device>/srv/<name>/{request,response}` (service calls), `muav/<device>/status` (retained presence, plain `online`/`offline`). `<slot>` / `<name>` are the keys of `subscribers` / `services` in `devices_msg.yaml`.
+- Telemetry reuses `decodeRosMsg` unchanged: the drone publishes the same JSON shape rosbridge does. A payload with bare `NaN`/`Infinity` is parsed with those as `null` instead of being dropped.
+- Service calls are enveloped (`{id, ts, request}` → `{id, success, response, error}`) and correlated by `id`. Unlike robofleet, `sendCommand` resolves only when the drone answers or the GCS timeout fires. `envelope.success=false` means the CALL failed; the service's own verdict (`response.success || response.result`) stays inside `response`.
+- Only `services` are bridged. Publishers and actions on an `mqtt` device answer a warning (out of scope for v1).
+- Tests: `test/test-mqtt-server.js` runs against a fake client (no broker).
 
 ## Element Type Catalog (`/api/markers/types`)
 
@@ -685,6 +703,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `PORT`: Server port (default 4000)
 - `ROS_CONNECTION`: Enable/disable ROS bridge (default true)
 - `FB_CONNECTION`: Enable/disable FlatBuffer protocol (default true)
+- `MQTT_CONNECTION`: Enable the MQTT device protocol (default **false**, needs a broker) / `MQTT_URL`: broker URL (default `mqtt://127.0.0.1:1883`)
 - `ROS_URL`: ROS bridge WS URL (default `ws://127.0.0.1:9090`)
 - `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
 - `DB_STORAGE`: local SQLite file (default `server/data/sequelize.sqlite`). `npm test` runs with `DB=false DB_STORAGE=:memory:` so tests never open — or run startup migrations on — the real database. Tests that need catalog data read the git-tracked files under `data/`, not DB rows.
