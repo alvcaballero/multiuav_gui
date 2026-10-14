@@ -157,7 +157,7 @@ export class categoryModel {
   }
   static createCategory(type, value) {
     logger.info(`categoryModel.createCategory: ${type}`);
-    if (!devices_msg.hasOwnProperty(value)) {
+    if (!devices_msg.hasOwnProperty(type)) {
       devices_msg[type] = value;
       writeDataFile(devicesMsg, devices_msg);
       return devices_msg[type];
