@@ -7,40 +7,66 @@ client/
 ├── index.html              # Vite entry point
 ├── vite.config.js          # Vite configuration
 ├── package.json            # Dependencies (React 19, MUI v7, MapLibre)
-├── .eslintrc.js            # ESLint configuration
+├── eslint.config.js        # ESLint configuration
 ├── build/                  # Production build output
 ├── public/                 # Static assets
 └── src/
     ├── index.jsx           # React entry point
     ├── App.jsx             # Main app component with routing
     ├── AppThemeProvider.jsx # MUI theme configuration
-    ├── Navigation.jsx      # Route definitions
+    ├── Navigation.jsx      # Route definitions (lazy-loaded pages)
     ├── ServerProvider.jsx  # Server initialization wrapper
     ├── SocketController.jsx # WebSocket lifecycle manager
-    ├── reactHelper.js      # React utility functions
+    ├── ErrorBoundary.jsx   # Top-level error boundary
+    ├── reactHelper.js      # React utility functions (useCatch, useAsyncTask, ...)
     ├── store/              # Redux state management
-    ├── components/         # UI components grouped by domain
-    │   ├── chat/           # ChatDrawer, ChatInput, ChatMessages
-    │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav
-    │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Routes, Waypoints
-    │   ├── camera/         # CameraDevice, CameraV1, CameraWebRTCV4
-    │   ├── commands/       # CommandCard, SendCommand
-    │   ├── layout/         # Navbar, MainToolbar, Menu, MenuItems, Footer
-    │   └── planning/       # PlanningToolbar, ElementsTab, PlanningTab, SettingsTab
-    ├── pages/              # Page-level components (one per route)
-    ├── settings/           # Settings pages
-    ├── map/                # Map rendering (MapLibre GL)
+    ├── pages/              # One file per main route; helpers live in feature subfolders
+    │   ├── MainPage / MainPage3D, MissionPage / MissionPage3D, PlanningPage,
+    │   │   DevicePage / DevicePage3D, CameraPage, ChatPage, Scene3DEditorPage
+    │   ├── planning/       # Hooks used only by PlanningPage (actions, redux handlers, polling)
+    │   ├── reports/        # EventsPage, Mission*Report*Page, missionDetailReport/ (its sections)
+    │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
+    ├── components/         # Feature components, grouped by domain
+    │   ├── chat/           # ChatDrawer, ChatPanel, ChatInput, ChatMessages, ToolApprovalGate, useChatLogic
+    │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav, DeviceCameraEditor, DeviceFilesEditor, useFilter
+    │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking
+    │   ├── camera/         # CameraDevice, CameraDevicePanel, CameraMediaMTXPlayer, SocketCameraCanvas
+    │   ├── commands/       # CommandCard
+    │   ├── layout/         # Navbar, Navbar2, MainToolbar, Menu, MenuItems, menu/ (popovers)
+    │   └── planning/       # PlanningToolbar, ElementsTab, PlanningTab, SettingsTab, BaseList, ElementList
+    ├── settings/           # Settings pages (devices, categories, element types, geofence)
+    ├── map/                # Map rendering (MapLibre GL): controls, core, devices, draw, environment, mission, transform
     ├── scene3d/            # 3D visualization (React Three Fiber)
-    ├── common/             # Shared attributes, components, theme and util (like traccar-web)
-    │   ├── components/     # ErrorHandler, PageLayout, SelectField, RemoveDialog, PositionValue, SwipeConfirm (see note below), device sensor widgets
-    │   ├── theme/          # MUI theme configuration
+    ├── common/             # Shared by several features — same idea as traccar-web's `common/`
+    │   ├── components/     # Generic UI: PageLayout, ErrorHandler, SelectField, RemoveDialog, SelectList,
+    │   │                   #   SaveFile, PositionValue, SwipeConfirm (see note below), form fields, and
+    │   │                   #   the obstacle-avoidance widgets (ObstacleAvoidanceSensors,
+    │   │                   #   ObstacleSensorCone, ObstacleAltitudeGauge)
+    │   ├── theme/          # MUI theme (palette, dimensions, component overrides)
     │   ├── attributes/     # Attribute hooks
-    │   └── util/           # formatter, converter, fetchs, styles/ (event, mission status, route colors), services (planning, files, chat), hooks, etc.
+    │   └── util/           # formatter, converter, fetchs, missionConvert, missionGeo, preferences,
+    │       │               #   usePersistedState/useQuery/useMarkerTypes/useMissionFile, and the
+    │       │               #   former services (planningService, fileService, missionPlanLoader,
+    │       │               #   sendChatMessage, toolApproval)
+    │       └── styles/     # Domain color maps: eventStyle, missionStatus, routeColors
     └── resources/          # Static resources image assets
         ├── images/             # Image assets
         ├── 3d/                 # 3D model assets
         └── lastimages/         # Recent images cache
 ```
+
+### Where does a new file go?
+
+- **A route** → `pages/` (root if it is a main page, `reports/` for report views, `other/` for the rest).
+  A hook or subcomponent used by ONE page lives next to it (`pages/planning/`, `pages/reports/missionDetailReport/`).
+- **A component for one feature** (chat, mission, planning, devices, ...) → `components/<feature>/`.
+- **Something used by several features** → `common/`: UI in `components/`, pure helpers and hooks in
+  `util/`, domain color maps in `util/styles/`, MUI theme config in `theme/`.
+- **Map-only code** (layers, GeoJSON features, popups) → `map/`. Mission *data* conversion is not map code:
+  it lives in `common/util/missionConvert.js`.
+- Keep `common/` free of imports from `pages/` and `components/`. A few `util/` files already import
+  `store/` (and `missionPlanLoader` imports `map/core/mapInstance`); do not add more.
+- The UI has no i18n: write plain English text, never traccar-style keys (`sharedName`, `positionIgnition`, ...).
 
 ## Architecture Overview
 
@@ -60,7 +86,7 @@ client/
 **Key Components:**
 
 - `client/src/map/`: Map rendering, device markers, route visualization
-- `client/src/components/`: UI components (ChatDrawer, device panels)
+- `client/src/components/`: feature components (ChatDrawer, device panels); generic UI lives in `client/src/common/`
 - `client/src/store/`: Redux slices and selectors
 - `client/src/SocketController.jsx`: WebSocket lifecycle manager
 - `client/src/ServerProvider.jsx`: Server initialization wrapper
