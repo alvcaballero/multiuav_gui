@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { RuteConvert, nextTaskId } from '../map/MissionConvert';
+import { RuteConvert, nextTaskId } from '../common/util/missionConvert';
 
 export const applyUavTypeDefaults = createAsyncThunk(
   'mission/applyUavTypeDefaults',

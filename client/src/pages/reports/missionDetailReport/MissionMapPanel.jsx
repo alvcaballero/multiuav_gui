@@ -22,7 +22,7 @@ import MapFlightPath from '../../../map/mission/MapFlightPath';
 import MapMarkers from '../../../map/environment/MapMarkers';
 import MapPositions from '../../../map/devices/MapPositions';
 import RoutesList from '../../../components/mission/RoutesList';
-import { RuteConvert } from '../../../map/MissionConvert';
+import { RuteConvert } from '../../../common/util/missionConvert';
 import SelectField from '../../../common/components/SelectField';
 import SelectList from '../../../common/components/SelectList';
 import BaseSettings from '../../../components/planning/BaseSettings';

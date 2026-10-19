@@ -1,4 +1,4 @@
-import { routesToTasks } from '../../map/MissionConvert';
+import { routesToTasks } from './missionConvert';
 
 // Command an already-loaded mission by its id. The mission + tasks were created
 // by commandLoadMission; the server commands each LOADED root task and the

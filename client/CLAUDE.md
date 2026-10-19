@@ -162,7 +162,7 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
     (cycles, two unordered tasks on one UAV) is validated by the server on load; its `400`
     message is shown to the user — don't duplicate those rules here.
 - **Wire format:** `commandLoadMission` always sends `{ tasks }` built by `routesToTasks`
-  (`map/MissionConvert.js`); `RuteConvert` reads `tasks[]` (v4), `route[]` (v3) and legacy.
+  (`common/util/missionConvert.js`); `RuteConvert` reads `tasks[]` (v4), `route[]` (v3) and legacy.
 - **Tracking (`store/activeMissions.js`)**: tasks are keyed by **task id**, never by
   `deviceId` — a device can run several tasks of one mission. `upsertTask` merges: the
   diagnostics-only updates from the server's waypoint tracking carry no
@@ -251,5 +251,5 @@ The correct fix is adding a stable id (e.g. `crypto.randomUUID()`) at creation t
 relevant Redux reducers (`store/mission.js` — `addWaypoint`, and the equivalent base/element
 creation actions), then keying off `waypoint.id` / `base.id` instead of the array index. This was
 deferred because it changes the mission data schema — it likely touches mission save/load format
-(`MissionConvert.js`) and possibly server-side mission parsing, so it needs a decision on
+(`common/util/missionConvert.js`) and possibly server-side mission parsing, so it needs a decision on
 migration strategy for existing saved missions before implementing.
