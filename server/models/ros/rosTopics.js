@@ -78,9 +78,15 @@ export async function PubRosMsg(params, ros) {
 
   const { topic, messageType, message } = params;
 
+  // Validate the ENCODED message: `message` is the neutral domain object (e.g. Gimbal
+  // {reset, pitch...}), only the encoder output has the ROS type's fields.
+  const rosMsg = encodeRosSrv({ type: '', msg: message, msgType: messageType });
+  if (!rosMsg) {
+    throw new Error('ROS message is empty or invalid');
+  }
   const msgStructure = await getMessageDetails(messageType, ros);
   const typeMap = buildTypeMap(msgStructure);
-  validateRosMsg(messageType, message, typeMap);
+  validateRosMsg(messageType, rosMsg, typeMap);
 
   const subscribers = await getTopics(ros);
   if (!subscribers.topics.includes(topic)) {
@@ -92,10 +98,6 @@ export async function PubRosMsg(params, ros) {
     name: topic,
     messageType: messageType,
   });
-  const rosMsg = encodeRosSrv({ type: '', msg: message, msgType: messageType });
-  if (!rosMsg) {
-    throw new Error('ROS message is empty or invalid');
-  }
 
   pub.on('warning', function (warning) {
     logger.warn(`ROS publish warning: ${warning}`);
