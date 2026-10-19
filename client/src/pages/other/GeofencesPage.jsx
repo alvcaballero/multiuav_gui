@@ -68,7 +68,7 @@ const GeofencesPage = () => {
         .map((point) => `${point.getAttribute('lat')} ${point.getAttribute('lon')}`)
         .join(', ');
       const area = `LINESTRING (${coordinates})`;
-      const newItem = { name: 'sharedGeofence', area };
+      const newItem = { name: 'Geofence', area };
       try {
         const response = await fetch('/api/geofences', {
           method: 'POST',
@@ -100,7 +100,7 @@ const GeofencesPage = () => {
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h6" className={classes.title}>
-              {'sharedGeofences'}
+              Geofences
             </Typography>
             <label htmlFor="upload-gpx">
               <input
@@ -111,7 +111,7 @@ const GeofencesPage = () => {
                 onChange={handleFile}
               />
               <IconButton edge="end" component="span" onClick={() => {}}>
-                <Tooltip title={'sharedUpload'}>
+                <Tooltip title="Upload">
                   <UploadFileIcon />
                 </Tooltip>
               </IconButton>

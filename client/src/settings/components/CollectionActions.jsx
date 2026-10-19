@@ -69,8 +69,8 @@ const CollectionActions = ({
               ))}
             {!readonly && (
               <>
-                {editPath && <MenuItem onClick={handleEdit}>{'sharedEdit'}</MenuItem>}
-                <MenuItem onClick={handleRemove}>{'sharedRemove'}</MenuItem>
+                {editPath && <MenuItem onClick={handleEdit}>Edit</MenuItem>}
+                <MenuItem onClick={handleRemove}>Remove</MenuItem>
               </>
             )}
           </Menu>
@@ -88,13 +88,13 @@ const CollectionActions = ({
           {!readonly && (
             <>
               {editPath && (
-                <Tooltip title={'sharedEdit'}>
+                <Tooltip title="Edit">
                   <IconButton size="small" onClick={handleEdit}>
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
-              <Tooltip title={'sharedRemove'}>
+              <Tooltip title="Remove">
                 <IconButton size="small" onClick={handleRemove}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>

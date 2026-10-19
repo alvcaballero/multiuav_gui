@@ -78,7 +78,7 @@ const MapGeofenceEdit = ({ selectedGeofenceId }) => {
   useEffect(() => {
     const listener = async (event) => {
       const feature = event.features[0];
-      const newItem = { name: 'sharedGeofence', area: geometryToArea(feature.geometry) };
+      const newItem = { name: 'Geofence', area: geometryToArea(feature.geometry) };
       draw.delete(feature.id);
       try {
         const response = await fetch('/api/geofences', {
