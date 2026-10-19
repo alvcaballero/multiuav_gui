@@ -6,13 +6,13 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useNavigate } from 'react-router-dom';
-import MapView from '../map/core/MapView';
-import MapCurrentLocation from '../map/controls/MapCurrentLocation';
-import MapGeofenceEdit from '../map/draw/MapGeofenceEdit';
+import MapView from '../../map/core/MapView';
+import MapCurrentLocation from '../../map/controls/MapCurrentLocation';
+import MapGeofenceEdit from '../../map/draw/MapGeofenceEdit';
 import GeofencesList from './GeofencesList';
-import MapGeocoder from '../map/controls/MapGeocoder';
-import { errorsActions } from '../store';
-import MapScale from '../map/controls/MapScale';
+import MapGeocoder from '../../map/controls/MapGeocoder';
+import { errorsActions } from '../../store';
+import MapScale from '../../map/controls/MapScale';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

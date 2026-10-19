@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useAsyncTask } from '../reactHelper';
+import { useAsyncTask } from '../../reactHelper';
 
 import {
   Typography,
@@ -22,8 +22,8 @@ import { makeStyles } from 'tss-react/mui';
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import { formatTime } from '../shared/formatter';
-import { taskStyle } from '../shared/missionStatus';
+import { formatTime } from '../../shared/formatter';
+import { taskStyle } from '../../shared/missionStatus';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

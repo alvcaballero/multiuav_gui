@@ -27,9 +27,9 @@ import PlanningToolbar from '../components/planning/PlanningToolbar';
 import ElementsTab from '../components/planning/ElementsTab';
 import PlanningTab from '../components/planning/PlanningTab';
 import SettingsTab from '../components/planning/SettingsTab';
-import { usePlanningActions } from './planningPage/usePlanningActions';
-import { usePlanningReduxHandlers } from './planningPage/usePlanningReduxHandlers';
-import { usePlanningResultPolling } from './planningPage/usePlanningResultPolling';
+import { usePlanningActions } from './planning/usePlanningActions';
+import { usePlanningReduxHandlers } from './planning/usePlanningReduxHandlers';
+import { usePlanningResultPolling } from './planning/usePlanningResultPolling';
 
 // Enums para las tabs
 const TABS = {

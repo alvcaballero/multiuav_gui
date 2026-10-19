@@ -25,7 +25,7 @@ import StopCircleIcon from '@mui/icons-material/StopCircle';
 
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../components/ui/PositionValue';
-import DroneSensorVisualizer from './DroneSensorVisualizer';
+import DroneSensorVisualizer from './device/DroneSensorVisualizer';
 import CameraDevice from '../components/camera/CameraDevice';
 import CommandCard from '../components/commands/CommandCard';
 import Scene3DCanvas from '../scene3d/Scene3DCanvas';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LinearGauge.css';
-import { mapIconKey, frontIcons } from '../map/core/preloadImages';
+import { mapIconKey, frontIcons } from '../../map/core/preloadImages';
 
 /**
  * LinearGauge — altímetro vertical con sensores up/down.

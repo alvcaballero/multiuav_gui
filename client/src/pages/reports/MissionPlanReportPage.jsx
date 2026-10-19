@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useAsyncTask } from '../reactHelper';
+import { useAsyncTask } from '../../reactHelper';
 
 import {
   Typography,
@@ -23,8 +23,8 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MapIcon from '@mui/icons-material/Map';
 import { useNavigate } from 'react-router-dom';
-import { formatTime } from '../shared/formatter';
-import { loadPlanToEditor } from '../services/missionPlanLoader';
+import { formatTime } from '../../shared/formatter';
+import { loadPlanToEditor } from '../../services/missionPlanLoader';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

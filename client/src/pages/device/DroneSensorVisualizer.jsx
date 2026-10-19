@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import DistanceSensor from './DistanceSensor';
-import { mapIconKey, mapIcons } from '../map/core/preloadImages';
+import { mapIconKey, mapIcons } from '../../map/core/preloadImages';
 import LinearGauge from './LinearGauge';
 
 const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize) => {

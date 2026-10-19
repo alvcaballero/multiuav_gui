@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
-import { mapIconKey, mapIcons, frontIcons } from '../map/core/preloadImages';
+import { mapIconKey, mapIcons, frontIcons } from '../../map/core/preloadImages';
 import { Typography } from '@mui/material';
 //import styled from 'styled-components';
 
