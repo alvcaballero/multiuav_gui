@@ -11,8 +11,6 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditItemView from './components/EditItemView';
-//import EditAttributesAccordion from './components/EditAttributesAccordion';
-//import useGeofenceAttributes from '../shared/attributes/useGeofenceAttributes';
 import SettingsMenu from './components/SettingsMenu';
 import { geofencesActions } from '../store';
 import useSettingsStyles from './common/useSettingsStyles';
@@ -37,37 +35,37 @@ const GeofencePage = () => {
       validate={validate}
       onItemSaved={onItemSaved}
       menu={<SettingsMenu />}
-      breadcrumbs={['settingsTitle', 'sharedGeofence']}
+      breadcrumbs={['Settings', 'Geofence']}
     >
       {item && (
         <>
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">{'sharedRequired'}</Typography>
+              <Typography variant="subtitle1">Obligatory data</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
               <TextField
                 value={item.name || ''}
                 onChange={(event) => setItem({ ...item, name: event.target.value })}
-                label={'sharedName'}
+                label="Name"
               />
             </AccordionDetails>
           </Accordion>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">{'sharedExtra'}</Typography>
+              <Typography variant="subtitle1">Extra</Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
               <TextField
                 value={item.description || ''}
                 onChange={(event) => setItem({ ...item, description: event.target.value })}
-                label={'sharedDescription'}
+                label="Description"
               />
 
               <FormControlLabel
                 control={
                   <Checkbox
-                    checked={item.attributes.hide}
+                    checked={!!item.attributes?.hide}
                     onChange={(e) =>
                       setItem({
                         ...item,
@@ -76,7 +74,7 @@ const GeofencePage = () => {
                     }
                   />
                 }
-                label={'sharedFilterMap'}
+                label="Hide on map"
               />
             </AccordionDetails>
           </Accordion>
