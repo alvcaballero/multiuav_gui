@@ -25,7 +25,7 @@ import StopCircleIcon from '@mui/icons-material/StopCircle';
 
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../common/components/PositionValue';
-import DroneSensorVisualizer from '../common/components/DroneSensorVisualizer';
+import ObstacleAvoidanceSensors from '../common/components/ObstacleAvoidanceSensors';
 import CameraDevice from '../components/camera/CameraDevice';
 import CommandCard from '../components/commands/CommandCard';
 import Scene3DCanvas from '../scene3d/Scene3DCanvas';
@@ -69,7 +69,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const DEFAULT_SENSOR_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
+const DEFAULT_OBSTACLE_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
 
 const DevicePage3D = () => {
   const { classes } = useStyles();
@@ -86,7 +86,7 @@ const DevicePage3D = () => {
 
   const markersRef = useRef([]);
 
-  const currentSensorData = item?.attributes?.obstacle_info
+  const currentObstacleData = item?.attributes?.obstacle_info
     ? {
         front: item.attributes.obstacle_info[1],
         back: item.attributes.obstacle_info[3],
@@ -95,7 +95,7 @@ const DevicePage3D = () => {
         up: item.attributes.obstacle_info[5],
         down: item.attributes.obstacle_info[0],
       }
-    : DEFAULT_SENSOR_DATA;
+    : DEFAULT_OBSTACLE_DATA;
 
   const [openSendCommand, setOpenSendCommand] = useState(false);
 
@@ -188,8 +188,8 @@ const DevicePage3D = () => {
                   flexDirection: 'column',
                 }}
               >
-                <DroneSensorVisualizer
-                  sensorData={currentSensorData}
+                <ObstacleAvoidanceSensors
+                  obstacleData={currentObstacleData}
                   altitude={
                     item.attributes?.home
                       ? item.altitude - item.attributes.home[2]

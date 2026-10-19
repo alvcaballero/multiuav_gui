@@ -61,9 +61,9 @@ const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize) => 
  * Ocupa todo el espacio que le da el padre (width + height 100%).
  * El ResizeObserver mide AMBAS dimensiones para que nada se corte.
  */
-const DroneSensorVisualizer = ({
-  sensorData = { down: 10, front: 10, left: 10, back: 10, right: 10, up: 10 },
-  sensorConfig = {
+const ObstacleAvoidanceSensors = ({
+  obstacleData = { down: 10, front: 10, left: 10, back: 10, right: 10, up: 10 },
+  obstacleLimits = {
     down: [0, 15],
     front: [0, 15],
     left: [0, 12],
@@ -162,42 +162,42 @@ const DroneSensorVisualizer = ({
               }}
             />
 
-            <div style={styleFrontText}>{sensorData.front.toFixed(0)}m</div>
+            <div style={styleFrontText}>{obstacleData.front.toFixed(0)}m</div>
             <div style={styleFrontCone}>
               <DistanceSensor
-                distance={sensorData.front}
-                limits={sensorConfig.front}
+                distance={obstacleData.front}
+                limits={obstacleLimits.front}
                 width={sensorConeWide}
                 height={sensorConeLen}
               />
             </div>
 
-            <div style={styleBackText}>{sensorData.back.toFixed(0)}m</div>
+            <div style={styleBackText}>{obstacleData.back.toFixed(0)}m</div>
             <div style={styleBackCone}>
               <DistanceSensor
-                distance={sensorData.back}
-                limits={sensorConfig.back}
+                distance={obstacleData.back}
+                limits={obstacleLimits.back}
                 width={sensorConeWide}
                 height={sensorConeLen}
               />
             </div>
 
-            <div style={styleLeftText}>{sensorData.left.toFixed(0)}m</div>
+            <div style={styleLeftText}>{obstacleData.left.toFixed(0)}m</div>
             <div style={styleLeftCone}>
               <DistanceSensor
-                distance={sensorData.left}
-                limits={sensorConfig.left}
+                distance={obstacleData.left}
+                limits={obstacleLimits.left}
                 width={sensorConeLen}
                 height={sensorConeWide}
                 orientation="h"
               />
             </div>
 
-            <div style={styleRightText}>{sensorData.right.toFixed(0)}m</div>
+            <div style={styleRightText}>{obstacleData.right.toFixed(0)}m</div>
             <div style={styleRightCone}>
               <DistanceSensor
-                distance={sensorData.right}
-                limits={sensorConfig.right}
+                distance={obstacleData.right}
+                limits={obstacleLimits.right}
                 width={sensorConeLen}
                 height={sensorConeWide}
                 orientation="h"
@@ -210,8 +210,8 @@ const DroneSensorVisualizer = ({
             <LinearGauge
               value={altitude}
               valueASL={altitudeASL}
-              sensorValue={[sensorData.up, sensorData.down]}
-              sensorLimits={{ up: sensorConfig.up, down: sensorConfig.down }}
+              sensorValue={[obstacleData.up, obstacleData.down]}
+              sensorLimits={{ up: obstacleLimits.up, down: obstacleLimits.down }}
             />
           </div>
         </>
@@ -220,8 +220,8 @@ const DroneSensorVisualizer = ({
   );
 };
 
-DroneSensorVisualizer.propTypes = {
-  sensorData: PropTypes.shape({
+ObstacleAvoidanceSensors.propTypes = {
+  obstacleData: PropTypes.shape({
     front: PropTypes.number.isRequired,
     back: PropTypes.number.isRequired,
     left: PropTypes.number.isRequired,
@@ -231,4 +231,4 @@ DroneSensorVisualizer.propTypes = {
   }).isRequired,
 };
 
-export default DroneSensorVisualizer;
+export default ObstacleAvoidanceSensors;

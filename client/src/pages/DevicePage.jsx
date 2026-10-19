@@ -30,7 +30,7 @@ import StopCircleIcon from '@mui/icons-material/StopCircle';
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../common/components/PositionValue';
 import usePersistedState from '../common/util/usePersistedState';
-import DroneSensorVisualizer from '../common/components/DroneSensorVisualizer';
+import ObstacleAvoidanceSensors from '../common/components/ObstacleAvoidanceSensors';
 import useFilter from '../components/devices/useFilter';
 import MainMap from '../map/MainMap';
 import CameraDevice from '../components/camera/CameraDevice';
@@ -65,7 +65,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const DEFAULT_SENSOR_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
+const DEFAULT_OBSTACLE_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
 
 const DevicePage = () => {
   const { classes } = useStyles();
@@ -88,7 +88,7 @@ const DevicePage = () => {
     statuses: [],
     groups: [],
   });
-  const currentSensorData = item?.attributes?.obstacle_info
+  const currentObstacleData = item?.attributes?.obstacle_info
     ? {
         front: item.attributes.obstacle_info[1],
         back: item.attributes.obstacle_info[3],
@@ -97,7 +97,7 @@ const DevicePage = () => {
         up: item.attributes.obstacle_info[5],
         down: item.attributes.obstacle_info[0],
       }
-    : DEFAULT_SENSOR_DATA;
+    : DEFAULT_OBSTACLE_DATA;
 
   const [filterSort] = usePersistedState('filterSort', '');
   const [filterMap] = usePersistedState('filterMap', false);
@@ -206,10 +206,10 @@ const DevicePage = () => {
             {item?.attributes?.obstacle_info && (
               <Paper>
                 <Typography align="center" variant="h5" component="div" style={{ padding: '15px' }}>
-                  Avoidance sensor
+                  Obstacle avoidance sensors
                 </Typography>
                 <div style={{ height: 280 }}>
-                  <DroneSensorVisualizer sensorData={currentSensorData} />
+                  <ObstacleAvoidanceSensors obstacleData={currentObstacleData} />
                 </div>
               </Paper>
             )}
