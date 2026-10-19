@@ -1,142 +1,203 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 import {
-  Typography,
-  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   IconButton,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  List,
+  ListItemButton,
+  ListItemText,
+  Typography,
   Button,
-  Card,
+  Box,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { makeStyles } from 'tss-react/mui';
 
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BaseCommandView from '../../common/components/BaseCommandView';
 import { useCatch } from '../../reactHelper';
 
 const useStyles = makeStyles()((theme) => ({
-  root: {
-    pointerEvents: 'none',
-    position: 'fixed',
-    zIndex: 8,
-    left: '50%',
-    top: '20%',
-    transform: 'translateX(-50%)',
-  },
-  card: {
-    pointerEvents: 'auto',
-    width: theme.dimensions.popupMaxWidth,
-  },
-  header: {
+  title: {
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: theme.spacing(1, 1, 0, 2),
+    justifyContent: 'space-between',
+    borderBottom: `1px solid ${theme.palette.divider}`,
   },
-
-  content: {
-    overflow: 'auto',
-    paddingTop: theme.spacing(2),
-    paddingBottom: theme.spacing(2),
-  },
-  buttons: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
+  body: {
     display: 'flex',
-    justifyContent: 'space-evenly',
-    '& > *': {
-      flexBasis: '33%',
+    padding: 0,
+    minHeight: 360,
+  },
+  list: {
+    width: 250,
+    flex: 'none',
+    overflowY: 'auto',
+    maxHeight: 440,
+    borderRight: `1px solid ${theme.palette.divider}`,
+    padding: 0,
+  },
+  item: {
+    borderLeft: '2px solid transparent',
+    '&.Mui-selected': {
+      borderLeftColor: theme.palette.primary.main,
     },
   },
-  details: {
+  code: {
+    fontFamily: 'ui-monospace, Menlo, monospace',
+    fontSize: 11,
+  },
+  detail: {
+    flex: 1,
+    minWidth: 0,
+    padding: theme.spacing(2),
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(2),
-    paddingBottom: theme.spacing(3),
+    gap: theme.spacing(1.5),
+  },
+  params: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: theme.spacing(1.5),
+  },
+  payload: {
+    margin: 0,
+    padding: theme.spacing(1),
+    background: theme.palette.action.hover,
+    fontFamily: 'ui-monospace, Menlo, monospace',
+    fontSize: 12,
+    overflow: 'auto',
+  },
+  footer: {
+    borderTop: `1px solid ${theme.palette.divider}`,
+    padding: theme.spacing(1, 2),
   },
 }));
 
-const CommandCard = ({ id, onClose }) => {
-  const { classes } = useStyles();
+const defaultAttributes = (params = []) =>
+  Object.fromEntries(params.filter((p) => p.default != null).map((p) => [p.id, p.default]));
 
-  const [item, setItem] = useState({});
-  const savedId = 0;
-  const limitCommands = 0;
+/**
+ * Send-command dialog. Lists the commands this device supports, as GET /api/commands/types
+ * resolved them (label, description, params with units/ranges/defaults). `hidden` ones are
+ * left out: their payload is built by another flow (e.g. a mission).
+ * By default it POSTs the command itself; pass `onSend(type, attributes)` to send it through the
+ * caller instead (DevicePage does, to log it in its stream and show its toast).
+ */
+const CommandCard = ({ id, onClose, onSend }) => {
+  const { classes } = useStyles();
+  const deviceName = useSelector((state) => state.devices.items[id]?.name);
+
+  const [commands, setCommands] = useState([]);
+  const [item, setItem] = useState({ attributes: {} });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/commands/types?${new URLSearchParams({ deviceId: id })}`, {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((all) => setCommands(all.filter((c) => !c.hidden)))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [id]);
+
+  const command = commands.find((c) => c.type === item.type);
+
+  const select = (selected) =>
+    setItem({ type: selected.type, attributes: defaultAttributes(selected.params) });
+
+  const payload = { deviceId: parseInt(id, 10), type: item.type, attributes: item.attributes };
 
   const handleSend = useCatch(async () => {
-    let command;
-    if (savedId) {
-      const response = await fetch(`/api/commands/${savedId}`);
-      if (response.ok) {
-        command = await response.json();
-      } else {
+    if (onSend) {
+      await onSend(item.type, item.attributes);
+    } else {
+      const response = await fetch('/api/commands/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, textChannel: item.textChannel }),
+      });
+      if (!response.ok) {
         throw Error(await response.text());
       }
-    } else {
-      command = item;
-    }
-
-    command.deviceId = parseInt(id, 10);
-
-    const response = await fetch('/api/commands/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(command),
-    });
-
-    if (response.ok) {
-      console.log('ok');
-    } else {
-      throw Error(await response.text());
+      // A rejected command (e.g. a param out of range) comes back as 200 { state: 'error', msg }.
+      const result = await response.json();
+      if (result?.state === 'error') throw Error(result.msg);
     }
     onClose();
   });
 
-  const validate = () => savedId || (item && item.type);
+  const hasParams = Boolean(command?.params?.length);
 
   return (
-    <div className={classes.root}>
-      <Card elevation={3} className={classes.card}>
-        <div className={classes.header}>
-          <Typography variant="body2" color="textSecondary">
-            Send Commands
-          </Typography>
-          <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </div>
-        <Container maxWidth="xs" className={classes.container}>
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">{'Command'}</Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.details}>
-              {!limitCommands && !savedId && (
-                <BaseCommandView deviceId={id} item={item} setItem={setItem} />
-              )}
-            </AccordionDetails>
-          </Accordion>
-          <div className={classes.buttons}>
-            <Button type="button" color="primary" variant="outlined" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              color="primary"
-              variant="contained"
-              onClick={handleSend}
-              disabled={!validate()}
+    <Dialog open onClose={onClose} maxWidth={false} slotProps={{ paper: { sx: { width: 760 } } }}>
+      <DialogTitle className={classes.title}>
+        Send command{deviceName ? ` · ${deviceName}` : ''}
+        <IconButton size="small" onClick={onClose} aria-label="Close">
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent className={classes.body}>
+        <List className={classes.list} dense>
+          {commands.map((c) => (
+            <ListItemButton
+              key={c.type}
+              selected={c.type === item.type}
+              onClick={() => select(c)}
+              className={classes.item}
             >
-              Send
-            </Button>
-          </div>
-        </Container>
-      </Card>
-    </div>
+              <ListItemText
+                primary={c.label ?? c.type}
+                secondary={`${c.type} · ${c.requires ? `requires ${c.requires}` : 'always'}`}
+                slotProps={{ secondary: { className: classes.code } }}
+              />
+            </ListItemButton>
+          ))}
+        </List>
+        <Box className={classes.detail}>
+          {command ? (
+            <>
+              <Typography variant="h6">{command.label ?? command.type}</Typography>
+              {command.description && (
+                <Typography variant="body2" color="textSecondary">
+                  {command.description}
+                </Typography>
+              )}
+              {hasParams && (
+                <div className={classes.params}>
+                  <BaseCommandView item={item} setItem={setItem} params={command.params} />
+                </div>
+              )}
+              <Typography variant="overline" color="textSecondary">
+                POST /api/commands/send
+              </Typography>
+              <pre className={classes.payload}>{JSON.stringify(payload, null, 2)}</pre>
+            </>
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              Pick a command from the list.
+            </Typography>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions className={classes.footer}>
+        <Typography variant="body2" color="textSecondary" sx={{ mr: 'auto' }}>
+          Showing {commands.length} commands this UAV supports.
+        </Typography>
+        <Button variant="outlined" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="contained" onClick={handleSend} disabled={!item.type}>
+          Send
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
+
 export default CommandCard;

@@ -26,6 +26,7 @@ import StopCircleIcon from '@mui/icons-material/StopCircle';
 import { useNavigate, useParams } from 'react-router-dom';
 import PositionValue from '../common/components/PositionValue';
 import ObstacleAvoidanceSensors from '../common/components/ObstacleAvoidanceSensors';
+import { obstacleFromInfo } from '../common/util/obstacles';
 import CameraDevice from '../components/camera/CameraDevice';
 import CommandCard from '../components/commands/CommandCard';
 import Scene3DCanvas from '../scene3d/Scene3DCanvas';
@@ -69,8 +70,6 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const DEFAULT_OBSTACLE_DATA = { front: 1, back: 3, left: 5, right: 9, up: 2, down: 8 };
-
 const DevicePage3D = () => {
   const { classes } = useStyles();
   const navigate = useNavigate();
@@ -86,16 +85,7 @@ const DevicePage3D = () => {
 
   const markersRef = useRef([]);
 
-  const currentObstacleData = item?.attributes?.obstacle_info
-    ? {
-        front: item.attributes.obstacle_info[1],
-        back: item.attributes.obstacle_info[3],
-        left: item.attributes.obstacle_info[4],
-        right: item.attributes.obstacle_info[2],
-        up: item.attributes.obstacle_info[5],
-        down: item.attributes.obstacle_info[0],
-      }
-    : DEFAULT_OBSTACLE_DATA;
+  const currentObstacleData = obstacleFromInfo(item?.attributes?.obstacle_info);
 
   const [openSendCommand, setOpenSendCommand] = useState(false);
 
@@ -188,15 +178,7 @@ const DevicePage3D = () => {
                   flexDirection: 'column',
                 }}
               >
-                <ObstacleAvoidanceSensors
-                  obstacleData={currentObstacleData}
-                  altitude={
-                    item.attributes?.home
-                      ? item.altitude - item.attributes.home[2]
-                      : (item.altitude ?? 0)
-                  }
-                  altitudeASL={item.altitude ?? 0}
-                />
+                <ObstacleAvoidanceSensors obstacleData={currentObstacleData} />
               </Paper>
             )}
           </div>

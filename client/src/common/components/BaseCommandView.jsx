@@ -1,8 +1,6 @@
 import React, { Fragment } from 'react';
 import { useSelector } from 'react-redux';
-import { TextField, FormControlLabel, Checkbox } from '@mui/material';
-import SelectField from './SelectField';
-import useCommandAttributes from '../attributes/useCommandAttributes';
+import { TextField, FormControlLabel, Checkbox, MenuItem } from '@mui/material';
 
 // The server enforces a UTC-ISO-with-Z contract for command dates
 // (assertUtcIsoDate). The user picks a time in their LOCAL zone, so we store the
@@ -23,87 +21,90 @@ const utcIsoToLocalInput = (utcIso) => {
   return local.toISOString().slice(0, 16);
 };
 
-const BaseCommandView = ({ deviceId, item, setItem }) => {
+const fieldLabel = ({ name, unit }) => (unit ? `${name} (${unit})` : name);
+
+// Parameter fields of one command, editing `item.attributes`. `params` is the command's
+// `params` as GET /api/commands/types resolved it for the device (command_schema).
+// Values are kept as typed: the server validates and converts them, and rejects what is
+// out of range, so an empty number field means "not sent" (its default), never 0.
+const BaseCommandView = ({ item, setItem, params = [] }) => {
   const textEnabled = useSelector((state) => state.session.server.textEnabled);
 
-  const availableAttributes = useCommandAttributes();
-
-  const attributes = item && item.type ? availableAttributes[item.type] || [] : [];
+  const update = (key, value) =>
+    setItem({ ...item, attributes: { ...item.attributes, [key]: value } });
 
   return (
-    <Fragment key="sdf">
-      <SelectField
-        value={item.type || ''}
-        onChange={(e) => setItem({ ...item, type: e.target.value, attributes: {} })}
-        endpoint={
-          deviceId
-            ? `/api/commands/types?${new URLSearchParams({
-                deviceId,
-              }).toString()}`
-            : '/api/commands/types'
-        }
-        keyGetter={(it) => it.type}
-        titleGetter={(it) => it.type}
-        label={'Command type'}
-        getItems={(items) => console.log(items)}
-      />
-      {attributes.map(({ key, name, type }) => {
+    <Fragment>
+      {params.map((param) => {
+        const { id, type, required, description } = param;
+        const label = fieldLabel(param);
         if (type === 'boolean') {
           return (
             <FormControlLabel
-              key={key}
+              key={id}
               control={
                 <Checkbox
-                  checked={item.attributes[key]}
-                  onChange={(e) => {
-                    const updateItem = {
-                      ...item,
-                      attributes: { ...item.attributes },
-                    };
-                    updateItem.attributes[key] = e.target.checked;
-                    setItem(updateItem);
-                  }}
+                  checked={Boolean(item.attributes[id])}
+                  onChange={(e) => update(id, e.target.checked)}
                 />
               }
-              label={name}
+              label={label}
             />
           );
         }
         if (type === 'datetime') {
           return (
             <TextField
-              key={key}
+              key={id}
               type="datetime-local"
-              value={utcIsoToLocalInput(item.attributes[key])}
-              onChange={(e) => {
-                const updateItem = {
-                  ...item,
-                  attributes: { ...item.attributes },
-                };
-                // Store the UTC instant; the server's contract requires "...Z".
-                updateItem.attributes[key] = localInputToUtcIso(e.target.value);
-                setItem(updateItem);
-              }}
-              label={name}
-              InputLabelProps={{ shrink: true }}
+              value={utcIsoToLocalInput(item.attributes[id])}
+              // Store the UTC instant; the server's contract requires "...Z".
+              onChange={(e) => update(id, localInputToUtcIso(e.target.value))}
+              label={label}
+              required={required}
+              helperText={description}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
+          );
+        }
+        if (type === 'select') {
+          return (
+            <TextField
+              key={id}
+              select
+              value={item.attributes[id] ?? ''}
+              onChange={(e) => update(id, e.target.value)}
+              label={label}
+              required={required}
+              helperText={description}
+            >
+              {param.options.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.name ?? option.value}
+                </MenuItem>
+              ))}
+            </TextField>
           );
         }
         return (
           <TextField
-            key={key}
+            key={id}
             type={type === 'number' ? 'number' : 'text'}
-            value={item.attributes[key]}
-            onChange={(e) => {
-              const updateItem = {
-                ...item,
-                attributes: { ...item.attributes },
-              };
-              updateItem.attributes[key] =
-                type === 'number' ? Number(e.target.value) : e.target.value;
-              setItem(updateItem);
+            value={item.attributes[id] ?? ''}
+            onChange={(e) => update(id, e.target.value)}
+            label={label}
+            required={required}
+            helperText={description}
+            slotProps={{
+              htmlInput:
+                type === 'number'
+                  ? {
+                      min: param.min ?? undefined,
+                      max: param.max ?? undefined,
+                      step: param.step ?? 'any',
+                    }
+                  : undefined,
             }}
-            label={name}
           />
         );
       })}
@@ -111,7 +112,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
         <FormControlLabel
           control={
             <Checkbox
-              checked={item.textChannel}
+              checked={Boolean(item.textChannel)}
               onChange={(event) => setItem({ ...item, textChannel: event.target.checked })}
             />
           }

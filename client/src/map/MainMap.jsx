@@ -58,6 +58,7 @@ const MainMap = ({
   selectedPosition,
   filteredMissiondeviceid = -1,
   routes = EMPTY_ROUTES,
+  children,
 }) => {
   const dispatch = useDispatch();
   const obstacles = useInspectionObstacles();
@@ -87,6 +88,7 @@ const MainMap = ({
         <MapSelectedDevice />
         <MapMissionHome />
         <MapDefaultCamera />
+        {children}
       </MapView>
       <MapScale />
       <MapGeocoder />

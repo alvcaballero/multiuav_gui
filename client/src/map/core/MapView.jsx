@@ -76,7 +76,12 @@ const MapView = ({ children }) => {
     const currentEl = containerElRef.current;
     currentEl.appendChild(element);
     map.resize();
+    // MapLibre only tracks window resizes: a container resized by its layout (a panel
+    // collapsing, a picture-in-picture growing) would leave the canvas stretched.
+    const observer = new ResizeObserver(() => map.resize());
+    observer.observe(currentEl);
     return () => {
+      observer.disconnect();
       currentEl.removeChild(element);
     };
   }, [containerElRef]);

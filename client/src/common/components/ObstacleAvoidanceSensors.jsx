@@ -1,221 +1,219 @@
-import React, { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import ObstacleSensorCone from './ObstacleSensorCone';
-import { mapIconKey, mapIcons } from '../../map/core/preloadImages';
-import ObstacleAltitudeGauge from './ObstacleAltitudeGauge';
+import { Typography } from '@mui/material';
+import { makeStyles } from 'tss-react/mui';
+import NavigationIcon from '@mui/icons-material/Navigation';
 
-const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize) => {
-  const center = containerSize / 2;
+import { STOP_DISTANCE, CAUTION_DISTANCE, obstacleSeverity } from '../util/obstacles';
 
-  const coneStyle = { position: 'absolute', zIndex: 1 };
-  const textStyle = {
+// Top-down view of the collision sensors: the drone in the center (front = up), and per
+// horizontal side a ray to the obstacle, a wall at its distance and a label. Up/down
+// are bars on the right. Distances in meters; >= RANGE reads as "clear".
+//
+// Data order on the wire is position.attributes.obstacle_info = [down, front, right, back,
+// left, up]; callers map it to { front, back, left, right, up, down } with obstacleFromInfo
+// (common/util/obstacles.js).
+
+const SIZE = 160;
+const C = SIZE / 2; // center
+const DRONE = 11; // half the drone glyph — rays start at its edge
+const SPAN = 57; // px the ray grows from 0 m to RANGE
+const RANGE = 10; // m — horizontal
+const V_RANGE = 15; // m — up/down bars
+const WALL = 36;
+const RINGS = [26, 52, 78];
+
+const useStyles = makeStyles()((theme) => ({
+  root: {
+    display: 'flex',
+    gap: theme.spacing(1.5),
+    alignItems: 'stretch',
+    fontVariantNumeric: 'tabular-nums',
+  },
+  view: {
+    position: 'relative',
+    width: SIZE,
+    height: SIZE,
+    flex: 'none',
+    overflow: 'hidden',
+  },
+  ring: {
     position: 'absolute',
-    fontSize: '0.75em',
-    color: '#333',
-    fontWeight: 'bold',
-    zIndex: 2,
+    borderRadius: '50%',
+    border: `1px dashed ${theme.palette.divider}`,
+  },
+  drone: {
+    position: 'absolute',
+    left: C - DRONE,
+    top: C - DRONE,
+    width: DRONE * 2,
+    height: DRONE * 2,
+    border: `1px solid ${theme.palette.text.primary}`,
+    background: theme.palette.background.paper,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    '& svg': { fontSize: 16 },
+  },
+  ray: {
+    position: 'absolute',
+    opacity: 0.35,
+    transition: 'all .4s',
+  },
+  wall: {
+    position: 'absolute',
+    transition: 'all .4s',
+  },
+  label: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    fontSize: 11,
+    fontWeight: 600,
+    padding: '0 3px',
+    background: theme.palette.background.paper,
+    whiteSpace: 'nowrap',
+    transition: 'all .4s',
     pointerEvents: 'none',
-  };
+  },
+  side: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+  },
+  value: {
+    fontSize: 19,
+    fontWeight: 600,
+    lineHeight: 1.1,
+  },
+  track: {
+    height: 4,
+    background: theme.palette.action.hover,
+  },
+  bar: {
+    height: '100%',
+    transition: 'width .4s',
+  },
+  legend: {
+    marginTop: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    fontSize: 11,
+    color: theme.palette.text.secondary,
+  },
+  dot: {
+    display: 'inline-block',
+    width: 8,
+    height: 8,
+    marginRight: 6,
+  },
+}));
 
-  switch (direction) {
+// Box geometry of one side's ray, wall and label, in px from the view's top-left.
+const geometry = (side, d) => {
+  const L = DRONE + (Math.min(d, RANGE) / RANGE) * SPAN;
+  const near = C - (L + DRONE) / 2;
+  const far = C + (L + DRONE) / 2;
+  switch (side) {
     case 'front':
-      coneStyle.top = 0;
-      coneStyle.left = center;
-      coneStyle.transform = 'translate(-50%, 0) rotate(180deg)';
-      textStyle.top = sensorHeight * 0.4;
-      textStyle.left = center;
-      textStyle.transform = 'translateX(-50%)';
-      break;
+      return {
+        ray: { left: C - 1, top: C - L, width: 2, height: L - DRONE },
+        wall: { left: C - WALL / 2, top: C - L - 2, width: WALL, height: 3 },
+        label: { left: C, top: near },
+      };
     case 'back':
-      coneStyle.bottom = 0;
-      coneStyle.left = center;
-      coneStyle.transform = 'translate(-50%, 0)';
-      textStyle.bottom = sensorHeight * 0.4;
-      textStyle.left = center;
-      textStyle.transform = 'translateX(-50%)';
-      break;
+      return {
+        ray: { left: C - 1, top: C + DRONE, width: 2, height: L - DRONE },
+        wall: { left: C - WALL / 2, top: C + L - 1, width: WALL, height: 3 },
+        label: { left: C, top: far },
+      };
     case 'left':
-      coneStyle.top = center;
-      coneStyle.left = 0;
-      coneStyle.transform = 'translate(0, -50%) rotateZ(180deg)';
-      textStyle.top = center;
-      textStyle.left = sensorWidth * 0.3;
-      textStyle.transform = 'translateY(-50%)';
-      break;
-    case 'right':
-      coneStyle.top = center;
-      coneStyle.right = 0;
-      coneStyle.transform = 'translate(0, -50%)';
-      textStyle.top = center;
-      textStyle.right = sensorWidth * 0.3;
-      textStyle.transform = 'translateY(-50%)';
-      break;
+      return {
+        ray: { left: C - L, top: C - 1, width: L - DRONE, height: 2 },
+        wall: { left: C - L - 2, top: C - WALL / 2, width: 3, height: WALL },
+        label: { left: near, top: C },
+      };
     default:
-      break;
+      return {
+        ray: { left: C + DRONE, top: C - 1, width: L - DRONE, height: 2 },
+        wall: { left: C + L - 1, top: C - WALL / 2, width: 3, height: WALL },
+        label: { left: far, top: C },
+      };
   }
-
-  return { coneStyle, textStyle };
 };
 
-/**
- * Ocupa todo el espacio que le da el padre (width + height 100%).
- * El ResizeObserver mide AMBAS dimensiones para que nada se corte.
- */
-const ObstacleAvoidanceSensors = ({
-  obstacleData = { down: 10, front: 10, left: 10, back: 10, right: 10, up: 10 },
-  obstacleLimits = {
-    down: [0, 15],
-    front: [0, 15],
-    left: [0, 12],
-    back: [0, 12],
-    right: [0, 12],
-    up: [0, 20],
-  },
-  altitude = 10,
-  altitudeASL,
-}) => {
-  const containerRef = useRef(null);
-  const [size, setSize] = useState({ w: 0, h: 0 });
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      setSize({ w: entry.contentRect.width, h: entry.contentRect.height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const { w, h } = size;
-  const ready = w > 10 && h > 10;
-
-  // El panel top-view es cuadrado con lado = min(h, 65% del ancho)
-  const topViewSize = ready ? Math.min(h, Math.round(w * 0.65)) : 0;
-  // El gauge toma el resto del ancho
-  const gaugeW = ready ? w - topViewSize - 8 : 0;
-
-  // Conos: proporcionales al panel cuadrado
-  const sensorConeLen = Math.round(topViewSize * 0.38);
-  const sensorConeWide = Math.round(topViewSize * 0.52);
-  const droneSize = Math.round(topViewSize * 0.22);
-
-  const { coneStyle: styleFrontCone, textStyle: styleFrontText } = getSensorStyle(
-    'front',
-    sensorConeWide,
-    sensorConeLen,
-    topViewSize,
-  );
-  const { coneStyle: styleBackCone, textStyle: styleBackText } = getSensorStyle(
-    'back',
-    sensorConeWide,
-    sensorConeLen,
-    topViewSize,
-  );
-  const { coneStyle: styleLeftCone, textStyle: styleLeftText } = getSensorStyle(
-    'left',
-    sensorConeLen,
-    sensorConeWide,
-    topViewSize,
-  );
-  const { coneStyle: styleRightCone, textStyle: styleRightText } = getSensorStyle(
-    'right',
-    sensorConeLen,
-    sensorConeWide,
-    topViewSize,
-  );
+const ObstacleAvoidanceSensors = ({ obstacleData }) => {
+  const { classes, theme } = useStyles();
+  const color = (d) => theme.palette[obstacleSeverity(d)].main;
 
   return (
-    // Wrapper: ocupa TODO el espacio del padre, sin overflow propio
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        overflow: 'hidden',
-      }}
-    >
-      {ready && (
-        <>
-          {/* ── Vista superior con conos ── */}
+    <div className={classes.root}>
+      <div className={classes.view}>
+        {RINGS.map((r) => (
           <div
-            style={{
-              width: topViewSize,
-              height: topViewSize,
-              position: 'relative',
-              flexShrink: 0,
-            }}
-          >
-            <img
-              src={mapIcons[mapIconKey('ArrowMap')]}
-              alt=""
-              style={{
-                width: droneSize,
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%,-50%)',
-                zIndex: 2,
-              }}
-            />
-
-            <div style={styleFrontText}>{obstacleData.front.toFixed(0)}m</div>
-            <div style={styleFrontCone}>
-              <ObstacleSensorCone
-                distance={obstacleData.front}
-                limits={obstacleLimits.front}
-                width={sensorConeWide}
-                height={sensorConeLen}
-              />
+            key={r}
+            className={classes.ring}
+            style={{ left: C - r, top: C - r, width: r * 2, height: r * 2 }}
+          />
+        ))}
+        {['front', 'back', 'left', 'right'].map((side) => {
+          const d = obstacleData[side];
+          const g = geometry(side, d);
+          return (
+            <div key={side}>
+              <div className={classes.ray} style={{ ...g.ray, background: color(d) }} />
+              <div className={classes.wall} style={{ ...g.wall, background: color(d) }} />
+              <span className={classes.label} style={{ ...g.label, color: color(d) }}>
+                {d >= RANGE ? `>${RANGE} m` : `${d.toFixed(1)} m`}
+              </span>
             </div>
-
-            <div style={styleBackText}>{obstacleData.back.toFixed(0)}m</div>
-            <div style={styleBackCone}>
-              <ObstacleSensorCone
-                distance={obstacleData.back}
-                limits={obstacleLimits.back}
-                width={sensorConeWide}
-                height={sensorConeLen}
-              />
+          );
+        })}
+        <div className={classes.drone} title="Front">
+          <NavigationIcon />
+        </div>
+      </div>
+      <div className={classes.side}>
+        {[
+          ['Up', obstacleData.up],
+          ['Down · ground', obstacleData.down],
+        ].map(([label, d]) => (
+          <div key={label}>
+            <Typography
+              variant="overline"
+              color="textSecondary"
+              component="div"
+              sx={{ lineHeight: 1.4 }}
+            >
+              {label}
+            </Typography>
+            <div className={classes.value} style={{ color: color(d) }}>
+              {d >= V_RANGE ? `>${V_RANGE} m` : `${d.toFixed(1)} m`}
             </div>
-
-            <div style={styleLeftText}>{obstacleData.left.toFixed(0)}m</div>
-            <div style={styleLeftCone}>
-              <ObstacleSensorCone
-                distance={obstacleData.left}
-                limits={obstacleLimits.left}
-                width={sensorConeLen}
-                height={sensorConeWide}
-                orientation="h"
-              />
-            </div>
-
-            <div style={styleRightText}>{obstacleData.right.toFixed(0)}m</div>
-            <div style={styleRightCone}>
-              <ObstacleSensorCone
-                distance={obstacleData.right}
-                limits={obstacleLimits.right}
-                width={sensorConeLen}
-                height={sensorConeWide}
-                orientation="h"
+            <div className={classes.track}>
+              <div
+                className={classes.bar}
+                style={{ width: `${Math.min(100, (d / V_RANGE) * 100)}%`, background: color(d) }}
               />
             </div>
           </div>
-
-          {/* ── ObstacleAltitudeGauge: ocupa el ancho restante, alto = topViewSize ── */}
-          <div style={{ width: gaugeW, height: topViewSize, flexShrink: 0, overflow: 'visible' }}>
-            <ObstacleAltitudeGauge
-              value={altitude}
-              valueASL={altitudeASL}
-              sensorValue={[obstacleData.up, obstacleData.down]}
-              sensorLimits={{ up: obstacleLimits.up, down: obstacleLimits.down }}
-            />
-          </div>
-        </>
-      )}
+        ))}
+        <div className={classes.legend}>
+          <span>
+            <span className={classes.dot} style={{ background: theme.palette.error.main }} />
+            {`< ${STOP_DISTANCE} m stop`}
+          </span>
+          <span>
+            <span className={classes.dot} style={{ background: theme.palette.warning.main }} />
+            {`${STOP_DISTANCE}–${CAUTION_DISTANCE} m caution`}
+          </span>
+          <span>
+            <span className={classes.dot} style={{ background: theme.palette.primary.main }} />
+            {`> ${CAUTION_DISTANCE} m clear`}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };

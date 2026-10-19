@@ -24,6 +24,8 @@ client/
     │   ├── MainPage / MainPage3D, MissionPage / MissionPage3D, PlanningPage,
     │   │   DevicePage / DevicePage3D, CameraPage, ChatPage, Scene3DEditorPage
     │   ├── planning/       # Hooks used only by PlanningPage (actions, redux handlers, polling)
+    │   ├── device/         # DevicePage panels (header, stage, mission, telemetry, raw data, manual
+    │   │                   #   control) and its hooks (capabilities, commands, raw stream, keys)
     │   ├── reports/        # EventsPage, Mission*Report*Page, missionDetailReport/ (its sections)
     │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
     ├── components/         # Feature components, grouped by domain
@@ -31,7 +33,8 @@ client/
     │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav, DeviceCameraEditor, DeviceFilesEditor, useFilter
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking
     │   ├── camera/         # CameraDevice, CameraDevicePanel, CameraMediaMTXPlayer, SocketCameraCanvas
-    │   ├── commands/       # CommandCard
+    │   ├── commands/       # CommandCard (send-command dialog). Labels, params, confirm and severity of
+    │   │                   #   each command come from GET /api/commands/types (server command_schema.yaml)
     │   ├── layout/         # Navbar, Navbar2, MainToolbar, Menu, MenuItems, menu/ (popovers)
     │   └── planning/       # PlanningToolbar, ElementsTab, PlanningTab, SettingsTab, BaseList, ElementList
     ├── settings/           # Settings pages (devices, categories, element types, geofence)
@@ -40,11 +43,12 @@ client/
     ├── common/             # Shared by several features — same idea as traccar-web's `common/`
     │   ├── components/     # Generic UI: PageLayout, ErrorHandler, SelectField, RemoveDialog, SelectList,
     │   │                   #   SaveFile, PositionValue, SwipeConfirm (see note below), form fields, and
-    │   │                   #   the obstacle-avoidance widgets (ObstacleAvoidanceSensors,
-    │   │                   #   ObstacleSensorCone, ObstacleAltitudeGauge)
+    │   │                   #   ObstacleAvoidanceSensors (top-down view of obstacle_info; helpers
+    │   │                   #   in util/obstacles.js)
     │   ├── theme/          # MUI theme (palette, dimensions, component overrides)
-    │   ├── attributes/     # Attribute hooks
     │   └── util/           # formatter, converter, fetchs, missionConvert, missionGeo, preferences,
+    │       │               #   commandTypes (mirror of the server CommandType; never which ones a
+    │       │               #   device has — that's /api/commands/types),
     │       │               #   usePersistedState/useQuery/useMarkerTypes/useMissionFile, and the
     │       │               #   former services (planningService, fileService, missionPlanLoader,
     │       │               #   sendChatMessage, toolApproval)

@@ -30,6 +30,7 @@ import RemoveDialog from '../../common/components/RemoveDialog';
 
 import { devicesActions } from '../../store';
 import CommandCard from '../commands/CommandCard';
+import { CommandType } from '../../common/util/commandTypes';
 
 const useStyles = makeStyles()((theme, { desktopPadding }) => ({
   card: {
@@ -189,7 +190,10 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
   const deviceName = device.name;
 
   const handleOpenMenu = (e) => setAnchorEl(e.currentTarget);
-  const handleSyncFiles = useCallback(() => serverCommand(deviceId, 'SincroniseFiles'), [deviceId]);
+  const handleSyncFiles = useCallback(
+    () => serverCommand(deviceId, CommandType.SYNC_FILES),
+    [deviceId],
+  );
   const handleRemoving = () => setRemoving(true);
   const changeMapFollow = useCallback(
     () => dispatch(devicesActions.updateFollow(!mapFollow)),
@@ -291,7 +295,9 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
                                 size="small"
                                 color="primary"
                                 style={{ margin: '1px', display: 'inline-block' }}
-                                onClick={() => serverCommand(device.id, 'threat_confirmation')}
+                                onClick={() =>
+                                  serverCommand(device.id, CommandType.THREAT_CONFIRMATION)
+                                }
                               >
                                 Validate
                               </Button>
@@ -300,7 +306,7 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
                                 size="small"
                                 color="secondary"
                                 style={{ margin: '1px', display: 'inline-block' }}
-                                onClick={() => serverCommand(device.id, 'threat_defuse')}
+                                onClick={() => serverCommand(device.id, CommandType.THREAT_DEFUSE)}
                               >
                                 Dismiss
                               </Button>

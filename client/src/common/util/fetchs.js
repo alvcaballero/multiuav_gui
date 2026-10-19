@@ -1,4 +1,5 @@
 import { routesToTasks } from './missionConvert';
+import { CommandType } from './commandTypes';
 
 // Command an already-loaded mission by its id. The mission + tasks were created
 // by commandLoadMission; the server commands each LOADED root task and the
@@ -74,7 +75,7 @@ export const commandStopMission = async (devices) => {
   const requests = listDeviceId.map((id) =>
     fetch('/api/commands/send', {
       method: 'POST',
-      body: JSON.stringify({ deviceId: id, type: 'StopMission' }),
+      body: JSON.stringify({ deviceId: id, type: CommandType.STOP_MISSION }),
       headers: { 'Content-Type': 'application/json' },
     }),
   );
@@ -86,7 +87,7 @@ export const commandPauseMission = async (devices) => {
   const requests = listDeviceId.map((id) =>
     fetch('/api/commands/send', {
       method: 'POST',
-      body: JSON.stringify({ deviceId: id, type: 'Pausemission' }),
+      body: JSON.stringify({ deviceId: id, type: CommandType.PAUSE_MISSION }),
       headers: { 'Content-Type': 'application/json' },
     }),
   );
@@ -98,7 +99,7 @@ export const commandResumeMission = async (devices) => {
   const requests = listDeviceId.map((id) =>
     fetch('/api/commands/send', {
       method: 'POST',
-      body: JSON.stringify({ deviceId: id, type: 'ResumeMission' }),
+      body: JSON.stringify({ deviceId: id, type: CommandType.RESUME_MISSION }),
       headers: { 'Content-Type': 'application/json' },
     }),
   );
