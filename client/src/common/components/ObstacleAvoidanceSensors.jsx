@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import DistanceSensor from './DistanceSensor';
+import ObstacleSensorCone from './ObstacleSensorCone';
 import { mapIconKey, mapIcons } from '../../map/core/preloadImages';
-import LinearGauge from './LinearGauge';
+import ObstacleAltitudeGauge from './ObstacleAltitudeGauge';
 
 const getSensorStyle = (direction, sensorWidth, sensorHeight, containerSize) => {
   const center = containerSize / 2;
@@ -164,7 +164,7 @@ const ObstacleAvoidanceSensors = ({
 
             <div style={styleFrontText}>{obstacleData.front.toFixed(0)}m</div>
             <div style={styleFrontCone}>
-              <DistanceSensor
+              <ObstacleSensorCone
                 distance={obstacleData.front}
                 limits={obstacleLimits.front}
                 width={sensorConeWide}
@@ -174,7 +174,7 @@ const ObstacleAvoidanceSensors = ({
 
             <div style={styleBackText}>{obstacleData.back.toFixed(0)}m</div>
             <div style={styleBackCone}>
-              <DistanceSensor
+              <ObstacleSensorCone
                 distance={obstacleData.back}
                 limits={obstacleLimits.back}
                 width={sensorConeWide}
@@ -184,7 +184,7 @@ const ObstacleAvoidanceSensors = ({
 
             <div style={styleLeftText}>{obstacleData.left.toFixed(0)}m</div>
             <div style={styleLeftCone}>
-              <DistanceSensor
+              <ObstacleSensorCone
                 distance={obstacleData.left}
                 limits={obstacleLimits.left}
                 width={sensorConeLen}
@@ -195,7 +195,7 @@ const ObstacleAvoidanceSensors = ({
 
             <div style={styleRightText}>{obstacleData.right.toFixed(0)}m</div>
             <div style={styleRightCone}>
-              <DistanceSensor
+              <ObstacleSensorCone
                 distance={obstacleData.right}
                 limits={obstacleLimits.right}
                 width={sensorConeLen}
@@ -205,9 +205,9 @@ const ObstacleAvoidanceSensors = ({
             </div>
           </div>
 
-          {/* ── LinearGauge: ocupa el ancho restante, alto = topViewSize ── */}
+          {/* ── ObstacleAltitudeGauge: ocupa el ancho restante, alto = topViewSize ── */}
           <div style={{ width: gaugeW, height: topViewSize, flexShrink: 0, overflow: 'visible' }}>
-            <LinearGauge
+            <ObstacleAltitudeGauge
               value={altitude}
               valueASL={altitudeASL}
               sensorValue={[obstacleData.up, obstacleData.down]}

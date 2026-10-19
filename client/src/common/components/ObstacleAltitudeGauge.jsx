@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './LinearGauge.css';
+import './ObstacleAltitudeGauge.css';
 import { mapIconKey, frontIcons } from '../../map/core/preloadImages';
 
 /**
- * LinearGauge — altímetro vertical con sensores up/down.
+ * ObstacleAltitudeGauge — altímetro vertical con sensores up/down.
  * Ocupa todo el ancho/alto que le da el padre (width/height 100%).
  * El indicador del valor actual se muestra a la IZQUIERDA de la regla
  * para que nunca se salga por la derecha.
@@ -16,7 +16,7 @@ const sensorColor = (val, limits) => {
   return '#bbb';
 };
 
-const LinearGauge = ({
+const ObstacleAltitudeGauge = ({
   value,
   valueASL,
   sensorValue = [7, 5],
@@ -275,4 +275,4 @@ const LinearGauge = ({
   );
 };
 
-export default LinearGauge;
+export default ObstacleAltitudeGauge;

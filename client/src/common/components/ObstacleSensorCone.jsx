@@ -14,7 +14,7 @@ import PropTypes from 'prop-types';
  * @param {Array} [limits=[0,10]] - Valores max - min del sensor .
  * @param {String} [orientation="v"] - v to vertical and h to horizontal .
  */
-const DistanceSensor = ({
+const ObstacleSensorCone = ({
   distance,
   width = 100,
   height = 100,
@@ -91,10 +91,10 @@ const DistanceSensor = ({
   );
 };
 
-DistanceSensor.propTypes = {
+ObstacleSensorCone.propTypes = {
   distance: PropTypes.number.isRequired,
   width: PropTypes.number,
   height: PropTypes.number,
 };
 
-export default DistanceSensor;
+export default ObstacleSensorCone;
