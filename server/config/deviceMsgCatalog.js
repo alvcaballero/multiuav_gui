@@ -92,6 +92,9 @@ export const KNOWN_SUBSCRIBER_KEYS = new Set(Object.values(SubscriberKey));
 // mismo command puede resolverse por service, action o publisher según la categoría.
 export const PublisherKey = Object.freeze({
   GIMBAL: 'Gimbal',
+  // PX4 /fmu/in/vehicle_command (px4_msgs/msg/VehicleCommand). Habilita los comandos
+  // de vuelo directos (Takeoff, Land, ReturnHome, Hold, Arm/Disarm, KillMotors, moveRelative).
+  VEHICLE_COMMAND: 'VehicleCommand',
 });
 
 // publisherKeys conocidas — para validar el bloque publishers: de devices_msg.
@@ -118,6 +121,9 @@ export const ServiceKey = Object.freeze({
   NAVIGATE_TO_POSE: 'navigateToPose',
   THREAT_CONFIRMATION: 'threat_confirmation',
   THREAT_DEFUSE: 'threat_defuse',
+  // px4_ros2 /offboard/gcs_command (muav_gcs_interfaces/srv/GCSCommand). Todavía ningún
+  // command lo requiere: en definición.
+  GCS_COMMAND: 'GCSCommand',
 });
 
 // serviceKeys conocidas — para validar los bloques services:/actions: de devices_msg.

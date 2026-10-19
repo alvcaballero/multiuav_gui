@@ -10,7 +10,7 @@
 //   - command                   — una ACCIÓN que el usuario dispara desde la UI.
 //     Tiene un `type` (lo que la UI muestra y sendCommand compara) y su propia
 //     forma de despacharse. Un command PUEDE requerir una serviceKey para estar
-//     disponible (`requires`), pero no siempre: saveHome/custom no dependen de
+//     disponible (`requires`), pero no siempre: SaveHome no depende de
 //     ninguna. Y una misma serviceKey puede habilitar VARIOS commands (Gimbal → 3).
 //
 // La relación es command → requires → serviceKey (un requisito), no serviceKey →
@@ -26,40 +26,54 @@
 //     capacidades del device (o es null → siempre disponible).
 //   - sendCommand: despacha según `dispatch`/`payload`, usando `rosService`.
 
-import { ServiceKey } from './deviceMsgCatalog.js';
+import { ServiceKey, PublisherKey } from './deviceMsgCatalog.js';
 
 // ─── Enums (SSOT de literales de commands) ────────────────────────────────────
 
 // command types — el `type` que la UI muestra y que sendCommand compara.
-// Distinto de ServiceKey: incluye commands sin serviceKey (saveHome/custom) y
-// varios commands que comparten una misma serviceKey (los de gimbal).
+// Distinto de ServiceKey: incluye commands sin serviceKey (SaveHome) y
+// varios commands que comparten una misma serviceKey (los de gimbal). Todos en
+// PascalCase: aunque un valor se parezca a su serviceKey (CommandMission vs
+// commandMission), son dos contratos distintos; la serviceKey la fija el lado ROS.
+// El cliente tiene un espejo en client/src/common/util/commandTypes.js
+// (test/test-command-types-mirror.js verifica que coinciden).
 export const CommandType = Object.freeze({
-  SAVE_HOME: 'saveHome',
-  CUSTOM: 'custom',
-  LOAD_MISSION: 'loadMission',
-  COMMAND_MISSION: 'commandMission',
-  SINCRONISE_FILES: 'SincroniseFiles',
+  SAVE_HOME: 'SaveHome',
+  LOAD_MISSION: 'LoadMission',
+  COMMAND_MISSION: 'CommandMission',
+  SYNC_FILES: 'SyncFiles',
   RESUME_MISSION: 'ResumeMission',
   STOP_MISSION: 'StopMission',
-  PAUSE_MISSION: 'Pausemission',
-  SETUP_CAMERA: 'setupcamera',
+  PAUSE_MISSION: 'PauseMission',
+  SETUP_CAMERA: 'SetupCamera',
   GIMBAL: 'Gimbal',
   GIMBAL_PITCH: 'GimbalPitch',
   RESET_GIMBAL: 'ResetGimbal',
   CAMERA_FILE_DOWNLOAD: 'CameraFileDownload',
   CAMERA_FILE_LIST: 'CameraFileList',
-  UPLOAD_MISSION: 'uploadMission',
-  NAVIGATE_TO_POSE: 'navigateToPose',
-  THREAT_CONFIRMATION: 'threat_confirmation',
-  THREAT_DEFUSE: 'threat_defuse',
+  UPLOAD_MISSION: 'UploadMission',
+  NAVIGATE_TO_POSE: 'NavigateToPose',
+  THREAT_CONFIRMATION: 'ThreatConfirmation',
+  THREAT_DEFUSE: 'ThreatDefuse',
+  // Vuelo directo PX4 (publisher VehicleCommand). El VehicleCommand concreto lo arma
+  // models/vehicleCommand.js.
+  TAKEOFF: 'Takeoff',
+  LAND: 'Land',
+  RETURN_HOME: 'ReturnHome',
+  HOLD: 'Hold',
+  ARM: 'Arm',
+  DISARM: 'Disarm',
+  KILL_MOTORS: 'KillMotors',
+  MOVE_RELATIVE: 'MoveRelative',
 });
 
 // Cómo sendCommand ejecuta el command.
 export const Dispatch = Object.freeze({
-  LOCAL: 'local', // maneja el server sin ROS (ej. saveHome → positionsController)
+  LOCAL: 'local', // maneja el server sin ROS (ej. SaveHome → positionsController)
   FLEET: 'fleet', // handler propio de flota (loadMission/commandMission)
   SERVICE: 'service', // ROS service vía standarCommand(rosService)
   GIMBAL: 'gimbal', // ruta especial GimbalUAV
+  VEHICLE_COMMAND: 'vehicleCommand', // PX4 VehicleCommand armado por buildVehicleCommand
 });
 
 // Cómo se arma el request del ROS service.
@@ -80,15 +94,9 @@ export const Payload = Object.freeze({
 //   payload:    cómo se arma el request (Payload.*).
 export const COMMAND_CATALOG = {
   [CommandType.SAVE_HOME]: { requires: null, dispatch: Dispatch.LOCAL },
-  [CommandType.CUSTOM]: {
-    requires: null,
-    dispatch: Dispatch.SERVICE,
-    rosService: undefined,
-    payload: Payload.ATTRIBUTES,
-  },
   [CommandType.LOAD_MISSION]: { requires: ServiceKey.CONFIGURE_MISSION, dispatch: Dispatch.FLEET },
   [CommandType.COMMAND_MISSION]: { requires: ServiceKey.COMMAND_MISSION, dispatch: Dispatch.FLEET },
-  [CommandType.SINCRONISE_FILES]: {
+  [CommandType.SYNC_FILES]: {
     requires: ServiceKey.SINCRONIZE,
     dispatch: Dispatch.SERVICE,
     rosService: ServiceKey.SINCRONIZE,
@@ -157,6 +165,14 @@ export const COMMAND_CATALOG = {
     rosService: ServiceKey.THREAT_DEFUSE,
     payload: Payload.NONE,
   },
+  [CommandType.TAKEOFF]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
+  [CommandType.LAND]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
+  [CommandType.RETURN_HOME]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
+  [CommandType.HOLD]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
+  [CommandType.ARM]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
+  [CommandType.DISARM]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
+  [CommandType.KILL_MOTORS]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
+  [CommandType.MOVE_RELATIVE]: { requires: PublisherKey.VEHICLE_COMMAND, dispatch: Dispatch.VEHICLE_COMMAND },
 };
 
 // ─── Índices derivados y helpers ──────────────────────────────────────────────

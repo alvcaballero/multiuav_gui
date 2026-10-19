@@ -127,17 +127,18 @@ export function encodeRosSrv({ type, msg, msgType }) {
   }
 
   // Gimbal (DJI OSDK, ROS1). Wire format de dji_osdk_ros/GimbalAction. El objeto
-  // de dominio llega neutro ({pitch, roll, yaw, reset} en grados); acá se traduce.
+  // de dominio llega neutro ({pitch, roll, yaw, reset} en grados ABSOLUTOS); acá se traduce.
   if (msgType === 'dji_osdk_ros/GimbalAction') {
     return {
       header: { seq: 0, stamp: { secs: 0, nsecs: 0 }, frame_id: '' },
       is_reset: msg.reset ? true : false,
       payload_index: 0,
-      // rotationMode 0 = ángulo relativo al punto de referencia previo, 1 = punto actual.
-      rotationMode: 0,
-      pitch: msg.pitch || 0.0,
-      roll: msg.roll || 0.0,
-      yaw: msg.yaw || 0.0,
+      // OSDK GimbalModule::Rotation: 0 = incremental sobre el ángulo actual del gimbal,
+      // 1 = absoluto (ground frame NEU). El dominio es absoluto → 1, igual que PSDK.
+      rotationMode: 1,
+      pitch: msg.pitch ?? 0.0,
+      roll: msg.roll ?? 0.0,
+      yaw: msg.yaw ?? 0.0,
       time: 0.0,
     };
   }
@@ -149,9 +150,9 @@ export function encodeRosSrv({ type, msg, msgType }) {
     return {
       payload_index: msg.payload_index || 1,
       rotation_mode: msg.rotation_mode ?? 1,
-      pitch: deg2rad(msg.pitch || 0),
-      roll: deg2rad(msg.roll || 0),
-      yaw: deg2rad(msg.yaw || 0),
+      pitch: deg2rad(msg.pitch ?? 0),
+      roll: deg2rad(msg.roll ?? 0),
+      yaw: deg2rad(msg.yaw ?? 0),
       time: 0.0,
     };
   }

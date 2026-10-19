@@ -22,6 +22,7 @@ import {
 } from '../../config/status.js';
 import { normalizeMission, missionForTask, TASK_GRAPH_VERSION } from './taskGraph.js';
 import { taskScheduler } from './taskScheduler.js';
+import { CommandType } from '../../config/commandCatalog.js';
 
 // Plans are stored as received, tagged with their format: consumers (client RuteConvert)
 // parse route[] as '3' and tasks[] as '4'.
@@ -811,7 +812,7 @@ export class missionModel {
         response = await withRetry(() =>
           commandsController.sendCommandDevice({
             deviceId: device.id,
-            type: 'loadMission',
+            type: CommandType.LOAD_MISSION,
             attributes: missionForTask(graph, task.task_id),
           })
         );
@@ -865,7 +866,7 @@ export class missionModel {
       let response;
       try {
         response = await withRetry(() =>
-          commandsController.sendCommandDevice({ deviceId: task.deviceId, type: 'commandMission' })
+          commandsController.sendCommandDevice({ deviceId: task.deviceId, type: CommandType.COMMAND_MISSION })
         );
       } catch (err) {
         response = { state: 'error', msg: err instanceof Error ? err.message : String(err) };

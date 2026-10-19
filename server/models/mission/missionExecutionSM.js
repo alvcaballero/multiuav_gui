@@ -8,6 +8,7 @@ import { missionController } from '../../controllers/mission.js';
 import { missionLogger as logger } from '../../common/logger.js';
 import { TASK_STATUS } from '../../config/status.js';
 import { normalizeMission, missionForTask } from './taskGraph.js';
+import { CommandType } from '../../config/commandCatalog.js';
 
 const LoadMissionSM = async (context) => {
   logger.info('service load mission');
@@ -19,7 +20,7 @@ const LoadMissionSM = async (context) => {
   logger.debug(`LoadMissionSM task mission: ${JSON.stringify(taskMission)}`);
   let response = await commandsController.sendCommandDevice({
     deviceId: context.uavId,
-    type: 'loadMission',
+    type: CommandType.LOAD_MISSION,
     attributes: taskMission,
   });
 
@@ -38,7 +39,7 @@ const CommandMissionSM = async (context) => {
   sleep(2000);
   let response = await commandsController.sendCommandDevice({
     deviceId: context.uavId,
-    type: 'commandMission',
+    type: CommandType.COMMAND_MISSION,
   });
 
   logger.debug(`CommandMissionSM response: ${JSON.stringify(response)}`);

@@ -6,6 +6,7 @@ import { missionModel } from '../models/mission/mission.js';
 import { missionSMModel } from '../models/mission/missionSM.js';
 import { taskScheduler } from '../models/mission/taskScheduler.js';
 import { commandsController } from '../controllers/commands.js';
+import { CommandType } from '../config/commandCatalog.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { TaskGraphError } from '../models/mission/taskGraph.js';
 import { MISSION_STATUS as M, TASK_STATUS as T } from '../config/status.js';
@@ -79,7 +80,7 @@ describe('manual flow', () => {
     assert.equal(t.T2.action, 'TAKEOFF_AND_SURVEY');
     assert.equal(t.T2.totalWp, 2);
 
-    const loads = cmds.filter((c) => c.type === 'loadMission');
+    const loads = cmds.filter((c) => c.type === CommandType.LOAD_MISSION);
     assert.equal(loads.length, 1);
     assert.deepEqual(loads[0].attributes.tasks.map((x) => [x.task_id, x.depends_on]), [['T1', []]]);
     assert.equal((await missionModel.getMissionValue(missionId)).status, M.INIT);
@@ -111,11 +112,11 @@ describe('manual flow', () => {
     const again = await missionModel.commandMissionManual(missionId);
     assert.equal(again.state, 'warning');
     assert.equal((await missionModel.getMissionValue(missionId)).status, M.RUNNING);
-    assert.equal(cmds.filter((c) => c.type === 'commandMission').length, 1);
+    assert.equal(cmds.filter((c) => c.type === CommandType.COMMAND_MISSION).length, 1);
   });
 
   test('a root that fails to load goes to ERROR and skips its whole downstream', async () => {
-    failFor.set(await deviceId(usv), 'loadMission');
+    failFor.set(await deviceId(usv), CommandType.LOAD_MISSION);
     const { missionId, results } = await missionModel.loadMissionManual(maritime());
     assert.equal(results[0].state, 'error');
     const t = await byKey(missionId);
@@ -128,7 +129,7 @@ describe('manual flow', () => {
   test('a root that fails to command goes to ERROR; an independent root still runs', async () => {
     const mission = maritime();
     mission.tasks.push({ task_id: 'T4', device: uav2, depends_on: [], params: {}, wp: wp(9) });
-    failFor.set(await deviceId(usv), 'commandMission');
+    failFor.set(await deviceId(usv), CommandType.COMMAND_MISSION);
     const { missionId } = await missionModel.loadMissionManual(mission);
     await missionModel.commandMissionManual(missionId);
     assert.ok(await until(async () => (await byKey(missionId)).T3.status === T.SKIPPED));
@@ -151,7 +152,7 @@ describe('manual flow', () => {
     assert.equal(t.T2.status, T.LOADED);
     const plan = await missionModel.getMissionPlan((await missionModel.getMissionValue(missionId)).planId);
     assert.equal(plan.missionData.version, '3', 'stored as received, tagged v3 for the client');
-    assert.equal(cmds.find((c) => c.type === 'loadMission').attributes.tasks[0].params.max_vel, 7);
+    assert.equal(cmds.find((c) => c.type === CommandType.LOAD_MISSION).attributes.tasks[0].params.max_vel, 7);
   });
 
   test('an invalid graph is rejected with a 400 before anything is persisted', async () => {

@@ -124,7 +124,7 @@ Content-Type: application/json
 
 {
     "deviceId": 5,
-    "type": "commandMission"
+    "type": "CommandMission"
 }
 
 ### send command Downloadfiles

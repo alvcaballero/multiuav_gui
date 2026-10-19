@@ -14,6 +14,9 @@ import {
 } from '../config/commandCatalog.js';
 import { logger } from '../common/logger.js';
 import { normalizeMission } from './mission/taskGraph.js';
+import { buildVehicleCommand } from './vehicleCommand.js';
+import { commandSchema, resolveCommand, validateAttributes } from './commandSchema.js';
+import { PublisherKey } from '../config/deviceMsgCatalog.js';
 
 export class commandsModel {
   static getSaveCommands(deviceId) {
@@ -43,7 +46,14 @@ export class commandsModel {
       types.push(...typesForServiceKey(serviceKey));
     }
 
-    return types.map((type) => ({ type }));
+    // Cada command sale resuelto para esta categoría (command_schema + overrides de
+    // devices_msg): params con unidades/rangos/defaults, label, confirm… `requires` se
+    // mantiene. Set: una key declarada en dos bloques no duplica sus commands.
+    return [...new Set(types)].map((type) => ({
+      ...resolveCommand(commandSchema, type, categoryConfig),
+      type,
+      requires: commandDef(type)?.requires ?? null,
+    }));
   }
 
   static async sendCommand({ deviceId, type, attributes }) {
@@ -76,6 +86,16 @@ export class commandsModel {
       return { state: 'error', msg: `Command '${type}' not supported by device ${myDevice.name}` };
     }
 
+    // Contrato del command resuelto para ESTE device (el mismo que entregó /types): los
+    // handlers reciben valores ya validados y con defaults. freeform = payload libre o
+    // validado por otro módulo (LoadMission → taskGraph).
+    const resolved = resolveCommand(commandSchema, type, categoryConfig);
+    if (resolved && !resolved.freeform) {
+      const checked = validateAttributes(resolved, attributes);
+      if (!checked.ok) return { state: 'error', msg: checked.msg };
+      attributes = checked.values;
+    }
+
     let response;
     // loadMission/commandMission son POR-DEVICE: cargan/comandan a UN dron. El
     // fan-out de flota + creación de plan/mission/routes vive en missionModel
@@ -92,8 +112,10 @@ export class commandsModel {
       // Gimbal enruta por GimbalUAV; ResetGimbal fuerza el flag de reset.
       const gimbalAttrs = command.payload === Payload.RESET ? { reset: true } : attributes;
       response = await this.GimbalUAV(deviceId, gimbalAttrs);
+    } else if (command.dispatch === Dispatch.VEHICLE_COMMAND) {
+      response = await this.vehicleCommand(deviceId, type, attributes);
     } else if (command.dispatch === Dispatch.SERVICE) {
-      // ROS service/action. rosService undefined (custom) → standarCommand lo maneja.
+      // ROS service/action.
       const request = command.payload === Payload.ATTRIBUTES ? attributes : undefined;
       response = await this.standarCommand(deviceId, command.rosService, request);
     } else {
@@ -111,17 +133,33 @@ export class commandsModel {
   }
 
   static async GimbalUAV(deviceId, attributes) {
-    // Objeto de dominio NEUTRO (grados). El wire format ROS lo arma rosEncode.js
-    // según el msgType de la categoría: dji_osdk_ros/GimbalAction (OSDK, service)
+    // Objeto de dominio NEUTRO: ángulos ABSOLUTOS en grados. El wire format ROS lo arma
+    // rosEncode.js según el msgType de la categoría: dji_osdk_ros/GimbalAction (OSDK, service)
     // o psdk_interfaces/msg/GimbalRotation (PSDK, publisher). standarCommand elige
     // el transporte (service vs publisher) según lo que declara el devices_msg.
-    let statuscommand = await this.standarCommand(deviceId, 'Gimbal', {
-      reset: attributes.reset ? true : false,
-      pitch: attributes.pitch ? attributes.pitch : 0.0,
-      roll: attributes.roll ? attributes.roll : 0.0,
-      yaw: attributes.yaw ? attributes.yaw : 0.0,
+    // Los dos wire formats llevan siempre los 3 ejes: el eje que no viene se completa con
+    // el ángulo actual (attributes.gimbal = [pitch, roll, yaw]), así mandar solo {pitch}
+    // no mueve roll/yaw. Sin telemetría de gimbal la posición trae [0, 0, 0].
+    // Los ejes que sí vienen ya están validados por sendCommand (command_schema).
+    const position = await positionsController.getByDeviceId(deviceId);
+    const [pitch, roll, yaw] = position?.attributes?.gimbal ?? [0, 0, 0];
+    return await this.standarCommand(deviceId, 'Gimbal', {
+      reset: Boolean(attributes.reset),
+      pitch: attributes.pitch ?? pitch,
+      roll: attributes.roll ?? roll,
+      yaw: attributes.yaw ?? yaw,
     });
-    return statuscommand;
+  }
+  static async vehicleCommand(deviceId, type, attributes) {
+    // Takeoff/moveRelative turn into absolute PX4 targets, so they need where the UAV is now.
+    const position = await positionsController.getByDeviceId(deviceId);
+    let msg;
+    try {
+      msg = buildVehicleCommand({ type, attributes, position });
+    } catch (err) {
+      return { state: 'error', msg: err.message };
+    }
+    return await this.standarCommand(deviceId, PublisherKey.VEHICLE_COMMAND, msg);
   }
   static async standarCommand(deviceId, type, attributes) {
     logger.debug(`standarCommand deviceId=${deviceId} type=${type}`);

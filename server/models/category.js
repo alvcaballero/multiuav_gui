@@ -4,6 +4,8 @@ import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS } from 
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 import { hasDecoder } from './ros/rosDecode.js';
+import { commandSchema, validateCommandSchema, validateCommandOverrides } from './commandSchema.js';
+import { CommandType } from '../config/commandCatalog.js';
 
 const devices_msg = readDataFile(devicesMsg);
 const messages_types = readDataFile(messagesTypes);
@@ -54,6 +56,21 @@ function validateDevicesMsgKeys(catalog) {
 }
 
 validateDevicesMsgKeys(devices_msg);
+
+// command_schema.yaml: una entrada por CommandType, y los bloques `commands:` de
+// devices_msg solo restringen ese dominio. Misma política: warn, o throw en debug.
+function validateCommands() {
+  const problems = [
+    ...validateCommandSchema(commandSchema, Object.values(CommandType)),
+    ...validateCommandOverrides(commandSchema, devices_msg),
+  ];
+  if (problems.length === 0) return;
+  const msg = `command_schema: ${problems.length} problem(s): ${problems.join('; ')}`;
+  if (process.env.LOG_LEVEL === 'debug') throw new Error(msg);
+  logger.warn(msg);
+}
+
+validateCommands();
 
 // ─── Mission catalog resolution (enriched catalog → per-category profile) ──────
 

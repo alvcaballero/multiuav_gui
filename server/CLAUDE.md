@@ -327,7 +327,8 @@ time, so per-task report windows (events, flown track) of two tasks on one devic
 
 - Two channels: ROS services OR FlatBuffer commands
 - 5-second timeout with automatic error callbacks
-- Command types: `loadMission`, `commandMission`, `CameraFileDownload`, custom commands
+- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. `commandCatalog.js` keeps WHEN it's available (`requires`) and HOW it runs (`dispatch`). A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
+- Command types: `CommandType` in `config/commandCatalog.js` (PascalCase: `LoadMission`, `CommandMission`, `CameraFileDownload`, …). Not the same thing as the `ServiceKey` a command requires (`configureMission`, `commandMission`, keys of `devices_msg.yaml`, fixed by the ROS side). The client mirrors it in `client/src/common/util/commandTypes.js`; `test/test-command-types-mirror.js` fails if they drift
 
 ### ROS Integration
 

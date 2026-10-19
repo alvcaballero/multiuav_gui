@@ -1,0 +1,199 @@
+# ─── Command schema (dominio, firmware-agnóstico) ─────────────────────────────
+#
+# SSOT del CONTRATO de cada command: qué significa, qué params recibe, en qué unidad,
+# con qué rango y default, y cómo se presenta (label/description/group/confirm).
+# Mismo patrón que mission_schema.yaml.
+#
+# Lo que NO vive acá:
+#   - cuándo está disponible y cómo se ejecuta (`requires`/`dispatch`) → config/commandCatalog.js
+#   - el wire format de cada firmware → los encoders (rosEncode.js, vehicleCommand.js)
+#   - los límites de un dron concreto → bloque `commands:` de su categoría en devices_msg.yaml,
+#     que solo puede RESTRINGIR (min/max/step/default/options) lo que se declara acá
+#
+# Las keys de `commands` son los CommandType (PascalCase). test/test-command-schema.js
+# verifica que haya exactamente una entrada por CommandType.
+#
+# Campos de un command:
+#   label, description   texto para la UI y para el LLM
+#   group                flight | mission | gimbal | camera | threat | system
+#   severity             normal (default) | danger → la UI lo pinta como peligroso
+#   confirm.message      si está, la UI pide confirmación; {device} = nombre del device
+#   hidden               true → no aparece en el diálogo genérico (su payload lo arma otro flujo)
+#   freeform             true → sendCommand NO valida los attributes contra params (payload
+#                        libre, o lo valida otro módulo). Sin freeform, un attribute fuera de
+#                        rango, de tipo equivocado, desconocido o required faltante se RECHAZA.
+#   params.<id>          name, type (number|string|boolean|datetime|select), unit, min, max,
+#                        step, default, required, options [{ value, name }], description
+#
+# Los límites reales (min/max) los define el usuario; los que faltan están marcados
+# con `# TODO límites`. Los params marcados `# SUPUESTO` no están verificados contra el .srv.
+
+version: 1
+
+commands:
+  # ─── flight ─────────────────────────────────────────────────────────────────
+  Takeoff:
+    label: 'Take off'
+    description: 'Take off and climb above the current position.'
+    group: flight
+    params:
+      altitude:
+        name: 'Height above current'
+        type: number
+        unit: m
+        step: 1
+        default: 10
+        # TODO límites
+  Land:
+    label: 'Land'
+    description: 'Land at the current position.'
+    group: flight
+    confirm: { message: '{device} will land at its current position.' }
+  ReturnHome:
+    label: 'Return home'
+    description: 'Fly back to the launch point and land.'
+    group: flight
+  Hold:
+    label: 'Hold'
+    description: 'Stop and hold the current position.'
+    group: flight
+  Arm:
+    label: 'Arm'
+    description: 'Arm the motors.'
+    group: flight
+  Disarm:
+    label: 'Disarm'
+    description: 'Disarm the motors (only on the ground).'
+    group: flight
+  KillMotors:
+    label: 'Kill motors'
+    description: 'Forced disarm: stops the motors immediately, even in the air.'
+    group: flight
+    severity: danger
+    confirm: { message: '{device} will stop its motors immediately, even in the air. It will fall.' }
+  MoveRelative:
+    label: 'Relative move'
+    description: 'Move relative to the UAV: forward/right/up in meters, yaw in degrees.'
+    group: flight
+    params:
+      # Body frame: dx adelante, dy derecha, dz arriba; dyaw horario. TODO límites
+      dx: { name: 'Forward', type: number, unit: m, default: 0 }
+      dy: { name: 'Right', type: number, unit: m, default: 0 }
+      dz: { name: 'Up', type: number, unit: m, default: 0 }
+      dyaw: { name: 'Yaw clockwise', type: number, unit: deg, default: 0 }
+  NavigateToPose:
+    label: 'Go to pose local'
+    description: 'Navigate to a pose in the map frame.'
+    group: flight
+    params:
+      x: { name: 'X', type: number, unit: m, required: true }
+      y: { name: 'Y', type: number, unit: m, required: true }
+      z: { name: 'Z', type: number, unit: m, default: 0 }
+
+  # ─── mission ────────────────────────────────────────────────────────────────
+  LoadMission:
+    label: 'Load mission'
+    description: 'Load a planned mission onto the UAV.'
+    group: mission
+    hidden: true
+    freeform: true # el payload es una misión: lo valida taskGraph, no este schema
+  CommandMission:
+    label: 'Start mission'
+    description: 'Start the loaded mission.'
+    group: mission
+    hidden: true # sin pasar por el flujo de misión no hay task ni state machine que lo siga
+  PauseMission:
+    label: 'Pause mission'
+    description: 'Hold position and pause the active mission.'
+    group: mission
+  ResumeMission:
+    label: 'Resume mission'
+    description: 'Continue the paused mission from the current waypoint.'
+    group: mission
+  StopMission:
+    label: 'Stop mission'
+    description: 'Stop the mission and hover in place.'
+    group: mission
+  UploadMission:
+    label: 'Upload mission'
+    description: 'Upload a mission file to the UAV.'
+    group: mission
+    hidden: true
+    freeform: true # SUPUESTO: psdk_interfaces/srv/UploadWaypointV2Mission lleva una misión entera
+
+  # ─── gimbal ─────────────────────────────────────────────────────────────────
+  # Ángulos ABSOLUTOS. Sin default: un eje que no viene queda donde está (GimbalUAV
+  # lo completa con la telemetría). Los límites dependen del dron Y del gimbal montado
+  # (H20 en M300, PSDK, …): van en el bloque `commands:` de cada categoría.
+  Gimbal:
+    label: 'Gimbal'
+    description: 'Point the gimbal to the given angles.'
+    group: gimbal
+    params:
+      pitch: { name: 'Pitch', type: number, unit: deg }
+      roll: { name: 'Roll', type: number, unit: deg }
+      yaw: { name: 'Yaw', type: number, unit: deg }
+  GimbalPitch:
+    label: 'Gimbal pitch'
+    description: 'Set the gimbal pitch angle.'
+    group: gimbal
+    params:
+      pitch: { name: 'Pitch', type: number, unit: deg, required: true }
+  ResetGimbal:
+    label: 'Reset gimbal'
+    description: 'Return the gimbal to its default position.'
+    group: gimbal
+
+  # ─── camera ─────────────────────────────────────────────────────────────────
+  SetupCamera:
+    label: 'Set up camera'
+    description: 'Start or stop a camera stream.'
+    group: camera
+    params:
+      # SUPUESTO: dji_osdk_ros/SetupCameraStream (cameraType 0 = FPV, 1 = main; start 1/0)
+      cameraType:
+        name: 'Camera'
+        type: select
+        default: 1
+        options:
+          - { value: 0, name: 'FPV' }
+          - { value: 1, name: 'Main camera' }
+      start:
+        name: 'Stream'
+        type: select
+        default: 1
+        options:
+          - { value: 1, name: 'Start' }
+          - { value: 0, name: 'Stop' }
+  CameraFileList:
+    label: 'List camera files'
+    description: 'Fetch the list of files on the camera storage.'
+    group: camera
+    # SUPUESTO: sin params. TODO verificar el request de dji_osdk_ros/FileList
+  CameraFileDownload:
+    label: 'Download camera files'
+    description: 'Download the files captured in a date range.'
+    group: camera
+    params:
+      startDate: { name: 'Start date', type: datetime, required: true }
+      endDate: { name: 'End date', type: datetime, required: true }
+  SyncFiles:
+    label: 'Sync files'
+    description: 'Download captured media to the ground station.'
+    group: camera
+
+  # ─── threat ─────────────────────────────────────────────────────────────────
+  ThreatConfirmation:
+    label: 'Confirm threat'
+    description: 'Confirm the detected threat.'
+    group: threat
+  ThreatDefuse:
+    label: 'Defuse threat'
+    description: 'Defuse the detected threat.'
+    group: threat
+
+  # ─── system ─────────────────────────────────────────────────────────────────
+  SaveHome:
+    label: 'Save home'
+    description: 'Store the current position as the home point.'
+    group: system

@@ -1,6 +1,6 @@
 {
     "deviceId": 3, 
-    "type": "loadMission",
+    "type": "LoadMission",
     "attributes":  [
     {
       "uav": "px4_2",

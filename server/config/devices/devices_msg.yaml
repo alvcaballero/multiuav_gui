@@ -558,6 +558,10 @@ px4_ros2:
     obstacle_info:
       name: '/obstacle_info'
       messageType: 'muav_gcs_interfaces/msg/ObstacleInfo'
+  publishers:
+    VehicleCommand:
+      name: '/fmu/in/vehicle_command'
+      messageType: 'px4_msgs/msg/VehicleCommand'
   services:
     configureMission:
       name: '/offboard/mission_load'
@@ -565,6 +569,9 @@ px4_ros2:
     commandMission:
       name: '/offboard/mission/start_stop'
       serviceType: 'std_srvs/srv/SetBool'
+    GCSCommand:
+      name: '/offboard/gcs_command'
+      serviceType: 'muav_gcs_interfaces/srv/GCSCommand'
   actions:
     CameraFileDownload:
       name: '/offboard/download_files_by_date_range'

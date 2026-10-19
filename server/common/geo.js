@@ -27,6 +27,17 @@ export function haversineMeters(lat1, lon1, lat2, lon2) {
 }
 
 /**
+ * Punto desplazado `east`/`north` metros desde (lat, lon), aproximación plana local.
+ * Error despreciable para desplazamientos de decenas/cientos de metros.
+ * @returns {{latitude: number, longitude: number}}
+ */
+export function offsetLatLon(lat, lon, east, north) {
+  const dLat = north / EARTH_RADIUS_M;
+  const dLon = east / (EARTH_RADIUS_M * Math.cos(lat * DEG_TO_RAD));
+  return { latitude: lat + dLat / DEG_TO_RAD, longitude: lon + dLon / DEG_TO_RAD };
+}
+
+/**
  * Distancia horizontal aproximada (equirectangular) entre dos puntos (metros).
  * Suficiente para comparar contra umbrales a escalas de inspección.
  */
