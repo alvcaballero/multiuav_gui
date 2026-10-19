@@ -58,7 +58,7 @@ const useStyles = makeStyles()((theme) => ({
 
 const PositionAlarm = React.memo(({ alarm, classes }) =>
   alarm === 'threat' ? (
-    <Tooltip title={`${'eventAlarm'}: ${formatAlarm(alarm)}`}>
+    <Tooltip title={`Alarm: ${formatAlarm(alarm)}`}>
       <IconButton size="small">
         <ErrorIcon fontSize="small" className={classes.error} />
       </IconButton>
@@ -67,7 +67,7 @@ const PositionAlarm = React.memo(({ alarm, classes }) =>
 );
 
 const PositionIgnition = React.memo(({ ignition, classes }) => (
-  <Tooltip title={`${'positionIgnition'}: ${formatBoolean(ignition)}`}>
+  <Tooltip title={`Ignition: ${formatBoolean(ignition)}`}>
     <IconButton size="small">
       {ignition ? (
         <EngineIcon width={20} height={20} style={classes.success} />
@@ -79,7 +79,7 @@ const PositionIgnition = React.memo(({ ignition, classes }) => (
 ));
 
 const PositionSpeed = React.memo(({ speed }) => (
-  <Tooltip title={`${'speed'}: ${speed}`}>
+  <Tooltip title={`Speed: ${speed}`}>
     <IconButton size="small">
       <div style={{ fontSize: '0.9rem' }}>V {speed}m/s</div>
     </IconButton>
@@ -87,7 +87,7 @@ const PositionSpeed = React.memo(({ speed }) => (
 ));
 
 const PositionAltitude = React.memo(({ altitude }) => (
-  <Tooltip title={`${'altitude'}: ${Math.round(altitude)}`}>
+  <Tooltip title={`Altitude: ${Math.round(altitude)}`}>
     <IconButton size="small">
       <div style={{ fontSize: '0.9rem' }}>H {altitude.toFixed(1)}m</div>
     </IconButton>
@@ -118,7 +118,7 @@ const PositionBattery = React.memo(({ batteryLevel, charge, classes }) => {
   };
 
   return (
-    <Tooltip title={`${'BatteryLevel'}: ${formatPercentage(batteryLevel)}`}>
+    <Tooltip title={`Battery: ${formatPercentage(batteryLevel)}`}>
       <IconButton size="small">{getBatteryIcon(batteryLevel, charge)}</IconButton>
     </Tooltip>
   );

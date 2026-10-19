@@ -133,9 +133,9 @@ const MainToolbar = React.memo(
                 onChange={(e) => setFilter({ ...filter, statuses: e.target.value })}
                 multiple
               >
-                <MenuItem value="online">{`${'Online'} (${deviceStatusCount('online')})`}</MenuItem>
-                <MenuItem value="offline">{`${'Offline'} (${deviceStatusCount('offline')})`}</MenuItem>
-                <MenuItem value="unknown">{`${'Unknown'} (${deviceStatusCount('unknown')})`}</MenuItem>
+                <MenuItem value="online">{`Online (${deviceStatusCount('online')})`}</MenuItem>
+                <MenuItem value="offline">{`Offline (${deviceStatusCount('offline')})`}</MenuItem>
+                <MenuItem value="unknown">{`Unknown (${deviceStatusCount('unknown')})`}</MenuItem>
               </Select>
             </FormControl>
             <FormControl>

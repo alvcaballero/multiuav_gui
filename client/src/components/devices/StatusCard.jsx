@@ -334,21 +334,21 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
             target="_blank"
             href={`https://www.google.com/maps/search/?api=1&query=${position.latitude}%2C${position.longitude}`}
           >
-            {'linkGoogleMaps'}
+            Google Maps
           </MenuItem>
           <MenuItem
             component="a"
             target="_blank"
             href={`http://maps.apple.com/?ll=${position.latitude},${position.longitude}`}
           >
-            {'linkAppleMaps'}
+            Apple Maps
           </MenuItem>
           <MenuItem
             component="a"
             target="_blank"
             href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${position.latitude}%2C${position.longitude}&heading=${position.course}`}
           >
-            {'linkStreetView'}
+            Street View
           </MenuItem>
         </Menu>
       )}

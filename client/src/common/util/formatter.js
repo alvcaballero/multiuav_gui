@@ -8,7 +8,6 @@ import {
   speedFromKnots,
   speedUnitString,
 } from './converter';
-import { prefixString } from './stringUtils';
 
 export const formatBoolean = (value) => (value ? 'Yes' : 'No');
 
@@ -35,7 +34,7 @@ export const formatTime = (value, format) => {
   }
   return '';
 };
-export const formatAlarm = (value) => (value ? prefixString('alarm_', value) : '');
+export const formatAlarm = (value) => (value ? value.charAt(0).toUpperCase() + value.slice(1) : '');
 
 export const formatCourse = (value) => {
   const courseValues = [

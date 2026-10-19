@@ -115,7 +115,7 @@ const BaseCommandView = ({ deviceId, item, setItem }) => {
               onChange={(event) => setItem({ ...item, textChannel: event.target.checked })}
             />
           }
-          label={'commandSendSms'}
+          label="Send SMS"
         />
       )}
     </Fragment>
