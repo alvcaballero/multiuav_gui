@@ -15,7 +15,7 @@ export const speedUnitString = (unit) => {
     case 'kmh':
       return 'Km/h';
     case 'mph':
-      return 'sharedMph';
+      return 'mph';
     case 'kn':
     default:
       return 'm/s';
@@ -63,10 +63,10 @@ const altitudeConverter = (unit) => {
 export const altitudeUnitString = (unit) => {
   switch (unit) {
     case 'ft':
-      return 'sharedFeet';
+      return 'ft';
     case 'm':
     default:
-      return 'sharedMeters';
+      return 'm';
   }
 };
 

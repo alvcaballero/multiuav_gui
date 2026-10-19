@@ -10,7 +10,7 @@ import {
 } from './converter';
 import { prefixString } from './stringUtils';
 
-export const formatBoolean = (value) => (value ? 'sharedYes' : 'sharedNo');
+export const formatBoolean = (value) => (value ? 'Yes' : 'No');
 
 export const formatNumber = (value, precision = 1) => Number(value.toFixed(precision));
 
@@ -64,10 +64,10 @@ export const formatAltitude = (value, unit, t) =>
 export const formatSpeed = (value, unit, t) =>
   `${speedFromKnots(value, unit).toFixed(2)} ${speedUnitString(unit, t)}`;
 
-export const formatNumericHours = (value, t) => {
+export const formatNumericHours = (value) => {
   const hours = Math.floor(value / 3600000);
   const minutes = Math.floor((value % 3600000) / 60000);
-  return `${hours} ${t('sharedHourAbbreviation')} ${minutes} ${t('sharedMinuteAbbreviation')}`;
+  return `${hours} h ${minutes} m`;
 };
 
 export const formatCoordinate = (key, value, unit) => {

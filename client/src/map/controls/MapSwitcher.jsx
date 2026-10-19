@@ -145,7 +145,7 @@ const MapSwitcher = ({ styles, selectedId, onSelect }) => {
         <ListItemIcon>
           <TuneIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>{'sharedPreferences'}</ListItemText>
+        <ListItemText>Preferences</ListItemText>
       </MenuItem>
     </Menu>
   );

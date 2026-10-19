@@ -53,12 +53,12 @@ const SettingsDevicesPage = () => {
   };
 
   return (
-    <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>
+    <PageLayout menu={<SettingsMenu />} breadcrumbs={['Settings', 'Devices']}>
       <SearchHeader keyword={searchKeyword} setKeyword={setSearchKeyword} />
       <Table className={classes.table}>
         <TableHead>
           <TableRow>
-            <TableCell>{'deviceId'}</TableCell>
+            <TableCell>{'Id'}</TableCell>
             <TableCell>{'Name'}</TableCell>
             <TableCell>{'Category'}</TableCell>
             <TableCell>{'Protocol'}</TableCell>

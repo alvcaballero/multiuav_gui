@@ -65,7 +65,7 @@ const SettingsElementTypesPageEdit = () => {
       validate={validate}
       onItemSaved={() => invalidateMarkerTypesCache()}
       menu={<SettingsMenu />}
-      breadcrumbs={['settingsTitle', 'Element Types']}
+      breadcrumbs={['Settings', 'Element Types']}
     >
       {item && (
         <>

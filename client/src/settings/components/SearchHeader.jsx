@@ -23,7 +23,7 @@ const SearchHeader = ({ keyword, setKeyword }) => {
     <div className={classes.header}>
       <TextField
         variant="outlined"
-        placeholder={'sharedSearch'}
+        placeholder="Search"
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
       />

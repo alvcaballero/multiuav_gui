@@ -32,7 +32,7 @@ const SettingsDevicesPageEdit = () => {
       setItem={setItem}
       validate={validate}
       menu={<SettingsMenu />}
-      breadcrumbs={['settingsTitle', 'sharedDevice']}
+      breadcrumbs={['Settings', 'Device']}
     >
       {item && (
         <>

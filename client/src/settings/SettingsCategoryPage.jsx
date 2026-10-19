@@ -53,7 +53,7 @@ const SettingsCategoryPage = () => {
 
   return (
     <>
-      <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'deviceTitle']}>
+      <PageLayout menu={<SettingsMenu />} breadcrumbs={['Settings', 'Category']}>
         <SearchHeader keyword={searchKeyword} setKeyword={setSearchKeyword} />
         <Table className={classes.table}>
           <TableHead>

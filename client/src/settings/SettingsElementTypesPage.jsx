@@ -60,7 +60,7 @@ const SettingsElementTypesPage = () => {
 
   return (
     <>
-      <PageLayout menu={<SettingsMenu />} breadcrumbs={['settingsTitle', 'Element Types']}>
+      <PageLayout menu={<SettingsMenu />} breadcrumbs={['Settings', 'Element Types']}>
         <SearchHeader keyword={searchKeyword} setKeyword={setSearchKeyword} />
         <Table className={classes.table}>
           <TableHead>
