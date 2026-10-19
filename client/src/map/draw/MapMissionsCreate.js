@@ -8,7 +8,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import { missionActions } from '../../store';
-import { createFeature, routesToFeature, routeTowaypoints } from '../transform/mission';
+import { createFeature, routesToFeature, routeTowaypoints } from '../transform/missionFeatures';
 
 class keepValue {
   constructor() {

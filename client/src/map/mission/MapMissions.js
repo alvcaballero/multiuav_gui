@@ -14,7 +14,7 @@ import {
   routesToFeature,
   routeTowaypoints,
   cleanRoute,
-} from '../transform/mission';
+} from '../transform/missionFeatures';
 const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
 const onMouseLeave = () => (map.getCanvas().style.cursor = '');
 
