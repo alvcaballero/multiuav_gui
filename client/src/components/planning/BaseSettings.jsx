@@ -13,7 +13,7 @@ import {
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
-import SelectField from '../../shared/components/SelectField';
+import SelectField from '../../common/components/SelectField';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 

@@ -13,7 +13,7 @@ import MapMarkers from '../../map/environment/MapMarkers';
 
 import MissionPanel from '../../components/mission/MissionPanel';
 import MissionElevation from '../../components/mission/MissionElevation';
-import SaveFile from '../../components/ui/SaveFile';
+import SaveFile from '../../common/components/SaveFile';
 import MapScale from '../../map/controls/MapScale';
 import MapDefaultCamera from '../../map/controls/MapDefaultCamera';
 import { MapMarkers3D } from '../../map/environment/MapMarkers3D';

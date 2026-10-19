@@ -16,7 +16,7 @@ import { makeStyles } from 'tss-react/mui';
 
 import { map } from '../../map/core/mapInstance';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import SelectField from '../../shared/components/SelectField';
+import SelectField from '../../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';

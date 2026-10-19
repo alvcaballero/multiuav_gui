@@ -24,8 +24,8 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { useNavigate } from 'react-router-dom';
-import { formatTime } from '../../shared/formatter';
-import { eventColor } from '../../shared/eventStyle';
+import { formatTime } from '../../common/util/formatter';
+import { eventColor } from '../../common/util/eventStyle';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

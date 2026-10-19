@@ -1,7 +1,7 @@
 import { useRef, useLayoutEffect, useEffect, useState, useMemo } from 'react';
 
-import { usePreference } from '../../shared/preferences';
-import usePersistedState from '../../shared/usePersistedState';
+import { usePreference } from '../../common/util/preferences';
+import usePersistedState from '../../common/util/usePersistedState';
 
 import useMapStyles from './useMapStyles';
 import {

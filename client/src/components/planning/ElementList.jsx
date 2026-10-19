@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import SelectField from '../../shared/components/SelectField';
+import SelectField from '../../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BaseList from './BaseList';
 import { generateLocalId } from '../../store/sessionMigration';

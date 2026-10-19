@@ -14,7 +14,7 @@ import {
   formatPercentage,
   formatSpeed,
   formatTime,
-} from '../../shared/formatter';
+} from '../util/formatter';
 
 const PositionValue = ({ position, property, attribute }) => {
   const device = useSelector((state) => state.devices.items[position.deviceId]);

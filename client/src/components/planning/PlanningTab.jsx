@@ -10,8 +10,8 @@ import {
 } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
-import SelectField from '../../shared/components/SelectField';
-import SelectList from '../ui/SelectList';
+import SelectField from '../../common/components/SelectField';
+import SelectList from '../../common/components/SelectList';
 
 const useStyles = makeStyles()((theme) => ({
   details: {

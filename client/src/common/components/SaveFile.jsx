@@ -18,7 +18,7 @@ import { makeStyles } from 'tss-react/mui';
 
 import YAML from 'yaml';
 
-import { routeColor, routeColorKey, toKmlColor } from '../../shared/routeColors';
+import { routeColor, routeColorKey, toKmlColor } from '../util/routeColors';
 
 const useStyles = makeStyles()((theme) => ({
   card: {

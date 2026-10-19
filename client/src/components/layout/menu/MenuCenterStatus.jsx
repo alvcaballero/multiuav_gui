@@ -5,7 +5,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import CircleIcon from '@mui/icons-material/Circle';
 
-import { missionStyle } from '../../../shared/missionStatus';
+import { missionStyle } from '../../../common/util/missionStatus';
 
 const MenuCenterStatus = ({
   classes,

@@ -2,7 +2,7 @@ import * as maplibregl from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
-import { usePreference } from '../../shared/preferences';
+import { usePreference } from '../../common/util/preferences';
 import { map } from '../core/mapInstance';
 
 // Rutas que renderizan una vista 3D (Scene3DCanvas) en vez de MainMap/MapDefaultCamera.

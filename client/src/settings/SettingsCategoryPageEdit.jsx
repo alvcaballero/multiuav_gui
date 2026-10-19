@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SelectField from '../shared/components/SelectField';
+import SelectField from '../common/components/SelectField';
 import {
   IconButton,
   Button,
@@ -21,7 +21,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useAsyncTask } from '../reactHelper';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
-import useQuery from '../shared/useQuery';
+import useQuery from '../common/util/useQuery';
 import EditItemView from './components/EditItemView';
 
 const SettingsCategoryPageEdit = () => {

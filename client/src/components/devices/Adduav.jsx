@@ -13,10 +13,10 @@ import {
   AccordionDetails,
   Typography,
 } from '@mui/material';
-import SelectField from '../../shared/components/SelectField';
+import SelectField from '../../common/components/SelectField';
 import DeviceCameraEditor from './DeviceCameraEditor';
 import DeviceFilesEditor from './DeviceFilesEditor';
-import { addDevice } from '../../shared/fetchs';
+import { addDevice } from '../../common/util/fetchs';
 import { useCatch } from '../../reactHelper';
 const useStyles = makeStyles()((theme) => ({
   root: {

@@ -15,9 +15,9 @@ import {
 } from '@mui/material';
 
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import SelectField from '../../shared/components/SelectField';
+import SelectField from '../../common/components/SelectField';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { routeColor, routeColorKey } from '../../shared/routeColors';
+import { routeColor, routeColorKey } from '../../common/util/routeColors';
 import { map } from '../../map/core/mapInstance';
 import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';

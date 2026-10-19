@@ -2,7 +2,7 @@ import { useId, useEffect, useRef, useState, useCallback } from 'react';
 import { map } from '../core/mapInstance';
 import { findFonts } from '../core/mapUtil';
 import { targetImageId } from '../core/preloadImages';
-import { routeColor } from '../../shared/routeColors';
+import { routeColor } from '../../common/util/routeColors';
 
 class keepMarkers {
   constructor() {

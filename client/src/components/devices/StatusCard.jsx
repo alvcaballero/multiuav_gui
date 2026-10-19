@@ -25,8 +25,8 @@ import PendingIcon from '@mui/icons-material/Pending';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
 
-import PositionValue from '../ui/PositionValue';
-import RemoveDialog from '../ui/RemoveDialog';
+import PositionValue from '../../common/components/PositionValue';
+import RemoveDialog from '../../common/components/RemoveDialog';
 
 import { devicesActions } from '../../store';
 import CommandCard from '../commands/CommandCard';

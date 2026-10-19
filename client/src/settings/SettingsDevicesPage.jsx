@@ -5,13 +5,13 @@ import Tooltip from '@mui/material/Tooltip';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAsyncTask, useCatchCallback } from '../reactHelper';
-import PageLayout from '../shared/components/PageLayout';
+import PageLayout from '../common/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
-import TableShimmer from '../shared/components/TableShimmer';
+import TableShimmer from '../common/components/TableShimmer';
 import SearchHeader from './components/SearchHeader';
 import { filterByKeyword } from './components/filterByKeyword';
 import useSettingsStyles from './common/useSettingsStyles';
-import RemoveDialog from '../components/ui/RemoveDialog';
+import RemoveDialog from '../common/components/RemoveDialog';
 
 const SettingsDevicesPage = () => {
   const { classes } = useSettingsStyles();

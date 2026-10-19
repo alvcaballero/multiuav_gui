@@ -24,7 +24,7 @@ import {
   formatBoolean,
   formatPercentage,
   getStatusColor,
-} from '../../shared/formatter';
+} from '../../common/util/formatter';
 import { mapIconKey, mapIcons } from '../../map/core/preloadImages';
 import EngineIcon from '../../resources/images/data/engine.svg';
 import { makeStyles } from 'tss-react/mui';

@@ -1,7 +1,7 @@
 import { Box, Chip, LinearProgress, Tooltip, Typography } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { amber } from '@mui/material/colors';
-import { taskStyle } from '../../shared/missionStatus';
+import { taskStyle } from '../../common/util/missionStatus';
 
 // Anomaly overrides the task's own status color — an anomalous task is worth
 // flagging regardless of where it is in its lifecycle.

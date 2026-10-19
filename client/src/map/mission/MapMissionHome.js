@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { map } from '../core/mapInstance';
-import { usePreference } from '../../shared/preferences';
+import { usePreference } from '../../common/util/preferences';
 
 // Centra el mapa en el home de la misión cuando se carga una nueva (state.mission.home
 // cambia). No debe disparar en el montaje: este componente vive dentro de MainMap, que

@@ -14,7 +14,7 @@ import { createRoot } from 'react-dom/client';
 import LayersIcon from '@mui/icons-material/Layers';
 import TuneIcon from '@mui/icons-material/Tune';
 import { map } from '../core/mapInstance';
-import usePersistedState from '../../shared/usePersistedState';
+import usePersistedState from '../../common/util/usePersistedState';
 
 const collectTitles = () => {
   const titles = [];

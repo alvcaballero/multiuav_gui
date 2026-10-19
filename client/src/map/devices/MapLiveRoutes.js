@@ -2,7 +2,7 @@ import { useId, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@mui/material/styles';
 import { map } from '../core/mapInstance';
-import { useAttributePreference } from '../../shared/preferences';
+import { useAttributePreference } from '../../common/util/preferences';
 
 const MapLiveRoutes = () => {
   const id = useId();

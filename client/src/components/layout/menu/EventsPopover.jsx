@@ -5,7 +5,7 @@ import { Box, Button, Divider, Popover, Typography } from '@mui/material';
 import CircleIcon from '@mui/icons-material/Circle';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { makeStyles } from 'tss-react/mui';
-import { eventColor } from '../../../shared/eventStyle';
+import { eventColor } from '../../../common/util/eventStyle';
 
 function relativeTime(ts) {
   const time = new Date(ts).getTime();

@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import { useAsyncTask } from './reactHelper';
 import App from './App';
-import useQuery from './shared/useQuery';
+import useQuery from './common/util/useQuery';
 import MainPage from './pages/MainPage';
 
 const MissionPage = lazy(() => import('./pages/MissionPage'));

@@ -6,18 +6,18 @@ import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
 import Adduav from '../components/devices/Adduav';
-import { commandMission } from '../shared/fetchs';
+import { commandMission } from '../common/util/fetchs';
 import { useCatch } from '../reactHelper';
 
 import DeviceList from '../components/devices/DeviceList';
-import SwipeConfirm from '../shared/components/SwipeConfirm';
+import SwipeConfirm from '../common/components/SwipeConfirm';
 import MainToolbar from '../components/layout/MainToolbar';
 import StatusCard from '../components/devices/StatusCard';
 import CameraDevicePanel from '../components/camera/CameraDevicePanel';
 
 import { devicesActions, getCommandableMissionId } from '../store';
 import useFilter from '../components/devices/useFilter';
-import usePersistedState from '../shared/usePersistedState';
+import usePersistedState from '../common/util/usePersistedState';
 
 import Scene3DCanvas from '../scene3d/Scene3DCanvas';
 

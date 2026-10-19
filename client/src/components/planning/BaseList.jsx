@@ -17,9 +17,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { map } from '../../map/core/mapInstance';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
-import { describeGeometry } from '../../shared/components/GeometryFields';
-import ItemParametersFields from '../../shared/components/ItemParametersFields';
-import OrientationFields from '../../shared/components/OrientationFields';
+import { describeGeometry } from '../../common/components/GeometryFields';
+import ItemParametersFields from '../../common/components/ItemParametersFields';
+import OrientationFields from '../../common/components/OrientationFields';
 
 // https://dev.to/shareef/how-to-work-with-arrays-in-reactjs-usestate-4cmi
 

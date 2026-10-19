@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Chip, Collapse, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import { activeMissionsActions } from '../../store';
-import { missionStyle } from '../../shared/missionStatus';
+import { missionStyle } from '../../common/util/missionStatus';
 import { loadMissionPlanToEditor } from '../../services/missionPlanLoader';
 import TaskTrackingRow from './TaskTrackingRow';
 

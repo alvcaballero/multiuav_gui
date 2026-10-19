@@ -14,7 +14,7 @@ import { useCatch } from '../reactHelper';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
 import EditItemView from './components/EditItemView';
-import GeometryFields, { DEFAULT_CIRCLE_GEOMETRY } from '../shared/components/GeometryFields';
+import GeometryFields, { DEFAULT_CIRCLE_GEOMETRY } from '../common/components/GeometryFields';
 import TypeParameterSchemaEditor from './TypeParameterSchemaEditor';
 import TypeDefinitionYamlEditor from './TypeDefinitionYamlEditor';
 import TypeModel3DViewer from './TypeModel3DViewer';

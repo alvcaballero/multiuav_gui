@@ -1,8 +1,8 @@
 import React, { Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { TextField, FormControlLabel, Checkbox } from '@mui/material';
-import SelectField from '../../shared/components/SelectField';
-import useCommandAttributes from '../../shared/attributes/useCommandAttributes';
+import SelectField from './SelectField';
+import useCommandAttributes from '../attributes/useCommandAttributes';
 
 // The server enforces a UTC-ISO-with-Z contract for command dates
 // (assertUtcIsoDate). The user picks a time in their LOCAL zone, so we store the

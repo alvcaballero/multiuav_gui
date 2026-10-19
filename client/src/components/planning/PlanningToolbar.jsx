@@ -4,7 +4,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { makeStyles } from 'tss-react/mui';
-import UploadButtons from '../ui/uploadButton';
+import UploadButtons from '../../common/components/uploadButton';
 
 const useStyles = makeStyles()(() => ({
   toolbar: {

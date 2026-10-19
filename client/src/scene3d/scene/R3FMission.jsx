@@ -1,7 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
-import { routeColor, routeColorKey } from '../../shared/routeColors';
+import { routeColor, routeColorKey } from '../../common/util/routeColors';
 import { Line } from '@react-three/drei';
 
 import NumberedSphere from '../primitives/NumberedSphere';

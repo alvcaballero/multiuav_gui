@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import { Button, Menu, MenuItem, Fade } from '@mui/material';
-import UploadButtons from '../ui/uploadButton';
+import UploadButtons from '../../common/components/uploadButton';
 
 const MenuItems = ({ items }) => {
   const [anchorEl, setAnchorEl] = useState(null);

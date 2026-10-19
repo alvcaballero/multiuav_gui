@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { useTheme } from '@mui/material/styles';
 import { map } from '../core/mapInstance';
 import { findFonts, geofenceToFeature } from '../core/mapUtil';
-import { useAttributePreference } from '../../shared/preferences';
+import { useAttributePreference } from '../../common/util/preferences';
 
 const MapGeofence = () => {
   const id = useId();

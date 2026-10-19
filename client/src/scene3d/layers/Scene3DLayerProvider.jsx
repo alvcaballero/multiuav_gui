@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useCallback, useState } from 'react';
-import usePersistedState from '../../shared/usePersistedState';
+import usePersistedState from '../../common/util/usePersistedState';
 
 const Scene3DLayerContext = createContext(null);
 

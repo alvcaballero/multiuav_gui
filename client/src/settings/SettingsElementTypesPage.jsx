@@ -6,15 +6,15 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { useCatchCallback } from '../reactHelper';
-import PageLayout from '../shared/components/PageLayout';
+import PageLayout from '../common/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
-import TableShimmer from '../shared/components/TableShimmer';
+import TableShimmer from '../common/components/TableShimmer';
 import SearchHeader from './components/SearchHeader';
 import { filterByKeyword } from './components/filterByKeyword';
 import useSettingsStyles from './common/useSettingsStyles';
-import RemoveDialog from '../components/ui/RemoveDialog';
+import RemoveDialog from '../common/components/RemoveDialog';
 import { invalidateMarkerTypesCache } from '../hooks/useMarkerTypes';
-import { describeGeometry } from '../shared/components/GeometryFields';
+import { describeGeometry } from '../common/components/GeometryFields';
 
 const SettingsElementTypesPage = () => {
   const { classes } = useSettingsStyles();

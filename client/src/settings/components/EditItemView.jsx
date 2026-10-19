@@ -11,7 +11,7 @@ import {
   TextField,
 } from '@mui/material';
 import { useCatch, useAsyncTask } from '../../reactHelper';
-import PageLayout from '../../shared/components/PageLayout';
+import PageLayout from '../../common/components/PageLayout';
 import useSettingsStyles from '../common/useSettingsStyles';
 
 const EditItemView = ({

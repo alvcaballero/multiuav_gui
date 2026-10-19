@@ -1,4 +1,4 @@
-import { routeColor, routeColorKey } from '../../shared/routeColors';
+import { routeColor, routeColorKey } from '../../common/util/routeColors';
 
 const createFeature = (myroute, point) => {
   let myYaw = null;

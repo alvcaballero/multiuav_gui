@@ -24,20 +24,19 @@ client/
     │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Routes, Waypoints
     │   ├── camera/         # CameraDevice, CameraV1, CameraWebRTCV4
-    │   ├── map/            # ElementList, BaseList, BaseSettings
     │   ├── commands/       # CommandCard, SendCommand
     │   ├── layout/         # Navbar, MainToolbar, Menu, MenuItems, Footer
-    │   └── ui/             # Toast, RemoveDialog, SelectList, SaveFile, PositionValue
+    │   └── planning/       # PlanningToolbar, ElementsTab, PlanningTab, SettingsTab
     ├── pages/              # Page-level components (one per route)
     ├── settings/           # Settings pages
     ├── map/                # Map rendering (MapLibre GL)
     ├── scene3d/            # 3D visualization (React Three Fiber)
     ├── services/           # Business logic services
-    ├── shared/             # Shared utilities, hooks, and base components
-    │   ├── components/     # ErrorHandler, PageLayout, SelectField, SwipeConfirm (see note below), etc.
+    ├── common/             # Shared attributes, components, theme and util (like traccar-web)
+    │   ├── components/     # ErrorHandler, PageLayout, SelectField, RemoveDialog, PositionValue, SwipeConfirm (see note below), device sensor widgets
     │   ├── theme/          # MUI theme configuration
     │   ├── attributes/     # Attribute hooks
-    │   └── util/           # Utility functions (duration, etc.)
+    │   └── util/           # formatter, converter, fetchs, missionStatus, usePersistedState, etc.
     └── resources/          # Static resources image assets
         ├── images/             # Image assets
         ├── 3d/                 # 3D model assets
@@ -168,7 +167,7 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
   `deviceId` — a device can run several tasks of one mission. `upsertTask` merges: the
   diagnostics-only updates from the server's waypoint tracking carry no
   `taskKey`/`action`/`dependsOn`, and replacing the task would erase them.
-- Task status styles live in `shared/missionStatus.js` (`taskStyle`); `init` is shown as
+- Task status styles live in `common/util/missionStatus.js` (`taskStyle`); `init` is shown as
   "Waiting" (for its dependencies), `skipped` means it never ran because a dependency failed.
 
 ### Redux State Updates
@@ -192,7 +191,7 @@ export const migrateNewFeature = (oldState) => {
 
 ### `SwipeConfirm` scope — not a chat/agent confirmation gate
 
-`shared/components/SwipeConfirm.jsx` is used ONLY for manual, human-initiated actions
+`common/components/SwipeConfirm.jsx` is used ONLY for manual, human-initiated actions
 from the UI (loading a mission, in `Menu.jsx`/`MainPage.jsx`/`MainPage3D.jsx`). It has
 no relation to the LLM chat.
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import SelectField from '../shared/components/SelectField';
+import SelectField from '../common/components/SelectField';
 import {
   TextField,
   Accordion,
@@ -10,7 +10,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
-import useQuery from '../shared/useQuery';
+import useQuery from '../common/util/useQuery';
 import EditItemView from './components/EditItemView';
 import DeviceCameraEditor from '../components/devices/DeviceCameraEditor';
 import DeviceFilesEditor from '../components/devices/DeviceFilesEditor';

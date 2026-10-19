@@ -5,7 +5,7 @@ import { List } from 'react-window';
 import { devicesActions } from '../../store';
 import { useAsyncTask } from '../../reactHelper';
 import DeviceRow from './DeviceRow';
-import fetchOrThrow from '../../shared/fetchOrThrow';
+import fetchOrThrow from '../../common/util/fetchOrThrow';
 
 const useStyles = makeStyles()((theme) => ({
   list: {

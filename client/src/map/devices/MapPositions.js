@@ -1,11 +1,11 @@
 import { useId, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { map } from '../core/mapInstance';
-import { formatTime, getStatusColor } from '../../shared/formatter';
+import { formatTime, getStatusColor } from '../../common/util/formatter';
 import { mapIconKey } from '../core/preloadImages';
 import { findFonts } from '../core/mapUtil';
-import { deviceRouteColorKey } from '../../shared/routeColors';
-//import { useAttributePreference, usePreference } from '../../shared/preferences';
+import { deviceRouteColorKey } from '../../common/util/routeColors';
+//import { useAttributePreference, usePreference } from '../../common/util/preferences';
 
 const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
 const onMouseLeave = () => (map.getCanvas().style.cursor = '');

@@ -3,7 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { CssBaseline, StyledEngineProvider } from '@mui/material';
 import { store } from './store';
-import ErrorHandler from './shared/components/ErrorHandler';
+import ErrorHandler from './common/components/ErrorHandler';
 import Navigation from './Navigation';
 import preloadImages from './map/core/preloadImages';
 import ServerProvider from './ServerProvider';

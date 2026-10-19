@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAttributePreference } from '../../shared/preferences';
+import { useAttributePreference } from '../../common/util/preferences';
 import { buildMartinStyle } from './martinStyle';
 
 const styleCustom = ({ tiles, minZoom, maxZoom, attribution, glyphs }) => {

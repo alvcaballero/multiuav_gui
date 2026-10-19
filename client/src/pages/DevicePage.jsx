@@ -28,9 +28,9 @@ import HomeIcon from '@mui/icons-material/Home';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 
 import { useNavigate, useParams } from 'react-router-dom';
-import PositionValue from '../components/ui/PositionValue';
-import usePersistedState from '../shared/usePersistedState';
-import DroneSensorVisualizer from './device/DroneSensorVisualizer';
+import PositionValue from '../common/components/PositionValue';
+import usePersistedState from '../common/util/usePersistedState';
+import DroneSensorVisualizer from '../common/components/DroneSensorVisualizer';
 import useFilter from '../components/devices/useFilter';
 import MainMap from '../map/MainMap';
 import CameraDevice from '../components/camera/CameraDevice';

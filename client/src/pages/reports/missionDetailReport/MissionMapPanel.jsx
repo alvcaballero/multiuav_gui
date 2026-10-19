@@ -14,7 +14,7 @@ import {
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 
-import { formatTime } from '../../../shared/formatter';
+import { formatTime } from '../../../common/util/formatter';
 import { map } from '../../../map/core/mapInstance';
 import MapView from '../../../map/core/MapView';
 import { MapMissions } from '../../../map/mission/MapMissions';
@@ -23,8 +23,8 @@ import MapMarkers from '../../../map/environment/MapMarkers';
 import MapPositions from '../../../map/devices/MapPositions';
 import RoutesList from '../../../components/mission/RoutesList';
 import { RuteConvert } from '../../../map/MissionConvert';
-import SelectField from '../../../shared/components/SelectField';
-import SelectList from '../../../components/ui/SelectList';
+import SelectField from '../../../common/components/SelectField';
+import SelectList from '../../../common/components/SelectList';
 import BaseSettings from '../../../components/planning/BaseSettings';
 
 const noop = () => null;

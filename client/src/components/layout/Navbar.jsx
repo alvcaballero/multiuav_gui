@@ -6,13 +6,13 @@ import { AppBar, Toolbar, Container, Typography, Button } from '@mui/material';
 import { missionActions, sessionActions, activeMissionsActions } from '../../store';
 import { map } from '../../map/core/mapInstance';
 import MenuItems from './MenuItems';
-import { connectRos, commandLoadMission } from '../../shared/fetchs';
+import { connectRos, commandLoadMission } from '../../common/util/fetchs';
 import { useCatch } from '../../reactHelper';
-import { usePreference } from '../../shared/preferences';
+import { usePreference } from '../../common/util/preferences';
 import { readTextFile, parseKmlElements } from '../../services/fileService';
 import { useMissionFile } from '../../services/useMissionFile';
 import { useMarkerTypes } from '../../hooks/useMarkerTypes';
-import { getMissionCentroid } from '../../shared/util/missionGeo';
+import { getMissionCentroid } from '../../common/util/missionGeo';
 
 const Navbar = React.memo(
   ({ SetAddUAVOpen, setconfirmMission = (item) => item, setChatOpen = () => null }) => {

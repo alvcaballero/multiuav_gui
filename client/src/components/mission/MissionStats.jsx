@@ -18,7 +18,7 @@ import RouteIcon from '@mui/icons-material/Route';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import PlaceIcon from '@mui/icons-material/Place';
-import { routeColor } from '../../shared/routeColors';
+import { routeColor } from '../../common/util/routeColors';
 
 const useStyles = makeStyles()((theme) => ({
   container: {

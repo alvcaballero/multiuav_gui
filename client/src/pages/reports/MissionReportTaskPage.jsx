@@ -22,8 +22,8 @@ import { makeStyles } from 'tss-react/mui';
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import { formatTime } from '../../shared/formatter';
-import { taskStyle } from '../../shared/missionStatus';
+import { formatTime } from '../../common/util/formatter';
+import { taskStyle } from '../../common/util/missionStatus';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

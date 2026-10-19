@@ -23,7 +23,7 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MapIcon from '@mui/icons-material/Map';
 import { useNavigate } from 'react-router-dom';
-import { formatTime } from '../../shared/formatter';
+import { formatTime } from '../../common/util/formatter';
 import { loadPlanToEditor } from '../../services/missionPlanLoader';
 
 const useStyles = makeStyles()((theme) => ({

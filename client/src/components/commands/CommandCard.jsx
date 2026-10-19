@@ -15,7 +15,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { makeStyles } from 'tss-react/mui';
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import BaseCommandView from '../../shared/components/BaseCommandView';
+import BaseCommandView from '../../common/components/BaseCommandView';
 import { useCatch } from '../../reactHelper';
 
 const useStyles = makeStyles()((theme) => ({

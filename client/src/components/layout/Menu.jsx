@@ -5,7 +5,7 @@ import { makeStyles } from 'tss-react/mui';
 import { grey, red, orange, green } from '@mui/material/colors';
 
 import { map } from '../../map/core/mapInstance';
-import { usePreference } from '../../shared/preferences';
+import { usePreference } from '../../common/util/preferences';
 import { useMissionFile } from '../../services/useMissionFile';
 import {
   commandLoadMission,
@@ -13,7 +13,7 @@ import {
   commandStopMission,
   commandPauseMission,
   commandResumeMission,
-} from '../../shared/fetchs';
+} from '../../common/util/fetchs';
 import { useCatchCallback } from '../../reactHelper';
 import {
   missionActions,
@@ -21,8 +21,8 @@ import {
   sessionActions,
   getCommandableMissionId,
 } from '../../store';
-import { getMissionCentroid } from '../../shared/util/missionGeo';
-import SwipeConfirm from '../../shared/components/SwipeConfirm';
+import { getMissionCentroid } from '../../common/util/missionGeo';
+import SwipeConfirm from '../../common/components/SwipeConfirm';
 import MissionDetailPopover from './menu/MissionDetailPopover';
 import ActiveMissionsPopover from './menu/ActiveMissionsPopover';
 import EventsPopover from './menu/EventsPopover';

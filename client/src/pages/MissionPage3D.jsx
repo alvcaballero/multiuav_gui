@@ -8,7 +8,7 @@ import { Menu } from '../components/layout/Menu';
 
 import MissionPanel from '../components/mission/MissionPanel';
 import MissionElevation from '../components/mission/MissionElevation';
-import SaveFile from '../components/ui/SaveFile';
+import SaveFile from '../common/components/SaveFile';
 
 import R3FCanvas from '../scene3d/core/R3FCanvas';
 import R3FMission from '../scene3d/scene/R3FMission';
