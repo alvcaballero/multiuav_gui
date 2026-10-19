@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Box, Typography, Button, Stack, Chip, TextField, Collapse, Alert } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { chatActions } from '../../store/chat';
-import { sendToolApprovalResponse } from '../../services/toolApproval';
+import { sendToolApprovalResponse } from '../../common/util/toolApproval';
 
 const secondsLeft = (expiresAt) =>
   Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));

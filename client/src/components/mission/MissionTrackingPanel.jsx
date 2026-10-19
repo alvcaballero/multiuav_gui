@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Box, Chip, Collapse, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import { activeMissionsActions } from '../../store';
 import { missionStyle } from '../../common/util/missionStatus';
-import { loadMissionPlanToEditor } from '../../services/missionPlanLoader';
+import { loadMissionPlanToEditor } from '../../common/util/missionPlanLoader';
 import TaskTrackingRow from './TaskTrackingRow';
 
 // One mission row, extracted (like TaskTrackingRow) so it only re-renders

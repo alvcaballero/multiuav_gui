@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from 'react';
-import { useMarkerTypes } from '../../hooks/useMarkerTypes';
+import { useMarkerTypes } from '../../common/util/useMarkerTypes';
 import { makeStyles } from 'tss-react/mui';
 
 import {

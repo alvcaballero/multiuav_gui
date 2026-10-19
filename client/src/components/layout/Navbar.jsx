@@ -9,9 +9,9 @@ import MenuItems from './MenuItems';
 import { connectRos, commandLoadMission } from '../../common/util/fetchs';
 import { useCatch } from '../../reactHelper';
 import { usePreference } from '../../common/util/preferences';
-import { readTextFile, parseKmlElements } from '../../services/fileService';
-import { useMissionFile } from '../../services/useMissionFile';
-import { useMarkerTypes } from '../../hooks/useMarkerTypes';
+import { readTextFile, parseKmlElements } from '../../common/util/fileService';
+import { useMissionFile } from '../../common/util/useMissionFile';
+import { useMarkerTypes } from '../../common/util/useMarkerTypes';
 import { getMissionCentroid } from '../../common/util/missionGeo';
 
 const Navbar = React.memo(

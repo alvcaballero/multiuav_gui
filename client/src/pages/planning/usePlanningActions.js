@@ -3,7 +3,7 @@ import YAML from 'yaml';
 
 import { planningToLegacy } from '../../store';
 import { useCatch } from '../../reactHelper';
-import { validateUniqueDevices, transformLocationsForAPI } from '../../services/planningService';
+import { validateUniqueDevices, transformLocationsForAPI } from '../../common/util/planningService';
 
 export const usePlanningActions = ({
   missionRequest,

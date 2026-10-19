@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { missionActions, activeMissionsActions } from '../store';
+import { missionActions, activeMissionsActions } from '../../store';
 import { readTextFile, parseMissionFile } from './fileService';
 
 /**

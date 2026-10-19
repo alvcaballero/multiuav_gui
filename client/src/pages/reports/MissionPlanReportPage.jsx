@@ -24,7 +24,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MapIcon from '@mui/icons-material/Map';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../common/util/formatter';
-import { loadPlanToEditor } from '../../services/missionPlanLoader';
+import { loadPlanToEditor } from '../../common/util/missionPlanLoader';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

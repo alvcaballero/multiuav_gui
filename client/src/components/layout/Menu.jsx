@@ -6,7 +6,7 @@ import { grey, red, orange, green } from '@mui/material/colors';
 
 import { map } from '../../map/core/mapInstance';
 import { usePreference } from '../../common/util/preferences';
-import { useMissionFile } from '../../services/useMissionFile';
+import { useMissionFile } from '../../common/util/useMissionFile';
 import {
   commandLoadMission,
   commandMission,

@@ -19,7 +19,7 @@ import MapGeofence from './environment/MapGeofence';
 import PegmanControl from './controls/PegmanControl/PegmanControl';
 import MapObstacles from './environment/MapObstacles';
 import { getAllInspectionGroups } from '../store/sessionSelectors';
-import { useMarkerTypes } from '../hooks/useMarkerTypes';
+import { useMarkerTypes } from '../common/util/useMarkerTypes';
 
 const EMPTY_MARKERS = [];
 const EMPTY_ROUTES = [];

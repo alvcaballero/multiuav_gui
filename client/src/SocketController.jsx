@@ -11,7 +11,7 @@ import {
   activeMissionsActions,
 } from './store';
 import { eventsActions } from './store/events';
-import { loadMissionPlanToEditor } from './services/missionPlanLoader';
+import { loadMissionPlanToEditor } from './common/util/missionPlanLoader';
 import { SnackbarProvider, enqueueSnackbar } from 'notistack';
 
 const logoutCode = 4000;

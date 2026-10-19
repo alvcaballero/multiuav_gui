@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 
 import { sessionActions } from '../../store';
-import { manageLocationPoints } from '../../services/planningService';
-import { useMarkerTypes } from '../../hooks/useMarkerTypes';
+import { manageLocationPoints } from '../../common/util/planningService';
+import { useMarkerTypes } from '../../common/util/useMarkerTypes';
 
 export const usePlanningReduxHandlers = ({
   dispatch,

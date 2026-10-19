@@ -16,7 +16,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { map } from '../../map/core/mapInstance';
-import { useMarkerTypes } from '../../hooks/useMarkerTypes';
+import { useMarkerTypes } from '../../common/util/useMarkerTypes';
 import { describeGeometry } from '../../common/components/GeometryFields';
 import ItemParametersFields from '../../common/components/ItemParametersFields';
 import OrientationFields from '../../common/components/OrientationFields';

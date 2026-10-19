@@ -13,7 +13,7 @@ import SearchHeader from './components/SearchHeader';
 import { filterByKeyword } from './components/filterByKeyword';
 import useSettingsStyles from './common/useSettingsStyles';
 import RemoveDialog from '../common/components/RemoveDialog';
-import { invalidateMarkerTypesCache } from '../hooks/useMarkerTypes';
+import { invalidateMarkerTypesCache } from '../common/util/useMarkerTypes';
 import { describeGeometry } from '../common/components/GeometryFields';
 
 const SettingsElementTypesPage = () => {

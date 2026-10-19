@@ -31,12 +31,11 @@ client/
     ├── settings/           # Settings pages
     ├── map/                # Map rendering (MapLibre GL)
     ├── scene3d/            # 3D visualization (React Three Fiber)
-    ├── services/           # Business logic services
     ├── common/             # Shared attributes, components, theme and util (like traccar-web)
     │   ├── components/     # ErrorHandler, PageLayout, SelectField, RemoveDialog, PositionValue, SwipeConfirm (see note below), device sensor widgets
     │   ├── theme/          # MUI theme configuration
     │   ├── attributes/     # Attribute hooks
-    │   └── util/           # formatter, converter, fetchs, missionStatus, usePersistedState, etc.
+    │   └── util/           # formatter, converter, fetchs, missionStatus, services (planning, files, chat), hooks, etc.
     └── resources/          # Static resources image assets
         ├── images/             # Image assets
         ├── 3d/                 # 3D model assets
@@ -201,7 +200,7 @@ park the server-side tool loop until an operator answers. Two rules that are loa
 rather than cosmetic:
 
 - **A chat message never approves anything.** Only the structured response keyed by
-  `requestId` (`services/toolApproval.js`) decides. With several requests open there is
+  `requestId` (`common/util/toolApproval.js`) decides. With several requests open there is
   no way to tell which one free text meant, and guessing wrong arms an aircraft.
 - **What is shown is what executes.** The gate renders the frozen input verbatim; the
   server re-checks its `sha256` before running it and refuses on any mismatch. The turn

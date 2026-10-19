@@ -19,7 +19,7 @@ import TypeParameterSchemaEditor from './TypeParameterSchemaEditor';
 import TypeDefinitionYamlEditor from './TypeDefinitionYamlEditor';
 import TypeModel3DViewer from './TypeModel3DViewer';
 import TypeYamlCompareViewer from './TypeYamlCompareViewer';
-import { invalidateMarkerTypesCache } from '../hooks/useMarkerTypes';
+import { invalidateMarkerTypesCache } from '../common/util/useMarkerTypes';
 
 const SettingsElementTypesPageEdit = () => {
   const { classes } = useSettingsStyles();

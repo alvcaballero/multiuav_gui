@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { chatActions } from '../../store';
-import { sendChatMessage } from '../../services/sendChatMessage';
-import { fetchPendingApprovals } from '../../services/toolApproval';
+import { sendChatMessage } from '../../common/util/sendChatMessage';
+import { fetchPendingApprovals } from '../../common/util/toolApproval';
 
 const EMPTY_MESSAGES = [];
 

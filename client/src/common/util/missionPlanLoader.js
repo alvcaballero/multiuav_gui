@@ -1,5 +1,5 @@
-import { missionActions } from '../store';
-import { map } from '../map/core/mapInstance';
+import { missionActions } from '../../store';
+import { map } from '../../map/core/mapInstance';
 
 const flyToMission = (missionData) => {
   const firstWp = (missionData?.route ?? missionData?.tasks)?.[0]?.wp?.[0];

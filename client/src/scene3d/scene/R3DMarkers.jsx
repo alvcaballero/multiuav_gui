@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { useModelLoader } from '../models/ModelLoader.jsx';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
-import { useMarkerTypes } from '../../hooks/useMarkerTypes';
+import { useMarkerTypes } from '../../common/util/useMarkerTypes';
 
 // heading: degrees from North, clockwise (0=N, 90=E, 180=S, 270=W)
 // Three.js axes: X=East, Y=up, Z=-North → rotY = -heading_rad
