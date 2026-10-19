@@ -4,7 +4,7 @@ import { map } from '../core/mapInstance';
 import { formatTime, getStatusColor } from '../../common/util/formatter';
 import { mapIconKey } from '../core/preloadImages';
 import { findFonts } from '../core/mapUtil';
-import { deviceRouteColorKey } from '../../common/util/routeColors';
+import { deviceRouteColorKey } from '../../common/util/styles/routeColors';
 //import { useAttributePreference, usePreference } from '../../common/util/preferences';
 
 const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');

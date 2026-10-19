@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material';
 import { loadImage, prepareIcon } from './mapUtil';
-import { routeColor } from '../../common/util/routeColors';
+import { routeColor } from '../../common/util/styles/routeColors';
 
 import { grey } from '@mui/material/colors';
 import backgroundSvg from '../../resources/images/background.svg';

@@ -25,7 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../common/util/formatter';
-import { eventColor } from '../../common/util/eventStyle';
+import { eventColor } from '../../common/util/styles/eventStyle';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

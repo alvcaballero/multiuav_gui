@@ -9,14 +9,14 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { formatTime } from '../../common/util/formatter';
-import { missionStyle, taskStyle } from '../../common/util/missionStatus';
+import { missionStyle, taskStyle } from '../../common/util/styles/missionStatus';
 
 import { useAsyncTask } from '../../reactHelper';
 import ImageFull from './missionDetailReport/ImageFull';
 import MissionSummarySection from './missionDetailReport/MissionSummarySection';
 import MissionTasksSection from './missionDetailReport/MissionTasksSection';
 import MissionMapPanel from './missionDetailReport/MissionMapPanel';
-import { routeColorKey } from '../../common/util/routeColors';
+import { routeColorKey } from '../../common/util/styles/routeColors';
 
 const useStyles = makeStyles()((theme) => ({
   root: {

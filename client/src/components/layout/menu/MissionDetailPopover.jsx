@@ -11,7 +11,7 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import DownloadIcon from '@mui/icons-material/Download';
 import { makeStyles } from 'tss-react/mui';
 import YAML from 'yaml';
-import { missionStyle } from '../../../common/util/missionStatus';
+import { missionStyle } from '../../../common/util/styles/missionStatus';
 import TaskTrackingRow from '../../mission/TaskTrackingRow';
 
 const useStyles = makeStyles()(() => ({

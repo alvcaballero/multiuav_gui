@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { FormControl, InputLabel, Select, Box, MenuItem, CircularProgress } from '@mui/material';
-import { routeColor, routeColorKey } from '../../common/util/routeColors';
+import { routeColor, routeColorKey } from '../../common/util/styles/routeColors';
 import { makeStyles } from 'tss-react/mui';
 import { missionActions } from '../../store';
 import { useAsyncTask } from '../../reactHelper';

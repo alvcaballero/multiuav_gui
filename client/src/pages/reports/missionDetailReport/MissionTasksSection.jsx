@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { isImageFile, isVideoFile } from './fileKind';
 import { formatTime } from '../../../common/util/formatter';
-import { eventColor } from '../../../common/util/eventStyle';
+import { eventColor } from '../../../common/util/styles/eventStyle';
 
 const TASK_ITEMS = [
   'id',

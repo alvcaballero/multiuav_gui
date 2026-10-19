@@ -1,7 +1,7 @@
 import { useId, useEffect } from 'react';
 
 import { map } from '../core/mapInstance';
-import { routeColor } from '../../common/util/routeColors';
+import { routeColor } from '../../common/util/styles/routeColors';
 
 const EMPTY_TRACKS = [];
 

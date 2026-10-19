@@ -8,7 +8,7 @@ import * as maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 
 import { map } from '../core/mapInstance';
-import { routeColor, routeColorKey } from '../../common/util/routeColors';
+import { routeColor, routeColorKey } from '../../common/util/styles/routeColors';
 
 const modelOrigin = [-6.485616, 37.144592];
 const modelRotate = [Math.PI / 2, 0, 0];

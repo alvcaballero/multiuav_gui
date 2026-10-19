@@ -35,7 +35,7 @@ client/
     │   ├── components/     # ErrorHandler, PageLayout, SelectField, RemoveDialog, PositionValue, SwipeConfirm (see note below), device sensor widgets
     │   ├── theme/          # MUI theme configuration
     │   ├── attributes/     # Attribute hooks
-    │   └── util/           # formatter, converter, fetchs, missionStatus, services (planning, files, chat), hooks, etc.
+    │   └── util/           # formatter, converter, fetchs, styles/ (event, mission status, route colors), services (planning, files, chat), hooks, etc.
     └── resources/          # Static resources image assets
         ├── images/             # Image assets
         ├── 3d/                 # 3D model assets
@@ -166,7 +166,7 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
   `deviceId` — a device can run several tasks of one mission. `upsertTask` merges: the
   diagnostics-only updates from the server's waypoint tracking carry no
   `taskKey`/`action`/`dependsOn`, and replacing the task would erase them.
-- Task status styles live in `common/util/missionStatus.js` (`taskStyle`); `init` is shown as
+- Task status styles live in `common/util/styles/missionStatus.js` (`taskStyle`); `init` is shown as
   "Waiting" (for its dependencies), `skipped` means it never ran because a dependency failed.
 
 ### Redux State Updates
