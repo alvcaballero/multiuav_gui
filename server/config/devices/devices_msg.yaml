@@ -9,7 +9,7 @@ agv:
   actions:
     navigateToPose:
       name: '/navigate_to_pose'
-      actionType: 'nav2_msgs/action/NavigateToPose'
+      messageType: 'nav2_msgs/action/NavigateToPose'
 sjtu:
   subscribers:
     position:
@@ -63,19 +63,19 @@ dji_M210_noetic:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/dji_control/start_mission'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     sincronize:
       name: '/dji_control/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     setupcamera:
       name: '/setup_camera_stream'
-      serviceType: 'dji_osdk_ros/SetupCameraStream'
+      messageType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'
-      serviceType: 'dji_osdk_ros/GimbalAction'
+      messageType: 'dji_osdk_ros/GimbalAction'
 dji_M210_melodic:
   subscribers:
     position:
@@ -111,19 +111,19 @@ dji_M210_melodic:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/dji_control/start_mission'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     sincronize:
       name: '/dji_control/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     setupcamera:
       name: '/setup_camera_stream'
-      serviceType: 'dji_osdk_ros/SetupCameraStream'
+      messageType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'
-      serviceType: 'dji_osdk_ros/GimbalAction'
+      messageType: 'dji_osdk_ros/GimbalAction'
 dji_M210_noetic_rtk:
   subscribers:
     position:
@@ -159,19 +159,19 @@ dji_M210_noetic_rtk:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/dji_control/start_mission'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     sincronize:
       name: '/dji_control/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     setupcamera:
       name: '/setup_camera_stream'
-      serviceType: 'dji_osdk_ros/SetupCameraStream'
+      messageType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'
-      serviceType: 'dji_osdk_ros/GimbalAction'
+      messageType: 'dji_osdk_ros/GimbalAction'
 dji_M210_melodic_rtk:
   subscribers:
     position:
@@ -207,19 +207,19 @@ dji_M210_melodic_rtk:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/dji_control/start_mission'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     sincronize:
       name: '/dji_control/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     setupcamera:
       name: '/setup_camera_stream'
-      serviceType: 'dji_osdk_ros/SetupCameraStream'
+      messageType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'
-      serviceType: 'dji_osdk_ros/GimbalAction'
+      messageType: 'dji_osdk_ros/GimbalAction'
 dji_M600:
   subscribers:
     position:
@@ -246,16 +246,16 @@ dji_M600:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/dji_control/start_mission'
-      serviceType: 'std_srvs/TriggerRequest'
+      messageType: 'std_srvs/TriggerRequest'
     CameraFileDownload:
       name: '/camera_download_files'
-      serviceType: 'dji_osdk_ros/DownloadMedia'
+      messageType: 'dji_osdk_ros/DownloadMedia'
     CameraFileList:
       name: '/camera_download_filelist'
-      serviceType: 'dji_osdk_ros/FileList'
+      messageType: 'dji_osdk_ros/FileList'
 dji_M300:
   subscribers:
     position:
@@ -300,34 +300,34 @@ dji_M300:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/dji_control/start_mission'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     stopMission:
       name: '/dji_osdk_ros/waypointV2_stopMission'
-      serviceType: 'dji_osdk_ros/StopWaypointV2Mission'
+      messageType: 'dji_osdk_ros/StopWaypointV2Mission'
     resumemission:
       name: '/dji_osdk_ros/waypointV2_resumeMission'
-      serviceType: 'dji_osdk_ros/ResumeWaypointV2Mission'
+      messageType: 'dji_osdk_ros/ResumeWaypointV2Mission'
     pausemission:
       name: '/dji_osdk_ros/waypointV2_pauseMission'
-      serviceType: 'dji_osdk_ros/PauseWaypointV2Mission'
+      messageType: 'dji_osdk_ros/PauseWaypointV2Mission'
     sincronize:
       name: '/dji_control/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     setupcamera:
       name: '/setup_camera_stream'
-      serviceType: 'dji_osdk_ros/SetupCameraStream'
+      messageType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'
-      serviceType: 'dji_osdk_ros/GimbalAction'
+      messageType: 'dji_osdk_ros/GimbalAction'
     CameraFileDownload:
       name: '/camera_download_files'
-      serviceType: 'dji_osdk_ros/DownloadMedia'
+      messageType: 'dji_osdk_ros/DownloadMedia'
     CameraFileList:
       name: '/camera_download_filelist'
-      serviceType: 'dji_osdk_ros/FileList'
+      messageType: 'dji_osdk_ros/FileList'
 dji_M300_rtk:
   subscribers:
     position:
@@ -372,34 +372,34 @@ dji_M300_rtk:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/dji_control/start_mission'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     stopMission:
       name: '/dji_osdk_ros/waypointV2_stopMission'
-      serviceType: 'dji_osdk_ros/StopWaypointV2Mission'
+      messageType: 'dji_osdk_ros/StopWaypointV2Mission'
     resumemission:
       name: '/dji_osdk_ros/waypointV2_resumeMission'
-      serviceType: 'dji_osdk_ros/ResumeWaypointV2Mission'
+      messageType: 'dji_osdk_ros/ResumeWaypointV2Mission'
     pausemission:
       name: '/dji_osdk_ros/waypointV2_pauseMission'
-      serviceType: 'dji_osdk_ros/PauseWaypointV2Mission'
+      messageType: 'dji_osdk_ros/PauseWaypointV2Mission'
     sincronize:
       name: '/dji_control/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     setupcamera:
       name: '/setup_camera_stream'
-      serviceType: 'dji_osdk_ros/SetupCameraStream'
+      messageType: 'dji_osdk_ros/SetupCameraStream'
     Gimbal:
       name: '/gimbal_task_control'
-      serviceType: 'dji_osdk_ros/GimbalAction'
+      messageType: 'dji_osdk_ros/GimbalAction'
     CameraFileDownload:
       name: '/camera_download_files'
-      serviceType: 'dji_osdk_ros/DownloadMedia'
+      messageType: 'dji_osdk_ros/DownloadMedia'
     CameraFileList:
       name: '/camera_download_filelist'
-      serviceType: 'dji_osdk_ros/FileList'
+      messageType: 'dji_osdk_ros/FileList'
 
 dji_M300_PSDK:
   subscribers:
@@ -438,26 +438,26 @@ dji_M300_PSDK:
   services:
     configureMission:
       name: '/psdk_ros2/waypointV2_initSetting'
-      serviceType: 'psdk_interfaces/srv/InitWaypointV2Setting'
+      messageType: 'psdk_interfaces/srv/InitWaypointV2Setting'
     uploadMission:
       name: '/psdk_ros2/waypointV2_uploadMission'
-      serviceType: 'psdk_interfaces/srv/UploadWaypointV2Mission'
+      messageType: 'psdk_interfaces/srv/UploadWaypointV2Mission'
     commandMission:
       name: '/psdk_ros2/waypointV2_startMission'
-      serviceType: 'psdk_interfaces/srv/StartWaypointV2Mission'
+      messageType: 'psdk_interfaces/srv/StartWaypointV2Mission'
     stopMission:
       name: '/psdk_ros2/waypointV2_stopMission'
-      serviceType: 'psdk_interfaces/srv/StopWaypointV2Mission'
+      messageType: 'psdk_interfaces/srv/StopWaypointV2Mission'
     resumemission:
       name: '/psdk_ros2/waypointV2_resumeMission'
-      serviceType: 'psdk_interfaces/srv/ResumeWaypointV2Mission'
+      messageType: 'psdk_interfaces/srv/ResumeWaypointV2Mission'
     pausemission:
       name: '/psdk_ros2/waypointV2_pauseMission'
-      serviceType: 'psdk_interfaces/srv/PauseWaypointV2Mission'
+      messageType: 'psdk_interfaces/srv/PauseWaypointV2Mission'
   actions:
     CameraFileDownload:
       name: '/offboard/download_files_by_date_range'
-      actionType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
+      messageType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 px4_mavros:
   subscribers:
     position:
@@ -488,16 +488,16 @@ px4_mavros:
   services:
     configureMission:
       name: '/mission/new'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
     commandMission:
       name: '/mission/start_stop'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     sincronize:
       name: '/px4_mission_node/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     CameraFileDownload:
       name: '/camera_download_files'
-      serviceType: 'dji_osdk_ros/DownloadMedia'
+      messageType: 'dji_osdk_ros/DownloadMedia'
 px4_mavros_slow:
   subscribers:
     position:
@@ -525,16 +525,16 @@ px4_mavros_slow:
   services:
     configureMission:
       name: '/mission/new'
-      serviceType: 'multiuav_interfaces/ConfigMission'
+      messageType: 'multiuav_interfaces/ConfigMission'
     commandMission:
       name: '/mission/start_stop'
-      serviceType: 'std_srvs/SetBool'
+      messageType: 'std_srvs/SetBool'
     sincronize:
       name: '/px4_mission_node/send_bags'
-      serviceType: 'std_srvs/Bool'
+      messageType: 'std_srvs/Bool'
     CameraFileDownload:
       name: '/camera_download_files'
-      serviceType: 'dji_osdk_ros/DownloadMedia'
+      messageType: 'dji_osdk_ros/DownloadMedia'
 px4_ros2:
   subscribers:
     position_global:
@@ -565,17 +565,17 @@ px4_ros2:
   services:
     configureMission:
       name: '/offboard/mission_load'
-      serviceType: 'muav_gcs_interfaces/srv/LoadMission'
+      messageType: 'muav_gcs_interfaces/srv/LoadMission'
     commandMission:
       name: '/offboard/mission/start_stop'
-      serviceType: 'std_srvs/srv/SetBool'
+      messageType: 'std_srvs/srv/SetBool'
     GCSCommand:
       name: '/offboard/gcs_command'
-      serviceType: 'muav_gcs_interfaces/srv/GCSCommand'
+      messageType: 'muav_gcs_interfaces/srv/GCSCommand'
   actions:
     CameraFileDownload:
       name: '/offboard/download_files_by_date_range'
-      actionType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
+      messageType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 fuvex:
   subscribers:
     position:
@@ -622,10 +622,10 @@ catec:
   services:
     threat_confirmation:
       name: '/threat_confirmation'
-      serviceType: 'std_srvs/Trigger'
+      messageType: 'std_srvs/Trigger'
     threat_defuse:
       name: '/threat_defuse'
-      serviceType: 'std_srvs/Trigger'
+      messageType: 'std_srvs/Trigger'
 griffin:
   subscribers:
     position:

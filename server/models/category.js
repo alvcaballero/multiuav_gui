@@ -58,6 +58,30 @@ function validateDevicesMsgKeys(catalog) {
 
 validateDevicesMsgKeys(devices_msg);
 
+// Todos los bloques declaran su tipo en `messageType` (también services y actions). Los nombres
+// viejos `serviceType`/`actionType` no se leen: el endpoint quedaría sin tipo y su command
+// desaparecería en silencio. Por eso este chequeo lanza siempre, no solo en debug.
+const LEGACY_TYPE_FIELDS = ['serviceType', 'actionType'];
+
+export function findLegacyTypeFields(catalog) {
+  const found = [];
+  for (const [category, def] of Object.entries(catalog ?? {})) {
+    for (const block of Object.keys(DEVICES_MSG_BLOCKS)) {
+      for (const [key, entry] of Object.entries(def?.[block] ?? {})) {
+        for (const field of LEGACY_TYPE_FIELDS) {
+          if (entry && field in entry) found.push(`${category}.${block}.${key}.${field}`);
+        }
+      }
+    }
+  }
+  return found;
+}
+
+const legacyTypeFields = findLegacyTypeFields(devices_msg);
+if (legacyTypeFields.length) {
+  throw new Error(`devices_msg: rename to 'messageType': ${legacyTypeFields.join(', ')}`);
+}
+
 // command_schema.yaml: una entrada por CommandType, y los bloques `commands:` de
 // devices_msg solo restringen ese dominio. commandRegistry: cada command de una categoría
 // sale por UN endpoint (dos matches sin `commands.<Type>.via` es ambiguo, y un `via` tiene
@@ -115,7 +139,7 @@ function filterParamOptions(param, symbols) {
 // unfiltered, so the planning UI always has a coherent baseline.
 function resolveMissionProfile(type) {
   const dev = devices_msg[type];
-  const serviceType = dev?.services?.configureMission?.serviceType;
+  const serviceType = dev?.services?.configureMission?.messageType;
   const profileName = dev?.mission ?? dev?.mission_schema ?? profileFor(type, serviceType);
   const profile = _mission_schema.profiles?.[profileName] ?? _mission_schema.profiles?.default;
   if (!profile) {

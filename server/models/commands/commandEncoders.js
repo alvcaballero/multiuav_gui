@@ -21,8 +21,8 @@
 
 export const ANY = '*';
 
-// block de devices_msg → campo que declara el tipo del endpoint.
-const TYPE_FIELD = { services: 'serviceType', actions: 'actionType', publishers: 'messageType' };
+// Bloques invocables de devices_msg. Todos declaran su tipo en `messageType`.
+const ENDPOINT_BLOCKS = ['services', 'actions', 'publishers'];
 
 const keyOf = (key, msgType) => `${key}|${msgType}`;
 
@@ -32,8 +32,8 @@ const keyOf = (key, msgType) => `${key}|${msgType}`;
  * @returns {{ block: string, key: string, msgType: string|undefined }[]}
  */
 export function endpointsOf(categoryConfig) {
-  return Object.entries(TYPE_FIELD).flatMap(([block, field]) =>
-    Object.entries(categoryConfig?.[block] ?? {}).map(([key, def]) => ({ block, key, msgType: def?.[field] }))
+  return ENDPOINT_BLOCKS.flatMap((block) =>
+    Object.entries(categoryConfig?.[block] ?? {}).map(([key, def]) => ({ block, key, msgType: def?.messageType }))
   );
 }
 

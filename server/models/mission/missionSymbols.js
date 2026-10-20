@@ -88,7 +88,7 @@ export const CONFIG_SYMBOLS = Object.freeze({
   },
 });
 
-// serviceType (from devices_msg.yaml services.configureMission) → symbol table.
+// serviceType (the messageType of devices_msg.yaml services.configureMission) → symbol table.
 // This is how a category's encoder family is resolved.
 const SERVICE_TO_SYMBOLS = {
   'psdk_interfaces/srv/InitWaypointV2Setting': PSDK_SYMBOLS,

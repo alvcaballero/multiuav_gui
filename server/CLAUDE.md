@@ -338,7 +338,7 @@ Maps device categories to ROS topics and message types:
 
 ```yaml
 dji_M210_noetic:
-  topics:
+  subscribers:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
@@ -348,8 +348,14 @@ dji_M210_noetic:
   services:
     configureMission:
       name: '/dji_control/configure_mission'
-      serviceType: 'aerialcore_common/ConfigMission'
+      messageType: 'aerialcore_common/ConfigMission'
 ```
+
+Every block (`subscribers`, `publishers`, `services`, `actions`) names its type with
+`messageType`, also for a `.srv` or `.action`. The old `serviceType`/`actionType` fields are not
+read: `categoryModel` refuses to boot when the YAML still has them, and `PUT`/`POST
+/api/category/:category` rejects them with 400. (`serviceType`/`actionType` survive only as the
+rosbridge argument names, inside `rosServices`/`rosAction`.)
 
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`

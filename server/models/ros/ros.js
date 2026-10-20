@@ -175,7 +175,7 @@ export class rosModel {
     const { name, category } = await devicesController.getDevice(deviceId);
     const serviceDef = resolveCategoryConfig(category, 'services', type);
     const service = serviceDef ? buildDeviceName(name, serviceDef) : undefined;
-    return rosServices.callService({ name, type, service, serviceType: serviceDef?.serviceType, request }, getRos());
+    return rosServices.callService({ name, type, service, serviceType: serviceDef?.messageType, request }, getRos());
   }
 
   // Device-layer publish: resolve the publisher from the category config here
@@ -374,7 +374,7 @@ export class rosModel {
         : rest.onComplete;
 
     return actionRegistry.sendActionGoal(
-      { actionServerName, actionType: actionDef.actionType, type, ...rest, onComplete },
+      { actionServerName, actionType: actionDef.messageType, type, ...rest, onComplete },
       getRos()
     );
   }
@@ -383,7 +383,7 @@ export class rosModel {
   // e.g. the HTTP device-layer route). Config resolution stays in the facade.
   static async actionTypeOf({ deviceId, type }) {
     const { category } = await devicesController.getDevice(deviceId);
-    return resolveCategoryConfig(category, 'actions', type)?.actionType;
+    return resolveCategoryConfig(category, 'actions', type)?.messageType;
   }
 
   static async getActionStatusDevice({ deviceId, type }) {

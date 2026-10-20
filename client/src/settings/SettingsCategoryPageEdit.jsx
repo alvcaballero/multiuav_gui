@@ -24,17 +24,17 @@ import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
 import EditItemView from './components/EditItemView';
 
-// The devices_msg.yaml blocks a category declares, and the field each one names its type with.
+// The devices_msg.yaml blocks a category declares; every block names its type with `messageType`.
 // Which keys and types can be picked comes from GET /api/category/messages, derived on the
 // server from the decoders and from what categories already declare.
 const BLOCKS = [
-  { block: 'subscribers', title: 'Telemetry - subscribers', typeField: 'messageType' },
-  { block: 'services', title: 'Commands - services', typeField: 'serviceType' },
-  { block: 'actions', title: 'Commands - actions', typeField: 'actionType' },
-  { block: 'publishers', title: 'Commands - publishers', typeField: 'messageType' },
+  { block: 'subscribers', title: 'Telemetry - subscribers' },
+  { block: 'services', title: 'Commands - services' },
+  { block: 'actions', title: 'Commands - actions' },
+  { block: 'publishers', title: 'Commands - publishers' },
 ];
 
-const EndpointSection = ({ block, title, typeField, item, setItem, options }) => {
+const EndpointSection = ({ block, title, item, setItem, options }) => {
   const { classes } = useSettingsStyles();
   const [adding, setAdding] = useState(false);
   const [newKey, setNewKey] = useState(null);
@@ -52,7 +52,7 @@ const EndpointSection = ({ block, title, typeField, item, setItem, options }) =>
   };
 
   const add = () => {
-    if (newKey) update(newKey, typeField, options[newKey][0]);
+    if (newKey) update(newKey, 'messageType', options[newKey][0]);
     setNewKey(null);
     setAdding(false);
   };
@@ -85,11 +85,11 @@ const EndpointSection = ({ block, title, typeField, item, setItem, options }) =>
                 </TableCell>
                 <TableCell>
                   <SelectField
-                    data={options[key] ?? [entry[typeField]]}
-                    value={entry[typeField]}
+                    data={options[key] ?? [entry.messageType]}
+                    value={entry.messageType}
                     keyGetter={(e) => e}
                     titleGetter={(e) => e}
-                    onChange={(e) => update(key, typeField, e.target.value)}
+                    onChange={(e) => update(key, 'messageType', e.target.value)}
                     emptyValue={null}
                   />
                 </TableCell>

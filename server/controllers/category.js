@@ -1,5 +1,14 @@
-import { categoryModel } from '../models/category.js';
+import { categoryModel, findLegacyTypeFields } from '../models/category.js';
 import { logger } from '../common/logger.js';
+
+// A body with serviceType/actionType would write fields the server no longer reads (boot
+// would then refuse the YAML): reject it before it reaches devices_msg.yaml.
+function rejectLegacyTypeFields(req, res) {
+  const legacy = findLegacyTypeFields({ [req.params.category]: req.body });
+  if (!legacy.length) return false;
+  res.status(400).json({ error: `rename to 'messageType': ${legacy.join(', ')}` });
+  return true;
+}
 
 export class categoryController {
   static async getAll(req, res) {
@@ -14,11 +23,13 @@ export class categoryController {
   }
   static async updateCategory(req, res) {
     logger.info(`Updating category: ${req.params.category}`);
+    if (rejectLegacyTypeFields(req, res)) return;
     const response = await categoryModel.updateCategory(req.params.category, req.body);
     res.json(response);
   }
   static async createCategory(req, res) {
     logger.info(`Creating category: ${req.params.category}`);
+    if (rejectLegacyTypeFields(req, res)) return;
     const response = await categoryModel.createCategory(req.params.category, req.body);
     res.json(response);
   }

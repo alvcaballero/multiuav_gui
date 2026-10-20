@@ -2,13 +2,13 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readDataFile } from '../common/utils.js';
 import { devicesMsg } from '../config/config.js';
-import { categoryModel } from '../models/category.js';
+import { categoryModel, findLegacyTypeFields } from '../models/category.js';
 import { decodableMsgTypes } from '../models/ros/rosDecode.js';
 
 // GET /api/category/messages feeds the category editor. It is derived from the decoders and
 // from what categories declare, so it can't drift the way the old messages.yaml did.
 const devices = readDataFile(devicesMsg);
-const TYPE_FIELD = { subscribers: 'messageType', publishers: 'messageType', services: 'serviceType', actions: 'actionType' };
+const BLOCKS = ['subscribers', 'publishers', 'services', 'actions'];
 const catalog = categoryModel.getMessagesType();
 
 describe('category message catalog', () => {
@@ -19,9 +19,9 @@ describe('category message catalog', () => {
   test('offers every endpoint some category declares, in its own block', () => {
     const missing = [];
     for (const [category, def] of Object.entries(devices)) {
-      for (const [block, field] of Object.entries(TYPE_FIELD)) {
+      for (const block of BLOCKS) {
         for (const [key, entry] of Object.entries(def?.[block] ?? {})) {
-          if (!catalog[block][key]?.includes(entry[field])) missing.push(`${category}.${block}.${key} ${entry[field]}`);
+          if (!catalog[block][key]?.includes(entry.messageType)) missing.push(`${category}.${block}.${key} ${entry.messageType}`);
         }
       }
     }
@@ -37,5 +37,25 @@ describe('category message catalog', () => {
   test('a command key only lists the types categories declare for it', () => {
     assert.deepEqual(catalog.services.Gimbal, ['dji_osdk_ros/GimbalAction']);
     assert.deepEqual(catalog.publishers.Gimbal, ['psdk_interfaces/msg/GimbalRotation']);
+  });
+});
+
+describe('devices_msg type field', () => {
+  test('every block of the real file names its type with messageType', () => {
+    assert.deepEqual(findLegacyTypeFields(devices), []);
+  });
+
+  test('serviceType/actionType are reported with their path', () => {
+    const legacy = {
+      some_drone: {
+        services: { commandMission: { name: '/start', serviceType: 'std_srvs/SetBool' } },
+        actions: { CameraFileDownload: { name: '/dl', actionType: 'x/action/Download' } },
+        publishers: { Gimbal: { name: '/g', messageType: 'x/msg/Gimbal' } },
+      },
+    };
+    assert.deepEqual(findLegacyTypeFields(legacy), [
+      'some_drone.services.commandMission.serviceType',
+      'some_drone.actions.CameraFileDownload.actionType',
+    ]);
   });
 });

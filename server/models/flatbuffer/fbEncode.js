@@ -173,7 +173,7 @@ export async function encodeFbMsg({ uav_id, type, attributes }) {
     return null;
   }
 
-  const serviceType = serviceDef['serviceType'];
+  const serviceType = serviceDef.messageType;
 
   if (type === 'position') {
     return encodePositionStamped({

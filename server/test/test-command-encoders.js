@@ -5,14 +5,14 @@ import { createCommandRegistry, endpointsOf } from '../models/commands/commandEn
 const PX4 = {
   publishers: { VehicleCommand: { name: '/fmu/in/vehicle_command', messageType: 'px4_msgs/msg/VehicleCommand' } },
   services: {
-    commandMission: { name: '/offboard/start', serviceType: 'std_srvs/srv/SetBool' },
-    stopMission: { name: '/offboard/stop', serviceType: 'std_srvs/srv/Trigger' },
+    commandMission: { name: '/offboard/start', messageType: 'std_srvs/srv/SetBool' },
+    stopMission: { name: '/offboard/stop', messageType: 'std_srvs/srv/Trigger' },
   },
   subscribers: { battery: { name: '/battery', messageType: 'px4_msgs/msg/BatteryStatus' } },
 };
 
 const OTHER_FIRMWARE = {
-  services: { takeoff: { name: '/cmd/takeoff', serviceType: 'other_msgs/srv/Takeoff' } },
+  services: { takeoff: { name: '/cmd/takeoff', messageType: 'other_msgs/srv/Takeoff' } },
 };
 
 function registry() {
@@ -67,7 +67,7 @@ describe('resolveCommands', () => {
 
   test('a generic msgType only implements the command its key names', () => {
     const { commands } = registry().resolveCommands({
-      services: { pausemission: { serviceType: 'std_srvs/srv/Trigger' } },
+      services: { pausemission: { messageType: 'std_srvs/srv/Trigger' } },
     });
     assert.ok(!commands.has('StopMission'));
   });
@@ -75,7 +75,7 @@ describe('resolveCommands', () => {
   test('a command that matches two endpoints is a problem until `via` picks one', () => {
     const dup = {
       ...PX4,
-      services: { ...PX4.services, VehicleCommand: { serviceType: 'px4_msgs/msg/VehicleCommand' } },
+      services: { ...PX4.services, VehicleCommand: { messageType: 'px4_msgs/msg/VehicleCommand' } },
     };
     const ambiguous = registry().resolveCommands(dup);
     const takeoff = ambiguous.problems.find((p) => p.startsWith('Takeoff: matches'));

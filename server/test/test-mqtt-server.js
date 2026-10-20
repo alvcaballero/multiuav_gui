@@ -25,7 +25,7 @@ class FakeClient extends EventEmitter {
 const DEVICE = { id: 7, name: 'uav1', category: 'cat' };
 const CATEGORY = {
   subscribers: { position: { name: '/gps', messageType: 'sensor_msgs/NavSatFix' } },
-  services: { commandMission: { name: '/start', serviceType: 'std_srvs/SetBool' } },
+  services: { commandMission: { name: '/start', messageType: 'std_srvs/SetBool' } },
 };
 
 function setup({ timeoutMs = 50, category = CATEGORY } = {}) {
