@@ -11,11 +11,11 @@
 // Los attributes llegan ya validados y con defaults (command_schema, commandsModel.sendCommand).
 
 import { createCommandRegistry } from './commandEncoders.js';
-import { CommandType } from '../config/commandTypes.js';
-import { ServiceKey } from '../config/deviceMsgCatalog.js';
+import { CommandType } from '../../config/commandTypes.js';
+import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { buildVehicleCommand } from './vehicleCommand.js';
-import { normalizeMission } from './mission/taskGraph.js';
-import { MISSION_SERVICE_TYPES } from './mission/missionSymbols.js';
+import { normalizeMission } from '../mission/taskGraph.js';
+import { MISSION_SERVICE_TYPES } from '../mission/missionSymbols.js';
 
 export const commandRegistry = createCommandRegistry();
 const { register, registerLocal } = commandRegistry;

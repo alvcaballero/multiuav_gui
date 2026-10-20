@@ -9,7 +9,7 @@ import {
   validateCommandOverrides,
   resolveCommand,
   validateAttributes,
-} from '../models/commandSchema.js';
+} from '../models/commands/commandSchema.js';
 
 const TYPES = Object.values(CommandType);
 

@@ -16,6 +16,7 @@ server/
 │   ├── ros/                     # ROS1/ROS2 integration (facade + transport primitives, see below)
 │   ├── flatbuffer/              # FlatBuffer device protocol (FlatbufferServer, fbEncode/fbDecode)
 │   ├── chat/                    # LLM chat orchestrator, provider handlers, agent profiles (see below)
+│   ├── commands/                # Device commands: sendCommand, command schema, encoder registry, PX4 VehicleCommand builder
 │   ├── mission/                 # Mission/route state machines, XYZ<->geodetic conversion, encoders
 │   ├── collision/                # UAV-to-UAV and obstacle collision detection/validation
 │   ├── markers/                 # Inspection element catalog: bases, groups, items, assignments
@@ -297,7 +298,7 @@ its dependents are skipped instead of waiting forever.
 - **One actor per task**, keyed by `taskId` in `listSM`. Creating an actor immediately
   sends `configureMission` to the device, so only the scheduler and the flows create them.
 - The device is loaded with a **one-task mission** (`missionForTask`, dependencies
-  stripped). The `LoadMission` encoder (`missionTaskForDevice`, `models/commandRegistry.js`) accepts any mission shape (incl. the bare `route[]` the
+  stripped). The `LoadMission` encoder (`missionTaskForDevice`, `models/commands/commandRegistry.js`) accepts any mission shape (incl. the bare `route[]` the
   MCP `load_mission_to_uav` tool posts) and loads the device's single task; a payload with
   several tasks for that device is rejected rather than guessed.
 - ROS end-of-mission signals carry only the device: `deviceFinishedMission` /
@@ -327,7 +328,7 @@ time, so per-task report windows (events, flown track) of two tasks on one devic
 
 - Two channels: ROS services OR FlatBuffer commands
 - 5-second timeout with automatic error callbacks
-- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. WHICH endpoint of a device implements a command, and how its message is built, is a registry like `rosDecode`'s: `models/commandEncoders.js` (`register(CommandType, { key?, msgType? }, encoder)`; specific msgTypes such as `px4_msgs/msg/VehicleCommand` match by msgType, generic ones such as `std_srvs/SetBool` by the endpoint key) filled in `models/commandRegistry.js`. Availability is DERIVED from the endpoints the category already declares — no per-category list. A command matching two endpoints of one category is a boot problem until `commands.<Type>.via` (e.g. `publishers.VehicleCommand`) picks one; `test/api/json/category_commands.json` is the golden list per category. A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
+- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. WHICH endpoint of a device implements a command, and how its message is built, is a registry like `rosDecode`'s: `models/commands/commandEncoders.js` (`register(CommandType, { key?, msgType? }, encoder)`; specific msgTypes such as `px4_msgs/msg/VehicleCommand` match by msgType, generic ones such as `std_srvs/SetBool` by the endpoint key) filled in `models/commands/commandRegistry.js`. Availability is DERIVED from the endpoints the category already declares — no per-category list. A command matching two endpoints of one category is a boot problem until `commands.<Type>.via` (e.g. `publishers.VehicleCommand`) picks one; `test/api/json/category_commands.json` is the golden list per category. A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commands/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
 - Command types: `CommandType` in `config/commandTypes.js` (PascalCase: `LoadMission`, `CommandMission`, `CameraFileDownload`, …). Not the same thing as the endpoint key that implements it on a device (`configureMission`, `commandMission`, keys of `devices_msg.yaml` enumerated by `ServiceKey`/`PublisherKey`, fixed by the ROS side). The client mirrors it in `client/src/common/util/commandTypes.js`; `test/test-command-types-mirror.js` fails if they drift
 
 ### ROS Integration
@@ -572,7 +573,7 @@ eventBus.emit('POSITION_UPDATED', data);
 When modifying mission flow, check all of:
 
 1. State machine definition (`models/mission/missionSM.js` / `missionExecutionSM.js`)
-2. Command handlers in `models/commands.js`
+2. Command handlers in `models/commands/commands.js`
 3. The scheduler's readiness rules (`models/mission/taskScheduler.js`) and the two flows in `models/mission/mission.js` (`initMission`, `loadMissionManual`/`commandMissionManual`)
 4. Every task must end in a terminal status on every path (success, failure, cancel, restart): a task left in `init` of a dead mission keeps its device "busy" for new mission requests forever
 
@@ -582,7 +583,7 @@ When adding new device types:
 
 1. Add configuration to `devices_msg.yaml` (`subscribers`, `services`, and/or `actions` per category); put any per-category scale/unit/offset on the subscriber entry itself
 2. Register a decoder for the `(slot, messageType)` pair in `models/ros/rosDecode.js` (or `ignore(...)` it) — boot validation and `test/test-devices-msg.js` fail on a pair with none
-3. If it takes commands: register the command encoder in `models/commandRegistry.js` (by msgType, or by key for a generic msgType) and the message encoder for that msgType in `models/msgEncode.js` (or `passthrough` it) — the boot check and `test/test-command-registry.js` fail otherwise
+3. If it takes commands: register the command encoder in `models/commands/commandRegistry.js` (by msgType, or by key for a generic msgType) and the message encoder for that msgType in `models/msgEncode.js` (or `passthrough` it) — the boot check and `test/test-command-registry.js` fail otherwise
 4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosTopics.js`; no per-device code needed
 
 ### WebSocket Message Format

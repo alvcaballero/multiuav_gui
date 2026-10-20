@@ -14,8 +14,8 @@
 //   - KillMotors is a FORCED DISARM (param2 = 21196, what QGC's emergency stop sends),
 //     not DO_FLIGHTTERMINATION: PX4 ships with CBRK_FLIGHTTERM set, which ignores it.
 
-import { CommandType } from '../config/commandTypes.js';
-import { offsetLatLon } from '../common/geo.js';
+import { CommandType } from '../../config/commandTypes.js';
+import { offsetLatLon } from '../../common/geo.js';
 
 export const VEHICLE_CMD = Object.freeze({
   NAV_RETURN_TO_LAUNCH: 20,

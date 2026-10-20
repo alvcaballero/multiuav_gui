@@ -1,4 +1,4 @@
-import { commandsModel } from '../models/commands.js';
+import { commandsModel } from '../models/commands/commands.js';
 
 export class commandsController {
   static async getAvalaibleCommands(req, res) {

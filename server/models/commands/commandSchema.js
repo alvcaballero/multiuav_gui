@@ -10,8 +10,8 @@
 // Las funciones reciben el schema y la config de categoría como argumentos (puras,
 // testeables); `commandSchema` es la instancia cargada del archivo.
 
-import { readDataFile } from '../common/utils.js';
-import { commandSchema as commandSchemaFile } from '../config/config.js';
+import { readDataFile } from '../../common/utils.js';
+import { commandSchema as commandSchemaFile } from '../../config/config.js';
 
 export const commandSchema = readDataFile(commandSchemaFile);
 

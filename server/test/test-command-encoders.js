@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { createCommandRegistry, endpointsOf } from '../models/commandEncoders.js';
+import { createCommandRegistry, endpointsOf } from '../models/commands/commandEncoders.js';
 
 const PX4 = {
   publishers: { VehicleCommand: { name: '/fmu/in/vehicle_command', messageType: 'px4_msgs/msg/VehicleCommand' } },

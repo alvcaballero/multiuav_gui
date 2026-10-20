@@ -1,10 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildVehicleCommand, relativeTarget, VEHICLE_CMD } from '../models/vehicleCommand.js';
+import { buildVehicleCommand, relativeTarget, VEHICLE_CMD } from '../models/commands/vehicleCommand.js';
 import { CommandType } from '../config/commandTypes.js';
-import { commandRegistry } from '../models/commandRegistry.js';
+import { commandRegistry } from '../models/commands/commandRegistry.js';
 import { approxDistanceMeters } from '../common/geo.js';
-import { commandSchema, resolveCommand, validateAttributes } from '../models/commandSchema.js';
+import { commandSchema, resolveCommand, validateAttributes } from '../models/commands/commandSchema.js';
 
 const POS = { latitude: 37.41, longitude: -6.0, altitude: 50, course: 0 };
 const close = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);

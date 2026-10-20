@@ -1,13 +1,13 @@
-import { devicesController } from '../controllers/devices.js';
-import { eventsController } from '../controllers/events.js';
-import { getGateway } from './gateways/index.js';
-import { positionsController } from '../controllers/positions.js';
-import { categoryModel } from './category.js';
-import { CommandType } from '../config/commandTypes.js';
-import { logger } from '../common/logger.js';
+import { devicesController } from '../../controllers/devices.js';
+import { eventsController } from '../../controllers/events.js';
+import { getGateway } from '../gateways/index.js';
+import { positionsController } from '../../controllers/positions.js';
+import { categoryModel } from '../category.js';
+import { CommandType } from '../../config/commandTypes.js';
+import { logger } from '../../common/logger.js';
 import { commandSchema, resolveCommand, validateAttributes } from './commandSchema.js';
 import { commandRegistry } from './commandRegistry.js';
-import { encodeMsg, hasMsgEncoder } from './msgEncode.js';
+import { encodeMsg, hasMsgEncoder } from '../msgEncode.js';
 
 const COMMAND_TYPES = new Set(Object.values(CommandType));
 

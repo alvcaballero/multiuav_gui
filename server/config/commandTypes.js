@@ -4,8 +4,8 @@
 // Un command es una ACCIÓN de dominio (Takeoff), no un mensaje: cada plataforma la implementa
 // con el suyo. Lo demás de un command vive en otro lado, cada cosa una sola vez:
 //   - qué significa (params, unidades, rangos, label, confirm) → config/devices/command_schema.yaml
-//   - qué endpoint de un device lo implementa y cómo se arma su mensaje → models/commandRegistry.js
-//     (registry de models/commandEncoders.js; la disponibilidad se deriva de los endpoints que
+//   - qué endpoint de un device lo implementa y cómo se arma su mensaje → models/commands/commandRegistry.js
+//     (registry de models/commands/commandEncoders.js; la disponibilidad se deriva de los endpoints que
 //     la categoría declara en devices_msg.yaml)
 //
 // Todos en PascalCase. No confundir con las keys de devices_msg.yaml (ServiceKey/PublisherKey,

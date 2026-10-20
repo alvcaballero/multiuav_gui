@@ -4,10 +4,10 @@ import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS } from 
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 import { hasDecoder, decodableMsgTypes } from './ros/rosDecode.js';
-import { commandSchema, validateCommandSchema, validateCommandOverrides } from './commandSchema.js';
+import { commandSchema, validateCommandSchema, validateCommandOverrides } from './commands/commandSchema.js';
 import { CommandType } from '../config/commandTypes.js';
-import { commandRegistry } from './commandRegistry.js';
-import { endpointsOf } from './commandEncoders.js';
+import { commandRegistry } from './commands/commandRegistry.js';
+import { endpointsOf } from './commands/commandEncoders.js';
 
 const devices_msg = readDataFile(devicesMsg);
 const _mission_schema = readDataFile(missionSchema);

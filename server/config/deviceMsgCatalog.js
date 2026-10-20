@@ -12,7 +12,7 @@
 // naturaleza que services/actions → PublisherKey (PascalCase).
 //
 // Es config del DEVICE, no de los comandos. Qué command implementa cada endpoint, y
-// cómo se arma su mensaje, lo decide models/commandRegistry.js (por msgType, o por estas
+// cómo se arma su mensaje, lo decide models/commands/commandRegistry.js (por msgType, o por estas
 // keys cuando el msgType es genérico); los literales de commands viven en commandTypes.js.
 //
 // Bloques y su enum/validación:

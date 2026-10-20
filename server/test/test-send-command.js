@@ -1,6 +1,6 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { commandsModel } from '../models/commands.js';
+import { commandsModel } from '../models/commands/commands.js';
 import { registerGateway } from '../models/gateways/registry.js';
 import { devicesController } from '../controllers/devices.js';
 import { positionsController } from '../controllers/positions.js';
