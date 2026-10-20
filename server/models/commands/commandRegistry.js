@@ -47,6 +47,7 @@ for (const type of [
   CommandType.DISARM,
   CommandType.KILL_MOTORS,
   CommandType.MOVE_RELATIVE,
+  CommandType.GIMBAL,
 ]) {
   register(type, { msgType: PX4_VEHICLE_COMMAND }, ({ attributes, position }) =>
     buildVehicleCommand({ type, attributes, position })

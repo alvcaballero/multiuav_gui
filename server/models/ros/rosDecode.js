@@ -119,6 +119,7 @@ register('vehicle_status', 'px4_msgs/msg/VehicleStatus', ({ msg, deviceId }) => 
   navState: getDroneStatus(msg.nav_state),
   failsafe: msg.failsafe,
   flightCheck: msg.pre_flight_checks_pass,
+  systemId: msg.system_id, // MAV_SYS_ID: the target_system of every VehicleCommand to it
 }));
 
 register('vehicle_command_ack', 'px4_msgs/msg/VehicleCommandAck', ({ msg, deviceId }) => ({

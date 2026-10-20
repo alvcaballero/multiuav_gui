@@ -115,6 +115,7 @@
     "CameraFileDownload",
     "CommandMission",
     "Disarm",
+    "Gimbal",
     "Hold",
     "KillMotors",
     "Land",

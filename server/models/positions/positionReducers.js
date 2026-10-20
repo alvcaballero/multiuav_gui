@@ -23,10 +23,11 @@ import { round } from '../../common/utils.js';
  * @property {{down?:number,front?:number,right?:number,back?:number,left?:number,up?:number}} [obstacle_info]
  * @property {boolean} [setHome] - snapshot the current lat/lon/alt as home
  * @property {{x:number,y:number,z:number}} [localposition] - local ENU, meters
- * @property {string} [armState] - with `navState`, `failsafe`, `flightCheck`
+ * @property {string} [armState] - with `navState`, `failsafe`, `flightCheck`, `systemId`
  * @property {string} [navState]
  * @property {boolean} [failsafe]
  * @property {boolean} [flightCheck]
+ * @property {number} [systemId] - PX4 MAV_SYS_ID (vehicleCommand.js targets it)
  * @property {string} [commandAck] - with `resultCmdAck`
  * @property {string} [resultCmdAck]
  * @property {string} [uav_state] - with `mission_state`, `wp_reached`, `landed_state`, `protocol`
@@ -129,6 +130,7 @@ export const REDUCERS = [
       pos.attributes.navState = p.navState;
       pos.attributes.failsafe = p.failsafe;
       pos.attributes.flightCheck = p.flightCheck;
+      if (p.systemId != null) pos.attributes.systemId = p.systemId;
     },
   },
   {

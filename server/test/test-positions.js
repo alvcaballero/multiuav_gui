@@ -144,6 +144,13 @@ describe('updatePosition: attributes', () => {
     assert.equal(pos.attributes.flightCheck, true);
   });
 
+  test('systemId is kept when a later vehicle_status does not carry it', async () => {
+    const id = newId();
+    await update(id, { armState: 'ARMED', navState: 'MISSION', failsafe: false, flightCheck: true, systemId: 2 });
+    const pos = await update(id, { armState: 'DISARMED', navState: 'MISSION', failsafe: false, flightCheck: true });
+    assert.equal(pos.attributes.systemId, 2);
+  });
+
   test('commandAck carries resultCmdAck with it', async () => {
     const pos = await update(newId(), { commandAck: 'ARM', resultCmdAck: 'ACCEPTED' });
     assert.equal(pos.attributes.commandAck, 'ARM');

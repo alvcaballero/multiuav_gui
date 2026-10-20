@@ -6,7 +6,7 @@ import { commandRegistry } from '../models/commands/commandRegistry.js';
 import { approxDistanceMeters } from '../common/geo.js';
 import { commandSchema, resolveCommand, validateAttributes } from '../models/commands/commandSchema.js';
 
-const POS = { latitude: 37.41, longitude: -6.0, altitude: 50, course: 0 };
+const POS = { latitude: 37.41, longitude: -6.0, altitude: 50, course: 0, attributes: { systemId: 3 } };
 const close = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
 describe('relativeTarget (body frame → global)', () => {
@@ -51,14 +51,14 @@ describe('buildVehicleCommand', () => {
 
   test('takeoff targets current altitude + requested height', () => {
     const msg = buildVehicleCommand({ type: CommandType.TAKEOFF, attributes: { altitude: 20 }, position: POS });
-    assert.equal(msg.command, VEHICLE_CMD.NAV_TAKEOFF);
+    assert.equal(msg.command, VEHICLE_CMD.VEHICLE_CMD_NAV_TAKEOFF);
     assert.equal(msg.param7, 70);
     assert.equal(msg.param5, POS.latitude);
   });
 
   test('kill motors is a forced disarm', () => {
-    const msg = buildVehicleCommand({ type: CommandType.KILL_MOTORS });
-    assert.equal(msg.command, VEHICLE_CMD.COMPONENT_ARM_DISARM);
+    const msg = buildVehicleCommand({ type: CommandType.KILL_MOTORS, position: POS });
+    assert.equal(msg.command, VEHICLE_CMD.VEHICLE_CMD_COMPONENT_ARM_DISARM);
     assert.equal(msg.param1, 0);
     assert.equal(msg.param2, 21196);
   });
@@ -69,7 +69,7 @@ describe('buildVehicleCommand', () => {
       attributes: { dx: 5, dz: 3 },
       position: POS,
     });
-    assert.equal(msg.command, VEHICLE_CMD.DO_REPOSITION);
+    assert.equal(msg.command, VEHICLE_CMD.VEHICLE_CMD_DO_REPOSITION);
     assert.equal(msg.param7, 53);
     assert.ok(msg.param5 > POS.latitude);
   });
@@ -85,7 +85,26 @@ describe('buildVehicleCommand', () => {
     assert.equal(msg.param7, 60);
   });
 
+  test('targets the system id the vehicle reports, never broadcast', () => {
+    const msg = buildVehicleCommand({ type: CommandType.LAND, position: POS });
+    assert.equal(msg.target_system, 3);
+    assert.equal(msg.target_component, 1);
+  });
+
+  test('without a known system id the command is rejected, even one that needs no position', () => {
+    const noSysId = { ...POS, attributes: {} };
+    assert.throws(() => buildVehicleCommand({ type: CommandType.KILL_MOTORS, position: noSysId }), /system id/);
+    assert.throws(() => buildVehicleCommand({ type: CommandType.LAND }), /system id/);
+  });
+
+  test('gimbal is a DO_GIMBAL_MANAGER_PITCHYAW', () => {
+    const msg = buildVehicleCommand({ type: CommandType.GIMBAL, attributes: { pitch: -30, yaw: 10 }, position: POS });
+    assert.equal(msg.command, VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW);
+    assert.equal(msg.param1, -30);
+    assert.equal(msg.param2, 10);
+  });
+
   test('a non vehicle command is rejected', () => {
-    assert.throws(() => buildVehicleCommand({ type: CommandType.GIMBAL }), /not a vehicle command/);
+    assert.throws(() => buildVehicleCommand({ type: CommandType.LOAD_MISSION }), /not a vehicle command/);
   });
 });

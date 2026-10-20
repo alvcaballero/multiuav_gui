@@ -131,7 +131,6 @@ commands:
     group: gimbal
     params:
       pitch: { name: 'Pitch', type: number, unit: deg }
-      roll: { name: 'Roll', type: number, unit: deg }
       yaw: { name: 'Yaw', type: number, unit: deg }
   GimbalPitch:
     label: 'Gimbal pitch'

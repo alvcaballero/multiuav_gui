@@ -9,8 +9,11 @@
 //     param4 into position_setpoint.yaw as-is), unlike the MAVLink spec's degrees.
 //   - rosbridge carries JSON: NaN ("keep current") can't be sent. Every param that
 //     PX4 would read as NaN is filled with the current value instead.
-//   - target_system/target_component 0 = broadcast: the topic is already namespaced per
-//     vehicle, and in multi-vehicle SITL each instance has a different MAV_SYS_ID.
+//   - target_system is the vehicle's MAV_SYS_ID, different per drone (multi-vehicle SITL:
+//     instance + 1). It comes from telemetry (vehicle_status.system_id →
+//     position.attributes.systemId). Unknown → the command is REJECTED, never sent as 0
+//     (broadcast): a KillMotors would reach every vehicle on the link.
+//     target_component 1 = MAV_COMP_ID_AUTOPILOT1.
 //   - KillMotors is a FORCED DISARM (param2 = 21196, what QGC's emergency stop sends),
 //     not DO_FLIGHTTERMINATION: PX4 ships with CBRK_FLIGHTTERM set, which ignores it.
 
@@ -18,12 +21,14 @@ import { CommandType } from '../../config/commandTypes.js';
 import { offsetLatLon } from '../../common/geo.js';
 
 export const VEHICLE_CMD = Object.freeze({
-  NAV_RETURN_TO_LAUNCH: 20,
-  NAV_LAND: 21,
-  NAV_TAKEOFF: 22,
-  DO_SET_MODE: 176,
-  DO_REPOSITION: 192,
-  COMPONENT_ARM_DISARM: 400,
+  VEHICLE_CMD_NAV_RETURN_TO_LAUNCH: 20,
+  VEHICLE_CMD_NAV_LAND: 21,
+  VEHICLE_CMD_NAV_TAKEOFF: 22,
+  VEHICLE_CMD_DO_SET_MODE: 176,
+  VEHICLE_CMD_DO_REPOSITION: 192,
+  VEHICLE_CMD_COMPONENT_ARM_DISARM: 400,
+  VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW: 1000,
+  VEHICLE_CMD_DO_GIMBAL_MANAGER_CONFIGURE: 1001,
 });
 
 const FORCE_DISARM_MAGIC = 21196;
@@ -43,7 +48,15 @@ function requirePosition(position, type) {
   }
 }
 
-function message(command, params = {}) {
+function systemIdOf(position, type) {
+  const systemId = position?.attributes?.systemId;
+  if (systemId == null) {
+    throw new Error(`${type} needs the vehicle's system id (vehicle_status telemetry) and none is known`);
+  }
+  return systemId;
+}
+
+function message(command, targetSystem, params = {}) {
   return {
     timestamp: 0,
     param1: params.param1 ?? 0,
@@ -54,8 +67,8 @@ function message(command, params = {}) {
     param6: params.param6 ?? 0,
     param7: params.param7 ?? 0,
     command,
-    target_system: 0,
-    target_component: 0,
+    target_system: targetSystem,
+    target_component: 1,
     source_system: 255,
     source_component: 190,
     confirmation: 0,
@@ -86,15 +99,17 @@ export function relativeTarget(position, { dx = 0, dy = 0, dz = 0, dyaw = 0 }) {
  * @param {string} args.type        a CommandType commandRegistry implements with a VehicleCommand
  * @param {object} [args.attributes] command attributes, ALREADY validated and defaulted by
  *   command_schema (commandsModel.sendCommand): numbers in range, defaults filled in
- * @param {object} [args.position]  current position ({latitude, longitude, altitude AMSL, course})
+ * @param {object} [args.position]  current position ({latitude, longitude, altitude AMSL, course,
+ *   attributes.systemId})
  * @returns {object} px4_msgs/msg/VehicleCommand
  */
 export function buildVehicleCommand({ type, attributes = {}, position }) {
+  const vehicleMessage = (command, params) => message(command, systemIdOf(position, type), params);
   switch (type) {
     case CommandType.TAKEOFF: {
       requirePosition(position, type);
       const height = attributes.altitude; // m above the current altitude
-      return message(VEHICLE_CMD.NAV_TAKEOFF, {
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_NAV_TAKEOFF, {
         param4: wrapPi((position.course ?? 0) * DEG_TO_RAD),
         param5: position.latitude,
         param6: position.longitude,
@@ -102,31 +117,39 @@ export function buildVehicleCommand({ type, attributes = {}, position }) {
       });
     }
     case CommandType.LAND:
-      return message(VEHICLE_CMD.NAV_LAND);
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_NAV_LAND);
     case CommandType.RETURN_HOME:
-      return message(VEHICLE_CMD.NAV_RETURN_TO_LAUNCH);
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_NAV_RETURN_TO_LAUNCH);
     case CommandType.HOLD:
-      return message(VEHICLE_CMD.DO_SET_MODE, {
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_DO_SET_MODE, {
         param1: MODE_CUSTOM,
         param2: PX4_MAIN_MODE_AUTO,
         param3: PX4_SUB_MODE_AUTO_LOITER,
       });
     case CommandType.ARM:
-      return message(VEHICLE_CMD.COMPONENT_ARM_DISARM, { param1: 1 });
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_COMPONENT_ARM_DISARM, { param1: 1 });
     case CommandType.DISARM:
-      return message(VEHICLE_CMD.COMPONENT_ARM_DISARM, { param1: 0 });
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_COMPONENT_ARM_DISARM, { param1: 0 });
     case CommandType.KILL_MOTORS:
-      return message(VEHICLE_CMD.COMPONENT_ARM_DISARM, { param1: 0, param2: FORCE_DISARM_MAGIC });
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_COMPONENT_ARM_DISARM, { param1: 0, param2: FORCE_DISARM_MAGIC });
     case CommandType.MOVE_RELATIVE: {
       requirePosition(position, type);
       const target = relativeTarget(position, attributes);
-      return message(VEHICLE_CMD.DO_REPOSITION, {
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_DO_REPOSITION, {
         param1: -1, // default ground speed
         param2: REPOSITION_CHANGE_MODE,
         param4: target.yaw,
         param5: target.latitude,
         param6: target.longitude,
         param7: target.altitude,
+      });
+    }
+    case CommandType.GIMBAL: {
+      const { pitch, yaw } = attributes;
+      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW, {
+        param1: pitch, //pitch
+        param2: yaw, // yaw
+        param5: 0, // 0 =  relative to device,  64 =  relative to world
       });
     }
     default:

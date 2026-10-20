@@ -14,7 +14,7 @@ const devices = readDataFile(devicesMsg);
 // endpoint o un encoder que cambia lo que expone un dron, el diff de este archivo lo muestra.
 const golden = JSON.parse(readFileSync(new URL('./api/json/category_commands.json', import.meta.url)));
 
-const POS = { latitude: 37.41, longitude: -6.0, altitude: 50, course: 0, attributes: { gimbal: [-30, 0, 15] } };
+const POS = { latitude: 37.41, longitude: -6.0, altitude: 50, course: 0, attributes: { gimbal: [-30, 0, 15], systemId: 1 } };
 const endpoint = (block, key, msgType) => ({ block, key, msgType });
 
 describe('commandRegistry — what each category exposes', () => {

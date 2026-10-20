@@ -13,7 +13,13 @@ const DEVICES = {
   1: { id: 1, name: 'px4_1', category: 'px4_ros2', protocol: 'test' },
   2: { id: 2, name: 'm300_1', category: 'dji_M300_PSDK', protocol: 'test' },
 };
-const POSITION = { latitude: 37.41, longitude: -6.0, altitude: 50, course: 0, attributes: { gimbal: [-30, 0, 15] } };
+const POSITION = {
+  latitude: 37.41,
+  longitude: -6.0,
+  altitude: 50,
+  course: 0,
+  attributes: { gimbal: [-30, 0, 15], systemId: 1 },
+};
 
 let sent = [];
 let homes = [];
@@ -35,6 +41,19 @@ describe('sendCommand', () => {
     assert.deepEqual(sent[0].endpoint, { block: 'publishers', key: 'vehicle_command', msgType: 'px4_msgs/msg/VehicleCommand' });
     assert.equal(sent[0].message.command, 22);
     assert.equal(sent[0].message.param7, 70);
+    assert.equal(sent[0].message.target_system, 1);
+  });
+
+  test('a PX4 command is not sent while the vehicle has not reported its system id', async () => {
+    positionsController.getByDeviceId = () => ({ ...POSITION, attributes: {} });
+    try {
+      const r = await commandsModel.sendCommand({ deviceId: 1, type: CommandType.LAND });
+      assert.equal(r.state, 'error');
+      assert.match(r.msg, /system id/);
+      assert.equal(sent.length, 0);
+    } finally {
+      positionsController.getByDeviceId = () => POSITION;
+    }
   });
 
   test('the same Gimbal command goes out by the PSDK publisher, already encoded for its msgType', async () => {
@@ -83,7 +102,7 @@ describe('sendCommand', () => {
 
   test('rejects before sending: unknown type, unsupported command, invalid attributes', async () => {
     assert.match((await commandsModel.sendCommand({ deviceId: 1, type: 'Fly' })).msg, /does not exist/);
-    assert.match((await commandsModel.sendCommand({ deviceId: 1, type: CommandType.GIMBAL })).msg, /not supported by device px4_1/);
+    assert.match((await commandsModel.sendCommand({ deviceId: 1, type: CommandType.SETUP_CAMERA })).msg, /not supported by device px4_1/);
     const bad = await commandsModel.sendCommand({ deviceId: 1, type: CommandType.TAKEOFF, attributes: { altitude: 'high' } });
     assert.match(bad.msg, /'altitude' must be a number/);
     assert.equal(sent.length, 0);

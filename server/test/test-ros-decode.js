@@ -79,7 +79,7 @@ describe('decodeRosMsg: px4 status', () => {
     const r = dec({
       type: 'vehicle_status',
       msgType: 'px4_msgs/msg/VehicleStatus',
-      msg: { arming_state: 2, nav_state: 4, failsafe: false, pre_flight_checks_pass: true },
+      msg: { arming_state: 2, nav_state: 4, failsafe: false, pre_flight_checks_pass: true, system_id: 2 },
     });
     assert.deepEqual(r, {
       deviceId: 7,
@@ -87,6 +87,7 @@ describe('decodeRosMsg: px4 status', () => {
       navState: getDroneStatus(4),
       failsafe: false,
       flightCheck: true,
+      systemId: 2,
     });
   });
 
