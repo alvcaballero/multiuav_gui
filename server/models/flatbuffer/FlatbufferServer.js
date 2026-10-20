@@ -44,7 +44,13 @@ export class FlatbufferServer {
 
   async sendCommand({ uav_id, type, attributes }) {
     const device = await devicesController.getDevice(uav_id);
-    const msg = await encodeFbMsg({ uav_id, type, attributes });
+    let msg;
+    try {
+      msg = await encodeFbMsg({ uav_id, type, attributes });
+    } catch (err) {
+      logger.warn(`FlatbufferServer: cannot pack "${type}" for device "${device.name}": ${err.message}`);
+      return { state: 'error', msg: err.message };
+    }
 
     if (msg === null) {
       logger.warn(`FlatbufferServer: no encoder for type "${type}" on device "${device.name}"`);

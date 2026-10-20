@@ -612,6 +612,12 @@ evaluated at registration hits a circular-import TDZ.
 - Direct WebSocket connection to fleet
 - Binary encoding for bandwidth efficiency
 - Used for non-ROS devices or optimized deployments
+- robofleet carries ROS messages packed in Flatbuffers generated from the same `.msg`/`.srv`
+  (`fbmsglib`, e.g. `fb.aerialcore_common.ConfigMissionRequest`). So `fbEncode.js` receives the ROS
+  message already encoded by `msgEncode` and only PACKS it (rosbridge's `{ data: [...] }` arrays become
+  plain vectors). Only `configureMission` with the ROS1 ConfigMission structure and `commandMission`
+  (`std_srvs/SetBool`) have a schema; another mission type (ROS2 LoadMission, PSDK) is rejected with an
+  error instead of packed as ConfigMission. Not verified against a real robofleet device.
 
 **MQTT Protocol** (`protocol: 'mqtt'`, opt-in with `MQTT_CONNECTION=true`, broker at `MQTT_URL`, default `mqtt://127.0.0.1:1883`):
 

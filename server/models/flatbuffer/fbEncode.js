@@ -39,7 +39,27 @@ function encodePositionStamped({ topic, type = 'geometry_msgs/PoseStamped', fram
   return fbb.asUint8Array();
 }
 
-function encodeMission({ topic, type, attributes }) {
+// The ROS message arrives already encoded for its msgType (models/msgEncode.js, before the
+// gateway): robofleet packs ROS messages, so this module only PACKS them into the Flatbuffer
+// schema generated from the same .srv — it never builds a message from domain data.
+
+// std_msgs/*MultiArray in rosbridge JSON is `{ data: [...] }`; the Flatbuffer schema stores
+// the plain vector.
+const dataOf = (field) => field?.data ?? [];
+
+// serviceTypes whose ROS message (MissionToRos) matches the generated
+// fb.aerialcore_common.ConfigMissionRequest schema.
+const CONFIG_MISSION_TYPES = new Set(['aerialcore_common/ConfigMission', 'multiuav_interfaces/ConfigMission']);
+
+/**
+ * Packs an aerialcore_common/ConfigMission request (the output of MissionToRos) into Flatbuffers.
+ * @param {object} msg  ROS ConfigMission request: waypoint[], radius, maxVel, idleVel,
+ *                      yaw/speed/gimbalPitch/commandList/commandParameter as { data: [] }, modes
+ * @param {{ topic: string, type: string }} meta  topic and serviceType for MsgMetadata
+ * @returns {Uint8Array}
+ */
+export function encodeConfigMission(msg, { topic, type }) {
+  const attributes = msg;
   const fbb = new flatbuffers.Builder();
   const metadataOffset = fb.fb.MsgMetadata.createMsgMetadata(
     fbb,
@@ -78,19 +98,19 @@ function encodeMission({ topic, type, attributes }) {
   }
 
   const waypointsOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createWaypointVector(fbb, waypoints);
-  const yawOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createYawVector(fbb, attributes.yaw);
+  const yawOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createYawVector(fbb, dataOf(attributes.yaw));
   const gimbalPitchOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createGimbalPitchVector(
     fbb,
-    attributes.gimbalPitch
+    dataOf(attributes.gimbalPitch)
   );
-  const speedOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createSpeedVector(fbb, attributes.speed);
+  const speedOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createSpeedVector(fbb, dataOf(attributes.speed));
   const commandListOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createCommandListVector(
     fbb,
-    attributes.commandList.flat()
+    dataOf(attributes.commandList)
   );
   const commandParameterOffset = fb.fb.aerialcore_common.ConfigMissionRequest.createCommandParameterVector(
     fbb,
-    attributes.commandParameter.flat()
+    dataOf(attributes.commandParameter)
   );
 
   fb.fb.aerialcore_common.ConfigMissionRequest.startConfigMissionRequest(fbb);
@@ -98,15 +118,16 @@ function encodeMission({ topic, type, attributes }) {
   fb.fb.aerialcore_common.ConfigMissionRequest.addMissionId(fbb, missionIdOffset);
   fb.fb.aerialcore_common.ConfigMissionRequest.addMissionType(fbb, attributes.missionType ?? 0);
   fb.fb.aerialcore_common.ConfigMissionRequest.addWaypoint(fbb, waypointsOffset);
-  fb.fb.aerialcore_common.ConfigMissionRequest.addRadius(fbb, attributes.radius);
-  fb.fb.aerialcore_common.ConfigMissionRequest.addMaxVel(fbb, attributes.maxVel);
+  fb.fb.aerialcore_common.ConfigMissionRequest.addRadius(fbb, attributes.radius ?? 0);
+  // maxVel / gimbalPitchMode are omitted on profiles that don't expose them (v1): pack 0.
+  fb.fb.aerialcore_common.ConfigMissionRequest.addMaxVel(fbb, attributes.maxVel ?? 0);
   fb.fb.aerialcore_common.ConfigMissionRequest.addIdleVel(fbb, attributes.idleVel);
   fb.fb.aerialcore_common.ConfigMissionRequest.addYaw(fbb, yawOffset);
   fb.fb.aerialcore_common.ConfigMissionRequest.addGimbalPitch(fbb, gimbalPitchOffset);
   fb.fb.aerialcore_common.ConfigMissionRequest.addSpeed(fbb, speedOffset);
   fb.fb.aerialcore_common.ConfigMissionRequest.addYawMode(fbb, attributes.yawMode);
   fb.fb.aerialcore_common.ConfigMissionRequest.addTraceMode(fbb, attributes.traceMode);
-  fb.fb.aerialcore_common.ConfigMissionRequest.addGimbalPitchMode(fbb, attributes.gimbalPitchMode);
+  fb.fb.aerialcore_common.ConfigMissionRequest.addGimbalPitchMode(fbb, attributes.gimbalPitchMode ?? 0);
   fb.fb.aerialcore_common.ConfigMissionRequest.addFinishAction(fbb, attributes.finishAction);
   fb.fb.aerialcore_common.ConfigMissionRequest.addCommandList(fbb, commandListOffset);
   fb.fb.aerialcore_common.ConfigMissionRequest.addCommandParameter(fbb, commandParameterOffset);
@@ -121,14 +142,16 @@ function encodeMission({ topic, type, attributes }) {
   return fbb.asUint8Array();
 }
 
-function encodeCommandMission({ topic, type, attributes: _attributes }) {
+// commandMission request → std_srvs/SetBool Flatbuffer. `data` defaults to true (start): a
+// category may declare commandMission as std_srvs/TriggerRequest, whose encoded request is {}.
+export function encodeSetBool(msg, { topic, type }) {
   const fbb = new flatbuffers.Builder();
   const metadataOffset = fb.fb.MsgMetadata.createMsgMetadata(
     fbb,
     fbb.createString(`${type}`),
     fbb.createString(`${topic}`)
   );
-  const requestOffset = fb.fb.std_srvs.SetBoolRequest.createSetBoolRequest(fbb, true);
+  const requestOffset = fb.fb.std_srvs.SetBoolRequest.createSetBoolRequest(fbb, msg?.data ?? true);
 
   fb.fb.std_srvs.SetBool.startSetBool(fbb);
   fb.fb.std_srvs.SetBool.add_Metadata(fbb, metadataOffset);
@@ -163,10 +186,15 @@ export async function encodeFbMsg({ uav_id, type, attributes }) {
     });
   }
   if (type === 'configureMission') {
-    return encodeMission({ topic: `/${uavName}/configureMission`, type: serviceType, attributes });
+    // Only the ROS1 ConfigMission structure has a generated Flatbuffer schema; packing another
+    // mission type (ROS2 LoadMission, PSDK) into it would send garbage.
+    if (!CONFIG_MISSION_TYPES.has(serviceType)) {
+      throw new Error(`robofleet has no Flatbuffer schema for mission type '${serviceType}' (device ${uavName})`);
+    }
+    return encodeConfigMission(attributes, { topic: `/${uavName}/configureMission`, type: serviceType });
   }
   if (type === 'commandMission') {
-    return encodeCommandMission({ topic: `/${uavName}/commandMission`, type: serviceType, attributes });
+    return encodeSetBool(attributes, { topic: `/${uavName}/commandMission`, type: serviceType });
   }
 
   return null;
