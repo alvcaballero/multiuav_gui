@@ -57,14 +57,14 @@ for (const type of [
 // ─── gimbal ───────────────────────────────────────────────────────────────────
 // Objeto de dominio NEUTRO: ángulos ABSOLUTOS en grados; msgEncode.js lo traduce por msgType.
 // Los dos wire formats llevan siempre los 3 ejes: el eje que no viene se completa con el
-// ángulo actual (attributes.gimbal = [pitch, roll, yaw]). Sin telemetría de gimbal la
-// posición trae [0, 0, 0].
+// ángulo actual (attributes.gimbal = [pitch, roll, yaw]). El roll no es un param del command:
+// sale siempre de la telemetría. Sin telemetría de gimbal la posición trae [0, 0, 0].
 function gimbalRequest({ attributes = {}, position }, reset = false) {
   const [pitch, roll, yaw] = position?.attributes?.gimbal ?? [0, 0, 0];
   return {
     reset,
     pitch: attributes.pitch ?? pitch,
-    roll: attributes.roll ?? roll,
+    roll,
     yaw: attributes.yaw ?? yaw,
   };
 }
