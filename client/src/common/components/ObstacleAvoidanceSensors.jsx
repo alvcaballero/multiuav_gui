@@ -184,7 +184,7 @@ const ObstacleAvoidanceSensors = ({ obstacleData }) => {
               variant="overline"
               color="textSecondary"
               component="div"
-              sx={{ lineHeight: 1.4 }}
+              sx={{ lineHeight: 1.2 }}
             >
               {label}
             </Typography>
@@ -202,15 +202,15 @@ const ObstacleAvoidanceSensors = ({ obstacleData }) => {
         <div className={classes.legend}>
           <span>
             <span className={classes.dot} style={{ background: theme.palette.error.main }} />
-            {`< ${STOP_DISTANCE} m stop`}
+            {`< ${STOP_DISTANCE} m`}
           </span>
           <span>
             <span className={classes.dot} style={{ background: theme.palette.warning.main }} />
-            {`${STOP_DISTANCE}–${CAUTION_DISTANCE} m caution`}
+            {`${STOP_DISTANCE}–${CAUTION_DISTANCE} m`}
           </span>
           <span>
             <span className={classes.dot} style={{ background: theme.palette.primary.main }} />
-            {`> ${CAUTION_DISTANCE} m clear`}
+            {`> ${CAUTION_DISTANCE} m`}
           </span>
         </div>
       </div>

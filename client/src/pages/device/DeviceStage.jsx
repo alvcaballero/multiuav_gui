@@ -174,16 +174,16 @@ const useStyles = makeStyles()((theme) => ({
     left: 14,
     bottom: 14,
     zIndex: 5,
-    width: 262,
-    padding: theme.spacing(1, 1.25, 1.25),
+    width: 264,
+    padding: theme.spacing(0.25, 1, 0.5, 1),
     opacity: 0.94,
     boxShadow: theme.shadows[4],
   },
   overlayHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(1),
-    marginBottom: theme.spacing(1),
+    gap: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.5),
   },
 }));
 
