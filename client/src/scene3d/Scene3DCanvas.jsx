@@ -16,7 +16,8 @@ import useSceneLayer from './layers/useSceneLayer';
 
 // Registers each scene group as a togglable layer (Scene3DLayerSwitcher lists
 // them automatically) — must run inside <Scene3DLayerProvider>.
-const Scene3DSceneContent = ({ routes, sessionMarkers }) => {
+// `children` are extra scene objects a page adds inside the canvas (e.g. DevicePage's ghost target).
+const Scene3DSceneContent = ({ routes, sessionMarkers, children }) => {
   const missionVisible = useSceneLayer('Misión');
   const markersVisible = useSceneLayer('Elementos');
   const devicesVisible = useSceneLayer('Vehículos');
@@ -32,6 +33,7 @@ const Scene3DSceneContent = ({ routes, sessionMarkers }) => {
         {devicesVisible && <R3FDevices />}
         <SelectDevice3D />
         <SceneScreenshot />
+        {children}
       </R3FCanvas>
       <Scene3DNavigationControl />
       <DownloadYamlButton />
@@ -41,7 +43,7 @@ const Scene3DSceneContent = ({ routes, sessionMarkers }) => {
   );
 };
 
-const Scene3DCanvas = ({ className, style }) => {
+const Scene3DCanvas = ({ className, style, children }) => {
   const routes = useSelector((state) => state.mission.route);
   const sessionMarkers = useSelector((state) => state.session.markers);
 
@@ -58,7 +60,9 @@ const Scene3DCanvas = ({ className, style }) => {
     >
       <Scene3DControlProvider>
         <Scene3DLayerProvider>
-          <Scene3DSceneContent routes={routes} sessionMarkers={sessionMarkers} />
+          <Scene3DSceneContent routes={routes} sessionMarkers={sessionMarkers}>
+            {children}
+          </Scene3DSceneContent>
         </Scene3DLayerProvider>
       </Scene3DControlProvider>
     </div>

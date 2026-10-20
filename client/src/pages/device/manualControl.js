@@ -71,17 +71,23 @@ export const relativeTarget = (position, { fwd, right, up, yaw }) => {
   };
 };
 
-/** Map preview of a pending move ({from, to, course, label} for MapGhostTarget), or null. */
+/**
+ * Preview of a pending move for MapGhostTarget / R3FGhostTarget, or null:
+ * {from, to, fromAltitude, toAltitude, course, label}. Altitudes are above home when it is
+ * known, AMSL otherwise — the same convention the 3D scene places the UAV with.
+ */
 export const ghostTarget = (position, pending) => {
   if (!hasPendingMove(pending) || position?.latitude == null) return null;
   const target = relativeTarget(position, pending);
-  const home = position.attributes?.home;
-  const altitude = home ? target.altitude - home[2] : target.altitude;
+  const homeAltitude = position.attributes?.home?.[2] ?? 0;
+  const toAltitude = target.altitude - homeAltitude;
   return {
     from: [position.longitude, position.latitude],
     to: [target.longitude, target.latitude],
+    fromAltitude: (position.altitude ?? 0) - homeAltitude,
+    toAltitude,
     course: target.course,
-    label: `Target ${Math.round(altitude)} m`,
+    label: `Target ${Math.round(toAltitude)} m`,
   };
 };
 

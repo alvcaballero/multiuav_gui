@@ -8,7 +8,8 @@ const isTyping = (target) =>
  * Keyboard for the manual control: W/S A/D R/F Q/E move, I/K J/L gimbal, Enter applies,
  * Esc clears. Ignored while `enabled` is false or focus is in a form field.
  * The window listener is registered once; it reads the latest options from a ref that is
- * updated after each commit (never during render).
+ * updated after each commit (never during render). It listens in the CAPTURE phase so it runs
+ * before the 3D scene's WASD camera keys, which skip events this hook already handled.
  */
 export const useControlKeys = ({ enabled, gimbal, onNudge, onApply, onClear }) => {
   const optionsRef = useRef(null);
@@ -34,7 +35,7 @@ export const useControlKeys = ({ enabled, gimbal, onNudge, onApply, onClear }) =
         options.onClear();
       }
     };
-    window.addEventListener('keydown', listener);
-    return () => window.removeEventListener('keydown', listener);
+    window.addEventListener('keydown', listener, true);
+    return () => window.removeEventListener('keydown', listener, true);
   }, []);
 };

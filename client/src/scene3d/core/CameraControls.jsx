@@ -105,6 +105,8 @@ export default function CameraControls({ controlsRef: externalRef }) {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Already handled elsewhere (e.g. the device page's manual control uses the same keys).
+      if (event.defaultPrevented) return;
       // For WASD keys, convert to lowercase
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
       if (keysRef.current.hasOwnProperty(key)) {

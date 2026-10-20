@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Button,
@@ -20,8 +20,11 @@ import MapGhostTarget from '../../map/devices/MapGhostTarget';
 import CameraDevice from '../../components/camera/CameraDevice';
 import ObstacleAvoidanceSensors from '../../common/components/ObstacleAvoidanceSensors';
 import { CAUTION_DISTANCE, obstacleSeverity } from '../../common/util/obstacles';
-import { devicesActions } from '../../store';
+import { devicesActions, sessionActions } from '../../store';
 import { blink } from './animations';
+
+// three.js is heavy: only download the 3D scene when it is first shown.
+const DeviceScene3D = lazy(() => import('./DeviceScene3D'));
 
 const EASE = 'all .35s cubic-bezier(.3,.7,.2,1)';
 const HUD_COLOR = '#f2f2f3';
@@ -194,7 +197,8 @@ const PIP = {
   width: 280,
   height: 170,
   zIndex: 3,
-  border: '1px solid',
+  borderWidth: 1,
+  borderStyle: 'solid',
 };
 const HALF_LEFT = { left: 0, top: 0, width: 'calc(50% - 1px)', height: '100%', zIndex: 1 };
 const HALF_RIGHT = {
@@ -210,6 +214,13 @@ const geometryFor = (view) => {
   if (view === 'map') return { camera: PIP, map: FULL };
   return { camera: FULL, map: PIP };
 };
+
+// Equirectangular distance in meters; plenty for "is it inside the 3D ground".
+const metersBetween = (a, b) =>
+  Math.hypot(
+    (b.lat - a.lat) * 111320,
+    (b.lng - a.lng) * 111320 * Math.cos((a.lat * Math.PI) / 180),
+  );
 
 const fixed = (value, digits = 1) => (value == null ? '—' : Number(value).toFixed(digits));
 
@@ -280,6 +291,8 @@ const DeviceStage = ({
   onViewChange,
   obstacleOpen,
   onObstacleToggle,
+  mapMode,
+  onMapModeChange,
   mapProps,
   ghost,
   gimbalPitch,
@@ -318,8 +331,35 @@ const DeviceStage = ({
     link.click();
   };
 
+  const is3d = mapMode === '3d';
+  const mapName = is3d ? '3D' : 'Map';
   const title =
-    effectiveView === 'map' ? 'Map' : effectiveView === 'split' ? 'Camera + Map' : 'Camera';
+    effectiveView === 'map'
+      ? mapName
+      : effectiveView === 'split'
+        ? `Camera + ${mapName}`
+        : 'Camera';
+
+  // The 3D scene is meant to be centered on the UAV: whenever it is shown (also when it comes
+  // from the remembered mode on load), turn Follow on. The user can still turn it off.
+  useEffect(() => {
+    if (is3d) dispatch(devicesActions.updateFollow(true));
+  }, [is3d, dispatch]);
+
+  // The 3D ground is only built around the scene origin (scene3d.range meters). The origin is
+  // global (last mission/Pegman, or the default) and SelectDevice3D only recenters when the
+  // selection CHANGES, which never happens here: the UAV is selected before the scene mounts.
+  // So move the origin onto the UAV when it is outside the ground.
+  const sceneOrigin = useSelector((state) => state.session.scene3d.origin);
+  const sceneRange = useSelector((state) => state.session.scene3d.range);
+  const latitude = position?.latitude;
+  const longitude = position?.longitude;
+  useEffect(() => {
+    if (!is3d || latitude == null) return;
+    if (metersBetween(sceneOrigin, { lat: latitude, lng: longitude }) <= sceneRange / 2) return;
+    // alt 400: same origin altitude SelectDevice3D uses.
+    dispatch(sessionActions.updateScene3dOrigin({ lat: latitude, lng: longitude, alt: 400 }));
+  }, [is3d, latitude, longitude, sceneOrigin, sceneRange, dispatch]);
   const pipBorder = theme.palette.text.primary;
 
   return (
@@ -361,6 +401,16 @@ const DeviceStage = ({
             Collision sensors
           </Button>
         )}
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={mapMode}
+          onChange={(_, value) => value && onMapModeChange(value)}
+          sx={{ height: 28 }}
+        >
+          <ToggleButton value="2d">2D</ToggleButton>
+          <ToggleButton value="3d">3D</ToggleButton>
+        </ToggleButtonGroup>
         {hasCamera && (
           <ToggleButtonGroup
             size="small"
@@ -384,16 +434,22 @@ const DeviceStage = ({
             boxShadow: mapPip ? theme.shadows[8] : 'none',
           }}
         >
-          <MainMap {...mapProps}>
-            {ghost && (
-              <MapGhostTarget
-                from={ghost.from}
-                to={ghost.to}
-                course={ghost.course}
-                label={ghost.label}
-              />
-            )}
-          </MainMap>
+          {is3d ? (
+            <Suspense fallback={null}>
+              <DeviceScene3D ghost={ghost} />
+            </Suspense>
+          ) : (
+            <MainMap {...mapProps}>
+              {ghost && (
+                <MapGhostTarget
+                  from={ghost.from}
+                  to={ghost.to}
+                  course={ghost.course}
+                  label={ghost.label}
+                />
+              )}
+            </MainMap>
+          )}
           {!mapPip && (
             <div className={classes.mapChips}>
               {position?.latitude != null && (
@@ -409,10 +465,10 @@ const DeviceStage = ({
               <button
                 type="button"
                 className={classes.pipCatcher}
-                aria-label="Expand map"
+                aria-label={`Expand ${mapName}`}
                 onClick={() => onViewChange('map')}
               />
-              <div className={classes.pipLabel}>Map · click to expand</div>
+              <div className={classes.pipLabel}>{`${mapName} · click to expand`}</div>
             </>
           )}
         </div>

@@ -125,6 +125,7 @@ const DevicePage = () => {
   );
 
   const [view, setView] = useState('cam');
+  const [mapMode, setMapMode] = usePersistedState('deviceMapMode', '2d');
   const [obstacleOpen, setObstacleOpen] = useState(true);
   const [commandOpen, setCommandOpen] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
@@ -241,6 +242,8 @@ const DevicePage = () => {
             obstacle={obstacle}
             view={view}
             onViewChange={setView}
+            mapMode={mapMode}
+            onMapModeChange={setMapMode}
             obstacleOpen={obstacleOpen}
             onObstacleToggle={() => setObstacleOpen(!obstacleOpen)}
             mapProps={{
