@@ -173,6 +173,40 @@ describe('decodeRosMsg: battery (the category only contributes params.scale)', (
 });
 
 describe('decodeRosMsg: gimbal and obstacles', () => {
+  describe('gimbal / px4_msgs GimbalDeviceAttitudeStatus', () => {
+    const rad = (deg) => (deg * Math.PI) / 180;
+    // Rotation of `deg` about one axis of FRD, as q = [w, x, y, z].
+    const about = (axis, deg) => {
+      const q = [Math.cos(rad(deg) / 2), 0, 0, 0];
+      q[{ x: 1, y: 2, z: 3 }[axis]] = Math.sin(rad(deg) / 2);
+      return q;
+    };
+    const px4 = (msg) => dec({ type: 'gimbal', msgType: 'px4_msgs/msg/GimbalDeviceAttitudeStatus', msg });
+    const EARTH = 64;
+    const YAW_LOCK = 16;
+
+    test('pitch is positive up and roll comes through, in degrees', () => {
+      near(px4({ q: about('y', -30), device_flags: EARTH }).gimbal.x, -30);
+      near(px4({ q: about('x', 5), device_flags: EARTH }).gimbal.y, 5);
+    });
+
+    test('an earth-frame yaw (YAW_IN_EARTH_FRAME or YAW_LOCK) is already absolute', () => {
+      near(px4({ q: about('z', 90), device_flags: EARTH }).gimbal.z, 90);
+      near(px4({ q: about('z', -120), device_flags: YAW_LOCK }).gimbal.z, -120);
+    });
+
+    test('a vehicle-frame yaw is made absolute with delta_yaw, wrapped to [-180, 180)', () => {
+      near(px4({ q: about('z', 10), device_flags: 0, delta_yaw: rad(90) }).gimbal.z, 100);
+      near(px4({ q: about('z', 30), device_flags: 0, delta_yaw: rad(170) }).gimbal.z, -160);
+    });
+
+    test('a vehicle-frame yaw without delta_yaw (NaN arrives as null) leaves the yaw out', () => {
+      const r = px4({ q: about('y', -45), device_flags: 0, delta_yaw: null });
+      near(r.gimbal.x, -45);
+      assert.equal(r.gimbal.z, undefined);
+    });
+  });
+
   test('gimbal / Vector3Stamped (ROS1) passes the vector through', () => {
     const vector = { x: 1, y: 2, z: 3 };
     const r = dec({ type: 'gimbal', msgType: 'geometry_msgs/Vector3Stamped', msg: { vector } });

@@ -107,6 +107,13 @@ describe('updatePosition: attributes', () => {
     assert.deepEqual(pos.attributes.gimbal, [1.3, -2, 0]);
   });
 
+  test('a gimbal patch without yaw keeps the cached yaw', async () => {
+    const id = newId();
+    await update(id, { gimbal: { x: 0, y: 0, z: 75 } });
+    const pos = await update(id, { gimbal: { x: -30, y: 1 } });
+    assert.deepEqual(pos.attributes.gimbal, [-30, 1, 75]);
+  });
+
   test('obstacle_info becomes [down, front, right, back, left, up] rounded to 1 decimal', async () => {
     const pos = await update(newId(), {
       obstacle_info: { down: 1.04, front: 2.06, right: 3, back: 4.44, left: 5.57, up: 6 },

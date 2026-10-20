@@ -552,6 +552,9 @@ px4_ros2:
     vehicle_command_ack:
       name: '/fmu/out/vehicle_command_ack'
       messageType: 'px4_msgs/msg/VehicleCommandAck'
+    gimbal:
+      name: '/fmu/out/gimbal_device_attitude_status'
+      messageType: 'px4_msgs/msg/GimbalDeviceAttitudeStatus'
     camera:
       name: '/camera/image/compressed'
       messageType: 'sensor_msgs/CompressedImage'

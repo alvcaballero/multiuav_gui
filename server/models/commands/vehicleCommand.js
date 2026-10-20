@@ -13,7 +13,7 @@
 //     instance + 1). It comes from telemetry (vehicle_status.system_id →
 //     position.attributes.systemId). Unknown → the command is REJECTED, never sent as 0
 //     (broadcast): a KillMotors would reach every vehicle on the link.
-//     target_component 1 = MAV_COMP_ID_AUTOPILOT1.
+//     target_component 1 = MAV_COMP_ID_AUTOPILOT1; the gimbal manager takes 0 (any component).
 //   - KillMotors is a FORCED DISARM (param2 = 21196, what QGC's emergency stop sends),
 //     not DO_FLIGHTTERMINATION: PX4 ships with CBRK_FLIGHTTERM set, which ignores it.
 
@@ -38,6 +38,11 @@ const PX4_MAIN_MODE_AUTO = 4;
 const PX4_SUB_MODE_AUTO_LOITER = 3;
 // DO_REPOSITION param2 bit 0: switch to the mode that flies the reposition.
 const REPOSITION_CHANGE_MODE = 1;
+const MAV_COMP_ID_AUTOPILOT1 = 1;
+const MAV_COMP_ID_ALL = 0;
+// DO_GIMBAL_MANAGER_PITCHYAW param5 (GIMBAL_MANAGER_FLAGS): yaw relative to North, not to the
+// vehicle heading. Absolute angles, as command_schema's Gimbal contract says.
+const GIMBAL_MANAGER_FLAGS_YAW_IN_EARTH_FRAME = 64;
 
 const DEG_TO_RAD = Math.PI / 180;
 const wrapPi = (rad) => Math.atan2(Math.sin(rad), Math.cos(rad));
@@ -56,7 +61,7 @@ function systemIdOf(position, type) {
   return systemId;
 }
 
-function message(command, targetSystem, params = {}) {
+function message(command, { system, component }, params = {}) {
   return {
     timestamp: 0,
     param1: params.param1 ?? 0,
@@ -67,8 +72,8 @@ function message(command, targetSystem, params = {}) {
     param6: params.param6 ?? 0,
     param7: params.param7 ?? 0,
     command,
-    target_system: targetSystem,
-    target_component: 1,
+    target_system: system,
+    target_component: component,
     source_system: 255,
     source_component: 190,
     confirmation: 0,
@@ -104,7 +109,8 @@ export function relativeTarget(position, { dx = 0, dy = 0, dz = 0, dyaw = 0 }) {
  * @returns {object} px4_msgs/msg/VehicleCommand
  */
 export function buildVehicleCommand({ type, attributes = {}, position }) {
-  const vehicleMessage = (command, params) => message(command, systemIdOf(position, type), params);
+  const vehicleMessage = (command, params, component = MAV_COMP_ID_AUTOPILOT1) =>
+    message(command, { system: systemIdOf(position, type), component }, params);
   switch (type) {
     case CommandType.TAKEOFF: {
       requirePosition(position, type);
@@ -145,12 +151,14 @@ export function buildVehicleCommand({ type, attributes = {}, position }) {
       });
     }
     case CommandType.GIMBAL: {
+      // Degrees. Both axes always arrive: commandRegistry fills a missing one with the gimbal
+      // telemetry (PX4 would read NaN as "keep", but rosbridge's JSON can't carry a NaN).
       const { pitch, yaw } = attributes;
-      return vehicleMessage(VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW, {
-        param1: pitch, //pitch
-        param2: yaw, // yaw
-        param5: 0, // 0 =  relative to device,  64 =  relative to world
-      });
+      return vehicleMessage(
+        VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW,
+        { param1: pitch, param2: yaw, param5: GIMBAL_MANAGER_FLAGS_YAW_IN_EARTH_FRAME },
+        MAV_COMP_ID_ALL
+      );
     }
     default:
       throw new Error(`'${type}' is not a vehicle command`);

@@ -19,7 +19,7 @@ import { round } from '../../common/utils.js';
  * @property {number} [course] - degrees, 0 = north
  * @property {number} [speed] - m/s
  * @property {number|string} [batteryLevel] - percent; rounded on write
- * @property {{x:number,y:number,z:number}} [gimbal]
+ * @property {{x:number,y:number,z?:number}} [gimbal] - pitch, roll, yaw (deg, absolute); no z keeps the cached yaw
  * @property {{down?:number,front?:number,right?:number,back?:number,left?:number,up?:number}} [obstacle_info]
  * @property {boolean} [setHome] - snapshot the current lat/lon/alt as home
  * @property {{x:number,y:number,z:number}} [localposition] - local ENU, meters
@@ -99,7 +99,10 @@ export const REDUCERS = [
   },
   {
     when: (p) => has(p, 'gimbal'),
-    apply: (pos, p) => (pos.attributes.gimbal = [round(p.gimbal.x, 1), round(p.gimbal.y, 1), round(p.gimbal.z, 1)]),
+    apply: (pos, p) => {
+      const yaw = p.gimbal.z == null ? pos.attributes.gimbal?.[2] ?? 0 : round(p.gimbal.z, 1);
+      pos.attributes.gimbal = [round(p.gimbal.x, 1), round(p.gimbal.y, 1), yaw];
+    },
   },
   {
     when: (p) => has(p, 'obstacle_info'),

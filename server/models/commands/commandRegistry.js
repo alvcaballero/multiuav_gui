@@ -47,12 +47,15 @@ for (const type of [
   CommandType.DISARM,
   CommandType.KILL_MOTORS,
   CommandType.MOVE_RELATIVE,
-  CommandType.GIMBAL,
 ]) {
   register(type, { msgType: PX4_VEHICLE_COMMAND }, ({ attributes, position }) =>
     buildVehicleCommand({ type, attributes, position })
   );
 }
+// Gimbal también completa el eje que no viene con la telemetría, igual que en DJI (gimbalRequest).
+register(CommandType.GIMBAL, { msgType: PX4_VEHICLE_COMMAND }, (ctx) =>
+  buildVehicleCommand({ type: CommandType.GIMBAL, attributes: gimbalRequest(ctx), position: ctx.position })
+);
 
 // ─── gimbal ───────────────────────────────────────────────────────────────────
 // Objeto de dominio NEUTRO: ángulos ABSOLUTOS en grados; msgEncode.js lo traduce por msgType.

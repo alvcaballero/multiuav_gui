@@ -44,6 +44,14 @@ describe('sendCommand', () => {
     assert.equal(sent[0].message.target_system, 1);
   });
 
+  test('a PX4 Gimbal fills the axis that does not come with the telemetry, like DJI', async () => {
+    await commandsModel.sendCommand({ deviceId: 1, type: CommandType.GIMBAL, attributes: { pitch: -60 } });
+    assert.equal(sent[0].endpoint.key, 'vehicle_command');
+    assert.equal(sent[0].message.command, 1000); // DO_GIMBAL_MANAGER_PITCHYAW
+    assert.equal(sent[0].message.param1, -60); // pitch, degrees
+    assert.equal(sent[0].message.param2, 15); // yaw kept: attributes.gimbal = [-30, 0, 15]
+  });
+
   test('a PX4 command is not sent while the vehicle has not reported its system id', async () => {
     positionsController.getByDeviceId = () => ({ ...POSITION, attributes: {} });
     try {

@@ -191,6 +191,27 @@ register(
   }
 );
 
+// PX4: q = [w, x, y, z] in FRD/NED, so its ZYX Euler angles are pitch up-positive and yaw
+// clockwise from north, as the other gimbals report them. Roll and pitch are always earth frame.
+// Yaw is earth frame only with YAW_LOCK / YAW_IN_EARTH_FRAME; otherwise it is relative to the
+// vehicle and delta_yaw (rad, the vehicle heading) makes it absolute. With neither the absolute
+// yaw is unknown and left out, so the cached one stays.
+const GIMBAL_DEVICE_FLAGS_YAW_LOCK = 16;
+const GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME = 64;
+const wrap180 = (deg) => ((((deg + 180) % 360) + 360) % 360) - 180;
+
+register('gimbal', 'px4_msgs/msg/GimbalDeviceAttitudeStatus', ({ msg, deviceId }) => {
+  const [w, x, y, z] = msg.q;
+  const roll = toDeg(Math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y)));
+  const pitch = toDeg(Math.asin(Math.max(-1, Math.min(1, 2 * (w * y - z * x)))));
+  const yaw = toDeg(Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)));
+  const earthYaw = msg.device_flags & (GIMBAL_DEVICE_FLAGS_YAW_LOCK | GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME);
+  let absoluteYaw;
+  if (earthYaw) absoluteYaw = wrap180(yaw);
+  else if (Number.isFinite(msg.delta_yaw)) absoluteYaw = wrap180(yaw + toDeg(msg.delta_yaw));
+  return { deviceId, gimbal: { x: pitch, y: roll, z: absoluteYaw } };
+});
+
 register(
   'obstacle_info',
   ['dji_osdk_ros/ObstacleInfo', 'psdk_interfaces/msg/RelativeObstacleInfo'],

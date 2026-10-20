@@ -102,6 +102,8 @@ describe('buildVehicleCommand', () => {
     assert.equal(msg.command, VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW);
     assert.equal(msg.param1, -30);
     assert.equal(msg.param2, 10);
+    assert.equal(msg.param5, 64); // GIMBAL_MANAGER_FLAGS_YAW_IN_EARTH_FRAME: absolute yaw
+    assert.equal(msg.target_component, 0);
   });
 
   test('a non vehicle command is rejected', () => {
