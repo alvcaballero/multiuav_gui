@@ -1,6 +1,7 @@
 import { rosModel } from '../models/ros/ros.js';
 import { RosEnable } from '../config/config.js';
 import { logger } from '../common/logger.js';
+import { encodeMsg } from '../models/msgEncode.js';
 export class rosController {
   static async getTopics(req, res) {
     try {
@@ -113,7 +114,10 @@ export class rosController {
     // HTTP contract uses `uav_id`; the facade takes `deviceId` — translate at the edge.
     const { uav_id, ...rest } = req.body;
     try {
-      const response = await rosModel.sendActionGoalDevice({ deviceId: uav_id, ...rest });
+      // The body carries the domain goal: encode it for the device's actionType (msgEncode).
+      const actionType = await rosModel.actionTypeOf({ deviceId: uav_id, type: rest.type });
+      const message = encodeMsg(actionType, rest.message);
+      const response = await rosModel.sendActionGoalDevice({ deviceId: uav_id, ...rest, message });
       res.json(response);
     } catch (error) {
       logger.error(`Error calling action: ${error.message}`);
@@ -196,7 +200,9 @@ export class rosController {
   }
   static async pubTopicOnce(req, res) {
     try {
-      const response = await rosModel.PubRosMsg(req.body);
+      // Raw route (MCP agv tools): fill the message for its messageType (e.g. Twist defaults).
+      const { messageType, message } = req.body;
+      const response = await rosModel.PubRosMsg({ ...req.body, message: encodeMsg(messageType, message) });
       res.json(response);
     } catch (error) {
       logger.error(`Error publishing message: ${error.message}`);
@@ -232,13 +238,13 @@ export class rosController {
     return response;
   }
 
-  // Internal (non-HTTP) counterpart of sendActionGoalHandler, used by commandsModel.standarCommand.
+  // Internal (non-HTTP) counterpart of sendActionGoalHandler, used by the ROS gateway (models/gateways/rosGateway.js).
   static async sendActionGoalDevice({ deviceId, type, message, target, timeout, blocking }) {
     if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
     return await rosModel.sendActionGoalDevice({ deviceId, type, message, target, timeout, blocking });
   }
 
-  // Internal (non-HTTP) device-layer publish, used by commandsModel.standarCommand.
+  // Internal (non-HTTP) device-layer publish, used by the ROS gateway (models/gateways/rosGateway.js).
   static async publishTopicDevice({ deviceId, type, message }) {
     if (!RosEnable) return { state: 'error', message: 'ROS connection is disabled' };
     return await rosModel.publishTopicDevice({ deviceId, type, message });

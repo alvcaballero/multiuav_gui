@@ -1,0 +1,777 @@
+[
+  {
+    "msgType": "aerialcore_common/ConfigMission",
+    "type": "configureMission",
+    "input": {
+      "task_id": "T1",
+      "device": "uav1",
+      "uav_type": "dji_M210_noetic",
+      "depends_on": [],
+      "params": {
+        "mode_landing": 2,
+        "mode_yaw": 2,
+        "mode_gimbal": 0,
+        "idle_vel": 7,
+        "max_vel": 12,
+        "mode_trace": 2
+      },
+      "wp": [
+        {
+          "pos": [
+            38.13898041,
+            -3.17466429,
+            9
+          ],
+          "action": {
+            "photo": 0,
+            "gimbal": -90
+          },
+          "yaw": 153.6
+        },
+        {
+          "pos": [
+            38.13816516,
+            -3.17414854,
+            29.19
+          ],
+          "speed": 5
+        }
+      ]
+    },
+    "output": {
+      "type": "waypoint",
+      "waypoint": [
+        {
+          "latitude": 38.13898041,
+          "longitude": -3.17466429,
+          "altitude": 9
+        },
+        {
+          "latitude": 38.13816516,
+          "longitude": -3.17414854,
+          "altitude": 29.19
+        }
+      ],
+      "radius": 0,
+      "maxVel": 12,
+      "idleVel": 7,
+      "yaw": {
+        "data": [
+          153.6,
+          0
+        ]
+      },
+      "speed": {
+        "data": [
+          7,
+          5
+        ]
+      },
+      "gimbalPitch": {
+        "data": [
+          0,
+          0
+        ]
+      },
+      "yawMode": 2,
+      "traceMode": 2,
+      "gimbalPitchMode": 0,
+      "finishAction": 2,
+      "commandList": {
+        "data": [
+          1,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "commandParameter": {
+        "data": [
+          0,
+          -90,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "msgType": "multiuav_interfaces/ConfigMission",
+    "type": "configureMission",
+    "input": {
+      "task_id": "T1",
+      "device": "uav1",
+      "uav_type": "dji_M300",
+      "depends_on": [],
+      "params": {
+        "mode_landing": 2,
+        "mode_yaw": 2,
+        "mode_gimbal": 0,
+        "idle_vel": 7,
+        "max_vel": 12,
+        "mode_trace": 2
+      },
+      "wp": [
+        {
+          "pos": [
+            38.13898041,
+            -3.17466429,
+            9
+          ],
+          "action": {
+            "photo": 0,
+            "gimbal": -90
+          },
+          "yaw": 153.6
+        },
+        {
+          "pos": [
+            38.13816516,
+            -3.17414854,
+            29.19
+          ],
+          "speed": 5
+        }
+      ]
+    },
+    "output": {
+      "type": "waypoint",
+      "waypoint": [
+        {
+          "latitude": 38.13898041,
+          "longitude": -3.17466429,
+          "altitude": 9
+        },
+        {
+          "latitude": 38.13816516,
+          "longitude": -3.17414854,
+          "altitude": 29.19
+        }
+      ],
+      "radius": 0,
+      "maxVel": 12,
+      "idleVel": 7,
+      "yaw": {
+        "data": [
+          153.6,
+          0
+        ]
+      },
+      "speed": {
+        "data": [
+          7,
+          5
+        ]
+      },
+      "gimbalPitch": {
+        "data": [
+          0,
+          0
+        ]
+      },
+      "yawMode": 2,
+      "traceMode": 2,
+      "gimbalPitchMode": 0,
+      "finishAction": 2,
+      "commandList": {
+        "data": [
+          1,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "commandParameter": {
+        "data": [
+          0,
+          -90,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "msgType": "muav_gcs_interfaces/srv/LoadMission",
+    "type": "configureMission",
+    "input": {
+      "task_id": "T1",
+      "device": "uav1",
+      "uav_type": "px4_ros2",
+      "depends_on": [],
+      "params": {
+        "mode_landing": 2,
+        "mode_yaw": 2,
+        "mode_gimbal": 0,
+        "idle_vel": 7,
+        "max_vel": 12,
+        "mode_trace": 2
+      },
+      "wp": [
+        {
+          "pos": [
+            38.13898041,
+            -3.17466429,
+            9
+          ],
+          "action": {
+            "photo": 0,
+            "gimbal": -90
+          },
+          "yaw": 153.6
+        },
+        {
+          "pos": [
+            38.13816516,
+            -3.17414854,
+            29.19
+          ],
+          "speed": 5
+        }
+      ]
+    },
+    "output": {
+      "request": {
+        "type": "waypoint",
+        "waypoint": [
+          {
+            "latitude": 38.13898041,
+            "longitude": -3.17466429,
+            "altitude": 9
+          },
+          {
+            "latitude": 38.13816516,
+            "longitude": -3.17414854,
+            "altitude": 29.19
+          }
+        ],
+        "radius": 0,
+        "vel_max": 12,
+        "vel_idle": 7,
+        "yaw": {
+          "data": [
+            153.6,
+            0
+          ]
+        },
+        "gimbal_pitch": {
+          "data": [
+            0,
+            0
+          ]
+        },
+        "speed": {
+          "data": [
+            7,
+            5
+          ]
+        },
+        "yaw_mode": 2,
+        "trace_mode": 2,
+        "gimbal_pitch_mode": 0,
+        "finish_action": 2,
+        "command_list": {
+          "data": [
+            1,
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "command_parameter": {
+          "data": [
+            0,
+            -90,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  },
+  {
+    "msgType": "psdk_interfaces/srv/InitWaypointV2Setting",
+    "type": "configureMission",
+    "input": {
+      "task_id": "T1",
+      "device": "uav1",
+      "uav_type": "dji_M300_PSDK",
+      "depends_on": [],
+      "params": {
+        "mode_landing": 2,
+        "mode_yaw": 2,
+        "mode_gimbal": 0,
+        "idle_vel": 7,
+        "max_vel": 12,
+        "mode_trace": 2
+      },
+      "wp": [
+        {
+          "pos": [
+            38.13898041,
+            -3.17466429,
+            9
+          ],
+          "action": {
+            "photo": 0,
+            "gimbal": -90
+          },
+          "yaw": 153.6
+        },
+        {
+          "pos": [
+            38.13816516,
+            -3.17414854,
+            29.19
+          ],
+          "speed": 5
+        }
+      ]
+    },
+    "output": {
+      "waypoint_v2_init_settings": {
+        "mission_id": 1,
+        "miss_total_len": 2,
+        "repeat_times": 0,
+        "finished_action": 2,
+        "max_flight_speed": 12,
+        "auto_flight_speed": 7,
+        "exit_mission_on_signal_lost": 1,
+        "goto_first_waypoint_mode": 0,
+        "mission": [
+          {
+            "longitude": -3.17466429,
+            "latitude": 38.13898041,
+            "relative_height": 9,
+            "waypoint_type": 2,
+            "heading_mode": 2,
+            "config": {
+              "use_local_cruise_vel": 0,
+              "use_local_max_vel": 0
+            },
+            "damping_distance": 0,
+            "heading": 153.6,
+            "turn_mode": 0,
+            "position_x": 0,
+            "position_y": 0,
+            "position_z": 0,
+            "max_flight_speed": 12,
+            "auto_flight_speed": 7
+          },
+          {
+            "longitude": -3.17414854,
+            "latitude": 38.13816516,
+            "relative_height": 29.19,
+            "waypoint_type": 2,
+            "heading_mode": 2,
+            "config": {
+              "use_local_cruise_vel": 1,
+              "use_local_max_vel": 0
+            },
+            "damping_distance": 0,
+            "heading": 0,
+            "turn_mode": 0,
+            "position_x": 0,
+            "position_y": 0,
+            "position_z": 0,
+            "max_flight_speed": 12,
+            "auto_flight_speed": 5
+          }
+        ],
+        "actions": [
+          {
+            "action_id": 0,
+            "waypoint_v2_action_trigger_type": 5,
+            "waypoint_v2_sample_reach_point_trigger": {
+              "waypoint_index": 0,
+              "terminate_num": 0
+            },
+            "waypoint_v2_action_actuator_type": 4,
+            "waypoint_v2_aircraft_control_actuator": {
+              "actuator_index": 0,
+              "dji_waypoint_v2_action_actuator_aircraft_control_operation_type": 2,
+              "waypoint_v2_aircraft_control_actuator_flying": {
+                "is_start_flying": 0
+              },
+              "waypoint_v2_aircraft_control_actuator_rotate_heading": {
+                "is_relative": 0,
+                "yaw": 0
+              }
+            }
+          },
+          {
+            "action_id": 1,
+            "waypoint_v2_action_trigger_type": 2,
+            "waypoint_v2_associate_trigger": {
+              "action_associated_type": 2,
+              "waiting_time": 0,
+              "action_id_associated": 0
+            },
+            "waypoint_v2_action_actuator_type": 2,
+            "waypoint_v2_gimbal_actuator": {
+              "dji_waypoint_v2_action_actuator_gimbal_operation_type": 1,
+              "actuator_index": 0,
+              "waypoint_v2_gimbal_actuator_rotation_param": {
+                "x": 0,
+                "y": -900,
+                "z": 0,
+                "ctrl_mode": 0,
+                "roll_cmd_ignore": 1,
+                "pitch_cmd_ignore": 0,
+                "yaw_cmd_ignore": 1,
+                "abs_yaw_mode_ref": 0,
+                "duration_time": 10
+              }
+            }
+          },
+          {
+            "action_id": 2,
+            "waypoint_v2_action_trigger_type": 2,
+            "waypoint_v2_associate_trigger": {
+              "action_associated_type": 2,
+              "waiting_time": 0,
+              "action_id_associated": 1
+            },
+            "waypoint_v2_action_actuator_type": 1,
+            "waypoint_v2_camera_actuator": {
+              "actuator_index": 0,
+              "dji_waypoint_v2_action_actuator_camera_operation_type": 1,
+              "focus_param": {
+                "x": 0,
+                "y": 0,
+                "region_type": 0,
+                "width": 0,
+                "height": 0
+              },
+              "zoom_param": {
+                "focal_length": 0
+              }
+            }
+          },
+          {
+            "action_id": 3,
+            "waypoint_v2_action_trigger_type": 2,
+            "waypoint_v2_associate_trigger": {
+              "action_associated_type": 2,
+              "waiting_time": 0,
+              "action_id_associated": 2
+            },
+            "waypoint_v2_action_actuator_type": 4,
+            "waypoint_v2_aircraft_control_actuator": {
+              "actuator_index": 0,
+              "dji_waypoint_v2_action_actuator_aircraft_control_operation_type": 2,
+              "waypoint_v2_aircraft_control_actuator_flying": {
+                "is_start_flying": 1
+              },
+              "waypoint_v2_aircraft_control_actuator_rotate_heading": {
+                "is_relative": 0,
+                "yaw": 0
+              }
+            }
+          }
+        ]
+      },
+      "polygon_num": 0,
+      "radius": 0,
+      "action_num": 4,
+      "upload_after_init": true
+    }
+  },
+  {
+    "msgType": "std_srvs/TriggerRequest",
+    "type": "x",
+    "input": {
+      "anything": 1
+    },
+    "output": {}
+  },
+  {
+    "msgType": "psdk_interfaces/srv/StartWaypointV2Mission",
+    "type": "x",
+    "input": {
+      "anything": 1
+    },
+    "output": {}
+  },
+  {
+    "msgType": "psdk_interfaces/srv/StopWaypointV2Mission",
+    "type": "x",
+    "input": {
+      "anything": 1
+    },
+    "output": {}
+  },
+  {
+    "msgType": "psdk_interfaces/srv/PauseWaypointV2Mission",
+    "type": "x",
+    "input": {
+      "anything": 1
+    },
+    "output": {}
+  },
+  {
+    "msgType": "psdk_interfaces/srv/ResumeWaypointV2Mission",
+    "type": "x",
+    "input": {
+      "anything": 1
+    },
+    "output": {}
+  },
+  {
+    "msgType": "px4_msgs/msg/TrajectorySetpoint",
+    "type": "",
+    "input": {
+      "position": [
+        1,
+        2,
+        3
+      ],
+      "yaw": 0.5
+    },
+    "output": {
+      "timestamp": 0,
+      "position": [
+        1,
+        2,
+        3
+      ],
+      "velocity": [
+        0,
+        0,
+        0
+      ],
+      "acceleration": [
+        0,
+        0,
+        0
+      ],
+      "jerk": [
+        0,
+        0,
+        0
+      ],
+      "yaw": 0.5,
+      "yawspeed": 0
+    }
+  },
+  {
+    "msgType": "geometry_msgs/Twist",
+    "type": "",
+    "input": {
+      "linear": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      }
+    },
+    "output": {
+      "linear": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "angular": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    }
+  },
+  {
+    "msgType": "dji_osdk_ros/GimbalAction",
+    "type": "Gimbal",
+    "input": {
+      "reset": false,
+      "pitch": -30,
+      "roll": 0,
+      "yaw": 15
+    },
+    "output": {
+      "header": {
+        "seq": 0,
+        "stamp": {
+          "secs": 0,
+          "nsecs": 0
+        },
+        "frame_id": ""
+      },
+      "is_reset": false,
+      "payload_index": 0,
+      "rotationMode": 1,
+      "pitch": -30,
+      "roll": 0,
+      "yaw": 15,
+      "time": 0
+    }
+  },
+  {
+    "msgType": "psdk_interfaces/msg/GimbalRotation",
+    "type": "Gimbal",
+    "input": {
+      "reset": false,
+      "pitch": -30,
+      "roll": 0,
+      "yaw": 15
+    },
+    "output": {
+      "payload_index": 1,
+      "rotation_mode": 1,
+      "pitch": -0.5235987755982988,
+      "roll": 0,
+      "yaw": 0.2617993877991494,
+      "time": 0
+    }
+  },
+  {
+    "msgType": "muav_gcs_interfaces/action/DownloadFilesByDateRange",
+    "type": "CameraFileDownload",
+    "input": {
+      "startDate": "2026-07-13T14:30:00.000Z",
+      "endDate": "2026-07-13T15:30:00.000Z"
+    },
+    "output": {
+      "payload_index": 1,
+      "init_date": "2026-07-13T14:30:00.000Z",
+      "finish_date": "2026-07-13T15:30:00.000Z",
+      "file_type": "all",
+      "delete_after_download": false
+    }
+  },
+  {
+    "msgType": "dji_osdk_ros/DownloadMedia",
+    "type": "CameraFileDownload",
+    "input": {
+      "startDate": "2026-07-13T14:30:00.000Z",
+      "endDate": "2026-07-13T15:30:00.000Z"
+    },
+    "output": {
+      "initDate": "2026-07-13T14:30:00.000Z",
+      "FinishDate": "2026-07-13T15:30:00.000Z",
+      "downloadCnt": 0
+    }
+  },
+  {
+    "msgType": "px4_msgs/msg/VehicleCommand",
+    "type": "VehicleCommand",
+    "input": {
+      "command": 22,
+      "param7": 70
+    },
+    "output": {
+      "command": 22,
+      "param7": 70
+    }
+  },
+  {
+    "msgType": "std_srvs/SetBool",
+    "type": "commandMission",
+    "input": {
+      "data": true
+    },
+    "output": {
+      "data": true
+    }
+  },
+  {
+    "msgType": "std_srvs/Trigger",
+    "type": "stopMission",
+    "input": null,
+    "output": {}
+  }
+]

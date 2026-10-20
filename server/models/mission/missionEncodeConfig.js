@@ -124,3 +124,69 @@ export function decodeMissionTask(task) {
     commandParameter: param_matrix,
   };
 }
+
+// Drops keys whose value is undefined, so a param the profile doesn't expose
+// (e.g. max_vel / mode_gimbal on the v1 profile) is OMITTED from the message
+// instead of sent as `undefined`.
+function omitUndefined(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+}
+
+// task → aerialcore_common/ConfigMission (ROS1; also multiuav_interfaces/ConfigMission).
+export function MissionToRos(task) {
+  const {
+    waypoint,
+    yaw,
+    speed,
+    gimbalPitch,
+    commandList,
+    commandParameter,
+    maxVel,
+    idleVel,
+    yawMode,
+    traceMode,
+    gimbalPitchMode,
+    finishAction,
+  } = decodeMissionTask(task);
+
+  return omitUndefined({
+    type: 'waypoint',
+    waypoint,
+    radius: 0,
+    maxVel,
+    idleVel,
+    yaw: { data: yaw },
+    speed: { data: speed },
+    gimbalPitch: { data: gimbalPitch },
+    yawMode,
+    traceMode,
+    gimbalPitchMode,
+    finishAction,
+    commandList: { data: commandList.flat() },
+    commandParameter: { data: commandParameter.flat() },
+  });
+}
+
+// task → muav_gcs_interfaces/srv/LoadMission (ROS2). Same ConfigMission family
+// (missionSymbols maps this serviceType to CONFIG_SYMBOLS), snake_case fields in `request`.
+export function MissionToRos2(task) {
+  const msg = MissionToRos(task);
+  return {
+    request: omitUndefined({
+      type: 'waypoint',
+      waypoint: msg.waypoint,
+      radius: msg.radius,
+      vel_max: msg.maxVel,
+      vel_idle: msg.idleVel,
+      yaw: msg.yaw,
+      gimbal_pitch: msg.gimbalPitch,
+      speed: msg.speed,
+      yaw_mode: msg.yawMode,
+      trace_mode: msg.traceMode,
+      gimbal_pitch_mode: msg.gimbalPitchMode,
+      finish_action: msg.finishAction,
+      command_list: msg.commandList,
+      command_parameter: msg.commandParameter,
+    }),
+  };
+}

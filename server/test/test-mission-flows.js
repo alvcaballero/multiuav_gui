@@ -6,7 +6,7 @@ import { missionModel } from '../models/mission/mission.js';
 import { missionSMModel } from '../models/mission/missionSM.js';
 import { taskScheduler } from '../models/mission/taskScheduler.js';
 import { commandsController } from '../controllers/commands.js';
-import { CommandType } from '../config/commandCatalog.js';
+import { CommandType } from '../config/commandTypes.js';
 import { ExtAppController } from '../controllers/ExtApp.js';
 import { TaskGraphError } from '../models/mission/taskGraph.js';
 import { MISSION_STATUS as M, TASK_STATUS as T } from '../config/status.js';

@@ -297,7 +297,7 @@ its dependents are skipped instead of waiting forever.
 - **One actor per task**, keyed by `taskId` in `listSM`. Creating an actor immediately
   sends `configureMission` to the device, so only the scheduler and the flows create them.
 - The device is loaded with a **one-task mission** (`missionForTask`, dependencies
-  stripped). `loadMissionToDevice` accepts any mission shape (incl. the bare `route[]` the
+  stripped). The `LoadMission` encoder (`missionTaskForDevice`, `models/commandRegistry.js`) accepts any mission shape (incl. the bare `route[]` the
   MCP `load_mission_to_uav` tool posts) and loads the device's single task; a payload with
   several tasks for that device is rejected rather than guessed.
 - ROS end-of-mission signals carry only the device: `deviceFinishedMission` /
@@ -327,8 +327,8 @@ time, so per-task report windows (events, flown track) of two tasks on one devic
 
 - Two channels: ROS services OR FlatBuffer commands
 - 5-second timeout with automatic error callbacks
-- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. `commandCatalog.js` keeps WHEN it's available (`requires`) and HOW it runs (`dispatch`). A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
-- Command types: `CommandType` in `config/commandCatalog.js` (PascalCase: `LoadMission`, `CommandMission`, `CameraFileDownload`, …). Not the same thing as the `ServiceKey` a command requires (`configureMission`, `commandMission`, keys of `devices_msg.yaml`, fixed by the ROS side). The client mirrors it in `client/src/common/util/commandTypes.js`; `test/test-command-types-mirror.js` fails if they drift
+- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. WHICH endpoint of a device implements a command, and how its message is built, is a registry like `rosDecode`'s: `models/commandEncoders.js` (`register(CommandType, { key?, msgType? }, encoder)`; specific msgTypes such as `px4_msgs/msg/VehicleCommand` match by msgType, generic ones such as `std_srvs/SetBool` by the endpoint key) filled in `models/commandRegistry.js`. Availability is DERIVED from the endpoints the category already declares — no per-category list. A command matching two endpoints of one category is a boot problem until `commands.<Type>.via` (e.g. `publishers.VehicleCommand`) picks one; `test/api/json/category_commands.json` is the golden list per category. A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
+- Command types: `CommandType` in `config/commandTypes.js` (PascalCase: `LoadMission`, `CommandMission`, `CameraFileDownload`, …). Not the same thing as the endpoint key that implements it on a device (`configureMission`, `commandMission`, keys of `devices_msg.yaml` enumerated by `ServiceKey`/`PublisherKey`, fixed by the ROS side). The client mirrors it in `client/src/common/util/commandTypes.js`; `test/test-command-types-mirror.js` fails if they drift
 
 ### ROS Integration
 
@@ -369,10 +369,15 @@ rounded to 0 or 1 by the position cache and also reaches the external planner as
 subscriber's `(slot, messageType)` against the registry (`hasDecoder`); `LOG_LEVEL=debug` makes
 a gap throw. A slot declared in the YAML that nothing consumes gets an explicit `ignore(...)`.
 
-**Message Encoding** (`models/ros/rosEncode.js`):
-
-- Converts mission objects to ROS service request format
-- Supports legacy `aerialcore_common/ConfigMission` and `px4_msgs/TrajectorySetpoint`
+**Message Encoding** (`models/msgEncode.js`, NOT under `ros/`): a registry by msgType, the mirror of
+`rosDecode` on the way out. The structure of a message depends only on its msgType and is the same for
+every protocol (rosbridge JSON, the same JSON over MQTT, robofleet = ROS messages packed in Flatbuffers),
+so it is encoded ONCE, before the gateway: `commandsModel.sendToDevice` (commands) and the raw routes
+`/ros/publish` and `/ros/action_send_goal`. The transport primitives (`callService`, `sendActionGoal`,
+`PubRosMsg`, `MqttServer`) receive the message already encoded and never encode. Three layers for a
+command: `commandRegistry` (what is sent, domain) → `encodeMsg(msgType)` (its shape) → gateway (packing).
+Every msgType a command endpoint uses must be registered (an encoder or an explicit `passthrough`);
+`commands.js` checks it at boot. `test/api/json/msg_encode_golden.json` froze the old `rosEncode` output.
 
 ### ROS Module Layout (`models/ros/`)
 
@@ -391,7 +396,6 @@ free of business-controller imports.
 | `rosAction.js`        | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building                                                                                           |
 | `rosInspect.js`       | Read-only rosapi introspection (topics/services/types/action servers)                                                                                                                                                                         |
 | `rosDecode.js`        | ROS message → internal format                                                                                                                                                                                                                 |
-| `rosEncode.js`        | Internal format → ROS service/message request                                                                                                                                                                                                 |
 | `rosValidateMSG.js`   | Message structure validation against type maps                                                                                                                                                                                                |
 | `ros2ActionClient.js` | Alternative action client (`callOnConnection`); currently unused                                                                                                                                                                              |
 | `index.js`            | Module barrel exports                                                                                                                                                                                                                         |
@@ -419,7 +423,7 @@ device-layer facade methods carry a `Device` suffix to set them apart from the
 primitives and the `*Ros*` raw methods: `callServiceDevice`,
 `publishTopicDevice`, `sendActionGoalDevice`, `getActionStatusDevice`,
 `cancelActionDevice` (each takes `{uav_id, type, ...}`). `rosController` mirrors
-those names for its non-HTTP callers (e.g. `commandsModel.standarCommand`); the
+those names for its non-HTTP callers (e.g. the ROS gateway); the
 HTTP handlers keep the `*Handler` suffix. `unsubscribeDevice(id)` unsubscribes
 one key, or ALL keys when `id < 0` (`-1` on disconnect).
 
@@ -572,7 +576,7 @@ When adding new device types:
 
 1. Add configuration to `devices_msg.yaml` (`subscribers`, `services`, and/or `actions` per category); put any per-category scale/unit/offset on the subscriber entry itself
 2. Register a decoder for the `(slot, messageType)` pair in `models/ros/rosDecode.js` (or `ignore(...)` it) — boot validation and `test/test-devices-msg.js` fail on a pair with none
-3. Add encoder logic in `models/ros/rosEncode.js` (if sending commands)
+3. If it takes commands: register the command encoder in `models/commandRegistry.js` (by msgType, or by key for a generic msgType) and the message encoder for that msgType in `models/msgEncode.js` (or `passthrough` it) — the boot check and `test/test-command-registry.js` fail otherwise
 4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosTopics.js`; no per-device code needed
 
 ### WebSocket Message Format
@@ -587,9 +591,10 @@ dispatch(sessionActions.updatePositions(data.positions));
 
 ## Device Communication Protocols
 
-**Command routing** (`models/gateways/`): `commandsModel.standarCommand` picks a gateway by
-`device.protocol` (a missing protocol means `ros`) and calls `gateway.sendCommand({ device, type,
-attributes })`. One gateway per protocol (`rosGateway`, `flatbufferGateway`, `mqttGateway`),
+**Command routing** (`models/gateways/`): `commandsModel.sendToDevice` picks a gateway by
+`device.protocol` (a missing protocol means `ros`) and calls `gateway.sendCommand({ device, endpoint,
+message })` — `endpoint` (`{ block, key, msgType }`) is already resolved by `commandRegistry`, so the
+ROS gateway reads the transport off `endpoint.block` instead of guessing. One gateway per protocol (`rosGateway`, `flatbufferGateway`, `mqttGateway`),
 registered in `gateways/index.js`; the caller never branches on the protocol. A new protocol is a
 new gateway plus an entry in `DEVICE_PROTOCOL` (`schemas/zod/devices.js`) — `test/test-gateways.js`
 fails if the two drift apart. Gateways resolve their controller/server when a command is SENT, not

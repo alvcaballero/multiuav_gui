@@ -11,9 +11,9 @@
 // a un COMANDO de usuario; sus keys son capacidades invocables (Gimbal...), misma
 // naturaleza que services/actions → PublisherKey (PascalCase).
 //
-// Es config del DEVICE, no de los comandos. La lógica de commands (qué acción
-// dispara el usuario, cómo se despacha) vive en commandCatalog.js, que IMPORTA
-// `ServiceKey` de acá — la relación es command → requires → serviceKey, no al revés.
+// Es config del DEVICE, no de los comandos. Qué command implementa cada endpoint, y
+// cómo se arma su mensaje, lo decide models/commandRegistry.js (por msgType, o por estas
+// keys cuando el msgType es genérico); los literales de commands viven en commandTypes.js.
 //
 // Bloques y su enum/validación:
 //   subscribers:       → SubscriberKey → KNOWN_SUBSCRIBER_KEYS
@@ -103,9 +103,9 @@ export const KNOWN_PUBLISHER_KEYS = new Set(Object.values(PublisherKey));
 // ─── Services / Actions ───────────────────────────────────────────────────────
 
 // serviceKeys — strings que son key EXACTA en devices_msg.yaml (services:/actions:)
-// y que se pasan a standarCommand/callService como service ROS. Incluye tanto
-// services como actions (ambos bloques invocables). commandCatalog.js las
-// referencia vía el campo `requires` de cada command.
+// y que el ROS gateway invoca como service/action ROS. Incluye tanto
+// services como actions (ambos bloques invocables). commandRegistry.js las usa para
+// reconocer los commands que van sobre un msgType genérico (std_srvs/SetBool, Trigger…).
 export const ServiceKey = Object.freeze({
   CONFIGURE_MISSION: 'configureMission',
   COMMAND_MISSION: 'commandMission',

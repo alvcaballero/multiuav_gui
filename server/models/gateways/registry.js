@@ -2,8 +2,11 @@
 //
 //   DeviceGateway {
 //     protocol: string                                   // value of device.protocol
-//     sendCommand({ device, type, attributes }) -> Promise<{ state, msg }>
+//     sendCommand({ device, endpoint, message }) -> Promise<{ state, msg }>
 //   }
+//
+// `endpoint` = { block, key, msgType } of the category, already resolved by commandEncoders
+// (block: services | actions | publishers); `message` = what the command encoder built.
 //
 // Callers (commandsModel) pick the gateway by `device.protocol` and know nothing about
 // ROS, FlatBuffers or MQTT. Adding a protocol means registering a gateway here, not

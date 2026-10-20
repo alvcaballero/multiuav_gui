@@ -1,7 +1,6 @@
 import * as ROSLIB from 'roslib';
 import { logger } from '../../common/logger.js';
 import { getActionServer } from './rosInspect.js';
-import { encodeRosSrv } from './rosEncode.js';
 
 
 export const ActionStatus = Object.freeze({
@@ -253,8 +252,8 @@ function _cancelEntry(key, entry) {
  * @param {object} ros
  */
 export async function sendActionGoal({ actionServerName, actionType, type, message, ...rest }, ros) {
-  const goalMessage = encodeRosSrv({ type, msg: message, msgType: actionType });
-  return sendRosActionGoal({ actionServerName, actionType, message: goalMessage, ...rest }, ros);
+  // `message` arrives already encoded for `actionType` (models/msgEncode.js, before the gateway).
+  return sendRosActionGoal({ actionServerName, actionType, message: message ?? {}, ...rest }, ros);
 }
 
 /**

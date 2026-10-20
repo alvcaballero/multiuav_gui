@@ -5,7 +5,7 @@ import { missionSchema } from '../config/config.js';
 import { categoryModel } from '../models/category.js';
 import { toPsdkValue } from '../models/mission/missionEncodePsdk.js';
 import { toConfigValue } from '../models/mission/missionEncodeConfig.js';
-import { encodeRosSrv } from '../models/ros/rosEncode.js';
+import { encodeMsg } from '../models/msgEncode.js';
 import { profileFor } from '../models/mission/missionSymbols.js';
 
 // ─── Contract tests: the enriched catalog is internally consistent ────────────
@@ -261,19 +261,11 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
 
   test('a profile without max_vel/mode_gimbal OMITS those keys from the message (not undefined)', () => {
     // v1 (M210) has no max_vel nor mode_gimbal — they must be absent, not sent as undefined.
-    const v1 = encodeRosSrv({
-      type: 'configureMission',
-      msg: { uav: 'u', uav_type: 'dji_M210_noetic', params: {}, wp: [{ pos: [38, -3, 10] }] },
-      msgType: 'aerialcore_common/ConfigMission',
-    });
+    const v1 = encodeMsg('aerialcore_common/ConfigMission', { uav: 'u', uav_type: 'dji_M210_noetic', params: {}, wp: [{ pos: [38, -3, 10] }] });
     assert.ok(!('maxVel' in v1), 'maxVel should be omitted on v1');
     assert.ok(!('gimbalPitchMode' in v1), 'gimbalPitchMode should be omitted on v1');
     // v2 (M300) does expose them.
-    const v2 = encodeRosSrv({
-      type: 'configureMission',
-      msg: { uav: 'u', uav_type: 'dji_M300', params: {}, wp: [{ pos: [38, -3, 10] }] },
-      msgType: 'aerialcore_common/ConfigMission',
-    });
+    const v2 = encodeMsg('aerialcore_common/ConfigMission', { uav: 'u', uav_type: 'dji_M300', params: {}, wp: [{ pos: [38, -3, 10] }] });
     assert.ok('maxVel' in v2 && 'gimbalPitchMode' in v2, 'v2 should include both');
   });
 
@@ -289,11 +281,7 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
         { pos: [38.2, -3.2, 10], mode_turn: 2 },
       ],
     };
-    const result = encodeRosSrv({
-      type: 'configureMission',
-      msg: route,
-      msgType: 'psdk_interfaces/srv/InitWaypointV2Setting',
-    });
+    const result = encodeMsg('psdk_interfaces/srv/InitWaypointV2Setting', route);
     const mission = result.waypoint_v2_init_settings.mission;
     assert.equal(mission[0].turn_mode, toPsdkValue('mode_turn', 'TURN_MODE_CLOCKWISE'));
     assert.equal(mission[1].turn_mode, toPsdkValue('mode_turn', 'TURN_MODE_COUNTER_CLOCKWISE'));
@@ -307,11 +295,7 @@ describe('per-waypoint params — mode_turn applies per waypoint', () => {
       params: {},
       wp: [{ pos: [38.1, -3.1, 10] }], // no turn
     };
-    const result = encodeRosSrv({
-      type: 'configureMission',
-      msg: route,
-      msgType: 'psdk_interfaces/srv/InitWaypointV2Setting',
-    });
+    const result = encodeMsg('psdk_interfaces/srv/InitWaypointV2Setting', route);
     // The catalog default resolves to the TURN_MODE_AUTO symbol, but AUTO is never
     // itself a valid firmware output (see 'mode_turn is intentionally NOT identity'):
     // the encoder auto-picks CW/CCW to minimize the turn arc. With no action.yaw and
@@ -331,11 +315,7 @@ describe('encoder value-transform — gimbal -90 differs by family', () => {
 
   test('PSDK encodes gimbal -90 as y = -900 (×10, 0.1° units)', () => {
     const route = { uav: 'u', uav_type: 'dji_M300_PSDK', params: {}, wp };
-    const result = encodeRosSrv({
-      type: 'configureMission',
-      msg: route,
-      msgType: 'psdk_interfaces/srv/InitWaypointV2Setting',
-    });
+    const result = encodeMsg('psdk_interfaces/srv/InitWaypointV2Setting', route);
     const gimbalAction = result.waypoint_v2_init_settings.actions.find(
       (a) => a.waypoint_v2_action_actuator_type === 2 // ACTUATOR.GIMBAL
     );
@@ -345,11 +325,7 @@ describe('encoder value-transform — gimbal -90 differs by family', () => {
   test('ConfigMission encodes gimbal -90 raw (no transform)', () => {
     // dji_M300 is v2 (exposes gimbal action) but uses the ConfigMission encoder.
     const route = { uav: 'u', uav_type: 'dji_M300', params: {}, wp };
-    const result = encodeRosSrv({
-      type: 'configureMission',
-      msg: route,
-      msgType: 'aerialcore_common/ConfigMission',
-    });
+    const result = encodeMsg('aerialcore_common/ConfigMission', route);
     assert.ok(result.commandParameter.data.includes(-90), 'raw -90 should be present');
     assert.ok(!result.commandParameter.data.includes(-900), 'should NOT be ×10 transformed');
   });

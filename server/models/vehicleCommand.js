@@ -1,4 +1,4 @@
-// PX4 VehicleCommand builder — command type (commandCatalog) → px4_msgs/msg/VehicleCommand.
+// PX4 VehicleCommand builder — command type (config/commandTypes.js) → px4_msgs/msg/VehicleCommand.
 //
 // Pure: receives the device's current position and returns the full wire message, so it
 // is testable without ROS. commandsModel publishes the result on the device's
@@ -14,7 +14,7 @@
 //   - KillMotors is a FORCED DISARM (param2 = 21196, what QGC's emergency stop sends),
 //     not DO_FLIGHTTERMINATION: PX4 ships with CBRK_FLIGHTTERM set, which ignores it.
 
-import { CommandType } from '../config/commandCatalog.js';
+import { CommandType } from '../config/commandTypes.js';
 import { offsetLatLon } from '../common/geo.js';
 
 export const VEHICLE_CMD = Object.freeze({
@@ -83,7 +83,7 @@ export function relativeTarget(position, { dx = 0, dy = 0, dz = 0, dyaw = 0 }) {
 
 /**
  * @param {object} args
- * @param {string} args.type        CommandType of the Dispatch.VEHICLE_COMMAND family
+ * @param {string} args.type        a CommandType commandRegistry implements with a VehicleCommand
  * @param {object} [args.attributes] command attributes, ALREADY validated and defaulted by
  *   command_schema (commandsModel.sendCommand): numbers in range, defaults filled in
  * @param {object} [args.position]  current position ({latitude, longitude, altitude AMSL, course})

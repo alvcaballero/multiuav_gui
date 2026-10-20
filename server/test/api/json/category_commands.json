@@ -1,0 +1,138 @@
+{
+  "agv": [
+    "NavigateToPose",
+    "SaveHome"
+  ],
+  "sjtu": [
+    "SaveHome"
+  ],
+  "dji_M210_noetic": [
+    "CommandMission",
+    "Gimbal",
+    "GimbalPitch",
+    "LoadMission",
+    "ResetGimbal",
+    "SaveHome",
+    "SetupCamera",
+    "SyncFiles"
+  ],
+  "dji_M210_melodic": [
+    "CommandMission",
+    "Gimbal",
+    "GimbalPitch",
+    "LoadMission",
+    "ResetGimbal",
+    "SaveHome",
+    "SetupCamera",
+    "SyncFiles"
+  ],
+  "dji_M210_noetic_rtk": [
+    "CommandMission",
+    "Gimbal",
+    "GimbalPitch",
+    "LoadMission",
+    "ResetGimbal",
+    "SaveHome",
+    "SetupCamera",
+    "SyncFiles"
+  ],
+  "dji_M210_melodic_rtk": [
+    "CommandMission",
+    "Gimbal",
+    "GimbalPitch",
+    "LoadMission",
+    "ResetGimbal",
+    "SaveHome",
+    "SetupCamera",
+    "SyncFiles"
+  ],
+  "dji_M600": [
+    "CameraFileDownload",
+    "CameraFileList",
+    "CommandMission",
+    "LoadMission",
+    "SaveHome"
+  ],
+  "dji_M300": [
+    "CameraFileDownload",
+    "CameraFileList",
+    "CommandMission",
+    "Gimbal",
+    "GimbalPitch",
+    "LoadMission",
+    "PauseMission",
+    "ResetGimbal",
+    "ResumeMission",
+    "SaveHome",
+    "SetupCamera",
+    "StopMission",
+    "SyncFiles"
+  ],
+  "dji_M300_rtk": [
+    "CameraFileDownload",
+    "CameraFileList",
+    "CommandMission",
+    "Gimbal",
+    "GimbalPitch",
+    "LoadMission",
+    "PauseMission",
+    "ResetGimbal",
+    "ResumeMission",
+    "SaveHome",
+    "SetupCamera",
+    "StopMission",
+    "SyncFiles"
+  ],
+  "dji_M300_PSDK": [
+    "CameraFileDownload",
+    "CommandMission",
+    "Gimbal",
+    "GimbalPitch",
+    "LoadMission",
+    "PauseMission",
+    "ResetGimbal",
+    "ResumeMission",
+    "SaveHome",
+    "StopMission",
+    "UploadMission"
+  ],
+  "px4_mavros": [
+    "CameraFileDownload",
+    "CommandMission",
+    "LoadMission",
+    "SaveHome",
+    "SyncFiles"
+  ],
+  "px4_mavros_slow": [
+    "CameraFileDownload",
+    "CommandMission",
+    "LoadMission",
+    "SaveHome",
+    "SyncFiles"
+  ],
+  "px4_ros2": [
+    "Arm",
+    "CameraFileDownload",
+    "CommandMission",
+    "Disarm",
+    "Hold",
+    "KillMotors",
+    "Land",
+    "LoadMission",
+    "MoveRelative",
+    "ReturnHome",
+    "SaveHome",
+    "Takeoff"
+  ],
+  "fuvex": [
+    "SaveHome"
+  ],
+  "catec": [
+    "SaveHome",
+    "ThreatConfirmation",
+    "ThreatDefuse"
+  ],
+  "griffin": [
+    "SaveHome"
+  ]
+}

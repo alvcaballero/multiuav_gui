@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readDataFile } from '../common/utils.js';
 import { devicesMsg } from '../config/config.js';
-import { CommandType } from '../config/commandCatalog.js';
+import { CommandType } from '../config/commandTypes.js';
 import {
   commandSchema,
   validateCommandSchema,

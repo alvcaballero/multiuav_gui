@@ -5,8 +5,8 @@
 # Mismo patrón que mission_schema.yaml.
 #
 # Lo que NO vive acá:
-#   - cuándo está disponible y cómo se ejecuta (`requires`/`dispatch`) → config/commandCatalog.js
-#   - el wire format de cada firmware → los encoders (rosEncode.js, vehicleCommand.js)
+#   - qué endpoint de un device lo implementa y cómo se arma su mensaje → models/commandRegistry.js
+#   - la forma del mensaje de cada msgType → models/msgEncode.js (y vehicleCommand.js para PX4)
 #   - los límites de un dron concreto → bloque `commands:` de su categoría en devices_msg.yaml,
 #     que solo puede RESTRINGIR (min/max/step/default/options) lo que se declara acá
 #

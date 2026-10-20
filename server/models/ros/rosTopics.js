@@ -1,5 +1,4 @@
 import * as ROSLIB from 'roslib';
-import { encodeRosSrv } from './rosEncode.js';
 import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
 import { getTopics, getMessageDetails, getPublishers } from './rosInspect.js';
 import { logger } from '../../common/logger.js';
@@ -78,9 +77,9 @@ export async function PubRosMsg(params, ros) {
 
   const { topic, messageType, message } = params;
 
-  // Validate the ENCODED message: `message` is the neutral domain object (e.g. Gimbal
-  // {reset, pitch...}), only the encoder output has the ROS type's fields.
-  const rosMsg = encodeRosSrv({ type: '', msg: message, msgType: messageType });
+  // `message` arrives already encoded for `messageType` (models/msgEncode.js: the gateway's
+  // caller for commands, pubTopicOnce for the raw route); validate that encoded message.
+  const rosMsg = message;
   if (!rosMsg) {
     throw new Error('ROS message is empty or invalid');
   }

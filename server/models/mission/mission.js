@@ -22,7 +22,7 @@ import {
 } from '../../config/status.js';
 import { normalizeMission, missionForTask, TASK_GRAPH_VERSION } from './taskGraph.js';
 import { taskScheduler } from './taskScheduler.js';
-import { CommandType } from '../../config/commandCatalog.js';
+import { CommandType } from '../../config/commandTypes.js';
 
 // Plans are stored as received, tagged with their format: consumers (client RuteConvert)
 // parse route[] as '3' and tasks[] as '4'.

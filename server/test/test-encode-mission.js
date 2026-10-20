@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { encodeRosSrv } from '../models/ros/rosEncode.js';
+import { encodeMsg } from '../models/msgEncode.js';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -32,17 +32,17 @@ function makeRoute(uav_type, attrs = BASE_ATTRS, wp = BASE_WP) {
 
 // ─── ROS1: aerialcore_common/ConfigMission ────────────────────────────────────
 
-describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
+describe('encodeMsg — ROS1 (aerialcore_common/ConfigMission)', () => {
   const route = makeRoute('dji_M210_noetic');
   const msgType = 'aerialcore_common/ConfigMission';
 
   test('devuelve type=waypoint', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.type, 'waypoint');
   });
 
   test('waypoints tienen la forma correcta (lat/lon/alt)', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.waypoint.length, 2);
     assert.ok('latitude' in result.waypoint[0]);
     assert.ok('longitude' in result.waypoint[0]);
@@ -53,26 +53,26 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
   });
 
   test('velocidades: idleVel y maxVel de params', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.idleVel, 7);
     assert.equal(result.maxVel, 12);
   });
 
   test('speed usa idle_vel en wp sin speed, y speed explícita en wp con speed', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.speed.data[0], 7); // wp[0] sin speed → idle_vel
     assert.equal(result.speed.data[1], 5); // wp[1] speed: 5
   });
 
   test('yaw se recoge del wp', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.yaw.data[0], 153.6);
     assert.equal(result.yaw.data[1], 0); // wp[1] sin yaw → 0
   });
 
   test('campos del wp en null (como los emite el MIP planner) toman el default', () => {
     const wp = [{ pos: [1, 2, 3], yaw: null, gimbal: null, speed: null, action: null }];
-    const result = encodeRosSrv({ type: 'configureMission', msg: makeRoute('dji_M210_noetic', BASE_ATTRS, wp), msgType });
+    const result = encodeMsg(msgType, makeRoute('dji_M210_noetic', BASE_ATTRS, wp));
     assert.equal(result.yaw.data[0], 0);
     assert.equal(result.speed.data[0], 7); // idle_vel
     assert.equal(result.gimbalPitch.data[0], 0);
@@ -80,13 +80,13 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
   });
 
   test('commandList y commandParameter son arrays aplanados de longitud 20 (2 wp × 10)', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.commandList.data.length, 20);
     assert.equal(result.commandParameter.data.length, 20);
   });
 
   test('modos de vuelo de params', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.yawMode, 2);
     assert.equal(result.finishAction, 2);
     assert.equal(result.traceMode, 2);
@@ -95,7 +95,7 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
   test('atributos con defaults del YAML cuando params está vacío (SSOT)', () => {
     // 'default' profile exposes mode_yaw/mode_trace/mode_landing/idle_vel (no max_vel).
     const emptyRoute = makeRoute('dji_M210_noetic', {});
-    const result = encodeRosSrv({ type: 'configureMission', msg: emptyRoute, msgType });
+    const result = encodeMsg(msgType, emptyRoute);
     assert.equal(result.idleVel, 2);
     assert.equal(result.yawMode, 0);
     assert.equal(result.finishAction, 2);
@@ -103,29 +103,29 @@ describe('encodeRosSrv — ROS1 (aerialcore_common/ConfigMission)', () => {
 
   test('un perfil v2 sí aporta max_vel por defecto', () => {
     const emptyRoute = makeRoute('dji_M300', {});
-    const result = encodeRosSrv({ type: 'configureMission', msg: emptyRoute, msgType });
+    const result = encodeMsg(msgType, emptyRoute);
     assert.equal(result.maxVel, 12);
   });
 
   test('msg null devuelve {}', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: null, msgType });
+    const result = encodeMsg(msgType, null);
     assert.deepEqual(result, {});
   });
 });
 
 // ─── ROS2: muav_gcs_interfaces/srv/LoadMission ───────────────────────────────
 
-describe('encodeRosSrv — ROS2 (muav_gcs_interfaces/srv/LoadMission)', () => {
+describe('encodeMsg — ROS2 (muav_gcs_interfaces/srv/LoadMission)', () => {
   const route = makeRoute('px4_ros2');
   const msgType = 'muav_gcs_interfaces/srv/LoadMission';
 
   test('tiene wrapper request', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.ok('request' in result);
   });
 
   test('request tiene campos ROS2 en snake_case', () => {
-    const { request } = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const { request } = encodeMsg(msgType, route);
     assert.ok('vel_max' in request);
     assert.ok('vel_idle' in request);
     assert.ok('yaw_mode' in request);
@@ -136,7 +136,7 @@ describe('encodeRosSrv — ROS2 (muav_gcs_interfaces/srv/LoadMission)', () => {
   });
 
   test('waypoints correctos dentro de request', () => {
-    const { request } = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const { request } = encodeMsg(msgType, route);
     assert.equal(request.waypoint.length, 2);
     assert.equal(request.waypoint[0].latitude, 38.13898041);
   });
@@ -144,24 +144,24 @@ describe('encodeRosSrv — ROS2 (muav_gcs_interfaces/srv/LoadMission)', () => {
 
 // ─── PSDK: psdk_interfaces/srv/InitWaypointV2Setting ─────────────────────────
 
-describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', () => {
+describe('encodeMsg — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', () => {
   const route = makeRoute('dji_M300_PSDK');
   const msgType = 'psdk_interfaces/srv/InitWaypointV2Setting';
 
   test('tiene waypoint_v2_init_settings en la raíz', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.ok('waypoint_v2_init_settings' in result);
   });
 
   test('mission tiene el número correcto de waypoints', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     const { waypoint_v2_init_settings } = result;
     assert.equal(waypoint_v2_init_settings.mission.length, 2);
     assert.equal(waypoint_v2_init_settings.miss_total_len, 2);
   });
 
   test('waypoint PSDK tiene campos DJI correctos', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     const wp0 = result.waypoint_v2_init_settings.mission[0];
     assert.ok('longitude' in wp0);
     assert.ok('latitude' in wp0);
@@ -174,13 +174,13 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
   });
 
   test('heading viene del yaw del wp', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     assert.equal(result.waypoint_v2_init_settings.mission[0].heading, 153.6);
     assert.equal(result.waypoint_v2_init_settings.mission[1].heading, 0); // wp[1] sin yaw
   });
 
   test('speed per-waypoint: usa idle cuando no hay speed, explícita cuando la hay', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     const mission = result.waypoint_v2_init_settings.mission;
     assert.equal(mission[0].auto_flight_speed, 7); // wp[0] sin speed → idle_vel
     assert.equal(mission[1].auto_flight_speed, 5); // wp[1] speed: 5
@@ -189,7 +189,7 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
   });
 
   test('modos de vuelo de params: finished_action, max_flight_speed', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     const init = result.waypoint_v2_init_settings;
     assert.equal(init.finished_action, 2);
     assert.equal(init.max_flight_speed, 12);
@@ -197,7 +197,7 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
   });
 
   test('actions se generan para wp con acciones PSDK válidas (photo, gimbal)', () => {
-    const result = encodeRosSrv({ type: 'configureMission', msg: route, msgType });
+    const result = encodeMsg(msgType, route);
     const actions = result.waypoint_v2_init_settings.actions;
     assert.ok(actions.length > 0);
     assert.equal(result.action_num, actions.length);
@@ -210,14 +210,14 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
       { pos: [38.0, -3.0, 10] },
       { pos: [38.1, -3.1, 20] },
     ]);
-    const result = encodeRosSrv({ type: 'configureMission', msg: routeNoActions, msgType });
+    const result = encodeMsg(msgType, routeNoActions);
     assert.equal(result.waypoint_v2_init_settings.actions.length, 0);
     assert.equal(result.action_num, 0);
   });
 
   test('lanza RangeError si mode_yaw tiene valor inválido (sin símbolo en el catálogo)', () => {
     const badRoute = makeRoute('dji_M300_PSDK', { ...BASE_ATTRS, mode_yaw: 99 });
-    assert.throws(() => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }), {
+    assert.throws(() => encodeMsg(msgType, badRoute), {
       name: 'RangeError',
       message: /mode_yaw=99/,
     });
@@ -225,7 +225,7 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
 
   test('lanza RangeError si mode_landing tiene valor inválido (sin símbolo en el catálogo)', () => {
     const badRoute = makeRoute('dji_M300_PSDK', { ...BASE_ATTRS, mode_landing: 99 });
-    assert.throws(() => encodeRosSrv({ type: 'configureMission', msg: badRoute, msgType }), {
+    assert.throws(() => encodeMsg(msgType, badRoute), {
       name: 'RangeError',
       message: /mode_landing=99/,
     });
@@ -234,34 +234,26 @@ describe('encodeRosSrv — PSDK (psdk_interfaces/srv/InitWaypointV2Setting)', ()
 
 // ─── Servicios no-misión (passthrough / vacío) ────────────────────────────────
 
-describe('encodeRosSrv — servicios no-misión', () => {
+describe('encodeMsg — servicios no-misión', () => {
   test('std_srvs/TriggerRequest devuelve {}', () => {
-    const result = encodeRosSrv({ type: 'commandMission', msg: {}, msgType: 'std_srvs/TriggerRequest' });
+    const result = encodeMsg('std_srvs/TriggerRequest', {});
     assert.deepEqual(result, {});
   });
 
   test('psdk_interfaces/srv/StartWaypointV2Mission devuelve {}', () => {
-    const result = encodeRosSrv({
-      type: 'commandMission',
-      msg: { data: true },
-      msgType: 'psdk_interfaces/srv/StartWaypointV2Mission',
-    });
+    const result = encodeMsg('psdk_interfaces/srv/StartWaypointV2Mission', { data: true });
     assert.deepEqual(result, {});
   });
 
   test('geometry_msgs/Twist hace passthrough con defaults', () => {
-    const result = encodeRosSrv({
-      type: 'custom',
-      msg: { linear: { x: 1, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0.5 } },
-      msgType: 'geometry_msgs/Twist',
-    });
+    const result = encodeMsg('geometry_msgs/Twist', { linear: { x: 1, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0.5 } });
     assert.equal(result.linear.x, 1);
     assert.equal(result.angular.z, 0.5);
   });
 
   test('tipo desconocido devuelve el msg tal cual', () => {
     const msg = { foo: 'bar' };
-    const result = encodeRosSrv({ type: 'custom', msg, msgType: 'unknown/Type' });
+    const result = encodeMsg('unknown/Type', msg);
     assert.deepEqual(result, msg);
   });
 });

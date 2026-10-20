@@ -1,5 +1,4 @@
 import * as ROSLIB from 'roslib';
-import { encodeRosSrv } from './rosEncode.js';
 import { buildTypeMap, validateRosMsg } from './rosValidateMSG.js';
 import { getServices, getServicesType, getServiceRequestDetails } from './rosInspect.js';
 import { logger } from '../../common/logger.js';
@@ -89,7 +88,8 @@ export async function callService({ name, type, service, serviceType, request },
     return { state: 'warning', msg: type + ' to:' + name + ' dont have this service' };
   }
 
-  let reqMsg = encodeRosSrv({ type, msg: request, msgType: serviceType });
+  // `request` arrives already encoded for `serviceType` (models/msgEncode.js, before the gateway).
+  const reqMsg = request ?? {};
   try {
     const response = await callRosService({ service, messageType: serviceType, message: reqMsg }, ros);
     if (response.success || response.result) {

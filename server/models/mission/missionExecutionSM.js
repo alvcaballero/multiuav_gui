@@ -8,7 +8,7 @@ import { missionController } from '../../controllers/mission.js';
 import { missionLogger as logger } from '../../common/logger.js';
 import { TASK_STATUS } from '../../config/status.js';
 import { normalizeMission, missionForTask } from './taskGraph.js';
-import { CommandType } from '../../config/commandCatalog.js';
+import { CommandType } from '../../config/commandTypes.js';
 
 const LoadMissionSM = async (context) => {
   logger.info('service load mission');

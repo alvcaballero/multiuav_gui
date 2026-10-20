@@ -4,7 +4,6 @@ import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
 import { decodeRosMsg } from '../ros/rosDecode.js';
-import { encodeRosSrv } from '../ros/rosEncode.js';
 import { logger } from '../../common/logger.js';
 import { SUBSCRIPTIONS, parseTopic, requestTopic } from './mqttTopics.js';
 
@@ -75,12 +74,9 @@ export class MqttServer {
 
     if (!this.client.connected) return { state: 'error', msg: 'MQTT broker not connected' };
 
-    let request;
-    try {
-      request = encodeRosSrv({ type, msg: attributes, msgType: serviceDef.serviceType });
-    } catch (err) {
-      return { state: 'error', msg: `Failed to encode ${type}: ${err.message}` };
-    }
+    // `attributes` arrive already encoded for the serviceType (models/msgEncode.js, before the
+    // gateway): MQTT carries the same JSON shape rosbridge does.
+    const request = attributes ?? {};
 
     const id = randomUUID();
     const envelope = JSON.stringify({ id, ts: Date.now(), request });

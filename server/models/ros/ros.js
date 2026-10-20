@@ -361,7 +361,7 @@ export class rosModel {
 
     // CameraFileDownload finishing is a business event (mission state machine),
     // not a ROS concern — inject it here like GCSServicesMission does for services,
-    // so actionRegistry/rosEncode stay unaware of missionController.
+    // so actionRegistry/msgEncode stay unaware of missionController.
     const onComplete =
       type === 'CameraFileDownload'
         ? (result) => {
@@ -377,6 +377,13 @@ export class rosModel {
       { actionServerName, actionType: actionDef.actionType, type, ...rest, onComplete },
       getRos()
     );
+  }
+
+  // The actionType a device declares for `type` (for callers that encode the goal themselves,
+  // e.g. the HTTP device-layer route). Config resolution stays in the facade.
+  static async actionTypeOf({ deviceId, type }) {
+    const { category } = await devicesController.getDevice(deviceId);
+    return resolveCategoryConfig(category, 'actions', type)?.actionType;
   }
 
   static async getActionStatusDevice({ deviceId, type }) {

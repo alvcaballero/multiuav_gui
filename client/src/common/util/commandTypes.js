@@ -1,5 +1,5 @@
 // Command types the GCS understands: the `type` of POST /api/commands/send and of
-// GET /api/commands/types. Mirror of `CommandType` in server/config/commandCatalog.js;
+// GET /api/commands/types. Mirror of `CommandType` in server/config/commandTypes.js;
 // server/test/test-command-types-mirror.js fails if they drift apart.
 // Which ones a device supports comes from GET /api/commands/types, never from here.
 export const CommandType = Object.freeze({

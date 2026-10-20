@@ -5,7 +5,8 @@ import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 import { hasDecoder } from './ros/rosDecode.js';
 import { commandSchema, validateCommandSchema, validateCommandOverrides } from './commandSchema.js';
-import { CommandType } from '../config/commandCatalog.js';
+import { CommandType } from '../config/commandTypes.js';
+import { commandRegistry } from './commandRegistry.js';
 
 const devices_msg = readDataFile(devicesMsg);
 const messages_types = readDataFile(messagesTypes);
@@ -58,11 +59,18 @@ function validateDevicesMsgKeys(catalog) {
 validateDevicesMsgKeys(devices_msg);
 
 // command_schema.yaml: una entrada por CommandType, y los bloques `commands:` de
-// devices_msg solo restringen ese dominio. Misma política: warn, o throw en debug.
+// devices_msg solo restringen ese dominio. commandRegistry: cada command de una categoría
+// sale por UN endpoint (dos matches sin `commands.<Type>.via` es ambiguo, y un `via` tiene
+// que apuntar a un endpoint que lo implemente). Misma política: warn, o throw en debug.
+// (Que el msgType de ese endpoint tenga encoder lo valida commands.js: msgEncode importa los
+// encoders de misión, que importan este módulo, así que acá no se puede.)
 function validateCommands() {
   const problems = [
     ...validateCommandSchema(commandSchema, Object.values(CommandType)),
     ...validateCommandOverrides(commandSchema, devices_msg),
+    ...Object.entries(devices_msg).flatMap(([category, def]) =>
+      commandRegistry.resolveCommands(def).problems.map((p) => `${category}.${p}`)
+    ),
   ];
   if (problems.length === 0) return;
   const msg = `command_schema: ${problems.length} problem(s): ${problems.join('; ')}`;

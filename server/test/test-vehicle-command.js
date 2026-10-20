@@ -1,7 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildVehicleCommand, relativeTarget, VEHICLE_CMD } from '../models/vehicleCommand.js';
-import { CommandType, COMMAND_CATALOG, Dispatch } from '../config/commandCatalog.js';
+import { CommandType } from '../config/commandTypes.js';
+import { commandRegistry } from '../models/commandRegistry.js';
 import { approxDistanceMeters } from '../common/geo.js';
 import { commandSchema, resolveCommand, validateAttributes } from '../models/commandSchema.js';
 
@@ -33,10 +34,9 @@ describe('relativeTarget (body frame → global)', () => {
 });
 
 describe('buildVehicleCommand', () => {
-  test('every VEHICLE_COMMAND catalog entry builds a message', () => {
-    const types = Object.entries(COMMAND_CATALOG)
-      .filter(([, def]) => def.dispatch === Dispatch.VEHICLE_COMMAND)
-      .map(([type]) => type);
+  test('every command the registry implements with a PX4 VehicleCommand builds a message', () => {
+    const endpoint = { block: 'publishers', key: 'VehicleCommand', msgType: 'px4_msgs/msg/VehicleCommand' };
+    const types = Object.values(CommandType).filter((type) => commandRegistry.encoderFor(type, endpoint));
     assert.ok(types.length > 0);
     for (const type of types) {
       // What sendCommand hands the builder: the schema defaults of an empty send.
