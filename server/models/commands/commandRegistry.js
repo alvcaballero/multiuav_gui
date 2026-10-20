@@ -10,10 +10,10 @@
 // la arma después models/msgEncode.js, la misma para todo protocolo (commandsModel.sendToDevice).
 // Los attributes llegan ya validados y con defaults (command_schema, commandsModel.sendCommand).
 
-import { createCommandRegistry } from './commandEncoders.js';
+import { createCommandRegistry, sequence } from './commandEncoders.js';
 import { CommandType } from '../../config/commandTypes.js';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
-import { buildVehicleCommand } from './vehicleCommand.js';
+import { buildVehicleCommand, buildGimbalTakeControl } from './vehicleCommand.js';
 import { normalizeMission } from '../mission/taskGraph.js';
 import { MISSION_SERVICE_TYPES } from '../mission/missionSymbols.js';
 
@@ -52,9 +52,13 @@ for (const type of [
     buildVehicleCommand({ type, attributes, position })
   );
 }
-// Gimbal también completa el eje que no viene con la telemetría, igual que en DJI (gimbalRequest).
+// Gimbal: primero la GCS toma el control del gimbal manager (si no, PX4 responde DENIED) y
+// después mueve; completa el eje que no viene con la telemetría, igual que en DJI (gimbalRequest).
 register(CommandType.GIMBAL, { msgType: PX4_VEHICLE_COMMAND }, (ctx) =>
-  buildVehicleCommand({ type: CommandType.GIMBAL, attributes: gimbalRequest(ctx), position: ctx.position })
+  sequence([
+    buildGimbalTakeControl({ position: ctx.position }),
+    buildVehicleCommand({ type: CommandType.GIMBAL, attributes: gimbalRequest(ctx), position: ctx.position }),
+  ])
 );
 
 // ─── gimbal ───────────────────────────────────────────────────────────────────

@@ -21,6 +21,14 @@
 
 export const ANY = '*';
 
+// Un encoder devuelve UN contenido. Cuando un command necesita varios mensajes en orden sobre el
+// mismo endpoint (PX4 Gimbal: tomar el control y después mover), los envuelve en sequence().
+// Marca explícita y no un array pelado: un payload libre (UploadMission) puede ser un array.
+const SEQUENCE = Symbol('sequence');
+export const sequence = (contents) => ({ [SEQUENCE]: contents });
+/** Los contenidos de lo que devolvió un encoder, en orden (uno solo si no es una secuencia). */
+export const contentsOf = (content) => content?.[SEQUENCE] ?? [content];
+
 // Bloques invocables de devices_msg. Todos declaran su tipo en `messageType`.
 const ENDPOINT_BLOCKS = ['services', 'actions', 'publishers'];
 
@@ -115,8 +123,8 @@ export function createCommandRegistry() {
   }
 
   /**
-   * Arma el mensaje de un command para su endpoint resuelto.
-   * @returns {object} el mensaje, listo para el transporte
+   * Arma el contenido de un command para su endpoint resuelto.
+   * @returns {object} el contenido de dominio (o una sequence(), ver contentsOf)
    */
   function encode(type, endpoint, ctx = {}) {
     const fn = encoderFor(type, endpoint);

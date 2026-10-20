@@ -7,6 +7,7 @@ import { CommandType } from '../../config/commandTypes.js';
 import { logger } from '../../common/logger.js';
 import { commandSchema, resolveCommand, validateAttributes } from './commandSchema.js';
 import { commandRegistry } from './commandRegistry.js';
+import { contentsOf } from './commandEncoders.js';
 import { encodeMsg, hasMsgEncoder } from '../msgEncode.js';
 
 const COMMAND_TYPES = new Set(Object.values(CommandType));
@@ -121,14 +122,20 @@ export class commandsModel {
     const position = await positionsController.getByDeviceId(device.id);
     // ① qué se manda (commandRegistry, dominio) → ② la forma que define el msgType del endpoint
     // (msgEncode, la misma para todo protocolo) → ③ el gateway solo empaqueta.
-    let message;
+    let messages;
     try {
       const content = commandRegistry.encode(type, endpoint, { attributes, position, device });
-      message = encodeMsg(endpoint.msgType, content);
+      messages = contentsOf(content).map((c) => encodeMsg(endpoint.msgType, c));
     } catch (err) {
       return { state: 'error', msg: err.message };
     }
-    logger.debug(`sendToDevice ${type} via ${viaOf(endpoint)} deviceId=${device.id}`);
-    return gateway.sendCommand({ device, endpoint, message });
+    logger.debug(`sendToDevice ${type} via ${viaOf(endpoint)} deviceId=${device.id} (${messages.length} msg)`);
+    // Una secuencia va en orden y corta en el primer fallo: mover sin haber tomado el control no sirve.
+    let response;
+    for (const message of messages) {
+      response = await gateway.sendCommand({ device, endpoint, message });
+      if (response?.state !== 'success') return response;
+    }
+    return response;
   }
 }

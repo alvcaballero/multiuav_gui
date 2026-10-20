@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { createCommandRegistry, endpointsOf } from '../models/commands/commandEncoders.js';
+import { createCommandRegistry, endpointsOf, sequence, contentsOf } from '../models/commands/commandEncoders.js';
 
 const PX4 = {
   publishers: { vehicle_command: { name: '/fmu/in/vehicle_command', messageType: 'px4_msgs/msg/VehicleCommand' } },
@@ -126,5 +126,17 @@ describe('encoderFor / encode', () => {
   test('encoding a command on an endpoint that does not implement it throws', () => {
     const endpoint = { block: 'services', key: 'stop_mission', msgType: 'std_srvs/srv/Trigger' };
     assert.throws(() => registry().encode('Takeoff', endpoint), /no encoder for Takeoff/);
+  });
+});
+
+describe('sequence / contentsOf', () => {
+  test('a plain content is a sequence of one; a sequence keeps its order', () => {
+    assert.deepEqual(contentsOf({ data: true }), [{ data: true }]);
+    assert.deepEqual(contentsOf(undefined), [undefined]);
+    assert.deepEqual(contentsOf(sequence([{ a: 1 }, { b: 2 }])), [{ a: 1 }, { b: 2 }]);
+  });
+
+  test('an array payload is ONE content, not a sequence', () => {
+    assert.deepEqual(contentsOf([1, 2]), [[1, 2]]);
   });
 });

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildVehicleCommand, relativeTarget, VEHICLE_CMD } from '../models/commands/vehicleCommand.js';
+import { buildVehicleCommand, buildGimbalTakeControl, relativeTarget, VEHICLE_CMD } from '../models/commands/vehicleCommand.js';
 import { CommandType } from '../config/commandTypes.js';
 import { commandRegistry } from '../models/commands/commandRegistry.js';
 import { approxDistanceMeters } from '../common/geo.js';
@@ -33,6 +33,8 @@ describe('relativeTarget (body frame → global)', () => {
   });
 });
 
+const NAN_ON_PURPOSE = { [CommandType.GIMBAL]: ['param3', 'param4'] }; // gimbal rates
+
 describe('buildVehicleCommand', () => {
   test('every command the registry implements with a PX4 VehicleCommand builds a message', () => {
     const endpoint = { block: 'publishers', key: 'vehicle_command', msgType: 'px4_msgs/msg/VehicleCommand' };
@@ -44,8 +46,11 @@ describe('buildVehicleCommand', () => {
       assert.ok(checked.ok, checked.msg);
       const msg = buildVehicleCommand({ type, attributes: checked.values, position: POS });
       assert.equal(typeof msg.command, 'number', type);
-      // rosbridge carries JSON: a NaN would arrive as null.
-      for (const [k, v] of Object.entries(msg)) assert.ok(!Number.isNaN(v), `${type}.${k} is NaN`);
+      // NaN only where PX4 reads it as "unset" on purpose: everything else is filled from telemetry.
+      const nanAllowed = NAN_ON_PURPOSE[type] ?? [];
+      for (const [k, v] of Object.entries(msg)) {
+        if (!nanAllowed.includes(k)) assert.ok(!Number.isNaN(v), `${type}.${k} is NaN`);
+      }
     }
   });
 
@@ -102,8 +107,20 @@ describe('buildVehicleCommand', () => {
     assert.equal(msg.command, VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW);
     assert.equal(msg.param1, -30);
     assert.equal(msg.param2, 10);
-    assert.equal(msg.param5, 64); // GIMBAL_MANAGER_FLAGS_YAW_IN_EARTH_FRAME: absolute yaw
+    assert.ok(Number.isNaN(msg.param3) && Number.isNaN(msg.param4)); // rates unset: angle only
+    assert.equal(msg.param5, 16); // GIMBAL_MANAGER_FLAGS_YAW_LOCK: absolute yaw (PX4 ignores 64)
     assert.equal(msg.target_component, 0);
+  });
+
+  test('gimbal take-control makes the GCS (255/190) the primary control of every gimbal', () => {
+    const msg = buildGimbalTakeControl({ position: POS });
+    assert.equal(msg.command, VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_CONFIGURE);
+    assert.deepEqual([msg.param1, msg.param2], [255, 190]);
+    assert.deepEqual([msg.param3, msg.param4], [-1, -1]); // secondary control unchanged
+    assert.equal(msg.param7, 0); // all gimbal devices
+    assert.deepEqual([msg.source_system, msg.source_component], [255, 190]);
+    assert.equal(msg.target_system, 3);
+    assert.throws(() => buildGimbalTakeControl({ position: { attributes: {} } }), /system id/);
   });
 
   test('a non vehicle command is rejected', () => {

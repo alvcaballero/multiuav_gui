@@ -7,8 +7,9 @@
 // Notes that are easy to get wrong:
 //   - The message goes straight to uORB, so angles are RADIANS (navigator writes
 //     param4 into position_setpoint.yaw as-is), unlike the MAVLink spec's degrees.
-//   - rosbridge carries JSON: NaN ("keep current") can't be sent. Every param that
-//     PX4 would read as NaN is filled with the current value instead.
+//   - NaN reaches rosbridge as the bare `NaN` literal (rosConnection's transport), but MQTT's
+//     JSON would turn it into null. Positions/angles PX4 would read as NaN are filled with the
+//     current value; only the gimbal rates go as NaN (a finite 0 doesn't move the gimbal).
 //   - target_system is the vehicle's MAV_SYS_ID, different per drone (multi-vehicle SITL:
 //     instance + 1). It comes from telemetry (vehicle_status.system_id →
 //     position.attributes.systemId). Unknown → the command is REJECTED, never sent as 0
@@ -40,9 +41,16 @@ const PX4_SUB_MODE_AUTO_LOITER = 3;
 const REPOSITION_CHANGE_MODE = 1;
 const MAV_COMP_ID_AUTOPILOT1 = 1;
 const MAV_COMP_ID_ALL = 0;
+// Who sends every VehicleCommand: the standard MAVLink identity of a ground station.
+const GCS_SYSTEM_ID = 255;
+const GCS_COMPONENT_ID = 190;
+// DO_GIMBAL_MANAGER_CONFIGURE: -1 leaves the secondary control unchanged; gimbal device 0 = all.
+const LEAVE_UNCHANGED = -1;
+const ALL_GIMBAL_DEVICES = 0;
 // DO_GIMBAL_MANAGER_PITCHYAW param5 (GIMBAL_MANAGER_FLAGS): yaw relative to North, not to the
-// vehicle heading. Absolute angles, as command_schema's Gimbal contract says.
-const GIMBAL_MANAGER_FLAGS_YAW_IN_EARTH_FRAME = 64;
+// vehicle heading. Absolute angles, as command_schema's Gimbal contract says. PX4's gimbal module
+// only reads YAW_LOCK (input_mavlink.cpp): YAW_IN_EARTH_FRAME (64) is ignored there.
+const GIMBAL_MANAGER_FLAGS_YAW_LOCK = 16;
 
 const DEG_TO_RAD = Math.PI / 180;
 const wrapPi = (rad) => Math.atan2(Math.sin(rad), Math.cos(rad));
@@ -74,11 +82,31 @@ function message(command, { system, component }, params = {}) {
     command,
     target_system: system,
     target_component: component,
-    source_system: 255,
-    source_component: 190,
+    source_system: GCS_SYSTEM_ID,
+    source_component: GCS_COMPONENT_ID,
     confirmation: 0,
     from_external: true,
   };
+}
+
+/**
+ * PX4's gimbal manager only obeys DO_GIMBAL_MANAGER_PITCHYAW from its primary control
+ * (source_system/component, else DENIED), and CONFIGURE is not source-checked. This makes the GCS
+ * (255/190, the source of every VehicleCommand) the primary control. Sent before EVERY Gimbal: a
+ * mission gimbal action or the RC can take the control, and the next move would be DENIED silently.
+ * @param {object} args
+ * @param {object} [args.position] current position (attributes.systemId)
+ * @returns {object} px4_msgs/msg/VehicleCommand
+ */
+export function buildGimbalTakeControl({ position }) {
+  const system = systemIdOf(position, 'Gimbal');
+  return message(VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_CONFIGURE, { system, component: MAV_COMP_ID_ALL }, {
+    param1: GCS_SYSTEM_ID, // primary control sysid
+    param2: GCS_COMPONENT_ID, // primary control compid
+    param3: LEAVE_UNCHANGED, // secondary control sysid
+    param4: LEAVE_UNCHANGED, // secondary control compid
+    param7: ALL_GIMBAL_DEVICES,
+  });
 }
 
 /**
@@ -152,11 +180,12 @@ export function buildVehicleCommand({ type, attributes = {}, position }) {
     }
     case CommandType.GIMBAL: {
       // Degrees. Both axes always arrive: commandRegistry fills a missing one with the gimbal
-      // telemetry (PX4 would read NaN as "keep", but rosbridge's JSON can't carry a NaN).
+      // telemetry, like DJI.
       const { pitch, yaw } = attributes;
       return vehicleMessage(
         VEHICLE_CMD.VEHICLE_CMD_DO_GIMBAL_MANAGER_PITCHYAW,
-        { param1: pitch, param2: yaw, param5: GIMBAL_MANAGER_FLAGS_YAW_IN_EARTH_FRAME },
+        // Rates NaN = "angle only": with 0 PX4 ACKs ACCEPTED but the gimbal doesn't move (tested on the drone).
+        { param1: pitch, param2: yaw, param3: NaN, param4: NaN, param5: GIMBAL_MANAGER_FLAGS_YAW_LOCK },
         MAV_COMP_ID_ALL
       );
     }

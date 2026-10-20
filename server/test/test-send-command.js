@@ -23,7 +23,9 @@ const POSITION = {
 
 let sent = [];
 let homes = [];
-registerGateway({ protocol: 'test', sendCommand: async (call) => (sent.push(call), { state: 'success', msg: 'sent' }) });
+const SENT = () => ({ state: 'success', msg: 'sent' });
+let reply = SENT; // what the test gateway answers; a test may make it fail
+registerGateway({ protocol: 'test', sendCommand: async (call) => (sent.push(call), reply(call)) });
 devicesController.getDevice = async (id) => DEVICES[id];
 positionsController.getByDeviceId = () => POSITION;
 positionsController.updatePosition = (payload) => homes.push(payload);
@@ -32,6 +34,7 @@ eventsController.addEvent = async () => {};
 beforeEach(() => {
   sent = [];
   homes = [];
+  reply = SENT;
 });
 
 describe('sendCommand', () => {
@@ -44,12 +47,26 @@ describe('sendCommand', () => {
     assert.equal(sent[0].message.target_system, 1);
   });
 
-  test('a PX4 Gimbal fills the axis that does not come with the telemetry, like DJI', async () => {
-    await commandsModel.sendCommand({ deviceId: 1, type: CommandType.GIMBAL, attributes: { pitch: -60 } });
-    assert.equal(sent[0].endpoint.key, 'vehicle_command');
-    assert.equal(sent[0].message.command, 1000); // DO_GIMBAL_MANAGER_PITCHYAW
-    assert.equal(sent[0].message.param1, -60); // pitch, degrees
-    assert.equal(sent[0].message.param2, 15); // yaw kept: attributes.gimbal = [-30, 0, 15]
+  test('a PX4 Gimbal takes the gimbal control as the GCS, then moves', async () => {
+    const r = await commandsModel.sendCommand({ deviceId: 1, type: CommandType.GIMBAL, attributes: { pitch: -60 } });
+    assert.equal(r.state, 'success');
+    assert.equal(sent.length, 2);
+    const [configure, move] = sent.map((s) => s.message);
+    assert.ok(sent.every((s) => s.endpoint.key === 'vehicle_command'));
+    assert.equal(configure.command, 1001); // DO_GIMBAL_MANAGER_CONFIGURE
+    assert.deepEqual([configure.param1, configure.param2], [255, 190]); // primary control = the GCS
+    assert.equal(move.command, 1000); // DO_GIMBAL_MANAGER_PITCHYAW
+    assert.deepEqual([move.source_system, move.source_component], [255, 190]); // the same GCS
+    assert.equal(move.param1, -60); // pitch, degrees
+    assert.equal(move.param2, 15); // yaw kept from telemetry: attributes.gimbal = [-30, 0, 15]
+  });
+
+  test('a sequence stops at the first message that fails: no move without the control', async () => {
+    reply = () => ({ state: 'error', msg: 'publish failed' });
+    const r = await commandsModel.sendCommand({ deviceId: 1, type: CommandType.GIMBAL, attributes: { pitch: -60 } });
+    assert.equal(r.state, 'error');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].message.command, 1001);
   });
 
   test('a PX4 command is not sent while the vehicle has not reported its system id', async () => {

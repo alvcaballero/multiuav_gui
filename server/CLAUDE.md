@@ -389,6 +389,10 @@ so it is encoded ONCE, before the gateway: `commandsModel.sendToDevice` (command
 `/ros/publish` and `/ros/action_send_goal`. The transport primitives (`callService`, `sendActionGoal`,
 `PubRosMsg`, `MqttServer`) receive the message already encoded and never encode. Three layers for a
 command: `commandRegistry` (what is sent, domain) → `encodeMsg(msgType)` (its shape) → gateway (packing).
+An encoder that needs several messages in order on the same endpoint returns `sequence([...])`
+(`commandEncoders.js`; PX4 Gimbal = take control with CONFIGURE, then PITCHYAW): `sendToDevice` sends
+them in order and stops at the first one that fails. NaN goes to rosbridge as the bare `NaN` literal
+(`stringifyKeepingNaN`, the `transportFactory` of `rosConnection.js`); MQTT's JSON still turns it into null.
 Every msgType a command endpoint uses must be registered (an encoder or an explicit `passthrough`);
 `commands.js` checks it at boot. `test/api/json/msg_encode_golden.json` froze the old `rosEncode` output.
 
