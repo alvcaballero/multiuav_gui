@@ -21,7 +21,12 @@ import {
   unsubscribeAll as _unsubscribeAll,
   subscribeOnce as _subscribeOnce,
 } from './rosSubscriptions.js';
-import { PubRosMsgOnce as _PubRosMsgOnce } from './rosPublishers.js';
+import {
+  PubRosMsgOnce as _PubRosMsgOnce,
+  startPeriodic as _startPeriodic,
+  stopPeriodic as _stopPeriodic,
+  stopAllPeriodic as _stopAllPeriodic,
+} from './rosPublishers.js';
 import * as rosServices from './rosServices.js';
 import * as rosInspect from './rosInspect.js';
 import * as actionRegistry from './rosAction.js';
@@ -146,12 +151,39 @@ export class rosModel {
         onMessage: makeOnMessage(slot == 'camera' ? toCamera : toPosition, cfg),
       }));
 
-    return _subscribeTopics({ key: id, topics }, getRos(), serverStatus());
+    const result = _subscribeTopics({ key: id, topics }, getRos(), serverStatus());
+    rosModel.startHeartbeat({ id, name, category });
+    return result;
+  }
+
+  // GCS heartbeat for categories that declare a `heartbeat:` block in devices_msg: the
+  // block names the topic, its rate and the constant fields of the message. The timestamp
+  // is the only field that changes, so it is stamped on every tick. It follows the
+  // device's subscription lifecycle (same key), so it also stops on disconnect.
+  static startHeartbeat({ id, name, category }) {
+    const heartbeat = resolveCategoryConfig(category, 'heartbeat');
+    if (!heartbeat) return null;
+    return _startPeriodic(
+      {
+        key: id,
+        name: buildDeviceName(name, heartbeat),
+        messageType: heartbeat['messageType'],
+        rateHz: heartbeat['rate_hz'],
+        buildMessage: () => ({ ...heartbeat['message'], timestamp: Date.now() * 1000 }),
+      },
+      getRos(),
+      serverStatus()
+    );
   }
 
   static async unsubscribeDevice(id) {
     // id < 0 (e.g. -1 on disconnect) means "unsubscribe everything".
-    return id < 0 ? _unsubscribeAll() : _unsubscribeKey(id);
+    if (id < 0) {
+      _stopAllPeriodic();
+      return _unsubscribeAll();
+    }
+    _stopPeriodic(id);
+    return _unsubscribeKey(id);
   }
 
   // Ad-hoc subscription to an arbitrary topic, independent of any device.

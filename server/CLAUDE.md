@@ -409,7 +409,7 @@ free of business-controller imports.
 | `ros.js`              | Facade (`rosModel`). Resolves `uav_id → {name, category}`, resolves per-category message config via `categoryModel` (`resolveCategoryConfig`), builds every ROS name (`buildDeviceName`), injects business callbacks, delegates to primitives |
 | `rosConnection.js`    | Connection lifecycle: connect, auto-reconnect (30s), inject connected/disconnect handlers                                                                                                                                                     |
 | `rosSubscriptions.js` | Subscription primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/`subscribeOnce`. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge |
-| `rosPublishers.js`    | Publish primitives: `PubRosMsgOnce` (validated one-shot publish); no category/topic-name knowledge |
+| `rosPublishers.js`    | Publish primitives: `PubRosMsgOnce` (validated one-shot) and `startPeriodic`/`stopPeriodic`/`stopAllPeriodic` (advertised topic + interval, e.g. the GCS heartbeat). Keeps `activePublishers` (opaque key → topic + timer); no category/topic-name knowledge |
 | `rosServices.js`      | ROS service calls: `callRosService` (primitive) + `callService` (receives the already-built service name + type; no config lookup)                                                                                                            |
 | `rosAction.js`        | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building                                                                                           |
 | `rosInspect.js`       | Read-only rosapi introspection (topics/services/types/action servers)                                                                                                                                                                         |
@@ -426,6 +426,8 @@ every ROS name through another:
 
 - `resolveCategoryConfig(category, block, type)` → `categoryModel.getCategory(category)?.[block]` (with `type`, the single entry). `block` is `'subscribers' | 'publishers' | 'services' | 'actions'`. Using `categoryModel` (not a frozen `readDataFile` snapshot) means a runtime category edit is picked up immediately.
 - `buildDeviceName(name, entry)` → `/${name}${entry.name}`. Device names are stored WITHOUT a leading slash and every config `name` starts with one, so every resulting topic/service/action name is absolute (`/agv_1/odom`). All four blocks use this one helper, so a device's topics, services and actions resolve identically.
+
+**Periodic publishers.** A category may declare a `heartbeat:` block in `devices_msg.yaml` (`name`, `messageType`, `rate_hz`, `message`) — NOT under `publishers:`, which feeds `commandRegistry` and would expose it as a command. `subscribeDevice` starts it through `startPeriodic` under the device id and `unsubscribeDevice` stops it; `message` holds the constant fields and the facade stamps `timestamp` each tick. px4_ros2 uses it for the `telemetry_status` GCS heartbeat PX4 needs to arm when `NAV_DLL_ACT > 0`.
 
 **Two-layer pattern (topics, services and actions).** Each has a pure primitive
 that takes already-resolved ROS names/types. The facade resolves the config +

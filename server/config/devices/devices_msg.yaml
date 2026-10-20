@@ -567,6 +567,17 @@ px4_ros2:
     vehicle_command:
       name: '/fmu/in/vehicle_command'
       messageType: 'px4_msgs/msg/VehicleCommand'
+  # GCS heartbeat, published at a constant rate while the device is subscribed. With
+  # NAV_DLL_ACT > 0 PX4 refuses to arm until a telemetry_status with heartbeat_type_gcs
+  # arrives (uXRCE-DDS cannot carry a MAVLink HEARTBEAT). Keep it well under COM_DL_LOSS_T
+  # (10 s). `timestamp` is stamped by the GCS on every tick. Remove the block for a drone
+  # that already has a real MAVLink link to a GCS.
+  heartbeat:
+    name: '/fmu/in/telemetry_status'
+    messageType: 'px4_msgs/msg/TelemetryStatus'
+    rate_hz: 1
+    message:
+      heartbeat_type_gcs: true
   services:
     configure_mission:
       name: '/offboard/mission_load'
