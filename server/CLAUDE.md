@@ -350,6 +350,12 @@ dji_M210_noetic:
       serviceType: 'aerialcore_common/ConfigMission'
 ```
 
+The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
+`actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`
+(`categoryModel.getMessagesType`), DERIVED from what `rosDecode` can decode plus what categories
+already declare — there is no hand-kept list (the old `messages.yaml` drifted and was removed).
+Saving a category rewrites `devices_msg.yaml` (`writeDataFile`), so its comments are lost.
+
 **Message Decoding** (`models/ros/rosDecode.js`): a registry, not an if-chain. A decoder is
 picked by `(slot, messageType)` — the `subscribers` key plus the `messageType` that entry
 declares — and returns a `TelemetryPatch` (typedef in `models/positions/positionReducers.js`),

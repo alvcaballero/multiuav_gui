@@ -31,6 +31,21 @@ function register(slot, msgTypes, decode) {
 // leaving a hole that looks like a typo.
 const ignore = (slot, msgTypes) => register(slot, msgTypes, () => null);
 
+/**
+ * slot → the concrete msgTypes it decodes (an explicit `ignore` included). A wildcard slot
+ * (registered with ANY) accepts any type, so it contributes no concrete type here.
+ * @returns {Map<string, string[]>}
+ */
+export function decodableMsgTypes() {
+  const out = new Map();
+  for (const key of decoders.keys()) {
+    const [slot, msgType] = key.split('|');
+    if (msgType === ANY) continue;
+    (out.get(slot) ?? out.set(slot, []).get(slot)).push(msgType);
+  }
+  return out;
+}
+
 /** True when (slot, msgType) has a decoder, an explicit `ignore` included. */
 export function hasDecoder(slot, msgType) {
   return decoders.has(keyOf(slot, msgType)) || decoders.has(keyOf(slot, ANY));

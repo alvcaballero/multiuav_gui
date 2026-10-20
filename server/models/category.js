@@ -1,15 +1,15 @@
 import { readDataFile, writeDataFile } from '../common/utils.js';
-import { devicesMsg, missionSchema, messagesTypes } from '../config/config.js';
+import { devicesMsg, missionSchema } from '../config/config.js';
 import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS } from '../config/deviceMsgCatalog.js';
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
-import { hasDecoder } from './ros/rosDecode.js';
+import { hasDecoder, decodableMsgTypes } from './ros/rosDecode.js';
 import { commandSchema, validateCommandSchema, validateCommandOverrides } from './commandSchema.js';
 import { CommandType } from '../config/commandTypes.js';
 import { commandRegistry } from './commandRegistry.js';
+import { endpointsOf } from './commandEncoders.js';
 
 const devices_msg = readDataFile(devicesMsg);
-const messages_types = readDataFile(messagesTypes);
 const _mission_schema = readDataFile(missionSchema);
 
 // Valida que cada key de los bloques subscribers/publishers/services/actions en
@@ -198,8 +198,28 @@ export class categoryModel {
     return devices_msg[type];
   }
 
+  // Message types the category editor offers, per block and key (GET /api/category/messages).
+  // DERIVED, never a hand-kept list (it was messages.yaml, and it drifted):
+  //   subscribers → what rosDecode decodes, plus what categories declare (wildcard slots
+  //                 such as battery accept any type, so only declarations name one)
+  //   services / actions / publishers → what categories declare; every one of them is
+  //                 checked at boot against commandRegistry/msgEncode. A command matched by key
+  //                 accepts any msgType, so the registries can't enumerate these.
+  // Read from the in-memory devices_msg, so a category edited at runtime shows up.
   static getMessagesType() {
-    return messages_types;
+    const catalog = { subscribers: {}, publishers: {}, services: {}, actions: {} };
+    const add = (block, key, msgType) => {
+      if (!msgType) return;
+      const types = (catalog[block][key] ??= []);
+      if (!types.includes(msgType)) types.push(msgType);
+    };
+    for (const [slot, types] of decodableMsgTypes()) for (const msgType of types) add('subscribers', slot, msgType);
+    for (const def of Object.values(devices_msg)) {
+      for (const [slot, entry] of Object.entries(def?.subscribers ?? {})) add('subscribers', slot, entry?.messageType);
+      for (const { block, key, msgType } of endpointsOf(def)) add(block, key, msgType);
+    }
+    for (const block of Object.values(catalog)) for (const types of Object.values(block)) types.sort();
+    return catalog;
   }
 
   // number → canonical symbol (catalog dictionary). Used by the encoders.

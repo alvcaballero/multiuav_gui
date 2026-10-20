@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import SelectField from '../common/components/SelectField';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   IconButton,
   Button,
@@ -18,237 +18,162 @@ import {
 import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SelectField from '../common/components/SelectField';
 import { useAsyncTask } from '../reactHelper';
 import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
-import useQuery from '../common/util/useQuery';
 import EditItemView from './components/EditItemView';
 
-const SettingsCategoryPageEdit = () => {
+// The devices_msg.yaml blocks a category declares, and the field each one names its type with.
+// Which keys and types can be picked comes from GET /api/category/messages, derived on the
+// server from the decoders and from what categories already declare.
+const BLOCKS = [
+  { block: 'subscribers', title: 'Telemetry - subscribers', typeField: 'messageType' },
+  { block: 'services', title: 'Commands - services', typeField: 'serviceType' },
+  { block: 'actions', title: 'Commands - actions', typeField: 'actionType' },
+  { block: 'publishers', title: 'Commands - publishers', typeField: 'messageType' },
+];
+
+const EndpointSection = ({ block, title, typeField, item, setItem, options }) => {
   const { classes } = useSettingsStyles();
+  const [adding, setAdding] = useState(false);
+  const [newKey, setNewKey] = useState(null);
 
-  const query = useQuery();
-  const uniqueId = query.get('uniqueId');
+  const entries = item[block] ?? {};
+  const available = Object.keys(options).filter((key) => !(key in entries));
 
-  const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
-  const [itemMsg, setItemMsg] = useState(uniqueId ? { uniqueId } : null);
-  const [loading, setLoading] = useState(false);
-  const [typeMsgMenu, setTypeMsgMenu] = useState(true);
-  const [selectTypeMsgMenu, setSelectTypeMsgMenu] = useState(true);
+  const update = (key, field, value) =>
+    setItem({ ...item, [block]: { ...entries, [key]: { ...entries[key], [field]: value } } });
+
+  const remove = (key) => {
+    const rest = { ...entries };
+    delete rest[key];
+    setItem({ ...item, [block]: rest });
+  };
+
+  const add = () => {
+    if (newKey) update(newKey, typeField, options[newKey][0]);
+    setNewKey(null);
+    setAdding(false);
+  };
+
+  return (
+    <Accordion>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <Typography variant="subtitle1">{title}</Typography>
+      </AccordionSummary>
+      <AccordionDetails className={classes.details}>
+        <Table className={classes.table}>
+          <TableHead>
+            <TableRow>
+              <TableCell>Key</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell className={classes.columnAction} />
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Object.entries(entries).map(([key, entry]) => (
+              <TableRow key={key}>
+                <TableCell>{key}</TableCell>
+                <TableCell>
+                  <TextField
+                    value={entry.name ?? ''}
+                    onChange={(e) => update(key, 'name', e.target.value)}
+                    placeholder="/topic_or_service"
+                  />
+                </TableCell>
+                <TableCell>
+                  <SelectField
+                    data={options[key] ?? [entry[typeField]]}
+                    value={entry[typeField]}
+                    keyGetter={(e) => e}
+                    titleGetter={(e) => e}
+                    onChange={(e) => update(key, typeField, e.target.value)}
+                    emptyValue={null}
+                  />
+                </TableCell>
+                <TableCell className={classes.columnAction} padding="none">
+                  <Tooltip title="Remove">
+                    <IconButton size="small" onClick={() => remove(key)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        <Box sx={{ textAlign: 'center' }}>
+          {adding ? (
+            <div>
+              <SelectField
+                fullWidth
+                label="Key"
+                data={available}
+                emptyValue={null}
+                value={newKey}
+                onChange={(e) => setNewKey(e.target.value)}
+                keyGetter={(e) => e}
+                titleGetter={(e) => e}
+              />
+              <div>
+                <Button onClick={() => setAdding(false)}>Cancel</Button>
+                <Button onClick={add} disabled={!newKey}>
+                  Add
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => setAdding(true)}
+              disabled={!available.length}
+            >
+              Add
+            </Button>
+          )}
+        </Box>
+      </AccordionDetails>
+    </Accordion>
+  );
+};
+
+const SettingsCategoryPageEdit = () => {
+  const { id } = useParams();
+  const [item, setItem] = useState(null);
+  const [catalog, setCatalog] = useState(null);
 
   useAsyncTask(async () => {
-    setLoading(true);
-    try {
-      const response2 = await fetch('/api/category/messages');
-      if (response2.ok) {
-        const data1 = await response2.json();
-        console.log(data1);
-        setItemMsg(data1);
-      } else {
-        throw Error(await response2.text());
-      }
-    } finally {
-      setLoading(false);
+    const response = await fetch('/api/category/messages');
+    if (response.ok) {
+      setCatalog(await response.json());
+    } else {
+      throw Error(await response.text());
     }
   }, []);
-
-  const addnewTopic = () => {
-    const newItem = structuredClone(item);
-    if (!newItem.topics) {
-      newItem.topics = {};
-    }
-    if (!newItem.topics[selectTypeMsgMenu]) {
-      newItem.topics[selectTypeMsgMenu] = {
-        name: '',
-        messageType: itemMsg.topics[selectTypeMsgMenu][0],
-      };
-    }
-    setItem(newItem);
-    setSelectTypeMsgMenu(null);
-    setTypeMsgMenu(!typeMsgMenu);
-  };
-
-  const addnewService = () => {
-    const newItem = structuredClone(item);
-    if (!newItem.services) {
-      newItem.services = {};
-    }
-    if (!newItem.services[selectTypeMsgMenu]) {
-      newItem.services[selectTypeMsgMenu] = {
-        name: '',
-        messageType: itemMsg.services[selectTypeMsgMenu][0],
-      };
-    }
-    setItem(newItem);
-    setSelectTypeMsgMenu(null);
-    setTypeMsgMenu(!typeMsgMenu);
-  };
-
-  const changeMsgType = (value, key, type) => {
-    const newItem = structuredClone(item);
-    newItem[type][key].messageType = value;
-    setItem(newItem);
-  };
-
-  const removeElement = (key, type) => {
-    const newItem = structuredClone(item);
-    delete newItem[type][key];
-    setItem(newItem);
-  };
-
-  const validate = () => item && item.topics && item.services;
 
   return (
     <EditItemView
       endpoint="category"
       item={item}
       setItem={setItem}
-      validate={validate}
+      validate={() => Boolean(item)}
       menu={<SettingsMenu />}
-      breadcrumbs={['Category', 'M300']}
+      breadcrumbs={['Category', id ?? 'New']}
     >
-      {!loading && item && (
-        <>
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Telemetry - topics</Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.details}>
-              <Table className={classes.table}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>{'Topic'}</TableCell>
-                    <TableCell>{'Name'}</TableCell>
-                    <TableCell>{'Message'}</TableCell>
-                    <TableCell className={classes.columnAction} />
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {Object.keys(item.topics).map((key) => (
-                    <TableRow key={key}>
-                      <TableCell>{key}</TableCell>
-                      <TableCell>
-                        <TextField value={item.topics[key].name} />
-                      </TableCell>
-                      <TableCell>
-                        <SelectField
-                          data={itemMsg.topics[key]}
-                          value={item.topics[key].messageType}
-                          keyGetter={(e) => e}
-                          titleGetter={(e) => e}
-                          onChange={(e) => changeMsgType(e.target.value, key, 'topics')}
-                          emptyValue={null}
-                        />
-                      </TableCell>
-                      <TableCell className={classes.columnAction} padding="none">
-                        <Tooltip title="Remove">
-                          <IconButton size="small" onClick={() => removeElement(key, 'topics')}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              <Box sx={{ textAlign: 'center' }}>
-                {typeMsgMenu ? (
-                  <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
-                    add a telemetry
-                  </Button>
-                ) : (
-                  <div>
-                    <Typography variant="subtitle1">Add Telemetry</Typography>
-                    <SelectField
-                      fullWidth={true}
-                      data={Object.keys(itemMsg.topics)}
-                      emptyValue={null}
-                      value={selectTypeMsgMenu}
-                      onChange={(e) => setSelectTypeMsgMenu(e.target.value)}
-                      keyGetter={(e) => e}
-                      titleGetter={(e) => e}
-                    />
-                    <div>
-                      <Button onClick={() => setTypeMsgMenu(!typeMsgMenu)}>Cancel</Button>
-                      <Button onClick={() => addnewTopic()}>Add</Button>
-                    </div>
-                  </div>
-                )}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Commands - Services</Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.details}>
-              <Table className={classes.table}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>{'Services'}</TableCell>
-                    <TableCell>{'Name'}</TableCell>
-                    <TableCell>{'Message'}</TableCell>
-                    <TableCell className={classes.columnAction} />
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {Object.keys(item.services).map((key) => (
-                    <TableRow key={key}>
-                      <TableCell>{key}</TableCell>
-                      <TableCell>
-                        <TextField value={item.services[key].name} />
-                      </TableCell>
-                      <TableCell>
-                        <SelectField
-                          data={itemMsg.services[key]}
-                          value={item.services[key].serviceType}
-                          keyGetter={(e) => e}
-                          titleGetter={(e) => e}
-                          onChange={(e) => changeMsgType(e.target.value, key, 'services')}
-                          emptyValue={null}
-                        />
-                      </TableCell>
-                      <TableCell className={classes.columnAction} padding="none">
-                        <Tooltip title="Remove">
-                          <IconButton size="small" onClick={() => removeElement(key, 'services')}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              <Box sx={{ textAlign: 'center' }}>
-                {typeMsgMenu ? (
-                  <Button variant="contained" onClick={() => setTypeMsgMenu(!typeMsgMenu)}>
-                    add a telemetry
-                  </Button>
-                ) : (
-                  <div>
-                    <Typography variant="subtitle1">Add command</Typography>
-                    <SelectField
-                      fullWidth={true}
-                      data={Object.keys(itemMsg.services)}
-                      emptyValue={null}
-                      value={selectTypeMsgMenu}
-                      onChange={(e) => setSelectTypeMsgMenu(e.target.value)}
-                      keyGetter={(e) => e}
-                      titleGetter={(e) => e}
-                    />
-                    <div>
-                      <Button onClick={() => setTypeMsgMenu(!typeMsgMenu)}>Cancel</Button>
-                      <Button onClick={() => addnewService()}>Add</Button>
-                    </div>
-                  </div>
-                )}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-        </>
-      )}
+      {catalog &&
+        item &&
+        BLOCKS.map((section) => (
+          <EndpointSection
+            key={section.block}
+            {...section}
+            item={item}
+            setItem={setItem}
+            options={catalog[section.block] ?? {}}
+          />
+        ))}
     </EditItemView>
   );
 };

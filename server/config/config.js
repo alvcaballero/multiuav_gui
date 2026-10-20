@@ -131,4 +131,3 @@ export const DEVICE_TIMEOUT_MS = Number(process.env.DEVICE_TIMEOUT_MS) || 30000;
 export const devicesMsg = '../config/devices/devices_msg.yaml';
 export const missionSchema = '../config/devices/mission_schema.yaml';
 export const commandSchema = '../config/devices/command_schema.yaml';
-export const messagesTypes = '../config/devices/messages.yaml';
