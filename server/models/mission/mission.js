@@ -784,7 +784,7 @@ export class missionModel {
     // Idempotency: a drone can't have two not-yet-commanded missions at once.
     // Cancel any INIT mission that overlaps with this load's devices before
     // creating the new one, so double-clicks / repeated loads don't pile up
-    // orphaned Mission/Task rows or re-send configureMission redundantly.
+    // orphaned Mission/Task rows or re-send configure_mission redundantly.
     await this._cancelStaleInitMissions(listUAV);
 
     const mission = await this.createMission({

@@ -88,7 +88,7 @@ export const CONFIG_SYMBOLS = Object.freeze({
   },
 });
 
-// serviceType (the messageType of devices_msg.yaml services.configureMission) → symbol table.
+// serviceType (the messageType of devices_msg.yaml services.configure_mission) → symbol table.
 // This is how a category's encoder family is resolved.
 const SERVICE_TO_SYMBOLS = {
   'psdk_interfaces/srv/InitWaypointV2Setting': PSDK_SYMBOLS,
@@ -97,12 +97,12 @@ const SERVICE_TO_SYMBOLS = {
   'muav_gcs_interfaces/srv/LoadMission': CONFIG_SYMBOLS,
 };
 
-// The serviceTypes a configureMission endpoint can declare: msgEncode.js encodes a mission for
+// The serviceTypes a configure_mission endpoint can declare: msgEncode.js encodes a mission for
 // each, and commandRegistry.js recognizes LoadMission by them. Lives here (a module with no
 // imports) so neither of them imports the other, which would close a cycle through category.js.
 export const MISSION_SERVICE_TYPES = Object.freeze(Object.keys(SERVICE_TO_SYMBOLS));
 
-// Returns the symbol table for a configureMission serviceType, or null when the
+// Returns the symbol table for a configure_mission serviceType, or null when the
 // service is absent/unknown (no device selected, or a device without a mission
 // service). A null result means "don't filter options" — category.js then shows
 // the unfiltered 'default' catalog profile as the planning baseline.

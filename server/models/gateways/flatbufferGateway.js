@@ -5,7 +5,7 @@ export function createFlatbufferGateway({ getServer = getFlatbufferServer } = {}
   return {
     protocol: 'robofleet',
 
-    // fbEncode codifica por key (configureMission, commandMission), no por msgType: recibe la
+    // fbEncode codifica por key (configure_mission, command_mission), no por msgType: recibe la
     // key del endpoint y el mensaje del command encoder tal cual.
     async sendCommand({ device, endpoint, message }) {
       logger.debug(`sending via robofleet device deviceId=${device.id}`);

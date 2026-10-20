@@ -196,7 +196,7 @@ validation (pure functions, tested in `test/test-task-graph.js`).
   tasks: [{
     task_id: 'T1',            // unique within the mission; what depends_on refers to
     device: 'usv_1',          // device name (was route.uav)
-    action: 'NAVIGATE',       // SEMANTIC only (UI, logs, LLM): every task flies as wp[] + configureMission
+    action: 'NAVIGATE',       // SEMANTIC only (UI, logs, LLM): every task flies as wp[] + configure_mission
     depends_on: ['T0'],       // task_ids; satisfied when they reach COMPLETED (last waypoint)
     params: {                 // was route.attributes; values + ranges from config/devices/mission_schema.yaml (SSOT, which calls them `params`)
       max_vel: number,        // m/s
@@ -296,7 +296,7 @@ its dependents are skipped instead of waiting forever.
 
 **State machines** (`missionSM.js` registry + `missionExecutionSM.js` definition):
 - **One actor per task**, keyed by `taskId` in `listSM`. Creating an actor immediately
-  sends `configureMission` to the device, so only the scheduler and the flows create them.
+  sends `configure_mission` to the device, so only the scheduler and the flows create them.
 - The device is loaded with a **one-task mission** (`missionForTask`, dependencies
   stripped). The `LoadMission` encoder (`missionTaskForDevice`, `models/commands/commandRegistry.js`) accepts any mission shape (incl. the bare `route[]` the
   MCP `load_mission_to_uav` tool posts) and loads the device's single task; a payload with
@@ -328,8 +328,8 @@ time, so per-task report windows (events, flown track) of two tasks on one devic
 
 - Two channels: ROS services OR FlatBuffer commands
 - 5-second timeout with automatic error callbacks
-- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. WHICH endpoint of a device implements a command, and how its message is built, is a registry like `rosDecode`'s: `models/commands/commandEncoders.js` (`register(CommandType, { key?, msgType? }, encoder)`; specific msgTypes such as `px4_msgs/msg/VehicleCommand` match by msgType, generic ones such as `std_srvs/SetBool` by the endpoint key) filled in `models/commands/commandRegistry.js`. Availability is DERIVED from the endpoints the category already declares — no per-category list. A command matching two endpoints of one category is a boot problem until `commands.<Type>.via` (e.g. `publishers.VehicleCommand`) picks one; `test/api/json/category_commands.json` is the golden list per category. A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commands/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
-- Command types: `CommandType` in `config/commandTypes.js` (PascalCase: `LoadMission`, `CommandMission`, `CameraFileDownload`, …). Not the same thing as the endpoint key that implements it on a device (`configureMission`, `commandMission`, keys of `devices_msg.yaml` enumerated by `ServiceKey`/`PublisherKey`, fixed by the ROS side). The client mirrors it in `client/src/common/util/commandTypes.js`; `test/test-command-types-mirror.js` fails if they drift
+- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. WHICH endpoint of a device implements a command, and how its message is built, is a registry like `rosDecode`'s: `models/commands/commandEncoders.js` (`register(CommandType, { key?, msgType? }, encoder)`; specific msgTypes such as `px4_msgs/msg/VehicleCommand` match by msgType, generic ones such as `std_srvs/SetBool` by the endpoint key) filled in `models/commands/commandRegistry.js`. Availability is DERIVED from the endpoints the category already declares — no per-category list. A command matching two endpoints of one category is a boot problem until `commands.<Type>.via` (e.g. `publishers.vehicle_command`) picks one; `test/api/json/category_commands.json` is the golden list per category. A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commands/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
+- Command types: `CommandType` in `config/commandTypes.js` (PascalCase: `LoadMission`, `CommandMission`, `CameraFileDownload`, …). Not the same thing as the endpoint key that implements it on a device (`configure_mission`, `command_mission`: keys of `devices_msg.yaml`, snake_case, enumerated by `SubscriberKey`/`ServiceKey`/`PublisherKey` in `config/deviceMsgCatalog.js`). A key names a slot, not the ROS name (that is `name:`), but it IS the MQTT topic segment (`muav/<device>/pub/<slot>`, `muav/<device>/srv/<key>`), so renaming one means updating the drone's `mqtt_client` config. The client mirrors it in `client/src/common/util/commandTypes.js`; `test/test-command-types-mirror.js` fails if they drift
 
 ### ROS Integration
 
@@ -346,7 +346,7 @@ dji_M210_noetic:
       name: '/dji_osdk_ros/battery_state'
       messageType: 'sensor_msgs/BatteryState'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
 ```
@@ -376,7 +376,7 @@ which `positionsModel.updatePosition` merges through ordered reducers.
 **What differs per category is a param, never a branch on the category name.** `ros.js` hands the
 decoder the category's own subscriber entry as `params`; the decoder reads, with defaults:
 `battery.scale` (× to percent, default 1 — `100` when the message is 0-1), `gimbal.unit`
-(`rad` → degrees), `IMU.heading_offset` (default 90). A 0-1 battery WITHOUT `scale: 100` is
+(`rad` → degrees), `imu.heading_offset` (default 90). A 0-1 battery WITHOUT `scale: 100` is
 rounded to 0 or 1 by the position cache and also reaches the external planner as
 `battery_level` (`mission.js`) ~100× too low. At boot, `categoryModel` checks every
 subscriber's `(slot, messageType)` against the registry (`hasDecoder`); `LOG_LEVEL=debug` makes
@@ -628,9 +628,11 @@ evaluated at registration hits a circular-import TDZ.
 - robofleet carries ROS messages packed in Flatbuffers generated from the same `.msg`/`.srv`
   (`fbmsglib`, e.g. `fb.aerialcore_common.ConfigMissionRequest`). So `fbEncode.js` receives the ROS
   message already encoded by `msgEncode` and only PACKS it (rosbridge's `{ data: [...] }` arrays become
-  plain vectors). Only `configureMission` with the ROS1 ConfigMission structure and `commandMission`
+  plain vectors). Only `configure_mission` with the ROS1 ConfigMission structure and `command_mission`
   (`std_srvs/SetBool`) have a schema; another mission type (ROS2 LoadMission, PSDK) is rejected with an
-  error instead of packed as ConfigMission. Not verified against a real robofleet device.
+  error instead of packed as ConfigMission. The robofleet topics keep their own names
+  (`/<uav>/configureMission`, `/<uav>/commandMission`), independent of the devices_msg keys. Not
+  verified against a real robofleet device.
 
 **MQTT Protocol** (`protocol: 'mqtt'`, opt-in with `MQTT_CONNECTION=true`, broker at `MQTT_URL`, default `mqtt://127.0.0.1:1883`):
 

@@ -7,7 +7,7 @@ agv:
       name: '/stereo_camera/right/image_raw/compressed'
       messageType: 'sensor_msgs/msg/CompressedImage'
   actions:
-    navigateToPose:
+    navigate_to_pose:
       name: '/navigate_to_pose'
       messageType: 'nav2_msgs/action/NavigateToPose'
 sjtu:
@@ -18,7 +18,7 @@ sjtu:
     speed:
       name: '/gps/vel'
       messageType: 'geometry_msgs/Vector3Stamped'
-    IMU:
+    imu:
       name: '/imu/out'
       messageType: 'sensor_msgs/Imu'
       heading_offset: -90
@@ -33,13 +33,13 @@ dji_M210_noetic:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/dji_osdk_ros/height_above_takeoff'
       messageType: 'std_msgs/Float32'
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    IMU: #hdg
+    imu: # heading
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     speed:
@@ -61,19 +61,19 @@ dji_M210_noetic:
       name: '/dji_osdk_ros/obstacle_info'
       messageType: 'dji_osdk_ros/ObstacleInfo'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/dji_control/start_mission'
       messageType: 'std_srvs/SetBool'
-    sincronize:
+    sync_files:
       name: '/dji_control/send_bags'
       messageType: 'std_srvs/Bool'
-    setupcamera:
+    setup_camera:
       name: '/setup_camera_stream'
       messageType: 'dji_osdk_ros/SetupCameraStream'
-    Gimbal:
+    gimbal_control:
       name: '/gimbal_task_control'
       messageType: 'dji_osdk_ros/GimbalAction'
 dji_M210_melodic:
@@ -81,13 +81,13 @@ dji_M210_melodic:
     position:
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/dji_osdk_ros/height_above_takeoff'
       messageType: 'std_msgs/Float32'
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    IMU: #hdg
+    imu: # heading
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     speed:
@@ -109,19 +109,19 @@ dji_M210_melodic:
       name: '/dji_osdk_ros/obstacle_info'
       messageType: 'dji_osdk_ros/ObstacleInfo'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/dji_control/start_mission'
       messageType: 'std_srvs/SetBool'
-    sincronize:
+    sync_files:
       name: '/dji_control/send_bags'
       messageType: 'std_srvs/Bool'
-    setupcamera:
+    setup_camera:
       name: '/setup_camera_stream'
       messageType: 'dji_osdk_ros/SetupCameraStream'
-    Gimbal:
+    gimbal_control:
       name: '/gimbal_task_control'
       messageType: 'dji_osdk_ros/GimbalAction'
 dji_M210_noetic_rtk:
@@ -129,13 +129,13 @@ dji_M210_noetic_rtk:
     position:
       name: '/dji_osdk_ros/rtk_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/dji_osdk_ros/height_above_takeoff'
       messageType: 'std_msgs/Float32'
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    IMU: #hdg
+    imu: # heading
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     speed:
@@ -157,19 +157,19 @@ dji_M210_noetic_rtk:
       name: '/dji_osdk_ros/obstacle_info'
       messageType: 'dji_osdk_ros/ObstacleInfo'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/dji_control/start_mission'
       messageType: 'std_srvs/SetBool'
-    sincronize:
+    sync_files:
       name: '/dji_control/send_bags'
       messageType: 'std_srvs/Bool'
-    setupcamera:
+    setup_camera:
       name: '/setup_camera_stream'
       messageType: 'dji_osdk_ros/SetupCameraStream'
-    Gimbal:
+    gimbal_control:
       name: '/gimbal_task_control'
       messageType: 'dji_osdk_ros/GimbalAction'
 dji_M210_melodic_rtk:
@@ -177,13 +177,13 @@ dji_M210_melodic_rtk:
     position:
       name: '/dji_osdk_ros/rtk_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/dji_osdk_ros/height_above_takeoff'
       messageType: 'std_msgs/Float32'
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    IMU: #hdg
+    imu: # heading
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     speed:
@@ -205,19 +205,19 @@ dji_M210_melodic_rtk:
       name: '/dji_osdk_ros/obstacle_info'
       messageType: 'dji_osdk_ros/ObstacleInfo'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/dji_control/start_mission'
       messageType: 'std_srvs/SetBool'
-    sincronize:
+    sync_files:
       name: '/dji_control/send_bags'
       messageType: 'std_srvs/Bool'
-    setupcamera:
+    setup_camera:
       name: '/setup_camera_stream'
       messageType: 'dji_osdk_ros/SetupCameraStream'
-    Gimbal:
+    gimbal_control:
       name: '/gimbal_task_control'
       messageType: 'dji_osdk_ros/GimbalAction'
 dji_M600:
@@ -225,13 +225,13 @@ dji_M600:
     position:
       name: '/dji_sdk/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/dji_sdk/height_above_takeoff'
       messageType: 'std_msgs/Float32'
-    IMU: #hdg
+    imu: # heading
       name: '/dji_sdk/imu'
       messageType: 'sensor_msgs/Imu'
-    hdg: # este lo he puesto para simulacion, en realidad ese no existe
+    heading: # este lo he puesto para simulacion, en realidad ese no existe
       name: '/dji_sdk/compass_heading'
       messageType: 'std_msgs/Float32'
     speed:
@@ -244,16 +244,16 @@ dji_M600:
       name: '/dji_sdk/display_mode'
       messageType: 'std_msgs/UInt8'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/dji_control/start_mission'
       messageType: 'std_srvs/TriggerRequest'
-    CameraFileDownload:
+    camera_file_download:
       name: '/camera_download_files'
       messageType: 'dji_osdk_ros/DownloadMedia'
-    CameraFileList:
+    camera_file_list:
       name: '/camera_download_filelist'
       messageType: 'dji_osdk_ros/FileList'
 dji_M300:
@@ -267,10 +267,10 @@ dji_M300:
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    IMU: #hdg
+    imu: # heading
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
-    hdg: #hdg
+    heading:
       name: '/dji_osdk_ros/compass_heading'
       messageType: 'std_msgs/Float32'
     mission_state:
@@ -288,7 +288,7 @@ dji_M300:
     gimbal:
       name: '/dji_osdk_ros/gimbal_angle'
       messageType: 'geometry_msgs/Vector3Stamped'
-    sensor_height:
+    height_above_takeoff:
       name: '/dji_osdk_ros/height_above_takeoff'
       messageType: 'std_msgs/Float32'
     obstacle_info:
@@ -298,34 +298,34 @@ dji_M300:
       name: '/dji_osdk_ros/flight_status'
       messageType: 'std_msgs/UInt8'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/dji_control/start_mission'
       messageType: 'std_srvs/SetBool'
-    stopMission:
+    stop_mission:
       name: '/dji_osdk_ros/waypointV2_stopMission'
       messageType: 'dji_osdk_ros/StopWaypointV2Mission'
-    resumemission:
+    resume_mission:
       name: '/dji_osdk_ros/waypointV2_resumeMission'
       messageType: 'dji_osdk_ros/ResumeWaypointV2Mission'
-    pausemission:
+    pause_mission:
       name: '/dji_osdk_ros/waypointV2_pauseMission'
       messageType: 'dji_osdk_ros/PauseWaypointV2Mission'
-    sincronize:
+    sync_files:
       name: '/dji_control/send_bags'
       messageType: 'std_srvs/Bool'
-    setupcamera:
+    setup_camera:
       name: '/setup_camera_stream'
       messageType: 'dji_osdk_ros/SetupCameraStream'
-    Gimbal:
+    gimbal_control:
       name: '/gimbal_task_control'
       messageType: 'dji_osdk_ros/GimbalAction'
-    CameraFileDownload:
+    camera_file_download:
       name: '/camera_download_files'
       messageType: 'dji_osdk_ros/DownloadMedia'
-    CameraFileList:
+    camera_file_list:
       name: '/camera_download_filelist'
       messageType: 'dji_osdk_ros/FileList'
 dji_M300_rtk:
@@ -339,7 +339,7 @@ dji_M300_rtk:
     vo_position:
       name: '/dji_osdk_ros/vo_position'
       messageType: 'dji_osdk_ros/VOPosition'
-    IMU: #hdg
+    imu: # heading
       name: '/dji_osdk_ros/imu'
       messageType: 'sensor_msgs/Imu'
     speed:
@@ -360,7 +360,7 @@ dji_M300_rtk:
     gimbal:
       name: '/dji_osdk_ros/gimbal_angle'
       messageType: 'geometry_msgs/Vector3Stamped'
-    sensor_height:
+    height_above_takeoff:
       name: '/dji_osdk_ros/height_above_takeoff'
       messageType: 'std_msgs/Float32'
     obstacle_info:
@@ -370,34 +370,34 @@ dji_M300_rtk:
       name: '/dji_osdk_ros/flight_status'
       messageType: 'std_msgs/UInt8'
   services:
-    configureMission:
+    configure_mission:
       name: '/dji_control/configure_mission'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/dji_control/start_mission'
       messageType: 'std_srvs/SetBool'
-    stopMission:
+    stop_mission:
       name: '/dji_osdk_ros/waypointV2_stopMission'
       messageType: 'dji_osdk_ros/StopWaypointV2Mission'
-    resumemission:
+    resume_mission:
       name: '/dji_osdk_ros/waypointV2_resumeMission'
       messageType: 'dji_osdk_ros/ResumeWaypointV2Mission'
-    pausemission:
+    pause_mission:
       name: '/dji_osdk_ros/waypointV2_pauseMission'
       messageType: 'dji_osdk_ros/PauseWaypointV2Mission'
-    sincronize:
+    sync_files:
       name: '/dji_control/send_bags'
       messageType: 'std_srvs/Bool'
-    setupcamera:
+    setup_camera:
       name: '/setup_camera_stream'
       messageType: 'dji_osdk_ros/SetupCameraStream'
-    Gimbal:
+    gimbal_control:
       name: '/gimbal_task_control'
       messageType: 'dji_osdk_ros/GimbalAction'
-    CameraFileDownload:
+    camera_file_download:
       name: '/camera_download_files'
       messageType: 'dji_osdk_ros/DownloadMedia'
-    CameraFileList:
+    camera_file_list:
       name: '/camera_download_filelist'
       messageType: 'dji_osdk_ros/FileList'
 
@@ -431,31 +431,31 @@ dji_M300_PSDK:
       messageType: 'psdk_interfaces/msg/RelativeObstacleInfo'
 
   publishers:
-    Gimbal:
+    gimbal_control:
       name: '/psdk_ros2/gimbal_rotation'
       messageType: 'psdk_interfaces/msg/GimbalRotation'
 
   services:
-    configureMission:
+    configure_mission:
       name: '/psdk_ros2/waypointV2_initSetting'
       messageType: 'psdk_interfaces/srv/InitWaypointV2Setting'
-    uploadMission:
+    upload_mission:
       name: '/psdk_ros2/waypointV2_uploadMission'
       messageType: 'psdk_interfaces/srv/UploadWaypointV2Mission'
-    commandMission:
+    command_mission:
       name: '/psdk_ros2/waypointV2_startMission'
       messageType: 'psdk_interfaces/srv/StartWaypointV2Mission'
-    stopMission:
+    stop_mission:
       name: '/psdk_ros2/waypointV2_stopMission'
       messageType: 'psdk_interfaces/srv/StopWaypointV2Mission'
-    resumemission:
+    resume_mission:
       name: '/psdk_ros2/waypointV2_resumeMission'
       messageType: 'psdk_interfaces/srv/ResumeWaypointV2Mission'
-    pausemission:
+    pause_mission:
       name: '/psdk_ros2/waypointV2_pauseMission'
       messageType: 'psdk_interfaces/srv/PauseWaypointV2Mission'
   actions:
-    CameraFileDownload:
+    camera_file_download:
       name: '/offboard/download_files_by_date_range'
       messageType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 px4_mavros:
@@ -463,10 +463,10 @@ px4_mavros:
     position:
       name: '/mavros/global_position/global'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/mavros/altitude'
       messageType: 'mavros_msgs/Altitude'
-    hdg:
+    heading:
       name: '/mavros/global_position/compass_hdg'
       messageType: 'std_msgs/Float64'
     speed:
@@ -486,16 +486,16 @@ px4_mavros:
       name: '/threat'
       messageType: 'std_msgs/Bool'
   services:
-    configureMission:
+    configure_mission:
       name: '/mission/new'
       messageType: 'aerialcore_common/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/mission/start_stop'
       messageType: 'std_srvs/SetBool'
-    sincronize:
+    sync_files:
       name: '/px4_mission_node/send_bags'
       messageType: 'std_srvs/Bool'
-    CameraFileDownload:
+    camera_file_download:
       name: '/camera_download_files'
       messageType: 'dji_osdk_ros/DownloadMedia'
 px4_mavros_slow:
@@ -503,10 +503,10 @@ px4_mavros_slow:
     position:
       name: '/gcs/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/gcs/altitude'
       messageType: 'mavros_msgs/Altitude'
-    hdg:
+    heading:
       name: '/gcs/compass_hdg'
       messageType: 'std_msgs/Float64'
     speed:
@@ -523,16 +523,16 @@ px4_mavros_slow:
       name: '/threat'
       messageType: 'std_msgs/Bool'
   services:
-    configureMission:
+    configure_mission:
       name: '/mission/new'
       messageType: 'multiuav_interfaces/ConfigMission'
-    commandMission:
+    command_mission:
       name: '/mission/start_stop'
       messageType: 'std_srvs/SetBool'
-    sincronize:
+    sync_files:
       name: '/px4_mission_node/send_bags'
       messageType: 'std_srvs/Bool'
-    CameraFileDownload:
+    camera_file_download:
       name: '/camera_download_files'
       messageType: 'dji_osdk_ros/DownloadMedia'
 px4_ros2:
@@ -559,21 +559,21 @@ px4_ros2:
       name: '/obstacle_info'
       messageType: 'muav_gcs_interfaces/msg/ObstacleInfo'
   publishers:
-    VehicleCommand:
+    vehicle_command:
       name: '/fmu/in/vehicle_command'
       messageType: 'px4_msgs/msg/VehicleCommand'
   services:
-    configureMission:
+    configure_mission:
       name: '/offboard/mission_load'
       messageType: 'muav_gcs_interfaces/srv/LoadMission'
-    commandMission:
+    command_mission:
       name: '/offboard/mission/start_stop'
       messageType: 'std_srvs/srv/SetBool'
-    GCSCommand:
-      name: '/offboard/gcs_command'
-      messageType: 'muav_gcs_interfaces/srv/GCSCommand'
+    offboard_command:
+      name: '/offboard/command'
+      messageType: 'muav_gcs_interfaces/srv/OffboardCommand'
   actions:
-    CameraFileDownload:
+    camera_file_download:
       name: '/offboard/download_files_by_date_range'
       messageType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'
 fuvex:
@@ -581,10 +581,10 @@ fuvex:
     position:
       name: '/gps'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/mavros/altitude'
       messageType: 'mavros_msgs/Altitude'
-    hdg:
+    heading:
       name: '/compass_hdg'
       messageType: 'std_msgs/Float64'
     speed:
@@ -600,10 +600,10 @@ catec:
     position:
       name: '/gps'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/mavros/altitude'
       messageType: 'mavros_msgs/Altitude'
-    hdg:
+    heading:
       name: '/compass_hdg'
       messageType: 'std_msgs/Float64'
     speed:
@@ -631,10 +631,10 @@ griffin:
     position:
       name: '/mavros/global_position/global'
       messageType: 'sensor_msgs/NavSatFix'
-    sensor_height:
+    height_above_takeoff:
       name: '/mavros/altitude'
       messageType: 'mavros_msgs/Altitude'
-    hdg:
+    heading:
       name: '/mavros/global_position/compass_hdg'
       messageType: 'std_msgs/Float64'
     speed:
@@ -644,7 +644,7 @@ griffin:
       name: '/mavros/battery'
       messageType: 'aerialcore_common/BatteryState'
       scale: 100 # percentage arrives as 0-1
-    sensors_humidity:
+    humidity:
       name: '/serial2ros/result'
       messageType: 'std_msgs/Int32MultiArray'
   services: {}

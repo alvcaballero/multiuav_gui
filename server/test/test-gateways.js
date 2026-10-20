@@ -38,12 +38,12 @@ describe('rosGateway: the resolved endpoint picks the transport', () => {
   };
   const gateway = createRosGateway({ controller });
   const send = (block, message) =>
-    gateway.sendCommand({ device: DEVICE, endpoint: { block, key: 'Gimbal', msgType: 'x/Y' }, message });
+    gateway.sendCommand({ device: DEVICE, endpoint: { block, key: 'gimbal_control', msgType: 'x/Y' }, message });
 
   test('a services endpoint is called as a service, with the message as request', async () => {
     calls.length = 0;
     await send('services', { pitch: 1 });
-    assert.deepEqual(calls[0], ['service', { deviceId: 7, type: 'Gimbal', request: { pitch: 1 } }]);
+    assert.deepEqual(calls[0], ['service', { deviceId: 7, type: 'gimbal_control', request: { pitch: 1 } }]);
   });
 
   test('an actions endpoint sends a goal', async () => {
@@ -55,14 +55,14 @@ describe('rosGateway: the resolved endpoint picks the transport', () => {
   test('a publishers endpoint publishes, with an empty message by default', async () => {
     calls.length = 0;
     await send('publishers');
-    assert.deepEqual(calls[0], ['publisher', { deviceId: 7, type: 'Gimbal', message: {} }]);
+    assert.deepEqual(calls[0], ['publisher', { deviceId: 7, type: 'gimbal_control', message: {} }]);
   });
 
   test('an error thrown by the controller becomes an error response', async () => {
     const boom = createRosGateway({
       controller: { callServiceDevice: async () => { throw new Error('ROS not connected'); } },
     });
-    const r = await boom.sendCommand({ device: DEVICE, endpoint: { block: 'services', key: 'Gimbal' }, message: {} });
+    const r = await boom.sendCommand({ device: DEVICE, endpoint: { block: 'services', key: 'gimbal_control' }, message: {} });
     assert.deepEqual(r, { state: 'error', msg: 'ROS not connected' });
   });
 });
@@ -71,11 +71,11 @@ describe('flatbuffer and mqtt gateways', () => {
   test('forward uav_id, the endpoint key and the message to their server', async () => {
     const seen = [];
     const server = { sendCommand: async (a) => (seen.push(a), { state: 'success', msg: 'sent' }) };
-    const endpoint = { block: 'services', key: 'commandMission', msgType: 'std_srvs/SetBool' };
+    const endpoint = { block: 'services', key: 'command_mission', msgType: 'std_srvs/SetBool' };
     for (const make of [createFlatbufferGateway, createMqttGateway]) {
       seen.length = 0;
       const r = await make({ getServer: () => server }).sendCommand({ device: DEVICE, endpoint, message: { data: true } });
-      assert.deepEqual(seen, [{ uav_id: 7, type: 'commandMission', attributes: { data: true } }]);
+      assert.deepEqual(seen, [{ uav_id: 7, type: 'command_mission', attributes: { data: true } }]);
       assert.equal(r.state, 'success');
     }
   });

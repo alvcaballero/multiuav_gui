@@ -2,6 +2,7 @@ import { devicesController } from '../../controllers/devices.js';
 import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
+import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { decodeRosMsg } from './rosDecode.js';
 import { logger, rosLogger, logHelpers } from '../../common/logger.js';
 import {
@@ -363,7 +364,7 @@ export class rosModel {
     // not a ROS concern — inject it here like GCSServicesMission does for services,
     // so actionRegistry/msgEncode stay unaware of missionController.
     const onComplete =
-      type === 'CameraFileDownload'
+      type === ServiceKey.CAMERA_FILE_DOWNLOAD
         ? (result) => {
             rosLogger.debug(`sendActionGoal onComplete: ${JSON.stringify(result)}`);
             if (result.state !== 'success') return;

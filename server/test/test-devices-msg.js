@@ -45,10 +45,10 @@ describe('devices_msg.yaml vs the decoder registry', () => {
     assert.ok(Math.abs(gimbal.x - 180) < 1e-9);
   });
 
-  test('sjtu heading is offset by -90, every other IMU category is not', () => {
+  test('sjtu heading is offset by -90, every other imu category is not', () => {
     const identity = { orientation: { w: 1, x: 0, y: 0, z: 0 } };
-    assert.equal(decodeAs('sjtu', 'IMU', identity).course, -90);
-    assert.equal(decodeAs('dji_M300', 'IMU', identity).course, 90);
+    assert.equal(decodeAs('sjtu', 'imu', identity).course, -90);
+    assert.equal(decodeAs('dji_M300', 'imu', identity).course, 90);
   });
 
   test('sjtu sonar (sensor_msgs/Range) is decoded as a downward reading', () => {

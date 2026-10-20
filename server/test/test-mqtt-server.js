@@ -25,7 +25,7 @@ class FakeClient extends EventEmitter {
 const DEVICE = { id: 7, name: 'uav1', category: 'cat' };
 const CATEGORY = {
   subscribers: { position: { name: '/gps', messageType: 'sensor_msgs/NavSatFix' } },
-  services: { commandMission: { name: '/start', messageType: 'std_srvs/SetBool' } },
+  services: { command_mission: { name: '/start', messageType: 'std_srvs/SetBool' } },
 };
 
 function setup({ timeoutMs = 50, category = CATEGORY } = {}) {
@@ -45,24 +45,24 @@ function setup({ timeoutMs = 50, category = CATEGORY } = {}) {
   return { client, server, updates, droneSays };
 }
 
-const call = (server) => server.sendCommand({ uav_id: 7, type: 'commandMission', attributes: { data: true } });
+const call = (server) => server.sendCommand({ uav_id: 7, type: 'command_mission', attributes: { data: true } });
 const tick = () => new Promise((r) => setImmediate(r));
 
 describe('mqttTopics', () => {
   test('parses the three inbound shapes and rejects the rest', () => {
     assert.deepEqual(parseTopic('muav/uav1/pub/position'), { kind: 'pub', device: 'uav1', slot: 'position' });
-    assert.deepEqual(parseTopic('muav/uav1/srv/commandMission/response'), {
+    assert.deepEqual(parseTopic('muav/uav1/srv/command_mission/response'), {
       kind: 'response',
       device: 'uav1',
-      name: 'commandMission',
+      name: 'command_mission',
     });
     assert.deepEqual(parseTopic('muav/uav1/status'), { kind: 'status', device: 'uav1' });
-    assert.equal(parseTopic('muav/uav1/srv/commandMission/request'), null);
+    assert.equal(parseTopic('muav/uav1/srv/command_mission/request'), null);
     assert.equal(parseTopic('other/uav1/status'), null);
   });
 
   test('builds the request topic', () => {
-    assert.equal(requestTopic('uav1', 'commandMission'), 'muav/uav1/srv/commandMission/request');
+    assert.equal(requestTopic('uav1', 'command_mission'), 'muav/uav1/srv/command_mission/request');
   });
 });
 
@@ -118,13 +118,13 @@ describe('MqttServer: service calls', () => {
     const p = call(server);
     await tick();
     const [sent] = client.published;
-    assert.equal(sent.topic, 'muav/uav1/srv/commandMission/request');
+    assert.equal(sent.topic, 'muav/uav1/srv/command_mission/request');
     assert.equal(sent.opts.qos, 1);
     assert.equal(sent.opts.retain, false);
     assert.deepEqual(sent.payload.request, { data: true });
     assert.equal(typeof sent.payload.id, 'string');
     assert.equal(typeof sent.payload.ts, 'number');
-    client.emit('message', 'muav/uav1/srv/commandMission/response', Buffer.from(JSON.stringify({ id: sent.payload.id, success: true, response: { success: true } })));
+    client.emit('message', 'muav/uav1/srv/command_mission/response', Buffer.from(JSON.stringify({ id: sent.payload.id, success: true, response: { success: true } })));
     assert.equal((await p).state, 'success');
   });
 
@@ -132,7 +132,7 @@ describe('MqttServer: service calls', () => {
     const { client, server, droneSays } = setup();
     const p = call(server);
     await tick();
-    droneSays('muav/uav1/srv/commandMission/response', {
+    droneSays('muav/uav1/srv/command_mission/response', {
       id: client.published[0].payload.id,
       success: true,
       response: { success: false },
@@ -144,7 +144,7 @@ describe('MqttServer: service calls', () => {
     const { client, server, droneSays } = setup();
     const p = call(server);
     await tick();
-    droneSays('muav/uav1/srv/commandMission/response', {
+    droneSays('muav/uav1/srv/command_mission/response', {
       id: client.published[0].payload.id,
       success: false,
       error: 'service not available',
@@ -160,8 +160,8 @@ describe('MqttServer: service calls', () => {
     const b = call(server);
     await tick();
     const [first, second] = client.published.map((m) => m.payload.id);
-    droneSays('muav/uav1/srv/commandMission/response', { id: second, success: true, response: { success: false } });
-    droneSays('muav/uav1/srv/commandMission/response', { id: first, success: true, response: { success: true } });
+    droneSays('muav/uav1/srv/command_mission/response', { id: second, success: true, response: { success: false } });
+    droneSays('muav/uav1/srv/command_mission/response', { id: first, success: true, response: { success: true } });
     assert.equal((await a).state, 'success');
     assert.equal((await b).state, 'error');
   });
@@ -177,7 +177,7 @@ describe('MqttServer: service calls', () => {
   test('a late response after the timeout is ignored', async () => {
     const { client, server, droneSays } = setup({ timeoutMs: 20 });
     await call(server);
-    droneSays('muav/uav1/srv/commandMission/response', {
+    droneSays('muav/uav1/srv/command_mission/response', {
       id: client.published[0].payload.id,
       success: true,
       response: { success: true },

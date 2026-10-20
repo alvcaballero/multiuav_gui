@@ -1,7 +1,7 @@
 [
   {
     "msgType": "aerialcore_common/ConfigMission",
-    "type": "configureMission",
+    "type": "configure_mission",
     "input": {
       "task_id": "T1",
       "device": "uav1",
@@ -129,7 +129,7 @@
   },
   {
     "msgType": "multiuav_interfaces/ConfigMission",
-    "type": "configureMission",
+    "type": "configure_mission",
     "input": {
       "task_id": "T1",
       "device": "uav1",
@@ -257,7 +257,7 @@
   },
   {
     "msgType": "muav_gcs_interfaces/srv/LoadMission",
-    "type": "configureMission",
+    "type": "configure_mission",
     "input": {
       "task_id": "T1",
       "device": "uav1",
@@ -387,7 +387,7 @@
   },
   {
     "msgType": "psdk_interfaces/srv/InitWaypointV2Setting",
-    "type": "configureMission",
+    "type": "configure_mission",
     "input": {
       "task_id": "T1",
       "device": "uav1",
@@ -675,7 +675,7 @@
   },
   {
     "msgType": "dji_osdk_ros/GimbalAction",
-    "type": "Gimbal",
+    "type": "gimbal_control",
     "input": {
       "reset": false,
       "pitch": -30,
@@ -702,7 +702,7 @@
   },
   {
     "msgType": "psdk_interfaces/msg/GimbalRotation",
-    "type": "Gimbal",
+    "type": "gimbal_control",
     "input": {
       "reset": false,
       "pitch": -30,
@@ -720,7 +720,7 @@
   },
   {
     "msgType": "muav_gcs_interfaces/action/DownloadFilesByDateRange",
-    "type": "CameraFileDownload",
+    "type": "camera_file_download",
     "input": {
       "startDate": "2026-07-13T14:30:00.000Z",
       "endDate": "2026-07-13T15:30:00.000Z"
@@ -735,7 +735,7 @@
   },
   {
     "msgType": "dji_osdk_ros/DownloadMedia",
-    "type": "CameraFileDownload",
+    "type": "camera_file_download",
     "input": {
       "startDate": "2026-07-13T14:30:00.000Z",
       "endDate": "2026-07-13T15:30:00.000Z"
@@ -748,7 +748,7 @@
   },
   {
     "msgType": "px4_msgs/msg/VehicleCommand",
-    "type": "VehicleCommand",
+    "type": "vehicle_command",
     "input": {
       "command": 22,
       "param7": 70
@@ -760,7 +760,7 @@
   },
   {
     "msgType": "std_srvs/SetBool",
-    "type": "commandMission",
+    "type": "command_mission",
     "input": {
       "data": true
     },
@@ -770,7 +770,7 @@
   },
   {
     "msgType": "std_srvs/Trigger",
-    "type": "stopMission",
+    "type": "stop_mission",
     "input": null,
     "output": {}
   }

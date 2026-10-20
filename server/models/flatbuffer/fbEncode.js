@@ -2,6 +2,7 @@ import * as fb from 'fbmsglib';
 import * as flatbuffers from 'flatbuffers';
 import { devicesController } from '../../controllers/devices.js';
 import { categoryModel } from '../category.js';
+import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 
 function encodePositionStamped({ topic, type = 'geometry_msgs/PoseStamped', frame = 'map', x, y, theta }) {
   const fbb = new flatbuffers.Builder();
@@ -142,8 +143,8 @@ export function encodeConfigMission(msg, { topic, type }) {
   return fbb.asUint8Array();
 }
 
-// commandMission request → std_srvs/SetBool Flatbuffer. `data` defaults to true (start): a
-// category may declare commandMission as std_srvs/TriggerRequest, whose encoded request is {}.
+// command_mission request → std_srvs/SetBool Flatbuffer. `data` defaults to true (start): a
+// category may declare command_mission as std_srvs/TriggerRequest, whose encoded request is {}.
 export function encodeSetBool(msg, { topic, type }) {
   const fbb = new flatbuffers.Builder();
   const metadataOffset = fb.fb.MsgMetadata.createMsgMetadata(
@@ -185,7 +186,9 @@ export async function encodeFbMsg({ uav_id, type, attributes }) {
       theta: attributes.theta,
     });
   }
-  if (type === 'configureMission') {
+  // The topics keep robofleet's own names (/configureMission, /commandMission): the drone side
+  // matches them, they are not the devices_msg keys.
+  if (type === ServiceKey.CONFIGURE_MISSION) {
     // Only the ROS1 ConfigMission structure has a generated Flatbuffer schema; packing another
     // mission type (ROS2 LoadMission, PSDK) into it would send garbage.
     if (!CONFIG_MISSION_TYPES.has(serviceType)) {
@@ -193,7 +196,7 @@ export async function encodeFbMsg({ uav_id, type, attributes }) {
     }
     return encodeConfigMission(attributes, { topic: `/${uavName}/configureMission`, type: serviceType });
   }
-  if (type === 'commandMission') {
+  if (type === ServiceKey.COMMAND_MISSION) {
     return encodeSetBool(attributes, { topic: `/${uavName}/commandMission`, type: serviceType });
   }
 

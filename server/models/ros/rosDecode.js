@@ -10,7 +10,7 @@ import { getDroneStatus, getArmingStatus, getVehicleCommand, getVehicleCmdResult
 //
 //   battery.scale        multiplier that turns `percentage` into percent (default 1)
 //   gimbal.unit          'rad' converts the angles to degrees (default: already degrees)
-//   IMU.heading_offset   degrees added to the yaw to get the course (default 90)
+//   imu.heading_offset   degrees added to the yaw to get the course (default 90)
 
 const toDeg = (rad) => (rad * 180) / Math.PI;
 const norm3 = ({ x, y, z }) => Math.sqrt(x * x + y * y + z * z);
@@ -129,14 +129,14 @@ register('vehicle_command_ack', 'px4_msgs/msg/VehicleCommandAck', ({ msg, device
 
 // ─── heading ───────────────────────────────────────────────────────────────────
 
-register('IMU', 'sensor_msgs/Imu', ({ msg, deviceId, params }) => {
+register('imu', 'sensor_msgs/Imu', ({ msg, deviceId, params }) => {
   // https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion
   const q = msg.orientation;
   const yaw = Math.atan2(2.0 * (q.z * q.w + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z)) * -1;
   return { deviceId, course: Math.round((params.heading_offset ?? 90) + yaw * 57.295) };
 });
 
-register('hdg', ['std_msgs/Float64', 'std_msgs/Float32'], ({ msg, deviceId }) => ({ deviceId, course: msg.data }));
+register('heading', ['std_msgs/Float64', 'std_msgs/Float32'], ({ msg, deviceId }) => ({ deviceId, course: msg.data }));
 
 register('attitude', 'geometry_msgs/msg/QuaternionStamped', ({ msg, deviceId }) => {
   const q = msg.quaternion;
@@ -247,11 +247,11 @@ register('state_machine', 'muav_state_machine/UAVState', ({ msg, deviceId }) => 
 
 // ─── slots whose payload does not depend on the message type ───────────────────
 
-register('sensors_humidity', ANY, ({ msg, deviceId }) => ({ deviceId, sensors_humidity: msg.data }));
+register('humidity', ANY, ({ msg, deviceId }) => ({ deviceId, sensors_humidity: msg.data }));
 register('threat', ANY, ({ msg, deviceId }) => ({ deviceId, threat: msg.data }));
 
 // ─── declared in devices_msg.yaml, nothing consumes them ───────────────────────
 
-ignore('sensor_height', ['std_msgs/Float32', 'mavros_msgs/Altitude']);
+ignore('height_above_takeoff', ['std_msgs/Float32', 'mavros_msgs/Altitude']);
 ignore('vo_position', 'dji_osdk_ros/VOPosition');
 ignore('flight_status', 'sensor_msgs/JointState');

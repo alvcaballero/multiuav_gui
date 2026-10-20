@@ -243,7 +243,7 @@ function _cancelEntry(key, entry) {
  * @param {object} args
  * @param {string} args.actionServerName - Full action server name, e.g. /agv_1/navigate_to_pose
  * @param {string} args.actionType       - e.g. nav2_msgs/action/NavigateToPose
- * @param {string} args.type             - Action config key (for encoding), e.g. navigateToPose
+ * @param {string} args.type             - Action config key (for encoding), e.g. navigate_to_pose
  * @param {object} args.message          - Goal message
  * @param {object} [args.target]
  * @param {number} [args.timeout]

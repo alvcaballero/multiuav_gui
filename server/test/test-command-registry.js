@@ -59,7 +59,7 @@ describe('commandRegistry — what each category exposes', () => {
 
 describe('commandRegistry — encoders build what the gateway gets', () => {
   test('flight commands build the PX4 VehicleCommand', () => {
-    const ep = endpoint('publishers', 'VehicleCommand', 'px4_msgs/msg/VehicleCommand');
+    const ep = endpoint('publishers', 'vehicle_command', 'px4_msgs/msg/VehicleCommand');
     const attributes = { altitude: 20 };
     assert.deepEqual(
       commandRegistry.encode(CommandType.TAKEOFF, ep, { attributes, position: POS }),
@@ -68,8 +68,8 @@ describe('commandRegistry — encoders build what the gateway gets', () => {
   });
 
   test('gimbal fills the missing axes from telemetry; reset forces the flag', () => {
-    const osdk = endpoint('services', 'Gimbal', 'dji_osdk_ros/GimbalAction');
-    const psdk = endpoint('publishers', 'Gimbal', 'psdk_interfaces/msg/GimbalRotation');
+    const osdk = endpoint('services', 'gimbal_control', 'dji_osdk_ros/GimbalAction');
+    const psdk = endpoint('publishers', 'gimbal_control', 'psdk_interfaces/msg/GimbalRotation');
     const ctx = { attributes: { pitch: -60 }, position: POS };
     const expected = { reset: false, pitch: -60, roll: 0, yaw: 15 };
     assert.deepEqual(commandRegistry.encode(CommandType.GIMBAL, osdk, ctx), expected);
@@ -77,15 +77,15 @@ describe('commandRegistry — encoders build what the gateway gets', () => {
     assert.equal(commandRegistry.encode(CommandType.RESET_GIMBAL, osdk, { position: POS }).reset, true);
   });
 
-  test('commandMission sends data: true; no-argument services send no request', () => {
-    const start = endpoint('services', 'commandMission', 'std_srvs/SetBool');
+  test('command_mission sends data: true; no-argument services send no request', () => {
+    const start = endpoint('services', 'command_mission', 'std_srvs/SetBool');
     assert.deepEqual(commandRegistry.encode(CommandType.COMMAND_MISSION, start), { data: true });
-    const stop = endpoint('services', 'stopMission', 'std_srvs/Trigger');
+    const stop = endpoint('services', 'stop_mission', 'std_srvs/Trigger');
     assert.equal(commandRegistry.encode(CommandType.STOP_MISSION, stop), undefined);
   });
 
   test('attribute services pass the validated attributes through', () => {
-    const ep = endpoint('services', 'setupcamera', 'dji_osdk_ros/SetupCameraStream');
+    const ep = endpoint('services', 'setup_camera', 'dji_osdk_ros/SetupCameraStream');
     const attributes = { cameraType: 1, start: 1 };
     assert.equal(commandRegistry.encode(CommandType.SETUP_CAMERA, ep, { attributes }), attributes);
   });

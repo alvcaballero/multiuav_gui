@@ -105,7 +105,7 @@ register(CommandType.STOP_MISSION, { key: ServiceKey.STOP_MISSION }, noRequest);
 register(CommandType.SETUP_CAMERA, { key: ServiceKey.SETUP_CAMERA }, passAttributes);
 register(CommandType.CAMERA_FILE_LIST, { key: ServiceKey.CAMERA_FILE_LIST }, passAttributes);
 register(CommandType.CAMERA_FILE_DOWNLOAD, { key: ServiceKey.CAMERA_FILE_DOWNLOAD }, passAttributes);
-register(CommandType.SYNC_FILES, { key: ServiceKey.SINCRONIZE }, noRequest);
+register(CommandType.SYNC_FILES, { key: ServiceKey.SYNC_FILES }, noRequest);
 
 // ─── flight: navegación / threat ──────────────────────────────────────────────
 register(CommandType.NAVIGATE_TO_POSE, { key: ServiceKey.NAVIGATE_TO_POSE }, passAttributes);

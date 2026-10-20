@@ -1,4 +1,5 @@
 import * as fb from 'fbmsglib';
+import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 
 export function getNameFromTopic(topic) {
   if (topic.startsWith('/')) {
@@ -94,6 +95,8 @@ export function decodeFbMsg(metadata, buf, deviceId, category, deviceName) {
   return { deviceId: null, type: metadata.type(), topic: metadata.topic(), deviceName };
 }
 
+// The topics are robofleet's own names (/commandMission, /configureMission); `type` maps them
+// back to the devices_msg key the request was sent under.
 export function isServiceResponse(metadata) {
   return (
     (metadata.type() === 'std_srvs/SetBool' && metadata.topic().includes('commandMission')) ||
@@ -108,7 +111,7 @@ export function decodeServiceResponse(metadata, buf, deviceId, deviceName) {
     return {
       uav_id: deviceId,
       name: deviceName,
-      type: 'commandMission',
+      type: ServiceKey.COMMAND_MISSION,
       response: {
         state: success ? 'success' : 'error',
         msg: `command mission to ${deviceName} ${success ? 'ok' : 'fail'}`,
@@ -121,7 +124,7 @@ export function decodeServiceResponse(metadata, buf, deviceId, deviceName) {
     return {
       uav_id: deviceId,
       name: deviceName,
-      type: 'configureMission',
+      type: ServiceKey.CONFIGURE_MISSION,
       response: {
         state: success ? 'success' : 'error',
         msg: `Config mission to ${deviceName} ${success ? 'ok' : 'fail'}`,

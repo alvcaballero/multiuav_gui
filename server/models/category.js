@@ -1,6 +1,6 @@
 import { readDataFile, writeDataFile } from '../common/utils.js';
 import { devicesMsg, missionSchema } from '../config/config.js';
-import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS } from '../config/deviceMsgCatalog.js';
+import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS, ServiceKey } from '../config/deviceMsgCatalog.js';
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
 import { hasDecoder, decodableMsgTypes } from './ros/rosDecode.js';
@@ -20,7 +20,7 @@ const _mission_schema = readDataFile(missionSchema);
 //
 // Cada bloque se valida contra SU SSOT (telemetría ≠ comandos: naturalezas distintas).
 // subscribers → SubscriberKey (telemetría); publishers → PublisherKey (comandos que
-// publican, PascalCase); services/actions → ServiceKey.
+// publican); services/actions → ServiceKey. Todas en snake_case.
 // warn por defecto; en modo debug (LOG_LEVEL=debug) lanza para forzar la alineación
 // temprano — un typo en el YAML no debe llegar silencioso a runtime.
 const DEVICES_MSG_BLOCKS = {
@@ -133,13 +133,13 @@ function filterParamOptions(param, symbols) {
 // Resolves the actions/params a category exposes by filtering the global catalog
 // through its profile AND its encoder family's capabilities.
 //
-// The profile is DERIVED from the configureMission serviceType + category (see
+// The profile is DERIVED from the configure_mission serviceType + category (see
 // profileFor), so it can't contradict the encoder. An explicit `mission:` field
 // on the device still wins as an escape hatch. No device/service → 'default',
 // unfiltered, so the planning UI always has a coherent baseline.
 function resolveMissionProfile(type) {
   const dev = devices_msg[type];
-  const serviceType = dev?.services?.configureMission?.messageType;
+  const serviceType = dev?.services?.[ServiceKey.CONFIGURE_MISSION]?.messageType;
   const profileName = dev?.mission ?? dev?.mission_schema ?? profileFor(type, serviceType);
   const profile = _mission_schema.profiles?.[profileName] ?? _mission_schema.profiles?.default;
   if (!profile) {
@@ -147,7 +147,7 @@ function resolveMissionProfile(type) {
     return undefined;
   }
 
-  // Encoder family (via configureMission serviceType) decides supported options.
+  // Encoder family (via configure_mission serviceType) decides supported options.
   // No device/service → symbols is null → options are left unfiltered (catalog full set).
   const symbols = symbolsForService(serviceType);
   const filterAll = (defs) => {

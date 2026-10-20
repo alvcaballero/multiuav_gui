@@ -35,7 +35,7 @@ describe('relativeTarget (body frame → global)', () => {
 
 describe('buildVehicleCommand', () => {
   test('every command the registry implements with a PX4 VehicleCommand builds a message', () => {
-    const endpoint = { block: 'publishers', key: 'VehicleCommand', msgType: 'px4_msgs/msg/VehicleCommand' };
+    const endpoint = { block: 'publishers', key: 'vehicle_command', msgType: 'px4_msgs/msg/VehicleCommand' };
     const types = Object.values(CommandType).filter((type) => commandRegistry.encoderFor(type, endpoint));
     assert.ok(types.length > 0);
     for (const type of types) {

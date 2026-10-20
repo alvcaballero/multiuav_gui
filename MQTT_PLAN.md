@@ -66,11 +66,11 @@ Se agrega a `mqtt_client` siguiendo su propio patrón: configuración por parám
 ```yaml
 bridge:
   services:
-    names: [commandMission, configureMission]
-    commandMission:
+    names: [command_mission, configure_mission]
+    command_mission:
       ros_service: /dji_control/start_mission
       ros_type: std_srvs/srv/SetBool
-      mqtt_topic: muav/uav1/srv/commandMission   # /request y /response se derivan
+      mqtt_topic: muav/uav1/srv/command_mission   # /request y /response se derivan
       timeout_s: 5.0
 ```
 
@@ -113,7 +113,7 @@ Por eso F3 se divide en un spike (F3a) antes de construir el bridge completo. Si
 
 ## Seguridad (obligatorio, no opcional)
 
-Un request de `commandMission` arma un dron.
+Un request de `command_mission` arma un dron.
 
 1. **Replay**: con QoS 1 y sesión persistente el broker puede entregar un comando viejo al reconectar. Mitigación principal: sesión **limpia** del dron (`clean_session=true`) y `retain=false`, así no hay cola de mensajes para un dron offline. Mitigación secundaria: descartar por `ts`.
 2. **Reloj**: el descarte por `ts` compara el reloj de la GCS contra el del dron. Si el dron no tiene NTP/chrony, el TTL falla en un sentido o en otro. Requiere sincronía de relojes (o usar el *message expiry interval* de MQTT 5 en vez de `ts`).
@@ -153,7 +153,7 @@ Pendiente de probar:
 
 ## Fuera de alcance (primera versión)
 
-- Acciones ROS (la GCS las usa, p. ej. `CameraFileDownload`). Quedan para después; el mismo diseño del bridge de servicios podría extenderse.
+- Acciones ROS (la GCS las usa, p. ej. `camera_file_download`). Quedan para después; el mismo diseño del bridge de servicios podría extenderse.
 - Publishers GCS → dron (`mqtt2ros` de `mqtt_client` lo soporta, sin diseñar acá).
 - Video / cámaras.
 - Autodescubrimiento de servicios (Transitive publica su lista cada 2 min; acá se declara en YAML).

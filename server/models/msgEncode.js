@@ -68,7 +68,7 @@ function assertUtcIsoDate(value, field) {
   return value;
 }
 
-// ─── mission: task → configureMission ─────────────────────────────────────────
+// ─── mission: task → configure_mission ────────────────────────────────────────
 // Each encoder family lives whole in its own module (ConfigMission in missionEncodeConfig,
 // PSDK in missionEncodePsdk); here they are only registered by msgType.
 register(['aerialcore_common/ConfigMission', 'multiuav_interfaces/ConfigMission'], MissionToRos);

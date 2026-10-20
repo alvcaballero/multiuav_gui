@@ -123,7 +123,7 @@ test('decodeServiceResponse: SetBool success', () => {
 
   assert.equal(result.uav_id, 42);
   assert.equal(result.name, 'uav1');
-  assert.equal(result.type, 'commandMission');
+  assert.equal(result.type, 'command_mission');
   assert.equal(result.response.state, 'success');
 });
 

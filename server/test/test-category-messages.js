@@ -35,8 +35,8 @@ describe('category message catalog', () => {
   });
 
   test('a command key only lists the types categories declare for it', () => {
-    assert.deepEqual(catalog.services.Gimbal, ['dji_osdk_ros/GimbalAction']);
-    assert.deepEqual(catalog.publishers.Gimbal, ['psdk_interfaces/msg/GimbalRotation']);
+    assert.deepEqual(catalog.services.gimbal_control, ['dji_osdk_ros/GimbalAction']);
+    assert.deepEqual(catalog.publishers.gimbal_control, ['psdk_interfaces/msg/GimbalRotation']);
   });
 });
 
@@ -48,14 +48,14 @@ describe('devices_msg type field', () => {
   test('serviceType/actionType are reported with their path', () => {
     const legacy = {
       some_drone: {
-        services: { commandMission: { name: '/start', serviceType: 'std_srvs/SetBool' } },
-        actions: { CameraFileDownload: { name: '/dl', actionType: 'x/action/Download' } },
-        publishers: { Gimbal: { name: '/g', messageType: 'x/msg/Gimbal' } },
+        services: { command_mission: { name: '/start', serviceType: 'std_srvs/SetBool' } },
+        actions: { camera_file_download: { name: '/dl', actionType: 'x/action/Download' } },
+        publishers: { gimbal_control: { name: '/g', messageType: 'x/msg/Gimbal' } },
       },
     };
     assert.deepEqual(findLegacyTypeFields(legacy), [
-      'some_drone.services.commandMission.serviceType',
-      'some_drone.actions.CameraFileDownload.actionType',
+      'some_drone.services.command_mission.serviceType',
+      'some_drone.actions.camera_file_download.actionType',
     ]);
   });
 });

@@ -90,7 +90,7 @@ describe('px4_ros2 telemetry as the fork publishes it', () => {
   });
 });
 
-describe('configureMission request vs muav_gcs_interfaces/srv/LoadMission', () => {
+describe('configure_mission request vs muav_gcs_interfaces/srv/LoadMission', () => {
   // Fields of Mission.msg (the srv's request is a single field called `request`).
   const MISSION_FIELDS = [
     'type', 'waypoint', 'radius', 'vel_max', 'vel_idle', 'yaw', 'gimbal_pitch', 'speed',

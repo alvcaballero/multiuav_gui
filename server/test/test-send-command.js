@@ -32,7 +32,7 @@ describe('sendCommand', () => {
   test('a PX4 flight command goes out as a VehicleCommand on the publisher', async () => {
     const r = await commandsModel.sendCommand({ deviceId: 1, type: CommandType.TAKEOFF, attributes: { altitude: '20' } });
     assert.equal(r.state, 'success');
-    assert.deepEqual(sent[0].endpoint, { block: 'publishers', key: 'VehicleCommand', msgType: 'px4_msgs/msg/VehicleCommand' });
+    assert.deepEqual(sent[0].endpoint, { block: 'publishers', key: 'vehicle_command', msgType: 'px4_msgs/msg/VehicleCommand' });
     assert.equal(sent[0].message.command, 22);
     assert.equal(sent[0].message.param7, 70);
   });
@@ -55,14 +55,14 @@ describe('sendCommand', () => {
 
   test('CommandMission goes to its service with data: true', async () => {
     await commandsModel.sendCommand({ deviceId: 1, type: CommandType.COMMAND_MISSION });
-    assert.equal(sent[0].endpoint.key, 'commandMission');
+    assert.equal(sent[0].endpoint.key, 'command_mission');
     assert.deepEqual(sent[0].message, { data: true });
   });
 
   test('LoadMission sends the device task; a mission without it is an error', async () => {
     const wp = [{ pos: [0, 0, 10] }];
     await commandsModel.sendCommand({ deviceId: 1, type: CommandType.LOAD_MISSION, attributes: [{ uav: 'px4_1', wp }] });
-    assert.equal(sent[0].endpoint.key, 'configureMission');
+    assert.equal(sent[0].endpoint.key, 'configure_mission');
     // px4_ros2 declares muav_gcs_interfaces/srv/LoadMission: the ROS2 request, not the task.
     assert.equal(sent[0].endpoint.msgType, 'muav_gcs_interfaces/srv/LoadMission');
     assert.equal(sent[0].message.request.type, 'waypoint');
@@ -94,8 +94,8 @@ describe('getCommandTypes', () => {
   test('each command says which endpoint implements it', async () => {
     const types = await commandsModel.getCommandTypes(1);
     const takeoff = types.find((t) => t.type === CommandType.TAKEOFF);
-    assert.equal(takeoff.via, 'publishers.VehicleCommand');
-    assert.equal(takeoff.requires, 'VehicleCommand');
+    assert.equal(takeoff.via, 'publishers.vehicle_command');
+    assert.equal(takeoff.requires, 'vehicle_command');
     assert.equal(takeoff.label, 'Take off');
     const home = types.find((t) => t.type === CommandType.SAVE_HOME);
     assert.equal(home.via, null);

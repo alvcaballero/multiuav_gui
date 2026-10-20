@@ -1,15 +1,20 @@
 // Device-msg catalog — SSOT de TODAS las keys válidas en devices_msg.yaml.
 //
 // Un device declara sus capacidades ROS en cuatro bloques: `subscribers:`,
-// `publishers:`, `services:` y `actions:`. Las keys de esos bloques están FIJADAS
-// por el lado ROS (el nombre del topic/.srv/.action del UAV); no se renombran acá.
-// Este módulo las enumera y es el único lugar donde viven esos literales.
+// `publishers:`, `services:` y `actions:`. Las keys NO son el nombre ROS (ese es `name:`):
+// nombran el slot, y todas van en snake_case (convención ROS para topics/services, y no se
+// confunden con los CommandType PascalCase: `command_mission` es el endpoint que implementa
+// CommandMission). Este módulo las enumera y es el único lugar donde viven esos literales.
+//
+// OJO: la key viaja en el cable MQTT (muav/<device>/pub/<slot>, muav/<device>/srv/<key>, ver
+// models/mqtt/mqttTopics.js): renombrar una obliga a actualizar el mqtt_client del dron.
+// Robofleet no: fbEncode/fbDecode tienen sus propios nombres de topic.
 //
 // subscribers → tópicos a los que el server se AUTOSUSCRIBE al arrancar (telemetría
 // entrante); sus keys son de telemetría (position, battery...) → SubscriberKey.
 // publishers → tópicos sobre los que el server PUBLICA bajo demanda como respuesta
-// a un COMANDO de usuario; sus keys son capacidades invocables (Gimbal...), misma
-// naturaleza que services/actions → PublisherKey (PascalCase).
+// a un COMANDO de usuario; sus keys son capacidades invocables (gimbal_control...), misma
+// naturaleza que services/actions → PublisherKey.
 //
 // Es config del DEVICE, no de los comandos. Qué command implementa cada endpoint, y
 // cómo se arma su mensaje, lo decide models/commands/commandRegistry.js (por msgType, o por estas
@@ -34,8 +39,8 @@ export const SubscriberKey = Object.freeze({
   LOCAL_POSITION: 'local_position',
   VEHICLE_STATUS: 'vehicle_status',
   VEHICLE_COMMAND_ACK: 'vehicle_command_ack',
-  IMU: 'IMU',
-  HDG: 'hdg',
+  IMU: 'imu',
+  HEADING: 'heading',
   MISSION_STATE: 'mission_state',
   SPEED: 'speed',
   BATTERY: 'battery',
@@ -44,10 +49,10 @@ export const SubscriberKey = Object.freeze({
   CAMERA: 'camera',
   FLIGHT_STATUS: 'flight_status',
   ATTITUDE: 'attitude',
-  SENSORS_HUMIDITY: 'sensors_humidity',
+  HUMIDITY: 'humidity',
   THREAT: 'threat',
   STATE_MACHINE: 'state_machine',
-  SENSOR_HEIGHT: 'sensor_height',
+  HEIGHT_ABOVE_TAKEOFF: 'height_above_takeoff',
   VO_POSITION: 'vo_position',
 });
 
@@ -64,7 +69,7 @@ export const SUBSCRIBER_CATALOG = {
   [SubscriberKey.VEHICLE_STATUS]: { decoded: true },
   [SubscriberKey.VEHICLE_COMMAND_ACK]: { decoded: true },
   [SubscriberKey.IMU]: { decoded: true },
-  [SubscriberKey.HDG]: { decoded: true },
+  [SubscriberKey.HEADING]: { decoded: true },
   [SubscriberKey.MISSION_STATE]: { decoded: true },
   [SubscriberKey.SPEED]: { decoded: true },
   [SubscriberKey.BATTERY]: { decoded: true },
@@ -73,12 +78,12 @@ export const SUBSCRIBER_CATALOG = {
   [SubscriberKey.CAMERA]: { decoded: true },
   [SubscriberKey.FLIGHT_STATUS]: { decoded: true },
   [SubscriberKey.ATTITUDE]: { decoded: true },
-  [SubscriberKey.SENSORS_HUMIDITY]: { decoded: true },
+  [SubscriberKey.HUMIDITY]: { decoded: true },
   [SubscriberKey.THREAT]: { decoded: true },
   [SubscriberKey.STATE_MACHINE]: { decoded: true },
   // Válidos/suscribibles pero sin decodificador (deshabilitados o de ciclo action).
-  [SubscriberKey.SENSOR_HEIGHT]: { decoded: false }, // decoder comentado — rosDecode.js:78
-  [SubscriberKey.VO_POSITION]: { decoded: false }, // decoder comentado — rosDecode.js:85
+  [SubscriberKey.HEIGHT_ABOVE_TAKEOFF]: { decoded: false }, // ignore() en rosDecode.js
+  [SubscriberKey.VO_POSITION]: { decoded: false }, // ignore() en rosDecode.js
 };
 
 // subscriberKeys conocidas — para validar el bloque subscribers: de devices_msg.
@@ -87,14 +92,13 @@ export const KNOWN_SUBSCRIBER_KEYS = new Set(Object.values(SubscriberKey));
 // ─── Publishers ─────────────────────────────────────────────────────────────────
 
 // publisher keys — capacidades que el server PUBLICA como respuesta a un comando
-// de usuario (no telemetría). Su casing es PascalCase porque son keys de comando,
-// no de topic: matchean el `type` que despacha commandsModel (ej. 'Gimbal'). Un
-// mismo command puede resolverse por service, action o publisher según la categoría.
+// de usuario (no telemetría). Un mismo command puede resolverse por service, action o
+// publisher según la categoría (commandRegistry.js).
 export const PublisherKey = Object.freeze({
-  GIMBAL: 'Gimbal',
+  GIMBAL_CONTROL: 'gimbal_control',
   // PX4 /fmu/in/vehicle_command (px4_msgs/msg/VehicleCommand). Habilita los comandos
-  // de vuelo directos (Takeoff, Land, ReturnHome, Hold, Arm/Disarm, KillMotors, moveRelative).
-  VEHICLE_COMMAND: 'VehicleCommand',
+  // de vuelo directos (Takeoff, Land, ReturnHome, Hold, Arm/Disarm, KillMotors, MoveRelative).
+  VEHICLE_COMMAND: 'vehicle_command',
 });
 
 // publisherKeys conocidas — para validar el bloque publishers: de devices_msg.
@@ -107,23 +111,23 @@ export const KNOWN_PUBLISHER_KEYS = new Set(Object.values(PublisherKey));
 // services como actions (ambos bloques invocables). commandRegistry.js las usa para
 // reconocer los commands que van sobre un msgType genérico (std_srvs/SetBool, Trigger…).
 export const ServiceKey = Object.freeze({
-  CONFIGURE_MISSION: 'configureMission',
-  COMMAND_MISSION: 'commandMission',
-  SINCRONIZE: 'sincronize',
-  SETUP_CAMERA: 'setupcamera',
-  GIMBAL: 'Gimbal',
-  RESUME_MISSION: 'resumemission',
-  STOP_MISSION: 'stopMission',
-  PAUSE_MISSION: 'pausemission',
-  UPLOAD_MISSION: 'uploadMission',
-  CAMERA_FILE_DOWNLOAD: 'CameraFileDownload',
-  CAMERA_FILE_LIST: 'CameraFileList',
-  NAVIGATE_TO_POSE: 'navigateToPose',
+  CONFIGURE_MISSION: 'configure_mission',
+  COMMAND_MISSION: 'command_mission',
+  SYNC_FILES: 'sync_files',
+  SETUP_CAMERA: 'setup_camera',
+  GIMBAL_CONTROL: 'gimbal_control',
+  RESUME_MISSION: 'resume_mission',
+  STOP_MISSION: 'stop_mission',
+  PAUSE_MISSION: 'pause_mission',
+  UPLOAD_MISSION: 'upload_mission',
+  CAMERA_FILE_DOWNLOAD: 'camera_file_download',
+  CAMERA_FILE_LIST: 'camera_file_list',
+  NAVIGATE_TO_POSE: 'navigate_to_pose',
   THREAT_CONFIRMATION: 'threat_confirmation',
   THREAT_DEFUSE: 'threat_defuse',
-  // px4_ros2 /offboard/gcs_command (muav_gcs_interfaces/srv/GCSCommand). Todavía ningún
+  // px4_ros2 /offboard/command (muav_gcs_interfaces/srv/OffboardCommand). Todavía ningún
   // command lo requiere: en definición.
-  GCS_COMMAND: 'GCSCommand',
+  OFFBOARD_COMMAND: 'offboard_command',
 });
 
 // serviceKeys conocidas — para validar los bloques services:/actions: de devices_msg.

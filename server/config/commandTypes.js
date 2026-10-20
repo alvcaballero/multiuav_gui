@@ -9,8 +9,8 @@
 //     la categoría declara en devices_msg.yaml)
 //
 // Todos en PascalCase. No confundir con las keys de devices_msg.yaml (ServiceKey/PublisherKey,
-// deviceMsgCatalog.js): CommandMission es la acción, `commandMission` es el service ROS que la
-// implementa en algunos drones, y esa key la fija el lado ROS.
+// deviceMsgCatalog.js): CommandMission es la acción, `command_mission` es el endpoint que la
+// implementa en algunos drones (las keys van en snake_case).
 //
 // El cliente tiene un espejo en client/src/common/util/commandTypes.js
 // (test/test-command-types-mirror.js verifica que coinciden).

@@ -73,7 +73,7 @@ describe('encodeFbMsg — mission type without a Flatbuffer schema', () => {
   test('a ROS2 LoadMission device is rejected instead of packed as ConfigMission', async () => {
     devicesController.getDevice = async () => ({ id: 1, name: 'px4_1', category: 'px4_ros2' });
     await assert.rejects(
-      encodeFbMsg({ uav_id: 1, type: 'configureMission', attributes: {} }),
+      encodeFbMsg({ uav_id: 1, type: 'configure_mission', attributes: {} }),
       /no Flatbuffer schema for mission type 'muav_gcs_interfaces\/srv\/LoadMission'/
     );
   });

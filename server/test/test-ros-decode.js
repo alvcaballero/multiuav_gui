@@ -96,29 +96,29 @@ describe('decodeRosMsg: px4 status', () => {
   });
 });
 
-describe('decodeRosMsg: heading (IMU / hdg / attitude)', () => {
-  test('IMU generic: identity quaternion is course 90', () => {
-    const r = dec({ type: 'IMU', msgType: 'sensor_msgs/Imu', msg: { orientation: IDENTITY } });
+describe('decodeRosMsg: heading (imu / heading / attitude)', () => {
+  test('imu generic: identity quaternion is course 90', () => {
+    const r = dec({ type: 'imu', msgType: 'sensor_msgs/Imu', msg: { orientation: IDENTITY } });
     assert.deepEqual(r, { deviceId: 7, course: 90 });
   });
 
-  test('IMU generic: 90° yaw is course 0', () => {
-    const r = dec({ type: 'IMU', msgType: 'sensor_msgs/Imu', msg: { orientation: YAW_90 } });
+  test('imu generic: 90° yaw is course 0', () => {
+    const r = dec({ type: 'imu', msgType: 'sensor_msgs/Imu', msg: { orientation: YAW_90 } });
     assert.equal(r.course, 0);
   });
 
-  test('IMU with params.heading_offset (sjtu: -90) shifts the course by that offset', () => {
+  test('imu with params.heading_offset (sjtu: -90) shifts the course by that offset', () => {
     const params = { heading_offset: -90 };
-    const r = dec({ type: 'IMU', msgType: 'sensor_msgs/Imu', msg: { orientation: IDENTITY }, params });
+    const r = dec({ type: 'imu', msgType: 'sensor_msgs/Imu', msg: { orientation: IDENTITY }, params });
     assert.deepEqual(r, { deviceId: 7, course: -90 });
 
-    const yawed = dec({ type: 'IMU', msgType: 'sensor_msgs/Imu', msg: { orientation: YAW_90 }, params });
+    const yawed = dec({ type: 'imu', msgType: 'sensor_msgs/Imu', msg: { orientation: YAW_90 }, params });
     assert.equal(yawed.course, -180);
   });
 
-  test('hdg / Float64 and Float32 pass data through as course', () => {
-    assert.deepEqual(dec({ type: 'hdg', msgType: 'std_msgs/Float64', msg: { data: 123.4 } }), { deviceId: 7, course: 123.4 });
-    assert.deepEqual(dec({ type: 'hdg', msgType: 'std_msgs/Float32', msg: { data: 5 } }), { deviceId: 7, course: 5 });
+  test('heading / Float64 and Float32 pass data through as course', () => {
+    assert.deepEqual(dec({ type: 'heading', msgType: 'std_msgs/Float64', msg: { data: 123.4 } }), { deviceId: 7, course: 123.4 });
+    assert.deepEqual(dec({ type: 'heading', msgType: 'std_msgs/Float32', msg: { data: 5 } }), { deviceId: 7, course: 5 });
   });
 
   test('attitude / QuaternionStamped: 0 is north, 90 is east, wrapped to [-180, 180]', () => {
@@ -252,8 +252,8 @@ describe('decodeRosMsg: camera, flight status, state machine', () => {
 });
 
 describe('decodeRosMsg: slots that ignore the message type', () => {
-  test('sensors_humidity and threat pass data through whatever the msgType is', () => {
-    assert.deepEqual(dec({ type: 'sensors_humidity', msgType: 'std_msgs/Int32MultiArray', msg: { data: [1, 2] } }), {
+  test('humidity and threat pass data through whatever the msgType is', () => {
+    assert.deepEqual(dec({ type: 'humidity', msgType: 'std_msgs/Int32MultiArray', msg: { data: [1, 2] } }), {
       deviceId: 7,
       sensors_humidity: [1, 2],
     });
@@ -264,7 +264,7 @@ describe('decodeRosMsg: slots that ignore the message type', () => {
 
 describe('decodeRosMsg: unknown combinations', () => {
   test('returns null for declared-but-undecoded slots and for wrong message types', () => {
-    assert.equal(dec({ type: 'sensor_height', msgType: 'std_msgs/Float32', msg: { data: 1 } }), null);
+    assert.equal(dec({ type: 'height_above_takeoff', msgType: 'std_msgs/Float32', msg: { data: 1 } }), null);
     assert.equal(dec({ type: 'vo_position', msgType: 'dji_osdk_ros/VOPosition', msg: {} }), null);
     assert.equal(dec({ type: 'flight_status', msgType: 'sensor_msgs/JointState', msg: {} }), null);
     assert.equal(dec({ type: 'position', msgType: 'px4_msgs/msg/VehicleGlobalPosition', msg: {} }), null);
