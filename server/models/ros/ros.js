@@ -19,9 +19,9 @@ import {
   subscribeTopics as _subscribeTopics,
   unsubscribeKey as _unsubscribeKey,
   unsubscribeAll as _unsubscribeAll,
-  PubRosMsg as _PubRosMsg,
   subscribeOnce as _subscribeOnce,
-} from './rosTopics.js';
+} from './rosSubscriptions.js';
+import { PubRosMsgOnce as _PubRosMsgOnce } from './rosPublishers.js';
 import * as rosServices from './rosServices.js';
 import * as rosInspect from './rosInspect.js';
 import * as actionRegistry from './rosAction.js';
@@ -96,7 +96,7 @@ export class rosModel {
   // is the single source of truth — no direct YAML read here), wire the business
   // effect (position vs camera) into each topic's onMessage, and hand the
   // fully-built topic list to the transport primitive. All category/camera
-  // knowledge lives here — rosTopics stays business-agnostic.
+  // knowledge lives here — rosSubscriptions stays business-agnostic.
   static async subscribeDevice({ id, name, category, camera = [] }) {
     logHelpers.ros.subscribe(id, name, { category });
 
@@ -181,7 +181,7 @@ export class rosModel {
 
   // Device-layer publish: resolve the publisher from the category config here
   // (mirror of subscribeDevice / callService), then delegate the fully-resolved
-  // topic + messageType to the pure PubRosMsg primitive. rosTopics owns no
+  // topic + messageType to the pure PubRosMsgOnce primitive. rosPublishers owns no
   // devices_msg/category knowledge.
   static async publishTopicDevice({ deviceId, type, message }) {
     const { name, category } = await devicesController.getDevice(deviceId);
@@ -194,7 +194,7 @@ export class rosModel {
     const messageType = publisherDef['messageType'];
     const topic = buildDeviceName(name, publisherDef);
     try {
-      await _PubRosMsg({ topic, messageType, message }, getRos());
+      await _PubRosMsgOnce({ topic, messageType, message }, getRos());
       return { state: 'success', msg: `${type} to ${name} ok` };
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
@@ -254,8 +254,8 @@ export class rosModel {
     return rosInspect.getPublishers(topic, getRos());
   }
 
-  static async PubRosMsg(params) {
-    return _PubRosMsg(params, getRos());
+  static async PubRosMsgOnce(params) {
+    return _PubRosMsgOnce(params, getRos());
   }
 
   static async subscribeOnce({ topic, messageType, timeout = 2000 }) {

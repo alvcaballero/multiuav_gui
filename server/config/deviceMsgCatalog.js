@@ -30,7 +30,7 @@
 // ─── Subscribers ────────────────────────────────────────────────────────────────
 
 // subscriber keys — strings de `type` que circulan entre el YAML (keys de
-// subscribers:), rosTopics (suscripción) y rosDecode (comparación). Usalo en
+// subscribers:), rosSubscriptions (suscripción) y rosDecode (comparación). Usalo en
 // rosDecode.js:
 // `if (type == SubscriberKey.POSITION_GLOBAL)` en vez del literal 'position_global'.
 export const SubscriberKey = Object.freeze({

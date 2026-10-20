@@ -202,7 +202,7 @@ export class rosController {
     try {
       // Raw route (MCP agv tools): fill the message for its messageType (e.g. Twist defaults).
       const { messageType, message } = req.body;
-      const response = await rosModel.PubRosMsg({ ...req.body, message: encodeMsg(messageType, message) });
+      const response = await rosModel.PubRosMsgOnce({ ...req.body, message: encodeMsg(messageType, message) });
       res.json(response);
     } catch (error) {
       logger.error(`Error publishing message: ${error.message}`);

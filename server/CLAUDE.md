@@ -387,7 +387,7 @@ a gap throw. A slot declared in the YAML that nothing consumes gets an explicit 
 every protocol (rosbridge JSON, the same JSON over MQTT, robofleet = ROS messages packed in Flatbuffers),
 so it is encoded ONCE, before the gateway: `commandsModel.sendToDevice` (commands) and the raw routes
 `/ros/publish` and `/ros/action_send_goal`. The transport primitives (`callService`, `sendActionGoal`,
-`PubRosMsg`, `MqttServer`) receive the message already encoded and never encode. Three layers for a
+`PubRosMsgOnce`, `MqttServer`) receive the message already encoded and never encode. Three layers for a
 command: `commandRegistry` (what is sent, domain) → `encodeMsg(msgType)` (its shape) → gateway (packing).
 An encoder that needs several messages in order on the same endpoint returns `sequence([...])`
 (`commandEncoders.js`; PX4 Gimbal = take control with CONFIGURE, then PITCHYAW): `sendToDevice` sends
@@ -408,7 +408,8 @@ free of business-controller imports.
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ros.js`              | Facade (`rosModel`). Resolves `uav_id → {name, category}`, resolves per-category message config via `categoryModel` (`resolveCategoryConfig`), builds every ROS name (`buildDeviceName`), injects business callbacks, delegates to primitives |
 | `rosConnection.js`    | Connection lifecycle: connect, auto-reconnect (30s), inject connected/disconnect handlers                                                                                                                                                     |
-| `rosTopics.js`        | Topic transport primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/`PubRosMsg`. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge                                        |
+| `rosSubscriptions.js` | Subscription primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/`subscribeOnce`. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge |
+| `rosPublishers.js`    | Publish primitives: `PubRosMsgOnce` (validated one-shot publish); no category/topic-name knowledge |
 | `rosServices.js`      | ROS service calls: `callRosService` (primitive) + `callService` (receives the already-built service name + type; no config lookup)                                                                                                            |
 | `rosAction.js`        | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building                                                                                           |
 | `rosInspect.js`       | Read-only rosapi introspection (topics/services/types/action servers)                                                                                                                                                                         |
@@ -594,7 +595,7 @@ When adding new device types:
 1. Add configuration to `devices_msg.yaml` (`subscribers`, `services`, and/or `actions` per category); put any per-category scale/unit/offset on the subscriber entry itself
 2. Register a decoder for the `(slot, messageType)` pair in `models/ros/rosDecode.js` (or `ignore(...)` it) — boot validation and `test/test-devices-msg.js` fail on a pair with none
 3. If it takes commands: register the command encoder in `models/commands/commandRegistry.js` (by msgType, or by key for a generic msgType) and the message encoder for that msgType in `models/msgEncode.js` (or `passthrough` it) — the boot check and `test/test-command-registry.js` fail otherwise
-4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosTopics.js`; no per-device code needed
+4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosSubscriptions.js`; no per-device code needed
 
 ### WebSocket Message Format
 
