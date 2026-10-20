@@ -536,21 +536,23 @@ px4_mavros_slow:
       name: '/camera_download_files'
       messageType: 'dji_osdk_ros/DownloadMedia'
 px4_ros2:
+  # PX4 with message versioning: some topics carry a version suffix (vehicle_status_v4).
+  # Check `ros2 topic list` against these names when the PX4 version changes.
   subscribers:
     position_global:
       name: '/fmu/out/vehicle_global_position'
       messageType: 'px4_msgs/msg/VehicleGlobalPosition'
     local_position:
-      name: '/fmu/out/vehicle_local_position'
+      name: '/fmu/out/vehicle_local_position_v1'
       messageType: 'px4_msgs/msg/VehicleLocalPosition'
     battery:
-      name: '/fmu/out/battery_status'
+      name: '/fmu/out/battery_status_v1'
       messageType: 'px4_msgs/msg/BatteryStatus'
     vehicle_status:
-      name: '/fmu/out/vehicle_status'
+      name: '/fmu/out/vehicle_status_v4'
       messageType: 'px4_msgs/msg/VehicleStatus'
     vehicle_command_ack:
-      name: '/fmu/out/vehicle_command_ack'
+      name: '/fmu/out/vehicle_command_ack_v1'
       messageType: 'px4_msgs/msg/VehicleCommandAck'
     gimbal:
       name: '/fmu/out/gimbal_device_attitude_status'
