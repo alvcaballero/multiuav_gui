@@ -30,7 +30,9 @@ client/
     │   ├── deviceMessages/ # DeviceMessagesPage (/device/:id/messages): the raw messages of one slot of a
     │   │                   #   device as they reached the server (before decode), as a JSON tree. Asks for
     │   │                   #   them over the shared WebSocket (raw:subscribe / raw:unsubscribe, see
-    │   │                   #   server/CLAUDE.md); the messages stay out of Redux (up to 10 per second)
+    │   │                   #   server/CLAUDE.md); the messages stay out of Redux (up to 10 per second).
+    │   │                   #   The first one may be the server's stored copy (`cached`, `ageMs`). The
+    │   │                   #   list shows each slot's rate/health from GET /api/devices/:id/telemetry
     │   ├── reports/        # EventsPage, Mission*Report*Page, missionDetailReport/ (its sections)
     │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
     ├── components/         # Feature components, grouped by domain

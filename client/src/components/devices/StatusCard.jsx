@@ -14,6 +14,8 @@ import {
   Menu,
   MenuItem,
   Button,
+  Chip,
+  Tooltip,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import CloseIcon from '@mui/icons-material/Close';
@@ -24,6 +26,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PendingIcon from '@mui/icons-material/Pending';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
+import SensorsOffIcon from '@mui/icons-material/SensorsOff';
 
 import PositionValue from '../../common/components/PositionValue';
 import RemoveDialog from '../../common/components/RemoveDialog';
@@ -149,6 +152,31 @@ const MemoCardHeader = React.memo(
   },
 );
 
+// Slots of the category that stopped (`stale`) or never started (`missing`) arriving,
+// as the server's telemetry watchdog reports them in `device.telemetry`.
+const TELEMETRY_HEALTH_TEXT = { stale: 'stopped', missing: 'never arrived' };
+
+const TelemetryChip = ({ telemetry }) => {
+  const slots = Object.keys(telemetry ?? {});
+  if (slots.length === 0) return null;
+  return (
+    <Tooltip
+      title={slots
+        .map((slot) => `${slot}: ${TELEMETRY_HEALTH_TEXT[telemetry[slot]] ?? telemetry[slot]}`)
+        .join(' · ')}
+    >
+      <Chip
+        icon={<SensorsOffIcon />}
+        color="warning"
+        size="small"
+        variant="outlined"
+        label={`No data: ${slots.join(', ')}`}
+        sx={{ mx: 2, mt: 1, maxWidth: 'calc(100% - 32px)' }}
+      />
+    </Tooltip>
+  );
+};
+
 const serverCommand = async (deviceId, command, attributes) => {
   console.log('send command uavud: ' + deviceId + command);
   try {
@@ -235,6 +263,7 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
               changeMapFollow={changeMapFollow}
               mapFollow={mapFollow}
             />
+            <TelemetryChip telemetry={device.telemetry} />
             {position && (
               <CardContent className={classes.content}>
                 <Table size="small" classes={{ root: classes.table }}>

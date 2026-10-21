@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import JsonTree from './deviceMessages/JsonTree';
 import { useCategorySubscribers } from './deviceMessages/useCategorySubscribers';
 import { useRawMessage } from './deviceMessages/useRawMessage';
+import { useSlotTelemetry } from './deviceMessages/useSlotTelemetry';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -79,6 +80,37 @@ const REJECTED = {
   too_many: 'Too many messages are being inspected from this window.',
 };
 
+const formatAge = (ms) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`);
+
+// What the watchdog says of one slot: its rate, or why there is none.
+const SlotRate = ({ telemetry }) => {
+  const { classes } = useStyles();
+  if (telemetry?.health === 'missing') {
+    return (
+      <Typography variant="caption" color="warning.main" className={classes.mono}>
+        never arrived
+      </Typography>
+    );
+  }
+  if (telemetry?.health === 'stale') {
+    return (
+      <Typography variant="caption" color="warning.main" className={classes.mono}>
+        stopped {formatAge(telemetry.ageMs)} ago
+      </Typography>
+    );
+  }
+  return (
+    <Typography
+      variant="caption"
+      color="textSecondary"
+      className={classes.mono}
+      title={telemetry?.ageMs != null ? `last one ${formatAge(telemetry.ageMs)} ago` : undefined}
+    >
+      {telemetry?.hz != null ? `${telemetry.hz.toFixed(1)} Hz` : '—'}
+    </Typography>
+  );
+};
+
 const Notice = ({ children }) => {
   const { classes } = useStyles();
   return <div className={classes.notice}>{children}</div>;
@@ -111,6 +143,7 @@ const DeviceMessagesPage = () => {
   const subscribers = useCategorySubscribers(device?.category);
   const [slot, setSlot] = useState(null);
   const raw = useRawMessage(id, slot);
+  const telemetry = useSlotTelemetry(id);
 
   // The camera is binary and has its own channel; the server would refuse it anyway.
   const slots = Object.entries(subscribers ?? {}).filter(([name]) => name !== 'camera');
@@ -164,6 +197,7 @@ const DeviceMessagesPage = () => {
                       secondary={[entry.name, entry.messageType].filter(Boolean).join(' · ')}
                       slotProps={{ secondary: { className: classes.mono, noWrap: true } }}
                     />
+                    <SlotRate telemetry={telemetry[name]} />
                   </ListItemButton>
                 ))}
               </List>
@@ -178,7 +212,10 @@ const DeviceMessagesPage = () => {
             </Typography>
             {message && (
               <Typography variant="caption" color="textSecondary" className={classes.mono}>
-                {message.transport} · {dayjs(raw.receivedAt).format('HH:mm:ss.SSS')}
+                {message.transport} ·{' '}
+                {message.cached
+                  ? `stored, received ${formatAge(message.ageMs)} before opening`
+                  : dayjs(raw.receivedAt).format('HH:mm:ss.SSS')}
               </Typography>
             )}
             <div className={classes.spacer} />

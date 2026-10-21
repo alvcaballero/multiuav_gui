@@ -13,6 +13,10 @@ const send = (socket, type, payload) => socket.send(JSON.stringify({ type, paylo
  *
  * `status`: 'idle' (no slot) · 'waiting' (subscribed, nothing yet) · 'streaming' ·
  * 'rejected' (see `reason`: not_inspectable | invalid | too_many).
+ *
+ * Right after subscribing the server sends the newest message it stored for the slot, marked
+ * `message.cached` with its `ageMs`: an event-driven slot would otherwise show nothing until the
+ * next event. The live ones that follow carry no `cached`.
  */
 export const useRawMessage = (deviceId, slot) => {
   // The effect depends on this: the page can open before the socket does (reload), and a
