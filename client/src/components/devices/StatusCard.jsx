@@ -21,7 +21,7 @@ import { makeStyles } from 'tss-react/mui';
 import CloseIcon from '@mui/icons-material/Close';
 import ReplayIcon from '@mui/icons-material/Replay';
 import PublishIcon from '@mui/icons-material/Publish';
-import EditIcon from '@mui/icons-material/Edit';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PendingIcon from '@mui/icons-material/Pending';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
@@ -126,7 +126,7 @@ const MemoCardActions = React.memo(
         <PublishIcon />
       </IconButton>
       <IconButton onClick={onEdit}>
-        <EditIcon />
+        <OpenInNewIcon />
       </IconButton>
       <IconButton color="error" onClick={onRemove}>
         <DeleteIcon />
