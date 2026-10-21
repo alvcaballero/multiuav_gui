@@ -164,7 +164,8 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
   - Definir tipo de respuesta de error uniforme: `{ success: false, error: { code, message } }`
   - Crear middleware de error handler global en `middlewares/errorHandler.js`
 
-- [ ] **Limpiar estado global mutable en ROS** (`models/ros/ros.js:14`)
+- [x] **Limpiar estado global mutable en ROS** (`models/ros/ros.js:14`)
+  - El `var ros` ya no estaba en `ros.js` (el split se hizo) sino en `rosConnection.js`, con 6 variables de módulo. Ahora es la clase `RosConnection`; las funciones exportadas (`getRos`, `rosConnect`…) delegan en una instancia compartida, así `ros.js` no cambió
   - `var ros = null` a nivel módulo dificulta testing y razonamiento
   - Encapsular en clase o módulo con acceso controlado (parte del split de rosModel)
 
