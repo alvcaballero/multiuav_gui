@@ -62,6 +62,96 @@ const PX4_COMMAND_RESULT = [
 
 export const px4CommandResult = (code) => PX4_COMMAND_RESULT[code] ?? COMMAND_RESULT.UNKNOWN;
 
+// ─── MAVLink HEARTBEAT (PX4 and ArduPilot over MAVLink) ────────────────────────
+// PX4's landed_state and command result above ARE the MAVLink enums (MAV_LANDED_STATE,
+// MAV_RESULT): EXTENDED_SYS_STATE and COMMAND_ACK reuse those adapters for both firmwares.
+// The mode is not: custom_mode means something else per autopilot, which the heartbeat itself
+// says (`autopilot`), and for ArduPilot per vehicle type too.
+
+const MAV_MODE_FLAG_SAFETY_ARMED = 128;
+const MAV_AUTOPILOT_ARDUPILOTMEGA = 3;
+const MAV_AUTOPILOT_PX4 = 12;
+// MAV_TYPE of the multirotors ArduCopter flies (quad, coaxial, heli, hexa, octo, tri, dodeca,
+// deca). Plane and Rover number their modes differently: they fall to OTHER.
+const COPTER_TYPES = new Set([2, 3, 4, 13, 14, 15, 29, 35]);
+
+export const mavlinkArmState = (baseMode) =>
+  baseMode == null ? ARM_STATE.UNKNOWN : baseMode & MAV_MODE_FLAG_SAFETY_ARMED ? ARM_STATE.ARMED : ARM_STATE.DISARMED;
+
+// PX4 custom_mode = (sub_mode << 24) | (main_mode << 16). Both enums of
+// src/modules/commander/px4_custom_mode.h count implicitly from 1: check there, not from memory.
+const PX4_MAIN_MODE = {
+  1: FLIGHT_MODE.MANUAL,
+  2: FLIGHT_MODE.ASSISTED, // altitude
+  3: FLIGHT_MODE.ASSISTED, // position
+  5: FLIGHT_MODE.MANUAL, // acro
+  6: FLIGHT_MODE.OFFBOARD,
+  7: FLIGHT_MODE.MANUAL, // stabilized
+  8: FLIGHT_MODE.MANUAL, // rattitude (legacy)
+  9: FLIGHT_MODE.ASSISTED, // simple
+  10: FLIGHT_MODE.EMERGENCY, // termination
+  11: FLIGHT_MODE.ASSISTED, // altitude cruise
+};
+const PX4_MAIN_MODE_AUTO = 4;
+const PX4_AUTO_SUB_MODE = {
+  2: FLIGHT_MODE.TAKEOFF,
+  3: FLIGHT_MODE.HOLD, // loiter
+  4: FLIGHT_MODE.MISSION,
+  5: FLIGHT_MODE.RTL,
+  6: FLIGHT_MODE.LAND,
+  8: FLIGHT_MODE.RTL, // RTGS: return to the ground station
+  9: FLIGHT_MODE.AUTO_OTHER, // follow target
+  10: FLIGHT_MODE.LAND, // precision land
+  11: FLIGHT_MODE.TAKEOFF, // VTOL takeoff
+  12: FLIGHT_MODE.LAND, // descend
+};
+
+export function px4CustomMode(customMode) {
+  const main = (customMode >>> 16) & 0xff;
+  const sub = (customMode >>> 24) & 0xff;
+  if (main === PX4_MAIN_MODE_AUTO) return PX4_AUTO_SUB_MODE[sub] ?? FLIGHT_MODE.OTHER;
+  return PX4_MAIN_MODE[main] ?? FLIGHT_MODE.OTHER;
+}
+
+// ArduCopter custom_mode = its mode number (ArduCopter/mode.h). GUIDED is "the GCS or a companion
+// sends the targets": OFFBOARD, as DJI's NAVI_SDK_CTRL. Takeoff and goto fly in GUIDED.
+const COPTER_MODE = {
+  0: FLIGHT_MODE.MANUAL, // stabilize
+  1: FLIGHT_MODE.MANUAL, // acro
+  2: FLIGHT_MODE.ASSISTED, // alt hold
+  3: FLIGHT_MODE.MISSION, // auto
+  4: FLIGHT_MODE.OFFBOARD, // guided
+  5: FLIGHT_MODE.HOLD, // loiter
+  6: FLIGHT_MODE.RTL,
+  7: FLIGHT_MODE.AUTO_OTHER, // circle
+  9: FLIGHT_MODE.LAND,
+  11: FLIGHT_MODE.ASSISTED, // drift
+  13: FLIGHT_MODE.ASSISTED, // sport
+  14: FLIGHT_MODE.MANUAL, // flip
+  15: FLIGHT_MODE.AUTO_OTHER, // autotune
+  16: FLIGHT_MODE.ASSISTED, // poshold
+  17: FLIGHT_MODE.HOLD, // brake
+  18: FLIGHT_MODE.AUTO_OTHER, // throw
+  19: FLIGHT_MODE.AUTO_OTHER, // avoid ADS-B
+  20: FLIGHT_MODE.OFFBOARD, // guided no GPS
+  21: FLIGHT_MODE.RTL, // smart RTL
+  22: FLIGHT_MODE.ASSISTED, // flow hold
+  23: FLIGHT_MODE.AUTO_OTHER, // follow
+  24: FLIGHT_MODE.AUTO_OTHER, // zigzag
+  26: FLIGHT_MODE.EMERGENCY, // autorotate
+  27: FLIGHT_MODE.RTL, // auto RTL (mission's DO_LAND_START)
+  28: FLIGHT_MODE.MANUAL, // turtle (flip a crashed copter back)
+};
+
+export const ardupilotCopterMode = (customMode) => COPTER_MODE[customMode] ?? FLIGHT_MODE.OTHER;
+
+/** The mode of a MAVLink HEARTBEAT, from its own autopilot and vehicle type. */
+export function mavlinkFlightMode({ autopilot, type, customMode }) {
+  if (autopilot === MAV_AUTOPILOT_PX4) return px4CustomMode(customMode);
+  if (autopilot === MAV_AUTOPILOT_ARDUPILOTMEGA && COPTER_TYPES.has(type)) return ardupilotCopterMode(customMode);
+  return FLIGHT_MODE.OTHER;
+}
+
 // ─── DJI flight_status (std_msgs/UInt8: STOPED=0, ON_GROUND=1, ON_AIR=2) ───────
 // One code carries two axes: STOPED is "motors stopped", which is a disarmed vehicle on the ground.
 

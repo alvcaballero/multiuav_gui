@@ -218,6 +218,13 @@ profiles:
     params: [mode_yaw, mode_trace, mode_landing, mode_gimbal, idle_vel, max_vel]
     waypoint_params: [gimbal, speed]
 
+  # PX4 / ArduPilot over the MAVLink mission protocol (missionEncodeMavlink.js). No max_vel:
+  # a MAVLink mission sets a speed (DO_CHANGE_SPEED), it has no separate ceiling.
+  mavlink:
+    actions: [stay, photo, video_start, video_stop, yaw, gimbal]
+    params: [mode_yaw, mode_trace, mode_landing, idle_vel]
+    waypoint_params: [gimbal, speed]
+
   psdk:
     actions: [stay, photo, video_start, video_stop, yaw, gimbal, focus_camara, zoom_camera]
     params: [mode_yaw, mode_trace, mode_landing, mode_goto_first, idle_vel, max_vel, mode_speed]

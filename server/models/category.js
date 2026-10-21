@@ -195,10 +195,55 @@ export function subscribesCamera(subscribers, camera) {
   return hasWebsocketCamera && Boolean(subscribers?.['camera']?.['messageType']);
 }
 
+// The MESSAGE FORMAT a category speaks — not a protocol. The protocols are four (ros, mqtt,
+// robofleet, mavlink), each with its own gateway and its own software on the robot; the device's
+// `protocol` picks the gateway. What a category declares is the shape of its messages, and a
+// protocol can only carry one shape:
+//   - MAVLINK: `mavlink/<MSG>` messages → only the mavlink protocol.
+//   - ROS_MSG: ROS-shaped messages (sensor_msgs/NavSatFix…) → ros (rosbridge JSON), mqtt (the same
+//     JSON) and robofleet (ROS messages packed in Flatbuffers).
+// DERIVED from the category's messageTypes, nothing declared.
+export const MESSAGE_FORMAT = Object.freeze({ MAVLINK: 'mavlink', ROS_MSG: 'ros_msg' });
+const MAVLINK_PREFIX = 'mavlink/';
+
+export function messageFormatOf(def) {
+  const blocks = ['subscribers', 'publishers', 'services', 'actions'];
+  const speaksMavlink = blocks.some((block) =>
+    Object.values(def?.[block] ?? {}).some((entry) => String(entry?.messageType ?? '').startsWith(MAVLINK_PREFIX))
+  );
+  return speaksMavlink ? MESSAGE_FORMAT.MAVLINK : MESSAGE_FORMAT.ROS_MSG;
+}
+
+/** The message format a protocol carries. */
+export const messageFormatOfProtocol = (protocol) => (protocol === 'mavlink' ? MESSAGE_FORMAT.MAVLINK : MESSAGE_FORMAT.ROS_MSG);
+
 export class categoryModel {
-  static getAll() {
-    logger.debug('categoryModel.getAll');
-    return Object.keys(devices_msg);
+  /** Every category, or only those a device of `protocol` can use. */
+  static getAll({ protocol } = {}) {
+    logger.debug(`categoryModel.getAll protocol=${protocol ?? '*'}`);
+    const names = Object.keys(devices_msg);
+    if (!protocol) return names;
+    return names.filter((name) => messageFormatOf(devices_msg[name]) === messageFormatOfProtocol(protocol));
+  }
+
+  /**
+   * Why a device with this protocol/category/systemId cannot work, or null. A mavlink device on a
+   * ROS category (or the other way) would get no telemetry and no commands, with no error.
+   * @returns {{path: string[], message: string}|null}
+   */
+  static deviceProblem({ protocol = 'ros', category, systemId }) {
+    const def = devices_msg[category];
+    if (!def) return { path: ['category'], message: `unknown category '${category}'` };
+    const format = messageFormatOf(def);
+    if (format !== messageFormatOfProtocol(protocol)) {
+      const speaks = format === MESSAGE_FORMAT.MAVLINK ? 'MAVLink' : 'ROS';
+      return {
+        path: ['category'],
+        message: `category '${category}' speaks ${speaks} messages, which protocol '${protocol}' does not carry`,
+      };
+    }
+    if (protocol === 'mavlink' && systemId == null) return { path: ['systemId'], message: 'a mavlink device needs a systemId' };
+    return null;
   }
   static getCategory(type) {
     logger.debug(`categoryModel.getCategory: ${type}`);

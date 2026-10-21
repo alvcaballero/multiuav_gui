@@ -102,6 +102,8 @@ const migrations = [
   // stored the same way as icon/model3d — a URL pointing at the asset on
   // disk, not the content itself.
   `ALTER TABLE ElementTypes ADD COLUMN definitionYaml TEXT DEFAULT NULL`,
+  // MAVLink devices are addressed by their system id.
+  `ALTER TABLE Devices ADD COLUMN systemId INTEGER DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

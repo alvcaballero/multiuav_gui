@@ -88,6 +88,39 @@ export const CONFIG_SYMBOLS = Object.freeze({
   },
 });
 
+// MAVLink mission protocol (PX4 and ArduPilot, missionEncodeMavlink.js). Not firmware numbers:
+// each symbol says the encoder implements the option, with mission items of its own. Only what
+// was flown in SITL is mapped (MAVLINK_PLAN.md › F4); the rest is filtered out of the UI.
+export const MAVLINK_SYMBOLS = Object.freeze({
+  mode_yaw: {
+    HEADING_MODE_AUTO: 0, // the autopilot faces the next waypoint (its default)
+    HEADING_MODE_WAYPOINT_CUSTOM: 3, // wp.yaw at each waypoint
+  },
+  mode_trace: {
+    FLIGHT_PATH_MODE_STRAIGHT_AND_STOP: 2,
+  },
+  mode_landing: {
+    MISSION_FINISHED_NO_ACTION: 0, // hover at the last waypoint
+    MISSION_FINISHED_GO_HOME: 1, // NAV_RETURN_TO_LAUNCH
+    MISSION_FINISHED_AUTO_LANDING: 2, // NAV_LAND at the last waypoint
+  },
+  actions: {
+    ACTION_STAY: 0,
+    ACTION_PHOTO: 1,
+    ACTION_VIDEO_START: 2,
+    ACTION_VIDEO_STOP: 3,
+    ACTION_YAW: 4,
+    ACTION_GIMBAL: 5,
+  },
+});
+
+// The configure_mission messageType of the mavlink categories. One per dialect, like the
+// commands: what a mission item means differs between PX4 and ArduPilot (home at seq 0).
+export const MAVLINK_MISSION = Object.freeze({
+  PX4: 'mavlink/PX4_MISSION',
+  ARDUPILOT: 'mavlink/ARDUPILOT_MISSION',
+});
+
 // serviceType (the messageType of devices_msg.yaml services.configure_mission) → symbol table.
 // This is how a category's encoder family is resolved.
 const SERVICE_TO_SYMBOLS = {
@@ -95,6 +128,8 @@ const SERVICE_TO_SYMBOLS = {
   'aerialcore_common/ConfigMission': CONFIG_SYMBOLS,
   'multiuav_interfaces/ConfigMission': CONFIG_SYMBOLS,
   'muav_gcs_interfaces/srv/LoadMission': CONFIG_SYMBOLS,
+  [MAVLINK_MISSION.PX4]: MAVLINK_SYMBOLS,
+  [MAVLINK_MISSION.ARDUPILOT]: MAVLINK_SYMBOLS,
 };
 
 // The serviceTypes a configure_mission endpoint can declare: msgEncode.js encodes a mission for
@@ -121,6 +156,8 @@ const SERVICE_TO_PROFILE = {
   'aerialcore_common/ConfigMission': 'v2',
   'multiuav_interfaces/ConfigMission': 'v2',
   'muav_gcs_interfaces/srv/LoadMission': 'v2',
+  [MAVLINK_MISSION.PX4]: 'mavlink',
+  [MAVLINK_MISSION.ARDUPILOT]: 'mavlink',
 };
 
 // Categories whose profile differs from what their serviceType alone implies.

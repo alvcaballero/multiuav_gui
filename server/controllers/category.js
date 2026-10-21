@@ -13,7 +13,8 @@ function rejectLegacyTypeFields(req, res) {
 export class categoryController {
   static async getAll(req, res) {
     logger.debug('Getting all categories');
-    const response = await categoryModel.getAll();
+    // ?protocol=mavlink → only the categories a device of that protocol can use.
+    const response = await categoryModel.getAll({ protocol: req.query.protocol });
     res.json(response);
   }
   static async getCategory(req, res) {

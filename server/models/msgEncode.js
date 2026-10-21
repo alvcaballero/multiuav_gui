@@ -19,6 +19,8 @@
 
 import { MissionToRos, MissionToRos2 } from './mission/missionEncodeConfig.js';
 import { MissionToPsdkV2 } from './mission/missionEncodePsdk.js';
+import { encodeMavlinkMission } from './mission/missionEncodeMavlink.js';
+import { MAVLINK_MISSION } from './mission/missionSymbols.js';
 
 const encoders = new Map(); // msgType → (msg) => message
 
@@ -74,6 +76,7 @@ function assertUtcIsoDate(value, field) {
 register(['aerialcore_common/ConfigMission', 'multiuav_interfaces/ConfigMission'], MissionToRos);
 register('muav_gcs_interfaces/srv/LoadMission', MissionToRos2);
 register('psdk_interfaces/srv/InitWaypointV2Setting', MissionToPsdkV2);
+for (const dialect of Object.values(MAVLINK_MISSION)) register(dialect, (task) => encodeMavlinkMission(task, dialect));
 
 // ─── services with an empty request ───────────────────────────────────────────
 register(
@@ -132,6 +135,8 @@ register('dji_osdk_ros/DownloadMedia', (msg) => ({
 // ─── passthrough: what the command encoder builds already IS the message ──────
 passthrough([
   'px4_msgs/msg/VehicleCommand', // vehicleCommand.js builds the whole PX4 message
+  'mavlink/PX4_COMMAND', // mavlinkCommand.js builds the MAV_CMD descriptor; MavlinkServer packs it
+  'mavlink/ARDUPILOT_COMMAND',
   'std_srvs/SetBool', // CommandMission → { data: true }
   'std_srvs/srv/SetBool',
   'std_srvs/Bool', // no request → {}

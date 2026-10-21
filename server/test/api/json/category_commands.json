@@ -138,5 +138,38 @@
   ],
   "simulationFB": [
     "SaveHome"
+  ],
+  "px4_mavlink": [
+    "Arm",
+    "CommandMission",
+    "Disarm",
+    "Gimbal",
+    "Hold",
+    "KillMotors",
+    "Land",
+    "LoadMission",
+    "MoveRelative",
+    "PauseMission",
+    "ResumeMission",
+    "ReturnHome",
+    "SaveHome",
+    "StopMission",
+    "Takeoff"
+  ],
+  "ardupilot_mavlink": [
+    "Arm",
+    "CommandMission",
+    "Disarm",
+    "Hold",
+    "KillMotors",
+    "Land",
+    "LoadMission",
+    "MoveRelative",
+    "PauseMission",
+    "ResumeMission",
+    "ReturnHome",
+    "SaveHome",
+    "StopMission",
+    "Takeoff"
   ]
 }

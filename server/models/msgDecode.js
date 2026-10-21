@@ -1,6 +1,17 @@
 import { getDatetime, round } from '../common/utils.js';
 import { getVehicleCommand } from '../config/status.js';
-import { px4ArmState, px4FlightMode, px4CommandResult, djiFlightStatus, djiFlightMode, catecFlightState, landedStateOf } from './vehicleStates.js';
+import {
+  px4ArmState,
+  px4FlightMode,
+  px4FlightPhase,
+  px4CommandResult,
+  djiFlightStatus,
+  djiFlightMode,
+  catecFlightState,
+  landedStateOf,
+  mavlinkArmState,
+  mavlinkFlightMode,
+} from './vehicleStates.js';
 
 // ROS message -> internal telemetry patch (`TelemetryPatch`, models/positions/positionReducers.js).
 //
@@ -204,17 +215,24 @@ const GIMBAL_DEVICE_FLAGS_YAW_LOCK = 16;
 const GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME = 64;
 const wrap180 = (deg) => ((((deg + 180) % 360) + 360) % 360) - 180;
 
-register('gimbal', 'px4_msgs/msg/GimbalDeviceAttitudeStatus', ({ msg, deviceId }) => {
-  const [w, x, y, z] = msg.q;
+// The same attitude arrives as px4_msgs (uORB, over ROS 2) and as MAVLink GIMBAL_DEVICE_ATTITUDE_STATUS;
+// only the field holding the flags is named differently.
+function gimbalFromAttitudeStatus(q, flags, deltaYaw) {
+  const [w, x, y, z] = q;
   const roll = toDeg(Math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y)));
   const pitch = toDeg(Math.asin(Math.max(-1, Math.min(1, 2 * (w * y - z * x)))));
   const yaw = toDeg(Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)));
-  const earthYaw = msg.device_flags & (GIMBAL_DEVICE_FLAGS_YAW_LOCK | GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME);
+  const earthYaw = flags & (GIMBAL_DEVICE_FLAGS_YAW_LOCK | GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME);
   let absoluteYaw;
   if (earthYaw) absoluteYaw = wrap180(yaw);
-  else if (Number.isFinite(msg.delta_yaw)) absoluteYaw = wrap180(yaw + toDeg(msg.delta_yaw));
-  return { deviceId, gimbal: { x: pitch, y: roll, z: absoluteYaw } };
-});
+  else if (Number.isFinite(deltaYaw)) absoluteYaw = wrap180(yaw + toDeg(deltaYaw));
+  return { x: pitch, y: roll, z: absoluteYaw };
+}
+
+register('gimbal', 'px4_msgs/msg/GimbalDeviceAttitudeStatus', ({ msg, deviceId }) => ({
+  deviceId,
+  gimbal: gimbalFromAttitudeStatus(msg.q, msg.device_flags, msg.delta_yaw),
+}));
 
 register(
   'obstacle_info',
@@ -276,6 +294,77 @@ register('state_machine', 'muav_state_machine/UAVState', ({ msg, deviceId }) => 
   uav_state: msg.uav_state,
   // A message without landed_state says nothing about the phase: it must not wipe the cached one.
   ...(msg.landed_state == null ? {} : { ...landedStateOf(msg.airframe_type, msg.landed_state), flightPhaseRaw: msg.landed_state }),
+}));
+
+// ─── MAVLink (PX4 and ArduPilot) ───────────────────────────────────────────────
+// A MAVLink message arrives as models/mavlink/mavlinkMessages.js `toPlain` builds it: the spec
+// field names (lat, relative_alt, custom_mode) and the integers as on the wire (1e7 degrees, mm,
+// cm/s, centidegrees). The category names it `mavlink/<MESSAGE_NAME>`. What differs between PX4
+// and ArduPilot travels in the message (HEARTBEAT.autopilot), never in the category name.
+
+const mav = (name) => `mavlink/${name}`;
+const MAV_STATE_CRITICAL = 5;
+const MAV_STATE_EMERGENCY = 6;
+const MAV_HDG_UNKNOWN = 65535;
+const MAV_BATTERY_UNKNOWN = -1;
+
+register('vehicle_status', mav('HEARTBEAT'), ({ msg, deviceId }) => ({
+  deviceId,
+  armState: mavlinkArmState(msg.base_mode),
+  flightMode: mavlinkFlightMode({ autopilot: msg.autopilot, type: msg.type, customMode: msg.custom_mode }),
+  flightModeRaw: msg.custom_mode,
+  failsafe: msg.system_status === MAV_STATE_CRITICAL || msg.system_status === MAV_STATE_EMERGENCY,
+}));
+
+register('position_global', mav('GLOBAL_POSITION_INT'), ({ msg, deviceId }) => {
+  // No fix yet: ArduPilot sends 0/0 until the GPS converges, which would draw the vehicle in the
+  // Gulf of Guinea. Say nothing instead.
+  if (msg.lat === 0 && msg.lon === 0) return null;
+  return {
+    id: 0,
+    deviceId,
+    latitude: msg.lat / 1e7,
+    longitude: msg.lon / 1e7,
+    altitude: round(msg.alt / 1000, 1), // AMSL
+    ...(msg.hdg === MAV_HDG_UNKNOWN ? {} : { course: msg.hdg / 100 }),
+    speed: round(norm3({ x: msg.vx, y: msg.vy, z: msg.vz }) / 100, 1),
+    deviceTime: getDatetime(),
+  };
+});
+
+// MAV_LANDED_STATE: the very enum PX4's landed_state uses, for both firmwares.
+register('flight_status', mav('EXTENDED_SYS_STATE'), ({ msg, deviceId }) => ({
+  deviceId,
+  flightPhase: px4FlightPhase(msg.landed_state),
+  flightPhaseRaw: msg.landed_state,
+}));
+
+// Only the first battery: a second pack would overwrite the level with its own.
+register('battery', mav('BATTERY_STATUS'), ({ msg, deviceId }) =>
+  msg.id !== 0 || msg.battery_remaining === MAV_BATTERY_UNKNOWN ? null : { deviceId, batteryLevel: msg.battery_remaining }
+);
+
+register('battery', mav('SYS_STATUS'), ({ msg, deviceId }) =>
+  msg.battery_remaining === MAV_BATTERY_UNKNOWN ? null : { deviceId, batteryLevel: msg.battery_remaining }
+);
+
+// MAV_RESULT: the enum PX4's VehicleCommandAck uses.
+register('vehicle_command_ack', mav('COMMAND_ACK'), ({ msg, deviceId }) => ({
+  deviceId,
+  commandAck: getVehicleCommand(msg.command),
+  commandAckRaw: msg.command,
+  resultCmdAck: px4CommandResult(msg.result),
+  resultCmdAckRaw: msg.result,
+}));
+
+register('gimbal', mav('GIMBAL_DEVICE_ATTITUDE_STATUS'), ({ msg, deviceId }) => ({
+  deviceId,
+  gimbal: gimbalFromAttitudeStatus(msg.q, msg.flags, msg.delta_yaw),
+}));
+
+register('home_position', mav('HOME_POSITION'), ({ msg, deviceId }) => ({
+  deviceId,
+  home: [msg.latitude / 1e7, msg.longitude / 1e7, round(msg.altitude / 1000, 1)],
 }));
 
 // ─── slots whose payload does not depend on the message type ───────────────────

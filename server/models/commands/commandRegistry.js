@@ -14,6 +14,7 @@ import { createCommandRegistry, sequence } from './commandEncoders.js';
 import { CommandType } from '../../config/commandTypes.js';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { buildVehicleCommand, buildGimbalTakeControl } from './vehicleCommand.js';
+import { buildMavlinkCommand, MAVLINK_COMMAND_TYPES } from './mavlinkCommand.js';
 import { normalizeMission } from '../mission/taskGraph.js';
 import { MISSION_SERVICE_TYPES } from '../mission/missionSymbols.js';
 
@@ -76,6 +77,19 @@ function gimbalRequest({ attributes = {}, position }, reset = false) {
   };
 }
 register(CommandType.GIMBAL, { msgType: GIMBAL_MSG_TYPES }, (ctx) => gimbalRequest(ctx));
+
+// ─── flight: MAVLink (PX4 / ArduPilot) ────────────────────────────────────────
+// The endpoint's msgType is the dialect (mavlinkCommand.js). Gimbal fills the missing axis from
+// the telemetry, as the other gimbals do.
+for (const [dialect, types] of Object.entries(MAVLINK_COMMAND_TYPES)) {
+  for (const [type, key] of Object.entries(types)) {
+    register(type, { key, msgType: dialect }, (ctx) => {
+      const attributes = type === CommandType.GIMBAL ? gimbalRequest(ctx) : ctx.attributes;
+      const content = buildMavlinkCommand({ dialect, type, attributes, position: ctx.position });
+      return Array.isArray(content) ? sequence(content) : content;
+    });
+  }
+}
 register(CommandType.GIMBAL_PITCH, { msgType: GIMBAL_MSG_TYPES }, (ctx) => gimbalRequest(ctx));
 register(CommandType.RESET_GIMBAL, { msgType: GIMBAL_MSG_TYPES }, (ctx) => gimbalRequest(ctx, true));
 

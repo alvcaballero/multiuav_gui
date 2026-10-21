@@ -21,6 +21,11 @@ const DeviceSchema = {
   protocol: {
     type: DataTypes.STRING,
   },
+  // MAVLink system id (protocol 'mavlink' only).
+  systemId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   model: {
     type: DataTypes.STRING,
   },

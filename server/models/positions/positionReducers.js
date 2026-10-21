@@ -23,6 +23,7 @@ import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
  * @property {{x:number,y:number,z?:number}} [gimbal] - pitch, roll, yaw (deg, absolute); no z keeps the cached yaw
  * @property {{down?:number,front?:number,right?:number,back?:number,left?:number,up?:number}} [obstacle_info]
  * @property {boolean} [setHome] - snapshot the current lat/lon/alt as home
+ * @property {number[]} [home] - [lat, lon, alt] the vehicle reports as its home (MAVLink HOME_POSITION)
  * @property {{x:number,y:number,z:number}} [localposition] - local ENU, meters
  * @property {string} [armState] - ARM_STATE (config/status.js), already in the GCS vocabulary
  * @property {string} [flightMode] - FLIGHT_MODE, how it is being flown
@@ -118,6 +119,7 @@ export const REDUCERS = [
     when: (p) => has(p, 'setHome'),
     apply: (pos) => (pos.attributes.home = [pos.latitude, pos.longitude, pos.altitude]),
   },
+  { when: (p) => has(p, 'home'), apply: (pos, p) => (pos.attributes.home = [...p.home]) },
   {
     when: (p) => has(p, 'localposition'),
     apply: (pos, p) => {

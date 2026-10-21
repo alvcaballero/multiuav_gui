@@ -55,6 +55,9 @@ export const SubscriberKey = Object.freeze({
   STATE_MACHINE: 'state_machine',
   HEIGHT_ABOVE_TAKEOFF: 'height_above_takeoff',
   VO_POSITION: 'vo_position',
+  // The home the autopilot itself reports (MAVLink HOME_POSITION). PX4 and ArduPilot move it on
+  // every arming, so a snapshot taken by the GCS (SaveHome) goes stale.
+  HOME_POSITION: 'home_position',
 });
 
 // subscriberKey → { decoded }. Indexado por SubscriberKey (el enum es la fuente de
@@ -83,6 +86,7 @@ export const SUBSCRIBER_CATALOG = {
   [SubscriberKey.HUMIDITY]: { decoded: true },
   [SubscriberKey.THREAT]: { decoded: true },
   [SubscriberKey.STATE_MACHINE]: { decoded: true },
+  [SubscriberKey.HOME_POSITION]: { decoded: true },
   // Válidos/suscribibles pero sin decodificador (deshabilitados o de ciclo action).
   [SubscriberKey.HEIGHT_ABOVE_TAKEOFF]: { decoded: false }, // ignore() en msgDecode.js
   [SubscriberKey.VO_POSITION]: { decoded: false }, // ignore() en msgDecode.js

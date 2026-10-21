@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const DEVICE_STATUS = z.enum(['online', 'offline']);
-export const DEVICE_PROTOCOL = z.enum(['ros', 'robofleet', 'mqtt']);
+export const DEVICE_PROTOCOL = z.enum(['ros', 'robofleet', 'mqtt', 'mavlink']);
 
 export const CameraSchema = z.object({
   type: z.enum(['WebRTC', 'RTSP', 'Websocket']),
@@ -26,6 +26,9 @@ export const DeviceSchema = z.object({
   category: z.string(),
   ip: z.string().ip(),
   protocol: DEVICE_PROTOCOL.default('ros'),
+  // MAVLink system id of the vehicle (MAV_SYS_ID on PX4, MAV_SYSID on ArduPilot >= 4.7). 0 is
+  // broadcast and 255 is the GCS itself, so neither can name a vehicle.
+  systemId: z.coerce.number().int().min(1).max(254).nullable().optional(),
   camera: z.array(CameraSchema).optional(),
   files: z.array(FileAccessSchema).optional(),
   lastUpdate: z.coerce.date().optional(),
@@ -41,6 +44,7 @@ export const DevicePublicSchema = DeviceSchema.pick({
   camera: true,
   status: true,
   protocol: true,
+  systemId: true,
   lastUpdate: true,
 });
 
@@ -53,8 +57,16 @@ export const DevicePrivateSchema = DeviceSchema.pick({
   files: true,
 });
 
+// The vehicle is addressed only by its system id: a MAVLink device without one could never be
+// reached, and its telemetry would never be matched to it.
+const requireSystemIdForMavlink = (device, ctx) => {
+  if (device.protocol === 'mavlink' && device.systemId == null) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['systemId'], message: 'a mavlink device needs a systemId' });
+  }
+};
+
 export function validateDevice(input) {
-  return DeviceSchema.safeParse(input);
+  return DeviceSchema.superRefine(requireSystemIdForMavlink).safeParse(input);
 }
 
 export function validatePartialDevice(input) {

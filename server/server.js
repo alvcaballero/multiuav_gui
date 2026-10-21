@@ -1,4 +1,17 @@
-import { port, RosEnable, FbEnable, MqttEnable, MqttUrl, LLMProvider, LLM, LLMApiKeys, LLMBaseURLs, LLMModel } from './config/config.js';
+import {
+  port,
+  RosEnable,
+  FbEnable,
+  MqttEnable,
+  MqttUrl,
+  MavlinkEnable,
+  MavlinkLinks,
+  LLMProvider,
+  LLM,
+  LLMApiKeys,
+  LLMBaseURLs,
+  LLMModel,
+} from './config/config.js';
 
 import express, { json } from 'express';
 import { createServer } from 'http';
@@ -31,6 +44,7 @@ import { taskScheduler } from './models/mission/taskScheduler.js';
 // comunications with devices
 import { initFlatbufferServer } from './models/flatbuffer/index.js';
 import { initMqttServer } from './models/mqtt/index.js';
+import { initMavlinkServer } from './models/mavlink/index.js';
 import { rosModel } from './models/ros/ros.js'; // ros model
 
 // comunication with devices
@@ -141,6 +155,16 @@ if (MqttEnable) {
   initMqttServer(MqttUrl);
 } else {
   logger.warn('MQTT communication disabled');
+}
+if (MavlinkEnable) {
+  try {
+    initMavlinkServer(MavlinkLinks);
+  } catch (err) {
+    // A bad MAVLINK_LINKS must not take the whole GCS down.
+    logger.error(`MAVLink disabled: ${err.message}`);
+  }
+} else {
+  logger.warn('MAVLink communication disabled');
 }
 
 // Initialize the LLM provider if enabled.

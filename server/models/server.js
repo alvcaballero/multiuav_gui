@@ -54,12 +54,16 @@ export class serverModel {
       eveEnabled: EveEnable,
     };
   }
+  // The four device protocols, ALWAYS, each with whether this server runs it: every one needs its
+  // own software on the robot and its own gateway here. The device form shows the disabled ones
+  // greyed out, so an operator sees they exist but cannot create a device nothing would listen to.
   static Protocol() {
-    let protocol = [];
-    ServerSetting.RosEnable ? protocol.push('ros') : null;
-    ServerSetting.FbEnable ? protocol.push('robofleet') : null;
-    ServerSetting.MqttEnable ? protocol.push('mqtt') : null;
-    return protocol;
+    return [
+      { name: 'ros', enabled: ServerSetting.RosEnable },
+      { name: 'mqtt', enabled: ServerSetting.MqttEnable },
+      { name: 'robofleet', enabled: ServerSetting.FbEnable },
+      { name: 'mavlink', enabled: ServerSetting.MavlinkEnable },
+    ];
   }
 
   static checkFileRoute(path) {

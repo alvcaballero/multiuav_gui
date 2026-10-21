@@ -1,5 +1,6 @@
 import { validateDevice, validatePartialDevice } from '../schemas/zod/devices.js';
 import { DevicesModel } from '../models/devices.js';
+import { categoryModel } from '../models/category.js';
 import { logger } from '../common/logger.js';
 import { telemetryWatchdog } from '../models/inspect/telemetryWatchdog.js';
 
@@ -28,6 +29,9 @@ class devicesController {
     const device = await DevicesModel.getByName(name);
     return device;
   };
+  static getBySystemId = async (systemId) => {
+    return await DevicesModel.getBySystemId(systemId);
+  };
 
   static getDevicesWithPositions = async (req, res) => {
     const summary = await DevicesModel.getDevicesWithPositions();
@@ -55,6 +59,10 @@ class devicesController {
     if (!result.success) {
       return res.status(400).json({ error: JSON.parse(result.error.message) });
     }
+    // zod checks the shape; whether the category can work with the protocol needs the category
+    // config, and schemas do not import models.
+    const problem = categoryModel.deviceProblem(result.data);
+    if (problem) return res.status(400).json({ error: [problem] });
 
     const newDevice = await DevicesModel.create(result.data);
     res.status(201).json(newDevice);
@@ -83,6 +91,17 @@ class devicesController {
     }
     const { id } = req.params;
     result.data.id = id;
+
+    // A partial edit is checked on the device it LEAVES: switching only the protocol to mavlink,
+    // on a device with no systemId, must fail too.
+    const current = await DevicesModel.getById({ id });
+    if (!current) return res.status(404).json({ message: 'device not found' });
+    const problem = categoryModel.deviceProblem({
+      protocol: result.data.protocol ?? current.protocol ?? 'ros',
+      category: result.data.category ?? current.category,
+      systemId: result.data.systemId !== undefined ? result.data.systemId : current.systemId,
+    });
+    if (problem) return res.status(400).json({ error: [problem] });
 
     const updatedDevice = await DevicesModel.editDevice(result.data);
 
