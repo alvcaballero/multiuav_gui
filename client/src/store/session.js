@@ -6,6 +6,8 @@ const { reducer, actions } = createSlice({
   initialState: {
     server: null,
     serverROS: null,
+    // MQTT broker connection: null = MQTT disabled on the server (no chip), else true/false.
+    serverMQTT: null,
     user: {},
     socket: null,
     includeLogs: false,
@@ -37,6 +39,9 @@ const { reducer, actions } = createSlice({
     updateServerROS(state, action) {
       //state.server.rosState = action.payload;
       state.serverROS = action.payload;
+    },
+    updateServerMQTT(state, action) {
+      state.serverMQTT = action.payload;
     },
     updateUser(state, action) {
       state.user = action.payload;

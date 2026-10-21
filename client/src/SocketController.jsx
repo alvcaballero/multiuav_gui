@@ -93,6 +93,11 @@ const SocketController = () => {
       if (data.server) {
         const isRosConnected = data.server.rosState === 'connect';
         dispatch(sessionActions.updateServerROS(isRosConnected));
+        // Sent only when MQTT is enabled on the server: no field, no chip.
+        const { mqttState } = data.server;
+        dispatch(
+          sessionActions.updateServerMQTT(mqttState == null ? null : mqttState === 'connect'),
+        );
       }
       if (data.events) {
         handleEvents(data.events);
