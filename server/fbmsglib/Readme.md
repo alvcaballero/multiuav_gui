@@ -22,8 +22,14 @@ docker run --rm \
   -u $(id -u):$(id -g) \
   -v $(pwd):/app -w /app \
   sptrakesh/flatbuffers:latest \
-  /opt/local/bin/flatc --ts --gen-all --gen-onefile -o ./src ./messages/schema_main.fbs
+  /opt/local/bin/flatc --ts --gen-all --gen-object-api -o ./src ./messages/schema_main.fbs
 ```
+
+`--gen-object-api` adds a `<Name>T` class per table with `unpack()` / `pack()` (a buffer →
+plain object, used by the raw message inspector). With flatc 25.x `--gen-onefile` no longer
+produces a single file, so it is not passed: the output is `src/schema_main.ts` + `src/fb/`,
+which tsup bundles into the one `dist/schema_main.cjs`. `src/` is not tracked; `dist/` is.
+The generated code works with the `flatbuffers` runtime of the server (24.12.x).
 
 ## Compile src → dist
 
