@@ -1,6 +1,7 @@
 //https://github.com/lukas8219/nodejs-design-patterns/blob/4a1d3cd4333a290e9461880ff2b060add40a1b45/13-messaging-and-integration-patterns/utils/websocket-manager.mjs#L4
 //https://www.npmjs.com/package/ws#sending-binary-data  find "ping"
 
+import { randomUUID } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import { logHelpers } from './common/logger.js';
 import { WS_PING_INTERVAL_MS } from './config/config.js';
@@ -16,6 +17,10 @@ export class WebsocketManager {
     // Handler externo para mensajes entrantes (lo setea el router vía onMessage).
     // El transporte NO parsea ni conoce tipos de negocio: solo delega el crudo.
     this.messageHandler = null;
+
+    // Clientes efímeros: viven mientras dure la conexión. `id` → WebsocketClient;
+    // se alta en `connection` y se baja en `close`.
+    this.clients = new Map();
 
     this.ws.on('connection', (client) => this._onConnection(client));
 
@@ -50,6 +55,19 @@ export class WebsocketManager {
     });
   }
 
+  /** Wrapper del cliente conectado con ese id, o undefined si ya se desconectó. */
+  getClient(id) {
+    return this.clients.get(id);
+  }
+
+  /** Unicast por id. Devuelve false si el cliente ya no existe o no está abierto. */
+  sendTo(id, message) {
+    const client = this.clients.get(id);
+    if (!client || client.client.readyState !== WebSocket.OPEN) return false;
+    client.notify(message);
+    return true;
+  }
+
   disconnect() {
     this._clearIntervals();
     this.ws.close();
@@ -65,18 +83,23 @@ export class WebsocketManager {
 
   _onConnection(rawClient) {
     rawClient.isAlive = true;
-    logHelpers.ws.connect(this.ws.clients.size);
 
-    const client = new WebsocketClient(this, { client: rawClient });
+    const client = new WebsocketClient(this, { client: rawClient, id: randomUUID() });
+    this.clients.set(client.id, client);
+    logHelpers.ws.connect(client.id, { total: this.clients.size });
 
     rawClient.on('error', (error) => {
-      logHelpers.ws.error('clientId', error);
+      logHelpers.ws.error(client.id, error);
     });
 
     rawClient.on('pong', heartbeat);
 
     rawClient.on('close', () => {
-      logHelpers.ws.disconnect('Client disconnected');
+      this.clients.delete(client.id);
+      logHelpers.ws.disconnect(client.id, { total: this.clients.size });
+      if (this.onClientClose) {
+        this.onClientClose(client.id);
+      }
     });
 
     // Delega el mensaje crudo al router externo; el transporte no lo interpreta.
@@ -93,7 +116,8 @@ export class WebsocketManager {
 }
 
 export class WebsocketClient {
-  constructor(wsManager, { client }) {
+  constructor(wsManager, { client, id }) {
+    this.id = id;
     this.client = client;
     this.wsManager = wsManager;
   }

@@ -146,6 +146,11 @@ export const EVENTS = Object.freeze({
   CHAT_TOOL_APPROVAL_REQUESTED: 'chat:tool_approval_requested',
   CHAT_TOOL_APPROVAL_RESOLVED: 'chat:tool_approval_resolved',
   CHAT_TOOL_APPROVAL_RESPONSE: 'chat:tool_approval_response',
+  // Inspector de mensajes raw (ver models/inspect/rawTap.js)
+  RAW_SUBSCRIBE: 'raw:subscribe', // WS inbound: a client asks to see a device slot's raw messages
+  RAW_UNSUBSCRIBE: 'raw:unsubscribe', // WS inbound: a client stops
+  RAW_MESSAGE: 'raw:message', // Per-client: a raw message for ONE subscribed client (targeted outbound)
+  RAW_STATUS: 'raw:status', // Per-client: the answer to a raw:subscribe (accepted, or why not)
   // Sistema
   SYSTEM_ERROR: 'system:error',
   SYSTEM_SHUTDOWN: 'system:shutdown',

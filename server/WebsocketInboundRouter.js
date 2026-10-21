@@ -1,6 +1,7 @@
 import { eventBus, EVENTS } from './common/eventBus.js';
 import { logger, logHelpers } from './common/logger.js';
 import { chatController } from './controllers/chat.js';
+import { rawTap } from './models/inspect/rawTap.js';
 
 /**
  * Router de mensajes ENTRANTES del cliente WebSocket (EIP Message Router).
@@ -54,6 +55,22 @@ const INBOUND_MAP = {
       responses: payload.responses,
       responderPrincipalId: payload.responderPrincipalId ?? null,
     });
+  },
+
+  // Inspector de mensajes raw: la suscripción es del cliente (`client.id`) y se
+  // borra sola al cerrar el socket (server.js → onClientClose). Los mensajes salen
+  // por RAW_MESSAGE → subscriber, dirigidos solo a este cliente, y la respuesta al
+  // subscribe (aceptado o por qué no) por RAW_STATUS, igual que cualquier salida.
+  [EVENTS.RAW_SUBSCRIBE]: async (payload, client) => {
+    const deviceId = payload?.deviceId;
+    const slot = payload?.slot;
+    const result = rawTap.subscribe(client.id, deviceId, slot);
+    if (!result.ok) logger.warn('WS inbound: raw subscribe rejected', { clientId: client.id, payload, ...result });
+    eventBus.emitSafe(EVENTS.RAW_STATUS, { clientId: client.id, deviceId, slot, ...result });
+  },
+
+  [EVENTS.RAW_UNSUBSCRIBE]: async (payload, client) => {
+    rawTap.unsubscribe(client.id, payload?.deviceId, payload?.slot);
   },
 };
 

@@ -43,6 +43,12 @@ export class websocketController {
     }
   }
 
+  /** Unicast por id de conexión. false si ese cliente ya no está conectado. */
+  sendToClient(clientId, msg) {
+    const serialized = typeof msg === 'string' ? msg : JSON.stringify(msg);
+    return this.wsManager.sendTo(clientId, serialized);
+  }
+
   sendBinary(buffer, client = null) {
     if (client) {
       client.send(buffer);

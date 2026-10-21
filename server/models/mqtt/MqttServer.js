@@ -4,6 +4,7 @@ import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
 import { decodeMsg } from '../msgDecode.js';
+import { rawTap } from '../inspect/rawTap.js';
 import { logger } from '../../common/logger.js';
 import { SUBSCRIPTIONS, parseTopic, requestTopic } from './mqttTopics.js';
 
@@ -144,6 +145,7 @@ export class MqttServer {
       return;
     }
 
+    rawTap.publish({ deviceId: device.id, slot, transport: 'mqtt', raw: msg });
     const decoded = decodeMsg({
       msg,
       deviceId: device.id,

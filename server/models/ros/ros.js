@@ -4,6 +4,7 @@ import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { decodeMsg } from '../msgDecode.js';
+import { rawTap } from '../inspect/rawTap.js';
 import { logger, rosLogger, logHelpers } from '../../common/logger.js';
 import {
   getRos,
@@ -124,6 +125,7 @@ export class rosModel {
     // The closure captures deviceId + the topic's own config entry (`params`: scale,
     // unit, ...) so the transport never sees them and the decoder never sees the category.
     const makeOnMessage = (effect, params) => (args) => {
+      rawTap.publish({ deviceId: id, slot: args.slot, transport: 'ros', raw: args.msg });
       const decoded = decodeMsg({
         msg: args.msg,
         deviceId: id,

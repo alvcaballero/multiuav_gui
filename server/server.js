@@ -12,6 +12,7 @@ import { getErrorPageHTML } from './views/errorPage.js';
 //ws - for client
 import { WebsocketManager } from './WebsocketManager.js';
 import { WebsocketInboundRouter } from './WebsocketInboundRouter.js';
+import { rawTap } from './models/inspect/rawTap.js';
 import { initWebsocketController } from './controllers/websocket.js';
 import { setupRoutes } from './routes/index.js';
 
@@ -79,6 +80,8 @@ const websocketController = initWebsocketController(wsManager);
 // Router de mensajes entrantes: el transporte delega el crudo, el router enruta por `type`
 const wsInboundRouter = new WebsocketInboundRouter();
 wsManager.onMessage((client, raw) => wsInboundRouter.handle(client, raw));
+// Las suscripciones del inspector raw son efímeras: mueren con la conexión
+wsManager.onClientClose = (clientId) => rawTap.removeClient(clientId);
 
 // Initialize EventBus subscribers
 const wsSubscriber = new WebSocketSubscriber(websocketController);

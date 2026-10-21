@@ -2,11 +2,27 @@ import { eventBus, EVENTS } from '../common/eventBus.js';
 import { logger } from '../common/logger.js';
 
 /**
+ * Marca un payload como dirigido a UN cliente (por su id de conexión) en vez de
+ * broadcast. Una clase y no un campo `to` suelto en el payload: un payload normal
+ * nunca puede confundirse con un destino. Ver `toClient`.
+ */
+class Targeted {
+  constructor(clientId, payload) {
+    this.clientId = clientId;
+    this.payload = payload;
+  }
+}
+
+/** Úsalo en una transformación de OUTBOUND_MAP para enviar solo a ese cliente. */
+const toClient = (clientId, payload) => new Targeted(clientId, payload);
+
+/**
  * Mapa declarativo evento → payload de salida.
  *
  * Cada entrada es una transformación pura `(data) => payload` que el dispatcher
  * genérico (`forward`) envía por WebSocket. Agregar un broadcast nuevo es una
- * línea acá, no un método más.
+ * línea acá, no un método más. Si devuelve `toClient(clientId, payload)`, va solo
+ * a ese cliente en lugar de a todos.
  *
  * El subscriber es 100% outbound: solo mapea eventos → mensajes WS. Los comandos
  * entrantes los maneja el WebsocketInboundRouter, no este archivo.
@@ -26,6 +42,10 @@ const OUTBOUND_MAP = {
   [EVENTS.POSITION_UPDATED]: (positions) => (positions && Object.keys(positions).length ? { positions } : null),
   [EVENTS.DEVICE_UPDATED]: (devices) => ({ devices: Object.values(devices) }),
   [EVENTS.SERVER_UPDATED]: (serverState) => ({ server: serverState }),
+
+  // Inspector raw: solo al cliente que lo pidió (ver models/inspect/rawTap.js)
+  [EVENTS.RAW_MESSAGE]: ({ clientId, ...raw }) => toClient(clientId, { raw }),
+  [EVENTS.RAW_STATUS]: ({ clientId, ...status }) => toClient(clientId, { rawStatus: status }),
 
   // Sistema
   [EVENTS.EVENT_CREATED]: (event) => ({ events: [event] }),
@@ -99,6 +119,11 @@ export class WebSocketSubscriber {
 
     const payload = transform(data);
     if (payload == null) return;
+
+    if (payload instanceof Targeted) {
+      this.wsController.sendToClient(payload.clientId, payload.payload);
+      return;
+    }
 
     this.wsController.sendMessage(payload);
   }
