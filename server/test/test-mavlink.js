@@ -853,6 +853,15 @@ describe('missionEncodeMavlink', () => {
     assert.deepEqual(ids('mode_landing'), [0, 1, 2]);
   });
 
+  test('PX4 restarts at item 0: only item 0 is flagged current; ArduPilot sends none', () => {
+    // Without a current item PX4 resumes at the seq the previous mission ended on.
+    const px4 = encodeMavlinkMission(task('px4_mavlink'), MAVLINK_MISSION.PX4);
+    const flags = px4.items.map((item, seq) => plainOf(missionItemInt(1, seq, item), 255, 190).current);
+    assert.deepEqual(flags, flags.map((_, i) => (i === 0 ? 1 : 0)));
+    const ardu = encodeMavlinkMission(task('ardupilot_mavlink'), MAVLINK_MISSION.ARDUPILOT);
+    assert.ok(ardu.items.every((item, seq) => plainOf(missionItemInt(2, seq, item), 255, 190).current === 0));
+  });
+
   test('MISSION_ITEM_INT on the wire: lat/lon as ints in a global frame, raw x/y otherwise', () => {
     const m = encodeMavlinkMission(task('px4_mavlink'), MAVLINK_MISSION.PX4);
     const wp = plainOf(missionItemInt(1, 3, m.items[3]), 255, 190);
@@ -931,6 +940,23 @@ describe('MavlinkServer: mission upload and progress', () => {
     feed(missionItemReached(3), 1); // waypoint 1
     feed(missionItemReached(4), 1); // the gimbal item
     assert.deepEqual(updates.map((u) => u.wp_reached), [2]);
+  });
+
+  // Seen in PX4 SITL (wpSeqs [0, 2, 6], RTL at 7): PX4 reported 1, 5 and 7, never a waypoint's own
+  // seq, because it runs the items without a position after a waypoint before it reports it.
+  test('PX4 reports the end of the waypoint group: any seq in [wp, next wp) is that waypoint', async () => {
+    const { upload, feed, updates, finished, server } = vehicle();
+    await upload();
+    assert.deepEqual(server.getVehicle(1).mission.wpSeqs, [0, 3, 6]);
+    updates.length = 0;
+    feed(missionItemReached(1), 1); // takeoff, then its speed item
+    feed(missionItemReached(1), 1); // PX4 repeats it every second
+    feed(missionItemReached(5), 1); // waypoint 1, then gimbal, photo, speed
+    feed(heartbeat({ baseMode: 29 | 128 }), 1);
+    feed(missionItemReached(7), 1); // last waypoint, then the RTL
+    assert.deepEqual(updates.map((u) => u.wp_reached), [1, 2, 3]);
+    feed(heartbeat({ baseMode: 29 }), 1);
+    assert.equal(finished.length, 1);
   });
 
   test('land at the end: finished only once the vehicle is down and disarmed', async () => {

@@ -15,6 +15,7 @@ import { MAVLINK_SYMBOLS, MAVLINK_MISSION } from './missionSymbols.js';
 //
 // Dialect differences (MAVLINK_PLAN.md › F4):
 //   - ArduPilot: seq 0 is the HOME, overwritten by the vehicle. A placeholder goes there.
+//   - PX4: item 0 is flagged `current`, or the mission resumes where the last one ended.
 //   - Waypoint yaw: PX4 reads NAV_WAYPOINT param4 (deg). ArduCopter ignores it: a CONDITION_YAW
 //     item follows the waypoint.
 //   - ArduPilot rejects the whole upload if a mission param is NaN where it does not allow it
@@ -143,6 +144,11 @@ export function encodeMavlinkMission(task, dialect) {
   if (finish === MISSION_FINISH.LAND) {
     items.push({ command: MAV_CMD_MISSION.NAV_LAND, params: [0, 0, 0, NaN], ...at([last.pos[0], last.pos[1], 0]) });
   }
+
+  // PX4 keeps the mission cursor between missions: an upload with no item flagged `current`
+  // resumes at the index the previous run ended on (navigator/mission_base.cpp clamps the old
+  // seq), and a mission that ended there is "finished" the moment it starts.
+  if (!isArdupilot) items[0].current = true;
 
   return { kind: 'mission', items, wpSeqs, finish };
 }

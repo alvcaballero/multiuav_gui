@@ -60,6 +60,7 @@ const UPLOAD_STEP_MS = 1500;
 const UPLOAD_RETRIES = 5;
 const MAV_MISSION_ACCEPTED = 0;
 const MISSION_FINISH_HOVER = 'hover';
+const MAV_AUTOPILOT_PX4 = 12;
 
 const resultName = (code) => common.MavResult[code] ?? `MAV_RESULT ${code}`;
 const commandName = (code) => common.MavCmd[code] ?? `MAV_CMD ${code}`;
@@ -341,13 +342,27 @@ export class MavlinkServer extends EventEmitter {
   _onItemReached(v, seq) {
     const m = v.mission;
     if (!m) return;
-    const index = m.wpSeqs.indexOf(seq);
-    // wp_reached counts reached waypoints (missionSignals jumps the task to it): index + 1.
-    if (index >= 0) this.positions.updatePosition({ deviceId: m.deviceId, uav_state: 'ok', mission_state: 'running', wp_reached: index + 1 });
-    if (seq === m.lastWpSeq && !m.reachedLast) {
+    const index = this._waypointReached(v, m, seq);
+    if (index < 0) return;
+    // PX4 repeats the last MISSION_ITEM_REACHED every second.
+    if (index !== m.reachedIndex) {
+      m.reachedIndex = index;
+      // wp_reached counts reached waypoints (missionSignals jumps the task to it): index + 1.
+      this.positions.updatePosition({ deviceId: m.deviceId, uav_state: 'ok', mission_state: 'running', wp_reached: index + 1 });
+    }
+    if (index === m.wpSeqs.length - 1 && !m.reachedLast) {
       m.reachedLast = true;
       if (m.finish === MISSION_FINISH_HOVER) this._finishMission(v);
     }
+  }
+
+  // Index of the waypoint a MISSION_ITEM_REACHED seq belongs to, -1 for an item that is not one.
+  // ArduPilot reports the waypoint's own seq. PX4 reports the cursor once it has already run the
+  // items after the waypoint that have no position (speed, gimbal, camera, RTL: navigator/
+  // mission_base.cpp, set_mission_item_reached), so the seq is somewhere in the waypoint's group.
+  _waypointReached(v, m, seq) {
+    if (v.autopilot !== MAV_AUTOPILOT_PX4) return m.wpSeqs.indexOf(seq);
+    return m.wpSeqs.findLastIndex((wpSeq) => wpSeq <= seq);
   }
 
   // RTL / land after the last waypoint: the mission is over once the vehicle is down and disarmed.

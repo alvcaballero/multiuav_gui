@@ -119,7 +119,7 @@ export function missionItemInt(targetSystem, seq, item) {
     seq,
     frame: item.frame,
     command: item.command,
-    current: 0,
+    current: item.current ? 1 : 0,
     autocontinue: 1,
     param1,
     param2,

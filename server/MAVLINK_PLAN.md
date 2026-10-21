@@ -534,9 +534,28 @@ posición 2–4 Hz, el resto 1 Hz, y gimbal/attitude solo si hace falta.
   y T2 se subió y arrancó **en el aire**, aterrizó y llegó a END. Misión `finish`.
 - **E2E pausa** (`scratchpad/f4/pause_resume.mjs ardu`): Pause (Hold, 0.37 m de deriva en 6 s a
   12 m), Resume (sigue hasta el waypoint siguiente) y Stop (Hold a 12 m): OK.
-- **Pendiente: PX4 en vuelo** (el SITL de PX4 se cerró). Verificar `[ARM, AUTO.MISSION]`, los
-  NaN del item de gimbal dentro de una misión PX4, el frame del NAV_TAKEOFF de misión y el
-  grafo PX4 → ArduCopter (`e2e_mission.mjs` sin argumento, `pause_resume.mjs px4`).
+- **PX4 en vuelo (2026-10-21, SITL 1.18.0, mundo `template_obstacles`)**: `[ARM, AUTO.MISSION]`
+  desde tierra, el NaN del gimbal y el `NAV_TAKEOFF` en `MAV_FRAME_GLOBAL` (AMSL) funcionan. El
+  "no despega" eran **dos bugs de PX4, ninguno del frame ni de MISSION_START**:
+  1. **El cursor de misión sobrevive entre misiones.** Todos los `MISSION_ITEM_INT` salían con
+     `current: 0`, así que PX4 deja `_transfer_current_seq = -1` (`mavlink_mission.cpp`) y el
+     navigator lo reemplaza por el índice anterior (`mission_base.cpp:101`). Con la misión previa
+     terminada en su último item, la nueva arranca ahí: `Mission finished, landed`, `No valid
+     mission available, refusing takeoff` y desarme automático a los ~10 s. La primera misión
+     tras un arranque limpio volaba, por eso parecía intermitente. **Fix**: el encoder marca el
+     item 0 como `current` (solo PX4).
+  2. **`MISSION_ITEM_REACHED` de PX4 no trae el seq del waypoint.** Reporta el cursor
+     (`set_mission_item_reached`) después de haber corrido los items sin posición que siguen
+     (velocidad, gimbal, foto, RTL). Con `wpSeqs [0, 2, 6]` y RTL en 7 llegaron 1, 5 y 7: ninguno
+     calzaba, `wp_reached` no avanzaba y la misión nunca se cerraba. **Fix**:
+     `_waypointReached`: en PX4 el seq pertenece al waypoint cuyo grupo lo contiene; en
+     ArduPilot sigue siendo exacto. PX4 repite el último reached cada segundo: se deduplica.
+  - Mi primera ruta de prueba chocó con `wall_1` (y=15, 15 m de alto): `Attitude failure
+    (roll)`. En ese mundo las rutas de prueba van al **este** (norte tiene paredes).
+  - **E2E**: PX4 (RTL) → ArduCopter (land), sobre un PX4 que ya había volado varias misiones:
+    T1 y T2 `end`, misión `finish`. `e2e_mission.mjs ardu` y `pause_resume.mjs ardu`: OK.
+  - Tests: `test-mavlink.js` (85); los dos nuevos fallan sin su fix.
+  - **Pendiente**: pausa/resume en PX4 (`pause_resume.mjs px4`), fuera de este alcance.
 
 #### Estado F5 (2026-10-21): hecho, falta probarlo en el navegador
 
