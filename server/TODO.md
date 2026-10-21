@@ -116,6 +116,33 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
   - Tradeoff: el watchdog pasa a leer una key que hoy solo tiene sentido en MAVLink (en ROS ningún
     slot la declara, así que no cambia nada ahí)
 
+<!-- Devices: lo que quedó afuera a propósito de F5 de MAVLink (2026-10-21, MAVLINK_PLAN.md). Lo que
+     SÍ entró: protocolo primero (uno de los 4: ros, mqtt, robofleet, mavlink, cada uno con su
+     gateway) y categoría filtrada por el FORMATO DE MENSAJE que ese protocolo transporta (`mavlink`
+     o `ros_msg`, deducido de sus messageType: categoryModel.messageFormatOf); System ID solo en
+     mavlink; coherencia validada al crear y editar (categoryModel.deviceProblem). -->
+
+- [ ] **Capacidades declaradas por categoría** (gimbal, cámara, descarga de archivos, offboard computer)
+  - Hoy se DERIVAN de los endpoints: un device tiene un comando si su categoría declara un endpoint que
+    lo implementa (`/api/commands/types`), y `shouldDownloadFiles` mira si ofrece `CameraFileDownload`
+  - Declararlas permitiría mostrarlas en la UI y filtrar por ellas
+  - Decidir antes qué pasa cuando lo declarado y lo derivado no coinciden (hoy no pueden divergir)
+
+- [ ] **Tipos de vehículo** (UAV multirrotor, UAV ala fija, USV, UGV) como dato de la categoría
+  - Lo necesitan el ícono del mapa, el planner y los modos de vuelo
+  - En MAVLink el tipo ya viaja en el HEARTBEAT (`MAV_TYPE`); `mavlinkFlightMode` solo mapea ArduPilot
+    multirrotor (Plane/Rover numeran distinto y caen en OTHER)
+
+- [ ] **Enlace MAVLink por device** (UDP / TCP / serie-SiK)
+  - Hoy los enlaces son del SERVER (`MAVLINK_LINKS`) y el vehículo se encuentra por sysid en
+    cualquiera, así que el device solo necesita el System ID
+  - Atarlo a un enlace serviría para rechazar un sysid que llegue por otro
+  - Los enlaces serie siguen sin implementar (`parseLinkSpec` los rechaza) hasta tener las radios
+
+- [ ] **Unicidad del System ID entre devices MAVLink**
+  - Hoy no se valida al crear ni al editar
+  - Si dos devices lo comparten, el server los ignora a los dos y lo loguea (`MavlinkServer._lookupDevice`)
+
 ---
 
 ## BAJO — Limpieza y pulido
