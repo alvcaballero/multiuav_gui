@@ -1,6 +1,7 @@
 import { validateDevice, validatePartialDevice } from '../schemas/zod/devices.js';
 import { DevicesModel } from '../models/devices.js';
 import { logger } from '../common/logger.js';
+import { telemetryWatchdog } from '../models/inspect/telemetryWatchdog.js';
 
 class devicesController {
   static getAll = async (req, res) => {
@@ -129,6 +130,12 @@ class devicesController {
     }
 
     res.status(404).json({ message: 'No snapshot available. Ensure stream is active.' });
+  };
+
+  // Per-slot rate, age and health from the telemetry watchdog (in memory, no DB): `{}` for a
+  // device that sends nothing, which is OFFLINE rather than an unknown id.
+  static getTelemetry = async (req, res) => {
+    res.json(telemetryWatchdog.snapshotOf(Number(req.params.id)));
   };
 }
 

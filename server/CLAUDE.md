@@ -431,6 +431,23 @@ rounded to 0 or 1 by the position cache and also reaches the external planner as
 subscriber's `(slot, messageType)` against the registry (`hasDecoder`); `LOG_LEVEL=debug` makes
 a gap throw. A slot declared in the YAML that nothing consumes gets an explicit `ignore(...)`.
 
+**Per-slot telemetry watchdog** (`models/inspect/telemetryWatchdog.js`, test `test/test-telemetry-watchdog.js`).
+`DeviceHealthMonitor` only sees the device as a whole, so one live slot keeps it ONLINE while
+`battery` never arrives. The three ingestors call `telemetryWatchdog.record(deviceId, slot)` next to
+`rawTap.publish` (before the decode); a timer (`TELEMETRY_CHECK_INTERVAL_MS`) compares every subscribed
+slot of the category against `TELEMETRY_SLOT_TIMEOUT_MS`. **On by default for every slot**: an
+event-driven one (`vehicle_command_ack`, `threat`) needs `watchdog: false` on its subscriber entry, a
+slow one `timeout_s`, or it is a permanent false alarm. `stale` = arrived then stopped (sensor/node
+down), `missing` = never arrived since the device showed up (config: topic name, PX4 version suffix).
+The expected slots follow the SAME camera rule as the ROS subscription (`subscribesCamera` in
+`category.js`). A device silent as a whole is skipped (that is OFFLINE, not N slot warnings). Only
+transitions are reported: a `warning`/`info` Event (snackbar) plus an immediate `DEVICE_UPDATED`. The
+state reaches the client as `device.telemetry` (`{ slot: 'stale' | 'missing' }`, `{}` when fine),
+added by `DevicesModel.getAll`, shown as a chip in `StatusCard`. It also counts messages for a
+smoothed per-slot rate: `GET /api/devices/:id/telemetry` → `{ slot: { health, hz, ageMs } }`, polled
+by the device messages page. Timestamps and counts only, never content — the content is `rawTap`'s. Dependencies are injected in
+`start()` from `server.js`: `models/devices.js` imports the watchdog, so it cannot import back.
+
 **Message Encoding** (`models/msgEncode.js`, NOT under `ros/`): a registry by msgType, the mirror of
 `msgDecode` on the way out. The structure of a message depends only on its msgType and is the same for
 every protocol (rosbridge JSON, the same JSON over MQTT, robofleet = ROS messages packed in Flatbuffers),
@@ -805,6 +822,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `PROCESS_THERMAL_IMG`: enable thermal image post-processing pipeline
 - `WS_PING_INTERVAL_MS` / `WS_POSITIONS_INTERVAL_MS` / `WS_STATE_INTERVAL_MS`: client WS timers (heartbeat, position-batch flush, server-state broadcast)
 - `DEVICE_CHECK_INTERVAL_MS` / `DEVICE_UPDATE_INTERVAL_MS` / `DEVICE_TIMEOUT_MS`: device health-check cadence and OFFLINE threshold
+- `TELEMETRY_CHECK_INTERVAL_MS` / `TELEMETRY_SLOT_TIMEOUT_MS`: per-slot telemetry watchdog tick (default 2s) and silence threshold (default 5s; per slot: `timeout_s`)
 - `MAP_LATITUDE` / `MAP_LONGITUDE` / `MAP_ZOOM`: default map center for the local-origin ENU conversion
 
 **Device Configuration** (`server/config/devices/devices_init.yaml`):

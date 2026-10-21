@@ -11,6 +11,7 @@ import { positionsController } from '../controllers/positions.js';
 import { logger } from '../common/logger.js';
 import { readDataFile } from '../common/utils.js';
 import { DEVICE_STATUS } from '../config/status.js';
+import { telemetryWatchdog } from './inspect/telemetryWatchdog.js';
 
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'lastUpdate'];
 const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
@@ -108,7 +109,8 @@ export class DevicesModel {
       attributes: publicFields,
       where: { deletedAt: null },
     });
-    const plain = mydevices.map((d) => d.dataValues);
+    // `telemetry`: the slots that stopped (or never started) arriving — see telemetryWatchdog.js
+    const plain = mydevices.map((d) => ({ ...d.dataValues, telemetry: telemetryWatchdog.statusOf(d.id) }));
     if (query) {
       if (Array.isArray(query)) {
         return plain.filter((device) => query.some((element) => device.id == element));

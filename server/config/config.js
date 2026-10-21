@@ -128,6 +128,8 @@ export const ROS_RECONNECT_INTERVAL_MS = Number(process.env.ROS_RECONNECT_INTERV
 export const DEVICE_CHECK_INTERVAL_MS = Number(process.env.DEVICE_CHECK_INTERVAL_MS) || 5000;
 export const DEVICE_UPDATE_INTERVAL_MS = Number(process.env.DEVICE_UPDATE_INTERVAL_MS) || 2000;
 export const DEVICE_TIMEOUT_MS = Number(process.env.DEVICE_TIMEOUT_MS) || 30000;
+export const TELEMETRY_CHECK_INTERVAL_MS = Number(process.env.TELEMETRY_CHECK_INTERVAL_MS) || 2000; // per-slot watchdog tick (see models/inspect/telemetryWatchdog.js)
+export const TELEMETRY_SLOT_TIMEOUT_MS = Number(process.env.TELEMETRY_SLOT_TIMEOUT_MS) || 5000; // a slot silent this long is stale; a subscriber may override it with `timeout_s`
 // config files
 export const devicesMsg = '../config/devices/devices_msg.yaml';
 export const missionSchema = '../config/devices/mission_schema.yaml';

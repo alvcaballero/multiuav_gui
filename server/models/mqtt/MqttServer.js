@@ -5,6 +5,7 @@ import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
 import { decodeMsg } from '../msgDecode.js';
 import { rawTap } from '../inspect/rawTap.js';
+import { telemetryWatchdog } from '../inspect/telemetryWatchdog.js';
 import { logger } from '../../common/logger.js';
 import { SUBSCRIPTIONS, parseTopic, requestTopic } from './mqttTopics.js';
 
@@ -146,6 +147,7 @@ export class MqttServer {
     }
 
     rawTap.publish({ deviceId: device.id, slot, transport: 'mqtt', raw: msg });
+    telemetryWatchdog.record(device.id, slot);
     const decoded = decodeMsg({
       msg,
       deviceId: device.id,

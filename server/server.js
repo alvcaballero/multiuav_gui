@@ -13,6 +13,9 @@ import { getErrorPageHTML } from './views/errorPage.js';
 import { WebsocketManager } from './WebsocketManager.js';
 import { WebsocketInboundRouter } from './WebsocketInboundRouter.js';
 import { rawTap } from './models/inspect/rawTap.js';
+import { telemetryWatchdog } from './models/inspect/telemetryWatchdog.js';
+import { DevicesModel } from './models/devices.js';
+import { eventsController } from './controllers/events.js';
 import { initWebsocketController } from './controllers/websocket.js';
 import { setupRoutes } from './routes/index.js';
 
@@ -104,6 +107,9 @@ positionHistorySampler
 // Agrupa POSITION_UPDATED de varios devices en un solo broadcast por tick (ver
 // positionBroadcastBatcher.js) — arranca siempre, no depende de la DB.
 positionBroadcastBatcher.start();
+
+// Avisa cuando a un device le falta un slot de telemetría de su categoría (ver telemetryWatchdog.js).
+telemetryWatchdog.start({ getDevices: () => DevicesModel.getAll(), addEvent: (e) => eventsController.addEvent(e) });
 
 // Vence las aprobaciones de herramientas de vuelo que nadie contestó y desbloquea
 // el turno que quedó esperándolas (ver approvalSweeper.js).
@@ -207,6 +213,7 @@ process.on('SIGTERM', () => {
 
   positionHistorySampler.stop();
   positionBroadcastBatcher.stop();
+  telemetryWatchdog.stop();
   approvalSweeper.stop();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();
@@ -224,6 +231,7 @@ process.on('SIGINT', () => {
 
   positionHistorySampler.stop();
   positionBroadcastBatcher.stop();
+  telemetryWatchdog.stop();
   approvalSweeper.stop();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();

@@ -187,6 +187,14 @@ function symbolForValue(param, value) {
   return def?.options?.find((opt) => opt.value === value)?.key;
 }
 
+// The `camera` slot is only subscribed when the device has a Websocket camera AND the category
+// gives it a messageType. Shared by the ROS subscription and the telemetry watchdog, so the
+// watchdog never expects a slot nobody subscribed.
+export function subscribesCamera(subscribers, camera) {
+  const hasWebsocketCamera = (camera ?? []).some((cam) => cam.type == 'Websocket');
+  return hasWebsocketCamera && Boolean(subscribers?.['camera']?.['messageType']);
+}
+
 export class categoryModel {
   static getAll() {
     logger.debug('categoryModel.getAll');

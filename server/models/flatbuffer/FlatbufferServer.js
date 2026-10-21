@@ -16,6 +16,7 @@ import {
 import { categoryModel } from '../category.js';
 import { unpackFbMsg } from './fbUnpack.js';
 import { rawTap } from '../inspect/rawTap.js';
+import { telemetryWatchdog } from '../inspect/telemetryWatchdog.js';
 import { encodeFbMsg } from './fbEncode.js';
 import { logger } from '../../common/logger.js';
 
@@ -128,14 +129,16 @@ export class FlatbufferServer {
     }
 
     const subscribers = categoryModel.getCategory(device.category)?.subscribers;
+    const slot = slotOfTopic(subscribers, metadata.topic());
 
     // The unpack is lazy: rawTap only runs it for a message a client is actually watching.
     rawTap.publish({
       deviceId: device.id,
-      slot: slotOfTopic(subscribers, metadata.topic()),
+      slot,
       transport: 'robofleet',
       raw: () => unpackFbMsg(metadata.type(), buf),
     });
+    telemetryWatchdog.record(device.id, slot);
 
     // Preferred: the category's decoder, same as rosbridge/MQTT. `undefined` = this topic is not
     // declared by the category (a bridge not renamed yet): the per-type decoder below handles it.

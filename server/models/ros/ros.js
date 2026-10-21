@@ -1,10 +1,11 @@
 import { devicesController } from '../../controllers/devices.js';
 import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
-import { categoryModel } from '../category.js';
+import { categoryModel, subscribesCamera } from '../category.js';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { decodeMsg } from '../msgDecode.js';
 import { rawTap } from '../inspect/rawTap.js';
+import { telemetryWatchdog } from '../inspect/telemetryWatchdog.js';
 import { logger, rosLogger, logHelpers } from '../../common/logger.js';
 import {
   getRos,
@@ -115,9 +116,8 @@ export class rosModel {
     // Only subscribe the camera topic when the device has a Websocket camera AND
     // the category config defines its message type — otherwise skip it.
     const hasWebsocketCamera = (camera ?? []).some((cam) => cam.type == 'Websocket');
-    const cameraMsgTypeDefined = Boolean(subscribers['camera']?.['messageType']);
-    const shouldSubscribeCamera = hasWebsocketCamera && cameraMsgTypeDefined;
-    if (hasWebsocketCamera && !cameraMsgTypeDefined) {
+    const shouldSubscribeCamera = subscribesCamera(subscribers, camera);
+    if (hasWebsocketCamera && !shouldSubscribeCamera) {
       logger.warn(`No message type found for camera subscription for ${name}`);
     }
 
@@ -126,6 +126,7 @@ export class rosModel {
     // unit, ...) so the transport never sees them and the decoder never sees the category.
     const makeOnMessage = (effect, params) => (args) => {
       rawTap.publish({ deviceId: id, slot: args.slot, transport: 'ros', raw: args.msg });
+      telemetryWatchdog.record(id, args.slot);
       const decoded = decodeMsg({
         msg: args.msg,
         deviceId: id,

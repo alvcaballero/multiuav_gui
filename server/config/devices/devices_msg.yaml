@@ -485,6 +485,7 @@ px4_mavros:
     threat:
       name: '/threat'
       messageType: 'std_msgs/Bool'
+      watchdog: false # event-driven
   services:
     configure_mission:
       name: '/mission/new'
@@ -522,6 +523,7 @@ px4_mavros_slow:
     threat:
       name: '/threat'
       messageType: 'std_msgs/Bool'
+      watchdog: false # event-driven
   services:
     configure_mission:
       name: '/mission/new'
@@ -554,6 +556,7 @@ px4_ros2:
     vehicle_command_ack:
       name: '/fmu/out/vehicle_command_ack_v1'
       messageType: 'px4_msgs/msg/VehicleCommandAck'
+      watchdog: false # only published as the answer to a command
     gimbal:
       name: '/fmu/out/gimbal_device_attitude_status'
       messageType: 'px4_msgs/msg/GimbalDeviceAttitudeStatus'
@@ -635,6 +638,7 @@ catec:
     threat:
       name: '/threat'
       messageType: 'std_msgs/UInt8'
+      watchdog: false # event-driven
   services:
     threat_confirmation:
       name: '/threat_confirmation'
@@ -703,4 +707,5 @@ simulationFB:
     threat:
       name: '/alarm'
       messageType: 'std_msgs/UInt8'
+      watchdog: false # event-driven
   services: {}
