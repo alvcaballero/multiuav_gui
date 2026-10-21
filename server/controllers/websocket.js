@@ -4,7 +4,17 @@ import { positionsController } from './positions.js';
 import { planningController } from './planning.js';
 import { logger } from '../common/logger.js';
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import { WS_STATE_INTERVAL_MS } from '../config/config.js';
+import { WS_STATE_INTERVAL_MS, MqttEnable } from '../config/config.js';
+import { getMqttServer } from '../models/mqtt/index.js';
+
+// What the connection chips of the UI show. `mqttState` only travels when MQTT is enabled: its
+// absence tells the client not to draw the chip at all.
+async function serverState() {
+  const ros = await rosController.getServerStatus();
+  const state = { rosState: ros.state };
+  if (MqttEnable) state.mqttState = getMqttServer()?.connectionState() ?? 'disconnect';
+  return state;
+}
 import { encodeCameraFrame } from '../subscribers/cameraStreamSubscriber.js';
 
 let wsController = null;
@@ -74,9 +84,8 @@ export class websocketController {
   async updateserver() {
     try {
       const devices = await devicesController.getAllDevices();
-      const server = await rosController.getServerStatus();
 
-      eventBus.emitSafe(EVENTS.SERVER_UPDATED, { rosState: server.state });
+      eventBus.emitSafe(EVENTS.SERVER_UPDATED, await serverState());
       eventBus.emitSafe(EVENTS.DEVICE_UPDATED, devices);
     } catch (error) {
       logger.error('Error in updateserver', {
@@ -97,11 +106,10 @@ export class websocketController {
   async WelcomeMessage() {
     const devices = await devicesController.getAllDevices();
     const positions = await positionsController.getLastPositions();
-    const server = await rosController.getServerStatus();
     const planning = await planningController.getDefaultPlanning();
     return {
       positions: positions,
-      server: { rosState: server.state },
+      server: await serverState(),
       devices: Object.values(devices),
       markers: { bases: planning.markersbase, elements: planning.elements },
       planning: {

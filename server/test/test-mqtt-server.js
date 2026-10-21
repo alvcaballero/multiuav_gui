@@ -75,6 +75,13 @@ describe('MqttServer: connection', () => {
     assert.ok(client.subscribed[0].includes('muav/+/pub/+'));
   });
 
+  test('connectionState follows the broker connection, in the ROS state words', () => {
+    const { client, server } = setup();
+    assert.equal(server.connectionState(), 'connect');
+    client.connected = false;
+    assert.equal(server.connectionState(), 'disconnect');
+  });
+
   test('presence is tracked from the retained status topic', async () => {
     const { server, droneSays } = setup();
     droneSays('muav/uav1/status', 'online');

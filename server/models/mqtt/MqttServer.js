@@ -96,6 +96,11 @@ export class MqttServer {
     });
   }
 
+  /** The broker connection, in the same words as the ROS state: 'connect' | 'disconnect'. */
+  connectionState() {
+    return this.client.connected ? 'connect' : 'disconnect';
+  }
+
   getPresence(deviceName) {
     return this.presence.get(deviceName) ?? 'unknown';
   }
