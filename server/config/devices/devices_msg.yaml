@@ -732,7 +732,6 @@ px4_mavlink:
     home_position:
       messageType: 'mavlink/HOME_POSITION'
       rate_hz: 0.5
-      timeout_s: 10 # one every 2 s: the default 5 s goes stale with two lost on a SiK link
     gimbal:
       messageType: 'mavlink/GIMBAL_DEVICE_ATTITUDE_STATUS'
       rate_hz: 2
@@ -774,7 +773,6 @@ ardupilot_mavlink:
     home_position:
       messageType: 'mavlink/HOME_POSITION'
       rate_hz: 0.5
-      timeout_s: 10 # one every 2 s: the default 5 s goes stale with two lost on a SiK link
     vehicle_command_ack:
       messageType: 'mavlink/COMMAND_ACK'
       watchdog: false # only sent as the answer to a command

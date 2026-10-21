@@ -102,7 +102,7 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
   - Implementar sistema de versioning simple o usar Sequelize migrations (`sequelize-cli`)
   - Al menos: guardar versión aplicada en tabla `schema_version`
 
-- [ ] **Watchdog de telemetría: timeout derivado de `rate_hz`** (`models/inspect/telemetryWatchdog.js`)
+- [x] **Watchdog de telemetría: timeout derivado de `rate_hz`** (`models/inspect/telemetryWatchdog.js`)
   - Hoy el timeout de un slot es `timeout_s` de su entrada o `TELEMETRY_SLOT_TIMEOUT_MS` (5 s), e
     IGNORA `rate_hz`, que las categorías MAVLink (`px4_mavlink`, `ardupilot_mavlink`) ya declaran
     como la tasa pedida con SET_MESSAGE_INTERVAL

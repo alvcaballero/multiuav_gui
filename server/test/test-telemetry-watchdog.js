@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { eventBus, EVENTS } from '../common/eventBus.js';
-import { telemetryWatchdog, SLOT_HEALTH } from '../models/inspect/telemetryWatchdog.js';
+import { telemetryWatchdog, SLOT_HEALTH, slotTimeoutMs } from '../models/inspect/telemetryWatchdog.js';
 import { categoryModel } from '../models/category.js';
 import { TELEMETRY_SLOT_TIMEOUT_MS } from '../config/config.js';
 
@@ -97,6 +97,31 @@ test('timeout_s de la entrada pisa el timeout por defecto', () => {
     assert.deepEqual(telemetryWatchdog.statusOf(1), {});
   } finally {
     delete battery.timeout_s;
+  }
+});
+
+test('slotTimeoutMs: timeout_s gana, rate_hz da tres períodos, nunca bajo el default', () => {
+  assert.equal(slotTimeoutMs({}), T);
+  assert.equal(slotTimeoutMs(undefined), T);
+  assert.equal(slotTimeoutMs({ rate_hz: 0.5 }), 6000); // 3 / 0.5 Hz
+  assert.equal(slotTimeoutMs({ rate_hz: 4 }), T); // 0.75 s < default
+  assert.equal(slotTimeoutMs({ rate_hz: 0.5, timeout_s: 20 }), 20000);
+  assert.equal(slotTimeoutMs({ rate_hz: 0 }), T);
+});
+
+test('un slot lento con rate_hz no oscila a stale tras un par de pérdidas', () => {
+  const battery = categoryModel.getCategory('px4_ros2').subscribers.battery;
+  battery.rate_hz = 0.5; // one every 2 s → 6 s of tolerance
+  try {
+    recordAll(0);
+    recordAll(T + 1000, WATCHED.filter((s) => s !== 'battery')); // battery silent for 6 s: still within
+    telemetryWatchdog.check([device()], 6000);
+    assert.deepEqual(telemetryWatchdog.statusOf(1), {});
+
+    telemetryWatchdog.check([device()], 6001);
+    assert.deepEqual(telemetryWatchdog.statusOf(1), { battery: SLOT_HEALTH.STALE });
+  } finally {
+    delete battery.rate_hz;
   }
 });
 

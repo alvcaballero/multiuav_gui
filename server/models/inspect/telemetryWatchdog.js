@@ -14,6 +14,22 @@ export const SLOT_HEALTH = Object.freeze({
 // message per window, and the raw count would jump between 0 and 1 Hz.
 const RATE_SMOOTHING = 0.5;
 
+// Periods of silence a slot with a declared `rate_hz` tolerates: two lost messages in a row on a
+// SiK radio must not flip it to stale.
+const RATE_PERIODS_TOLERATED = 3;
+
+/**
+ * Silence after which a slot is stale/missing. `timeout_s` wins; else three periods of the
+ * declared `rate_hz` (never below the global default); else the global default.
+ */
+export function slotTimeoutMs(cfg) {
+  const explicit = Number(cfg?.timeout_s);
+  if (explicit > 0) return explicit * 1000;
+  const rate = Number(cfg?.rate_hz);
+  if (rate > 0) return Math.max(TELEMETRY_SLOT_TIMEOUT_MS, (RATE_PERIODS_TOLERATED * 1000) / rate);
+  return TELEMETRY_SLOT_TIMEOUT_MS;
+}
+
 class DeviceTrack {
   constructor(now) {
     this.firstSeen = now;
@@ -50,6 +66,7 @@ class DeviceTrack {
  * - Activo por defecto en todo slot suscripto. Un slot que solo publica por evento
  *   (`vehicle_command_ack`, `threat`) se excluye con `watchdog: false` en su entrada, y uno
  *   lento se ajusta con `timeout_s`: es un param de la entrada, nunca un branch por categoría.
+ *   Sin `timeout_s`, un slot que declara `rate_hz` espera tres períodos (`slotTimeoutMs`).
  * - Un device que no manda NADA no se evalúa (se descarta su estado): eso es OFFLINE, y lo
  *   cubre DeviceHealthMonitor; acá daría un warning por cada slot.
  * - Avisa en las TRANSICIONES (warning al caer, info al volver), no en cada tick.
@@ -176,7 +193,7 @@ class TelemetryWatchdog {
       if (cfg?.watchdog === false || (slot === 'camera' && !watchCamera)) continue;
       expected.add(slot);
 
-      const timeout = cfg?.timeout_s ? cfg.timeout_s * 1000 : TELEMETRY_SLOT_TIMEOUT_MS;
+      const timeout = slotTimeoutMs(cfg);
       const seen = track.lastSeen.get(slot);
       let health = SLOT_HEALTH.OK;
       if (seen !== undefined && now - seen > timeout) health = SLOT_HEALTH.STALE;

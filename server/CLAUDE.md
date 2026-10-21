@@ -450,7 +450,7 @@ a gap throw. A slot declared in the YAML that nothing consumes gets an explicit 
 `rawTap.publish` (before the decode); a timer (`TELEMETRY_CHECK_INTERVAL_MS`) compares every subscribed
 slot of the category against `TELEMETRY_SLOT_TIMEOUT_MS`. **On by default for every slot**: an
 event-driven one (`vehicle_command_ack`, `threat`) needs `watchdog: false` on its subscriber entry, a
-slow one `timeout_s`, or it is a permanent false alarm. `stale` = arrived then stopped (sensor/node
+slow one `timeout_s`, or it is a permanent false alarm. A slot that declares `rate_hz` (MAVLink) and no `timeout_s` waits `max(TELEMETRY_SLOT_TIMEOUT_MS, 3 / rate_hz)` (`slotTimeoutMs`), so changing the rate moves the timeout with it. `stale` = arrived then stopped (sensor/node
 down), `missing` = never arrived since the device showed up (config: topic name, PX4 version suffix).
 The expected slots follow the SAME camera rule as the ROS subscription (`subscribesCamera` in
 `category.js`). A device silent as a whole is skipped (that is OFFLINE, not N slot warnings). Only
