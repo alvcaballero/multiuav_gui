@@ -1,12 +1,60 @@
 import * as fb from 'fbmsglib';
-import { ServiceKey } from '../../config/deviceMsgCatalog.js';
+import { ServiceKey, SubscriberKey } from '../../config/deviceMsgCatalog.js';
 import { djiFlightStatus, djiFlightMode } from '../vehicleStates.js';
+import { decodeMsg, hasDecoder } from '../msgDecode.js';
+import { fbMsgAsRos } from './fbUnpack.js';
 
 export function getNameFromTopic(topic) {
   if (topic.startsWith('/')) {
     return topic.split('/')[1];
   }
   return topic.split('/')[0];
+}
+
+// The robofleet topic without its device prefix ('/uav1/gps_position' → 'gps_position'): what the
+// raw inspector uses as the `slot` of a FlatBuffer device, whose topics are robofleet's own names
+// and not the keys of devices_msg.
+export function slotFromTopic(topic) {
+  return topic.replace(/^\//, '').split('/').slice(1).join('/');
+}
+
+// Slot of a robofleet topic according to the device's category: the key of the `subscribers` entry
+// whose `name` is that topic ('gps_position' ← position: {name: '/gps_position'}), the same
+// '/<device>' + name rule ROS uses. A topic the category does not declare keeps its own name, so
+// a device whose bridge has not been renamed yet is still inspectable.
+export function slotOfTopic(subscribers, topic) {
+  return findSlot(subscribers, topic) ?? slotFromTopic(topic);
+}
+
+// The slot the category declares for that topic, or null. No fallback: it decides whether a
+// message goes through the category's decoder at all.
+export function findSlot(subscribers, topic) {
+  const suffix = '/' + slotFromTopic(topic);
+  return Object.entries(subscribers ?? {}).find(([, entry]) => entry?.name === suffix)?.[0] ?? null;
+}
+
+// The categories name ROS2 types 'pkg/msg/Name'; robofleet carries 'pkg/Name'.
+const sameMsgType = (a, b) => String(a).replace('/msg/', '/') === String(b).replace('/msg/', '/');
+
+/**
+ * Decodes a robofleet message the way every other transport does: unpack it into the ROS message
+ * it carries and hand it to the `msgDecode` registry, picked by the slot the category declares for
+ * its topic. So FlatBuffer, rosbridge and MQTT share one decoder per (slot, messageType).
+ *
+ * @returns {object|null|undefined} the TelemetryPatch; `null` when the decoder says there is
+ *   nothing to apply (an explicit `ignore`); `undefined` when this message does not go through
+ *   the category (undeclared topic, other type, no decoder, camera) and the caller should fall back
+ *   to `decodeFbMsg`.
+ */
+export function decodeFbViaCategory({ type, topic, buf, deviceId, subscribers }) {
+  const slot = findSlot(subscribers, topic);
+  const entry = slot ? subscribers[slot] : null;
+  if (!entry || slot === SubscriberKey.CAMERA) return undefined;
+  if (!sameMsgType(entry.messageType, type) || !hasDecoder(slot, entry.messageType)) return undefined;
+
+  const msg = fbMsgAsRos(type, buf);
+  if (!msg) return undefined;
+  return decodeMsg({ msg, deviceId, type: slot, msgType: entry.messageType, params: entry });
 }
 
 export function decodeFbMsg(metadata, buf, deviceId, category, deviceName) {

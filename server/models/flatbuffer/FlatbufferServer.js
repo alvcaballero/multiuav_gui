@@ -5,7 +5,17 @@ import { parse } from 'url';
 import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { eventsController } from '../../controllers/events.js';
-import { decodeFbMsg, decodeServiceResponse, isServiceResponse, getNameFromTopic } from './fbDecode.js';
+import {
+  decodeFbMsg,
+  decodeServiceResponse,
+  isServiceResponse,
+  getNameFromTopic,
+  slotOfTopic,
+  decodeFbViaCategory,
+} from './fbDecode.js';
+import { categoryModel } from '../category.js';
+import { unpackFbMsg } from './fbUnpack.js';
+import { rawTap } from '../inspect/rawTap.js';
 import { encodeFbMsg } from './fbEncode.js';
 import { logger } from '../../common/logger.js';
 
@@ -30,6 +40,7 @@ export class FlatbufferServer {
   constructor(port) {
     this.clients = new Map();
     this._serviceTimeouts = {};
+    this._legacyWarned = new Set(); // `${deviceId}:${topic}` already reported by _warnLegacyDecoder
 
     this.ws = new WebSocketServer({ port });
     logger.info(`FlatbufferServer listening on port ${port}`);
@@ -116,12 +127,56 @@ export class FlatbufferServer {
       return;
     }
 
+    const subscribers = categoryModel.getCategory(device.category)?.subscribers;
+
+    // The unpack is lazy: rawTap only runs it for a message a client is actually watching.
+    rawTap.publish({
+      deviceId: device.id,
+      slot: slotOfTopic(subscribers, metadata.topic()),
+      transport: 'robofleet',
+      raw: () => unpackFbMsg(metadata.type(), buf),
+    });
+
+    // Preferred: the category's decoder, same as rosbridge/MQTT. `undefined` = this topic is not
+    // declared by the category (a bridge not renamed yet): the per-type decoder below handles it.
+    let patch;
+    try {
+      patch = decodeFbViaCategory({
+        type: metadata.type(),
+        topic: metadata.topic(),
+        buf,
+        deviceId: device.id,
+        subscribers,
+      });
+    } catch (err) {
+      logger.warn(`FlatbufferServer: category decode failed for "${metadata.topic()}": ${err.message}`);
+    }
+    if (patch !== undefined) {
+      if (patch) positionsController.updatePosition(patch);
+      return;
+    }
+
+    this._warnLegacyDecoder(device, metadata);
     const position = decodeFbMsg(metadata, buf, device.id, device.category, device.name);
     if (position?.deviceId !== null) {
       positionsController.updatePosition(position);
     } else {
       logger.warn(`FlatbufferServer: unhandled msg type="${position?.type}" topic="${position?.topic}"`);
     }
+  }
+
+  // `decodeFbMsg` is the transitional per-type decoder: it only runs for a topic the device's
+  // category does not declare (TODO.md: delete it). Say it ONCE per device and topic, so the log
+  // shows what still needs it, and goes quiet when nothing does.
+  _warnLegacyDecoder(device, metadata) {
+    const key = `${device.id}:${metadata.topic()}`;
+    if (this._legacyWarned.has(key)) return;
+    this._legacyWarned.add(key);
+    logger.warn(
+      `FlatbufferServer: "${device.name}" (${device.category}) topic="${metadata.topic()}" ` +
+        `type="${metadata.type()}" is decoded by the legacy per-type decoder, not by its category. ` +
+        `Declare the topic in the category's subscribers and publish that name.`
+    );
   }
 
   _handleServiceResponse({ uav_id, name, type, response }) {

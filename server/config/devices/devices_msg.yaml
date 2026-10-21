@@ -664,3 +664,43 @@ griffin:
       name: '/serial2ros/result'
       messageType: 'std_msgs/Int32MultiArray'
   services: {}
+# Devices that talk robofleet (FlatBuffer): the robofleet topic is '/<device>' + `name`, as everywhere.
+# Names are the ones fbDecode.js matches today (it only checks `includes`), so the bridge can keep
+# publishing them; the slot of a message is looked up here by that topic. fbDecode still decodes by
+# type + topic fragment, NOT through this block (see FlatbufferServer.js).
+simulationFB:
+  subscribers:
+    position:
+      name: '/gps_position'
+      messageType: 'sensor_msgs/NavSatFix'
+    heading:
+      name: '/orientation'
+      messageType: 'std_msgs/Float64'
+    imu:
+      name: '/imu'
+      messageType: 'sensor_msgs/Imu'
+    battery:
+      name: '/battery_state'
+      messageType: 'sensor_msgs/BatteryState'
+    gimbal:
+      name: '/gimbal'
+      messageType: 'geometry_msgs/Vector3Stamped'
+    speed:
+      name: '/speed'
+      messageType: 'geometry_msgs/Vector3Stamped'
+    flight_status:
+      name: '/flight_status'
+      messageType: 'std_msgs/UInt8'
+    display_mode:
+      name: '/display_mode'
+      messageType: 'std_msgs/UInt8'
+    obstacle_info:
+      name: '/obstacle_info'
+      messageType: 'dji_osdk_ros/ObstacleInfo'
+    mission_state:
+      name: '/mission_state'
+      messageType: 'dji_osdk_ros/WaypointV2MissionStatePush'
+    threat:
+      name: '/alarm'
+      messageType: 'std_msgs/UInt8'
+  services: {}

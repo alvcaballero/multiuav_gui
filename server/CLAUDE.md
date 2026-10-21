@@ -127,6 +127,39 @@ Client messages are delegated raw by `WebsocketManager` to `WebsocketInboundRout
 `CHAT_USER_MESSAGE` → `chatController.processMessage`). The transport knows no
 business types. Any reply back to the client goes out via the EventBus → subscriber.
 
+**Targeted outbound + raw inspector:** each WS connection gets an ephemeral `id`
+(`WebsocketManager.clients`, removed on `close`; `sendTo(id, msg)`). An `OUTBOUND_MAP`
+transform may return `toClient(clientId, payload)` instead of a plain payload to send to
+that ONE client rather than broadcast (`websocketSubscriber.js`, `Targeted`). First user:
+the raw message inspector (`models/inspect/rawTap.js`). A client sends `raw:subscribe
+{deviceId, slot}` / `raw:unsubscribe`; ros.js and MqttServer call `rawTap.publish()` with
+the message BEFORE the decode; `rawTap` emits `RAW_MESSAGE` only when somebody is
+subscribed, at most once per `WS_RAW_INSPECT_INTERVAL_MS` per client and slot, and the client
+receives `{ raw: {deviceId, slot, transport, ts, data} }`. Inside a window the first message goes
+out at once and the NEWEST one goes out when it closes; the ones in between are dropped (a state
+change that arrives right after another message of its slot must not be lost). Every
+`raw:subscribe` is answered with `{ rawStatus: {deviceId, slot, ok, reason?} }` (`RAW_STATUS`,
+same targeted path; reasons in `RAW_REJECT`: `invalid`, `not_inspectable`, `too_many` — a client may
+hold 8 subscriptions). Subscriptions die with the socket (`onClientClose`).
+`test/test-raw-inspector-ws.js` runs the whole path with real `ws` clients. The `camera`
+slot is not inspectable. FlatBuffer is tapped too (`FlatbufferServer._onMessage`): there the
+`slot` is looked up in the device's category (`slotOfTopic`: the `subscribers` key whose `name` is
+the topic, same `'/<device>' + name` rule as ROS; the `simulationFB` category declares what
+fbDecode understands today). A topic the category does not declare keeps its own name without the
+device prefix. **Decoding goes through the category too** (`decodeFbViaCategory`): the message is
+unpacked into the ROS message it carries (`fbMsgAsRos`: `.msg` field names, no robofleet metadata)
+and handed to the same `msgDecode` registry as rosbridge/MQTT, so ROS is the reference and a
+robofleet device decodes like a ROS one. Only a topic the category does not declare (a bridge not
+renamed yet), a type mismatch or the camera slot falls back to the old per-type `decodeFbMsg`;
+that fallback is meant to disappear once the bridge publishes the `devices_msg` names. The `.msg`
+name of each generated field is read from the `.fbs` (`rosFieldName`): flatc camelCases
+`frame_id` but keeps DJI's `curWaypointIndex`, so it cannot be guessed. Constants declared inside
+a table (`HEALT_WORKING` in ObstacleInfo, which flatc makes a real field) are dropped. Never edit a
+`.fbs` to fix that: removing a field renumbers the vtable and breaks the bridge. `raw`
+is a function that `rawTap` runs lazily (`unpackFbMsg`, `models/flatbuffer/fbUnpack.js`): it
+resolves the class from the ROS type (`pkg/Name` → `fb[pkg][Name]`, no table to maintain; a type
+the lib does not have comes back as hex) and unpacks it with the object API of `fbmsglib`.
+
 Key events: `MISSION_PLAN_SHOWN`, `MISSION_UPDATED`, `TASK_UPDATED` (WS `taskUpdated`; also consumed by `missionWpTracking` and `taskScheduler`), `POSITION_UPDATED`, `CAMERA_RECEIVED`, `DEVICE_UPDATED`, `CHAT_CREATED`
 
 ### Database Models
