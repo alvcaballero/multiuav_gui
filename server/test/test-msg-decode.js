@@ -1,9 +1,9 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeRosMsg } from '../models/ros/rosDecode.js';
-import { getDroneStatus, getArmingStatus, getVehicleCommand, getVehicleCmdResult } from '../config/status.js';
+import { decodeMsg } from '../models/msgDecode.js';
+import { getVehicleCommand } from '../config/status.js';
 
-// What decodeRosMsg does for each (slot, messageType), one case per decoder. Born as
+// What decodeMsg does for each (slot, messageType), one case per decoder. Born as
 // characterization tests to prove the if-chain -> registry refactor changed nothing; the
 // quirks they exposed (sonar type typo, per-category battery scale) have since been fixed.
 //
@@ -11,14 +11,14 @@ import { getDroneStatus, getArmingStatus, getVehicleCommand, getVehicleCmdResult
 // `params` (the category's own subscriber entry): `scale`, `unit`, `heading_offset`.
 // The decoder never sees a category name.
 
-const dec = (o) => decodeRosMsg({ deviceId: 7, ...o });
+const dec = (o) => decodeMsg({ deviceId: 7, ...o });
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} is not within ${eps} of ${b}`);
 
 // 90° yaw rotation about z, and identity.
 const IDENTITY = { w: 1, x: 0, y: 0, z: 0 };
 const YAW_90 = { w: Math.SQRT1_2, x: 0, y: 0, z: Math.SQRT1_2 };
 
-describe('decodeRosMsg: position family', () => {
+describe('decodeMsg: position family', () => {
   test('position / NavSatFix', () => {
     const r = dec({
       type: 'position',
@@ -74,7 +74,7 @@ describe('decodeRosMsg: position family', () => {
   });
 });
 
-describe('decodeRosMsg: px4 status', () => {
+describe('decodeMsg: px4 status', () => {
   test('vehicle_status', () => {
     const r = dec({
       type: 'vehicle_status',
@@ -83,8 +83,9 @@ describe('decodeRosMsg: px4 status', () => {
     });
     assert.deepEqual(r, {
       deviceId: 7,
-      armState: getArmingStatus(2),
-      navState: getDroneStatus(4),
+      armState: 'ARMED',
+      flightMode: 'HOLD',
+      flightModeRaw: 4,
       failsafe: false,
       flightCheck: true,
       systemId: 2,
@@ -93,11 +94,17 @@ describe('decodeRosMsg: px4 status', () => {
 
   test('vehicle_command_ack', () => {
     const r = dec({ type: 'vehicle_command_ack', msgType: 'px4_msgs/msg/VehicleCommandAck', msg: { command: 400, result: 0 } });
-    assert.deepEqual(r, { deviceId: 7, commandAck: getVehicleCommand(400), resultCmdAck: getVehicleCmdResult(0) });
+    assert.deepEqual(r, {
+      deviceId: 7,
+      commandAck: getVehicleCommand(400),
+      commandAckRaw: 400,
+      resultCmdAck: 'ACCEPTED',
+      resultCmdAckRaw: 0,
+    });
   });
 });
 
-describe('decodeRosMsg: heading (imu / heading / attitude)', () => {
+describe('decodeMsg: heading (imu / heading / attitude)', () => {
   test('imu generic: identity quaternion is course 90', () => {
     const r = dec({ type: 'imu', msgType: 'sensor_msgs/Imu', msg: { orientation: IDENTITY } });
     assert.deepEqual(r, { deviceId: 7, course: 90 });
@@ -132,7 +139,7 @@ describe('decodeRosMsg: heading (imu / heading / attitude)', () => {
   });
 });
 
-describe('decodeRosMsg: speed', () => {
+describe('decodeMsg: speed', () => {
   test('speed / Vector3Stamped, ROS1 and ROS2 names, is the rounded norm', () => {
     for (const msgType of ['geometry_msgs/Vector3Stamped', 'geometry_msgs/msg/Vector3Stamped']) {
       assert.deepEqual(dec({ type: 'speed', msgType, msg: { vector: { x: 3, y: 4, z: 0 } } }), { deviceId: 7, speed: 5 });
@@ -151,7 +158,7 @@ describe('decodeRosMsg: speed', () => {
   });
 });
 
-describe('decodeRosMsg: battery (the category only contributes params.scale)', () => {
+describe('decodeMsg: battery (the category only contributes params.scale)', () => {
   const bat = (msgType, msg, params) => dec({ type: 'battery', msgType, msg, params });
 
   test('percentage is multiplied by params.scale', () => {
@@ -172,7 +179,7 @@ describe('decodeRosMsg: battery (the category only contributes params.scale)', (
   });
 });
 
-describe('decodeRosMsg: gimbal and obstacles', () => {
+describe('decodeMsg: gimbal and obstacles', () => {
   describe('gimbal / px4_msgs GimbalDeviceAttitudeStatus', () => {
     const rad = (deg) => (deg * Math.PI) / 180;
     // Rotation of `deg` about one axis of FRD, as q = [w, x, y, z].
@@ -247,7 +254,7 @@ describe('decodeRosMsg: gimbal and obstacles', () => {
   });
 });
 
-describe('decodeRosMsg: camera, flight status, state machine', () => {
+describe('decodeMsg: camera, flight status, state machine', () => {
   test('camera / CompressedImage, ROS1 and ROS2 names, decodes base64 into a Buffer', () => {
     for (const msgType of ['sensor_msgs/CompressedImage', 'sensor_msgs/msg/CompressedImage']) {
       const r = dec({ type: 'camera', msgType, msg: { data: 'AQID' } });
@@ -257,36 +264,65 @@ describe('decodeRosMsg: camera, flight status, state machine', () => {
     }
   });
 
-  test('flight_status / UInt8 hardcodes protocol dji', () => {
+  test('flight_status / UInt8 is DJI: one code gives the arm state and the phase', () => {
     assert.deepEqual(dec({ type: 'flight_status', msgType: 'std_msgs/UInt8', msg: { data: 2 } }), {
       deviceId: 7,
-      protocol: 'dji',
-      landed_state: 2,
+      armState: 'ARMED',
+      flightPhase: 'IN_AIR',
+      flightPhaseRaw: 2,
+    });
+    assert.deepEqual(dec({ type: 'flight_status', msgType: 'std_msgs/UInt8', msg: { data: 0 } }), {
+      deviceId: 7,
+      armState: 'DISARMED',
+      flightPhase: 'ON_GROUND',
+      flightPhaseRaw: 0,
     });
   });
 
-  test('state_machine / std_msgs/String hardcodes protocol catec', () => {
+  test('display_mode / UInt8 is the DJI flight mode, not the phase', () => {
+    assert.deepEqual(dec({ type: 'display_mode', msgType: 'std_msgs/UInt8', msg: { data: 6 } }), {
+      deviceId: 7,
+      flightMode: 'ASSISTED',
+      flightModeRaw: 6,
+    });
+    assert.deepEqual(dec({ type: 'display_mode', msgType: 'std_msgs/UInt8', msg: { data: 15 } }), {
+      deviceId: 7,
+      flightMode: 'RTL',
+      flightModeRaw: 15,
+    });
+  });
+
+  test('state_machine / std_msgs/String is CATEC: the text becomes a phase and is kept raw', () => {
     assert.deepEqual(dec({ type: 'state_machine', msgType: 'std_msgs/String', msg: { data: 'HOVER' } }), {
       deviceId: 7,
-      protocol: 'catec',
       mission_state: '0',
       wp_reached: '0',
       uav_state: 'ok',
-      landed_state: 'HOVER',
+      flightPhase: 'IN_AIR',
+      flightPhaseRaw: 'HOVER',
     });
   });
 
-  test('state_machine / UAVState takes the protocol from airframe_type', () => {
+  test('state_machine / UAVState reads the landed_state by its airframe_type', () => {
+    const msg = { mission_state: '1', wp_reached: '2', uav_state: 'ok' };
+    const mission = { deviceId: 7, mission_state: '1', wp_reached: '2', uav_state: 'ok' };
+    const px4 = dec({ type: 'state_machine', msgType: 'muav_state_machine/UAVState', msg: { ...msg, airframe_type: 'px4', landed_state: 3 } });
+    assert.deepEqual(px4, { ...mission, flightPhase: 'TAKEOFF', flightPhaseRaw: 3 });
+    const dji = dec({ type: 'state_machine', msgType: 'muav_state_machine/UAVState', msg: { ...msg, airframe_type: 'dji', landed_state: 1 } });
+    assert.deepEqual(dji, { ...mission, armState: 'ARMED', flightPhase: 'ON_GROUND', flightPhaseRaw: 1 });
+  });
+
+  test('state_machine / UAVState without landed_state says nothing about the phase', () => {
     const r = dec({
       type: 'state_machine',
       msgType: 'muav_state_machine/UAVState',
-      msg: { airframe_type: 'px4', mission_state: '1', wp_reached: '2', uav_state: 'ok', landed_state: 3 },
+      msg: { airframe_type: 'px4', mission_state: '1', wp_reached: '2', uav_state: 'ok' },
     });
-    assert.deepEqual(r, { deviceId: 7, protocol: 'px4', mission_state: '1', wp_reached: '2', uav_state: 'ok', landed_state: 3 });
+    assert.deepEqual(r, { deviceId: 7, mission_state: '1', wp_reached: '2', uav_state: 'ok' });
   });
 });
 
-describe('decodeRosMsg: slots that ignore the message type', () => {
+describe('decodeMsg: slots that ignore the message type', () => {
   test('humidity and threat pass data through whatever the msgType is', () => {
     assert.deepEqual(dec({ type: 'humidity', msgType: 'std_msgs/Int32MultiArray', msg: { data: [1, 2] } }), {
       deviceId: 7,
@@ -297,7 +333,7 @@ describe('decodeRosMsg: slots that ignore the message type', () => {
   });
 });
 
-describe('decodeRosMsg: unknown combinations', () => {
+describe('decodeMsg: unknown combinations', () => {
   test('returns null for declared-but-undecoded slots and for wrong message types', () => {
     assert.equal(dec({ type: 'height_above_takeoff', msgType: 'std_msgs/Float32', msg: { data: 1 } }), null);
     assert.equal(dec({ type: 'vo_position', msgType: 'dji_osdk_ros/VOPosition', msg: {} }), null);

@@ -1,7 +1,10 @@
 import { z } from 'zod';
+import { ARM_STATE as ARM, FLIGHT_PHASE as PHASE, FLIGHT_MODE as MODE } from '../../config/status.js';
 
 export const UAV_STATE = z.enum(['OK', 'WARNING', 'ERROR', 'CRITICAL']);
-export const LANDED_STATE = z.enum(['UNDEFINED', 'ON GROUND', 'IN AIR', 'TAKEOFF', 'LANDING', 'STOPED']);
+export const ARM_STATE = z.enum(Object.values(ARM));
+export const FLIGHT_PHASE = z.enum(Object.values(PHASE));
+export const FLIGHT_MODE = z.enum(Object.values(MODE));
 export const MISSION_STATE = z.enum(['Ready', 'Running', 'Paused', 'Completed', 'Error']);
 export const ALARM_STATE = z.enum(['None', 'threat', 'confirm', 'UNDEFINED']);
 
@@ -28,7 +31,9 @@ export const PositionAttributesSchema = z.object({
   mission_state: MISSION_STATE.default('Ready'),
   wp_reached: z.number().default(0),
   uav_state: UAV_STATE.default('OK'),
-  landed_state: LANDED_STATE.default('UNDEFINED'),
+  armState: ARM_STATE.default(ARM.UNKNOWN),
+  flightPhase: FLIGHT_PHASE.default(PHASE.UNKNOWN),
+  flightMode: FLIGHT_MODE.default(MODE.UNKNOWN),
   alarm: ALARM_STATE.default('UNDEFINED'),
   home: z.array(z.number()).optional(),
   MIC_1: z.number().optional(),

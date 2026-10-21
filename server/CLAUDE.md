@@ -59,7 +59,7 @@ server/
 
    - Uses ROSLIB via the `models/ros/` module (facade `models/ros/ros.js`)
    - Auto-subscribes to device topics based on `devices_msg.yaml` configuration
-   - Decodes ROS messages via `models/ros/rosDecode.js` into internal position/status format
+   - Decodes ROS messages via `models/msgDecode.js` into internal position/status format
    - Auto-reconnects every 30s on disconnect (see `models/ros/rosConnection.js`)
 
 3. **Device WebSocket** (FlatBuffer protocol): Server → UAV Fleet
@@ -328,7 +328,7 @@ time, so per-task report windows (events, flown track) of two tasks on one devic
 
 - Two channels: ROS services OR FlatBuffer commands
 - 5-second timeout with automatic error callbacks
-- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. WHICH endpoint of a device implements a command, and how its message is built, is a registry like `rosDecode`'s: `models/commands/commandEncoders.js` (`register(CommandType, { key?, msgType? }, encoder)`; specific msgTypes such as `px4_msgs/msg/VehicleCommand` match by msgType, generic ones such as `std_srvs/SetBool` by the endpoint key) filled in `models/commands/commandRegistry.js`. Availability is DERIVED from the endpoints the category already declares — no per-category list. A command matching two endpoints of one category is a boot problem until `commands.<Type>.via` (e.g. `publishers.vehicle_command`) picks one; `test/api/json/category_commands.json` is the golden list per category. A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commands/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
+- Command contract: `config/devices/command_schema.yaml` (same pattern as `mission_schema.yaml`) says what each command means — params with unit/min/max/default/required, label, group, `severity`, `confirm`, `hidden`. WHICH endpoint of a device implements a command, and how its message is built, is a registry like `msgDecode`'s: `models/commands/commandEncoders.js` (`register(CommandType, { key?, msgType? }, encoder)`; specific msgTypes such as `px4_msgs/msg/VehicleCommand` match by msgType, generic ones such as `std_srvs/SetBool` by the endpoint key) filled in `models/commands/commandRegistry.js`. Availability is DERIVED from the endpoints the category already declares — no per-category list. A command matching two endpoints of one category is a boot problem until `commands.<Type>.via` (e.g. `publishers.vehicle_command`) picks one; `test/api/json/category_commands.json` is the golden list per category. A category may narrow a command's params in its `commands:` block of `devices_msg.yaml` (min/max/step/default/options only, never widen). `models/commands/commandSchema.js` validates both at boot and resolves them; `GET /api/commands/types` returns each command resolved for the device, and `sendCommand` validates `attributes` against that SAME resolved command (out of range / wrong type / unknown / missing required → `{ state: 'error', msg }`, never clamped; defaults filled), so handlers and builders get clean values. `freeform: true` skips it (LoadMission and UploadMission: their payload is a mission, validated by taskGraph)
 - Command types: `CommandType` in `config/commandTypes.js` (PascalCase: `LoadMission`, `CommandMission`, `CameraFileDownload`, …). Not the same thing as the endpoint key that implements it on a device (`configure_mission`, `command_mission`: keys of `devices_msg.yaml`, snake_case, enumerated by `SubscriberKey`/`ServiceKey`/`PublisherKey` in `config/deviceMsgCatalog.js`). A key names a slot, not the ROS name (that is `name:`), but it IS the MQTT topic segment (`muav/<device>/pub/<slot>`, `muav/<device>/srv/<key>`), so renaming one means updating the drone's `mqtt_client` config. The client mirrors it in `client/src/common/util/commandTypes.js`; `test/test-command-types-mirror.js` fails if they drift
 
 ### ROS Integration
@@ -359,19 +359,35 @@ rosbridge argument names, inside `rosServices`/`rosAction`.)
 
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`
-(`categoryModel.getMessagesType`), DERIVED from what `rosDecode` can decode plus what categories
+(`categoryModel.getMessagesType`), DERIVED from what `msgDecode` can decode plus what categories
 already declare — there is no hand-kept list (the old `messages.yaml` drifted and was removed).
 Saving a category rewrites `devices_msg.yaml` (`writeDataFile`), so its comments are lost.
 
-**Message Decoding** (`models/ros/rosDecode.js`): a registry, not an if-chain. A decoder is
-picked by `(slot, messageType)` — the `subscribers` key plus the `messageType` that entry
-declares — and returns a `TelemetryPatch` (typedef in `models/positions/positionReducers.js`),
+**Message Decoding** (`models/msgDecode.js`, NOT under `ros/`, the mirror of `msgEncode`): a
+registry, not an if-chain. `decodeMsg` serves every transport that carries ROS-shaped JSON —
+rosbridge (`ros.js`) and MQTT (`MqttServer.js`); robofleet has its own wire decoder (`fbDecode.js`).
+A decoder is picked by `(slot, messageType)` — the `subscribers` key plus the `messageType` that
+entry declares — and returns a `TelemetryPatch` (typedef in `models/positions/positionReducers.js`),
 which `positionsModel.updatePosition` merges through ordered reducers.
 
 - `sensor_msgs/NavSatFix` → GPS position
-- `px4_msgs/VehicleStatus` → Arming state, navigation state, failsafe
+- `px4_msgs/VehicleStatus` → `armState` + `flightMode` (canonical, see below), failsafe
 - `sensor_msgs/Imu` → Heading from quaternion
 - `sensor_msgs/BatteryState` (and its `*/BatteryState*` look-alikes) → Battery percentage
+
+**Vehicle state is canonical, never a firmware label.** Three independent axes in
+`position.attributes`, vocabulary in `config/status.js`: `armState` (`ARM_STATE`), `flightPhase`
+(`FLIGHT_PHASE`, where it is) and `flightMode` (`FLIGHT_MODE`, how it is flown; `isAutonomous(mode)`
+/ `controlLevelOf(mode)` say who is in control, derived from the mode). A decoder translates its
+message's own codes through `models/vehicleStates.js` (NOT under `ros/`: rosbridge, MQTT and robofleet
+all call it) and keeps the raw code in `flightModeRaw` / `flightPhaseRaw`. `UNKNOWN` = the source says
+nothing, `OTHER` = a mode the GCS does not tell apart. Consumers compare against the constants, never
+against a string: `missionSignals` does, and the client mirrors them (with the text to show) in
+`client/src/common/util/vehicleState.js`, guarded by `test/test-vehicle-state-mirror.js`. A new
+firmware = a new adapter in `vehicleStates.js` plus a test; no consumer changes. A reducer writes only
+the keys a message carries (DJI `flight_status` brings arm + phase, DJI `display_mode` the mode, PX4
+`vehicle_status` arm + mode). Two slots can share a messageType (`flight_status` and `display_mode`
+are both `std_msgs/UInt8`): the slot, not the type, says which axis it is, so give each its own.
 
 **What differs per category is a param, never a branch on the category name.** `ros.js` hands the
 decoder the category's own subscriber entry as `params`; the decoder reads, with defaults:
@@ -383,7 +399,7 @@ subscriber's `(slot, messageType)` against the registry (`hasDecoder`); `LOG_LEV
 a gap throw. A slot declared in the YAML that nothing consumes gets an explicit `ignore(...)`.
 
 **Message Encoding** (`models/msgEncode.js`, NOT under `ros/`): a registry by msgType, the mirror of
-`rosDecode` on the way out. The structure of a message depends only on its msgType and is the same for
+`msgDecode` on the way out. The structure of a message depends only on its msgType and is the same for
 every protocol (rosbridge JSON, the same JSON over MQTT, robofleet = ROS messages packed in Flatbuffers),
 so it is encoded ONCE, before the gateway: `commandsModel.sendToDevice` (commands) and the raw routes
 `/ros/publish` and `/ros/action_send_goal`. The transport primitives (`callService`, `sendActionGoal`,
@@ -413,7 +429,6 @@ free of business-controller imports.
 | `rosServices.js`      | ROS service calls: `callRosService` (primitive) + `callService` (receives the already-built service name + type; no config lookup)                                                                                                            |
 | `rosAction.js`        | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building                                                                                           |
 | `rosInspect.js`       | Read-only rosapi introspection (topics/services/types/action servers)                                                                                                                                                                         |
-| `rosDecode.js`        | ROS message → internal format                                                                                                                                                                                                                 |
 | `rosValidateMSG.js`   | Message structure validation against type maps                                                                                                                                                                                                |
 | `ros2ActionClient.js` | Alternative action client (`callOnConnection`); currently unused                                                                                                                                                                              |
 | `index.js`            | Module barrel exports                                                                                                                                                                                                                         |
@@ -595,7 +610,7 @@ When modifying mission flow, check all of:
 When adding new device types:
 
 1. Add configuration to `devices_msg.yaml` (`subscribers`, `services`, and/or `actions` per category); put any per-category scale/unit/offset on the subscriber entry itself
-2. Register a decoder for the `(slot, messageType)` pair in `models/ros/rosDecode.js` (or `ignore(...)` it) — boot validation and `test/test-devices-msg.js` fail on a pair with none
+2. Register a decoder for the `(slot, messageType)` pair in `models/msgDecode.js` (or `ignore(...)` it) — boot validation and `test/test-devices-msg.js` fail on a pair with none
 3. If it takes commands: register the command encoder in `models/commands/commandRegistry.js` (by msgType, or by key for a generic msgType) and the message encoder for that msgType in `models/msgEncode.js` (or `passthrough` it) — the boot check and `test/test-command-registry.js` fail otherwise
 4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosSubscriptions.js`; no per-device code needed
 
@@ -645,7 +660,7 @@ evaluated at registration hits a circular-import TDZ.
 
 - `models/mqtt/MqttServer.js` (started from `server.js` via `initMqttServer`), mirror of `FlatbufferServer`. Plan and open risks: `MQTT_PLAN.md`.
 - Topic contract lives ONLY in `models/mqtt/mqttTopics.js`: `muav/<device>/pub/<slot>` (telemetry), `muav/<device>/srv/<name>/{request,response}` (service calls), `muav/<device>/status` (retained presence, plain `online`/`offline`). `<slot>` / `<name>` are the keys of `subscribers` / `services` in `devices_msg.yaml`.
-- Telemetry reuses `decodeRosMsg` unchanged: the drone publishes the same JSON shape rosbridge does. A payload with bare `NaN`/`Infinity` is parsed with those as `null` instead of being dropped.
+- Telemetry reuses `decodeMsg` unchanged: the drone publishes the same JSON shape rosbridge does. A payload with bare `NaN`/`Infinity` is parsed with those as `null` instead of being dropped.
 - Service calls are enveloped (`{id, ts, request}` → `{id, success, response, error}`) and correlated by `id`. Unlike robofleet, `sendCommand` resolves only when the drone answers or the GCS timeout fires. `envelope.success=false` means the CALL failed; the service's own verdict (`response.success || response.result`) stays inside `response`.
 - Only `services` are bridged. Publishers and actions on an `mqtt` device answer a warning (out of scope for v1).
 - Tests: `test/test-mqtt-server.js` runs against a fake client (no broker).

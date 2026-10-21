@@ -2,6 +2,7 @@ import { Button, Typography } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import dayjs from 'dayjs';
+import { FLIGHT_MODE, FLIGHT_PHASE, armLabel, modeLabel, phaseLabel } from '../../common/util/vehicleState';
 import { blink } from './animations';
 
 const useStyles = makeStyles()((theme) => ({
@@ -78,10 +79,10 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-// Status shown in the pill, from the PX4 nav/landed state when there is one.
+// Status shown in the pill, from the flight mode / phase when there is one.
 const deviceStatus = (device, attributes = {}) => {
-  if (/return/i.test(attributes.navState ?? '')) return { text: 'Returning', color: 'error' };
-  if (attributes.landed_state === 'IN AIR') return { text: 'In flight', color: 'success' };
+  if (attributes.flightMode === FLIGHT_MODE.RTL) return { text: 'Returning', color: 'error' };
+  if (attributes.flightPhase === FLIGHT_PHASE.IN_AIR) return { text: 'In flight', color: 'success' };
   if (device?.status === 'online') return { text: 'Online', color: 'success' };
   return { text: device?.status ?? 'Unknown', color: 'neutral' };
 };
@@ -102,8 +103,8 @@ const DeviceHeader = ({ device, position, capabilities, inMission, onBack, onSen
       value: battery != null ? `${battery}%` : '—',
       color: battColor ? theme.palette[battColor].main : undefined,
     },
-    { label: 'Armed', value: attributes.armState ?? '—' },
-    { label: 'Landed', value: attributes.landed_state ?? '—' },
+    { label: 'Armed', value: armLabel(attributes.armState) ?? '—' },
+    { label: 'Phase', value: phaseLabel(attributes.flightPhase) ?? '—' },
     {
       label: 'Last update',
       value: position?.deviceTime ? dayjs(position.deviceTime).format('HH:mm:ss') : '—',
@@ -137,9 +138,9 @@ const DeviceHeader = ({ device, position, capabilities, inMission, onBack, onSen
         <span className={classes.status} style={{ color: statusColor }}>
           {status.text}
         </span>
-        {attributes.navState && (
+        {modeLabel(attributes.flightMode) && (
           <Typography variant="caption" color="textSecondary">
-            {attributes.navState}
+            {modeLabel(attributes.flightMode)}
           </Typography>
         )}
       </div>

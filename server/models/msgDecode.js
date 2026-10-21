@@ -1,5 +1,6 @@
-import { getDatetime, round } from '../../common/utils.js';
-import { getDroneStatus, getArmingStatus, getVehicleCommand, getVehicleCmdResult } from '../../config/status.js';
+import { getDatetime, round } from '../common/utils.js';
+import { getVehicleCommand } from '../config/status.js';
+import { px4ArmState, px4FlightMode, px4CommandResult, djiFlightStatus, djiFlightMode, catecFlightState, landedStateOf } from './vehicleStates.js';
 
 // ROS message -> internal telemetry patch (`TelemetryPatch`, models/positions/positionReducers.js).
 //
@@ -22,7 +23,7 @@ const keyOf = (slot, msgType) => `${slot}|${msgType}`;
 function register(slot, msgTypes, decode) {
   for (const msgType of [msgTypes].flat()) {
     const key = keyOf(slot, msgType);
-    if (decoders.has(key)) throw new Error(`rosDecode: duplicate decoder for ${key}`);
+    if (decoders.has(key)) throw new Error(`msgDecode: duplicate decoder for ${key}`);
     decoders.set(key, decode);
   }
 }
@@ -60,7 +61,7 @@ export function hasDecoder(slot, msgType) {
  * @param {object} [ctx.params] - the category's subscriber entry (scale, unit, heading_offset, ...)
  * @returns {object|null} a TelemetryPatch, or null when there is nothing to apply
  */
-export function decodeRosMsg({ msg, deviceId, type, msgType, params = {} }) {
+export function decodeMsg({ msg, deviceId, type, msgType, params = {} }) {
   const decode = decoders.get(keyOf(type, msgType)) ?? decoders.get(keyOf(type, ANY));
   return decode ? decode({ msg, deviceId, params }) : null;
 }
@@ -115,8 +116,9 @@ register('local_position', 'px4_msgs/msg/VehicleLocalPosition', ({ msg, deviceId
 
 register('vehicle_status', 'px4_msgs/msg/VehicleStatus', ({ msg, deviceId }) => ({
   deviceId,
-  armState: getArmingStatus(msg.arming_state),
-  navState: getDroneStatus(msg.nav_state),
+  armState: px4ArmState(msg.arming_state),
+  flightMode: px4FlightMode(msg.nav_state),
+  flightModeRaw: msg.nav_state,
   failsafe: msg.failsafe,
   flightCheck: msg.pre_flight_checks_pass,
   systemId: msg.system_id, // MAV_SYS_ID: the target_system of every VehicleCommand to it
@@ -125,7 +127,9 @@ register('vehicle_status', 'px4_msgs/msg/VehicleStatus', ({ msg, deviceId }) => 
 register('vehicle_command_ack', 'px4_msgs/msg/VehicleCommandAck', ({ msg, deviceId }) => ({
   deviceId,
   commandAck: getVehicleCommand(msg.command),
-  resultCmdAck: getVehicleCmdResult(msg.result),
+  commandAckRaw: msg.command,
+  resultCmdAck: px4CommandResult(msg.result),
+  resultCmdAckRaw: msg.result,
 }));
 
 // ─── heading ───────────────────────────────────────────────────────────────────
@@ -245,26 +249,33 @@ register('camera', ['sensor_msgs/CompressedImage', 'sensor_msgs/msg/CompressedIm
 
 register('flight_status', 'std_msgs/UInt8', ({ msg, deviceId }) => ({
   deviceId,
-  protocol: 'dji',
-  landed_state: msg.data,
+  ...djiFlightStatus(msg.data),
+  flightPhaseRaw: msg.data,
 }));
 
-register('state_machine', 'std_msgs/String', ({ msg, deviceId }) => ({
+// Same message type as flight_status, a different thing: the flight mode, not the phase.
+register('display_mode', 'std_msgs/UInt8', ({ msg, deviceId }) => ({
   deviceId,
-  protocol: 'catec',
+  flightMode: djiFlightMode(msg.data),
+  flightModeRaw: msg.data,
+}));
+
+register('state_machine', 'std_msgs/String',({ msg, deviceId }) => ({
+  deviceId,
   mission_state: '0',
   wp_reached: '0',
   uav_state: 'ok',
-  landed_state: msg.data,
+  ...catecFlightState(msg.data),
+  flightPhaseRaw: msg.data,
 }));
 
 register('state_machine', 'muav_state_machine/UAVState', ({ msg, deviceId }) => ({
   deviceId,
-  protocol: msg.airframe_type,
   mission_state: msg.mission_state,
   wp_reached: msg.wp_reached,
   uav_state: msg.uav_state,
-  landed_state: msg.landed_state,
+  // A message without landed_state says nothing about the phase: it must not wipe the cached one.
+  ...(msg.landed_state == null ? {} : { ...landedStateOf(msg.airframe_type, msg.landed_state), flightPhaseRaw: msg.landed_state }),
 }));
 
 // ─── slots whose payload does not depend on the message type ───────────────────

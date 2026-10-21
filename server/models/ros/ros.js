@@ -3,7 +3,7 @@ import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
-import { decodeRosMsg } from './rosDecode.js';
+import { decodeMsg } from '../msgDecode.js';
 import { logger, rosLogger, logHelpers } from '../../common/logger.js';
 import {
   getRos,
@@ -124,7 +124,7 @@ export class rosModel {
     // The closure captures deviceId + the topic's own config entry (`params`: scale,
     // unit, ...) so the transport never sees them and the decoder never sees the category.
     const makeOnMessage = (effect, params) => (args) => {
-      const decoded = decodeRosMsg({
+      const decoded = decodeMsg({
         msg: args.msg,
         deviceId: id,
         type: args.slot,

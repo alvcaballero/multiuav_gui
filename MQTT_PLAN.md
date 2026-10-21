@@ -26,7 +26,7 @@ Recibir telemetría de los drones y comandar sus servicios ROS por MQTT, en para
 
 - `<device>` = `name` del device en la DB (mismo namespace ROS que arma `buildDeviceName`).
 - `<slot>` y `<name>` salen de `devices_msg.yaml` (`subscribers` / `services`).
-- Telemetría: JSON con la misma forma que entrega rosbridge, así `decodeRosMsg` se reutiliza tal cual.
+- Telemetría: JSON con la misma forma que entrega rosbridge, así `decodeMsg` se reutiliza tal cual.
 
 Servicios:
 
@@ -46,7 +46,7 @@ Servicios:
  │ mqtt_client (FORK)  │─ pub/slot ▶│ models/mqtt/         │
  │  ├ bridge de topics │            │   MqttServer.js      │
  │  │  (upstream)      │            │                      │
- │  └ bridge de        │◀ request ──│  decodeRosMsg →      │
+ │  └ bridge de        │◀ request ──│  decodeMsg →      │
  │    servicios (nuevo)│─ response ▶│  positionsController │
  │    GenericClient    │            │  pending[id]         │
  └─────────────────────┘            └──────────────────────┘
@@ -92,7 +92,7 @@ Notas:
 
 ### Pieza 3: servidor (`server/models/mqtt/`, espejo de `models/flatbuffer/`)
 
-- Suscripción a `muav/+/pub/+` → device por nombre → `messageType` de la categoría → `decodeRosMsg` → `positionsController.updatePosition`.
+- Suscripción a `muav/+/pub/+` → device por nombre → `messageType` de la categoría → `decodeMsg` → `positionsController.updatePosition`.
 - `sendCommand`: publica el request con `uuid`, guarda `pending[id] = {resolve, timer}`, devuelve una Promise que resuelve la respuesta real o el timeout. (robofleet devuelve `success` al enviar; acá no.)
 - Cambios en archivos existentes:
   - `schemas/zod/devices.js:4`: agregar `'mqtt'` a `DEVICE_PROTOCOL`.

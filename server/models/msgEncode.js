@@ -6,7 +6,7 @@
 // before the gateway (commandsModel.sendToDevice, and the raw /ros routes); a gateway only
 // packs bytes.
 //
-// A registry by msgType, like rosDecode on the way in. What differs between categories is
+// A registry by msgType, like msgDecode on the way in. What differs between categories is
 // never a branch on the category: it is the msgType the category declares.
 //
 //   register(msgType, encode)  domain object → message

@@ -49,6 +49,8 @@ client/
     │   └── util/           # formatter, converter, fetchs, missionConvert, missionGeo, preferences,
     │       │               #   commandTypes (mirror of the server CommandType; never which ones a
     │       │               #   device has — that's /api/commands/types),
+    │       │               #   vehicleState (mirror of the server ARM_STATE / FLIGHT_PHASE / FLIGHT_MODE
+    │       │               #   plus the text to show for each — see below),
     │       │               #   usePersistedState/useQuery/useMarkerTypes/useMissionFile, and the
     │       │               #   former services (planningService, fileService, missionPlanLoader,
     │       │               #   sendChatMessage, toolApproval)
@@ -198,6 +200,21 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
   `taskKey`/`action`/`dependsOn`, and replacing the task would erase them.
 - Task status styles live in `common/util/styles/missionStatus.js` (`taskStyle`); `init` is shown as
   "Waiting" (for its dependencies), `skipped` means it never ran because a dependency failed.
+
+### Vehicle state (`position.attributes`)
+
+The server sends the vehicle state already canonical, as three independent axes — never a firmware
+label (see `server/CLAUDE.md` › Message Decoding):
+
+- `armState`: `ARMED | DISARMED | UNKNOWN`
+- `flightPhase`: where it is — `ON_GROUND | TAKEOFF | IN_AIR | LANDING | UNKNOWN`
+- `flightMode`: how it is flown — `MANUAL | ASSISTED | HOLD | MISSION | RTL | OFFBOARD | …`
+
+`common/util/vehicleState.js` mirrors those constants (`server/test/test-vehicle-state-mirror.js` fails
+if they drift) and owns the text to show: `armLabel` / `phaseLabel` / `modeLabel`, which return `null`
+for `UNKNOWN` or an absent attribute — the caller picks a dash (stats) or nothing (captions). Compare
+against the constants (`flightMode === FLIGHT_MODE.RTL`), never against a string or the label. The
+old `navState` and `landed_state` no longer exist.
 
 ### Redux State Updates
 

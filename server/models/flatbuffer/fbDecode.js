@@ -1,5 +1,6 @@
 import * as fb from 'fbmsglib';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
+import { djiFlightStatus, djiFlightMode } from '../vehicleStates.js';
 
 export function getNameFromTopic(topic) {
   if (topic.startsWith('/')) {
@@ -60,7 +61,11 @@ export function decodeFbMsg(metadata, buf, deviceId, category, deviceName) {
   }
   if (metadata.type() === 'std_msgs/UInt8' && metadata.topic().includes('flight_status')) {
     const msg = fb.fb.std_msgs.UInt8.getRootAsUInt8(buf);
-    return { deviceId, protocol: 'dji', landed_state: msg.data() };
+    return { deviceId, ...djiFlightStatus(msg.data()), flightPhaseRaw: msg.data() };
+  }
+  if (metadata.type() === 'std_msgs/UInt8' && metadata.topic().includes('display_mode')) {
+    const msg = fb.fb.std_msgs.UInt8.getRootAsUInt8(buf);
+    return { deviceId, flightMode: djiFlightMode(msg.data()), flightModeRaw: msg.data() };
   }
   if (metadata.type() === 'dji_osdk_ros/ObstacleInfo') {
     const msg = fb.fb.dji_osdk_ros.ObstacleInfo.getRootAsObstacleInfo(buf);

@@ -18,11 +18,13 @@
 import { positionsModel } from '../positions/positions.js';
 import { missionLogger as logger } from '../../common/logger.js';
 import { haversineMeters } from '../../common/geo.js';
+import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
 
 // ---------------------------------------------------------------------------
 // Signal 1 — UAV flight state (armed / in-air / nav mode)
-// Template: works for PX4 (armState/navState/failsafe) and DJI (landed_state).
-// Returns null estimate — only produces anomaly flags.
+// Reads the canonical armState / flightMode / flightPhase, so it does not care which firmware
+// produced them. Returns null estimate — only produces anomaly flags.
+const RTH_MODES = [FLIGHT_MODE.RTL, FLIGHT_MODE.LAND, FLIGHT_MODE.EMERGENCY];
 // ---------------------------------------------------------------------------
 export function signalFlightState(deviceId) {
   const pos = positionsModel.getByDeviceId(deviceId);
@@ -31,20 +33,15 @@ export function signalFlightState(deviceId) {
   const attr = pos.attributes ?? {};
   const anomalies = [];
 
-  // PX4: armState comes from VehicleStatus
-  if (attr.armState === 'Disarmed') {
+  if (attr.armState === ARM_STATE.DISARMED) {
     anomalies.push('DISARMED');
   }
 
-  // PX4: RTH/land nav states
-  const rthStates = ['Auto return to launch mode', 'Auto Land', 'Descend mode', 'Termination mode'];
-  if (attr.navState && rthStates.includes(attr.navState)) {
+  if (RTH_MODES.includes(attr.flightMode)) {
     anomalies.push('RTH_SUSPECTED');
   }
 
-  // DJI / CATEC: landed_state
-  const landedStr = String(attr.landed_state ?? '').toUpperCase();
-  if (landedStr === 'ON GROUND' || landedStr === 'STOPED') {
+  if (attr.flightPhase === FLIGHT_PHASE.ON_GROUND) {
     anomalies.push('ON_GROUND');
   }
 

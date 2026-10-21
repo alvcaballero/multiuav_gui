@@ -9,6 +9,7 @@ import useFilter from '../components/devices/useFilter';
 import CommandCard from '../components/commands/CommandCard';
 import { CommandType } from '../common/util/commandTypes';
 import { obstacleFromInfo } from '../common/util/obstacles';
+import { ARM_STATE, armLabel } from '../common/util/vehicleState';
 import { devicesActions } from '../store';
 
 import DeviceHeader from './device/DeviceHeader';
@@ -142,7 +143,7 @@ const DevicePage = () => {
     pitch: Math.round(attributes.gimbal?.[0] ?? 0),
     yaw: Math.round(attributes.gimbal?.[2] ?? 0),
   };
-  const armed = attributes.armState ? attributes.armState === 'Armed' : null;
+  const armed = armLabel(attributes.armState) ? attributes.armState === ARM_STATE.ARMED : null;
   const obstacle = capabilities.obstacle ? obstacleFromInfo(attributes.obstacle_info) : null;
 
   const askConfirm = (options) => setConfirmation(options);

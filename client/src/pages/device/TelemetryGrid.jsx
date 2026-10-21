@@ -1,6 +1,7 @@
 import { Paper, Typography } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import dayjs from 'dayjs';
+import { armLabel, phaseLabel } from '../../common/util/vehicleState';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -113,7 +114,7 @@ const TelemetryGrid = ({ position }) => {
       unit: '°',
       sub: gimbal ? `pitch · yaw ${fixed(gimbal[2], 0)}°` : '',
     },
-    { label: 'Flight', value: a.landed_state ?? '—', sub: a.armState ?? '' },
+    { label: 'Flight', value: phaseLabel(a.flightPhase) ?? '—', sub: armLabel(a.armState) ?? '' },
     {
       label: 'Mission',
       value: a.mission_state ?? '—',

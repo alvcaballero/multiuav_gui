@@ -3,7 +3,7 @@ import { devicesMsg, missionSchema } from '../config/config.js';
 import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS, ServiceKey } from '../config/deviceMsgCatalog.js';
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
-import { hasDecoder, decodableMsgTypes } from './ros/rosDecode.js';
+import { hasDecoder, decodableMsgTypes } from './msgDecode.js';
 import { commandSchema, validateCommandSchema, validateCommandOverrides } from './commands/commandSchema.js';
 import { CommandType } from '../config/commandTypes.js';
 import { commandRegistry } from './commands/commandRegistry.js';
@@ -31,7 +31,7 @@ const DEVICES_MSG_BLOCKS = {
 };
 
 // Además de la key, cada subscriber valida el PAR (slot, messageType) contra el registry
-// de rosDecode: un messageType mal escrito en el YAML (o en el decoder) dejaría el topic
+// de msgDecode: un messageType mal escrito en el YAML (o en el decoder) dejaría el topic
 // suscripto y mudo, sin ningún error.
 function validateDevicesMsgKeys(catalog) {
   const strict = process.env.LOG_LEVEL === 'debug';
@@ -224,7 +224,7 @@ export class categoryModel {
 
   // Message types the category editor offers, per block and key (GET /api/category/messages).
   // DERIVED, never a hand-kept list (it was messages.yaml, and it drifted):
-  //   subscribers → what rosDecode decodes, plus what categories declare (wildcard slots
+  //   subscribers → what msgDecode decodes, plus what categories declare (wildcard slots
   //                 such as battery accept any type, so only declarations name one)
   //   services / actions / publishers → what categories declare; every one of them is
   //                 checked at boot against commandRegistry/msgEncode. A command matched by key

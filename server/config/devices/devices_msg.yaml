@@ -240,7 +240,7 @@ dji_M600:
     battery:
       name: '/dji_sdk/battery_state'
       messageType: 'sensor_msgs/BatteryState'
-    flight_status:
+    display_mode:
       name: '/dji_sdk/display_mode'
       messageType: 'std_msgs/UInt8'
   services:

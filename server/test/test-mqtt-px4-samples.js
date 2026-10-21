@@ -84,7 +84,7 @@ describe('px4_ros2 telemetry as the fork publishes it', () => {
   test('vehicle_status: arming and nav state, and the system id VehicleCommand targets', async () => {
     const { updates, droneSays } = setup();
     await droneSays('vehicle_status', SAMPLES.vehicle_status);
-    assert.equal(updates[0].armState, 'Disarmed');
+    assert.equal(updates[0].armState, 'DISARMED');
     assert.equal(updates[0].flightCheck, true);
     assert.equal(updates[0].failsafe, false);
     assert.equal(updates[0].systemId, 1);

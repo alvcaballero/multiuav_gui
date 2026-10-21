@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readDataFile } from '../common/utils.js';
 import { devicesMsg } from '../config/config.js';
 import { categoryModel, findLegacyTypeFields } from '../models/category.js';
-import { decodableMsgTypes } from '../models/ros/rosDecode.js';
+import { decodableMsgTypes } from '../models/msgDecode.js';
 
 // GET /api/category/messages feeds the category editor. It is derived from the decoders and
 // from what categories declare, so it can't drift the way the old messages.yaml did.

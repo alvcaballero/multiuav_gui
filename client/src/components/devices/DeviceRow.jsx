@@ -25,6 +25,7 @@ import {
   formatPercentage,
   getStatusColor,
 } from '../../common/util/formatter';
+import { armLabel, phaseLabel } from '../../common/util/vehicleState';
 import { mapIconKey, mapIcons } from '../../map/core/preloadImages';
 import EngineIcon from '../../resources/images/data/engine.svg';
 import { makeStyles } from 'tss-react/mui';
@@ -135,18 +136,14 @@ const DeviceRow = ({ devices, index, style }) => {
 
   const status = item.status === 'online' ? item.status : dayjs(item.lastUpdate).fromNow();
 
-  const navState = position?.attributes?.navState;
   const armState = position?.attributes?.armState;
-  const landedState = position?.attributes?.landed_state;
+  const flightPhase = position?.attributes?.flightPhase;
 
   const secondaryText = useMemo(() => {
-    const uavStatus = navState ? (
+    const vehicleState = [armLabel(armState), phaseLabel(flightPhase)].filter(Boolean).join(' · ');
+    const uavStatus = vehicleState ? (
       <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
-        {armState}
-      </Typography>
-    ) : landedState ? (
-      <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
-        {landedState}
+        {vehicleState}
       </Typography>
     ) : null;
 
@@ -162,7 +159,7 @@ const DeviceRow = ({ devices, index, style }) => {
         </Typography>
       </>
     );
-  }, [navState, armState, landedState, classes, item.status, status]);
+  }, [armState, flightPhase, classes, item.status, status]);
 
   return (
     <div style={style}>

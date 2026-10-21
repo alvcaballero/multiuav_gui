@@ -30,8 +30,8 @@
 // ─── Subscribers ────────────────────────────────────────────────────────────────
 
 // subscriber keys — strings de `type` que circulan entre el YAML (keys de
-// subscribers:), rosSubscriptions (suscripción) y rosDecode (comparación). Usalo en
-// rosDecode.js:
+// subscribers:), rosSubscriptions (suscripción) y msgDecode (comparación). Usalo en
+// msgDecode.js:
 // `if (type == SubscriberKey.POSITION_GLOBAL)` en vez del literal 'position_global'.
 export const SubscriberKey = Object.freeze({
   POSITION: 'position',
@@ -48,6 +48,7 @@ export const SubscriberKey = Object.freeze({
   OBSTACLE_INFO: 'obstacle_info',
   CAMERA: 'camera',
   FLIGHT_STATUS: 'flight_status',
+  DISPLAY_MODE: 'display_mode',
   ATTITUDE: 'attitude',
   HUMIDITY: 'humidity',
   THREAT: 'threat',
@@ -58,7 +59,7 @@ export const SubscriberKey = Object.freeze({
 
 // subscriberKey → { decoded }. Indexado por SubscriberKey (el enum es la fuente de
 // los literales).
-//   decoded: true   → rosDecode.js tiene una rama `if (type == '<key>')`.
+//   decoded: true   → msgDecode.js tiene una rama `if (type == '<key>')`.
 //   decoded: false  → key válida y suscribible pero SIN decodificador (comentada
 //                     en el decoder, o de ciclo action). No es un error; el
 //                     mensaje se recibe pero no se consume.
@@ -77,13 +78,14 @@ export const SUBSCRIBER_CATALOG = {
   [SubscriberKey.OBSTACLE_INFO]: { decoded: true },
   [SubscriberKey.CAMERA]: { decoded: true },
   [SubscriberKey.FLIGHT_STATUS]: { decoded: true },
+  [SubscriberKey.DISPLAY_MODE]: { decoded: true },
   [SubscriberKey.ATTITUDE]: { decoded: true },
   [SubscriberKey.HUMIDITY]: { decoded: true },
   [SubscriberKey.THREAT]: { decoded: true },
   [SubscriberKey.STATE_MACHINE]: { decoded: true },
   // Válidos/suscribibles pero sin decodificador (deshabilitados o de ciclo action).
-  [SubscriberKey.HEIGHT_ABOVE_TAKEOFF]: { decoded: false }, // ignore() en rosDecode.js
-  [SubscriberKey.VO_POSITION]: { decoded: false }, // ignore() en rosDecode.js
+  [SubscriberKey.HEIGHT_ABOVE_TAKEOFF]: { decoded: false }, // ignore() en msgDecode.js
+  [SubscriberKey.VO_POSITION]: { decoded: false }, // ignore() en msgDecode.js
 };
 
 // subscriberKeys conocidas — para validar el bloque subscribers: de devices_msg.

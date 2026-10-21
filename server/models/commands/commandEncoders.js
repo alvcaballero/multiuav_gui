@@ -1,5 +1,5 @@
 // Command encoders — qué endpoint de un device implementa cada command, y cómo se arma su
-// mensaje. Mismo patrón que rosDecode: un registry, no un if-chain ni un switch por dispatch.
+// mensaje. Mismo patrón que msgDecode: un registry, no un if-chain ni un switch por dispatch.
 //
 // Un command (Takeoff) es una acción de dominio; cada plataforma la implementa con SU mensaje
 // (PX4: px4_msgs/msg/VehicleCommand; otro firmware: otro). Por eso un encoder se registra por

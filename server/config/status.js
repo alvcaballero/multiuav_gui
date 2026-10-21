@@ -54,48 +54,87 @@ export const TASK_TERMINAL_STATUS = Object.freeze([
 // Terminal tasks that never flew to completion: they make a finished mission "with errors".
 export const TASK_FAILED_STATUS = Object.freeze([TASK_STATUS.CANCELLED, TASK_STATUS.ERROR, TASK_STATUS.SKIPPED]);
 
-// --- PX4 / ROS navigation maps ---
-// Definimos el mapa de estados
-const navigationStates = {
-  0: 'Manual mode',
-  1: 'Altitude mode',
-  2: 'Position mode',
-  3: 'Mission mode',
-  4: 'Loiter mode',
-  5: 'Auto return to launch mode',
-  6: 'Position slow',
-  7: 'Free5',
-  8: 'Free4',
-  9: 'Free3',
-  10: 'Acro mode',
-  11: 'Free2',
-  12: 'Descend mode',
-  13: 'Termination mode',
-  14: 'Offboard mode',
-  15: 'Stabilized mode',
-  16: 'Free1',
-  17: 'Auto Takeoff',
-  18: 'Auto Land',
-  19: 'Auto Follow',
-  20: 'Precision Land',
-  21: 'Orbit mode',
-  22: 'VTOL Takeoff',
-  23: 'External1',
-  24: 'External2',
-  25: 'External3',
-  26: 'External4',
-  27: 'External5',
-  28: 'External6',
-  29: 'External7',
-  30: 'External8',
-  31: 'Max',
+// --- Canonical vehicle state ---
+// The GCS vocabulary: every decoder translates its message's own codes into these, so no
+// consumer ever compares against a firmware's label. Three independent axes; UNKNOWN means
+// "the source says nothing", OTHER means "it says something the GCS does not tell apart".
+// The firmware's raw code travels next to the canonical value for debugging.
+export const ARM_STATE = Object.freeze({
+  ARMED: 'ARMED',
+  DISARMED: 'DISARMED',
+  UNKNOWN: 'UNKNOWN',
+});
+
+// Where the vehicle is, regardless of who flies it.
+export const FLIGHT_PHASE = Object.freeze({
+  ON_GROUND: 'ON_GROUND',
+  TAKEOFF: 'TAKEOFF',
+  IN_AIR: 'IN_AIR',
+  LANDING: 'LANDING',
+  UNKNOWN: 'UNKNOWN',
+});
+
+// How the vehicle is being flown. Deliberately coarser than any firmware's mode list.
+export const FLIGHT_MODE = Object.freeze({
+  MANUAL: 'MANUAL', // pilot commands the attitude/rates directly
+  ASSISTED: 'ASSISTED', // pilot flies, the autopilot stabilises (altitude/position hold)
+  HOLD: 'HOLD',
+  MISSION: 'MISSION',
+  TAKEOFF: 'TAKEOFF',
+  LAND: 'LAND',
+  RTL: 'RTL',
+  AUTO_OTHER: 'AUTO_OTHER', // autonomous behaviour the GCS does not tell apart (orbit, follow…)
+  OFFBOARD: 'OFFBOARD', // an external computer (companion/GCS) sends the setpoints
+  EMERGENCY: 'EMERGENCY', // flight termination
+  OTHER: 'OTHER',
+  UNKNOWN: 'UNKNOWN',
+});
+
+// Who is in control, derived from the mode: one value stored, nothing to keep consistent.
+export const CONTROL_LEVEL = Object.freeze({
+  MANUAL: 'MANUAL',
+  ASSISTED: 'ASSISTED',
+  AUTO: 'AUTO', // the autopilot's own logic
+  EXTERNAL: 'EXTERNAL', // an external computer
+  UNKNOWN: 'UNKNOWN',
+});
+
+const MODE_CONTROL = Object.freeze({
+  [FLIGHT_MODE.MANUAL]: CONTROL_LEVEL.MANUAL,
+  [FLIGHT_MODE.ASSISTED]: CONTROL_LEVEL.ASSISTED,
+  [FLIGHT_MODE.HOLD]: CONTROL_LEVEL.AUTO,
+  [FLIGHT_MODE.MISSION]: CONTROL_LEVEL.AUTO,
+  [FLIGHT_MODE.TAKEOFF]: CONTROL_LEVEL.AUTO,
+  [FLIGHT_MODE.LAND]: CONTROL_LEVEL.AUTO,
+  [FLIGHT_MODE.RTL]: CONTROL_LEVEL.AUTO,
+  [FLIGHT_MODE.AUTO_OTHER]: CONTROL_LEVEL.AUTO,
+  [FLIGHT_MODE.OFFBOARD]: CONTROL_LEVEL.EXTERNAL,
+  [FLIGHT_MODE.EMERGENCY]: CONTROL_LEVEL.UNKNOWN, // terminated: nobody is flying it
+  [FLIGHT_MODE.OTHER]: CONTROL_LEVEL.UNKNOWN,
+  [FLIGHT_MODE.UNKNOWN]: CONTROL_LEVEL.UNKNOWN,
+});
+
+export const controlLevelOf = (mode) => MODE_CONTROL[mode] ?? CONTROL_LEVEL.UNKNOWN;
+
+// What the vehicle answered to a command (an ack), in the GCS vocabulary like the axes above.
+export const COMMAND_RESULT = Object.freeze({
+  ACCEPTED: 'ACCEPTED', // accepted and executed
+  REJECTED: 'REJECTED', // temporarily: retrying later may work
+  DENIED: 'DENIED', // permanently
+  UNSUPPORTED: 'UNSUPPORTED',
+  FAILED: 'FAILED', // accepted, executed, and it failed
+  IN_PROGRESS: 'IN_PROGRESS', // not an answer yet: more acks follow
+  CANCELLED: 'CANCELLED',
+  UNKNOWN: 'UNKNOWN',
+});
+
+/** True when something other than the pilot's sticks is flying: the autopilot or an external computer. */
+export const isAutonomous = (mode) => {
+  const level = controlLevelOf(mode);
+  return level === CONTROL_LEVEL.AUTO || level === CONTROL_LEVEL.EXTERNAL;
 };
 
-const armingStates = {
-  1: 'Disarmed',
-  2: 'Armed',
-};
-
+// --- PX4 command maps ---
 const vehicleCommands = {
   0: 'CUSTOM_0 (Test command)',
   1: 'CUSTOM_1 (Test command)',
@@ -180,29 +219,6 @@ const vehicleCommands = {
   43003: 'EXTERNAL_POSITION_ESTIMATE',
   43004: 'EXTERNAL_WIND_ESTIMATE',
 };
-
-const vehicleCmdResults = {
-  0: 'ACCEPTED and EXECUTED',
-  1: 'TEMPORARILY REJECTED',
-  2: 'DENIED (permanently)',
-  3: 'UNSUPPORTED / UNKNOWN',
-  4: 'FAILED (executed but failed)',
-  5: 'IN PROGRESS',
-  6: 'CANCELLED',
-};
-
-// Función para obtener el estado
-export function getDroneStatus(code) {
-  return navigationStates[code] || 'Unknown status';
-}
-export function getArmingStatus(code) {
-  return armingStates[code] || 'Unknown status';
-}
-
-// Función para obtener el resultado por código
-export function getVehicleCmdResult(code) {
-  return vehicleCmdResults[code] || 'Unknown result';
-}
 
 // Función para obtener comando por ID
 export function getVehicleCommand(cmd) {

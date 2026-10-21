@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCatch } from '../../reactHelper';
+import { COMMAND_RESULT, resultLabel } from '../../common/util/vehicleState';
 
-const ACK_ACCEPTED = 'ACCEPTED and EXECUTED'; // server/config/status.js vehicleCmdResults[0]
+// An ack that is not a verdict yet (IN_PROGRESS) is information, not a warning; every other
+// result that is not an acceptance is one.
+const ACK_SEVERITY = {
+  [COMMAND_RESULT.ACCEPTED]: 'success',
+  [COMMAND_RESULT.IN_PROGRESS]: 'info',
+};
 
 /**
  * Sends commands to one device: logs them in the raw stream, shows "<label> — sent" and, for
@@ -40,10 +46,9 @@ export const useDeviceCommands = (deviceId, position, log, labelOf) => {
   useEffect(() => {
     // Only acks after a command sent from here: the cached one from before is not ours.
     if (!ack || !lastLabelRef.current) return;
-    const accepted = ackResult === ACK_ACCEPTED;
     setToast({
-      message: `${lastLabelRef.current} — ${accepted ? 'accepted' : ackResult}`,
-      severity: accepted ? 'success' : 'warning',
+      message: `${lastLabelRef.current} — ${resultLabel(ackResult) ?? 'unknown result'}`,
+      severity: ACK_SEVERITY[ackResult] ?? 'warning',
       key: Date.now(),
     });
   }, [ack, ackResult]);

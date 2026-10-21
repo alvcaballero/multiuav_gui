@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { categoryModel } from '../models/category.js';
-import { decodeRosMsg, hasDecoder } from '../models/ros/rosDecode.js';
+import { decodeMsg, hasDecoder } from '../models/msgDecode.js';
 
 // devices_msg.yaml is the SSOT for what each category publishes. These tests tie it to the
 // decoder registry the way ros.js does at runtime: decoder picked by (slot, messageType),
@@ -11,7 +11,7 @@ const categories = () => categoryModel.getAll().map((name) => [name, categoryMod
 const subscriber = (category, slot) => categoryModel.getCategory(category).subscribers[slot];
 const decodeAs = (category, slot, msg) => {
   const entry = subscriber(category, slot);
-  return decodeRosMsg({ msg, deviceId: 1, type: slot, msgType: entry.messageType, params: entry });
+  return decodeMsg({ msg, deviceId: 1, type: slot, msgType: entry.messageType, params: entry });
 };
 
 describe('devices_msg.yaml vs the decoder registry', () => {

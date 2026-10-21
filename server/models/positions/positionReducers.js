@@ -1,4 +1,5 @@
 import { round } from '../../common/utils.js';
+import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
 
 // Pure merge rules for one telemetry patch into one cached position. No controller
 // imports, so it runs in a test without opening the database: side effects (events)
@@ -6,7 +7,7 @@ import { round } from '../../common/utils.js';
 
 /**
  * A telemetry patch: what `positionsModel.updatePosition` accepts. It is a contract
- * shared by every producer (`rosDecode.js`, `FlatbufferServer.js`, `commands.js`) and a
+ * shared by every producer (`msgDecode.js`, `FlatbufferServer.js`, `commands.js`) and a
  * patch carries only the keys of ONE message, so absent keys mean "unchanged".
  * Groups travel together: a key that triggers a reducer is listed first.
  *
@@ -23,30 +24,24 @@ import { round } from '../../common/utils.js';
  * @property {{down?:number,front?:number,right?:number,back?:number,left?:number,up?:number}} [obstacle_info]
  * @property {boolean} [setHome] - snapshot the current lat/lon/alt as home
  * @property {{x:number,y:number,z:number}} [localposition] - local ENU, meters
- * @property {string} [armState] - with `navState`, `failsafe`, `flightCheck`, `systemId`
- * @property {string} [navState]
+ * @property {string} [armState] - ARM_STATE (config/status.js), already in the GCS vocabulary
+ * @property {string} [flightMode] - FLIGHT_MODE, how it is being flown
+ * @property {number|string} [flightModeRaw] - the firmware's own mode code, for debugging
+ * @property {string} [flightPhase] - FLIGHT_PHASE, where it is
+ * @property {number|string} [flightPhaseRaw] - the firmware's own phase code, for debugging
  * @property {boolean} [failsafe]
  * @property {boolean} [flightCheck]
  * @property {number} [systemId] - PX4 MAV_SYS_ID (vehicleCommand.js targets it)
- * @property {string} [commandAck] - with `resultCmdAck`
- * @property {string} [resultCmdAck]
- * @property {string} [uav_state] - with `mission_state`, `wp_reached`, `landed_state`, `protocol`
+ * @property {string} [commandAck] - with `resultCmdAck`; the command's name, informational
+ * @property {number} [commandAckRaw] - the firmware's own command id
+ * @property {string} [resultCmdAck] - COMMAND_RESULT (config/status.js)
+ * @property {number} [resultCmdAckRaw] - the firmware's own result code
+ * @property {string} [uav_state] - with `mission_state`, `wp_reached`
  * @property {string} [mission_state]
  * @property {string} [wp_reached]
- * @property {number|string} [landed_state] - decoded through `protocol`; alone it sets uav_state too
- * @property {string} [protocol] - 'dji' | 'catec' | anything else = px4 table
  * @property {ArrayLike<number>} [sensors_humidity] - six channels, see HUMIDITY_CHANNELS
  * @property {number|boolean} [threat] - 2 = threat, 3 = confirmed, anything else clears
  */
-
-const LANDED_STATE_PX4 = ['UNDEFINED', 'ON GROUND', 'IN AIR', 'TAKEOFF', 'LANDING'];
-const LANDED_STATE_DJI = ['STOPED', 'ON GROUND', 'IN AIR'];
-
-export function convertLandedState(protocol, landedState) {
-  if (protocol == 'dji') return LANDED_STATE_DJI[landedState];
-  if (protocol == 'catec') return landedState;
-  return LANDED_STATE_PX4[landedState];
-}
 
 // Order of the cached `obstacle_info` array.
 const OBSTACLE_SIDES = ['down', 'front', 'right', 'back', 'left', 'up'];
@@ -70,13 +65,17 @@ export function createDefaultPosition(deviceId) {
       mission_state: 'Ready',
       wp_reached: null,
       uav_state: 'OK',
-      landed_state: 'Ready',
+      armState: ARM_STATE.UNKNOWN,
+      flightMode: FLIGHT_MODE.UNKNOWN,
+      flightPhase: FLIGHT_PHASE.UNKNOWN,
       alarm: 'UNDEFINED',
     },
   };
 }
 
 const has = (p, key) => Object.hasOwn(p, key);
+
+const VEHICLE_STATE_KEYS = ['armState', 'flightMode', 'flightModeRaw', 'flightPhase', 'flightPhaseRaw', 'failsafe', 'flightCheck', 'systemId'];
 
 // Order matters where one reducer reads what an earlier one wrote (`setHome` reads
 // latitude/longitude/altitude). `apply(position, patch, effects)` mutates `position`
@@ -127,39 +126,28 @@ export const REDUCERS = [
     },
   },
   {
-    when: (p) => has(p, 'armState'),
+    // Each source carries a different subset (PX4 vehicle_status all of them, DJI flight_status
+    // arm + phase), so only the keys present are written, and a null never wipes what is cached.
+    when: (p) => VEHICLE_STATE_KEYS.some((key) => has(p, key)),
     apply: (pos, p) => {
-      pos.attributes.armState = p.armState;
-      pos.attributes.navState = p.navState;
-      pos.attributes.failsafe = p.failsafe;
-      pos.attributes.flightCheck = p.flightCheck;
-      if (p.systemId != null) pos.attributes.systemId = p.systemId;
+      for (const key of VEHICLE_STATE_KEYS) if (p[key] != null) pos.attributes[key] = p[key];
     },
   },
   {
     when: (p) => has(p, 'commandAck'),
     apply: (pos, p) => {
       pos.attributes.commandAck = p.commandAck;
+      pos.attributes.commandAckRaw = p.commandAckRaw;
       pos.attributes.resultCmdAck = p.resultCmdAck;
+      pos.attributes.resultCmdAckRaw = p.resultCmdAckRaw;
     },
   },
   {
-    // uav_state and landed_state are ONE unit: with uav_state it rewrites the mission
-    // block; landed_state alone also feeds uav_state.
-    when: (p) => has(p, 'uav_state') || has(p, 'landed_state'),
+    when: (p) => has(p, 'uav_state'),
     apply: (pos, p) => {
-      const a = pos.attributes;
-      const landed = convertLandedState(p.protocol, p.landed_state);
-      if (has(p, 'uav_state')) {
-        a.mission_state = p.mission_state;
-        a.wp_reached = p.wp_reached;
-        a.uav_state = p.uav_state;
-        // A message without landed_state must not wipe the one we already have.
-        if (has(p, 'landed_state')) a.landed_state = landed;
-      } else {
-        a.uav_state = landed;
-        a.landed_state = landed;
-      }
+      pos.attributes.mission_state = p.mission_state;
+      pos.attributes.wp_reached = p.wp_reached;
+      pos.attributes.uav_state = p.uav_state;
     },
   },
   {

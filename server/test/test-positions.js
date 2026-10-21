@@ -1,7 +1,8 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { positionsModel } from '../models/positions/positions.js';
-import { applyPatch, convertLandedState, createDefaultPosition } from '../models/positions/positionReducers.js';
+import { applyPatch, createDefaultPosition } from '../models/positions/positionReducers.js';
+import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../config/status.js';
 import { eventsController } from '../controllers/events.js';
 
 // What positionsModel.updatePosition does with each kind of telemetry patch. Born as
@@ -50,7 +51,9 @@ describe('updatePosition: entry and defaults', () => {
         mission_state: 'Ready',
         wp_reached: null,
         uav_state: 'OK',
-        landed_state: 'Ready',
+        armState: 'UNKNOWN',
+        flightMode: 'UNKNOWN',
+        flightPhase: 'UNKNOWN',
         alarm: 'UNDEFINED',
       },
     });
@@ -143,19 +146,36 @@ describe('updatePosition: attributes', () => {
     assert.deepEqual(pos.attributes.home, [1, 2, 3]);
   });
 
-  test('armState carries navState, failsafe and flightCheck with it', async () => {
-    const pos = await update(newId(), { armState: 'ARMED', navState: 'MISSION', failsafe: false, flightCheck: true });
-    assert.equal(pos.attributes.armState, 'ARMED');
-    assert.equal(pos.attributes.navState, 'MISSION');
+  test('a vehicle_status patch writes arm state, mode, failsafe and flightCheck', async () => {
+    const pos = await update(newId(), {
+      armState: ARM_STATE.ARMED,
+      flightMode: FLIGHT_MODE.MISSION,
+      flightModeRaw: 3,
+      failsafe: false,
+      flightCheck: true,
+    });
+    assert.equal(pos.attributes.armState, ARM_STATE.ARMED);
+    assert.equal(pos.attributes.flightMode, FLIGHT_MODE.MISSION);
+    assert.equal(pos.attributes.flightModeRaw, 3);
     assert.equal(pos.attributes.failsafe, false);
     assert.equal(pos.attributes.flightCheck, true);
   });
 
   test('systemId is kept when a later vehicle_status does not carry it', async () => {
     const id = newId();
-    await update(id, { armState: 'ARMED', navState: 'MISSION', failsafe: false, flightCheck: true, systemId: 2 });
-    const pos = await update(id, { armState: 'DISARMED', navState: 'MISSION', failsafe: false, flightCheck: true });
+    await update(id, { armState: ARM_STATE.ARMED, flightMode: FLIGHT_MODE.MISSION, failsafe: false, flightCheck: true, systemId: 2 });
+    const pos = await update(id, { armState: ARM_STATE.DISARMED, flightMode: FLIGHT_MODE.MISSION, failsafe: false, flightCheck: true });
     assert.equal(pos.attributes.systemId, 2);
+  });
+
+  test('a source that carries only some of the vehicle state leaves the rest alone', async () => {
+    const id = newId();
+    await update(id, { armState: ARM_STATE.ARMED, flightMode: FLIGHT_MODE.OFFBOARD, failsafe: true });
+    const pos = await update(id, { armState: ARM_STATE.DISARMED, flightPhase: FLIGHT_PHASE.ON_GROUND });
+    assert.equal(pos.attributes.armState, ARM_STATE.DISARMED);
+    assert.equal(pos.attributes.flightPhase, FLIGHT_PHASE.ON_GROUND);
+    assert.equal(pos.attributes.flightMode, FLIGHT_MODE.OFFBOARD);
+    assert.equal(pos.attributes.failsafe, true);
   });
 
   test('commandAck carries resultCmdAck with it', async () => {
@@ -165,55 +185,32 @@ describe('updatePosition: attributes', () => {
   });
 });
 
-describe('updatePosition: uav_state / landed_state pair', () => {
-  test('uav_state writes the whole mission block and converts landed_state by protocol (dji)', async () => {
-    const pos = await update(newId(), {
-      uav_state: 'ok',
-      mission_state: '1',
-      wp_reached: '3',
-      landed_state: 1,
-      protocol: 'dji',
-    });
+describe('updatePosition: mission block and flight phase are independent', () => {
+  test('uav_state writes the whole mission block', async () => {
+    const pos = await update(newId(), { uav_state: 'ok', mission_state: '1', wp_reached: '3' });
     assert.equal(pos.attributes.mission_state, '1');
     assert.equal(pos.attributes.wp_reached, '3');
     assert.equal(pos.attributes.uav_state, 'ok');
-    assert.equal(pos.attributes.landed_state, 'ON GROUND');
   });
 
-  test('catec protocol passes landed_state through untouched', async () => {
-    const pos = await update(newId(), { uav_state: 'ok', mission_state: '0', wp_reached: '0', landed_state: 'HOVER', protocol: 'catec' });
-    assert.equal(pos.attributes.landed_state, 'HOVER');
-  });
-
-  test('any other protocol uses the px4 table', async () => {
-    const pos = await update(newId(), { uav_state: 'ok', mission_state: '0', wp_reached: '0', landed_state: 3, protocol: 'px4' });
-    assert.equal(pos.attributes.landed_state, 'TAKEOFF');
-  });
-
-  test('uav_state without landed_state keeps the landed_state it already had', async () => {
+  test('a mission block without flightPhase keeps the phase it already had', async () => {
     const id = newId();
-    assert.equal((await update(id, { uav_state: 'ok', mission_state: '0', wp_reached: '0' })).attributes.landed_state, 'Ready');
+    assert.equal((await update(id, { uav_state: 'ok', mission_state: '0', wp_reached: '0' })).attributes.flightPhase, FLIGHT_PHASE.UNKNOWN);
 
-    await update(id, { uav_state: 'ok', mission_state: '0', wp_reached: '0', landed_state: 2, protocol: 'dji' });
+    await update(id, { flightPhase: FLIGHT_PHASE.IN_AIR });
     const pos = await update(id, { uav_state: 'ok', mission_state: '1', wp_reached: '4' });
-    assert.equal(pos.attributes.landed_state, 'IN AIR');
+    assert.equal(pos.attributes.flightPhase, FLIGHT_PHASE.IN_AIR);
     assert.equal(pos.attributes.mission_state, '1');
     assert.equal(pos.attributes.wp_reached, '4');
   });
 
-  test('landed_state alone writes BOTH uav_state and landed_state, leaves the mission block alone', async () => {
-    const pos = await update(newId(), { landed_state: 2, protocol: 'dji' });
-    assert.equal(pos.attributes.uav_state, 'IN AIR');
-    assert.equal(pos.attributes.landed_state, 'IN AIR');
+  test('flightPhase alone leaves the mission block (and uav_state) alone', async () => {
+    const pos = await update(newId(), { flightPhase: FLIGHT_PHASE.IN_AIR, flightPhaseRaw: 2 });
+    assert.equal(pos.attributes.flightPhase, FLIGHT_PHASE.IN_AIR);
+    assert.equal(pos.attributes.flightPhaseRaw, 2);
+    assert.equal(pos.attributes.uav_state, 'OK');
     assert.equal(pos.attributes.mission_state, 'Ready');
     assert.equal(pos.attributes.wp_reached, null);
-  });
-
-  test('convertLandedState: tables per protocol, out of range is undefined', () => {
-    assert.equal(convertLandedState('dji', 0), 'STOPED');
-    assert.equal(convertLandedState('dji', 5), undefined);
-    assert.equal(convertLandedState('catec', 'X'), 'X');
-    assert.equal(convertLandedState(undefined, 4), 'LANDING');
   });
 });
 

@@ -3,7 +3,7 @@ import mqtt from 'mqtt';
 import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
-import { decodeRosMsg } from '../ros/rosDecode.js';
+import { decodeMsg } from '../msgDecode.js';
 import { logger } from '../../common/logger.js';
 import { SUBSCRIPTIONS, parseTopic, requestTopic } from './mqttTopics.js';
 
@@ -30,7 +30,7 @@ function parseJson(text) {
 
 /**
  * Third device transport: telemetry and ROS service calls over MQTT, mirror of
- * FlatbufferServer. Telemetry reuses decodeRosMsg (the drone publishes the same JSON
+ * FlatbufferServer. Telemetry reuses decodeMsg (the drone publishes the same JSON
  * shape rosbridge does); service calls are request/response correlated by `id`.
  *
  * `connect` is injectable so tests run without a broker.
@@ -144,7 +144,7 @@ export class MqttServer {
       return;
     }
 
-    const decoded = decodeRosMsg({
+    const decoded = decodeMsg({
       msg,
       deviceId: device.id,
       type: slot,
