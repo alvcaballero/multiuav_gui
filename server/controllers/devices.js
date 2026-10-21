@@ -4,6 +4,19 @@ import { categoryModel } from '../models/category.js';
 import { logger } from '../common/logger.js';
 import { telemetryWatchdog } from '../models/inspect/telemetryWatchdog.js';
 
+/**
+ * A MAVLink vehicle is found by its systemId, so two devices sharing one would both be ignored by
+ * the server. Needs the DB, which is why it is not in `categoryModel.deviceProblem`.
+ * @param {number|string|null} [selfId] the device being edited, which may keep its own systemId
+ * @returns {Promise<{path: string[], message: string}|null>}
+ */
+const systemIdTaken = async ({ protocol, systemId }, selfId = null) => {
+  if (protocol !== 'mavlink' || systemId == null) return null;
+  const others = ((await DevicesModel.getBySystemId(systemId)) ?? []).filter((d) => String(d.id) !== String(selfId));
+  if (!others.length) return null;
+  return { path: ['systemId'], message: `systemId ${systemId} is already used by '${others.map((d) => d.name).join("', '")}'` };
+};
+
 class devicesController {
   static getAll = async (req, res) => {
     const { id } = req.query;
@@ -61,7 +74,7 @@ class devicesController {
     }
     // zod checks the shape; whether the category can work with the protocol needs the category
     // config, and schemas do not import models.
-    const problem = categoryModel.deviceProblem(result.data);
+    const problem = categoryModel.deviceProblem(result.data) ?? (await systemIdTaken(result.data));
     if (problem) return res.status(400).json({ error: [problem] });
 
     const newDevice = await DevicesModel.create(result.data);
@@ -96,11 +109,12 @@ class devicesController {
     // on a device with no systemId, must fail too.
     const current = await DevicesModel.getById({ id });
     if (!current) return res.status(404).json({ message: 'device not found' });
-    const problem = categoryModel.deviceProblem({
+    const leaving = {
       protocol: result.data.protocol ?? current.protocol ?? 'ros',
       category: result.data.category ?? current.category,
       systemId: result.data.systemId !== undefined ? result.data.systemId : current.systemId,
-    });
+    };
+    const problem = categoryModel.deviceProblem(leaving) ?? (await systemIdTaken(leaving, id));
     if (problem) return res.status(400).json({ error: [problem] });
 
     const updatedDevice = await DevicesModel.editDevice(result.data);

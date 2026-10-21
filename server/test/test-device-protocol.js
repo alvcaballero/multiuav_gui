@@ -86,6 +86,21 @@ describe('device API: protocol ↔ category', () => {
     assert.equal((await update(id, { protocol: 'mavlink', category: 'px4_mavlink', systemId: 6 })).statusCode, 200);
   });
 
+  test('two mavlink devices cannot share a systemId, but a device keeps its own on edit', async () => {
+    const mav = { ...base, category: 'px4_mavlink', protocol: 'mavlink' };
+    assert.equal((await create({ ...mav, name: 'p_sys_a', systemId: 21 })).statusCode, 201);
+    const dup = await create({ ...mav, name: 'p_sys_b', systemId: 21 });
+    assert.equal(dup.statusCode, 400);
+    assert.deepEqual(dup.body.error[0].path, ['systemId']);
+    assert.match(dup.body.error[0].message, /p_sys_a/);
+
+    assert.equal((await create({ ...mav, name: 'p_sys_c', systemId: 22 })).statusCode, 201);
+    const { id } = await DevicesModel.getByName('p_sys_c');
+    assert.equal((await update(id, { systemId: 21 })).statusCode, 400);
+    assert.equal((await update(id, { systemId: 22, name: 'p_sys_c2' })).statusCode, 200); // its own
+    assert.equal((await update(id, { systemId: 23 })).statusCode, 200);
+  });
+
   test('an unknown device answers 404', async () => {
     assert.equal((await update(999999, { name: 'x' })).statusCode, 404);
   });

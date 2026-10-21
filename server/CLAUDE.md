@@ -705,7 +705,7 @@ CATEGORY only says which MESSAGE FORMAT it speaks, derived from its `messageType
 (`categoryModel.messageFormatOf`): `mavlink` (`mavlink/<MSG>`, carried only by mavlink) or `ros_msg`
 (carried by ros, mqtt and robofleet alike). `GET /api/category?protocol=` lists the categories the
 protocol can carry (no param: all, as before); `POST`/`PUT /api/devices` refuse a category the protocol
-cannot carry or a mavlink device without `systemId` (`categoryModel.deviceProblem`, in the controller
+cannot carry, a mavlink device without `systemId`, or one whose `systemId` another mavlink device already has (`categoryModel.deviceProblem` + `systemIdTaken`, in the controller
 because zod schemas do not import models; a `PUT` is checked on the device it leaves, stored + partial).
 `GET /api/server/protocol` returns the four as `{ name, enabled }`: the device form greys out the
 ones this server does not run. The server state on the WS carries `mqttState` only when MQTT is

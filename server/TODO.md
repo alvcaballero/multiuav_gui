@@ -139,9 +139,9 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
   - Atarlo a un enlace serviría para rechazar un sysid que llegue por otro
   - Los enlaces serie siguen sin implementar (`parseLinkSpec` los rechaza) hasta tener las radios
 
-- [ ] **Unicidad del System ID entre devices MAVLink**
-  - Hoy no se valida al crear ni al editar
-  - Si dos devices lo comparten, el server los ignora a los dos y lo loguea (`MavlinkServer._lookupDevice`)
+- [x] **Unicidad del System ID entre devices MAVLink**
+  - Se valida al crear y al editar (`systemIdTaken`, `controllers/devices.js`): 400 con `path: ['systemId']`
+  - `MavlinkServer._lookupDevice` sigue ignorando duplicados: cubre los que ya estaban en la DB antes de la validación
 
 ---
 
