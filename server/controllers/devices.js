@@ -34,9 +34,13 @@ class devicesController {
     const devices = await DevicesModel.getAll();
     return devices;
   };
+  /** @returns {Promise<object|null>} the device, or null when `id` matches none */
   static getDevice = async (id) => {
+    if (id == null) return null;
+    // getAll(query) answers EVERY device when `id` is not a number (or is 0): an exact match here
+    // keeps a bad id from resolving to whichever device comes first.
     const devices = await DevicesModel.getAll(id);
-    return Array.isArray(devices) ? devices.at() : devices;
+    return devices.find((device) => String(device.id) === String(id)) ?? null;
   };
   static getByName = async (name) => {
     const device = await DevicesModel.getByName(name);

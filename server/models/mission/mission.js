@@ -172,20 +172,26 @@ export class missionModel {
 
     // Single build of the row: externalId defaults to null, so including it always is
     // identical to omitting it for the manual flow — no need for two separate creates.
-    const myMission = await sequelize.models.Mission.create({
-      externalId,
-      name,
-      planId,
-      trigger,
-      uav,
-      status,
-      initTime,
-      endTime,
-      request,
-      mission,
-      results,
-      errorMessage,
-    });
+    let myMission;
+    try {
+      myMission = await sequelize.models.Mission.create({
+        externalId,
+        name,
+        planId,
+        trigger,
+        uav,
+        status,
+        initTime,
+        endTime,
+        request,
+        mission,
+        results,
+        errorMessage,
+      });
+    } catch (err) {
+      logger.error(`createMission: could not persist mission '${name}' (externalId=${externalId}): ${err.message}`);
+      throw err;
+    }
     this._emitMissionUpdated(myMission);
     return myMission;
   }

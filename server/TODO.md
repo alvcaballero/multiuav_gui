@@ -147,12 +147,14 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
 
 ## BAJO — Limpieza y pulido
 
-- [ ] **Guard para `devices.at()` sin resultado** (`controllers/devices.js:16`)
+- [x] **Guard para `devices.at()` sin resultado** (`controllers/devices.js:16`)
+  - Era peor que el caso vacío: con un id no numérico o `0`, `getAll` devuelve TODOS y `.at()` daba el primer device. Ahora busca por id exacto y devuelve `null`
   - `Array.isArray(devices) ? devices.at() : devices`
   - Si `devices` es array vacío, `at()` devuelve `undefined` silenciosamente
   - Agregar guard o manejo explícito del caso vacío
 
-- [ ] **Agregar try-catch en funciones async críticas**
+- [x] **Agregar try-catch en funciones async críticas**
+  - `createMission` del model loguea con contexto y relanza; el handler HTTP `POST /missions` responde 500. `getDevice` ya no necesita catch (no lanza)
   - `models/mission.js:79` — `createMission` sin catch, puede tirar sin contexto
   - `controllers/devices.js:5` — `getDevice` sin catch
   - Patrón consistente: try/catch + logger.error + respuesta HTTP apropiada

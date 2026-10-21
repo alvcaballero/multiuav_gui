@@ -42,8 +42,13 @@ class missionController {
   };
 
   static createMission = async (req, res) => {
-    const response = await missionModel.broadcastMission(req.body);
-    res.json(response);
+    try {
+      const response = await missionModel.broadcastMission(req.body);
+      res.json(response);
+    } catch (err) {
+      logger.error(`createMission: ${err.message}`);
+      res.status(500).json({ error: err.message });
+    }
   };
 
   static getTasks = async (req, res) => {

@@ -105,3 +105,16 @@ describe('device API: protocol ↔ category', () => {
     assert.equal((await update(999999, { name: 'x' })).statusCode, 404);
   });
 });
+
+describe('devicesController.getDevice', () => {
+  test('resolves by exact id and never falls back to another device', async () => {
+    await devicesController.create({ body: { ip: '127.0.0.1', name: 'p_get', category: 'px4_ros2', protocol: 'ros' } }, fakeRes());
+    const { id } = await DevicesModel.getByName('p_get');
+    assert.equal((await devicesController.getDevice(id)).name, 'p_get');
+    assert.equal((await devicesController.getDevice(String(id))).id, id);
+    // getAll answers every device for these, and the old `.at()` returned the first one
+    for (const bad of [undefined, null, 'abc', 0, 999999]) {
+      assert.equal(await devicesController.getDevice(bad), null, String(bad));
+    }
+  });
+});
