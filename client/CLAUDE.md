@@ -37,7 +37,12 @@ client/
     │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
     ├── components/         # Feature components, grouped by domain
     │   ├── chat/           # ChatDrawer, ChatPanel, ChatInput, ChatMessages, ToolApprovalGate, useChatLogic
-    │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav, DeviceCameraEditor, DeviceFilesEditor, useFilter
+    │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav, DeviceCameraEditor, DeviceFilesEditor, useFilter,
+    │   │                   #   DeviceIdentityEditor (name → protocol → category → MAVLink system id → ip, shared by
+    │   │                   #   Adduav and settings/SettingsDevicesPageEdit; its rule in deviceIdentity.js mirrors the
+    │   │                   #   server's). The protocol comes first: GET /api/server/protocol lists the four with
+    │   │                   #   `enabled` (disabled ones greyed out) and the categories come from
+    │   │                   #   GET /api/category?protocol= (see server/CLAUDE.md › Protocol vs message format)
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking
     │   ├── camera/         # CameraDevice, CameraDevicePanel, CameraMediaMTXPlayer, SocketCameraCanvas
     │   ├── commands/       # CommandCard (send-command dialog). Labels, params, confirm and severity of
@@ -48,7 +53,10 @@ client/
     ├── map/                # Map rendering (MapLibre GL): controls, core, devices, draw, environment, mission, transform
     ├── scene3d/            # 3D visualization (React Three Fiber)
     ├── common/             # Shared by several features — same idea as traccar-web's `common/`
-    │   ├── components/     # Generic UI: PageLayout, ErrorHandler, SelectField, RemoveDialog, SelectList,
+    │   ├── components/     # Generic UI: PageLayout, ErrorHandler, SelectField (with emptyValue={null} it
+    │   │                   #   auto-selects the first item passing the whole ITEM, not its key, and keeps its old
+    │   │                   #   list until a new endpoint answers: remount it with a `key` when the list changes;
+    │   │                   #   `itemDisabled` greys items out), RemoveDialog, SelectList,
     │   │                   #   SaveFile, PositionValue, SwipeConfirm (see note below), form fields, and
     │   │                   #   ObstacleAvoidanceSensors (top-down view of obstacle_info; helpers
     │   │                   #   in util/obstacles.js)
@@ -88,7 +96,8 @@ client/
 **Client-side State (Redux):**
 
 - `devices`: Device list, selection, follow mode
-- `session`: Positions, camera feeds, markers, planning data, 3D scene
+- `session`: Positions, camera feeds, markers, planning data, 3D scene, and the server connections the
+  toolbar chips show (`serverROS`; `serverMQTT` is `null` when the server does not run MQTT — no chip)
 - `mission`: Mission editing — the plan being edited, as routes (each route = one task of the server's task graph, see below)
 - `activeMissions`: Live tracking of missions and their tasks, fed by `GET /api/missions/tasks` + WS `taskUpdated`
 - `chat`: LLM conversation histories

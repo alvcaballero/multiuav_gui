@@ -15,6 +15,9 @@ server/
 ├── models/                      # Core business logic, one subfolder per domain
 │   ├── ros/                     # ROS1/ROS2 integration (facade + transport primitives, see below)
 │   ├── flatbuffer/              # FlatBuffer device protocol (FlatbufferServer, fbEncode/fbDecode)
+│   ├── mqtt/                    # MQTT device protocol (MqttServer, mqttTopics)
+│   ├── mavlink/                 # MAVLink device protocol (MavlinkServer, links, mavlinkMessages)
+│   ├── gateways/                # One command gateway per device protocol (see Device Communication Protocols)
 │   ├── chat/                    # LLM chat orchestrator, provider handlers, agent profiles (see below)
 │   ├── commands/                # Device commands: sendCommand, command schema, encoder registry, PX4 VehicleCommand builder
 │   ├── mission/                 # Mission/route state machines, XYZ<->geodetic conversion, encoders
@@ -348,7 +351,10 @@ its dependents are skipped instead of waiting forever.
 - **Files are downloaded once per device**, by its last open task: `DecideDownload` asks
   `shouldDownloadFiles` when the task *finishes* (not when dispatched), so if a later task
   of the device got skipped meanwhile, this one downloads. Earlier tasks go through
-  `FinishWithoutDownload`. The download window is the mission's `initTime` → now.
+  `FinishWithoutDownload`. The download window is the mission's `initTime` → now. A device whose
+  category offers no `CameraFileDownload` (MAVLink, `sjtu`…) never downloads: without that rule its
+  machine waited in `UAVDownloadFiles` for a `downloadFilesGCS` that never comes (no `onDone`) and the
+  scheduler kept the device busy until a restart.
 - Full XState definition: states `LoadMission`, `Commadmission`, `RunningMission`,
   `DecideDownload`, `UAVDownloadFiles`, `FinishWithoutDownload`, `DownloadFilesGCS`,
   `resetUAV`, `return2home`, `stopMission`, `END` — not a simple linear pipeline.
@@ -403,8 +409,9 @@ already declare — there is no hand-kept list (the old `messages.yaml` drifted 
 Saving a category rewrites `devices_msg.yaml` (`writeDataFile`), so its comments are lost.
 
 **Message Decoding** (`models/msgDecode.js`, NOT under `ros/`, the mirror of `msgEncode`): a
-registry, not an if-chain. `decodeMsg` serves every transport that carries ROS-shaped JSON —
-rosbridge (`ros.js`) and MQTT (`MqttServer.js`); robofleet has its own wire decoder (`fbDecode.js`).
+registry, not an if-chain. `decodeMsg` serves every transport: rosbridge (`ros.js`) and MQTT
+(`MqttServer.js`) with ROS-shaped JSON, robofleet with the ROS message unpacked from its Flatbuffer
+(`decodeFbViaCategory`), and MAVLink (`MavlinkServer.js`) with `mavlink/<MSG>` types (see MAVLink Protocol).
 A decoder is picked by `(slot, messageType)` — the `subscribers` key plus the `messageType` that
 entry declares — and returns a `TelemetryPatch` (typedef in `models/positions/positionReducers.js`),
 which `positionsModel.updatePosition` merges through ordered reducers.
@@ -685,12 +692,24 @@ dispatch(sessionActions.updatePositions(data.positions));
 **Command routing** (`models/gateways/`): `commandsModel.sendToDevice` picks a gateway by
 `device.protocol` (a missing protocol means `ros`) and calls `gateway.sendCommand({ device, endpoint,
 message })` — `endpoint` (`{ block, key, msgType }`) is already resolved by `commandRegistry`, so the
-ROS gateway reads the transport off `endpoint.block` instead of guessing. One gateway per protocol (`rosGateway`, `flatbufferGateway`, `mqttGateway`),
+ROS gateway reads the transport off `endpoint.block` instead of guessing. One gateway per protocol (`rosGateway`, `flatbufferGateway`, `mqttGateway`, `mavlinkGateway`),
 registered in `gateways/index.js`; the caller never branches on the protocol. A new protocol is a
 new gateway plus an entry in `DEVICE_PROTOCOL` (`schemas/zod/devices.js`) — `test/test-gateways.js`
 fails if the two drift apart. Gateways resolve their controller/server when a command is SENT, not
 at registration: `controllers/ros.js` reaches `commands.js` through its imports, so a default
 evaluated at registration hits a circular-import TDZ.
+
+**Protocol vs message format.** The PROTOCOLS are four (`ros`, `mqtt`, `robofleet`, `mavlink`): each
+needs its own software on the robot and its own gateway here, and `device.protocol` picks it. A
+CATEGORY only says which MESSAGE FORMAT it speaks, derived from its `messageType`s
+(`categoryModel.messageFormatOf`): `mavlink` (`mavlink/<MSG>`, carried only by mavlink) or `ros_msg`
+(carried by ros, mqtt and robofleet alike). `GET /api/category?protocol=` lists the categories the
+protocol can carry (no param: all, as before); `POST`/`PUT /api/devices` refuse a category the protocol
+cannot carry or a mavlink device without `systemId` (`categoryModel.deviceProblem`, in the controller
+because zod schemas do not import models; a `PUT` is checked on the device it leaves, stored + partial).
+`GET /api/server/protocol` returns the four as `{ name, enabled }`: the device form greys out the
+ones this server does not run. The server state on the WS carries `mqttState` only when MQTT is
+enabled (`controllers/websocket.js` `serverState()`).
 
 **ROS Protocol** (`protocol: 'ros'`):
 
@@ -720,6 +739,16 @@ evaluated at registration hits a circular-import TDZ.
 - Service calls are enveloped (`{id, ts, request}` → `{id, success, response, error}`) and correlated by `id`. Unlike robofleet, `sendCommand` resolves only when the drone answers or the GCS timeout fires. `envelope.success=false` means the CALL failed; the service's own verdict (`response.success || response.result`) stays inside `response`.
 - Only `services` are bridged. Publishers and actions on an `mqtt` device answer a warning (out of scope for v1).
 - Tests: `test/test-mqtt-server.js` runs against a fake client (no broker).
+
+**MAVLink Protocol** (`protocol: 'mavlink'`, opt-in with `MAVLINK_CONNECTION=true`, links in `MAVLINK_LINKS`, default `udp:0.0.0.0:14550`). PX4 and ArduCopter on `node-mavlink` (pinned: its traps below were measured on 2.3.0). Plan, SITL results and open items: `MAVLINK_PLAN.md` — read its "Resultados F0" and "Estado Fn" before changing anything here.
+
+- `models/mavlink/`: `links.js` (UDP listens, one parser per remote `address:port`; TCP connects; serial not yet), `MavlinkServer.js`, `mavlinkMessages.js` (registry, GCS identity 255/190, builders). Started from `server.js` via `initMavlinkServer`.
+- **A vehicle is its `device.systemId`** (column; 1..254), on ANY link: the route back is learned from the autopilot HEARTBEAT (`autopilot != INVALID`, `type != GCS`; components and other GCS are ignored). Presence from that heartbeat (offline after 5 s); `device.status` still comes from positions (`DeviceHealthMonitor`). The GCS heartbeats at 1 Hz; PX4 answers TEMPORARILY_REJECTED to commands until it heard it for ~1 s, so commands wait for that.
+- **node-mavlink traps** (they fail silently, the ACK still says ACCEPTED): the header is `sysid`/`compid` (no `srcSystem`); in `CommandLong`/`CommandInt` the params AND x/y/z are `_param1.._param7` (`msg.param1 = …` sends 0; PX4 once got lat 0, lon 0) — only `commandLong`/`commandInt`/`missionItemInt` in `mavlinkMessages.js` build them, and every new command gets a serialize→parse round-trip test; `AUTOPILOT_VERSION` is in the `standard` dialect.
+- **Telemetry**: categories `px4_mavlink` / `ardupilot_mavlink` declare `subscribers` with `messageType: 'mavlink/<MSG>'` (no `name:`); the plain view (`toPlain`: spec field names, wire integers, BigInt made JSON-safe) goes to rawTap, the watchdog and `decodeMsg`. `rate_hz` on a subscriber is a stream asked with SET_MESSAGE_INTERVAL when the vehicle comes online and again while missing: ArduPilot sends NO telemetry until asked, PX4 sends position at ~50 Hz. The firmware is a fact of the HEARTBEAT (`mavlinkFlightMode({autopilot, type, customMode})`, never the category name). `home_position` follows HOME_POSITION: both firmwares move home on every arming.
+- **Commands**: the endpoint msgType is the dialect (`mavlink/PX4_COMMAND`, `mavlink/ARDUPILOT_COMMAND`, `models/commands/mavlinkCommand.js`, registered by `(key, msgType)`); the server refuses to send when the heartbeat reports another autopilot. Same number, different meaning: NAV_TAKEOFF altitude is AMSL on PX4 (it ignores the COMMAND_INT frame) and relative on ArduCopter (only GLOBAL_RELATIVE_ALT, else DENIED); PX4 reads the DO_REPOSITION yaw in RADIANS, ArduCopter ignores it (a CONDITION_YAW follows). Anything with lat/lon goes as COMMAND_INT. **Hold/Pause/Stop on ArduCopter is BRAKE, never LOITER**: LOITER follows the throttle stick and with no RC it descends to the ground. ACCEPTED = taken, not finished; a refusal carries the STATUSTEXT reason (chunks glued by `id`).
+- **Missions**: `configure_mission` with `mavlink/PX4_MISSION` / `mavlink/ARDUPILOT_MISSION` (family `MAVLINK_SYMBOLS`, profile `mavlink`); `missionEncodeMavlink.js` builds the items (AMSL, ArduPilot home placeholder at seq 0, no NaN where `AP_Mission::sanity_check_params` refuses it) and `wpSeqs`, the seq of each waypoint — the extra items (speed, gimbal, camera) must not count, MISSION_ITEM_REACHED becomes `wp_reached` = index + 1 through it, and it is reset to 0 on every load. The GCS detects the end itself (last waypoint; plus disarmed for RTL/land) and calls `deviceFinishMission`. Flown end to end on ArduCopter; PX4 takeoff still open (see the plan).
+- Tests: `test/test-mavlink.js` with real packets (`test/helpers/mavlinkFixtures.js`, no SITL), `test/test-device-protocol.js`.
 
 ## Element Type Catalog (`/api/markers/types`)
 
@@ -809,6 +838,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `ROS_CONNECTION`: Enable/disable ROS bridge (default true)
 - `FB_CONNECTION`: Enable/disable FlatBuffer protocol (default true)
 - `MQTT_CONNECTION`: Enable the MQTT device protocol (default **false**, needs a broker) / `MQTT_URL`: broker URL (default `mqtt://127.0.0.1:1883`)
+- `MAVLINK_CONNECTION`: Enable the MAVLink device protocol (default **false**) / `MAVLINK_LINKS`: comma-separated `udp:<bind host>:<port>` (listen) or `tcp:<host>:<port>` (connect), default `udp:0.0.0.0:14550`. Only one process can bind the UDP port (no `reuseAddr`: a second GCS would silently split the datagrams)
 - `ROS_URL`: ROS bridge WS URL (default `ws://127.0.0.1:9090`)
 - `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
 - `DB_STORAGE`: local SQLite file (default `server/data/sequelize.sqlite`). `npm test` runs with `DB=false DB_STORAGE=:memory:` so tests never open — or run startup migrations on — the real database. Tests that need catalog data read the git-tracked files under `data/`, not DB rows.
@@ -871,6 +901,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 9. **MCP Server**: When developing MCP tools, the server auto-restarts may cause temporary disconnections (auto-reconnection handles this)
 10. **Controller statics share one namespace**: controllers mix HTTP handlers (`(req, res)`) and facade methods for other models as `static` fields of the same class. A second `static` with the same name silently replaces the first — a facade `getMission(missionId)` once overrode the `GET /api/missions` handler and broke the mission list with no error. Give facades distinct names (`getMissionById`), and grep for the name before adding one.
 11. **Tests and the real database**: always run tests through `npm test` (it sets `DB=false DB_STORAGE=:memory:`). A plain `node --test` of any file that imports `common/sequelize.js` opens — and runs startup migrations on — `data/sequelize.sqlite`. `--test-force-exit` is there because importing `models/devices.js` starts the `DeviceHealthMonitor` timers at import time, which would keep a test process alive.
+12. **`positionsModel.getByDeviceId` is synchronous on purpose**: it only reads the in-memory cache, and `missionSignals` / `events.js` call it without `await`. While it was `async` they read a Promise, so the mission anomalies, `wp_reached` and the event position silently never worked. Keep it synchronous (`test/test-mission-signals.js`).
 
 ## External Dependencies
 
