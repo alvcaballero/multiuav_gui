@@ -20,6 +20,8 @@ const SelectField = ({
   titleGetter = defaultTitleGetter,
   getItems = defaultGetItems,
   disabled = false,
+  // (item) => true to show an item greyed out and not selectable (it still displays as the value).
+  itemDisabled,
 }) => {
   const [fetchedItems, setFetchedItems] = useState(undefined);
   const items = endpoint ? fetchedItems : data;
@@ -75,7 +77,11 @@ const SelectField = ({
               <MenuItem value={emptyValue}>{emptyTitle}</MenuItem>
             )}
             {items.map((item) => (
-              <MenuItem key={keyGetter(item)} value={keyGetter(item)}>
+              <MenuItem
+                key={keyGetter(item)}
+                value={keyGetter(item)}
+                disabled={Boolean(itemDisabled?.(item))}
+              >
                 {titleGetter(item)}
               </MenuItem>
             ))}
