@@ -89,7 +89,15 @@ const deviceStatus = (device, attributes = {}) => {
 
 const batteryColor = (level) => (level < 15 ? 'error' : level < 30 ? 'warning' : null);
 
-const DeviceHeader = ({ device, position, capabilities, inMission, onBack, onSendCommand }) => {
+const DeviceHeader = ({
+  device,
+  position,
+  capabilities,
+  inMission,
+  onBack,
+  onSendCommand,
+  onOpenMessages,
+}) => {
   const { classes, theme } = useStyles();
   const attributes = position?.attributes ?? {};
   const status = deviceStatus(device, attributes);
@@ -174,6 +182,9 @@ const DeviceHeader = ({ device, position, capabilities, inMission, onBack, onSen
           </span>
         ))}
       </div>
+      <Button variant="outlined" onClick={onOpenMessages}>
+        Messages
+      </Button>
       <Button variant="contained" onClick={onSendCommand}>
         Send command
       </Button>

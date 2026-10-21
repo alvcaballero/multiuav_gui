@@ -30,7 +30,7 @@ const diffLines = (prev, next) => {
 };
 
 /** Live text stream of a device's telemetry changes plus the commands sent from this page. */
-export const useRawStream = (position) => {
+export const useTelemetryLog = (position) => {
   const [lines, setLines] = useState([]);
   const [paused, setPaused] = useState(false);
   // Last snapshot already turned into lines (a ref, not usePrevious: StrictMode re-runs the

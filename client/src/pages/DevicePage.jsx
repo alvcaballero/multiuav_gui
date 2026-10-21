@@ -16,12 +16,12 @@ import DeviceHeader from './device/DeviceHeader';
 import DeviceStage from './device/DeviceStage';
 import MissionControlCard from './device/MissionControlCard';
 import TelemetryGrid from './device/TelemetryGrid';
-import RawDataPanel from './device/RawDataPanel';
+import TelemetryLogPanel from './device/TelemetryLogPanel';
 import ManualControlPanel from './device/ManualControlPanel';
 import ConfirmDialog from './device/ConfirmDialog';
 import { useDeviceCapabilities, selectDeviceMission } from './device/useDeviceCapabilities';
 import { useDeviceCommands } from './device/useDeviceCommands';
-import { useRawStream } from './device/useRawStream';
+import { useTelemetryLog } from './device/useTelemetryLog';
 import { useControlKeys } from './device/useControlKeys';
 import { useMissionActions } from './device/useMissionActions';
 import {
@@ -56,7 +56,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-// Layout "A · Stage + rail" of the design: stage on the left, mission/telemetry/raw data on a
+// Layout "A · Stage + rail" of the design: stage on the left, mission/telemetry/telemetry log on a
 // 400px rail, manual control under the stage. Areas of capabilities the device lacks are dropped.
 const gridFor = ({ mission, control }) => {
   const rail = [...(mission ? ['mission'] : []), 'telem', 'raw'];
@@ -117,7 +117,7 @@ const DevicePage = () => {
   const { filteredPositions } = useFilter('', filter, filterSort, filterMap, positions);
 
   const capabilities = useDeviceCapabilities(device);
-  const stream = useRawStream(position);
+  const stream = useTelemetryLog(position);
   const { send, toast, closeToast, notify } = useDeviceCommands(
     id,
     position,
@@ -230,6 +230,7 @@ const DevicePage = () => {
         inMission={Boolean(missionInfo)}
         onBack={() => navigate(-1)}
         onSendCommand={() => setCommandOpen(true)}
+        onOpenMessages={() => navigate(`/device/${id}/messages`)}
       />
       <main
         className={classes.main}
@@ -272,7 +273,7 @@ const DevicePage = () => {
           <TelemetryGrid position={position} />
         </div>
         <div className={classes.area} style={{ gridArea: 'raw' }}>
-          <RawDataPanel position={position} stream={stream} />
+          <TelemetryLogPanel position={position} stream={stream} />
         </div>
         {showControl && (
           <div className={classes.area} style={{ gridArea: 'ctrl' }}>

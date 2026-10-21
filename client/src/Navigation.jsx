@@ -9,6 +9,7 @@ const MissionPage = lazy(() => import('./pages/MissionPage'));
 const MissionPageTest = lazy(() => import('./pages/other/MissionPageTest'));
 const ReplayPage = lazy(() => import('./pages/other/ReplayPage'));
 const DevicePage = lazy(() => import('./pages/DevicePage'));
+const DeviceMessagesPage = lazy(() => import('./pages/DeviceMessagesPage'));
 const CameraPage = lazy(() => import('./pages/CameraPage'));
 const EventsPage = lazy(() => import('./pages/reports/EventsPage'));
 const TopicsPage = lazy(() => import('./pages/other/TopicsPage'));
@@ -82,6 +83,7 @@ const Navigation = () => {
           <Route path="planning" element={<PlanningPage />} />
           <Route path="camera" element={<CameraPage />} />
           <Route path="device/:id" element={<DevicePage />} />
+          <Route path="device/:id/messages" element={<DeviceMessagesPage />} />
           <Route path="device3d/:id" element={<DevicePage3D />} />
 
           <Route path="replay" element={<ReplayPage />} />

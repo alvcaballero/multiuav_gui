@@ -24,8 +24,13 @@ client/
     │   ├── MainPage / MainPage3D, MissionPage / MissionPage3D, PlanningPage,
     │   │   DevicePage / DevicePage3D, CameraPage, ChatPage, Scene3DEditorPage
     │   ├── planning/       # Hooks used only by PlanningPage (actions, redux handlers, polling)
-    │   ├── device/         # DevicePage panels (header, stage, mission, telemetry, raw data, manual
-    │   │                   #   control) and its hooks (capabilities, commands, raw stream, keys)
+    │   ├── device/         # DevicePage panels (header, stage, mission, telemetry, telemetry log,
+    │   │                   #   manual control) and its hooks (capabilities, commands, telemetry log, keys).
+    │   │                   #   The telemetry log shows the DECODED position diffs, not raw messages
+    │   ├── deviceMessages/ # DeviceMessagesPage (/device/:id/messages): the raw messages of one slot of a
+    │   │                   #   device as they reached the server (before decode), as a JSON tree. Asks for
+    │   │                   #   them over the shared WebSocket (raw:subscribe / raw:unsubscribe, see
+    │   │                   #   server/CLAUDE.md); the messages stay out of Redux (up to 10 per second)
     │   ├── reports/        # EventsPage, Mission*Report*Page, missionDetailReport/ (its sections)
     │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
     ├── components/         # Feature components, grouped by domain

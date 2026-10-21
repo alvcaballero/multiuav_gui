@@ -89,7 +89,7 @@ const topicColor = (theme, topic) => {
   return colors[hash % colors.length];
 };
 
-const RawDataPanel = ({ position, stream }) => {
+const TelemetryLogPanel = ({ position, stream }) => {
   const { classes, theme } = useStyles();
   const [tab, setTab] = useState('table');
   const [filter, setFilter] = useState('');
@@ -110,7 +110,7 @@ const RawDataPanel = ({ position, stream }) => {
     <Paper variant="outlined" square className={classes.root}>
       <div className={classes.header}>
         <Typography variant="overline" color="primary" sx={{ lineHeight: 1.2 }}>
-          Raw data
+          Telemetry log
         </Typography>
         <ToggleButtonGroup
           size="small"
@@ -184,4 +184,4 @@ const RawDataPanel = ({ position, stream }) => {
   );
 };
 
-export default RawDataPanel;
+export default TelemetryLogPanel;
