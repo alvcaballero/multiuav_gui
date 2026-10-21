@@ -13,6 +13,7 @@ import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { convertMissionXYZToLatLong, convertMissionBriefingToXYZ } from './coordinateConverter.js';
 import { missionLogger as logger } from '../../common/logger.js';
 import {
+  DEVICE_STATUS,
   MISSION_STATUS,
   TASK_STATUS,
   MISSION_ALIVE_STATUS,
@@ -55,7 +56,7 @@ export class missionModel {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
     return await sequelize.models.Mission.findAll({
       where: {
-        status: { [Op.in]: [MISSION_STATUS.INIT, MISSION_STATUS.PLANNING, MISSION_STATUS.RUNNING] },
+        status: { [Op.in]: MISSION_ALIVE_STATUS },
         initTime: { [Op.gte]: since },
       },
     });
@@ -306,8 +307,8 @@ export class missionModel {
         }
       }
       // filter devices are online
-      if (myDevice == null || myDevice.status == 'offline') {
-        logger.info(`device offline ${myDevice.name}`);
+      if (myDevice == null || myDevice.status === DEVICE_STATUS.OFFLINE) {
+        logger.info(`device ${myDevice?.name ?? 'unknown'} is not online, skipped`);
         continue;
       }
       // filter devices are free

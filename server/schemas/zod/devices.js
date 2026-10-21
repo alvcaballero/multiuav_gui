@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { DEVICE_STATUS as DEVICE_STATUS_MAP } from '../../config/status.js';
 
-export const DEVICE_STATUS = z.enum(['online', 'offline']);
+export const DEVICE_STATUS = z.enum(Object.values(DEVICE_STATUS_MAP));
 export const DEVICE_PROTOCOL = z.enum(['ros', 'robofleet', 'mqtt', 'mavlink']);
 
 export const CameraSchema = z.object({
@@ -32,7 +33,7 @@ export const DeviceSchema = z.object({
   camera: z.array(CameraSchema).optional(),
   files: z.array(FileAccessSchema).optional(),
   lastUpdate: z.coerce.date().optional(),
-  status: DEVICE_STATUS.default('offline').optional(),
+  status: DEVICE_STATUS.default(DEVICE_STATUS_MAP.OFFLINE).optional(),
   user: z.string().nullable().optional(),
   pwd: z.string().nullable().optional(),
 });

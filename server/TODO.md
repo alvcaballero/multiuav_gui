@@ -168,7 +168,9 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
   - `var ros = null` a nivel módulo dificulta testing y razonamiento
   - Encapsular en clase o módulo con acceso controlado (parte del split de rosModel)
 
-- [ ] **Consolidar definiciones de status**
+- [x] **Consolidar definiciones de status**
+  - Casi todo ya vivía en `config/status.js`; quedaban el enum de `schemas/zod/devices.js`, los `default('init')` de zod, la lista inline de `MISSION_ALIVE_STATUS` y un `'offline'` en `models/mission/mission.js`
+  - Se deja afuera `{ state: 'error' }`: es el contrato de respuesta de un comando, no un status de entidad
   - Status definidos en: `config/status.js`, `models/devices.js:30-38`, `models/mission.js:26-44`, `schemas/zod/mission.js:3-22`
   - Centralizar en `config/status.js` como fuente única de verdad
   - Importar desde ahí en todos los otros lugares
