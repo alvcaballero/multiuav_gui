@@ -172,4 +172,13 @@ describe('shouldDownloadFiles', () => {
     await missionModel.editTask({ id: t.T3.id, status: T.SKIPPED });
     assert.equal(await missionModel.shouldDownloadFiles(t.T1.id), true, 'T3 skipped: T1 is now the last');
   });
+
+  // Its state machine would wait in UAVDownloadFiles for a downloadFilesGCS that never comes,
+  // and the scheduler would keep the device busy for good.
+  test('a device whose category cannot download files finishes without downloading', async () => {
+    // sjtu (ROS) declares no camera_file_download, like the mavlink categories.
+    const noFiles = (await sequelize.models.Device.create({ name: 'no_files_1', category: 'sjtu', camera: [] })).id;
+    const { t } = await graph(M.INIT, [['T1', noFiles]]);
+    assert.equal(await missionModel.shouldDownloadFiles(t.T1.id), false);
+  });
 });

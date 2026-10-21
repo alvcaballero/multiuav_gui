@@ -23,6 +23,7 @@ import {
 import { normalizeMission, missionForTask, TASK_GRAPH_VERSION } from './taskGraph.js';
 import { taskScheduler } from './taskScheduler.js';
 import { CommandType } from '../../config/commandTypes.js';
+import { commandsModel } from '../commands/commands.js';
 
 // Plans are stored as received, tagged with their format: consumers (client RuteConvert)
 // parse route[] as '3' and tasks[] as '4'.
@@ -597,6 +598,11 @@ export class missionModel {
   // tasks are ordered by the graph, so any other open task of this device runs later.
   static async shouldDownloadFiles(taskId) {
     const task = await this.getTask(taskId);
+    // A device that cannot download (its category offers no CameraFileDownload: MAVLink, sjtu…)
+    // would wait in UAVDownloadFiles forever for a downloadFilesGCS that never comes, and the
+    // scheduler would keep the device busy: it finishes without downloading instead.
+    const commands = await commandsModel.getCommandTypes(task.deviceId);
+    if (!commands.some((c) => c.type === CommandType.CAMERA_FILE_DOWNLOAD)) return false;
     const deviceTasks = await this.getTasks({ missionId: task.missionId, deviceId: task.deviceId });
     return !deviceTasks.some((t) => t.id !== task.id && !TASK_TERMINAL_STATUS.includes(t.status));
   }
