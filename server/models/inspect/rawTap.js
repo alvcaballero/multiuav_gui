@@ -45,6 +45,12 @@ class Subscription {
  *
  * Los ingestores de ROS/MQTT ya están suscritos por el decode, así que "encender
  * la captura" es solo "hay alguien escuchando": no se abre ni se cierra ningún topic.
+ *
+ * Además guarda el ÚLTIMO mensaje de cada slot, haya o no suscriptores, y se lo manda al
+ * cliente que se suscribe (`replayLast`, `cached: true` + `ageMs`). Sin eso, un slot por
+ * evento (`vehicle_command_ack`, `threat`) no se podía inspeccionar: abrías la página y no
+ * llegaba nada hasta el próximo evento. Es pisar una referencia en un Map (el mensaje ya
+ * existe), así que cuesta lo mismo que antes; la memoria es un mensaje por device y slot.
  */
 class RawTap {
   constructor() {
@@ -52,6 +58,8 @@ class RawTap {
     this._subs = new Map();
     // clientId → Set<key>, to count and to clean up without scanning every key
     this._byClient = new Map();
+    // `${deviceId}:${slot}` → the newest message of that slot (same shape `publish` builds)
+    this._last = new Map();
   }
 
   static _key(deviceId, slot) {
@@ -76,6 +84,19 @@ class RawTap {
     this._byClient.set(clientId, owned);
     logger.debug('RawTap: subscribed', { clientId, key });
     return { ok: true };
+  }
+
+  /**
+   * Sends the newest stored message of the slot to a client that just subscribed, marked
+   * `cached` and with its age, so it is never mistaken for live data. Separate from
+   * `subscribe` so the router can answer the subscribe (RAW_STATUS) first.
+   */
+  replayLast(clientId, deviceId, slot) {
+    const key = RawTap._key(deviceId, slot);
+    const sub = this._subs.get(key)?.get(clientId);
+    const message = this._last.get(key);
+    if (!sub || !message) return;
+    this._send(clientId, sub, message, Date.now(), true);
   }
 
   unsubscribe(clientId, deviceId, slot) {
@@ -105,14 +126,17 @@ class RawTap {
    * @param {{deviceId: number|string, slot: string, transport: 'ros'|'mqtt'|'robofleet', raw: any|(() => any)}} msg
    */
   publish({ deviceId, slot, transport, raw }) {
-    if (this._subs.size === 0) return;
+    if (deviceId == null || !slot || NOT_INSPECTABLE_SLOTS.has(slot)) return;
     const key = RawTap._key(deviceId, slot);
+    const now = Date.now();
+    // Shared by every client (and the cache), so a lazy `raw` is resolved once however many
+    // are watching. `ts` is when it ARRIVED, not when it is sent.
+    const message = { deviceId, slot, transport, raw, ts: now, resolved: false, data: undefined };
+    this._last.set(key, message);
+
     const clients = this._subs.get(key);
     if (!clients) return;
 
-    // Shared by every client, so a lazy `raw` is resolved once however many are watching.
-    const message = { deviceId, slot, transport, raw, resolved: false, data: undefined };
-    const now = Date.now();
     for (const [clientId, sub] of clients) {
       const wait = sub.lastSentAt + WS_RAW_INSPECT_INTERVAL_MS - now;
       if (wait <= 0) {
@@ -133,15 +157,18 @@ class RawTap {
     this._send(clientId, sub, message, Date.now());
   }
 
-  _send(clientId, sub, message, now) {
+  _send(clientId, sub, message, now, cached = false) {
     if (!message.resolved) {
       message.data = typeof message.raw === 'function' ? this._resolve(message.raw) : message.raw;
       message.resolved = true;
+      message.raw = undefined; // once resolved, the cache keeps the result and lets the buffer go
     }
     if (message.data === undefined) return;
     sub.lastSentAt = now;
-    const { deviceId, slot, transport, data } = message;
-    eventBus.emitSafe(EVENTS.RAW_MESSAGE, { clientId, deviceId, slot, transport, ts: now, data });
+    const { deviceId, slot, transport, ts, data } = message;
+    // `ageMs` is computed here, not on the client: the two clocks need not agree.
+    const extra = cached ? { cached: true, ageMs: now - ts } : {};
+    eventBus.emitSafe(EVENTS.RAW_MESSAGE, { clientId, deviceId, slot, transport, ts, data, ...extra });
   }
 
   _resolve(thunk) {

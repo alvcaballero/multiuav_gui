@@ -67,6 +67,7 @@ const INBOUND_MAP = {
     const result = rawTap.subscribe(client.id, deviceId, slot);
     if (!result.ok) logger.warn('WS inbound: raw subscribe rejected', { clientId: client.id, payload, ...result });
     eventBus.emitSafe(EVENTS.RAW_STATUS, { clientId: client.id, deviceId, slot, ...result });
+    if (result.ok) rawTap.replayLast(client.id, deviceId, slot);
   },
 
   [EVENTS.RAW_UNSUBSCRIBE]: async (payload, client) => {

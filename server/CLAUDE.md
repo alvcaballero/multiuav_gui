@@ -140,7 +140,13 @@ out at once and the NEWEST one goes out when it closes; the ones in between are 
 change that arrives right after another message of its slot must not be lost). Every
 `raw:subscribe` is answered with `{ rawStatus: {deviceId, slot, ok, reason?} }` (`RAW_STATUS`,
 same targeted path; reasons in `RAW_REJECT`: `invalid`, `not_inspectable`, `too_many` — a client may
-hold 8 subscriptions). Subscriptions die with the socket (`onClientClose`).
+hold 8 subscriptions). Subscriptions die with the socket (`onClientClose`). `rawTap` also keeps the
+NEWEST message of every slot (camera excluded), subscribed or not, and the router replays it right
+after an accepted `RAW_STATUS` (`replayLast`) as `{ ..., cached: true, ageMs }`: without it an
+event-driven slot (`vehicle_command_ack`, `threat`) showed nothing until the next event. `ts` is the
+ARRIVAL time; `ageMs` is computed on the server so the client clock does not matter. A lazy `raw`
+(robofleet, MAVLink) stays UNRESOLVED in the cache, holding its buffer, until a client receives it
+(one buffer per device and slot); it is then resolved once and the thunk dropped.
 `test/test-raw-inspector-ws.js` runs the whole path with real `ws` clients. The `camera`
 slot is not inspectable. FlatBuffer is tapped too (`FlatbufferServer._onMessage`): there the
 `slot` is looked up in the device's category (`slotOfTopic`: the `subscribers` key whose `name` is

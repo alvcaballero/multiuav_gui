@@ -145,3 +145,46 @@ test('el subscriber manda RAW_MESSAGE y RAW_STATUS solo al cliente destino, no b
     sub.cleanup();
   }
 });
+
+test('guarda el último mensaje sin suscriptores y se lo manda al que se suscribe, marcado cached', async () => {
+  rawTap._last.clear();
+  rawTap.publish(raw({ slot: 'vehicle_command_ack', raw: { n: 1 } }));
+  rawTap.publish(raw({ slot: 'vehicle_command_ack', raw: { n: 2 } }));
+  assert.equal(emitted.length, 0);
+
+  await sleep(20);
+  rawTap.subscribe('c1', 1, 'vehicle_command_ack');
+  rawTap.replayLast('c1', 1, 'vehicle_command_ack');
+  assert.equal(emitted.length, 1);
+  assert.deepEqual(emitted[0].data, { n: 2 }, 'the newest one');
+  assert.equal(emitted[0].cached, true);
+  assert.ok(emitted[0].ageMs >= 20, `ageMs=${emitted[0].ageMs}`);
+
+  rawTap.publish(raw({ slot: 'vehicle_command_ack', raw: { n: 3 } }));
+  await afterWindow();
+  assert.equal(emitted.at(-1).cached, undefined, 'live messages are not marked');
+});
+
+test('replayLast no manda nada sin suscripción, sin caché, ni para la cámara', () => {
+  rawTap._last.clear();
+  rawTap.publish(raw({ slot: 'camera' }));
+  rawTap.publish(raw({ slot: 'battery' }));
+  rawTap.replayLast('c1', 1, 'battery'); // not subscribed
+  rawTap.subscribe('c1', 1, 'gimbal');
+  rawTap.replayLast('c1', 1, 'gimbal'); // nothing stored
+  assert.equal(emitted.length, 0);
+  assert.equal(rawTap._last.has('1:camera'), false);
+});
+
+test('el caché resuelve un raw perezoso una sola vez y suelta el thunk', () => {
+  rawTap._last.clear();
+  let calls = 0;
+  rawTap.publish(raw({ slot: 'battery', raw: () => (calls++, { v: 1 }) }));
+  for (const c of ['c1', 'c2']) {
+    rawTap.subscribe(c, 1, 'battery');
+    rawTap.replayLast(c, 1, 'battery');
+  }
+  assert.equal(calls, 1);
+  assert.equal(emitted.length, 2);
+  assert.equal(rawTap._last.get('1:battery').raw, undefined);
+});
