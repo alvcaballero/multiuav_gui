@@ -63,8 +63,8 @@ export class RosConnection {
     this._reconnectTimer = null;
   }
 
-  _handleDisconnect() {
-    if (this._onDisconnect) {
+  _handleDisconnect({ notify = true } = {}) {
+    if (notify && this._onDisconnect) {
       this._onDisconnect();
     }
     this._startReconnect();
@@ -80,23 +80,41 @@ export class RosConnection {
       this._onConnected = onConnected;
     }
     if (this.state.state != 'connect') {
-      this.ros = new ROSLIB.Ros({ url: ROS_URL, encoding: 'utf8', transportFactory: transportKeepingNaN });
-      this.ros.on('connection', () => {
+      const client = new ROSLIB.Ros({ url: ROS_URL, encoding: 'utf8', transportFactory: transportKeepingNaN });
+      this.ros = client;
+      // A failed attempt fires `error` AND `close`, and every retry builds a new client. The
+      // disconnect handler undoes what a connection set up (subscriptions, GCS services), so it
+      // runs once per connection that was really established and then lost — not per event, and
+      // not for attempts that never connected.
+      let established = false;
+      let lost = false;
+      const onLost = () => {
+        // Late events from a client already replaced by a retry must not touch the live state.
+        if (client !== this.ros) return;
+        this._handleDisconnect({ notify: established && !lost });
+        lost = true;
+      };
+      client.on('connection', () => {
+        if (client !== this.ros) return;
+        established = true;
+        lost = false;
         logHelpers.ros.connect('server', { status: 'connected' });
         this.setState({ state: 'connect', msg: 'Conected to ROS' });
         if (this._onConnected) {
           this._onConnected();
         }
       });
-      this.ros.on('error', (error) => {
+      client.on('error', (error) => {
+        if (client !== this.ros) return;
         logHelpers.ros.error('Error connect to server', error);
         this.setState({ state: 'error', msg: 'No se ha podido conectar a ROS' });
-        this._handleDisconnect();
+        onLost();
       });
-      this.ros.on('close', () => {
+      client.on('close', () => {
+        if (client !== this.ros) return;
         logHelpers.ros.error('Connection closed.', { message: 'Connection closed' });
         this.setState({ state: 'disconnect', msg: 'offline a ROS' });
-        this._handleDisconnect();
+        onLost();
       });
     }
   }
