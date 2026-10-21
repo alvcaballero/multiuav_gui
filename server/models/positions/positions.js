@@ -9,7 +9,10 @@ export class positionsModel {
     return positions;
   }
 
-  static async getByDeviceId(deviceId) {
+  // Synchronous on purpose: it only reads the in-memory cache. missionSignals and events.js call it
+  // without `await`; while it was async they read a Promise, and the mission anomalies,
+  // wp_reached and the event position never worked (test/test-mission-signals.js).
+  static getByDeviceId(deviceId) {
     return positions[deviceId];
   }
   // Posiciones cacheadas de una lista de ids (para GET /positions?id=31&id=42).
