@@ -80,8 +80,13 @@ export class RosConnection {
       this._onConnected = onConnected;
     }
     if (this.state.state != 'connect') {
+      const previous = this.ros;
       const client = new ROSLIB.Ros({ url: ROS_URL, encoding: 'utf8', transportFactory: transportKeepingNaN });
       this.ros = client;
+      // The previous attempt may still be in its handshake (a slow host): left alone it would open
+      // later as an orphan socket nobody listens to. roslib has no timers of its own, so the
+      // socket is all there is to release.
+      previous?.close();
       // A failed attempt fires `error` AND `close`, and every retry builds a new client. The
       // disconnect handler undoes what a connection set up (subscriptions, GCS services), so it
       // runs once per connection that was really established and then lost — not per event, and
@@ -95,7 +100,11 @@ export class RosConnection {
         lost = true;
       };
       client.on('connection', () => {
-        if (client !== this.ros) return;
+        if (client !== this.ros) {
+          // `previous.close()` did nothing if its transport did not exist yet: close it on open.
+          client.close();
+          return;
+        }
         established = true;
         lost = false;
         logHelpers.ros.connect('server', { status: 'connected' });

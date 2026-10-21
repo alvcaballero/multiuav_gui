@@ -87,3 +87,25 @@ test('onDisconnect corre una vez por conexión perdida, no en cada reintento fal
     await new Promise((resolve) => (wss ? wss.close(resolve) : resolve()));
   }
 });
+
+test('un intento reemplazado por un reintento no deja un socket huérfano abierto', async () => {
+  // Handshake slower than the retry interval: every attempt is replaced while still connecting.
+  const wss = await new Promise((resolve) => {
+    const server = new WebSocketServer({ port: 19091, verifyClient: (_info, done) => setTimeout(() => done(true), 250) }, () => resolve(server));
+  });
+  const c = new RosConnection();
+  try {
+    c.initAutoConnect(() => {}, () => {});
+    c.connect();
+    await sleep(900);
+    c._stopReconnect();
+    c.ros?.close();
+    await sleep(400); // let the last handshakes finish, so a leaked one would show as OPEN
+    const open = [...wss.clients].filter((client) => client.readyState === 1).length;
+    assert.equal(open, 0, `${open} orphan socket(s) left open on the server`);
+  } finally {
+    c._stopReconnect();
+    wss.clients.forEach((client) => client.terminate());
+    await new Promise((resolve) => wss.close(resolve));
+  }
+});
