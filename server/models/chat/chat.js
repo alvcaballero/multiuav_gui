@@ -19,6 +19,7 @@ import {
   emitToolApprovalResolved,
 } from './chatEvents.js';
 import { ToolApprovalStore, toInputRequest } from './toolApprovalStore.js';
+import { InputAudit } from './inputAudit.js';
 import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
 import { forceFinishItem, RETRY_AFTER_TOOL_ERROR_MESSAGE } from './handlers/baseLLMhandler.js';
 
@@ -368,6 +369,17 @@ export class MessageOrchestrator {
         input: hasContext ? { ...args, ...contextParams } : args,
       });
       const row = await ToolApprovalStore.createPending({ chatId, turnId, iteration, frozen, resumeContext });
+      await InputAudit.recordSafe({
+        engine: 'legacy',
+        chatId,
+        requestId: row.requestId,
+        callId: row.callId,
+        toolName: row.toolName,
+        kind: 'requested',
+        source: 'system',
+        input: row.input,
+        inputHash: row.inputHash,
+      });
       requests.push(toInputRequest(row));
     }
 
@@ -572,6 +584,18 @@ export class MessageOrchestrator {
         return { code: 'tool_approval_already_executed', message: `"${name}" already ran for call ${callId}` };
       }
 
+      // Written when the right to run was claimed, not when the tool returned: the claim is the
+      // point of no return. Best-effort, there is nothing left to stop.
+      await InputAudit.recordSafe({
+        engine: 'legacy',
+        chatId: approval.chatId,
+        requestId: approval.requestId,
+        callId,
+        toolName: name,
+        kind: 'executed',
+        source: 'system',
+      });
+
       return null;
     } catch (error) {
       chatLogger.error(`[ToolApproval] Refused ${name} (call ${callId}): ${error.message}`);
@@ -593,6 +617,19 @@ export class MessageOrchestrator {
     if (expired.length === 0) return 0;
 
     await ToolApprovalStore.expireStale();
+
+    for (const row of expired) {
+      await InputAudit.recordSafe({
+        engine: 'legacy',
+        chatId: row.chatId,
+        requestId: row.requestId,
+        callId: row.callId,
+        toolName: row.toolName,
+        kind: 'decided',
+        source: 'system',
+        outcome: 'expired',
+      });
+    }
 
     for (const { chatId, turnId } of ToolApprovalStore.distinctTurns(expired)) {
       chatLogger.warn(`[ToolApproval] Turn ${turnId} resumed with expired approvals — nothing was authorised`);
@@ -649,6 +686,19 @@ export class MessageOrchestrator {
         stale.push({ requestId, reason: 'stale' });
         continue;
       }
+
+      await InputAudit.recordSafe({
+        engine: 'legacy',
+        chatId,
+        requestId,
+        callId: row.callId,
+        toolName: row.toolName,
+        kind: 'decided',
+        source: 'operator',
+        outcome: row.status,
+        responderPrincipalId,
+        text: row.denyReason,
+      });
 
       resolutions.push({
         requestId,
