@@ -1,65 +1,55 @@
+import { useState } from 'react';
 import {
-  IconButton,
-  ListItem,
-  Toolbar,
-  Typography,
   Box,
-  Avatar,
-  Paper,
-  AppBar,
-  Stack,
-  Select,
-  MenuItem,
-  FormControl,
+  Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Button,
-  Chip,
+  ThemeProvider,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import ReplayIcon from '@mui/icons-material/Replay';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CircularProgress from '@mui/material/CircularProgress';
-import Tooltip from '@mui/material/Tooltip';
-import { MessageBubble, WelcomeMessage } from './ChatMessages';
+import ChatHistoryView from './ChatHistoryView';
 import ChatInput from './ChatInput';
-import ToolApprovalGate from './ToolApprovalGate';
-import { activityText } from '../../common/util/inputRequest';
+import { ChatNavigationContext } from './ChatNavigationContext';
+import ChatThread from './ChatThread';
+import ChatTitleBar from './ChatTitleBar';
+import SubagentMenu, { SubagentStrip, subagentName } from './SubagentMenu';
+import { BODY_FONT, chatTheme } from './chatTheme';
+import { formatTimestamp } from '../../common/util/chatMessage';
 
 /** The element that actually scrolls. */
 const messagesScrollerSx = {
   flexGrow: 1,
+  minHeight: 0,
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  mb: 0,
-  pr: 1,
 };
 
 /**
  * The scroller's single child, sized by the transcript inside it.
- * `flexGrow` keeps it filling an empty chat so the welcome panel can still
- * centre itself; `flexShrink: 0` stops the flex layout from compressing it back
- * to the viewport height, which would leave nothing to scroll.
+ * `flexGrow` keeps it filling an empty chat; `flexShrink: 0` stops the flex layout from
+ * compressing it back to the viewport height, which would leave nothing to scroll.
  */
 const messagesContentSx = {
   display: 'flex',
   flexDirection: 'column',
   flexGrow: 1,
   flexShrink: 0,
+  gap: 1.75,
+  px: 1.75,
+  py: 2,
 };
 
+/** The assistant panel (title bar, thread or history, composer) in the look of the handoff. */
 const ChatPanel = ({
   // layout
-  titleSlot,
+  onClose,
   sx,
   // chat logic (from useChatLogic)
   activeChatId,
+  activeChat,
   activeConversation,
   messages,
   hasMoreOlder,
@@ -73,193 +63,192 @@ const ChatPanel = ({
   messagesContentRef,
   eveEnabled,
   activeEngine,
-  engineLabel,
+  agentInfo,
   activity,
+  view,
+  historyQuery,
+  parentChat,
+  rootChatId,
+  subagents,
+  mainMeta,
+  pendingApprovals,
+  resolvedApprovals,
   handleSendMessage,
-  handleChatChange,
+  handleSelectChat,
   handleMessagesScroll,
   handleUserScrollIntent,
-  clearChat,
+  handleNewLegacyChat,
   handleNewEveChat,
+  openHistory,
+  handleBack,
+  setHistoryQuery,
+  refreshSubagents,
   handleDeleteClick,
   handleDeleteConfirm,
   handleDeleteCancel,
   startRecording,
   stopRecording,
-}) => (
-  <Paper
-    sx={{
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      borderRadius: 2,
-      border: '1px solid #e0e0e0',
-      ...sx,
-    }}
-  >
-    <AppBar position="static" sx={{ backgroundColor: '#673ab7' }}>
-      <Toolbar sx={{ px: 2, minHeight: 48 }} disableGutters>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          Chat Assistant
-        </Typography>
-        {engineLabel && (
-          <Chip
-            icon={
-              activeEngine === 'eve' ? (
-                <AutoAwesomeIcon sx={{ color: 'inherit !important' }} />
-              ) : undefined
-            }
-            label={engineLabel}
-            size="small"
-            sx={{ mr: 1, maxWidth: 220, bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}
+}) => {
+  const [subMenuAnchor, setSubMenuAnchor] = useState(null);
+
+  const activeSubagent = subagents.find((subagent) => subagent.chatId === activeChatId) ?? null;
+  const isSubagent = Boolean(activeChat?.parentChatId);
+  const inHistory = view === 'history';
+
+  const title =
+    inHistory || !isSubagent
+      ? 'Assistant'
+      : subagentName(activeSubagent ?? { agentType: activeChat.agent });
+  const subtitle = inHistory
+    ? 'Chat history'
+    : isSubagent
+      ? `Subagent of ${parentChat?.name ?? 'Main'}`
+      : (activeChat?.name ?? activeConversation?.name ?? 'New chat');
+
+  const assistantLabel = [agentInfo.name, agentInfo.model].filter(Boolean).join(' · ');
+  const working = loading.sendingMessage || Boolean(activity);
+  const repliesToApproval = activeEngine === 'eve' && pendingApprovals.length > 0;
+
+  const openSubagentMenu = (event) => {
+    refreshSubagents();
+    setSubMenuAnchor(event.currentTarget);
+  };
+
+  const selectFromMenu = (chatId) => {
+    setSubMenuAnchor(null);
+    handleSelectChat(chatId);
+  };
+
+  return (
+    <ThemeProvider theme={chatTheme}>
+      <ChatNavigationContext value={{ openChat: handleSelectChat }}>
+        <Box
+          sx={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            bgcolor: 'background.default',
+            color: 'text.primary',
+            fontFamily: BODY_FONT,
+            ...sx,
+          }}
+        >
+          <ChatTitleBar
+            title={title}
+            subtitle={subtitle}
+            showBack={inHistory || isSubagent}
+            subagentCount={subagents.length}
+            subagentRunning={subagents.some((subagent) => subagent.status === 'running')}
+            subagentMenuOpen={Boolean(subMenuAnchor)}
+            eveEnabled={eveEnabled}
+            onBack={handleBack}
+            onToggleSubagents={openSubagentMenu}
+            onHistory={openHistory}
+            onNewLegacyChat={handleNewLegacyChat}
+            onNewEveChat={handleNewEveChat}
+            onClose={onClose}
           />
-        )}
-        {titleSlot}
-        <IconButton size="small" color="inherit" onClick={clearChat} sx={{ mr: 0.5 }}>
-          <ReplayIcon fontSize="small" />
-        </IconButton>
-        {activeChatId && (
-          <Tooltip title="Delete current chat">
-            <IconButton size="small" color="inherit" onClick={handleDeleteClick} sx={{ mr: 0.5 }}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Toolbar>
-    </AppBar>
 
-    {/* Chat selector */}
-    <Box sx={{ p: 1, borderBottom: '1px solid #e0e0e0', backgroundColor: '#fafafa' }}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-        <FormControl size="small" sx={{ flexGrow: 1 }}>
-          <Select
-            value={activeChatId || 'new'}
-            onChange={handleChatChange}
-            displayEmpty
-            disabled={loading.loadingChatList}
-            sx={{ bgcolor: '#ffffff', '& .MuiSelect-select': { py: 1 } }}
-          >
-            <MenuItem value="new">New Chat</MenuItem>
-            {activeChatId && !availableChats.find((c) => c.id === activeChatId) && (
-              <MenuItem value={activeChatId}>
-                {activeConversation?.name || `Chat ${activeChatId.slice(5, 13)}`}
-              </MenuItem>
-            )}
-            {availableChats.map((chat) => {
-              const shortId = chat.id.replace('chat_', '').split('_')[0];
-              return (
-                <MenuItem key={chat.id} value={chat.id}>
-                  {chat.engine === 'eve' ? `✨ ${chat.agent ?? 'eve'} · ` : ''}
-                  {chat.name || `Chat #${shortId}`}
-                </MenuItem>
-              );
-            })}
-          </Select>
-        </FormControl>
-        <Tooltip title="New Chat">
-          <IconButton
-            size="small"
-            onClick={clearChat}
-            sx={{ bgcolor: '#673ab7', color: 'white', '&:hover': { bgcolor: '#5e35b1' } }}
-          >
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        {eveEnabled && (
-          <Tooltip title="New chat on the eve agent orchestrator (beta)">
-            <IconButton
-              size="small"
-              onClick={handleNewEveChat}
-              sx={{ bgcolor: '#00897b', color: 'white', '&:hover': { bgcolor: '#00695c' } }}
-            >
-              <AutoAwesomeIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Stack>
-    </Box>
+          <SubagentMenu
+            anchorEl={subMenuAnchor}
+            onClose={() => setSubMenuAnchor(null)}
+            subagents={subagents}
+            mainMeta={mainMeta}
+            activeChatId={activeChatId}
+            rootChatId={rootChatId}
+            onSelect={selectFromMenu}
+          />
 
-    {/* Messages area */}
-    <Box
-      ref={messagesContainerRef}
-      onScroll={handleMessagesScroll}
-      // Gestures, so the scroll handler can tell the user moving the view apart
-      // from the browser re-clamping it. onPointerDown covers dragging the
-      // scrollbar itself, which emits no wheel or touch event.
-      onWheel={handleUserScrollIntent}
-      onTouchMove={handleUserScrollIntent}
-      onPointerDown={handleUserScrollIntent}
-      sx={messagesScrollerSx}
-    >
-      {/* Wraps everything that scrolls so a ResizeObserver can watch the content
-          box grow — that is what keeps the view pinned to the newest message
-          while rows, images and markdown settle into their real heights. */}
-      <Box ref={messagesContentRef} sx={messagesContentSx}>
-        {messages.length === 0 ? (
-          <WelcomeMessage />
-        ) : (
-          <>
-            {(loadingOlderMessages || hasMoreOlder) && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-                {loadingOlderMessages ? (
-                  <CircularProgress size={16} />
-                ) : (
-                  <Typography variant="caption" color="text.secondary">
-                    Scroll up to load earlier messages
-                  </Typography>
-                )}
-              </Box>
-            )}
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id || msg.timestamp} message={msg} chatId={activeChatId} />
-            ))}
-            {(loading.sendingMessage || activityText(activity)) && (
-              <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>
-                <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32, mr: 1 }}>
-                  <SmartToyIcon fontSize="small" />
-                </Avatar>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={16} />
-                  <Typography variant="body2" color="text.secondary">
-                    {activityText(activity) ?? 'Thinking...'}
-                  </Typography>
+          {inHistory ? (
+            <ChatHistoryView
+              chats={availableChats}
+              query={historyQuery}
+              onQueryChange={setHistoryQuery}
+              activeChatId={activeChatId}
+              loading={loading.loadingChatList}
+              onOpen={handleSelectChat}
+              onDelete={handleDeleteClick}
+            />
+          ) : (
+            <>
+              {isSubagent && (
+                <SubagentStrip
+                  subagent={activeSubagent}
+                  meta={[
+                    activeSubagent && formatTimestamp(activeSubagent.createdAt),
+                    agentInfo.name,
+                    agentInfo.model,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  onGoToMain={() => handleSelectChat(parentChat?.id ?? rootChatId)}
+                />
+              )}
+
+              <Box
+                ref={messagesContainerRef}
+                onScroll={handleMessagesScroll}
+                // Gestures, so the scroll handler can tell the user moving the view apart
+                // from the browser re-clamping it. onPointerDown covers dragging the
+                // scrollbar itself, which emits no wheel or touch event.
+                onWheel={handleUserScrollIntent}
+                onTouchMove={handleUserScrollIntent}
+                onPointerDown={handleUserScrollIntent}
+                sx={messagesScrollerSx}
+              >
+                {/* Wraps everything that scrolls so a ResizeObserver can watch the content
+                    box grow — that is what keeps the view pinned to the newest message
+                    while rows, images and markdown settle into their real heights. */}
+                <Box ref={messagesContentRef} sx={messagesContentSx}>
+                  <ChatThread
+                    chatId={activeChatId}
+                    messages={messages}
+                    pendingApprovals={pendingApprovals}
+                    resolvedApprovals={resolvedApprovals}
+                    isSubagent={isSubagent}
+                    assistantLabel={assistantLabel}
+                    working={working}
+                    activity={activity}
+                    hasMoreOlder={hasMoreOlder}
+                    loadingOlderMessages={loadingOlderMessages}
+                    showSuggestions={showOptions && messages.length === 0}
+                    onSend={handleSendMessage}
+                  />
                 </Box>
-              </ListItem>
-            )}
-          </>
-        )}
-      </Box>
-    </Box>
+              </Box>
 
-    <ToolApprovalGate chatId={activeChatId} />
+              <ChatInput
+                onSendMessage={handleSendMessage}
+                loading={loading.sendingMessage}
+                isRecording={isRecording}
+                onStartRecording={startRecording}
+                onStopRecording={stopRecording}
+                agentInfo={agentInfo}
+                repliesToApproval={repliesToApproval}
+              />
+            </>
+          )}
 
-    <ChatInput
-      onSendMessage={handleSendMessage}
-      loading={loading.sendingMessage}
-      showOptions={showOptions}
-      isRecording={isRecording}
-      onStartRecording={startRecording}
-      onStopRecording={stopRecording}
-      hasMessages={messages.length > 0}
-    />
-
-    <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
-      <DialogTitle>Delete Chat</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          Are you sure you want to delete this chat? This action cannot be undone.
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleDeleteCancel}>Cancel</Button>
-        <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-          Delete
-        </Button>
-      </DialogActions>
-    </Dialog>
-  </Paper>
-);
+          <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+            <DialogTitle>Delete chat</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Are you sure you want to delete this chat? This action cannot be undone.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleDeleteCancel}>Cancel</Button>
+              <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+      </ChatNavigationContext>
+    </ThemeProvider>
+  );
+};
 
 export default ChatPanel;

@@ -31,26 +31,44 @@ const useChatLogic = (open = true) => {
   // gates offering it in the UI, mirrors the server-side EveEnable check in
   // chatController.createChat.
   const eveEnabled = useSelector((state) => state.session.server?.eveEnabled ?? false);
-  // Which engine the active chat runs on. Looked up from availableChats (server
-  // is the source of truth for chat.metadata.engine) rather than duplicated into
-  // Redux conversation state — 'legacy' for a brand-new/not-yet-listed chat.
-  const activeEngine =
-    availableChats.find((c) => c.id === activeChatId)?.engine === 'eve' ? 'eve' : 'legacy';
-  // What answers the open chat, for the header: `eve · agent`, or `provider · model · agent profile`.
-  // Both come from data the client already has; nothing is probed.
-  const activeAgent = availableChats.find((c) => c.id === activeChatId)?.agent ?? null;
+  // The open chat as the server lists it (it is the source of truth for chat.metadata: engine,
+  // agent, parent). Null for a brand-new chat that has no row yet.
+  const activeChat = availableChats.find((c) => c.id === activeChatId) ?? null;
+  // Which engine the active chat runs on — 'legacy' for a brand-new/not-yet-listed chat.
+  const activeEngine = activeChat?.engine === 'eve' ? 'eve' : 'legacy';
+  // What answers the open chat, for the composer and the assistant label: the agent, and for the
+  // legacy engine the provider and model it runs on. All of it is data the client already has;
+  // nothing is probed.
   const llmProvider = useSelector((state) => state.session.server?.llmProvider ?? null);
   const llmModel = useSelector((state) => state.session.server?.llmModel ?? null);
-  const engineLabel =
-    activeEngine === 'eve'
-      ? `eve · ${activeAgent ?? 'agent'}`
-      : [llmProvider, llmModel, activeAgent].filter(Boolean).join(' · ');
+  const describeAgent = (chat) =>
+    chat?.engine === 'eve'
+      ? { name: chat.agent ?? 'agent', model: 'eve' }
+      : {
+          name: chat?.agent ?? 'default',
+          model: [llmProvider, llmModel].filter(Boolean).join(' · ') || null,
+        };
+  const agentInfo = describeAgent(activeChat);
+  // A subagent is a chat of its own that points at its parent; the switcher lists the siblings.
+  const parentChatId = activeChat?.parentChatId ?? null;
+  const rootChatId = parentChatId ?? activeChatId;
+  const parentChat = availableChats.find((c) => c.id === parentChatId) ?? null;
+  const pendingApprovals = useSelector((state) => state.chat.pendingApprovals);
+  const chatPendingApprovals = pendingApprovals[activeChatId] ?? EMPTY_MESSAGES;
+  const resolvedApprovals = useSelector(
+    (state) => state.chat.resolvedApprovals[state.chat.activeChatId] ?? EMPTY_MESSAGES,
+  );
   // What the open turn is doing (only the eve engine reports it): a plan can take minutes.
   const activity = useSelector((state) => state.chat.activity[activeChatId] ?? null);
 
+  // 'chat' is the thread; 'history' replaces it with the list of conversations.
+  const [view, setView] = useState('chat');
+  const [historyQuery, setHistoryQuery] = useState('');
+  // Runtime state of the subagents the server still knows about (it keeps them in memory only).
+  const [subagentRuntime, setSubagentRuntime] = useState([]);
+  const [chatToDelete, setChatToDelete] = useState(null);
   const [showOptions, setShowOptions] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const audioChunksRef = useRef([]);
@@ -199,26 +217,88 @@ const useChatLogic = (open = true) => {
     }
   }, [loadOlderMessages]);
 
-  const handleChatChange = async (event) => {
-    const newChatId = event.target.value;
-    if (newChatId === 'new') {
-      dispatch(chatActions.setActiveChat(null));
-      setShowOptions(true);
-      return;
-    }
-    if (newChatId && newChatId !== activeChatId) {
-      dispatch(chatActions.setActiveChat(newChatId));
-      setShowOptions(false);
-      const existingConversation = availableChats.find((c) => c.id === newChatId);
-      if (existingConversation) {
-        await loadChatHistory(newChatId);
-      }
+  const handleSelectChat = async (newChatId) => {
+    setView('chat');
+    if (!newChatId || newChatId === activeChatId) return;
+    dispatch(chatActions.setActiveChat(newChatId));
+    setShowOptions(false);
+    const existingConversation = availableChats.find((c) => c.id === newChatId);
+    if (existingConversation) {
+      await loadChatHistory(newChatId);
     }
   };
+
+  const openHistory = () => {
+    fetchAvailableChats();
+    setView('history');
+  };
+
+  const closeHistory = () => setView('chat');
+
+  // Back goes one level up: out of the history list, or from a subagent to the chat that spawned it.
+  const handleBack = () => {
+    if (view === 'history') closeHistory();
+    else if (parentChatId) handleSelectChat(parentChatId);
+  };
+
+  // The server only remembers subagents while it runs; the chat list (the DB) remembers them for
+  // good. The switcher shows both, so a subagent that just started is there before the list reloads.
+  const refreshSubagents = useCallback(async () => {
+    if (!rootChatId) {
+      setSubagentRuntime([]);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/chat/subagents/${rootChatId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSubagentRuntime(data.subagents ?? []);
+      }
+    } catch (error) {
+      console.error('Error fetching subagents:', error);
+    }
+  }, [rootChatId]);
+
+  const knownSubagents = new Map();
+  // A chat that has no row yet has no root: matching `null` against the top-level chats' own
+  // `parentChatId: null` would list every one of them as its subagent.
+  for (const chat of availableChats) {
+    if (rootChatId && chat.parentChatId === rootChatId) {
+      knownSubagents.set(chat.id, {
+        chatId: chat.id,
+        agentType: chat.agent,
+        status: 'done',
+        createdAt: chat.createdAt,
+      });
+    }
+  }
+  for (const record of subagentRuntime) {
+    knownSubagents.set(record.chatId, { ...knownSubagents.get(record.chatId), ...record });
+  }
+  const subagents = [...knownSubagents.values()]
+    .map((subagent) => ({
+      ...subagent,
+      approvalsWaiting: pendingApprovals[subagent.chatId]?.length ?? 0,
+    }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // The line the switcher shows for the main thread: the agent of the chat that spawned the others.
+  const mainInfo = describeAgent(parentChat ?? activeChat);
+  const mainMeta = [mainInfo.name, mainInfo.model].filter(Boolean).join(' · ');
+  const subagentsRunning = subagents.some((subagent) => subagent.status === 'running');
 
   useEffect(() => {
     if (open) fetchAvailableChats();
   }, [open, fetchAvailableChats]);
+
+  // A subagent is spawned and finishes in the middle of a turn: look again when the thread moves,
+  // and keep looking while one is running (its state is the one thing that changes without a message).
+  useEffect(() => {
+    if (!open || view !== 'chat') return undefined;
+    refreshSubagents();
+    if (!subagentsRunning) return undefined;
+    const poll = setInterval(refreshSubagents, 4000);
+    return () => clearInterval(poll);
+  }, [open, view, refreshSubagents, subagentsRunning, messages.length]);
 
   useEffect(() => {
     if (activeChatId && !availableChats.find((c) => c.id === activeChatId)) {
@@ -335,9 +415,11 @@ const useChatLogic = (open = true) => {
     }
   };
 
-  const clearChat = () => {
+  // A new legacy chat is created lazily by the server on the first message.
+  const handleNewLegacyChat = () => {
     dispatch(chatActions.setActiveChat(null));
     setShowOptions(true);
+    setView('chat');
   };
 
   /**
@@ -366,6 +448,7 @@ const useChatLogic = (open = true) => {
       await fetchAvailableChats();
       dispatch(chatActions.setActiveChat(chat.id));
       setShowOptions(false);
+      setView('chat');
     } catch (error) {
       console.error('Error creating eve chat:', error);
       dispatch(chatActions.setError(error.message));
@@ -374,18 +457,20 @@ const useChatLogic = (open = true) => {
     }
   };
 
-  const handleDeleteClick = () => {
-    if (!activeChatId) return;
-    setDeleteDialogOpen(true);
+  const handleDeleteClick = (chatId) => {
+    if (chatId) setChatToDelete(chatId);
   };
 
   const handleDeleteConfirm = async () => {
-    setDeleteDialogOpen(false);
+    const chatId = chatToDelete;
+    setChatToDelete(null);
     try {
-      const response = await fetch(`/api/chat/chats/${activeChatId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/chat/chats/${chatId}`, { method: 'DELETE' });
       if (response.ok) {
-        dispatch(chatActions.setActiveChat(null));
-        setShowOptions(true);
+        if (chatId === activeChatId) {
+          dispatch(chatActions.setActiveChat(null));
+          setShowOptions(true);
+        }
         fetchAvailableChats();
       }
     } catch (error) {
@@ -393,7 +478,7 @@ const useChatLogic = (open = true) => {
     }
   };
 
-  const handleDeleteCancel = () => setDeleteDialogOpen(false);
+  const handleDeleteCancel = () => setChatToDelete(null);
 
   const startRecording = async () => {
     try {
@@ -535,20 +620,33 @@ const useChatLogic = (open = true) => {
     availableChats,
     showOptions,
     isRecording,
-    deleteDialogOpen,
+    deleteDialogOpen: chatToDelete !== null,
     messagesContainerRef,
     messagesContentRef,
     eveEnabled,
     activeEngine,
-    engineLabel,
+    agentInfo,
     activity,
+    view,
+    historyQuery,
+    activeChat,
+    parentChat,
+    rootChatId,
+    subagents,
+    mainMeta,
+    pendingApprovals: chatPendingApprovals,
+    resolvedApprovals,
     // Handlers
     handleSendMessage,
-    handleChatChange,
+    handleSelectChat,
     handleMessagesScroll,
     handleUserScrollIntent,
-    clearChat,
+    handleNewLegacyChat,
     handleNewEveChat,
+    openHistory,
+    handleBack,
+    setHistoryQuery,
+    refreshSubagents,
     handleDeleteClick,
     handleDeleteConfirm,
     handleDeleteCancel,

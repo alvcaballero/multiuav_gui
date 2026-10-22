@@ -10,6 +10,7 @@ import {
   isTimed,
   optionsOf,
   requestTitle,
+  resolvedOutcome,
   secondsLeft,
   splitOptions,
 } from '../../client/src/common/util/inputRequest.js';
@@ -109,5 +110,37 @@ describe('what the approval card shows, for both engines', () => {
     assert.equal(activityText({ phase: 'planning', label: 'planner_sandbox' }), 'Working on planner_sandbox…');
     assert.equal(activityText({ phase: 'awaiting_input', label: null }), null);
     assert.equal(activityText(null), null);
+  });
+});
+
+describe('resolvedOutcome: what the transcript says happened to a request', () => {
+  it('reads the operator\'s own answer', () => {
+    assert.equal(resolvedOutcome('approved', { optionId: 'approve', text: null }), 'approved');
+    assert.equal(resolvedOutcome('denied', { optionId: 'deny', text: null }), 'rejected');
+    assert.equal(resolvedOutcome('cancelled', { optionId: 'cancel', text: null }), 'rejected');
+  });
+
+  it('calls a rejection with an instruction a redirect', () => {
+    assert.equal(
+      resolvedOutcome('denied', { optionId: 'deny', text: 'start from WP3' }),
+      'redirected',
+    );
+  });
+
+  it('lets the server override when the request never took', () => {
+    assert.equal(resolvedOutcome('expired', { optionId: 'approve', text: null }), 'expired');
+    assert.equal(resolvedOutcome('invalid', { optionId: 'approve', text: null }), 'invalid');
+  });
+
+  it('falls back on the server outcome when there was no answer from this client', () => {
+    assert.equal(resolvedOutcome('approved', undefined), 'approved');
+    assert.equal(resolvedOutcome('denied', undefined), 'rejected');
+    assert.equal(resolvedOutcome('expired', undefined), 'expired');
+    assert.equal(resolvedOutcome(undefined, undefined), 'rejected');
+  });
+
+  it('never reports an approval nobody gave', () => {
+    // An unknown outcome and no answer must not read as approved: fail toward "not sent".
+    assert.equal(resolvedOutcome('answered', undefined), 'rejected');
   });
 });

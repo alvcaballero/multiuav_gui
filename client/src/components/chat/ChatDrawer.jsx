@@ -1,79 +1,57 @@
 import { useState, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
-import { IconButton } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { useTheme } from '@mui/material';
 import useChatLogic from './useChatLogic';
 import ChatPanel from './ChatPanel';
+import { chatColors, shadows } from './chatTheme';
 
-const useStyles = makeStyles()(() => ({
-  panel: {
-    background: '#f0f0f0',
-    borderLeft: '2px solid #ccc',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'column',
-    boxSizing: 'border-box',
-    zIndex: 9,
-    cursor: 'default !important',
-    '& *': {
-      cursor: 'default',
-    },
-  },
-}));
+const DEFAULT_WIDTH = 452;
+const MIN_WIDTH = 360;
 
+const panelStyle = {
+  zIndex: 9,
+  borderLeft: `1px solid ${chatColors.divider}`,
+  boxShadow: shadows.lg,
+  boxSizing: 'border-box',
+};
+
+/**
+ * The assistant docked to the right edge, as tall as the map: it starts under the navbar and runs
+ * to the bottom of the window. Its width is the only thing the operator moves (the left edge).
+ */
 const ChatDrawer = ({ open, onClose }) => {
-  const { classes } = useStyles();
+  const theme = useTheme();
   const chatLogic = useChatLogic(open);
+  const top = parseInt(theme.dimensions.navbarHeight, 10);
 
-  const [panelState, setPanelState] = useState({
-    width: 500,
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [viewport, setViewport] = useState({
+    width: window.innerWidth,
     height: window.innerHeight,
-    x: window.innerWidth - 500,
-    y: 0,
   });
 
   useEffect(() => {
-    const handleWindowResize = () => {
-      setPanelState((prev) => ({ ...prev, x: window.innerWidth - prev.width }));
-    };
+    const handleWindowResize = () =>
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
   }, []);
-
-  const handleResizeStop = (e, direction, ref, delta, position) => {
-    setPanelState({
-      width: parseInt(ref.style.width, 10),
-      height: '100vh',
-      ...position,
-    });
-  };
 
   if (!open) return null;
 
   return (
     <Rnd
-      className={classes.panel}
-      size={{ width: panelState.width, height: panelState.height }}
-      position={{ x: panelState.x, y: panelState.y }}
-      minWidth={300}
-      maxWidth={window.innerWidth / 2}
+      style={panelStyle}
+      size={{ width, height: viewport.height - top }}
+      position={{ x: viewport.width - width, y: top }}
+      minWidth={MIN_WIDTH}
+      maxWidth={viewport.width / 2}
       enableResizing={{ left: true, right: false }}
       dragAxis="none"
-      onResizeStop={handleResizeStop}
+      onResizeStop={(e, direction, ref) => setWidth(parseInt(ref.style.width, 10))}
       disableDragging
-      style={{ cursor: 'default' }}
     >
-      <ChatPanel
-        {...chatLogic}
-        sx={{ borderRadius: 0 }}
-        titleSlot={
-          <IconButton size="small" color="inherit" onClick={() => onClose(false)}>
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
-        }
-      />
+      <ChatPanel {...chatLogic} onClose={() => onClose(false)} />
     </Rnd>
   );
 };

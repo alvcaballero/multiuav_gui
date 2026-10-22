@@ -1,9 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { requestTitle, resolvedOutcome } from '../common/util/inputRequest';
 
 // Cap on live messages kept per conversation in Redux (browser memory). Older
 // messages stay safely in the server DB and can be re-fetched via
 // prependMessages when the user scrolls up (see hasMoreOlder).
 const MAX_LIVE_MESSAGES = 300;
+
+// Resolved approvals kept per chat for the transcript. Session-only: the tool message that follows
+// an approved call is what survives a reload, this is the "approved by you" line between them.
+const MAX_RESOLVED_PER_CHAT = 50;
 
 const initialState = {
   // Map of chatId -> chat object
@@ -26,6 +31,13 @@ const initialState = {
   // requestId -> why the operator's answer did NOT take effect (the server could not record or
   // deliver it). The card of that request stays, shows this and lets them try again.
   approvalFailures: {},
+
+  // requestId -> what the operator answered ({ optionId, text }), noted when they press the button
+  // so that the line shown once the request resolves can say what they did.
+  approvalAnswers: {},
+
+  // chatId -> approvals that were decided, oldest first: { requestId, title, outcome, instruction, at }.
+  resolvedApprovals: {},
 
   // chatId -> { phase: 'running' | 'planning' | 'awaiting_input' | 'idle', label } of an open
   // turn, as the server reports it (only the eve engine does). Transient: not rebuilt on reload.
@@ -187,13 +199,38 @@ const chatSlice = createSlice({
       ];
     },
 
+    noteApprovalAnswer(state, action) {
+      const { requestId, optionId, text } = action.payload;
+      state.approvalAnswers[requestId] = { optionId, text: text || null };
+    },
+
     resolveApprovals(state, action) {
       const { chatId, resolutions } = action.payload;
+      const pending = state.pendingApprovals[chatId] ?? [];
+      const resolvedList = state.resolvedApprovals[chatId] ?? [];
+
+      for (const { requestId, outcome } of resolutions) {
+        const request = pending.find((r) => r.requestId === requestId);
+        // Already recorded (the legacy card goes at once and the server confirms afterwards), or
+        // not one this client was showing: nothing to add.
+        if (!request || resolvedList.some((r) => r.requestId === requestId)) continue;
+        const answer = state.approvalAnswers[requestId];
+        resolvedList.push({
+          requestId,
+          title: requestTitle(request),
+          outcome: resolvedOutcome(outcome, answer),
+          instruction: answer?.text ?? null,
+          at: new Date().toISOString(),
+        });
+      }
+      state.resolvedApprovals[chatId] = resolvedList.slice(-MAX_RESOLVED_PER_CHAT);
+
       const resolved = new Set(resolutions.map((r) => r.requestId));
-      state.pendingApprovals[chatId] = (state.pendingApprovals[chatId] ?? []).filter(
-        (r) => !resolved.has(r.requestId),
-      );
-      resolved.forEach((requestId) => delete state.approvalFailures[requestId]);
+      state.pendingApprovals[chatId] = pending.filter((r) => !resolved.has(r.requestId));
+      resolved.forEach((requestId) => {
+        delete state.approvalFailures[requestId];
+        delete state.approvalAnswers[requestId];
+      });
     },
 
     setApprovalFailures(state, action) {

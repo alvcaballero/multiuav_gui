@@ -1,5 +1,5 @@
 /**
- * Helpers for the card that asks the operator to decide (`ToolApprovalGate`).
+ * Helpers for the card that asks the operator to decide (`ApprovalCard`).
  *
  * Two engines produce the requests it shows and they do not speak the same dialect: the legacy one
  * parks a tool call and times it out (`expiresAt`, `inputHash`, options `approve` / `deny`), eve
@@ -45,6 +45,21 @@ export const formatCountdown = (seconds) =>
 /** A request that arms an aircraft is shown in red; a session limit or a question is not an alarm. */
 export const isFlightApproval = (request) =>
   (request.kind ?? 'tool-approval') === 'tool-approval' && Boolean(request.action);
+
+/**
+ * What the transcript says happened to a request, from what the server reports and what the operator
+ * pressed. The server wins when the request never took (expired / invalid); otherwise the operator's
+ * own answer, which is the only place a "do this instead" shows (it is a rejection with a text).
+ * @returns {'approved' | 'rejected' | 'redirected' | 'expired' | 'invalid'}
+ */
+export const resolvedOutcome = (serverOutcome, answer) => {
+  if (serverOutcome === 'expired' || serverOutcome === 'invalid') return serverOutcome;
+  if (answer) {
+    if (answer.optionId === 'approve') return 'approved';
+    return answer.text ? 'redirected' : 'rejected';
+  }
+  return serverOutcome === 'approved' ? 'approved' : 'rejected';
+};
 
 /** One line for the status under the messages while a turn is open. */
 export const activityText = (activity) => {

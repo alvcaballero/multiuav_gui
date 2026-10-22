@@ -1,37 +1,45 @@
 import { useState, useRef } from 'react';
-import { IconButton, TextField, Button, Box, Stack, Chip } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import MicIcon from '@mui/icons-material/Mic';
-import StopIcon from '@mui/icons-material/Stop';
+import {
+  Box,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Button,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CloseIcon from '@mui/icons-material/Close';
-import CircularProgressIcon from '@mui/material/CircularProgress';
+import MicNoneOutlinedIcon from '@mui/icons-material/MicNoneOutlined';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import StopIcon from '@mui/icons-material/Stop';
+import { chatColors } from './chatTheme';
 
-const initialOptions = [
-  'Which drones are available?',
-  `Inspect the entire wind farm`,
-  `Inspect the entire wind farm using all available UAVs to get a general assessment of its condition`,
-  'Use 2 UAVs to monitor the condition of the 4 wind turbines located in the north as soon as possible',
-  'Inspect wind turbine B3 with a high level of detail',
-  'Inspect the north face of the smaller building',
-  'Quickly inspect lighting towers without entering the work area',
-  'Inspect the crane tower in detail',
-  'Inspecciona la línea A y la línea B de la granja de aerogeneradores.',
-  'Inspecciona la turbina eólica B6 con un alto nivel de detalle.',
-];
+const iconButtonSx = { width: 30, height: 30 };
 
+/**
+ * The composer: the message box, and under it what answers (the agent and the model it runs on),
+ * the attachments and the send button.
+ *
+ * The agent is shown, not chosen: a chat's agent is fixed when it is created (a profile for the
+ * legacy engine, the eve agent for eve), and switching it halfway would need the server to accept it.
+ */
 const ChatInput = ({
   onSendMessage,
   loading,
-  showOptions,
   isRecording,
   onStartRecording,
   onStopRecording,
-  hasMessages,
+  agentInfo,
+  repliesToApproval,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [attachedImages, setAttachedImages] = useState([]);
   const fileInputRef = useRef(null);
+
+  const canSend = (inputValue.trim() || attachedImages.length > 0) && !loading && !isRecording;
 
   const handleSend = () => {
     if (!inputValue.trim() && attachedImages.length === 0) return;
@@ -53,15 +61,11 @@ const ChatInput = ({
     setAttachedImages([]);
   };
 
-  const handleKeyPress = (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
       handleSend();
     }
-  };
-
-  const handleOptionClick = (optionText) => {
-    onSendMessage(optionText);
   };
 
   const handleFileChange = (event) => {
@@ -81,37 +85,22 @@ const ChatInput = ({
   };
 
   return (
-    <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
-      {showOptions && !hasMessages && (
-        <Box sx={{ mb: 2 }}>
-          <Stack direction="column" sx={{ flexWrap: 'wrap' }} spacing={1} useFlexGap>
-            {initialOptions.map((option, index) => (
-              <Button
-                key={index}
-                variant="outlined"
-                onClick={() => handleOptionClick(option)}
-                sx={{
-                  justifyContent: 'flex-start',
-                  textTransform: 'none',
-                  borderRadius: '20px',
-                  borderColor: '#bdbdbd',
-                  fontWeight: 600,
-                  color: '#424242',
-                  '&:hover': {
-                    borderColor: '#673ab7',
-                    backgroundColor: '#f3e5f5',
-                  },
-                }}
-              >
-                {option}
-              </Button>
-            ))}
-          </Stack>
-        </Box>
-      )}
-
+    <Box
+      sx={{
+        px: 1.5,
+        pt: 1.25,
+        pb: 1.5,
+        borderTop: '1px solid',
+        borderColor: 'divider',
+        bgcolor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        flexShrink: 0,
+      }}
+    >
       {attachedImages.length > 0 && (
-        <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', mb: 1 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
           {attachedImages.map((img, i) => (
             <Chip
               key={img.dataUrl}
@@ -122,7 +111,7 @@ const ChatInput = ({
               sx={{ maxWidth: 160 }}
             />
           ))}
-        </Stack>
+        </Box>
       )}
 
       <input
@@ -135,82 +124,133 @@ const ChatInput = ({
         onChange={handleFileChange}
       />
 
-      <Stack direction="row" spacing={1}>
-        <IconButton
-          aria-label="Attach images"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={loading || isRecording}
+      <TextField
+        fullWidth
+        multiline
+        minRows={1}
+        maxRows={5}
+        placeholder={
+          repliesToApproval
+            ? 'Reply, or tell the assistant what to do instead…'
+            : 'Message the assistant…'
+        }
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={loading || isRecording}
+        slotProps={{
+          htmlInput: { 'aria-label': 'Message' },
+          input: {
+            sx: {
+              fontSize: 14,
+              py: 1.25,
+              px: 1.5,
+              minHeight: 44,
+              alignItems: 'flex-start',
+              borderRadius: '6px',
+              bgcolor: '#ffffff',
+              '& fieldset': { borderColor: chatColors.neutral[300] },
+              '&.Mui-focused fieldset': { borderColor: chatColors.accent.main, borderWidth: 1 },
+            },
+          },
+        }}
+      />
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Box
+          title="Chosen when the chat is created"
           sx={{
-            bgcolor: '#f5f5f5',
-            color: attachedImages.length > 0 ? '#1976d2' : '#757575',
-            '&:hover': { bgcolor: '#e0e0e0' },
-            '&:disabled': { bgcolor: '#f5f5f5' },
-            width: 40,
-            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            minWidth: 0,
+            height: 30,
+            px: 1.25,
+            border: `1px solid ${chatColors.accent[200]}`,
+            borderRadius: '15px',
+            bgcolor: chatColors.accent[100],
+            color: chatColors.accent[800],
+            fontSize: 12.5,
           }}
         >
-          <AttachFileIcon fontSize="small" />
-        </IconButton>
-        <TextField
-          fullWidth
-          multiline
-          maxRows={3}
-          placeholder="Something to do or ask?"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyUp={handleKeyPress}
-          disabled={loading || isRecording}
-          variant="outlined"
-          size="small"
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-              bgcolor: '#f8f9fa',
-            },
-            '& .MuiInputBase-input': {
-              height: 'auto',
-            },
-          }}
-        />
-        <IconButton
-          onClick={isRecording ? onStopRecording : onStartRecording}
-          disabled={loading}
-          sx={{
-            bgcolor: isRecording ? '#f44336' : '#4caf50',
-            color: 'white',
-            '&:hover': { bgcolor: isRecording ? '#d32f2f' : '#388e3c' },
-            '&:disabled': { bgcolor: '#e0e0e0' },
-            width: 40,
-            height: 40,
-            animation: isRecording ? 'pulse 1.5s ease-in-out infinite' : 'none',
-            '@keyframes pulse': {
-              '0%': { transform: 'scale(1)', opacity: 1 },
-              '50%': { transform: 'scale(1.1)', opacity: 0.8 },
-              '100%': { transform: 'scale(1)', opacity: 1 },
-            },
-          }}
-        >
-          {isRecording ? <StopIcon fontSize="small" /> : <MicIcon fontSize="small" />}
-        </IconButton>
-        <IconButton
+          <SmartToyOutlinedIcon sx={{ fontSize: 15, flexShrink: 0 }} />
+          <Typography component="span" noWrap sx={{ fontSize: 'inherit', fontWeight: 500 }}>
+            {agentInfo.name}
+          </Typography>
+          {agentInfo.model && (
+            <Typography
+              component="span"
+              noWrap
+              sx={{ fontSize: 'inherit', color: 'text.secondary' }}
+            >
+              {agentInfo.model}
+            </Typography>
+          )}
+        </Box>
+
+        <Box sx={{ flex: 1 }} />
+
+        <Tooltip title="Attach images">
+          <span>
+            <IconButton
+              aria-label="Attach images"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading || isRecording}
+              sx={{
+                ...iconButtonSx,
+                color: attachedImages.length > 0 ? 'primary.main' : undefined,
+              }}
+            >
+              <AttachFileIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title={isRecording ? 'Stop recording' : 'Record a voice message'}>
+          <span>
+            <IconButton
+              aria-label={isRecording ? 'Stop recording' : 'Record a voice message'}
+              onClick={isRecording ? onStopRecording : onStartRecording}
+              disabled={loading}
+              sx={{
+                ...iconButtonSx,
+                color: isRecording ? 'error.main' : undefined,
+                animation: isRecording ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%': { opacity: 1 },
+                  '50%': { opacity: 0.45 },
+                  '100%': { opacity: 1 },
+                },
+              }}
+            >
+              {isRecording ? (
+                <StopIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <MicNoneOutlinedIcon sx={{ fontSize: 18 }} />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Button
+          variant="contained"
+          aria-label="Send"
           onClick={handleSend}
-          disabled={(!inputValue.trim() && attachedImages.length === 0) || loading || isRecording}
+          disabled={!canSend}
           sx={{
-            bgcolor: '#1976d2',
-            color: 'white',
-            '&:hover': { bgcolor: '#1565c0' },
-            '&:disabled': { bgcolor: '#e0e0e0' },
-            width: 40,
-            height: 40,
+            minWidth: 34,
+            width: 34,
+            height: 30,
+            minHeight: 30,
+            p: 0,
+            ml: 0.5,
           }}
         >
           {loading ? (
-            <CircularProgressIcon size={20} color="inherit" />
+            <CircularProgress size={14} color="inherit" />
           ) : (
-            <SendIcon fontSize="small" />
+            <SendOutlinedIcon sx={{ fontSize: 16 }} />
           )}
-        </IconButton>
-      </Stack>
+        </Button>
+      </Box>
     </Box>
   );
 };
