@@ -83,7 +83,30 @@ export const MCPenable = process.env.MCP_ENABLE === 'true'; // Model Context Pro
 // eve agent orchestrator (gcs_eevee_assistant) — opt-in per chat via metadata.engine === 'eve',
 // runs alongside the legacy MessageOrchestrator/mcpClient path, does not replace it.
 export const EveEnable = process.env.EVE_ENABLE === 'true';
-export const EveUrl = process.env.EVE_URL || 'http://127.0.0.1:2000';
+
+/**
+ * Base URL of an eve agent, up to but NOT including `/v1`. eve has no endpoint that lists its
+ * agents, so the registry lives here. A base without an `/eve` segment is the old `EVE_URL`
+ * shape (`http://host:2000`, where the client added `/eve/v1`), so `/eve` is appended.
+ */
+export const normalizeEveBase = (url) => {
+  const base = String(url).trim().replace(/\/+$/, '');
+  return /\/eve(\/|$)/.test(new URL(base).pathname + '/') ? base : `${base}/eve`;
+};
+
+/**
+ * Agent name → base URL. `EVE_AGENTS` is a JSON object (`{"assistant":"http://localhost:3300/eve/assistant"}`,
+ * what `dev:all` serves); without it, `EVE_URL` is the one agent `assistant` (`dev:assistant`, :2000).
+ */
+const parseEveAgents = () => {
+  if (process.env.EVE_AGENTS) {
+    const agents = JSON.parse(process.env.EVE_AGENTS);
+    return Object.fromEntries(Object.entries(agents).map(([name, url]) => [name, normalizeEveBase(url)]));
+  }
+  return { assistant: normalizeEveBase(process.env.EVE_URL || 'http://127.0.0.1:2000') };
+};
+export const EveAgents = parseEveAgents();
+export const EveDefaultAgent = process.env.EVE_DEFAULT_AGENT || Object.keys(EveAgents)[0];
 
 const VALID_MCP_TRANSPORTS = ['stdio', 'http', 'sse'];
 let _MCPconfig = {};

@@ -143,8 +143,10 @@ export const EVENTS = Object.freeze({
   CHAT_USER_MESSAGE: 'chat:user_message',
   CHAT_ASSISTANT_MESSAGE: 'chat:assistant_message',
   CHAT_BUSY: 'chat:busy',
+  CHAT_ACTIVITY: 'chat:activity',
   CHAT_TOOL_APPROVAL_REQUESTED: 'chat:tool_approval_requested',
   CHAT_TOOL_APPROVAL_RESOLVED: 'chat:tool_approval_resolved',
+  CHAT_TOOL_APPROVAL_FAILED: 'chat:tool_approval_failed',
   CHAT_TOOL_APPROVAL_RESPONSE: 'chat:tool_approval_response',
   // Inspector de mensajes raw (ver models/inspect/rawTap.js)
   RAW_SUBSCRIBE: 'raw:subscribe', // WS inbound: a client asks to see a device slot's raw messages

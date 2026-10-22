@@ -11,6 +11,7 @@ import {
   LLMApiKeys,
   LLMBaseURLs,
   LLMModel,
+  EveEnable,
 } from './config/config.js';
 
 import express, { json } from 'express';
@@ -38,6 +39,7 @@ import { CameraStreamSubscriber } from './subscribers/cameraStreamSubscriber.js'
 import { eventBus } from './common/eventBus.js';
 import { positionHistorySampler, positionBroadcastBatcher } from './models/positions/index.js';
 import { approvalSweeper } from './models/chat/approvalSweeper.js';
+import { EveOrchestrator, eveRelay } from './models/chat/eveOrchestrator.js';
 import { missionWpTracking } from './models/mission/missionWpTracking.js';
 import { taskScheduler } from './models/mission/taskScheduler.js';
 
@@ -128,6 +130,12 @@ telemetryWatchdog.start({ getDevices: () => DevicesModel.getAll(), addEvent: (e)
 // Vence las aprobaciones de herramientas de vuelo que nadie contestó y desbloquea
 // el turno que quedó esperándolas (ver approvalSweeper.js).
 approvalSweeper.start();
+
+// A turn of an eve chat that was running when this process died is still running in eve: pick its
+// reader back up from the stored cursor (see EveRelay). A turn parked on an approval needs nothing.
+if (EveEnable) {
+  EveOrchestrator.resumeOpenTurns().catch((err) => logger.error(`Could not resume eve turns: ${err.message}`));
+}
 
 // Mission waypoint tracking: subscribes to TASK_UPDATED/POSITION_RECEIVED and
 // rehydrates its in-memory tracking registry from routes already in flight (so a
@@ -239,6 +247,7 @@ process.on('SIGTERM', () => {
   positionBroadcastBatcher.stop();
   telemetryWatchdog.stop();
   approvalSweeper.stop();
+  eveRelay.stopAll();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();
   websocketController.destroy();
@@ -257,6 +266,7 @@ process.on('SIGINT', () => {
   positionBroadcastBatcher.stop();
   telemetryWatchdog.stop();
   approvalSweeper.stop();
+  eveRelay.stopAll();
   wsSubscriber.cleanup();
   cameraSubscriber.cleanup();
   websocketController.destroy();

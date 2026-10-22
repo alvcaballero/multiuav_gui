@@ -1,0 +1,5 @@
+{"type":"input.resolved","data":{"resolutions":[{"kind":"tool-approval","outcome":"ignored","requestId":"aitxt-SYN1","response":null}],"sequence":3,"turnId":"turn_0"},"meta":{"id":"evt_SYN0021","at":"2026-10-22T10:02:00.000Z"}}
+{"type":"action.result","data":{"status":"rejected","error":{"code":"TOOL_EXECUTION_DENIED","message":"Tool execution was denied."},"result":{"callId":"call_start","kind":"tool-result","toolName":"multiuav-gcs__start_mission","isError":true,"output":{"code":"TOOL_EXECUTION_DENIED","tool":{"result":"not_run"}}},"sequence":4,"stepIndex":0,"turnId":"turn_0"},"meta":{"id":"evt_SYN0022","at":"2026-10-22T10:02:00.100Z"}}
+{"type":"message.completed","data":{"finishReason":"stop","message":"Entendido, no inicio nada. ¿Qué querés saber?","sequence":5,"stepIndex":1,"turnId":"turn_0"},"meta":{"id":"evt_SYN0023","at":"2026-10-22T10:02:01.000Z"}}
+{"type":"turn.completed","data":{"sequence":6,"turnId":"turn_0"},"meta":{"id":"evt_SYN0024","at":"2026-10-22T10:02:01.100Z"}}
+{"type":"session.waiting","data":{"continuationToken":"wrun_SYN","wait":"next-user-message"},"meta":{"id":"evt_SYN0025","at":"2026-10-22T10:02:01.200Z"}}

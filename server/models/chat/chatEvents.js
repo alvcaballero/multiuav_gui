@@ -56,6 +56,17 @@ export function emitChatBusy(chatId, busy) {
 }
 
 /**
+ * What an open turn is doing, for the UI to say something better than a spinner: a plan can take
+ * minutes. Only the eve engine reports it, it is the one that knows about tasks.
+ *
+ * @param {string} chatId
+ * @param {{phase: 'idle'|'running'|'planning'|'awaiting_input', label: ?string}} activity
+ */
+export function emitChatActivity(chatId, activity) {
+  eventBus.emitSafe(EVENTS.CHAT_ACTIVITY, { chatId, ...activity });
+}
+
+/**
  * Announces tool calls parked waiting for a human decision.
  *
  * Only an announcement: the requests are already durable in the DB before this
@@ -67,6 +78,19 @@ export function emitChatBusy(chatId, busy) {
 export function emitToolApprovalRequested(chatId, requests) {
   if (!requests?.length) return;
   eventBus.emitSafe(EVENTS.CHAT_TOOL_APPROVAL_REQUESTED, { chatId, requests });
+}
+
+/**
+ * An answer to an approval did NOT take effect, so its card must stay and say why. Without this a
+ * client that removes the card when the operator clicks would leave them believing a flight was
+ * approved (or refused) when nothing was sent.
+ *
+ * @param {string} chatId
+ * @param {Array<{requestId: string, message: string}>} failures
+ */
+export function emitToolApprovalFailed(chatId, failures) {
+  if (!failures?.length) return;
+  eventBus.emitSafe(EVENTS.CHAT_TOOL_APPROVAL_FAILED, { chatId, failures });
 }
 
 /**

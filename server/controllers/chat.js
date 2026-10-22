@@ -4,7 +4,7 @@ import { ChatHistoryManager } from '../models/chat/chatHistoryManager.js';
 import { SubAgentManager } from '../models/chat/subAgentManager.js';
 import { agents, setAgentForChat } from '../models/chat/agents/index.js';
 import { logger } from '../common/logger.js';
-import { EveEnable } from '../config/config.js';
+import { EveAgents, EveDefaultAgent, EveEnable } from '../config/config.js';
 
 export class chatController {
   static initializeLLMProvider(provider, apiKey, options = {}) {
@@ -89,13 +89,23 @@ export class chatController {
    * yet — until it does, treat the value as an audit hint, not a permission.
    */
   static async respondToApproval({ chatId, responses, responderPrincipalId = null }) {
+    // eve owns the approval of its chats: the answer goes to eve, not to ChatToolApproval. The
+    // operator is not recorded there (the GCS has no users), `responderPrincipalId` is a hint.
+    if ((await chatController._resolveEngine(chatId)) === 'eve') {
+      return EveOrchestrator.respondToInput(chatId, responses);
+    }
     return MessageOrchestrator.respondToApproval(chatId, responses, { responderPrincipalId });
   }
 
   static async getPendingApprovals(req, res) {
     const { chatId } = req.params;
     try {
-      res.json({ requests: await MessageOrchestrator.getPendingApprovals(chatId) });
+      const engine = await chatController._resolveEngine(chatId);
+      const requests =
+        engine === 'eve'
+          ? await EveOrchestrator.getPendingApprovals(chatId)
+          : await MessageOrchestrator.getPendingApprovals(chatId);
+      res.json({ requests });
     } catch (error) {
       logger.error('Error in chatController.getPendingApprovals:', error);
       res.status(500).json({ error: error.message || 'Failed to load pending approvals.' });
@@ -139,7 +149,7 @@ export class chatController {
   }
 
   static async createChat(req, res) {
-    const { name, agentProfile, engine } = req.body;
+    const { name, agentProfile, engine, agent } = req.body;
 
     if (engine && engine !== 'eve') {
       return res.status(400).json({ error: `Invalid engine '${engine}'. Only 'eve' is a valid opt-in.` });
@@ -147,9 +157,16 @@ export class chatController {
     if (engine === 'eve' && !EveEnable) {
       return res.status(400).json({ error: "The eve engine is disabled (set EVE_ENABLE=true to allow it)." });
     }
+    // Which eve agent talks. Only the ones configured: eve cannot list them, the registry is ours.
+    const eveAgent = agent ?? EveDefaultAgent;
+    if (engine === 'eve' && !EveAgents[eveAgent]) {
+      return res.status(400).json({
+        error: `Unknown eve agent '${eveAgent}'. Configured: ${Object.keys(EveAgents).join(', ')}.`,
+      });
+    }
 
     try {
-      const chat = await MessageOrchestrator.createChat(name, engine === 'eve' ? { engine: 'eve' } : {});
+      const chat = await MessageOrchestrator.createChat(name, engine === 'eve' ? { engine: 'eve', eveAgent } : {});
       if (agentProfile) {
         if (engine === 'eve') {
           logger.warn(`Ignoring agentProfile '${agentProfile}' for eve chat ${chat.id}: eve has no agent profiles.`);

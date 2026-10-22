@@ -53,6 +53,7 @@ const OUTBOUND_MAP = {
   // Chat
   [EVENTS.CHAT_CREATED]: (data) => ({ chatCreated: data }),
   [EVENTS.CHAT_BUSY]: ({ chatId, busy }) => ({ chatBusy: { chatId, busy } }),
+  [EVENTS.CHAT_ACTIVITY]: ({ chatId, phase, label }) => ({ chatActivity: { chatId, phase, label } }),
   [EVENTS.CHAT_ASSISTANT_MESSAGE]: ({ chatId, message }) => ({
     chat: {
       chatId,
@@ -66,6 +67,9 @@ const OUTBOUND_MAP = {
   }),
   [EVENTS.CHAT_TOOL_APPROVAL_RESOLVED]: ({ chatId, resolutions }) => ({
     chatToolApproval: { chatId, kind: 'resolved', resolutions },
+  }),
+  [EVENTS.CHAT_TOOL_APPROVAL_FAILED]: ({ chatId, failures }) => ({
+    chatToolApproval: { chatId, kind: 'failed', failures },
   }),
 };
 
