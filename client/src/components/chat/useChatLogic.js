@@ -36,6 +36,8 @@ const useChatLogic = (open = true) => {
   // Redux conversation state — 'legacy' for a brand-new/not-yet-listed chat.
   const activeEngine =
     availableChats.find((c) => c.id === activeChatId)?.engine === 'eve' ? 'eve' : 'legacy';
+  // What the open turn is doing (only the eve engine reports it): a plan can take minutes.
+  const activity = useSelector((state) => state.chat.activity[activeChatId] ?? null);
 
   const [showOptions, setShowOptions] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
@@ -529,6 +531,7 @@ const useChatLogic = (open = true) => {
     messagesContentRef,
     eveEnabled,
     activeEngine,
+    activity,
     // Handlers
     handleSendMessage,
     handleChatChange,

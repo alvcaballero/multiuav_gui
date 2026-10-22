@@ -7,12 +7,24 @@ const model = () => sequelize.models.ChatToolApproval;
 const toPlain = (row) => (row ? row.get({ plain: true }) : null);
 
 /**
+ * What the legacy engine lets an operator answer with. eve sends its own `options` on the request
+ * (`approve` / `cancel`); the legacy ones are fixed, and listed here so the client renders both
+ * engines from the request alone instead of knowing which vocabulary a chat speaks.
+ */
+export const LEGACY_APPROVAL_OPTIONS = [
+  { id: 'approve', label: 'Approve & execute' },
+  { id: 'deny', label: 'Deny' },
+];
+
+/**
  * The shape the client is given. Deliberately NOT the raw row: `resumeContext`
  * is orchestration state, not something an operator decides on.
  */
 export const toInputRequest = (row) => ({
   requestId: row.requestId,
   kind: 'tool-approval',
+  source: 'legacy',
+  options: LEGACY_APPROVAL_OPTIONS,
   chatId: row.chatId,
   toolName: row.toolName,
   action: {

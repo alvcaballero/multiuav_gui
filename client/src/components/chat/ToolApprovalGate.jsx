@@ -2,97 +2,140 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Typography, Button, Stack, Chip, TextField, Collapse, Alert } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined';
 import { chatActions } from '../../store/chat';
 import { sendToolApprovalResponse } from '../../common/util/toolApproval';
-
-const secondsLeft = (expiresAt) =>
-  Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
-
-const formatCountdown = (seconds) =>
-  `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+import {
+  formatCountdown,
+  isFlightApproval,
+  isTimed,
+  requestTitle,
+  secondsLeft,
+  splitOptions,
+} from '../../common/util/inputRequest';
 
 /**
- * One parked tool call awaiting a decision.
+ * One request waiting for the operator.
  *
- * Renders the input EXACTLY as it will execute — the operator is approving this
- * value, not the intent behind it, so nothing here is summarised or reformatted.
+ * For a tool call it renders the input EXACTLY as it will execute — the operator is approving this
+ * value, not the intent behind it, so nothing here is summarised or reformatted. The same card
+ * serves both engines: the legacy one (with an expiry and an input hash) and eve (neither; its
+ * options come with the request). A request that is not a tool call, such as a session limit,
+ * shows its prompt and its options.
  */
 const ApprovalRequest = ({ request, chatId, onResponded }) => {
-  const [remaining, setRemaining] = useState(() => secondsLeft(request.expiresAt));
-  const [denying, setDenying] = useState(false);
+  const timed = isTimed(request);
+  const [remaining, setRemaining] = useState(() => (timed ? secondsLeft(request.expiresAt) : null));
+  const [pendingNegative, setPendingNegative] = useState(null);
   const [reason, setReason] = useState('');
-  const [sending, setSending] = useState(false);
+  const [answered, setAnswered] = useState(false);
   const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  // Why the server could not take the answer (it could not record or deliver it). While it is set
+  // the card is usable again; it is cleared when the operator tries once more.
+  const failure = useSelector((state) => state.chat.approvalFailures[request.requestId]);
+  const sending = answered && !failure;
 
   useEffect(() => {
+    if (!timed) return undefined;
     const tick = setInterval(() => setRemaining(secondsLeft(request.expiresAt)), 1000);
     return () => clearInterval(tick);
-  }, [request.expiresAt]);
+  }, [timed, request.expiresAt]);
 
-  const expired = remaining === 0;
+  const expired = timed && remaining === 0;
+  const flight = isFlightApproval(request);
+  const { affirmative, negatives } = splitOptions(request);
 
   const respond = (optionId) => {
-    setSending(true);
+    setAnswered(true);
     setError(null);
+    dispatch(
+      chatActions.setApprovalFailures({
+        failures: [{ requestId: request.requestId, message: null }],
+      }),
+    );
     try {
       sendToolApprovalResponse(chatId, [
         { requestId: request.requestId, optionId, text: reason || undefined },
       ]);
-      onResponded?.(request.requestId);
+      // The legacy engine takes the answer synchronously, so its card goes at once. An eve card
+      // stays until eve confirms (`resolved`): if the server cannot record or deliver the answer
+      // it says so (`failure`), and a card that already vanished would leave the operator
+      // believing a flight was approved when nothing was sent.
+      if (request.source !== 'eve') onResponded?.(request.requestId);
     } catch (err) {
       setError(err.message);
-      setSending(false);
+      setAnswered(false);
     }
+  };
+
+  const handleNegative = (option) => {
+    if (pendingNegative === option.id) respond(option.id);
+    else setPendingNegative(option.id);
   };
 
   return (
     <Box
       sx={{
         border: '2px solid',
-        borderColor: expired ? 'grey.400' : 'error.main',
+        borderColor: expired ? 'grey.400' : flight ? 'error.main' : 'primary.main',
         borderRadius: '8px',
-        bgcolor: expired ? 'grey.50' : '#fff8f6',
+        bgcolor: expired ? 'grey.50' : flight ? '#fff8f6' : 'grey.50',
         p: 1.5,
         mb: 1,
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-        <WarningAmberIcon fontSize="small" color={expired ? 'disabled' : 'error'} />
+        {flight ? (
+          <WarningAmberIcon fontSize="small" color={expired ? 'disabled' : 'error'} />
+        ) : (
+          <HelpOutlineIcon fontSize="small" color={expired ? 'disabled' : 'primary'} />
+        )}
         <Typography variant="subtitle2" sx={{ fontWeight: 700, flexGrow: 1 }}>
-          {request.toolName}
+          {requestTitle(request)}
         </Typography>
-        <Chip
-          size="small"
-          label={expired ? 'Expired' : formatCountdown(remaining)}
-          color={expired ? 'default' : 'error'}
-          variant="outlined"
-        />
+        {timed && (
+          <Chip
+            size="small"
+            label={expired ? 'Expired' : formatCountdown(remaining)}
+            color={expired ? 'default' : 'error'}
+            variant="outlined"
+          />
+        )}
       </Stack>
 
-      <Typography variant="caption" color="text.secondary">
-        This command will be executed exactly as shown:
-      </Typography>
-      <Box
-        component="pre"
-        sx={{
-          m: 0,
-          mt: 0.5,
-          p: 1,
-          bgcolor: 'grey.900',
-          color: 'grey.100',
-          borderRadius: '4px',
-          fontSize: '0.72rem',
-          overflowX: 'auto',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        }}
-      >
-        {JSON.stringify(request.action.input, null, 2)}
-      </Box>
+      {request.action?.input != null ? (
+        <>
+          <Typography variant="caption" color="text.secondary">
+            This command will be executed exactly as shown:
+          </Typography>
+          <Box
+            component="pre"
+            sx={{
+              m: 0,
+              mt: 0.5,
+              p: 1,
+              bgcolor: 'grey.900',
+              color: 'grey.100',
+              borderRadius: '4px',
+              fontSize: '0.72rem',
+              overflowX: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}
+          >
+            {JSON.stringify(request.action.input, null, 2)}
+          </Box>
+        </>
+      ) : (
+        request.prompt && <Typography variant="body2">{request.prompt}</Typography>
+      )}
 
-      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
-        {request.action.inputHash?.slice(0, 19)}…
-      </Typography>
+      {request.action?.inputHash && (
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
+          {request.action.inputHash.slice(0, 19)}…
+        </Typography>
+      )}
 
       {expired ? (
         <Alert severity="warning" sx={{ mt: 1 }}>
@@ -100,7 +143,7 @@ const ApprovalRequest = ({ request, chatId, onResponded }) => {
         </Alert>
       ) : (
         <>
-          <Collapse in={denying}>
+          <Collapse in={pendingNegative !== null}>
             <TextField
               fullWidth
               size="small"
@@ -111,30 +154,35 @@ const ApprovalRequest = ({ request, chatId, onResponded }) => {
             />
           </Collapse>
 
-          {error && (
+          {(error || failure) && (
             <Alert severity="error" sx={{ mt: 1 }}>
-              {error}
+              {error ?? failure}
             </Alert>
           )}
 
           <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
             <Button
               variant="contained"
-              color="error"
+              color={flight ? 'error' : 'primary'}
               size="small"
               disabled={sending}
-              onClick={() => respond('approve')}
+              onClick={() => respond(affirmative.id)}
             >
-              Approve &amp; execute
+              {affirmative.label}
             </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              disabled={sending}
-              onClick={() => (denying ? respond('deny') : setDenying(true))}
-            >
-              {denying ? 'Confirm deny' : 'Deny'}
-            </Button>
+            {negatives.map((option) => (
+              <Button
+                key={option.id}
+                variant="outlined"
+                size="small"
+                disabled={sending}
+                onClick={() => handleNegative(option)}
+              >
+                {pendingNegative === option.id
+                  ? `Confirm ${option.label.toLowerCase()}`
+                  : option.label}
+              </Button>
+            ))}
           </Stack>
         </>
       )}
@@ -145,9 +193,9 @@ const ApprovalRequest = ({ request, chatId, onResponded }) => {
 /**
  * The human-in-the-loop gate for flight tools.
  *
- * Renders nothing when there is nothing parked, so it costs nothing in the
- * common case. Answers travel as structured responses keyed by `requestId` —
- * typing into the chat box never approves anything.
+ * Renders nothing when there is nothing waiting, so it costs nothing in the common case. Answers
+ * travel as structured responses keyed by `requestId` — typing into the chat box never approves
+ * anything (with eve it cancels the approval instead, which is the safe direction).
  */
 const ToolApprovalGate = ({ chatId }) => {
   const dispatch = useDispatch();

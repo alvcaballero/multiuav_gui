@@ -115,12 +115,17 @@ const SocketController = () => {
         dispatch(chatActions.setActiveChat(data.chatCreated.chatId));
       }
       if (data.chatToolApproval) {
-        const { chatId, kind, requests, resolutions } = data.chatToolApproval;
+        const { chatId, kind, requests, resolutions, failures } = data.chatToolApproval;
         if (kind === 'requested') {
           dispatch(chatActions.addPendingApprovals({ chatId, requests }));
         } else if (kind === 'resolved') {
           dispatch(chatActions.resolveApprovals({ chatId, resolutions }));
+        } else if (kind === 'failed') {
+          dispatch(chatActions.setApprovalFailures({ failures }));
         }
+      }
+      if (data.chatActivity) {
+        dispatch(chatActions.setChatActivity(data.chatActivity));
       }
       if (data.missionPlan) {
         console.log(data.missionPlan);

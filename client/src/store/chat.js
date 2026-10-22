@@ -23,6 +23,14 @@ const initialState = {
   // source of truth, so a reload re-reads it instead of losing it.
   pendingApprovals: {},
 
+  // requestId -> why the operator's answer did NOT take effect (the server could not record or
+  // deliver it). The card of that request stays, shows this and lets them try again.
+  approvalFailures: {},
+
+  // chatId -> { phase: 'running' | 'planning' | 'awaiting_input' | 'idle', label } of an open
+  // turn, as the server reports it (only the eve engine does). Transient: not rebuilt on reload.
+  activity: {},
+
   // Loading states
   loading: {
     sendingMessage: false,
@@ -185,6 +193,21 @@ const chatSlice = createSlice({
       state.pendingApprovals[chatId] = (state.pendingApprovals[chatId] ?? []).filter(
         (r) => !resolved.has(r.requestId),
       );
+      resolved.forEach((requestId) => delete state.approvalFailures[requestId]);
+    },
+
+    setApprovalFailures(state, action) {
+      // A null message clears it: the operator is trying again.
+      for (const { requestId, message } of action.payload.failures) {
+        if (message == null) delete state.approvalFailures[requestId];
+        else state.approvalFailures[requestId] = message;
+      }
+    },
+
+    setChatActivity(state, action) {
+      const { chatId, phase, label } = action.payload;
+      if (phase === 'idle') delete state.activity[chatId];
+      else state.activity[chatId] = { phase, label: label ?? null };
     },
 
     // Update loading state

@@ -29,6 +29,7 @@ import Tooltip from '@mui/material/Tooltip';
 import { MessageBubble, WelcomeMessage } from './ChatMessages';
 import ChatInput from './ChatInput';
 import ToolApprovalGate from './ToolApprovalGate';
+import { activityText } from '../../common/util/inputRequest';
 
 /** The element that actually scrolls. */
 const messagesScrollerSx = {
@@ -72,6 +73,7 @@ const ChatPanel = ({
   messagesContentRef,
   eveEnabled,
   activeEngine,
+  activity,
   handleSendMessage,
   handleChatChange,
   handleMessagesScroll,
@@ -102,7 +104,7 @@ const ChatPanel = ({
           Chat Assistant
         </Typography>
         {activeEngine === 'eve' && (
-          <Tooltip title="This chat runs on the eve agent orchestrator (beta) — flight-tool approval is not wired up on this path yet">
+          <Tooltip title="This chat runs on the eve agent orchestrator (beta). Flight tools ask for your approval here as well.">
             <Chip
               icon={<AutoAwesomeIcon sx={{ color: 'inherit !important' }} />}
               label="eve · beta"
@@ -210,7 +212,7 @@ const ChatPanel = ({
             {messages.map((msg) => (
               <MessageBubble key={msg.id || msg.timestamp} message={msg} chatId={activeChatId} />
             ))}
-            {loading.sendingMessage && (
+            {(loading.sendingMessage || activityText(activity)) && (
               <ListItem sx={{ justifyContent: 'flex-start', py: 1 }}>
                 <Avatar sx={{ bgcolor: '#1976d2', width: 32, height: 32, mr: 1 }}>
                   <SmartToyIcon fontSize="small" />
@@ -218,7 +220,7 @@ const ChatPanel = ({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CircularProgress size={16} />
                   <Typography variant="body2" color="text.secondary">
-                    Thinking...
+                    {activityText(activity) ?? 'Thinking...'}
                   </Typography>
                 </Box>
               </ListItem>
