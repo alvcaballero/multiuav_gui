@@ -1,4 +1,4 @@
-import { eveClient } from './eveClient.js';
+import { eveClient, explainEveError } from './eveClient.js';
 import { EveRelay } from './eveRelay.js';
 import { ChatHistoryManager } from './chatHistoryManager.js';
 import { InputAudit } from './inputAudit.js';
@@ -66,6 +66,17 @@ export class AuditUnavailableError extends Error {
   }
 }
 
+/** A failure of a call to eve, in words the operator can act on (see `explainEveError`). */
+const explain = (error, agent) => {
+  let base;
+  try {
+    base = deps.client.baseOf?.(agent);
+  } catch {
+    // an agent that is not configured: the error being explained already says so
+  }
+  return explainEveError(error, agent, base);
+};
+
 /** Requests answered but not yet confirmed by eve, so a double click cannot send the answer twice. */
 const answered = new Map();
 
@@ -87,6 +98,7 @@ export class EveOrchestrator {
   static async processMessage(chatId, message) {
     emitChatBusy(chatId, true);
 
+    let agent = null;
     try {
       const userItem = await ChatHistoryManager.addMessage(chatId, 'user', {
         role: 'user',
@@ -95,7 +107,9 @@ export class EveOrchestrator {
       });
       emitAssistantMessage(userItem); // no-op for 'user' (BROADCAST_SENDERS filters it), kept for symmetry
 
-      const { agent, sessionId } = await deps.store.load(chatId);
+      const stored = await deps.store.load(chatId);
+      agent = stored.agent;
+      const { sessionId } = stored;
       if (!sessionId) {
         const created = await deps.client.createSession(agent, message);
         await ChatHistoryManager.setSessionId(chatId, created.sessionId);
@@ -111,7 +125,7 @@ export class EveOrchestrator {
       return { chatId, accepted: true };
     } catch (error) {
       chatLogger.error(`EveOrchestrator: error sending a message for chat ${chatId}:`, error);
-      emitAssistantError(chatId, error.message || 'Error talking to the eve agent');
+      emitAssistantError(chatId, explain(error, agent));
       emitChatBusy(chatId, false);
       throw error;
     }
@@ -205,7 +219,7 @@ export class EveOrchestrator {
         chatId,
         ids.map((requestId) => ({
           requestId,
-          message: `The decision could not be delivered to the agent: ${error.message}`,
+          message: `The decision could not be delivered: ${explain(error, agent)}`,
         }))
       );
       throw error;

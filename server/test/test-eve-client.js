@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createEveClient, EveHttpError, EveSessionExpiredError } from '../models/chat/eveClient.js';
+import { createEveClient, EveHttpError, EveSessionExpiredError, explainEveError } from '../models/chat/eveClient.js';
 import { normalizeEveBase } from '../config/config.js';
 
 const AGENTS = { assistant: 'http://gcs:3300/eve/assistant', solo: 'http://gcs:2000/eve' };
@@ -146,6 +146,37 @@ describe('eveClient — the stream', () => {
     await assert.rejects(
       () => collect(client.streamEvents('assistant', 'wrun_1', { startIndex: 0 })),
       (error) => error instanceof EveSessionExpiredError && error.status === 410
+    );
+  });
+});
+
+describe('explainEveError — what the operator reads when eve cannot be reached', () => {
+  const base = 'http://user:secret@gcs:3300/eve/assistant';
+
+  it('says eve is not running, with the host, instead of "fetch failed"', () => {
+    const error = new TypeError('fetch failed', { cause: { code: 'ECONNREFUSED' } });
+
+    const text = explainEveError(error, 'assistant', base);
+
+    assert.equal(text, 'The eve agent "assistant" at gcs:3300 is not reachable. Is it running?');
+    assert.ok(!text.includes('secret'), 'only the host, never the credentials in the URL');
+  });
+
+  it('says the agent refuses the GCS when it answers 401 or 403', () => {
+    const error = new EveHttpError('eve send message failed: 401', { status: 401 });
+
+    assert.match(explainEveError(error, 'assistant', base), /rejected the GCS credentials \(401\)/);
+  });
+
+  it('keeps the message of any other answer from eve, and survives a missing or broken base', () => {
+    assert.equal(
+      explainEveError(new EveHttpError('eve stream open failed: 500 boom', { status: 500 }), 'a', base),
+      'eve stream open failed: 500 boom'
+    );
+    assert.equal(explainEveError(new Error('boom'), 'a', 'not a url'), 'boom');
+    assert.equal(
+      explainEveError(new TypeError('fetch failed'), 'a'),
+      'The eve agent "a" is not reachable. Is it running?'
     );
   });
 });

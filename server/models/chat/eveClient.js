@@ -31,6 +31,36 @@ export class EveSessionExpiredError extends EveHttpError {
   }
 }
 
+/**
+ * What to tell the operator when a call to eve fails. A network error reads "fetch failed", which
+ * says nothing; what they can act on is that nobody is listening (eve is not running) or that the
+ * agent refuses the GCS. `base` is only used for the host: the URL itself can carry credentials.
+ * @param {Error} error
+ * @param {string} agent
+ * @param {string} [base] - the agent's configured base URL
+ */
+export const explainEveError = (error, agent, base) => {
+  let where = '';
+  try {
+    if (base) where = ` at ${new URL(base).host}`;
+  } catch {
+    // a malformed base: say nothing about where rather than fail while explaining a failure
+  }
+
+  if (error instanceof EveHttpError) {
+    if (error.status === 401 || error.status === 403) {
+      return `The eve agent "${agent}"${where} rejected the GCS credentials (${error.status}).`;
+    }
+    return error.message;
+  }
+  if (
+    /fetch failed|ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|timeout|aborted/i.test(`${error?.message} ${error?.cause?.code}`)
+  ) {
+    return `The eve agent "${agent}"${where} is not reachable. Is it running?`;
+  }
+  return error?.message || 'Error talking to the eve agent';
+};
+
 const parseErrorCode = (body) => {
   try {
     const parsed = JSON.parse(body);
