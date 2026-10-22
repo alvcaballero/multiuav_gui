@@ -283,6 +283,13 @@ answer it says so (`approvalFailures`, `CHAT_TOOL_APPROVAL_FAILED`) and the card
 turn's activity (`Thinking…` / `Working on <task>…`, `state.chat.activity`) is only reported by eve. Typing in the
 chat while an eve approval is open CANCELS it (eve outcome `ignored`); it never approves.
 
+The chat header says what answers the open chat: `eve · <agent>`, or `<provider> · <model> · <agent profile>` for
+the legacy engine (`engineLabel` in `useChatLogic`). `chat.agent` is the eve agent or the legacy profile
+(`agents/*.md`, `default` when none was chosen); the server state's `llmModel` is the model really in use, which
+is the handler's default when `LLM_MODEL` is empty.
+It is a label, not a status: nothing is probed. A connection problem shows up when a message is sent, as an
+error in the chat (`explainEveError` for eve: "The eve agent … is not reachable. Is it running?").
+
 Design rationale and the rest of the protocol work this belongs to: `docs/ChatProtocol.md`.
 
 ## Known Issues Needing Architectural Decisions

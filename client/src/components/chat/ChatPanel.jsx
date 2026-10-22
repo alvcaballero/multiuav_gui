@@ -73,6 +73,7 @@ const ChatPanel = ({
   messagesContentRef,
   eveEnabled,
   activeEngine,
+  engineLabel,
   activity,
   handleSendMessage,
   handleChatChange,
@@ -103,15 +104,17 @@ const ChatPanel = ({
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Chat Assistant
         </Typography>
-        {activeEngine === 'eve' && (
-          <Tooltip title="This chat runs on the eve agent orchestrator (beta). Flight tools ask for your approval here as well.">
-            <Chip
-              icon={<AutoAwesomeIcon sx={{ color: 'inherit !important' }} />}
-              label="eve · beta"
-              size="small"
-              sx={{ mr: 1, bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}
-            />
-          </Tooltip>
+        {engineLabel && (
+          <Chip
+            icon={
+              activeEngine === 'eve' ? (
+                <AutoAwesomeIcon sx={{ color: 'inherit !important' }} />
+              ) : undefined
+            }
+            label={engineLabel}
+            size="small"
+            sx={{ mr: 1, maxWidth: 220, bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}
+          />
         )}
         {titleSlot}
         <IconButton size="small" color="inherit" onClick={clearChat} sx={{ mr: 0.5 }}>
@@ -148,7 +151,7 @@ const ChatPanel = ({
               const shortId = chat.id.replace('chat_', '').split('_')[0];
               return (
                 <MenuItem key={chat.id} value={chat.id}>
-                  {chat.engine === 'eve' ? '✨ ' : ''}
+                  {chat.engine === 'eve' ? `✨ ${chat.agent ?? 'eve'} · ` : ''}
                   {chat.name || `Chat #${shortId}`}
                 </MenuItem>
               );

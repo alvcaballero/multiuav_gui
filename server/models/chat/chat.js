@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { MCPclient } from './mcpClient.js';
 import { LLMFactory } from './handlers/llmFactory.js';
 import { chatLogger } from '../../common/logger.js';
-import { LLM, MCPenable, TOOL_APPROVAL_ENFORCE } from '../../config/config.js';
+import { EveDefaultAgent, LLM, MCPenable, TOOL_APPROVAL_ENFORCE } from '../../config/config.js';
 import {
   requiresApproval,
   assertApprovedInputMatches,
@@ -20,8 +20,16 @@ import {
 } from './chatEvents.js';
 import { ToolApprovalStore, toInputRequest } from './toolApprovalStore.js';
 import { InputAudit } from './inputAudit.js';
+import { DEFAULT_AGENT } from './agents/index.js';
 import { getContextParams, removeSubAgent } from './subAgentRegistry.js';
 import { forceFinishItem, RETRY_AFTER_TOOL_ERROR_MESSAGE } from './handlers/baseLLMhandler.js';
+
+/**
+ * Which agent answers a chat: the eve agent, or the profile (agents/*.md) of a legacy chat. The
+ * header of the chat shows it.
+ */
+const agentOf = (metadata = {}) =>
+  metadata.engine === 'eve' ? (metadata.eveAgent ?? EveDefaultAgent) : (metadata.agentProfile ?? DEFAULT_AGENT);
 
 let mcpClient = null;
 let llmHandler = null;
@@ -71,6 +79,15 @@ export class MessageOrchestrator {
 
   static isReady() {
     return llmHandler !== null && llmHandler !== undefined && llmHandler.initialized === true;
+  }
+
+  /**
+   * The model the legacy engine really uses: the configured one, or the default the provider's
+   * handler picked when `LLM_MODEL` is empty (which the config alone cannot tell).
+   * @returns {?string} null while no handler exists
+   */
+  static getLLMModel() {
+    return llmHandler?.model ?? null;
   }
 
   /**
@@ -856,6 +873,7 @@ export class MessageOrchestrator {
           createdAt: dbChat.createdAt,
           source: 'database',
           engine: dbChat.metadata?.engine === 'eve' ? 'eve' : 'legacy',
+          agent: agentOf(dbChat.metadata),
         });
       }
 
@@ -938,6 +956,7 @@ export class MessageOrchestrator {
         name: chat.name,
         createdAt: chat.createdAt,
         engine: metadata.engine === 'eve' ? 'eve' : 'legacy',
+        agent: agentOf(metadata),
       };
     } catch (error) {
       chatLogger.error('Error creating chat:', error);

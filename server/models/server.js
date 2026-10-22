@@ -1,6 +1,16 @@
-import { LocalGlyphs, mapLatitude, mapLongitude, mapZoom, LLM, EveEnable } from '../config/config.js';
+import {
+  LocalGlyphs,
+  mapLatitude,
+  mapLongitude,
+  mapZoom,
+  LLM,
+  LLMProvider,
+  LLMModel,
+  EveEnable,
+} from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile, readDataFile } from '../common/utils.js';
+import { MessageOrchestrator } from './chat/chat.js';
 import { logger } from '../common/logger.js';
 
 const buildingImages = readDataFile('../data/elements.json');
@@ -51,6 +61,9 @@ export class serverModel {
       openIdEnabled: false,
       openIdForce: false,
       llmEnabled: LLM,
+      llmProvider: LLMProvider,
+      // The model really in use: LLM_MODEL is empty when the provider's default applies.
+      llmModel: MessageOrchestrator.getLLMModel() ?? (LLMModel || null),
       eveEnabled: EveEnable,
     };
   }

@@ -36,6 +36,15 @@ const useChatLogic = (open = true) => {
   // Redux conversation state — 'legacy' for a brand-new/not-yet-listed chat.
   const activeEngine =
     availableChats.find((c) => c.id === activeChatId)?.engine === 'eve' ? 'eve' : 'legacy';
+  // What answers the open chat, for the header: `eve · agent`, or `provider · model · agent profile`.
+  // Both come from data the client already has; nothing is probed.
+  const activeAgent = availableChats.find((c) => c.id === activeChatId)?.agent ?? null;
+  const llmProvider = useSelector((state) => state.session.server?.llmProvider ?? null);
+  const llmModel = useSelector((state) => state.session.server?.llmModel ?? null);
+  const engineLabel =
+    activeEngine === 'eve'
+      ? `eve · ${activeAgent ?? 'agent'}`
+      : [llmProvider, llmModel, activeAgent].filter(Boolean).join(' · ');
   // What the open turn is doing (only the eve engine reports it): a plan can take minutes.
   const activity = useSelector((state) => state.chat.activity[activeChatId] ?? null);
 
@@ -531,6 +540,7 @@ const useChatLogic = (open = true) => {
     messagesContentRef,
     eveEnabled,
     activeEngine,
+    engineLabel,
     activity,
     // Handlers
     handleSendMessage,
