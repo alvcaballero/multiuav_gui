@@ -31,6 +31,32 @@ import { forceFinishItem, RETRY_AFTER_TOOL_ERROR_MESSAGE } from './handlers/base
 const agentOf = (metadata = {}) =>
   metadata.engine === 'eve' ? (metadata.eveAgent ?? EveDefaultAgent) : (metadata.agentProfile ?? DEFAULT_AGENT);
 
+/** Chats that get a preview line in the list: the history view shows the recent ones. */
+const PREVIEW_CHATS = 60;
+const PREVIEW_MAX_CHARS = 120;
+
+/**
+ * One line of what a chat is about, for the history list: the latest user/assistant text, so
+ * tool calls, reasoning and the orchestrator's own nudges are skipped.
+ * @param {Array<{message: object}>} items - messages, any order
+ */
+export const previewOf = (items) => {
+  for (const { message } of [...items].reverse()) {
+    if (message?.role !== 'user' && message?.role !== 'assistant') continue;
+    if (message.type && message.type !== 'text' && message.type !== 'message') continue;
+    const content = message.content;
+    const text =
+      typeof content === 'string'
+        ? content
+        : Array.isArray(content)
+          ? content.find((block) => typeof block?.text === 'string')?.text
+          : null;
+    const line = text?.replace(/\s+/g, ' ').trim();
+    if (line) return line.length > PREVIEW_MAX_CHARS ? `${line.slice(0, PREVIEW_MAX_CHARS - 1)}…` : line;
+  }
+  return null;
+};
+
 let mcpClient = null;
 let llmHandler = null;
 
@@ -863,8 +889,24 @@ export class MessageOrchestrator {
       const dbChats = await ChatHistoryManager.getAllChats();
       const chats = [];
 
+      // A subagent is a chat of its own that points at its parent: the parent's count comes from
+      // the same list, not from asking the registry (which a restart empties).
+      const subagentCounts = new Map();
+      for (const { metadata } of dbChats) {
+        const parent = metadata?.parentChatId;
+        if (parent) subagentCounts.set(parent, (subagentCounts.get(parent) ?? 0) + 1);
+      }
+
+      // `dbChats` is newest-first, so the first PREVIEW_CHATS top-level chats are the recent ones.
+      let previewsLeft = PREVIEW_CHATS;
       for (const dbChat of dbChats) {
+        const parentChatId = dbChat.metadata?.parentChatId ?? null;
         const messageCount = await ChatHistoryManager.getMessageCount(dbChat.id);
+        let preview = null;
+        if (!parentChatId && previewsLeft > 0) {
+          previewsLeft -= 1;
+          preview = previewOf(await ChatHistoryManager.loadHistory(dbChat.id, { limit: 12, order: 'DESC' }));
+        }
         chats.push({
           id: dbChat.id,
           name: dbChat.name,
@@ -874,6 +916,9 @@ export class MessageOrchestrator {
           source: 'database',
           engine: dbChat.metadata?.engine === 'eve' ? 'eve' : 'legacy',
           agent: agentOf(dbChat.metadata),
+          parentChatId,
+          subagentCount: subagentCounts.get(dbChat.id) ?? 0,
+          preview,
         });
       }
 
