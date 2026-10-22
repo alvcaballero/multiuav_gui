@@ -273,6 +273,16 @@ Pending approvals live in the server DB (`ChatToolApproval`), so they survive a 
 `pendingApprovals` in the Redux chat slice is a projection of that, never the source of
 truth. Enforcement is behind `TOOL_APPROVAL_ENFORCE`.
 
+The same card serves the eve engine (`request.source === 'eve'`), so it renders a request without knowing
+which engine sent it: the answers come from `request.options` (legacy `approve`/`deny`, eve `approve`/`cancel`
+or `continue`/`stop` for a session limit), and `expiresAt` / `inputHash` are optional (eve has neither). What
+decides how a request looks lives in `common/util/inputRequest.js`, tested from `server/test/test-input-request-client.js`
+because the client has no runner. Two differences that are on purpose: a legacy card leaves when the operator
+clicks, an **eve card leaves when eve confirms** (`resolved`), because if the server cannot record or deliver the
+answer it says so (`approvalFailures`, `CHAT_TOOL_APPROVAL_FAILED`) and the card must still be there; and the
+turn's activity (`Thinking…` / `Working on <task>…`, `state.chat.activity`) is only reported by eve. Typing in the
+chat while an eve approval is open CANCELS it (eve outcome `ignored`); it never approves.
+
 Design rationale and the rest of the protocol work this belongs to: `docs/ChatProtocol.md`.
 
 ## Known Issues Needing Architectural Decisions

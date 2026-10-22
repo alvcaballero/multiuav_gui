@@ -601,39 +601,75 @@ Pending requests live in the DB, so they survive a reload and a server restart.
 - `CHAT_CREATED` → notifies the client a new chat was created (outbound via subscriber)
 - `CHAT_ASSISTANT_MESSAGE` → Broadcasts response to clients via WebSocket
 
-**eve Agent Bridge (`eveClient.js`, `eveOrchestrator.js`):**
+**eve Agent Bridge (`eveClient.js`, `eveEvents.js`, `eveRelay.js`, `eveOrchestrator.js`):**
 
-A second, parallel orchestrator that talks to the `eve` agent framework running
-as its own process (`gcs_eevee_assistant`, sibling repo at `../../gcs_eevee_assistant`
-relative to `llm_planner_gcs/`), over `eve`'s `/eve/v1/session` HTTP API. Opt-in
-per chat via `chat.metadata.engine === 'eve'` (set at creation, `POST /api/chat/chats
-{engine:"eve"}`) — everything else keeps using `MessageOrchestrator`/`mcpClient.js`
-unchanged; `chatController._resolveEngine` is the only branch point. eve is its own
-full orchestrator (tool loop, sub-agents, sandbox) — this bridge does not reimplement
-any of that, it only relays messages and projects the final assistant text back into
-the existing chat persistence/eventBus so history/listing/WS broadcast behave the same
-as the legacy path.
+A second, parallel orchestrator that talks to an `eve` agent (`gcs_eevee_assistant`, a sibling
+checkout at `../gcs_eevee_assistant` relative to `llm_planner_gcs/`) over its `<base>/v1/session` HTTP
+API. Opt-in per chat via `chat.metadata.engine === 'eve'` (set at creation, `POST /api/chat/chats
+{engine:"eve", agent?}`); everything else keeps using `MessageOrchestrator`/`mcpClient.js` unchanged and
+`chatController._resolveEngine` is the only branch point. eve is its own full orchestrator (tool loop,
+sub-agents, sandbox): this bridge does not reimplement any of that. Plan, decisions and what is still
+unverified: `eve-implementation.md` (repo root of `multiuav_gcs/`).
 
-**eve's stream is durable and replays from event 0 on every `GET .../stream` unless
-a `startIndex` is passed** — it is not a "tail -f", it's a full event log you page
-through. `EveOrchestrator` tracks the absolute count of events already consumed in
-`chat.metadata.eveStreamIndex` and passes it as `startIndex` on every read after the
-first; skipping this makes every follow-up message re-read the PREVIOUS turn's
-`session.waiting` boundary and return its (stale) answer instead of waiting for a new
-one — this bit us once, see git history on `eveOrchestrator.js`.
+**It does not wait for the answer.** A turn can wait on a human for hours, so `EveOrchestrator.processMessage`
+only sends the message and makes sure `EveRelay` is reading; what comes back reaches the client through the
+same events the legacy path uses (`CHAT_ASSISTANT_MESSAGE`, `CHAT_BUSY`, `CHAT_TOOL_APPROVAL_*`) plus
+`CHAT_ACTIVITY` (running / planning / awaiting_input, only eve reports it).
 
-Requires, for local dev: `mcp_server` running in `http` transport (`:3001/mcp`,
-`npx tsx src/index.ts http`) and `gcs_eevee_assistant` running (`eve dev --no-ui`,
-`:2000`, needs Node 24 — this repo's server runs on Node 20, so use a separate
-`nvm`/binary). Env: `EVE_ENABLE`, `EVE_URL` (default `http://127.0.0.1:2000`) in
-`config/config.js`.
+- `eveEvents.js`: a PURE state machine over the event stream (`reduceEvent(state, event) → {state, effects}`).
+  A turn ends on `turn.completed|failed|cancelled`. `turn.waiting {on:"input"}` parks it on a person (the
+  reader stops); `{on:"tasks"}` is sub-work and the turn is still running. The answer is the LAST
+  `message.completed` of the turn (a turn appends one per step; `finishReason` cannot tell them apart).
+  Text deltas (`message.appended`, `action.input.appended`: ~240 per turn) are ignored.
+- `eveRelay.js`: one background reader per chat. Persists the cursor and the turn state in
+  `chat.metadata` (`eveStreamIndex`, `eveTurn`) after every event that changes something, reconnects with
+  backoff, dedupes by `meta.id`. At-least-once: a crash between an effect and the cursor save replays that
+  one event (the audit is idempotent, a persisted item is not).
+- `eveClient.js`: HTTP. Agents come from `config.EveAgents` (eve cannot list them). **Never build a URL from
+  an event's `streamPath`**: eve fills it with its agent-local route (`/eve/v1/...`), a 404 under `dev:all`.
+- Persisted items reuse the legacy shapes (`function_call`, `function_call_output`, `text`) so REST history and
+  `ChatMessages` need no change. Interim `message.completed` texts and task events are NOT persisted.
 
-Not yet implemented: projecting `actions.requested`/`action.result` (tool-call
-visibility), `input.requested` (HITL approval — eve's MCP tool config has
-`approval: "user-approval"` on flight tools with no code-level gate to hook into on
-this side yet, see `client/CLAUDE.md`), or `subagent.called`/`childSessionId`
-(sub-agent progress) to the frontend. Currently server-only; no client UI wired to
-`engine: 'eve'` chats yet.
+**eve's stream is durable and replays from event 0 on every `GET .../stream` unless a `startIndex` is
+passed.** The relay always passes its cursor. Without it every follow-up re-reads the previous turn.
+
+**Approvals.** `input.requested` → `CHAT_TOOL_APPROVAL_REQUESTED` with the same `InputRequest` the legacy
+engine sends, plus `options` (eve: `approve`/`cancel`) and no `expiresAt`/`inputHash`. The answer goes
+`chat:tool_approval_response` → `chatController.respondToApproval` → (eve) `EveOrchestrator.respondToInput` →
+`POST inputResponses`. Rules, in order of how badly they break things:
+
+1. **Fail-closed on `decided`.** The operator's decision is written to `ChatInputAudit` BEFORE it is sent; if
+   that write fails, nothing is sent, the card stays (`CHAT_TOOL_APPROVAL_FAILED`) and they can retry.
+   Everything else in the audit is best-effort (`requested`, `executed`, and all of the legacy engine, where
+   `ChatToolApproval` already is the gate).
+2. **Free text approves nothing.** Sent while an approval is open it CANCELS it (eve outcome `ignored`).
+3. **An eve card leaves when eve confirms (`input.resolved`)**, not when the operator clicks.
+4. The open approvals live in `metadata.eveTurn.pending`, so they survive a reload and a restart.
+
+`ChatInputAudit` (`models/chat/inputAudit.js`) is an append-only record for BOTH engines, one row per event
+(`requested|decided|executed`), no FK to `Chat`. Unique on `(engine, requestId, kind, source)`: replaying a
+stream cannot duplicate a row. `responderPrincipalId` stays null (the GCS has no users).
+
+Two lists decide which tools need a person: `TOOL_APPROVAL_REQUIRED` here and `FLIGHT_CRITICAL_TOOLS` in the
+eve repo (`connections/multiuav-gcs.ts`). `test/test-eve-flight-tools-contract.js` fails if this server gates a
+tool eve does not.
+
+**Retention (read before production).** For `private`/`unknown` audiences outside development eve asks its World
+to delete a session when it ends (retention 0): finished turns become unreadable (`410 session_expired`, the
+relay reports it and stops). Our persisted items are then the only copy. `experimental.workflow.retention:
+"default"` in the agent's `agent.ts` keeps eve's copy; its duration is not documented.
+
+Requires, for local dev: `mcp_server` in `http` transport (`:3001/mcp`) and `gcs_eevee_assistant` running
+(`npm run dev:assistant` on `:2000`, or `dev:all` on `:3300` with one path per agent; needs Node 24, this
+server runs on Node 20). Env: `EVE_ENABLE`; `EVE_AGENTS` (JSON `{"assistant":"http://localhost:3300/eve/assistant"}`)
+or, for the single `dev:assistant` agent, `EVE_URL` (default `http://127.0.0.1:2000`; the `/eve` mount is added
+if missing); `EVE_DEFAULT_AGENT`. In production eve rejects everything but Vercel OIDC unless the agent's
+`channels/eve.ts` configures `eveChannel({auth})` with service auth.
+
+Not implemented yet: text streaming (deltas), the child session of a subagent (`agent.started.sessionId`), the
+cancel button (`EveOrchestrator.cancel` exists, no route), activity after a page reload, free-text questions.
+`subagent.called`/`childSessionId` do NOT exist any more in eve (removed): a subagent shows as `task.started`
+(+ `agent.started` when it opens a session).
 
 **MCP Reconnection System:**
 The MCP client implements automatic reconnection:
