@@ -36,7 +36,7 @@ client/
     │   ├── reports/        # EventsPage, Mission*Report*Page, missionDetailReport/ (its sections)
     │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
     ├── components/         # Feature components, grouped by domain
-    │   ├── chat/           # ChatDrawer, ChatPanel, ChatInput, ChatMessages, ToolApprovalGate, useChatLogic
+    │   ├── chat/           # ChatDrawer, ChatPanel, ChatThread, ApprovalCard, ToolCallRow, ChatInput, useChatLogic, chatTheme
     │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav, DeviceCameraEditor, DeviceFilesEditor, useFilter,
     │   │                   #   DeviceIdentityEditor (name → protocol → category → MAVLink system id → ip, shared by
     │   │                   #   Adduav and settings/SettingsDevicesPageEdit; its rule in deviceIdentity.js mirrors the
@@ -257,7 +257,7 @@ export const migrateNewFeature = (oldState) => {
 from the UI (loading a mission, in `Menu.jsx`/`MainPage.jsx`/`MainPage3D.jsx`). It has
 no relation to the LLM chat.
 
-The chat agents have their own, separate gate: `components/chat/ToolApprovalGate.jsx`.
+The chat agents have their own, separate gate: `components/chat/ApprovalCard.jsx`.
 Tools listed in `TOOL_APPROVAL_REQUIRED` (default `load_mission_to_uav`, `start_mission`)
 park the server-side tool loop until an operator answers. Two rules that are load-bearing
 rather than cosmetic:
@@ -283,12 +283,40 @@ answer it says so (`approvalFailures`, `CHAT_TOOL_APPROVAL_FAILED`) and the card
 turn's activity (`Thinking…` / `Working on <task>…`, `state.chat.activity`) is only reported by eve. Typing in the
 chat while an eve approval is open CANCELS it (eve outcome `ignored`); it never approves.
 
-The chat header says what answers the open chat: `eve · <agent>`, or `<provider> · <model> · <agent profile>` for
-the legacy engine (`engineLabel` in `useChatLogic`). `chat.agent` is the eve agent or the legacy profile
-(`agents/*.md`, `default` when none was chosen); the server state's `llmModel` is the model really in use, which
-is the handler's default when `LLM_MODEL` is empty.
-It is a label, not a status: nothing is probed. A connection problem shows up when a message is sent, as an
-error in the chat (`explainEveError` for eve: "The eve agent … is not reachable. Is it running?").
+What answers the open chat is shown in the composer and in the assistant label of the thread (`agentInfo` in
+`useChatLogic`): `eve · <agent>`, or `<agent profile> · <provider> · <model>` for the legacy engine. `chat.agent`
+is the eve agent or the legacy profile (`agents/*.md`, `default` when none was chosen); the server state's
+`llmModel` is the model really in use, which is the handler's default when `LLM_MODEL` is empty.
+It is a label, not a status: nothing is probed, and it is not a selector (a chat's agent is fixed when it is
+created). A connection problem shows up when a message is sent, as an error in the chat (`explainEveError` for
+eve: "The eve agent … is not reachable. Is it running?").
+
+### The assistant panel (design handoff "AI Assistant Panel")
+
+The panel follows version 2 of the handoff mapped onto MUI. `chatTheme.js` is a theme of its own given to the panel
+through a nested `ThemeProvider` (in `ChatPanel`, so the docked drawer and `/chat` both get it): "Industry" palette,
+Barlow / Barlow Condensed (self-hosted with `@fontsource`, a GCS can be offline), `shape.borderRadius: 4`. Colour
+carries the meaning, from `chatColors`: green is approved / done, amber is waiting on the operator, red is rejected
+or failed, teal is a finished subagent, the accent blue is the operator and anything running. In `sx`, `width: 1` is
+100%, not 1px — write `'1px'`.
+
+- **Docked, as tall as the map**: `ChatDrawer` starts under the navbar (`theme.dimensions.navbarHeight`); only its
+  width is resizable.
+- **Two ways to start a chat, one per engine**: a button for legacy (`+`) and one for eve (sparkles, only when
+  `eveEnabled`). The engine is chosen by the click, never by a setting.
+- **History** replaces the thread (`view` in `useChatLogic`): top-level chats only, grouped by day
+  (`common/util/chatHistory.js`). `listChats` gives it `preview`, `subagentCount` and `parentChatId`.
+- **Subagents** are chats with `metadata.parentChatId`. The title-bar switcher lists them (the DB list plus the
+  server's in-memory registry, which knows which are running); opening one is just `handleSelectChat`. Rows reach
+  that action through `ChatNavigationContext`, not props, so the `memo` of the transcript rows survives.
+- **A tool call and its result are one row** (`groupTranscript` in `common/util/chatMessage.js`, paired by
+  `call_id`). Collapsed rows keep `content-visibility: auto`.
+- **Approval card**: Approve / Reject / "Do this instead…". The last is a rejection that carries the operator's text
+  (`denyReason` for legacy, the option's `text` for eve): the command is never sent. Decided requests stay in the
+  thread as a line (`resolvedApprovals`, session-only; `resolvedOutcome` decides what it says).
+
+Pure logic (`chatMessage.js`, `chatHistory.js`, `inputRequest.js`) is tested from `server/test`
+(`test-chat-transcript.js`, `test-input-request-client.js`).
 
 Design rationale and the rest of the protocol work this belongs to: `docs/ChatProtocol.md`.
 
@@ -299,7 +327,7 @@ Design rationale and the rest of the protocol work this belongs to: `docs/ChatPr
 The chat wire format has no stable message id (the DB PK never leaves the backend), three
 different clocks stamp the same message's timestamp, images travel and are stored as inline
 base64, and an unrecognised message `type` falls through `convertMsg`
-(`components/chat/ChatMessages.jsx:175-184`) into a plain text bubble via `ReactMarkdown` —
+(`convertMsg` in `common/util/chatMessage.js`) into a plain text bubble via `ReactMarkdown` —
 so a client-side artifact is visually indistinguishable from a real assistant message, and
 markdown-significant characters in the payload corrupt what is shown.
 
