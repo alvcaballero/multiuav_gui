@@ -78,7 +78,9 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
             label="MAVLink system id"
             value={systemId ?? ''}
             onChange={(event) =>
-              setAttribute({ systemId: event.target.value === '' ? null : Number(event.target.value) })
+              setAttribute({
+                systemId: event.target.value === '' ? null : Number(event.target.value),
+              })
             }
             slotProps={{ htmlInput: { min: 1, max: 254, step: 1 } }}
             error={Boolean(sysidProblem)}

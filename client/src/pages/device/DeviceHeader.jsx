@@ -2,7 +2,13 @@ import { Button, Typography } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import dayjs from 'dayjs';
-import { FLIGHT_MODE, FLIGHT_PHASE, armLabel, modeLabel, phaseLabel } from '../../common/util/vehicleState';
+import {
+  FLIGHT_MODE,
+  FLIGHT_PHASE,
+  armLabel,
+  modeLabel,
+  phaseLabel,
+} from '../../common/util/vehicleState';
 import { blink } from './animations';
 
 const useStyles = makeStyles()((theme) => ({
@@ -82,7 +88,8 @@ const useStyles = makeStyles()((theme) => ({
 // Status shown in the pill, from the flight mode / phase when there is one.
 const deviceStatus = (device, attributes = {}) => {
   if (attributes.flightMode === FLIGHT_MODE.RTL) return { text: 'Returning', color: 'error' };
-  if (attributes.flightPhase === FLIGHT_PHASE.IN_AIR) return { text: 'In flight', color: 'success' };
+  if (attributes.flightPhase === FLIGHT_PHASE.IN_AIR)
+    return { text: 'In flight', color: 'success' };
   if (device?.status === 'online') return { text: 'Online', color: 'success' };
   return { text: device?.status ?? 'Unknown', color: 'neutral' };
 };

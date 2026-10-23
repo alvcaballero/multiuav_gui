@@ -75,7 +75,12 @@ const SettingsElementTypesPageEdit = () => {
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
               {!isNew && (
-                <TextField label="Id" value={item.id} disabled helperText="Asignado automáticamente" />
+                <TextField
+                  label="Id"
+                  value={item.id}
+                  disabled
+                  helperText="Asignado automáticamente"
+                />
               )}
               <TextField
                 required

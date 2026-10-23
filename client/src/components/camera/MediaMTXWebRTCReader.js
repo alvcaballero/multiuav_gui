@@ -36,7 +36,8 @@ export class MediaMTXWebRTCReader {
           if (offer.sdp.includes(` ${codec}`)) throw new Error('already present');
 
           const sections = offer.sdp.split(`m=${mediaType}`);
-          const payloadTypes = sections.slice(1)
+          const payloadTypes = sections
+            .slice(1)
             .map((s) => s.split('\r\n')[0].split(' ').slice(3))
             .reduce((prev, cur) => [...prev, ...cur], []);
           payloadType = this.#reservePayloadType(payloadTypes);
@@ -51,24 +52,27 @@ export class MediaMTXWebRTCReader {
           offer.sdp = sections.join(`m=${mediaType}`);
           return pc.setLocalDescription(offer);
         })
-        .then(() => (
-          pc.setRemoteDescription(new RTCSessionDescription({
-            type: 'answer',
-            sdp: 'v=0\r\n'
-            + 'o=- 6539324223450680508 0 IN IP4 0.0.0.0\r\n'
-            + 's=-\r\n'
-            + 't=0 0\r\n'
-            + 'a=fingerprint:sha-256 0D:9F:78:15:42:B5:4B:E6:E2:94:3E:5B:37:78:E1:4B:54:59:A3:36:3A:E5:05:EB:27:EE:8F:D2:2D:41:29:25\r\n'
-            + `m=${mediaType} 9 UDP/TLS/RTP/SAVPF ${payloadType}\r\n`
-            + 'c=IN IP4 0.0.0.0\r\n'
-            + 'a=ice-pwd:7c3bf4770007e7432ee4ea4d697db675\r\n'
-            + 'a=ice-ufrag:29e036dc\r\n'
-            + 'a=sendonly\r\n'
-            + 'a=rtcp-mux\r\n'
-            + `a=rtpmap:${payloadType} ${codec}\r\n`
-            + ((fmtp !== undefined) ? `a=fmtp:${payloadType} ${fmtp}\r\n` : ''),
-          }))
-        ))
+        .then(() =>
+          pc.setRemoteDescription(
+            new RTCSessionDescription({
+              type: 'answer',
+              sdp:
+                'v=0\r\n' +
+                'o=- 6539324223450680508 0 IN IP4 0.0.0.0\r\n' +
+                's=-\r\n' +
+                't=0 0\r\n' +
+                'a=fingerprint:sha-256 0D:9F:78:15:42:B5:4B:E6:E2:94:3E:5B:37:78:E1:4B:54:59:A3:36:3A:E5:05:EB:27:EE:8F:D2:2D:41:29:25\r\n' +
+                `m=${mediaType} 9 UDP/TLS/RTP/SAVPF ${payloadType}\r\n` +
+                'c=IN IP4 0.0.0.0\r\n' +
+                'a=ice-pwd:7c3bf4770007e7432ee4ea4d697db675\r\n' +
+                'a=ice-ufrag:29e036dc\r\n' +
+                'a=sendonly\r\n' +
+                'a=rtcp-mux\r\n' +
+                `a=rtpmap:${payloadType} ${codec}\r\n` +
+                (fmtp !== undefined ? `a=fmtp:${payloadType} ${fmtp}\r\n` : ''),
+            }),
+          ),
+        )
         .then(() => resolve(true))
         .catch(() => resolve(false))
         .finally(() => pc.close());
@@ -80,16 +84,20 @@ export class MediaMTXWebRTCReader {
   }
 
   static #linkToIceServers(links) {
-    return (links !== null) ? links.split(', ').map((link) => {
-      const m = link.match(/^<(.+?)>; rel="ice-server"(; username="(.*?)"; credential="(.*?)"; credential-type="password")?/i);
-      const ret = { urls: [m[1]] };
-      if (m[3] !== undefined) {
-        ret.username = this.#unquoteCredential(m[3]);
-        ret.credential = this.#unquoteCredential(m[4]);
-        ret.credentialType = 'password';
-      }
-      return ret;
-    }) : [];
+    return links !== null
+      ? links.split(', ').map((link) => {
+          const m = link.match(
+            /^<(.+?)>; rel="ice-server"(; username="(.*?)"; credential="(.*?)"; credential-type="password")?/i,
+          );
+          const ret = { urls: [m[1]] };
+          if (m[3] !== undefined) {
+            ret.username = this.#unquoteCredential(m[3]);
+            ret.credential = this.#unquoteCredential(m[4]);
+            ret.credentialType = 'password';
+          }
+          return ret;
+        })
+      : [];
   }
 
   static #parseOffer(sdp) {
@@ -134,13 +142,28 @@ export class MediaMTXWebRTCReader {
     const lines = section.split('\r\n');
     const configs = [
       { codec: 'multiopus/48000/3', fmtp: 'channel_mapping=0,2,1;num_streams=2;coupled_streams=1' },
-      { codec: 'multiopus/48000/4', fmtp: 'channel_mapping=0,1,2,3;num_streams=2;coupled_streams=2' },
-      { codec: 'multiopus/48000/5', fmtp: 'channel_mapping=0,4,1,2,3;num_streams=3;coupled_streams=2' },
-      { codec: 'multiopus/48000/6', fmtp: 'channel_mapping=0,4,1,2,3,5;num_streams=4;coupled_streams=2' },
-      { codec: 'multiopus/48000/7', fmtp: 'channel_mapping=0,4,1,2,3,5,6;num_streams=4;coupled_streams=4' },
-      { codec: 'multiopus/48000/8', fmtp: 'channel_mapping=0,6,1,4,5,2,3,7;num_streams=5;coupled_streams=4' }
+      {
+        codec: 'multiopus/48000/4',
+        fmtp: 'channel_mapping=0,1,2,3;num_streams=2;coupled_streams=2',
+      },
+      {
+        codec: 'multiopus/48000/5',
+        fmtp: 'channel_mapping=0,4,1,2,3;num_streams=3;coupled_streams=2',
+      },
+      {
+        codec: 'multiopus/48000/6',
+        fmtp: 'channel_mapping=0,4,1,2,3,5;num_streams=4;coupled_streams=2',
+      },
+      {
+        codec: 'multiopus/48000/7',
+        fmtp: 'channel_mapping=0,4,1,2,3,5,6;num_streams=4;coupled_streams=4',
+      },
+      {
+        codec: 'multiopus/48000/8',
+        fmtp: 'channel_mapping=0,6,1,4,5,2,3,7;num_streams=5;coupled_streams=4',
+      },
     ];
-    configs.forEach(c => {
+    configs.forEach((c) => {
       let payloadType = this.#reservePayloadType(payloadTypes);
       lines[0] += ` ${payloadType}`;
       lines.splice(lines.length - 1, 0, `a=rtpmap:${payloadType} ${c.codec}`);
@@ -152,7 +175,7 @@ export class MediaMTXWebRTCReader {
 
   static #enableL16(payloadTypes, section) {
     const lines = section.split('\r\n');
-    [8000, 16000, 48000].forEach(rate => {
+    [8000, 16000, 48000].forEach((rate) => {
       let payloadType = this.#reservePayloadType(payloadTypes);
       lines[0] += ` ${payloadType}`;
       lines.splice(lines.length - 1, 0, `a=rtpmap:${payloadType} L16/${rate}/2`);
@@ -182,16 +205,20 @@ export class MediaMTXWebRTCReader {
 
   static #editOffer(sdp, nonAdvertisedCodecs) {
     const sections = sdp.split('m=');
-    const payloadTypes = sections.slice(1)
+    const payloadTypes = sections
+      .slice(1)
       .map((s) => s.split('\r\n')[0].split(' ').slice(3))
       .reduce((prev, cur) => [...prev, ...cur], []);
 
     for (let i = 1; i < sections.length; i++) {
       if (sections[i].startsWith('audio')) {
         sections[i] = this.#enableStereoOpus(sections[i]);
-        if (nonAdvertisedCodecs.includes('pcma/8000/2')) sections[i] = this.#enableStereoPcmau(payloadTypes, sections[i]);
-        if (nonAdvertisedCodecs.includes('multiopus/48000/6')) sections[i] = this.#enableMultichannelOpus(payloadTypes, sections[i]);
-        if (nonAdvertisedCodecs.includes('L16/48000/2')) sections[i] = this.#enableL16(payloadTypes, sections[i]);
+        if (nonAdvertisedCodecs.includes('pcma/8000/2'))
+          sections[i] = this.#enableStereoPcmau(payloadTypes, sections[i]);
+        if (nonAdvertisedCodecs.includes('multiopus/48000/6'))
+          sections[i] = this.#enableMultichannelOpus(payloadTypes, sections[i]);
+        if (nonAdvertisedCodecs.includes('L16/48000/2'))
+          sections[i] = this.#enableL16(payloadTypes, sections[i]);
         break;
       }
     }
@@ -221,9 +248,15 @@ export class MediaMTXWebRTCReader {
 
   #handleError(err) {
     if (this.state === 'running') {
-      if (this.pc !== null) { this.pc.close(); this.pc = null; }
+      if (this.pc !== null) {
+        this.pc.close();
+        this.pc = null;
+      }
       this.offerData = null;
-      if (this.sessionUrl !== null) { fetch(this.sessionUrl, { method: 'DELETE' }); this.sessionUrl = null; }
+      if (this.sessionUrl !== null) {
+        fetch(this.sessionUrl, { method: 'DELETE' });
+        this.sessionUrl = null;
+      }
       this.queuedCandidates = [];
       this.state = 'restarting';
       this.restartTimeout = window.setTimeout(() => {
@@ -239,11 +272,17 @@ export class MediaMTXWebRTCReader {
   }
 
   #getNonAdvertisedCodecs() {
-    Promise.all([
-      ['pcma/8000/2'],
-      ['multiopus/48000/6', 'channel_mapping=0,4,1,2,3,5;num_streams=4;coupled_streams=2'],
-      ['L16/48000/2'],
-    ].map((c) => MediaMTXWebRTCReader.#supportsNonAdvertisedCodec(c[0], c[1]).then((r) => ((r) ? c[0] : false))))
+    Promise.all(
+      [
+        ['pcma/8000/2'],
+        ['multiopus/48000/6', 'channel_mapping=0,4,1,2,3,5;num_streams=4;coupled_streams=2'],
+        ['L16/48000/2'],
+      ].map((c) =>
+        MediaMTXWebRTCReader.#supportsNonAdvertisedCodec(c[0], c[1]).then((r) =>
+          r ? c[0] : false,
+        ),
+      ),
+    )
       .then((c) => c.filter((e) => e !== false))
       .then((codecs) => {
         if (this.state !== 'getting_codecs') throw new Error('closed');
@@ -263,14 +302,16 @@ export class MediaMTXWebRTCReader {
   }
 
   #authHeader() {
-    if (this.conf.user) return {'Authorization': `Basic ${btoa(`${this.conf.user}:${this.conf.pass}`)}`};
-    if (this.conf.token) return {'Authorization': `Bearer ${this.conf.token}`};
+    if (this.conf.user)
+      return { Authorization: `Basic ${btoa(`${this.conf.user}:${this.conf.pass}`)}` };
+    if (this.conf.token) return { Authorization: `Bearer ${this.conf.token}` };
     return {};
   }
 
   #requestICEServers() {
-    return fetch(this.conf.url, { method: 'OPTIONS', headers: { ...this.#authHeader() } })
-      .then((res) => MediaMTXWebRTCReader.#linkToIceServers(res.headers.get('Link')));
+    return fetch(this.conf.url, { method: 'OPTIONS', headers: { ...this.#authHeader() } }).then(
+      (res) => MediaMTXWebRTCReader.#linkToIceServers(res.headers.get('Link')),
+    );
   }
 
   #setupPeerConnection(iceServers) {
@@ -285,12 +326,11 @@ export class MediaMTXWebRTCReader {
     this.pc.ontrack = (evt) => this.#onTrack(evt);
     this.pc.ondatachannel = (evt) => this.#onDataChannel(evt);
 
-    return this.pc.createOffer()
-      .then((offer) => {
-        offer.sdp = MediaMTXWebRTCReader.#editOffer(offer.sdp, this.nonAdvertisedCodecs);
-        this.offerData = MediaMTXWebRTCReader.#parseOffer(offer.sdp);
-        return this.pc.setLocalDescription(offer).then(() => offer.sdp);
-      });
+    return this.pc.createOffer().then((offer) => {
+      offer.sdp = MediaMTXWebRTCReader.#editOffer(offer.sdp, this.nonAdvertisedCodecs);
+      this.offerData = MediaMTXWebRTCReader.#parseOffer(offer.sdp);
+      return this.pc.setLocalDescription(offer).then(() => offer.sdp);
+    });
   }
 
   #sendOffer(offer) {
@@ -299,19 +339,19 @@ export class MediaMTXWebRTCReader {
       method: 'POST',
       headers: { ...this.#authHeader(), 'Content-Type': 'application/sdp' },
       body: offer,
-    })
-      .then((res) => {
-        if (res.status === 201) {
-          this.sessionUrl = new URL(res.headers.get('location'), this.conf.url).toString();
-          return res.text();
-        }
-        throw new Error(`status ${res.status}`);
-      });
+    }).then((res) => {
+      if (res.status === 201) {
+        this.sessionUrl = new URL(res.headers.get('location'), this.conf.url).toString();
+        return res.text();
+      }
+      throw new Error(`status ${res.status}`);
+    });
   }
 
   #setAnswer(answer) {
     if (this.state !== 'running') throw new Error('closed');
-    return this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answer }))
+    return this.pc
+      .setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answer }))
       .then(() => {
         if (this.state === 'running' && this.queuedCandidates.length !== 0) {
           this.#sendLocalCandidates(this.queuedCandidates);
@@ -335,11 +375,18 @@ export class MediaMTXWebRTCReader {
   }
 
   #onConnectionState() {
-    if (this.state === 'running' && (this.pc.connectionState === 'failed' || this.pc.connectionState === 'closed')) {
+    if (
+      this.state === 'running' &&
+      (this.pc.connectionState === 'failed' || this.pc.connectionState === 'closed')
+    ) {
       this.#handleError('peer connection closed');
     }
   }
 
-  #onTrack(evt) { if (this.conf.onTrack) this.conf.onTrack(evt); }
-  #onDataChannel(evt) { if (this.conf.onDataChannel) this.conf.onDataChannel(evt); }
+  #onTrack(evt) {
+    if (this.conf.onTrack) this.conf.onTrack(evt);
+  }
+  #onDataChannel(evt) {
+    if (this.conf.onDataChannel) this.conf.onDataChannel(evt);
+  }
 }

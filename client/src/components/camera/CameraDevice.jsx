@@ -7,10 +7,7 @@ import { CameraMediaMTXPlayer } from './CameraMediaMTXPlayer';
 const hostname = window.location.hostname;
 
 export const customEqual = (oldValue, newValue) => {
-  return (
-    oldValue?.camera === newValue?.camera &&
-    oldValue?.name === newValue?.name
-  );
+  return oldValue?.camera === newValue?.camera && oldValue?.name === newValue?.name;
 };
 
 // Selects between the two camera transports for a device — raw Websocket JPEG

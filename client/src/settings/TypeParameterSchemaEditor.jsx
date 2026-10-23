@@ -159,7 +159,9 @@ const TypeParameterSchemaEditor = ({ value, onChange }) => {
                   fullWidth
                   label="Valor por defecto"
                   value={def.default ?? ''}
-                  onChange={(event) => updateDef(index, { default: castDefault(event.target.value, def.dataType) })}
+                  onChange={(event) =>
+                    updateDef(index, { default: castDefault(event.target.value, def.dataType) })
+                  }
                 />
               </Grid>
             </Grid>
