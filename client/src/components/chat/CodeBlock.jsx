@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, Button, IconButton, Tooltip, Typography, useTheme } from '@mui/material';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -10,7 +10,7 @@ import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
 import prism from 'react-syntax-highlighter/dist/esm/styles/prism/prism';
-import { chatColors, kickerSx, MONO_FONT } from './chatTheme';
+import { kickerSx, MONO_FONT } from './chatTheme';
 import { getFormattedResult } from '../../common/util/chatMessage';
 
 // PrismLight ships no grammars: each one is opted into explicitly. The full `Prism` build pulls
@@ -91,7 +91,7 @@ const TruncationNote = ({ shown, total, onShowAll }) => (
 const preSx = {
   m: 0,
   p: 1,
-  bgcolor: chatColors.surface,
+  bgcolor: 'background.surface',
   fontFamily: MONO_FONT,
   fontSize: 12,
   lineHeight: 1.45,
@@ -118,7 +118,7 @@ export const PayloadBlock = ({ label, value }) => {
           {shown}
         </Box>
         {isTruncated && (
-          <Box sx={{ bgcolor: chatColors.surface }}>
+          <Box sx={{ bgcolor: 'background.surface' }}>
             <TruncationNote shown={shown.length} total={text.length} onShowAll={showAll} />
           </Box>
         )}
@@ -135,18 +135,20 @@ export const FormattedPayload = ({ label, content }) => {
 
 /** A fenced block inside the assistant's markdown: highlighted, with a copy button. */
 export const CodeBlock = ({ language, value }) => {
+  const theme = useTheme();
   const { text, shown, isTruncated, showAll } = useTruncated(value);
   const { copied, copy } = useCopy(text);
 
   return (
-    <Box sx={{ position: 'relative', my: 1, border: `1px solid ${chatColors.divider}` }}>
+    <Box sx={{ position: 'relative', my: 1, border: 1, borderColor: 'divider' }}>
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           px: 1,
-          bgcolor: chatColors.neutral[200],
-          borderBottom: `1px solid ${chatColors.divider}`,
+          bgcolor: 'neutral.200',
+          borderBottom: 1,
+          borderBottomColor: 'divider',
         }}
       >
         <Typography sx={{ ...kickerSx, flex: 1, fontFamily: MONO_FONT, letterSpacing: 0 }}>
@@ -161,7 +163,8 @@ export const CodeBlock = ({ language, value }) => {
           margin: 0,
           borderRadius: 0,
           fontSize: 12,
-          background: chatColors.surface,
+          // customStyle is an inline style, not sx: it takes the colour, not its palette path.
+          background: theme.palette.background.surface,
           fontFamily: MONO_FONT,
         }}
       >

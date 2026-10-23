@@ -3,15 +3,14 @@ import { Rnd } from 'react-rnd';
 import { useTheme } from '@mui/material';
 import useChatLogic from './useChatLogic';
 import ChatPanel from './ChatPanel';
-import { chatColors, shadows } from './chatTheme';
+import { DOCKED_FRAME } from './chatTheme';
 
 const DEFAULT_WIDTH = 452;
 const MIN_WIDTH = 360;
 
 const panelStyle = {
   zIndex: 9,
-  borderLeft: `1px solid ${chatColors.divider}`,
-  boxShadow: shadows.lg,
+  ...DOCKED_FRAME,
   boxSizing: 'border-box',
 };
 

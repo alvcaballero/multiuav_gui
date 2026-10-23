@@ -6,9 +6,9 @@ import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HistoryIcon from '@mui/icons-material/History';
-import { chatColors, HEADING_FONT } from './chatTheme';
+import { HEADING_FONT } from './chatTheme';
 
-const iconButtonSx = { width: 30, height: 30, '&:hover': { bgcolor: chatColors.hover } };
+const iconButtonSx = { width: 30, height: 30, '&:hover': { bgcolor: 'titleBar.hover' } };
 const iconSx = { fontSize: 18 };
 
 /**
@@ -39,8 +39,9 @@ const ChatTitleBar = ({
       py: 1,
       pr: 1,
       pl: 1.75,
-      bgcolor: chatColors.titleBar,
-      borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+      bgcolor: 'titleBar.main',
+      borderBottom: 1,
+      borderBottomColor: 'titleBar.border',
       flexShrink: 0,
     }}
   >
@@ -66,7 +67,7 @@ const ChatTitleBar = ({
       >
         {title}
       </Typography>
-      <Typography noWrap sx={{ fontSize: 12, color: chatColors.neutral[700], lineHeight: 1.3 }}>
+      <Typography noWrap sx={{ fontSize: 12, color: 'neutral.700', lineHeight: 1.3 }}>
         {subtitle}
       </Typography>
     </Box>
@@ -86,10 +87,11 @@ const ChatTitleBar = ({
               height: 30,
               px: 1,
               mr: 0.5,
-              border: '1px solid rgba(0, 0, 0, 0.18)',
+              border: 1,
+              borderColor: 'titleBar.control',
               borderRadius: '3px',
               fontSize: 12.5,
-              '&:hover': { bgcolor: chatColors.hover },
+              '&:hover': { bgcolor: 'titleBar.hover' },
             }}
           >
             <AccountTreeOutlinedIcon sx={{ fontSize: 15 }} />

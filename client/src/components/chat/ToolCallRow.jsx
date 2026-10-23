@@ -1,10 +1,11 @@
 import { memo, useState } from 'react';
 import { Box, Button, ButtonBase, CircularProgress, Collapse, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { chatColors, MONO_FONT, OFFSCREEN_SKIP } from './chatTheme';
+import { MONO_FONT, OFFSCREEN_SKIP } from './chatTheme';
 import { PayloadBlock, FormattedPayload } from './CodeBlock';
 import {
   durationLabel,
@@ -51,7 +52,7 @@ const showMission = async (args, name) => {
 const StatusIcon = ({ status }) => {
   if (status === 'running') return <CircularProgress size={14} thickness={4} />;
   if (status === 'error') return <ErrorOutlineIcon sx={{ fontSize: 14 }} color="error" />;
-  if (status === 'done') return <CheckIcon sx={{ fontSize: 14, color: chatColors.ok.main }} />;
+  if (status === 'done') return <CheckIcon sx={{ fontSize: 14, color: 'success.main' }} />;
   return null;
 };
 
@@ -86,10 +87,10 @@ const ToolCallRow = ({ call, output, running = false }) => {
       sx={{
         border: '1px solid',
         borderStyle: status === 'running' ? 'dashed' : 'solid',
-        borderColor: status === 'running' ? chatColors.accent[400] : 'divider',
+        borderColor: status === 'running' ? 'primary.400' : 'divider',
         borderRadius: 1,
         overflow: 'hidden',
-        bgcolor: status === 'running' ? chatColors.accent[100] : '#ffffff',
+        bgcolor: status === 'running' ? 'primary.100' : 'background.paper',
         flexShrink: 0,
         ...collapsedRowSx,
       }}
@@ -108,10 +109,10 @@ const ToolCallRow = ({ call, output, running = false }) => {
             py: 0.875,
             textAlign: 'left',
             justifyContent: 'flex-start',
-            '&:hover': { bgcolor: 'rgba(29, 31, 32, 0.05)' },
+            '&:hover': { bgcolor: (theme) => alpha(theme.palette.text.primary, 0.05) },
           }}
         >
-          <BuildOutlinedIcon sx={{ fontSize: 14, color: chatColors.accent[700] }} />
+          <BuildOutlinedIcon sx={{ fontSize: 14, color: 'primary.700' }} />
           <Typography sx={{ fontFamily: MONO_FONT, fontSize: 12.5, flexShrink: 0 }}>
             {name}
           </Typography>

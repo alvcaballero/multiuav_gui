@@ -1,6 +1,7 @@
 import { useState, use, memo } from 'react';
 import { useDispatch } from 'react-redux';
 import { Box, Button, ButtonBase, Collapse, Menu, MenuItem, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -12,7 +13,7 @@ import { forkConversation } from '../../store/chat';
 import { ChatNavigationContext } from './ChatNavigationContext';
 import StatusTag from './StatusTag';
 import { CodeBlock, FormattedPayload } from './CodeBlock';
-import { chatColors, HEADING_FONT, kickerSx, MONO_FONT, OFFSCREEN_SKIP } from './chatTheme';
+import { HEADING_FONT, kickerSx, MONO_FONT, OFFSCREEN_SKIP } from './chatTheme';
 import { getMessageView } from '../../common/util/chatMessage';
 
 const CodeRenderer = ({ inline, className, children, ...props }) => {
@@ -24,7 +25,7 @@ const CodeRenderer = ({ inline, className, children, ...props }) => {
     <code
       className={className}
       style={{
-        backgroundColor: chatColors.surface,
+        backgroundColor: 'background.surface',
         padding: '1px 4px',
         fontFamily: MONO_FONT,
         fontSize: '0.9em',
@@ -48,15 +49,16 @@ const markdownSx = {
   '& p': { my: 0, mb: 1 },
   '& ul, & ol': { my: 0.5, pl: 2.75 },
   '& h1, & h2, & h3, & h4': { fontSize: 15, fontWeight: 600, my: 1 },
-  '& a': { color: chatColors.accent[700] },
+  '& a': { color: 'primary.700' },
   '& table': { borderCollapse: 'collapse', my: 1, fontSize: 12.5 },
-  '& th, & td': { border: `1px solid ${chatColors.divider}`, px: 1, py: 0.5, textAlign: 'left' },
-  '& th': { bgcolor: chatColors.surface },
+  '& th, & td': { border: 1, borderColor: 'divider', px: 1, py: 0.5, textAlign: 'left' },
+  '& th': { bgcolor: 'background.surface' },
   '& blockquote': {
     m: 0,
     my: 1,
     pl: 1.5,
-    borderLeft: `2px solid ${chatColors.accent[300]}`,
+    borderLeft: 2,
+    borderLeftColor: 'primary.300',
     color: 'text.secondary',
   },
 };
@@ -124,9 +126,10 @@ const TextMessage = ({ message, chatId, view }) => {
       </Typography>
       <Box
         sx={{
-          bgcolor: chatColors.accent[600],
-          border: `1px solid ${chatColors.accent[600]}`,
-          color: '#ffffff',
+          bgcolor: 'primary.600',
+          border: 1,
+          borderColor: 'primary.600',
+          color: 'primary.contrastText',
           borderRadius: '6px 6px 0 6px',
           px: 1.5,
           py: 1.125,
@@ -209,7 +212,7 @@ const ReasoningRow = ({ content }) => {
         borderColor: 'divider',
         borderRadius: 1,
         overflow: 'hidden',
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
         ...OFFSCREEN_SKIP,
         containIntrinsicSize: 'auto 34px',
       }}
@@ -225,10 +228,10 @@ const ReasoningRow = ({ content }) => {
           px: 1.25,
           py: 0.875,
           justifyContent: 'flex-start',
-          '&:hover': { bgcolor: 'rgba(29, 31, 32, 0.05)' },
+          '&:hover': { bgcolor: (theme) => alpha(theme.palette.text.primary, 0.05) },
         }}
       >
-        <PsychologyOutlinedIcon sx={{ fontSize: 14, color: chatColors.accent[700] }} />
+        <PsychologyOutlinedIcon sx={{ fontSize: 14, color: 'primary.700' }} />
         <Typography sx={{ ...kickerSx, flex: 1, textAlign: 'left', letterSpacing: '0.1em' }}>
           Thinking
         </Typography>
@@ -288,13 +291,14 @@ const SubagentCard = ({ view }) => {
         gap: 0.75,
         border: '1px solid',
         borderColor: 'divider',
-        borderTop: `3px solid ${failed ? chatColors.bad.main : chatColors.teal.main}`,
+        borderTop: 3,
+        borderTopColor: failed ? 'error.main' : 'subagent.main',
         borderRadius: 1,
-        bgcolor: failed ? chatColors.bad.tint : chatColors.teal.tint,
+        bgcolor: failed ? 'error.tint' : 'subagent.tint',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <AccountTreeOutlinedIcon sx={{ fontSize: 14, color: chatColors.accent[700] }} />
+        <AccountTreeOutlinedIcon sx={{ fontSize: 14, color: 'primary.700' }} />
         <Typography sx={kickerSx}>Subagent</Typography>
         <Box sx={{ flex: 1 }} />
         <StatusTag tone={tag.tone} label={tag.label} />
@@ -314,7 +318,7 @@ const SubagentCard = ({ view }) => {
           sx={{
             fontSize: 13,
             lineHeight: 1.45,
-            color: chatColors.neutral[800],
+            color: 'neutral.800',
             textWrap: 'pretty',
           }}
         >
@@ -333,9 +337,9 @@ const SubagentCard = ({ view }) => {
             endIcon={<NorthEastIcon sx={{ fontSize: 14 }} />}
             onClick={() => openChat(view.subAgentChatId)}
             sx={{
-              bgcolor: '#ffffff',
-              color: failed ? 'error.main' : chatColors.teal.text,
-              borderColor: failed ? chatColors.bad.border : chatColors.teal.border,
+              bgcolor: 'background.paper',
+              color: failed ? 'error.main' : 'subagent.text',
+              borderColor: failed ? 'error.border' : 'subagent.border',
             }}
           >
             Open chat

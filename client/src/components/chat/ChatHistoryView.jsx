@@ -7,10 +7,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import StatusTag from './StatusTag';
-import { chatColors, kickerSx } from './chatTheme';
+import { kickerSx } from './chatTheme';
 import { groupHistory, historyTimeLabel } from '../../common/util/chatHistory';
 
 const SubagentCountTag = ({ count }) => (
@@ -23,8 +24,9 @@ const SubagentCountTag = ({ count }) => (
       px: 1,
       fontSize: 12,
       fontWeight: 500,
-      color: chatColors.accent[700],
-      border: `1px solid ${chatColors.accent[400]}`,
+      color: 'primary.700',
+      border: 1,
+      borderColor: 'primary.400',
     }}
   >
     {count === 1 ? '1 subagent' : `${count} subagents`}
@@ -37,8 +39,10 @@ const HistoryItem = ({ chat, active, onOpen, onDelete }) => (
       position: 'relative',
       borderLeft: '2px solid',
       borderColor: active ? 'primary.main' : 'transparent',
-      bgcolor: active ? chatColors.accent[100] : 'transparent',
-      '&:hover': { bgcolor: active ? chatColors.accent[100] : 'rgba(89, 128, 166, 0.08)' },
+      bgcolor: active ? 'primary.100' : 'transparent',
+      '&:hover': {
+        bgcolor: active ? 'primary.100' : (theme) => alpha(theme.palette.primary.main, 0.08),
+      },
       '&:hover .delete, &:focus-within .delete': { opacity: 1 },
     }}
   >
@@ -64,7 +68,7 @@ const HistoryItem = ({ chat, active, onOpen, onDelete }) => (
         </Typography>
       </Box>
       {chat.preview && (
-        <Typography noWrap sx={{ fontSize: 12.5, color: chatColors.neutral[800] }}>
+        <Typography noWrap sx={{ fontSize: 12.5, color: 'neutral.800' }}>
           {chat.preview}
         </Typography>
       )}

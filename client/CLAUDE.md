@@ -294,11 +294,16 @@ eve: "The eve agent … is not reachable. Is it running?").
 
 ### The assistant panel (design handoff "AI Assistant Panel")
 
-The panel follows version 2 of the handoff mapped onto MUI. `chatTheme.js` is a theme of its own given to the panel
-through a nested `ThemeProvider` (in `ChatPanel`, so the docked drawer and `/chat` both get it): "Industry" palette,
-Barlow / Barlow Condensed (self-hosted with `@fontsource`, a GCS can be offline), `shape.borderRadius: 4`. Colour
-carries the meaning, from `chatColors`: green is approved / done, amber is waiting on the operator, red is rejected
-or failed, teal is a finished subagent, the accent blue is the operator and anything running. In `sx`, `width: 1` is
+The panel follows version 2 of the handoff mapped onto MUI. `chatTheme.js` is given to the panel through a nested
+`ThemeProvider` (in `ChatPanel`, so the docked drawer and `/chat` both get it). It is built from the app theme's
+options (`themeOptions` in `common/theme`) with the handoff on top — a nested provider given an object REPLACES the
+outer theme, so `dimensions` and `palette.colorsDevices` exist inside the panel only because of that. On top:
+"Industry" palette, Barlow / Barlow Condensed (self-hosted with `@fontsource`, a GCS can be offline),
+`shape.borderRadius: 4`. Every colour lives in its palette and components ask for it by path in `sx`
+(`'warning.tint'`, `'primary.700'`, `'subagent.main'`, `'titleBar.hover'`) — no hex in the components. A border is
+`border: 1, borderColor: '<path>'`: a path inside a template string is not resolved. Colour carries the meaning:
+green (`success`) is approved / done, amber (`warning`) is waiting on the operator, red (`error`) is rejected or
+failed, teal (`subagent`) is a finished subagent, the accent blue (`primary`) is the operator and anything running. In `sx`, `width: 1` is
 100%, not 1px — write `'1px'`.
 
 - **Docked, as tall as the map**: `ChatDrawer` starts under the navbar (`theme.dimensions.navbarHeight`); only its

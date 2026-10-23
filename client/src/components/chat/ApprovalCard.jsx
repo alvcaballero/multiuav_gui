@@ -17,7 +17,7 @@ import {
   splitOptions,
 } from '../../common/util/inputRequest';
 import StatusTag from './StatusTag';
-import { chatColors, HEADING_FONT, MONO_FONT } from './chatTheme';
+import { HEADING_FONT, MONO_FONT } from './chatTheme';
 
 /**
  * One request waiting for the operator, as the handoff's approval card.
@@ -32,10 +32,10 @@ import { chatColors, HEADING_FONT, MONO_FONT } from './chatTheme';
  * command is never sent, and the assistant gets what to do in its place.
  */
 const rejectSx = {
-  bgcolor: '#ffffff',
+  bgcolor: 'background.paper',
   color: 'error.main',
-  borderColor: chatColors.bad.border,
-  '&:hover': { bgcolor: chatColors.bad.tint, borderColor: chatColors.bad.border },
+  borderColor: 'error.border',
+  '&:hover': { bgcolor: 'error.tint', borderColor: 'error.border' },
 };
 
 const ApprovalCard = ({ request, chatId }) => {
@@ -101,13 +101,13 @@ const ApprovalCard = ({ request, chatId }) => {
         flexDirection: 'column',
         gap: 1.25,
         border: '1px solid',
-        borderColor: expired ? 'divider' : chatColors.warn.main,
-        bgcolor: expired ? 'transparent' : chatColors.warn.tint,
+        borderColor: expired ? 'divider' : 'warning.main',
+        bgcolor: expired ? 'transparent' : 'warning.tint',
         borderRadius: 1,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <GppMaybeOutlinedIcon sx={{ fontSize: 16, color: chatColors.warn.icon }} />
+        <GppMaybeOutlinedIcon sx={{ fontSize: 16, color: 'warning.icon' }} />
         <Typography
           sx={{
             fontFamily: HEADING_FONT,
@@ -115,7 +115,7 @@ const ApprovalCard = ({ request, chatId }) => {
             fontSize: 13,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: chatColors.warn.text,
+            color: 'warning.text',
             flex: 1,
           }}
         >
@@ -276,9 +276,9 @@ const RESOLVED_TEXT = {
 
 // Green when it went through, red when it was refused, amber for what changed course or did not take.
 const RESOLVED_LOOK = {
-  approved: { border: chatColors.ok.border, bg: chatColors.ok.tint },
-  rejected: { border: chatColors.bad.rowBorder, bg: chatColors.bad.tint },
-  default: { border: chatColors.warn.border, bg: chatColors.warn.tint },
+  approved: { border: 'success.border', bg: 'success.tint' },
+  rejected: { border: 'error.rowBorder', bg: 'error.tint' },
+  default: { border: 'warning.border', bg: 'warning.tint' },
 };
 
 /** The line left in the thread once a request was decided (the card is replaced by it). */
@@ -298,16 +298,16 @@ export const ResolvedApprovalRow = ({ resolved }) => {
         bgcolor: look.bg,
         borderRadius: 1,
         fontSize: 12.5,
-        color: chatColors.neutral[800],
+        color: 'neutral.800',
       }}
     >
       <Box component="span" sx={{ alignSelf: 'center', display: 'flex' }}>
         {resolved.outcome === 'approved' ? (
-          <CheckIcon sx={{ fontSize: 14, color: chatColors.ok.main }} />
+          <CheckIcon sx={{ fontSize: 14, color: 'success.main' }} />
         ) : resolved.outcome === 'rejected' ? (
-          <CloseIcon sx={{ fontSize: 14, color: chatColors.bad.main }} />
+          <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
         ) : (
-          <SubdirectoryArrowRightIcon sx={{ fontSize: 14, color: chatColors.neutral[700] }} />
+          <SubdirectoryArrowRightIcon sx={{ fontSize: 14, color: 'neutral.700' }} />
         )}
       </Box>
       <Typography component="span" sx={{ fontFamily: MONO_FONT, fontSize: 12 }}>

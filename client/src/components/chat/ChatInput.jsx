@@ -15,7 +15,6 @@ import MicNoneOutlinedIcon from '@mui/icons-material/MicNoneOutlined';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import StopIcon from '@mui/icons-material/Stop';
-import { chatColors } from './chatTheme';
 
 const iconButtonSx = { width: 30, height: 30 };
 
@@ -92,7 +91,7 @@ const ChatInput = ({
         pb: 1.5,
         borderTop: '1px solid',
         borderColor: 'divider',
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
         display: 'flex',
         flexDirection: 'column',
         gap: 1,
@@ -148,9 +147,9 @@ const ChatInput = ({
               minHeight: 44,
               alignItems: 'flex-start',
               borderRadius: '6px',
-              bgcolor: '#ffffff',
-              '& fieldset': { borderColor: chatColors.neutral[300] },
-              '&.Mui-focused fieldset': { borderColor: chatColors.accent.main, borderWidth: 1 },
+              bgcolor: 'background.paper',
+              '& fieldset': { borderColor: 'neutral.300' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: 1 },
             },
           },
         }}
@@ -166,10 +165,11 @@ const ChatInput = ({
             minWidth: 0,
             height: 30,
             px: 1.25,
-            border: `1px solid ${chatColors.accent[200]}`,
+            border: 1,
+            borderColor: 'primary.200',
             borderRadius: '15px',
-            bgcolor: chatColors.accent[100],
-            color: chatColors.accent[800],
+            bgcolor: 'primary.100',
+            color: 'primary.800',
             fontSize: 12.5,
           }}
         >

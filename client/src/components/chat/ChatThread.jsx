@@ -3,7 +3,7 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import ApprovalCard, { ResolvedApprovalRow } from './ApprovalCard';
 import { ChatMessage, isUserMessage } from './ChatMessages';
 import ToolCallRow from './ToolCallRow';
-import { chatColors, HEADING_FONT, kickerSx } from './chatTheme';
+import { HEADING_FONT, kickerSx } from './chatTheme';
 import { groupTranscript, mergeResolved } from '../../common/util/chatMessage';
 import { activityText } from '../../common/util/inputRequest';
 
@@ -39,14 +39,14 @@ const EmptyThread = ({ showSuggestions, onSend }) => (
           width: 80,
           height: 80,
           borderRadius: '50%',
-          bgcolor: chatColors.accent[100],
+          bgcolor: 'primary.100',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           mb: 2,
         }}
       >
-        <PrecisionManufacturingIcon sx={{ fontSize: 40, color: chatColors.accent.main }} />
+        <PrecisionManufacturingIcon sx={{ fontSize: 40, color: 'primary.main' }} />
       </Box>
       <Typography
         sx={{
@@ -109,7 +109,7 @@ const TaskCard = ({ message }) => {
         border: '1px solid',
         borderColor: 'divider',
         borderRadius: 1,
-        bgcolor: chatColors.surface,
+        bgcolor: 'background.surface',
         px: 1.5,
         py: 1.25,
         display: 'flex',
@@ -226,7 +226,7 @@ const ChatThread = ({
                 fontSize: 12,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: chatColors.accent[700],
+                color: 'primary.700',
               }}
             >
               {assistantLabel}

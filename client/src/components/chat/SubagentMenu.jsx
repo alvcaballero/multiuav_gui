@@ -1,7 +1,8 @@
 import { Box, ButtonBase, Link, Popover, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import StatusTag from './StatusTag';
-import { chatColors, kickerSx } from './chatTheme';
+import { kickerSx } from './chatTheme';
 import { formatTimestamp } from '../../common/util/chatMessage';
 
 // The colour says how it went: the accent while it runs, teal once it finished, red when it failed.
@@ -9,15 +10,15 @@ const STATUS_LOOK = {
   running: {
     tone: 'accent',
     label: 'Running',
-    line: chatColors.accent.main,
-    strip: chatColors.accent[100],
+    line: 'primary.main',
+    strip: 'primary.100',
   },
-  error: { tone: 'error', label: 'Failed', line: chatColors.bad.main, strip: chatColors.bad.tint },
+  error: { tone: 'error', label: 'Failed', line: 'error.main', strip: 'error.tint' },
   done: {
     tone: 'success',
     label: 'Completed',
-    line: chatColors.teal.main,
-    strip: chatColors.teal.strip,
+    line: 'subagent.main',
+    strip: 'subagent.strip',
   },
 };
 
@@ -33,8 +34,8 @@ const rowSx = (active) => ({
   p: 1,
   textAlign: 'left',
   justifyContent: 'flex-start',
-  bgcolor: active ? chatColors.accent[100] : 'transparent',
-  '&:hover': { bgcolor: 'rgba(89, 128, 166, 0.1)' },
+  bgcolor: active ? 'primary.100' : 'transparent',
+  '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) },
   borderRadius: '2px',
 });
 
@@ -98,7 +99,8 @@ const SubagentMenu = ({
             sx={{
               ...rowSx(activeChatId === subagent.chatId),
               ml: '15px',
-              borderLeft: `3px solid ${tag.line}`,
+              borderLeft: 3,
+              borderLeftColor: tag.line,
             }}
           >
             <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
@@ -137,7 +139,7 @@ export const SubagentStrip = ({ subagent, meta, onGoToMain }) => {
         borderBottom: '1px solid',
         borderColor: 'divider',
         fontSize: 12,
-        color: chatColors.neutral[800],
+        color: 'neutral.800',
         flexShrink: 0,
       }}
     >
