@@ -31,23 +31,32 @@ const useChatLogic = (open = true) => {
   // gates offering it in the UI, mirrors the server-side EveEnable check in
   // chatController.createChat.
   const eveEnabled = useSelector((state) => state.session.server?.eveEnabled ?? false);
+  // "New eve chat" was pressed and nothing was sent yet. The chat is created on the first message,
+  // not on the click: `_resolveEngine` needs its row to exist before that message lands, but a
+  // row made by the click alone is an empty chat that then sits in the history.
+  const [pendingEveChat, setPendingEveChat] = useState(false);
+
   // The open chat as the server lists it (it is the source of truth for chat.metadata: engine,
   // agent, parent). Null for a brand-new chat that has no row yet.
   const activeChat = availableChats.find((c) => c.id === activeChatId) ?? null;
   // Which engine the active chat runs on — 'legacy' for a brand-new/not-yet-listed chat.
-  const activeEngine = activeChat?.engine === 'eve' ? 'eve' : 'legacy';
+  const eveDefaultAgent = useSelector((state) => state.session.server?.eveDefaultAgent ?? null);
+  const awaitingEveChat = pendingEveChat && !activeChatId;
+  const activeEngine = awaitingEveChat || activeChat?.engine === 'eve' ? 'eve' : 'legacy';
   // What answers the open chat, for the composer and the assistant label: the agent, and for the
   // legacy engine the provider and model it runs on. All of it is data the client already has;
   // nothing is probed.
   const llmProvider = useSelector((state) => state.session.server?.llmProvider ?? null);
   const llmModel = useSelector((state) => state.session.server?.llmModel ?? null);
   const describeAgent = (chat) =>
-    chat?.engine === 'eve'
-      ? { name: chat.agent ?? 'agent', model: 'eve' }
-      : {
-          name: chat?.agent ?? 'default',
-          model: [llmProvider, llmModel].filter(Boolean).join(' · ') || null,
-        };
+    awaitingEveChat && !chat
+      ? { name: eveDefaultAgent ?? 'agent', model: 'eve' }
+      : chat?.engine === 'eve'
+        ? { name: chat.agent ?? 'agent', model: 'eve' }
+        : {
+            name: chat?.agent ?? 'default',
+            model: [llmProvider, llmModel].filter(Boolean).join(' · ') || null,
+          };
   const agentInfo = describeAgent(activeChat);
   // A subagent is a chat of its own that points at its parent; the switcher lists the siblings.
   const parentChatId = activeChat?.parentChatId ?? null;
@@ -219,6 +228,7 @@ const useChatLogic = (open = true) => {
 
   const handleSelectChat = async (newChatId) => {
     setView('chat');
+    setPendingEveChat(false);
     if (!newChatId || newChatId === activeChatId) return;
     dispatch(chatActions.setActiveChat(newChatId));
     setShowOptions(false);
@@ -377,9 +387,14 @@ const useChatLogic = (open = true) => {
     // bottom even if the user had scrolled up to read something older.
     isAtBottomRef.current = true;
 
+    let targetChatId = activeChatId;
     try {
       dispatch(chatActions.setLoading({ key: 'sendingMessage', value: true }));
-      const chatIdForMessage = activeChatId || '_pending';
+      if (awaitingEveChat) {
+        targetChatId = await createEveChat();
+        setPendingEveChat(false);
+      }
+      const chatIdForMessage = targetChatId || '_pending';
       dispatch(
         chatActions.addMessage({
           chatId: chatIdForMessage,
@@ -391,21 +406,22 @@ const useChatLogic = (open = true) => {
         }),
       );
       setShowOptions(false);
-      sendChatMessage(activeChatId, messageToSend);
+      sendChatMessage(targetChatId, messageToSend);
       if (fromAudio) {
         window.shouldPlayAudioResponse = true;
       }
     } catch (error) {
       console.error('Error sending message:', error);
       dispatch(chatActions.setError(error.message));
-      const chatIdForError = activeChatId || '_pending';
+      const chatIdForError = targetChatId || '_pending';
       dispatch(
         chatActions.addMessage({
           chatId: chatIdForError,
           message: {
             role: 'assistant',
-            content:
-              'Error: No se pudo enviar el mensaje. Por favor verifica la conexión WebSocket.',
+            content: awaitingEveChat
+              ? `Error: ${error.message}`
+              : 'Error: No se pudo enviar el mensaje. Por favor verifica la conexión WebSocket.',
             timestamp: new Date().toISOString(),
           },
         }),
@@ -417,22 +433,21 @@ const useChatLogic = (open = true) => {
 
   // A new legacy chat is created lazily by the server on the first message.
   const handleNewLegacyChat = () => {
+    setPendingEveChat(false);
     dispatch(chatActions.setActiveChat(null));
     setShowOptions(true);
     setView('chat');
   };
 
   /**
-   * Starts a new chat on the eve agent orchestrator (`gcs_eevee_assistant`)
-   * instead of the legacy MessageOrchestrator. Unlike a legacy "new chat"
-   * (created lazily on the first WS message), this chat is created explicitly
-   * up front — `chatController._resolveEngine` only knows a chat is 'eve' from
-   * its DB row, so it has to exist before the first `chat:user_message` for
-   * that chatId lands.
+   * Creates the chat row of an eve chat. Unlike a legacy chat (the server makes it on the first WS
+   * message), it has to exist before that message: `chatController._resolveEngine` only knows a
+   * chat is 'eve' from its DB row.
+   * @returns {Promise<string>} the new chat id, already active
    */
-  const handleNewEveChat = async () => {
+  const createEveChat = async () => {
+    dispatch(chatActions.setLoading({ key: 'creatingChat', value: true }));
     try {
-      dispatch(chatActions.setLoading({ key: 'creatingChat', value: true }));
       const response = await fetch('/api/chat/chats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -447,14 +462,18 @@ const useChatLogic = (open = true) => {
       // reads 'eve' on the very first render of this chat, not one tick later.
       await fetchAvailableChats();
       dispatch(chatActions.setActiveChat(chat.id));
-      setShowOptions(false);
-      setView('chat');
-    } catch (error) {
-      console.error('Error creating eve chat:', error);
-      dispatch(chatActions.setError(error.message));
+      return chat.id;
     } finally {
       dispatch(chatActions.setLoading({ key: 'creatingChat', value: false }));
     }
+  };
+
+  // Only marks the intent: nothing is created until the first message is sent.
+  const handleNewEveChat = () => {
+    dispatch(chatActions.setActiveChat(null));
+    setPendingEveChat(true);
+    setShowOptions(true);
+    setView('chat');
   };
 
   const handleDeleteClick = (chatId) => {

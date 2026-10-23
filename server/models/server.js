@@ -7,6 +7,7 @@ import {
   LLMProvider,
   LLMModel,
   EveEnable,
+  EveDefaultAgent,
 } from '../config/config.js';
 import * as ServerSetting from '../config/config.js';
 import { checkFile, readDataFile } from '../common/utils.js';
@@ -65,6 +66,7 @@ export class serverModel {
       // The model really in use: LLM_MODEL is empty when the provider's default applies.
       llmModel: MessageOrchestrator.getLLMModel() ?? (LLMModel || null),
       eveEnabled: EveEnable,
+      eveDefaultAgent: EveDefaultAgent,
     };
   }
   // The four device protocols, ALWAYS, each with whether this server runs it: every one needs its
