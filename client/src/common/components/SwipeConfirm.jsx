@@ -61,7 +61,7 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 const SwipeConfirm = ({ enable, onClose, onSucces }) => {
-  const { classes } = useStyles();
+  const { classes, theme } = useStyles();
 
   return (
     <div className={classes.root}>
@@ -83,7 +83,7 @@ const SwipeConfirm = ({ enable, onClose, onSucces }) => {
             <div style={{ marginTop: '10px', height: '50px' }}>
               <ReactSwipeButton
                 text="Slide to Command Mission"
-                color="#7393B3"
+                color={theme.palette.missionControl.swipe}
                 text_unlocked="Commanded"
                 onSuccess={onSucces}
               />

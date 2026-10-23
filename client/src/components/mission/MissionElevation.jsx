@@ -29,7 +29,7 @@ const useStyles = makeStyles()((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     pointerEvents: 'none',
-    color: 'rgba(0, 0, 0, 0.4)',
+    color: theme.palette.text.disabled,
   },
   content: {
     height: '100%',

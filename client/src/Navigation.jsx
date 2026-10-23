@@ -4,6 +4,7 @@ import { useAsyncTask } from './reactHelper';
 import App from './App';
 import useQuery from './common/util/useQuery';
 import MainPage from './pages/MainPage';
+import { LOADER } from './common/theme/palette';
 
 const MissionPage = lazy(() => import('./pages/MissionPage'));
 const MissionPageTest = lazy(() => import('./pages/other/MissionPageTest'));
@@ -47,8 +48,8 @@ const PageLoader = () => (
       style={{
         width: 48,
         height: 48,
-        border: '4px solid #e0e0e0',
-        borderTopColor: '#1976d2',
+        border: `4px solid ${LOADER.track}`,
+        borderTopColor: LOADER.arc,
         borderRadius: '50%',
         animation: 'page-spin 0.8s linear infinite',
       }}

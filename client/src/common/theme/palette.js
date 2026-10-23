@@ -70,6 +70,15 @@ export const HAZARD_TEXT = {
  */
 export const GEOMETRY = '#3bb2d0';
 
+/**
+ * The page-loading spinner (Navigation's PageLoader): a grey track with a blue arc. A constant, not
+ * a palette entry, because the loader is plain inline CSS — it can show before the theme is ready.
+ */
+export const LOADER = {
+  track: grey[300],
+  arc: blue[700],
+};
+
 const DARK_TEXT = 'rgba(0, 0, 0, 0.87)';
 
 /** The text colour that reads best on `background`: white or the theme's dark text. */
@@ -150,6 +159,8 @@ export default () => {
       pauseHover: orange[50],
       resume: green[700],
       resumeHover: green[50],
+      /** The "Slide to Command Mission" swipe button (SwipeConfirm). */
+      swipe: '#7393B3',
     },
     /** The side panels of the editors (mission, planning): the line under their header bar. */
     panel: {
