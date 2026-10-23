@@ -98,7 +98,7 @@ const getCoordinatesFromProfile = (profile) =>
   profile.map((route) =>
     route.data
       .filter((point) => point.wp !== undefined)
-      .map((point) => [point.lat, point.lng, point.uav])
+      .map((point) => [point.lat, point.lng, point.uav]),
   );
 
 const hasGeometryChanged = (currentWaypoints, profileCoordinates) => {
@@ -108,9 +108,7 @@ const hasGeometryChanged = (currentWaypoints, profileCoordinates) => {
     const prevRoute = profileCoordinates[i] || [];
     if (currentRoute.length !== prevRoute.length) return true;
 
-    return currentRoute.some(
-      (wp, j) => wp[0] !== prevRoute[j]?.[0] || wp[1] !== prevRoute[j]?.[1]
-    );
+    return currentRoute.some((wp, j) => wp[0] !== prevRoute[j]?.[0] || wp[1] !== prevRoute[j]?.[1]);
   });
 };
 
@@ -150,14 +148,11 @@ const MissionElevation = memo(({ active = true }) => {
   const missionRoute = useSelector((state) => state.mission.route);
   const elevProfile = useSelector((state) => state.mission.elevation.profile);
 
-  const missionGeometry = useMemo(
-    () => getWpListFromRoute(missionRoute),
-    [missionRoute]
-  );
+  const missionGeometry = useMemo(() => getWpListFromRoute(missionRoute), [missionRoute]);
 
   const selectedItems = useMemo(
     () => (selectRT === -1 ? elevProfile : elevProfile[selectRT] ? [elevProfile[selectRT]] : []),
-    [selectRT, elevProfile]
+    [selectRT, elevProfile],
   );
 
   const chartData = useMemo(() => selectedItems.flatMap((item) => item.data), [selectedItems]);
@@ -178,13 +173,18 @@ const MissionElevation = memo(({ active = true }) => {
       if (missionRoute.length === 0) return;
 
       const currentWaypoints = missionGeometry;
-      const profileCoordinates = elevProfile.length > 0 ? getCoordinatesFromProfile(elevProfile) : [];
+      const profileCoordinates =
+        elevProfile.length > 0 ? getCoordinatesFromProfile(elevProfile) : [];
 
       const hasLastRouteWaypoints = currentWaypoints[currentWaypoints.length - 1]?.length > 0;
       if (!hasLastRouteWaypoints) return;
 
       if (!hasGeometryChanged(currentWaypoints, profileCoordinates)) {
-        const updatedProfile = applyAltitudeDelta(elevProfile, currentWaypoints, profileCoordinates);
+        const updatedProfile = applyAltitudeDelta(
+          elevProfile,
+          currentWaypoints,
+          profileCoordinates,
+        );
         if (updatedProfile) {
           dispatch(missionActions.setElevationProfile(updatedProfile));
         }
@@ -216,7 +216,7 @@ const MissionElevation = memo(({ active = true }) => {
         setLoading(false);
       }
     },
-    [missionGeometry]
+    [missionGeometry],
   );
 
   return (
