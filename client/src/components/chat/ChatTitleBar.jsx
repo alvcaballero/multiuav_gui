@@ -6,7 +6,6 @@ import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HistoryIcon from '@mui/icons-material/History';
-import { HEADING_FONT } from './chatTheme';
 
 const iconButtonSx = { width: 30, height: 30, '&:hover': { bgcolor: 'titleBar.hover' } };
 const iconSx = { fontSize: 18 };
@@ -57,7 +56,6 @@ const ChatTitleBar = ({
       <Typography
         noWrap
         sx={{
-          fontFamily: HEADING_FONT,
           fontWeight: 700,
           fontSize: 17,
           letterSpacing: '0.3em',
@@ -67,7 +65,7 @@ const ChatTitleBar = ({
       >
         {title}
       </Typography>
-      <Typography noWrap sx={{ fontSize: 12, color: 'neutral.700', lineHeight: 1.3 }}>
+      <Typography noWrap sx={{ fontSize: 12, color: 'grey.700', lineHeight: 1.3 }}>
         {subtitle}
       </Typography>
     </Box>
@@ -102,7 +100,7 @@ const ChatTitleBar = ({
               <Box
                 component="span"
                 title="Running"
-                sx={{ width: 6, height: 6, bgcolor: 'primary.main', borderRadius: '50%' }}
+                sx={{ width: 6, height: 6, bgcolor: 'running.main', borderRadius: '50%' }}
               />
             )}
             <ExpandMoreIcon sx={{ fontSize: 14 }} />

@@ -13,7 +13,7 @@ import { forkConversation } from '../../store/chat';
 import { ChatNavigationContext } from './ChatNavigationContext';
 import StatusTag from './StatusTag';
 import { CodeBlock, FormattedPayload } from './CodeBlock';
-import { HEADING_FONT, kickerSx, MONO_FONT, OFFSCREEN_SKIP } from './chatTheme';
+import { kickerSx, MONO_FONT, OFFSCREEN_SKIP } from './chatTheme';
 import { getMessageView } from '../../common/util/chatMessage';
 
 const CodeRenderer = ({ inline, className, children, ...props }) => {
@@ -126,9 +126,9 @@ const TextMessage = ({ message, chatId, view }) => {
       </Typography>
       <Box
         sx={{
-          bgcolor: 'primary.600',
+          bgcolor: 'primary.main',
           border: 1,
-          borderColor: 'primary.600',
+          borderColor: 'primary.main',
           color: 'primary.contrastText',
           borderRadius: '6px 6px 0 6px',
           px: 1.5,
@@ -304,9 +304,7 @@ const SubagentCard = ({ view }) => {
         <StatusTag tone={tag.tone} label={tag.label} />
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
-        <Typography
-          sx={{ fontFamily: HEADING_FONT, fontWeight: 600, fontSize: 18, lineHeight: 1.2 }}
-        >
+        <Typography sx={{ fontWeight: 600, fontSize: 18, lineHeight: 1.2 }}>
           {view.agentName || view.name || 'Subagent'}
         </Typography>
         {view.name && view.agentName && (
@@ -318,7 +316,7 @@ const SubagentCard = ({ view }) => {
           sx={{
             fontSize: 13,
             lineHeight: 1.45,
-            color: 'neutral.800',
+            color: 'grey.800',
             textWrap: 'pretty',
           }}
         >

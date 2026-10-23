@@ -148,7 +148,7 @@ const ChatInput = ({
               alignItems: 'flex-start',
               borderRadius: '6px',
               bgcolor: 'background.paper',
-              '& fieldset': { borderColor: 'neutral.300' },
+              '& fieldset': { borderColor: 'grey.300' },
               '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: 1 },
             },
           },

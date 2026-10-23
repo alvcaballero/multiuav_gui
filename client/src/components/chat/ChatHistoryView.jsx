@@ -68,7 +68,7 @@ const HistoryItem = ({ chat, active, onOpen, onDelete }) => (
         </Typography>
       </Box>
       {chat.preview && (
-        <Typography noWrap sx={{ fontSize: 12.5, color: 'neutral.800' }}>
+        <Typography noWrap sx={{ fontSize: 12.5, color: 'grey.800' }}>
           {chat.preview}
         </Typography>
       )}

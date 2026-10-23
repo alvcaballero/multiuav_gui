@@ -3,7 +3,7 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import ApprovalCard, { ResolvedApprovalRow } from './ApprovalCard';
 import { ChatMessage, isUserMessage } from './ChatMessages';
 import ToolCallRow from './ToolCallRow';
-import { HEADING_FONT, kickerSx } from './chatTheme';
+import { kickerSx } from './chatTheme';
 import { groupTranscript, mergeResolved } from '../../common/util/chatMessage';
 import { activityText } from '../../common/util/inputRequest';
 
@@ -50,7 +50,6 @@ const EmptyThread = ({ showSuggestions, onSend }) => (
       </Box>
       <Typography
         sx={{
-          fontFamily: HEADING_FONT,
           fontWeight: 600,
           fontSize: 20,
           letterSpacing: '0.1em',
@@ -221,7 +220,6 @@ const ChatThread = ({
           <Box key={run.key} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Typography
               sx={{
-                fontFamily: HEADING_FONT,
                 fontWeight: 600,
                 fontSize: 12,
                 letterSpacing: '0.1em',

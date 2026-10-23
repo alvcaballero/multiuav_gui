@@ -3,16 +3,9 @@ import { Rnd } from 'react-rnd';
 import { useTheme } from '@mui/material';
 import useChatLogic from './useChatLogic';
 import ChatPanel from './ChatPanel';
-import { DOCKED_FRAME } from './chatTheme';
 
 const DEFAULT_WIDTH = 452;
 const MIN_WIDTH = 360;
-
-const panelStyle = {
-  zIndex: 9,
-  ...DOCKED_FRAME,
-  boxSizing: 'border-box',
-};
 
 /**
  * The assistant docked to the right edge, as tall as the map: it starts under the navbar and runs
@@ -22,6 +15,13 @@ const ChatDrawer = ({ open, onClose }) => {
   const theme = useTheme();
   const chatLogic = useChatLogic(open);
   const top = parseInt(theme.dimensions.navbarHeight, 10);
+  // Drawn around the resizable box, outside the panel's ThemeProvider: the app theme's divider and shadow.
+  const panelStyle = {
+    zIndex: 9,
+    borderLeft: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.shadows[8],
+    boxSizing: 'border-box',
+  };
 
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [viewport, setViewport] = useState({

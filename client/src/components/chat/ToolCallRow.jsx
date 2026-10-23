@@ -87,10 +87,10 @@ const ToolCallRow = ({ call, output, running = false }) => {
       sx={{
         border: '1px solid',
         borderStyle: status === 'running' ? 'dashed' : 'solid',
-        borderColor: status === 'running' ? 'primary.400' : 'divider',
+        borderColor: status === 'running' ? 'running.border' : 'divider',
         borderRadius: 1,
         overflow: 'hidden',
-        bgcolor: status === 'running' ? 'primary.100' : 'background.paper',
+        bgcolor: status === 'running' ? 'running.tint' : 'background.paper',
         flexShrink: 0,
         ...collapsedRowSx,
       }}

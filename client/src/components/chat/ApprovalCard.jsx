@@ -17,7 +17,7 @@ import {
   splitOptions,
 } from '../../common/util/inputRequest';
 import StatusTag from './StatusTag';
-import { HEADING_FONT, MONO_FONT } from './chatTheme';
+import { MONO_FONT } from './chatTheme';
 
 /**
  * One request waiting for the operator, as the handoff's approval card.
@@ -33,7 +33,8 @@ import { HEADING_FONT, MONO_FONT } from './chatTheme';
  */
 const rejectSx = {
   bgcolor: 'background.paper',
-  color: 'error.main',
+  // error.text, not error.main: it must still read on the hover tint.
+  color: 'error.text',
   borderColor: 'error.border',
   '&:hover': { bgcolor: 'error.tint', borderColor: 'error.border' },
 };
@@ -110,7 +111,6 @@ const ApprovalCard = ({ request, chatId }) => {
         <GppMaybeOutlinedIcon sx={{ fontSize: 16, color: 'warning.icon' }} />
         <Typography
           sx={{
-            fontFamily: HEADING_FONT,
             fontWeight: 600,
             fontSize: 13,
             letterSpacing: '0.12em',
@@ -298,7 +298,7 @@ export const ResolvedApprovalRow = ({ resolved }) => {
         bgcolor: look.bg,
         borderRadius: 1,
         fontSize: 12.5,
-        color: 'neutral.800',
+        color: 'grey.800',
       }}
     >
       <Box component="span" sx={{ alignSelf: 'center', display: 'flex' }}>
@@ -307,7 +307,7 @@ export const ResolvedApprovalRow = ({ resolved }) => {
         ) : resolved.outcome === 'rejected' ? (
           <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
         ) : (
-          <SubdirectoryArrowRightIcon sx={{ fontSize: 14, color: 'neutral.700' }} />
+          <SubdirectoryArrowRightIcon sx={{ fontSize: 14, color: 'grey.700' }} />
         )}
       </Box>
       <Typography component="span" sx={{ fontFamily: MONO_FONT, fontSize: 12 }}>

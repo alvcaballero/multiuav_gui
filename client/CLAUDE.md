@@ -324,17 +324,25 @@ eve: "The eve agent … is not reachable. Is it running?").
 
 ### The assistant panel (design handoff "AI Assistant Panel")
 
-The panel follows version 2 of the handoff mapped onto MUI. `chatTheme.js` is given to the panel through a nested
-`ThemeProvider` (in `ChatPanel`, so the docked drawer and `/chat` both get it). It is built from the app theme's
-options (`themeOptions` in `common/theme`) with the handoff on top — a nested provider given an object REPLACES the
-outer theme, so `dimensions` and `palette.colors` exist inside the panel only because of that. On top:
-"Industry" palette, Barlow / Barlow Condensed (self-hosted with `@fontsource`, a GCS can be offline),
-`shape.borderRadius: 4`. Every colour lives in its palette and components ask for it by path in `sx`
-(`'warning.tint'`, `'primary.700'`, `'subagent.main'`, `'titleBar.hover'`) — no hex in the components. A border is
-`border: 1, borderColor: '<path>'`: a path inside a template string is not resolved. Colour carries the meaning:
-green (`success`) is approved / done, amber (`warning`) is waiting on the operator, red (`error`) is rejected or
-failed, teal (`subagent`) is a finished subagent, the accent blue (`primary`) is the operator and anything running. In `sx`, `width: 1` is
-100%, not 1px — write `'1px'`.
+The panel keeps the handoff's layout and density, but **looks like the app**: it has no colour and no font of its
+own. `chatTheme.js` is given to the panel through a nested `ThemeProvider` (in `ChatPanel`, so the docked drawer and
+`/chat` both get it). It is built from the app theme's options (`themeOptions` in `common/theme`) — a nested
+provider given an object REPLACES the outer theme, so `dimensions` and the app palette exist inside the panel only
+because of that. The font is the app's system stack (`FONT_FAMILY`); no web font is loaded.
+
+What it adds is vocabulary, every value **derived** from the app with `lighten`/`darken` (`scale()`, `tones()`):
+a scale for `primary` (`primary.100`…`800`), and for each state a `tint`, `tag`, `border`, `rowBorder` and `text`.
+The meaning is the app's: `primary` (the app's primary) is the operator — their messages, the main actions;
+`running` (`STATUS.running`) is a tool call or subagent in progress, the same blue as a running task; `success`
+(`STATUS.done`) approved / done; `warning` (`STATUS.attention`) waiting on the operator; `error` (`STATUS.failed`)
+rejected or failed. Only `subagent` (MUI's teal, a finished subagent) has no app counterpart. `titleBar` is the
+app's toolbar colours. Red or amber written on a tint uses `error.text` / `warning.text` (darkened): the plain
+colour does not reach AA there. What the panel keeps of its own is density: 34px buttons without capitals, 22px
+chips, smaller body text.
+
+Components ask for colours by path in `sx` (`'warning.tint'`, `'primary.700'`, `'running.main'`) — no hex. A
+border is `border: 1, borderColor: '<path>'`: a path inside a template string is not resolved. In `sx`, `width: 1`
+is 100%, not 1px — write `'1px'`.
 
 - **Docked, as tall as the map**: `ChatDrawer` starts under the navbar (`theme.dimensions.navbarHeight`); only its
   width is resizable.

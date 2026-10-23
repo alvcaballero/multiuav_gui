@@ -15,7 +15,7 @@ import { ChatNavigationContext } from './ChatNavigationContext';
 import ChatThread from './ChatThread';
 import ChatTitleBar from './ChatTitleBar';
 import SubagentMenu, { SubagentStrip, subagentName } from './SubagentMenu';
-import { BODY_FONT, chatTheme } from './chatTheme';
+import { chatTheme } from './chatTheme';
 import { formatTimestamp } from '../../common/util/chatMessage';
 
 /** The element that actually scrolls. */
@@ -131,7 +131,6 @@ const ChatPanel = ({
             overflow: 'hidden',
             bgcolor: 'background.default',
             color: 'text.primary',
-            fontFamily: BODY_FONT,
             ...sx,
           }}
         >

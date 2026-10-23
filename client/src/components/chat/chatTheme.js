@@ -1,76 +1,41 @@
-import '@fontsource/barlow/400.css';
-import '@fontsource/barlow/500.css';
-import '@fontsource/barlow/600.css';
-import '@fontsource/barlow-condensed/500.css';
-import '@fontsource/barlow-condensed/600.css';
-import { createTheme } from '@mui/material/styles';
+import { createTheme, darken, lighten } from '@mui/material/styles';
+import { grey, teal } from '@mui/material/colors';
 import { themeOptions } from '../../common/theme';
+import { STATUS, contrastText } from '../../common/theme/palette';
 
 /**
- * The look of the assistant panel: the "Industry" design system of the handoff mapped onto MUI.
+ * The assistant panel's theme: the APP's theme, with the variants the panel needs and its density.
+ *
+ * It has no colour and no font of its own. Every colour below is derived from the app — its
+ * `primary`, its `STATUS`, its toolbar, MUI's grey and teal scales — so when the app changes, the
+ * panel follows. The font is the app's (`FONT_FAMILY` in common/theme).
+ *
+ * What the panel adds is vocabulary, not identity: a state needs a tint behind it, a border, a tag
+ * and readable text on each, which the app palette does not spell out. The meaning is the app's:
+ * blue `primary` is the operator (their messages, the main actions), `running` is anything in
+ * progress (STATUS.running, like a running task), green `success` approved / done, amber `warning`
+ * waiting on the operator, red `error` rejected or failed. Only `subagent` (teal, a subagent that
+ * finished) has no app counterpart.
+ *
+ * What it keeps of its own is density: a narrow side panel full of rows, so smaller buttons without
+ * capitals, smaller chips and text.
  *
  * It is given to the panel through a nested ThemeProvider. A ThemeProvider given an object REPLACES
- * the outer theme, so this one is built from the app's own options (`themeOptions`) with the
- * handoff's on top: inside the panel `theme.dimensions`, and `palette.colors`
- * still exist, and any common/ component rendered there works. Menus, tooltips and dialogs render in
- * portals, which keep the React context, so they pick it up too.
- *
- * Built from options, not merged into a finished theme (`createTheme(outer, …)`): that merge happens
- * after MUI has expanded the typography variants and the palette, so the font would not reach
- * `body1` and the like, and `light`/`dark`/`contrastText` would keep the app's values.
- *
- * Every colour lives in the palette below: components ask for it by path in `sx`
- * (`bgcolor: 'warning.tint'`, `color: 'primary.700'`) and never import a hex value. Colour carries
- * the meaning (version 2 of the handoff): green (success) is approved / done, amber (warning) is
- * waiting on the operator, red (error) is rejected or failed, teal (subagent) is a finished
- * subagent, and the accent blue (primary) is the operator and anything running.
- *
- * Corners are 4px: `shape.borderRadius` is 4, and MUI's Paper, Button, inputs, Menu and Tooltip
- * all read it.
+ * the outer theme, so this one is built from the app's own options (`themeOptions`): inside the
+ * panel `theme.dimensions` and every app palette entry still exist. Built from options, not merged
+ * into a finished theme (`createTheme(outer, …)`): that merge happens after MUI has expanded the
+ * typography variants and the palette, so sizes would not reach `body1` and the like.
  */
 
-const accent = {
-  100: '#eef6ff',
-  200: '#d6ebff',
-  300: '#b5d9fd',
-  400: '#94bce3',
-  500: '#749dc4',
-  600: '#597ea3',
-  700: '#416180',
-  800: '#2c455d',
-  900: '#1d2d3d',
-  main: '#5980a6',
-};
-
-const divider = 'rgba(29, 31, 32, 0.16)';
-const text = '#1d1f20';
-
-export const shadows = {
-  md: '0 3px 10px rgba(43, 43, 45, 0.16)',
-  lg: '0 12px 32px rgba(43, 43, 45, 0.22)',
-};
-
-/**
- * The frame of the docked panel. ChatDrawer draws it outside the panel's ThemeProvider (around the
- * resizable box), so it cannot ask the palette for the divider.
- */
-export const DOCKED_FRAME = {
-  borderLeft: `1px solid ${divider}`,
-  boxShadow: shadows.lg,
-};
-
-export const BODY_FONT = '"Barlow", system-ui, sans-serif';
-/** Titles and small-caps labels: 600 weight, uppercase, tracked out. */
-export const HEADING_FONT = '"Barlow Condensed", system-ui, sans-serif';
 export const MONO_FONT = 'ui-monospace, Menlo, monospace';
 
-/** The small-caps label of the handoff (section kickers, INPUT/OUTPUT, group names). */
+/** The small uppercase label of the panel (section kickers, INPUT/OUTPUT, group names). */
 export const kickerSx = {
-  fontFamily: HEADING_FONT,
   fontSize: 11,
+  fontWeight: 600,
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  color: 'neutral.700',
+  color: 'grey.700',
   lineHeight: 1.3,
 };
 
@@ -86,78 +51,78 @@ export const kickerSx = {
  */
 export const OFFSCREEN_SKIP = { contentVisibility: 'auto' };
 
-const focusRing = {
-  outline: `2px solid ${accent.main}`,
-  outlineOffset: 2,
-};
+/** A scale around `main`: 100–400 are tints of it (backgrounds, borders), 700–800 darker (text, icons). */
+const scale = (main) => ({
+  100: lighten(main, 0.92),
+  200: lighten(main, 0.84),
+  300: lighten(main, 0.7),
+  400: lighten(main, 0.5),
+  600: main,
+  700: darken(main, 0.15),
+  800: darken(main, 0.3),
+  main,
+  contrastText: contrastText(main),
+});
+
+/** The variants of a state colour: a tint behind it, a border, a tag background, text on a light ground. */
+const tones = (main) => ({
+  main,
+  contrastText: contrastText(main),
+  tint: lighten(main, 0.92),
+  tag: lighten(main, 0.85),
+  border: lighten(main, 0.55),
+  rowBorder: lighten(main, 0.7),
+  text: darken(main, 0.2),
+});
 
 const app = themeOptions();
+const { toolbar } = app.palette;
+
+const attention = tones(STATUS.attention);
 
 export const chatTheme = createTheme({
   ...app,
-  shape: { borderRadius: 4 },
   palette: {
     ...app.palette,
-    mode: 'light',
-    // The accent ramp: `primary.100` … `primary.900`.
-    primary: { ...accent, dark: accent[700], contrastText: '#ffffff' },
+    // The operator and the main actions: the app's primary, with a scale for tints.
+    primary: scale(app.palette.primary.main),
+    /** In progress: a tool call, a subagent. STATUS.running, as a running task. */
+    running: tones(STATUS.running),
     /** Approved, done. */
-    success: {
-      main: '#2e7d32',
-      dark: '#256628',
-      contrastText: '#ffffff',
-      text: '#1e5b22',
-      tag: '#e3f2e4',
-      tint: '#edf7ee',
-      border: '#b7dfb9',
-    },
+    success: tones(STATUS.done),
     /** Rejected, failed. */
-    error: { main: '#c62828', border: '#e6a3a3', rowBorder: '#f1b8b8', tint: '#fdeeee' },
-    /** Waiting for the operator. */
+    error: tones(STATUS.failed),
+    /** Waiting for the operator. Amber is light: its text and icon are darkened to read on white. */
     warning: {
-      main: '#f0b429',
-      dark: '#8a5a00',
-      icon: '#b7791f',
-      text: '#8a5a00',
-      tagText: '#3d2a00',
-      tint: '#fffaf0',
-      border: '#f0d58a',
+      ...attention,
+      dark: darken(STATUS.attention, 0.5),
+      text: darken(STATUS.attention, 0.5),
+      icon: darken(STATUS.attention, 0.25),
+      tagText: contrastText(STATUS.attention),
     },
-    /** A subagent that finished. */
+    /** A subagent that finished. The one state the app has no colour for: MUI's teal. */
     subagent: {
-      main: '#00897b',
-      text: '#00796b',
-      border: '#80cbc4',
-      tint: '#f7fbfb',
-      strip: '#e0f2f1',
+      main: teal[600],
+      text: teal[700],
+      border: teal[200],
+      tint: lighten(teal[600], 0.96),
+      strip: teal[50],
     },
-    // The app's `neutral` (main) plus the steps the handoff names.
-    neutral: {
-      ...app.palette.neutral,
-      100: '#f5f5f8',
-      200: '#e7e7ea',
-      300: '#d4d4d7',
-      700: '#5d5d60',
-      800: '#424244',
-    },
-    text: { primary: text, secondary: '#5d5d60' },
     background: {
-      default: '#ffffff',
-      paper: '#ffffff',
+      ...app.palette.background,
       /** Code blocks, tables, quoted tasks. */
-      surface: '#e9e9ea',
+      surface: grey[200],
     },
-    /** The grey title bar: its fill, the hover of its buttons, its bottom line, the switcher's outline. */
+    /** The panel's title bar: the app's toolbar colours. */
     titleBar: {
-      main: '#e4e4e6',
-      hover: 'rgba(0, 0, 0, 0.07)',
-      border: 'rgba(0, 0, 0, 0.12)',
-      control: 'rgba(0, 0, 0, 0.18)',
+      main: toolbar.bottom,
+      hover: toolbar.hover,
+      border: toolbar.border,
+      control: toolbar.border,
     },
-    divider,
   },
   typography: {
-    fontFamily: BODY_FONT,
+    ...app.typography,
     fontSize: 14,
     body1: { fontSize: 14, lineHeight: 1.5 },
     body2: { fontSize: 13, lineHeight: 1.45 },
@@ -165,27 +130,34 @@ export const chatTheme = createTheme({
     button: { textTransform: 'none', fontWeight: 500, fontSize: 13 },
   },
   // Per component, the panel's entry replaces the app's (its 40px buttons, its outlined-input
-  // background, its 500ms tooltip delay); the app's others (Snackbar, ...) still apply.
+  // background, its 500ms tooltip delay); the app's others (Snackbar, ...) still apply. Colours
+  // come from the theme being built, through the style callbacks.
   components: {
     ...app.components,
     MuiButtonBase: {
-      styleOverrides: { root: { '&.Mui-focusVisible': focusRing } },
+      styleOverrides: {
+        root: ({ theme }) => ({
+          '&.Mui-focusVisible': {
+            outline: `2px solid ${theme.palette.primary.main}`,
+            outlineOffset: 2,
+          },
+        }),
+      },
     },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: { minHeight: 34, paddingInline: 14 },
         sizeSmall: { minHeight: 30, paddingInline: 10 },
-        containedPrimary: {
-          '&:hover': { backgroundColor: accent[600] },
-          '&:active': { backgroundColor: accent[700] },
-        },
-        outlinedPrimary: { borderColor: divider, color: text },
-        textPrimary: { color: accent[700] },
+        // A secondary action reads as neutral, not as a second primary.
+        outlinedPrimary: ({ theme }) => ({
+          borderColor: theme.palette.divider,
+          color: theme.palette.text.primary,
+        }),
       },
     },
     MuiIconButton: {
-      styleOverrides: { root: { color: text } },
+      styleOverrides: { root: ({ theme }) => ({ color: theme.palette.text.primary }) },
     },
     MuiChip: {
       styleOverrides: { root: { height: 22, fontSize: 12, borderRadius: 3 } },
@@ -195,25 +167,31 @@ export const chatTheme = createTheme({
     },
     MuiMenu: {
       styleOverrides: {
-        paper: { border: `1px solid ${divider}`, boxShadow: shadows.md },
+        paper: ({ theme }) => ({
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.shadows[4],
+        }),
       },
     },
     MuiPopover: {
       styleOverrides: {
-        paper: { border: `1px solid ${divider}`, boxShadow: shadows.md },
+        paper: ({ theme }) => ({
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.shadows[4],
+        }),
       },
     },
     MuiMenuItem: {
       styleOverrides: { root: { fontSize: 13.5 } },
     },
-    // The app makes every form control small; the panel's inputs are sized by the handoff.
+    // The app makes every form control small; the panel's inputs keep their size.
     MuiFormControl: {
       defaultProps: { size: 'medium' },
     },
     MuiOutlinedInput: {
       styleOverrides: {
-        notchedOutline: { borderColor: divider },
-        root: { backgroundColor: '#ffffff' },
+        notchedOutline: ({ theme }) => ({ borderColor: theme.palette.divider }),
+        root: ({ theme }) => ({ backgroundColor: theme.palette.background.paper }),
       },
     },
     MuiTooltip: {

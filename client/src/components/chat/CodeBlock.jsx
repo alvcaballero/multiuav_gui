@@ -146,7 +146,7 @@ export const CodeBlock = ({ language, value }) => {
           display: 'flex',
           alignItems: 'center',
           px: 1,
-          bgcolor: 'neutral.200',
+          bgcolor: 'grey.200',
           borderBottom: 1,
           borderBottomColor: 'divider',
         }}

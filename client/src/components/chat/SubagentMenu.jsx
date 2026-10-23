@@ -10,8 +10,8 @@ const STATUS_LOOK = {
   running: {
     tone: 'running',
     label: 'Running',
-    line: 'primary.main',
-    strip: 'primary.100',
+    line: 'running.main',
+    strip: 'running.tint',
   },
   error: { tone: 'failed', label: 'Failed', line: 'error.main', strip: 'error.tint' },
   done: {
@@ -139,7 +139,7 @@ export const SubagentStrip = ({ subagent, meta, onGoToMain }) => {
         borderBottom: '1px solid',
         borderColor: 'divider',
         fontSize: 12,
-        color: 'neutral.800',
+        color: 'grey.800',
         flexShrink: 0,
       }}
     >

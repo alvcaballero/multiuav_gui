@@ -4,13 +4,13 @@ import { Chip } from '@mui/material';
 // handoff's.
 const TONES = {
   // In progress: the accent, solid.
-  running: { bgcolor: 'primary.main', color: 'primary.contrastText' },
+  running: { bgcolor: 'running.main', color: 'running.contrastText' },
   // No state: a plain label (the agent, "Expired").
-  neutral: { bgcolor: 'neutral.100', color: 'neutral.800' },
+  neutral: { bgcolor: 'grey.100', color: 'grey.800' },
   done: { bgcolor: 'success.tag', color: 'success.text' },
   // Waiting for the operator.
   attention: { bgcolor: 'warning.main', color: 'warning.tagText' },
-  failed: { bgcolor: 'error.tint', color: 'error.main' },
+  failed: { bgcolor: 'error.tint', color: 'error.text' },
 };
 
 /** The small status label of the handoff ("Running", "Completed · 18s", "Waiting"). */
