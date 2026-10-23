@@ -37,9 +37,10 @@ client/
     │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
     ├── components/         # Feature components, grouped by domain
     │   ├── chat/           # ChatDrawer, ChatPanel, ChatThread, ApprovalCard, ToolCallRow, ChatInput, useChatLogic, chatTheme
-    │   ├── devices/        # DeviceList, DeviceRow, StatusCard, Adduav, DeviceCameraEditor, DeviceFilesEditor, useFilter,
+    │   ├── devices/        # DeviceList, DeviceRow, StatusCard, AddDevice (dialog), DeviceCameraEditor, DeviceFilesEditor
+    │   │                   #   (each entry a DeviceSourceCard), useFilter,
     │   │                   #   DeviceIdentityEditor (name → protocol → category → MAVLink system id → ip, shared by
-    │   │                   #   Adduav and settings/SettingsDevicesPageEdit; its rule in deviceIdentity.js mirrors the
+    │   │                   #   AddDevice and settings/SettingsDevicesPageEdit; its rule in deviceIdentity.js mirrors the
     │   │                   #   server's). The protocol comes first: GET /api/server/protocol lists the four with
     │   │                   #   `enabled` (disabled ones greyed out) and the categories come from
     │   │                   #   GET /api/category?protocol= (see server/CLAUDE.md › Protocol vs message format)
