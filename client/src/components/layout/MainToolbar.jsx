@@ -50,7 +50,7 @@ const MainToolbar = React.memo(
     setFilterSort,
     filterMap,
     setFilterMap,
-    SetAddUAVOpen,
+    setAddDeviceOpen,
   }) => {
     const { classes } = useStyles();
     const theme = useTheme();
@@ -164,7 +164,7 @@ const MainToolbar = React.memo(
         <IconButton
           edge="end"
           onClick={() => {
-            SetAddUAVOpen(true);
+            setAddDeviceOpen(true);
           }}
         >
           <Tooltip>

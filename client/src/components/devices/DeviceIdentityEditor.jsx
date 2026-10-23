@@ -21,7 +21,7 @@ const useStyles = makeStyles()((theme) => ({
 
 // Controlled editor for the identity of a device: name, protocol, category (only those the
 // protocol can drive, from GET /api/category?protocol=…), the protocol's own attributes (MAVLink: system id).
-// Shared by the add dialog (Adduav) and the settings page, like DeviceCameraEditor.
+// Shared by the add dialog (AddDevice) and the settings page, like DeviceCameraEditor.
 const DeviceIdentityEditor = ({ value, onChange }) => {
   const { classes } = useStyles();
   const set = (patch) => onChange({ ...value, ...patch });

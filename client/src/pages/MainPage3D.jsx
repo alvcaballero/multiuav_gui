@@ -5,7 +5,7 @@ import { makeStyles } from 'tss-react/mui';
 import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/layout/Navbar';
 import { Menu } from '../components/layout/Menu';
-import Adduav from '../components/devices/Adduav';
+import AddDevice from '../components/devices/AddDevice';
 import { commandMission } from '../common/util/fetchs';
 import { useCatch } from '../reactHelper';
 
@@ -99,7 +99,7 @@ const MainPage3D = () => {
 
   const handleCommandMission = useCatch(() => commandMission(commandableMissionId));
 
-  const [addUAVOpen, setAddUAVOpen] = useState(false);
+  const [addDeviceOpen, setAddDeviceOpen] = useState(false);
   const [confirmMission, setConfirmMission] = useState(false);
 
   const unselectDevice = useCallback(() => {
@@ -108,7 +108,7 @@ const MainPage3D = () => {
 
   return (
     <div className={classes.root}>
-      <Navbar SetAddUAVOpen={setAddUAVOpen} setconfirmMission={setConfirmMission} />
+      <Navbar setAddDeviceOpen={setAddDeviceOpen} setconfirmMission={setConfirmMission} />
       <Menu />
       <Scene3DCanvas className={classes.canvas} />
 
@@ -124,7 +124,7 @@ const MainPage3D = () => {
             setFilterSort={setFilterSort}
             filterMap={filterMap}
             setFilterMap={setFilterMap}
-            SetAddUAVOpen={setAddUAVOpen}
+            setAddDeviceOpen={setAddDeviceOpen}
           />
         </Paper>
         <div className={classes.middle}>
@@ -148,7 +148,7 @@ const MainPage3D = () => {
         onSucces={() => handleCommandMission()}
       />
       <CameraDevicePanel deviceId={selectedDeviceId} onClose={unselectDevice} />
-      {addUAVOpen && <Adduav SetAddUAVOpen={setAddUAVOpen} />}
+      {addDeviceOpen && <AddDevice onClose={() => setAddDeviceOpen(false)} />}
     </div>
   );
 };

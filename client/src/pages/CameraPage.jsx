@@ -37,8 +37,8 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 const CameraPage = () => {
-  const [addUAVOpen, setAddUAVOpen] = useState(false);
-  void addUAVOpen;
+  const [addDeviceOpen, setAddDeviceOpen] = useState(false);
+  void addDeviceOpen;
   const devices = useSelector((state) => state.devices.items);
   let listdevices = Object.values(devices);
 
@@ -81,7 +81,7 @@ const CameraPage = () => {
       <div className={classes.sidebarStyle}>
         <div className={classes.middleStyle}>
           <Paper square className={classes.contentListStyle}>
-            <MainToolbar SetAddUAVOpen={setAddUAVOpen} />
+            <MainToolbar setAddDeviceOpen={setAddDeviceOpen} />
             <DeviceList devices={listdevices} />
           </Paper>
         </div>

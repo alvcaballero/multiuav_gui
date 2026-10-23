@@ -15,7 +15,7 @@ import { useMarkerTypes } from '../../common/util/useMarkerTypes';
 import { getMissionCentroid } from '../../common/util/missionGeo';
 
 const Navbar = React.memo(
-  ({ SetAddUAVOpen, setconfirmMission = (item) => item, setChatOpen = () => null }) => {
+  ({ setAddDeviceOpen, setconfirmMission = (item) => item, setChatOpen = () => null }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const mission = useSelector((state) => state.mission);
@@ -57,7 +57,7 @@ const Navbar = React.memo(
       {
         title: 'Devices',
         submenu: [
-          { title: 'Connect Devices', action: () => openAddUav() },
+          { title: 'Connect Devices', action: () => openAddDevice() },
           { title: 'Load Mission all', action: () => handleCommandLoadMission() },
           { title: 'Command Mission All', action: () => setconfirmMission(true) },
         ],
@@ -141,8 +141,8 @@ const Navbar = React.memo(
       navigate('/3Dmission');
     }
 
-    function openAddUav() {
-      SetAddUAVOpen(true);
+    function openAddDevice() {
+      setAddDeviceOpen(true);
     }
 
     return (
