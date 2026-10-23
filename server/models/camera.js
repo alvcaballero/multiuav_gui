@@ -4,6 +4,9 @@ import { positionsController } from '../controllers/positions.js';
 
 const apiURL = 'http://localhost:9997/v3/config/paths';
 
+// A camera on this machine (the simulator) is served on 8553, a real one on 8554.
+const rtspPort = (host) => (host === '127.0.0.1' ? 8553 : 8554);
+
 export class cameraModel {
   /**
    * Obtiene una captura de imagen (snapshot) del dron.
@@ -28,13 +31,16 @@ export class cameraModel {
     if (device.camera && device.camera.length > 0) {
       try {
         const cameraConfig = device.camera[0];
-        const devicePort = device.ip === '127.0.0.1' ? 8553 : 8554;
 
-        let rtspUrl = `rtsp://${device.ip}:${devicePort}/${cameraConfig.source}`;
+        let rtspUrl = null;
         if (cameraConfig.type === 'WebRTC') {
           // MediaMTX path format
           rtspUrl = `rtsp://localhost:8554/${device.name}_${cameraConfig.source}`;
+        } else if (cameraConfig.host) {
+          rtspUrl = `rtsp://${cameraConfig.host}:${rtspPort(cameraConfig.host)}/${cameraConfig.source}`;
         }
+        // A Websocket camera has no stream to grab: its frames only come through the GCS cache above.
+        if (!rtspUrl) return null;
 
         const imgBuffer = await VideoUtils.captureFrame(rtspUrl);
         if (imgBuffer) {
@@ -54,11 +60,11 @@ export class cameraModel {
 
   static async addCameraWebRTC(device) {
     logger.info(`Adding WebRTC cameras for device ${device.name}`);
-    const devicePort = device.ip === '127.0.0.1' ? 8553 : 8554;
     // Device.camera is a nullable JSON column: a device without cameras has none to add.
     const cameras = device.camera ?? [];
     for (let i = 0; i < cameras.length; i = i + 1) {
-      logger.info(`Device IP: rtsp://${device.ip}:${devicePort}/${cameras[i].source}`);
+      const rtspUrl = `rtsp://${cameras[i].host}:${rtspPort(cameras[i].host)}/${cameras[i].source}`;
+      logger.info(`Camera stream: ${rtspUrl}`);
       if (cameras[i]['type'] == 'WebRTC') {
         try {
           let response = await fetch(
@@ -66,7 +72,7 @@ export class cameraModel {
             {
               method: 'POST',
               body: JSON.stringify({
-                source: `rtsp://${device.ip}:${devicePort}/${cameras[i].source}`,
+                source: rtspUrl,
               }),
               headers: {
                 'Content-Type': 'application/json',

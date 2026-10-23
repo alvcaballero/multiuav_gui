@@ -9,7 +9,6 @@ const hostname = window.location.hostname;
 export const customEqual = (oldValue, newValue) => {
   return (
     oldValue?.camera === newValue?.camera &&
-    oldValue?.ip === newValue?.ip &&
     oldValue?.name === newValue?.name
   );
 };
@@ -29,7 +28,7 @@ const CameraDevice = ({ deviceId, cameraIndex = 0, ref }) => {
     if (cam.type === 'WebRTC') {
       return { type: 'WebRTC', cameraSrc: `${device.name}_${cam.source}`, srcIp: hostname };
     }
-    return { type: cam.type, cameraSrc: cam.source, srcIp: device.ip };
+    return { type: cam.type, cameraSrc: cam.source, srcIp: cam.host };
   }, [device, cameraIndex]);
 
   useImperativeHandle(

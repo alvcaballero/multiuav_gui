@@ -227,11 +227,11 @@ export class categoryModel {
   }
 
   /**
-   * Why a device with this protocol/category/systemId cannot work, or null. A mavlink device on a
+   * Why a device with this protocol/category cannot work, or null. A mavlink device on a
    * ROS category (or the other way) would get no telemetry and no commands, with no error.
    * @returns {{path: string[], message: string}|null}
    */
-  static deviceProblem({ protocol = 'ros', category, systemId }) {
+  static deviceProblem({ protocol = 'ros', category }) {
     const def = devices_msg[category];
     if (!def) return { path: ['category'], message: `unknown category '${category}'` };
     const format = messageFormatOf(def);
@@ -242,7 +242,6 @@ export class categoryModel {
         message: `category '${category}' speaks ${speaks} messages, which protocol '${protocol}' does not carry`,
       };
     }
-    if (protocol === 'mavlink' && systemId == null) return { path: ['systemId'], message: 'a mavlink device needs a systemId' };
     return null;
   }
   static getCategory(type) {

@@ -20,13 +20,15 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 // Controlled editor for the identity of a device: name, protocol, category (only those the
-// protocol can drive, from GET /api/category?protocol=…), the MAVLink system id and the IP.
+// protocol can drive, from GET /api/category?protocol=…), the protocol's own attributes (MAVLink: system id).
 // Shared by the add dialog (Adduav) and the settings page, like DeviceCameraEditor.
 const DeviceIdentityEditor = ({ value, onChange }) => {
   const { classes } = useStyles();
   const set = (patch) => onChange({ ...value, ...patch });
   const mavlink = isMavlink(value.protocol);
-  const sysidProblem = mavlink && value.systemId != null ? systemIdError(value.systemId) : null;
+  const setAttribute = (patch) => set({ attributes: { ...value.attributes, ...patch } });
+  const systemId = value.attributes?.systemId;
+  const sysidProblem = mavlink && systemId != null ? systemIdError(systemId) : null;
 
   return (
     <Accordion defaultExpanded>
@@ -74,9 +76,9 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
             required
             type="number"
             label="MAVLink system id"
-            value={value.systemId ?? ''}
+            value={systemId ?? ''}
             onChange={(event) =>
-              set({ systemId: event.target.value === '' ? null : Number(event.target.value) })
+              setAttribute({ systemId: event.target.value === '' ? null : Number(event.target.value) })
             }
             slotProps={{ htmlInput: { min: 1, max: 254, step: 1 } }}
             error={Boolean(sysidProblem)}
@@ -86,12 +88,6 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
             }
           />
         )}
-        <TextField
-          label="ip"
-          value={value.ip ?? ''}
-          onChange={(event) => set({ ip: event.target.value })}
-          helperText="IP for camera stream"
-        />
       </AccordionDetails>
     </Accordion>
   );

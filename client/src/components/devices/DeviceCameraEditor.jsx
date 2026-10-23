@@ -54,7 +54,7 @@ const DeviceCameraEditor = ({ value, onChange }) => {
   };
 
   const addCamera = () => {
-    onChange([...structuredClone(cameras), { type: 'WebRTC', source: '' }]);
+    onChange([...structuredClone(cameras), { type: 'WebRTC', source: '', host: '' }]);
   };
 
   const removeCamera = (index) => {
@@ -69,7 +69,10 @@ const DeviceCameraEditor = ({ value, onChange }) => {
         <Typography variant="subtitle1">Camera Stream</Typography>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
-        <Typography variant="caption">Source example:main</Typography>
+        <Typography variant="caption">
+          Source example: webrtc : device is published the stream to GCSserver, webrtc_env : device
+          is published stream in own webrtcserver. websocket: ros publish compressed images.
+        </Typography>
         {cameras.map((camera, index) => (
           <Fragment key={'fragment-action-' + index}>
             <Typography variant="subtitle1" className={classes.attributeName}>
@@ -98,6 +101,17 @@ const DeviceCameraEditor = ({ value, onChange }) => {
                   onChange={(e) => setCameraField(index, 'source', e.target.value)}
                 />
               </div>
+              {camera['type'] !== 'Websocket' && (
+                <div className={classes.actionValue}>
+                  <TextField
+                    required
+                    fullWidth={true}
+                    label="Host"
+                    value={camera['host'] ?? ''}
+                    onChange={(e) => setCameraField(index, 'host', e.target.value)}
+                  />
+                </div>
+              )}
               <IconButton
                 sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
                 onClick={() => removeCamera(index)}

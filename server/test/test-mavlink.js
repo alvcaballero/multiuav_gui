@@ -33,7 +33,7 @@ import { contentsOf } from '../models/commands/commandEncoders.js';
 import { toCommandMessage, commandInt } from '../models/mavlink/mavlinkMessages.js';
 import { CommandType } from '../config/commandTypes.js';
 
-const DEVICE = { id: 7, name: 'px4_1', category: 'px4_mavlink', protocol: 'mavlink', systemId: 1 };
+const DEVICE = { id: 7, name: 'px4_1', category: 'px4_mavlink', protocol: 'mavlink', attributes: { systemId: 1 } };
 const CATEGORY = { subscribers: { position_global: { messageType: 'mavlink/GLOBAL_POSITION_INT' } } };
 const PX4_REMOTE = { address: '127.0.0.1', port: 18570 };
 
@@ -327,18 +327,18 @@ describe('mavlink gateway', () => {
   });
 });
 
-describe('device schema: systemId', () => {
-  const base = { name: 'px4_1', category: 'px4_mavlink', ip: '127.0.0.1', protocol: 'mavlink' };
+describe('device schema: mavlink attributes.systemId', () => {
+  const base = { name: 'px4_1', category: 'px4_mavlink', protocol: 'mavlink' };
   test('a mavlink device needs a systemId', () => {
     const r = validateDevice(base);
     assert.equal(r.success, false);
-    assert.deepEqual(r.error.issues[0].path, ['systemId']);
+    assert.deepEqual(r.error.issues[0].path, ['attributes', 'systemId']);
   });
   test('accepts 1..254, rejects broadcast 0 and the GCS 255', () => {
-    assert.equal(validateDevice({ ...base, systemId: 1 }).success, true);
-    assert.equal(validateDevice({ ...base, systemId: '254' }).success, true);
-    assert.equal(validateDevice({ ...base, systemId: 0 }).success, false);
-    assert.equal(validateDevice({ ...base, systemId: 255 }).success, false);
+    assert.equal(validateDevice({ ...base, attributes: { systemId: 1 } }).success, true);
+    assert.equal(validateDevice({ ...base, attributes: { systemId: '254' } }).success, true);
+    assert.equal(validateDevice({ ...base, attributes: { systemId: 0 } }).success, false);
+    assert.equal(validateDevice({ ...base, attributes: { systemId: 255 } }).success, false);
   });
   test('other protocols do not need it', () => {
     assert.equal(validateDevice({ ...base, protocol: 'ros' }).success, true);

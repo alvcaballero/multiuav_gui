@@ -21,22 +21,11 @@ const DeviceSchema = {
   protocol: {
     type: DataTypes.STRING,
   },
-  // MAVLink system id (protocol 'mavlink' only).
-  systemId: {
-    type: DataTypes.INTEGER,
+  // Settings specific to each device that depend on something else about it, e.g. its protocol
+  // (mavlink: { systemId }). Which keys apply when lives in schemas/zod/devices.js (ATTRIBUTE_GROUPS).
+  attributes: {
+    type: DataTypes.JSON,
     allowNull: true,
-  },
-  model: {
-    type: DataTypes.STRING,
-  },
-  ip: {
-    type: DataTypes.STRING,
-  },
-  user: {
-    type: DataTypes.STRING,
-  },
-  pwd: {
-    type: DataTypes.STRING,
   },
   camera: {
     type: DataTypes.JSON,

@@ -1,4 +1,4 @@
-import { validateDevice, validatePartialDevice } from '../schemas/zod/devices.js';
+import { validateDevice, validatePartialDevice, validateDeviceAttributes, pruneAttributes } from '../schemas/zod/devices.js';
 import { DevicesModel } from '../models/devices.js';
 import { categoryModel } from '../models/category.js';
 import { logger } from '../common/logger.js';
@@ -10,11 +10,12 @@ import { telemetryWatchdog } from '../models/inspect/telemetryWatchdog.js';
  * @param {number|string|null} [selfId] the device being edited, which may keep its own systemId
  * @returns {Promise<{path: string[], message: string}|null>}
  */
-const systemIdTaken = async ({ protocol, systemId }, selfId = null) => {
+const systemIdTaken = async ({ protocol, attributes }, selfId = null) => {
+  const systemId = attributes?.systemId;
   if (protocol !== 'mavlink' || systemId == null) return null;
   const others = ((await DevicesModel.getBySystemId(systemId)) ?? []).filter((d) => String(d.id) !== String(selfId));
   if (!others.length) return null;
-  return { path: ['systemId'], message: `systemId ${systemId} is already used by '${others.map((d) => d.name).join("', '")}'` };
+  return { path: ['attributes', 'systemId'], message: `systemId ${systemId} is already used by '${others.map((d) => d.name).join("', '")}'` };
 };
 
 class devicesController {
@@ -116,10 +117,19 @@ class devicesController {
     const leaving = {
       protocol: result.data.protocol ?? current.protocol ?? 'ros',
       category: result.data.category ?? current.category,
-      systemId: result.data.systemId !== undefined ? result.data.systemId : current.systemId,
     };
+    // Stored attributes that no longer apply to the device it becomes (e.g. mavlink's after a protocol
+    // change) are dropped; the ones sent in this edit are merged on top and must all apply.
+    const kept = pruneAttributes(leaving, current.attributes);
+    const attributes = validateDeviceAttributes(leaving, { ...kept, ...result.data.attributes });
+    if (!attributes.success) {
+      const error = attributes.error.issues.map((issue) => ({ ...issue, path: ['attributes', ...issue.path] }));
+      return res.status(400).json({ error });
+    }
+    leaving.attributes = attributes.data;
     const problem = categoryModel.deviceProblem(leaving) ?? (await systemIdTaken(leaving, id));
     if (problem) return res.status(400).json({ error: [problem] });
+    result.data.attributes = attributes.data;
 
     const updatedDevice = await DevicesModel.editDevice(result.data);
 

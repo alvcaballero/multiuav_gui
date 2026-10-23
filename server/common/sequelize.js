@@ -4,6 +4,8 @@ import { useExternalDb, dbType, dbName, dbHost, dbPort, dbUser, dbPassword, dbSt
 import { setupModels } from '../schemas/database/index.js';
 import { logger } from './logger.js';
 import { migrateMissionTaskGraph } from './migrations/missionTaskGraph.js';
+import { migrateDeviceAttributes } from './migrations/deviceAttributes.js';
+import { migrateDeviceCameraHost } from './migrations/deviceCameraHost.js';
 
 
 logger.info('useExternalDb is ' + useExternalDb);
@@ -60,6 +62,18 @@ try {
 }
 
 try {
+  await migrateDeviceAttributes(sequelize, logger);
+} catch (error) {
+  logger.error('Migration failed: device attributes', error.message);
+}
+
+try {
+  await migrateDeviceCameraHost(sequelize, logger);
+} catch (error) {
+  logger.error('Migration failed: device camera host', error.message);
+}
+
+try {
   await sequelize.sync({ force: false });
   logger.info('DB  models were synchronized successfully.');
 } catch (error) {
@@ -102,8 +116,6 @@ const migrations = [
   // stored the same way as icon/model3d — a URL pointing at the asset on
   // disk, not the content itself.
   `ALTER TABLE ElementTypes ADD COLUMN definitionYaml TEXT DEFAULT NULL`,
-  // MAVLink devices are addressed by their system id.
-  `ALTER TABLE Devices ADD COLUMN systemId INTEGER DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

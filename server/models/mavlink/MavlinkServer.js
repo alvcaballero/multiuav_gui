@@ -78,7 +78,7 @@ const WARN_EVERY_MS = 60000;
 /**
  * Fourth device transport: MAVLink over one or more links. Vehicles are told apart by their
  * system id (header.sysid), never by the link they came from: several vehicles share a UDP
- * port, and a vehicle is matched to its device by `device.systemId`.
+ * port, and a vehicle is matched to its device by `device.attributes.systemId`.
  *
  * Per vehicle it keeps the route back (link + remote) learned from the autopilot's heartbeat,
  * and its presence. Emits `online` / `offline` with the vehicle.
@@ -160,8 +160,8 @@ export class MavlinkServer extends EventEmitter {
     if (expected == null) {
       return { state: 'warning', msg: `${endpoint?.key}: not implemented over MAVLink yet` };
     }
-    const v = this.vehicles.get(Number(device.systemId));
-    if (!v?.online) return { state: 'error', msg: `${device.name}: vehicle sysid ${device.systemId} is offline` };
+    const v = this.vehicles.get(Number(device.attributes?.systemId));
+    if (!v?.online) return { state: 'error', msg: `${device.name}: vehicle sysid ${device.attributes?.systemId} is offline` };
     // The category decides the dialect (what an altitude means); the heartbeat says the truth.
     if (v.autopilot !== expected) {
       return {

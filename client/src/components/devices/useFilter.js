@@ -9,8 +9,8 @@ export default (keyword, filter, filterSort, filterMap, positions) => {
     const filtered = Object.values(devices).filter((device) => {
       if (filter.statuses.length && !filter.statuses.includes(device.status)) return false;
       const lowerCaseKeyword = keyword.toLowerCase();
-      return [device.name, device.uniqueId, device.phone, device.model, device.contact].some(
-        (s) => s && s.toLowerCase().includes(lowerCaseKeyword),
+      return [device.name, device.category, device.protocol].some((value) =>
+        value?.toLowerCase().includes(lowerCaseKeyword),
       );
     });
     switch (filterSort) {

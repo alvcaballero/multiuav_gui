@@ -36,7 +36,7 @@ describe('missionSignals read the cached position', () => {
 
 describe('events carry the device position', () => {
   test('addEvent stores where the device was', async () => {
-    const device = await sequelize.models.Device.create({ name: 'evt_pos_dev', category: 'px4_mavlink', protocol: 'mavlink', systemId: 77 });
+    const device = await sequelize.models.Device.create({ name: 'evt_pos_dev', category: 'px4_mavlink', protocol: 'mavlink', attributes: { systemId: 77 } });
     await positionsModel.updatePosition({ deviceId: device.id, latitude: 43.47, longitude: -8.18, altitude: 100.2, deviceTime: new Date().toISOString() });
     await eventsModel.addEvent({ type: 'info', eventTime: new Date(), deviceId: device.id, attributes: { message: 'x' } });
     const event = await sequelize.models.Event.findOne({ where: { deviceId: device.id } });

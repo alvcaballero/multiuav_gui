@@ -13,8 +13,8 @@ import { readDataFile } from '../common/utils.js';
 import { DEVICE_STATUS } from '../config/status.js';
 import { telemetryWatchdog } from './inspect/telemetryWatchdog.js';
 
-const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'systemId', 'lastUpdate'];
-const privateFields = ['id', 'name', 'user', 'pwd', 'ip', 'files'];
+const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'attributes', 'lastUpdate'];
+const privateFields = ['id', 'name', 'files'];
 
 // File-download presets (path, folder type, delete, srvDownload) shared by every
 // installation. A device entry references one by `type` and may override any of
@@ -182,10 +182,12 @@ export class DevicesModel {
 
   // Every mavlink device with this system id: more than one is a misconfiguration the caller reports.
   static async getBySystemId(systemId) {
-    return await sequelize.models.Device.findAll({
+    // Filtered here, not in SQL: JSON paths in a WHERE differ per dialect and a fleet is small.
+    const mavlink = await sequelize.models.Device.findAll({
       attributes: publicFields,
-      where: { systemId, protocol: protocols.MAVLINK, deletedAt: null },
+      where: { protocol: protocols.MAVLINK, deletedAt: null },
     });
+    return mavlink.filter((d) => Number(d.attributes?.systemId) === Number(systemId));
   }
 
   static async getAccess(id) {
@@ -239,14 +241,11 @@ export class DevicesModel {
       myDevice = await sequelize.models.Device.create({
         name: device.name,
         category: device.category,
-        ip: device.ip,
         status: DEVICE_STATUS.OFFLINE,
-        user: device.user,
-        pwd: device.pwd,
         camera: device.camera,
         files: device.files,
         protocol: protocol,
-        systemId: device.systemId ?? null,
+        attributes: device.attributes ?? {},
       });
       logger.info(`Device created: ${myDevice.id}, ${myDevice.name}, ${myDevice.category}`);
     } catch (e) {
@@ -263,7 +262,7 @@ export class DevicesModel {
 
     // A MAVLink device has nothing to subscribe in ROS: MavlinkServer matches it by systemId.
     if (protocol === protocols.MAVLINK) {
-      logger.info(`Device ${device.name} added. Type: ${device.category}, MAVLink sysid ${device.systemId}`);
+      logger.info(`Device ${device.name} added. Type: ${device.category}, MAVLink sysid ${device.attributes?.systemId}`);
       return { state: 'success', msg: 'Device created' };
     }
 
@@ -295,15 +294,16 @@ export class DevicesModel {
     return response;
   }
 
-  static async editDevice({ id, name, category, ip, user, pwd, camera, files, protocol, systemId }) {
+  static async editDevice({ id, name, category, camera, files, protocol, attributes }) {
     let myDevice = await sequelize.models.Device.findOne({ where: { id: id }, raw: false });
     if (protocol && protocol !== myDevice.protocol) {
       logger.debug(`Device ${id}: changing protocol to ${protocol}`);
       myDevice.protocol = protocol;
     }
-    if (systemId !== undefined && systemId !== myDevice.systemId) {
-      logger.debug(`Device ${id}: changing MAVLink system id to ${systemId}`);
-      myDevice.systemId = systemId;
+    // Already validated against the protocol's schema (and merged into the stored ones) by the controller.
+    if (attributes !== undefined && JSON.stringify(attributes) !== JSON.stringify(myDevice.attributes)) {
+      logger.debug(`Device ${id}: changing protocol attributes`);
+      myDevice.attributes = attributes;
     }
     if ((name && name !== myDevice.name) || (category && category !== myDevice.category)) {
       logger.debug(`Device ${id}: changing name/category`);
@@ -325,12 +325,6 @@ export class DevicesModel {
         });
       }
     }
-    if (ip && ip !== myDevice.ip) {
-      cameraModel.removeCameraWebRTC(myDevice);
-      myDevice.ip = ip;
-      cameraModel.removeCameraWebRTC({ ...myDevice, ip: ip });
-    }
-
     if (camera && JSON.stringify(camera) !== JSON.stringify(myDevice.camera)) {
       logger.debug(`Device ${id}: changing camera config`);
       myDevice.camera = camera;
@@ -339,8 +333,6 @@ export class DevicesModel {
     }
 
     if (files) myDevice.files = files;
-    if (user) myDevice.user = user;
-    if (pwd) myDevice.pwd = pwd;
 
     myDevice.save();
   }
@@ -360,7 +352,7 @@ export class DevicesModel {
 
   static async addAllUAV() {
     const myDevices = await sequelize.models.Device.findAll({
-      attributes: ['id', 'name', 'category', 'ip', 'camera', 'status', 'protocol'],
+      attributes: ['id', 'name', 'category', 'camera', 'status', 'protocol'],
       where: { deletedAt: null },
     });
     for (let device of myDevices) {

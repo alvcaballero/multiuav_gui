@@ -741,11 +741,28 @@ CATEGORY only says which MESSAGE FORMAT it speaks, derived from its `messageType
 (`categoryModel.messageFormatOf`): `mavlink` (`mavlink/<MSG>`, carried only by mavlink) or `ros_msg`
 (carried by ros, mqtt and robofleet alike). `GET /api/category?protocol=` lists the categories the
 protocol can carry (no param: all, as before); `POST`/`PUT /api/devices` refuse a category the protocol
-cannot carry, a mavlink device without `systemId`, or one whose `systemId` another mavlink device already has (`categoryModel.deviceProblem` + `systemIdTaken`, in the controller
+cannot carry, a mavlink device without `attributes.systemId`, or one whose `systemId` another mavlink device already has (`categoryModel.deviceProblem` + `systemIdTaken`, in the controller
 because zod schemas do not import models; a `PUT` is checked on the device it leaves, stored + partial).
 `GET /api/server/protocol` returns the four as `{ name, enabled }`: the device form greys out the
 ones this server does not run. The server state on the WS carries `mqttState` only when MQTT is
 enabled (`controllers/websocket.js` `serverState()`).
+
+**Per-device attributes** (`Device.attributes`, JSON): settings specific to each robot that depend on
+something else about it (mavlink: `{ systemId }`). They are declared as GROUPS in `ATTRIBUTE_GROUPS`
+(`schemas/zod/devices.js`): `appliesTo({protocol, category, attributes})` says when a group applies and `shape`
+(zod fields) which keys it adds, so a parameter can depend on the protocol, the category or another attribute's
+value. A device's attributes are the strict union of the groups that apply to it (an unknown key is a 400, path
+`['attributes', ...]`; two groups declaring one key for the same device throw). A new per-robot parameter is a
+new group there, no new column. `validateDevice` coerces them on create; on `PUT` the controller validates the
+attributes of the device it leaves: stored keys no group applies to any more are DROPPED (`pruneAttributes`,
+e.g. mavlink's after a protocol change) and the ones sent are merged on top. They are public (`publicFields`):
+never put a secret in them. The client form still hardcodes the mavlink field (`DeviceIdentityEditor`).
+**A device has no `ip`, `user` or `pwd`**: the address of a camera's stream is `camera[].host` (required unless
+the camera is `Websocket`; `camera.js` builds the RTSP URL from it, the client's `CameraDevice` uses it for
+`WebRTC_env`), and the file-download credentials are in `files[].url`. Migration:
+`common/migrations/deviceCameraHost.js`.
+`getBySystemId` filters in JS because JSON paths in a WHERE differ per dialect. Migration from the old
+`systemId` column: `common/migrations/deviceAttributes.js` (native `DROP COLUMN`, idempotent).
 
 **ROS Protocol** (`protocol: 'ros'`):
 
@@ -779,7 +796,7 @@ enabled (`controllers/websocket.js` `serverState()`).
 **MAVLink Protocol** (`protocol: 'mavlink'`, opt-in with `MAVLINK_CONNECTION=true`, links in `MAVLINK_LINKS`, default `udp:0.0.0.0:14550`). PX4 and ArduCopter on `node-mavlink` (pinned: its traps below were measured on 2.3.0). Plan, SITL results and open items: `MAVLINK_PLAN.md` — read its "Resultados F0" and "Estado Fn" before changing anything here.
 
 - `models/mavlink/`: `links.js` (UDP listens, one parser per remote `address:port`; TCP connects; serial not yet), `MavlinkServer.js`, `mavlinkMessages.js` (registry, GCS identity 255/190, builders). Started from `server.js` via `initMavlinkServer`.
-- **A vehicle is its `device.systemId`** (column; 1..254), on ANY link: the route back is learned from the autopilot HEARTBEAT (`autopilot != INVALID`, `type != GCS`; components and other GCS are ignored). Presence from that heartbeat (offline after 5 s); `device.status` still comes from positions (`DeviceHealthMonitor`). The GCS heartbeats at 1 Hz; PX4 answers TEMPORARILY_REJECTED to commands until it heard it for ~1 s, so commands wait for that.
+- **A vehicle is its `device.attributes.systemId`** (1..254), on ANY link: the route back is learned from the autopilot HEARTBEAT (`autopilot != INVALID`, `type != GCS`; components and other GCS are ignored). Presence from that heartbeat (offline after 5 s); `device.status` still comes from positions (`DeviceHealthMonitor`). The GCS heartbeats at 1 Hz; PX4 answers TEMPORARILY_REJECTED to commands until it heard it for ~1 s, so commands wait for that.
 - **node-mavlink traps** (they fail silently, the ACK still says ACCEPTED): the header is `sysid`/`compid` (no `srcSystem`); in `CommandLong`/`CommandInt` the params AND x/y/z are `_param1.._param7` (`msg.param1 = …` sends 0; PX4 once got lat 0, lon 0) — only `commandLong`/`commandInt`/`missionItemInt` in `mavlinkMessages.js` build them, and every new command gets a serialize→parse round-trip test; `AUTOPILOT_VERSION` is in the `standard` dialect.
 - **Telemetry**: categories `px4_mavlink` / `ardupilot_mavlink` declare `subscribers` with `messageType: 'mavlink/<MSG>'` (no `name:`); the plain view (`toPlain`: spec field names, wire integers, BigInt made JSON-safe) goes to rawTap, the watchdog and `decodeMsg`. `rate_hz` on a subscriber is a stream asked with SET_MESSAGE_INTERVAL when the vehicle comes online and again while missing: ArduPilot sends NO telemetry until asked, PX4 sends position at ~50 Hz. The firmware is a fact of the HEARTBEAT (`mavlinkFlightMode({autopilot, type, customMode})`, never the category name). `home_position` follows HOME_POSITION: both firmwares move home on every arming.
 - **Commands**: the endpoint msgType is the dialect (`mavlink/PX4_COMMAND`, `mavlink/ARDUPILOT_COMMAND`, `models/commands/mavlinkCommand.js`, registered by `(key, msgType)`); the server refuses to send when the heartbeat reports another autopilot. Same number, different meaning: NAV_TAKEOFF altitude is AMSL on PX4 (it ignores the COMMAND_INT frame) and relative on ArduCopter (only GLOBAL_RELATIVE_ALT, else DENIED); PX4 reads the DO_REPOSITION yaw in RADIANS, ArduCopter ignores it (a CONDITION_YAW follows). Anything with lat/lon goes as COMMAND_INT. **Hold/Pause/Stop on ArduCopter is BRAKE, never LOITER**: LOITER follows the throttle stick and with no RC it descends to the ground. ACCEPTED = taken, not finished; a refusal carries the STATUSTEXT reason (chunks glued by `id`).

@@ -1,4 +1,4 @@
-// The identity of a device (name, protocol, category, MAVLink system id, IP) as the device forms
+// The identity of a device (name, protocol, category, the protocol's own attributes) as the device forms
 // edit it. Mirrors the server: schemas/zod/devices.js (shape) and categoryModel.deviceProblem
 // (the category's message format must be one the protocol carries, a mavlink device needs a
 // system id). The server stays the authority: this only keeps the forms from sending what it
@@ -22,14 +22,15 @@ export const systemIdError = (systemId) =>
 
 /** True when the server would accept the identity fields of `item`. */
 export function isDeviceIdentityValid(item) {
-  if (!item?.name || !item.protocol || !item.category || !item.ip) return false;
-  return !isMavlink(item.protocol) || systemIdError(item.systemId) === null;
+  if (!item?.name || !item.protocol || !item.category) return false;
+  return !isMavlink(item.protocol) || systemIdError(item.attributes?.systemId) === null;
 }
 
 /**
  * The item after a protocol change: a category in a message format the new protocol does not carry
  * would leave the device deaf, so it is cleared (the category list reloads for the new protocol);
- * a system id only exists on mavlink. null (not undefined) so an edit clears it in the database too.
+ * `attributes` belong to the protocol (mavlink: systemId), so they are kept only while it stays the
+ * same. {} (not undefined) so an edit clears them in the database too.
  */
 export function withProtocol(item, protocol) {
   const sameFormat = messageFormat(protocol) === messageFormat(item.protocol);
@@ -37,6 +38,6 @@ export function withProtocol(item, protocol) {
     ...item,
     protocol,
     category: sameFormat ? item.category : null,
-    systemId: isMavlink(protocol) ? (item.systemId ?? null) : null,
+    attributes: protocol === item.protocol ? (item.attributes ?? {}) : {},
   };
 }

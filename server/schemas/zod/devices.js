@@ -4,10 +4,21 @@ import { DEVICE_STATUS as DEVICE_STATUS_MAP } from '../../config/status.js';
 export const DEVICE_STATUS = z.enum(Object.values(DEVICE_STATUS_MAP));
 export const DEVICE_PROTOCOL = z.enum(['ros', 'robofleet', 'mqtt', 'mavlink']);
 
-export const CameraSchema = z.object({
-  type: z.enum(['WebRTC', 'RTSP', 'Websocket']),
-  source: z.string(),
-});
+// `host` is where the camera's stream is served: the RTSP host MediaMTX pulls from (WebRTC) or the
+// host the browser connects to directly (WebRTC_env). A Websocket camera arrives through the GCS
+// (ROS/MQTT frames), so it has none. It lives here, not on the device: one robot can have cameras on
+// different hosts, and a robot without cameras has no use for an address.
+export const CameraSchema = z
+  .object({
+    type: z.enum(['WebRTC', 'WebRTC_env', 'RTSP', 'Websocket']),
+    source: z.string(),
+    host: z.string().trim().min(1).optional(),
+  })
+  .superRefine((camera, ctx) => {
+    if (camera.type !== 'Websocket' && !camera.host) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['host'], message: `a ${camera.type} camera needs a host` });
+    }
+  });
 
 // `type` selects a server preset (devices.yaml → files.<type>). The optional
 // fields below override that preset per-device, field-by-field; omit one to keep
@@ -21,21 +32,66 @@ export const FileAccessSchema = z.object({
   srvDownload: z.boolean().optional(),
 });
 
+// Per-device settings stored in Device.attributes. They are declared as GROUPS: a group says WHEN it
+// applies (`appliesTo`, over the device's protocol, category or even another attribute) and which keys
+// it adds (`shape`, zod fields). A device's attributes are the union of the groups that apply to it,
+// strict: a key no applicable group declares is an error instead of a silent typo. A new per-robot
+// parameter is a new group HERE and nothing else on the schema side.
+export const ATTRIBUTE_GROUPS = [
+  {
+    id: 'mavlink',
+    appliesTo: ({ protocol }) => protocol === 'mavlink',
+    shape: {
+      // MAVLink system id of the vehicle (MAV_SYS_ID on PX4, MAV_SYSID on ArduPilot >= 4.7). 0 is
+      // broadcast and 255 is the GCS itself, so neither can name a vehicle. The vehicle is addressed
+      // only by it: a MAVLink device without one could never be reached.
+      systemId: z.coerce.number().int().min(1).max(254),
+    },
+  },
+];
+
+/**
+ * The zod fields of every group that applies to `device` ({ protocol, category, attributes }).
+ * Two groups declaring the same key for one device is a programming error and throws.
+ */
+export function resolveAttributeShape(groups, device) {
+  const shape = {};
+  for (const group of groups) {
+    if (!group.appliesTo({ ...device, protocol: device.protocol ?? 'ros', attributes: device.attributes ?? {} })) continue;
+    for (const key of Object.keys(group.shape)) {
+      if (key in shape) throw new Error(`attribute '${key}' is declared twice for one device (group '${group.id}')`);
+      shape[key] = group.shape[key];
+    }
+  }
+  return shape;
+}
+
+/**
+ * Validates `attributes` against the groups that apply to `device` ({ protocol, category }).
+ * @returns {import('zod').SafeParseReturnType} issue paths are relative to `attributes`
+ */
+export function validateDeviceAttributes(device, attributes) {
+  const candidate = attributes ?? {};
+  return z.object(resolveAttributeShape(ATTRIBUTE_GROUPS, { ...device, attributes: candidate })).strict().safeParse(candidate);
+}
+
+/** `attributes` without the keys no group applies to `device` any more (after a protocol/category change). */
+export function pruneAttributes(device, attributes) {
+  const allowed = resolveAttributeShape(ATTRIBUTE_GROUPS, { ...device, attributes });
+  return Object.fromEntries(Object.entries(attributes ?? {}).filter(([key]) => key in allowed));
+}
+
 export const DeviceSchema = z.object({
   id: z.coerce.string().optional(),
   name: z.string(),
   category: z.string(),
-  ip: z.string().ip(),
   protocol: DEVICE_PROTOCOL.default('ros'),
-  // MAVLink system id of the vehicle (MAV_SYS_ID on PX4, MAV_SYSID on ArduPilot >= 4.7). 0 is
-  // broadcast and 255 is the GCS itself, so neither can name a vehicle.
-  systemId: z.coerce.number().int().min(1).max(254).nullable().optional(),
+  // Shape depends on the device (protocol, category…): checked by validateDevice / the controller, see ATTRIBUTE_GROUPS.
+  attributes: z.record(z.unknown()).nullable().optional(),
   camera: z.array(CameraSchema).optional(),
   files: z.array(FileAccessSchema).optional(),
   lastUpdate: z.coerce.date().optional(),
   status: DEVICE_STATUS.default(DEVICE_STATUS_MAP.OFFLINE).optional(),
-  user: z.string().nullable().optional(),
-  pwd: z.string().nullable().optional(),
 });
 
 export const DevicePublicSchema = DeviceSchema.pick({
@@ -45,29 +101,29 @@ export const DevicePublicSchema = DeviceSchema.pick({
   camera: true,
   status: true,
   protocol: true,
-  systemId: true,
+  attributes: true,
   lastUpdate: true,
 });
 
 export const DevicePrivateSchema = DeviceSchema.pick({
   id: true,
   name: true,
-  user: true,
-  pwd: true,
-  ip: true,
   files: true,
 });
 
-// The vehicle is addressed only by its system id: a MAVLink device without one could never be
-// reached, and its telemetry would never be matched to it.
-const requireSystemIdForMavlink = (device, ctx) => {
-  if (device.protocol === 'mavlink' && device.systemId == null) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['systemId'], message: 'a mavlink device needs a systemId' });
+// Replaces `attributes` with the version parsed by the groups that apply to the device (coerced,
+// defaults applied); its issues are reported under the `attributes` path.
+const withDeviceAttributes = (device, ctx) => {
+  const parsed = validateDeviceAttributes(device, device.attributes);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) ctx.addIssue({ ...issue, path: ['attributes', ...issue.path] });
+    return z.NEVER;
   }
+  return { ...device, attributes: parsed.data };
 };
 
 export function validateDevice(input) {
-  return DeviceSchema.superRefine(requireSystemIdForMavlink).safeParse(input);
+  return DeviceSchema.transform(withDeviceAttributes).safeParse(input);
 }
 
 export function validatePartialDevice(input) {

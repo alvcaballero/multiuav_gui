@@ -92,7 +92,6 @@ const Adduav = ({ SetAddUAVOpen }) => {
   const handleAddDevice = useCatch(addDevice);
   const [item, setItem] = useState({
     name: 'uav_',
-    ip: '10.42.0.42',
     camera: [],
     files: [],
   });
