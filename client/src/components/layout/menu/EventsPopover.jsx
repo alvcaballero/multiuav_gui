@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { grey } from '@mui/material/colors';
 import { Box, Button, Divider, Popover, Typography } from '@mui/material';
 import CircleIcon from '@mui/icons-material/Circle';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -16,28 +15,28 @@ function relativeTime(ts) {
   return `${Math.floor(diff / 3600)}h ago`;
 }
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   eventRow: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '8px',
     padding: '5px 12px',
-    borderBottom: `1px solid ${grey[100]}`,
+    borderBottom: `1px solid ${theme.palette.grey[100]}`,
     '&:last-child': { borderBottom: 'none' },
   },
   eventMsg: {
     fontSize: '12px',
     lineHeight: 1.4,
-    color: grey[800],
+    color: theme.palette.grey[800],
     flex: 1,
   },
   eventSource: {
     fontWeight: 700,
-    color: grey[900],
+    color: theme.palette.grey[900],
   },
   eventTime: {
     fontSize: '11px',
-    color: grey[500],
+    color: theme.palette.grey[500],
     whiteSpace: 'nowrap',
     marginTop: '1px',
   },
@@ -84,7 +83,7 @@ const EventsPopover = ({ anchor, onClose }) => {
           >
             Recent Events
           </Typography>
-          <Typography variant="caption" sx={{ color: grey[400], fontSize: 10 }}>
+          <Typography variant="caption" sx={{ color: 'grey.400', fontSize: 10 }}>
             {`showing last ${recentEvents.length} of ${events.length}`}
           </Typography>
         </Box>
@@ -125,7 +124,7 @@ const EventsPopover = ({ anchor, onClose }) => {
               onClose();
               navigate('/reports/events');
             }}
-            sx={{ fontSize: 11, textTransform: 'none', color: grey[600] }}
+            sx={{ fontSize: 11, textTransform: 'none', color: 'grey.600' }}
           >
             View all events
           </Button>

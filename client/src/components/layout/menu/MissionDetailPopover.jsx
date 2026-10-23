@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { grey, blue } from '@mui/material/colors';
 import { Box, Button, Chip, Collapse, Divider, Popover, Typography } from '@mui/material';
 import RouteIcon from '@mui/icons-material/Route';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -14,7 +13,7 @@ import YAML from 'yaml';
 import { missionStyle } from '../../../common/util/styles/missionStatus';
 import TaskTrackingRow from '../../mission/TaskTrackingRow';
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   panelHeader: {
     display: 'flex',
     alignItems: 'center',
@@ -26,7 +25,7 @@ const useStyles = makeStyles()(() => ({
     fontWeight: 700,
     letterSpacing: '0.5px',
     textTransform: 'uppercase',
-    color: grey[500],
+    color: theme.palette.grey[500],
   },
   wpBadge: {
     display: 'inline-flex',
@@ -35,10 +34,10 @@ const useStyles = makeStyles()(() => ({
     width: '18px',
     height: '18px',
     borderRadius: '50%',
-    backgroundColor: grey[200],
+    backgroundColor: theme.palette.grey[200],
     fontSize: '10px',
     fontWeight: 700,
-    color: grey[700],
+    color: theme.palette.grey[700],
     flexShrink: 0,
   },
 }));
@@ -115,7 +114,7 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
         </div>
 
         {mission.description && (
-          <Typography sx={{ px: 1.5, pb: 0.5, fontSize: 12, color: grey[600] }}>
+          <Typography sx={{ px: 1.5, pb: 0.5, fontSize: 12, color: 'grey.600' }}>
             {mission.description}
           </Typography>
         )}
@@ -152,12 +151,13 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
                   px: 1.5,
                   py: 0.75,
                   cursor: 'pointer',
-                  '&:hover': { backgroundColor: grey[50] },
-                  borderBottom: `1px solid ${grey[100]}`,
+                  '&:hover': { backgroundColor: 'grey.50' },
+                  borderBottom: 1,
+                  borderBottomColor: 'grey.100',
                 }}
               >
-                <RouteIcon sx={{ fontSize: 15, color: grey[500], flexShrink: 0 }} />
-                <Typography sx={{ fontSize: 12, fontWeight: 600, flex: 1, color: grey[800] }}>
+                <RouteIcon sx={{ fontSize: 15, color: 'grey.500', flexShrink: 0 }} />
+                <Typography sx={{ fontSize: 12, fontWeight: 600, flex: 1, color: 'grey.800' }}>
                   {route.name || `Route ${route.id}`}
                 </Typography>
                 <Chip
@@ -167,18 +167,19 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
                     height: '16px',
                     fontSize: '10px',
                     fontWeight: 600,
-                    backgroundColor: route.uav ? blue[50] : grey[100],
-                    color: route.uav ? blue[800] : grey[600],
-                    border: `1px solid ${route.uav ? blue[200] : grey[300]}`,
+                    backgroundColor: route.uav ? 'assignedDevice.tint' : 'grey.100',
+                    color: route.uav ? 'assignedDevice.main' : 'grey.600',
+                    border: 1,
+                    borderColor: route.uav ? 'assignedDevice.border' : 'grey.300',
                   }}
                 />
-                <Typography sx={{ fontSize: 11, color: grey[500], ml: 0.5, flexShrink: 0 }}>
+                <Typography sx={{ fontSize: 11, color: 'grey.500', ml: 0.5, flexShrink: 0 }}>
                   {route.wp?.length ?? 0} wp
                 </Typography>
                 <ExpandMoreIcon
                   sx={{
                     fontSize: 16,
-                    color: grey[400],
+                    color: 'grey.400',
                     flexShrink: 0,
                     transform: expandedRoute === route.id ? 'rotate(180deg)' : 'none',
                     transition: 'transform 0.2s',
@@ -187,7 +188,7 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
               </Box>
 
               <Collapse in={expandedRoute === route.id}>
-                <Box sx={{ backgroundColor: grey[50], maxHeight: 160, overflowY: 'auto' }}>
+                <Box sx={{ backgroundColor: 'grey.50', maxHeight: 160, overflowY: 'auto' }}>
                   {(route.wp ?? []).map((wp, idx) => (
                     <Box
                       key={`${route.id}-wp-${wp.pos?.join(',')}-${idx}`}
@@ -197,18 +198,19 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
                         gap: 1,
                         px: 2,
                         py: 0.5,
-                        borderBottom: `1px solid ${grey[100]}`,
+                        borderBottom: 1,
+                        borderBottomColor: 'grey.100',
                         '&:last-child': { borderBottom: 'none' },
                       }}
                     >
                       <span className={classes.wpBadge}>{idx + 1}</span>
-                      <PlaceIcon sx={{ fontSize: 13, color: grey[400], flexShrink: 0 }} />
-                      <Typography sx={{ fontSize: 11, color: grey[700], flex: 1 }}>
+                      <PlaceIcon sx={{ fontSize: 13, color: 'grey.400', flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: 11, color: 'grey.700', flex: 1 }}>
                         {wp.pos
                           ? `${Number(wp.pos[0]).toFixed(5)}, ${Number(wp.pos[1]).toFixed(5)}`
                           : '—'}
                       </Typography>
-                      <Typography sx={{ fontSize: 11, color: grey[500], flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: 11, color: 'grey.500', flexShrink: 0 }}>
                         {wp.pos?.[2] != null ? `${Number(wp.pos[2]).toFixed(1)} m` : ''}
                       </Typography>
                     </Box>

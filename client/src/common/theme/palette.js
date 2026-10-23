@@ -151,6 +151,12 @@ export default () => {
       resume: green[700],
       resumeHover: green[50],
     },
+    /** The device a route is assigned to, as a small tag ("unassigned" stays grey). */
+    assignedDevice: {
+      tint: blue[50],
+      main: blue[800],
+      border: blue[200],
+    },
     colors,
   };
 };
