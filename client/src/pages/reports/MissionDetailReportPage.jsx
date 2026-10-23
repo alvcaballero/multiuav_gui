@@ -166,9 +166,7 @@ const MissionDetailReportPage = () => {
 
       case 'status': {
         const style = axis === 'task' ? taskStyle(value) : missionStyle(value);
-        return (
-          <Chip label={style.label} sx={{ backgroundColor: style.color, color: style.textColor }} />
-        );
+        return <Chip label={style.label} sx={style.sx} />;
       }
       case 'result':
         return formatResult(value);

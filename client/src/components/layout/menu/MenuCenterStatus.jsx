@@ -107,7 +107,7 @@ const MenuCenterStatus = ({
           padding: '0 9px',
           minWidth: '72px',
           justifyContent: 'center',
-          backgroundColor: currentStatus ? missionStyle(currentStatus).color : grey[100],
+          ...(currentStatus ? missionStyle(currentStatus).sx : { backgroundColor: grey[100] }),
           cursor: 'default',
         }}
       >

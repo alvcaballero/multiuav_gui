@@ -221,8 +221,10 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
   which fixes what a colour MEANS across the app: blue in progress, green finished well, amber needs the operator
   or went partly wrong, red failed, grey not started, blue-grey stopped. The assistant panel follows the same rule
   with its own shades (`StatusTag` tones are named like `STATUS`). Never pick a status colour in a component,
-  nor the text on it: `missionStyle`/`taskStyle` return `textColor` and events have `eventTextColor`, both from
-  `contrastText()` (white on the solid shades, dark text on the light ones — all at WCAG AA).
+  nor the text on it: `missionStyle`/`taskStyle` return the chip's `sx` (spread it, don't rebuild it from `color`)
+  and `textColor`, and events have `eventTextColor`, all from `contrastText()` (white on the solid shades, dark text
+  on the light ones — all at WCAG AA). "Downloaded" is `outlined` (no fill, inset outline) so it does not read as a
+  second "Done"; a status built outside the maps (the anomaly chip) goes through `statusStyle()` too.
 
 ### Vehicle state (`position.attributes`)
 

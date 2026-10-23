@@ -16,7 +16,7 @@ const MISSION_STATUS_STYLE = {
   running: { color: STATUS.running, label: 'Running' },
   finish: { color: STATUS.done, label: 'Done' }, // MISSION_STATUS.COMPLETED
   finish_errors: { color: STATUS.attention, label: 'Done (errors)' }, // MISSION_STATUS.COMPLETED_WITH_ERRORS
-  done: { color: STATUS.archived, label: 'Downloaded' }, // MISSION_STATUS.END (finished + files downloaded)
+  done: { color: STATUS.archived, label: 'Downloaded', outlined: true }, // MISSION_STATUS.END (finished + files downloaded)
   error: { color: STATUS.failed, label: 'Error' },
   cancelled: { color: STATUS.cancelled, label: 'Cancelled' },
 };
@@ -27,7 +27,7 @@ const TASK_STATUS_STYLE = {
   commanded: { color: STATUS.pending, label: 'Sent' },
   running: { color: STATUS.running, label: 'Running' },
   complete: { color: STATUS.done, label: 'Done' },
-  end: { color: STATUS.archived, label: 'Downloaded' },
+  end: { color: STATUS.archived, label: 'Downloaded', outlined: true },
   cancelled: { color: STATUS.cancelled, label: 'Cancelled' },
   error: { color: STATUS.failed, label: 'Error' },
   skipped: { color: STATUS.skipped, label: 'Skipped' }, // never ran: a dependency failed
@@ -35,8 +35,22 @@ const TASK_STATUS_STYLE = {
 
 const FALLBACK = (s) => ({ color: STATUS.waiting, label: s ?? 'unknown' });
 
-// `textColor` is the text that reads on `color` (white on the solid ones, dark on the light ones).
-const withText = (style) => ({ ...style, textColor: contrastText(style.color) });
+// `color` is the status hue; `textColor` the text that reads where the status is shown; `sx` the
+// chip (or any box) showing it. A status is filled with its hue, with white or dark text by contrast.
+// An `outlined` one (Downloaded: past Done, nothing left to do) is not filled, so it does not read
+// as a second "Done": its hue goes to the text and to an inset outline, which, unlike a border,
+// leaves the box the size of the filled ones.
+export const statusStyle = ({ outlined, ...style }) => {
+  const textColor = outlined ? style.color : contrastText(style.color);
+  const sx = outlined
+    ? {
+        backgroundColor: 'transparent',
+        color: textColor,
+        boxShadow: `inset 0 0 0 1px ${style.color}`,
+      }
+    : { backgroundColor: style.color, color: textColor };
+  return { ...style, textColor, sx };
+};
 
-export const missionStyle = (s) => withText(MISSION_STATUS_STYLE[s] ?? FALLBACK(s));
-export const taskStyle = (s) => withText(TASK_STATUS_STYLE[s] ?? FALLBACK(s));
+export const missionStyle = (s) => statusStyle(MISSION_STATUS_STYLE[s] ?? FALLBACK(s));
+export const taskStyle = (s) => statusStyle(TASK_STATUS_STYLE[s] ?? FALLBACK(s));

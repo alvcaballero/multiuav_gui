@@ -96,12 +96,7 @@ const MissionReportTaskPage = () => {
 
       case 'status': {
         const style = taskStyle(value);
-        return (
-          <Chip
-            label={style.label.toUpperCase()}
-            sx={{ backgroundColor: style.color, color: style.textColor }}
-          />
-        );
+        return <Chip label={style.label.toUpperCase()} sx={style.sx} />;
       }
       default:
         return value;
