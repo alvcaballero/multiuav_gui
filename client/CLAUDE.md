@@ -245,6 +245,24 @@ for `UNKNOWN` or an absent attribute — the caller picks a dash (stats) or noth
 against the constants (`flightMode === FLIGHT_MODE.RTL`), never against a string or the label. The
 old `navState` and `landed_state` no longer exist.
 
+### Colours (`common/theme/palette.js`)
+
+A component never writes a hex, an `rgba()` or a `@mui/material/colors` shade: it asks the theme. In `sx` by
+path (`'grey.300'`, `'toolbar.badge'`; a border is `border: 1, borderColor: '<path>'`, a path inside a template
+string is not resolved), in `makeStyles` via `theme.palette.…`. Tokens are named by what they are for:
+
+- **Meaning** — `STATUS` (state of a mission/task/event/connection), `HAZARD` / `HAZARD_TEXT` (how close a danger
+  is), `GEOMETRY` (drawn shapes). Exported as constants too, for MapLibre / Three.js, which do not read the theme.
+- **Chrome** — `navbar`, `toolbar`, `missionControl`, `panel`, `assignedDevice`; MUI's own `grey`, `text`,
+  `divider`, `background` for the rest. `LOADER` is a constant because the page loader is inline CSS.
+- **Text on a colour** goes through `contrastText()`; never fix it to white.
+- **Data colours** are not theme: route colours live in `common/util/styles/routeColors.js`, and the same entity is
+  drawn with the same colour in 2D and 3D (a 3D waypoint falls back to `NO_ROUTE_COLOR`, like the map).
+
+Left as literals on purpose: the base map style (`map/core/martinStyle.js`), the 3D world (`R3FCanvas`,
+`textures.js`, the gizmo axes), mapbox-gl-draw's own theme, the map and 3D controls (they copy MapLibre's native
+look), video backgrounds and the HUD over video, and colours stored as data (an element type's default colour).
+
 ### Redux State Updates
 
 - Use immer-style mutations in Redux Toolkit reducers
