@@ -14,12 +14,12 @@ import { missionActions } from '../../store';
 import { useMissionFile } from '../../common/util/useMissionFile';
 import MissionTransformDialog from './MissionTransformDialog';
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   toolbar: {
     display: 'flex',
     gap: '10px 10px',
     height: '30px',
-    borderBottom: '3px solid rgb(212, 212, 212)',
+    borderBottom: `3px solid ${theme.palette.panel.headerBorder}`,
   },
   list: {
     maxHeight: 'calc(100vh - 152px)',

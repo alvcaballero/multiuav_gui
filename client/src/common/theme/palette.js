@@ -151,6 +151,10 @@ export default () => {
       resume: green[700],
       resumeHover: green[50],
     },
+    /** The side panels of the editors (mission, planning): the line under their header bar. */
+    panel: {
+      headerBorder: '#d4d4d4',
+    },
     /** The device a route is assigned to, as a small tag ("unassigned" stays grey). */
     assignedDevice: {
       tint: blue[50],

@@ -6,12 +6,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { makeStyles } from 'tss-react/mui';
 import UploadButtons from '../../common/components/uploadButton';
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   toolbar: {
     display: 'flex',
     gap: '10px 10px',
     height: '30px',
-    borderBottom: '3px solid rgb(212, 212, 212)',
+    borderBottom: `3px solid ${theme.palette.panel.headerBorder}`,
   },
   title: {
     flexGrow: 1,
