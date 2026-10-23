@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { grey } from '@mui/material/colors';
 import { Box, Tooltip, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -22,11 +21,12 @@ const MenuCenterStatus = ({
         display: 'flex',
         alignItems: 'stretch',
         height: '26px',
-        border: `1px solid ${grey[300]}`,
+        border: 1,
+        borderColor: 'grey.300',
         borderRadius: '6px',
         overflow: 'hidden',
-        backgroundColor: '#fff',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+        backgroundColor: 'background.paper',
+        boxShadow: (theme) => theme.palette.toolbar.raisedShadow,
       }}
     >
       {/* Segmento localizar */}
@@ -42,13 +42,14 @@ const MenuCenterStatus = ({
               justifyContent: 'center',
               width: '28px',
               border: 'none',
-              borderRight: `1px solid ${grey[200]}`,
+              borderRight: 1,
+              borderRightColor: 'grey.200',
               backgroundColor: 'transparent',
               padding: 0,
               cursor: hasMission && !is3D ? 'pointer' : 'default',
-              color: hasMission && !is3D ? grey[600] : grey[400],
+              color: hasMission && !is3D ? 'grey.600' : 'grey.400',
               '&:hover':
-                hasMission && !is3D ? { backgroundColor: grey[100], color: grey[900] } : {},
+                hasMission && !is3D ? { backgroundColor: 'grey.100', color: 'grey.900' } : {},
             }}
           >
             <MyLocationIcon sx={{ fontSize: 14 }} />
@@ -68,13 +69,14 @@ const MenuCenterStatus = ({
               alignItems: 'center',
               gap: '5px',
               border: 'none',
-              borderRight: `1px solid ${grey[200]}`,
+              borderRight: 1,
+              borderRightColor: 'grey.200',
               backgroundColor: 'transparent',
               padding: '0 10px',
               minWidth: '160px',
               maxWidth: '300px',
               cursor: hasMission ? 'pointer' : 'default',
-              '&:hover': hasMission ? { backgroundColor: grey[50] } : {},
+              '&:hover': hasMission ? { backgroundColor: 'grey.50' } : {},
             }}
           >
             <Typography
@@ -84,7 +86,7 @@ const MenuCenterStatus = ({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                color: hasMission ? grey[800] : grey[400],
+                color: hasMission ? 'grey.800' : 'grey.400',
                 flex: 1,
                 textAlign: 'left',
               }}
@@ -92,7 +94,7 @@ const MenuCenterStatus = ({
               {hasMission ? missionName : 'No mission loaded'}
             </Typography>
             {hasMission && (
-              <ExpandMoreIcon sx={{ fontSize: 14, color: grey[400], flexShrink: 0 }} />
+              <ExpandMoreIcon sx={{ fontSize: 14, color: 'grey.400', flexShrink: 0 }} />
             )}
           </Box>
         </span>
@@ -107,7 +109,7 @@ const MenuCenterStatus = ({
           padding: '0 9px',
           minWidth: '72px',
           justifyContent: 'center',
-          ...(currentStatus ? missionStyle(currentStatus).sx : { backgroundColor: grey[100] }),
+          ...(currentStatus ? missionStyle(currentStatus).sx : { backgroundColor: 'grey.100' }),
           cursor: 'default',
         }}
       >
@@ -131,7 +133,7 @@ const MenuCenterStatus = ({
             letterSpacing: '0.4px',
             textTransform: 'uppercase',
             whiteSpace: 'nowrap',
-            color: currentStatus ? missionStyle(currentStatus).textColor : grey[500],
+            color: currentStatus ? missionStyle(currentStatus).textColor : 'grey.500',
           }}
         >
           {currentStatus ? missionStyle(currentStatus).label : 'no status'}

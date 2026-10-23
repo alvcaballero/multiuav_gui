@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
-import { red } from '@mui/material/colors';
 
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import SendIcon from '@mui/icons-material/Send';
@@ -150,8 +149,10 @@ const MenuRightGroup = ({
               width: 7,
               height: 7,
               borderRadius: '50%',
-              backgroundColor: red[500],
-              border: '1.5px solid #e4e7ec',
+              backgroundColor: 'toolbar.badge',
+              // Cut out of the icon by a ring of the bar's own colour.
+              border: '1.5px solid',
+              borderColor: 'toolbar.bottom',
             }}
           />
         )}
@@ -178,8 +179,10 @@ const MenuRightGroup = ({
               width: 7,
               height: 7,
               borderRadius: '50%',
-              backgroundColor: red[500],
-              border: '1.5px solid #e4e7ec',
+              backgroundColor: 'toolbar.badge',
+              // Cut out of the icon by a ring of the bar's own colour.
+              border: '1.5px solid',
+              borderColor: 'toolbar.bottom',
             }}
           />
         )}

@@ -146,7 +146,10 @@ const Navbar = React.memo(
     }
 
     return (
-      <AppBar position="static" style={{ backgroundColor: '#333', height: '52px' }}>
+      <AppBar
+        position="static"
+        sx={{ bgcolor: 'navbar.main', color: 'navbar.contrastText', height: '52px' }}
+      >
         <Container maxWidth="x">
           <Toolbar disableGutters>
             <Button
@@ -165,7 +168,7 @@ const Navbar = React.memo(
                   fontFamily: 'monospace',
                   fontWeight: 700,
                   letterSpacing: '.3rem',
-                  color: '#FFFFFF',
+                  color: 'navbar.contrastText',
                   textDecoration: 'none',
                 }}
               >

@@ -7,6 +7,7 @@ import {
   green,
   indigo,
   lightBlue,
+  orange,
   red,
   common,
 } from '@mui/material/colors';
@@ -114,6 +115,42 @@ export default () => {
     },
     status: STATUS,
     hazard: HAZARD,
+    /** The dark bar at the very top (Navbar): the app name and its menus. */
+    navbar: {
+      main: '#333333',
+      contrastText: common.white,
+    },
+    /** The light mission bar under it (layout/Menu.jsx and its menu/ groups). */
+    toolbar: {
+      /** Its background is a vertical gradient from `top` to `bottom`. */
+      top: '#f0f2f5',
+      bottom: '#e4e7ec',
+      border: '#c8cdd6',
+      /** The thin vertical line between groups of buttons. */
+      separator: '#c0c5ce',
+      shadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+      /** The status box in the middle, lifted off the bar. */
+      raisedShadow: '0 1px 2px rgba(0, 0, 0, 0.06)',
+      hover: 'rgba(0, 0, 0, 0.07)',
+      /** The "something new" dot on an icon (unseen missions, unseen errors). */
+      badge: red[500],
+    },
+    /**
+     * The mission buttons of the toolbar. Actions, not states: they do not follow STATUS (Stop is not
+     * "failed"). Fly is a gradient from `fly` to `flyEnd`, one shade lighter on hover; the others
+     * are an icon in their colour over a pale tint of it on hover.
+     */
+    missionControl: {
+      fly: blue[800],
+      flyEnd: blue[900],
+      flyHover: blue[700],
+      stop: red[700],
+      stopHover: red[50],
+      pause: orange[800],
+      pauseHover: orange[50],
+      resume: green[700],
+      resumeHover: green[50],
+    },
     colors,
   };
 };

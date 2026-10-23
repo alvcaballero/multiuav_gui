@@ -2,7 +2,6 @@ import { memo, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch, useStore } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
-import { grey, red, orange, green } from '@mui/material/colors';
 
 import { map } from '../../map/core/mapInstance';
 import { usePreference } from '../../common/util/preferences';
@@ -30,12 +29,12 @@ import MenuLeftGroup from './menu/MenuLeftGroup';
 import MenuCenterStatus from './menu/MenuCenterStatus';
 import MenuRightGroup from './menu/MenuRightGroup';
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
   toolbar: {
     height: '36px',
-    background: 'linear-gradient(180deg, #f0f2f5 0%, #e4e7ec 100%)',
-    borderBottom: '1px solid #c8cdd6',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    background: `linear-gradient(180deg, ${theme.palette.toolbar.top} 0%, ${theme.palette.toolbar.bottom} 100%)`,
+    borderBottom: `1px solid ${theme.palette.toolbar.border}`,
+    boxShadow: theme.palette.toolbar.shadow,
     display: 'flex',
     alignItems: 'center',
     flexShrink: 0,
@@ -68,37 +67,40 @@ const useStyles = makeStyles()(() => ({
   vDivider: {
     width: '1px',
     height: '18px',
-    backgroundColor: '#c0c5ce',
+    backgroundColor: theme.palette.toolbar.separator,
     margin: '0 5px',
     flexShrink: 0,
   },
   iconBtn: {
-    color: grey[600],
+    color: theme.palette.grey[600],
     padding: '4px',
     borderRadius: '5px',
-    '&:hover': { backgroundColor: 'rgba(0,0,0,0.07)', color: grey[900] },
-    '&.Mui-disabled': { color: grey[400] },
+    '&:hover': {
+      backgroundColor: theme.palette.toolbar.hover,
+      color: theme.palette.grey[900],
+    },
+    '&.Mui-disabled': { color: theme.palette.grey[400] },
   },
   stopBtn: {
-    color: red[700],
+    color: theme.palette.missionControl.stop,
     padding: '4px',
     borderRadius: '5px',
-    '&:hover': { backgroundColor: red[50] },
-    '&.Mui-disabled': { color: grey[400] },
+    '&:hover': { backgroundColor: theme.palette.missionControl.stopHover },
+    '&.Mui-disabled': { color: theme.palette.grey[400] },
   },
   pauseBtn: {
-    color: orange[800],
+    color: theme.palette.missionControl.pause,
     padding: '4px',
     borderRadius: '5px',
-    '&:hover': { backgroundColor: orange[50] },
-    '&.Mui-disabled': { color: grey[400] },
+    '&:hover': { backgroundColor: theme.palette.missionControl.pauseHover },
+    '&.Mui-disabled': { color: theme.palette.grey[400] },
   },
   resumeBtn: {
-    color: green[700],
+    color: theme.palette.missionControl.resume,
     padding: '4px',
     borderRadius: '5px',
-    '&:hover': { backgroundColor: green[50] },
-    '&.Mui-disabled': { color: grey[400] },
+    '&:hover': { backgroundColor: theme.palette.missionControl.resumeHover },
+    '&.Mui-disabled': { color: theme.palette.grey[400] },
   },
   rosChip: {
     height: '20px',
@@ -116,10 +118,16 @@ const useStyles = makeStyles()(() => ({
     borderRadius: '5px',
     paddingLeft: '8px',
     paddingRight: '8px',
-    color: grey[700],
-    border: `1px solid ${grey[400]}`,
-    '&:hover': { backgroundColor: grey[200], border: `1px solid ${grey[500]}` },
-    '&.Mui-disabled': { color: grey[400], border: `1px solid ${grey[300]}` },
+    color: theme.palette.grey[700],
+    border: `1px solid ${theme.palette.grey[400]}`,
+    '&:hover': {
+      backgroundColor: theme.palette.grey[200],
+      border: `1px solid ${theme.palette.grey[500]}`,
+    },
+    '&.Mui-disabled': {
+      color: theme.palette.grey[400],
+      border: `1px solid ${theme.palette.grey[300]}`,
+    },
   },
   flyBtn: {
     height: '24px',
@@ -129,11 +137,13 @@ const useStyles = makeStyles()(() => ({
     borderRadius: '5px',
     paddingLeft: '8px',
     paddingRight: '8px',
-    background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
-    color: '#fff',
+    background: `linear-gradient(135deg, ${theme.palette.missionControl.fly} 0%, ${theme.palette.missionControl.flyEnd} 100%)`,
+    color: theme.palette.common.white,
     border: 'none',
-    '&:hover': { background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)' },
-    '&.Mui-disabled': { background: grey[300], color: grey[500] },
+    '&:hover': {
+      background: `linear-gradient(135deg, ${theme.palette.missionControl.flyHover} 0%, ${theme.palette.missionControl.fly} 100%)`,
+    },
+    '&.Mui-disabled': { background: theme.palette.grey[300], color: theme.palette.grey[500] },
   },
   toggleBtn: {
     height: '24px',
@@ -143,9 +153,12 @@ const useStyles = makeStyles()(() => ({
     borderRadius: '5px',
     paddingLeft: '7px',
     paddingRight: '7px',
-    color: grey[700],
-    border: `1px solid ${grey[400]}`,
-    '&:hover': { backgroundColor: grey[200], border: `1px solid ${grey[500]}` },
+    color: theme.palette.grey[700],
+    border: `1px solid ${theme.palette.grey[400]}`,
+    '&:hover': {
+      backgroundColor: theme.palette.grey[200],
+      border: `1px solid ${theme.palette.grey[500]}`,
+    },
   },
 }));
 

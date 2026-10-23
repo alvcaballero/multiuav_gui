@@ -25,7 +25,7 @@ const MenuItems = ({ items }) => {
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
-        sx={{ color: '#FFFFFF', fontSize: 16 }}
+        sx={{ color: 'navbar.contrastText', fontSize: 16 }}
         style={{ textTransform: 'none' }}
       >
         {items.title}
