@@ -1,5 +1,10 @@
 import { useRef, useEffect } from 'react';
 import { Billboard, Text, Circle, Box, Line } from '@react-three/drei';
+import { NO_ROUTE_COLOR } from '../../common/util/styles/routeColors';
+
+// The gimbal direction. The 2D map does not draw it (it is only text in the waypoint popup), so
+// there is no map colour to match.
+const GIMBAL_COLOR = '#04ff00';
 
 const WORD_FONT_PROPS = {
   font: '/Inter-Bold.woff',
@@ -9,11 +14,14 @@ const WORD_FONT_PROPS = {
   'material-toneMapped': false,
 };
 
+// A waypoint, as the 2D map draws it (MapMissions): its route's colour (routeColors.js), set by
+// R3FMission, and NO_ROUTE_COLOR when it has none — never a colour of its own.
 const NumberedSphere = ({ position, properties, hideLabel = false }) => {
+  const color = properties.color ?? NO_ROUTE_COLOR;
   return (
     <group position={position} scale={1}>
       {!hideLabel && (
-        <Word key={properties.id} position={[0, 0, 0]} color={properties.color ?? '#ff0000'}>
+        <Word key={properties.id} position={[0, 0, 0]} color={color}>
           {properties.id ?? 0}
         </Word>
       )}
@@ -24,10 +32,10 @@ const NumberedSphere = ({ position, properties, hideLabel = false }) => {
               [0, 0, 0],
               [0, 0, -1],
             ]}
-            color={properties.color ?? '#ff0000'}
+            color={color}
           />
           <Box args={[0.2, 0.2, 0.2]} position={[0, 0, -1]}>
-            <meshStandardMaterial color={properties.color ?? '#ff0000'} />
+            <meshStandardMaterial color={color} />
           </Box>
           {properties.gimbal_pitch != null && (
             <group rotation={[(properties.gimbal_pitch * Math.PI) / 180, 0, 0]}>
@@ -36,10 +44,10 @@ const NumberedSphere = ({ position, properties, hideLabel = false }) => {
                   [0, 0, 0],
                   [0, 0, -1],
                 ]}
-                color={'#04ff00'}
+                color={GIMBAL_COLOR}
               />
               <Box args={[0.1, 0.1, 0.1]} position={[0, 0, -1]} rotation={[0, 0, 0]}>
-                <meshStandardMaterial color={'#04ff00'} />
+                <meshStandardMaterial color={GIMBAL_COLOR} />
               </Box>
             </group>
           )}

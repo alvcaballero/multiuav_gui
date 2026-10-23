@@ -1,7 +1,7 @@
 import React from 'react';
 
 const SEGMENTS = 24;
-const WIRE_COLOR = '#ff9800'; // same convention as GeometryWireframe (R3DMarkers.jsx) —
+export const WIRE_COLOR = '#ff9800'; // same convention as GeometryWireframe (R3DMarkers.jsx) —
 // wireframe + orange visually marks this as the YAML-derived approximation,
 // distinct from the solid/textured GLB it's being compared against.
 

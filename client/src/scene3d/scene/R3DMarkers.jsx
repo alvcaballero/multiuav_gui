@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useModelLoader } from '../models/ModelLoader.jsx';
+import { WIRE_COLOR } from '../models/definitionPrimitives';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
 import { useMarkerTypes } from '../../common/util/useMarkerTypes';
@@ -32,7 +33,7 @@ const GeometryWireframe = ({ position, geometry, azimFront = 0 }) => {
     return (
       <mesh position={meshPosition} rotation={[0, rotationY, 0]}>
         <boxGeometry args={[width, height, length]} />
-        <meshBasicMaterial color="#ff9800" wireframe />
+        <meshBasicMaterial color={WIRE_COLOR} wireframe />
       </mesh>
     );
   }
@@ -41,7 +42,7 @@ const GeometryWireframe = ({ position, geometry, azimFront = 0 }) => {
   return (
     <mesh position={meshPosition}>
       <cylinderGeometry args={[radius, radius, height, 32]} />
-      <meshBasicMaterial color="#ff9800" wireframe />
+      <meshBasicMaterial color={WIRE_COLOR} wireframe />
     </mesh>
   );
 };
