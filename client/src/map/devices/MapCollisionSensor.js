@@ -1,6 +1,7 @@
 import { useId, useEffect, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { map } from '../core/mapInstance';
+import { HAZARD } from '../../common/theme/palette';
 
 // Proximity arcs around a UAV, one per horizontal collision sensor (front/right/back/left).
 // Reads `position.attributes.obstacle_info` = [down, front, right, back, left, up] (meters,
@@ -105,11 +106,11 @@ const MapCollisionSensor = ({ mode = 'selected' }) => {
           ['linear'],
           ['get', 'severity'],
           0,
-          '#4caf50',
+          HAZARD.clear,
           0.45,
-          '#ffc107',
+          HAZARD.caution,
           0.8,
-          '#f44336',
+          HAZARD.danger,
         ],
         'fill-opacity': ['interpolate', ['linear'], ['get', 'severity'], 0, 0.15, 1, 0.85],
       },

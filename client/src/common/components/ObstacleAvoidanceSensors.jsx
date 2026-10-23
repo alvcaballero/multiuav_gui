@@ -3,7 +3,13 @@ import { Typography } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import NavigationIcon from '@mui/icons-material/Navigation';
 
-import { STOP_DISTANCE, CAUTION_DISTANCE, obstacleSeverity } from '../util/obstacles';
+import {
+  STOP_DISTANCE,
+  CAUTION_DISTANCE,
+  obstacleColor,
+  obstacleTextColor,
+} from '../util/obstacles';
+import { HAZARD } from '../theme/palette';
 
 // Top-down view of the collision sensors: the drone in the center (front = up), and per
 // horizontal side a ray to the obstacle, a wall at its distance and a label. Up/down
@@ -144,8 +150,7 @@ const geometry = (side, d) => {
 };
 
 const ObstacleAvoidanceSensors = ({ obstacleData }) => {
-  const { classes, theme } = useStyles();
-  const color = (d) => theme.palette[obstacleSeverity(d)].main;
+  const { classes } = useStyles();
 
   return (
     <div className={classes.root}>
@@ -162,9 +167,9 @@ const ObstacleAvoidanceSensors = ({ obstacleData }) => {
           const g = geometry(side, d);
           return (
             <div key={side}>
-              <div className={classes.ray} style={{ ...g.ray, background: color(d) }} />
-              <div className={classes.wall} style={{ ...g.wall, background: color(d) }} />
-              <span className={classes.label} style={{ ...g.label, color: color(d) }}>
+              <div className={classes.ray} style={{ ...g.ray, background: obstacleColor(d) }} />
+              <div className={classes.wall} style={{ ...g.wall, background: obstacleColor(d) }} />
+              <span className={classes.label} style={{ ...g.label, color: obstacleTextColor(d) }}>
                 {d >= RANGE ? `>${RANGE} m` : `${d.toFixed(1)} m`}
               </span>
             </div>
@@ -188,28 +193,31 @@ const ObstacleAvoidanceSensors = ({ obstacleData }) => {
             >
               {label}
             </Typography>
-            <div className={classes.value} style={{ color: color(d) }}>
+            <div className={classes.value} style={{ color: obstacleTextColor(d) }}>
               {d >= V_RANGE ? `>${V_RANGE} m` : `${d.toFixed(1)} m`}
             </div>
             <div className={classes.track}>
               <div
                 className={classes.bar}
-                style={{ width: `${Math.min(100, (d / V_RANGE) * 100)}%`, background: color(d) }}
+                style={{
+                  width: `${Math.min(100, (d / V_RANGE) * 100)}%`,
+                  background: obstacleColor(d),
+                }}
               />
             </div>
           </div>
         ))}
         <div className={classes.legend}>
           <span>
-            <span className={classes.dot} style={{ background: theme.palette.error.main }} />
+            <span className={classes.dot} style={{ background: HAZARD.danger }} />
             {`< ${STOP_DISTANCE} m`}
           </span>
           <span>
-            <span className={classes.dot} style={{ background: theme.palette.warning.main }} />
+            <span className={classes.dot} style={{ background: HAZARD.caution }} />
             {`${STOP_DISTANCE}–${CAUTION_DISTANCE} m`}
           </span>
           <span>
-            <span className={classes.dot} style={{ background: theme.palette.primary.main }} />
+            <span className={classes.dot} style={{ background: HAZARD.clear }} />
             {`> ${CAUTION_DISTANCE} m`}
           </span>
         </div>

@@ -136,6 +136,10 @@ Adaptations vs. upstream: `map` comes from `core/mapInstance`, no `toMapCoordina
 Closer obstacle → arc closer to the icon, more opaque, green→yellow→red; beyond `MAX_RANGE` nothing
 is drawn. Radius is in screen pixels (recomputed on `zoom`), not real meters. `mode="selected"`
 (default) draws only the selected device, `mode="all"` draws every UAV with a position.
+Its colours are `HAZARD` (`common/theme/palette.js`), the same scale as the sensor widget, the device page alert
+and the exclusion zones (`MapObstacles`): `obstacleColor(d)` for a fill, `obstacleTextColor(d)` (`HAZARD_TEXT`) for
+a distance written on a light background — amber text on white is unreadable. It is a scale of its own, not
+`STATUS`: "clear" is not "finished well".
 
 **Layer visibility toggling (`traccar:title` metadata):**
 

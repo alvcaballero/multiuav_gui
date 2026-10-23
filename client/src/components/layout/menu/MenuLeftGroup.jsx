@@ -1,27 +1,28 @@
 import { memo } from 'react';
 import { useSelector } from 'react-redux';
-import { green, red } from '@mui/material/colors';
+import { alpha } from '@mui/material/styles';
 import { Chip, IconButton, Tooltip } from '@mui/material';
 
 import HomeIcon from '@mui/icons-material/Home';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import CircleIcon from '@mui/icons-material/Circle';
+import { STATUS } from '../../../common/theme/palette';
 
-// One connection of the GCS (WebSocket, ROS bridge, MQTT broker): green when up, red when down.
+// One connection of the GCS (WebSocket, ROS bridge, MQTT broker): green (STATUS.done) when up,
+// red (STATUS.failed) when down — a tint of it behind, the full colour for the dot and the text.
 const ConnectionChip = ({ className, connected, label, tooltip }) => {
+  const tone = connected ? STATUS.done : STATUS.failed;
   const chip = (
     <Chip
-      icon={
-        <CircleIcon sx={{ fontSize: '7px !important', color: connected ? green[500] : red[500] }} />
-      }
+      icon={<CircleIcon sx={{ fontSize: '7px !important', color: tone }} />}
       label={label}
       size="small"
       className={className}
       sx={{
-        backgroundColor: connected ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.10)',
-        color: connected ? green[800] : red[700],
-        border: `1px solid ${connected ? 'rgba(76,175,80,0.35)' : 'rgba(244,67,54,0.35)'}`,
+        backgroundColor: alpha(tone, 0.1),
+        color: tone,
+        border: `1px solid ${alpha(tone, 0.35)}`,
       }}
     />
   );
@@ -111,7 +112,12 @@ const MenuLeftGroup = ({
             size="small"
             onClick={onClearMission}
             disabled={!hasMission}
-            sx={{ '&:hover': { color: red[600], backgroundColor: red[50] } }}
+            sx={{
+              '&:hover': {
+                color: 'error.main',
+                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.08),
+              },
+            }}
           >
             <DeleteForeverIcon sx={{ fontSize: 17 }} />
           </IconButton>

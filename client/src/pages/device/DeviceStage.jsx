@@ -19,7 +19,8 @@ import MainMap from '../../map/MainMap';
 import MapGhostTarget from '../../map/devices/MapGhostTarget';
 import CameraDevice from '../../components/camera/CameraDevice';
 import ObstacleAvoidanceSensors from '../../common/components/ObstacleAvoidanceSensors';
-import { CAUTION_DISTANCE, obstacleSeverity } from '../../common/util/obstacles';
+import { CAUTION_DISTANCE, obstacleColor } from '../../common/util/obstacles';
+import { contrastText } from '../../common/theme/palette';
 import { devicesActions, sessionActions } from '../../store';
 import { blink } from './animations';
 
@@ -52,7 +53,6 @@ const useStyles = makeStyles()((theme) => ({
     alignItems: 'center',
     gap: 6,
     padding: '3px 10px',
-    color: '#fff',
     fontSize: 12,
     fontWeight: 600,
   },
@@ -60,7 +60,7 @@ const useStyles = makeStyles()((theme) => ({
     width: 7,
     height: 7,
     borderRadius: '50%',
-    background: '#fff',
+    background: 'currentColor',
     animation: `${blink} 1s infinite`,
   },
   stage: {
@@ -377,7 +377,10 @@ const DeviceStage = ({
         {alert && (
           <span
             className={classes.alert}
-            style={{ background: theme.palette[obstacleSeverity(alert[1])].main }}
+            style={{
+              background: obstacleColor(alert[1]),
+              color: contrastText(obstacleColor(alert[1])),
+            }}
           >
             <span className={classes.alertDot} />
             {`Obstacle ${alert[1].toFixed(1)} m ${alert[0]}`}

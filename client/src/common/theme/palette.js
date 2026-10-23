@@ -1,4 +1,4 @@
-import { getContrastRatio } from '@mui/material/styles';
+import { darken, getContrastRatio } from '@mui/material/styles';
 import {
   amber,
   blue,
@@ -40,6 +40,26 @@ export const STATUS = {
   skipped: blueGrey[300],
   /** An informational event: no state, just news. Not the blue of `running`. */
   info: lightBlue[800],
+};
+
+/**
+ * How close a danger is: the collision sensor (map arcs, sensor widget, the device page alert) and
+ * the exclusion zones. A scale of its own, not STATUS: "clear" is not "a task finished well".
+ * Text on them goes through `contrastText()`, like on STATUS.
+ */
+export const HAZARD = {
+  /** Nothing within the caution distance. */
+  clear: green[500],
+  caution: amber[500],
+  /** Within the stop distance; an exclusion zone. */
+  danger: red[700],
+};
+
+/** HAZARD as text on a light background (a distance written in its colour): AA on white. */
+export const HAZARD_TEXT = {
+  clear: green[800],
+  caution: darken(amber[500], 0.5),
+  danger: red[700],
 };
 
 /**
@@ -93,6 +113,7 @@ export default () => {
       main: colors.medium,
     },
     status: STATUS,
+    hazard: HAZARD,
     colors,
   };
 };

@@ -1,9 +1,10 @@
 import { useId, useEffect, useCallback, useMemo, useRef } from 'react';
 import { map } from '../core/mapInstance';
 import { circle } from '@turf/circle';
+import { HAZARD } from '../../common/theme/palette';
 
 const DEFAULT_COLORS = {
-  exclusion: '#F44336',
+  exclusion: HAZARD.danger,
 };
 
 /**
@@ -187,7 +188,7 @@ const MapObstacles = ({ obstacles = [], visible = true, colors = DEFAULT_COLORS 
         source: sourceIds.exclusion,
         metadata: { 'traccar:title': 'ObstaclesRegions' },
         paint: {
-          'line-color': '#D32F2F',
+          'line-color': colors.exclusion,
           'line-width': 2,
           'line-dasharray': [4, 2],
         },
