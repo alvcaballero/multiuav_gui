@@ -217,6 +217,10 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
   `taskKey`/`action`/`dependsOn`, and replacing the task would erase them.
 - Task status styles live in `common/util/styles/missionStatus.js` (`taskStyle`); `init` is shown as
   "Waiting" (for its dependencies), `skipped` means it never ran because a dependency failed.
+- Their colours, and the events', come from `STATUS` in `common/theme/palette.js` (also `palette.status` in `sx`),
+  which fixes what a colour MEANS across the app: blue in progress, green finished well, amber needs the operator
+  or went partly wrong, red failed, grey not started, blue-grey stopped. The assistant panel follows the same rule
+  with its own shades (`StatusTag` tones are named like `STATUS`). Never pick a status colour in a component.
 
 ### Vehicle state (`position.attributes`)
 

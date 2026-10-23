@@ -1,4 +1,33 @@
-import { amber, grey, green, indigo, red, common } from '@mui/material/colors';
+import { amber, blue, blueGrey, grey, green, indigo, red, common } from '@mui/material/colors';
+
+/**
+ * What each colour MEANS wherever a state is shown (missions, tasks, events): the same rule as the
+ * assistant panel, whose own theme (components/chat/chatTheme.js) uses its handoff's shades of it.
+ * Blue is in progress, green finished well, amber needs the operator or went partly wrong, red
+ * failed, grey has not started, blue-grey was stopped before it ended.
+ *
+ * Hex, not palette paths, so they also work outside `sx`; `palette.status` exposes them to `sx` too.
+ */
+export const STATUS = {
+  /** In progress: a mission or task running. */
+  running: blue[600],
+  /** On its way, not yet running: planning, a command sent. */
+  pending: blue[300],
+  /** Not started: waiting for its dependencies. */
+  waiting: grey[400],
+  /** Needs the operator, or finished with errors: loaded and waiting for start, an anomaly. */
+  attention: amber[700],
+  /** Finished well. */
+  done: green[700],
+  /** Finished, and its files downloaded. */
+  archived: green[900],
+  failed: red[700],
+  cancelled: blueGrey[600],
+  /** Never ran: a dependency failed. */
+  skipped: blueGrey[300],
+  /** An informational event: no state, just news. */
+  info: blue[600],
+};
 
 export default () => {
   const colors = {
@@ -46,6 +75,7 @@ export default () => {
     warning: {
       main: colors.medium,
     },
+    status: STATUS,
     colors,
     colorsDevices,
   };

@@ -8,14 +8,14 @@ import { formatTimestamp } from '../../common/util/chatMessage';
 // The colour says how it went: the accent while it runs, teal once it finished, red when it failed.
 const STATUS_LOOK = {
   running: {
-    tone: 'accent',
+    tone: 'running',
     label: 'Running',
     line: 'primary.main',
     strip: 'primary.100',
   },
-  error: { tone: 'error', label: 'Failed', line: 'error.main', strip: 'error.tint' },
+  error: { tone: 'failed', label: 'Failed', line: 'error.main', strip: 'error.tint' },
   done: {
-    tone: 'success',
+    tone: 'done',
     label: 'Completed',
     line: 'subagent.main',
     strip: 'subagent.strip',

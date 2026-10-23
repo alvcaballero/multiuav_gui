@@ -268,9 +268,9 @@ const SUBAGENT_DONE = new Set(['done', 'completed', 'success', 'succeeded']);
 const SUBAGENT_FAILED = new Set(['error', 'incomplete', 'failed']);
 
 const subagentTag = (status) => {
-  if (SUBAGENT_FAILED.has(status)) return { tone: 'error', label: 'Failed' };
-  if (!status || SUBAGENT_DONE.has(status)) return { tone: 'success', label: 'Completed' };
-  return { tone: 'accent', label: status };
+  if (SUBAGENT_FAILED.has(status)) return { tone: 'failed', label: 'Failed' };
+  if (!status || SUBAGENT_DONE.has(status)) return { tone: 'done', label: 'Completed' };
+  return { tone: 'running', label: status };
 };
 
 /** A subagent's result as the handoff's subagent card, with its full output one click away. */

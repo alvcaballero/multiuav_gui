@@ -125,7 +125,7 @@ const ApprovalCard = ({ request, chatId }) => {
           <StatusTag label="Expired" />
         ) : (
           <StatusTag
-            tone="warning"
+            tone="attention"
             label={timed ? `Waiting · ${formatCountdown(remaining)}` : 'Waiting'}
           />
         )}
