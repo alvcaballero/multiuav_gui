@@ -115,7 +115,7 @@ const MenuCenterStatus = ({
           <CircleIcon
             sx={{
               fontSize: 7,
-              color: '#fff',
+              color: missionStyle(currentStatus).textColor,
               flexShrink: 0,
               ...(currentStatus === 'running' && {
                 animation: 'menuPulse 1.4s ease-in-out infinite',
@@ -131,7 +131,7 @@ const MenuCenterStatus = ({
             letterSpacing: '0.4px',
             textTransform: 'uppercase',
             whiteSpace: 'nowrap',
-            color: currentStatus ? '#fff' : grey[500],
+            color: currentStatus ? missionStyle(currentStatus).textColor : grey[500],
           }}
         >
           {currentStatus ? missionStyle(currentStatus).label : 'no status'}

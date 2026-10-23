@@ -220,7 +220,9 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
 - Their colours, and the events', come from `STATUS` in `common/theme/palette.js` (also `palette.status` in `sx`),
   which fixes what a colour MEANS across the app: blue in progress, green finished well, amber needs the operator
   or went partly wrong, red failed, grey not started, blue-grey stopped. The assistant panel follows the same rule
-  with its own shades (`StatusTag` tones are named like `STATUS`). Never pick a status colour in a component.
+  with its own shades (`StatusTag` tones are named like `STATUS`). Never pick a status colour in a component,
+  nor the text on it: `missionStyle`/`taskStyle` return `textColor` and events have `eventTextColor`, both from
+  `contrastText()` (white on the solid shades, dark text on the light ones — all at WCAG AA).
 
 ### Vehicle state (`position.attributes`)
 

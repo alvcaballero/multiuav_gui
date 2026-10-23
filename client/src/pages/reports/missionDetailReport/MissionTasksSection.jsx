@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { isImageFile, isVideoFile } from './fileKind';
 import { formatTime } from '../../../common/util/formatter';
-import { eventColor } from '../../../common/util/styles/eventStyle';
+import { eventColor, eventTextColor } from '../../../common/util/styles/eventStyle';
 
 const TASK_ITEMS = [
   'id',
@@ -63,7 +63,7 @@ const TaskEvents = ({ items }) => (
               <Chip
                 label={event.type}
                 size="small"
-                sx={{ backgroundColor: eventColor(event.type), color: '#fff' }}
+                sx={{ backgroundColor: eventColor(event.type), color: eventTextColor(event.type) }}
               />
             </TableCell>
             <TableCell>{event.attributes?.action ?? '—'}</TableCell>

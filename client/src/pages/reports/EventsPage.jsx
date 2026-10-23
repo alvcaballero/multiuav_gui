@@ -25,7 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../common/util/formatter';
-import { eventColor } from '../../common/util/styles/eventStyle';
+import { eventColor, eventTextColor } from '../../common/util/styles/eventStyle';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -118,7 +118,10 @@ const EventsPage = () => {
                           <Chip
                             label={event.type}
                             size="small"
-                            sx={{ backgroundColor: eventColor(event.type), color: '#fff' }}
+                            sx={{
+                              backgroundColor: eventColor(event.type),
+                              color: eventTextColor(event.type),
+                            }}
                           />
                         </TableCell>
                         <TableCell>{event.attributes?.action ?? '—'}</TableCell>

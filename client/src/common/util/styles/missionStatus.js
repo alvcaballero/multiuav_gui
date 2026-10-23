@@ -8,7 +8,7 @@
 // Colors come from the theme's STATUS (common/theme/palette.js), which says what each one means:
 // blue in progress, green finished well, amber needs the operator, red failed. They are HEX so
 // every consumer renders the exact same color, in sx={{ backgroundColor, color }} or anywhere else.
-import { STATUS } from '../../theme/palette';
+import { STATUS, contrastText } from '../../theme/palette';
 
 const MISSION_STATUS_STYLE = {
   init: { color: STATUS.waiting, label: 'Init' },
@@ -35,5 +35,8 @@ const TASK_STATUS_STYLE = {
 
 const FALLBACK = (s) => ({ color: STATUS.waiting, label: s ?? 'unknown' });
 
-export const missionStyle = (s) => MISSION_STATUS_STYLE[s] ?? FALLBACK(s);
-export const taskStyle = (s) => TASK_STATUS_STYLE[s] ?? FALLBACK(s);
+// `textColor` is the text that reads on `color` (white on the solid ones, dark on the light ones).
+const withText = (style) => ({ ...style, textColor: contrastText(style.color) });
+
+export const missionStyle = (s) => withText(MISSION_STATUS_STYLE[s] ?? FALLBACK(s));
+export const taskStyle = (s) => withText(TASK_STATUS_STYLE[s] ?? FALLBACK(s));

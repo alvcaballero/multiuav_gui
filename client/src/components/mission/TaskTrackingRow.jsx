@@ -1,11 +1,15 @@
 import { Box, Chip, LinearProgress, Tooltip, Typography } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { taskStyle } from '../../common/util/styles/missionStatus';
-import { STATUS } from '../../common/theme/palette';
+import { STATUS, contrastText } from '../../common/theme/palette';
 
 // Anomaly overrides the task's own status color — an anomalous task is worth
 // flagging regardless of where it is in its lifecycle.
-const ANOMALY_STYLE = { color: STATUS.attention, label: 'Anomaly' };
+const ANOMALY_STYLE = {
+  color: STATUS.attention,
+  textColor: contrastText(STATUS.attention),
+  label: 'Anomaly',
+};
 
 const ANOMALY_LABEL = {
   DEVIATION: 'Deviating from route',
@@ -78,7 +82,7 @@ const TaskTrackingRow = ({ task, devicesMap }) => {
               height: 18,
               fontSize: '0.6rem',
               backgroundColor: style.color,
-              color: '#fff',
+              color: style.textColor,
             }}
           />
         </Box>

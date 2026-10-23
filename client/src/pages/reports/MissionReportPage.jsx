@@ -95,7 +95,7 @@ const MissionReportPage = () => {
         return (
           <Chip
             label={style.label.toUpperCase()}
-            sx={{ backgroundColor: style.color, color: '#fff' }}
+            sx={{ backgroundColor: style.color, color: style.textColor }}
           />
         );
       }

@@ -30,7 +30,11 @@ const MissionTrackingRow = React.memo(({ mission, isSelected, devicesMap, onSele
         <Chip
           label={missionStyle(mission.status).label}
           size="small"
-          sx={{ ml: 1, backgroundColor: missionStyle(mission.status).color, color: '#fff' }}
+          sx={{
+            ml: 1,
+            backgroundColor: missionStyle(mission.status).color,
+            color: missionStyle(mission.status).textColor,
+          }}
         />
       </ListItemButton>
 

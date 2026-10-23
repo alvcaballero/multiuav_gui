@@ -109,7 +109,7 @@ const MissionDetailPopover = ({ anchor, onClose, onClear }) => {
                 fontSize: '10px',
                 fontWeight: 700,
                 backgroundColor: missionStyle(currentStatus).color,
-                color: '#fff',
+                color: missionStyle(currentStatus).textColor,
               }}
             />
           )}
