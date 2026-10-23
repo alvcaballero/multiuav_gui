@@ -1,5 +1,7 @@
 // Copy of the original theme
 // https://github.com/mapbox/mapbox-gl-draw/blob/v1.4.0/src/lib/theme.js
+// Only change: draw's blue (#3bb2d0) is the app's GEOMETRY, the same one the rest of the map uses.
+import { GEOMETRY } from '../../common/theme/palette';
 
 export default [
   {
@@ -12,8 +14,8 @@ export default [
       ['!=', 'mode', 'static'],
     ],
     paint: {
-      'fill-color': '#3bb2d0',
-      'fill-outline-color': '#3bb2d0',
+      'fill-color': GEOMETRY,
+      'fill-outline-color': GEOMETRY,
       'fill-opacity': 0.1,
     },
   },
@@ -50,7 +52,7 @@ export default [
       'line-join': 'round',
     },
     paint: {
-      'line-color': '#3bb2d0',
+      'line-color': GEOMETRY,
       'line-width': 2,
     },
   },
@@ -82,7 +84,7 @@ export default [
       'line-join': 'round',
     },
     paint: {
-      'line-color': '#3bb2d0',
+      'line-color': GEOMETRY,
       'line-width': 2,
     },
   },
@@ -146,7 +148,7 @@ export default [
     ],
     paint: {
       'circle-radius': 3,
-      'circle-color': '#3bb2d0',
+      'circle-color': GEOMETRY,
     },
   },
   {

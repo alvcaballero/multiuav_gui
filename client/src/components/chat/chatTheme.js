@@ -11,7 +11,7 @@ import { themeOptions } from '../../common/theme';
  *
  * It is given to the panel through a nested ThemeProvider. A ThemeProvider given an object REPLACES
  * the outer theme, so this one is built from the app's own options (`themeOptions`) with the
- * handoff's on top: inside the panel `theme.dimensions`, `palette.colors` and `palette.colorsDevices`
+ * handoff's on top: inside the panel `theme.dimensions`, and `palette.colors`
  * still exist, and any common/ component rendered there works. Menus, tooltips and dialogs render in
  * portals, which keep the React context, so they pick it up too.
  *

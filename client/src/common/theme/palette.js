@@ -42,6 +42,13 @@ export const STATUS = {
   info: lightBlue[800],
 };
 
+/**
+ * Drawn geometry on the map: geofences, accuracy circles, live routes, mapbox-gl-draw's shapes (it is
+ * draw's own default blue). A constant, not only `palette.geometry`, for map/draw/theme.js, which
+ * is a static style list with no theme.
+ */
+export const GEOMETRY = '#3bb2d0';
+
 const DARK_TEXT = 'rgba(0, 0, 0, 0.87)';
 
 /** The text colour that reads best on `background`: white or the theme's dark text. */
@@ -60,19 +67,8 @@ export default () => {
     medium: amber[700],
     negative: red[500],
     neutral: grey[500],
-    geometry: '#3bb2d0',
   };
 
-  const colorsDevices = {
-    0: '#F34C28',
-    1: '#F39A28',
-    2: '#1EC910',
-    3: '#1012C9',
-    4: '#C310C9',
-    5: '#1FDBF1',
-    6: '#F6FD04',
-    7: '#808080',
-  };
   return {
     background: {
       default: colors.background,
@@ -88,7 +84,7 @@ export default () => {
       main: colors.neutral,
     },
     geometry: {
-      main: colors.geometry,
+      main: GEOMETRY,
     },
     success: {
       main: colors.positive,
@@ -98,6 +94,5 @@ export default () => {
     },
     status: STATUS,
     colors,
-    colorsDevices,
   };
 };

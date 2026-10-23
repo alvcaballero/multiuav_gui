@@ -103,7 +103,7 @@ export const geofenceToFeature = (theme, item) => {
     geometry,
     properties: {
       name: item.name,
-      color: item.attributes?.color || theme.palette.colors.geometry,
+      color: item.attributes?.color || theme.palette.geometry.main,
       // `geofences-line` reads width and opacity off the feature. Nothing ever wrote
       // them, so the expression resolved to null: silently defaulted by v5, warned
       // about on every style validation by v6. The defaults below are the values it
