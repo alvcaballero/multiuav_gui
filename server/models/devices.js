@@ -12,6 +12,7 @@ import { logger } from '../common/logger.js';
 import { readDataFile } from '../common/utils.js';
 import { DEVICE_STATUS } from '../config/status.js';
 import { telemetryWatchdog } from './inspect/telemetryWatchdog.js';
+import { categoryModel } from './category.js';
 
 const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'attributes', 'lastUpdate'];
 const privateFields = ['id', 'name', 'files'];
@@ -356,6 +357,11 @@ export class DevicesModel {
       where: { deletedAt: null },
     });
     for (let device of myDevices) {
+      // A deleted/renamed category leaves the device with no subscriptions at all (ros.js
+      // resolves its config to undefined): say it once at boot instead of staying silent.
+      if (!categoryModel.getCategory(device.category)) {
+        logger.error(`Device ${device.name} (id=${device.id}) has category "${device.category}", which does not exist: it gets no telemetry`);
+      }
       if (StreamServer) {
         await cameraModel.addCameraWebRTC(device);
       }
