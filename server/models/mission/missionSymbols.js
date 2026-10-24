@@ -162,9 +162,7 @@ const SERVICE_TO_PROFILE = {
 
 // Categories whose profile differs from what their serviceType alone implies.
 const CATEGORY_PROFILE_OVERRIDES = {
-  dji_M210_noetic_rtk: 'v1',
   dji_M210_noetic: 'v1',
-  dji_M210_melodic_rtk: 'v1',
   dji_M210_melodic: 'v1',
   px4_mavros: 'v1',
   px4_mavros_slow: 'v1',

@@ -26,26 +26,6 @@
     "SetupCamera",
     "SyncFiles"
   ],
-  "dji_M210_noetic_rtk": [
-    "CommandMission",
-    "Gimbal",
-    "GimbalPitch",
-    "LoadMission",
-    "ResetGimbal",
-    "SaveHome",
-    "SetupCamera",
-    "SyncFiles"
-  ],
-  "dji_M210_melodic_rtk": [
-    "CommandMission",
-    "Gimbal",
-    "GimbalPitch",
-    "LoadMission",
-    "ResetGimbal",
-    "SaveHome",
-    "SetupCamera",
-    "SyncFiles"
-  ],
   "dji_M600": [
     "CameraFileDownload",
     "CameraFileList",
@@ -54,21 +34,6 @@
     "SaveHome"
   ],
   "dji_M300": [
-    "CameraFileDownload",
-    "CameraFileList",
-    "CommandMission",
-    "Gimbal",
-    "GimbalPitch",
-    "LoadMission",
-    "PauseMission",
-    "ResetGimbal",
-    "ResumeMission",
-    "SaveHome",
-    "SetupCamera",
-    "StopMission",
-    "SyncFiles"
-  ],
-  "dji_M300_rtk": [
     "CameraFileDownload",
     "CameraFileList",
     "CommandMission",

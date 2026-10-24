@@ -45,13 +45,10 @@ modelCache.set('default', { scene: defaultModel });
 export const modelKey = (category) => {
   switch (category) {
     case 'dji_M210_noetic':
-    case 'dji_M210_melodic_rtk':
     case 'dji_M210_melodic':
-    case 'dji_M210_noetic_rtk':
     case 'dji_M600':
       return 'drone';
     case 'dji_M300':
-    case 'dji_M300_rtk':
       return 'm300';
     default:
       return modelPaths.hasOwnProperty(category) ? category : 'default';

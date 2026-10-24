@@ -57,12 +57,9 @@ export const frontIcons = {
 export const mapIconKey = (category) => {
   switch (category) {
     case 'dji_M210_noetic':
-    case 'dji_M210_melodic_rtk':
     case 'dji_M210_melodic':
-    case 'dji_M210_noetic_rtk':
       return 'dji_M210';
     case 'dji_M300':
-    case 'dji_M300_rtk':
       return 'dji_M300';
     default:
       return mapIcons.hasOwnProperty(category) ? category : 'default';

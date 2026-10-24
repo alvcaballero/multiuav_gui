@@ -22,11 +22,7 @@ missionTypes:
             [
               'dji_M210_noetic',
               'dji_M210_melodic',
-              'dji_M210_noetic_rtk',
-              'dji_M21_melodic_rtk',
-              'dji_M210_noetic_rtk',
               'dji_M300',
-              'dji_M300_rtk',
               'px4',
             ]
       settings:
@@ -78,11 +74,7 @@ missionTypes:
             [
               'dji_M210_noetic',
               'dji_M210_melodic',
-              'dji_M210_noetic_rtk',
-              'dji_M21_melodic_rtk',
-              'dji_M210_noetic_rtk',
               'dji_M300',
-              'dji_M300_rtk',
               'dji_M300_PSDK',
               'px4_ros2',
             ]
@@ -184,11 +176,7 @@ missionTypes:
             [
               'dji_M210_noetic',
               'dji_M210_melodic',
-              'dji_M210_noetic_rtk',
-              'dji_M21_melodic_rtk',
-              'dji_M210_noetic_rtk',
               'dji_M300',
-              'dji_M300_rtk',
             ]
           default: ''
       settings:
