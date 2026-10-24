@@ -33,7 +33,7 @@ dji_M210_noetic:
     position: # GNSS; position_rtk wins while it is fresh (priority / fresh_ms)
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-      attribute: position_gps
+      attribute: position_gnss
       priority: 0
       fresh_ms: 3000
     position_rtk: # no RTK on the device -> silent forever, so no watchdog
@@ -90,7 +90,7 @@ dji_M210_melodic:
     position: # GNSS; position_rtk wins while it is fresh (priority / fresh_ms)
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-      attribute: position_gps
+      attribute: position_gnss
       priority: 0
       fresh_ms: 3000
     position_rtk: # no RTK on the device -> silent forever, so no watchdog
@@ -183,7 +183,7 @@ dji_M300:
     position: # GNSS; position_rtk wins while it is fresh (priority / fresh_ms)
       name: '/dji_osdk_ros/gps_position'
       messageType: 'sensor_msgs/NavSatFix'
-      attribute: position_gps
+      attribute: position_gnss
       priority: 0
       fresh_ms: 3000
     position_rtk: # no RTK on the device -> silent forever, so no watchdog
