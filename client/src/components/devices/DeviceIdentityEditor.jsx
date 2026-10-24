@@ -16,8 +16,10 @@ import { makeStyles } from 'tss-react/mui';
 import SelectField from '../../common/components/SelectField';
 import { useAsyncTask } from '../../reactHelper';
 import {
+  VEHICLE_TYPE_LABELS,
   hasCapability,
   isMavlink,
+  vehicleTypesOf,
   protocolsFor,
   systemIdError,
   withCapability,
@@ -103,6 +105,11 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
   const [interfaces, setInterfaces] = useState(null);
   const [protocols, setProtocols] = useState(null);
   const [catalog, setCatalog] = useState(null);
+  // The vehicle-type filter of the model list. Until the user picks one, it is the type of the model
+  // the device already has (editing), or none (all models).
+  const [vehicleType, setVehicleType] = useState(undefined); // undefined = untouched, null = all
+  const currentModel = models?.find((m) => m.name === value.deviceModel);
+  const shownType = vehicleType !== undefined ? vehicleType : (currentModel?.vehicleType ?? null);
 
   useAsyncTask(async ({ signal }) => {
     setModels(await fetchJson('/api/device-models', signal));
@@ -145,20 +152,43 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
           onChange={(event) => set({ name: event.target.value })}
           helperText="The name must be unique, it will be used to identify the device, must to be the same of that device's name_space or device's identificator ,it is recommended to use the format uav_XXXX in case of using a UAV"
         />
+        {/* Only narrows the model list: the type is the model's. Picking another type drops a model
+            that is not of it. Empty = every type. */}
+        <SelectField
+          emptyValue=""
+          emptyTitle="All"
+          value={shownType ?? ''}
+          onChange={(e) => {
+            const type = e.target.value || null;
+            setVehicleType(type);
+            if (type && currentModel && currentModel.vehicleType !== type)
+              onChange(withModel(value, null));
+          }}
+          data={models ? vehicleTypesOf(models).map((type) => ({ type })) : undefined}
+          keyGetter={(it) => it.type}
+          titleGetter={(it) => VEHICLE_TYPE_LABELS[it.type] ?? it.type}
+          label="Vehicle type "
+        />
         {/* What the device IS: grouped by vehicle type on the server, generic last in each. */}
         <SelectField
           emptyValue=""
           value={value.deviceModel ?? ''}
           onChange={(e) => onChange(withModel(value, e.target.value || null))}
-          data={models ?? undefined}
+          data={
+            models ? models.filter((m) => !shownType || m.vehicleType === shownType) : undefined
+          }
           keyGetter={(it) => it.name}
-          titleGetter={(it) => `${it.label ?? it.name} · ${it.vehicleType}`}
+          titleGetter={(it) =>
+            shownType
+              ? (it.label ?? it.name)
+              : `${it.label ?? it.name} · ${VEHICLE_TYPE_LABELS[it.vehicleType] ?? it.vehicleType}`
+          }
           label="Model "
         />
         <DeviceCapabilitiesEditor
           value={value}
           onChange={onChange}
-          model={models?.find((m) => m.name === value.deviceModel)}
+          model={currentModel}
           catalog={catalog}
         />
         {value.deviceModel && (

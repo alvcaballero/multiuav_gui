@@ -8,6 +8,8 @@ import {
   withCategory,
   withModel,
   withProtocol,
+  vehicleTypesOf,
+  VEHICLE_TYPE_LABELS,
 } from '../../client/src/components/devices/deviceIdentity.js';
 
 // The device form picks name → model → interface → protocol, and a change clears what depended on
@@ -85,5 +87,20 @@ describe('device capabilities (client)', () => {
     const item = { ...x500OnMavlink, attributes: { systemId: 1, capabilities: { gimbal: true } } };
     assert.deepEqual(withProtocol(item, 'ros').attributes, { capabilities: { gimbal: true } });
     assert.deepEqual(withModel(item, 'standard_vtol').attributes, {});
+  });
+});
+
+describe('vehicle type filter (client)', () => {
+  test('only the types that have models, in the form order; an unknown one goes last under its key', () => {
+    const models = [{ vehicleType: 'ugv' }, { vehicleType: 'multirotor' }, { vehicleType: 'submarine' }, { vehicleType: 'multirotor' }];
+    assert.deepEqual(vehicleTypesOf(models), ['multirotor', 'ugv', 'submarine']);
+    assert.deepEqual(vehicleTypesOf(null), []);
+  });
+});
+
+describe('VEHICLE_TYPE_LABELS mirrors the server', () => {
+  test('every server vehicle type has its label, and no label names a type the server lacks', async () => {
+    const { VEHICLE_TYPE } = await import('../config/status.js');
+    assert.deepEqual(Object.keys(VEHICLE_TYPE_LABELS).sort(), Object.values(VEHICLE_TYPE).sort());
   });
 });

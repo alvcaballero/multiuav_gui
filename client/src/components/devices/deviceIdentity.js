@@ -8,6 +8,25 @@
 
 export const isMavlink = (protocol) => protocol === 'mavlink';
 
+// The vehicle types of the server (config/status.js VEHICLE_TYPE), in the order the form offers them,
+// with the text to show. Only a FILTER of the model list: a device's type is its model's, never
+// stored. A type the server adds and this map lacks still shows, under its raw key, after these.
+export const VEHICLE_TYPE_LABELS = {
+  multirotor: 'Multirotor',
+  vtol: 'VTOL',
+  fixed_wing: 'Fixed wing',
+  flapping_wing: 'Flapping wing (ornithopter)',
+  ugv: 'Ground vehicle (UGV)',
+  usv: 'Surface vessel (USV)',
+};
+
+/** The vehicle types that have at least one model (GET /api/device-models), in VEHICLE_TYPE_LABELS order. */
+export function vehicleTypesOf(models) {
+  const present = new Set((models ?? []).map((m) => m.vehicleType));
+  const known = Object.keys(VEHICLE_TYPE_LABELS).filter((t) => present.has(t));
+  return [...known, ...[...present].filter((t) => !(t in VEHICLE_TYPE_LABELS)).sort()];
+}
+
 // The message format a protocol carries (server: MESSAGE_FORMAT). The protocols are four, each with
 // its own gateway; ros, mqtt and robofleet carry the same ROS-shaped messages, mavlink carries MAVLink.
 export const messageFormat = (protocol) => (isMavlink(protocol) ? 'mavlink' : 'ros_msg');
