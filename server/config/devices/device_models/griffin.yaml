@@ -1,0 +1,4 @@
+vehicleType: flapping_wing
+firmware: [ ardupilot ]
+label: 'GRIFFIN ornithopter'
+icon: griffin

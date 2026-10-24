@@ -1,6 +1,7 @@
 firmwares: [ dji ]
 vehicleTypes: [ multirotor ]
 control: companion
+defaultModel: dji_M210
 mission: v1 # ConfigMission, but the M210 firmware only runs the v1 profile
 subscribers:
   position:

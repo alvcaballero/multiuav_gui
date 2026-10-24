@@ -1,6 +1,7 @@
 firmwares: [ dji ]
 vehicleTypes: [ multirotor ]
 control: companion
+defaultModel: dji_M300
 subscribers:
   position:
     # GNSS; position_rtk wins while it is fresh (priority / fresh_ms)

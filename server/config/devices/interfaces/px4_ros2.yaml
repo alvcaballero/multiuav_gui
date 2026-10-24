@@ -1,6 +1,7 @@
 firmwares: [ px4 ]
 vehicleTypes: [ multirotor, vtol, fixed_wing ]
 control: autopilot
+defaultModel: x500
 # PX4 with message versioning: some topics carry a version suffix (vehicle_status_v4).
 # Check `ros2 topic list` against these names when the PX4 version changes.
 

@@ -13,8 +13,9 @@ import { readDataFile } from '../common/utils.js';
 import { DEVICE_STATUS } from '../config/status.js';
 import { telemetryWatchdog } from './inspect/telemetryWatchdog.js';
 import { categoryModel } from './category.js';
+import { deviceModelsModel } from './deviceModels/deviceModels.js';
 
-const publicFields = ['id', 'name', 'category', 'camera', 'status', 'protocol', 'attributes', 'lastUpdate'];
+const publicFields = ['id', 'name', 'category', 'deviceModel', 'camera', 'status', 'protocol', 'attributes', 'lastUpdate'];
 const privateFields = ['id', 'name', 'files'];
 
 // File-download presets (path, folder type, delete, srvDownload) shared by every
@@ -112,7 +113,12 @@ export class DevicesModel {
       where: { deletedAt: null },
     });
     // `telemetry`: the slots that stopped (or never started) arriving — see telemetryWatchdog.js
-    const plain = mydevices.map((d) => ({ ...d.dataValues, telemetry: telemetryWatchdog.statusOf(d.id) }));
+    // `platform`: what the client draws it as (vehicle type, icon, 3D model), from its device model.
+    const plain = mydevices.map((d) => ({
+      ...d.dataValues,
+      telemetry: telemetryWatchdog.statusOf(d.id),
+      platform: deviceModelsModel.platformOf(d.deviceModel),
+    }));
     if (query) {
       if (Array.isArray(query)) {
         return plain.filter((device) => query.some((element) => device.id == element));
@@ -242,6 +248,7 @@ export class DevicesModel {
       myDevice = await sequelize.models.Device.create({
         name: device.name,
         category: device.category,
+        deviceModel: device.deviceModel,
         status: DEVICE_STATUS.OFFLINE,
         camera: device.camera,
         files: device.files,
@@ -295,8 +302,13 @@ export class DevicesModel {
     return response;
   }
 
-  static async editDevice({ id, name, category, camera, files, protocol, attributes }) {
+  static async editDevice({ id, name, category, deviceModel, camera, files, protocol, attributes }) {
     let myDevice = await sequelize.models.Device.findOne({ where: { id: id }, raw: false });
+    // Already checked against the category it leaves with by the controller.
+    if (deviceModel && deviceModel !== myDevice.deviceModel) {
+      logger.debug(`Device ${id}: changing device model to ${deviceModel}`);
+      myDevice.deviceModel = deviceModel;
+    }
     if (protocol && protocol !== myDevice.protocol) {
       logger.debug(`Device ${id}: changing protocol to ${protocol}`);
       myDevice.protocol = protocol;
@@ -351,9 +363,23 @@ export class DevicesModel {
     await sequelize.models.Device.update({ deletedAt: new Date() }, { where: { id: id } });
   }
 
+  // A device from before device models (the column was added empty) gets its category's default,
+  // once, and says so; one whose model is unknown or no longer fits its category is reported (it
+  // keeps working: the model only says what it is, not how it is talked to).
+  static async #checkDeviceModel(device) {
+    if (!device.deviceModel) {
+      const deviceModel = deviceModelsModel.defaultFor(device.category);
+      await sequelize.models.Device.update({ deviceModel }, { where: { id: device.id } });
+      logger.info(`Device ${device.name} (id=${device.id}): no device model, set to its category's default '${deviceModel}'`);
+      return;
+    }
+    const problem = deviceModelsModel.deviceProblem(device);
+    if (problem) logger.warn(`Device ${device.name} (id=${device.id}): ${problem.message}`);
+  }
+
   static async addAllUAV() {
     const myDevices = await sequelize.models.Device.findAll({
-      attributes: ['id', 'name', 'category', 'camera', 'status', 'protocol'],
+      attributes: ['id', 'name', 'category', 'deviceModel', 'camera', 'status', 'protocol'],
       where: { deletedAt: null },
     });
     for (let device of myDevices) {
@@ -361,6 +387,8 @@ export class DevicesModel {
       // resolves its config to undefined): say it once at boot instead of staying silent.
       if (!categoryModel.getCategory(device.category)) {
         logger.error(`Device ${device.name} (id=${device.id}) has category "${device.category}", which does not exist: it gets no telemetry`);
+      } else {
+        await DevicesModel.#checkDeviceModel(device);
       }
       if (StreamServer) {
         await cameraModel.addCameraWebRTC(device);

@@ -1,0 +1,4 @@
+# Fallback for a multirotor whose model nobody declared: no physics, compatible with any firmware.
+vehicleType: multirotor
+label: 'Multirotor (generic)'
+icon: drone

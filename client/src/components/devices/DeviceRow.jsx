@@ -26,7 +26,7 @@ import {
   getStatusColor,
 } from '../../common/util/formatter';
 import { armLabel, phaseLabel } from '../../common/util/vehicleState';
-import { mapIconKey, mapIcons } from '../../map/core/preloadImages';
+import { deviceIconKey, mapIcons } from '../../map/core/preloadImages';
 import EngineIcon from '../../resources/images/data/engine.svg';
 import { makeStyles } from 'tss-react/mui';
 
@@ -170,7 +170,7 @@ const DeviceRow = ({ devices, index, style }) => {
       >
         <ListItemAvatar>
           <Avatar>
-            <img className={classes.icon} src={mapIcons[mapIconKey(item.category)]} alt="" />
+            <img className={classes.icon} src={mapIcons[deviceIconKey(item)]} alt="" />
           </Avatar>
         </ListItemAvatar>
         <ListItemText

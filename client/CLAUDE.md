@@ -46,6 +46,11 @@ client/
     │   │                   #   GET /api/category?protocol=&details=true (see server/CLAUDE.md › Protocol vs message
     │   │                   #   format): objects, each variant listed after the category it `extends` (its `root`).
     │   │                   #   The category editor (settings/SettingsCategoryPageEdit) loads `/raw`, the file as written.
+    │   │                   #   Then the device MODEL (what it is): GET /api/device-models?category=, only the ones
+    │   │                   #   the category can drive, its default first (auto-selected); `withCategory()` clears it
+    │   │                   #   when the category changes. A device is DRAWN by `device.platform` (icon, model3d,
+    │   │                   #   vehicleType, from its model): `deviceIconKey(device)` / `getModelPath(platform.model3d)`,
+    │   │                   #   never by the category name.
     │   │                   #   A device has no `ip`: a camera's address is `camera[].host`, in DeviceCameraEditor
     │   │                   #   (required unless Websocket). See "Device attributes" below
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking

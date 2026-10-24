@@ -116,6 +116,9 @@ const migrations = [
   // stored the same way as icon/model3d — a URL pointing at the asset on
   // disk, not the content itself.
   `ALTER TABLE ElementTypes ADD COLUMN definitionYaml TEXT DEFAULT NULL`,
+  // What the device IS (config/devices/device_models/), next to its category (how it is talked to).
+  // A device left null by this migration gets its category's default at boot (DevicesModel.addAllUAV).
+  `ALTER TABLE Devices ADD COLUMN deviceModel TEXT DEFAULT NULL`,
 ];
 
 for (const sql of migrations) {

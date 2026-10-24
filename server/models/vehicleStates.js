@@ -1,4 +1,4 @@
-import { ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE, COMMAND_RESULT } from '../config/status.js';
+import { ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE, COMMAND_RESULT, VEHICLE_TYPE } from '../config/status.js';
 
 // A firmware's own state codes -> the GCS vocabulary (ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE in
 // config/status.js). One adapter per message that carries them, used by that message's decoder.
@@ -74,6 +74,20 @@ const MAV_AUTOPILOT_PX4 = 12;
 // MAV_TYPE of the multirotors ArduCopter flies (quad, coaxial, heli, hexa, octo, tri, dodeca,
 // deca). Plane and Rover number their modes differently: they fall to OTHER.
 const COPTER_TYPES = new Set([2, 3, 4, 13, 14, 15, 29, 35]);
+
+// MAV_TYPE (HEARTBEAT.type) → the GCS vehicle type. 1 FIXED_WING; 10 GROUND_ROVER; 11 SURFACE_BOAT;
+// 19..25 the VTOL family (tailsitters, tiltrotor, fixed rotor, tiltwing). Anything else (a submarine,
+// a gimbal, an antenna tracker) says nothing about it: null.
+const MAV_VTOL_TYPES = new Set([19, 20, 21, 22, 23, 24, 25]);
+
+export function vehicleTypeOfMavType(type) {
+  if (COPTER_TYPES.has(type)) return VEHICLE_TYPE.MULTIROTOR;
+  if (MAV_VTOL_TYPES.has(type)) return VEHICLE_TYPE.VTOL;
+  if (type === 1) return VEHICLE_TYPE.FIXED_WING;
+  if (type === 10) return VEHICLE_TYPE.UGV;
+  if (type === 11) return VEHICLE_TYPE.USV;
+  return null;
+}
 
 export const mavlinkArmState = (baseMode) =>
   baseMode == null ? ARM_STATE.UNKNOWN : baseMode & MAV_MODE_FLAG_SAFETY_ARMED ? ARM_STATE.ARMED : ARM_STATE.DISARMED;

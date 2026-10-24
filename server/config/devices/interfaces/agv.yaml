@@ -1,6 +1,7 @@
 firmwares: [ nav2 ]
 vehicleTypes: [ ugv ]
 control: companion
+defaultModel: bcr_bot
 subscribers:
   position:
     name: '/odom'

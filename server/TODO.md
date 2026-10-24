@@ -157,6 +157,14 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
     El cambio de fuente NO genera Event (fila en DB + snackbar por cada vaivén del fix RTK): si hace falta avisar
     al operador, mejor un chip en el cliente que lea `positionSource` / `position_rtk.at`
 
+- [ ] **Verificar los datos físicos de los device models**
+  - `config/devices/device_models/_dji_rotorcraft.yaml` (y `dji_M600`): masa, rotores, coeficientes
+    aerodinámicos, batería, velocidades y rangos de los sensores de obstáculos se copiaron TAL CUAL del
+    viejo `devices.yaml`, donde todos los modelos tenían los mismos números (7.2 kg, rotor 0.226 m…)
+  - Los usa el modelo de energía de Smart-Flies-MUAVPlanner (F6 del plan): un dato falso planifica mal
+    sin avisar. Contrastar con las fichas de DJI (M210, M300, M600) y medir lo que no esté
+  - Los demás modelos (x500, standard_vtol, fuvex, catec, griffin…) no tienen física todavía
+
 - [ ] **Verificar la interfaz `sjtu` contra el simulador real** (para más adelante)
   - sjtu_drone (github.com/NovoG93/sjtu_drone): quadrotor de Gazebo en ROS 2 con su propio plugin de
     control (PIDs), sin PX4/ArduPilot → `firmwares: [custom]`. Copia local en `/home/grvc/work/sjtu_drone`

@@ -1,3 +1,4 @@
+defaultModel: sjtu_drone
 firmwares: [ custom ]
 vehicleTypes: [ multirotor ]
 subscribers:

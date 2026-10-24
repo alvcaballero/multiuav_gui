@@ -1,6 +1,7 @@
 firmwares: [ dji ]
 vehicleTypes: [ multirotor ]
 control: companion
+defaultModel: dji_M600
 mission: default # no waypoint actions/params beyond the default profile
 subscribers:
   position:

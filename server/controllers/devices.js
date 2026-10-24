@@ -1,6 +1,7 @@
 import { validateDevice, validatePartialDevice, validateDeviceAttributes, pruneAttributes } from '../schemas/zod/devices.js';
 import { DevicesModel } from '../models/devices.js';
 import { categoryModel } from '../models/category.js';
+import { deviceModelsModel } from '../models/deviceModels/deviceModels.js';
 import { logger } from '../common/logger.js';
 import { telemetryWatchdog } from '../models/inspect/telemetryWatchdog.js';
 
@@ -78,9 +79,13 @@ class devicesController {
       return res.status(400).json({ error: JSON.parse(result.error.message) });
     }
     // zod checks the shape; whether the category can work with the protocol needs the category
-    // config, and schemas do not import models.
-    const problem = categoryModel.deviceProblem(result.data) ?? (await systemIdTaken(result.data));
+    // config, and schemas do not import models. A device created without a model (MCP, ExtApp, an
+    // old client) gets its category's default.
+    const device = { ...result.data, deviceModel: result.data.deviceModel ?? deviceModelsModel.defaultFor(result.data.category) };
+    const problem =
+      categoryModel.deviceProblem(device) ?? deviceModelsModel.deviceProblem(device) ?? (await systemIdTaken(device));
     if (problem) return res.status(400).json({ error: [problem] });
+    result.data = device;
 
     const newDevice = await DevicesModel.create(result.data);
     res.status(201).json(newDevice);
@@ -117,6 +122,7 @@ class devicesController {
     const leaving = {
       protocol: result.data.protocol ?? current.protocol ?? 'ros',
       category: result.data.category ?? current.category,
+      deviceModel: result.data.deviceModel ?? current.deviceModel,
     };
     // Stored attributes that no longer apply to the device it becomes (e.g. mavlink's after a protocol
     // change) are dropped; the ones sent in this edit are merged on top and must all apply.
@@ -127,7 +133,12 @@ class devicesController {
       return res.status(400).json({ error });
     }
     leaving.attributes = attributes.data;
-    const problem = categoryModel.deviceProblem(leaving) ?? (await systemIdTaken(leaving, id));
+    // A category change keeps the model unless one is sent: if it does not fit the new category, the
+    // edit says so instead of leaving a device that is something its interface cannot drive.
+    const problem =
+      categoryModel.deviceProblem(leaving) ??
+      (leaving.deviceModel ? deviceModelsModel.deviceProblem(leaving) : null) ??
+      (await systemIdTaken(leaving, id));
     if (problem) return res.status(400).json({ error: [problem] });
     result.data.attributes = attributes.data;
 

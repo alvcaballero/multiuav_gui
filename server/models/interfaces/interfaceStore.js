@@ -1,6 +1,7 @@
-// Files of the interfaces (the "categories" of a device): config/devices/interfaces/<key>.yaml,
-// one per interface. The FILE NAME is the key, so the file system keeps keys unique, and an edit
-// rewrites only its own file. IO only: what a file must contain is interfaceCatalog.js.
+// Files of a YAML catalog, one per definition: the interfaces ("categories",
+// config/devices/interfaces/<key>.yaml) and the device models (config/devices/device_models/).
+// The FILE NAME is the key, so the file system keeps keys unique, and an edit rewrites only its own
+// file. IO only: what a file must contain is interfaceCatalog.js / deviceModelCatalog.js.
 import { readdirSync, readFileSync } from 'node:fs';
 import { writeFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
@@ -13,7 +14,7 @@ export const isInterfaceKey = (key) => typeof key === 'string' && INTERFACE_KEY.
 
 /** The file of `key`, or an Error when `key` could escape `dir` (`../`) or is not a key. */
 function fileOf(dir, key) {
-  if (!isInterfaceKey(key)) throw new Error(`'${key}' is not a valid interface key (${INTERFACE_KEY})`);
+  if (!isInterfaceKey(key)) throw new Error(`'${key}' is not a valid key (${INTERFACE_KEY})`);
   return path.join(dir, `${key}${EXT}`);
 }
 
@@ -34,7 +35,7 @@ export function readInterfaceDir(dir) {
   for (const file of files) {
     const key = file.slice(0, -EXT.length);
     if (!isInterfaceKey(key)) {
-      problems.push({ path: [key], message: `file '${file}' is not named after a valid interface key (${INTERFACE_KEY})` });
+      problems.push({ path: [key], message: `file '${file}' is not named after a valid key (${INTERFACE_KEY})` });
       continue;
     }
     const doc = parseDocument(readFileSync(path.join(dir, file), 'utf8'));

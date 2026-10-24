@@ -1,6 +1,7 @@
 firmwares: [ ardupilot ]
 vehicleTypes: [ multirotor ]
 control: autopilot
+defaultModel: x500
 subscribers:
   vehicle_status:
     messageType: 'mavlink/HEARTBEAT'

@@ -9,6 +9,7 @@
 firmwares: [ px4 ]
 vehicleTypes: [ multirotor, vtol, fixed_wing ]
 control: autopilot
+defaultModel: x500
 subscribers:
   vehicle_status:
     messageType: 'mavlink/HEARTBEAT'

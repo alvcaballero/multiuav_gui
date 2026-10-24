@@ -1,5 +1,6 @@
 import { createDevicesRouter } from './devices.js';
 import { categoryRouter } from './category.js';
+import { deviceModelsRouter } from './deviceModels.js';
 import { positionsRouter } from './positions.js';
 import { eventsRouter } from './events.js';
 import { commandsRouter } from './commands.js';
@@ -17,6 +18,7 @@ import { rosRouter } from './ros.js';
 export function setupRoutes(app) {
   app.use('/api/devices', createDevicesRouter());
   app.use('/api/category', categoryRouter);
+  app.use('/api/device-models', deviceModelsRouter);
   app.use('/api/positions', positionsRouter);
   app.use('/api/events', eventsRouter);
   app.use('/api/commands', commandsRouter);

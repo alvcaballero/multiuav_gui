@@ -1,0 +1,4 @@
+# A ROS 2 ground robot driven by Nav2 (bcr_bot_1, bcr_bot_2).
+vehicleType: ugv
+firmware: [ nav2 ]
+label: 'bcr_bot'

@@ -1,7 +1,8 @@
-// The identity of a device (name, protocol, category, the protocol's own attributes) as the device forms
-// edit it. Mirrors the server: schemas/zod/devices.js (shape) and categoryModel.deviceProblem
+// The identity of a device (name, protocol, category, device model, the protocol's own attributes) as
+// the device forms edit it. Mirrors the server: schemas/zod/devices.js (shape), categoryModel.deviceProblem
 // (the category's message format must be one the protocol carries, a mavlink device needs a
-// system id). The server stays the authority: this only keeps the forms from sending what it
+// system id) and deviceModelsModel.deviceProblem (the model must be one the category can drive: the
+// list only offers those). The server stays the authority: this only keeps the forms from sending what it
 // would reject.
 
 export const isMavlink = (protocol) => protocol === 'mavlink';
@@ -35,9 +36,17 @@ export function isDeviceIdentityValid(item) {
 export function withProtocol(item, protocol) {
   const sameFormat = messageFormat(protocol) === messageFormat(item.protocol);
   return {
-    ...item,
+    ...(sameFormat ? item : withCategory(item, null)),
     protocol,
-    category: sameFormat ? item.category : null,
     attributes: protocol === item.protocol ? (item.attributes ?? {}) : {},
   };
+}
+
+/**
+ * The item after a category change: the device model is cleared, so the model list (only the models
+ * the new category can drive, GET /api/device-models?category=) auto-selects that category's default.
+ * Keeping it could send a model the server refuses for the new category (a DJI M300 on px4_ros2).
+ */
+export function withCategory(item, category) {
+  return category === item.category ? item : { ...item, category, deviceModel: null };
 }

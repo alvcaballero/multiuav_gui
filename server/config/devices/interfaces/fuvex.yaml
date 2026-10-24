@@ -1,6 +1,7 @@
 firmwares: [ px4, ardupilot ]
 vehicleTypes: [ fixed_wing ]
 control: companion
+defaultModel: fuvex
 subscribers:
   position:
     name: '/gps'

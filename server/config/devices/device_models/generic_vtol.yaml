@@ -1,0 +1,4 @@
+# Fallback for a vtol whose model nobody declared: no physics, compatible with any firmware.
+vehicleType: vtol
+label: 'VTOL (generic)'
+icon: plane

@@ -1,6 +1,7 @@
 firmwares: [ px4, ardupilot ]
 vehicleTypes: [ multirotor ]
 control: companion
+defaultModel: catec
 subscribers:
   position:
     name: '/gps'

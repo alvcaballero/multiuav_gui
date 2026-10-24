@@ -1,6 +1,7 @@
 firmwares: [ dji ]
 vehicleTypes: [ multirotor ]
 control: companion
+defaultModel: dji_M300
 subscribers:
   position:
     name: '/psdk_ros2/gps_position_fused'

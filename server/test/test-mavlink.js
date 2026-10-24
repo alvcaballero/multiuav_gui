@@ -10,7 +10,8 @@ import { validateDevice } from '../schemas/zod/devices.js';
 import { commandLong, setMessageInterval, classOfMsgType } from '../models/mavlink/mavlinkMessages.js';
 import { decodeMsg } from '../models/msgDecode.js';
 import { categoryModel } from '../models/category.js';
-import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE, COMMAND_RESULT } from '../config/status.js';
+import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE, COMMAND_RESULT, VEHICLE_TYPE } from '../config/status.js';
+import { vehicleTypeOfMavType } from '../models/vehicleStates.js';
 import {
   packetsOf,
   frame,
@@ -986,5 +987,38 @@ describe('MavlinkServer: mission upload and progress', () => {
     const second = upload();
     assert.match((await first).msg, /superseded/);
     assert.equal((await second).state, 'error');
+  });
+});
+
+describe('mavlink: the vehicle type of the HEARTBEAT vs the device model', () => {
+  const MAV_TYPE_VTOL_TILTROTOR = 21;
+  const run = async (type) => {
+    const { server, feed } = setup({ devicesBySysid: { 1: [{ ...DEVICE, deviceModel: 'x500' }] } });
+    server.deviceModels = { platformOf: (m) => (m === 'x500' ? { vehicleType: VEHICLE_TYPE.MULTIROTOR } : null) };
+    const warned = [];
+    server._warnOnce = (key, msg) => warned.push(msg);
+    feed(heartbeat({ type }), 1);
+    for (let i = 0; i < 5; i++) await tick();
+    return { server, warned };
+  };
+
+  test('MAV_TYPE maps onto the GCS vehicle types; what is not a vehicle says nothing', () => {
+    assert.equal(vehicleTypeOfMavType(minimal.MavType.QUADROTOR), VEHICLE_TYPE.MULTIROTOR);
+    assert.equal(vehicleTypeOfMavType(minimal.MavType.FIXED_WING), VEHICLE_TYPE.FIXED_WING);
+    assert.equal(vehicleTypeOfMavType(MAV_TYPE_VTOL_TILTROTOR), VEHICLE_TYPE.VTOL);
+    assert.equal(vehicleTypeOfMavType(minimal.MavType.GROUND_ROVER), VEHICLE_TYPE.UGV);
+    assert.equal(vehicleTypeOfMavType(minimal.MavType.SURFACE_BOAT), VEHICLE_TYPE.USV);
+    assert.equal(vehicleTypeOfMavType(minimal.MavType.GIMBAL), null);
+  });
+
+  test('a contradiction is reported, never refused: the vehicle still comes online', async () => {
+    const { server, warned } = await run(MAV_TYPE_VTOL_TILTROTOR);
+    assert.equal(server.presenceOf(1), 'online');
+    assert.equal(warned.length, 1);
+    assert.match(warned[0], /MAV_TYPE 21 \(vtol\) but its device model 'x500' is a multirotor/);
+  });
+
+  test('a HEARTBEAT that matches the model says nothing', async () => {
+    assert.deepEqual((await run(minimal.MavType.QUADROTOR)).warned, []);
   });
 });

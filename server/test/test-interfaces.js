@@ -14,7 +14,7 @@ import { categoryModel } from '../models/category.js';
 // endpoint. The identity fields F1 added (and `mission:`, which replaced the per-category
 // override list of missionSymbols.js) are compared apart.
 const golden = JSON.parse(readFileSync(new URL('./api/json/interfaces_golden.json', import.meta.url)));
-const IDENTITY = ['extends', 'firmwares', 'vehicleTypes', 'control', 'mission'];
+const IDENTITY = ['extends', 'firmwares', 'vehicleTypes', 'control', 'defaultModel', 'mission'];
 const endpointsOnly = (def) => Object.fromEntries(Object.entries(def).filter(([key]) => !IDENTITY.includes(key)));
 
 const withDir = (files, fn) => {
@@ -115,7 +115,7 @@ describe('extends', () => {
     });
     assert.deepEqual(Object.keys(catalog), ['ok']);
     const messages = Object.fromEntries(problems.map((p) => [String(p.path[0]), p.message]));
-    assert.equal(messages.orphan, "extends unknown interface 'nobody'");
+    assert.equal(messages.orphan, "extends unknown 'nobody'");
     assert.match(messages.b ?? messages.a, /^cycle: /);
     assert.equal(messages.child, "not loaded because its parent 'broken' is invalid");
   });
@@ -186,7 +186,7 @@ describe('readInterfaceDir', () => {
       const { raw, problems } = readInterfaceDir(dir);
       assert.deepEqual(raw, {});
       assert.equal(problems.length, 1);
-      assert.match(problems[0].message, /not named after a valid interface key/);
+      assert.match(problems[0].message, /not named after a valid key/);
     });
   });
 
@@ -207,7 +207,7 @@ describe('readInterfaceDir', () => {
 
   test('writeInterfaceFile refuses a key that could leave the folder', async () => {
     await withDir({}, async (dir) => {
-      await assert.rejects(writeInterfaceFile(dir, '../escape', {}), /not a valid interface key/);
+      await assert.rejects(writeInterfaceFile(dir, '../escape', {}), /not a valid key/);
     });
   });
 });

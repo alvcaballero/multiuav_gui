@@ -1,0 +1,4 @@
+vehicleType: fixed_wing
+firmware: [ px4 ]
+label: 'FuVeX'
+icon: fuvex

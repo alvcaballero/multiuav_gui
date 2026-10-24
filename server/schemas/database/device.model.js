@@ -21,6 +21,11 @@ const DeviceSchema = {
   protocol: {
     type: DataTypes.STRING,
   },
+  // What the device is (config/devices/device_models/<key>.yaml); `category` is how it is talked to.
+  deviceModel: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   // Settings specific to each device that depend on something else about it, e.g. its protocol
   // (mavlink: { systemId }). Which keys apply when lives in schemas/zod/devices.js (ATTRIBUTE_GROUPS).
   attributes: {

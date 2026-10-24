@@ -2,7 +2,7 @@ import { useId, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { map } from '../core/mapInstance';
 import { formatTime, getStatusColor } from '../../common/util/formatter';
-import { mapIconKey } from '../core/preloadImages';
+import { deviceIconKey } from '../core/preloadImages';
 import { findFonts } from '../core/mapUtil';
 import { deviceRouteColorKey } from '../../common/util/styles/routeColors';
 //import { useAttributePreference, usePreference } from '../../common/util/preferences';
@@ -46,7 +46,7 @@ const MapPositions = ({ positions, onClick, showStatus, selectedPosition, titleF
         deviceId: position.deviceId,
         name: device.name,
         fixTime: formatTime(position.fixTime, 'seconds', hours12),
-        category: mapIconKey(device.category),
+        category: deviceIconKey(device),
         color: showStatus ? getStatusColor(device.status) : 'neutral',
         rotation: position.course,
         direction: showDirection,

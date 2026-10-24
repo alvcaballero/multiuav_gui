@@ -200,6 +200,27 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
 - MAVLink: el HEARTBEAT (`MAV_TYPE`, `autopilot`) se compara con el modelo declarado. Si no coinciden,
   warning (no se rechaza).
 
+#### Estado F2 (2026-10-24): hecho
+
+- 17 archivos en `config/devices/device_models/`: un `generic_<tipo>` por cada uno de los 6 tipos,
+  `_dji_rotorcraft` (abstracto) → `dji_M210`, `dji_M300`, `dji_M600`; `x500` (px4, ardupilot),
+  `standard_vtol` (px4), `fuvex` (ala fija, px4), `catec` (px4), `griffin` (ornitóptero, ardupilot),
+  `sjtu_drone` (custom), `bcr_bot` (ugv, nav2).
+- El firmware que CORRE un vehículo está en su modelo; la interfaz dice cuáles puede manejar (mavros: los dos).
+- `defaultModel` en las interfaces (px4_* y mavlink → x500; las DJI → su modelo; agv → bcr_bot…).
+  `px4_mavros` (y por herencia `_slow`) sirve ahora `[multirotor, vtol]`.
+- Los datos físicos de los DJI son copias sin verificar del viejo `devices.yaml` (TODO). Se borraron de
+  `devices.yaml` (quedan `camera` y los presets de `files`). No se pasaron a fuvex/catec/px4: eran el mismo
+  M210 copiado (4 rotores en un ala fija).
+- Formulario: nombre → protocolo → interfaz → **modelo** (filtrado, default preseleccionado).
+  Mapa, lista de devices y 3D se dibujan por `device.platform` (adiós a los `switch` por categoría).
+  Arreglado de paso: `px4` se dibujaba como avión.
+- Migración: columna `Device.deviceModel` (aditiva) + relleno en el boot con el default de su
+  interfaz. Probado en una copia de la DB local: 16 devices, idempotente. **`vtol_1` queda como `x500`**
+  (default de `px4_mavros_slow`): hay que pasarlo a `standard_vtol` desde el formulario.
+- No entró (a propósito): `vehicle_types.yaml` con la semántica por tipo (F4/F5) y mandarle el modelo a
+  Smart-Flies, que hoy indexa su propio `files/devices.yaml` por NOMBRE DE CATEGORÍA (F6).
+
 ### F3 · Capacidades
 
 - `capabilities.yaml` (catálogo) y el bloque `capabilities` del modelo, validados al bootear. Una capacidad

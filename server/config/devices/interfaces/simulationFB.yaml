@@ -6,6 +6,7 @@
 firmwares: [ dji ]
 vehicleTypes: [ multirotor ]
 control: companion
+defaultModel: dji_M300
 subscribers:
   position:
     name: '/gps_position'

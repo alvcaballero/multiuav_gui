@@ -1,6 +1,7 @@
 firmwares: [ px4, ardupilot ]
-vehicleTypes: [ multirotor ]
+vehicleTypes: [ multirotor, vtol ]
 control: companion
+defaultModel: x500
 mission: v1
 subscribers:
   position:

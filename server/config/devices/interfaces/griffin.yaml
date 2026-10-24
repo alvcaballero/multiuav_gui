@@ -1,6 +1,7 @@
 firmwares: [ px4, ardupilot ]
 vehicleTypes: [ flapping_wing ]
 control: companion
+defaultModel: griffin
 subscribers:
   position:
     name: '/mavros/global_position/global'

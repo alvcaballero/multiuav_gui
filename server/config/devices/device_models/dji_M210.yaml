@@ -1,0 +1,4 @@
+extends: _dji_rotorcraft
+label: 'DJI Matrice 210'
+icon: dji_M210
+model3d: drone

@@ -1,0 +1,29 @@
+# Shared by the DJI models. ⚠ NOT VERIFIED: copied as-is from the old config/devices/devices.yaml,
+# where every model carried the same numbers (see TODO.md "Verificar los datos físicos").
+abstract: true
+vehicleType: multirotor
+firmware: [ dji ]
+physics:
+  mass: 7.2 # kg
+  number_of_rotors: 4
+  rotor_blades: 2
+  rotor_radius: 0.226 # m
+  blade_chord: 0.0247 # m, at 0.7 R
+  lift_coefficient: 1.01
+  draft_coefficient: 0.01
+  induced_power_factor: 1.15
+  energy_efficiency: 0.72
+  P0_numerical_constant: 4.65
+  equivalent_flat_plate_area: 0.32 # m²
+battery:
+  number: 2
+  capacity: 80000 # mAh
+  number_of_cells: 4
+  voltage_per_cell: 3.9 # V
+speeds:
+  mission: 7 # m/s
+  navigation: 15 # m/s
+obstacle_sensor: # [min, max] m
+  down: [ 0, 15 ]
+  front: [ 0, 30 ]
+  up: [ 0, 20 ]

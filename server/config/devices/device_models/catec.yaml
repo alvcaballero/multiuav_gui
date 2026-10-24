@@ -1,0 +1,4 @@
+vehicleType: multirotor
+firmware: [ px4 ]
+label: 'CATEC'
+icon: catec

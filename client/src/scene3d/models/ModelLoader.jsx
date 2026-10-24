@@ -42,21 +42,12 @@ const defaultModel = new THREE.Group();
 defaultModel.add(redCube);
 modelCache.set('default', { scene: defaultModel });
 
-export const modelKey = (category) => {
-  switch (category) {
-    case 'dji_M210_noetic':
-    case 'dji_M210_melodic':
-    case 'dji_M600':
-      return 'drone';
-    case 'dji_M300':
-      return 'm300';
-    default:
-      return modelPaths.hasOwnProperty(category) ? category : 'default';
-  }
-};
+// `key` is a modelPaths key: a device's `platform.model3d` (from its device model, see
+// config/devices/device_models/ on the server), an element type or 'base'. Unknown → the red cube.
+export const modelKey = (key) => (Object.hasOwn(modelPaths, key ?? '') ? key : 'default');
 
-export const getModelPath = (category) => {
-  return modelPaths[modelKey(category)];
+export const getModelPath = (key) => {
+  return modelPaths[modelKey(key)];
 };
 
 const getModel = async (type) => {

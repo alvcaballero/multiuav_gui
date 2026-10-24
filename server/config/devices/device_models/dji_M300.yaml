@@ -1,0 +1,8 @@
+extends: _dji_rotorcraft
+label: 'DJI Matrice 300'
+icon: dji_M300
+model3d: m300
+obstacle_sensor: # [min, max] m; the M300 also senses to the sides and back
+  left: [ 0, 12 ]
+  back: [ 0, 12 ]
+  right: [ 0, 12 ]

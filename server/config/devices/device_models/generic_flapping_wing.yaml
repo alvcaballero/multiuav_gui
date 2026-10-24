@@ -1,0 +1,4 @@
+# Fallback for a flapping_wing whose model nobody declared: no physics, compatible with any firmware.
+vehicleType: flapping_wing
+label: 'Flapping wing (generic)'
+icon: griffin

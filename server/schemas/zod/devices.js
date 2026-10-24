@@ -85,6 +85,8 @@ export const DeviceSchema = z.object({
   id: z.coerce.string().optional(),
   name: z.string(),
   category: z.string(),
+  // config/devices/device_models/<key>.yaml. Optional (null = not chosen): a device created without it gets its category's default.
+  deviceModel: z.string().nullish(),
   protocol: DEVICE_PROTOCOL.default('ros'),
   // Shape depends on the device (protocol, category…): checked by validateDevice / the controller, see ATTRIBUTE_GROUPS.
   attributes: z.record(z.unknown()).nullable().optional(),
@@ -98,6 +100,7 @@ export const DevicePublicSchema = DeviceSchema.pick({
   id: true,
   name: true,
   category: true,
+  deviceModel: true,
   camera: true,
   status: true,
   protocol: true,

@@ -3,6 +3,7 @@
 // What a slot or a command means (decoders, command registry) is checked by category.js on top.
 import { interfaceShapeProblems } from '../../schemas/zod/interface.js';
 import { readInterfaceDir } from './interfaceStore.js';
+import { resolveExtends, rootOf } from '../catalog/resolveExtends.js';
 
 export const ENDPOINT_BLOCKS = ['subscribers', 'publishers', 'services', 'actions'];
 
@@ -115,24 +116,8 @@ export function buildCatalog(raw) {
     else shaped[key] = def ?? {};
   }
 
-  const resolved = {};
-  const failed = new Set(Object.keys(raw).filter((key) => !shaped[key]));
-  const resolve = (key, chain) => {
-    if (resolved[key] || failed.has(key)) return resolved[key];
-    const def = shaped[key];
-    const fail = (message) => {
-      problems.push({ path: [key, 'extends'], message });
-      failed.add(key);
-    };
-    if (!def.extends) return (resolved[key] = mergeInterface({}, def));
-    const parentKey = def.extends;
-    if (parentKey === key || chain.includes(parentKey)) return fail(`cycle: ${[...chain, key, parentKey].join(' → ')}`);
-    if (!(parentKey in raw)) return fail(`extends unknown interface '${parentKey}'`);
-    const parent = resolve(parentKey, [...chain, key]);
-    if (!parent) return fail(`not loaded because its parent '${parentKey}' is invalid`);
-    return (resolved[key] = mergeInterface(parent, def));
-  };
-  for (const key of Object.keys(shaped)) resolve(key, []);
+  const { resolved, problems: extendsProblems } = resolveExtends(shaped, Object.keys(raw), mergeInterface);
+  problems.push(...extendsProblems);
 
   const catalog = {};
   const abstract = {};
@@ -148,16 +133,7 @@ export function buildCatalog(raw) {
   return { catalog, abstract, problems };
 }
 
-/** The interface at the top of `key`'s `extends` chain (itself when it extends nothing). */
-export function rootOf(raw, key) {
-  const seen = new Set();
-  let current = key;
-  while (raw[current]?.extends && !seen.has(current)) {
-    seen.add(current);
-    current = raw[current].extends;
-  }
-  return current;
-}
+export { rootOf };
 
 /** Reads `dir` and builds its catalog; file problems (bad name, bad YAML) come first. */
 export function loadInterfaces(dir) {

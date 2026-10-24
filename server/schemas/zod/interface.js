@@ -65,6 +65,9 @@ export const interfaceSchema = z
     firmwares: uniqueList(enumOf(FIRMWARE), 'repeated firmware').optional(),
     vehicleTypes: uniqueList(enumOf(VEHICLE_TYPE), 'repeated vehicle type').optional(),
     control: enumOf(INTERFACE_CONTROL).optional(),
+    // The device model a device of this interface gets when none is chosen (config/devices/
+    // device_models/). Without it: the generic model of its first vehicle type.
+    defaultModel: z.string().regex(/^[A-Za-z0-9_]+$/).optional(),
     subscribers: block(subscriber).optional(),
     publishers: block(command).optional(),
     services: block(command).optional(),

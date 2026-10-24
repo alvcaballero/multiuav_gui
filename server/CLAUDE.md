@@ -429,6 +429,29 @@ into the file. `GET /api/category?details=true` → `[{name, root, firmware, veh
 each `root` (top of its `extends` chain) before its variants. Names in `config/planning/config.yaml`
 are checked at boot (`unknownPlanningCategories`, a warning).
 
+**Device models** (`config/devices/device_models/<key>.yaml`, `models/deviceModels/`): WHAT a vehicle
+is, apart from its interface (HOW it is talked to). A device = `deviceModel` + `category`
+(`Device.deviceModel`). Same conventions as the interfaces: one file per model, file name = key,
+strict zod schema (`schemas/zod/deviceModel.js`), `extends` (objects merged key by key) and
+`abstract` (`_dji_rotorcraft` holds what the DJI models share). A model declares `vehicleType`
+(required), the `firmware` it runs (a list; NOT declared = not known, fits any interface of its type),
+`label`, `icon` / `model3d` (client keys), and what a planner needs: `physics` / `battery` (field names
+are Smart-Flies-MUAVPlanner's), `speeds`, `limits.min_turn_radius`, `obstacle_sensor`. Every vehicle
+type has a `generic_<type>` model (boot problem otherwise). **Compatible** ⇔ `model.vehicleType ∈
+interface.vehicleTypes` ∧ (`model.firmware` undeclared ∨ it meets `interface.firmwares`)
+(`incompatibility`, pure). An interface's `defaultModel` (else the generic of its first vehicle type)
+is what a device gets when none is given: `POST /api/devices` fills it (MCP/ExtApp create devices
+without one), and at boot a device with a null `deviceModel` (the column was added empty) gets it once
+(`DevicesModel.#checkDeviceModel`, logged); a stored model that no longer fits is a warning, never a
+stop. `POST`/`PUT` refuse an unknown or incompatible model (`deviceModelsModel.deviceProblem`, 400,
+path `['deviceModel']`); a `PUT` that only changes the category keeps the model and is refused if it
+does not fit. `GET /api/device-models[?category=]` (only the compatible ones, the default first,
+`isDefault`), `GET /api/device-models/:model`. `getAll` adds `platform: {vehicleType, label, icon,
+model3d}` (the generic of its type fills a missing icon/model3d): the client draws a device by it,
+never by its category name. MAVLink: the HEARTBEAT's `MAV_TYPE` (`vehicleTypeOfMavType`) is compared
+with the model when a vehicle comes online; a mismatch is a warning once, never a refusal. The
+physics are UNVERIFIED copies of the old `devices.yaml` (TODO); capabilities are plan F3.
+
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`
 (`categoryModel.getMessagesType`), DERIVED from what `msgDecode` can decode plus what categories

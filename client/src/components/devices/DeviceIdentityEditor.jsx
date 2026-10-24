@@ -8,7 +8,13 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
 import SelectField from '../../common/components/SelectField';
-import { isMavlink, messageFormat, systemIdError, withProtocol } from './deviceIdentity';
+import {
+  isMavlink,
+  messageFormat,
+  systemIdError,
+  withCategory,
+  withProtocol,
+} from './deviceIdentity';
 
 const useStyles = makeStyles()((theme) => ({
   details: {
@@ -20,7 +26,8 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 // Controlled editor for the identity of a device: name, protocol, category (only those the
-// protocol can drive, from GET /api/category?protocol=…), the protocol's own attributes (MAVLink: system id).
+// protocol can drive, from GET /api/category?protocol=…), device model (only those the category can
+// drive, GET /api/device-models?category=…), the protocol's own attributes (MAVLink: system id).
 // Shared by the add dialog (AddDevice) and the settings page, like DeviceCameraEditor.
 const DeviceIdentityEditor = ({ value, onChange }) => {
   const { classes } = useStyles();
@@ -66,7 +73,7 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
             value={value.category ?? null}
             // The auto-selection (emptyValue={null}) hands over the whole ITEM, a pick in the list
             // its key: keep only the name either way.
-            onChange={(e) => set({ category: e.target.value?.name ?? e.target.value })}
+            onChange={(e) => onChange(withCategory(value, e.target.value?.name ?? e.target.value))}
             // details: each category with its `root` (top of its `extends` chain), sorted so a
             // variant (dji_M210_melodic) follows the category it extends (dji_M210_noetic).
             endpoint={`/api/category?protocol=${encodeURIComponent(value.protocol)}&details=true`}
@@ -75,6 +82,23 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
               it.root === it.name ? it.name : `${it.name} (variant of ${it.root})`
             }
             label="Type "
+          />
+        )}
+        {value.category && (
+          // What the device IS. Only the models this category can drive, its default first, so the
+          // auto-selection (emptyValue={null}, again the whole item) lands on the default. Remounted
+          // per category for the same reason as the list above.
+          <SelectField
+            key={value.category}
+            emptyValue={null}
+            value={value.deviceModel ?? null}
+            onChange={(e) => set({ deviceModel: e.target.value?.name ?? e.target.value })}
+            endpoint={`/api/device-models?category=${encodeURIComponent(value.category)}`}
+            keyGetter={(it) => it.name}
+            titleGetter={(it) =>
+              `${it.label ?? it.name} · ${it.vehicleType}${it.isDefault ? ' (default)' : ''}`
+            }
+            label="Model "
           />
         )}
         {mavlink && (

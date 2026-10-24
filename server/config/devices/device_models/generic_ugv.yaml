@@ -1,0 +1,4 @@
+# Fallback for a ugv whose model nobody declared: no physics, compatible with any firmware.
+vehicleType: ugv
+label: 'Ground vehicle (generic)'
+icon: default

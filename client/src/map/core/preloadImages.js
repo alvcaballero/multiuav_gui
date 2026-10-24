@@ -54,17 +54,12 @@ export const frontIcons = {
   default: FrontDroneSvg,
 };
 
-export const mapIconKey = (category) => {
-  switch (category) {
-    case 'dji_M210_noetic':
-    case 'dji_M210_melodic':
-      return 'dji_M210';
-    case 'dji_M300':
-      return 'dji_M300';
-    default:
-      return mapIcons.hasOwnProperty(category) ? category : 'default';
-  }
-};
+export const mapIconKey = (key) => (Object.hasOwn(mapIcons, key ?? '') ? key : 'default');
+
+// A device is drawn as its device MODEL says (`platform.icon`, resolved by the server from
+// config/devices/device_models/, with the generic of its vehicle type filling in), never by the
+// name of its category: a category is how the GCS talks to it, not what it is.
+export const deviceIconKey = (device) => mapIconKey(device?.platform?.icon);
 
 export const mapImages = {};
 

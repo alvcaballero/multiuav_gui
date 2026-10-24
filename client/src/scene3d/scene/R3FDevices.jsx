@@ -14,7 +14,7 @@ const _qPitch = new THREE.Quaternion();
 const _axisY = new THREE.Vector3(0, 1, 0);
 const _axisX = new THREE.Vector3(1, 0, 0);
 
-const Device = ({ id, position, isSelected, category }) => {
+const Device = ({ id, position, isSelected, model3d }) => {
   const meshRef = useRef();
   const camRef = useRef();
   const { invalidate } = useThree();
@@ -24,7 +24,8 @@ const Device = ({ id, position, isSelected, category }) => {
   const nextPositionRef = useRef(null);
   if (nextPositionRef.current === null) nextPositionRef.current = new THREE.Vector3();
 
-  const model = useGLTF(getModelPath(category));
+  // What the device IS (its device model's 3D model), not the name of its category.
+  const model = useGLTF(getModelPath(model3d));
 
   useHelper(camRef, THREE.CameraHelper);
 
@@ -131,7 +132,7 @@ const R3FDevices = () => {
           id={item.deviceId}
           position={positionxyz}
           isSelected={String(selectedDeviceId) === String(item.deviceId)}
-          category={devices[item.deviceId]?.category}
+          model3d={devices[item.deviceId]?.platform?.model3d}
         />
       ))}
     </>

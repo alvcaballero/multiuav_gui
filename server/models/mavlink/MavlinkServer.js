@@ -2,6 +2,8 @@ import { EventEmitter } from 'node:events';
 import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
+import { vehicleTypeOfMavType } from '../vehicleStates.js';
 import { decodeMsg } from '../msgDecode.js';
 import { rawTap } from '../inspect/rawTap.js';
 import { telemetryWatchdog } from '../inspect/telemetryWatchdog.js';
@@ -119,6 +121,7 @@ export class MavlinkServer extends EventEmitter {
     this.devices = deps.devices ?? devicesController;
     this.positions = deps.positions ?? positionsController;
     this.categories = deps.categories ?? categoryModel;
+    this.deviceModels = deps.deviceModels ?? deviceModelsModel;
     this.rawTap = deps.rawTap ?? rawTap;
     this.watchdog = deps.telemetryWatchdog ?? telemetryWatchdog;
 
@@ -551,7 +554,22 @@ export class MavlinkServer extends EventEmitter {
       v.online = true;
       logger.info(`MAVLink: sysid ${sysid} (${autopilotName(heartbeat.autopilot)}) online via ${routeName(link, remote)}`);
       this.emit('online', v);
+      this._checkVehicleType(sysid, heartbeat.type).catch((err) => logger.error(`MAVLink vehicle type check: ${err.message}`));
     }
+  }
+
+  // The HEARTBEAT says what the vehicle is (MAV_TYPE); its device model says what we think it is.
+  // A mismatch (a VTOL registered as a multirotor) is reported once, never refused: the model only
+  // shapes what the GCS offers, the vehicle flies regardless.
+  async _checkVehicleType(sysid, mavType) {
+    const reported = vehicleTypeOfMavType(mavType);
+    const device = reported ? await this._deviceFor(sysid) : null;
+    const declared = device && this.deviceModels.platformOf(device.deviceModel)?.vehicleType;
+    if (!declared || declared === reported) return;
+    this._warnOnce(
+      `vehicleType:${sysid}`,
+      `MAVLink: ${device.name} (sysid ${sysid}) reports MAV_TYPE ${mavType} (${reported}) but its device model '${device.deviceModel}' is a ${declared}`
+    );
   }
 
   // The slot is the subscriber of the device's category whose messageType is
