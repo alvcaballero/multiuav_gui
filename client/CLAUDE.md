@@ -39,11 +39,13 @@ client/
     │   ├── chat/           # ChatDrawer, ChatPanel, ChatThread, ApprovalCard, ToolCallRow, ChatInput, useChatLogic, chatTheme
     │   ├── devices/        # DeviceList, DeviceRow, StatusCard, AddDevice (dialog), DeviceCameraEditor, DeviceFilesEditor
     │   │                   #   (each entry a DeviceSourceCard), useFilter,
-    │   │                   #   DeviceIdentityEditor (name → protocol → category → MAVLink system id → ip, shared by
+    │   │                   #   DeviceIdentityEditor (name → protocol → category → the protocol's attributes, shared by
     │   │                   #   AddDevice and settings/SettingsDevicesPageEdit; its rule in deviceIdentity.js mirrors the
     │   │                   #   server's). The protocol comes first: GET /api/server/protocol lists the four with
     │   │                   #   `enabled` (disabled ones greyed out) and the categories come from
-    │   │                   #   GET /api/category?protocol= (see server/CLAUDE.md › Protocol vs message format)
+    │   │                   #   GET /api/category?protocol= (see server/CLAUDE.md › Protocol vs message format).
+    │   │                   #   A device has no `ip`: a camera's address is `camera[].host`, in DeviceCameraEditor
+    │   │                   #   (required unless Websocket). See "Device attributes" below
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking
     │   ├── camera/         # CameraDevice, CameraDevicePanel, CameraMediaMTXPlayer, SocketCameraCanvas
     │   ├── commands/       # CommandCard (send-command dialog). Labels, params, confirm and severity of
@@ -244,6 +246,21 @@ if they drift) and owns the text to show: `armLabel` / `phaseLabel` / `modeLabel
 for `UNKNOWN` or an absent attribute — the caller picks a dash (stats) or nothing (captions). Compare
 against the constants (`flightMode === FLIGHT_MODE.RTL`), never against a string or the label. The
 old `navState` and `landed_state` no longer exist.
+
+### Device attributes (`device.attributes`)
+
+A device's own settings that depend on something else about it — its protocol, its category, or another
+attribute — live in `device.attributes` (JSON), not in columns. Today the only one is mavlink's `{ systemId }`
+(1..254). The server declares them as groups in `ATTRIBUTE_GROUPS` (`server/schemas/zod/devices.js`; full rules in
+server/CLAUDE.md › Per-device attributes): strict, so an unknown key is a 400, and on `PUT` it drops the stored keys
+no group applies to any more.
+
+The client does NOT read those groups: it mirrors them by hand in `components/devices/` —
+`DeviceIdentityEditor` shows the field (`isMavlink(protocol)` → system id), `deviceIdentity.js` validates it
+(`systemIdError`, `isDeviceIdentityValid`) and `withProtocol()` resets `attributes` to `{}` when the protocol
+changes (`{}`, not `undefined`, so an edit clears them in the database too). **A new group on the server needs
+its field and rule added here**, or the form never sends it (or sends a key the server rejects). The server stays
+the authority; the client only avoids sending what it would refuse.
 
 ### Colours (`common/theme/palette.js`)
 
