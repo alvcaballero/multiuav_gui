@@ -122,16 +122,11 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
      o `ros_msg`, deducido de sus messageType: categoryModel.messageFormatOf); System ID solo en
      mavlink; coherencia validada al crear y editar (categoryModel.deviceProblem). -->
 
-- [ ] **Capacidades declaradas por categoría** (gimbal, cámara, descarga de archivos, offboard computer)
-  - Hoy se DERIVAN de los endpoints: un device tiene un comando si su categoría declara un endpoint que
-    lo implementa (`/api/commands/types`), y `shouldDownloadFiles` mira si ofrece `CameraFileDownload`
-  - Declararlas permitiría mostrarlas en la UI y filtrar por ellas
-  - Decidir antes qué pasa cuando lo declarado y lo derivado no coinciden (hoy no pueden divergir)
-
-- [ ] **Tipos de vehículo** (UAV multirrotor, UAV ala fija, USV, UGV) como dato de la categoría
-  - Lo necesitan el ícono del mapa, el planner y los modos de vuelo
-  - En MAVLink el tipo ya viaja en el HEARTBEAT (`MAV_TYPE`); `mavlinkFlightMode` solo mapea ArduPilot
-    multirrotor (Plane/Rover numeran distinto y caen en OTHER)
+- [ ] **Device models, tipos de vehículo y capacidades** → plan en `VEHICLE_PLATFORMS_PLAN.md` (F1–F7)
+  - Decidido (2026-10-24): device model (qué es) separado de la interfaz (`category`: cómo se le habla);
+    capacidades híbridas `standard`/`optional` con override explícito por device; compatibilidad por
+    `vehicleType` + `firmware`; variantes de interfaz planas con `extends`; modelos genéricos por tipo
+  - Reemplaza a "Capacidades declaradas por categoría" y "Tipos de vehículo como dato de la categoría"
 
 - [ ] **Renombrar `category` → `interface`** (en otra fase, después de capacidades/tipos de vehículo)
   - `category` (`devices_msg.yaml`, `Device.category`) nunca fue una categoría de dispositivo: es la INTERFAZ,
@@ -140,13 +135,10 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
     vehículo: cada referencia existente pasaría a mentir sin error
   - Toca DB (migración de columna), API, cliente, MCP (`mcp_server/`) y los prompts de los agentes
 
-- [ ] **MAVLink: el dialecto PX4/ArduPilot no es una interfaz**
-  - En MAVLink los mensajes los fija el PROTOCOLO, no la categoría: `px4_mavlink` y `ardupilot_mavlink`
-    solo difieren en el tag de dialecto (`mavlink/PX4_*` vs `mavlink/ARDUPILOT_*`) y un subscriber de gimbal,
-    y el firmware ya viaja en el HEARTBEAT (`autopilot`)
-  - Por ahora se quedan como dos categorías declaradas (la UI y el planner necesitan saberlo sin conexión;
-    el HEARTBEAT solo verifica)
-  - Revisar cuando aparezca un segundo modelo MAVLink que difiera en algo más que el firmware
+- [x] **MAVLink: ¿el dialecto PX4/ArduPilot es una interfaz?** — Sí (decidido 2026-10-24)
+  - Interfaz = protocolo + dialecto: `px4_mavlink` / `ardupilot_mavlink` se quedan. NO dos protocolos
+    (comparten `MavlinkServer`, enlaces, puerto UDP y System IDs). Lo propio de cada airframe (x500, VTOL)
+    va en su device model, y los slots que dependen del hardware con `requires` (ver `VEHICLE_PLATFORMS_PLAN.md`)
 
 - [ ] **Slots de posición satelital: nombres y datum**
   - Hoy `position` es la posición GNSS sin corrección y `position_rtk` la corregida por RTK; el cache usa la de
