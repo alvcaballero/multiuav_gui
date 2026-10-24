@@ -1,5 +1,6 @@
 # github.com/NovoG93/sjtu_drone: a Gazebo quadrotor with its own control plugin (PIDs), no PX4/ArduPilot.
 vehicleType: multirotor
 firmware: [ custom ]
+interfaces: [ sjtu ]
 label: 'sjtu_drone (Gazebo)'
 icon: drone

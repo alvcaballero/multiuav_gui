@@ -39,18 +39,18 @@ client/
     │   ├── chat/           # ChatDrawer, ChatPanel, ChatThread, ApprovalCard, ToolCallRow, ChatInput, useChatLogic, chatTheme
     │   ├── devices/        # DeviceList, DeviceRow, StatusCard, AddDevice (dialog), DeviceCameraEditor, DeviceFilesEditor
     │   │                   #   (each entry a DeviceSourceCard), useFilter,
-    │   │                   #   DeviceIdentityEditor (name → protocol → category → the protocol's attributes, shared by
-    │   │                   #   AddDevice and settings/SettingsDevicesPageEdit; its rule in deviceIdentity.js mirrors the
-    │   │                   #   server's). The protocol comes first: GET /api/server/protocol lists the four with
-    │   │                   #   `enabled` (disabled ones greyed out) and the categories come from
-    │   │                   #   GET /api/category?protocol=&details=true (see server/CLAUDE.md › Protocol vs message
-    │   │                   #   format): objects, each variant listed after the category it `extends` (its `root`).
+    │   │                   #   DeviceIdentityEditor (shared by AddDevice and settings/SettingsDevicesPageEdit), in the
+    │   │                   #   order the parts depend on each other: name → device MODEL (what it is,
+    │   │                   #   GET /api/device-models) → interface/category (one the model lists,
+    │   │                   #   GET /api/category?deviceModel=&details=true; a variant follows the one it `extends`)
+    │   │                   #   → protocol (only those that carry the interface's `messageFormat`, from
+    │   │                   #   GET /api/server/protocol, disabled ones greyed out; set by itself when only one does,
+    │   │                   #   as for MAVLink) → the protocol's attributes. `withModel` / `withCategory` /
+    │   │                   #   `withProtocol` (deviceIdentity.js, tested in server/test/test-device-identity-client.js)
+    │   │                   #   clear what a change invalidates. See server/CLAUDE.md › Device models.
     │   │                   #   The category editor (settings/SettingsCategoryPageEdit) loads `/raw`, the file as written.
-    │   │                   #   Then the device MODEL (what it is): GET /api/device-models?category=, only the ones
-    │   │                   #   the category can drive, its default first (auto-selected); `withCategory()` clears it
-    │   │                   #   when the category changes. A device is DRAWN by `device.platform` (icon, model3d,
-    │   │                   #   vehicleType, from its model): `deviceIconKey(device)` / `getModelPath(platform.model3d)`,
-    │   │                   #   never by the category name.
+    │   │                   #   A device is DRAWN by `device.platform` (icon, model3d, vehicleType, from its model):
+    │   │                   #   `deviceIconKey(device)` / `getModelPath(platform.model3d)`, never by the category name.
     │   │                   #   A device has no `ip`: a camera's address is `camera[].host`, in DeviceCameraEditor
     │   │                   #   (required unless Websocket). See "Device attributes" below
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking

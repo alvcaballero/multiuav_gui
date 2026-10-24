@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   TextField,
   Accordion,
@@ -8,11 +9,13 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
 import SelectField from '../../common/components/SelectField';
+import { useAsyncTask } from '../../reactHelper';
 import {
   isMavlink,
-  messageFormat,
+  protocolsFor,
   systemIdError,
   withCategory,
+  withModel,
   withProtocol,
 } from './deviceIdentity';
 
@@ -25,9 +28,18 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-// Controlled editor for the identity of a device: name, protocol, category (only those the
-// protocol can drive, from GET /api/category?protocol=…), device model (only those the category can
-// drive, GET /api/device-models?category=…), the protocol's own attributes (MAVLink: system id).
+const fetchJson = async (url, signal) => {
+  const response = await fetch(url, { signal });
+  if (!response.ok) throw Error(await response.text());
+  return response.json();
+};
+
+// Controlled editor for the identity of a device, in the order its parts depend on each other:
+// name → model (what it IS, GET /api/device-models) → interface (one the model lists,
+// GET /api/category?deviceModel=…) → protocol (one that carries the interface's message format;
+// picked by itself when only one does, as for MAVLink) → the protocol's own attributes (MAVLink:
+// system id). Changing one clears what depended on it (deviceIdentity.js). No list auto-selects:
+// SelectField's auto-selection hands over the whole item, and picking for the user hides a choice.
 // Shared by the add dialog (AddDevice) and the settings page, like DeviceCameraEditor.
 const DeviceIdentityEditor = ({ value, onChange }) => {
   const { classes } = useStyles();
@@ -36,6 +48,36 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
   const setAttribute = (patch) => set({ attributes: { ...value.attributes, ...patch } });
   const systemId = value.attributes?.systemId;
   const sysidProblem = mavlink && systemId != null ? systemIdError(systemId) : null;
+
+  const [models, setModels] = useState(null);
+  const [interfaces, setInterfaces] = useState(null);
+  const [protocols, setProtocols] = useState(null);
+
+  useAsyncTask(async ({ signal }) => {
+    setModels(await fetchJson('/api/device-models', signal));
+    setProtocols(await fetchJson('/api/server/protocol', signal));
+  }, []);
+
+  useAsyncTask(
+    async ({ signal }) => {
+      setInterfaces(null);
+      if (!value.deviceModel) return;
+      const url = `/api/category?deviceModel=${encodeURIComponent(value.deviceModel)}&details=true`;
+      setInterfaces(await fetchJson(url, signal));
+    },
+    [value.deviceModel],
+  );
+
+  const format = interfaces?.find((it) => it.name === value.category)?.messageFormat;
+  const carriers = format ? protocolsFor(protocols, format) : [];
+  const enabledCarriers = carriers.filter((p) => p.enabled);
+
+  // Only one protocol carries this interface (MAVLink): nothing to choose.
+  useEffect(() => {
+    if (!value.protocol && carriers.length === 1 && enabledCarriers.length === 1) {
+      onChange(withProtocol(value, enabledCarriers[0].name));
+    }
+  }, [value, carriers.length, enabledCarriers, onChange]);
 
   return (
     <Accordion defaultExpanded>
@@ -51,54 +93,46 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
           onChange={(event) => set({ name: event.target.value })}
           helperText="The name must be unique, it will be used to identify the device, must to be the same of that device's name_space or device's identificator ,it is recommended to use the format uav_XXXX in case of using a UAV"
         />
-        {/* GET /api/server/protocol lists the four protocols with `enabled`: the ones this server
-            does not run are shown greyed out. No auto-selection (emptyValue ''): it would pass the
-            whole item, and could land on a disabled protocol. */}
+        {/* What the device IS: grouped by vehicle type on the server, generic last in each. */}
         <SelectField
           emptyValue=""
-          value={value.protocol ?? ''}
-          onChange={(e) => onChange(withProtocol(value, e.target.value || null))}
-          endpoint="/api/server/protocol"
+          value={value.deviceModel ?? ''}
+          onChange={(e) => onChange(withModel(value, e.target.value || null))}
+          data={models ?? undefined}
           keyGetter={(it) => it.name}
-          titleGetter={(it) => (it.enabled ? it.name : `${it.name} (disabled on the server)`)}
-          itemDisabled={(it) => !it.enabled}
-          label="Protocol "
+          titleGetter={(it) => `${it.label ?? it.name} · ${it.vehicleType}`}
+          label="Model "
         />
-        {value.protocol && (
-          // Remounted per message format: SelectField keeps its previous list until the new one
-          // arrives, and would auto-select a category the new protocol cannot carry meanwhile.
+        {value.deviceModel && (
+          // The interfaces this model lists; a variant (dji_M210_melodic) follows the one it extends.
           <SelectField
-            key={messageFormat(value.protocol)}
-            emptyValue={null}
-            value={value.category ?? null}
-            // The auto-selection (emptyValue={null}) hands over the whole ITEM, a pick in the list
-            // its key: keep only the name either way.
-            onChange={(e) => onChange(withCategory(value, e.target.value?.name ?? e.target.value))}
-            // details: each category with its `root` (top of its `extends` chain), sorted so a
-            // variant (dji_M210_melodic) follows the category it extends (dji_M210_noetic).
-            endpoint={`/api/category?protocol=${encodeURIComponent(value.protocol)}&details=true`}
+            emptyValue=""
+            value={value.category ?? ''}
+            onChange={(e) => {
+              const category = e.target.value || null;
+              const picked = interfaces?.find((it) => it.name === category);
+              onChange(withCategory(value, category, picked?.messageFormat));
+            }}
+            data={interfaces ?? undefined}
             keyGetter={(it) => it.name}
             titleGetter={(it) =>
               it.root === it.name ? it.name : `${it.name} (variant of ${it.root})`
             }
-            label="Type "
+            label="Interface "
           />
         )}
-        {value.category && (
-          // What the device IS. Only the models this category can drive, its default first, so the
-          // auto-selection (emptyValue={null}, again the whole item) lands on the default. Remounted
-          // per category for the same reason as the list above.
+        {value.category && format && (
+          // The protocols that carry this interface's messages; the ones this server does not run
+          // are greyed out (GET /api/server/protocol `enabled`).
           <SelectField
-            key={value.category}
-            emptyValue={null}
-            value={value.deviceModel ?? null}
-            onChange={(e) => set({ deviceModel: e.target.value?.name ?? e.target.value })}
-            endpoint={`/api/device-models?category=${encodeURIComponent(value.category)}`}
+            emptyValue=""
+            value={value.protocol ?? ''}
+            onChange={(e) => onChange(withProtocol(value, e.target.value || null))}
+            data={carriers}
             keyGetter={(it) => it.name}
-            titleGetter={(it) =>
-              `${it.label ?? it.name} · ${it.vehicleType}${it.isDefault ? ' (default)' : ''}`
-            }
-            label="Model "
+            titleGetter={(it) => (it.enabled ? it.name : `${it.name} (disabled on the server)`)}
+            itemDisabled={(it) => !it.enabled}
+            label="Protocol "
           />
         )}
         {mavlink && (

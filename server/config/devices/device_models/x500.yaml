@@ -1,5 +1,6 @@
 # Holybro X500 frame: flies PX4 or ArduPilot (the GCS' simulated px4_ros2 / mavros drones are x500).
 vehicleType: multirotor
 firmware: [ px4, ardupilot ]
+interfaces: [ px4_ros2, px4_mavros, px4_mavros_slow, px4_mavlink, ardupilot_mavlink ]
 label: 'Holybro X500'
 icon: drone

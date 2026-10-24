@@ -1,5 +1,6 @@
 # PX4's standard VTOL (quad plane): hovers on its lift rotors, cruises as a fixed wing.
 vehicleType: vtol
 firmware: [ px4 ]
+interfaces: [ px4_mavros, px4_mavros_slow, px4_ros2, px4_mavlink ]
 label: 'Standard VTOL'
 icon: plane

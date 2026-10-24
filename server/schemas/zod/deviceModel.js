@@ -55,6 +55,13 @@ export const deviceModelSchema = z
       .min(1)
       .refine((list) => new Set(list).size === list.length, 'repeated firmware')
       .optional(),
+    // The interfaces (categories) a device of this model can use, written out: the device form offers
+    // exactly these. Each one is checked at boot against the compatibility rule (vehicle type +
+    // firmware), so a hand-written list cannot name one that cannot drive it. [] = none yet.
+    interfaces: z
+      .array(key)
+      .refine((list) => new Set(list).size === list.length, 'repeated interface')
+      .optional(),
     label: z.string().min(1).optional(),
     icon: key.optional(), // client map icon (preloadImages.js mapIcons)
     model3d: key.optional(), // client 3D model (ModelLoader.jsx modelPaths)

@@ -1,4 +1,5 @@
 extends: _dji_rotorcraft
+interfaces: [ dji_M210_noetic, dji_M210_melodic ]
 label: 'DJI Matrice 210'
 icon: dji_M210
 model3d: drone

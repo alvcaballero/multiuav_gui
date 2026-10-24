@@ -41,7 +41,10 @@ export function buildDeviceModelCatalog(raw) {
   const catalog = {};
   for (const [key, def] of Object.entries(resolved)) {
     if (def.abstract) continue;
-    if (!def.vehicleType) problems.push({ path: [key, 'vehicleType'], message: 'missing vehicleType' });
+    const own = [];
+    if (!def.vehicleType) own.push({ path: [key, 'vehicleType'], message: 'missing vehicleType' });
+    if (!def.interfaces) own.push({ path: [key, 'interfaces'], message: 'missing interfaces (the list may be empty)' });
+    if (own.length) problems.push(...own);
     else catalog[key] = def;
   }
   // Every vehicle type has its generic model: it is what a device gets when nothing else applies.
@@ -75,6 +78,18 @@ export function incompatibility(modelKey, model, interfaceKey, iface) {
     return `model '${modelKey}' runs ${model.firmware.join(', ')}, and interface '${interfaceKey}' drives ${(iface.firmwares ?? []).join(', ')}`;
   }
   return null;
+}
+
+/**
+ * Why a device of model `modelKey` cannot use interface `interfaceKey`, or null: the model must list
+ * it (`interfaces`), and the pair must pass the compatibility rule (`incompatibility`). The boot checks
+ * the second for every listed interface, so on a running server only the first can fail.
+ */
+export function modelInterfaceProblem(modelKey, model, interfaceKey, iface) {
+  if (!model.interfaces?.includes(interfaceKey)) {
+    return `model '${modelKey}' does not list interface '${interfaceKey}' (its interfaces: ${(model.interfaces ?? []).join(', ') || 'none'})`;
+  }
+  return incompatibility(modelKey, model, interfaceKey, iface);
 }
 
 /** The model a new device of `interfaceKey` gets: the interface's `defaultModel`, or the generic of its first vehicle type. */

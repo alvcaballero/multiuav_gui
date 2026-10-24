@@ -262,7 +262,8 @@ export class categoryModel {
     return this.getAll({ protocol })
       .map((name) => {
         const { firmwares, vehicleTypes, control } = devices_msg[name];
-        return { name, root: rootOf(rawInterfaces, name), firmwares, vehicleTypes, control };
+        const messageFormat = messageFormatOf(devices_msg[name]);
+        return { name, root: rootOf(rawInterfaces, name), messageFormat, firmwares, vehicleTypes, control };
       })
       .sort((a, b) => a.root.localeCompare(b.root) || (a.name !== a.root) - (b.name !== b.root) || a.name.localeCompare(b.name));
   }

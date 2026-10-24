@@ -1,4 +1,5 @@
 vehicleType: fixed_wing
 firmware: [ px4 ]
+interfaces: [ fuvex ]
 label: 'FuVeX'
 icon: fuvex

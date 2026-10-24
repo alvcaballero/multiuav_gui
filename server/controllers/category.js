@@ -1,4 +1,5 @@
 import { categoryModel, CategoryError } from '../models/category.js';
+import { deviceModelsModel } from '../models/deviceModels/deviceModels.js';
 import { logger } from '../common/logger.js';
 
 // Writes go through the same validator as the boot (models/interfaces/interfaceCatalog.js), BEFORE
@@ -17,9 +18,15 @@ export class categoryController {
   static async getAll(req, res) {
     logger.debug('Getting all categories');
     // ?protocol=mavlink → only the categories a device of that protocol can use.
-    // ?details=true → [{ name, root, firmwares, vehicleTypes, control }] instead of names.
+    // ?deviceModel=x500 → only the ones that model lists (its `interfaces`): the device form picks
+    //   the model first, then one of its interfaces, then a protocol that carries it.
+    // ?details=true → [{ name, root, messageFormat, firmwares, vehicleTypes, control }] instead of names.
     const filter = { protocol: req.query.protocol };
-    const response = req.query.details === 'true' ? categoryModel.getAllDetailed(filter) : categoryModel.getAll(filter);
+    let response = req.query.details === 'true' ? categoryModel.getAllDetailed(filter) : categoryModel.getAll(filter);
+    if (req.query.deviceModel) {
+      const listed = deviceModelsModel.interfacesOf(req.query.deviceModel);
+      response = response.filter((it) => listed.includes(it.name ?? it));
+    }
     res.json(response);
   }
   static async getCategory(req, res) {

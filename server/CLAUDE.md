@@ -434,19 +434,24 @@ is, apart from its interface (HOW it is talked to). A device = `deviceModel` + `
 (`Device.deviceModel`). Same conventions as the interfaces: one file per model, file name = key,
 strict zod schema (`schemas/zod/deviceModel.js`), `extends` (objects merged key by key) and
 `abstract` (`_dji_rotorcraft` holds what the DJI models share). A model declares `vehicleType`
-(required), the `firmware` it runs (a list; NOT declared = not known, fits any interface of its type),
-`label`, `icon` / `model3d` (client keys), and what a planner needs: `physics` / `battery` (field names
-are Smart-Flies-MUAVPlanner's), `speeds`, `limits.min_turn_radius`, `obstacle_sensor`. Every vehicle
-type has a `generic_<type>` model (boot problem otherwise). **Compatible** ⇔ `model.vehicleType ∈
-interface.vehicleTypes` ∧ (`model.firmware` undeclared ∨ it meets `interface.firmwares`)
-(`incompatibility`, pure). An interface's `defaultModel` (else the generic of its first vehicle type)
-is what a device gets when none is given: `POST /api/devices` fills it (MCP/ExtApp create devices
-without one), and at boot a device with a null `deviceModel` (the column was added empty) gets it once
-(`DevicesModel.#checkDeviceModel`, logged); a stored model that no longer fits is a warning, never a
-stop. `POST`/`PUT` refuse an unknown or incompatible model (`deviceModelsModel.deviceProblem`, 400,
-path `['deviceModel']`); a `PUT` that only changes the category keeps the model and is refused if it
-does not fit. `GET /api/device-models[?category=]` (only the compatible ones, the default first,
-`isDefault`), `GET /api/device-models/:model`. `getAll` adds `platform: {vehicleType, label, icon,
+(required), the **`interfaces` a device of it can use, written out** (required, may be `[]`: the
+form offers exactly these, so x500 never sees `catec`, which is mavros with CATEC's own topics), the
+`firmware` it runs (a list; NOT declared = not known), `label`, `icon` / `model3d` (client keys), and
+what a planner needs: `physics` / `battery` (field names are Smart-Flies-MUAVPlanner's), `speeds`,
+`limits.min_turn_radius`, `obstacle_sensor`. Every vehicle type has a `generic_<type>` model (boot
+problem otherwise), listing only the GENERIC interfaces of its type. The hand-written list is checked
+at boot by the compatibility rule: `model.vehicleType ∈ interface.vehicleTypes` ∧ (`model.firmware`
+undeclared ∨ it meets `interface.firmwares`) (`incompatibility`, pure); a model listing an unknown or
+incompatible interface is NOT loaded. A device pair is valid when the model lists the interface
+(`modelInterfaceProblem`). An interface's `defaultModel` (else the generic of its first vehicle type;
+it must list the interface) is what a device gets when none is given: `POST /api/devices` fills it
+(MCP/ExtApp create devices without one), and at boot a device with a null `deviceModel` (the column
+was added empty) gets it once (`DevicesModel.#checkDeviceModel`, logged); a stored pair that no longer
+fits is a warning, never a stop. `POST`/`PUT` refuse an unknown model (400, path `['deviceModel']`) or
+an interface the model does not list (path `['category']`). `GET /api/device-models[?category=]`
+(grouped by vehicle type, generic last; with `category`, the models that list it, default first),
+`GET /api/device-models/:model`; `GET /api/category?deviceModel=` → the interfaces that model lists
+(with `details=true` each carries its `messageFormat`, which decides the protocols offered). `getAll` adds `platform: {vehicleType, label, icon,
 model3d}` (the generic of its type fills a missing icon/model3d): the client draws a device by it,
 never by its category name. MAVLink: the HEARTBEAT's `MAV_TYPE` (`vehicleTypeOfMavType`) is compared
 with the model when a vehicle comes online; a mismatch is a warning once, never a refusal. The

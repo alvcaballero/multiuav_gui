@@ -212,8 +212,13 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
 - Los datos físicos de los DJI son copias sin verificar del viejo `devices.yaml` (TODO). Se borraron de
   `devices.yaml` (quedan `camera` y los presets de `files`). No se pasaron a fuvex/catec/px4: eran el mismo
   M210 copiado (4 rotores en un ala fija).
-- Formulario: nombre → protocolo → interfaz → **modelo** (filtrado, default preseleccionado).
-  Mapa, lista de devices y 3D se dibujan por `device.platform` (adiós a los `switch` por categoría).
+- **Revisado tras usarlo (2026-10-24):** el formulario va en el orden de las dependencias,
+  nombre → **modelo** → interfaz → protocolo → System ID. El modelo LISTA sus `interfaces` a mano
+  (opción A: la regla deducida ofrecía `catec` a un x500, porque es mavros multirrotor); la regla
+  queda como verificación al arrancar de esa lista. El protocolo se deduce del formato de mensaje de
+  la interfaz (MAVLink → solo mavlink, auto). Sin `protocols:` en la interfaz: lo que sobra
+  (`simulationFB` solo robofleet) se arregla alineando robofleet con ROS (TODO).
+- Mapa, lista de devices y 3D se dibujan por `device.platform` (adiós a los `switch` por categoría).
   Arreglado de paso: `px4` se dibujaba como avión.
 - Migración: columna `Device.deviceModel` (aditiva) + relleno en el boot con el default de su
   interfaz. Probado en una copia de la DB local: 16 devices, idempotente. **`vtol_1` queda como `x500`**

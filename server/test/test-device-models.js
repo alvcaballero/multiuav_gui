@@ -9,6 +9,7 @@ import {
   incompatibility,
   loadDeviceModels,
   mergeDeviceModel,
+  modelInterfaceProblem,
 } from '../models/deviceModels/deviceModelCatalog.js';
 import { deviceModelsModel } from '../models/deviceModels/deviceModels.js';
 import { categoryModel } from '../models/category.js';
@@ -16,7 +17,7 @@ import { categoryModel } from '../models/category.js';
 // config/devices/device_models/: WHAT each vehicle is. A device = a device model + an interface
 // (its category, HOW it is talked to); this file tests the models and which pairs work.
 
-const generics = Object.fromEntries(Object.values(VEHICLE_TYPE).map((t) => [genericModelOf(t), { vehicleType: t }]));
+const generics = Object.fromEntries(Object.values(VEHICLE_TYPE).map((t) => [genericModelOf(t), { vehicleType: t, interfaces: [] }]));
 const problemsOf = (raw) => buildDeviceModelCatalog({ ...generics, ...raw }).problems;
 
 describe('the real device model files', () => {
@@ -26,11 +27,11 @@ describe('the real device model files', () => {
     assert.deepEqual(problems, []);
   });
 
-  test('every interface has a default model that exists and that it can drive', () => {
+  test('every interface has a default model that exists and lists it', () => {
     for (const [key, iface] of Object.entries(categoryModel.getCatalog())) {
       const modelKey = defaultModelOf(iface);
       assert.ok(catalog[modelKey], `${key}: ${modelKey}`);
-      assert.equal(incompatibility(modelKey, catalog[modelKey], key, iface), null, key);
+      assert.equal(modelInterfaceProblem(modelKey, catalog[modelKey], key, iface), null, key);
     }
   });
 
@@ -53,14 +54,18 @@ describe('the real device model files', () => {
 
 describe('buildDeviceModelCatalog', () => {
   test('every vehicle type needs its generic model', () => {
-    const { problems } = buildDeviceModelCatalog({ generic_multirotor: { vehicleType: 'multirotor' } });
+    const { problems } = buildDeviceModelCatalog({ generic_multirotor: { vehicleType: 'multirotor', interfaces: [] } });
     assert.ok(problems.some((p) => p.path[0] === 'generic_usv'));
   });
 
-  test('a typo, a bad sensor range or a model without vehicle type is an error', () => {
-    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', phisics: {} } }).length, 1);
-    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', obstacle_sensor: { down: [0] } } }).length, 1);
-    assert.deepEqual(problemsOf({ m: { label: 'x' } }), [{ path: ['m', 'vehicleType'], message: 'missing vehicleType' }]);
+  test('a typo, a bad sensor range or a model without vehicle type or interfaces is an error', () => {
+    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', interfaces: [], phisics: {} } }).length, 1);
+    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', interfaces: [], obstacle_sensor: { down: [0] } } }).length, 1);
+    assert.deepEqual(problemsOf({ m: { interfaces: [] } }), [{ path: ['m', 'vehicleType'], message: 'missing vehicleType' }]);
+    assert.deepEqual(problemsOf({ m: { vehicleType: 'multirotor' } }), [
+      { path: ['m', 'interfaces'], message: 'missing interfaces (the list may be empty)' },
+    ]);
+    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', interfaces: ['a', 'a'] } }).length, 1);
   });
 
   test('extends merges objects key by key and replaces the rest', () => {
@@ -101,16 +106,32 @@ describe('model ↔ interface', () => {
 });
 
 describe('deviceModelsModel', () => {
-  test('lists only the models a category can drive, its default first', () => {
+  test('every model and every interface it lists loaded: the boot check found nothing wrong', () => {
+    const { catalog } = loadDeviceModels(deviceModelsDir);
+    assert.deepEqual(Object.keys(deviceModelsModel.getAll()).sort(), Object.keys(catalog).sort());
+    for (const [key, model] of Object.entries(catalog)) {
+      for (const iface of model.interfaces) {
+        assert.equal(incompatibility(key, model, iface, categoryModel.getCategory(iface)), null, `${key} → ${iface}`);
+      }
+    }
+  });
+
+  test('a model offers exactly the interfaces it lists: x500 never sees catec (mavros, but CATEC´s topics)', () => {
+    assert.deepEqual(deviceModelsModel.interfacesOf('x500'), ['px4_ros2', 'px4_mavros', 'px4_mavros_slow', 'px4_mavlink', 'ardupilot_mavlink']);
+    assert.deepEqual(deviceModelsModel.interfacesOf('catec'), ['catec']);
+    assert.deepEqual(deviceModelsModel.interfacesOf('nope'), []);
+  });
+
+  test('list({ category }): the models that list it, its default first', () => {
     const names = deviceModelsModel.list({ category: 'dji_M300_PSDK' }).map((m) => m.name);
-    assert.equal(names[0], 'dji_M300');
-    assert.ok(names.includes('dji_M210'));
-    assert.ok(!names.includes('x500')); // px4/ardupilot: the DJI SDK cannot drive it
-    assert.ok(!names.includes('bcr_bot'));
+    assert.deepEqual(names, ['dji_M300']);
+    assert.deepEqual(
+      deviceModelsModel.list({ category: 'px4_mavros' }).map((m) => m.name),
+      ['x500', 'generic_multirotor', 'standard_vtol', 'generic_vtol']
+    );
   });
 
   test('the VTOL fits px4_mavros_slow (vtol is inherited from px4_mavros)', () => {
-    assert.ok(deviceModelsModel.list({ category: 'px4_mavros_slow' }).some((m) => m.name === 'standard_vtol'));
     assert.equal(deviceModelsModel.deviceProblem({ category: 'px4_mavros_slow', deviceModel: 'standard_vtol' }), null);
   });
 
@@ -120,12 +141,16 @@ describe('deviceModelsModel', () => {
     assert.equal(deviceModelsModel.defaultFor('nope'), null);
   });
 
-  test('deviceProblem names the field and says why', () => {
-    assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'agv', deviceModel: 'dji_M300' }), {
-      path: ['deviceModel'],
-      message: "model 'dji_M300' is a multirotor, and interface 'agv' serves ugv",
+  test('deviceProblem: the interface must be one the model lists (the form picks the model first)', () => {
+    assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'catec', deviceModel: 'x500' }), {
+      path: ['category'],
+      message:
+        "model 'x500' does not list interface 'catec' (its interfaces: px4_ros2, px4_mavros, px4_mavros_slow, px4_mavlink, ardupilot_mavlink)",
     });
-    assert.equal(deviceModelsModel.deviceProblem({ category: 'agv', deviceModel: 'nope' }).message, "unknown device model 'nope'");
+    assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'agv', deviceModel: 'nope' }), {
+      path: ['deviceModel'],
+      message: "unknown device model 'nope'",
+    });
   });
 
   test('platformOf: what the client draws, with the generic of its type filling what the model leaves out', () => {

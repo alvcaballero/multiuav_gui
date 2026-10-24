@@ -1,4 +1,5 @@
 vehicleType: flapping_wing
 firmware: [ ardupilot ]
+interfaces: [ griffin ]
 label: 'GRIFFIN ornithopter'
 icon: griffin

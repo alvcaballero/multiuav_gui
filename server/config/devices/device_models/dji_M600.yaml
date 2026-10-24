@@ -1,4 +1,5 @@
 extends: _dji_rotorcraft
+interfaces: [ dji_M600 ]
 label: 'DJI Matrice 600'
 icon: dji_M600
 model3d: drone

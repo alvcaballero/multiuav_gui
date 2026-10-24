@@ -1,13 +1,16 @@
 // Device models at runtime: what each vehicle is (VEHICLE_PLATFORMS_PLAN.md › F2). A device is a
-// model + an interface (its `category`); this module says which pairs work.
+// model + one of the interfaces that model lists (its `category`); this module says which pairs work.
 import { deviceModelsDir } from '../../config/config.js';
 import { logger } from '../../common/logger.js';
 import { categoryModel } from '../category.js';
-import { defaultModelOf, genericModelOf, incompatibility, loadDeviceModels } from './deviceModelCatalog.js';
+import {
+  defaultModelOf,
+  genericModelOf,
+  incompatibility,
+  loadDeviceModels,
+  modelInterfaceProblem,
+} from './deviceModelCatalog.js';
 import { formatProblem } from '../interfaces/interfaceCatalog.js';
-
-const loaded = loadDeviceModels(deviceModelsDir);
-const models = loaded.catalog;
 
 function reportProblems(problems) {
   if (problems.length === 0) return;
@@ -15,23 +18,44 @@ function reportProblems(problems) {
   if (process.env.LOG_LEVEL === 'debug') throw new Error(`device models: ${problems.map(formatProblem).join('; ')}`);
 }
 
-// An interface's `defaultModel` must exist and be one it can drive: it is what a device of that
-// interface gets when nobody chose a model.
-function defaultModelProblems() {
+// Every interface a model lists must exist and be one that can drive it: the list is written by hand,
+// the compatibility rule (vehicle type + firmware) checks it. A model with a wrong entry is not
+// loaded, like an invalid file: its devices are reported at boot instead of offered a dead interface.
+function listedInterfaceProblems(catalog) {
   const problems = [];
-  for (const [key, iface] of Object.entries(categoryModel.getCatalog())) {
-    const modelKey = defaultModelOf(iface);
-    const model = models[modelKey];
-    if (!model) problems.push({ path: [key, 'defaultModel'], message: `unknown device model '${modelKey}'` });
-    else {
-      const why = incompatibility(modelKey, model, key, iface);
-      if (why) problems.push({ path: [key, 'defaultModel'], message: why });
+  const interfaces = categoryModel.getCatalog();
+  for (const [modelKey, model] of Object.entries(catalog)) {
+    for (const interfaceKey of model.interfaces) {
+      const iface = interfaces[interfaceKey];
+      const why = iface
+        ? incompatibility(modelKey, model, interfaceKey, iface)
+        : `lists interface '${interfaceKey}', which does not exist (or was not loaded)`;
+      if (why) problems.push({ path: [modelKey, 'interfaces', interfaceKey], message: why });
     }
   }
   return problems;
 }
 
-reportProblems(loaded.problems);
+const loaded = loadDeviceModels(deviceModelsDir);
+const listProblems = listedInterfaceProblems(loaded.catalog);
+const models = Object.fromEntries(
+  Object.entries(loaded.catalog).filter(([key]) => !listProblems.some((p) => p.path[0] === key))
+);
+
+// An interface's `defaultModel` (what a device created without a model gets, e.g. by the MCP) must
+// exist and list that interface.
+function defaultModelProblems() {
+  const problems = [];
+  for (const [key, iface] of Object.entries(categoryModel.getCatalog())) {
+    const modelKey = defaultModelOf(iface);
+    const model = models[modelKey];
+    const why = model ? modelInterfaceProblem(modelKey, model, key, iface) : `unknown device model '${modelKey}'`;
+    if (why) problems.push({ path: [key, 'defaultModel'], message: why });
+  }
+  return problems;
+}
+
+reportProblems([...loaded.problems, ...listProblems]);
 reportProblems(defaultModelProblems());
 
 export class deviceModelsModel {
@@ -45,17 +69,27 @@ export class deviceModelsModel {
   }
 
   /**
-   * The models a device of `category` can be, its default first. Without a category: all of them.
+   * Every model, grouped by vehicle type; with `category`, only the ones that list it, its default
+   * first (what an API client choosing for an existing interface needs).
    * @returns {{ name: string, isDefault: boolean, ...model }[]}
    */
   static list({ category } = {}) {
-    const iface = category ? categoryModel.getCategory(category) : null;
-    if (category && !iface) return [];
-    const defaultKey = iface ? defaultModelOf(iface) : null;
+    const defaultKey = category ? this.defaultFor(category) : null;
     return Object.entries(models)
-      .filter(([key, model]) => !iface || !incompatibility(key, model, category, iface))
+      .filter(([, model]) => !category || model.interfaces.includes(category))
       .map(([key, model]) => ({ name: key, isDefault: key === defaultKey, ...model }))
-      .sort((a, b) => b.isDefault - a.isDefault || a.name.localeCompare(b.name));
+      .sort(
+        (a, b) =>
+          b.isDefault - a.isDefault ||
+          a.vehicleType.localeCompare(b.vehicleType) ||
+          a.name.startsWith('generic_') - b.name.startsWith('generic_') ||
+          a.name.localeCompare(b.name)
+      );
+  }
+
+  /** The interfaces a device of this model can use (its `interfaces`), or [] for an unknown model. */
+  static interfacesOf(deviceModel) {
+    return models[deviceModel]?.interfaces ?? [];
   }
 
   /** The model a device of `category` gets when none is given (null for an unknown category). */
@@ -74,8 +108,8 @@ export class deviceModelsModel {
     if (!iface) return null;
     const model = models[deviceModel];
     if (!model) return { path: ['deviceModel'], message: `unknown device model '${deviceModel}'` };
-    const why = incompatibility(deviceModel, model, category, iface);
-    return why ? { path: ['deviceModel'], message: why } : null;
+    const why = modelInterfaceProblem(deviceModel, model, category, iface);
+    return why ? { path: ['category'], message: why } : null;
   }
 
   /**

@@ -1,4 +1,5 @@
 vehicleType: multirotor
 firmware: [ px4 ]
+interfaces: [ catec ]
 label: 'CATEC'
 icon: catec

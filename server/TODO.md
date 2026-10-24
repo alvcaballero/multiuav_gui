@@ -157,6 +157,16 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
     El cambio de fuente NO genera Event (fila en DB + snackbar por cada vaivén del fix RTK): si hace falta avisar
     al operador, mejor un chip en el cliente que lea `positionSource` / `position_rtk.at`
 
+- [ ] **Robofleet (FlatBuffer) con los mismos topics y mensajes que ROS/MQTT → eliminar `simulationFB`**
+  - Hoy una interfaz con mensajes ROS (`dji_M300`) viaja igual por `ros` o `mqtt`: mismos slots, mismos
+    `messageType`, el mismo `decodeMsg`. Robofleet todavía no: el bridge publica sus propios nombres
+    (`/<uav>/configureMission`…), así que el M300 por robofleet necesita una interfaz aparte (`simulationFB`)
+  - Objetivo: que el bridge robofleet publique los nombres de `devices_msg` (`'/<device>' + name`) y los
+    mensajes `.msg` tal cual, como ya hace el lado de decodificación (`decodeFbViaCategory`); quitar el
+    fallback a `decodeFbMsg` y los nombres propios de `fbEncode.js`; y entonces un M300 por robofleet usa
+    la interfaz `dji_M300` con `protocol: robofleet`, y `simulationFB` se borra (y sale de `dji_M300.interfaces`)
+  - Ver server/CLAUDE.md › FlatBuffer Protocol (no verificado contra un device robofleet real)
+
 - [ ] **Verificar los datos físicos de los device models**
   - `config/devices/device_models/_dji_rotorcraft.yaml` (y `dji_M600`): masa, rotores, coeficientes
     aerodinámicos, batería, velocidades y rangos de los sensores de obstáculos se copiaron TAL CUAL del
