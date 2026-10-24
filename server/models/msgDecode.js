@@ -23,6 +23,7 @@ import {
 //   battery.scale        multiplier that turns `percentage` into percent (default 1)
 //   gimbal.unit          'rad' converts the angles to degrees (default: already degrees)
 //   imu.heading_offset   degrees added to the yaw to get the course (default 90)
+//   attribute            name under `position.attributes` where that source keeps its own last fix (default: the slot)
 //   priority, fresh_ms   a slot that carries lat/lon next to another one (DJI position / position_rtk):
 //                        the higher priority wins while it is fresher than `fresh_ms` (see positionReducers.js)
 
@@ -82,6 +83,7 @@ export function decodeMsg({ msg, deviceId, type, msgType, params = {} }) {
     patch.positionSource = type;
     patch.positionPriority = Number(params.priority ?? 0);
     if (params.fresh_ms != null) patch.positionFreshMs = Number(params.fresh_ms);
+    if (params.attribute != null) patch.positionAttribute = params.attribute;
   }
   return patch;
 }

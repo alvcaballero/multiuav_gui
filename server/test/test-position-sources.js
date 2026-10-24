@@ -6,7 +6,7 @@ import { decodeMsg } from '../models/msgDecode.js';
 // Arbitration between the slots of a category that carry lat/lon (DJI: `position` GNSS and
 // `position_rtk`). Pure: reducers + decoder, no database. The clock is injected (`now`).
 
-const GNSS = { priority: 0, fresh_ms: 3000 };
+const GNSS = { priority: 0, fresh_ms: 3000, attribute: 'position_gps' };
 const RTK = { priority: 10, fresh_ms: 3000 };
 const fix = (lat, lon) => ({ header: { seq: 1 }, latitude: lat, longitude: lon, altitude: 12.34 });
 
@@ -105,5 +105,29 @@ describe('position source arbitration', () => {
     assert.equal(pos.latitude, 43.2);
     assert.equal(pos.attributes.positionSource, undefined);
     assert.equal(effects.length, 0);
+  });
+
+  test('every source keeps its own fix in attributes, winner or not', () => {
+    const pos = createDefaultPosition(1);
+    rtk(pos, 43.1, -8.1, 1000);
+    gnss(pos, 43.2, -8.2, 1500);
+    assert.deepEqual(pos.attributes.position_rtk, { latitude: 43.1, longitude: -8.1, altitude: 12.3, at: 1000, fix: 'ok' });
+    assert.deepEqual(pos.attributes.position_gps, { latitude: 43.2, longitude: -8.2, altitude: 12.3, at: 1500, fix: 'ok' });
+    assert.equal(pos.latitude, 43.1);
+  });
+
+  test('0,0 marks that source nofix, without coordinates', () => {
+    const pos = createDefaultPosition(1);
+    gnss(pos, 43.2, -8.2, 1000);
+    gnss(pos, 0, 0, 1200);
+    assert.deepEqual(pos.attributes.position_gps, { at: 1200, fix: 'nofix' });
+    assert.equal(pos.latitude, 43.2);
+  });
+
+  test('the attribute defaults to the slot', () => {
+    const pos = createDefaultPosition(1);
+    rtk(pos, 43.1, -8.1, 1000);
+    assert.equal(pos.attributes.position_rtk.fix, 'ok');
+    assert.equal(pos.attributes.position, undefined);
   });
 });

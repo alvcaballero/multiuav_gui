@@ -156,7 +156,8 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
     MSL, ~50 m en España): al cambiar de fuente en vuelo puede saltar la altitud en el mapa 3D y en
     `missionSignals`. Verificar con datos reales del M210/M300 antes de confiar en ella
   - Calidad del fix RTK: hoy solo se mira la frescura (+ lat/lon 0). Si el nodo DJI publica `rtk_position` sin
-    fix, hay que mirar `status.status` o el topic de estado RTK del OSDK
+    fix, hay que mirar `status.status` o el topic de estado RTK del OSDK. Hoy `attributes.position_gps|rtk.fix`
+    es `'nofix'` solo con lat/lon 0; `NavSatFix.status.status` (-1/0/1/2) no se lee y no está verificado qué rellena el OSDK
   - Salto al volver el RTK: no hay histéresis; al recuperarse gana de inmediato y la posición (y la altitud, ver
     arriba) salta los metros que separan ambas fuentes. Si molesta en el mapa o en el tracking de waypoints,
     exigir N mensajes seguidos antes de volver a RTK

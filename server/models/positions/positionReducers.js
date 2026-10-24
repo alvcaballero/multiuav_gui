@@ -19,6 +19,7 @@ import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
  * @property {number} [altitude]
  * @property {string} [positionSource] - slot that produced lat/lon; set by `decodeMsg` only when the entry declares `priority`/`fresh_ms`
  * @property {number} [positionPriority] - higher wins (default 0)
+ * @property {string} [positionAttribute] - key of `attributes` that keeps the last fix of this source (default: the slot)
  * @property {number} [positionFreshMs] - how long a patch of this source blocks lower priorities (default POSITION_FRESH_MS)
  * @property {number} [course] - degrees, 0 = north
  * @property {number} [speed] - m/s
@@ -86,6 +87,9 @@ const has = (p, key) => Object.hasOwn(p, key);
 // while another source of HIGHER priority delivered one within ITS `fresh_ms`: when that
 // source goes quiet the lower one takes over again, and when it comes back it wins at
 // once. Patches with no `positionSource` (every other category) are never arbitrated.
+// Every source also keeps its OWN last fix in `attributes[<entry.attribute ?? slot>]`
+// (`{ latitude, longitude, altitude, at, fix }`, `at` = server ms of its last message), winner or not,
+// so the client can show both. `fix: 'nofix'` = the receiver sent 0,0 (no latitude/longitude then).
 export const POSITION_FRESH_MS = 3000;
 
 const sourcesSeen = new WeakMap(); // position -> Map(slot -> { priority, freshMs, at })
@@ -102,11 +106,22 @@ function gatePosition(position, patch, now, effects) {
   const drop = () => {
     for (const key of ['latitude', 'longitude', 'altitude', 'deviceTime']) delete patch[key];
   };
-  // 0,0 is what a NavSatFix carries before the receiver has a fix: not a position, not a sign of life.
-  if (isNullIsland(patch)) return drop();
-
   const slot = patch.positionSource;
+  const key = patch.positionAttribute ?? slot;
+
+  // 0,0 is what a NavSatFix carries before the receiver has a fix: not a position, not a sign of life.
+  if (isNullIsland(patch)) {
+    if (slot !== undefined) position.attributes[key] = { at: now, fix: 'nofix' };
+    return drop();
+  }
   if (slot === undefined) return;
+  position.attributes[key] = {
+    latitude: patch.latitude,
+    longitude: patch.longitude,
+    altitude: patch.altitude,
+    at: now,
+    fix: 'ok',
+  };
 
   const priority = patch.positionPriority ?? 0;
   const seen = sourcesSeen.get(position) ?? sourcesSeen.set(position, new Map()).get(position);
