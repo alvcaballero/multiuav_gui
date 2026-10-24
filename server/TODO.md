@@ -133,6 +133,36 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
   - En MAVLink el tipo ya viaja en el HEARTBEAT (`MAV_TYPE`); `mavlinkFlightMode` solo mapea ArduPilot
     multirrotor (Plane/Rover numeran distinto y caen en OTHER)
 
+- [ ] **Renombrar `category` → `interface`** (en otra fase, después de capacidades/tipos de vehículo)
+  - `category` (`devices_msg.yaml`, `Device.category`) nunca fue una categoría de dispositivo: es la INTERFAZ,
+    el conjunto de mensajes + topics + encoders de un stack (`dji_M210_noetic` = DJI OSDK en ROS Noetic)
+  - Mientras tanto se queda el nombre y se documenta como interfaz. NO reutilizar "categoría" para el tipo de
+    vehículo: cada referencia existente pasaría a mentir sin error
+  - Toca DB (migración de columna), API, cliente, MCP (`mcp_server/`) y los prompts de los agentes
+
+- [ ] **MAVLink: el dialecto PX4/ArduPilot no es una interfaz**
+  - En MAVLink los mensajes los fija el PROTOCOLO, no la categoría: `px4_mavlink` y `ardupilot_mavlink`
+    solo difieren en el tag de dialecto (`mavlink/PX4_*` vs `mavlink/ARDUPILOT_*`) y un subscriber de gimbal,
+    y el firmware ya viaja en el HEARTBEAT (`autopilot`)
+  - Por ahora se quedan como dos categorías declaradas (la UI y el planner necesitan saberlo sin conexión;
+    el HEARTBEAT solo verifica)
+  - Revisar cuando aparezca un segundo modelo MAVLink que difiera en algo más que el firmware
+
+- [ ] **Slots de posición satelital: nombres y datum**
+  - Hoy `position` es la posición GNSS sin corrección y `position_rtk` la corregida por RTK; el cache usa la de
+    mayor prioridad que tenga mensajes recientes y cae a la otra. Definir nombres definitivos (`position_gnss`?)
+    al renombrar `category` → `interface`
+  - ALTITUD: se toma tal como viene de cada fuente. RTK y GPS pueden reportar en datums distintos (elipsoide vs
+    MSL, ~50 m en España): al cambiar de fuente en vuelo puede saltar la altitud en el mapa 3D y en
+    `missionSignals`. Verificar con datos reales del M210/M300 antes de confiar en ella
+  - Calidad del fix RTK: hoy solo se mira la frescura (+ lat/lon 0). Si el nodo DJI publica `rtk_position` sin
+    fix, hay que mirar `status.status` o el topic de estado RTK del OSDK
+  - Salto al volver el RTK: no hay histéresis; al recuperarse gana de inmediato y la posición (y la altitud, ver
+    arriba) salta los metros que separan ambas fuentes. Si molesta en el mapa o en el tracking de waypoints,
+    exigir N mensajes seguidos antes de volver a RTK
+  - Hecho: arbitraje por `priority`/`fresh_ms` de la entrada (`positionReducers.js`), `attributes.positionSource`
+    y un evento `info` al cambiar de fuente
+
 - [ ] **Enlace MAVLink por device** (UDP / TCP / serie-SiK)
   - Hoy los enlaces son del SERVER (`MAVLINK_LINKS`) y el vehículo se encuentra por sysid en
     cualquiera, así que el device solo necesita el System ID
