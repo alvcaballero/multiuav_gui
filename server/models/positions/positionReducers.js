@@ -17,6 +17,9 @@ import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
  * @property {number} [longitude]
  * @property {string} [deviceTime]
  * @property {number} [altitude]
+ * @property {string} [positionSource] - slot that produced lat/lon; set by `decodeMsg` only when the entry declares `priority`/`fresh_ms`
+ * @property {number} [positionPriority] - higher wins (default 0)
+ * @property {number} [positionFreshMs] - how long a patch of this source blocks lower priorities (default POSITION_FRESH_MS)
  * @property {number} [course] - degrees, 0 = north
  * @property {number} [speed] - m/s
  * @property {number|string} [batteryLevel] - percent; rounded on write
@@ -75,6 +78,54 @@ export function createDefaultPosition(deviceId) {
 }
 
 const has = (p, key) => Object.hasOwn(p, key);
+
+// ─── position source arbitration ───────────────────────────────────────────────
+// A category may subscribe SEVERAL slots that carry lat/lon (DJI: `position` GNSS and
+// `position_rtk`). Each entry declares `priority` (higher wins, default 0) and `fresh_ms`
+// in devices_msg.yaml; `decodeMsg` stamps them on the patch. A lat/lon patch is dropped
+// while another source of HIGHER priority delivered one within ITS `fresh_ms`: when that
+// source goes quiet the lower one takes over again, and when it comes back it wins at
+// once. Patches with no `positionSource` (every other category) are never arbitrated.
+export const POSITION_FRESH_MS = 3000;
+
+const sourcesSeen = new WeakMap(); // position -> Map(slot -> { priority, freshMs, at })
+
+const isNullIsland = (p) => p.latitude === 0 && p.longitude === 0;
+
+/**
+ * Decides whether the lat/lon of `patch` is applied. When it is not, the position keys of the
+ * patch (latitude, longitude, deviceTime and the altitude of the same message) are DELETED
+ * from it: the caller then sees a patch with no position (the controller does not announce it).
+ */
+function gatePosition(position, patch, now, effects) {
+  if (!has(patch, 'latitude')) return;
+  const drop = () => {
+    for (const key of ['latitude', 'longitude', 'altitude', 'deviceTime']) delete patch[key];
+  };
+  // 0,0 is what a NavSatFix carries before the receiver has a fix: not a position, not a sign of life.
+  if (isNullIsland(patch)) return drop();
+
+  const slot = patch.positionSource;
+  if (slot === undefined) return;
+
+  const priority = patch.positionPriority ?? 0;
+  const seen = sourcesSeen.get(position) ?? sourcesSeen.set(position, new Map()).get(position);
+  seen.set(slot, { priority, freshMs: patch.positionFreshMs ?? POSITION_FRESH_MS, at: now });
+
+  for (const [other, s] of seen) {
+    if (other !== slot && s.priority > priority && now - s.at <= s.freshMs) return drop();
+  }
+
+  const previous = position.attributes.positionSource;
+  position.attributes.positionSource = slot;
+  if (previous !== undefined && previous !== slot) {
+    effects.push({
+      type: 'info',
+      deviceId: patch.deviceId,
+      attributes: { action: 'PositionSource', message: `Position source: ${previous} -> ${slot}` },
+    });
+  }
+}
 
 const VEHICLE_STATE_KEYS = ['armState', 'flightMode', 'flightModeRaw', 'flightPhase', 'flightPhaseRaw', 'failsafe', 'flightCheck', 'systemId'];
 
@@ -184,13 +235,16 @@ export const REDUCERS = [
 ];
 
 /**
- * Merges `patch` into `position` (in place) and returns the events to emit.
+ * Merges `patch` into `position` (in place) and returns the events to emit. A lat/lon patch
+ * that loses the source arbitration (or is 0,0) has its position keys removed from `patch`.
  * @param {object} position
  * @param {TelemetryPatch} patch
+ * @param {number} [now] - ms; injected so a test can move the clock
  * @returns {object[]} events for `eventsController.addEvent`
  */
-export function applyPatch(position, patch) {
+export function applyPatch(position, patch, now = Date.now()) {
   const effects = [];
+  gatePosition(position, patch, now, effects);
   for (const reducer of REDUCERS) {
     if (reducer.when(patch)) reducer.apply(position, patch, effects);
   }

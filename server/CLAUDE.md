@@ -416,10 +416,24 @@ A decoder is picked by `(slot, messageType)` — the `subscribers` key plus the 
 entry declares — and returns a `TelemetryPatch` (typedef in `models/positions/positionReducers.js`),
 which `positionsModel.updatePosition` merges through ordered reducers.
 
-- `sensor_msgs/NavSatFix` → GPS position
+- `sensor_msgs/NavSatFix` → GPS position (slots `position`, `position_rtk`)
 - `px4_msgs/VehicleStatus` → `armState` + `flightMode` (canonical, see below), failsafe
 - `sensor_msgs/Imu` → Heading from quaternion
 - `sensor_msgs/BatteryState` (and its `*/BatteryState*` look-alikes) → Battery percentage
+
+**Several slots with lat/lon: source arbitration** (`gatePosition`, `models/positions/positionReducers.js`;
+test `test/test-position-sources.js`). DJI categories subscribe `position` (GNSS) AND `position_rtk`
+(`/dji_osdk_ros/rtk_position`); there is no `*_rtk` category. It is a param of each subscriber entry, never a
+branch on a slot or category name: `priority` (higher wins, default 0) and `fresh_ms` (how long a patch of that
+slot keeps blocking lower priorities, default `POSITION_FRESH_MS` = 3000). `decodeMsg` stamps
+`positionSource`/`positionPriority`/`positionFreshMs` on a lat/lon patch ONLY when the entry declares one of
+them, so a category without them behaves as before. A lower-priority patch is dropped while a higher one is
+fresh (server clock, injected as `now`); when the RTK goes quiet GNSS takes over, and when it returns it wins
+at once. A dropped patch loses `latitude/longitude/altitude/deviceTime` (altitude is taken as each source
+gives it, the datum is open in `TODO.md`), so `POSITION_RECEIVED` and mission tracking only see the position
+that was applied. A patch with lat = lon = 0 is never applied and never counts as fresh (any category). The
+winner is `position.attributes.positionSource`; a change emits an `info` event. The slot that may be absent
+(`position_rtk`) needs `watchdog: false`.
 
 **Vehicle state is canonical, never a firmware label.** Three independent axes in
 `position.attributes`, vocabulary in `config/status.js`: `armState` (`ARM_STATE`), `flightPhase`

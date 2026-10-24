@@ -23,6 +23,8 @@ import {
 //   battery.scale        multiplier that turns `percentage` into percent (default 1)
 //   gimbal.unit          'rad' converts the angles to degrees (default: already degrees)
 //   imu.heading_offset   degrees added to the yaw to get the course (default 90)
+//   priority, fresh_ms   a slot that carries lat/lon next to another one (DJI position / position_rtk):
+//                        the higher priority wins while it is fresher than `fresh_ms` (see positionReducers.js)
 
 const toDeg = (rad) => (rad * 180) / Math.PI;
 const norm3 = ({ x, y, z }) => Math.sqrt(x * x + y * y + z * z);
@@ -74,7 +76,14 @@ export function hasDecoder(slot, msgType) {
  */
 export function decodeMsg({ msg, deviceId, type, msgType, params = {} }) {
   const decode = decoders.get(keyOf(type, msgType)) ?? decoders.get(keyOf(type, ANY));
-  return decode ? decode({ msg, deviceId, params }) : null;
+  const patch = decode ? decode({ msg, deviceId, params }) : null;
+  // The entry opts in to source arbitration; the patch carries which slot it came from.
+  if (patch && patch.latitude !== undefined && (params.priority != null || params.fresh_ms != null)) {
+    patch.positionSource = type;
+    patch.positionPriority = Number(params.priority ?? 0);
+    if (params.fresh_ms != null) patch.positionFreshMs = Number(params.fresh_ms);
+  }
+  return patch;
 }
 
 // ─── position ──────────────────────────────────────────────────────────────────
@@ -86,6 +95,16 @@ register('position', 'sensor_msgs/NavSatFix', ({ msg, deviceId }) => ({
   longitude: msg.longitude,
   altitude: round(msg.altitude, 1),
   deviceTime: getDatetime(), // "2023-03-09T22:12:44.000+00:00",
+}));
+
+// Second satellite source of the same device (DJI RTK); arbitrated against `position` by priority.
+register('position_rtk', 'sensor_msgs/NavSatFix', ({ msg, deviceId }) => ({
+  id: msg.header.seq,
+  deviceId,
+  latitude: msg.latitude,
+  longitude: msg.longitude,
+  altitude: round(msg.altitude, 1),
+  deviceTime: getDatetime(),
 }));
 
 register('position', 'nav_msgs/msg/Odometry', ({ msg, deviceId }) => ({

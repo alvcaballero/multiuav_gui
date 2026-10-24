@@ -35,6 +35,7 @@
 // `if (type == SubscriberKey.POSITION_GLOBAL)` en vez del literal 'position_global'.
 export const SubscriberKey = Object.freeze({
   POSITION: 'position',
+  POSITION_RTK: 'position_rtk',
   POSITION_GLOBAL: 'position_global',
   LOCAL_POSITION: 'local_position',
   VEHICLE_STATUS: 'vehicle_status',
@@ -68,6 +69,7 @@ export const SubscriberKey = Object.freeze({
 //                     mensaje se recibe pero no se consume.
 export const SUBSCRIBER_CATALOG = {
   [SubscriberKey.POSITION]: { decoded: true },
+  [SubscriberKey.POSITION_RTK]: { decoded: true },
   [SubscriberKey.POSITION_GLOBAL]: { decoded: true },
   [SubscriberKey.LOCAL_POSITION]: { decoded: true },
   [SubscriberKey.VEHICLE_STATUS]: { decoded: true },
