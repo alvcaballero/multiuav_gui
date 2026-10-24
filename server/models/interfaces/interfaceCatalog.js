@@ -54,30 +54,116 @@ function resolvedProblems(def) {
   return problems;
 }
 
+// What a concrete interface must say about itself (an abstract base may leave it to its children).
+function identityProblems(def) {
+  const problems = [];
+  if (!def.firmwares) problems.push({ path: ['firmwares'], message: 'missing firmwares' });
+  if (!def.vehicleTypes) problems.push({ path: ['vehicleTypes'], message: 'missing vehicleTypes' });
+  return problems;
+}
+
 const prefixed = (key, problems) => problems.map(({ path, message }) => ({ path: [key, ...path], message }));
 
+// Blocks that are maps of entries: a child merges entry by entry (a `null` entry removes the
+// inherited one). Everything else (firmwares, vehicleTypes, mission…) the child just replaces.
+const ENTRY_BLOCKS = [...ENDPOINT_BLOCKS, 'commands'];
+
+function mergeEntries(parentBlock = {}, childBlock = {}) {
+  const merged = { ...parentBlock };
+  for (const [key, entry] of Object.entries(childBlock)) {
+    if (entry === null) delete merged[key];
+    else merged[key] = { ...(merged[key] ?? {}), ...entry };
+  }
+  return merged;
+}
+
+/** `child` over its resolved `parent`; `abstract` is never inherited. */
+export function mergeInterface(parent, child) {
+  const { abstract, ...out } = { ...parent, ...child };
+  for (const block of ENTRY_BLOCKS) {
+    if (block in child) out[block] = mergeEntries(parent[block], child[block]);
+  }
+  if (child.heartbeat === null) delete out.heartbeat;
+  else if (child.heartbeat) out.heartbeat = { ...(parent.heartbeat ?? {}), ...child.heartbeat };
+  if (child.abstract) out.abstract = true;
+  return out;
+}
+
+const hasNullEntries = (def) =>
+  def.heartbeat === null || ENTRY_BLOCKS.some((block) => Object.values(def[block] ?? {}).includes(null));
+
 /**
- * Validates every interface of `raw` (key → file contents). An interface with any problem is
- * LEFT OUT of `catalog`; the others are not affected.
- * @returns {{ catalog: Record<string, object>, problems: {path: (string|number)[], message: string}[] }}
+ * Validates and resolves every interface of `raw` (key → file contents), in two passes: shape of
+ * each file, then `extends` (so the order of the files does not matter). An interface with any
+ * problem is LEFT OUT, and so are its children (their problem says why); the others are not
+ * affected. Abstract interfaces are only bases: they are in `abstract`, never in `catalog`.
+ * @returns {{
+ *   catalog: Record<string, object>,
+ *   abstract: Record<string, object>,
+ *   problems: {path: (string|number)[], message: string}[],
+ * }}
  */
 export function buildCatalog(raw) {
-  const catalog = {};
   const problems = [];
+  const shaped = {};
   for (const [key, def] of Object.entries(raw)) {
     const own = interfaceShapeProblems(def);
-    if (own.length === 0) own.push(...resolvedProblems(def));
+    if (own.length === 0 && !def.extends && hasNullEntries(def)) {
+      own.push({ path: [], message: 'a null entry removes an inherited one, and this interface extends nothing' });
+    }
+    if (own.length) problems.push(...prefixed(key, own));
+    else shaped[key] = def ?? {};
+  }
+
+  const resolved = {};
+  const failed = new Set(Object.keys(raw).filter((key) => !shaped[key]));
+  const resolve = (key, chain) => {
+    if (resolved[key] || failed.has(key)) return resolved[key];
+    const def = shaped[key];
+    const fail = (message) => {
+      problems.push({ path: [key, 'extends'], message });
+      failed.add(key);
+    };
+    if (!def.extends) return (resolved[key] = mergeInterface({}, def));
+    const parentKey = def.extends;
+    if (parentKey === key || chain.includes(parentKey)) return fail(`cycle: ${[...chain, key, parentKey].join(' → ')}`);
+    if (!(parentKey in raw)) return fail(`extends unknown interface '${parentKey}'`);
+    const parent = resolve(parentKey, [...chain, key]);
+    if (!parent) return fail(`not loaded because its parent '${parentKey}' is invalid`);
+    return (resolved[key] = mergeInterface(parent, def));
+  };
+  for (const key of Object.keys(shaped)) resolve(key, []);
+
+  const catalog = {};
+  const abstract = {};
+  for (const [key, def] of Object.entries(resolved)) {
+    if (def.abstract) {
+      abstract[key] = def;
+      continue;
+    }
+    const own = [...identityProblems(def), ...resolvedProblems(def)];
     if (own.length) problems.push(...prefixed(key, own));
     else catalog[key] = def;
   }
-  return { catalog, problems };
+  return { catalog, abstract, problems };
+}
+
+/** The interface at the top of `key`'s `extends` chain (itself when it extends nothing). */
+export function rootOf(raw, key) {
+  const seen = new Set();
+  let current = key;
+  while (raw[current]?.extends && !seen.has(current)) {
+    seen.add(current);
+    current = raw[current].extends;
+  }
+  return current;
 }
 
 /** Reads `dir` and builds its catalog; file problems (bad name, bad YAML) come first. */
 export function loadInterfaces(dir) {
   const { raw, problems: fileProblems } = readInterfaceDir(dir);
-  const { catalog, problems } = buildCatalog(raw);
-  return { raw, catalog, problems: [...fileProblems, ...problems] };
+  const { catalog, abstract, problems } = buildCatalog(raw);
+  return { raw, catalog, abstract, problems: [...fileProblems, ...problems] };
 }
 
 export const formatProblem = ({ path, message }) => `${path.join('.')}: ${message}`;

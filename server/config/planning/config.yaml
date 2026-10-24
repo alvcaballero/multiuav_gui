@@ -23,7 +23,7 @@ missionTypes:
               'dji_M210_noetic',
               'dji_M210_melodic',
               'dji_M300',
-              'px4',
+              'px4_ros2',
             ]
       settings:
         base:

@@ -11,6 +11,7 @@ categoryRouter.get('/attributeslist/:type', categoryController.getAttributesList
 categoryRouter.get('/waypointparams/:type', categoryController.getWaypointParams);
 categoryRouter.get('/attributesdefaults/:type', categoryController.getAttributesDefaults);
 categoryRouter.get('/actions/:type', categoryController.getActions);
+categoryRouter.get('/:category/raw', categoryController.getCategoryRaw);
 categoryRouter.get('/:category', categoryController.getCategory);
 categoryRouter.put('/:category', categoryController.updateCategory);
 categoryRouter.post('/:category', categoryController.createCategory);

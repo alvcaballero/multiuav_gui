@@ -1,37 +1,24 @@
+# px4_mavros through a relay that runs ON THE DRONE: it republishes the telemetry under /slow/ at a
+# lower rate, so only the slow topics cross the link (rosbridge runs next to the GCS and, in ROS 1, a
+# subscriber gets every message of the topic it subscribes to). The relay also republishes the
+# battery and mission messages as multiuav_interfaces/*, whose definition matches on both sides of a
+# Melodic/Noetic link (a ROS 1 message whose md5sum differs does not connect).
+# The /slow/ names must match the relay's launch on the drone.
+extends: px4_mavros
 subscribers:
   position:
-    name: '/gcs/gps_position'
-    messageType: 'sensor_msgs/NavSatFix'
+    name: '/slow/gps_position'
   height_above_takeoff:
-    name: '/gcs/altitude'
-    messageType: 'mavros_msgs/Altitude'
+    name: '/slow/altitude'
   heading:
-    name: '/gcs/compass_hdg'
-    messageType: 'std_msgs/Float64'
+    name: '/slow/compass_hdg'
   speed:
-    name: '/gcs/velocity'
-    messageType: 'geometry_msgs/TwistStamped'
+    name: '/slow/velocity'
   battery:
-    name: '/gcs/battery'
+    name: '/slow/battery'
     messageType: 'multiuav_interfaces/BatteryState'
-    scale: 100 # percentage arrives as 0-1
   camera:
-    name: '/gcs/video_stream_compress'
-    messageType: 'sensor_msgs/CompressedImage'
-  threat:
-    name: '/threat'
-    messageType: 'std_msgs/Bool'
-    watchdog: false # event-driven
+    name: '/slow/video_stream_compress'
 services:
   configure_mission:
-    name: '/mission/new'
     messageType: 'multiuav_interfaces/ConfigMission'
-  command_mission:
-    name: '/mission/start_stop'
-    messageType: 'std_srvs/SetBool'
-  sync_files:
-    name: '/px4_mission_node/send_bags'
-    messageType: 'std_srvs/Bool'
-  camera_file_download:
-    name: '/camera_download_files'
-    messageType: 'dji_osdk_ros/DownloadMedia'

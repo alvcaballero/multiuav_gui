@@ -54,6 +54,37 @@ export const TASK_TERMINAL_STATUS = Object.freeze([
 // Terminal tasks that never flew to completion: they make a finished mission "with errors".
 export const TASK_FAILED_STATUS = Object.freeze([TASK_STATUS.CANCELLED, TASK_STATUS.ERROR, TASK_STATUS.SKIPPED]);
 
+// --- What a device is and what talks to it (VEHICLE_PLATFORMS_PLAN.md) ---
+// How a vehicle moves: what its missions can contain. An interface lists the ones it can serve
+// (`vehicleTypes`); a device model will declare the one it is.
+export const VEHICLE_TYPE = Object.freeze({
+  MULTIROTOR: 'multirotor',
+  FIXED_WING: 'fixed_wing',
+  VTOL: 'vtol',
+  FLAPPING_WING: 'flapping_wing', // ornithopter: flies forward like a fixed wing, cannot hover
+  USV: 'usv', // surface vessel
+  UGV: 'ugv', // ground vehicle
+});
+
+// The software that runs the vehicle. An interface lists the ones it drives correctly
+// (`firmwares`): one for a firmware-specific bridge (DJI OSDK, uXRCE-DDS, a MAVLink dialect), several
+// for one that only translates (mavros is MAVLink in ROS: PX4 and ArduPilot alike). Which one a
+// vehicle actually runs is a fact of its device model / the device (F2), not of the interface.
+export const FIRMWARE = Object.freeze({
+  DJI: 'dji',
+  PX4: 'px4',
+  ARDUPILOT: 'ardupilot',
+  NAV2: 'nav2', // ROS 2 navigation stack of a ground robot: no autopilot
+  CUSTOM: 'custom', // its own controller, no known family (sjtu_drone: a Gazebo plugin with its PIDs)
+});
+
+// Who the GCS talks to (`control`). Informative only: what a companion enables is already derived
+// from the endpoints, so nothing may branch on it.
+export const INTERFACE_CONTROL = Object.freeze({
+  AUTOPILOT: 'autopilot', // straight to the flight controller (MAVLink, uXRCE-DDS)
+  COMPANION: 'companion', // a program on board in between (DJI OSDK/PSDK node, mavros, a bridge)
+});
+
 // --- Canonical vehicle state ---
 // The GCS vocabulary: every decoder translates its message's own codes into these, so no
 // consumer ever compares against a firmware's label. Three independent axes; UNKNOWN means

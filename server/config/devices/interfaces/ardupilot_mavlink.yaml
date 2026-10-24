@@ -1,3 +1,6 @@
+firmwares: [ ardupilot ]
+vehicleTypes: [ multirotor ]
+control: autopilot
 subscribers:
   vehicle_status:
     messageType: 'mavlink/HEARTBEAT'

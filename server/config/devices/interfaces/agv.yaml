@@ -1,3 +1,6 @@
+firmwares: [ nav2 ]
+vehicleTypes: [ ugv ]
+control: companion
 subscribers:
   position:
     name: '/odom'

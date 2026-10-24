@@ -134,6 +134,12 @@ archivo ENTERO al guardar, así que editar una categoría borra los comentarios 
 - `test/test-devices-msg.js` corre el validador sobre todos los archivos de la carpeta: un archivo mal
   escrito rompe `npm test`, no el boot en campo.
 
+#### Estado F1.0 (2026-10-24): hecho (`0506110`)
+
+16 archivos, comentarios conservados, golden idéntico. La primera corrida del validador solo encontró
+`griffin.subscribers.speed` (`name: ' '`), que se borró: el topic real no se conoce. El editor sigue
+sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nombre; deuda anterior).
+
 ### F1 · Interfaces: `extends`, `vehicleTypes`, `firmware`
 
 - `categoryModel` (único lector de las interfaces) resuelve `extends` en DOS pasadas: carga todas en
@@ -153,6 +159,31 @@ archivo ENTERO al guardar, así que editar una categoría borra los comentarios 
 - **Riesgo R1**: el editor de categorías (Settings › Category) reescribe el YAML (`writeDataFile`).
   Tiene que editar y guardar la forma CRUDA (con `extends`), no la resuelta, o aplana las variantes.
 - Cliente: el selector de categoría agrupa por la raíz del `extends` ("M210 · ROS Noetic / Melodic").
+
+#### Estado F1 (2026-10-24): hecho
+
+- `extends` (con `slot: null` para quitar una entrada heredada), `abstract`, `firmwares`, `vehicleTypes`,
+  `control` y `mission:` (reemplaza a `CATEGORY_PROFILE_OVERRIDES`). `dji_M210_melodic` = `extends:
+  dji_M210_noetic` + su batería (5 líneas en vez de 57). `px4_mavros_slow` = `extends: px4_mavros` + los
+  topics `/slow/*` del relay + sus dos tipos `multiuav_interfaces/*`.
+- **`firmwares` es una LISTA** en la interfaz: con qué firmwares funciona correctamente (mavros traduce
+  MAVLink, así que las interfaces mavros listan `[px4, ardupilot]`). El firmware que CORRE un vehículo es
+  del device model / device (F2). Por eso no hace falta `unknown`: lo que no se sabe es del vehículo.
+- Vocabularios nuevos en `config/status.js`: `VEHICLE_TYPE` (+ `flapping_wing` para griffin), `FIRMWARE`
+  (+ `nav2` para el UGV, `custom` para sjtu_drone: plugin de Gazebo con sus PIDs).
+- Identidad declarada por el usuario: px4_mavros(_slow) = multirotor (x500 por mavros); simulationFB = M300
+  por robofleet (dji); agv = UGV con Nav2; sjtu y catec multirotor; fuvex ala fija; griffin ornitóptero.
+- Se borraron las entradas `state_machine` de las interfaces (M210, M300, px4_mavros, catec): eran una
+  prueba. Los decoders siguen registrados.
+- `config/planning/config.yaml` nombraba `'px4'` (no existe) → `'px4_ros2'`. El chequeo al bootear lo encontró.
+- **El relay `_slow` corre en el dron**: es lo único que ahorra el enlace en ROS 1 (rosbridge corre junto al
+  GCS; `throttle_rate` de rosbridge solo descarta del lado del GCS, después de que los mensajes cruzaron).
+  Falta: cambiar el launch del relay en el dron de `/gcs/*` a `/slow/*`, y declarar `rate_hz` en las
+  entradas del `_slow` (para el timeout del watchdog) cuando se sepa qué tasa entrega.
+- Pendiente para F2: el device `vtol_1` (DB local) usa `px4_mavros_slow`, que declara solo `multirotor`. Si
+  su modelo es VTOL, la compatibilidad lo va a rechazar: agregar `vtol` a la interfaz o moverlo.
+- Cliente: el editor carga `/raw` y avisa de quién hereda; el selector de categoría del device lista cada
+  variante debajo de su raíz ("dji_M210_melodic (variant of dji_M210_noetic)").
 
 ### F2 · Device models
 

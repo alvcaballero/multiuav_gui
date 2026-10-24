@@ -1,3 +1,7 @@
+firmwares: [ dji ]
+vehicleTypes: [ multirotor ]
+control: companion
+mission: default # no waypoint actions/params beyond the default profile
 subscribers:
   position:
     name: '/dji_sdk/gps_position'

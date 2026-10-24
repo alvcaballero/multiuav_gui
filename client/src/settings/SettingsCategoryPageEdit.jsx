@@ -24,7 +24,8 @@ import SettingsMenu from './components/SettingsMenu';
 import useSettingsStyles from './common/useSettingsStyles';
 import EditItemView from './components/EditItemView';
 
-// The devices_msg.yaml blocks a category declares; every block names its type with `messageType`.
+// The blocks a category (server/config/devices/interfaces/<name>.yaml) declares; every block names
+// its type with `messageType`.
 // Which keys and types can be picked comes from GET /api/category/messages, derived on the
 // server from the decoders and from what categories already declare.
 const BLOCKS = [
@@ -157,12 +158,21 @@ const SettingsCategoryPageEdit = () => {
   return (
     <EditItemView
       endpoint="category"
+      // The file as written (own entries + `extends`), not the resolved category: saving the
+      // resolved one would copy every inherited entry into this file and cut it off from its parent.
+      loadPath={(categoryId) => `/api/category/${encodeURIComponent(categoryId)}/raw`}
       item={item}
       setItem={setItem}
       validate={() => Boolean(item)}
       menu={<SettingsMenu />}
       breadcrumbs={['Category', id ?? 'New']}
     >
+      {item?.extends && (
+        <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1 }}>
+          Extends <b>{item.extends}</b>: only what this category changes is listed below; everything
+          else comes from {item.extends}.
+        </Typography>
+      )}
       {catalog &&
         item &&
         BLOCKS.map((section) => (

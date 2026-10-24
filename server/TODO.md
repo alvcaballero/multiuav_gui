@@ -157,6 +157,18 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
     El cambio de fuente NO genera Event (fila en DB + snackbar por cada vaivén del fix RTK): si hace falta avisar
     al operador, mejor un chip en el cliente que lea `positionSource` / `position_rtk.at`
 
+- [ ] **Verificar la interfaz `sjtu` contra el simulador real** (para más adelante)
+  - sjtu_drone (github.com/NovoG93/sjtu_drone): quadrotor de Gazebo en ROS 2 con su propio plugin de
+    control (PIDs), sin PX4/ArduPilot → `firmwares: [custom]`. Copia local en `/home/grvc/work/sjtu_drone`
+  - Arranque: `tmuxinator start -p /home/grvc/work/sjtu_drone/tmuxinator.yaml` (`run_docker2.sh` levanta el
+    contenedor `sjtu_drone`; adentro, ROS 2 Iron + `rosbridge_websocket_launch.xml`; el tercer pane hace
+    `ros2 topic list`)
+  - Contrastar con `ros2 topic list` / `ros2 topic info`: según su README `~/gps/vel` es `TwistStamped` (la
+    interfaz dice `Vector3Stamped`); el estado de vuelo real es `~/state` (`Int8`: 0 landed, 1 flying,
+    2 hovering) y la interfaz usa `/joint_states` como `flight_status`; el namespace es `/simple_drone` en
+    su config y `/drone` en sus ejemplos; los messageType no llevan `/msg/` (estilo ROS 1)
+  - Comandos que expone (`~/takeoff`, `~/land`, `~/cmd_vel`, `~/posctrl`): hoy la interfaz no declara ninguno
+
 - [ ] **Enlace MAVLink por device** (UDP / TCP / serie-SiK)
   - Hoy los enlaces son del SERVER (`MAVLINK_LINKS`) y el vehículo se encuentra por sysid en
     cualquiera, así que el device solo necesita el System ID

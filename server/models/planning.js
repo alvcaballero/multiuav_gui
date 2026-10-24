@@ -8,6 +8,24 @@ const configPlanning = readDataFile('../config/planning/config.yaml');
 var initPlanning = readDataFile(missionsConfigData);
 import { missionController } from '../controllers/mission.js';
 import { missionLogger as logger } from '../common/logger.js';
+import { categoryModel } from './category.js';
+
+// Each mission type lists, BY NAME, the categories whose devices can fly it (decodeMissionRequest
+// filters on it). A name with no interface file filters every such device out with no error.
+export function unknownPlanningCategories(config, known) {
+  const unknown = [];
+  for (const missionType of config?.missionTypes ?? []) {
+    for (const name of missionType?.data?.devices?.category?.type ?? []) {
+      if (!known.includes(name)) unknown.push(`${missionType.name}: '${name}'`);
+    }
+  }
+  return unknown;
+}
+
+const unknownCategories = unknownPlanningCategories(configPlanning, categoryModel.getAll());
+if (unknownCategories.length) {
+  logger.warn(`planning/config.yaml names categories that do not exist: ${unknownCategories.join(', ')}`);
+}
 
 const requestPlanning = {};
 

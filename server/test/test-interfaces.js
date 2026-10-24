@@ -4,13 +4,18 @@ import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { interfacesDir } from '../config/config.js';
-import { buildCatalog, loadInterfaces } from '../models/interfaces/interfaceCatalog.js';
+import { buildCatalog, loadInterfaces, mergeInterface, rootOf } from '../models/interfaces/interfaceCatalog.js';
 import { readInterfaceDir, writeInterfaceFile } from '../models/interfaces/interfaceStore.js';
+import { categoryModel } from '../models/category.js';
 
 // config/devices/interfaces/: one file per interface, validated as a whole. The golden is what the
 // old devices_msg.yaml resolved to (minus griffin.speed, whose `name: ' '` never subscribed
-// anything): splitting the file must not change one value.
+// anything): splitting the file, and rewriting variants with `extends`, must not change one
+// endpoint. The identity fields F1 added (and `mission:`, which replaced the per-category
+// override list of missionSymbols.js) are compared apart.
 const golden = JSON.parse(readFileSync(new URL('./api/json/interfaces_golden.json', import.meta.url)));
+const IDENTITY = ['extends', 'firmwares', 'vehicleTypes', 'control', 'mission'];
+const endpointsOnly = (def) => Object.fromEntries(Object.entries(def).filter(([key]) => !IDENTITY.includes(key)));
 
 const withDir = (files, fn) => {
   const dir = mkdtempSync(path.join(tmpdir(), 'interfaces-'));
@@ -22,7 +27,9 @@ const withDir = (files, fn) => {
   }
 };
 
+const IDENTITY_FIELDS = { firmwares: ['px4'], vehicleTypes: ['multirotor'] };
 const ros = (extra = {}) => ({
+  ...IDENTITY_FIELDS,
   subscribers: { position: { name: '/gps', messageType: 'sensor_msgs/NavSatFix', ...extra } },
 });
 const problemsOf = (def) => buildCatalog({ x: def }).problems.map(({ path: p, message }) => [p.join('.'), message]);
@@ -34,8 +41,134 @@ describe('the real interface files', () => {
     assert.deepEqual(problems, []);
   });
 
-  test('resolve to exactly what devices_msg.yaml did', () => {
-    assert.deepEqual(catalog, golden);
+  test('resolve to exactly the endpoints devices_msg.yaml had', () => {
+    assert.deepEqual(Object.keys(catalog).sort(), Object.keys(golden).sort());
+    for (const [key, def] of Object.entries(catalog)) assert.deepEqual(endpointsOnly(def), golden[key], key);
+  });
+
+  test('dji_M210_melodic is the noetic stack with its own battery message', () => {
+    assert.equal(catalog.dji_M210_melodic.extends, 'dji_M210_noetic');
+    assert.equal(catalog.dji_M210_melodic.subscribers.battery.messageType, 'aerialcore_common/BatteryState_melodic');
+    assert.equal(catalog.dji_M210_melodic.mission, 'v1'); // inherited
+  });
+
+  test('the profile overrides that lived in missionSymbols.js are now `mission:` of each file', () => {
+    const missionOf = Object.fromEntries(Object.entries(catalog).filter(([, def]) => def.mission).map(([key, def]) => [key, def.mission]));
+    assert.deepEqual(missionOf, {
+      dji_M210_noetic: 'v1',
+      dji_M210_melodic: 'v1',
+      px4_mavros: 'v1',
+      px4_mavros_slow: 'v1',
+      dji_M600: 'default',
+    });
+  });
+});
+
+describe('extends', () => {
+  const base = {
+    firmwares: ['px4'],
+    vehicleTypes: ['multirotor'],
+    subscribers: {
+      position: { name: '/gps', messageType: 'sensor_msgs/NavSatFix' },
+      battery: { name: '/battery', messageType: 'sensor_msgs/BatteryState', scale: 100 },
+    },
+  };
+
+  test('a child merges entry by entry, field by field, and replaces everything else', () => {
+    const child = { extends: 'base', vehicleTypes: ['vtol'], subscribers: { battery: { messageType: 'x/BatteryState' } } };
+    assert.deepEqual(mergeInterface(base, child), {
+      extends: 'base',
+      firmwares: ['px4'],
+      vehicleTypes: ['vtol'],
+      subscribers: {
+        position: { name: '/gps', messageType: 'sensor_msgs/NavSatFix' },
+        battery: { name: '/battery', messageType: 'x/BatteryState', scale: 100 },
+      },
+    });
+  });
+
+  test('a null entry removes the inherited one', () => {
+    const { catalog } = buildCatalog({ base, child: { extends: 'base', subscribers: { battery: null } } });
+    assert.deepEqual(Object.keys(catalog.child.subscribers), ['position']);
+  });
+
+  test('a null entry in an interface that extends nothing is an error', () => {
+    assert.deepEqual(problemsOf({ ...base, subscribers: { ...base.subscribers, battery: null } }), [
+      ['x', 'a null entry removes an inherited one, and this interface extends nothing'],
+    ]);
+  });
+
+  test('the order of the files does not matter', () => {
+    const { catalog } = buildCatalog({ c: { extends: 'b' }, b: { extends: 'a' }, a: base });
+    assert.deepEqual(Object.keys(catalog).sort(), ['a', 'b', 'c']);
+    assert.deepEqual(catalog.c.subscribers, base.subscribers);
+  });
+
+  test('an unknown parent, a cycle and an invalid parent leave the interface out, saying why', () => {
+    const { catalog, problems } = buildCatalog({
+      orphan: { ...base, extends: 'nobody' },
+      a: { ...base, extends: 'b' },
+      b: { ...base, extends: 'a' },
+      broken: { subscribers: { position: { nmae: '/x' } } },
+      child: { extends: 'broken' },
+      ok: base,
+    });
+    assert.deepEqual(Object.keys(catalog), ['ok']);
+    const messages = Object.fromEntries(problems.map((p) => [String(p.path[0]), p.message]));
+    assert.equal(messages.orphan, "extends unknown interface 'nobody'");
+    assert.match(messages.b ?? messages.a, /^cycle: /);
+    assert.equal(messages.child, "not loaded because its parent 'broken' is invalid");
+  });
+
+  test('an abstract base is not in the catalog, its children are, and abstract is not inherited', () => {
+    const { catalog, abstract } = buildCatalog({
+      dji_base: { abstract: true, subscribers: base.subscribers },
+      m: { extends: 'dji_base', firmwares: ['dji'], vehicleTypes: ['multirotor'] },
+    });
+    assert.deepEqual(Object.keys(catalog), ['m']);
+    assert.deepEqual(Object.keys(abstract), ['dji_base']);
+    assert.equal(catalog.m.abstract, undefined);
+  });
+
+  test('a concrete interface must say its firmwares and the vehicle types it serves', () => {
+    assert.deepEqual(problemsOf({ subscribers: base.subscribers }), [
+      ['x.firmwares', 'missing firmwares'],
+      ['x.vehicleTypes', 'missing vehicleTypes'],
+    ]);
+    assert.equal(problemsOf({ ...base, vehicleTypes: ['submarine'] }).length, 1);
+    assert.equal(problemsOf({ ...base, vehicleTypes: ['vtol', 'vtol'] }).length, 1);
+    assert.equal(problemsOf({ ...base, vehicleTypes: [] }).length, 1);
+  });
+
+  test('rootOf follows the chain to the top', () => {
+    const raw = { a: {}, b: { extends: 'a' }, c: { extends: 'b' } };
+    assert.equal(rootOf(raw, 'c'), 'a');
+    assert.equal(rootOf(raw, 'a'), 'a');
+  });
+});
+
+describe('categoryModel and variants', () => {
+  test('the device form lists each root before its variants', () => {
+    const detailed = categoryModel.getAllDetailed({ protocol: 'ros' });
+    const names = detailed.map((c) => c.name);
+    assert.ok(names.indexOf('dji_M210_noetic') < names.indexOf('dji_M210_melodic'));
+    assert.equal(detailed.find((c) => c.name === 'dji_M210_melodic').root, 'dji_M210_noetic');
+    assert.ok(detailed.every((c) => c.name !== 'px4_mavlink')); // ros carries no MAVLink interface
+  });
+
+  test('the editor gets the file as written, not the resolved one', () => {
+    const raw = categoryModel.getCategoryRaw('dji_M210_melodic');
+    assert.equal(raw.extends, 'dji_M210_noetic');
+    assert.deepEqual(Object.keys(raw.subscribers), ['battery']);
+  });
+
+  test('deleting a parent other interfaces extend is refused before touching the file', async () => {
+    await assert.rejects(categoryModel.deleteCategory('dji_M210_noetic'), (err) => {
+      assert.equal(err.status, 400);
+      assert.ok(err.errors.some((e) => e.path[0] === 'dji_M210_melodic'));
+      return true;
+    });
+    assert.ok(categoryModel.getCategory('dji_M210_melodic'));
   });
 });
 
@@ -103,21 +236,22 @@ describe('buildCatalog', () => {
   });
 
   test('every entry names its messageType, and a ROS entry its name', () => {
-    assert.deepEqual(problemsOf({ services: { command_mission: { name: '/start' } } }), [
+    assert.deepEqual(problemsOf({ ...IDENTITY_FIELDS, services: { command_mission: { name: '/start' } } }), [
       ['x.services.command_mission', 'missing messageType'],
     ]);
-    assert.deepEqual(problemsOf({ services: { command_mission: { messageType: 'std_srvs/SetBool' } } }), [
+    assert.deepEqual(problemsOf({ ...IDENTITY_FIELDS, services: { command_mission: { messageType: 'std_srvs/SetBool' } } }), [
       ['x.services.command_mission', 'missing name (the ROS topic/service/action)'],
     ]);
   });
 
   test('a MAVLink interface has no names and does not mix in ROS messages', () => {
-    assert.deepEqual(problemsOf({ subscribers: { battery: { messageType: 'mavlink/BATTERY_STATUS' } } }), []);
-    assert.deepEqual(problemsOf({ subscribers: { battery: { name: '/b', messageType: 'mavlink/BATTERY_STATUS' } } }), [
+    assert.deepEqual(problemsOf({ ...IDENTITY_FIELDS, subscribers: { battery: { messageType: 'mavlink/BATTERY_STATUS' } } }), []);
+    assert.deepEqual(problemsOf({ ...IDENTITY_FIELDS, subscribers: { battery: { name: '/b', messageType: 'mavlink/BATTERY_STATUS' } } }), [
       ['x.subscribers.battery', 'a MAVLink entry has no name (there are no topics)'],
     ]);
     assert.deepEqual(
       problemsOf({
+        ...IDENTITY_FIELDS,
         subscribers: { battery: { messageType: 'mavlink/BATTERY_STATUS' }, position: { name: '/gps', messageType: 'sensor_msgs/NavSatFix' } },
       }),
       [['x.subscribers.position', "mixes message formats: 'sensor_msgs/NavSatFix' in a mavlink interface"]]

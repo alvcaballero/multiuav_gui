@@ -1,3 +1,5 @@
+firmwares: [ custom ]
+vehicleTypes: [ multirotor ]
 subscribers:
   position:
     name: '/gps/nav'

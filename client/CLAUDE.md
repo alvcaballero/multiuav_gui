@@ -43,7 +43,9 @@ client/
     │   │                   #   AddDevice and settings/SettingsDevicesPageEdit; its rule in deviceIdentity.js mirrors the
     │   │                   #   server's). The protocol comes first: GET /api/server/protocol lists the four with
     │   │                   #   `enabled` (disabled ones greyed out) and the categories come from
-    │   │                   #   GET /api/category?protocol= (see server/CLAUDE.md › Protocol vs message format).
+    │   │                   #   GET /api/category?protocol=&details=true (see server/CLAUDE.md › Protocol vs message
+    │   │                   #   format): objects, each variant listed after the category it `extends` (its `root`).
+    │   │                   #   The category editor (settings/SettingsCategoryPageEdit) loads `/raw`, the file as written.
     │   │                   #   A device has no `ip`: a camera's address is `camera[].host`, in DeviceCameraEditor
     │   │                   #   (required unless Websocket). See "Device attributes" below
     │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking

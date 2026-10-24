@@ -1,3 +1,6 @@
+firmwares: [ dji ]
+vehicleTypes: [ multirotor ]
+control: companion
 subscribers:
   position:
     name: '/psdk_ros2/gps_position_fused'

@@ -17,12 +17,20 @@ export class categoryController {
   static async getAll(req, res) {
     logger.debug('Getting all categories');
     // ?protocol=mavlink → only the categories a device of that protocol can use.
-    const response = await categoryModel.getAll({ protocol: req.query.protocol });
+    // ?details=true → [{ name, root, firmwares, vehicleTypes, control }] instead of names.
+    const filter = { protocol: req.query.protocol };
+    const response = req.query.details === 'true' ? categoryModel.getAllDetailed(filter) : categoryModel.getAll(filter);
     res.json(response);
   }
   static async getCategory(req, res) {
     logger.debug(`Getting category: ${req.params.category}`);
     const response = await categoryModel.getCategory(req.params.category);
+    res.json(response);
+  }
+  // What the file says (own entries + `extends`): what the category editor loads and saves back.
+  static async getCategoryRaw(req, res) {
+    const response = categoryModel.getCategoryRaw(req.params.category);
+    if (response === undefined) return res.status(404).json({ error: `unknown category '${req.params.category}'` });
     res.json(response);
   }
   static async updateCategory(req, res) {

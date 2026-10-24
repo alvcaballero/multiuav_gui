@@ -3,6 +3,9 @@
 # publishing them; the slot of a message is looked up here by that topic. fbDecode still decodes by
 # type + topic fragment, NOT through this block (see FlatbufferServer.js).
 
+firmwares: [ dji ]
+vehicleTypes: [ multirotor ]
+control: companion
 subscribers:
   position:
     name: '/gps_position'

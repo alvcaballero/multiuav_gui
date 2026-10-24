@@ -148,9 +148,9 @@ export function symbolsForService(serviceType) {
 // ─── Capability profile derivation (serviceType + category → profile) ─────────
 //
 // The profile is DERIVED, not declared, so it can never contradict the encoder.
-// The serviceType resolves the majority; a small per-category override list
-// handles cases where the same serviceType maps to different capabilities
-// (e.g. dji_M300 uses ConfigMission like an M210 but supports the v2 profile).
+// The serviceType resolves the majority; a category whose firmware supports less than
+// its serviceType implies (dji_M210 uses ConfigMission like an M300 but only v1) sets
+// `mission:` in its interface file (categoryModel's resolveMissionProfile).
 const SERVICE_TO_PROFILE = {
   'psdk_interfaces/srv/InitWaypointV2Setting': 'psdk',
   'aerialcore_common/ConfigMission': 'v2',
@@ -160,17 +160,8 @@ const SERVICE_TO_PROFILE = {
   [MAVLINK_MISSION.ARDUPILOT]: 'mavlink',
 };
 
-// Categories whose profile differs from what their serviceType alone implies.
-const CATEGORY_PROFILE_OVERRIDES = {
-  dji_M210_noetic: 'v1',
-  dji_M210_melodic: 'v1',
-  px4_mavros: 'v1',
-  px4_mavros_slow: 'v1',
-  dji_M600: 'default',
-};
-
-// Resolves the catalog profile name for a category. Override by category wins;
-// otherwise derive from serviceType; falls back to 'default' (no device/service).
-export function profileFor(category, serviceType) {
-  return CATEGORY_PROFILE_OVERRIDES[category] ?? SERVICE_TO_PROFILE[serviceType] ?? 'default';
+// The catalog profile name a configure_mission serviceType implies; 'default' when
+// there is none (no mission service).
+export function profileFor(serviceType) {
+  return SERVICE_TO_PROFILE[serviceType] ?? 'default';
 }

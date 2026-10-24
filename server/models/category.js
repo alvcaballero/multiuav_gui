@@ -8,7 +8,7 @@ import { commandSchema, validateCommandSchema, validateCommandOverrides } from '
 import { CommandType } from '../config/commandTypes.js';
 import { commandRegistry } from './commands/commandRegistry.js';
 import { endpointsOf } from './commands/commandEncoders.js';
-import { buildCatalog, formatProblem, loadInterfaces, MESSAGE_FORMAT, messageFormatOf } from './interfaces/interfaceCatalog.js';
+import { buildCatalog, formatProblem, loadInterfaces, MESSAGE_FORMAT, messageFormatOf, rootOf } from './interfaces/interfaceCatalog.js';
 import { deleteInterfaceFile, isInterfaceKey, INTERFACE_KEY, writeInterfaceFile } from './interfaces/interfaceStore.js';
 
 export { MESSAGE_FORMAT, messageFormatOf };
@@ -20,6 +20,7 @@ export { MESSAGE_FORMAT, messageFormatOf };
 const loaded = loadInterfaces(interfacesDir);
 let rawInterfaces = loaded.raw;
 let devices_msg = loaded.catalog;
+let abstractInterfaces = loaded.abstract;
 let interfaceProblems = loaded.problems;
 const _mission_schema = readDataFile(missionSchema);
 
@@ -129,7 +130,7 @@ async function commitInterface(key, def) {
   const candidate = { ...rawInterfaces };
   if (def === null) delete candidate[key];
   else candidate[key] = def;
-  const { catalog, problems } = buildCatalog(candidate);
+  const { catalog, abstract, problems } = buildCatalog(candidate);
   const alreadyBroken = new Set(interfaceProblems.map((p) => String(p.path[0])));
   const introduced = problems.filter((p) => p.path[0] === key || !alreadyBroken.has(String(p.path[0])));
   if (introduced.length) {
@@ -139,10 +140,11 @@ async function commitInterface(key, def) {
   else await writeInterfaceFile(interfacesDir, key, def);
   rawInterfaces = candidate;
   devices_msg = catalog;
+  abstractInterfaces = abstract;
   interfaceProblems = problems;
-  if (def !== null) {
+  if (catalog[key]) {
     // Same warnings as at boot (never fatal here: the file is valid, it may just name a slot
-    // or command this server does not know yet).
+    // or command this server does not know yet). An abstract base is checked through its children.
     validateDevicesMsgKeys({ [key]: catalog[key] }, { strict: false });
     validateCommands({ [key]: catalog[key] }, { strict: false, schema: false });
   }
@@ -177,14 +179,15 @@ function filterParamOptions(param, symbols) {
 // Resolves the actions/params a category exposes by filtering the global catalog
 // through its profile AND its encoder family's capabilities.
 //
-// The profile is DERIVED from the configure_mission serviceType + category (see
-// profileFor), so it can't contradict the encoder. An explicit `mission:` field
-// on the device still wins as an escape hatch. No device/service → 'default',
-// unfiltered, so the planning UI always has a coherent baseline.
+// The profile is DERIVED from the configure_mission serviceType (see profileFor), so it
+// can't contradict the encoder. A category whose firmware supports less than its serviceType
+// implies says so with `mission:` in its file (dji_M210_*, px4_mavros*: v1; dji_M600: default),
+// inherited through `extends`. No device/service → 'default', unfiltered, so the planning UI
+// always has a coherent baseline.
 function resolveMissionProfile(type) {
   const dev = devices_msg[type];
   const serviceType = dev?.services?.[ServiceKey.CONFIGURE_MISSION]?.messageType;
-  const profileName = dev?.mission ?? profileFor(type, serviceType);
+  const profileName = dev?.mission ?? profileFor(serviceType);
   const profile = _mission_schema.profiles?.[profileName] ?? _mission_schema.profiles?.default;
   if (!profile) {
     logger.warn(`mission_schema: no profile resolvable for category '${type}' (and no 'default' profile)`);
@@ -252,12 +255,28 @@ export class categoryModel {
   }
 
   /**
+   * getAll with what the device form needs to group variants: `root` is the top of the `extends`
+   * chain (dji_M210_melodic → dji_M210_noetic), sorted so each root comes before its variants.
+   */
+  static getAllDetailed({ protocol } = {}) {
+    return this.getAll({ protocol })
+      .map((name) => {
+        const { firmwares, vehicleTypes, control } = devices_msg[name];
+        return { name, root: rootOf(rawInterfaces, name), firmwares, vehicleTypes, control };
+      })
+      .sort((a, b) => a.root.localeCompare(b.root) || (a.name !== a.root) - (b.name !== b.root) || a.name.localeCompare(b.name));
+  }
+
+  /**
    * Why a device with this protocol/category cannot work, or null. A mavlink device on a
    * ROS category (or the other way) would get no telemetry and no commands, with no error.
    * @returns {{path: string[], message: string}|null}
    */
   static deviceProblem({ protocol = 'ros', category }) {
     const def = devices_msg[category];
+    if (abstractInterfaces[category]) {
+      return { path: ['category'], message: `category '${category}' is abstract: a base to extend, not for a device` };
+    }
     if (!def) return { path: ['category'], message: `unknown category '${category}'` };
     const format = messageFormatOf(def);
     if (format !== messageFormatOfProtocol(protocol)) {
@@ -272,6 +291,13 @@ export class categoryModel {
   static getCategory(type) {
     logger.debug(`categoryModel.getCategory: ${type}`);
     return devices_msg[type];
+  }
+  /**
+   * The category as its FILE says it (with `extends`, only its own entries), for the editor: saving
+   * the resolved one would copy every inherited entry into the file and cut it off from its parent.
+   */
+  static getCategoryRaw(type) {
+    return rawInterfaces[type];
   }
   /** Every loaded interface, key → resolved definition (what the API and the registries see). */
   static getCatalog() {

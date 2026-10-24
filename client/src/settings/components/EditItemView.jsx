@@ -24,6 +24,8 @@ const EditItemView = ({
   onItemSaved,
   menu,
   breadcrumbs,
+  // Where the item is loaded from, when it is not where it is saved (`/api/${endpoint}/${id}`).
+  loadPath,
 }) => {
   const navigate = useNavigate();
   const { classes } = useSettingsStyles();
@@ -33,7 +35,7 @@ const EditItemView = ({
   useAsyncTask(async () => {
     if (!item) {
       if (id) {
-        const response = await fetch(`/api/${endpoint}/${id}`);
+        const response = await fetch(loadPath ? loadPath(id) : `/api/${endpoint}/${id}`);
         if (response.ok) {
           setItem(await response.json());
         } else {
@@ -43,7 +45,7 @@ const EditItemView = ({
         setItem(defaultItem || {});
       }
     }
-  }, [id, item, defaultItem, endpoint, setItem]);
+  }, [id, item, defaultItem, endpoint, setItem, loadPath]);
 
   const handleSave = useCatch(async () => {
     let url = `/api/${endpoint}`;

@@ -64,10 +64,16 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
             key={messageFormat(value.protocol)}
             emptyValue={null}
             value={value.category ?? null}
-            onChange={(e) => set({ category: e.target.value })}
-            endpoint={`/api/category?protocol=${encodeURIComponent(value.protocol)}`}
-            keyGetter={(it) => it}
-            titleGetter={(it) => it}
+            // The auto-selection (emptyValue={null}) hands over the whole ITEM, a pick in the list
+            // its key: keep only the name either way.
+            onChange={(e) => set({ category: e.target.value?.name ?? e.target.value })}
+            // details: each category with its `root` (top of its `extends` chain), sorted so a
+            // variant (dji_M210_melodic) follows the category it extends (dji_M210_noetic).
+            endpoint={`/api/category?protocol=${encodeURIComponent(value.protocol)}&details=true`}
+            keyGetter={(it) => it.name}
+            titleGetter={(it) =>
+              it.root === it.name ? it.name : `${it.name} (variant of ${it.root})`
+            }
             label="Type "
           />
         )}

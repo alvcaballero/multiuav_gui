@@ -1,3 +1,6 @@
+firmwares: [ px4, ardupilot ]
+vehicleTypes: [ fixed_wing ]
+control: companion
 subscribers:
   position:
     name: '/gps'

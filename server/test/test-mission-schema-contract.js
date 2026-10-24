@@ -198,33 +198,33 @@ describe('per-family option filtering — UI only offers supported modes', () =>
   });
 });
 
-describe('profile derivation — serviceType + category, not a declared field', () => {
+describe('profile derivation — serviceType, unless the interface file says `mission:`', () => {
   test('PSDK serviceType derives the psdk profile', () => {
-    assert.equal(profileFor('dji_M300_PSDK', 'psdk_interfaces/srv/InitWaypointV2Setting'), 'psdk');
+    assert.equal(profileFor('psdk_interfaces/srv/InitWaypointV2Setting'), 'psdk');
   });
 
   test('ConfigMission serviceType derives the v2 profile by default', () => {
-    // Unknown category on a ConfigMission service → base mapping is v2.
-    assert.equal(profileFor('some_config_robot', 'aerialcore_common/ConfigMission'), 'v2');
-    assert.equal(profileFor('some_config_robot', 'muav_gcs_interfaces/srv/LoadMission'), 'v2');
+    assert.equal(profileFor('aerialcore_common/ConfigMission'), 'v2');
+    assert.equal(profileFor('muav_gcs_interfaces/srv/LoadMission'), 'v2');
   });
 
-  test('category override wins over the serviceType base mapping', () => {
-    // M210 noetic / px4_mavros are pinned to v1 despite the ConfigMission service.
-    assert.equal(profileFor('dji_M210_noetic', 'aerialcore_common/ConfigMission'), 'v1');
-    assert.equal(profileFor('px4_mavros', 'aerialcore_common/ConfigMission'), 'v1');
-    assert.equal(profileFor('dji_M600', 'aerialcore_common/ConfigMission'), 'default');
+  test("an interface's `mission:` wins over the serviceType base mapping", () => {
+    // M210 / px4_mavros are pinned to v1 despite the ConfigMission service: no max_vel.
+    for (const category of ['dji_M210_noetic', 'dji_M210_melodic', 'px4_mavros']) {
+      const ids = categoryModel.getAttributesList(category).map((p) => p.id);
+      assert.ok(!ids.includes('max_vel'), category);
+    }
+    assert.ok(categoryModel.getAttributesList('dji_M300').some((p) => p.id === 'max_vel'));
+    assert.deepEqual(categoryModel.getActions({ type: 'dji_M600' }), []);
   });
 
   test('no serviceType (no mission service) → default', () => {
-    assert.equal(profileFor('agv', undefined), 'default');
-    assert.equal(profileFor('unknown', undefined), 'default');
+    assert.equal(profileFor(undefined), 'default');
   });
 
   test('derived profile is consistent with the encoder family (no Frankenstein)', () => {
     // psdk profile ⇒ PSDK encoder serviceType; never psdk profile on a ConfigMission service.
-    assert.equal(profileFor('x', 'psdk_interfaces/srv/InitWaypointV2Setting'), 'psdk');
-    assert.notEqual(profileFor('x', 'aerialcore_common/ConfigMission'), 'psdk');
+    assert.notEqual(profileFor('aerialcore_common/ConfigMission'), 'psdk');
   });
 });
 

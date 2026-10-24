@@ -1,3 +1,7 @@
+firmwares: [ dji ]
+vehicleTypes: [ multirotor ]
+control: companion
+mission: v1 # ConfigMission, but the M210 firmware only runs the v1 profile
 subscribers:
   position:
     # GNSS; position_rtk wins while it is fresh (priority / fresh_ms)
@@ -29,9 +33,6 @@ subscribers:
   battery:
     name: '/dji_osdk_ros/battery_state'
     messageType: 'sensor_msgs/BatteryState'
-  state_machine:
-    name: '/muav_sm/uavstate'
-    messageType: 'muav_state_machine/UAVState'
   camera:
     name: '/video_stream_compress'
     messageType: 'sensor_msgs/CompressedImage'

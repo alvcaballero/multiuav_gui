@@ -410,6 +410,25 @@ file using it is refused. Every block names its type with `messageType`; the old
 `serviceType`/`actionType` are schema errors. (`serviceType`/`actionType` survive only as the
 rosbridge argument names, inside `rosServices`/`rosAction`.)
 
+Every concrete interface says what it can drive: the `firmwares` it works with correctly
+(`FIRMWARE`: dji, px4, ardupilot, nav2, custom — one for a firmware-specific bridge such as DJI
+OSDK, uXRCE-DDS or a MAVLink dialect, several for one that only translates: mavros is MAVLink in
+ROS, so a mavros interface lists px4 AND ardupilot) and the `vehicleTypes` it can serve
+(`VEHICLE_TYPE`: multirotor, fixed_wing, vtol, flapping_wing, usv, ugv), both in `config/status.js`.
+Which firmware a vehicle actually RUNS is a fact of its device model / device (plan F2), not of
+the interface; `control` (autopilot |
+companion) is informative, nothing branches on it. A variant is a file with `extends: <parent>`:
+resolved in two passes (file order does not matter), block entries merged one by one, field by
+field (`slot: null` removes an inherited one), everything else replaced. An unknown parent, a cycle
+or an invalid parent leave the child out, saying why. `abstract: true` = a base only to extend: not
+listed, refused for a device (`deviceProblem`). `mission:` pins the mission_schema profile when the
+one derived from configure_mission is not right (it replaced the per-category list in
+`missionSymbols.js`). `GET /api/category/:category` returns the RESOLVED category; the editor loads
+`GET /api/category/:category/raw` (the file as written) so saving does not copy every inherited entry
+into the file. `GET /api/category?details=true` → `[{name, root, firmware, vehicleTypes, control}]`,
+each `root` (top of its `extends` chain) before its variants. Names in `config/planning/config.yaml`
+are checked at boot (`unknownPlanningCategories`, a warning).
+
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`
 (`categoryModel.getMessagesType`), DERIVED from what `msgDecode` can decode plus what categories

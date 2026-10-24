@@ -1,3 +1,7 @@
+firmwares: [ px4, ardupilot ]
+vehicleTypes: [ multirotor ]
+control: companion
+mission: v1
 subscribers:
   position:
     name: '/mavros/global_position/global'
@@ -15,9 +19,6 @@ subscribers:
     name: '/mavros/battery'
     messageType: 'aerialcore_common/BatteryState'
     scale: 100 # percentage arrives as 0-1
-  state_machine:
-    name: '/muav_sm/uavstate'
-    messageType: 'muav_state_machine/UAVState'
   camera:
     name: '/video_stream_compress'
     messageType: 'sensor_msgs/CompressedImage'

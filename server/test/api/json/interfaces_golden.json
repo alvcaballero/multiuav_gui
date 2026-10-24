@@ -78,10 +78,6 @@
         "name": "/dji_osdk_ros/battery_state",
         "messageType": "sensor_msgs/BatteryState"
       },
-      "state_machine": {
-        "name": "/muav_sm/uavstate",
-        "messageType": "muav_state_machine/UAVState"
-      },
       "camera": {
         "name": "/video_stream_compress",
         "messageType": "sensor_msgs/CompressedImage"
@@ -153,10 +149,6 @@
       "battery": {
         "name": "/dji_osdk_ros/battery_state",
         "messageType": "aerialcore_common/BatteryState_melodic"
-      },
-      "state_machine": {
-        "name": "/muav_sm/uavstate",
-        "messageType": "muav_state_machine/UAVState"
       },
       "camera": {
         "name": "/video_stream_compress",
@@ -287,10 +279,6 @@
       "battery": {
         "name": "/dji_osdk_ros/battery_state",
         "messageType": "sensor_msgs/BatteryState"
-      },
-      "state_machine": {
-        "name": "/muav_sm/uavstate",
-        "messageType": "muav_state_machine/UAVState"
       },
       "camera": {
         "name": "/video_stream_compress",
@@ -455,10 +443,6 @@
         "messageType": "aerialcore_common/BatteryState",
         "scale": 100
       },
-      "state_machine": {
-        "name": "/muav_sm/uavstate",
-        "messageType": "muav_state_machine/UAVState"
-      },
       "camera": {
         "name": "/video_stream_compress",
         "messageType": "sensor_msgs/CompressedImage"
@@ -491,28 +475,28 @@
   "px4_mavros_slow": {
     "subscribers": {
       "position": {
-        "name": "/gcs/gps_position",
+        "name": "/slow/gps_position",
         "messageType": "sensor_msgs/NavSatFix"
       },
       "height_above_takeoff": {
-        "name": "/gcs/altitude",
+        "name": "/slow/altitude",
         "messageType": "mavros_msgs/Altitude"
       },
       "heading": {
-        "name": "/gcs/compass_hdg",
+        "name": "/slow/compass_hdg",
         "messageType": "std_msgs/Float64"
       },
       "speed": {
-        "name": "/gcs/velocity",
+        "name": "/slow/velocity",
         "messageType": "geometry_msgs/TwistStamped"
       },
       "battery": {
-        "name": "/gcs/battery",
+        "name": "/slow/battery",
         "messageType": "multiuav_interfaces/BatteryState",
         "scale": 100
       },
       "camera": {
-        "name": "/gcs/video_stream_compress",
+        "name": "/slow/video_stream_compress",
         "messageType": "sensor_msgs/CompressedImage"
       },
       "threat": {
@@ -659,10 +643,6 @@
         "name": "/battery",
         "messageType": "aerialcore_common/BatteryState",
         "scale": 100
-      },
-      "state_machine": {
-        "name": "/fligh_state",
-        "messageType": "std_msgs/String"
       },
       "threat": {
         "name": "/threat",

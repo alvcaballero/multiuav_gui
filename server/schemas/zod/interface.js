@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FIRMWARE, INTERFACE_CONTROL, VEHICLE_TYPE } from '../../config/status.js';
 
 // Shape of ONE interface file (config/devices/interfaces/<key>.yaml), as written: strict, so a
 // typo (`nmae:`, `messageTyp:`) or a param nobody reads is an error instead of a silent no-op.
@@ -45,17 +46,32 @@ const heartbeat = z
   })
   .strict();
 
-const block = (entry) => z.record(z.string(), entry);
+// `null` removes an entry the interface inherits (`extends`).
+const block = (entry) => z.record(z.string(), entry.nullable());
+
+const enumOf = (values) => z.enum(Object.values(values));
+const uniqueList = (item, message) =>
+  z
+    .array(item)
+    .min(1)
+    .refine((list) => new Set(list).size === list.length, message);
 
 export const interfaceSchema = z
   .object({
+    // Inherits every block of that interface; an entry here is merged over the parent's.
+    extends: z.string().regex(/^[A-Za-z0-9_]+$/).optional(),
+    // Only a base to extend: no device may use it, and it is not listed.
+    abstract: z.boolean().optional(),
+    firmwares: uniqueList(enumOf(FIRMWARE), 'repeated firmware').optional(),
+    vehicleTypes: uniqueList(enumOf(VEHICLE_TYPE), 'repeated vehicle type').optional(),
+    control: enumOf(INTERFACE_CONTROL).optional(),
     subscribers: block(subscriber).optional(),
     publishers: block(command).optional(),
     services: block(command).optional(),
     actions: block(command).optional(),
-    heartbeat: heartbeat.optional(),
+    heartbeat: heartbeat.nullable().optional(),
     // Narrows command params (commandSchema.validateCommandOverrides checks the inside).
-    commands: z.record(z.string(), z.record(z.unknown())).optional(),
+    commands: z.record(z.string(), z.record(z.unknown()).nullable()).optional(),
     // mission_schema.yaml profile, when the one derived from configure_mission is not right.
     mission: z.string().min(1).optional(),
   })
