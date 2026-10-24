@@ -47,19 +47,17 @@ describe('position source arbitration', () => {
     assert.equal(pos.latitude, 43.2);
     assert.equal(pos.attributes.positionSource, 'position');
 
-    const { effects } = rtk(pos, 43.1, -8.1, 6000);
+    rtk(pos, 43.1, -8.1, 6000);
     assert.equal(pos.latitude, 43.1);
     assert.equal(pos.attributes.positionSource, 'position_rtk');
-    assert.equal(effects.length, 1);
-    assert.equal(effects[0].type, 'info');
   });
 
-  test('the source change is announced once, not on the first fix and not on every message', () => {
+  test('switching source never raises an Event (it would be a DB row and a snackbar per switch)', () => {
     const pos = createDefaultPosition(1);
     assert.equal(gnss(pos, 43.2, -8.2, 1000).effects.length, 0);
-    assert.equal(gnss(pos, 43.2, -8.2, 1200).effects.length, 0);
-    assert.equal(rtk(pos, 43.1, -8.1, 1300).effects.length, 1);
-    assert.equal(rtk(pos, 43.1, -8.1, 1400).effects.length, 0);
+    assert.equal(rtk(pos, 43.1, -8.1, 1300).effects.length, 0);
+    assert.equal(gnss(pos, 43.2, -8.2, 9000).effects.length, 0);
+    assert.equal(pos.attributes.positionSource, 'position');
   });
 
   test('lat = lon = 0 is not applied and does not make its source fresh', () => {

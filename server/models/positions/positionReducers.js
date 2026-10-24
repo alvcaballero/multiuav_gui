@@ -101,7 +101,7 @@ const isNullIsland = (p) => p.latitude === 0 && p.longitude === 0;
  * patch (latitude, longitude, deviceTime and the altitude of the same message) are DELETED
  * from it: the caller then sees a patch with no position (the controller does not announce it).
  */
-function gatePosition(position, patch, now, effects) {
+function gatePosition(position, patch, now) {
   if (!has(patch, 'latitude')) return;
   const drop = () => {
     for (const key of ['latitude', 'longitude', 'altitude', 'deviceTime']) delete patch[key];
@@ -131,15 +131,9 @@ function gatePosition(position, patch, now, effects) {
     if (other !== slot && s.priority > priority && now - s.at <= s.freshMs) return drop();
   }
 
-  const previous = position.attributes.positionSource;
+  // Attribute only, no Event: near towers the RTK fix comes and goes, and an Event is a DB row plus a
+  // snackbar per switch. The hysteresis that would calm the switching itself is open in TODO.md.
   position.attributes.positionSource = slot;
-  if (previous !== undefined && previous !== slot) {
-    effects.push({
-      type: 'info',
-      deviceId: patch.deviceId,
-      attributes: { action: 'PositionSource', message: `Position source: ${previous} -> ${slot}` },
-    });
-  }
 }
 
 const VEHICLE_STATE_KEYS = ['armState', 'flightMode', 'flightModeRaw', 'flightPhase', 'flightPhaseRaw', 'failsafe', 'flightCheck', 'systemId'];
@@ -259,7 +253,7 @@ export const REDUCERS = [
  */
 export function applyPatch(position, patch, now = Date.now()) {
   const effects = [];
-  gatePosition(position, patch, now, effects);
+  gatePosition(position, patch, now);
   for (const reducer of REDUCERS) {
     if (reducer.when(patch)) reducer.apply(position, patch, effects);
   }

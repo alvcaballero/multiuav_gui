@@ -161,8 +161,9 @@ Tareas ordenadas por prioridad. Marcar con `[x]` al completar.
   - Salto al volver el RTK: no hay histéresis; al recuperarse gana de inmediato y la posición (y la altitud, ver
     arriba) salta los metros que separan ambas fuentes. Si molesta en el mapa o en el tracking de waypoints,
     exigir N mensajes seguidos antes de volver a RTK
-  - Hecho: arbitraje por `priority`/`fresh_ms` de la entrada (`positionReducers.js`), `attributes.positionSource`
-    y un evento `info` al cambiar de fuente
+  - Hecho: arbitraje por `priority`/`fresh_ms` de la entrada (`positionReducers.js`) y `attributes.positionSource`.
+    El cambio de fuente NO genera Event (fila en DB + snackbar por cada vaivén del fix RTK): si hace falta avisar
+    al operador, mejor un chip en el cliente que lea `positionSource` / `position_rtk.at`
 
 - [ ] **Enlace MAVLink por device** (UDP / TCP / serie-SiK)
   - Hoy los enlaces son del SERVER (`MAVLINK_LINKS`) y el vehículo se encuentra por sysid en

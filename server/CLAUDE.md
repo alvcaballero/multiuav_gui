@@ -432,7 +432,7 @@ fresh (server clock, injected as `now`); when the RTK goes quiet GNSS takes over
 at once. A dropped patch loses `latitude/longitude/altitude/deviceTime` (altitude is taken as each source
 gives it, the datum is open in `TODO.md`), so `POSITION_RECEIVED` and mission tracking only see the position
 that was applied. A patch with lat = lon = 0 is never applied and never counts as fresh (any category). The
-winner is `position.attributes.positionSource`; a change emits an `info` event. Each source also keeps its own
+winner is `position.attributes.positionSource`; a change raises NO Event (a DB row plus a snackbar per switch; near towers the RTK fix flaps). Each source also keeps its own
 last fix in `attributes[entry.attribute ?? slot]` (DJI: `position_gnss`, `position_rtk`) as `{ latitude, longitude,
 altitude, at, fix }`: `at` = server ms of its last message (age = now - at), `fix: 'nofix'` when it sent 0,0 (then
 no coordinates). Winner or not, so the client can show both. The slot that may be absent
