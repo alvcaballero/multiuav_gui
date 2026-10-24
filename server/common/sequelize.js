@@ -6,6 +6,7 @@ import { logger } from './logger.js';
 import { migrateMissionTaskGraph } from './migrations/missionTaskGraph.js';
 import { migrateDeviceAttributes } from './migrations/deviceAttributes.js';
 import { migrateDeviceCameraHost } from './migrations/deviceCameraHost.js';
+import { migrateDeviceSlowRelay } from './migrations/deviceSlowRelay.js';
 
 
 logger.info('useExternalDb is ' + useExternalDb);
@@ -71,6 +72,12 @@ try {
   await migrateDeviceCameraHost(sequelize, logger);
 } catch (error) {
   logger.error('Migration failed: device camera host', error.message);
+}
+
+try {
+  await migrateDeviceSlowRelay(sequelize, logger);
+} catch (error) {
+  logger.error('Migration failed: device slow relay', error.message);
 }
 
 try {

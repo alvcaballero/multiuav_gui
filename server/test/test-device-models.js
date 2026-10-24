@@ -125,7 +125,7 @@ describe('deviceModelsModel', () => {
   });
 
   test('a model offers exactly the interfaces it lists: x500 never sees external_telemetry (the CATEC/FuVeX topics)', () => {
-    assert.deepEqual(deviceModelsModel.interfacesOf('x500'), ['px4_ros2', 'px4_mavros', 'px4_mavros_slow', 'px4_mavlink', 'ardupilot_mavlink']);
+    assert.deepEqual(deviceModelsModel.interfacesOf('x500'), ['px4_ros2', 'px4_mavros', 'px4_mavlink', 'ardupilot_mavlink']);
     assert.deepEqual(deviceModelsModel.interfacesOf('catec'), ['external_telemetry']);
     assert.deepEqual(deviceModelsModel.interfacesOf('nope'), []);
   });
@@ -139,8 +139,8 @@ describe('deviceModelsModel', () => {
     );
   });
 
-  test('the VTOL fits px4_mavros_slow (vtol is inherited from px4_mavros)', () => {
-    assert.equal(deviceModelsModel.deviceProblem({ category: 'px4_mavros_slow', deviceModel: 'standard_vtol' }), null);
+  test('the VTOL fits px4_mavros (vtol_1, with the slow relay as a device attribute now)', () => {
+    assert.equal(deviceModelsModel.deviceProblem({ category: 'px4_mavros', deviceModel: 'standard_vtol' }), null);
   });
 
   test('defaultFor: the interface default, or the generic of its first vehicle type', () => {
@@ -153,7 +153,7 @@ describe('deviceModelsModel', () => {
     assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'external_telemetry', deviceModel: 'x500' }), {
       path: ['category'],
       message:
-        "model 'x500' does not list interface 'external_telemetry' (its interfaces: px4_ros2, px4_mavros, px4_mavros_slow, px4_mavlink, ardupilot_mavlink)",
+        "model 'x500' does not list interface 'external_telemetry' (its interfaces: px4_ros2, px4_mavros, px4_mavlink, ardupilot_mavlink)",
     });
     assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'agv', deviceModel: 'nope' }), {
       path: ['deviceModel'],

@@ -3,6 +3,7 @@ import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel, subscribesCamera } from '../category.js';
 import { deviceModelsModel } from '../deviceModels/deviceModels.js';
+import { buildDeviceName, buildTelemetryName } from './rosNames.js';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { decodeMsg } from '../msgDecode.js';
 import { rawTap } from '../inspect/rawTap.js';
@@ -46,14 +47,8 @@ function resolveCategoryConfig(category, block, type) {
   return type ? cfg?.[type] : cfg;
 }
 
-// Build the absolute ROS name for a device entry from its namespace and the
-// config suffix. Device names are stored WITHOUT a leading slash (e.g. 'agv_1')
-// and every config `name` starts with one (e.g. '/odom'), so the result is
-// always absolute: `/agv_1/odom`. Shared by subscribers/publishers/services/
-// actions so a device's topics, services and actions all resolve identically.
-function buildDeviceName(name, entry) {
-  return `/${name}${entry['name']}`;
-}
+// Every ROS name of a device: rosNames.js (buildDeviceName for all four blocks; buildTelemetryName for
+// the subscribers, which also knows the slow relay).
 
 export class rosModel {
   static setrosState({ state, msg }) {
@@ -159,7 +154,7 @@ export class rosModel {
       })
       .map(([slot, cfg]) => ({
         slot,
-        name: buildDeviceName(name, cfg),
+        name: buildTelemetryName(name, cfg, attributes),
         messageType: cfg['messageType'],
         onMessage: makeOnMessage(slot == 'camera' ? toCamera : toPosition, cfg),
       }));

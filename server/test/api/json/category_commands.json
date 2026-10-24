@@ -64,13 +64,6 @@
     "SaveHome",
     "SyncFiles"
   ],
-  "px4_mavros_slow": [
-    "CameraFileDownload",
-    "CommandMission",
-    "LoadMission",
-    "SaveHome",
-    "SyncFiles"
-  ],
   "px4_ros2": [
     "Arm",
     "CameraFileDownload",

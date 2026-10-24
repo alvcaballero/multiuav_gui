@@ -454,58 +454,6 @@
       }
     }
   },
-  "px4_mavros_slow": {
-    "subscribers": {
-      "position": {
-        "name": "/slow/gps_position",
-        "messageType": "sensor_msgs/NavSatFix"
-      },
-      "height_above_takeoff": {
-        "name": "/slow/altitude",
-        "messageType": "mavros_msgs/Altitude"
-      },
-      "heading": {
-        "name": "/slow/compass_hdg",
-        "messageType": "std_msgs/Float64"
-      },
-      "speed": {
-        "name": "/slow/velocity",
-        "messageType": "geometry_msgs/TwistStamped"
-      },
-      "battery": {
-        "name": "/slow/battery",
-        "messageType": "multiuav_interfaces/BatteryState",
-        "scale": 100
-      },
-      "camera": {
-        "name": "/slow/video_stream_compress",
-        "messageType": "sensor_msgs/CompressedImage"
-      },
-      "threat": {
-        "name": "/threat",
-        "messageType": "std_msgs/Bool",
-        "watchdog": false
-      }
-    },
-    "services": {
-      "configure_mission": {
-        "name": "/mission/new",
-        "messageType": "multiuav_interfaces/ConfigMission"
-      },
-      "command_mission": {
-        "name": "/mission/start_stop",
-        "messageType": "std_srvs/SetBool"
-      },
-      "sync_files": {
-        "name": "/px4_mission_node/send_bags",
-        "messageType": "std_srvs/Bool"
-      },
-      "camera_file_download": {
-        "name": "/camera_download_files",
-        "messageType": "dji_osdk_ros/DownloadMedia"
-      }
-    }
-  },
   "px4_ros2": {
     "subscribers": {
       "position_global": {

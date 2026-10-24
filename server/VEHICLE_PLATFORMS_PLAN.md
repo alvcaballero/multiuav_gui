@@ -180,6 +180,12 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
   GCS; `throttle_rate` de rosbridge solo descarta del lado del GCS, después de que los mensajes cruzaron).
   Falta: cambiar el launch del relay en el dron de `/gcs/*` a `/slow/*`, y declarar `rate_hz` en las
   entradas del `_slow` (para el timeout del watchdog) cuando se sepa qué tasa entrega.
+  **Actualizado (2026-10-25):** `px4_mavros_slow` ya no existe. El relay es un ATRIBUTO del device ROS
+  (`attributes.slow`, casilla "Slow relay" en el formulario), válido para cualquier interfaz ROS: con él la
+  telemetría se lee de `/<device>/slow<topic original>` (solo subscribers; servicios, acciones y publishers
+  no cambian). El relay mantiene los tipos de mensaje originales. Migración `deviceSlowRelay.js`:
+  `px4_mavros_slow` → `px4_mavros` + `slow: true` (`vtol_1`). El launch del relay tiene que publicar
+  `/<device>/slow/mavros/...` con el nombre COMPLETO del topic (antes eran nombres acortados, `/gcs/gps_position`).
 - Pendiente para F2: el device `vtol_1` (DB local) usa `px4_mavros_slow`, que declara solo `multirotor`. Si
   su modelo es VTOL, la compatibilidad lo va a rechazar: agregar `vtol` a la interfaz o moverlo.
 - Cliente: el editor carga `/raw` y avisa de quién hereda; el selector de categoría del device lista cada

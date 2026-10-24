@@ -49,6 +49,17 @@ export const ATTRIBUTE_GROUPS = [
     },
   },
   {
+    id: 'ros',
+    appliesTo: ({ protocol }) => protocol === 'ros',
+    shape: {
+      // The companion runs the slow relay: the telemetry (subscribers only) is read from
+      // `/<device>/slow<topic>`, republished at a lower rate, instead of `/<device><topic>`. A
+      // deployment of THIS unit, not of its interface: any ROS interface works with or without it.
+      // MQTT and robofleet already bring their telemetry at a lower rate.
+      slow: z.boolean().optional(),
+    },
+  },
+  {
     id: 'capabilities',
     appliesTo: () => true,
     shape: {

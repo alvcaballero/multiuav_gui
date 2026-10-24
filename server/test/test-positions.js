@@ -10,7 +10,7 @@ import { eventsController } from '../controllers/events.js';
 // quirks were fixed and their assertions flipped.
 //
 // Open question, deliberately NOT pinned as correct: a boolean `threat` (std_msgs/Bool, declared
-// by px4_mavros / px4_mavros_slow) never raises the alarm because `true == 2` is false. What
+// by px4_mavros) never raises the alarm because `true == 2` is false. What
 // `true` should mean is a hardware decision; see the threat tests below.
 //
 // Run through `npm test` (it sets DB=false DB_STORAGE=:memory:), never a bare `node --test`.

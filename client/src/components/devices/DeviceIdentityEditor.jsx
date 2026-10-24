@@ -193,6 +193,19 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
             label="Protocol "
           />
         )}
+        {value.protocol === 'ros' && (
+          // ROS only (server ATTRIBUTE_GROUPS 'ros'): the companion republishes the telemetry slower under
+          // /<device>/slow<topic>. Cleared with the other protocol attributes when the protocol changes.
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={Boolean(value.attributes?.slow)}
+                onChange={(e) => setAttribute({ slow: e.target.checked || undefined })}
+              />
+            }
+            label="Slow relay: read the telemetry from /<device>/slow/… (the relay on the companion)"
+          />
+        )}
         {mavlink && (
           <TextField
             required
