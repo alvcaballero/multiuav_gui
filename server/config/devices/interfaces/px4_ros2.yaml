@@ -1,0 +1,58 @@
+# PX4 with message versioning: some topics carry a version suffix (vehicle_status_v4).
+# Check `ros2 topic list` against these names when the PX4 version changes.
+
+subscribers:
+  position_global:
+    name: '/fmu/out/vehicle_global_position'
+    messageType: 'px4_msgs/msg/VehicleGlobalPosition'
+  local_position:
+    name: '/fmu/out/vehicle_local_position_v1'
+    messageType: 'px4_msgs/msg/VehicleLocalPosition'
+  battery:
+    name: '/fmu/out/battery_status_v1'
+    messageType: 'px4_msgs/msg/BatteryStatus'
+  vehicle_status:
+    name: '/fmu/out/vehicle_status_v4'
+    messageType: 'px4_msgs/msg/VehicleStatus'
+  vehicle_command_ack:
+    name: '/fmu/out/vehicle_command_ack_v1'
+    messageType: 'px4_msgs/msg/VehicleCommandAck'
+    watchdog: false # only published as the answer to a command
+  gimbal:
+    name: '/fmu/out/gimbal_device_attitude_status'
+    messageType: 'px4_msgs/msg/GimbalDeviceAttitudeStatus'
+  camera:
+    name: '/camera/image/compressed'
+    messageType: 'sensor_msgs/CompressedImage'
+  obstacle_info:
+    name: '/obstacle_info'
+    messageType: 'muav_gcs_interfaces/msg/ObstacleInfo'
+publishers:
+  vehicle_command:
+    name: '/fmu/in/vehicle_command'
+    messageType: 'px4_msgs/msg/VehicleCommand'
+# GCS heartbeat, published at a constant rate while the device is subscribed. With
+# NAV_DLL_ACT > 0 PX4 refuses to arm until a telemetry_status with heartbeat_type_gcs
+# arrives (uXRCE-DDS cannot carry a MAVLink HEARTBEAT). Keep it well under COM_DL_LOSS_T
+# (10 s). `timestamp` is stamped by the GCS on every tick. Remove the block for a drone
+# that already has a real MAVLink link to a GCS.
+heartbeat:
+  name: '/fmu/in/telemetry_status'
+  messageType: 'px4_msgs/msg/TelemetryStatus'
+  rate_hz: 1
+  message:
+    heartbeat_type_gcs: true
+services:
+  configure_mission:
+    name: '/offboard/mission_load'
+    messageType: 'muav_gcs_interfaces/srv/LoadMission'
+  command_mission:
+    name: '/offboard/mission/start_stop'
+    messageType: 'std_srvs/srv/SetBool'
+  offboard_command:
+    name: '/offboard/command'
+    messageType: 'muav_gcs_interfaces/srv/OffboardCommand'
+actions:
+  camera_file_download:
+    name: '/offboard/download_files_by_date_range'
+    messageType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'

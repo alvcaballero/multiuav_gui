@@ -378,35 +378,46 @@ time, so per-task report windows (events, flown track) of two tasks on one devic
 
 ### ROS Integration
 
-**Device Configuration** (`server/config/devices/devices_msg.yaml`):
-Maps device categories to ROS topics and message types:
+**Device Configuration** (`server/config/devices/interfaces/<category>.yaml`, one file per
+category). A "category" is an INTERFACE — how the GCS talks to a device (message set + topics +
+encoders of one software stack), not a kind of vehicle (plan: `VEHICLE_PLATFORMS_PLAN.md`). The
+name `devices_msg` survives in code and comments for this catalog (it was one `devices_msg.yaml`).
 
 ```yaml
-dji_M210_noetic:
-  subscribers:
-    position:
-      name: '/dji_osdk_ros/gps_position'
-      messageType: 'sensor_msgs/NavSatFix'
-    battery:
-      name: '/dji_osdk_ros/battery_state'
-      messageType: 'sensor_msgs/BatteryState'
-  services:
-    configure_mission:
-      name: '/dji_control/configure_mission'
-      messageType: 'aerialcore_common/ConfigMission'
+# config/devices/interfaces/dji_M210_noetic.yaml — the file name IS the key
+subscribers:
+  position:
+    name: '/dji_osdk_ros/gps_position'
+    messageType: 'sensor_msgs/NavSatFix'
+  battery:
+    name: '/dji_osdk_ros/battery_state'
+    messageType: 'sensor_msgs/BatteryState'
+services:
+  configure_mission:
+    name: '/dji_control/configure_mission'
+    messageType: 'aerialcore_common/ConfigMission'
 ```
 
-Every block (`subscribers`, `publishers`, `services`, `actions`) names its type with
-`messageType`, also for a `.srv` or `.action`. The old `serviceType`/`actionType` fields are not
-read: `categoryModel` refuses to boot when the YAML still has them, and `PUT`/`POST
-/api/category/:category` rejects them with 400. (`serviceType`/`actionType` survive only as the
+Every `*.yaml` of the folder is an interface (no index to register it in; other extensions are
+ignored, a file name that is not a key `^[A-Za-z0-9_]+$` is reported). Each one is validated by ONE
+validator (`models/interfaces/interfaceCatalog.js` + the strict zod schema `schemas/zod/interface.js`)
+that the boot, the API and `test/test-interfaces.js` share: an unknown key (`nmae:`), a param of the
+wrong type, a ROS `name` without `/` or with spaces, a missing `messageType`, a MAVLink entry with a
+`name` or an interface mixing formats are errors. An invalid file is NOT loaded (`logger.error` with
+all its problems; the others keep working; `LOG_LEVEL=debug` throws) and its devices hit the boot
+error "category does not exist". A new param a decoder reads must be added to the schema, or every
+file using it is refused. Every block names its type with `messageType`; the old
+`serviceType`/`actionType` are schema errors. (`serviceType`/`actionType` survive only as the
 rosbridge argument names, inside `rosServices`/`rosAction`.)
 
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`
 (`categoryModel.getMessagesType`), DERIVED from what `msgDecode` can decode plus what categories
 already declare — there is no hand-kept list (the old `messages.yaml` drifted and was removed).
-Saving a category rewrites `devices_msg.yaml` (`writeDataFile`), so its comments are lost.
+`PUT`/`POST /api/category/:category` validate the WHOLE catalog with the change applied BEFORE
+writing (an edit must not leave an invalid file nor break another interface): `400 { error,
+errors: [{path, message}] }`, `404` unknown, `409` already exists. Saving rewrites only that
+category's file, so its comments (and only its) are lost.
 
 **Message Decoding** (`models/msgDecode.js`, NOT under `ros/`, the mirror of `msgEncode`): a
 registry, not an if-chain. `decodeMsg` serves every transport: rosbridge (`ros.js`) and MQTT
@@ -514,8 +525,9 @@ free of business-controller imports.
 | `index.js`            | Module barrel exports                                                                                                                                                                                                                         |
 
 **Config resolution lives ONLY in the facade.** `categoryModel` (in
-`models/category.js`) is the single source of truth for `devices_msg.yaml` — it
-is the ONLY module that reads that file. No file under `models/ros/` reads it.
+`models/category.js`) is the single source of truth for the interface files
+(`config/devices/interfaces/`) — it is the ONLY module that reads them (through
+`models/interfaces/`). No file under `models/ros/` reads them.
 The facade resolves per-category message config through one helper and builds
 every ROS name through another:
 
@@ -725,7 +737,7 @@ When modifying mission flow, check all of:
 
 When adding new device types:
 
-1. Add configuration to `devices_msg.yaml` (`subscribers`, `services`, and/or `actions` per category); put any per-category scale/unit/offset on the subscriber entry itself
+1. Add a file `config/devices/interfaces/<category>.yaml` (`subscribers`, `services`, and/or `actions`); put any per-category scale/unit/offset on the subscriber entry itself (a NEW param also goes in `schemas/zod/interface.js`)
 2. Register a decoder for the `(slot, messageType)` pair in `models/msgDecode.js` (or `ignore(...)` it) — boot validation and `test/test-devices-msg.js` fail on a pair with none
 3. If it takes commands: register the command encoder in `models/commands/commandRegistry.js` (by msgType, or by key for a generic msgType) and the message encoder for that msgType in `models/msgEncode.js` (or `passthrough` it) — the boot check and `test/test-command-registry.js` fail otherwise
 4. Subscriptions are created automatically — the facade (`ros.js`) resolves the config via `categoryModel` and hands built topics to `models/ros/rosSubscriptions.js`; no per-device code needed

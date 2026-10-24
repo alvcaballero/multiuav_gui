@@ -1,5 +1,5 @@
-import { readDataFile, writeDataFile } from '../common/utils.js';
-import { devicesMsg, missionSchema } from '../config/config.js';
+import { readDataFile } from '../common/utils.js';
+import { interfacesDir, missionSchema } from '../config/config.js';
 import { KNOWN_SERVICE_KEYS, KNOWN_SUBSCRIBER_KEYS, KNOWN_PUBLISHER_KEYS, ServiceKey } from '../config/deviceMsgCatalog.js';
 import { logger } from '../common/logger.js';
 import { symbolsForService, profileFor } from './mission/missionSymbols.js';
@@ -8,9 +8,44 @@ import { commandSchema, validateCommandSchema, validateCommandOverrides } from '
 import { CommandType } from '../config/commandTypes.js';
 import { commandRegistry } from './commands/commandRegistry.js';
 import { endpointsOf } from './commands/commandEncoders.js';
+import { buildCatalog, formatProblem, loadInterfaces, MESSAGE_FORMAT, messageFormatOf } from './interfaces/interfaceCatalog.js';
+import { deleteInterfaceFile, isInterfaceKey, INTERFACE_KEY, writeInterfaceFile } from './interfaces/interfaceStore.js';
 
-const devices_msg = readDataFile(devicesMsg);
+export { MESSAGE_FORMAT, messageFormatOf };
+
+// "devices_msg" = the interface catalog: one file per interface in config/devices/interfaces/
+// (models/interfaces/). `rawInterfaces` is what the files contain; `devices_msg` the interfaces
+// that passed validation, which is what everything else reads. An invalid file is left out (the
+// others keep working) and its devices get no telemetry: the boot reports it, never in silence.
+const loaded = loadInterfaces(interfacesDir);
+let rawInterfaces = loaded.raw;
+let devices_msg = loaded.catalog;
+let interfaceProblems = loaded.problems;
 const _mission_schema = readDataFile(missionSchema);
+
+function reportInterfaceProblems(problems) {
+  if (problems.length === 0) return;
+  const byInterface = new Map();
+  for (const p of problems) {
+    const key = String(p.path[0] ?? '');
+    byInterface.set(key, [...(byInterface.get(key) ?? []), p]);
+  }
+  for (const [key, list] of byInterface) {
+    logger.error(`interface '${key}' not loaded: ${list.map(formatProblem).join('; ')}`);
+  }
+  if (process.env.LOG_LEVEL === 'debug') throw new Error(`interfaces: ${problems.map(formatProblem).join('; ')}`);
+}
+
+reportInterfaceProblems(interfaceProblems);
+
+/** A change to the catalog the API refuses: `errors` are {path, message}, as zod reports them. */
+export class CategoryError extends Error {
+  constructor(status, message, errors = []) {
+    super(message);
+    this.status = status;
+    this.errors = errors;
+  }
+}
 
 // Valida que cada key de los bloques subscribers/publishers/services/actions en
 // devices_msg esté registrada en su catálogo correspondiente. Una key huérfana
@@ -33,8 +68,7 @@ const DEVICES_MSG_BLOCKS = {
 // Además de la key, cada subscriber valida el PAR (slot, messageType) contra el registry
 // de msgDecode: un messageType mal escrito en el YAML (o en el decoder) dejaría el topic
 // suscripto y mudo, sin ningún error.
-function validateDevicesMsgKeys(catalog) {
-  const strict = process.env.LOG_LEVEL === 'debug';
+function validateDevicesMsgKeys(catalog, { strict = process.env.LOG_LEVEL === 'debug' } = {}) {
   const orphans = [];
   const undecoded = [];
   for (const [category, def] of Object.entries(catalog)) {
@@ -58,29 +92,8 @@ function validateDevicesMsgKeys(catalog) {
 
 validateDevicesMsgKeys(devices_msg);
 
-// Todos los bloques declaran su tipo en `messageType` (también services y actions). Los nombres
-// viejos `serviceType`/`actionType` no se leen: el endpoint quedaría sin tipo y su command
-// desaparecería en silencio. Por eso este chequeo lanza siempre, no solo en debug.
-const LEGACY_TYPE_FIELDS = ['serviceType', 'actionType'];
-
-export function findLegacyTypeFields(catalog) {
-  const found = [];
-  for (const [category, def] of Object.entries(catalog ?? {})) {
-    for (const block of Object.keys(DEVICES_MSG_BLOCKS)) {
-      for (const [key, entry] of Object.entries(def?.[block] ?? {})) {
-        for (const field of LEGACY_TYPE_FIELDS) {
-          if (entry && field in entry) found.push(`${category}.${block}.${key}.${field}`);
-        }
-      }
-    }
-  }
-  return found;
-}
-
-const legacyTypeFields = findLegacyTypeFields(devices_msg);
-if (legacyTypeFields.length) {
-  throw new Error(`devices_msg: rename to 'messageType': ${legacyTypeFields.join(', ')}`);
-}
+// (The old `serviceType`/`actionType` fields, and any other key nobody reads, are rejected by the
+// file schema, schemas/zod/interface.js: that interface is not loaded.)
 
 // command_schema.yaml: una entrada por CommandType, y los bloques `commands:` de
 // devices_msg solo restringen ese dominio. commandRegistry: cada command de una categoría
@@ -88,21 +101,52 @@ if (legacyTypeFields.length) {
 // que apuntar a un endpoint que lo implemente). Misma política: warn, o throw en debug.
 // (Que el msgType de ese endpoint tenga encoder lo valida commands.js: msgEncode importa los
 // encoders de misión, que importan este módulo, así que acá no se puede.)
-function validateCommands() {
+function validateCommands(catalog, { strict = process.env.LOG_LEVEL === 'debug', schema = true } = {}) {
   const problems = [
-    ...validateCommandSchema(commandSchema, Object.values(CommandType)),
-    ...validateCommandOverrides(commandSchema, devices_msg),
-    ...Object.entries(devices_msg).flatMap(([category, def]) =>
+    ...(schema ? validateCommandSchema(commandSchema, Object.values(CommandType)) : []),
+    ...validateCommandOverrides(commandSchema, catalog),
+    ...Object.entries(catalog).flatMap(([category, def]) =>
       commandRegistry.resolveCommands(def).problems.map((p) => `${category}.${p}`)
     ),
   ];
   if (problems.length === 0) return;
   const msg = `command_schema: ${problems.length} problem(s): ${problems.join('; ')}`;
-  if (process.env.LOG_LEVEL === 'debug') throw new Error(msg);
+  if (strict) throw new Error(msg);
   logger.warn(msg);
 }
 
-validateCommands();
+validateCommands(devices_msg);
+
+// Applies a change to ONE interface file (def null = delete) only if the whole catalog still
+// validates: an edit must not leave an invalid file on disk, nor break another interface. The
+// problems some other interface already had (it was not loaded) do not block it.
+async function commitInterface(key, def) {
+  if (!isInterfaceKey(key)) {
+    throw new CategoryError(400, `'${key}' is not a valid category name`, [
+      { path: [], message: `must match ${INTERFACE_KEY}` },
+    ]);
+  }
+  const candidate = { ...rawInterfaces };
+  if (def === null) delete candidate[key];
+  else candidate[key] = def;
+  const { catalog, problems } = buildCatalog(candidate);
+  const alreadyBroken = new Set(interfaceProblems.map((p) => String(p.path[0])));
+  const introduced = problems.filter((p) => p.path[0] === key || !alreadyBroken.has(String(p.path[0])));
+  if (introduced.length) {
+    throw new CategoryError(400, `invalid category '${key}'`, introduced);
+  }
+  if (def === null) await deleteInterfaceFile(interfacesDir, key);
+  else await writeInterfaceFile(interfacesDir, key, def);
+  rawInterfaces = candidate;
+  devices_msg = catalog;
+  interfaceProblems = problems;
+  if (def !== null) {
+    // Same warnings as at boot (never fatal here: the file is valid, it may just name a slot
+    // or command this server does not know yet).
+    validateDevicesMsgKeys({ [key]: catalog[key] }, { strict: false });
+    validateCommands({ [key]: catalog[key] }, { strict: false, schema: false });
+  }
+}
 
 // ─── Mission catalog resolution (enriched catalog → per-category profile) ──────
 
@@ -140,7 +184,7 @@ function filterParamOptions(param, symbols) {
 function resolveMissionProfile(type) {
   const dev = devices_msg[type];
   const serviceType = dev?.services?.[ServiceKey.CONFIGURE_MISSION]?.messageType;
-  const profileName = dev?.mission ?? dev?.mission_schema ?? profileFor(type, serviceType);
+  const profileName = dev?.mission ?? profileFor(type, serviceType);
   const profile = _mission_schema.profiles?.[profileName] ?? _mission_schema.profiles?.default;
   if (!profile) {
     logger.warn(`mission_schema: no profile resolvable for category '${type}' (and no 'default' profile)`);
@@ -195,26 +239,7 @@ export function subscribesCamera(subscribers, camera) {
   return hasWebsocketCamera && Boolean(subscribers?.['camera']?.['messageType']);
 }
 
-// The MESSAGE FORMAT a category speaks — not a protocol. The protocols are four (ros, mqtt,
-// robofleet, mavlink), each with its own gateway and its own software on the robot; the device's
-// `protocol` picks the gateway. What a category declares is the shape of its messages, and a
-// protocol can only carry one shape:
-//   - MAVLINK: `mavlink/<MSG>` messages → only the mavlink protocol.
-//   - ROS_MSG: ROS-shaped messages (sensor_msgs/NavSatFix…) → ros (rosbridge JSON), mqtt (the same
-//     JSON) and robofleet (ROS messages packed in Flatbuffers).
-// DERIVED from the category's messageTypes, nothing declared.
-export const MESSAGE_FORMAT = Object.freeze({ MAVLINK: 'mavlink', ROS_MSG: 'ros_msg' });
-const MAVLINK_PREFIX = 'mavlink/';
-
-export function messageFormatOf(def) {
-  const blocks = ['subscribers', 'publishers', 'services', 'actions'];
-  const speaksMavlink = blocks.some((block) =>
-    Object.values(def?.[block] ?? {}).some((entry) => String(entry?.messageType ?? '').startsWith(MAVLINK_PREFIX))
-  );
-  return speaksMavlink ? MESSAGE_FORMAT.MAVLINK : MESSAGE_FORMAT.ROS_MSG;
-}
-
-/** The message format a protocol carries. */
+/** The message format a protocol carries (MESSAGE_FORMAT / messageFormatOf: interfaceCatalog.js). */
 export const messageFormatOfProtocol = (protocol) => (protocol === 'mavlink' ? MESSAGE_FORMAT.MAVLINK : MESSAGE_FORMAT.ROS_MSG);
 
 export class categoryModel {
@@ -248,30 +273,39 @@ export class categoryModel {
     logger.debug(`categoryModel.getCategory: ${type}`);
     return devices_msg[type];
   }
-  static updateCategory(type, value) {
+  /** Every loaded interface, key → resolved definition (what the API and the registries see). */
+  static getCatalog() {
+    return devices_msg;
+  }
+  /** Why each interface that was not loaded was refused (path[0] is its key). */
+  static getProblems() {
+    return interfaceProblems;
+  }
+
+  // An interface exists when it has a file, even one that did not validate: the API may fix it.
+  static #exists(type) {
+    return Object.hasOwn(rawInterfaces, type) || interfaceProblems.some((p) => p.path[0] === type);
+  }
+
+  /** @throws {CategoryError} 404 if it does not exist, 400 if `value` does not validate */
+  static async updateCategory(type, value) {
     logger.info(`categoryModel.updateCategory: ${type}`);
-    if (devices_msg.hasOwnProperty(type)) {
-      devices_msg[type] = value;
-      writeDataFile(devicesMsg, devices_msg);
-    }
+    if (!this.#exists(type)) throw new CategoryError(404, `unknown category '${type}'`);
+    await commitInterface(type, value);
     return devices_msg[type];
   }
-  static createCategory(type, value) {
+  /** @throws {CategoryError} 409 if it already exists, 400 if `value` does not validate */
+  static async createCategory(type, value) {
     logger.info(`categoryModel.createCategory: ${type}`);
-    if (!devices_msg.hasOwnProperty(type)) {
-      devices_msg[type] = value;
-      writeDataFile(devicesMsg, devices_msg);
-      return devices_msg[type];
-    }
-    return null;
-  }
-  static deleteCategory(type) {
-    logger.info(`categoryModel.deleteCategory: ${type}`);
-    if (devices_msg.hasOwnProperty(type)) {
-      delete devices_msg[type];
-      writeDataFile(devicesMsg, devices_msg);
-    }
+    if (this.#exists(type)) throw new CategoryError(409, `category '${type}' already exists`);
+    await commitInterface(type, value);
     return devices_msg[type];
+  }
+  /** @throws {CategoryError} 404 if it does not exist */
+  static async deleteCategory(type) {
+    logger.info(`categoryModel.deleteCategory: ${type}`);
+    if (!this.#exists(type)) throw new CategoryError(404, `unknown category '${type}'`);
+    await commitInterface(type, null);
   }
 
   // Message types the category editor offers, per block and key (GET /api/category/messages).

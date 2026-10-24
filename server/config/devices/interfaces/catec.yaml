@@ -1,0 +1,31 @@
+subscribers:
+  position:
+    name: '/gps'
+    messageType: 'sensor_msgs/NavSatFix'
+  height_above_takeoff:
+    name: '/mavros/altitude'
+    messageType: 'mavros_msgs/Altitude'
+  heading:
+    name: '/compass_hdg'
+    messageType: 'std_msgs/Float64'
+  speed:
+    name: '/velocity'
+    messageType: 'geometry_msgs/TwistStamped'
+  battery:
+    name: '/battery'
+    messageType: 'aerialcore_common/BatteryState'
+    scale: 100 # percentage arrives as 0-1
+  state_machine:
+    name: '/fligh_state'
+    messageType: 'std_msgs/String'
+  threat:
+    name: '/threat'
+    messageType: 'std_msgs/UInt8'
+    watchdog: false # event-driven
+services:
+  threat_confirmation:
+    name: '/threat_confirmation'
+    messageType: 'std_srvs/Trigger'
+  threat_defuse:
+    name: '/threat_defuse'
+    messageType: 'std_srvs/Trigger'

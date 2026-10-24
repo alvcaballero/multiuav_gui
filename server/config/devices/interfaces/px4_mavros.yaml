@@ -1,0 +1,40 @@
+subscribers:
+  position:
+    name: '/mavros/global_position/global'
+    messageType: 'sensor_msgs/NavSatFix'
+  height_above_takeoff:
+    name: '/mavros/altitude'
+    messageType: 'mavros_msgs/Altitude'
+  heading:
+    name: '/mavros/global_position/compass_hdg'
+    messageType: 'std_msgs/Float64'
+  speed:
+    name: '/mavros/local_position/velocity_local'
+    messageType: 'geometry_msgs/TwistStamped'
+  battery:
+    name: '/mavros/battery'
+    messageType: 'aerialcore_common/BatteryState'
+    scale: 100 # percentage arrives as 0-1
+  state_machine:
+    name: '/muav_sm/uavstate'
+    messageType: 'muav_state_machine/UAVState'
+  camera:
+    name: '/video_stream_compress'
+    messageType: 'sensor_msgs/CompressedImage'
+  threat:
+    name: '/threat'
+    messageType: 'std_msgs/Bool'
+    watchdog: false # event-driven
+services:
+  configure_mission:
+    name: '/mission/new'
+    messageType: 'aerialcore_common/ConfigMission'
+  command_mission:
+    name: '/mission/start_stop'
+    messageType: 'std_srvs/SetBool'
+  sync_files:
+    name: '/px4_mission_node/send_bags'
+    messageType: 'std_srvs/Bool'
+  camera_file_download:
+    name: '/camera_download_files'
+    messageType: 'dji_osdk_ros/DownloadMedia'

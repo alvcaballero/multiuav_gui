@@ -158,6 +158,7 @@ export const DEVICE_TIMEOUT_MS = Number(process.env.DEVICE_TIMEOUT_MS) || 30000;
 export const TELEMETRY_CHECK_INTERVAL_MS = Number(process.env.TELEMETRY_CHECK_INTERVAL_MS) || 2000; // per-slot watchdog tick (see models/inspect/telemetryWatchdog.js)
 export const TELEMETRY_SLOT_TIMEOUT_MS = Number(process.env.TELEMETRY_SLOT_TIMEOUT_MS) || 5000; // a slot silent this long is stale; a subscriber may override it with `timeout_s`
 // config files
-export const devicesMsg = '../config/devices/devices_msg.yaml';
+// One file per interface ("category"), named after its key: models/interfaces/interfaceStore.js.
+export const interfacesDir = path.join(__dirname, 'devices', 'interfaces');
 export const missionSchema = '../config/devices/mission_schema.yaml';
 export const commandSchema = '../config/devices/command_schema.yaml';

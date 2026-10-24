@@ -1,14 +1,14 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { readDataFile } from '../common/utils.js';
-import { devicesMsg } from '../config/config.js';
+import { interfacesDir } from '../config/config.js';
+import { loadInterfaces } from '../models/interfaces/interfaceCatalog.js';
 import { CommandType } from '../config/commandTypes.js';
 import { commandRegistry, missionTaskForDevice } from '../models/commands/commandRegistry.js';
 import { buildVehicleCommand } from '../models/commands/vehicleCommand.js';
 import { hasMsgEncoder } from '../models/msgEncode.js';
 
-const devices = readDataFile(devicesMsg);
+const devices = loadInterfaces(interfacesDir).catalog;
 // Golden: los commands que expone cada categoría. Se generó con el catálogo anterior
 // (`requires` por key), así el registry prueba que deriva EXACTAMENTE lo mismo. Si agregás un
 // endpoint o un encoder que cambia lo que expone un dron, el diff de este archivo lo muestra.

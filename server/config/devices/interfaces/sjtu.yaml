@@ -1,0 +1,17 @@
+subscribers:
+  position:
+    name: '/gps/nav'
+    messageType: 'sensor_msgs/NavSatFix'
+  speed:
+    name: '/gps/vel'
+    messageType: 'geometry_msgs/Vector3Stamped'
+  imu:
+    name: '/imu/out'
+    messageType: 'sensor_msgs/Imu'
+    heading_offset: -90
+  flight_status:
+    name: '/joint_states'
+    messageType: 'sensor_msgs/JointState'
+  obstacle_info:
+    name: '/sonar/out'
+    messageType: 'sensor_msgs/Range'

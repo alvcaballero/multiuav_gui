@@ -1,0 +1,56 @@
+subscribers:
+  position:
+    name: '/psdk_ros2/gps_position_fused'
+    messageType: 'sensor_msgs/NavSatFix'
+  local_position:
+    name: '/psdk_ros2/position_fused'
+    messageType: 'psdk_interfaces/msg/PositionFused'
+  speed:
+    name: '/psdk_ros2/velocity_ground_fused'
+    messageType: 'geometry_msgs/msg/Vector3Stamped'
+  attitude:
+    name: '/psdk_ros2/attitude'
+    messageType: 'geometry_msgs/msg/QuaternionStamped'
+  battery:
+    name: '/psdk_ros2/battery'
+    messageType: 'sensor_msgs/msg/BatteryState'
+    scale: 100 # percentage arrives as 0-1
+  camera:
+    name: '/video_stream_compress'
+    messageType: 'sensor_msgs/CompressedImage'
+  gimbal:
+    name: '/psdk_ros2/gimbal_angles'
+    messageType: 'geometry_msgs/msg/Vector3Stamped'
+    unit: rad
+  obstacle_info:
+    name: '/psdk_ros2/relative_obstacle_info'
+    messageType: 'psdk_interfaces/msg/RelativeObstacleInfo'
+
+publishers:
+  gimbal_control:
+    name: '/psdk_ros2/gimbal_rotation'
+    messageType: 'psdk_interfaces/msg/GimbalRotation'
+
+services:
+  configure_mission:
+    name: '/psdk_ros2/waypointV2_initSetting'
+    messageType: 'psdk_interfaces/srv/InitWaypointV2Setting'
+  upload_mission:
+    name: '/psdk_ros2/waypointV2_uploadMission'
+    messageType: 'psdk_interfaces/srv/UploadWaypointV2Mission'
+  command_mission:
+    name: '/psdk_ros2/waypointV2_startMission'
+    messageType: 'psdk_interfaces/srv/StartWaypointV2Mission'
+  stop_mission:
+    name: '/psdk_ros2/waypointV2_stopMission'
+    messageType: 'psdk_interfaces/srv/StopWaypointV2Mission'
+  resume_mission:
+    name: '/psdk_ros2/waypointV2_resumeMission'
+    messageType: 'psdk_interfaces/srv/ResumeWaypointV2Mission'
+  pause_mission:
+    name: '/psdk_ros2/waypointV2_pauseMission'
+    messageType: 'psdk_interfaces/srv/PauseWaypointV2Mission'
+actions:
+  camera_file_download:
+    name: '/offboard/download_files_by_date_range'
+    messageType: 'muav_gcs_interfaces/action/DownloadFilesByDateRange'

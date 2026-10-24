@@ -1,0 +1,37 @@
+subscribers:
+  position:
+    name: '/dji_sdk/gps_position'
+    messageType: 'sensor_msgs/NavSatFix'
+  height_above_takeoff:
+    name: '/dji_sdk/height_above_takeoff'
+    messageType: 'std_msgs/Float32'
+  imu:
+    # heading
+    name: '/dji_sdk/imu'
+    messageType: 'sensor_msgs/Imu'
+  heading:
+    # este lo he puesto para simulacion, en realidad ese no existe
+    name: '/dji_sdk/compass_heading'
+    messageType: 'std_msgs/Float32'
+  speed:
+    name: '/dji_sdk/velocity'
+    messageType: 'geometry_msgs/Vector3Stamped'
+  battery:
+    name: '/dji_sdk/battery_state'
+    messageType: 'sensor_msgs/BatteryState'
+  display_mode:
+    name: '/dji_sdk/display_mode'
+    messageType: 'std_msgs/UInt8'
+services:
+  configure_mission:
+    name: '/dji_control/configure_mission'
+    messageType: 'aerialcore_common/ConfigMission'
+  command_mission:
+    name: '/dji_control/start_mission'
+    messageType: 'std_srvs/TriggerRequest'
+  camera_file_download:
+    name: '/camera_download_files'
+    messageType: 'dji_osdk_ros/DownloadMedia'
+  camera_file_list:
+    name: '/camera_download_filelist'
+    messageType: 'dji_osdk_ros/FileList'

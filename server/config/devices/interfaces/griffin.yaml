@@ -1,0 +1,18 @@
+subscribers:
+  position:
+    name: '/mavros/global_position/global'
+    messageType: 'sensor_msgs/NavSatFix'
+  height_above_takeoff:
+    name: '/mavros/altitude'
+    messageType: 'mavros_msgs/Altitude'
+  heading:
+    name: '/mavros/global_position/compass_hdg'
+    messageType: 'std_msgs/Float64'
+  battery:
+    name: '/mavros/battery'
+    messageType: 'aerialcore_common/BatteryState'
+    scale: 100 # percentage arrives as 0-1
+  humidity:
+    name: '/serial2ros/result'
+    messageType: 'std_msgs/Int32MultiArray'
+services: {}

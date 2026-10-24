@@ -1,0 +1,11 @@
+subscribers:
+  position:
+    name: '/odom'
+    messageType: 'nav_msgs/msg/Odometry'
+  camera:
+    name: '/stereo_camera/right/image_raw/compressed'
+    messageType: 'sensor_msgs/msg/CompressedImage'
+actions:
+  navigate_to_pose:
+    name: '/navigate_to_pose'
+    messageType: 'nav2_msgs/action/NavigateToPose'

@@ -1,0 +1,59 @@
+subscribers:
+  position:
+    # GNSS; position_rtk wins while it is fresh (priority / fresh_ms)
+    name: '/dji_osdk_ros/gps_position'
+    messageType: 'sensor_msgs/NavSatFix'
+    attribute: position_gnss
+    priority: 0
+    fresh_ms: 3000
+  position_rtk:
+    # no RTK on the device -> silent forever, so no watchdog
+    name: '/dji_osdk_ros/rtk_position'
+    messageType: 'sensor_msgs/NavSatFix'
+    priority: 10
+    fresh_ms: 3000
+    watchdog: false
+  height_above_takeoff:
+    name: '/dji_osdk_ros/height_above_takeoff'
+    messageType: 'std_msgs/Float32'
+  vo_position:
+    name: '/dji_osdk_ros/vo_position'
+    messageType: 'dji_osdk_ros/VOPosition'
+  imu:
+    # heading
+    name: '/dji_osdk_ros/imu'
+    messageType: 'sensor_msgs/Imu'
+  speed:
+    name: '/dji_osdk_ros/velocity'
+    messageType: 'geometry_msgs/Vector3Stamped'
+  battery:
+    name: '/dji_osdk_ros/battery_state'
+    messageType: 'aerialcore_common/BatteryState_melodic'
+  state_machine:
+    name: '/muav_sm/uavstate'
+    messageType: 'muav_state_machine/UAVState'
+  camera:
+    name: '/video_stream_compress'
+    messageType: 'sensor_msgs/CompressedImage'
+  gimbal:
+    name: '/dji_osdk_ros/gimbal_angle'
+    messageType: 'geometry_msgs/Vector3Stamped'
+  obstacle_info:
+    name: '/dji_osdk_ros/obstacle_info'
+    messageType: 'dji_osdk_ros/ObstacleInfo'
+services:
+  configure_mission:
+    name: '/dji_control/configure_mission'
+    messageType: 'aerialcore_common/ConfigMission'
+  command_mission:
+    name: '/dji_control/start_mission'
+    messageType: 'std_srvs/SetBool'
+  sync_files:
+    name: '/dji_control/send_bags'
+    messageType: 'std_srvs/Bool'
+  setup_camera:
+    name: '/setup_camera_stream'
+    messageType: 'dji_osdk_ros/SetupCameraStream'
+  gimbal_control:
+    name: '/gimbal_task_control'
+    messageType: 'dji_osdk_ros/GimbalAction'

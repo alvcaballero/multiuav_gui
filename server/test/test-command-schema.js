@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readDataFile } from '../common/utils.js';
-import { devicesMsg } from '../config/config.js';
+import { interfacesDir } from '../config/config.js';
+import { loadInterfaces } from '../models/interfaces/interfaceCatalog.js';
 import { CommandType } from '../config/commandTypes.js';
 import {
   commandSchema,
@@ -44,7 +44,7 @@ describe('command_schema.yaml (real file)', () => {
   });
 
   test('the commands: blocks of devices_msg.yaml only narrow the domain', () => {
-    assert.deepEqual(validateCommandOverrides(commandSchema, readDataFile(devicesMsg)), []);
+    assert.deepEqual(validateCommandOverrides(commandSchema, loadInterfaces(interfacesDir).catalog), []);
   });
 });
 

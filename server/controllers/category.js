@@ -1,13 +1,16 @@
-import { categoryModel, findLegacyTypeFields } from '../models/category.js';
+import { categoryModel, CategoryError } from '../models/category.js';
 import { logger } from '../common/logger.js';
 
-// A body with serviceType/actionType would write fields the server no longer reads (boot
-// would then refuse the YAML): reject it before it reaches devices_msg.yaml.
-function rejectLegacyTypeFields(req, res) {
-  const legacy = findLegacyTypeFields({ [req.params.category]: req.body });
-  if (!legacy.length) return false;
-  res.status(400).json({ error: `rename to 'messageType': ${legacy.join(', ')}` });
-  return true;
+// Writes go through the same validator as the boot (models/interfaces/interfaceCatalog.js), BEFORE
+// the file is written: an invalid body is a 400 { error, errors: [{path, message}] } and never
+// reaches disk.
+async function respondWrite(res, write) {
+  try {
+    res.json((await write()) ?? null);
+  } catch (err) {
+    if (!(err instanceof CategoryError)) throw err;
+    res.status(err.status).json({ error: err.message, errors: err.errors });
+  }
 }
 
 export class categoryController {
@@ -24,20 +27,15 @@ export class categoryController {
   }
   static async updateCategory(req, res) {
     logger.info(`Updating category: ${req.params.category}`);
-    if (rejectLegacyTypeFields(req, res)) return;
-    const response = await categoryModel.updateCategory(req.params.category, req.body);
-    res.json(response);
+    await respondWrite(res, () => categoryModel.updateCategory(req.params.category, req.body));
   }
   static async createCategory(req, res) {
     logger.info(`Creating category: ${req.params.category}`);
-    if (rejectLegacyTypeFields(req, res)) return;
-    const response = await categoryModel.createCategory(req.params.category, req.body);
-    res.json(response);
+    await respondWrite(res, () => categoryModel.createCategory(req.params.category, req.body));
   }
   static async deleteCategory(req, res) {
     logger.info(`Deleting category: ${req.params.category}`);
-    const response = await categoryModel.deleteCategory(req.params.category);
-    res.json(response);
+    await respondWrite(res, () => categoryModel.deleteCategory(req.params.category));
   }
   static async messagesTypes(req, res) {
     logger.debug('Getting message types');

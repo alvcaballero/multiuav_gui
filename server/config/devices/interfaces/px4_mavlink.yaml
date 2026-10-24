@@ -1,0 +1,48 @@
+# ─── MAVLink (protocol: mavlink) ─────────────────────────────────────────────────
+# messageType `mavlink/<MESSAGE_NAME>` (models/mavlink): there are no topics, the vehicle is
+# found by device.systemId. `rate_hz` is a stream the server asks for with SET_MESSAGE_INTERVAL
+# when the vehicle comes online (and again while it is not arriving): ArduPilot sends no
+# telemetry until asked, and PX4 sends position at ~50 Hz. Keep the rates low: a SiK radio
+# carries ~1-2 KB/s. HEARTBEAT has no rate: it is always 1 Hz. PX4 vs ArduPilot differences
+# travel in the HEARTBEAT (autopilot), not in the category. See MAVLINK_PLAN.md.
+
+subscribers:
+  vehicle_status:
+    messageType: 'mavlink/HEARTBEAT'
+  position_global:
+    messageType: 'mavlink/GLOBAL_POSITION_INT'
+    rate_hz: 4
+  flight_status:
+    messageType: 'mavlink/EXTENDED_SYS_STATE'
+    rate_hz: 1
+  battery:
+    messageType: 'mavlink/BATTERY_STATUS'
+    rate_hz: 1
+  home_position:
+    messageType: 'mavlink/HOME_POSITION'
+    rate_hz: 0.5
+  gimbal:
+    messageType: 'mavlink/GIMBAL_DEVICE_ATTITUDE_STATUS'
+    rate_hz: 2
+  vehicle_command_ack:
+    messageType: 'mavlink/COMMAND_ACK'
+    watchdog: false # only sent as the answer to a command
+publishers:
+  # The messageType is the dialect: PX4 reads the Takeoff altitude as AMSL and the reposition
+  # yaw in radians (models/commands/mavlinkCommand.js). The server refuses to send if the
+  # vehicle's heartbeat reports another autopilot.
+  vehicle_command:
+    messageType: 'mavlink/PX4_COMMAND'
+services:
+  # MAVLink mission protocol upload (missionEncodeMavlink.js). Start = arm + AUTO.MISSION;
+  # pause/stop = Hold; resume = AUTO.MISSION. Not ROS services: the key names the command.
+  configure_mission:
+    messageType: 'mavlink/PX4_MISSION'
+  command_mission:
+    messageType: 'mavlink/PX4_COMMAND'
+  pause_mission:
+    messageType: 'mavlink/PX4_COMMAND'
+  resume_mission:
+    messageType: 'mavlink/PX4_COMMAND'
+  stop_mission:
+    messageType: 'mavlink/PX4_COMMAND'

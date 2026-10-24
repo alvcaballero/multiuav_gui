@@ -1,0 +1,37 @@
+subscribers:
+  vehicle_status:
+    messageType: 'mavlink/HEARTBEAT'
+  position_global:
+    messageType: 'mavlink/GLOBAL_POSITION_INT'
+    rate_hz: 4
+  flight_status:
+    messageType: 'mavlink/EXTENDED_SYS_STATE'
+    rate_hz: 1
+  battery:
+    messageType: 'mavlink/BATTERY_STATUS'
+    rate_hz: 1
+  home_position:
+    messageType: 'mavlink/HOME_POSITION'
+    rate_hz: 0.5
+  vehicle_command_ack:
+    messageType: 'mavlink/COMMAND_ACK'
+    watchdog: false # only sent as the answer to a command
+publishers:
+  # ArduCopter dialect: Takeoff altitude relative and only in GUIDED, reposition yaw ignored
+  # (a CONDITION_YAW follows it). See models/commands/mavlinkCommand.js.
+  vehicle_command:
+    messageType: 'mavlink/ARDUPILOT_COMMAND'
+services:
+  # MAVLink mission protocol upload (seq 0 is ArduPilot's home). Start = GUIDED + arm +
+  # MISSION_START; pause/stop = BRAKE (never LOITER: it follows the throttle stick and descends
+  # with no RC); resume = AUTO.
+  configure_mission:
+    messageType: 'mavlink/ARDUPILOT_MISSION'
+  command_mission:
+    messageType: 'mavlink/ARDUPILOT_COMMAND'
+  pause_mission:
+    messageType: 'mavlink/ARDUPILOT_COMMAND'
+  resume_mission:
+    messageType: 'mavlink/ARDUPILOT_COMMAND'
+  stop_mission:
+    messageType: 'mavlink/ARDUPILOT_COMMAND'
