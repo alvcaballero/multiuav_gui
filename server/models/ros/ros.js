@@ -2,6 +2,7 @@ import { devicesController } from '../../controllers/devices.js';
 import { missionController } from '../../controllers/mission.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel, subscribesCamera } from '../category.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
 import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { decodeMsg } from '../msgDecode.js';
 import { rawTap } from '../inspect/rawTap.js';
@@ -72,6 +73,8 @@ export class rosModel {
           name: device.name,
           category: device.category,
           camera: device.camera,
+          deviceModel: device.deviceModel,
+          attributes: device.attributes,
         });
       }
     }
@@ -104,8 +107,11 @@ export class rosModel {
   // effect (position vs camera) into each topic's onMessage, and hand the
   // fully-built topic list to the transport primitive. All category/camera
   // knowledge lives here — rosSubscriptions stays business-agnostic.
-  static async subscribeDevice({ id, name, category, camera = [] }) {
+  // `deviceModel` + `attributes` decide its capabilities: a slot of a capability the device does not
+  // have (rtk on a unit without the module, humidity on an x500) is not subscribed.
+  static async subscribeDevice({ id, name, category, camera = [], deviceModel, attributes }) {
     logHelpers.ros.subscribe(id, name, { category });
+    const device = { category, deviceModel, attributes };
 
     const subscribers = resolveCategoryConfig(category, 'subscribers');
     if (!subscribers) {
@@ -143,6 +149,10 @@ export class rosModel {
       .filter(([slot]) => {
         if (slot == 'camera' && !shouldSubscribeCamera) {
           logger.debug(`Skipping camera subscription for ${name} as no websocket camera is present`);
+          return false;
+        }
+        if (!deviceModelsModel.allowsSlot(device, slot)) {
+          logger.debug(`Skipping ${slot} for ${name}: its device model lacks the capability`);
           return false;
         }
         return true;

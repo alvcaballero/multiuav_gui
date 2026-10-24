@@ -1,8 +1,16 @@
 // Device models at runtime: what each vehicle is (VEHICLE_PLATFORMS_PLAN.md › F2). A device is a
 // model + one of the interfaces that model lists (its `category`); this module says which pairs work.
-import { deviceModelsDir } from '../../config/config.js';
+import { readFileSync } from 'node:fs';
+import { parse } from 'yaml';
+import { capabilitiesFile, deviceModelsDir } from '../../config/config.js';
 import { logger } from '../../common/logger.js';
 import { categoryModel } from '../category.js';
+import {
+  buildCapabilityCatalog,
+  capabilityOfCommand,
+  capabilityOfSlot,
+  effectiveCapabilities,
+} from '../capabilities/capabilityCatalog.js';
 import {
   defaultModelOf,
   genericModelOf,
@@ -36,8 +44,23 @@ function listedInterfaceProblems(catalog) {
   return problems;
 }
 
+const capabilitiesLoaded = buildCapabilityCatalog(parse(readFileSync(capabilitiesFile, 'utf8')));
+const capabilities = capabilitiesLoaded.catalog;
+
+// A model may only name capabilities of the catalog: a typo would silently take the capability away.
+function capabilityNameProblems(catalog) {
+  const problems = [];
+  for (const [modelKey, model] of Object.entries(catalog)) {
+    if (model.capabilities === '*') continue;
+    for (const name of Object.keys(model.capabilities)) {
+      if (!capabilities[name]) problems.push({ path: [modelKey, 'capabilities', name], message: `unknown capability '${name}'` });
+    }
+  }
+  return problems;
+}
+
 const loaded = loadDeviceModels(deviceModelsDir);
-const listProblems = listedInterfaceProblems(loaded.catalog);
+const listProblems = [...listedInterfaceProblems(loaded.catalog), ...capabilityNameProblems(loaded.catalog)];
 const models = Object.fromEntries(
   Object.entries(loaded.catalog).filter(([key]) => !listProblems.some((p) => p.path[0] === key))
 );
@@ -55,6 +78,7 @@ function defaultModelProblems() {
   return problems;
 }
 
+reportProblems(capabilitiesLoaded.problems.map((p) => ({ ...p, path: ['capabilities.yaml', ...p.path] })));
 reportProblems([...loaded.problems, ...listProblems]);
 reportProblems(defaultModelProblems());
 
@@ -110,6 +134,55 @@ export class deviceModelsModel {
     if (!model) return { path: ['deviceModel'], message: `unknown device model '${deviceModel}'` };
     const why = modelInterfaceProblem(deviceModel, model, category, iface);
     return why ? { path: ['category'], message: why } : null;
+  }
+
+  /** The capability catalog (config/devices/capabilities.yaml), key → { label, description, commands, slots }. */
+  static getCapabilities() {
+    return capabilities;
+  }
+
+  /**
+   * What THIS device can do: its model's capabilities (+ its own overrides,
+   * `attributes.capabilities`) that its interface implements. A device with an unknown model keeps
+   * everything its interface offers, as before device models existed.
+   * @param {{ category: string, deviceModel?: string, attributes?: object }} device
+   * @returns {Set<string>|null} null when its category is unknown: nothing to gate against (the boot
+   *   already reports that device; gating it would only hide what little it has)
+   */
+  static capabilitiesOf(device) {
+    const iface = categoryModel.getCategory(device?.category);
+    if (!iface) return null;
+    return effectiveCapabilities(capabilities, models[device.deviceModel], iface, device.attributes?.capabilities ?? {});
+  }
+
+  /** Whether `device` may be sent `command`: every device has the commands no capability owns. */
+  static allowsCommand(device, command) {
+    const capability = capabilityOfCommand(capabilities, command);
+    return !capability || (this.capabilitiesOf(device)?.has(capability) ?? true);
+  }
+
+  /** Whether `device` gets telemetry slot `slot`: subscribed, expected by the watchdog, decoded. */
+  static allowsSlot(device, slot) {
+    const capability = capabilityOfSlot(capabilities, slot);
+    return !capability || (this.capabilitiesOf(device)?.has(capability) ?? true);
+  }
+
+  /**
+   * Why `overrides` (a device's `attributes.capabilities`) cannot apply to its model, or null: only
+   * the capabilities the model declares can be switched (a device never gains one its model lacks),
+   * and a `'*'` model has nothing to switch.
+   */
+  static capabilityOverrideProblem({ deviceModel, attributes }) {
+    const overrides = attributes?.capabilities;
+    if (!overrides || Object.keys(overrides).length === 0) return null;
+    const model = models[deviceModel];
+    const declared = model && model.capabilities !== '*' ? model.capabilities : {};
+    const unknown = Object.keys(overrides).filter((name) => !(name in declared));
+    if (unknown.length === 0) return null;
+    return {
+      path: ['attributes', 'capabilities', unknown[0]],
+      message: `model '${deviceModel}' does not declare capability '${unknown[0]}' (it declares: ${Object.keys(declared).join(', ') || 'none'})`,
+    };
   }
 
   /**

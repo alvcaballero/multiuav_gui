@@ -242,6 +242,28 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
 - `DevicesModel.getAll` expone las capacidades efectivas y el cliente las muestra como chips (pocas),
   con un filtro por capacidad.
 
+#### Estado F3 (2026-10-25): hecho, salvo chips y filtro en la UI
+
+- **Cambio de diseño respecto de lo de arriba:** no hay `requires:` en las interfaces. Un catálogo único
+  (`capabilities.yaml`) dice qué comandos y slots implementan cada capacidad; la interfaz implementa una
+  si declara alguno. Las interfaces no cambiaron (salvo las uniones de abajo).
+- Capacidades por modelo (decididas por el usuario): M210/M300 misiones + gimbal + cámara + descarga +
+  obstáculos, RTK opcional; **M600 solo telemetría** (y su interfaz sin servicios); x500/standard_vtol
+  misiones + vuelo + descarga, gimbal y cámara opcionales; catec `threat_detection`; fuvex nada; griffin
+  `humidity_sensor`; bcr_bot navegación + cámara; sjtu nada; genéricos `'*'`.
+- **catec + fuvex → `external_telemetry`** (batería `sensor_msgs/BatteryState`, la de fuvex); el `threat` es
+  capacidad de catec. Migración: `UPDATE Devices SET category='external_telemetry'` (idempotente).
+- **griffin por `ardupilot_mavlink`: solo telemetría** (la interfaz sirve ahora `flapping_wing`; griffin no
+  tiene `flight_control` ni `autonomous_mission`, así que no se le ofrece ni manda ningún comando de vuelo).
+- R2 arreglado: `editDevice` re-suscribe por el protocolo GUARDADO y ante cualquier cambio del que
+  dependen las suscripciones (nombre, interfaz, modelo, attributes, cámara), con la cámara nueva.
+- Cliente: casillas de capacidades bajo el modelo (solo se guardan las diferencias con el modelo);
+  los botones de amenaza de `StatusCard` miran `threat_detection`, no el nombre `catec`.
+- **Cambios de comportamiento a tener en cuenta:** un M210/M300 ya no se suscribe a `position_rtk` hasta
+  habilitar `rtk` en el device; un x500 ya no ve Gimbal ni se suscribe a la cámara hasta habilitar
+  `gimbal` / `camera_stream`.
+- Pendiente: chips con las capacidades en la lista de devices y filtro por capacidad.
+
 ### F4 · Telemetría según tipo de vehículo
 
 - Eje nuevo `vtolState` (MC / FW / transición) en `position.attributes`, en el vocabulario de

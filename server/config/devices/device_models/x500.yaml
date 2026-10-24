@@ -2,5 +2,11 @@
 vehicleType: multirotor
 firmware: [ px4, ardupilot ]
 interfaces: [ px4_ros2, px4_mavros, px4_mavros_slow, px4_mavlink, ardupilot_mavlink ]
+capabilities:
+  autonomous_mission: standard
+  flight_control: standard
+  file_download: standard
+  gimbal: optional
+  camera_stream: optional
 label: 'Holybro X500'
 icon: drone

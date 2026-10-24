@@ -1,5 +1,5 @@
 firmwares: [ ardupilot ]
-vehicleTypes: [ multirotor ]
+vehicleTypes: [ multirotor, flapping_wing ]
 control: autopilot
 defaultModel: x500
 subscribers:

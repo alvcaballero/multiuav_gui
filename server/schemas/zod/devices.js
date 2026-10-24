@@ -48,6 +48,17 @@ export const ATTRIBUTE_GROUPS = [
       systemId: z.coerce.number().int().min(1).max(254),
     },
   },
+  {
+    id: 'capabilities',
+    appliesTo: () => true,
+    shape: {
+      // Switches this unit's capabilities against its model's (config/devices/capabilities.yaml):
+      // `{ rtk: true }` enables an optional one (the module is fitted), `{ gimbal: false }` disables a
+      // standard one (it is broken). Only the ones the model declares: checked by the controller
+      // (deviceModelsModel.capabilityOverrideProblem), since schemas do not import models.
+      capabilities: z.record(z.string(), z.boolean()).optional(),
+    },
+  },
 ];
 
 /**

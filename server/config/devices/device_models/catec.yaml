@@ -1,5 +1,7 @@
 vehicleType: multirotor
 firmware: [ px4 ]
-interfaces: [ catec ]
+interfaces: [ external_telemetry ]
+capabilities:
+  threat_detection: standard
 label: 'CATEC'
 icon: catec

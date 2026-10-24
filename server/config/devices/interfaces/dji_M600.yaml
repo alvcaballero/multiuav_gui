@@ -2,7 +2,6 @@ firmwares: [ dji ]
 vehicleTypes: [ multirotor ]
 control: companion
 defaultModel: dji_M600
-mission: default # no waypoint actions/params beyond the default profile
 subscribers:
   position:
     name: '/dji_sdk/gps_position'
@@ -27,16 +26,3 @@ subscribers:
   display_mode:
     name: '/dji_sdk/display_mode'
     messageType: 'std_msgs/UInt8'
-services:
-  configure_mission:
-    name: '/dji_control/configure_mission'
-    messageType: 'aerialcore_common/ConfigMission'
-  command_mission:
-    name: '/dji_control/start_mission'
-    messageType: 'std_srvs/TriggerRequest'
-  camera_file_download:
-    name: '/camera_download_files'
-    messageType: 'dji_osdk_ros/DownloadMedia'
-  camera_file_list:
-    name: '/camera_download_filelist'
-    messageType: 'dji_osdk_ros/FileList'

@@ -3,6 +3,7 @@ import mqtt from 'mqtt';
 import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
 import { decodeMsg } from '../msgDecode.js';
 import { rawTap } from '../inspect/rawTap.js';
 import { telemetryWatchdog } from '../inspect/telemetryWatchdog.js';
@@ -146,7 +147,8 @@ export class MqttServer {
     if (!device) return;
 
     const cfg = this.categories.getCategory(device.category)?.subscribers?.[slot];
-    if (!cfg) {
+    // A slot of a capability the device lacks is dropped like an undeclared one.
+    if (!cfg || !deviceModelsModel.allowsSlot(device, slot)) {
       logger.debug(`MqttServer: ${deviceName} has no subscriber slot "${slot}"`);
       return;
     }

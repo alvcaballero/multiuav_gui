@@ -1,8 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  hasCapability,
   isDeviceIdentityValid,
   protocolsFor,
+  withCapability,
   withCategory,
   withModel,
   withProtocol,
@@ -59,5 +61,29 @@ describe('device identity (client)', () => {
     assert.ok(isDeviceIdentityValid(x500OnMavlink));
     assert.ok(!isDeviceIdentityValid({ ...x500OnMavlink, deviceModel: null }));
     assert.ok(!isDeviceIdentityValid({ ...x500OnMavlink, attributes: {} }));
+  });
+});
+
+describe('device capabilities (client)', () => {
+  const m210 = { deviceModel: 'dji_M210', category: 'dji_M210_noetic', protocol: 'ros', attributes: {} };
+
+  test('a standard capability is on, an optional one off, until the unit switches it', () => {
+    assert.equal(hasCapability(m210, 'gimbal', 'standard'), true);
+    assert.equal(hasCapability(m210, 'rtk', 'optional'), false);
+    const withRtk = withCapability(m210, 'rtk', 'optional', true);
+    assert.deepEqual(withRtk.attributes, { capabilities: { rtk: true } });
+    assert.equal(hasCapability(withRtk, 'rtk', 'optional'), true);
+  });
+
+  test('only what differs from the model is stored: switching back removes the entry', () => {
+    const off = withCapability(m210, 'gimbal', 'standard', false);
+    assert.deepEqual(off.attributes, { capabilities: { gimbal: false } });
+    assert.deepEqual(withCapability(off, 'gimbal', 'standard', true).attributes, {});
+  });
+
+  test('a protocol change keeps the capability switches, a model change drops them', () => {
+    const item = { ...x500OnMavlink, attributes: { systemId: 1, capabilities: { gimbal: true } } };
+    assert.deepEqual(withProtocol(item, 'ros').attributes, { capabilities: { gimbal: true } });
+    assert.deepEqual(withModel(item, 'standard_vtol').attributes, {});
   });
 });

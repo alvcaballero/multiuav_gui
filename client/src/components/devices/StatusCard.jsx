@@ -312,8 +312,10 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
                         />
                       ))}
 
+                    {/* The threat buttons are the device's threat_detection capability (its model, see
+                        server config/devices/capabilities.yaml), never the name of its category. */}
                     {position.attributes.hasOwnProperty('alarm') &&
-                      device.category.includes('catec') && (
+                      device.capabilities?.includes('threat_detection') && (
                         <StatusRow
                           key="alarm1"
                           name={'Alarm ' + position.attributes.alarm}

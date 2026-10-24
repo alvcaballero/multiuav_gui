@@ -44,6 +44,7 @@ export function buildDeviceModelCatalog(raw) {
     const own = [];
     if (!def.vehicleType) own.push({ path: [key, 'vehicleType'], message: 'missing vehicleType' });
     if (!def.interfaces) own.push({ path: [key, 'interfaces'], message: 'missing interfaces (the list may be empty)' });
+    if (!def.capabilities) own.push({ path: [key, 'capabilities'], message: "missing capabilities ({} for none, '*' for a generic)" });
     if (own.length) problems.push(...own);
     else catalog[key] = def;
   }

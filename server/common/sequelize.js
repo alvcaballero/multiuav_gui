@@ -119,6 +119,9 @@ const migrations = [
   // What the device IS (config/devices/device_models/), next to its category (how it is talked to).
   // A device left null by this migration gets its category's default at boot (DevicesModel.addAllUAV).
   `ALTER TABLE Devices ADD COLUMN deviceModel TEXT DEFAULT NULL`,
+  // catec and fuvex were one stack with two names (external_telemetry); catec's threat detection is a
+  // capability of its device model now. Idempotent: no row matches the second time.
+  `UPDATE Devices SET category = 'external_telemetry' WHERE category IN ('catec', 'fuvex')`,
 ];
 
 for (const sql of migrations) {

@@ -14,6 +14,7 @@ import {
   decodeFbViaCategory,
 } from './fbDecode.js';
 import { categoryModel } from '../category.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
 import { unpackFbMsg } from './fbUnpack.js';
 import { rawTap } from '../inspect/rawTap.js';
 import { telemetryWatchdog } from '../inspect/telemetryWatchdog.js';
@@ -130,6 +131,9 @@ export class FlatbufferServer {
 
     const subscribers = categoryModel.getCategory(device.category)?.subscribers;
     const slot = slotOfTopic(subscribers, metadata.topic());
+    // A declared slot of a capability the device lacks is dropped (an undeclared topic keeps the old
+    // per-type fallback, see fbDecode.js).
+    if (subscribers?.[slot] && !deviceModelsModel.allowsSlot(device, slot)) return;
 
     // The unpack is lazy: rawTap only runs it for a message a client is actually watching.
     rawTap.publish({

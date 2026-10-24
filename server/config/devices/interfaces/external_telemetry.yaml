@@ -1,5 +1,9 @@
+# Telemetry published by an external node on the vehicle's companion (plain /gps, /velocity,
+# /compass_hdg, /battery: not mavros' own topic names). Was two interfaces, catec and fuvex, that only
+# differed in the threat detection CATEC adds: that is a capability now (threat_detection), so the
+# threat topic and services exist only for a device whose model has it.
 firmwares: [ px4, ardupilot ]
-vehicleTypes: [ multirotor ]
+vehicleTypes: [ multirotor, fixed_wing ]
 control: companion
 defaultModel: catec
 subscribers:
@@ -17,7 +21,7 @@ subscribers:
     messageType: 'geometry_msgs/TwistStamped'
   battery:
     name: '/battery'
-    messageType: 'aerialcore_common/BatteryState'
+    messageType: 'sensor_msgs/BatteryState'
     scale: 100 # percentage arrives as 0-1
   threat:
     name: '/threat'

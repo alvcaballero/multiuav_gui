@@ -6,6 +6,11 @@ export class deviceModelsController {
     res.json(deviceModelsModel.list({ category: req.query.category }));
   }
 
+  // The capability catalog (config/devices/capabilities.yaml): key → { label, description, commands, slots }.
+  static getCapabilities(req, res) {
+    res.json(deviceModelsModel.getCapabilities());
+  }
+
   static get(req, res) {
     const model = deviceModelsModel.get(req.params.model);
     if (!model) return res.status(404).json({ error: `unknown device model '${req.params.model}'` });

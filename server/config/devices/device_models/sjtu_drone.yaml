@@ -2,5 +2,6 @@
 vehicleType: multirotor
 firmware: [ custom ]
 interfaces: [ sjtu ]
+capabilities: {}
 label: 'sjtu_drone (Gazebo)'
 icon: drone

@@ -1,5 +1,12 @@
 extends: _dji_rotorcraft
 interfaces: [ dji_M300, dji_M300_PSDK, simulationFB ]
+capabilities:
+  autonomous_mission: standard
+  gimbal: standard
+  camera_stream: standard
+  file_download: standard
+  obstacle_sensing: standard
+  rtk: optional
 label: 'DJI Matrice 300'
 icon: dji_M300
 model3d: m300

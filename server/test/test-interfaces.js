@@ -59,7 +59,6 @@ describe('the real interface files', () => {
       dji_M210_melodic: 'v1',
       px4_mavros: 'v1',
       px4_mavros_slow: 'v1',
-      dji_M600: 'default',
     });
   });
 });

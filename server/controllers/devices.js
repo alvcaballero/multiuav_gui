@@ -83,7 +83,10 @@ class devicesController {
     // old client) gets its category's default.
     const device = { ...result.data, deviceModel: result.data.deviceModel ?? deviceModelsModel.defaultFor(result.data.category) };
     const problem =
-      categoryModel.deviceProblem(device) ?? deviceModelsModel.deviceProblem(device) ?? (await systemIdTaken(device));
+      categoryModel.deviceProblem(device) ??
+      deviceModelsModel.deviceProblem(device) ??
+      deviceModelsModel.capabilityOverrideProblem(device) ??
+      (await systemIdTaken(device));
     if (problem) return res.status(400).json({ error: [problem] });
     result.data = device;
 
@@ -127,6 +130,8 @@ class devicesController {
     // Stored attributes that no longer apply to the device it becomes (e.g. mavlink's after a protocol
     // change) are dropped; the ones sent in this edit are merged on top and must all apply.
     const kept = pruneAttributes(leaving, current.attributes);
+    // A new model has its own capabilities: the old unit's switches do not carry over unless sent again.
+    if (leaving.deviceModel !== current.deviceModel) delete kept.capabilities;
     const attributes = validateDeviceAttributes(leaving, { ...kept, ...result.data.attributes });
     if (!attributes.success) {
       const error = attributes.error.issues.map((issue) => ({ ...issue, path: ['attributes', ...issue.path] }));
@@ -138,6 +143,7 @@ class devicesController {
     const problem =
       categoryModel.deviceProblem(leaving) ??
       (leaving.deviceModel ? deviceModelsModel.deviceProblem(leaving) : null) ??
+      deviceModelsModel.capabilityOverrideProblem(leaving) ??
       (await systemIdTaken(leaving, id));
     if (problem) return res.status(400).json({ error: [problem] });
     result.data.attributes = attributes.data;

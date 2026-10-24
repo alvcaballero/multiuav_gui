@@ -62,6 +62,10 @@ export const deviceModelSchema = z
       .array(key)
       .refine((list) => new Set(list).size === list.length, 'repeated interface')
       .optional(),
+    // What the vehicle can do (config/devices/capabilities.yaml): `standard` it always has, `optional`
+    // only when the device enables it (hardware fitted on that unit: RTK, a gimbal). `'*'` = every
+    // capability its interface implements (the generic models: a vehicle nobody described).
+    capabilities: z.union([z.literal('*'), z.record(key, z.enum(['standard', 'optional']))]).optional(),
     label: z.string().min(1).optional(),
     icon: key.optional(), // client map icon (preloadImages.js mapIcons)
     model3d: key.optional(), // client 3D model (ModelLoader.jsx modelPaths)

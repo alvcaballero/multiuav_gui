@@ -114,11 +114,17 @@ export class DevicesModel {
     });
     // `telemetry`: the slots that stopped (or never started) arriving — see telemetryWatchdog.js
     // `platform`: what the client draws it as (vehicle type, icon, 3D model), from its device model.
-    const plain = mydevices.map((d) => ({
-      ...d.dataValues,
-      telemetry: telemetryWatchdog.statusOf(d.id),
-      platform: deviceModelsModel.platformOf(d.deviceModel),
-    }));
+    // `capabilities`: what this unit can do (its model's, switched by its own overrides, that its
+    // interface implements); null when its category is unknown.
+    const plain = mydevices.map((d) => {
+      const capabilities = deviceModelsModel.capabilitiesOf(d.dataValues);
+      return {
+        ...d.dataValues,
+        telemetry: telemetryWatchdog.statusOf(d.id),
+        platform: deviceModelsModel.platformOf(d.deviceModel),
+        capabilities: capabilities ? [...capabilities].sort() : null,
+      };
+    });
     if (query) {
       if (Array.isArray(query)) {
         return plain.filter((device) => query.some((element) => device.id == element));
@@ -281,8 +287,8 @@ export class DevicesModel {
         name: myDevice.name,
         category: myDevice.category,
         camera: device.camera,
-        watch_bound: true,
-        bag: false,
+        deviceModel: myDevice.deviceModel,
+        attributes: myDevice.attributes,
       });
 
       logger.info(`Device ${device.name} added. Type: ${device.category}`);
@@ -304,50 +310,48 @@ export class DevicesModel {
 
   static async editDevice({ id, name, category, deviceModel, camera, files, protocol, attributes }) {
     let myDevice = await sequelize.models.Device.findOne({ where: { id: id }, raw: false });
+    const wasRos = (myDevice.protocol ?? protocols.ROS) === protocols.ROS;
+    // What the ROS subscriptions depend on: the topics (name, category), which slots the device has
+    // (model + capability overrides in attributes) and whether the camera is subscribed.
+    let subscriptionsChanged = false;
+    const change = (field, value, why) => {
+      logger.debug(`Device ${id}: changing ${why}`);
+      myDevice[field] = value;
+      subscriptionsChanged = true;
+    };
     // Already checked against the category it leaves with by the controller.
-    if (deviceModel && deviceModel !== myDevice.deviceModel) {
-      logger.debug(`Device ${id}: changing device model to ${deviceModel}`);
-      myDevice.deviceModel = deviceModel;
-    }
-    if (protocol && protocol !== myDevice.protocol) {
-      logger.debug(`Device ${id}: changing protocol to ${protocol}`);
-      myDevice.protocol = protocol;
-    }
+    if (deviceModel && deviceModel !== myDevice.deviceModel) change('deviceModel', deviceModel, `device model to ${deviceModel}`);
+    if (protocol && protocol !== myDevice.protocol) change('protocol', protocol, `protocol to ${protocol}`);
     // Already validated against the protocol's schema (and merged into the stored ones) by the controller.
     if (attributes !== undefined && JSON.stringify(attributes) !== JSON.stringify(myDevice.attributes)) {
-      logger.debug(`Device ${id}: changing protocol attributes`);
-      myDevice.attributes = attributes;
+      change('attributes', attributes, 'attributes');
     }
-    if ((name && name !== myDevice.name) || (category && category !== myDevice.category)) {
-      logger.debug(`Device ${id}: changing name/category`);
-      myDevice.name = name ? name : myDevice.name;
-      myDevice.category = category ? category : myDevice.category;
-      if (protocol === protocols.ROBOFLEET) {
-        // unsuscribe topics
-        // subscribe new topics
-      }
-      if (protocol === protocols.ROS) {
-        // unsuscribe topics
-        await rosController.unsubscribeDevice(myDevice.id);
-        // subscribe new topics
-        await rosController.subscribeDevice({
-          id: myDevice.id,
-          name: myDevice.name,
-          category: myDevice.category,
-          camera: myDevice.camera,
-        });
-      }
-    }
+    if (name && name !== myDevice.name) change('name', name, `name to ${name}`);
+    if (category && category !== myDevice.category) change('category', category, `category to ${category}`);
     if (camera && JSON.stringify(camera) !== JSON.stringify(myDevice.camera)) {
-      logger.debug(`Device ${id}: changing camera config`);
-      myDevice.camera = camera;
       cameraModel.removeCameraWebRTC(myDevice);
-      cameraModel.addCameraWebRTC({ ...myDevice, camera: camera });
+      change('camera', camera, 'camera config');
+      cameraModel.addCameraWebRTC({ ...myDevice.dataValues, camera });
     }
-
     if (files) myDevice.files = files;
+    await myDevice.save();
 
-    myDevice.save();
+    // The STORED protocol decides, not the request's: a partial PUT (only the category) carries none.
+    // Robofleet and MQTT match messages per device on arrival, MAVLink re-reads the device after its
+    // lookup cache expires: only ROS keeps per-device subscriptions to rebuild.
+    const isRos = (myDevice.protocol ?? protocols.ROS) === protocols.ROS;
+    if (!subscriptionsChanged || (!wasRos && !isRos)) return;
+    if (wasRos) await rosController.unsubscribeDevice(myDevice.id);
+    if (isRos) {
+      await rosController.subscribeDevice({
+        id: myDevice.id,
+        name: myDevice.name,
+        category: myDevice.category,
+        camera: myDevice.camera,
+        deviceModel: myDevice.deviceModel,
+        attributes: myDevice.attributes,
+      });
+    }
   }
 
   static async get_device_ns(uav_id) {

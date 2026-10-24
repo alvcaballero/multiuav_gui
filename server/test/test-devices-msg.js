@@ -27,7 +27,7 @@ describe('devices_msg.yaml vs the decoder registry', () => {
 
   // The message arrives as percentage 0-1: without `scale: 100` the cache rounds it to 0 or 1.
   test('categories whose battery arrives as 0-1 declare scale: 100 and report percent', () => {
-    for (const category of ['px4_mavros', 'px4_mavros_slow', 'griffin', 'catec', 'fuvex', 'dji_M300_PSDK']) {
+    for (const category of ['px4_mavros', 'px4_mavros_slow', 'griffin', 'external_telemetry', 'dji_M300_PSDK']) {
       assert.equal(subscriber(category, 'battery').scale, 100, `${category} battery scale`);
       const { batteryLevel } = decodeAs(category, 'battery', { percentage: 0.87 });
       assert.ok(Math.abs(batteryLevel - 87) < 1e-9, `${category}: ${batteryLevel}`);

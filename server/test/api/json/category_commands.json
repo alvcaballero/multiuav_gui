@@ -27,10 +27,6 @@
     "SyncFiles"
   ],
   "dji_M600": [
-    "CameraFileDownload",
-    "CameraFileList",
-    "CommandMission",
-    "LoadMission",
     "SaveHome"
   ],
   "dji_M300": [
@@ -90,14 +86,6 @@
     "SaveHome",
     "Takeoff"
   ],
-  "fuvex": [
-    "SaveHome"
-  ],
-  "catec": [
-    "SaveHome",
-    "ThreatConfirmation",
-    "ThreatDefuse"
-  ],
   "griffin": [
     "SaveHome"
   ],
@@ -136,5 +124,10 @@
     "SaveHome",
     "StopMission",
     "Takeoff"
+  ],
+  "external_telemetry": [
+    "SaveHome",
+    "ThreatConfirmation",
+    "ThreatDefuse"
   ]
 }

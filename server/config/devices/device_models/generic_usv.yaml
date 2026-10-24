@@ -1,5 +1,6 @@
 # Fallback for a usv whose model nobody declared: no physics, no firmware (any); it lists the GENERIC interfaces of its type, never one made for a specific vehicle (catec, griffin…).
 vehicleType: usv
 interfaces: []
+capabilities: "*"
 label: 'Surface vessel (generic)'
 icon: default

@@ -1,5 +1,6 @@
 # Fallback for a vtol whose model nobody declared: no physics, no firmware (any); it lists the GENERIC interfaces of its type, never one made for a specific vehicle (catec, griffin…).
 vehicleType: vtol
 interfaces: [ px4_ros2, px4_mavros, px4_mavros_slow, px4_mavlink ]
+capabilities: "*"
 label: 'VTOL (generic)'
 icon: plane

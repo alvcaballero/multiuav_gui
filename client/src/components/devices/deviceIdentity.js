@@ -31,15 +31,40 @@ export function isDeviceIdentityValid(item) {
   return !isMavlink(item.protocol) || systemIdError(item.attributes?.systemId) === null;
 }
 
+// `attributes.capabilities` belongs to the MODEL (which of its capabilities this unit has), every
+// other key to the protocol (mavlink: systemId).
+const capabilityOverrides = (item) =>
+  item.attributes?.capabilities ? { capabilities: item.attributes.capabilities } : {};
+
 /**
- * The item after a protocol change: `attributes` belong to the protocol (mavlink: systemId), so they
- * are kept only while it stays the same. {} (not undefined) so an edit clears them in the database too.
+ * The item after a protocol change: the protocol's attributes are kept only while it stays the same,
+ * the capability switches always. {} (not undefined) so an edit clears them in the database too.
  */
 export function withProtocol(item, protocol) {
   return {
     ...item,
     protocol,
-    attributes: protocol === item.protocol ? (item.attributes ?? {}) : {},
+    attributes: protocol === item.protocol ? (item.attributes ?? {}) : capabilityOverrides(item),
+  };
+}
+
+/** The model's capabilities this unit has: its own switch, else on when the model says `standard`. */
+export const hasCapability = (item, name, level) =>
+  item.attributes?.capabilities?.[name] ?? level === 'standard';
+
+/**
+ * The item with capability `name` switched to `on`. A switch that matches the model's default is
+ * dropped: only what makes this unit differ from its model is stored.
+ */
+export function withCapability(item, name, level, on) {
+  const capabilities = { ...item.attributes?.capabilities };
+  if (on === (level === 'standard')) delete capabilities[name];
+  else capabilities[name] = on;
+  const rest = { ...item.attributes };
+  delete rest.capabilities;
+  return {
+    ...item,
+    attributes: Object.keys(capabilities).length ? { ...rest, capabilities } : rest,
   };
 }
 
@@ -56,9 +81,10 @@ export function withCategory(item, category, format) {
 
 /**
  * The item after a model change: its interfaces are another list, so the category (and with it the
- * protocol) is chosen again.
+ * protocol) is chosen again, and the capability switches were the old model's.
  */
 export function withModel(item, deviceModel) {
   if (deviceModel === item.deviceModel) return item;
-  return { ...withCategory(item, null, null), deviceModel };
+  const cleared = withCategory(item, null, null);
+  return { ...cleared, deviceModel, attributes: {} };
 }

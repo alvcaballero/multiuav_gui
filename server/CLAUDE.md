@@ -455,7 +455,27 @@ an interface the model does not list (path `['category']`). `GET /api/device-mod
 model3d}` (the generic of its type fills a missing icon/model3d): the client draws a device by it,
 never by its category name. MAVLink: the HEARTBEAT's `MAV_TYPE` (`vehicleTypeOfMavType`) is compared
 with the model when a vehicle comes online; a mismatch is a warning once, never a refusal. The
-physics are UNVERIFIED copies of the old `devices.yaml` (TODO); capabilities are plan F3.
+physics are UNVERIFIED copies of the old `devices.yaml` (TODO).
+
+**Capabilities** (`config/devices/capabilities.yaml`, `models/capabilities/capabilityCatalog.js`): WHAT a
+vehicle can do, and which COMMANDS and telemetry SLOTS implement each one (`autonomous_mission`,
+`flight_control`, `navigation`, `file_download`, `gimbal`, `camera_stream`, `rtk`, `obstacle_sensing`,
+`threat_detection`, `humidity_sensor`); a command or slot belongs to at most one, and what none owns
+(SaveHome, position, battery…) every device has. The interfaces are untouched: they declare topics, the
+catalog says what each one is for. A model declares `capabilities: { name: standard | optional }` (`{}` =
+telemetry only, `'*'` = everything its interface implements, the generics); a unit switches them in
+`attributes.capabilities` (`{ rtk: true }` enables an optional one, `{ gimbal: false }` disables a
+standard one; only the ones its model declares, `capabilityOverrideProblem`, 400; a model change drops
+them). **Effective** = the model's (+ switches) that the interface IMPLEMENTS (`implementedBy`: a slot
+declared, or a command `commandRegistry` resolves) — `deviceModelsModel.capabilitiesOf(device)`, null for
+an unknown category (then nothing is gated). Gated with `allowsCommand` / `allowsSlot`:
+`/api/commands/types` and `sendCommand` (so `shouldDownloadFiles` too), ROS subscriptions (`subscribeDevice`
+now takes `deviceModel` + `attributes`), the watchdog's expected slots, MAVLink stream requests and
+`_ingest`, MQTT and FlatBuffer ingestion. `getAll` adds `capabilities` (sorted list). Example: griffin on
+`ardupilot_mavlink` gets only SaveHome (no `flight_control`), griffin on its mavros interface gets `humidity`,
+an x500 there would not. `editDevice` rebuilds the ROS subscriptions on ANY change they depend on (name,
+category, model, attributes, camera), deciding on the STORED protocol (a partial PUT carries none).
+MAVLink re-reads the device only when its lookup cache expires.
 
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`

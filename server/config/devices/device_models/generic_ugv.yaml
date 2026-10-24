@@ -1,5 +1,6 @@
 # Fallback for a ugv whose model nobody declared: no physics, no firmware (any); it lists the GENERIC interfaces of its type, never one made for a specific vehicle (catec, griffin…).
 vehicleType: ugv
 interfaces: [ agv ]
+capabilities: "*"
 label: 'Ground vehicle (generic)'
 icon: default

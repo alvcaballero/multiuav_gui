@@ -1,5 +1,6 @@
 # Fallback for a fixed_wing whose model nobody declared: no physics, no firmware (any); it lists the GENERIC interfaces of its type, never one made for a specific vehicle (catec, griffin…).
 vehicleType: fixed_wing
 interfaces: [ px4_ros2, px4_mavlink ]
+capabilities: "*"
 label: 'Fixed wing (generic)'
 icon: plane

@@ -3,6 +3,7 @@ import { eventsController } from '../../controllers/events.js';
 import { getGateway } from '../gateways/index.js';
 import { positionsController } from '../../controllers/positions.js';
 import { categoryModel } from '../category.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
 import { CommandType } from '../../config/commandTypes.js';
 import { logger } from '../../common/logger.js';
 import { commandSchema, resolveCommand, validateAttributes } from './commandSchema.js';
@@ -44,12 +45,16 @@ export class commandsModel {
   // categoría declara en devices_msg.yaml (más los locales), y cada uno sale resuelto contra
   // command_schema + overrides de la categoría. `via` dice qué endpoint lo implementa;
   // `requires` (su key, null si es local) se mantiene por compatibilidad.
+  // Only the commands of the capabilities the device HAS (deviceModelsModel.allowsCommand): its
+  // interface may implement more (ardupilot_mavlink has Takeoff; griffin on it is telemetry only).
   static async getCommandTypes(deviceId) {
     logger.debug(`getCommandTypes deviceId=${deviceId}`);
-    const category = (await devicesController.getDevice(deviceId))?.category;
-    const categoryConfig = category ? categoryModel.getCategory(category) : undefined;
+    const device = await devicesController.getDevice(deviceId);
+    const categoryConfig = device?.category ? categoryModel.getCategory(device.category) : undefined;
     const { commands } = commandRegistry.resolveCommands(categoryConfig);
-    return [...commands].map(([type, endpoint]) => ({
+    return [...commands]
+      .filter(([type]) => !device || deviceModelsModel.allowsCommand(device, type))
+      .map(([type, endpoint]) => ({
       ...resolveCommand(commandSchema, type, categoryConfig),
       type,
       requires: endpoint?.key ?? null,
@@ -82,6 +87,13 @@ export class commandsModel {
     const { commands } = commandRegistry.resolveCommands(categoryConfig);
     if (!commands.has(type)) {
       return { state: 'error', msg: `Command '${type}' not supported by device ${device.name}` };
+    }
+    // The interface implements it, but the vehicle may not do it (its device model's capabilities).
+    if (!deviceModelsModel.allowsCommand(device, type)) {
+      return {
+        state: 'error',
+        msg: `Command '${type}' needs a capability device ${device.name} (model ${device.deviceModel}) does not have`,
+      };
     }
 
     // Contrato del command resuelto para ESTE device (el mismo que entregó /types): los

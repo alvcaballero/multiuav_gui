@@ -237,7 +237,9 @@ export class MavlinkServer extends EventEmitter {
       const device = await this._deviceFor(v.sysid);
       if (!device) continue;
       const subscribers = this.categories.getCategory(device.category)?.subscribers ?? {};
-      for (const cfg of Object.values(subscribers)) {
+      for (const [slot, cfg] of Object.entries(subscribers)) {
+        // Never ask for a stream of a capability the vehicle lacks (a gimbal it does not carry).
+        if (!this.deviceModels.allowsSlot(device, slot)) continue;
         const hz = Number(cfg?.rate_hz);
         const clazz = classOfMsgType(cfg?.messageType);
         if (!(hz > 0) || !clazz) continue;
@@ -582,7 +584,7 @@ export class MavlinkServer extends EventEmitter {
     const subscribers = this.categories.getCategory(device.category)?.subscribers;
     const msgType = msgTypeOf(clazz.MSG_NAME);
     const slot = slotOf(subscribers, msgType);
-    if (!slot) return;
+    if (!slot || !this.deviceModels.allowsSlot(device, slot)) return;
     const msg = toPlain(clazz, decoded ?? decode(packet));
     this.rawTap.publish({ deviceId: device.id, slot, transport: 'mavlink', raw: msg });
     this.watchdog.record(device.id, slot);

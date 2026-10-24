@@ -2,6 +2,7 @@ import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { logger } from '../../common/logger.js';
 import { TELEMETRY_CHECK_INTERVAL_MS, TELEMETRY_SLOT_TIMEOUT_MS } from '../../config/config.js';
 import { categoryModel, subscribesCamera } from '../category.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
 
 /** Health of one subscriber slot. Only the problems are exposed (`statusOf`); OK is the default. */
 export const SLOT_HEALTH = Object.freeze({
@@ -191,6 +192,8 @@ class TelemetryWatchdog {
 
     for (const [slot, cfg] of Object.entries(subscribers)) {
       if (cfg?.watchdog === false || (slot === 'camera' && !watchCamera)) continue;
+      // A slot of a capability the device lacks is not subscribed: never expect it (same rule as ros.js).
+      if (!deviceModelsModel.allowsSlot(device, slot)) continue;
       expected.add(slot);
 
       const timeout = slotTimeoutMs(cfg);

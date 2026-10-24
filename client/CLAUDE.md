@@ -48,6 +48,10 @@ client/
     │   │                   #   as for MAVLink) → the protocol's attributes. `withModel` / `withCategory` /
     │   │                   #   `withProtocol` (deviceIdentity.js, tested in server/test/test-device-identity-client.js)
     │   │                   #   clear what a change invalidates. See server/CLAUDE.md › Device models.
+    │   │                   #   Under the model, a box per capability it declares (GET /api/device-models/capabilities
+    │   │                   #   for the labels): `withCapability` stores only what differs from the model in
+    │   │                   #   attributes.capabilities. A device's own `capabilities` (effective, from getAll) gate the
+    │   │                   #   UI: e.g. StatusCard's threat buttons need `threat_detection`, never a category name.
     │   │                   #   The category editor (settings/SettingsCategoryPageEdit) loads `/raw`, the file as written.
     │   │                   #   A device is DRAWN by `device.platform` (icon, model3d, vehicleType, from its model):
     │   │                   #   `deviceIconKey(device)` / `getModelPath(platform.model3d)`, never by the category name.

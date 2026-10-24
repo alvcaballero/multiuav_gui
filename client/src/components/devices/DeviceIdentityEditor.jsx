@@ -5,15 +5,22 @@ import {
   AccordionSummary,
   AccordionDetails,
   Typography,
+  FormControl,
+  FormLabel,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { makeStyles } from 'tss-react/mui';
 import SelectField from '../../common/components/SelectField';
 import { useAsyncTask } from '../../reactHelper';
 import {
+  hasCapability,
   isMavlink,
   protocolsFor,
   systemIdError,
+  withCapability,
   withCategory,
   withModel,
   withProtocol,
@@ -27,6 +34,49 @@ const useStyles = makeStyles()((theme) => ({
     paddingBottom: theme.spacing(3),
   },
 }));
+
+// What this unit can do, against its model (server config/devices/capabilities.yaml): a box per
+// capability the model declares, checked when the unit has it. `standard` ones start checked (uncheck
+// a broken gimbal), `optional` ones unchecked (check an RTK module that is fitted). A generic model
+// ('*') has whatever its interface offers: nothing to switch. Only the differences are stored, in
+// attributes.capabilities. Whether the interface implements each one is the server's call.
+const DeviceCapabilitiesEditor = ({ value, onChange, model, catalog }) => {
+  if (!model) return null;
+  if (model.capabilities === '*') {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        Generic model: the device can do everything its interface offers.
+      </Typography>
+    );
+  }
+  const declared = Object.entries(model.capabilities ?? {});
+  if (declared.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        Telemetry only: this model declares no capabilities.
+      </Typography>
+    );
+  }
+  return (
+    <FormControl component="fieldset" variant="standard">
+      <FormLabel component="legend">Capabilities</FormLabel>
+      <FormGroup>
+        {declared.map(([name, level]) => (
+          <FormControlLabel
+            key={name}
+            control={
+              <Checkbox
+                checked={hasCapability(value, name, level)}
+                onChange={(e) => onChange(withCapability(value, name, level, e.target.checked))}
+              />
+            }
+            label={`${catalog?.[name]?.label ?? name}${level === 'optional' ? ' (optional)' : ''}`}
+          />
+        ))}
+      </FormGroup>
+    </FormControl>
+  );
+};
 
 const fetchJson = async (url, signal) => {
   const response = await fetch(url, { signal });
@@ -52,10 +102,12 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
   const [models, setModels] = useState(null);
   const [interfaces, setInterfaces] = useState(null);
   const [protocols, setProtocols] = useState(null);
+  const [catalog, setCatalog] = useState(null);
 
   useAsyncTask(async ({ signal }) => {
     setModels(await fetchJson('/api/device-models', signal));
     setProtocols(await fetchJson('/api/server/protocol', signal));
+    setCatalog(await fetchJson('/api/device-models/capabilities', signal));
   }, []);
 
   useAsyncTask(
@@ -102,6 +154,12 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
           keyGetter={(it) => it.name}
           titleGetter={(it) => `${it.label ?? it.name} · ${it.vehicleType}`}
           label="Model "
+        />
+        <DeviceCapabilitiesEditor
+          value={value}
+          onChange={onChange}
+          model={models?.find((m) => m.name === value.deviceModel)}
+          catalog={catalog}
         />
         {value.deviceModel && (
           // The interfaces this model lists; a variant (dji_M210_melodic) follows the one it extends.

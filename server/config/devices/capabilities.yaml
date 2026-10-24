@@ -1,0 +1,59 @@
+# ─── Capability catalog (VEHICLE_PLATFORMS_PLAN.md › F3) ────────────────────────
+#
+# WHAT a vehicle can do, and which commands / telemetry slots implement it. A device model declares
+# its capabilities (standard / optional); an interface IMPLEMENTS one when it declares an endpoint
+# for one of its commands or one of its slots. A device has a capability when its model (plus its own
+# overrides) says so AND its interface implements it; without it, the capability's commands are not
+# offered nor sent, and its slots are not subscribed nor expected by the watchdog.
+#
+# A command or slot belongs to at most one capability. Anything not listed here (SaveHome, position,
+# battery, heading…) is always there: it is what every device has.
+
+autonomous_mission:
+  label: 'Autonomous missions'
+  description: 'Loads and flies a waypoint mission on its own'
+  commands: [LoadMission, CommandMission, UploadMission, PauseMission, ResumeMission, StopMission]
+  slots: [mission_state]
+
+flight_control:
+  label: 'Flight commands'
+  description: 'Takeoff, land, hold, return home, arm and move on command'
+  commands: [Takeoff, Land, Hold, ReturnHome, Arm, Disarm, KillMotors, MoveRelative]
+
+navigation:
+  label: 'Navigation goals'
+  description: 'Drives to a goal pose on its own (ground robots, Nav2)'
+  commands: [NavigateToPose]
+
+file_download:
+  label: 'File download'
+  description: 'Hands over the files it recorded (photos, logs)'
+  commands: [CameraFileDownload, CameraFileList, SyncFiles]
+
+gimbal:
+  label: 'Gimbal'
+  commands: [Gimbal, GimbalPitch, ResetGimbal]
+  slots: [gimbal]
+
+camera_stream:
+  label: 'Camera stream'
+  commands: [SetupCamera]
+  slots: [camera]
+
+rtk:
+  label: 'RTK positioning'
+  slots: [position_rtk]
+
+obstacle_sensing:
+  label: 'Obstacle sensing'
+  slots: [obstacle_info]
+
+threat_detection:
+  label: 'Threat detection'
+  description: 'Reports threats and takes their confirmation / defuse'
+  commands: [ThreatConfirmation, ThreatDefuse]
+  slots: [threat]
+
+humidity_sensor:
+  label: 'Humidity sensor'
+  slots: [humidity]

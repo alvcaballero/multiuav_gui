@@ -216,24 +216,6 @@
         "name": "/dji_sdk/display_mode",
         "messageType": "std_msgs/UInt8"
       }
-    },
-    "services": {
-      "configure_mission": {
-        "name": "/dji_control/configure_mission",
-        "messageType": "aerialcore_common/ConfigMission"
-      },
-      "command_mission": {
-        "name": "/dji_control/start_mission",
-        "messageType": "std_srvs/TriggerRequest"
-      },
-      "camera_file_download": {
-        "name": "/camera_download_files",
-        "messageType": "dji_osdk_ros/DownloadMedia"
-      },
-      "camera_file_list": {
-        "name": "/camera_download_filelist",
-        "messageType": "dji_osdk_ros/FileList"
-      }
     }
   },
   "dji_M300": {
@@ -595,72 +577,6 @@
       }
     }
   },
-  "fuvex": {
-    "subscribers": {
-      "position": {
-        "name": "/gps",
-        "messageType": "sensor_msgs/NavSatFix"
-      },
-      "height_above_takeoff": {
-        "name": "/mavros/altitude",
-        "messageType": "mavros_msgs/Altitude"
-      },
-      "heading": {
-        "name": "/compass_hdg",
-        "messageType": "std_msgs/Float64"
-      },
-      "speed": {
-        "name": "/velocity",
-        "messageType": "geometry_msgs/TwistStamped"
-      },
-      "battery": {
-        "name": "/battery",
-        "messageType": "sensor_msgs/BatteryState",
-        "scale": 100
-      }
-    },
-    "services": {}
-  },
-  "catec": {
-    "subscribers": {
-      "position": {
-        "name": "/gps",
-        "messageType": "sensor_msgs/NavSatFix"
-      },
-      "height_above_takeoff": {
-        "name": "/mavros/altitude",
-        "messageType": "mavros_msgs/Altitude"
-      },
-      "heading": {
-        "name": "/compass_hdg",
-        "messageType": "std_msgs/Float64"
-      },
-      "speed": {
-        "name": "/velocity",
-        "messageType": "geometry_msgs/TwistStamped"
-      },
-      "battery": {
-        "name": "/battery",
-        "messageType": "aerialcore_common/BatteryState",
-        "scale": 100
-      },
-      "threat": {
-        "name": "/threat",
-        "messageType": "std_msgs/UInt8",
-        "watchdog": false
-      }
-    },
-    "services": {
-      "threat_confirmation": {
-        "name": "/threat_confirmation",
-        "messageType": "std_srvs/Trigger"
-      },
-      "threat_defuse": {
-        "name": "/threat_defuse",
-        "messageType": "std_srvs/Trigger"
-      }
-    }
-  },
   "griffin": {
     "subscribers": {
       "position": {
@@ -836,6 +752,46 @@
       },
       "stop_mission": {
         "messageType": "mavlink/ARDUPILOT_COMMAND"
+      }
+    }
+  },
+  "external_telemetry": {
+    "subscribers": {
+      "position": {
+        "name": "/gps",
+        "messageType": "sensor_msgs/NavSatFix"
+      },
+      "height_above_takeoff": {
+        "name": "/mavros/altitude",
+        "messageType": "mavros_msgs/Altitude"
+      },
+      "heading": {
+        "name": "/compass_hdg",
+        "messageType": "std_msgs/Float64"
+      },
+      "speed": {
+        "name": "/velocity",
+        "messageType": "geometry_msgs/TwistStamped"
+      },
+      "battery": {
+        "name": "/battery",
+        "messageType": "sensor_msgs/BatteryState",
+        "scale": 100
+      },
+      "threat": {
+        "name": "/threat",
+        "messageType": "std_msgs/UInt8",
+        "watchdog": false
+      }
+    },
+    "services": {
+      "threat_confirmation": {
+        "name": "/threat_confirmation",
+        "messageType": "std_srvs/Trigger"
+      },
+      "threat_defuse": {
+        "name": "/threat_defuse",
+        "messageType": "std_srvs/Trigger"
       }
     }
   }

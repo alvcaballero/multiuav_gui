@@ -1,5 +1,7 @@
 vehicleType: flapping_wing
 firmware: [ ardupilot ]
-interfaces: [ griffin ]
+interfaces: [ griffin, ardupilot_mavlink ]
+capabilities:
+  humidity_sensor: standard
 label: 'GRIFFIN ornithopter'
 icon: griffin

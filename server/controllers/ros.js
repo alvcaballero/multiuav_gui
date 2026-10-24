@@ -225,8 +225,8 @@ export class rosController {
     res.json(response);
   }
 
-  static async subscribeDevice({ id, name, category, camera, watch_bound = true, bag = false }) {
-    return RosEnable ? await rosModel.subscribeDevice({ id, name, category, camera, watch_bound, bag }) : null;
+  static async subscribeDevice({ id, name, category, camera, deviceModel, attributes }) {
+    return RosEnable ? await rosModel.subscribeDevice({ id, name, category, camera, deviceModel, attributes }) : null;
   }
   static async unsubscribeDevice(id) {
     logger.debug(`unsubscribeDevice id=${id}`);

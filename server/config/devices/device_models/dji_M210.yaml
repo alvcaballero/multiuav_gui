@@ -1,5 +1,12 @@
 extends: _dji_rotorcraft
 interfaces: [ dji_M210_noetic, dji_M210_melodic ]
+capabilities:
+  autonomous_mission: standard
+  gimbal: standard
+  camera_stream: standard
+  file_download: standard
+  obstacle_sensing: standard
+  rtk: optional
 label: 'DJI Matrice 210'
 icon: dji_M210
 model3d: drone

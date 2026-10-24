@@ -13,11 +13,12 @@ import {
 } from '../models/deviceModels/deviceModelCatalog.js';
 import { deviceModelsModel } from '../models/deviceModels/deviceModels.js';
 import { categoryModel } from '../models/category.js';
+import { buildCapabilityCatalog } from '../models/capabilities/capabilityCatalog.js';
 
 // config/devices/device_models/: WHAT each vehicle is. A device = a device model + an interface
 // (its category, HOW it is talked to); this file tests the models and which pairs work.
 
-const generics = Object.fromEntries(Object.values(VEHICLE_TYPE).map((t) => [genericModelOf(t), { vehicleType: t, interfaces: [] }]));
+const generics = Object.fromEntries(Object.values(VEHICLE_TYPE).map((t) => [genericModelOf(t), { vehicleType: t, interfaces: [], capabilities: '*' }]));
 const problemsOf = (raw) => buildDeviceModelCatalog({ ...generics, ...raw }).problems;
 
 describe('the real device model files', () => {
@@ -54,18 +55,25 @@ describe('the real device model files', () => {
 
 describe('buildDeviceModelCatalog', () => {
   test('every vehicle type needs its generic model', () => {
-    const { problems } = buildDeviceModelCatalog({ generic_multirotor: { vehicleType: 'multirotor', interfaces: [] } });
+    const { problems } = buildDeviceModelCatalog({ generic_multirotor: { vehicleType: 'multirotor', interfaces: [], capabilities: '*' } });
     assert.ok(problems.some((p) => p.path[0] === 'generic_usv'));
   });
 
-  test('a typo, a bad sensor range or a model without vehicle type or interfaces is an error', () => {
-    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', interfaces: [], phisics: {} } }).length, 1);
-    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', interfaces: [], obstacle_sensor: { down: [0] } } }).length, 1);
-    assert.deepEqual(problemsOf({ m: { interfaces: [] } }), [{ path: ['m', 'vehicleType'], message: 'missing vehicleType' }]);
-    assert.deepEqual(problemsOf({ m: { vehicleType: 'multirotor' } }), [
+  test('a typo, a bad sensor range or a model without vehicle type, interfaces or capabilities is an error', () => {
+    const ok = { vehicleType: 'multirotor', interfaces: [], capabilities: {} };
+    assert.equal(problemsOf({ m: { ...ok, phisics: {} } }).length, 1);
+    assert.equal(problemsOf({ m: { ...ok, obstacle_sensor: { down: [0] } } }).length, 1);
+    assert.deepEqual(problemsOf({ m: { interfaces: [], capabilities: {} } }), [
+      { path: ['m', 'vehicleType'], message: 'missing vehicleType' },
+    ]);
+    assert.deepEqual(problemsOf({ m: { vehicleType: 'multirotor', capabilities: {} } }), [
       { path: ['m', 'interfaces'], message: 'missing interfaces (the list may be empty)' },
     ]);
-    assert.equal(problemsOf({ m: { vehicleType: 'multirotor', interfaces: ['a', 'a'] } }).length, 1);
+    assert.deepEqual(problemsOf({ m: { vehicleType: 'multirotor', interfaces: [] } }), [
+      { path: ['m', 'capabilities'], message: "missing capabilities ({} for none, '*' for a generic)" },
+    ]);
+    assert.equal(problemsOf({ m: { ...ok, interfaces: ['a', 'a'] } }).length, 1);
+    assert.equal(problemsOf({ m: { ...ok, capabilities: { rtk: 'sometimes' } } }).length, 1);
   });
 
   test('extends merges objects key by key and replaces the rest', () => {
@@ -116,9 +124,9 @@ describe('deviceModelsModel', () => {
     }
   });
 
-  test('a model offers exactly the interfaces it lists: x500 never sees catec (mavros, but CATEC´s topics)', () => {
+  test('a model offers exactly the interfaces it lists: x500 never sees external_telemetry (the CATEC/FuVeX topics)', () => {
     assert.deepEqual(deviceModelsModel.interfacesOf('x500'), ['px4_ros2', 'px4_mavros', 'px4_mavros_slow', 'px4_mavlink', 'ardupilot_mavlink']);
-    assert.deepEqual(deviceModelsModel.interfacesOf('catec'), ['catec']);
+    assert.deepEqual(deviceModelsModel.interfacesOf('catec'), ['external_telemetry']);
     assert.deepEqual(deviceModelsModel.interfacesOf('nope'), []);
   });
 
@@ -142,10 +150,10 @@ describe('deviceModelsModel', () => {
   });
 
   test('deviceProblem: the interface must be one the model lists (the form picks the model first)', () => {
-    assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'catec', deviceModel: 'x500' }), {
+    assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'external_telemetry', deviceModel: 'x500' }), {
       path: ['category'],
       message:
-        "model 'x500' does not list interface 'catec' (its interfaces: px4_ros2, px4_mavros, px4_mavros_slow, px4_mavlink, ardupilot_mavlink)",
+        "model 'x500' does not list interface 'external_telemetry' (its interfaces: px4_ros2, px4_mavros, px4_mavros_slow, px4_mavlink, ardupilot_mavlink)",
     });
     assert.deepEqual(deviceModelsModel.deviceProblem({ category: 'agv', deviceModel: 'nope' }), {
       path: ['deviceModel'],
@@ -162,5 +170,64 @@ describe('deviceModelsModel', () => {
     });
     assert.equal(deviceModelsModel.platformOf('bcr_bot').icon, 'default'); // from generic_ugv
     assert.equal(deviceModelsModel.platformOf(null), null);
+  });
+});
+
+describe('capabilities', () => {
+  const dev = (deviceModel, category, capabilities) => ({ deviceModel, category, attributes: capabilities ? { capabilities } : {} });
+  const caps = (d) => [...deviceModelsModel.capabilitiesOf(d)].sort();
+
+  test('a device has its model capabilities that its interface implements', () => {
+    assert.deepEqual(caps(dev('dji_M300', 'dji_M300')), ['autonomous_mission', 'camera_stream', 'file_download', 'gimbal', 'obstacle_sensing']);
+    assert.deepEqual(caps(dev('dji_M600', 'dji_M600')), []); // telemetry only
+    assert.deepEqual(caps(dev('catec', 'external_telemetry')), ['threat_detection']);
+    assert.deepEqual(caps(dev('fuvex', 'external_telemetry')), []);
+  });
+
+  test('griffin on ardupilot_mavlink is telemetry only: the interface has Takeoff, griffin does not fly on command', () => {
+    const griffin = dev('griffin', 'ardupilot_mavlink');
+    assert.deepEqual(caps(griffin), []);
+    assert.ok(!deviceModelsModel.allowsCommand(griffin, 'Takeoff'));
+    assert.ok(!deviceModelsModel.allowsCommand(griffin, 'LoadMission'));
+    assert.ok(deviceModelsModel.allowsCommand(griffin, 'SaveHome')); // no capability owns it
+    assert.ok(deviceModelsModel.allowsSlot(griffin, 'position_global'));
+  });
+
+  test('griffin on its mavros interface reads the humidity sensor; an x500 there would not', () => {
+    assert.ok(deviceModelsModel.allowsSlot(dev('griffin', 'griffin'), 'humidity'));
+    assert.ok(!deviceModelsModel.allowsSlot(dev('x500', 'griffin'), 'humidity'));
+  });
+
+  test('an optional capability is off until the device enables it; a standard one off when it disables it', () => {
+    assert.ok(!deviceModelsModel.allowsSlot(dev('dji_M210', 'dji_M210_noetic'), 'position_rtk'));
+    assert.ok(deviceModelsModel.allowsSlot(dev('dji_M210', 'dji_M210_noetic', { rtk: true }), 'position_rtk'));
+    assert.ok(!deviceModelsModel.allowsCommand(dev('dji_M210', 'dji_M210_noetic', { gimbal: false }), 'Gimbal'));
+  });
+
+  test('a generic model has everything its interface implements, as before device models', () => {
+    const generic = dev('generic_multirotor', 'px4_ros2');
+    for (const command of ['Takeoff', 'LoadMission', 'Gimbal']) assert.ok(deviceModelsModel.allowsCommand(generic, command), command);
+  });
+
+  test('an unknown category gates nothing (the boot reports that device)', () => {
+    assert.equal(deviceModelsModel.capabilitiesOf(dev('x500', 'nope')), null);
+    assert.ok(deviceModelsModel.allowsCommand(dev('x500', 'nope'), 'Takeoff'));
+  });
+
+  test('a device may only switch the capabilities its model declares', () => {
+    assert.equal(deviceModelsModel.capabilityOverrideProblem(dev('dji_M210', 'dji_M210_noetic', { rtk: true })), null);
+    assert.deepEqual(deviceModelsModel.capabilityOverrideProblem(dev('fuvex', 'external_telemetry', { threat_detection: true })), {
+      path: ['attributes', 'capabilities', 'threat_detection'],
+      message: "model 'fuvex' does not declare capability 'threat_detection' (it declares: none)",
+    });
+  });
+
+  test('the catalog: each command and slot belongs to at most one capability, and they all exist', () => {
+    assert.ok(Object.keys(deviceModelsModel.getCapabilities()).length > 0);
+    assert.deepEqual(buildCapabilityCatalog({ a: { label: 'A', commands: ['Takeoff'] }, b: { label: 'B', commands: ['Takeoff'] } }).problems, [
+      { path: ['b'], message: "'Takeoff' already belongs to 'a'" },
+    ]);
+    assert.equal(buildCapabilityCatalog({ a: { label: 'A', commands: ['Fly'] } }).problems.length, 1);
+    assert.equal(buildCapabilityCatalog({ a: { label: 'A', slots: ['nope'] } }).problems.length, 1);
   });
 });

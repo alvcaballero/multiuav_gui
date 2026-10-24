@@ -1,5 +1,6 @@
 # Fallback for a flapping_wing whose model nobody declared: no physics, no firmware (any); it lists the GENERIC interfaces of its type, never one made for a specific vehicle (catec, griffin…).
 vehicleType: flapping_wing
 interfaces: []
+capabilities: "*"
 label: 'Flapping wing (generic)'
 icon: griffin

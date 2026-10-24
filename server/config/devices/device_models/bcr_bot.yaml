@@ -2,4 +2,7 @@
 vehicleType: ugv
 firmware: [ nav2 ]
 interfaces: [ agv ]
+capabilities:
+  navigation: standard
+  camera_stream: standard
 label: 'bcr_bot'

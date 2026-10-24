@@ -2,5 +2,11 @@
 vehicleType: vtol
 firmware: [ px4 ]
 interfaces: [ px4_mavros, px4_mavros_slow, px4_ros2, px4_mavlink ]
+capabilities:
+  autonomous_mission: standard
+  flight_control: standard
+  file_download: standard
+  gimbal: optional
+  camera_stream: optional
 label: 'Standard VTOL'
 icon: plane

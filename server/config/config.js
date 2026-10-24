@@ -162,5 +162,7 @@ export const TELEMETRY_SLOT_TIMEOUT_MS = Number(process.env.TELEMETRY_SLOT_TIMEO
 export const interfacesDir = path.join(__dirname, 'devices', 'interfaces');
 // One file per device model (what a vehicle is): models/deviceModels/.
 export const deviceModelsDir = path.join(__dirname, 'devices', 'device_models');
+// What a vehicle can do, and which commands / slots implement it: models/capabilities/.
+export const capabilitiesFile = path.join(__dirname, 'devices', 'capabilities.yaml');
 export const missionSchema = '../config/devices/mission_schema.yaml';
 export const commandSchema = '../config/devices/command_schema.yaml';
