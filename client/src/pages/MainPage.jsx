@@ -89,6 +89,7 @@ const MainPage = () => {
   const [keyword, setKeyword] = useState('');
   const [filter, setFilter] = usePersistedState('filter', {
     statuses: [],
+    vehicleTypes: [],
     groups: [],
   });
   const [filterSort, setFilterSort] = usePersistedState('filterSort', '');

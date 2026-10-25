@@ -8,6 +8,12 @@ export default (keyword, filter, filterSort, filterMap, positions) => {
   const filteredDevices = useMemo(() => {
     const filtered = Object.values(devices).filter((device) => {
       if (filter.statuses.length && !filter.statuses.includes(device.status)) return false;
+      // `?.`: a filter persisted before vehicleTypes existed has no such key
+      if (
+        filter.vehicleTypes?.length &&
+        !filter.vehicleTypes.includes(device.platform?.vehicleType)
+      )
+        return false;
       const lowerCaseKeyword = keyword.toLowerCase();
       return [device.name, device.category, device.protocol].some((value) =>
         value?.toLowerCase().includes(lowerCaseKeyword),

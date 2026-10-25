@@ -29,8 +29,7 @@ física) + **interfaz** (`category`: CÓMO se le habla, un stack de mensajes) + 
 - Verificar los datos físicos de los DJI (TODO) y la interfaz `sjtu` contra el simulador (TODO).
 
 **Siguiente:**
-1. Cerrar F3: chips de capacidades en la lista de devices + filtro por capacidad (chico).
-2. F4 (telemetría según tipo: eje `vtolState`, modos PX4 FW/VTOL, ArduPlane, ArduRover) o saltar a F5/F6
+1. F4 (telemetría según tipo: eje `vtolState`, modos PX4 FW/VTOL, ArduPlane, ArduRover) o saltar a F5/F6
    si lo prioritario es planificar con la flota heterogénea (tipos de waypoint VTOL, Smart-Flies recibiendo el
    modelo en vez del nombre de categoría). Decidirlo al empezar.
 
@@ -287,7 +286,7 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
 - `DevicesModel.getAll` expone las capacidades efectivas y el cliente las muestra como chips (pocas),
   con un filtro por capacidad.
 
-#### Estado F3 (2026-10-25): hecho, salvo chips y filtro en la UI
+#### Estado F3 (2026-10-25): hecho
 
 - **Cambio de diseño respecto de lo de arriba:** no hay `requires:` en las interfaces. Un catálogo único
   (`capabilities.yaml`) dice qué comandos y slots implementan cada capacidad; la interfaz implementa una
@@ -307,7 +306,11 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
 - **Cambios de comportamiento a tener en cuenta:** un M210/M300 ya no se suscribe a `position_rtk` hasta
   habilitar `rtk` en el device; un x500 ya no ve Gimbal ni se suscribe a la cámara hasta habilitar
   `gimbal` / `camera_stream`.
-- Pendiente: chips con las capacidades en la lista de devices y filtro por capacidad.
+- Lista de devices (decidido por el usuario, en vez de chips por capacidad + filtro por capacidad): un
+  indicador `RTK` en `DeviceRow` solo si el device tiene la capacidad `rtk`, verde mientras
+  `positionSource === 'position_rtk'` (el RTK gana el arbitraje) y gris mientras vuela con GNSS. El filtro
+  de la toolbar filtra por **tipo de vehículo** (`platform.vehicleType`, `filter.vehicleTypes`), no por
+  capacidad. Sin verificar en el navegador.
 
 ### F4 · Telemetría según tipo de vehículo
 

@@ -111,7 +111,11 @@ const DevicePage = () => {
   const position = positions[id];
   const attributes = position?.attributes ?? {};
 
-  const [filter] = usePersistedState('filter', { statuses: [], groups: [] });
+  const [filter] = usePersistedState('filter', {
+    statuses: [],
+    vehicleTypes: [],
+    groups: [],
+  });
   const [filterSort] = usePersistedState('filterSort', '');
   const [filterMap] = usePersistedState('filterMap', false);
   const { filteredPositions } = useFilter('', filter, filterSort, filterMap, positions);

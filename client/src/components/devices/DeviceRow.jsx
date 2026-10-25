@@ -70,11 +70,7 @@ const PositionAlarm = React.memo(({ alarm, classes }) =>
 const PositionIgnition = React.memo(({ ignition, classes }) => (
   <Tooltip title={`Ignition: ${formatBoolean(ignition)}`}>
     <IconButton size="small">
-      {ignition ? (
-        <EngineIcon width={20} height={20} style={classes.success} />
-      ) : (
-        <EngineIcon width={20} height={20} style={classes.neutral} />
-      )}
+      <EngineIcon width={20} height={20} className={ignition ? classes.success : classes.neutral} />
     </IconButton>
   </Tooltip>
 ));
@@ -91,6 +87,28 @@ const PositionAltitude = React.memo(({ altitude }) => (
   <Tooltip title={`Altitude: ${Math.round(altitude)}`}>
     <IconButton size="small">
       <div style={{ fontSize: '0.9rem' }}>H {altitude.toFixed(1)}m</div>
+    </IconButton>
+  </Tooltip>
+));
+
+// Only for a device with the `rtk` capability. Green while the RTK fix is the position in use (it wins
+// the source arbitration, server positionReducers.js gatePosition), grey while it flies on GNSS.
+const RTK_SLOT = 'position_rtk';
+const rtkTitle = (inUse, rtk) => {
+  if (inUse) return 'RTK: in use';
+  if (rtk?.fix === 'nofix') return 'RTK: no fix, using GNSS';
+  return 'RTK: not in use, using GNSS';
+};
+
+const PositionRtk = React.memo(({ inUse, rtk, classes }) => (
+  <Tooltip title={rtkTitle(inUse, rtk)}>
+    <IconButton size="small">
+      <div
+        style={{ fontSize: '0.75rem', fontWeight: 'bold' }}
+        className={inUse ? classes.success : classes.neutral}
+      >
+        RTK
+      </div>
     </IconButton>
   </Tooltip>
 ));
@@ -194,6 +212,13 @@ const DeviceRow = ({ devices, index, style }) => {
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
               {position.attributes?.alarm && (
                 <PositionAlarm alarm={position.attributes.alarm} classes={classes} />
+              )}
+              {item.capabilities?.includes('rtk') && (
+                <PositionRtk
+                  inUse={position.attributes?.positionSource === RTK_SLOT}
+                  rtk={position.attributes?.[RTK_SLOT]}
+                  classes={classes}
+                />
               )}
               {position.attributes?.ignition !== undefined && (
                 <PositionIgnition ignition={position.attributes.ignition} classes={classes} />

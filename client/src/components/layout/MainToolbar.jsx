@@ -24,6 +24,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TuneIcon from '@mui/icons-material/Tune';
 import DeviceRow from '../devices/DeviceRow';
+import { VEHICLE_TYPE_LABELS, vehicleTypesOf } from '../devices/deviceIdentity';
 
 const useStyles = makeStyles()((theme) => ({
   toolbar: {
@@ -65,6 +66,16 @@ const MainToolbar = React.memo(
     const deviceStatusCount = (status) =>
       Object.values(devices).filter((d) => d.status === status).length;
 
+    // A device's type is its model's (`platform`, server getAll). The types offered are those of the devices
+    // present, plus any still selected, so a persisted choice whose devices are gone can be cleared.
+    const selectedVehicleTypes = filter.vehicleTypes ?? [];
+    const platforms = Object.values(devices).flatMap((d) => (d.platform ? [d.platform] : []));
+    const vehicleTypes = vehicleTypesOf([
+      ...platforms,
+      ...selectedVehicleTypes.map((vehicleType) => ({ vehicleType })),
+    ]);
+    const vehicleTypeCount = (type) => platforms.filter((p) => p.vehicleType === type).length;
+
     return (
       <Toolbar ref={toolbarRef} className={classes.toolbar}>
         <IconButton edge="start">
@@ -84,7 +95,11 @@ const MainToolbar = React.memo(
                 edge="end"
                 onClick={() => setFilterAnchorEl(inputRef.current)}
               >
-                <Badge color="info" variant="dot" invisible={!filter.statuses.length}>
+                <Badge
+                  color="info"
+                  variant="dot"
+                  invisible={!filter.statuses.length && !selectedVehicleTypes.length}
+                >
                   <TuneIcon fontSize="small" />
                 </Badge>
               </IconButton>
@@ -136,6 +151,24 @@ const MainToolbar = React.memo(
                 <MenuItem value="online">{`Online (${deviceStatusCount('online')})`}</MenuItem>
                 <MenuItem value="offline">{`Offline (${deviceStatusCount('offline')})`}</MenuItem>
                 <MenuItem value="unknown">{`Unknown (${deviceStatusCount('unknown')})`}</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl>
+              <InputLabel>{'Vehicle type'}</InputLabel>
+              <Select
+                label={'Vehicle type'}
+                value={selectedVehicleTypes}
+                onChange={(e) => setFilter({ ...filter, vehicleTypes: e.target.value })}
+                renderValue={(selected) =>
+                  selected.map((type) => VEHICLE_TYPE_LABELS[type] ?? type).join(', ')
+                }
+                multiple
+              >
+                {vehicleTypes.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {`${VEHICLE_TYPE_LABELS[type] ?? type} (${vehicleTypeCount(type)})`}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <FormControl>
