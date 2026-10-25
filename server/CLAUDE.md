@@ -1022,6 +1022,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `ROS_URL`: ROS bridge WS URL (default `ws://127.0.0.1:9090`)
 - `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
 - `DB_STORAGE`: local SQLite file (default `server/data/sequelize.sqlite`). `npm test` runs with `DB=false DB_STORAGE=:memory:` so tests never open — or run startup migrations on — the real database. Tests that need catalog data read the git-tracked files under `data/`, not DB rows.
+- `LOG_FILES`: `'false'` keeps the logger on the console only (no `logs/*.log`). Opt-out, read straight from `process.env` by `common/logger.js` (like `LOG_LEVEL`); `npm test` sets it so tests never write into the server's real logs.
 - `STREAM_SERVER`: Enable/disable video streaming (MediaMTX)
 - `LLM`: Enable/disable chat features
 - `LLM_PROVIDER`: `openai` | `gemini` | `anthropic`/`claude` | `ollama` | `llamacpp` | `openai-compatible` (default `openai`)
@@ -1081,7 +1082,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 8. **Git Submodules**: Remember to initialize/update submodules after cloning (`git submodule update --init --recursive`)
 9. **MCP Server**: When developing MCP tools, the server auto-restarts may cause temporary disconnections (auto-reconnection handles this)
 10. **Controller statics share one namespace**: controllers mix HTTP handlers (`(req, res)`) and facade methods for other models as `static` fields of the same class. A second `static` with the same name silently replaces the first — a facade `getMission(missionId)` once overrode the `GET /api/missions` handler and broke the mission list with no error. Give facades distinct names (`getMissionById`), and grep for the name before adding one.
-11. **Tests and the real database**: always run tests through `npm test` (it sets `DB=false DB_STORAGE=:memory:`). A plain `node --test` of any file that imports `common/sequelize.js` opens — and runs startup migrations on — `data/sequelize.sqlite`. `--test-force-exit` is there because importing `models/devices.js` starts the `DeviceHealthMonitor` timers at import time, which would keep a test process alive.
+11. **Tests and the real database**: always run tests through `npm test` (it sets `DB=false DB_STORAGE=:memory: LOG_FILES=false`). A plain `node --test` of any file that imports `common/sequelize.js` opens — and runs startup migrations on — `data/sequelize.sqlite`, and anything that logs writes into `logs/`. `--test-force-exit` is there because importing `models/devices.js` starts the `DeviceHealthMonitor` timers at import time, which would keep a test process alive.
 12. **`positionsModel.getByDeviceId` is synchronous on purpose**: it only reads the in-memory cache, and `missionSignals` / `events.js` call it without `await`. While it was `async` they read a Promise, so the mission anomalies, `wp_reached` and the event position silently never worked. Keep it synchronous (`test/test-mission-signals.js`).
 13. **Node 20 APIs only**: the server runs on Node 20 (`.nvmrc` v20.19, `npm test` uses it), so no
     `Map.groupBy` / `Object.groupBy`, `Set.prototype.union`/`intersection`, `Promise.withResolvers` or

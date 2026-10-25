@@ -60,15 +60,14 @@ que el vehículo puede** (capacidades efectivas + `vehicleType`).
 1. **No armar sobre una misión que PX4 marcó inválida.** Hoy el GCS arma, PX4 rechaza el modo (`TEMPORARILY_REJECTED`)
    y desarma solo. El dato existe (`mission_result.valid` por MAVLink).
 2. **Mostrar los warnings del validador al cargar**, no solo con el botón Validar.
-3. **Los tests escriben en los logs reales del server** (`server/logs/`): ensucian la depuración (pasó buscando un vuelo).
-4. Validar mientras se edita (con debounce) y marcar el waypoint con error dentro del editor (hoy: lista + click).
-5. Que el server rechace `camera[]` / `files[]` de un device sin `camera_stream` / `file_download` (hoy solo se ocultan
+3. Validar mientras se edita (con debounce) y marcar el waypoint con error dentro del editor (hoy: lista + click).
+4. Que el server rechace `camera[]` / `files[]` de un device sin `camera_stream` / `file_download` (hoy solo se ocultan
    en el formulario, sin borrarlos).
-6. `verification-mission.md` tiene un ejemplo con `mode_gimbal`, que el perfil `mavlink` no tiene: con el validador
+5. `verification-mission.md` tiene un ejemplo con `mode_gimbal`, que el perfil `mavlink` no tiene: con el validador
    nuevo, una misión así para un MAVLink se rechaza.
-7. Leer los parámetros del vehículo por MAVLink (`PARAM_REQUEST_READ`) para verificar el modelo contra el vehículo
+6. Leer los parámetros del vehículo por MAVLink (`PARAM_REQUEST_READ`) para verificar el modelo contra el vehículo
    real; con eso, la geometría en ala podría pasar de warning a error.
-8. Sin verificar: `stay` (hold) en FW; en qué referencia de altura manda el planner externo de `planning.js`
+7. Sin verificar: `stay` (hold) en FW; en qué referencia de altura manda el planner externo de `planning.js`
    (`/get_plan`; sin marca se toma relativa); el total de tests varía entre corridas (941–976) sin fallos nuevos.
 
 **Siguiente grande — F6 · Planificación y seguridad:**

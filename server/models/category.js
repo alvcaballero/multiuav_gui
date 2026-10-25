@@ -320,7 +320,6 @@ export class categoryModel {
     return null;
   }
   static getCategory(type) {
-    logger.debug(`categoryModel.getCategory: ${type}`);
     return devices_msg[type];
   }
   /**

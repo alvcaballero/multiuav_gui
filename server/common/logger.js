@@ -29,8 +29,12 @@ const fileFormat = winston.format.combine(
   winston.format.json()
 );
 
+// LOG_FILES=false deja solo la consola: `npm test` lo usa para no escribir en logs/ reales.
+// Opt-out, para que una variable faltante nunca apague los logs del server.
+const logToFiles = process.env.LOG_FILES !== 'false';
+
 // Transports base compartidos (error.log + combined.log)
-const baseFileTransports = [
+const baseFileTransports = !logToFiles ? [] : [
   new winston.transports.File({
     filename: join(__dirname, '../logs/error.log'),
     level: 'error',
@@ -103,7 +107,7 @@ const createLogger = ({ label = null, color = chalk.blue, level = null, filename
     ...baseFileTransports,
   ];
 
-  if (filename) {
+  if (filename && logToFiles) {
     transports.push(
       new winston.transports.File({
         filename: join(__dirname, `../logs/${filename}`),
