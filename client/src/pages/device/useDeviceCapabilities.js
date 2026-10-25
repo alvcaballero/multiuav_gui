@@ -11,7 +11,8 @@ const TASK_TERMINAL = ['complete', 'end', 'cancelled', 'error', 'skipped'];
  *     services/actions/publishers and resolved against command_schema — the same list the
  *     command dialog shows)
  *   - category:     GET /api/category/:category (the devices_msg block), for telemetry
- *     that is not a command (camera stream, obstacle_info)
+ *     that is not a command (camera stream, obstacle_info), together with `device.capabilities` for
+ *     the equipment a slot needs (lidar_3d, obstacle_sensing)
  * `obstacle_info` can't be read off the position: the server fills it with 100s by default.
  */
 export const useDeviceCapabilities = (device) => {
@@ -54,7 +55,9 @@ export const useDeviceCapabilities = (device) => {
     label: (type) => commands.get(type)?.label ?? type,
     camera: Boolean(device?.camera?.length) || 'camera' in subscribers,
     gimbal: types.has(CommandType.GIMBAL),
-    obstacle: 'obstacle_info' in subscribers,
+    // Same rule as the server's subscription: the unit has `obstacle_sensing` (model + its switches), so
+    // a slot the category declares but this device never subscribes does not show an empty widget
+    obstacle: Boolean(device?.capabilities?.includes('obstacle_sensing')) && 'obstacle_info' in subscribers,
     // The device has the lidar (the server's verdict: model + the unit's switches) AND its interface
     // can stream the cloud (an on-demand slot)
     lidar: Boolean(device?.capabilities?.includes('lidar_3d')) && 'lidar_3d_points' in subscribers,
