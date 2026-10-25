@@ -1,116 +1,82 @@
-#!/usr/bin/env node
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-/**
- * Test del sistema de logging
- * Ejecuta: node test-logger.js
- */
+// El logger lee el entorno y abre sus archivos AL IMPORTARSE: cada caso corre en un subproceso propio, con LOG_DIR
+// en un directorio temporal, para no escribir nunca en los logs/ reales del server.
+const LOGGER = new URL('../common/logger.js', import.meta.url).href;
 
-import { logger, logHelpers, wsLogger, deviceLogger, rosLogger, createCustomLogger, chalk } from '../common/logger.js';
-
-console.log('🚀 Iniciando pruebas del sistema de logging...\n');
-
-// Test 1: Logger básico
-console.log('📋 Test 1: Logger básico');
-logger.info('Mensaje de información');
-logger.warn('Mensaje de advertencia');
-logger.error('Mensaje de error');
-logger.debug('Mensaje de debug (solo visible si LOG_LEVEL=debug)');
-
-// Test 2: Logger con metadatos
-console.log('\n📋 Test 2: Logger con metadatos');
-logger.info('Operación completada', {
-  operacion: 'test',
-  usuario: 'admin',
-  duracion: '125ms',
-  items: 42,
-});
-
-// Test 3: Logger de sistema
-console.log('\n📋 Test 3: Logger de sistema');
-logHelpers.system.info('Sistema inicializado');
-logHelpers.system.warn('Memoria alta detectada', { usage: '85%' });
-logHelpers.system.error('Error de conexión', new Error('Connection refused'));
-
-// Test 4: Logger de API
-console.log('\n📋 Test 4: Logger de API');
-logHelpers.api.request('GET', '/api/devices', '192.168.1.100');
-logHelpers.api.response('GET', '/api/devices', 200, 45);
-logHelpers.api.error('POST', '/api/commands', new Error('Validation failed'));
-
-// Test 5: Logger de WebSocket
-console.log('\n📋 Test 5: Logger de WebSocket');
-logHelpers.ws.connect('client-123');
-logHelpers.ws.message('client-123', 'Hello server');
-logHelpers.ws.broadcast('System notification', 5);
-logHelpers.ws.disconnect('client-123');
-
-// Test 6: Logger de dispositivos
-console.log('\n📋 Test 6: Logger de dispositivos');
-logHelpers.device.connect('uav-001', 'M300-Drone');
-logHelpers.device.position('uav-001', 'M300-Drone', { lat: 40.7128, lng: -74.006, alt: 100 });
-logHelpers.device.command('uav-001', 'M300-Drone', 'takeoff');
-logHelpers.device.status('uav-001', 'M300-Drone', 'flying');
-
-// Test 7: Logger de ROS
-console.log('\n📋 Test 7: Logger de ROS');
-logHelpers.ros.connect('mavros_node');
-logHelpers.ros.publish('/mavros/setpoint_position/local', 'mavros_node');
-logHelpers.ros.message('/mavros/global_position/global', 'mavros_node', 'NavSatFix');
-
-// Test 8: Logger personalizado
-console.log('\n📋 Test 8: Logger personalizado');
-const testLogger = createCustomLogger('TEST', {
-  level: 'info',
-  color: chalk.magenta,
-  filename: 'test.log',
-});
-
-testLogger.info('Logger personalizado funcionando');
-testLogger.warn('Advertencia del logger personalizado');
-
-// Test 9: Logging de errores con stack trace
-console.log('\n📋 Test 9: Logging de errores con stack trace');
-try {
-  throw new Error('Error de prueba con stack trace');
-} catch (error) {
-  logger.error('Error capturado en test', error);
-}
-
-// Test 10: Logging de performance
-console.log('\n📋 Test 10: Logging de performance');
-const start = Date.now();
-setTimeout(() => {
-  const duration = Date.now() - start;
-  logger.info('Operación completada', {
-    operation: 'timeout-test',
-    duration: `${duration}ms`,
-    success: true,
+/** Importa el logger con `env`, corre `body` y espera a que los archivos de `waitFor` tengan contenido. */
+const runLogger = (env, body, waitFor = []) => {
+  const dir = mkdtempSync(join(tmpdir(), 'muav-logger-'));
+  const script = `
+    import fs from 'node:fs';
+    import * as L from '${LOGGER}';
+    ${body}
+    const dir = process.env.LOG_DIR;
+    const ready = () => ${JSON.stringify(waitFor)}.every((f) => fs.existsSync(dir + '/' + f) && fs.statSync(dir + '/' + f).size > 0);
+    for (const t0 = Date.now(); !ready() && Date.now() - t0 < 3000; ) await new Promise((r) => setTimeout(r, 20));
+    process.exit(0);
+  `;
+  const stdout = execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+    env: { ...process.env, LOG_FILES: '', LOG_LEVEL: '', FORCE_COLOR: '0', LOG_DIR: dir, ...env },
+    encoding: 'utf8',
   });
-}, 100);
+  const files = Object.fromEntries(readdirSync(dir).map((f) => [f, readFileSync(join(dir, f), 'utf8')]));
+  rmSync(dir, { recursive: true, force: true });
+  return { stdout, files };
+};
 
-// Test 11: Loggers específicos directos
-console.log('\n📋 Test 11: Loggers específicos directos');
-wsLogger.info('Mensaje directo del WebSocket logger');
-deviceLogger.info('Mensaje directo del device logger', { deviceId: 'test-001' });
-rosLogger.info('Mensaje directo del ROS logger', { topic: '/test/topic' });
+test('LOG_FILES=false: solo consola, ningún archivo', () => {
+  const { stdout, files } = runLogger({ LOG_FILES: 'false' }, `L.logger.error('boom'); L.missionLogger.info('m');`);
+  assert.deepEqual(files, {});
+  assert.match(stdout, /boom/);
+});
 
-console.log('\n✅ Pruebas del logger completadas!');
-console.log('📁 Revisa los archivos en la carpeta ./logs/');
-console.log('📁 Archivos generados:');
-console.log('   - combined.log (todos los logs)');
-console.log('   - error.log (solo errores)');
-console.log('   - websocket.log (logs de WebSocket)');
-console.log('   - devices.log (logs de dispositivos)');
-console.log('   - ros.log (logs de ROS)');
-console.log('   - test.log (logger personalizado)');
+test('por defecto: combined recibe todo, error solo los errores, cada módulo su archivo', () => {
+  const { files } = runLogger(
+    {},
+    `L.logger.info('info-line'); L.logger.error('error-line'); L.missionLogger.info('mission-line');`,
+    ['combined.log', 'error.log', 'mission.log']
+  );
+  assert.match(files['combined.log'], /info-line/);
+  assert.match(files['combined.log'], /error-line/);
+  assert.match(files['combined.log'], /mission-line/);
+  assert.match(files['error.log'], /error-line/);
+  assert.doesNotMatch(files['error.log'], /info-line/);
+  assert.match(files['mission.log'], /mission-line/);
+  assert.doesNotMatch(files['mission.log'], /info-line/);
+  assert.deepEqual(JSON.parse(files['mission.log'].trim()).message, 'mission-line');
+});
 
-// Mostrar información de configuración
-console.log('\n⚙️  Configuración actual:');
-console.log(`   - LOG_LEVEL: ${process.env.LOG_LEVEL || 'info'}`);
-console.log(`   - WS_LOG_LEVEL: ${process.env.WS_LOG_LEVEL || 'info'}`);
-console.log(`   - DEVICE_LOG_LEVEL: ${process.env.DEVICE_LOG_LEVEL || 'info'}`);
-console.log(`   - ROS_LOG_LEVEL: ${process.env.ROS_LOG_LEVEL || 'info'}`);
+// Sin `tailable` winston numera hacia arriba y, tras un reinicio, la tanda anterior queda fuera de lo que borra
+// `maxFiles` (se acumularon combined32..50). La rotación en sí se verificó a mano: acá se fija la configuración.
+test('todos los archivos rotan con nombres fijos (tailable) y con límite', () => {
+  const { stdout } = runLogger(
+    {},
+    `const all = [L.logger, L.wsLogger, L.deviceLogger, L.rosLogger, L.chatLogger, L.missionLogger]
+       .flatMap((l) => l.transports).filter((t) => t.filename);
+     console.log(JSON.stringify(all.map((t) => ({ file: t.filename, tailable: t.tailable, maxFiles: t.maxFiles, maxsize: t.maxsize }))));`
+  );
+  const transports = JSON.parse(stdout.trim().split('\n').pop());
+  assert.ok(transports.length > 0);
+  for (const t of transports) {
+    assert.equal(t.tailable, true, t.file);
+    assert.ok(t.maxFiles > 0 && t.maxsize > 0, t.file);
+  }
+});
 
-setTimeout(() => {
-  process.exit(0);
-}, 200);
+test('createLogger: el label sale en consola y envLevelKey pisa LOG_LEVEL', () => {
+  const { stdout } = runLogger(
+    { LOG_FILES: 'false', LOG_LEVEL: 'info', MY_LOG_LEVEL: 'debug' },
+    `const a = L.createLogger({ label: 'ALPHA', envLevelKey: 'MY_LOG_LEVEL' });
+     const b = L.createLogger({ label: 'BETA' });
+     a.debug('alpha-debug'); b.debug('beta-debug'); b.info('beta-info');`
+  );
+  assert.match(stdout, /\[ALPHA\].*alpha-debug/);
+  assert.doesNotMatch(stdout, /beta-debug/);
+  assert.match(stdout, /\[BETA\].*beta-info/);
+});

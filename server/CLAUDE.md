@@ -1022,7 +1022,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `ROS_URL`: ROS bridge WS URL (default `ws://127.0.0.1:9090`)
 - `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
 - `DB_STORAGE`: local SQLite file (default `server/data/sequelize.sqlite`). `npm test` runs with `DB=false DB_STORAGE=:memory:` so tests never open — or run startup migrations on — the real database. Tests that need catalog data read the git-tracked files under `data/`, not DB rows.
-- `LOG_FILES`: `'false'` keeps the logger on the console only (no `logs/*.log`). Opt-out, read straight from `process.env` by `common/logger.js` (like `LOG_LEVEL`); `npm test` sets it so tests never write into the server's real logs.
+- `LOG_FILES`: `'false'` keeps the logger on the console only (no `logs/*.log`). Opt-out, read straight from `process.env` by `common/logger.js` (like `LOG_LEVEL`); `npm test` sets it so tests never write into the server's real logs. `LOG_DIR`: where the files go (default `server/logs`); `test/test-logger.js` points it at a temp dir. Files rotate under fixed names (`tailable`: `<name>.log` is always the live one, then `<name>1..N-1`)
 - `STREAM_SERVER`: Enable/disable video streaming (MediaMTX)
 - `LLM`: Enable/disable chat features
 - `LLM_PROVIDER`: `openai` | `gemini` | `anthropic`/`claude` | `ollama` | `llamacpp` | `openai-compatible` (default `openai`)

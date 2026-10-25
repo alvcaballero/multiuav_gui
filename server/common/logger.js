@@ -32,13 +32,14 @@ const fileFormat = winston.format.combine(
 // LOG_FILES=false deja solo la consola: `npm test` lo usa para no escribir en logs/ reales.
 // Opt-out, para que una variable faltante nunca apague los logs del server.
 const logToFiles = process.env.LOG_FILES !== 'false';
+const logDir = process.env.LOG_DIR || join(__dirname, '../logs');
 
 // `tailable`: el archivo activo es siempre `<name>.log` y al rotar se renombran `<name>1..N-1` (nombres fijos).
 // Sin él winston numera hacia arriba (`combined36.log`…) y tras un reinicio vuelve a 0: la tanda anterior
 // queda fuera de lo que `maxFiles` borra y se acumula para siempre.
 const fileTransport = (filename, { level, maxFiles = 5 } = {}) =>
   new winston.transports.File({
-    filename: join(__dirname, `../logs/${filename}`),
+    filename: join(logDir, filename),
     level,
     format: fileFormat,
     maxsize: 5242880, // 5MB
