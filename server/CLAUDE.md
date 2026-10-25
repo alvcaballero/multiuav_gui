@@ -1051,6 +1051,10 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 10. **Controller statics share one namespace**: controllers mix HTTP handlers (`(req, res)`) and facade methods for other models as `static` fields of the same class. A second `static` with the same name silently replaces the first — a facade `getMission(missionId)` once overrode the `GET /api/missions` handler and broke the mission list with no error. Give facades distinct names (`getMissionById`), and grep for the name before adding one.
 11. **Tests and the real database**: always run tests through `npm test` (it sets `DB=false DB_STORAGE=:memory:`). A plain `node --test` of any file that imports `common/sequelize.js` opens — and runs startup migrations on — `data/sequelize.sqlite`. `--test-force-exit` is there because importing `models/devices.js` starts the `DeviceHealthMonitor` timers at import time, which would keep a test process alive.
 12. **`positionsModel.getByDeviceId` is synchronous on purpose**: it only reads the in-memory cache, and `missionSignals` / `events.js` call it without `await`. While it was `async` they read a Promise, so the mission anomalies, `wp_reached` and the event position silently never worked. Keep it synchronous (`test/test-mission-signals.js`).
+13. **Node 20 APIs only**: the server runs on Node 20 (`.nvmrc` v20.19, `npm test` uses it), so no
+    `Map.groupBy` / `Object.groupBy`, `Set.prototype.union`/`intersection`, `Promise.withResolvers` or
+    other Node 21+ builtins. A test catches one only on a path it runs: a builtin in a rare branch (an
+    error report at boot) fails in the field instead. `engines` (`>=20`) does not stop it, it is not a lint.
 
 ## External Dependencies
 
