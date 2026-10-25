@@ -28,6 +28,12 @@ describe('the real config/planning/config.yaml', () => {
       'it is a vtol, this mission type needs multirotor'
     );
   });
+
+  test('a lidar inspection takes only the x500 whose 3D lidar is enabled', () => {
+    const lidar = requirementsOf(config.missionTypes.find((m) => m.id === 2).data);
+    assert.equal(requirementMismatch(lidar, profile('x500', 'px4_ros2')), 'it lacks lidar_3d');
+    assert.equal(requirementMismatch(lidar, profile('x500', 'px4_ros2', { lidar_3d: true })), null);
+  });
 });
 
 describe('requirementProblems', () => {

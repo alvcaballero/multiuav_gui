@@ -5,4 +5,5 @@ interfaces: [ agv ]
 capabilities:
   navigation: standard
   camera_stream: standard
+  lidar_2d: standard
 label: 'bcr_bot'

@@ -56,8 +56,8 @@ que el vehículo puede** (capacidades efectivas + `vehicleType`).
 **Del usuario (fuera del código):**
 - Pasar `vtol_1` a `standard_vtol` (quedó como `x500` en la migración de F2) y cambiar el launch del relay del dron a
   `/<device>/slow/<topic completo>`.
-- Habilitar `rtk` en los M210/M300 que tengan el módulo, y `gimbal` / `camera` / `camera_stream` en los x500 que los
-  tengan (son opcionales: apagados hasta habilitarlos).
+- Habilitar `rtk` en los M210/M300 que tengan el módulo, y `gimbal` / `camera` / `camera_stream` / `lidar_3d` en los
+  x500 que los tengan (son opcionales: apagados hasta habilitarlos).
 - Verificar los datos físicos de los DJI (copias sin verificar del viejo `devices.yaml`) y la interfaz `sjtu`.
 
 **Chicos (código), en este orden:**
@@ -115,7 +115,8 @@ warning); USV/UGV (`pos[2]`, sin takeoff/land; `flightPhase` de superficie).
 | VTOL | Despegue `NAV_TAKEOFF` (queda en MC); la transición es una **acción por waypoint**; Auto landing → `NAV_VTOL_LAND`. Fin de misión: lo decide PX4 (`MIS_TKO_LAND_REQ`), sin reescribir el RTL |
 | Física | En el modelo (formato de Smart-Flies). El GCS la usa para AVISAR (geometría en ala); la dinámica real la planifica el planner |
 | Física en el planner (R5) | El GCS la manda inline (`vehicle`) y tiene prioridad; el planner usa la suya solo si no viene (corre sin el GCS, o el modelo no declara ese bloque). El GCS nunca rellena con defaults |
-| Quién vuela un tipo de misión | `vehicleTypes` + `capabilities` en `config/planning/config.yaml`; inspección (línea, torre, vegetación): multirrotor + `autonomous_mission` + `camera`; lidar: sin `camera` (no hay capacidad lidar) |
+| Quién vuela un tipo de misión | `vehicleTypes` + `capabilities` en `config/planning/config.yaml`; inspección (línea, torre, vegetación): multirrotor + `autonomous_mission` + `camera`; lidar: multirrotor + `autonomous_mission` + `lidar_3d` |
+| Lidar | Dos capacidades **a bordo** (`onboard: true`: el GCS no habla con el sensor, ninguna interfaz la implementa; cuenta si el modelo la declara, nunca en un genérico `'*'`): `lidar_2d` estándar en bcr_bot, `lidar_3d` opcional en x500 (se habilita en la unidad que lo tiene). **Descartado** un slot de telemetría: suscribir una nube de puntos por rosbridge para no mostrarla |
 | MAVLink | Interfaz = protocolo + dialecto (`px4_mavlink`, `ardupilot_mavlink`), no dos protocolos |
 | Variantes de interfaz | Plano + `extends`; el editor guarda la forma cruda (`/raw`) |
 
@@ -142,8 +143,9 @@ warning); USV/UGV (`pos[2]`, sin takeoff/land; `flightPhase` de superficie).
 - **Validador:** antes, una acción que la interfaz no codificaba se descartaba con un warning; ahora la carga se
   rechaza. Grabar un waypoint desde la posición ya no mete `gimbal` sin la capacidad.
 - **F6.1, cambio de comportamiento:** el filtro de tipos de misión ya no es por categoría. Un x500 (`px4_ros2`, antes
-  admitido en línea/torre) queda fuera hasta habilitarle `camera`; el M600 (lidar) también, porque no declara
-  `autonomous_mission` (ya estaba roto: el GCS le rechazaba la carga). El skip se loguea con el motivo (`info`).
+  admitido en línea/torre) queda fuera hasta habilitarle `camera`; la inspección de lidar ya no es del M600 (no
+  declara `autonomous_mission`: el GCS le rechazaba la carga) sino del x500 con `lidar_3d` habilitado. El skip se
+  loguea con el motivo (`info`).
 
 ## Riesgos abiertos
 

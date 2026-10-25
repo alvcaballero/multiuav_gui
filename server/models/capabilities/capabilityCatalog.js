@@ -16,6 +16,9 @@ const capabilitySchema = z
     description: z.string().optional(),
     commands: z.array(z.enum(Object.values(CommandType))).optional(),
     slots: z.array(z.string()).optional(),
+    // Equipment the vehicle carries that the GCS never talks to (a lidar mapping on board): no
+    // interface implements it, so it counts when the model declares it (effectiveCapabilities).
+    onboard: z.boolean().optional(),
     mission: z
       .object(Object.fromEntries(MISSION_ITEM_KINDS.map((kind) => [kind, z.array(z.string()).optional()])))
       .strict()
@@ -57,6 +60,13 @@ export function buildCapabilityCatalog(raw, missionKeys = null) {
       ...(parsed.data.slots ?? []).map((s) => `slot:${s}`),
       ...MISSION_ITEM_KINDS.flatMap((kind) => mission[kind].map((item) => `${kind}:${item}`)),
     ];
+    // An endpoint would make an interface implement it: then it is not on board only
+    if (parsed.data.onboard && items.length > 0) {
+      problems.push({
+        path: [key, 'onboard'],
+        message: 'an onboard capability owns no command, slot nor mission item',
+      });
+    }
     for (const item of items) {
       if (owner.has(item)) problems.push({ path: [key], message: `'${item}' already belongs to '${owner.get(item)}'` });
       else owner.set(item, key);
@@ -103,7 +113,9 @@ export function implementedBy(catalog, iface, missionItems = {}) {
 /**
  * The capabilities a device HAS: its model's (`'*'` = every one its interface implements; otherwise
  * the standard ones plus the optional ones the device enables, minus the ones it disables) that its
- * interface implements. `overrides` is `device.attributes.capabilities`: `{ rtk: true, gimbal: false }`.
+ * interface implements, plus its model's `onboard` ones (no interface implements those). A generic
+ * (`'*'`) or unknown model gets no onboard capability: nobody said it carries one.
+ * `overrides` is `device.attributes.capabilities`: `{ rtk: true, gimbal: false }`.
  * @returns {Set<string>}
  */
 export function effectiveCapabilities(catalog, model, iface, overrides = {}, missionItems = {}) {
@@ -112,5 +124,6 @@ export function effectiveCapabilities(catalog, model, iface, overrides = {}, mis
   if (model.capabilities === '*') return implemented;
   const declared = model.capabilities ?? {};
   const has = (key) => overrides[key] ?? declared[key] === 'standard';
-  return new Set([...implemented].filter((key) => key in declared && has(key)));
+  const onboard = Object.keys(catalog).filter((key) => catalog[key].onboard);
+  return new Set([...implemented, ...onboard].filter((key) => key in declared && has(key)));
 }

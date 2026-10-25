@@ -114,10 +114,8 @@ missionTypes:
           type: 'number'
           name: 'Device'
           default: 0
-        # No lidar capability in the catalog yet: any multirotor that flies missions. The M600 (the
-        # lidar carrier) declares no autonomous_mission, so it is filtered out until its model does.
         vehicleTypes: [multirotor]
-        capabilities: [autonomous_mission]
+        capabilities: [autonomous_mission, lidar_3d]
       settings:
         base:
           type: 'array'

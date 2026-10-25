@@ -9,5 +9,7 @@ capabilities:
   gimbal: optional
   camera: optional
   camera_stream: optional
+  # A lidar fitted on one unit: enable it on that device
+  lidar_3d: optional
 label: 'Holybro X500'
 icon: drone

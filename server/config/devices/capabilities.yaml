@@ -13,6 +13,11 @@
 # capability enables. A device without it is not offered them, and a mission using them is refused.
 # An interface also implements a capability when its mission profile has one of these. What depends on
 # the vehicle TYPE rather than on equipment (vtol_transition) is declared in mission_schema.yaml.
+#
+# `onboard: true`: equipment the vehicle carries that the GCS never talks to (no command, slot nor
+# mission item). No interface implements it, so a device has it when its model declares it (and the
+# device does not switch it off); a generic `'*'` model never gets it. What it is for: planning (which
+# mission types a device can fly, what the planners are told).
 
 autonomous_mission:
   label: 'Autonomous missions'
@@ -74,3 +79,13 @@ threat_detection:
 humidity_sensor:
   label: 'Humidity sensor'
   slots: [humidity]
+
+lidar_2d:
+  label: '2D lidar'
+  description: 'Scans a plane around it (ground robots: localization, obstacle avoidance)'
+  onboard: true
+
+lidar_3d:
+  label: '3D lidar'
+  description: 'Captures a point cloud of what it flies over (lidar inspection)'
+  onboard: true

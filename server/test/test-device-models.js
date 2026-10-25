@@ -260,6 +260,21 @@ describe('capabilities', () => {
     });
   });
 
+  test('an onboard capability (lidar) needs no interface: it counts when the model declares it', () => {
+    assert.ok(caps(dev('bcr_bot', 'agv')).includes('lidar_2d'));
+    assert.ok(!caps(dev('x500', 'px4_ros2')).includes('lidar_3d'), 'optional: off until enabled');
+    assert.ok(caps(dev('x500', 'px4_ros2', { lidar_3d: true })).includes('lidar_3d'));
+    // Nobody said a generic vehicle carries one
+    assert.ok(!caps(dev('generic_ugv', 'agv')).includes('lidar_2d'));
+    assert.ok(!caps(dev('generic_multirotor', 'px4_ros2')).includes('lidar_3d'));
+  });
+
+  test('the catalog: an onboard capability owns no endpoint (one would make an interface implement it)', () => {
+    assert.deepEqual(buildCapabilityCatalog({ a: { label: 'A', onboard: true, slots: ['humidity'] } }).problems, [
+      { path: ['a', 'onboard'], message: 'an onboard capability owns no command, slot nor mission item' },
+    ]);
+  });
+
   test('the catalog: each command and slot belongs to at most one capability, and they all exist', () => {
     assert.ok(Object.keys(deviceModelsModel.getCapabilities()).length > 0);
     assert.deepEqual(buildCapabilityCatalog({ a: { label: 'A', commands: ['Takeoff'] }, b: { label: 'B', commands: ['Takeoff'] } }).problems, [

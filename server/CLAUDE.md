@@ -473,7 +473,7 @@ parameter values, each named in its file (a real airframe's may differ).
 **Capabilities** (`config/devices/capabilities.yaml`, `models/capabilities/capabilityCatalog.js`): WHAT a
 vehicle can do, and which COMMANDS and telemetry SLOTS implement each one (`autonomous_mission`,
 `flight_control`, `navigation`, `file_download`, `gimbal`, `camera`, `camera_stream`, `rtk`, `obstacle_sensing`,
-`threat_detection`, `humidity_sensor`); a command or slot belongs to at most one, and what none owns
+`threat_detection`, `humidity_sensor`, `lidar_2d`, `lidar_3d`); a command or slot belongs to at most one, and what none owns
 (SaveHome, position, battery…) every device has. The interfaces are untouched: they declare topics, the
 catalog says what each one is for. A model declares `capabilities: { name: standard | optional }` (`{}` =
 telemetry only, `'*'` = everything its interface implements, the generics); a unit switches them in
@@ -481,7 +481,10 @@ telemetry only, `'*'` = everything its interface implements, the generics); a un
 standard one; only the ones its model declares, `capabilityOverrideProblem`, 400; a model change drops
 them). **Effective** = the model's (+ switches) that the interface IMPLEMENTS (`implementedBy`: a slot
 declared, or a command `commandRegistry` resolves) — `deviceModelsModel.capabilitiesOf(device)`, null for
-an unknown category (then nothing is gated). Gated with `allowsCommand` / `allowsSlot`:
+an unknown category (then nothing is gated). The exception is an **`onboard`** capability (`lidar_2d` on
+bcr_bot, `lidar_3d` optional on x500): equipment the GCS never talks to, so it owns no command, slot nor mission
+item (a boot problem otherwise) and counts when the model declares it, whatever the interface; a `'*'` generic
+never gets one. It only matters for planning (mission type requirements, `planningProfileOf`). Gated with `allowsCommand` / `allowsSlot`:
 `/api/commands/types` and `sendCommand` (so `shouldDownloadFiles` too), ROS subscriptions (`subscribeDevice`
 now takes `deviceModel` + `attributes`), the watchdog's expected slots, MAVLink stream requests and
 `_ingest`, MQTT and FlatBuffer ingestion. `getAll` adds `capabilities` (sorted list). Example: griffin on
