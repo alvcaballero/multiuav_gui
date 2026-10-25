@@ -232,7 +232,7 @@ const DevicePage = () => {
         position={position}
         capabilities={capabilities}
         inMission={Boolean(missionInfo)}
-        onBack={() => navigate(-1)}
+        onBack={() => navigate('/')}
         onSendCommand={() => setCommandOpen(true)}
         onOpenMessages={() => navigate(`/device/${id}/messages`)}
       />
