@@ -24,6 +24,8 @@ const subscriber = z
   .object({
     ...endpoint,
     watchdog: z.boolean().optional(),
+    // Not subscribed with the device: a viewer opens it (models/lidar/lidarStream.js)
+    on_demand: z.boolean().optional(),
     timeout_s: z.number().positive().optional(),
     rate_hz: z.number().positive().optional(),
     scale: z.number().optional(),

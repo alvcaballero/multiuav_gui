@@ -482,9 +482,11 @@ standard one; only the ones its model declares, `capabilityOverrideProblem`, 400
 them). **Effective** = the model's (+ switches) that the interface IMPLEMENTS (`implementedBy`: a slot
 declared, or a command `commandRegistry` resolves) — `deviceModelsModel.capabilitiesOf(device)`, null for
 an unknown category (then nothing is gated). The exception is an **`onboard`** capability (`lidar_2d` on
-bcr_bot, `lidar_3d` optional on x500): equipment the GCS never talks to, so it owns no command, slot nor mission
-item (a boot problem otherwise) and counts when the model declares it, whatever the interface; a `'*'` generic
-never gets one. It only matters for planning (mission type requirements, `planningProfileOf`). Gated with `allowsCommand` / `allowsSlot`:
+bcr_bot, `lidar_3d` optional on x500): equipment the GCS gives no command nor mission item (a boot problem
+otherwise; a slot to READ it is fine, `lidar_3d` owns `lidar_3d_points`) and counts when the model declares it,
+whatever the interface (`implementedBy` skips onboard ones, so no interface "implements" a lidar); a `'*'` generic
+never gets one. It matters for planning (mission type requirements, `planningProfileOf`) and, with a slot, for
+watching it. Gated with `allowsCommand` / `allowsSlot`:
 `/api/commands/types` and `sendCommand` (so `shouldDownloadFiles` too), ROS subscriptions (`subscribeDevice`
 now takes `deviceModel` + `attributes`), the watchdog's expected slots, MAVLink stream requests and
 `_ingest`, MQTT and FlatBuffer ingestion. `getAll` adds `capabilities` (sorted list). Example: griffin on
@@ -656,6 +658,28 @@ over. rosapi is fragile (a bad request kills it and calls then never answer): th
 only skips the tick (warn once, info when it answers again) and the devices stay pending. `ROS_LAZY_SUBSCRIBE=false`
 restores the eager behaviour, and ROS1 uses it automatically (never run against a ROS1 master). If the version
 cannot be resolved at connect (rosapi down) it defaults to ROS1, i.e. eager.
+
+**On-demand slots and the lidar point cloud** (`models/lidar/`; tests `test-point-cloud.js`, `test-lidar-stream.js`,
+`test-lidar-frame-client.js`). A subscriber entry with `on_demand: true` (px4_ros2 `lidar_3d_points`, `PointCloud2`) is NOT
+subscribed with the device (`subscribeDevice` skips it, so the lazy watch never lists it) nor watched: a cloud is ~5.7k
+points at ~10 Hz ≈ 1.8 MB/s per drone before rosbridge's base64. A viewer opens it: client `lidar:subscribe {deviceId, level}`
+(`LIDAR_SUBSCRIBE`, answered by `LIDAR_STATUS` → `{ lidarStatus: {deviceId, ok, reason?, level?} }`, targeted like
+`raw:status`; reasons in `LIDAR_REJECT`) → `lidarStream` (`start()` in `server.js` injects ROS, devices and the socket)
+→ `rosModel.subscribeOnDemand` with rosbridge's `throttle_rate` (`throttleMs` in `subscribeTopics`) = the quickest level
+asked. One ROS subscription per device serves every client and it closes with the last viewer, or when the socket closes
+(`onClientClose`), or the device is edited/deleted (`deviceGone`, via `unsubscribeDevice`); on a ROS reconnect
+`reopenAll` opens again what is still watched. A frame is parsed by the message's own `fields` (`parsePointCloud2`, never
+a fixed layout), then cut per level (`LIDAR_LEVELS`: low 1000 pts @2 Hz, medium 4000 @3 Hz, high 12000 @5 Hz;
+`reducePoints` = a voxel grid that grows until it fits, so the ground does not eat the budget of the walls; stride as
+last resort) and sent as a BINARY WS frame only to the clients of that level (`encodeLidarFrame`, type 2, floats aligned;
+wire format in `lidarFrame.js`, mirrored by `client/src/common/util/lidarFrame.js`). A message that is not due for any
+level is not even parsed. `sendBinaryToClient` DROPS the frame when the client's socket has >4 MB buffered (the camera
+pushes ~10 MB/s down the same socket and is never dropped, so a tight limit starved the lidar). The slot belongs to the
+capability **`lidar_3d`** itself (one capability: having the lidar is what lets the GCS watch it; no separate "stream"
+switch). It is `onboard`, so a generic `'*'` model on px4_ros2 does NOT get the slot, and an x500 turns it on in
+`attributes.capabilities`. Slots are named by what they carry (`lidar_3d_points`, a `PointCloud2`); a 2D lidar will
+get its own (`lidar_2d_scan`, a `LaserScan`: another viewer). Coordinates stay in the sensor frame (x forward, y left,
+z up): no TF, no world accumulation yet.
 
 **Periodic publishers.** A category may declare a `heartbeat:` block in `devices_msg.yaml` (`name`, `messageType`, `rate_hz`, `message`) — NOT under `publishers:`, which feeds `commandRegistry` and would expose it as a command. `subscribeDevice` starts it through `startPeriodic` under the device id and `unsubscribeDevice` stops it; `message` holds the constant fields and the facade stamps `timestamp` each tick. px4_ros2 uses it for the `telemetry_status` GCS heartbeat PX4 needs to arm when `NAV_DLL_ACT > 0`.
 

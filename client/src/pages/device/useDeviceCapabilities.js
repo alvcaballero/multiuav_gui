@@ -55,6 +55,9 @@ export const useDeviceCapabilities = (device) => {
     camera: Boolean(device?.camera?.length) || 'camera' in subscribers,
     gimbal: types.has(CommandType.GIMBAL),
     obstacle: 'obstacle_info' in subscribers,
+    // The device has the lidar (the server's verdict: model + the unit's switches) AND its interface
+    // can stream the cloud (an on-demand slot)
+    lidar: Boolean(device?.capabilities?.includes('lidar_3d')) && 'lidar_3d_points' in subscribers,
     control: types.has(CommandType.MOVE_RELATIVE),
   };
 };

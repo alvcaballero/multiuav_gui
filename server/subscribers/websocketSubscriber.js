@@ -46,6 +46,7 @@ const OUTBOUND_MAP = {
   // Inspector raw: solo al cliente que lo pidió (ver models/inspect/rawTap.js)
   [EVENTS.RAW_MESSAGE]: ({ clientId, ...raw }) => toClient(clientId, { raw }),
   [EVENTS.RAW_STATUS]: ({ clientId, ...status }) => toClient(clientId, { rawStatus: status }),
+  [EVENTS.LIDAR_STATUS]: ({ clientId, ...status }) => toClient(clientId, { lidarStatus: status }),
 
   // Sistema
   [EVENTS.EVENT_CREATED]: (event) => ({ events: [event] }),

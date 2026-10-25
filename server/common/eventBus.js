@@ -153,6 +153,11 @@ export const EVENTS = Object.freeze({
   RAW_UNSUBSCRIBE: 'raw:unsubscribe', // WS inbound: a client stops
   RAW_MESSAGE: 'raw:message', // Per-client: a raw message for ONE subscribed client (targeted outbound)
   RAW_STATUS: 'raw:status', // Per-client: the answer to a raw:subscribe (accepted, or why not)
+  // Nube de puntos del lidar bajo demanda (ver models/lidar/lidarStream.js). Los frames van binarios
+  // por el controller (sendBinaryToClient), no por el EventBus: solo el estado pasa por acá.
+  LIDAR_SUBSCRIBE: 'lidar:subscribe', // WS inbound: a client asks for a device's point cloud ({deviceId, level})
+  LIDAR_UNSUBSCRIBE: 'lidar:unsubscribe', // WS inbound: a client stops
+  LIDAR_STATUS: 'lidar:status', // Per-client: the answer to a subscribe (accepted, or why not) / the stream ended
   // Sistema
   SYSTEM_ERROR: 'system:error',
   SYSTEM_SHUTDOWN: 'system:shutdown',

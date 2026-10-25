@@ -14,10 +14,11 @@
 # An interface also implements a capability when its mission profile has one of these. What depends on
 # the vehicle TYPE rather than on equipment (vtol_transition) is declared in mission_schema.yaml.
 #
-# `onboard: true`: equipment the vehicle carries that the GCS never talks to (no command, slot nor
-# mission item). No interface implements it, so a device has it when its model declares it (and the
-# device does not switch it off); a generic `'*'` model never gets it. What it is for: planning (which
-# mission types a device can fly, what the planners are told).
+# `onboard: true`: equipment the vehicle carries; the GCS gives it no command nor mission item (it MAY
+# read it through a telemetry slot). No interface implements it, so a device has it when its model
+# declares it (and the device does not switch it off); a generic `'*'` model never gets it. What it is
+# for: planning (which mission types a device can fly, what the planners are told) and, with a slot,
+# watching it.
 
 autonomous_mission:
   label: 'Autonomous missions'
@@ -85,7 +86,12 @@ lidar_2d:
   description: 'Scans a plane around it (ground robots: localization, obstacle avoidance)'
   onboard: true
 
+# The sensor is equipment (`onboard`: a model that declares it carries it, an interface never "implements"
+# it) AND the GCS can watch it: its slot is `on_demand` in the interface, so nothing subscribes until a
+# viewer asks (models/lidar/). An interface without the slot still has the capability (the lidar is
+# there, for planning); it just has nothing to stream.
 lidar_3d:
   label: '3D lidar'
-  description: 'Captures a point cloud of what it flies over (lidar inspection)'
+  description: 'Captures a point cloud of what it flies over (lidar inspection); the GCS can show it'
   onboard: true
+  slots: [lidar_3d_points]

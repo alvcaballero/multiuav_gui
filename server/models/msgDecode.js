@@ -403,4 +403,6 @@ register('threat', ANY, ({ msg, deviceId }) => ({ deviceId, threat: msg.data }))
 
 ignore('height_above_takeoff', ['std_msgs/Float32', 'mavros_msgs/Altitude']);
 ignore('vo_position', 'dji_osdk_ros/VOPosition');
+// On demand, not decoded here: models/lidar reads the cloud for a viewer.
+ignore('lidar_3d_points', ['sensor_msgs/PointCloud2', 'sensor_msgs/msg/PointCloud2']);
 ignore('flight_status', 'sensor_msgs/JointState');

@@ -8,6 +8,7 @@ import { ServiceKey } from '../../config/deviceMsgCatalog.js';
 import { decodeMsg } from '../msgDecode.js';
 import { rawTap } from '../inspect/rawTap.js';
 import { telemetryWatchdog } from '../inspect/telemetryWatchdog.js';
+import { lidarStream } from '../lidar/lidarStream.js';
 import { logger, rosLogger, logHelpers } from '../../common/logger.js';
 import {
   getRos,
@@ -56,6 +57,9 @@ function resolveCategoryConfig(category, block, type) {
 // Every ROS name of a device: rosNames.js (buildDeviceName for all four blocks; buildTelemetryName for
 // the subscribers, which also knows the slow relay).
 
+// Registry key of an on-demand subscription: a device id would collide with the device's own.
+const onDemandKey = (deviceId, slot) => `${slot}:${deviceId}`;
+
 export class rosModel {
   static setrosState({ state, msg }) {
     setRosState({ state, msg });
@@ -93,6 +97,7 @@ export class rosModel {
       async () => {
         await rosModel._resolveRosVersion();
         await rosModel.connectAllUAV();
+        lidarStream.reopenAll();
         rosModel.GCSServicesMission();
       },
       () => {
@@ -147,7 +152,8 @@ export class rosModel {
     const toCamera = (d) => positionsController.updateCamera(d);
 
     const topics = Object.entries(subscribers)
-      .filter(([slot]) => {
+      .filter(([slot, cfg]) => {
+        if (cfg.on_demand) return false; // a viewer opens it (subscribeOnDemand)
         if (slot == 'camera' && !shouldSubscribeCamera) {
           logger.debug(`Skipping camera subscription for ${name} as no websocket camera is present`);
           return false;
@@ -221,7 +227,8 @@ export class rosModel {
   }
 
   static async unsubscribeDevice(id) {
-    // id < 0 (e.g. -1 on disconnect) means "unsubscribe everything".
+    // id < 0 (e.g. -1 on disconnect) means "unsubscribe everything". The lidar viewers stay: they
+    // are opened again on reconnect (rosConnect).
     if (id < 0) {
       _unwatchAll();
       _stopAllPeriodic();
@@ -229,7 +236,37 @@ export class rosModel {
     }
     _unwatch(id);
     _stopPeriodic(id);
+    lidarStream.deviceGone(id);
     return _unsubscribeKey(id);
+  }
+
+  // A slot the category marks `on_demand` (a point cloud: far too heavy to keep open for every
+  // device), opened for a viewer instead of with the device. Same name, message type and capability
+  // rules as subscribeDevice; the caller (models/lidar) owns who is watching and when to close.
+  //   device — { id, name, category, deviceModel, attributes }
+  static subscribeOnDemand(device, slot, { throttleMs, onMessage }) {
+    const cfg = resolveCategoryConfig(device.category, 'subscribers')?.[slot];
+    if (!cfg?.on_demand) return { state: 'error', msg: `${slot} is not an on-demand slot of ${device.category}` };
+    return _subscribeTopics(
+      {
+        key: onDemandKey(device.id, slot),
+        topics: [
+          {
+            slot,
+            name: buildTelemetryName(device.name, cfg, device.attributes),
+            messageType: cfg['messageType'],
+            onMessage: ({ msg }) => onMessage(msg),
+            throttleMs,
+          },
+        ],
+      },
+      getRos(),
+      serverStatus()
+    );
+  }
+
+  static unsubscribeOnDemand(device, slot) {
+    return _unsubscribeKey(onDemandKey(device.id, slot));
   }
 
   // Ad-hoc subscription to an arbitrary topic, independent of any device.

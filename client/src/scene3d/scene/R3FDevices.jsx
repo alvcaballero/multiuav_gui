@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { getModelPath } from '../models/ModelLoader.jsx';
 import { LatLon2XYZObj } from '../core/convertion';
 import { useGLTF, useHelper } from '@react-three/drei';
+import R3FLidarCloud from '../lidar/R3FLidarCloud';
 
 const RING_HEIGHT_OFFSET = 1; // meters above drone
 
@@ -90,6 +91,8 @@ const Device = ({ id, position, isSelected, model3d }) => {
     <group ref={meshRef}>
       <perspectiveCamera ref={camRef} fov={60} near={1} far={4} position={[0, 0.15, -0.15]} />
       <primitive object={model.scene.clone()} scale={[1, 1, 1]} />
+      {/* Its lidar point cloud, only while the device page has the viewer on for this device */}
+      <R3FLidarCloud deviceId={id} />
       {/* Camera helper: represents the drone's forward-looking camera direction */}
       {isSelected && (
         <mesh position={[0, RING_HEIGHT_OFFSET, 0]}>

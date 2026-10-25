@@ -59,6 +59,9 @@ export const SubscriberKey = Object.freeze({
   // The home the autopilot itself reports (MAVLink HOME_POSITION). PX4 and ArduPilot move it on
   // every arming, so a snapshot taken by the GCS (SaveHome) goes stale.
   HOME_POSITION: 'home_position',
+  // A 3D lidar's point cloud. `on_demand` in the interface: it is opened for a viewer (models/lidar/),
+  // never with the device.
+  LIDAR_3D_POINTS: 'lidar_3d_points',
 });
 
 // subscriberKey → { decoded }. Indexado por SubscriberKey (el enum es la fuente de
@@ -89,6 +92,7 @@ export const SUBSCRIBER_CATALOG = {
   [SubscriberKey.THREAT]: { decoded: true },
   [SubscriberKey.STATE_MACHINE]: { decoded: true },
   [SubscriberKey.HOME_POSITION]: { decoded: true },
+  [SubscriberKey.LIDAR_3D_POINTS]: { decoded: false }, // ignore() en msgDecode.js: lo consume models/lidar, no el decode
   // Válidos/suscribibles pero sin decodificador (deshabilitados o de ciclo action).
   [SubscriberKey.HEIGHT_ABOVE_TAKEOFF]: { decoded: false }, // ignore() en msgDecode.js
   [SubscriberKey.VO_POSITION]: { decoded: false }, // ignore() en msgDecode.js

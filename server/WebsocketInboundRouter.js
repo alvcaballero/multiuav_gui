@@ -2,6 +2,7 @@ import { eventBus, EVENTS } from './common/eventBus.js';
 import { logger, logHelpers } from './common/logger.js';
 import { chatController } from './controllers/chat.js';
 import { rawTap } from './models/inspect/rawTap.js';
+import { lidarStream } from './models/lidar/lidarStream.js';
 
 /**
  * Router de mensajes ENTRANTES del cliente WebSocket (EIP Message Router).
@@ -72,6 +73,17 @@ const INBOUND_MAP = {
 
   [EVENTS.RAW_UNSUBSCRIBE]: async (payload, client) => {
     rawTap.unsubscribe(client.id, payload?.deviceId, payload?.slot);
+  },
+
+  // Nube de puntos del lidar: igual que el inspector, la suscripción es del cliente y muere con su
+  // socket; la respuesta sale por LIDAR_STATUS y los frames van binarios, solo a este cliente.
+  [EVENTS.LIDAR_SUBSCRIBE]: async (payload, client) => {
+    const result = await lidarStream.subscribe(client.id, payload?.deviceId, payload?.level);
+    if (!result.ok) logger.warn('WS inbound: lidar subscribe rejected', { clientId: client.id, payload, ...result });
+  },
+
+  [EVENTS.LIDAR_UNSUBSCRIBE]: async (payload, client) => {
+    lidarStream.unsubscribe(client.id, payload?.deviceId);
   },
 };
 

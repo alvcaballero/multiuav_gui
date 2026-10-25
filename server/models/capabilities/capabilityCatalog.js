@@ -60,11 +60,13 @@ export function buildCapabilityCatalog(raw, missionKeys = null) {
       ...(parsed.data.slots ?? []).map((s) => `slot:${s}`),
       ...MISSION_ITEM_KINDS.flatMap((kind) => mission[kind].map((item) => `${kind}:${item}`)),
     ];
-    // An endpoint would make an interface implement it: then it is not on board only
-    if (parsed.data.onboard && items.length > 0) {
+    // A command or mission item would make an interface implement it: then it is not on board only. A
+    // slot may be read (the sensor's data), but it never makes an interface "implement" the equipment
+    // (implementedBy skips onboard ones), so a generic `'*'` model still does not get it.
+    if (parsed.data.onboard && items.some((item) => !item.startsWith('slot:'))) {
       problems.push({
         path: [key, 'onboard'],
-        message: 'an onboard capability owns no command, slot nor mission item',
+        message: 'an onboard capability owns no command nor mission item (a slot is fine)',
       });
     }
     for (const item of items) {
@@ -103,6 +105,7 @@ export function implementedBy(catalog, iface, missionItems = {}) {
     MISSION_ITEM_KINDS.some((kind) => cap.mission?.[kind]?.some((i) => missionItems[kind]?.has(i)));
   const implemented = new Set();
   for (const [key, cap] of Object.entries(catalog)) {
+    if (cap.onboard) continue; // equipment: a model carries it, an interface does not implement it
     if (cap.slots.some((s) => slots.has(s)) || cap.commands.some((c) => commands.has(c)) || inProfile(cap)) {
       implemented.add(key);
     }

@@ -488,6 +488,12 @@
       "obstacle_info": {
         "name": "/obstacle_info",
         "messageType": "muav_gcs_interfaces/msg/ObstacleInfo"
+      },
+      "lidar_3d_points": {
+        "name": "/lidar/points",
+        "messageType": "sensor_msgs/msg/PointCloud2",
+        "on_demand": true,
+        "watchdog": false
       }
     },
     "publishers": {

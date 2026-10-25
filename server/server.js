@@ -36,7 +36,11 @@ import { setupRoutes } from './routes/index.js';
 // EventBus and Subscribers
 import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
 import { CameraStreamSubscriber } from './subscribers/cameraStreamSubscriber.js';
-import { eventBus } from './common/eventBus.js';
+import { eventBus, EVENTS } from './common/eventBus.js';
+import { lidarStream } from './models/lidar/lidarStream.js';
+import { devicesController } from './controllers/devices.js';
+import { deviceModelsModel } from './models/deviceModels/deviceModels.js';
+import { categoryModel } from './models/category.js';
 import { positionHistorySampler, positionBroadcastBatcher } from './models/positions/index.js';
 import { approvalSweeper } from './models/chat/approvalSweeper.js';
 import { EveOrchestrator, eveRelay } from './models/chat/eveOrchestrator.js';
@@ -99,8 +103,27 @@ const websocketController = initWebsocketController(wsManager);
 // Router de mensajes entrantes: el transporte delega el crudo, el router enruta por `type`
 const wsInboundRouter = new WebsocketInboundRouter();
 wsManager.onMessage((client, raw) => wsInboundRouter.handle(client, raw));
-// Las suscripciones del inspector raw son efímeras: mueren con la conexión
-wsManager.onClientClose = (clientId) => rawTap.removeClient(clientId);
+// Las suscripciones del inspector raw y los visores de lidar son efímeros: mueren con la conexión
+wsManager.onClientClose = (clientId) => {
+  rawTap.removeClient(clientId);
+  lidarStream.removeClient(clientId);
+};
+
+// Nube de puntos del lidar bajo demanda: ROS, dispositivos y socket entran por acá (ver lidarStream.js)
+const LIDAR_SLOT = 'lidar_3d_points';
+lidarStream.start({
+  getDevice: (id) => devicesController.getDevice(id),
+  supports: (device) =>
+    RosEnable &&
+    (device.protocol ?? 'ros') === 'ros' &&
+    Boolean(categoryModel.getCategory(device.category)?.subscribers?.[LIDAR_SLOT]?.on_demand) &&
+    deviceModelsModel.allowsSlot(device, LIDAR_SLOT),
+  open: (device, opts) => rosModel.subscribeOnDemand(device, LIDAR_SLOT, opts),
+  close: (device) => rosModel.unsubscribeOnDemand(device, LIDAR_SLOT),
+  isConnected: (clientId) => websocketController.isClientConnected(clientId),
+  send: (clientId, buffer) => websocketController.sendBinaryToClient(clientId, buffer),
+  emitStatus: (status) => eventBus.emitSafe(EVENTS.LIDAR_STATUS, status),
+});
 
 // Initialize EventBus subscribers
 const wsSubscriber = new WebSocketSubscriber(websocketController);

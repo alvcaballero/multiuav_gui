@@ -59,6 +59,25 @@ export class websocketController {
     return this.wsManager.sendTo(clientId, serialized);
   }
 
+  // A frame the browser cannot keep up with is dropped, not queued: the socket's buffer would grow
+  // by the whole stream (a lidar frame is up to ~200 KB) and the viewer would fall seconds behind.
+  // The camera pushes ~10 MB/s down the same socket and is never dropped, so the limit has to leave
+  // room for a few of its frames or the lidar would starve behind them.
+  static MAX_BUFFERED_BYTES = 4_000_000;
+
+  /** Unicast binario por id de conexión. false si el cliente no está o va atrasado (el frame se descarta). */
+  sendBinaryToClient(clientId, buffer) {
+    const socket = this.wsManager.getClient(clientId)?.client;
+    if (!socket || socket.readyState !== 1) return false;
+    if (socket.bufferedAmount > websocketController.MAX_BUFFERED_BYTES) return false;
+    socket.send(buffer);
+    return true;
+  }
+
+  isClientConnected(clientId) {
+    return this.wsManager.getClient(clientId)?.client.readyState === 1;
+  }
+
   sendBinary(buffer, client = null) {
     if (client) {
       client.send(buffer);

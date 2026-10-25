@@ -218,6 +218,16 @@ automatically. `client/src/scene3d/controls/OrientationGizmo.jsx` is intentional
 this system — it renders directly into the WebGL canvas via `gl.setScissor`/`setViewport` inside
 `useFrame`, not as an HTML overlay, so it can't be portaled like the other controls.
 
+**Lidar point cloud (`scene3d/lidar/`, `pages/device/DeviceStage.jsx`).** The `Lidar` button of the device page (3D view
+only, and only with the device's `lidar_3d` capability and an interface that has the `lidar_3d_points` slot) turns the viewer on; Low / Medium / High pick how many points
+and how often (`LIDAR_LEVELS`, mirrored from the server in `common/util/lidarFrame.js`, which also decodes the binary
+frame; `server/test/test-lidar-frame-client.js` guards the mirror). `DeviceScene3D` gives `{ deviceId, level, onStatus }`
+through `LidarCloudContext`, and `R3FDevices` draws `R3FLidarCloud` INSIDE the group of that device (it moves and turns
+with it). The component owns the WS side (`lidar:subscribe` while mounted, `lidar:unsubscribe` on cleanup, a new subscribe
+on a level change) and copies each frame into a fixed `BufferGeometry` from `useFrame`: points never touch Redux or React
+state. Sensor frame (x forward, y left, z up) → the device group's (-y, z, -x); the sensor's mount offset is not applied.
+Never on by itself: it costs the fleet bandwidth, so it dies with the 3D view.
+
 ### Missions as task graphs
 
 The server runs a mission as a graph of tasks (one device per task, `depends_on` between

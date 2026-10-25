@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Button,
@@ -13,6 +13,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import RadarIcon from '@mui/icons-material/Radar';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
+import GrainIcon from '@mui/icons-material/Grain';
 import dayjs from 'dayjs';
 
 import MainMap from '../../map/MainMap';
@@ -20,6 +21,7 @@ import MapGhostTarget from '../../map/devices/MapGhostTarget';
 import CameraDevice from '../../components/camera/CameraDevice';
 import ObstacleAvoidanceSensors from '../../common/components/ObstacleAvoidanceSensors';
 import { CAUTION_DISTANCE, obstacleColor } from '../../common/util/obstacles';
+import { DEFAULT_LIDAR_LEVEL, LIDAR_LEVELS } from '../../common/util/lidarFrame';
 import { contrastText } from '../../common/theme/palette';
 import { devicesActions, sessionActions } from '../../store';
 import { blink } from './animations';
@@ -224,6 +226,22 @@ const metersBetween = (a, b) =>
 
 const fixed = (value, digits = 1) => (value == null ? '—' : Number(value).toFixed(digits));
 
+// Why the server refused the lidar viewer (server/models/lidar/lidarStream.js › LIDAR_REJECT)
+const LIDAR_REASON = {
+  not_supported: 'This device has no lidar stream',
+  unknown_device: 'Unknown device',
+  ros_unavailable: 'ROS is not connected',
+  too_many: 'Too many lidar viewers open',
+  device_changed: 'The device changed: turn Lidar off and on',
+  invalid: 'Invalid request',
+};
+
+const lidarStatusText = (status) => {
+  if (status.state === 'waiting') return 'Waiting for points…';
+  if (status.state === 'rejected') return LIDAR_REASON[status.reason] ?? 'Lidar refused';
+  return null;
+};
+
 /** Closest horizontal obstacle as [side, distance]. */
 const nearest = (obstacle) =>
   ['front', 'back', 'left', 'right']
@@ -302,6 +320,12 @@ const DeviceStage = ({
   const follow = useSelector((state) => state.devices.follow);
   const cameraRef = useRef(null);
 
+  // The point cloud costs the fleet bandwidth, so it is never on by itself: the operator asks for it,
+  // for the 3D view of this device only, and it stops when that view goes away.
+  const [lidarOn, setLidarOn] = useState(false);
+  const [lidarLevel, setLidarLevel] = useState(DEFAULT_LIDAR_LEVEL);
+  const [lidarStatus, setLidarStatus] = useState({ state: 'idle' });
+
   const hasCamera = capabilities.camera;
   const effectiveView = hasCamera ? view : 'map';
   const geometry = geometryFor(effectiveView);
@@ -332,6 +356,13 @@ const DeviceStage = ({
   };
 
   const is3d = mapMode === '3d';
+  const lidar = useMemo(
+    () =>
+      capabilities.lidar && is3d && lidarOn
+        ? { deviceId, level: lidarLevel, onStatus: setLidarStatus }
+        : null,
+    [capabilities.lidar, is3d, lidarOn, deviceId, lidarLevel],
+  );
   const mapName = is3d ? '3D' : 'Map';
   const title =
     effectiveView === 'map'
@@ -404,6 +435,38 @@ const DeviceStage = ({
             Collision sensors
           </Button>
         )}
+        {capabilities.lidar && is3d && (
+          <>
+            {lidar && lidarStatusText(lidarStatus) && (
+              <Typography variant="caption" color="textSecondary">
+                {lidarStatusText(lidarStatus)}
+              </Typography>
+            )}
+            {lidar && (
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={lidarLevel}
+                onChange={(_, value) => value && setLidarLevel(value)}
+                sx={{ height: 28 }}
+              >
+                {LIDAR_LEVELS.map((level) => (
+                  <ToggleButton key={level.key} value={level.key}>
+                    {level.label}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            )}
+            <Button
+              size="small"
+              variant={lidarOn ? 'contained' : 'outlined'}
+              startIcon={<GrainIcon />}
+              onClick={() => setLidarOn((on) => !on)}
+            >
+              Lidar
+            </Button>
+          </>
+        )}
         <ToggleButtonGroup
           size="small"
           exclusive
@@ -439,7 +502,7 @@ const DeviceStage = ({
         >
           {is3d ? (
             <Suspense fallback={null}>
-              <DeviceScene3D ghost={ghost} />
+              <DeviceScene3D ghost={ghost} lidar={lidar} />
             </Suspense>
           ) : (
             <MainMap {...mapProps}>

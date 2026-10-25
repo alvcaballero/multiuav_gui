@@ -16,7 +16,8 @@ const activeSubscriptions = {};
 // message types and effect callbacks, so this primitive stays free of any
 // devices_msg / category / camera business logic.
 //   key    — opaque String grouping these subscriptions for later unsubscribe
-//   topics — [{ slot, name, messageType, onMessage }]
+//   topics — [{ slot, name, messageType, onMessage, throttleMs? }] — throttleMs is rosbridge's own
+//            throttle_rate: the gap it keeps between two messages, so the rest never cross the websocket
 export function subscribeTopics({ key, topics }, ros, rosState) {
   if (!rosState || rosState.state != 'connect') {
     return { state: 'error', msg: 'ROS no conectado' };
@@ -28,8 +29,13 @@ export function subscribeTopics({ key, topics }, ros, rosState) {
   }
   activeSubscriptions[key] = {};
 
-  for (const { slot, name, messageType, onMessage } of topics) {
-    const topic = new ROSLIB.Topic({ ros, name, messageType });
+  for (const { slot, name, messageType, onMessage, throttleMs } of topics) {
+    const topic = new ROSLIB.Topic({
+      ros,
+      name,
+      messageType,
+      ...(throttleMs > 0 && { throttle_rate: throttleMs, queue_length: 1 }),
+    });
     topic.subscribe(function (msg) {
       onMessage({ msg, key, slot, messageType });
     });

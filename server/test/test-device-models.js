@@ -269,9 +269,20 @@ describe('capabilities', () => {
     assert.ok(!caps(dev('generic_multirotor', 'px4_ros2')).includes('lidar_3d'));
   });
 
-  test('the catalog: an onboard capability owns no endpoint (one would make an interface implement it)', () => {
-    assert.deepEqual(buildCapabilityCatalog({ a: { label: 'A', onboard: true, slots: ['humidity'] } }).problems, [
-      { path: ['a', 'onboard'], message: 'an onboard capability owns no command, slot nor mission item' },
+  test('the 3D lidar is ONE capability: having it is what lets its point cloud be watched', () => {
+    const slot = 'lidar_3d_points';
+    assert.ok(!deviceModelsModel.allowsSlot(dev('x500', 'px4_ros2'), slot), 'optional: off until enabled');
+    assert.ok(deviceModelsModel.allowsSlot(dev('x500', 'px4_ros2', { lidar_3d: true }), slot));
+    // Nobody said a generic vehicle carries a lidar, even on an interface that has the slot
+    assert.ok(!deviceModelsModel.allowsSlot(dev('generic_multirotor', 'px4_ros2'), slot));
+    // The lidar is on the airframe whatever the interface: it counts for planning, there is just nothing to watch
+    assert.ok(caps(dev('x500', 'px4_mavros', { lidar_3d: true })).includes('lidar_3d'));
+  });
+
+  test('the catalog: an onboard capability may read a slot, but owns no command nor mission item', () => {
+    assert.deepEqual(buildCapabilityCatalog({ a: { label: 'A', onboard: true, slots: ['humidity'] } }).problems, []);
+    assert.deepEqual(buildCapabilityCatalog({ a: { label: 'A', onboard: true, commands: ['Takeoff'] } }).problems, [
+      { path: ['a', 'onboard'], message: 'an onboard capability owns no command nor mission item (a slot is fine)' },
     ]);
   });
 
