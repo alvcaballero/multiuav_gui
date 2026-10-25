@@ -152,7 +152,12 @@ export const WS_RAW_INSPECT_INTERVAL_MS = Number(process.env.WS_RAW_INSPECT_INTE
 export const WS_STATE_INTERVAL_MS = Number(process.env.WS_STATE_INTERVAL_MS) || 10000;
 export const ROS_URL = process.env.ROS_URL || 'ws://127.0.0.1:9090';
 export const ROS_RECONNECT_INTERVAL_MS = Number(process.env.ROS_RECONNECT_INTERVAL_MS) || 30000;
-export const DEVICE_CHECK_INTERVAL_MS = Number(process.env.DEVICE_CHECK_INTERVAL_MS) || 5000;
+// Opt-out. A ROS device is subscribed only once somebody publishes its topics (models/ros/rosDiscovery.js),
+// so the graph is not filled with subscribers of devices that are registered but not running. It leans on
+// rosapi: 'false' brings back the old behaviour (subscribe every registered device at connect).
+export const ROS_LAZY_SUBSCRIBE = process.env.ROS_LAZY_SUBSCRIBE !== 'false';
+export const ROS_DISCOVERY_INTERVAL_MS = Number(process.env.ROS_DISCOVERY_INTERVAL_MS) || 10000;
+export const DEVICE_CHECK_INTERVAL_MS =Number(process.env.DEVICE_CHECK_INTERVAL_MS) || 5000;
 export const DEVICE_UPDATE_INTERVAL_MS = Number(process.env.DEVICE_UPDATE_INTERVAL_MS) || 2000;
 export const DEVICE_TIMEOUT_MS = Number(process.env.DEVICE_TIMEOUT_MS) || 30000;
 export const TELEMETRY_CHECK_INTERVAL_MS = Number(process.env.TELEMETRY_CHECK_INTERVAL_MS) || 2000; // per-slot watchdog tick (see models/inspect/telemetryWatchdog.js)

@@ -31,6 +31,12 @@ import {
   stopPeriodic as _stopPeriodic,
   stopAllPeriodic as _stopAllPeriodic,
 } from './rosPublishers.js';
+import {
+  watchPublishers as _watchPublishers,
+  unwatch as _unwatch,
+  unwatchAll as _unwatchAll,
+} from './rosDiscovery.js';
+import { ROS_LAZY_SUBSCRIBE, ROS_DISCOVERY_INTERVAL_MS } from '../../config/config.js';
 import * as rosServices from './rosServices.js';
 import * as rosInspect from './rosInspect.js';
 import * as actionRegistry from './rosAction.js';
@@ -159,9 +165,39 @@ export class rosModel {
         onMessage: makeOnMessage(slot == 'camera' ? toCamera : toPosition, cfg),
       }));
 
-    const result = _subscribeTopics({ key: id, topics }, getRos(), serverStatus());
-    rosModel.startHeartbeat({ id, name, category });
-    return result;
+    const activate = () => {
+      const result = _subscribeTopics({ key: id, topics }, getRos(), serverStatus());
+      rosModel.startHeartbeat({ id, name, category });
+      return result;
+    };
+
+    if (!rosModel._lazySubscribe() || topics.length === 0) return activate();
+    if (serverStatus().state != 'connect') return { state: 'error', msg: 'ROS no conectado' };
+
+    // Neither the subscribers nor the heartbeat (a publisher is a topic of the graph too) exist until
+    // somebody publishes one of the device's topics; after that it is active for good.
+    _unwatch(id);
+    _watchPublishers(
+      { key: id, topics: topics.map((t) => t.name) },
+      (topic) => {
+        logger.info(`ROS device ${name} is publishing (${topic}): subscribing`);
+        activate();
+      },
+      getRos,
+      ROS_DISCOVERY_INTERVAL_MS
+    );
+    return { state: 'pending', msg: `${name} waits for a publisher` };
+  }
+
+  // The lazy mode needs rosapi's `publishers` service, whose type is the ROS2 one in getPublishers.
+  // TODO ROS1: `rosapi/Publishers`; until then ROS1 subscribes as before.
+  static _lazySubscribe() {
+    if (!ROS_LAZY_SUBSCRIBE) return false;
+    if (_getRosVersionInfo().version < 2) {
+      logger.debug('Lazy ROS subscription skipped: ROS1 (rosapi publishers not supported yet)');
+      return false;
+    }
+    return true;
   }
 
   // GCS heartbeat for categories that declare a `heartbeat:` block in devices_msg: the
@@ -187,9 +223,11 @@ export class rosModel {
   static async unsubscribeDevice(id) {
     // id < 0 (e.g. -1 on disconnect) means "unsubscribe everything".
     if (id < 0) {
+      _unwatchAll();
       _stopAllPeriodic();
       return _unsubscribeAll();
     }
+    _unwatch(id);
     _stopPeriodic(id);
     return _unsubscribeKey(id);
   }

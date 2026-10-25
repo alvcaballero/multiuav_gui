@@ -624,6 +624,7 @@ free of business-controller imports.
 | `ros.js`              | Facade (`rosModel`). Resolves `uav_id → {name, category}`, resolves per-category message config via `categoryModel` (`resolveCategoryConfig`), builds every ROS name (`buildDeviceName`), injects business callbacks, delegates to primitives |
 | `rosConnection.js`    | Connection lifecycle: connect, auto-reconnect (30s), inject connected/disconnect handlers                                                                                                                                                     |
 | `rosSubscriptions.js` | Subscription primitives: `subscribeTopics`/`unsubscribeKey`/`unsubscribeAll`/`subscribeOnce`. Keeps `activeSubscriptions` (opaque subscriptionKey → listeners); no category/camera/topic-name knowledge |
+| `rosDiscovery.js`     | Lazy subscription: `watchPublishers`/`unwatch`/`unwatchAll` wait (rosapi `topics` + `publishers`, every call with a timeout) until a set of topics has a publisher, without subscribing. Keeps the pending keys; no category/topic-name knowledge |
 | `rosPublishers.js`    | Publish primitives: `PubRosMsgOnce` (validated one-shot) and `startPeriodic`/`stopPeriodic`/`stopAllPeriodic` (advertised topic + interval, e.g. the GCS heartbeat). Keeps `activePublishers` (opaque key → topic + timer); no category/topic-name knowledge |
 | `rosServices.js`      | ROS service calls: `callRosService` (primitive) + `callService` (receives the already-built service name + type; no config lookup)                                                                                                            |
 | `rosAction.js`        | ROS2 action lifecycle + registry (see below). Device-layer methods receive the already-built `actionServerName`; no config lookup nor name-building                                                                                           |
@@ -641,6 +642,17 @@ every ROS name through another:
 
 - `resolveCategoryConfig(category, block, type)` → `categoryModel.getCategory(category)?.[block]` (with `type`, the single entry). `block` is `'subscribers' | 'publishers' | 'services' | 'actions'`. Using `categoryModel` (not a frozen `readDataFile` snapshot) means a runtime category edit is picked up immediately.
 - `buildDeviceName(name, entry)` → `/${name}${entry.name}`. Device names are stored WITHOUT a leading slash and every config `name` starts with one, so every resulting topic/service/action name is absolute (`/agv_1/odom`). All four blocks use this one helper, so a device's topics, services and actions resolve identically. Both live in `models/ros/rosNames.js` (pure). The SUBSCRIBERS use `buildTelemetryName`, which is the same unless the device has `attributes.slow` (ROS-only attribute group 'ros'): its companion runs a relay that republishes the telemetry at a lower rate, read from `/<device>/slow<topic>` (only those cross the link; rosbridge's own `throttle_rate` would drop them on the GCS side, after they crossed). Services, actions and publishers never move. It replaced the `px4_mavros_slow` interface (`common/migrations/deviceSlowRelay.js`).
+
+**Lazy subscription** (`ROS_LAZY_SUBSCRIBE`, default ON). A subscriber is a node of the ROS graph, so subscribing every
+registered device at connect filled `ros2 topic list` with topics nobody publishes. `subscribeDevice` now leaves the
+device `pending` (`{ state: 'pending' }`) and `rosDiscovery` looks every `ROS_DISCOVERY_INTERVAL_MS` (default 10 s):
+the first topic of the device with a PUBLISHER (not merely listed: a topic with only subscribers is listed too)
+activates ALL its slots and its heartbeat (a publisher is a topic as well), for good — no going back to pending
+while ROS stays connected. A ROS disconnect or `unsubscribeDevice` clears the pendings, so the next connect starts
+over. rosapi is fragile (a bad request kills it and calls then never answer): every call has a timeout, a failure
+only skips the tick (warn once, info when it answers again) and the devices stay pending. `ROS_LAZY_SUBSCRIBE=false`
+restores the eager behaviour, and ROS1 uses it automatically (`getPublishers` uses the ROS2 service type; TODO
+`rosapi/Publishers`). If the version cannot be resolved at connect (rosapi down) it defaults to ROS1, i.e. eager.
 
 **Periodic publishers.** A category may declare a `heartbeat:` block in `devices_msg.yaml` (`name`, `messageType`, `rate_hz`, `message`) — NOT under `publishers:`, which feeds `commandRegistry` and would expose it as a command. `subscribeDevice` starts it through `startPeriodic` under the device id and `unsubscribeDevice` stops it; `message` holds the constant fields and the facade stamps `timestamp` each tick. px4_ros2 uses it for the `telemetry_status` GCS heartbeat PX4 needs to arm when `NAV_DLL_ACT > 0`.
 
@@ -1030,6 +1042,7 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `MQTT_CONNECTION`: Enable the MQTT device protocol (default **false**, needs a broker) / `MQTT_URL`: broker URL (default `mqtt://127.0.0.1:1883`)
 - `MAVLINK_CONNECTION`: Enable the MAVLink device protocol (default **false**) / `MAVLINK_LINKS`: comma-separated `udp:<bind host>:<port>` (listen) or `tcp:<host>:<port>` (connect), default `udp:0.0.0.0:14550`. Only one process can bind the UDP port (no `reuseAddr`: a second GCS would silently split the datagrams)
 - `ROS_URL`: ROS bridge WS URL (default `ws://127.0.0.1:9090`)
+- `ROS_LAZY_SUBSCRIBE`: subscribe a ROS device only once someone publishes its topics (default **true**, opt-out `'false'`) / `ROS_DISCOVERY_INTERVAL_MS`: how often pending devices are looked at (default 10000)
 - `DB` / `DB_TYPE` / `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT`: enable + connect to an external DB (unset `DB` → local SQLite)
 - `DB_STORAGE`: local SQLite file (default `server/data/sequelize.sqlite`). `npm test` runs with `DB=false DB_STORAGE=:memory:` so tests never open — or run startup migrations on — the real database. Tests that need catalog data read the git-tracked files under `data/`, not DB rows.
 - `LOG_FILES`: `'false'` keeps the logger on the console only (no `logs/*.log`). Opt-out, read straight from `process.env` by `common/logger.js` (like `LOG_LEVEL`); `npm test` sets it so tests never write into the server's real logs. `LOG_DIR`: where the files go (default `server/logs`); `test/test-logger.js` points it at a temp dir. Files rotate under fixed names (`tailable`: `<name>.log` is always the live one, then `<name>1..N-1`)
