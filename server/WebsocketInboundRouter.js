@@ -68,11 +68,16 @@ const INBOUND_MAP = {
     const result = rawTap.subscribe(client.id, deviceId, slot);
     if (!result.ok) logger.warn('WS inbound: raw subscribe rejected', { clientId: client.id, payload, ...result });
     eventBus.emitSafe(EVENTS.RAW_STATUS, { clientId: client.id, deviceId, slot, ...result });
-    if (result.ok) rawTap.replayLast(client.id, deviceId, slot);
+    if (result.ok) {
+      rawTap.replayLast(client.id, deviceId, slot);
+      // An on-demand slot (the lidar cloud) publishes nothing until somebody opens it
+      await lidarStream.inspect(client.id, deviceId, slot);
+    }
   },
 
   [EVENTS.RAW_UNSUBSCRIBE]: async (payload, client) => {
     rawTap.unsubscribe(client.id, payload?.deviceId, payload?.slot);
+    lidarStream.uninspect(client.id, payload?.deviceId, payload?.slot);
   },
 
   // Nube de puntos del lidar: igual que el inspector, la suscripción es del cliente y muere con su

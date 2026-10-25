@@ -147,3 +147,43 @@ test('a broken cloud is reported once and the stream keeps going', async () => {
   onMessage(cloud(100));
   assert.equal(sent.length, 1);
 });
+
+test('the raw inspector opens the topic and gets a summary, never the cloud', async () => {
+  const published = [];
+  stream._deps.publishRaw = (message) => published.push(message);
+
+  await stream.inspect('a', 2, 'lidar_3d_points');
+  assert.equal(opened.length, 1, 'inspecting opens the topic');
+  assert.equal(opened[0].throttleMs, 1000);
+
+  onMessage({ ...cloud(5000), header: { frame_id: 'lidar' } });
+  assert.equal(published.length, 1);
+  const { deviceId, slot, raw } = published[0];
+  assert.deepEqual([deviceId, slot], [2, 'lidar_3d_points']);
+  assert.equal(raw.data, undefined, 'the buffer stays out');
+  assert.equal(raw.points, 5000);
+  assert.equal(raw.data_bytes, 5000 * 16);
+  assert.equal(raw.header.frame_id, 'lidar');
+  assert.equal(raw.sample.length, 8);
+  assert.deepEqual(raw.sample[1], { x: 1, y: 0, z: 1, intensity: 0 });
+  assert.equal(sent.length, 0, 'and no binary frame is sent to anybody');
+
+  clock += 100; // inside its second
+  onMessage(cloud(10));
+  assert.equal(published.length, 1);
+
+  stream.uninspect('a', 2, 'lidar_3d_points');
+  assert.equal(closed.length, 1, 'the topic closes with the last reader');
+});
+
+test('the inspector ignores other slots and shares the topic with a viewer', async () => {
+  await stream.inspect('a', 2, 'battery');
+  assert.equal(opened.length, 0);
+
+  await stream.subscribe('b', 2, 'low');
+  await stream.inspect('a', 2, 'lidar_3d_points');
+  stream.unsubscribe('b', 2);
+  assert.equal(closed.length, 0, 'the inspector is still reading');
+  stream.removeClient('a');
+  assert.equal(closed.length, 1);
+});

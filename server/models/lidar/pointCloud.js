@@ -79,6 +79,41 @@ export function parsePointCloud2(msg) {
   return { count: n, xyz: xyz.subarray(0, n * 3), intensity: intensity.subarray(0, n) };
 }
 
+/** How many points of a cloud the raw inspector shows. */
+export const SAMPLE_POINTS = 8;
+
+const round3 = (v) => Math.round(v * 1000) / 1000;
+
+/**
+ * What the raw inspector shows of a PointCloud2: the message without its `data` (~2 MB of base64), plus
+ * its size and the first points decoded. Only the head of the buffer is read.
+ * @returns {object} the message's own fields (header, width, height, fields…) + `data_bytes`, `sample`
+ */
+export function sampleOfPointCloud(msg, count = SAMPLE_POINTS) {
+  const { data, ...rest } = msg ?? {};
+  const step = rest.point_step;
+  const total = rest.width * rest.height;
+  const padding = typeof data === 'string' ? (data.match(/=*$/)?.[0].length ?? 0) : 0;
+  const dataBytes = typeof data === 'string' ? (data.length * 3) / 4 - padding : data?.length;
+  const summary = { ...rest, points: total, data_bytes: dataBytes };
+  const n = Math.min(count, total);
+  if (!(n > 0) || !(step > 0) || data == null) return { ...summary, sample: [] };
+  try {
+    // base64: 4 chars carry 3 bytes, so cutting on a multiple of 4 leaves whole bytes
+    const head = typeof data === 'string' ? data.slice(0, Math.ceil((n * step) / 3) * 4) : data.slice(0, n * step);
+    const cloud = parsePointCloud2({ ...rest, width: n, height: 1, row_step: n * step, data: head });
+    const sample = Array.from({ length: cloud.count }, (_, i) => ({
+      x: round3(cloud.xyz[i * 3]),
+      y: round3(cloud.xyz[i * 3 + 1]),
+      z: round3(cloud.xyz[i * 3 + 2]),
+      intensity: round3(cloud.intensity[i]),
+    }));
+    return { ...summary, sample };
+  } catch (error) {
+    return { ...summary, sample: [], sample_error: error.message };
+  }
+}
+
 // 17 bits per axis keep the key under 2^53; two voxels 131072 cells apart would share a key, which
 // at a lidar's range only costs a point.
 const AXIS = 0x1ffff;

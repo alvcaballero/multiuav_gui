@@ -1,5 +1,5 @@
 import { logger } from '../../common/logger.js';
-import { LIDAR_LEVELS, DEFAULT_LIDAR_LEVEL, parsePointCloud2, reducePoints } from './pointCloud.js';
+import { LIDAR_LEVELS, DEFAULT_LIDAR_LEVEL, parsePointCloud2, reducePoints, sampleOfPointCloud } from './pointCloud.js';
 import { encodeLidarFrame } from './lidarFrame.js';
 
 // A device's point cloud on demand. The cloud weighs ~2 MB/s per drone, so nothing subscribes to it
@@ -20,6 +20,11 @@ export const LIDAR_REJECT = Object.freeze({
   DEVICE_CHANGED: 'device_changed',
 });
 
+/** The category slot of the cloud: the raw inspector (messages page) lists it under this name. */
+export const LIDAR_SLOT = 'lidar_3d_points';
+// The raw inspector looks at one summary (sampleOfPointCloud) a second: it reads, it does not draw.
+const INSPECT_INTERVAL_MS = 1000;
+
 // A client views one device at a time today; the cap only stops a client from fanning out.
 const MAX_DEVICES_PER_CLIENT = 4;
 // A frame closer than this to the previous one of its level is still on time: the bridge's throttle
@@ -29,7 +34,9 @@ const ON_TIME = 0.9;
 class LidarStream {
   constructor() {
     this._deps = null;
-    // deviceId (String) → { device, clients: Map<clientId, level>, lastSent: Map<level, ms>, throttleMs, broken }
+    // deviceId (String) → { device, clients: Map<clientId, level>, inspectors: Set<clientId>, lastSent: Map<level, ms>,
+    //   lastInspected: ms, throttleMs, broken }
+    // `clients` draw the cloud (binary frames); `inspectors` read one summary of it in the raw inspector.
     this._devices = new Map();
     this._byClient = new Map(); // clientId → Set<deviceId>
   }
@@ -43,6 +50,7 @@ class LidarStream {
    * @param {(clientId) => boolean} deps.isConnected
    * @param {(clientId, buffer) => boolean} deps.send — false when the frame was dropped (client too slow)
    * @param {(status: object) => void} deps.emitStatus — `{ clientId, deviceId, ok, reason?, level? }`
+   * @param {(message: {deviceId, slot, transport, raw}) => void} deps.publishRaw — the raw inspector's tap
    * @param {() => number} [deps.now]
    */
   start(deps) {
@@ -69,12 +77,7 @@ class LidarStream {
     if (!this._deps.supports(device)) return reply({ ok: false, reason: LIDAR_REJECT.NOT_SUPPORTED });
 
     // From here to the end nothing awaits, so two clients asking at once cannot open the topic twice.
-    let entry = this._devices.get(key);
-    const isNew = !entry;
-    if (isNew) {
-      entry = { device, clients: new Map(), lastSent: new Map(), throttleMs: 0, broken: false };
-      this._devices.set(key, entry);
-    }
+    const { entry, isNew } = this._entryOf(key, device);
     entry.clients.set(clientId, level);
     if (!this._byClient.has(clientId)) this._byClient.set(clientId, new Set());
     this._byClient.get(clientId).add(key);
@@ -90,9 +93,51 @@ class LidarStream {
     this._drop(String(deviceId), clientId);
   }
 
+  /**
+   * The raw inspector asked for `slot` of a device (rawTap accepted it). The cloud is on demand, so
+   * nothing publishes it to rawTap until someone opens it: this does, for as long as the client looks.
+   * Anything but the cloud's slot is not ours. A device that cannot stream it stays "waiting" (the
+   * messages page does not list a slot the device lacks).
+   */
+  async inspect(clientId, deviceId, slot) {
+    if (slot !== LIDAR_SLOT || deviceId == null) return;
+    const key = String(deviceId);
+    const device = await this._deps.getDevice(deviceId);
+    if (!this._deps.isConnected(clientId) || !device || !this._deps.supports(device)) return;
+
+    const { entry, isNew } = this._entryOf(key, device);
+    entry.inspectors.add(clientId);
+    if (!this._byClient.has(clientId)) this._byClient.set(clientId, new Set());
+    this._byClient.get(clientId).add(key);
+    if (!this._retune(key, entry, isNew)) this._drop(key, clientId);
+  }
+
+  uninspect(clientId, deviceId, slot) {
+    if (slot !== LIDAR_SLOT) return;
+    this._drop(String(deviceId), clientId);
+  }
+
   /** The socket of a client closed: its viewers die with it. */
   removeClient(clientId) {
     for (const key of [...(this._byClient.get(clientId) ?? [])]) this._drop(key, clientId);
+  }
+
+  _entryOf(key, device) {
+    let entry = this._devices.get(key);
+    const isNew = !entry;
+    if (isNew) {
+      entry = {
+        device,
+        clients: new Map(),
+        inspectors: new Set(),
+        lastSent: new Map(),
+        lastInspected: 0,
+        throttleMs: 0,
+        broken: false,
+      };
+      this._devices.set(key, entry);
+    }
+    return { entry, isNew };
   }
 
   /** The device was edited or deleted: what was open for it is stale, so its viewers are told and let go. */
@@ -104,6 +149,7 @@ class LidarStream {
       this._deps.emitStatus({ clientId, deviceId, ok: false, reason: LIDAR_REJECT.DEVICE_CHANGED });
       this._drop(key, clientId);
     }
+    for (const clientId of [...entry.inspectors]) this._drop(key, clientId); // the inspector has no status to tell
   }
 
   /** ROS came back (every subscription died with the connection): open again what is still being watched. */
@@ -118,7 +164,9 @@ class LidarStream {
 
   // The ROS topic is throttled to the quickest level someone asked for. Returns false when it could not be opened.
   _retune(key, entry, force) {
-    const throttleMs = Math.min(...[...entry.clients.values()].map((level) => LIDAR_LEVELS[level].intervalMs));
+    const intervals = [...entry.clients.values()].map((level) => LIDAR_LEVELS[level].intervalMs);
+    if (entry.inspectors.size > 0) intervals.push(INSPECT_INTERVAL_MS);
+    const throttleMs = Math.min(...intervals);
     if (!force && throttleMs === entry.throttleMs) return true;
     const result = this._deps.open(entry.device, {
       throttleMs,
@@ -135,11 +183,12 @@ class LidarStream {
   _drop(key, clientId) {
     const entry = this._devices.get(key);
     entry?.clients.delete(clientId);
+    entry?.inspectors.delete(clientId);
     const held = this._byClient.get(clientId);
     held?.delete(key);
     if (held?.size === 0) this._byClient.delete(clientId);
     if (!entry) return;
-    if (entry.clients.size === 0) {
+    if (entry.clients.size === 0 && entry.inspectors.size === 0) {
       this._devices.delete(key);
       this._deps.close(entry.device);
     } else {
@@ -151,6 +200,17 @@ class LidarStream {
     const entry = this._devices.get(key);
     if (!entry) return;
     const now = this._deps.now();
+
+    // The inspector reads a summary, never the whole cloud (and it does not wait for the viewers' levels).
+    if (entry.inspectors.size > 0 && now - entry.lastInspected >= INSPECT_INTERVAL_MS * ON_TIME) {
+      entry.lastInspected = now;
+      this._deps.publishRaw({
+        deviceId: entry.device.id,
+        slot: LIDAR_SLOT,
+        transport: 'ros',
+        raw: sampleOfPointCloud(msg),
+      });
+    }
 
     // Cheap test first: most of the arrivals are not due for any level, and parsing is the cost.
     const due = new Set();

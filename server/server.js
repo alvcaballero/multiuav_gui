@@ -37,7 +37,7 @@ import { setupRoutes } from './routes/index.js';
 import { WebSocketSubscriber } from './subscribers/websocketSubscriber.js';
 import { CameraStreamSubscriber } from './subscribers/cameraStreamSubscriber.js';
 import { eventBus, EVENTS } from './common/eventBus.js';
-import { lidarStream } from './models/lidar/lidarStream.js';
+import { lidarStream, LIDAR_SLOT } from './models/lidar/lidarStream.js';
 import { devicesController } from './controllers/devices.js';
 import { deviceModelsModel } from './models/deviceModels/deviceModels.js';
 import { categoryModel } from './models/category.js';
@@ -110,7 +110,6 @@ wsManager.onClientClose = (clientId) => {
 };
 
 // Nube de puntos del lidar bajo demanda: ROS, dispositivos y socket entran por acá (ver lidarStream.js)
-const LIDAR_SLOT = 'lidar_3d_points';
 lidarStream.start({
   getDevice: (id) => devicesController.getDevice(id),
   supports: (device) =>
@@ -123,6 +122,7 @@ lidarStream.start({
   isConnected: (clientId) => websocketController.isClientConnected(clientId),
   send: (clientId, buffer) => websocketController.sendBinaryToClient(clientId, buffer),
   emitStatus: (status) => eventBus.emitSafe(EVENTS.LIDAR_STATUS, status),
+  publishRaw: (message) => rawTap.publish(message),
 });
 
 // Initialize EventBus subscribers
