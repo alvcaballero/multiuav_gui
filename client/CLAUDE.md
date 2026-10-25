@@ -68,7 +68,7 @@ client/
     ├── scene3d/            # 3D visualization (React Three Fiber)
     ├── common/             # Shared by several features — same idea as traccar-web's `common/`
     │   ├── components/     # Generic UI: PageLayout, ErrorHandler, SelectField (with emptyValue={null} it
-    │   │                   #   auto-selects the first item passing the whole ITEM, not its key, and keeps its old
+    │   │                   #   auto-selects the first item passing its KEY (like a click; `onChange(e, items)`), and keeps its old
     │   │                   #   list until a new endpoint answers: remount it with a `key` when the list changes;
     │   │                   #   `itemDisabled` greys items out), RemoveDialog, SelectList,
     │   │                   #   SaveFile, PositionValue, SwipeConfirm (see note below), form fields, and

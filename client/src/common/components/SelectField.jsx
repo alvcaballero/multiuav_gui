@@ -27,20 +27,23 @@ const SelectField = ({
   const items = endpoint ? fetchedItems : data;
 
   // Resolves the full item for the current `value` once `loadedItems` is available -
-  // either by auto-selecting the first one, or by notifying the parent of the item
-  // that was already selected externally (value set before this list finished loading).
+  // either by auto-selecting the first one (as its key, like a click would), or by
+  // notifying the parent of the item that was already selected externally (value set
+  // before this list finished loading).
   const resolveCurrentItem = useCallback(
     (loadedItems) => {
       if (!loadedItems) return;
       if (emptyValue == null && (value === null || value === undefined)) {
-        if (loadedItems.length > 0) onChange({ target: { value: loadedItems[0] } });
+        if (loadedItems.length > 0) {
+          onChange({ target: { value: keyGetter(loadedItems[0]) } }, loadedItems);
+        }
         return;
       }
       if (value !== null && value !== undefined) {
         getItems(loadedItems[value]);
       }
     },
-    [emptyValue, value, onChange, getItems],
+    [emptyValue, value, onChange, getItems, keyGetter],
   );
 
   // Fetching only depends on `endpoint` - callers often pass inline `onChange`/`getItems`,
