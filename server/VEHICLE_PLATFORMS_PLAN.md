@@ -75,11 +75,22 @@ que el vehículo puede** (capacidades efectivas + `vehicleType`).
    (`/get_plan`; sin marca se toma relativa); el total de tests varía entre corridas (941–976) sin fallos nuevos
    (el único inestable conocido es el de `test-raw-tap.js`, ver "Cómo probar").
 
-**Siguiente grande — F6 · Planificación y seguridad:**
-- Los planners reciben el modelo: tipo, capacidades efectivas, física (`speeds`, `limits`, `vtol`). Primero el MCP y
-  los prompts (`planner.md` fuente de verdad, `plannerFast.md` en sync; **R4**: nombran categorías), después
-  Smart-Flies (ya consume ese formato; **R5**: congela el contrato) y `mip_planner`. Que el planner emita las
-  transiciones VTOL y respete la misma geometría que valida el GCS (mismos números).
+**En curso — F6 · Planificación y seguridad.** Los planners reciben el modelo y planifican con los mismos números
+que valida el GCS. Estado de partida (2026-10-25): TODOS recibían solo `category` y la usaban como modelo.
+- **F6.1 · GCS (hecho, sin commit):** `planningProfileOf(device)` → `vehicle` en el request a Smart-Flies y en
+  `geodetic-to-xyz`; la identidad en `geodetic-to-xyz` es nombre + id (ya no `category`); los tipos de misión de
+  `config/planning/config.yaml` piden `vehicleTypes` + `capabilities` (`planningRequirements.js`), no categorías.
+- **F6.2 · Camino LLM:** `get_devices` del MCP muestra tipo/modelo/capacidades (hoy las tira); los prompts eligen
+  por tipo y capacidades (`planner.md` fuente de verdad, `plannerFast.md` en sync, skill `mission-planning.md` de
+  eve); velocidad acotada por device (fuera "every drone accepts"); limpiar los ejemplos `px4_ros2`/`px4_sitl` del
+  MCP y `verification-mission.md` (**R4**: solo texto, ningún código ramifica por categoría); el sandbox de eve
+  pone `uav_type = category` (y su copia vieja en `subagents/` sigue en `route[]`).
+- **F6.3 · Smart-Flies** (`~/work/px4/Smart-Flies-MUAVPlanner`, la que lanza `run.yml`): usar `vehicle` si viene,
+  su `files/devices.yaml` si no (hoy busca por `category` y cae en el M300 SIN avisar); la rama de ala fija por
+  `vehicleType` (hoy `category == "px4"`, que no existe: muerta); emitir `vtol_transition` en vez de `{command: N}`.
+  Su física es plana (`speed_navegation`, sic) y la nuestra anidada: el aplanado va de su lado.
+- **F6.4 · mip_planner** (lo llama `llm_mission_evaluator`, no el GCS): velocidad por UAV (hoy 5 m/s fija) y
+  `vehicleType`; emite `route[]`.
 - Colisión 2D/3D según el dominio; el desvío vertical (`detourGenerator`) solo para vehículos aéreos.
 
 **Lo que queda de F4/F5 (sin vehículo que lo use todavía):** ArduPlane / ArduRover (modos en `vehicleStates.js`,
@@ -103,6 +114,8 @@ warning); USV/UGV (`pos[2]`, sin takeoff/land; `flightPhase` de superficie).
 | Altura de misión | `altitude_ref` por tarea, **relativa por defecto** (editor y planner: `calculateLocalOrigin` da `alt: 0`). Un valor desconocido es error, nunca cae en el default |
 | VTOL | Despegue `NAV_TAKEOFF` (queda en MC); la transición es una **acción por waypoint**; Auto landing → `NAV_VTOL_LAND`. Fin de misión: lo decide PX4 (`MIS_TKO_LAND_REQ`), sin reescribir el RTL |
 | Física | En el modelo (formato de Smart-Flies). El GCS la usa para AVISAR (geometría en ala); la dinámica real la planifica el planner |
+| Física en el planner (R5) | El GCS la manda inline (`vehicle`) y tiene prioridad; el planner usa la suya solo si no viene (corre sin el GCS, o el modelo no declara ese bloque). El GCS nunca rellena con defaults |
+| Quién vuela un tipo de misión | `vehicleTypes` + `capabilities` en `config/planning/config.yaml`; inspección (línea, torre, vegetación): multirrotor + `autonomous_mission` + `camera`; lidar: sin `camera` (no hay capacidad lidar) |
 | MAVLink | Interfaz = protocolo + dialecto (`px4_mavlink`, `ardupilot_mavlink`), no dos protocolos |
 | Variantes de interfaz | Plano + `extends`; el editor guarda la forma cruda (`/raw`) |
 
@@ -128,6 +141,9 @@ warning); USV/UGV (`pos[2]`, sin takeoff/land; `flightPhase` de superficie).
   PX4 no tiene altura mínima en FW: se usan los 20 m de `MIS_TAKEOFF_ALT` de `rc.vtol_defaults`.
 - **Validador:** antes, una acción que la interfaz no codificaba se descartaba con un warning; ahora la carga se
   rechaza. Grabar un waypoint desde la posición ya no mete `gimbal` sin la capacidad.
+- **F6.1, cambio de comportamiento:** el filtro de tipos de misión ya no es por categoría. Un x500 (`px4_ros2`, antes
+  admitido en línea/torre) queda fuera hasta habilitarle `camera`; el M600 (lidar) también, porque no declara
+  `autonomous_mission` (ya estaba roto: el GCS le rechazaba la carga). El skip se loguea con el motivo (`info`).
 
 ## Riesgos abiertos
 

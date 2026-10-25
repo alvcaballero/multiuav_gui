@@ -429,8 +429,7 @@ one derived from configure_mission is not right (it replaced the per-category li
 `missionSymbols.js`). `GET /api/category/:category` returns the RESOLVED category; the editor loads
 `GET /api/category/:category/raw` (the file as written) so saving does not copy every inherited entry
 into the file. `GET /api/category?details=true` → `[{name, root, firmware, vehicleTypes, control}]`,
-each `root` (top of its `extends` chain) before its variants. Names in `config/planning/config.yaml`
-are checked at boot (`unknownPlanningCategories`, a warning).
+each `root` (top of its `extends` chain) before its variants.
 
 **Device models** (`config/devices/device_models/<key>.yaml`, `models/deviceModels/`): WHAT a vehicle
 is, apart from its interface (HOW it is talked to). A device = `deviceModel` + `category`
@@ -458,7 +457,15 @@ an interface the model does not list (path `['category']`). `GET /api/device-mod
 `GET /api/device-models/:model`; `GET /api/category?deviceModel=` → the interfaces that model lists
 (with `details=true` each carries its `messageFormat`, which decides the protocols offered). `getAll` adds `platform: {vehicleType, label, icon,
 model3d}` (the generic of its type fills a missing icon/model3d): the client draws a device by it,
-never by its category name. MAVLink: the HEARTBEAT's `MAV_TYPE` (`vehicleTypeOfMavType`) is compared
+never by its category name. **What a planner is told** is `planningProfileOf(device)` (plan › F6):
+`{ deviceModel, vehicleType, capabilities (effective), label, firmware, speeds, limits, vtol, physics, battery,
+obstacle_sensor }`, a block only when the model declares it (never a default: the planner then uses its own,
+as when it runs without the GCS). It goes out as `vehicle` on each device of the Smart-Flies request
+(`decodeMissionRequest`) and of `POST /missions/convert/geodetic-to-xyz` (LLM planner, mip via the evaluator);
+`category` still goes too, for planners that do not read `vehicle` yet, but it is no longer part of a
+device's identity there (name + id). Which devices may fly a mission type of `config/planning/config.yaml`
+is `vehicleTypes` + `capabilities` under its `data.devices` (`models/planningRequirements.js`, checked at
+boot), never category names. MAVLink: the HEARTBEAT's `MAV_TYPE` (`vehicleTypeOfMavType`) is compared
 with the model when a vehicle comes online; a mismatch is a warning once, never a refusal. The DJI
 physics are UNVERIFIED copies of the old `devices.yaml` (TODO); `standard_vtol`'s numbers are PX4 SITL's
 parameter values, each named in its file (a real airframe's may differ).

@@ -17,14 +17,9 @@ missionTypes:
           type: 'number'
           name: 'Device'
           default: 0
-        category:
-          type:
-            [
-              'dji_M210_noetic',
-              'dji_M210_melodic',
-              'dji_M300',
-              'px4_ros2',
-            ]
+        # What a device needs to fly this mission type (planningRequirements.js); [] or absent = any
+        vehicleTypes: [multirotor]
+        capabilities: [autonomous_mission, camera]
       settings:
         base:
           type: 'array'
@@ -69,15 +64,8 @@ missionTypes:
           type: 'number'
           name: 'Device'
           default: 0
-        category:
-          type:
-            [
-              'dji_M210_noetic',
-              'dji_M210_melodic',
-              'dji_M300',
-              'dji_M300_PSDK',
-              'px4_ros2',
-            ]
+        vehicleTypes: [multirotor]
+        capabilities: [autonomous_mission, camera]
       settings:
         base:
           type: 'array'
@@ -126,8 +114,10 @@ missionTypes:
           type: 'number'
           name: 'Device'
           default: 0
-        category:
-          type: ['dji_M600']
+        # No lidar capability in the catalog yet: any multirotor that flies missions. The M600 (the
+        # lidar carrier) declares no autonomous_mission, so it is filtered out until its model does.
+        vehicleTypes: [multirotor]
+        capabilities: [autonomous_mission]
       settings:
         base:
           type: 'array'
@@ -171,14 +161,8 @@ missionTypes:
           type: 'number'
           name: 'Device'
           default: 0
-        category:
-          type:
-            [
-              'dji_M210_noetic',
-              'dji_M210_melodic',
-              'dji_M300',
-            ]
-          default: ''
+        vehicleTypes: [multirotor]
+        capabilities: [autonomous_mission, camera]
       settings:
         base:
           type: 'array'

@@ -2,6 +2,7 @@ import { chatLogger } from '../../common/logger.js';
 import { devicesController } from '../../controllers/devices.js';
 import { positionsController } from '../../controllers/positions.js';
 import { resolveInspectionTargets, resolveObstaclesInBounds } from '../markers/inspectionTargets.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
 
 // Constants for geodetic calculations
 const EARTH_RADIUS_M = 6378137.0; // WGS84 equatorial radius in meters
@@ -206,13 +207,15 @@ async function convertMissionBriefingToXYZ(missionBriefing) {
   }
 
   // Resolve each LLM-supplied device against the DB by name (unique, and the
-  // field an LLM is least likely to misremember vs. the numeric id). id and
-  // category are cross-checked, not trusted blindly, so a hallucinated
-  // id/category is rejected rather than silently used. The mismatch error
-  // deliberately does NOT echo back the real device's id/category — the LLM
-  // would otherwise pick up an unrelated device's data from the error and
-  // treat it as required context. All mismatches are collected before
-  // throwing so the LLM can fix every bad entry in one retry.
+  // field an LLM is least likely to misremember vs. the numeric id). The id is
+  // cross-checked, not trusted blindly, so a hallucinated id is rejected rather
+  // than silently used. The category is NOT part of the identity any more: it is
+  // how the device is talked to, which the planner has no use for (F6); a
+  // `category` sent is ignored. The mismatch error deliberately does NOT echo
+  // back the real device's id — the LLM would otherwise pick up an unrelated
+  // device's data from the error and treat it as required context. All
+  // mismatches are collected before throwing so the LLM can fix every bad entry
+  // in one retry.
   const deviceErrors = [];
   const devices = await Promise.all(
     selected_devices.map(async (requested) => {
@@ -221,9 +224,9 @@ async function convertMissionBriefingToXYZ(missionBriefing) {
         deviceErrors.push(`Device "${requested.name}" not found.`);
         return null;
       }
-      if (String(dbDevice.id) !== String(requested.id) || dbDevice.category !== requested.category) {
+      if (String(dbDevice.id) !== String(requested.id)) {
         deviceErrors.push(
-          `Device "${requested.name}" is invalid: no device exists with that exact combination of name, id and category. Re-check the device list before retrying.`
+          `Device "${requested.name}" is invalid: no device exists with that exact combination of name and id. Re-check the device list before retrying.`
         );
         return null;
       }
@@ -238,6 +241,8 @@ async function convertMissionBriefingToXYZ(missionBriefing) {
         id: dbDevice.id,
         name: dbDevice.name,
         category: dbDevice.category,
+        // What it is, what it can do and its model's numbers (deviceModelsModel.planningProfileOf)
+        vehicle: deviceModelsModel.planningProfileOf(dbDevice),
         batteryLevel: position.attributes?.batteryLevel,
         location: {
           lat: position.latitude,

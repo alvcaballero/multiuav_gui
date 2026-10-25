@@ -26,6 +26,8 @@ import { assertMissionValid, missionProblems } from './missionValidator.js';
 import { taskScheduler } from './taskScheduler.js';
 import { CommandType } from '../../config/commandTypes.js';
 import { commandsModel } from '../commands/commands.js';
+import { deviceModelsModel } from '../deviceModels/deviceModels.js';
+import { requirementMismatch, requirementsOf } from '../planningRequirements.js';
 
 // Plans are stored as received, tagged with their format: consumers (client RuteConvert)
 // parse route[] as '3' and tasks[] as '4'.
@@ -280,6 +282,7 @@ export class missionModel {
     let devices = await devicesController.getAllDevices();
     // get settings of the requested objective
     let param = planningController.getConfigParam(objetivo);
+    const requirements = requirementsOf(param);
     let auxconfig = {};
     Object.keys(param['settings']).forEach((key1) => {
       auxconfig[key1] = param['settings'][key1].default;
@@ -299,17 +302,16 @@ export class missionModel {
       for (const value of Object.keys(auxconfig)) {
         value !== 'base' ? (config.settings[value] = auxconfig[value]) : null;
       }
-      // verify if the device is allow to do the mission
-      if (param.devices && param.devices['category']) {
-        const auvAllow = param.devices['category'].type.some((item) => item == myDevice.category);
-        logger.debug(`device ${myDevice.name} auvAllow ${auvAllow}`);
-        if (!auvAllow) {
-          continue;
-        }
-      }
       // filter devices are online
       if (myDevice == null || myDevice.status === DEVICE_STATUS.OFFLINE) {
         logger.info(`device ${myDevice?.name ?? 'unknown'} is not online, skipped`);
+        continue;
+      }
+      // verify the device can fly this mission type (its vehicle type and capabilities)
+      const vehicle = deviceModelsModel.planningProfileOf(myDevice);
+      const mismatch = requirementMismatch(requirements, vehicle);
+      if (mismatch) {
+        logger.info(`device ${myDevice.name} cannot fly this mission type: ${mismatch}, skipped`);
         continue;
       }
       // filter devices are free
@@ -325,6 +327,9 @@ export class missionModel {
 
       config.id = myDevice.name;
       config.category = myDevice.category;
+      // What the device is and its model's numbers: the planner plans with these over its own
+      // (VEHICLE_PLATFORMS_PLAN.md › F6). `category` stays for a planner that does not read it yet.
+      config.vehicle = vehicle;
       // The external planner expects exactly [latitude, longitude, id] (see
       // server/test/api/json/missionRequest*.json) — build it explicitly
       // instead of Object.values(), whose order/length depends on the shape

@@ -82,6 +82,9 @@ function defaultModelProblems() {
   return problems;
 }
 
+// The blocks of a model a planner plans with (Smart-Flies' field names inside each one).
+const PLANNING_BLOCKS = ['speeds', 'limits', 'vtol', 'physics', 'battery', 'obstacle_sensor'];
+
 reportProblems(capabilitiesLoaded.problems.map((p) => ({ ...p, path: ['capabilities.yaml', ...p.path] })));
 reportProblems([...loaded.problems, ...listProblems]);
 reportProblems(defaultModelProblems());
@@ -208,6 +211,30 @@ export class deviceModelsModel {
       path: ['attributes', 'capabilities', unknown[0]],
       message: `model '${deviceModel}' does not declare capability '${unknown[0]}' (it declares: ${Object.keys(declared).join(', ') || 'none'})`,
     };
+  }
+
+  /**
+   * What a planner is told about THIS device (VEHICLE_PLATFORMS_PLAN.md › F6): what it is, what it can
+   * do (effective capabilities, as getAll) and its model's numbers. A block the model does not declare
+   * is left out, never filled with a default: the planner then uses its own, as it does when it runs
+   * without the GCS. An unknown model gives only the capabilities.
+   * @param {{ category: string, deviceModel?: string, attributes?: object }} device
+   */
+  static planningProfileOf(device) {
+    const model = models[device?.deviceModel];
+    const capabilities = this.capabilitiesOf(device);
+    const profile = {
+      deviceModel: device?.deviceModel ?? null,
+      vehicleType: model?.vehicleType ?? null,
+      capabilities: capabilities ? [...capabilities].sort() : null,
+    };
+    if (!model) return profile;
+    profile.label = model.label ?? device.deviceModel;
+    if (model.firmware) profile.firmware = model.firmware;
+    for (const block of PLANNING_BLOCKS) {
+      if (model[block]) profile[block] = model[block];
+    }
+    return profile;
   }
 
   /**

@@ -171,6 +171,37 @@ describe('deviceModelsModel', () => {
     assert.equal(deviceModelsModel.platformOf('bcr_bot').icon, 'default'); // from generic_ugv
     assert.equal(deviceModelsModel.platformOf(null), null);
   });
+
+  test('planningProfileOf: what the planners are told, only the blocks the model declares', () => {
+    const vtol = deviceModelsModel.planningProfileOf({
+      deviceModel: 'standard_vtol',
+      category: 'px4_mavlink',
+      attributes: {},
+    });
+    assert.equal(vtol.vehicleType, 'vtol');
+    assert.deepEqual(vtol.firmware, ['px4']);
+    // Effective: the model declares file_download, MAVLink does not implement it
+    assert.deepEqual(vtol.capabilities, ['autonomous_mission', 'flight_control']);
+    // The same numbers the mission validator warns with
+    assert.equal(vtol.speeds.fixed_wing, 15);
+    assert.equal(vtol.limits.min_turn_radius, 19.2);
+    assert.equal(vtol.vtol.transition_airspeed, 10);
+    // Not declared: left out for the planner to use its own, never a default
+    assert.equal('physics' in vtol, false);
+    assert.equal('battery' in vtol, false);
+
+    const m300 = deviceModelsModel.planningProfileOf({ deviceModel: 'dji_M300', category: 'dji_M300', attributes: {} });
+    assert.equal(m300.label, 'DJI Matrice 300');
+    assert.equal(m300.physics.mass, 7.2); // inherited from _dji_rotorcraft
+    assert.deepEqual(Object.keys(m300.obstacle_sensor).sort(), ['back', 'down', 'front', 'left', 'right', 'up']);
+  });
+
+  test('planningProfileOf: an unknown model gives only its capabilities', () => {
+    const profile = deviceModelsModel.planningProfileOf({ deviceModel: 'nope', category: 'px4_ros2', attributes: {} });
+    assert.deepEqual(Object.keys(profile).sort(), ['capabilities', 'deviceModel', 'vehicleType']);
+    assert.equal(profile.vehicleType, null);
+    assert.equal(deviceModelsModel.planningProfileOf({ deviceModel: 'x500', category: 'nope' }).capabilities, null);
+  });
 });
 
 describe('capabilities', () => {
