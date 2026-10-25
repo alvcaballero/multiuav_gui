@@ -28,6 +28,22 @@ export const commandMission = async (missionId) => {
 // tasks (no dependencies) on their devices. The editor's routes are sent as tasks[]
 // so dependencies of a plan loaded from a task graph survive the round trip.
 // Returns { missionId, planId, results: [{ deviceId, name, taskKey, state, msg }] }.
+// What the server would refuse in this mission, without loading it (the editor's Validate button):
+// the SAME body commandLoadMission sends, checked by the same validator the load runs. Resolves to
+// { ok, problems: [{ level: 'error' | 'warning', task, device, wp, field, message }] }.
+export const checkMission = async (missions) => {
+  const data = { name: missions.name, tasks: routesToTasks(missions.route) };
+  const response = await fetch('/api/missions/check', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error((await response.json().catch(() => null))?.error ?? response.statusText);
+  }
+  return response.json();
+};
+
 export const commandLoadMission = async (missions) => {
   const data = { name: missions.name, tasks: routesToTasks(missions.route) };
 

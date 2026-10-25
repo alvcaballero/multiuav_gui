@@ -480,6 +480,23 @@ an x500 there would not. `editDevice` rebuilds the ROS subscriptions on ANY chan
 category, model, attributes, camera), deciding on the STORED protocol (a partial PUT carries none).
 MAVLink re-reads the device only when its lookup cache expires.
 
+**Mission content follows the vehicle** (plan › F5 · Contenido de la misión). A mission may carry only what its
+interface encodes ∩ what its vehicle can do. A capability may own mission items in `capabilities.yaml`
+(`mission: { actions, params, waypoint_params }`: `gimbal` → action `gimbal`, `mode_gimbal`, wp `gimbal`; `camera`,
+which has no command nor slot → `photo`, `video_*`, `focus_camara`, `zoom_camera`), and `implementedBy` also
+counts an interface whose mission profile has one of them. What depends on the vehicle TYPE is `vehicleTypes` on
+the item or option in `mission_schema.yaml` (`vtol_transition: [vtol]`). `categoryModel`'s mission getters take an
+optional `restrict` (`deviceModelsModel.missionRestrictionOf(device)`: `{ vehicleType, allows(kind, key) }`;
+`category.js` cannot import deviceModels, which imports it): without it what the interface encodes, with it what
+that device can do. The editor's endpoints (`/api/category/actions|attributeslist|atributesparam|waypointparams|
+attributesdefaults/:type`) take `?deviceId=` for it (then the device's own interface; unknown id → 404).
+`models/mission/missionValidator.js` is the ONE validator: an item the device cannot carry, a select option it is
+not offered, a number out of range, an unknown key → ERROR, located (`{ level, task, device, wp, field, message }`,
+`formatProblem` → `T1 · wp 2 · action.gimbal: …`). It refuses every load: manual (`/missions/load` → 400 with
+`problems`), automatic (`initMission` → mission error) and the bare `LoadMission` command (MCP; in
+`sendToDevice`). A device that does not exist is a WARNING (the task fails and skips its dependents, as before).
+`POST /missions/check` returns `{ ok, problems }` without loading: the editor's Validate button.
+
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`
 (`categoryModel.getMessagesType`), DERIVED from what `msgDecode` can decode plus what categories

@@ -23,7 +23,7 @@ import WaypointRouteList from './WaypointRouteList';
 import { missionActions } from '../../store';
 import { applyUavTypeDefaults } from '../../store/mission';
 import { useAsyncTask } from '../../reactHelper';
-import { DEFAULT_UAV_TYPE, TASK_ACTION_SUGGESTIONS } from './missionDefaults';
+import { TASK_ACTION_SUGGESTIONS, missionCatalogUrl } from './missionDefaults';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -57,7 +57,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const AttributeField = ({ attrDef, value, uavType, onChange, disabled = false }) => {
+const AttributeField = ({ attrDef, value, uavType, deviceId, onChange, disabled = false }) => {
   const { classes } = useStyles();
 
   if (attrDef.type === 'number') {
@@ -85,15 +85,18 @@ const AttributeField = ({ attrDef, value, uavType, onChange, disabled = false })
     );
   }
 
+  const endpoint = missionCatalogUrl('atributesparam', uavType, deviceId, attrDef.id);
   return (
     <div className={classes.attributeValue}>
+      {/* key: SelectField keeps its old list until a new endpoint answers (the device changed) */}
       <SelectField
+        key={endpoint}
         emptyValue={null}
         fullWidth={true}
         disabled={disabled}
         value={value ?? attrDef.default ?? 0}
         onChange={(e) => onChange(e.target.value)}
-        endpoint={`/api/category/atributesparam/${uavType}/${attrDef.id}`}
+        endpoint={endpoint}
         keyGetter={(it) => it.id}
         titleGetter={(it) => it.name}
       />
@@ -139,17 +142,16 @@ const TaskFields = ({ route, taskOptions, onChange, disabled }) => {
   );
 };
 
-const RouteOptions = ({ index, route, uavType, NoEdit = false }) => {
+const RouteOptions = ({ index, route, uavType, deviceId, NoEdit = false }) => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const [expand, setExpand] = useState(false);
   const [attrDefs, setAttrDefs] = useState([]);
-  const resolvedUavType = uavType || DEFAULT_UAV_TYPE;
 
   useAsyncTask(async () => {
-    const response = await fetch(`/api/category/attributeslist/${resolvedUavType}`);
+    const response = await fetch(missionCatalogUrl('attributeslist', uavType, deviceId));
     if (response.ok) setAttrDefs(await response.json());
-  }, [resolvedUavType]);
+  }, [uavType, deviceId]);
 
   const handleAttributeChange = (attrId, value) => {
     dispatch(missionActions.updateRouteAttribute({ index, attribute: attrId, value }));
@@ -170,7 +172,8 @@ const RouteOptions = ({ index, route, uavType, NoEdit = false }) => {
               <AttributeField
                 attrDef={attrDef}
                 value={route.attributes[attrDef.id]}
-                uavType={resolvedUavType}
+                uavType={uavType}
+                deviceId={deviceId}
                 onChange={(value) => handleAttributeChange(attrDef.id, value)}
                 disabled={NoEdit}
               />
@@ -198,6 +201,15 @@ const RouteRoutesList = ({
     const found = Object.values(state.devices.items).find((device) => device.name === route.uav);
     return found ? { id: found.id, name: found.name, category: found.category } : null;
   }, shallowEqual);
+  // Whether the device has a gimbal: a recorded waypoint only carries a gimbal action then, or the
+  // server would refuse the mission (capabilities.yaml gimbal → mission).
+  const hasGimbal = useSelector((state) =>
+    Boolean(
+      Object.values(state.devices.items)
+        .find((device) => device.name === route.uav)
+        ?.capabilities?.includes('gimbal'),
+    ),
+  );
   // positions is only read inside handleRecordWp, a click handler — read it
   // imperatively from the store there instead of subscribing via useSelector,
   // so the 2s WS position broadcast doesn't re-render this whole accordion tree.
@@ -216,9 +228,11 @@ const RouteRoutesList = ({
     // real attribute values that must not be treated as "nothing assigned yet".
     const hasAttributes = Object.keys(route.attributes || {}).length > 0;
     if (!hasAttributes) {
-      dispatch(applyUavTypeDefaults({ routeIndex: index, uavType: matchedCategory }));
+      dispatch(
+        applyUavTypeDefaults({ routeIndex: index, uavType: matchedCategory, deviceId: routeUAV }),
+      );
     }
-  }, [NoEdit, matchedCategory, index, route.uav_type, route.attributes, dispatch]);
+  }, [NoEdit, matchedCategory, routeUAV, index, route.uav_type, route.attributes, dispatch]);
 
   const handleAddWaypoint = (index_route, index_wp) => {
     let center = map.getCenter();
@@ -238,7 +252,7 @@ const RouteRoutesList = ({
 
       const mywp = {
         pos: [positions[routeUAV].latitude, positions[routeUAV].longitude, altitude],
-        action: { yaw: 0, gimbal: 0 },
+        action: hasGimbal ? { yaw: 0, gimbal: 0 } : { yaw: 0 },
       };
 
       if (positions[routeUAV].course !== undefined) {
@@ -247,7 +261,7 @@ const RouteRoutesList = ({
             ? +Number(positions[routeUAV].course).toFixed(2)
             : -360 + +Number(positions[routeUAV].course).toFixed(2);
       }
-      if (positions[routeUAV].attributes?.gimbal) {
+      if (hasGimbal && positions[routeUAV].attributes?.gimbal) {
         mywp.action.gimbal = Number(positions[routeUAV].attributes.gimbal[0]);
       }
 
@@ -340,7 +354,13 @@ const RouteRoutesList = ({
               disabled={NoEdit}
             />
 
-            <RouteOptions index={index} route={route} uavType={route.uav_type} NoEdit={NoEdit} />
+            <RouteOptions
+              index={index}
+              route={route}
+              uavType={route.uav_type}
+              deviceId={routeUAV}
+              NoEdit={NoEdit}
+            />
 
             <Typography variant="subtitle1">Waypoints</Typography>
             {route.wp.map((waypoint, index_wp) => (
@@ -351,6 +371,7 @@ const RouteRoutesList = ({
                 waypoint={waypoint}
                 idleVel={idleVel}
                 uavType={route.uav_type}
+                deviceId={routeUAV}
                 expanded={expanded}
                 setExpanded={setExpanded}
                 onAddWaypoint={handleAddWaypoint}

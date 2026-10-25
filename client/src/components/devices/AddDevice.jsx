@@ -13,7 +13,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 
 import DeviceIdentityEditor from './DeviceIdentityEditor';
-import { isDeviceIdentityValid } from './deviceIdentity';
+import { capabilityEnabled, isDeviceIdentityValid } from './deviceIdentity';
+import useDeviceModel from './useDeviceModel';
 import DeviceCameraEditor from './DeviceCameraEditor';
 import DeviceFilesEditor from './DeviceFilesEditor';
 import { addDevice } from '../../common/util/fetchs';
@@ -48,6 +49,8 @@ const AddDevice = ({ onClose }) => {
   const { classes } = useStyles();
   const [item, setItem] = useState({ name: 'uav_', camera: [], files: [] });
   const [saving, setSaving] = useState(false);
+  // Its model's capabilities decide which source settings it has (the stream, the files).
+  const model = useDeviceModel(item.deviceModel);
 
   const handleAdd = useCatch(async () => {
     setSaving(true);
@@ -71,11 +74,15 @@ const AddDevice = ({ onClose }) => {
       </DialogTitle>
       <DialogContent className={classes.body}>
         <DeviceIdentityEditor value={item} onChange={setItem} />
-        <DeviceCameraEditor
-          value={item.camera}
-          onChange={(camera) => setItem({ ...item, camera })}
-        />
-        <DeviceFilesEditor value={item.files} onChange={(files) => setItem({ ...item, files })} />
+        {capabilityEnabled(item, model, 'camera_stream') && (
+          <DeviceCameraEditor
+            value={item.camera}
+            onChange={(camera) => setItem({ ...item, camera })}
+          />
+        )}
+        {capabilityEnabled(item, model, 'file_download') && (
+          <DeviceFilesEditor value={item.files} onChange={(files) => setItem({ ...item, files })} />
+        )}
       </DialogContent>
       <DialogActions className={classes.footer}>
         <Typography variant="body2" color="textSecondary" sx={{ mr: 'auto' }}>

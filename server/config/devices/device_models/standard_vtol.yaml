@@ -6,7 +6,8 @@ capabilities:
   autonomous_mission: standard
   flight_control: standard
   file_download: standard
-  gimbal: optional
+  # No gimbal: a VTOL's camera, when it has one, is usually fixed to the airframe.
+  camera: optional
   camera_stream: optional
 label: 'Standard VTOL'
 icon: plane

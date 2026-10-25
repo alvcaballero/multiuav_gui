@@ -72,6 +72,19 @@ export const hasCapability = (item, name, level) =>
   item.attributes?.capabilities?.[name] ?? level === 'standard';
 
 /**
+ * Whether the device being edited has capability `name` from its model and its own switches: what
+ * decides if the form shows that capability's settings (camera_stream → the stream sources,
+ * file_download → the file sources). `'*'` has them all; no model known (none chosen, unknown) shows
+ * everything, as the server keeps everything for a device of an unknown model. Whether the interface
+ * implements it is the server's call.
+ */
+export function capabilityEnabled(item, model, name) {
+  if (!model || model.capabilities === '*') return true;
+  const level = model.capabilities?.[name];
+  return level != null && hasCapability(item, name, level);
+}
+
+/**
  * The item with capability `name` switched to `on`. A switch that matches the model's default is
  * dropped: only what makes this unit differ from its model is stored.
  */

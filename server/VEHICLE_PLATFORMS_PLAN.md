@@ -329,6 +329,45 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
   `mode_landing` para ala fija, sin `stay` donde no puede quedarse quieto.
 - Encoders MAVLink para VTOL (`NAV_VTOL_TAKEOFF`/`DO_VTOL_TRANSITION`/`NAV_VTOL_LAND`).
 
+#### F5 · Contenido de la misión según el vehículo (decidido 2026-10-25)
+
+Regla: **lo que una misión puede tener = lo que la interfaz codifica (perfil + símbolos del encoder) ∩ lo que
+el vehículo puede (capacidades efectivas del device + `vehicleType` de su modelo)**. Vale en los dos lados: el
+editor (y el MCP en F6) VE solo eso, y el server RECHAZA al cargar lo demás.
+
+- **Dónde se declara (opción A):** lo que exige una capacidad, en `capabilities.yaml` (`mission: { actions,
+  params, waypoint_params }`, misma regla que comandos/slots: cada cosa pertenece a lo sumo a una capacidad). Lo
+  que depende del tipo de vehículo, en `mission_schema.yaml` junto a la acción / param / opción
+  (`vehicleTypes: [vtol]`): no es una capacidad, es física. Una interfaz IMPLEMENTA una capacidad también si
+  su perfil de misión contiene uno de sus items (si no, `camera`, que no tiene comandos ni slots, nunca existiría).
+- **Tres capacidades separadas** (decisión del usuario): `camera_stream` (video en vivo; habilita la config del
+  stream del device), `camera` (NUEVA: fotos/video en misión: `photo`, `video_start`, `video_stop`,
+  `focus_camara`, `zoom_camera`) y `file_download` (bajar lo grabado; habilita la config de archivos). El gimbal
+  es independiente de la cámara (cámaras fijas): `gimbal` → acción `gimbal`, param `mode_gimbal`, wp param
+  `gimbal`. `standard_vtol` sin gimbal, `camera` opcional.
+- **Fin de misión:** No action = quedarse en el último punto (hover; loiter en ala fija), Go home = RTL
+  (aterriza en el home), Auto landing = aterriza en el último wp. Para el VTOL se deja a PX4 (`MIS_TKO_LAND_REQ`
+  decide, opción a): nada de reescribir el RTL.
+- **Rechazar** (decisión del usuario) lo que el device no puede, con el motivo ubicado (tarea, wp, campo). Un
+  solo validador en el server, usado al cargar (400) y por `POST /api/missions/check`, que el editor llama con
+  un botón **Validar** (validar mientras se edita: después).
+- Endpoints del editor (`/api/category/actions/:type`, `attributeslist`, `waypointparams`…) con `?deviceId=`
+  opcional: sin él responden como hoy (lo que codifica la interfaz); con él, filtrado para ese device. NO por
+  categoría: `px4_mavlink` sirve multirotor/vtol/ala fija, y las capacidades son del modelo + overrides.
+- El formulario del device muestra la config del stream solo con `camera_stream` y la de archivos solo con
+  `file_download`.
+- A vigilar: `verification-mission.md` tiene un ejemplo con `mode_gimbal`, que el perfil `mavlink` no tiene.
+
+**Estado (2026-10-25): hecho, sin probar en el navegador.** `capabilities.yaml` (`mission` en gimbal; `camera`
+nueva), `vehicleTypes` en `mission_schema.yaml`, `implementedBy` por perfil de misión, perfiles filtrados por device
+(`missionRestrictionOf`), `missionValidator.js` en los tres caminos de carga + `POST /missions/check`, `?deviceId=`
+en los endpoints, editor por device + botón Validar (`MissionValidation.jsx`), formulario del device con stream y
+archivos según capacidad. `standard_vtol` sin gimbal, `camera` opcional; M210/M300 `camera` estándar; x500 opcional.
+Cambio de comportamiento: una acción que la interfaz no codifica antes se descartaba con un warning; ahora la carga
+se rechaza. Grabar un waypoint desde la posición ya no mete `gimbal` si el device no tiene gimbal.
+Pendiente: validar mientras se edita; marcar el waypoint con error en el propio editor (hoy: lista + click); que el
+server rechace `camera[]`/`files[]` de un device sin la capacidad (hoy solo se ocultan en el formulario).
+
 #### Estado F4 + F5 VTOL (2026-10-25): PX4 por MAVLink, VOLADO en SITL
 
 **Volado de punta a punta** (`npm run test:e2e:vtol`, `test/e2e/test-vtol-mission-sitl.js`, `gz_standard_vtol`):

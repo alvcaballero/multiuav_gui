@@ -8,6 +8,7 @@ import { categoryModel } from '../category.js';
 import {
   buildCapabilityCatalog,
   capabilityOfCommand,
+  capabilityOfMissionItem,
   capabilityOfSlot,
   effectiveCapabilities,
 } from '../capabilities/capabilityCatalog.js';
@@ -44,7 +45,10 @@ function listedInterfaceProblems(catalog) {
   return problems;
 }
 
-const capabilitiesLoaded = buildCapabilityCatalog(parse(readFileSync(capabilitiesFile, 'utf8')));
+const capabilitiesLoaded = buildCapabilityCatalog(
+  parse(readFileSync(capabilitiesFile, 'utf8')),
+  categoryModel.missionKeys()
+);
 const capabilities = capabilitiesLoaded.catalog;
 
 // A model may only name capabilities of the catalog: a typo would silently take the capability away.
@@ -152,7 +156,28 @@ export class deviceModelsModel {
   static capabilitiesOf(device) {
     const iface = categoryModel.getCategory(device?.category);
     if (!iface) return null;
-    return effectiveCapabilities(capabilities, models[device.deviceModel], iface, device.attributes?.capabilities ?? {});
+    const overrides = device.attributes?.capabilities ?? {};
+    const missionItems = categoryModel.missionItemsOf(device.category);
+    return effectiveCapabilities(capabilities, models[device.deviceModel], iface, overrides, missionItems);
+  }
+
+  /** Whether `device` may carry a mission item (`kind` of MISSION_ITEM_KINDS) its capabilities own. */
+  static allowsMissionItem(device, kind, item) {
+    const capability = capabilityOfMissionItem(capabilities, kind, item);
+    return !capability || (this.capabilitiesOf(device)?.has(capability) ?? true);
+  }
+
+  /**
+   * What narrows the mission profile of its interface to what THIS device can do: the `restrict` that
+   * categoryModel's mission getters take. Equipment (gimbal, camera) through its capabilities, physics
+   * through its model's vehicle type (mission_schema.yaml `vehicleTypes`). An unknown model gives no
+   * vehicle type: nothing is filtered by type, as nothing is gated for an unknown category.
+   */
+  static missionRestrictionOf(device) {
+    return {
+      vehicleType: models[device?.deviceModel]?.vehicleType ?? null,
+      allows: (kind, item) => this.allowsMissionItem(device, kind, item),
+    };
   }
 
   /** Whether `device` may be sent `command`: every device has the commands no capability owns. */

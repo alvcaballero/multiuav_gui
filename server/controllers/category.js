@@ -1,5 +1,6 @@
 import { categoryModel, CategoryError } from '../models/category.js';
 import { deviceModelsModel } from '../models/deviceModels/deviceModels.js';
+import { devicesController } from './devices.js';
 import { logger } from '../common/logger.js';
 
 // Writes go through the same validator as the boot (models/interfaces/interfaceCatalog.js), BEFORE
@@ -12,6 +13,18 @@ async function respondWrite(res, write) {
     if (!(err instanceof CategoryError)) throw err;
     res.status(err.status).json({ error: err.message, errors: err.errors });
   }
+}
+
+// The mission getters (actions, params, waypoint params…) answer for an interface (`:type`) or, with
+// `?deviceId=`, for ONE device: its interface narrowed to what it can do (capabilities, vehicle type;
+// VEHICLE_PLATFORMS_PLAN.md › F5 · Contenido de la misión). Then the device's own interface is used,
+// not `:type`. An unknown device is a 404, never the unfiltered answer.
+async function withMissionScope(req, res, answer) {
+  const { deviceId } = req.query;
+  if (deviceId == null || deviceId === '') return res.json(await answer({ type: req.params.type, restrict: null }));
+  const device = await devicesController.getDevice(deviceId);
+  if (!device) return res.status(404).json({ error: `device ${deviceId} not found` });
+  return res.json(await answer({ type: device.category, restrict: deviceModelsModel.missionRestrictionOf(device) }));
 }
 
 export class categoryController {
@@ -60,20 +73,19 @@ export class categoryController {
 
   static async getAtributes(req, res) {
     logger.debug(`Getting attributes for device type: ${req.params.type}`);
-    let response = await categoryModel.getAtributes(req.params.type);
-    res.json(response);
+    await withMissionScope(req, res, ({ type, restrict }) => categoryModel.getAtributes(type, restrict));
   }
 
   static async getAtributesParam(req, res) {
     logger.debug(`Getting attribute parameters for: ${JSON.stringify(req.params)}`);
-    let response = await categoryModel.getAtributesParam(req.params);
-    res.json(response);
+    await withMissionScope(req, res, ({ type, restrict }) =>
+      categoryModel.getAtributesParam({ type, param: req.params.param }, restrict)
+    );
   }
 
   static async getActions(req, res) {
     logger.debug(`Getting actions for: ${JSON.stringify(req.params)}`);
-    let response = await categoryModel.getActions(req.params);
-    res.json(response);
+    await withMissionScope(req, res, ({ type, restrict }) => categoryModel.getActions({ type }, restrict));
   }
   static async getActionsParam(params) {
     logger.debug(`Getting action parameters for: ${JSON.stringify(params)}`);
@@ -82,19 +94,16 @@ export class categoryController {
 
   static async getAttributesList(req, res) {
     logger.debug(`Getting attributes list for: ${req.params.type}`);
-    const response = await categoryModel.getAttributesList(req.params.type);
-    res.json(response);
+    await withMissionScope(req, res, ({ type, restrict }) => categoryModel.getAttributesList(type, restrict));
   }
 
   static async getWaypointParams(req, res) {
     logger.debug(`Getting waypoint params for: ${req.params.type}`);
-    const response = await categoryModel.getWaypointParams(req.params.type);
-    res.json(response);
+    await withMissionScope(req, res, ({ type, restrict }) => categoryModel.getWaypointParams(type, restrict));
   }
 
   static async getAttributesDefaults(req, res) {
     logger.debug(`Getting attributes defaults for: ${req.params.type}`);
-    const response = await categoryModel.getAttributesDefaults(req.params.type);
-    res.json(response);
+    await withMissionScope(req, res, ({ type, restrict }) => categoryModel.getAttributesDefaults(type, restrict));
   }
 }

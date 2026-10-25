@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  capabilityEnabled,
   hasCapability,
   isDeviceIdentityValid,
   protocolsFor,
@@ -87,6 +88,18 @@ describe('device capabilities (client)', () => {
     const item = { ...x500OnMavlink, attributes: { systemId: 1, capabilities: { gimbal: true } } };
     assert.deepEqual(withProtocol(item, 'ros').attributes, { capabilities: { gimbal: true } });
     assert.deepEqual(withModel(item, 'standard_vtol').attributes, {});
+  });
+
+  // What decides if the form shows the stream sources (camera_stream) and the file sources (file_download).
+  test('a capability is enabled by the model and the unit switch; a generic or unknown model shows everything', () => {
+    const x500 = { capabilities: { file_download: 'standard', camera_stream: 'optional' } };
+    assert.equal(capabilityEnabled(x500OnMavlink, x500, 'file_download'), true);
+    assert.equal(capabilityEnabled(x500OnMavlink, x500, 'camera_stream'), false, 'optional: off until switched on');
+    const withStream = withCapability(x500OnMavlink, 'camera_stream', 'optional', true);
+    assert.equal(capabilityEnabled(withStream, x500, 'camera_stream'), true);
+    assert.equal(capabilityEnabled(x500OnMavlink, { capabilities: {} }, 'file_download'), false, 'not declared');
+    assert.equal(capabilityEnabled(x500OnMavlink, { capabilities: '*' }, 'camera_stream'), true);
+    assert.equal(capabilityEnabled(x500OnMavlink, null, 'camera_stream'), true);
   });
 });
 

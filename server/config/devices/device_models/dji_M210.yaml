@@ -3,6 +3,7 @@ interfaces: [ dji_M210_noetic, dji_M210_melodic ]
 capabilities:
   autonomous_mission: standard
   gimbal: standard
+  camera: standard
   camera_stream: standard
   file_download: standard
   obstacle_sensing: standard

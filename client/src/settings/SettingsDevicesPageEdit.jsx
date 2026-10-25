@@ -3,7 +3,8 @@ import SettingsMenu from './components/SettingsMenu';
 import useQuery from '../common/util/useQuery';
 import EditItemView from './components/EditItemView';
 import DeviceIdentityEditor from '../components/devices/DeviceIdentityEditor';
-import { isDeviceIdentityValid } from '../components/devices/deviceIdentity';
+import { capabilityEnabled, isDeviceIdentityValid } from '../components/devices/deviceIdentity';
+import useDeviceModel from '../components/devices/useDeviceModel';
 import DeviceCameraEditor from '../components/devices/DeviceCameraEditor';
 import DeviceFilesEditor from '../components/devices/DeviceFilesEditor';
 
@@ -12,6 +13,7 @@ const SettingsDevicesPageEdit = () => {
   const uniqueId = query.get('uniqueId');
 
   const [item, setItem] = useState(uniqueId ? { uniqueId } : null);
+  const model = useDeviceModel(item?.deviceModel);
 
   const validate = () => isDeviceIdentityValid(item);
 
@@ -28,11 +30,20 @@ const SettingsDevicesPageEdit = () => {
         <>
           <DeviceIdentityEditor value={item} onChange={setItem} />
 
-          <DeviceCameraEditor
-            value={item.camera}
-            onChange={(camera) => setItem({ ...item, camera })}
-          />
-          <DeviceFilesEditor value={item.files} onChange={(files) => setItem({ ...item, files })} />
+          {/* Only the source settings of the capabilities it has; switching one off hides its
+              settings without deleting them, so switching it back on restores them. */}
+          {capabilityEnabled(item, model, 'camera_stream') && (
+            <DeviceCameraEditor
+              value={item.camera}
+              onChange={(camera) => setItem({ ...item, camera })}
+            />
+          )}
+          {capabilityEnabled(item, model, 'file_download') && (
+            <DeviceFilesEditor
+              value={item.files}
+              onChange={(files) => setItem({ ...item, files })}
+            />
+          )}
         </>
       )}
     </EditItemView>

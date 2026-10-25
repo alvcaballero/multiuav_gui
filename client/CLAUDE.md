@@ -52,12 +52,18 @@ client/
     │   │                   #   for the labels): `withCapability` stores only what differs from the model in
     │   │                   #   attributes.capabilities. A device's own `capabilities` (effective, from getAll) gate the
     │   │                   #   UI: e.g. StatusCard's threat buttons need `threat_detection`, never a category name.
+    │   │                   #   The forms show the stream sources (DeviceCameraEditor) only with `camera_stream` and the
+    │   │                   #   file sources (DeviceFilesEditor) only with `file_download` (`capabilityEnabled`, model
+    │   │                   #   from `useDeviceModel`); switching one off hides its settings, it does not delete them.
     │   │                   #   The category editor (settings/SettingsCategoryPageEdit) loads `/raw`, the file as written.
     │   │                   #   A device is DRAWN by `device.platform` (icon, model3d, vehicleType, from its model):
     │   │                   #   `deviceIconKey(device)` / `getModelPath(platform.model3d)`, never by the category name.
     │   │                   #   A device has no `ip`: a camera's address is `camera[].host`, in DeviceCameraEditor
     │   │                   #   (required unless Websocket). See "Device attributes" below
-    │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking
+    │   ├── mission/        # MissionPanel, MissionStats, MissionElevation, Route/Waypoint lists, tracking.
+    │   │                   #   The editor asks the mission catalog FOR THE ROUTE'S DEVICE (`missionCatalogUrl`,
+    │   │                   #   `?deviceId=`): it offers only what that vehicle can carry. MissionValidation is the
+    │   │                   #   Validate button: POST /missions/check, the server's rules (never re-implemented here)
     │   ├── camera/         # CameraDevice, CameraDevicePanel, CameraMediaMTXPlayer, SocketCameraCanvas
     │   ├── commands/       # CommandCard (send-command dialog). Labels, params, confirm and severity of
     │   │                   #   each command come from GET /api/commands/types (server command_schema.yaml)

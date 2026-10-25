@@ -3,8 +3,11 @@ import { RuteConvert, nextTaskId } from '../common/util/missionConvert';
 
 export const applyUavTypeDefaults = createAsyncThunk(
   'mission/applyUavTypeDefaults',
-  async ({ routeIndex, uavType }) => {
-    const response = await fetch(`/api/category/attributesdefaults/${uavType}`);
+  async ({ routeIndex, uavType, deviceId }) => {
+    // With its device, the defaults of what THAT vehicle can carry (components/mission/missionDefaults.js
+    // missionCatalogUrl: same URL, not imported so the store stays free of components/).
+    const query = deviceId != null ? `?deviceId=${deviceId}` : '';
+    const response = await fetch(`/api/category/attributesdefaults/${uavType}${query}`);
     if (!response.ok) throw new Error('Failed to fetch attribute defaults');
     const defaults = await response.json();
     return { routeIndex, defaults };

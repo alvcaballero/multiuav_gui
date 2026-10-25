@@ -8,6 +8,11 @@
 #
 # A command or slot belongs to at most one capability. Anything not listed here (SaveHome, position,
 # battery, heading…) is always there: it is what every device has.
+#
+# `mission` (mission_schema.yaml keys): the mission actions, route params and waypoint params the
+# capability enables. A device without it is not offered them, and a mission using them is refused.
+# An interface also implements a capability when its mission profile has one of these. What depends on
+# the vehicle TYPE rather than on equipment (vtol_transition) is declared in mission_schema.yaml.
 
 autonomous_mission:
   label: 'Autonomous missions'
@@ -32,11 +37,23 @@ file_download:
 
 gimbal:
   label: 'Gimbal'
+  description: 'Points its camera on its own axis (a fixed camera has no gimbal)'
   commands: [Gimbal, GimbalPitch, ResetGimbal]
   slots: [gimbal]
+  mission:
+    actions: [gimbal]
+    params: [mode_gimbal]
+    waypoint_params: [gimbal]
+
+camera:
+  label: 'Camera'
+  description: 'Takes photos and records video during a mission'
+  mission:
+    actions: [photo, video_start, video_stop, focus_camara, zoom_camera]
 
 camera_stream:
   label: 'Camera stream'
+  description: 'Sends live video to the GCS'
   commands: [SetupCamera]
   slots: [camera]
 

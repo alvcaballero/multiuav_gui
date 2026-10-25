@@ -14,6 +14,9 @@ version: 2
 # ─── Actions ──────────────────────────────────────────────────────────────────
 # `payload` (when present) describes the action's value: type/unit/range/default.
 # Absence of `payload` means the action is a flag (no value).
+# `vehicleTypes` (an action, a param or one of its options): only those vehicle types (config/status.js
+# VEHICLE_TYPE) get it; absent = every type. What depends on EQUIPMENT (gimbal, camera) is not here: it
+# is the capability's `mission` in capabilities.yaml.
 actions:
   stay:
     key: ACTION_STAY
@@ -60,13 +63,13 @@ actions:
     label: 'Set zoom'
     description: 'set_zoom'
     payload: { type: number, unit: mm, min: 0, max: 200, step: 1, default: 24 }
-  # Only a VTOL: switch to the wing or back to the lift rotors after reaching this waypoint. A mission
-  # carrying it on any other vehicle is refused (missionEncodeMavlink.js).
+  # Switch to the wing or back to the lift rotors after reaching this waypoint.
   vtol_transition:
     key: ACTION_VTOL_TRANSITION
     id: 8
     label: 'VTOL transition'
     description: 'vtol_transition'
+    vehicleTypes: [vtol]
     payload:
       type: select
       default: 0
@@ -233,7 +236,6 @@ profiles:
 
   # PX4 / ArduPilot over the MAVLink mission protocol (missionEncodeMavlink.js). No max_vel:
   # a MAVLink mission sets a speed (DO_CHANGE_SPEED), it has no separate ceiling.
-  # vtol_transition is offered to every MAVLink vehicle: only a VTOL may fly it (refused otherwise).
   mavlink:
     actions: [stay, photo, video_start, video_stop, yaw, gimbal, vtol_transition]
     params: [mode_yaw, mode_trace, mode_landing, idle_vel]

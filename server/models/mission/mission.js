@@ -22,6 +22,7 @@ import {
   TASK_FAILED_STATUS,
 } from '../../config/status.js';
 import { normalizeMission, missionForTask, TASK_GRAPH_VERSION } from './taskGraph.js';
+import { assertMissionValid, missionProblems } from './missionValidator.js';
 import { taskScheduler } from './taskScheduler.js';
 import { CommandType } from '../../config/commandTypes.js';
 import { commandsModel } from '../commands/commands.js';
@@ -469,6 +470,9 @@ export class missionModel {
       // Validate the graph before persisting anything: an invalid plan fails the
       // mission (catch below) without leaving a MissionPlan behind.
       const { tasks } = normalizeMission(mission);
+      // A plan asking a device for what it cannot do fails the mission (catch below), same rule
+      // as a manual load.
+      await assertMissionValid(mission, (name) => devicesController.getByName(name));
       const devices = await this._resolveDevices(tasks);
 
       // Every task pointed at an unknown device → nothing to fly. Fail it explicitly
@@ -786,6 +790,9 @@ export class missionModel {
   static async loadMissionManual(missionData) {
     logger.info('===== loadMissionManual =====');
     const graph = normalizeMission(missionData);
+    // What a task asks of its device that it cannot do refuses the whole load, before anything
+    // is persisted (400 with every problem, the same list POST /missions/check gives the editor).
+    await assertMissionValid(missionData, (name) => devicesController.getByName(name));
 
     const storedMission = withFormatVersion(missionData);
     const plan = await this.createMissionPlan(storedMission, { source: 'manual' });
@@ -948,6 +955,14 @@ export class missionModel {
 
   static async convertBriefingToXYZ(missionBriefing) {
     return await convertMissionBriefingToXYZ(missionBriefing);
+  }
+
+  /**
+   * Every problem of a mission against its devices, without loading anything: what the mission
+   * editor's Validate button shows. `{ ok, problems: [{ level, task, device, wp, field, message }] }`.
+   */
+  static async checkMission(missionData) {
+    return missionProblems(missionData, (name) => devicesController.getByName(name));
   }
 
   static convertXYZToGeodetic(missionDataXYZ) {

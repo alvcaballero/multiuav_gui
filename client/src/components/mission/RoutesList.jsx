@@ -5,6 +5,7 @@ import { Divider, Box, Button, TextField } from '@mui/material';
 
 import { missionActions } from '../../store';
 import RouteRoutesList from './RouteRouteList';
+import MissionValidation from './MissionValidation';
 
 const RoutesList = ({ mission: missionProp, setScrool, NoEdit = false }) => {
   const dispatch = useDispatch();
@@ -114,6 +115,14 @@ const RoutesList = ({ mission: missionProp, setScrool, NoEdit = false }) => {
                   Add new Route
                 </Button>
               </Box>
+            )}
+            {!NoEdit && (
+              <MissionValidation
+                mission={mission}
+                onSelect={(routeIndex, wp) =>
+                  setExpanded(wp != null ? `r${routeIndex}-wp${wp}` : `r${routeIndex}`)
+                }
+              />
             )}
           </Box>
         </Fragment>

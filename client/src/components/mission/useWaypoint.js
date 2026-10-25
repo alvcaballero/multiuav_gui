@@ -1,9 +1,8 @@
 import { useDispatch } from 'react-redux';
 import { missionActions } from '../../store';
-import { DEFAULT_UAV_TYPE } from './missionDefaults';
+import { missionCatalogUrl } from './missionDefaults';
 
-const useWaypoint = (routeIndex, wpIndex, uavType) => {
-  const resolvedUavType = uavType || DEFAULT_UAV_TYPE;
+const useWaypoint = (routeIndex, wpIndex, uavType, deviceId) => {
   const dispatch = useDispatch();
 
   const updateField = (field, value) =>
@@ -19,7 +18,7 @@ const useWaypoint = (routeIndex, wpIndex, uavType) => {
     dispatch(missionActions.removeWaypointAction({ routeIndex, wpIndex, actionKey }));
 
   const addAction = async (actionId, onDone) => {
-    const endpoint = `/api/category/actions/${resolvedUavType}`;
+    const endpoint = missionCatalogUrl('actions', uavType, deviceId);
     const response = await fetch(endpoint);
     if (!response.ok) {
       console.error('Failed to fetch actions:', await response.text());

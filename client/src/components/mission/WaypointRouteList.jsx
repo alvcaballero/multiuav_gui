@@ -27,6 +27,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import useWaypoint from './useWaypoint';
+import { missionCatalogUrl } from './missionDefaults';
 
 const useStyles = makeStyles()((theme) => ({
   list: {
@@ -222,6 +223,7 @@ const WaypointRouteList = ({
   waypoint,
   idleVel,
   uavType,
+  deviceId,
   expanded,
   setExpanded,
   onAddWaypoint,
@@ -229,7 +231,8 @@ const WaypointRouteList = ({
 }) => {
   const { classes } = useStyles();
   const { updateField, updatePos, updateAction, removeAction, addAction, copy, remove, move } =
-    useWaypoint(routeIndex, indexWp, uavType);
+    useWaypoint(routeIndex, indexWp, uavType, deviceId);
+  const actionsUrl = missionCatalogUrl('actions', uavType, deviceId);
 
   const [newactionmenu, setNewactionmenu] = useState(true);
   const [newactionid, setNewactionid] = useState(0);
@@ -243,17 +246,18 @@ const WaypointRouteList = ({
   const wpKey = `r${routeIndex}-wp${indexWp}`;
   const isOpen = expanded === wpKey;
 
-  // Fetch the rich action catalog + per-waypoint params for this category once open
+  // Fetch the rich action catalog + per-waypoint params once open: for the route's device when it
+  // has one (what that vehicle can carry), else for its category.
   React.useEffect(() => {
     if (!isOpen || !uavType) return;
     const controller = new AbortController();
-    fetch(`/api/category/actions/${uavType}`, { signal: controller.signal })
+    fetch(actionsUrl, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : []))
       .then((defs) => {
         setActionDefs(Object.fromEntries(defs.map((d) => [d.name, d])));
       })
       .catch(() => {});
-    fetch(`/api/category/waypointparams/${uavType}`, { signal: controller.signal })
+    fetch(missionCatalogUrl('waypointparams', uavType, deviceId), { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : []))
       .then((defs) => {
         setWpParams(defs);
@@ -262,7 +266,7 @@ const WaypointRouteList = ({
     return () => {
       controller.abort();
     };
-  }, [isOpen, uavType]);
+  }, [isOpen, uavType, deviceId, actionsUrl]);
 
   // Keep posInput in sync when waypoint is updated externally (e.g. map drag)
   React.useEffect(() => {
@@ -432,12 +436,13 @@ const WaypointRouteList = ({
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <SelectField
+                      key={actionsUrl}
                       label="Action"
                       fullWidth
                       emptyValue={null}
                       value={newactionid}
                       onChange={(e) => setNewactionid(e.target.value)}
-                      endpoint={`/api/category/actions/${uavType}`}
+                      endpoint={actionsUrl}
                       keyGetter={(it) => it.id}
                       titleGetter={(it) => it.description}
                     />

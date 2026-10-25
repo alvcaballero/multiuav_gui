@@ -178,7 +178,14 @@ describe('capabilities', () => {
   const caps = (d) => [...deviceModelsModel.capabilitiesOf(d)].sort();
 
   test('a device has its model capabilities that its interface implements', () => {
-    assert.deepEqual(caps(dev('dji_M300', 'dji_M300')), ['autonomous_mission', 'camera_stream', 'file_download', 'gimbal', 'obstacle_sensing']);
+    assert.deepEqual(caps(dev('dji_M300', 'dji_M300')), [
+      'autonomous_mission',
+      'camera',
+      'camera_stream',
+      'file_download',
+      'gimbal',
+      'obstacle_sensing',
+    ]);
     assert.deepEqual(caps(dev('dji_M600', 'dji_M600')), []); // telemetry only
     assert.deepEqual(caps(dev('catec', 'external_telemetry')), ['threat_detection']);
     assert.deepEqual(caps(dev('fuvex', 'external_telemetry')), []);
@@ -229,5 +236,51 @@ describe('capabilities', () => {
     ]);
     assert.equal(buildCapabilityCatalog({ a: { label: 'A', commands: ['Fly'] } }).problems.length, 1);
     assert.equal(buildCapabilityCatalog({ a: { label: 'A', slots: ['nope'] } }).problems.length, 1);
+  });
+
+  test('the catalog: mission items exist in mission_schema.yaml and belong to at most one capability', () => {
+    const keys = categoryModel.missionKeys();
+    const twice = { a: { label: 'A', mission: { actions: ['photo'] } }, b: { label: 'B', mission: { actions: ['photo'] } } };
+    assert.deepEqual(buildCapabilityCatalog(twice, keys).problems, [{ path: ['b'], message: "'actions:photo' already belongs to 'a'" }]);
+    assert.deepEqual(buildCapabilityCatalog({ a: { label: 'A', mission: { params: ['nope'] } } }, keys).problems, [
+      { path: ['a', 'mission', 'params'], message: "'nope' is not in mission_schema.yaml params" },
+    ]);
+  });
+});
+
+describe('capabilities: mission content', () => {
+  const dev = (deviceModel, category, capabilities) => ({ deviceModel, category, attributes: capabilities ? { capabilities } : {} });
+  const actionsOf = (d) => categoryModel.getActions({ type: d.category }, deviceModelsModel.missionRestrictionOf(d)).map((a) => a.name);
+
+  // camera has no command nor slot: only its mission actions say an interface implements it.
+  test('an interface implements a capability through its mission profile', () => {
+    assert.ok(deviceModelsModel.capabilitiesOf(dev('x500', 'px4_mavlink', { camera: true })).has('camera'));
+    assert.ok(!deviceModelsModel.capabilitiesOf(dev('x500', 'px4_mavlink')).has('camera'), 'optional: off until enabled');
+  });
+
+  test('one interface, two vehicles: each sees only what it can do', () => {
+    const vtol = actionsOf(dev('standard_vtol', 'px4_mavlink'));
+    const x500 = actionsOf(dev('x500', 'px4_mavlink'));
+    assert.ok(vtol.includes('vtol_transition') && !x500.includes('vtol_transition'), 'vtol_transition only for a VTOL');
+    assert.ok(!vtol.includes('gimbal') && !x500.includes('gimbal'), 'no gimbal (x500: optional and off)');
+    assert.ok(!x500.includes('photo'), 'no camera until enabled');
+    assert.ok(actionsOf(dev('x500', 'px4_mavlink', { camera: true, gimbal: true })).includes('photo'));
+    assert.ok(x500.includes('stay') && x500.includes('yaw'), 'what no capability owns, every device has');
+  });
+
+  test('a route param and a waypoint param owned by a capability go with it', () => {
+    const restrict = (d) => deviceModelsModel.missionRestrictionOf(d);
+    const ids = (list) => list.map((p) => p.id);
+    const m300 = dev('dji_M300', 'dji_M300'); // ConfigMission v2: has mode_gimbal and the wp gimbal
+    assert.ok(ids(categoryModel.getWaypointParams(m300.category, restrict(m300))).includes('gimbal'));
+    assert.ok(ids(categoryModel.getAttributesList(m300.category, restrict(m300))).includes('mode_gimbal'));
+    const noGimbal = dev('dji_M300', 'dji_M300', { gimbal: false }); // a broken gimbal
+    assert.ok(!ids(categoryModel.getWaypointParams(noGimbal.category, restrict(noGimbal))).includes('gimbal'));
+    assert.ok(!ids(categoryModel.getAttributesList(noGimbal.category, restrict(noGimbal))).includes('mode_gimbal'));
+  });
+
+  test('without a device the profile is what the interface encodes, as before', () => {
+    const all = categoryModel.getActions({ type: 'px4_mavlink' }).map((a) => a.name);
+    for (const action of ['vtol_transition', 'gimbal', 'photo']) assert.ok(all.includes(action), action);
   });
 });

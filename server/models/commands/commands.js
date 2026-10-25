@@ -7,7 +7,8 @@ import { deviceModelsModel } from '../deviceModels/deviceModels.js';
 import { CommandType } from '../../config/commandTypes.js';
 import { logger } from '../../common/logger.js';
 import { commandSchema, resolveCommand, validateAttributes } from './commandSchema.js';
-import { commandRegistry } from './commandRegistry.js';
+import { commandRegistry, missionTaskForDevice } from './commandRegistry.js';
+import { formatProblem, taskProblems } from '../mission/missionValidator.js';
 import { contentsOf } from './commandEncoders.js';
 import { encodeMsg, hasMsgEncoder } from '../msgEncode.js';
 
@@ -135,6 +136,18 @@ export class commandsModel {
     // What the vehicle IS (its device model): a VTOL mission item on anything else is refused.
     // Resolved here, not in commandRegistry: deviceModels imports it (through the capabilities).
     const vehicleType = deviceModelsModel.platformOf(device.deviceModel)?.vehicleType ?? null;
+    // Every load reaches the device through here, the MCP's bare LoadMission too: the mission
+    // validator's per-task rules (what this device can carry) refuse it before anything is sent.
+    if (type === CommandType.LOAD_MISSION) {
+      try {
+        const errors = taskProblems(missionTaskForDevice(attributes, device, vehicleType), device);
+        if (errors.length > 0) {
+          return { state: 'error', msg: `Mission refused: ${errors.map(formatProblem).join('; ')}` };
+        }
+      } catch (err) {
+        return { state: 'error', msg: err.message };
+      }
+    }
     // ① qué se manda (commandRegistry, dominio) → ② la forma que define el msgType del endpoint
     // (msgEncode, la misma para todo protocolo) → ③ el gateway solo empaqueta.
     let messages;

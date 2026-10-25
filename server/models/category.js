@@ -184,7 +184,37 @@ function filterParamOptions(param, symbols) {
 // implies says so with `mission:` in its file (dji_M210_*, px4_mavros*: v1; dji_M600: default),
 // inherited through `extends`. No device/service → 'default', unfiltered, so the planning UI
 // always has a coherent baseline.
-function resolveMissionProfile(type) {
+// Whether a catalog entry (action, param or select option) is meant for this vehicle type
+// (mission_schema.yaml `vehicleTypes`; absent = every type). No type known = no filter.
+const forVehicleType = (def, vehicleType) =>
+  !vehicleType || !def?.vehicleTypes || def.vehicleTypes.includes(vehicleType);
+
+// Narrows a resolved profile to what ONE device can do. `restrict` comes from whoever knows the
+// device (deviceModelsModel.missionRestrictionOf; this module cannot import it: it imports this one):
+// `{ vehicleType, allows(kind, key) }`, kind ∈ actions | params | waypoint_params.
+function restrictProfile(profile, restrict) {
+  if (!profile || !restrict) return profile;
+  const keep = (kind, defs) => {
+    const out = {};
+    for (const [key, def] of Object.entries(defs)) {
+      if (!restrict.allows(kind, key) || !forVehicleType(def, restrict.vehicleType)) continue;
+      const options = def.options?.filter((o) => forVehicleType(o, restrict.vehicleType));
+      out[key] = options ? { ...def, options } : def;
+    }
+    return out;
+  };
+  return {
+    actions: keep('actions', profile.actions),
+    params: keep('params', profile.params),
+    waypointParams: keep('waypoint_params', profile.waypointParams),
+  };
+}
+
+function resolveMissionProfile(type, restrict = null) {
+  return restrictProfile(resolveInterfaceProfile(type), restrict);
+}
+
+function resolveInterfaceProfile(type) {
   const dev = devices_msg[type];
   const serviceType = dev?.services?.[ServiceKey.CONFIGURE_MISSION]?.messageType;
   const profileName = dev?.mission ?? profileFor(serviceType);
@@ -364,25 +394,53 @@ export class categoryModel {
     return symbolForValue(param, value);
   }
 
-  static getAtributes(type) {
+  // ─── Mission profile ──────────────────────────────────────────────────────────
+  // Every getter takes an optional `restrict` (see restrictProfile): without it, what the interface
+  // encodes (as before devices mattered); with it, what one device can do.
+
+  /** mission_schema.yaml's keys per kind (actions / params / waypoint_params): the vocabulary. */
+  static missionKeys() {
+    return {
+      actions: new Set(Object.keys(_mission_schema.actions ?? {})),
+      params: new Set(Object.keys(_mission_schema.params ?? {})),
+      waypoint_params: new Set(Object.keys(_mission_schema.waypoint_params ?? {})),
+    };
+  }
+
+  /** The keys per kind an interface's mission profile has (what decides it implements a capability). */
+  static missionItemsOf(type) {
+    const profile = resolveInterfaceProfile(type);
+    return {
+      actions: new Set(Object.keys(profile?.actions ?? {})),
+      params: new Set(Object.keys(profile?.params ?? {})),
+      waypoint_params: new Set(Object.keys(profile?.waypointParams ?? {})),
+    };
+  }
+
+  /** The resolved profile (catalog definitions), `{ actions, params, waypointParams }`, or undefined. */
+  static missionProfile(type, restrict = null) {
+    return resolveMissionProfile(type, restrict);
+  }
+
+  static getAtributes(type, restrict = null) {
     logger.debug(`categoryModel.getAtributes: ${type}`);
-    const profile = resolveMissionProfile(type);
+    const profile = resolveMissionProfile(type, restrict);
     if (!profile) return [];
     return Object.values(profile.params);
   }
 
-  static getAttributesList(type) {
+  static getAttributesList(type, restrict = null) {
     logger.debug(`categoryModel.getAttributesList: ${type}`);
-    const profile = resolveMissionProfile(type);
+    const profile = resolveMissionProfile(type, restrict);
     if (!profile) return [];
     return Object.values(profile.params).map(formatParamDef);
   }
 
   // Per-waypoint parameter defs (mode_turn, speed, gimbal_pitch). Same rich shape
   // as getAttributesList; the UI renders these on each waypoint instead of the route.
-  static getWaypointParams(type) {
+  static getWaypointParams(type, restrict = null) {
     logger.debug(`categoryModel.getWaypointParams: ${type}`);
-    const profile = resolveMissionProfile(type);
+    const profile = resolveMissionProfile(type, restrict);
     if (!profile) return [];
     return Object.values(profile.waypointParams).map(formatParamDef);
   }
@@ -393,9 +451,9 @@ export class categoryModel {
     return profile?.waypointParams?.[param]?.default ?? _mission_schema.waypoint_params?.[param]?.default ?? 0;
   }
 
-  static getAttributesDefaults(type) {
+  static getAttributesDefaults(type, restrict = null) {
     logger.debug(`categoryModel.getAttributesDefaults: ${type}`);
-    const profile = resolveMissionProfile(type);
+    const profile = resolveMissionProfile(type, restrict);
     if (!profile) return {};
     return Object.values(profile.params).reduce((acc, { id, default: defaultValue }) => {
       if (defaultValue !== undefined) acc[id] = defaultValue;
@@ -403,9 +461,9 @@ export class categoryModel {
     }, {});
   }
 
-  static getAtributesParam({ type, param }) {
+  static getAtributesParam({ type, param }, restrict = null) {
     logger.debug(`categoryModel.getAtributesParam: ${type}-${param}`);
-    const profile = resolveMissionProfile(type);
+    const profile = resolveMissionProfile(type, restrict);
     if (!profile) return {};
     // Look in route params first, then per-waypoint params (e.g. mode_turn).
     const def = profile.params[param] ?? profile.waypointParams[param];
@@ -414,9 +472,9 @@ export class categoryModel {
     return options.map((opt) => ({ id: opt.value, name: opt.name }));
   }
 
-  static getActions({ type }) {
+  static getActions({ type }, restrict = null) {
     logger.debug(`categoryModel.getActions: ${type}`);
-    const profile = resolveMissionProfile(type);
+    const profile = resolveMissionProfile(type, restrict);
     if (!profile) return [];
     // Superset: legacy {name,id,param,description} + rich {key,label,payload}.
     return Object.entries(profile.actions).map(([name, a]) => ({
@@ -431,9 +489,9 @@ export class categoryModel {
   }
 
   // {actionName: payload.default} — lets the client seed catalog defaults.
-  static getActionDefaults(type) {
+  static getActionDefaults(type, restrict = null) {
     logger.debug(`categoryModel.getActionDefaults: ${type}`);
-    const profile = resolveMissionProfile(type);
+    const profile = resolveMissionProfile(type, restrict);
     if (!profile) return {};
     return Object.entries(profile.actions).reduce((acc, [name, a]) => {
       if (a.payload?.default !== undefined) acc[name] = a.payload.default;

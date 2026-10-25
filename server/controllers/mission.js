@@ -105,8 +105,26 @@ class missionController {
       res.json(response);
     } catch (error) {
       logger.error(`Error in loadMissionManual: ${error.message}`);
-      // TaskGraphError carries status 400 and every validation error.
-      res.status(error.status || 500).json({ error: error.message || 'Failed to load mission.', errors: error.errors });
+      // TaskGraphError and MissionValidationError carry status 400 and every validation error;
+      // the second also the located problems (what POST /missions/check returns).
+      res.status(error.status || 500).json({
+        error: error.message || 'Failed to load mission.',
+        errors: error.errors,
+        problems: error.problems,
+      });
+    }
+  };
+
+  // Validate without loading (the mission editor's Validate button). Same body as /load.
+  // Returns { ok, problems: [{ level, task, device, wp, field, message }] }: 200 even when not ok,
+  // the problems ARE the answer.
+  static checkMission = async (req, res) => {
+    const missionData = req.body?.tasks || req.body?.route ? req.body : (req.body?.mission ?? {});
+    try {
+      res.json(await missionModel.checkMission(missionData));
+    } catch (error) {
+      logger.error(`Error in checkMission: ${error.message}`);
+      res.status(500).json({ error: error.message || 'Failed to check mission.' });
     }
   };
 
