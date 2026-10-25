@@ -1,5 +1,44 @@
 # Device models, tipos de vehículo y capacidades — plan
 
+## Cómo retomar (estado al 2026-10-25)
+
+**Leer primero:** esta sección → "Decisiones tomadas" → los "Estado Fx" de cada fase. Cómo funciona el
+código HOY: `server/CLAUDE.md` › ROS Integration (interfaces, Device models, Capabilities) y › ROS Module
+Layout (`rosNames.js`, slow relay). Lo suelto: `server/TODO.md`.
+
+**Hecho (commits `0506110` … `e615a79`, rama `feat/eve-agent-integration`):**
+
+| Fase | Qué quedó |
+|---|---|
+| F1.0 | Un archivo por interfaz en `config/devices/interfaces/`, validador único (boot + API + tests) |
+| F1 | `extends`/`abstract`, `firmwares` (lista), `vehicleTypes`, `control`, `mission:`, `defaultModel` |
+| F2 | Device models en `config/devices/device_models/` (tipo, firmware, `interfaces` explícitas, física, ícono). `Device.deviceModel`. Formulario: nombre → **tipo (filtro)** → modelo → interfaz → protocolo |
+| F3 | Capacidades: catálogo `config/devices/capabilities.yaml` (capacidad → comandos + slots), `standard`/`optional`/`'*'` en el modelo, overrides en `attributes.capabilities`; gating de comandos y slots en todos los protocolos |
+| aparte | RTK = slot `position_rtk` con arbitraje; `_slow` = atributo ROS `attributes.slow` (`/<device>/slow<topic>`); catec+fuvex → `external_telemetry` |
+
+**El modelo mental en una línea:** device = **modelo** (QUÉ es y qué PUEDE: tipo, firmware, capacidades,
+física) + **interfaz** (`category`: CÓMO se le habla, un stack de mensajes) + **protocolo** (por dónde viaja)
++ atributos del device (systemId, slow, overrides de capacidades).
+
+**Pendiente del usuario (fuera del código):**
+- Reiniciar el server `:4000` (aplica las migraciones `deviceModel`, `external_telemetry`, `slow` en la DB real)
+  y pasar `vtol_1` a `standard_vtol`.
+- Cambiar el launch del relay del dron a `/<device>/slow/<topic completo>`.
+- Habilitar `rtk` en los M210/M300 que tengan el módulo, y `gimbal`/`camera_stream` en los x500 que los tengan
+  (con F3 dejaron de suscribirse/ofrecerse por defecto).
+- Verificar los datos físicos de los DJI (TODO) y la interfaz `sjtu` contra el simulador (TODO).
+
+**Siguiente:**
+1. Cerrar F3: chips de capacidades en la lista de devices + filtro por capacidad (chico).
+2. F4 (telemetría según tipo: eje `vtolState`, modos PX4 FW/VTOL, ArduPlane, ArduRover) o saltar a F5/F6
+   si lo prioritario es planificar con la flota heterogénea (tipos de waypoint VTOL, Smart-Flies recibiendo el
+   modelo en vez del nombre de categoría). Decidirlo al empezar.
+
+**Trampas de esta sesión** (no repetirlas): en zsh `GID` es de solo lectura y `for p in "a b"` no parte palabras
+(usar `bash -c`); `sd` interpreta `${...}` del reemplazo como grupo de captura; `fd`/`eza` se cuelgan en este
+sandbox; `Map.groupBy` no existe en Node 20; `SelectField` con `emptyValue={null}` auto-selecciona pasando
+el ITEM entero; correr tests SIEMPRE con `npm test` (DB en memoria).
+
 Objetivo: que la flota pueda ser heterogénea (multirrotor, ala fija, VTOL, USV, UGV) y que cada
 device diga QUÉ es (tipo, física, capacidades) por separado de CÓMO se le habla (protocolo, stack,
 mensajes). Hoy las dos cosas están fundidas en la "categoría" de `devices_msg.yaml`, y eso produce
