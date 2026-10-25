@@ -97,12 +97,25 @@ que valida el GCS. Estado de partida (2026-10-25): TODOS recibían solo `categor
   Visto y NO tocado: el asistente delega en `subagents/planner_sandbox` (el viejo, `route[]`); el que emite
   `tasks[]` (`agents/planner_sandbox`) es un agente de prueba. Y su `DEFAULT_PARAMS` lleva `mode_gimbal: 0`, que el
   validador del GCS rechaza en un dron sin `gimbal` (un x500 sin habilitarlo).
-- **F6.3 · Smart-Flies** (`~/work/px4/Smart-Flies-MUAVPlanner`, la que lanza `run.yml`): usar `vehicle` si viene,
-  su `files/devices.yaml` si no (hoy busca por `category` y cae en el M300 SIN avisar); la rama de ala fija por
-  `vehicleType` (hoy `category == "px4"`, que no existe: muerta); emitir `vtol_transition` en vez de `{command: N}`.
-  Su física es plana (`speed_navegation`, sic) y la nuestra anidada: el aplanado va de su lado.
-- **F6.4 · mip_planner** (lo llama `llm_mission_evaluator`, no el GCS): velocidad por UAV (hoy 5 m/s fija) y
-  `vehicleType`; emite `route[]`.
+- **F6.3 · Smart-Flies (hecho; Smart-Flies `a30793a`: `modules/uav.py`, `yaml.py`, `api.py`,
+  `tests/test_vehicle_model.py`; GCS: `mission.js`; el GCS aún no actualiza el puntero del submódulo)**. Un primer intento leía `vehicle.category`, que NO existe
+  (`planningProfileOf` no lo lleva; la identidad sigue siendo `category` en el device) y rompía todo request con
+  `vehicle`; se revirtió. Lo que hay ahora, `resolve_model_data` (pura, la usan el chequeo temprano de `api.py` y la
+  carga):
+  - Base = la entrada de `devices.yaml` por `category`; `vehicle.physics` / `vehicle.battery` la pisan CAMPO a campo
+    (las claves son las mismas que las del yaml). Un campo que no es número positivo se ignora con warning.
+  - `category` desconocida y `vehicle` completo → sin fallback ni warning. `category` desconocida y `vehicle` sin
+    física o incompleto → lo que falta sale del `dji_M300` (el modelo por defecto, completo) con un warning que dice
+    qué faltó. Los warnings salen en la respuesta de `/mission_request` y en el YAML del plan.
+  - `obstacle_sensor` no se lee (planner de alto nivel, no evita obstáculos) y el GCS ya no lo manda en el request.
+  - `vehicle.speeds` tampoco: las velocidades llegan por `settings`.
+  - Tests: `cd Smart-Flies-MUAVPlanner && uv run pytest tests/` (20, pasan). Falta correr un request real GCS → planner.
+  - El cambio está en el submódulo que usa el GCS, `llm_planner_gcs/Smart-Flies-MUAVPlanner`. Existe otro checkout
+    suelto (`px4/Smart-Flies-MUAVPlanner`, 3 commits adelante: docs, AGENTS.md, Python 3.10) que NO lo tiene.
+- **F6.4 · mip_planner (congelado):** lo usa `llm_mission_evaluator` para evaluar al LLM, no está en el camino
+  de producción del GCS. La velocidad heterogénea por UAV requiere cambiar la matriz de costos del solver
+  (`c[i][j]` → `c[i][j][k]`) y no justifica el esfuerzo para un componente de evaluación. El schema ya emite
+  `route[]` con `uav_type`; el GCS lo carga correctamente.
 - Colisión 2D/3D según el dominio; el desvío vertical (`detourGenerator`) solo para vehículos aéreos.
 
 **Lo que queda de F4/F5 (sin vehículo que lo use todavía):** ArduPlane / ArduRover (modos en `vehicleStates.js`,

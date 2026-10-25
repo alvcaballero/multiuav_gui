@@ -329,7 +329,9 @@ export class missionModel {
       config.category = myDevice.category;
       // What the device is and its model's numbers: the planner plans with these over its own
       // (VEHICLE_PLATFORMS_PLAN.md › F6). `category` stays for a planner that does not read it yet.
-      config.vehicle = vehicle;
+      // Not the obstacle sensors: Smart-Flies is a high-level planner, it does not avoid obstacles.
+      const { obstacle_sensor: _obstacleSensor, ...vehicleForPlanner } = vehicle;
+      config.vehicle = vehicleForPlanner;
       // The external planner expects exactly [latitude, longitude, id] (see
       // server/test/api/json/missionRequest*.json) — build it explicitly
       // instead of Object.values(), whose order/length depends on the shape
