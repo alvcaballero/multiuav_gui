@@ -249,6 +249,9 @@ validation (pure functions, tested in `test/test-task-graph.js`).
       mode_landing: 0-4       // MISSION_FINISHED_* (0=No action,1=Home,2=Land,3=First WP,4=Infinite)
     },
     uav_type, name,           // optional
+    altitude_ref: 'relative', // what a GEODETIC wp.pos[2] means (ALTITUDE_REF, taskGraph.js): 'relative' (absent:
+                              // height over the takeoff; the editor and convertMissionXYZToLatLong, whose
+                              // origin has alt 0) | 'amsl' (nothing produces it today). A typo is a 400
     wp: [{
       type: string,           // "takeoff" | "inspection" | ... — first wp is usually "takeoff"
       pos: [x, y, z],         // LOCAL ENU meters, NOT lat/lon — z is altitude AGL

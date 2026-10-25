@@ -161,6 +161,9 @@ function convertMissionXYZToLatLong(missionData) {
   // Convert waypoints from XYZ to lat/lng/alt. Task graphs (tasks[], v4) and the
   // route format (route[], v3) carry wp[] the same way; every other field is kept as is.
   const plans = [...(Array.isArray(converted.route) ? converted.route : []), ...(Array.isArray(converted.tasks) ? converted.tasks : [])];
+  // The output altitude is origin.alt + z, and calculateLocalOrigin gives alt 0: z IS the height
+  // over the takeoff point, so the plans stay relative (taskGraph ALTITUDE_REF, the default) and
+  // are not marked.
   for (const plan of plans) {
     if (plan.wp && Array.isArray(plan.wp)) {
       for (const waypoint of plan.wp) {

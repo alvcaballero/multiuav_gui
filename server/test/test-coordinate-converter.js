@@ -32,4 +32,12 @@ describe('convertMissionXYZToLatLong', () => {
     const out = convertMissionXYZToLatLong({ global_origin: origin, route: [{ uav: 'uav_1', wp: [{ pos: [0, 0, 10] }] }] });
     assert.deepEqual(out.route[0].wp[0].pos, [origin.lat, origin.lng, 10]);
   });
+
+  // calculateLocalOrigin gives alt 0, so z is the height over the takeoff point: relative, the
+  // default. Marking it AMSL would send a 10 m plan to 10 m above SEA LEVEL over MAVLink.
+  test('z stays the height over the takeoff point, relative: no altitude_ref mark', () => {
+    const out = convertMissionXYZToLatLong({ global_origin: origin, route: [{ uav: 'uav_1', wp: [{ pos: [0, 0, 10] }] }] });
+    assert.equal(out.route[0].wp[0].pos[2], 10);
+    assert.ok(!('altitude_ref' in out.route[0]));
+  });
 });

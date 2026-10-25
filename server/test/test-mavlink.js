@@ -25,7 +25,13 @@ import {
   missionAck,
   missionItemReached,
 } from './helpers/mavlinkFixtures.js';
-import { encodeMavlinkMission, MAV_CMD_MISSION, MISSION_FINISH } from '../models/mission/missionEncodeMavlink.js';
+import {
+  encodeMavlinkMission,
+  MAV_CMD_MISSION,
+  MAV_FRAME_MISSION_ITEM,
+  MISSION_FINISH,
+} from '../models/mission/missionEncodeMavlink.js';
+import { ALTITUDE_REF } from '../models/mission/taskGraph.js';
 import { MAVLINK_MISSION } from '../models/mission/missionSymbols.js';
 import { missionItemInt } from '../models/mavlink/mavlinkMessages.js';
 import { buildMavlinkCommand, MAVLINK_COMMAND, MAV_CMD } from '../models/commands/mavlinkCommand.js';
@@ -864,12 +870,35 @@ describe('missionEncodeMavlink', () => {
   });
 
   test('MISSION_ITEM_INT on the wire: lat/lon as ints in a global frame, raw x/y otherwise', () => {
-    const m = encodeMavlinkMission(task('px4_mavlink'), MAVLINK_MISSION.PX4);
+    const amsl = { ...task('px4_mavlink'), altitude_ref: ALTITUDE_REF.AMSL };
+    const m = encodeMavlinkMission(amsl, MAVLINK_MISSION.PX4);
     const wp = plainOf(missionItemInt(1, 3, m.items[3]), 255, 190);
     assert.deepEqual([wp.x, wp.y, wp.seq, wp.frame, wp.autocontinue], [434728000, -81788000, 3, 0, 1]);
     assert.ok(Math.abs(wp.z - 112) < 1e-4);
     const gimbal = plainOf(missionItemInt(1, 4, m.items[4]), 255, 190);
     assert.deepEqual([gimbal.param1, gimbal.x, gimbal.frame], [-30, 0, 2]);
+  });
+
+  // The mission editor writes a height over the takeoff point: sent as AMSL, PX4 refused it in SITL
+  // ("Takeoff altitude below home altitude!", 5 m AMSL with the home at 488 m).
+  test('altitude: relative by default (GLOBAL_RELATIVE_ALT), AMSL only when the task says so', () => {
+    const positional = (m) => m.items.filter((i) => i.frame !== MAV_FRAME_MISSION_ITEM.MISSION);
+    const framesOf = (m) => new Set(positional(m).map((i) => i.frame));
+    const relative = encodeMavlinkMission(task('px4_mavlink'), MAVLINK_MISSION.PX4);
+    assert.deepEqual([...framesOf(relative)], [MAV_FRAME_MISSION_ITEM.GLOBAL_RELATIVE_ALT]);
+    assert.equal(plainOf(missionItemInt(1, 0, relative.items[0]), 255, 190).frame, 3, 'the takeoff too');
+    const withRef = (uavType, altitude_ref) => ({ ...task(uavType), altitude_ref });
+    const explicit = encodeMavlinkMission(withRef('px4_mavlink', ALTITUDE_REF.RELATIVE), MAVLINK_MISSION.PX4);
+    assert.deepEqual([...framesOf(explicit)], [MAV_FRAME_MISSION_ITEM.GLOBAL_RELATIVE_ALT]);
+    const amsl = encodeMavlinkMission(withRef('ardupilot_mavlink', ALTITUDE_REF.AMSL), MAVLINK_MISSION.ARDUPILOT);
+    assert.deepEqual([...framesOf(amsl)], [MAV_FRAME_MISSION_ITEM.GLOBAL], 'ArduPilot home placeholder included');
+  });
+
+  test('altitude: an unknown reference is refused, never flown as relative', () => {
+    assert.throws(
+      () => encodeMavlinkMission({ ...task('px4_mavlink'), altitude_ref: 'AMSL' }, MAVLINK_MISSION.PX4),
+      /unknown altitude_ref 'AMSL'/
+    );
   });
 });
 

@@ -619,7 +619,11 @@ device van a `TODO.md` (raíz del GCS).
 
 ## Riesgos abiertos
 
-- **R1 · Referencia de altitud mezclada entre devices.** Verificado: `ENUToGeodetic` hace
+- **R1 · DESACTUALIZADO (2026-10-25):** `calculateLocalOrigin` hoy suma `0` (`sumAlt += 0`): `origin.alt`
+  es 0 y la altura de una misión es RELATIVA al despegue, no AMSL. El encoder MAVLink manda
+  `MAV_FRAME_GLOBAL_RELATIVE_ALT` salvo que la tarea diga `altitude_ref: amsl`
+  (VEHICLE_PLATFORMS_PLAN.md › Estado F4 + F5 VTOL). Lo de abajo describe el código anterior.
+  Texto original: Verificado: `ENUToGeodetic` hace
   `alt = origin.alt + z` (`coordinateConverter.js:118`), y `origin.alt` es el **promedio** de
   `position.altitude` de todos los devices de la misión (`calculateLocalOrigin`). Para un device
   MAVLink, `position.altitude` sale de `GLOBAL_POSITION_INT.alt` (AMSL), así que una misión solo

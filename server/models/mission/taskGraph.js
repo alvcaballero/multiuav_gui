@@ -1,6 +1,15 @@
 export const TASK_GRAPH_VERSION = '4';
 export const LEGACY_ROUTE_ACTION = 'ROUTE';
 
+// What wp.pos[2] of a geodetic task means. Per task (not per mission) so it survives the bare
+// route[] the MCP loads. Absent = RELATIVE, the height over the takeoff point: what the mission
+// editor writes and what convertMissionXYZToLatLong gives (its origin has alt 0). Nothing in the
+// GCS produces AMSL today; a producer that does must say so.
+export const ALTITUDE_REF = Object.freeze({
+  RELATIVE: 'relative',
+  AMSL: 'amsl',
+});
+
 export class TaskGraphError extends Error {
   constructor(errors) {
     super(`Invalid task graph: ${errors.join('; ')}`);
@@ -95,6 +104,10 @@ export function validateTaskGraph(tasks) {
     // lose its flight params (max_vel, mode_yaw...) and fly on defaults.
     if (task?.attributes !== undefined && task?.params === undefined) {
       errors.push(`${label}: uses 'attributes'; tasks use 'params'`);
+    }
+    // A typo ('AMSL') must not fall back to relative: the vehicle would fly hundreds of meters off.
+    if (task?.altitude_ref !== undefined && !Object.values(ALTITUDE_REF).includes(task.altitude_ref)) {
+      errors.push(`${label}: altitude_ref must be one of ${Object.values(ALTITUDE_REF).join(', ')}`);
     }
   }
   if (errors.length > 0) return errors;

@@ -1,12 +1,17 @@
 import { categoryModel } from '../category.js';
 import { missionLogger as logger } from '../../common/logger.js';
 import { MAVLINK_SYMBOLS, MAVLINK_MISSION } from './missionSymbols.js';
+import { ALTITUDE_REF } from './taskGraph.js';
 
 // ─── task → MAVLink mission (PX4 / ArduPilot) ─────────────────────────────────
 //
 // A task (taskGraph.js) becomes the item list the MAVLink mission protocol uploads
-// (MavlinkServer._uploadMission). Positions are geodetic and AMSL (pos = [lat, lon, alt]), so
-// every positional item goes in MAV_FRAME_GLOBAL.
+// (MavlinkServer._uploadMission). Positions are geodetic, pos = [lat, lon, alt], and what `alt`
+// means is the task's `altitude_ref` (taskGraph ALTITUDE_REF): AMSL → MAV_FRAME_GLOBAL; relative,
+// the default (the mission editor's "Height") → MAV_FRAME_GLOBAL_RELATIVE_ALT, over the home the
+// autopilot itself holds. Sending an editor height as AMSL put the takeoff at 5 m above sea level
+// with the home at 488 m: PX4 refused it ("Takeoff altitude below home altitude"), and ArduPilot,
+// which has no such check on waypoints, would have been sent below the ground.
 //
 // The items are NOT one per waypoint: speed changes, gimbal, camera and ArduPilot's home slot
 // are items too. `wpSeqs[i]` is the seq of waypoint i: MISSION_ITEM_REACHED reports seqs, and
@@ -37,6 +42,7 @@ export const MAV_CMD_MISSION = Object.freeze({
 export const MAV_FRAME_MISSION_ITEM = Object.freeze({
   GLOBAL: 0, // AMSL
   MISSION: 2, // not a position
+  GLOBAL_RELATIVE_ALT: 3, // altitude over the home
 });
 
 const SPEED_TYPE_GROUND = 1;
@@ -61,7 +67,11 @@ function symbolOf(group, value) {
   return symbol;
 }
 
-const at = (pos) => ({ frame: MAV_FRAME_MISSION_ITEM.GLOBAL, lat: pos[0], lon: pos[1], alt: pos[2] });
+const FRAME_OF_ALTITUDE = {
+  [ALTITUDE_REF.AMSL]: MAV_FRAME_MISSION_ITEM.GLOBAL,
+  [ALTITUDE_REF.RELATIVE]: MAV_FRAME_MISSION_ITEM.GLOBAL_RELATIVE_ALT,
+};
+const positionAt = (frame) => (pos) => ({ frame, lat: pos[0], lon: pos[1], alt: pos[2] });
 const notAt = () => ({ frame: MAV_FRAME_MISSION_ITEM.MISSION, x: 0, y: 0, z: 0 });
 
 const changeSpeed = (speed) => ({ command: MAV_CMD_MISSION.DO_CHANGE_SPEED, params: [SPEED_TYPE_GROUND, speed, THROTTLE_UNCHANGED, 0], ...notAt() });
@@ -89,6 +99,13 @@ export function encodeMavlinkMission(task, dialect) {
   const isArdupilot = dialect === MAVLINK_MISSION.ARDUPILOT;
   const waypoints = Object.values(task.wp ?? {});
   if (waypoints.length === 0) throw new Error(`MAVLink mission: task ${task.task_id} has no waypoints`);
+  // taskGraph already refuses an unknown altitude_ref; this keeps a task built elsewhere from
+  // flying it as relative.
+  const frame = FRAME_OF_ALTITUDE[task.altitude_ref ?? ALTITUDE_REF.RELATIVE];
+  if (frame == null) {
+    throw new Error(`MAVLink mission: task ${task.task_id} has an unknown altitude_ref '${task.altitude_ref}'`);
+  }
+  const at = positionAt(frame);
 
   const params = { ...categoryModel.getAttributesDefaults(task.uav_type), ...(task.params ?? {}) };
   const yawMode = symbolOf('mode_yaw', params.mode_yaw);

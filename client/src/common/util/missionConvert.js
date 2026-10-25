@@ -40,8 +40,10 @@ const withTaskIds = (routes) => {
 };
 
 // The editor edits a task-graph plan (v4) as routes. Each route keeps its task's
-// task_id/depends_on/action so sending it back (routesToTasks) keeps the dependencies.
-const TASK_META = ['task_id', 'depends_on', 'action'];
+// task_id/depends_on/action so sending it back (routesToTasks) keeps the dependencies,
+// and its altitude_ref (server taskGraph.js ALTITUDE_REF): absent means the height over the
+// takeoff point, so dropping an `amsl` would fly that plan its home altitude too high.
+const TASK_META = ['task_id', 'depends_on', 'action', 'altitude_ref'];
 
 const tasksToEditorRoutes = (tasks) =>
   tasks.map(({ device, params, ...rest }) => ({ ...rest, uav: device, attributes: params ?? {} }));

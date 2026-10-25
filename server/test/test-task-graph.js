@@ -11,6 +11,7 @@ import {
   TaskGraphError,
   TASK_GRAPH_VERSION,
   LEGACY_ROUTE_ACTION,
+  ALTITUDE_REF,
 } from '../models/mission/taskGraph.js';
 
 const wp = (x = 0) => [{ type: 'takeoff', pos: [x, 0, 10] }];
@@ -124,6 +125,16 @@ describe('validateTaskGraph', () => {
   test('rejects route-style attributes without params', () => {
     const errors = validateTaskGraph([task('T1', 'a', [], { attributes: { max_vel: 5 } })]);
     assert.deepEqual(errors, ["T1: uses 'attributes'; tasks use 'params'"]);
+  });
+
+  test('altitude_ref: absent or a known one is fine, a typo is an error (it must not fall back to relative)', () => {
+    assert.deepEqual(validateTaskGraph([task('T1', 'a')]), []);
+    for (const ref of Object.values(ALTITUDE_REF)) {
+      assert.deepEqual(validateTaskGraph([task('T1', 'a', [], { altitude_ref: ref })]), []);
+    }
+    assert.deepEqual(validateTaskGraph([task('T1', 'a', [], { altitude_ref: 'AMSL' })]), [
+      'T1: altitude_ref must be one of relative, amsl',
+    ]);
   });
 
   test('self and unknown dependencies', () => {
