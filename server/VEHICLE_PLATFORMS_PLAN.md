@@ -31,7 +31,11 @@ que el vehículo puede** (capacidades efectivas + `vehicleType`).
 | F5 geometría | `04d82ce` | Warnings de geometría en ala (transición, giros, frenado, altura) con los números del modelo; `standard_vtol` con valores de PX4 SITL |
 
 **Cómo probar:**
-- `npm test` SIEMPRE (DB en memoria). Falla `test-definition-resolver.js` (windTurbine): es anterior a todo esto.
+- `npm test` SIEMPRE (DB en memoria, `LOG_FILES=false`: no toca `server/logs/`). Falla `test-definition-resolver.js`
+  (windTurbine): es anterior a todo esto. `test-raw-tap.js:161` (`ageMs >= 20` tras `sleep(20)`) falla a veces con la
+  suite en paralelo y pasa solo: el timer dispara 1–2 ms antes de lo que mide `Date.now()`.
+- Depurar un vuelo: los logs del server rotan con nombres fijos, el activo es siempre `server/logs/<nombre>.log`
+  (`mission.log`, `combined.log`…) y los anteriores `<nombre>1..N`.
 - El VTOL: SITL (`make px4_sitl gz_standard_vtol`, en tierra), server en `:4000` con `MAVLINK_CONNECTION=true`,
   un device `standard_vtol` / `px4_mavlink` / mavlink con su `systemId`; `npm run test:e2e:vtol` vuela la misión,
   la sigue desde el GCS y desde PX4 (`px4-listener`), manda ReturnHome/Land si falla y guarda el ULog.
@@ -68,7 +72,8 @@ que el vehículo puede** (capacidades efectivas + `vehicleType`).
 6. Leer los parámetros del vehículo por MAVLink (`PARAM_REQUEST_READ`) para verificar el modelo contra el vehículo
    real; con eso, la geometría en ala podría pasar de warning a error.
 7. Sin verificar: `stay` (hold) en FW; en qué referencia de altura manda el planner externo de `planning.js`
-   (`/get_plan`; sin marca se toma relativa); el total de tests varía entre corridas (941–976) sin fallos nuevos.
+   (`/get_plan`; sin marca se toma relativa); el total de tests varía entre corridas (941–976) sin fallos nuevos
+   (el único inestable conocido es el de `test-raw-tap.js`, ver "Cómo probar").
 
 **Siguiente grande — F6 · Planificación y seguridad:**
 - Los planners reciben el modelo: tipo, capacidades efectivas, física (`speeds`, `limits`, `vtol`). Primero el MCP y
@@ -133,7 +138,7 @@ warning); USV/UGV (`pos[2]`, sin takeoff/land; `flightPhase` de superficie).
 | R4 | MCP y prompts de agentes nombran categorías concretas |
 | R5 | El formato de física de Smart-Flies se vuelve un contrato |
 | R6 | `extends` en dos niveles (interfaz y modelo) hace difícil saber de dónde sale un valor |
-| R8 | Los números del modelo (geometría) son del SITL: un vehículo real con otros parámetros da avisos equivocados hasta verificarlos (pendiente 7) |
+| R8 | Los números del modelo (geometría) son del SITL: un vehículo real con otros parámetros da avisos equivocados hasta verificarlos (pendiente 6) |
 
 ## Fuera de alcance
 
