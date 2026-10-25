@@ -12,6 +12,7 @@
     "inspect": "node --inspect ./server.js",
     "test": "DB=false DB_STORAGE=:memory: node --test --test-force-exit test/*.js",
     "test:e2e:collision": "node test/e2e/test-llm-collision-avoidance.js",
+    "test:e2e:vtol": "node test/e2e/test-vtol-mission-sitl.js",
     "test-logger": "node test-logger.js",
     "build:fbmsglib": "tsup fbmsglib/src/schema_main.ts --format cjs --out-dir fbmsglib/dist --no-dts",
     "lint": "eslint .",
