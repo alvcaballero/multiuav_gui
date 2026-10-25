@@ -32,7 +32,7 @@ import {
   stopAllPeriodic as _stopAllPeriodic,
 } from './rosPublishers.js';
 import {
-  watchPublishers as _watchPublishers,
+  watchTopics as _watchTopics,
   unwatch as _unwatch,
   unwatchAll as _unwatchAll,
 } from './rosDiscovery.js';
@@ -175,26 +175,26 @@ export class rosModel {
     if (serverStatus().state != 'connect') return { state: 'error', msg: 'ROS no conectado' };
 
     // Neither the subscribers nor the heartbeat (a publisher is a topic of the graph too) exist until
-    // somebody publishes one of the device's topics; after that it is active for good.
+    // one of the device's topics shows up in the graph; after that it is active for good.
     _unwatch(id);
-    _watchPublishers(
+    _watchTopics(
       { key: id, topics: topics.map((t) => t.name) },
       (topic) => {
-        logger.info(`ROS device ${name} is publishing (${topic}): subscribing`);
+        logger.info(`ROS device ${name} appeared (${topic}): subscribing`);
         activate();
       },
       getRos,
       ROS_DISCOVERY_INTERVAL_MS
     );
-    return { state: 'pending', msg: `${name} waits for a publisher` };
+    return { state: 'pending', msg: `${name} waits for its topics` };
   }
 
-  // The lazy mode needs rosapi's `publishers` service, whose type is the ROS2 one in getPublishers.
-  // TODO ROS1: `rosapi/Publishers`; until then ROS1 subscribes as before.
+  // TODO ROS1: the lazy mode only needs /rosapi/topics, which ROS1 has too, but it was never run
+  // against a ROS1 master; until then ROS1 subscribes as before.
   static _lazySubscribe() {
     if (!ROS_LAZY_SUBSCRIBE) return false;
     if (_getRosVersionInfo().version < 2) {
-      logger.debug('Lazy ROS subscription skipped: ROS1 (rosapi publishers not supported yet)');
+      logger.debug('Lazy ROS subscription skipped: ROS1 (not verified yet)');
       return false;
     }
     return true;

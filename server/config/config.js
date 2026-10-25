@@ -152,7 +152,7 @@ export const WS_RAW_INSPECT_INTERVAL_MS = Number(process.env.WS_RAW_INSPECT_INTE
 export const WS_STATE_INTERVAL_MS = Number(process.env.WS_STATE_INTERVAL_MS) || 10000;
 export const ROS_URL = process.env.ROS_URL || 'ws://127.0.0.1:9090';
 export const ROS_RECONNECT_INTERVAL_MS = Number(process.env.ROS_RECONNECT_INTERVAL_MS) || 30000;
-// Opt-out. A ROS device is subscribed only once somebody publishes its topics (models/ros/rosDiscovery.js),
+// Opt-out. A ROS device is subscribed only once its topics exist (models/ros/rosDiscovery.js),
 // so the graph is not filled with subscribers of devices that are registered but not running. It leans on
 // rosapi: 'false' brings back the old behaviour (subscribe every registered device at connect).
 export const ROS_LAZY_SUBSCRIBE = process.env.ROS_LAZY_SUBSCRIBE !== 'false';

@@ -1,13 +1,19 @@
-import { getTopics, getPublishers } from './rosInspect.js';
+import { getTopics } from './rosInspect.js';
 import { logger } from '../../common/logger.js';
 
-// Waits until somebody publishes a set of topics, without subscribing to them. A subscriber is
-// itself a node of the ROS graph (it shows in `ros2 topic list`), so subscribing to the telemetry
+// Waits until a set of topics shows up in the ROS graph, without subscribing to them. A subscriber
+// is itself an entity of the graph (it shows in `ros2 topic list`), so subscribing to the telemetry
 // of every registered device fills the graph with topics nobody publishes. The facade (ros.js)
 // resolves the names and what to do once they are alive; this primitive only watches.
 //
+// "Exists in /rosapi/topics" is the signal, NOT "rosapi/publishers has someone": that service walks
+// the ROS NODES, and PX4's uXRCE-DDS agent publishes from a bare DDS participant
+// (`_CREATED_BY_BARE_DDS_APP_`), so it answers `publishers=[]` for a topic that has one (measured
+// with `ros2 topic info` against it). The price is a false positive: a topic someone else only
+// subscribes to (rqt, `ros2 topic echo`) is listed too, and its device gets subscribed early.
+//
 // It leans on rosapi, which is fragile (it dies on a bad request, and then a call never answers):
-// every call has a timeout, a tick never overlaps the previous one, and a failure only skips the
+// the call has a timeout, a tick never overlaps the previous one, and a failure only skips the
 // tick (the watched keys stay pending and the next tick tries again).
 
 const CALL_TIMEOUT_MS = 3000;
@@ -26,31 +32,17 @@ function withTimeout(promise, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(id));
 }
 
-async function hasPublisher(topic, ros) {
-  const publishers = await withTimeout(getPublishers(topic, ros), `rosapi publishers ${topic}`);
-  return Array.isArray(publishers) && publishers.length > 0;
-}
-
 async function tick(getRos) {
   if (ticking) return;
   const ros = getRos();
   if (!ros || !ros.isConnected) return;
   ticking = true;
   try {
-    // One call for the whole graph first: only the names that exist are worth a publishers call.
-    // The list also holds topics that have subscribers and no publisher, hence the second check.
+    // One call for the whole graph, however many devices are pending.
     const graph = await withTimeout(getTopics(ros), 'rosapi topics');
     const existing = new Set(graph.topics);
     for (const [key, entry] of [...watched]) {
-      let alive = null;
-      for (const topic of entry.topics) {
-        if (!existing.has(topic)) continue;
-        if (!watched.has(key)) break; // unwatched while a call was in flight
-        if (await hasPublisher(topic, ros)) {
-          alive = topic;
-          break;
-        }
-      }
+      const alive = entry.topics.find((topic) => existing.has(topic));
       if (alive && watched.delete(key)) {
         try {
           await entry.onFound(alive);
@@ -79,9 +71,9 @@ function stopTimer() {
   timer = null;
 }
 
-// Watch `topics` under `key`: the first one that has a publisher removes the key and calls
-// onFound(topic). A watch is one-shot — after onFound the key is the caller's again.
-export function watchPublishers({ key, topics }, onFound, getRos, intervalMs) {
+// Watch `topics` under `key`: the first one that exists removes the key and calls onFound(topic).
+// A watch is one-shot — after onFound the key is the caller's again.
+export function watchTopics({ key, topics }, onFound, getRos, intervalMs) {
   watched.set(String(key), { topics, onFound });
   if (!timer) {
     timer = setInterval(() => tick(getRos), intervalMs);
