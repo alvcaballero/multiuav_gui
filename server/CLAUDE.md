@@ -1053,8 +1053,9 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 12. **`positionsModel.getByDeviceId` is synchronous on purpose**: it only reads the in-memory cache, and `missionSignals` / `events.js` call it without `await`. While it was `async` they read a Promise, so the mission anomalies, `wp_reached` and the event position silently never worked. Keep it synchronous (`test/test-mission-signals.js`).
 13. **Node 20 APIs only**: the server runs on Node 20 (`.nvmrc` v20.19, `npm test` uses it), so no
     `Map.groupBy` / `Object.groupBy`, `Set.prototype.union`/`intersection`, `Promise.withResolvers` or
-    other Node 21+ builtins. A test catches one only on a path it runs: a builtin in a rare branch (an
-    error report at boot) fails in the field instead. `engines` (`>=20`) does not stop it, it is not a lint.
+    other Node 21+ builtins. `eslint-plugin-es-x` (`flat/restrict-to-es2023` in `eslint.config.js`) now
+    catches these at lint time regardless of which code path exercises them — `engines` (`>=20`) alone
+    never did, it's not enforced by anything.
 
 ## External Dependencies
 
