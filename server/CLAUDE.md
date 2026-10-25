@@ -17,6 +17,7 @@ server/
 │   ├── flatbuffer/              # FlatBuffer device protocol (FlatbufferServer, fbEncode/fbDecode)
 │   ├── mqtt/                    # MQTT device protocol (MqttServer, mqttTopics)
 │   ├── mavlink/                 # MAVLink device protocol (MavlinkServer, links, mavlinkMessages)
+│   ├── lidar/                   # On-demand 3D point cloud for a viewer: PointCloud2 parse, reduce by level, binary frame (see On-demand slots)
 │   ├── gateways/                # One command gateway per device protocol (see Device Communication Protocols)
 │   ├── chat/                    # LLM chat orchestrator, provider handlers, agent profiles (see below)
 │   ├── commands/                # Device commands: sendCommand, command schema, encoder registry, PX4 VehicleCommand builder
@@ -670,8 +671,9 @@ asked. One ROS subscription per device serves every client and it closes with th
 (`onClientClose`), or the device is edited/deleted (`deviceGone`, via `unsubscribeDevice`); on a ROS reconnect
 `reopenAll` opens again what is still watched. A frame is parsed by the message's own `fields` (`parsePointCloud2`, never
 a fixed layout), then cut per level (`LIDAR_LEVELS`: low 1000 pts @2 Hz, medium 4000 @3 Hz, high 12000 @5 Hz;
-`reducePoints` = a voxel grid that grows until it fits, so the ground does not eat the budget of the walls; stride as
-last resort) and sent as a BINARY WS frame only to the clients of that level (`encodeLidarFrame`, type 2, floats aligned;
+`reducePoints` = a voxel grid whose cell is found by BISECTION to fill ≥90% of the budget, so the count is smooth from one
+frame to the next and a dense near wall is not crushed by the far points; stride as last resort. A cell that grew from a
+guess left 720 of 4000 points and flickered right at the ceiling, which `test-point-cloud.js` now pins) and sent as a BINARY WS frame only to the clients of that level (`encodeLidarFrame`, type 2, floats aligned;
 wire format in `lidarFrame.js`, mirrored by `client/src/common/util/lidarFrame.js`). A message that is not due for any
 level is not even parsed. `sendBinaryToClient` DROPS the frame when the client's socket has >4 MB buffered (the camera
 pushes ~10 MB/s down the same socket and is never dropped, so a tight limit starved the lidar). The slot belongs to the

@@ -226,6 +226,9 @@ through `LidarCloudContext`, and `R3FDevices` draws `R3FLidarCloud` INSIDE the g
 with it). The component owns the WS side (`lidar:subscribe` while mounted, `lidar:unsubscribe` on cleanup, a new subscribe
 on a level change) and copies each frame into a fixed `BufferGeometry` from `useFrame`: points never touch Redux or React
 state. Sensor frame (x forward, y left, z up) → the device group's (-y, z, -x); the sensor's mount offset is not applied.
+Points are a fixed 4 px (`sizeAttenuation` off) and skip the depth test: the scene's camera sits 100+ m away, where a
+30 cm point is one pixel, and what the lidar sees of the ground lies ON the scene's ground plane, which would hide it.
+The 3D view is a picture-in-picture while the device page is on `Camera`: switch to `Map` to see the cloud large.
 Never on by itself: it costs the fleet bandwidth, so it dies with the 3D view.
 
 ### Missions as task graphs
