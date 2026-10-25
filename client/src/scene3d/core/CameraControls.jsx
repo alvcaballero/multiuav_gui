@@ -4,9 +4,10 @@ import { OrbitControls } from '@react-three/drei';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { LatLon2XYZ } from './convertion';
+import { deviceObjectName } from '../scene/R3FDevices';
 
 export default function CameraControls({ controlsRef: externalRef }) {
-  const { camera } = useThree();
+  const { camera, scene } = useThree();
   const internalRef = useRef();
   const controlsRef = externalRef ?? internalRef;
   const moveSpeed = 1;
@@ -67,8 +68,16 @@ export default function CameraControls({ controlsRef: externalRef }) {
   const followPosition = useSelector((state) => state.session.positions[selectedDeviceId]);
   const origin3d = useSelector((state) => state.session.scene3d.origin);
 
-  // Target position for smooth follow — updated on each telemetry tick, consumed by useFrame lerp
+  // Fallback follow target from raw telemetry, for when the device is not drawn (devices layer hidden).
+  // While it is drawn, the camera follows its interpolated group instead: two different smoothings of
+  // the same telemetry made the drone wobble against the camera.
   const followTargetRef = useRef(null);
+  const followObjectRef = useRef(null);
+  // Once the camera has reached the drone it stays ON it: easing after a moving target kept the drone
+  // off-centre by speed × lag and turned every change of speed into a wobble.
+  const followLockedRef = useRef(false);
+  const _followPosRef = useRef(null);
+  if (_followPosRef.current === null) _followPosRef.current = new THREE.Vector3();
 
   useEffect(() => {
     if (!mapFollow || !followPosition?.latitude) return;
@@ -143,10 +152,32 @@ export default function CameraControls({ controlsRef: externalRef }) {
     const controls = controlsRef.current;
     let didMove = false;
 
-    if (mapFollow && followTargetRef.current) {
-      const lerpFactor = 1 - Math.exp(-8 * delta);
+    let followTarget = null;
+    if (mapFollow) {
+      const name = deviceObjectName(selectedDeviceId);
+      let obj = followObjectRef.current;
+      // Look it up again when the selection changed or the object left the scene (remount).
+      if (!obj || obj.name !== name || !obj.parent) {
+        obj = scene.getObjectByName(name) ?? null;
+        followObjectRef.current = obj;
+        followLockedRef.current = false;
+      }
+      followTarget = obj ? obj.getWorldPosition(_followPosRef.current) : followTargetRef.current;
+    } else {
+      followLockedRef.current = false;
+    }
+
+    if (followTarget) {
       _offsetRef.current.copy(camera.position).sub(controls.target);
-      controls.target.lerp(followTargetRef.current, lerpFactor);
+      // Raw telemetry (no drawn drone) jumps at 2 Hz: that one is always eased, never locked.
+      if (followObjectRef.current && controls.target.distanceToSquared(followTarget) < 0.25) {
+        followLockedRef.current = true;
+      }
+      if (followLockedRef.current && followObjectRef.current) {
+        controls.target.copy(followTarget);
+      } else {
+        controls.target.lerp(followTarget, 1 - Math.exp(-8 * delta));
+      }
       camera.position.copy(controls.target).add(_offsetRef.current);
       controls.update();
       didMove = true;

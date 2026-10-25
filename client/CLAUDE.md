@@ -228,6 +228,20 @@ automatically. `client/src/scene3d/controls/OrientationGizmo.jsx` is intentional
 this system — it renders directly into the WebGL canvas via `gl.setScissor`/`setViewport` inside
 `useFrame`, not as an HTML overlay, so it can't be portaled like the other controls.
 
+**Device motion in 3D (`scene3d/scene/R3FDevices.jsx`).** Positions arrive at 2 Hz (server
+`WS_POSITIONS_INTERVAL_MS`). Each sample is reached at CONSTANT speed, starting from where the drone is drawn
+(snapshot interpolation; yaw along the shortest arc), over the AVERAGE gap × `PLAYOUT_MARGIN` (1.2), so the 3D view
+shows the drone about 1.2 intervals behind the telemetry — on purpose. A per-frame `lerp(target, k)` eases toward
+every sample: fast after it arrives, slow before the next, a speed sawtooth seen as jumps when flying fast. Without
+the margin a sample arriving a few ms late stops the drone for a frame twice per second: invisible with a still
+camera, the whole world freezing with follow on. The gimbal (the camera's frustum, a `CameraHelper`) is eased the
+same way, as its own stream (`retime`). The motion effect is keyed on the position VALUES, not on the sample
+object (rebuilt for every device on each tick). The camera's follow (`CameraControls`) follows the device's group
+(`deviceObjectName(id)`), what is drawn: it eases in, then stays LOCKED on it (easing after a moving target leaves
+it off-centre and wobbling); raw telemetry, always eased, only when the device is not in the scene. The devices move
+in `useFrame` priority `-0.5`, after OrbitControls (`-1`) and before the follow (`0`), so the camera never chases
+the previous frame's drone.
+
 **Lidar point cloud (`scene3d/lidar/`, `pages/device/DeviceStage.jsx`).** The `Lidar` button of the device page (3D view
 only, and only with the device's `lidar_3d` capability and an interface that has the `lidar_3d_points` slot) turns the viewer on; Low / Medium / High pick how many points
 and how often (`LIDAR_LEVELS`, mirrored from the server in `common/util/lidarFrame.js`, which also decodes the binary
