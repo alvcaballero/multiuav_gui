@@ -38,7 +38,10 @@ client/
     ├── components/         # Feature components, grouped by domain
     │   ├── chat/           # ChatDrawer, ChatPanel, ChatThread, ApprovalCard, ToolCallRow, ChatInput, useChatLogic, chatTheme
     │   ├── devices/        # DeviceList, DeviceRow, StatusCard, AddDevice (dialog), DeviceCameraEditor, DeviceFilesEditor
-    │   │                   #   (each entry a DeviceSourceCard), useFilter,
+    │   │                   #   (each entry a DeviceSourceCard), useFilter (status + vehicle type, `filter.vehicleTypes`
+    │   │                   #   by `platform.vehicleType`; persisted, so tolerate the key missing),
+    │   │                   #   DeviceRow (an RTK mark only with the `rtk` capability: green while `positionSource` is
+    │   │                   #   `position_rtk`, grey while it flies on GNSS),
     │   │                   #   DeviceIdentityEditor (shared by AddDevice and settings/SettingsDevicesPageEdit), in the
     │   │                   #   order the parts depend on each other: name → device MODEL (what it is,
     │   │                   #   GET /api/device-models) → interface/category (one the model lists,
@@ -234,6 +237,11 @@ them — see `server/CLAUDE.md` › Mission Planning System). The client side:
     message is shown to the user — don't duplicate those rules here.
 - **Wire format:** `commandLoadMission` always sends `{ tasks }` built by `routesToTasks`
   (`common/util/missionConvert.js`); `RuteConvert` reads `tasks[]` (v4), `route[]` (v3) and legacy.
+  A route keeps its task's `altitude_ref` (`TASK_META`): absent = heights over the takeoff point, which is what
+  the editor writes; dropping an `amsl` would fly that plan its home altitude too high
+  (`server/test/test-mission-convert-client.js`).
+- **Waypoint actions** come from the catalog of the route's device; an action whose `payload` is a `select`
+  (`vtol_transition`: to fixed wing / to multicopter) is a dropdown committing the option's number.
 - **Tracking (`store/activeMissions.js`)**: tasks are keyed by **task id**, never by
   `deviceId` — a device can run several tasks of one mission. `upsertTask` merges: the
   diagnostics-only updates from the server's waypoint tracking carry no

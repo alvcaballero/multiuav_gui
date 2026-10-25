@@ -440,8 +440,10 @@ strict zod schema (`schemas/zod/deviceModel.js`), `extends` (objects merged key 
 (required), the **`interfaces` a device of it can use, written out** (required, may be `[]`: the
 form offers exactly these, so x500 never sees `catec`, which is mavros with CATEC's own topics), the
 `firmware` it runs (a list; NOT declared = not known), `label`, `icon` / `model3d` (client keys), and
-what a planner needs: `physics` / `battery` (field names are Smart-Flies-MUAVPlanner's), `speeds`,
-`limits.min_turn_radius`, `obstacle_sensor`. Every vehicle type has a `generic_<type>` model (boot
+what a planner needs: `physics` / `battery` (field names are Smart-Flies-MUAVPlanner's), `speeds`
+(`mission`, `navigation`, `fixed_wing`), `limits` (`min_turn_radius`, `min_fixed_wing_altitude`), `vtol`
+(`transition_airspeed`, `front_transition_duration`, `back_transition_deceleration`), `obstacle_sensor`; the
+mission validator's wing geometry reads them. Every vehicle type has a `generic_<type>` model (boot
 problem otherwise), listing only the GENERIC interfaces of its type. The hand-written list is checked
 at boot by the compatibility rule: `model.vehicleType ∈ interface.vehicleTypes` ∧ (`model.firmware`
 undeclared ∨ it meets `interface.firmwares`) (`incompatibility`, pure); a model listing an unknown or
@@ -457,12 +459,13 @@ an interface the model does not list (path `['category']`). `GET /api/device-mod
 (with `details=true` each carries its `messageFormat`, which decides the protocols offered). `getAll` adds `platform: {vehicleType, label, icon,
 model3d}` (the generic of its type fills a missing icon/model3d): the client draws a device by it,
 never by its category name. MAVLink: the HEARTBEAT's `MAV_TYPE` (`vehicleTypeOfMavType`) is compared
-with the model when a vehicle comes online; a mismatch is a warning once, never a refusal. The
-physics are UNVERIFIED copies of the old `devices.yaml` (TODO).
+with the model when a vehicle comes online; a mismatch is a warning once, never a refusal. The DJI
+physics are UNVERIFIED copies of the old `devices.yaml` (TODO); `standard_vtol`'s numbers are PX4 SITL's
+parameter values, each named in its file (a real airframe's may differ).
 
 **Capabilities** (`config/devices/capabilities.yaml`, `models/capabilities/capabilityCatalog.js`): WHAT a
 vehicle can do, and which COMMANDS and telemetry SLOTS implement each one (`autonomous_mission`,
-`flight_control`, `navigation`, `file_download`, `gimbal`, `camera_stream`, `rtk`, `obstacle_sensing`,
+`flight_control`, `navigation`, `file_download`, `gimbal`, `camera`, `camera_stream`, `rtk`, `obstacle_sensing`,
 `threat_detection`, `humidity_sensor`); a command or slot belongs to at most one, and what none owns
 (SaveHome, position, battery…) every device has. The interfaces are untouched: they declare topics, the
 catalog says what each one is for. A model declares `capabilities: { name: standard | optional }` (`{}` =
@@ -1061,7 +1064,8 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 
 - Server tests: Node.js built-in test runner (`npm test` → `node --test test/*.js`)
 - API fixtures: `test/api/json/` holds real request/response payloads (mission plans, MCP tool calls, validation reports) used as golden files
-- E2E: `test/e2e/` (run individually, e.g. `npm run test:e2e:collision` for the LLM collision-avoidance scenario)
+- E2E: `test/e2e/` (run individually, e.g. `npm run test:e2e:collision` for the LLM collision-avoidance scenario,
+  `npm run test:e2e:vtol` for a VTOL mission flown against PX4 SITL through the GCS manual flow)
 - Integration tests: ROS message mocking, WebSocket simulation
 - Frontend: Manual testing via development server (no client test script configured)
 
