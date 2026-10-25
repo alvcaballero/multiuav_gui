@@ -34,10 +34,10 @@ física) + **interfaz** (`category`: CÓMO se le habla, un stack de mensajes) + 
    si lo prioritario es planificar con la flota heterogénea (tipos de waypoint VTOL, Smart-Flies recibiendo el
    modelo en vez del nombre de categoría). Decidirlo al empezar.
 
-**Trampas de esta sesión** (no repetirlas): en zsh `GID` es de solo lectura y `for p in "a b"` no parte palabras
-(usar `bash -c`); `sd` interpreta `${...}` del reemplazo como grupo de captura; `fd`/`eza` se cuelgan en este
-sandbox; `Map.groupBy` no existe en Node 20; `SelectField` con `emptyValue={null}` auto-selecciona pasando
-el ITEM entero; correr tests SIEMPRE con `npm test` (DB en memoria).
+**Trampas del proyecto** (no repetirlas): `Map.groupBy`/`Object.groupBy` no existen en Node 20 (el server);
+`SelectField` con `emptyValue={null}` auto-selecciona pasando el ITEM entero, no su key; correr tests SIEMPRE
+con `npm test` (DB en memoria). Las del entorno (shell, `fd`, `eza`, `sd`) ya están resueltas y escritas en
+`~/.claude/CLAUDE.md`: el shell de la herramienta es bash, y el código se edita con la herramienta Edit.
 
 Objetivo: que la flota pueda ser heterogénea (multirrotor, ala fija, VTOL, USV, UGV) y que cada
 device diga QUÉ es (tipo, física, capacidades) por separado de CÓMO se le habla (protocolo, stack,
