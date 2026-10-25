@@ -32,7 +32,12 @@ client/
     │   │                   #   them over the shared WebSocket (raw:subscribe / raw:unsubscribe, see
     │   │                   #   server/CLAUDE.md); the messages stay out of Redux (up to 10 per second).
     │   │                   #   The first one may be the server's stored copy (`cached`, `ageMs`). The
-    │   │                   #   list shows each slot's rate/health from GET /api/devices/:id/telemetry
+    │   │                   #   list shows each slot's rate/health from GET /api/devices/:id/telemetry.
+    │   │                   #   The list is the category's `subscribers` minus the slots whose capability the
+    │   │                   #   device lacks (`useSlotCapabilities`: slot → capability from GET
+    │   │                   #   /api/device-models/capabilities, against `device.capabilities`): the server never
+    │   │                   #   subscribes those, so offering them was a message that could not arrive. The lidar
+    │   │                   #   cloud arrives as a summary without its `data` (server/CLAUDE.md › on-demand slots)
     │   ├── reports/        # EventsPage, Mission*Report*Page, missionDetailReport/ (its sections)
     │   └── other/          # GeofencesPage (+GeofencesList), ReplayPage, TopicsPage (+SquareMove), MissionPageTest
     ├── components/         # Feature components, grouped by domain
@@ -151,6 +156,11 @@ own source + layer in a `useEffect` (cleanup removes both), and a second `useEff
 `map.getSource(id).setData(...)`. When you need a new map layer, check whether traccar-web already has
 one (e.g. `MapAccuracy`, `MapRoutes`, `MapGeofence`) and port it instead of inventing a new pattern.
 Adaptations vs. upstream: `map` comes from `core/mapInstance`, no `toMapCoordinates`/`useTranslation`.
+
+**Obstacle widgets follow the capability.** `useDeviceCapabilities().obstacle` (the "Collision" chip, the device page's
+alert and sensor widget) is `obstacle_sensing` in `device.capabilities` AND the category's `obstacle_info` slot, like
+`lidar`: the server only subscribes the slot for a unit that has the capability, so a category-only test showed a widget
+that never got data. The x500 declares it `optional`: switch it on per device.
 
 **Collision sensor arcs (`map/devices/MapCollisionSensor.js`):** draws one arc per side
 (front/right/back/left) around the UAV from `position.attributes.obstacle_info`

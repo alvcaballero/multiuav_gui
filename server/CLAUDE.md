@@ -683,6 +683,15 @@ switch). It is `onboard`, so a generic `'*'` model on px4_ros2 does NOT get the 
 get its own (`lidar_2d_scan`, a `LaserScan`: another viewer). Coordinates stay in the sensor frame (x forward, y left,
 z up): no TF, no world accumulation yet.
 
+**The raw inspector reads the cloud too, as a summary.** An on-demand slot never goes through `makeOnMessage`, so `rawTap`
+would get nothing from it. When `raw:subscribe` is accepted for `LIDAR_SLOT`, the router calls `lidarStream.inspect`
+(`raw:unsubscribe` → `uninspect`, a closed socket → `removeClient`): the device's `entry.inspectors` keep the topic open at
+`INSPECT_INTERVAL_MS` (1 s, next to the viewers' levels in `_retune`) and each arrival goes to `rawTap.publish`
+(`publishRaw`, injected in `server.js`) as `sampleOfPointCloud(msg)`: the message WITHOUT its `data` (~2 MB of base64) plus
+`points`, `data_bytes` and `sample`, the first `SAMPLE_POINTS` points decoded from the head of the buffer. No binary frame
+is sent and the cloud is not parsed. Any other slot is ignored by `inspect`. The messages page lists a slot only when the
+device has its capability (below), so an inspector for a device that cannot stream stays silent.
+
 **Periodic publishers.** A category may declare a `heartbeat:` block in `devices_msg.yaml` (`name`, `messageType`, `rate_hz`, `message`) — NOT under `publishers:`, which feeds `commandRegistry` and would expose it as a command. `subscribeDevice` starts it through `startPeriodic` under the device id and `unsubscribeDevice` stops it; `message` holds the constant fields and the facade stamps `timestamp` each tick. px4_ros2 uses it for the `telemetry_status` GCS heartbeat PX4 needs to arm when `NAV_DLL_ACT > 0`.
 
 **Two-layer pattern (topics, services and actions).** Each has a pure primitive
