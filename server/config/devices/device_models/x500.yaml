@@ -11,5 +11,7 @@ capabilities:
   camera_stream: optional
   # A lidar fitted on one unit: enable it on that device
   lidar_3d: optional
+  # Range sensors around the frame (the simulated x500 carries a collision lidar): enable it on that device
+  obstacle_sensing: optional
 label: 'Holybro X500'
 icon: drone

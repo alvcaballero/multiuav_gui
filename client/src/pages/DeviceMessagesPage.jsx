@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import JsonTree from './deviceMessages/JsonTree';
 import { useCategorySubscribers } from './deviceMessages/useCategorySubscribers';
 import { useRawMessage } from './deviceMessages/useRawMessage';
+import { useSlotCapabilities } from './deviceMessages/useSlotCapabilities';
 import { useSlotTelemetry } from './deviceMessages/useSlotTelemetry';
 
 const useStyles = makeStyles()((theme) => ({
@@ -141,12 +142,18 @@ const DeviceMessagesPage = () => {
 
   const device = useSelector((state) => state.devices.items[id]);
   const subscribers = useCategorySubscribers(device?.category);
+  const slotOwners = useSlotCapabilities();
   const [slot, setSlot] = useState(null);
   const raw = useRawMessage(id, slot);
   const telemetry = useSlotTelemetry(id);
 
-  // The camera is binary and has its own channel; the server would refuse it anyway.
-  const slots = Object.entries(subscribers ?? {}).filter(([name]) => name !== 'camera');
+  // The camera is binary and has its own channel; the server would refuse it anyway. A slot whose
+  // capability this device lacks is never subscribed by the server, so it is not offered either.
+  const slots = Object.entries(subscribers ?? {}).filter(([name]) => {
+    if (name === 'camera') return false;
+    const owner = slotOwners?.[name];
+    return !owner || !device?.capabilities || device.capabilities.includes(owner);
+  });
   const message = raw.status === 'streaming' ? raw.message : null;
 
   const copy = () => navigator.clipboard?.writeText(JSON.stringify(message.data, null, 2));
