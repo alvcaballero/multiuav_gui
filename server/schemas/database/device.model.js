@@ -14,10 +14,12 @@ const DeviceSchema = {
     type: DataTypes.STRING,
     unique: true,
   },
+  // the interface of messages
   category: {
     allowNull: false,
     type: DataTypes.STRING,
   },
+  // comunication protocol used to talk to the device (e.g. mavlink, ros, etc.)
   protocol: {
     type: DataTypes.STRING,
   },
