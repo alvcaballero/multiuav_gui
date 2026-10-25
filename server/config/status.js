@@ -105,6 +105,16 @@ export const FLIGHT_PHASE = Object.freeze({
   UNKNOWN: 'UNKNOWN',
 });
 
+// How a VTOL is flying: on its lift rotors (MC) or on its wing (FW), or switching. A fourth axis,
+// only a VTOL has it: a decoder writes it only when the vehicle reports one, never for a multirotor.
+export const VTOL_STATE = Object.freeze({
+  MC: 'MC',
+  FW: 'FW',
+  TRANSITION_TO_FW: 'TRANSITION_TO_FW',
+  TRANSITION_TO_MC: 'TRANSITION_TO_MC',
+  UNKNOWN: 'UNKNOWN',
+});
+
 // How the vehicle is being flown. Deliberately coarser than any firmware's mode list.
 export const FLIGHT_MODE = Object.freeze({
   MANUAL: 'MANUAL', // pilot commands the attitude/rates directly

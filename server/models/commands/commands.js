@@ -132,11 +132,14 @@ export class commandsModel {
     }
     // Takeoff/MoveRelative/Gimbal parten de dónde está el UAV ahora.
     const position = await positionsController.getByDeviceId(device.id);
+    // What the vehicle IS (its device model): a VTOL mission item on anything else is refused.
+    // Resolved here, not in commandRegistry: deviceModels imports it (through the capabilities).
+    const vehicleType = deviceModelsModel.platformOf(device.deviceModel)?.vehicleType ?? null;
     // ① qué se manda (commandRegistry, dominio) → ② la forma que define el msgType del endpoint
     // (msgEncode, la misma para todo protocolo) → ③ el gateway solo empaqueta.
     let messages;
     try {
-      const content = commandRegistry.encode(type, endpoint, { attributes, position, device });
+      const content = commandRegistry.encode(type, endpoint, { attributes, position, device, vehicleType });
       messages = contentsOf(content).map((c) => encodeMsg(endpoint.msgType, c));
     } catch (err) {
       return { state: 'error', msg: err.message };

@@ -1,6 +1,7 @@
 // Canonical vehicle state the server puts under `position.attributes`: `armState`,
-// `flightPhase` and `flightMode`. Mirror of ARM_STATE / FLIGHT_PHASE / FLIGHT_MODE in
-// server/config/status.js; server/test/test-vehicle-state-mirror.js fails if they drift apart.
+// `flightPhase`, `flightMode` and, only for a VTOL, `vtolState`. Mirror of ARM_STATE / FLIGHT_PHASE /
+// FLIGHT_MODE / VTOL_STATE in server/config/status.js; server/test/test-vehicle-state-mirror.js
+// fails if they drift apart.
 // The server never sends a firmware label, so the text the UI shows lives here.
 export const ARM_STATE = Object.freeze({
   ARMED: 'ARMED',
@@ -13,6 +14,14 @@ export const FLIGHT_PHASE = Object.freeze({
   TAKEOFF: 'TAKEOFF',
   IN_AIR: 'IN_AIR',
   LANDING: 'LANDING',
+  UNKNOWN: 'UNKNOWN',
+});
+
+export const VTOL_STATE = Object.freeze({
+  MC: 'MC',
+  FW: 'FW',
+  TRANSITION_TO_FW: 'TRANSITION_TO_FW',
+  TRANSITION_TO_MC: 'TRANSITION_TO_MC',
   UNKNOWN: 'UNKNOWN',
 });
 
@@ -65,6 +74,13 @@ const PHASE_LABEL = {
   [FLIGHT_PHASE.LANDING]: 'Landing',
 };
 
+const VTOL_LABEL = {
+  [VTOL_STATE.MC]: 'MC',
+  [VTOL_STATE.FW]: 'FW',
+  [VTOL_STATE.TRANSITION_TO_FW]: 'MC → FW',
+  [VTOL_STATE.TRANSITION_TO_MC]: 'FW → MC',
+};
+
 const MODE_LABEL = {
   [FLIGHT_MODE.MANUAL]: 'Manual',
   [FLIGHT_MODE.ASSISTED]: 'Assisted',
@@ -84,4 +100,5 @@ const MODE_LABEL = {
 export const armLabel = (armState) => ARM_LABEL[armState] ?? null;
 export const phaseLabel = (flightPhase) => PHASE_LABEL[flightPhase] ?? null;
 export const modeLabel = (flightMode) => MODE_LABEL[flightMode] ?? null;
+export const vtolLabel = (vtolState) => VTOL_LABEL[vtolState] ?? null;
 export const resultLabel = (result) => RESULT_LABEL[result] ?? null;

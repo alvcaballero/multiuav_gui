@@ -99,8 +99,10 @@ register(CommandType.RESET_GIMBAL, { msgType: GIMBAL_MSG_TYPES }, (ctx) => gimba
  * La task de UN device dentro de una misión (cualquier forma que acepte normalizeMission:
  * tasks[], route[] o el route[] pelado que postea la tool MCP load_mission_to_uav).
  * Una misión con varias tasks para el device se rechaza en vez de adivinar cuál volar.
+ * `vehicleType` (el del device model, VEHICLE_TYPE) viaja como `vehicle_type` cuando se conoce:
+ * el encoder MAVLink rechaza items VTOL en lo que no es un VTOL.
  */
-export function missionTaskForDevice(missionData, device) {
+export function missionTaskForDevice(missionData, device, vehicleType = null) {
   if (missionData == null || (Array.isArray(missionData) && missionData.length === 0)) {
     throw new Error('no mission');
   }
@@ -111,11 +113,11 @@ export function missionTaskForDevice(missionData, device) {
     const ids = deviceTasks.map((t) => t.task_id).join(', ');
     throw new Error(`device ${device.name} has several tasks (${ids}); load one task at a time`);
   }
-  return { ...deviceTasks[0], uav_type: device.category };
+  return { ...deviceTasks[0], uav_type: device.category, ...(vehicleType ? { vehicle_type: vehicleType } : {}) };
 }
 
-register(CommandType.LOAD_MISSION, { msgType: MISSION_SERVICE_TYPES }, ({ attributes, device }) =>
-  missionTaskForDevice(attributes, device)
+register(CommandType.LOAD_MISSION, { msgType: MISSION_SERVICE_TYPES }, ({ attributes, device, vehicleType }) =>
+  missionTaskForDevice(attributes, device, vehicleType)
 );
 register(CommandType.COMMAND_MISSION, { key: ServiceKey.COMMAND_MISSION }, () => ({ data: true }));
 register(CommandType.UPLOAD_MISSION, { key: ServiceKey.UPLOAD_MISSION }, passAttributes);

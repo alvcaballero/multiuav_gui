@@ -25,7 +25,7 @@ import {
   formatPercentage,
   getStatusColor,
 } from '../../common/util/formatter';
-import { armLabel, phaseLabel } from '../../common/util/vehicleState';
+import { armLabel, phaseLabel, vtolLabel } from '../../common/util/vehicleState';
 import { deviceIconKey, mapIcons } from '../../map/core/preloadImages';
 import EngineIcon from '../../resources/images/data/engine.svg';
 import { makeStyles } from 'tss-react/mui';
@@ -156,9 +156,12 @@ const DeviceRow = ({ devices, index, style }) => {
 
   const armState = position?.attributes?.armState;
   const flightPhase = position?.attributes?.flightPhase;
+  const vtolState = position?.attributes?.vtolState;
 
   const secondaryText = useMemo(() => {
-    const vehicleState = [armLabel(armState), phaseLabel(flightPhase)].filter(Boolean).join(' · ');
+    const vehicleState = [armLabel(armState), phaseLabel(flightPhase), vtolLabel(vtolState)]
+      .filter(Boolean)
+      .join(' · ');
     const uavStatus = vehicleState ? (
       <Typography component="span" variant="body2" sx={{ display: 'block', fontSize: 10 }}>
         {vehicleState}
@@ -177,7 +180,7 @@ const DeviceRow = ({ devices, index, style }) => {
         </Typography>
       </>
     );
-  }, [armState, flightPhase, classes, item.status, status]);
+  }, [armState, flightPhase, vtolState, classes, item.status, status]);
 
   return (
     <div style={style}>

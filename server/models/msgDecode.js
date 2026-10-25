@@ -11,6 +11,7 @@ import {
   landedStateOf,
   mavlinkArmState,
   mavlinkFlightMode,
+  mavlinkVtolState,
 } from './vehicleStates.js';
 
 // ROS message -> internal telemetry patch (`TelemetryPatch`, models/positions/positionReducers.js).
@@ -353,12 +354,17 @@ register('position_global', mav('GLOBAL_POSITION_INT'), ({ msg, deviceId }) => {
   };
 });
 
-// MAV_LANDED_STATE: the very enum PX4's landed_state uses, for both firmwares.
-register('flight_status', mav('EXTENDED_SYS_STATE'), ({ msg, deviceId }) => ({
-  deviceId,
-  flightPhase: px4FlightPhase(msg.landed_state),
-  flightPhaseRaw: msg.landed_state,
-}));
+// MAV_LANDED_STATE: the very enum PX4's landed_state uses, for both firmwares. vtol_state only for
+// a VTOL: any other vehicle sends UNDEFINED, and gets no vtolState at all.
+register('flight_status', mav('EXTENDED_SYS_STATE'), ({ msg, deviceId }) => {
+  const vtolState = mavlinkVtolState(msg.vtol_state);
+  return {
+    deviceId,
+    flightPhase: px4FlightPhase(msg.landed_state),
+    flightPhaseRaw: msg.landed_state,
+    ...(vtolState ? { vtolState, vtolStateRaw: msg.vtol_state } : {}),
+  };
+});
 
 // Only the first battery: a second pack would overwrite the level with its own.
 register('battery', mav('BATTERY_STATUS'), ({ msg, deviceId }) =>

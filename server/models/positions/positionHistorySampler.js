@@ -36,6 +36,7 @@ const KEY_ATTRIBUTES = [
   'armState',
   'flightMode',
   'flightPhase',
+  'vtolState',
   'failsafe',
   'commandAck',
   'MIC_1',

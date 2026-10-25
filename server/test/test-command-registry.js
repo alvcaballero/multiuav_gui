@@ -104,6 +104,20 @@ describe('missionTaskForDevice', () => {
     assert.deepEqual(missionTaskForDevice(mission, device), { ...mission.tasks[0], uav_type: 'px4_ros2' });
   });
 
+  test('carries the vehicle type of the device model when it is known', () => {
+    const mission = { tasks: [{ task_id: 'T1', device: 'uav1', depends_on: [], params: {}, wp }] };
+    assert.equal(missionTaskForDevice(mission, device, 'vtol').vehicle_type, 'vtol');
+    assert.ok(!('vehicle_type' in missionTaskForDevice(mission, device)));
+  });
+
+  test('the LoadMission encoder receives it from sendToDevice', () => {
+    const endpoint = { block: 'services', key: 'configure_mission', msgType: 'mavlink/PX4_MISSION' };
+    const mission = { tasks: [{ task_id: 'T1', device: 'uav1', depends_on: [], params: {}, wp }] };
+    const ctx = { attributes: mission, device, vehicleType: 'vtol' };
+    const content = commandRegistry.encode('LoadMission', endpoint, ctx);
+    assert.equal(content.vehicle_type, 'vtol');
+  });
+
   test('accepts the bare route array the MCP posts', () => {
     assert.equal(missionTaskForDevice([{ uav: 'uav1', wp }], device).device, 'uav1');
   });

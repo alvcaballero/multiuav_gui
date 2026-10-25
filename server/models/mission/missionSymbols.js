@@ -111,6 +111,11 @@ export const MAVLINK_SYMBOLS = Object.freeze({
     ACTION_VIDEO_STOP: 3,
     ACTION_YAW: 4,
     ACTION_GIMBAL: 5,
+    ACTION_VTOL_TRANSITION: 8, // DO_VTOL_TRANSITION, only on a VTOL
+  },
+  vtol_transition: {
+    VTOL_TRANSITION_FW: 0,
+    VTOL_TRANSITION_MC: 1,
   },
 });
 

@@ -34,6 +34,8 @@ import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
  * @property {number|string} [flightModeRaw] - the firmware's own mode code, for debugging
  * @property {string} [flightPhase] - FLIGHT_PHASE, where it is
  * @property {number|string} [flightPhaseRaw] - the firmware's own phase code, for debugging
+ * @property {string} [vtolState] - VTOL_STATE, only for a VTOL (MC / FW / transitioning)
+ * @property {number} [vtolStateRaw] - the firmware's own VTOL state code, for debugging
  * @property {boolean} [failsafe]
  * @property {boolean} [flightCheck]
  * @property {number} [systemId] - PX4 MAV_SYS_ID (vehicleCommand.js targets it)
@@ -136,7 +138,18 @@ function gatePosition(position, patch, now) {
   position.attributes.positionSource = slot;
 }
 
-const VEHICLE_STATE_KEYS = ['armState', 'flightMode', 'flightModeRaw', 'flightPhase', 'flightPhaseRaw', 'failsafe', 'flightCheck', 'systemId'];
+const VEHICLE_STATE_KEYS = [
+  'armState',
+  'flightMode',
+  'flightModeRaw',
+  'flightPhase',
+  'flightPhaseRaw',
+  'vtolState',
+  'vtolStateRaw',
+  'failsafe',
+  'flightCheck',
+  'systemId',
+];
 
 // Order matters where one reducer reads what an earlier one wrote (`setHome` reads
 // latitude/longitude/altitude). `apply(position, patch, effects)` mutates `position`

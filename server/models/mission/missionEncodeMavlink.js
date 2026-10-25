@@ -1,5 +1,6 @@
 import { categoryModel } from '../category.js';
 import { missionLogger as logger } from '../../common/logger.js';
+import { VEHICLE_TYPE } from '../../config/status.js';
 import { MAVLINK_SYMBOLS, MAVLINK_MISSION } from './missionSymbols.js';
 import { ALTITUDE_REF } from './taskGraph.js';
 
@@ -25,19 +26,34 @@ import { ALTITUDE_REF } from './taskGraph.js';
 //     item follows the waypoint.
 //   - ArduPilot rejects the whole upload if a mission param is NaN where it does not allow it
 //     (only param4 of NAV_WAYPOINT / NAV_TAKEOFF / NAV_LAND, and a few others).
+//
+// VTOL (only a task whose `vehicle_type` is vtol; PX4, ~/PX4-Autopilot navigator, v1.18-dev):
+//   - The takeoff stays NAV_TAKEOFF: PX4 takes off and STAYS multicopter. Flying on the wing is
+//     the waypoint action `vtol_transition` → DO_VTOL_TRANSITION after that waypoint; before going
+//     to FW PX4 first turns towards the NEXT waypoint (Mission::handleVtolTransition).
+//   - Auto landing is NAV_VTOL_LAND: back to multicopter, then land.
+//   - PX4 refuses a mission with VTOL items on a vehicle that is not one (FeasibilityChecker): the
+//     GCS refuses it first, with the reason.
+//   - PX4's VTOL airframes (rc.vtol_defaults, SITL included) set MIS_TKO_LAND_REQ=2: a mission
+//     that does not end in a landing is rejected. An RTL does not count.
 
 export const MAV_CMD_MISSION = Object.freeze({
   NAV_WAYPOINT: 16,
   NAV_RETURN_TO_LAUNCH: 20,
   NAV_LAND: 21,
   NAV_TAKEOFF: 22,
+  NAV_VTOL_LAND: 85,
   CONDITION_YAW: 115,
   DO_CHANGE_SPEED: 178,
   DO_GIMBAL_MANAGER_PITCHYAW: 1000,
   IMAGE_START_CAPTURE: 2000,
   VIDEO_START_CAPTURE: 2500,
   VIDEO_STOP_CAPTURE: 2501,
+  DO_VTOL_TRANSITION: 3000,
 });
+
+// DO_VTOL_TRANSITION param1 (MAV_VTOL_STATE): the state to switch to.
+const MAV_VTOL_STATE_OF = { VTOL_TRANSITION_FW: 4, VTOL_TRANSITION_MC: 3 };
 
 export const MAV_FRAME_MISSION_ITEM = Object.freeze({
   GLOBAL: 0, // AMSL
@@ -88,15 +104,33 @@ const gimbalPitch = (pitch, isArdupilot) => ({
 const photo = () => ({ command: MAV_CMD_MISSION.IMAGE_START_CAPTURE, params: [0, 0, 1, 0], ...notAt() });
 const videoStart = () => ({ command: MAV_CMD_MISSION.VIDEO_START_CAPTURE, params: [0, 0, 0, 0], ...notAt() });
 const videoStop = () => ({ command: MAV_CMD_MISSION.VIDEO_STOP_CAPTURE, params: [0, 0, 0, 0], ...notAt() });
+// param2 0: a normal transition, not forced immediately.
+const vtolTransition = (state) => ({
+  command: MAV_CMD_MISSION.DO_VTOL_TRANSITION,
+  params: [state, 0, 0, 0],
+  ...notAt(),
+});
+
+// The catalog option of the vtol_transition action (mission_schema.yaml) → MAV_VTOL_STATE, refusing
+// one this encoder does not implement.
+function vtolStateOf(payload, value) {
+  const symbol = payload?.options?.find((opt) => opt.value === Number(value))?.key;
+  if (symbol == null || !(symbol in MAVLINK_SYMBOLS.vtol_transition)) {
+    throw new RangeError(`MAVLink mission: vtol_transition=${value} (${symbol ?? 'unknown'}) is not supported`);
+  }
+  return MAV_VTOL_STATE_OF[symbol];
+}
 
 /**
- * @param {object} task a task with `uav_type` (commandRegistry.missionTaskForDevice)
+ * @param {object} task a task with `uav_type` and, when its device model is known, `vehicle_type`
+ *   (commandRegistry.missionTaskForDevice)
  * @param {string} dialect MAVLINK_MISSION.*
  * @returns {{kind: 'mission', items: object[], wpSeqs: number[], finish: string}}
  */
 export function encodeMavlinkMission(task, dialect) {
   if (!Object.values(MAVLINK_MISSION).includes(dialect)) throw new Error(`unknown MAVLink mission dialect '${dialect}'`);
   const isArdupilot = dialect === MAVLINK_MISSION.ARDUPILOT;
+  const isVtol = task.vehicle_type === VEHICLE_TYPE.VTOL;
   const waypoints = Object.values(task.wp ?? {});
   if (waypoints.length === 0) throw new Error(`MAVLink mission: task ${task.task_id} has no waypoints`);
   // taskGraph already refuses an unknown altitude_ref; this keeps a task built elsewhere from
@@ -111,7 +145,23 @@ export function encodeMavlinkMission(task, dialect) {
   const yawMode = symbolOf('mode_yaw', params.mode_yaw);
   symbolOf('mode_trace', params.mode_trace);
   const finish = FINISH_OF[symbolOf('mode_landing', params.mode_landing)];
-  const supportedActions = new Set(categoryModel.getActions({ type: task.uav_type }).map((a) => a.name));
+  const actionDefs = new Map(categoryModel.getActions({ type: task.uav_type }).map((a) => [a.name, a]));
+  const supportedActions = new Set(actionDefs.keys());
+
+  // An unknown vehicle type is not a VTOL: refused, never guessed.
+  const transitions = waypoints.filter((wp) => wp.action?.vtol_transition != null).length;
+  if (transitions > 0 && !isVtol) {
+    throw new Error(
+      `MAVLink mission: task ${task.task_id} has ${transitions} VTOL transition(s), but its vehicle is ` +
+        `${task.vehicle_type ?? 'of an unknown type'}, not a VTOL`
+    );
+  }
+  if (isVtol && !isArdupilot && finish !== MISSION_FINISH.LAND) {
+    logger.warn(
+      `MAVLink mission: VTOL task ${task.task_id} does not end in a landing; PX4's VTOL defaults ` +
+        `(MIS_TKO_LAND_REQ=2) reject it`
+    );
+  }
 
   const items = [];
   const wpSeqs = [];
@@ -154,12 +204,17 @@ export function encodeMavlinkMission(task, dialect) {
     if (has('photo')) items.push(photo());
     if (has('video_start')) items.push(videoStart());
     if (has('video_stop')) items.push(videoStop());
+    // Last: whatever the waypoint does (photo, gimbal) happens before the vehicle changes how it flies.
+    if (has('vtol_transition')) {
+      items.push(vtolTransition(vtolStateOf(actionDefs.get('vtol_transition').payload, action.vtol_transition)));
+    }
   });
 
   const last = waypoints.at(-1);
   if (finish === MISSION_FINISH.HOME) items.push({ command: MAV_CMD_MISSION.NAV_RETURN_TO_LAUNCH, params: [0, 0, 0, 0], ...notAt() });
   if (finish === MISSION_FINISH.LAND) {
-    items.push({ command: MAV_CMD_MISSION.NAV_LAND, params: [0, 0, 0, NaN], ...at([last.pos[0], last.pos[1], 0]) });
+    const land = isVtol ? MAV_CMD_MISSION.NAV_VTOL_LAND : MAV_CMD_MISSION.NAV_LAND;
+    items.push({ command: land, params: [0, 0, 0, NaN], ...at([last.pos[0], last.pos[1], 0]) });
   }
 
   // PX4 keeps the mission cursor between missions: an upload with no item flagged `current`

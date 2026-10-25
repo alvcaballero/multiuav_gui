@@ -1,6 +1,6 @@
-import { ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE, COMMAND_RESULT, VEHICLE_TYPE } from '../config/status.js';
+import { ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE, COMMAND_RESULT, VEHICLE_TYPE, VTOL_STATE } from '../config/status.js';
 
-// A firmware's own state codes -> the GCS vocabulary (ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE in
+// A firmware's own state codes -> the GCS vocabulary (ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE, VTOL_STATE in
 // config/status.js). One adapter per message that carries them, used by that message's decoder.
 // Not under ros/: the same codes arrive over rosbridge, MQTT and robofleet, and each transport's
 // decoder (msgDecode.js, fbDecode.js) calls the same adapter, as models/msgEncode.js does on the way out.
@@ -88,6 +88,13 @@ export function vehicleTypeOfMavType(type) {
   if (type === 11) return VEHICLE_TYPE.USV;
   return null;
 }
+
+// EXTENDED_SYS_STATE.vtol_state (MAV_VTOL_STATE). 0 UNDEFINED is what a vehicle that is not a VTOL
+// sends: null, so the decoder writes nothing (a multirotor has no VTOL axis, not an UNKNOWN one).
+const MAV_VTOL_STATE = [null, VTOL_STATE.TRANSITION_TO_FW, VTOL_STATE.TRANSITION_TO_MC, VTOL_STATE.MC, VTOL_STATE.FW];
+
+export const mavlinkVtolState = (code) =>
+  code == null || code === 0 ? null : (MAV_VTOL_STATE[code] ?? VTOL_STATE.UNKNOWN);
 
 export const mavlinkArmState = (baseMode) =>
   baseMode == null ? ARM_STATE.UNKNOWN : baseMode & MAV_MODE_FLAG_SAFETY_ARMED ? ARM_STATE.ARMED : ARM_STATE.DISARMED;

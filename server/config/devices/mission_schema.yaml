@@ -60,6 +60,19 @@ actions:
     label: 'Set zoom'
     description: 'set_zoom'
     payload: { type: number, unit: mm, min: 0, max: 200, step: 1, default: 24 }
+  # Only a VTOL: switch to the wing or back to the lift rotors after reaching this waypoint. A mission
+  # carrying it on any other vehicle is refused (missionEncodeMavlink.js).
+  vtol_transition:
+    key: ACTION_VTOL_TRANSITION
+    id: 8
+    label: 'VTOL transition'
+    description: 'vtol_transition'
+    payload:
+      type: select
+      default: 0
+      options:
+        - { value: 0, key: VTOL_TRANSITION_FW, name: 'To fixed wing' }
+        - { value: 1, key: VTOL_TRANSITION_MC, name: 'To multicopter' }
 
 # ─── Parameters (route attributes) ────────────────────────────────────────────
 # select params: each option carries value (wire) + key (symbol) + name (UI) + description.
@@ -220,8 +233,9 @@ profiles:
 
   # PX4 / ArduPilot over the MAVLink mission protocol (missionEncodeMavlink.js). No max_vel:
   # a MAVLink mission sets a speed (DO_CHANGE_SPEED), it has no separate ceiling.
+  # vtol_transition is offered to every MAVLink vehicle: only a VTOL may fly it (refused otherwise).
   mavlink:
-    actions: [stay, photo, video_start, video_stop, yaw, gimbal]
+    actions: [stay, photo, video_start, video_stop, yaw, gimbal, vtol_transition]
     params: [mode_yaw, mode_trace, mode_landing, idle_vel]
     waypoint_params: [gimbal, speed]
 

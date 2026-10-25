@@ -10,7 +10,7 @@ import { validateDevice } from '../schemas/zod/devices.js';
 import { commandLong, setMessageInterval, classOfMsgType } from '../models/mavlink/mavlinkMessages.js';
 import { decodeMsg } from '../models/msgDecode.js';
 import { categoryModel } from '../models/category.js';
-import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE, COMMAND_RESULT, VEHICLE_TYPE } from '../config/status.js';
+import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE, COMMAND_RESULT, VEHICLE_TYPE, VTOL_STATE } from '../config/status.js';
 import { vehicleTypeOfMavType } from '../models/vehicleStates.js';
 import {
   packetsOf,
@@ -451,6 +451,22 @@ describe('mavlink decoders', () => {
     const p = decodeAs('flight_status', 'EXTENDED_SYS_STATE', m);
     assert.equal(p.flightPhase, FLIGHT_PHASE.IN_AIR);
     assert.equal(p.flightPhaseRaw, 2);
+    assert.ok(!('vtolState' in p), 'UNDEFINED (any vehicle that is not a VTOL): no VTOL axis at all');
+  });
+
+  test('EXTENDED_SYS_STATE: MAV_VTOL_STATE is the VTOL state', () => {
+    const vtol = (vtolState) => {
+      const m = new common.ExtendedSysState();
+      Object.assign(m, { vtolState, landedState: common.MavLandedState.IN_AIR });
+      return decodeAs('flight_status', 'EXTENDED_SYS_STATE', m);
+    };
+    assert.deepEqual(
+      [1, 2, 3, 4].map((code) => vtol(code).vtolState),
+      [VTOL_STATE.TRANSITION_TO_FW, VTOL_STATE.TRANSITION_TO_MC, VTOL_STATE.MC, VTOL_STATE.FW]
+    );
+    assert.equal(vtol(4).vtolStateRaw, 4);
+    assert.equal(vtol(4).flightPhase, FLIGHT_PHASE.IN_AIR, 'the phase still comes with it');
+    assert.equal(vtol(9).vtolState, VTOL_STATE.UNKNOWN, 'a code the GCS does not know');
   });
 
   test('BATTERY_STATUS: the first pack in percent; unknown or a second pack say nothing', () => {
@@ -899,6 +915,67 @@ describe('missionEncodeMavlink', () => {
       () => encodeMavlinkMission({ ...task('px4_mavlink'), altitude_ref: 'AMSL' }, MAVLINK_MISSION.PX4),
       /unknown altitude_ref 'AMSL'/
     );
+  });
+
+  // ─── VTOL (PX4) ───
+  const VTOL_WPS = [
+    { type: 'takeoff', pos: [43.4726, -8.1788, 110] },
+    { type: 'inspection', pos: [43.4728, -8.1788, 130], action: { photo: 1, vtol_transition: 0 } },
+    { type: 'inspection', pos: [43.474, -8.1788, 130], action: { vtol_transition: 1 } },
+  ];
+  const vtolTask = (vehicle_type = VEHICLE_TYPE.VTOL, params = {}, wp = VTOL_WPS) => ({
+    ...task('px4_mavlink', params, wp),
+    vehicle_type,
+  });
+
+  test('VTOL: MC takeoff, a transition after its waypoint (after the photo), VTOL landing', () => {
+    const m = encodeMavlinkMission(vtolTask(), MAVLINK_MISSION.PX4);
+    assert.deepEqual(commandsOf(m), [
+      C.NAV_TAKEOFF, // stays multicopter (decision: the transition is explicit)
+      C.DO_CHANGE_SPEED, // idle_vel
+      C.NAV_WAYPOINT,
+      C.IMAGE_START_CAPTURE,
+      C.DO_VTOL_TRANSITION, // → FW, last item of its waypoint
+      C.NAV_WAYPOINT,
+      C.DO_VTOL_TRANSITION, // → MC
+      C.NAV_VTOL_LAND,
+    ]);
+    assert.deepEqual(m.wpSeqs, [0, 2, 5], 'a transition is not a waypoint');
+    assert.deepEqual([m.items[4].params[0], m.items[6].params[0]], [4, 3], 'MAV_VTOL_STATE FW, then MC');
+    assert.equal(m.finish, MISSION_FINISH.LAND);
+  });
+
+  test('VTOL: a transition on anything that is not a VTOL is refused, an unknown type too', () => {
+    assert.throws(
+      () => encodeMavlinkMission(vtolTask(VEHICLE_TYPE.MULTIROTOR), MAVLINK_MISSION.PX4),
+      /2 VTOL transition\(s\).*multirotor, not a VTOL/
+    );
+    // null, not undefined: undefined would take vtolTask's default (a VTOL).
+    assert.throws(() => encodeMavlinkMission(vtolTask(null), MAVLINK_MISSION.PX4), /unknown type, not a VTOL/);
+  });
+
+  test('VTOL: an option the encoder does not implement is refused', () => {
+    const wp = [VTOL_WPS[0], { ...VTOL_WPS[1], action: { vtol_transition: 7 } }];
+    assert.throws(
+      () => encodeMavlinkMission(vtolTask(VEHICLE_TYPE.VTOL, {}, wp), MAVLINK_MISSION.PX4),
+      /vtol_transition=7.*not supported/
+    );
+  });
+
+  test('VTOL: a mission without transitions still lands as a VTOL; a multirotor keeps NAV_LAND', () => {
+    const vtol = encodeMavlinkMission(vtolTask(VEHICLE_TYPE.VTOL, {}, WPS), MAVLINK_MISSION.PX4);
+    assert.equal(vtol.items.at(-1).command, C.NAV_VTOL_LAND);
+    assert.ok(!commandsOf(vtol).includes(C.DO_VTOL_TRANSITION));
+    const copter = encodeMavlinkMission(vtolTask(VEHICLE_TYPE.MULTIROTOR, {}, WPS), MAVLINK_MISSION.PX4);
+    assert.equal(copter.items.at(-1).command, C.NAV_LAND);
+  });
+
+  test('VTOL items on the wire: DO_VTOL_TRANSITION keeps param1 in the mission frame, NAV_VTOL_LAND is positional', () => {
+    const m = encodeMavlinkMission(vtolTask(), MAVLINK_MISSION.PX4);
+    const transition = plainOf(missionItemInt(1, 4, m.items[4]), 255, 190);
+    assert.deepEqual([transition.command, transition.param1, transition.frame], [3000, 4, 2]);
+    const land = plainOf(missionItemInt(1, 7, m.items[7]), 255, 190);
+    assert.deepEqual([land.command, land.x, land.y, land.frame], [85, 434740000, -81788000, 3]);
   });
 });
 

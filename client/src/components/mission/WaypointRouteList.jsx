@@ -61,15 +61,37 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 // Renders a waypoint action's value input driven by its catalog payload metadata
-// (type/unit/min/max/step). Number inputs clamp to [min,max] on blur so the value
-// committed to the mission is always firmware-valid. Falls back to a plain field
-// when no payload metadata is available (boolean flag actions or metadata pending).
+// (type/unit/min/max/step/options). Number inputs clamp to [min,max] on blur so the value
+// committed to the mission is always firmware-valid; a select commits the option's numeric
+// value (vtol_transition). Falls back to a plain field when no payload metadata is available
+// (boolean flag actions or metadata pending).
 const ActionValueField = ({ payload, value, onCommit, disabled = false }) => {
   const [draft, setDraft] = useState(value ?? payload?.default ?? 0);
 
   React.useEffect(() => {
     setDraft(value ?? payload?.default ?? 0);
   }, [value, payload]);
+
+  if (payload?.type === 'select') {
+    return (
+      <TextField
+        select
+        size="small"
+        variant="standard"
+        disabled={disabled}
+        sx={{ flexGrow: 1 }}
+        value={value ?? payload.default ?? ''}
+        onChange={(e) => onCommit(Number(e.target.value))}
+        slotProps={{ select: { native: true } }}
+      >
+        {(payload.options ?? []).map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.name}
+          </option>
+        ))}
+      </TextField>
+    );
+  }
 
   if (!payload || payload.type !== 'number') {
     return (

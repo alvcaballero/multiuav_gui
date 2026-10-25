@@ -29,9 +29,10 @@ física) + **interfaz** (`category`: CÓMO se le habla, un stack de mensajes) + 
 - Verificar los datos físicos de los DJI (TODO) y la interfaz `sjtu` contra el simulador (TODO).
 
 **Siguiente:**
-1. F4 (telemetría según tipo: eje `vtolState`, modos PX4 FW/VTOL, ArduPlane, ArduRover) o saltar a F5/F6
-   si lo prioritario es planificar con la flota heterogénea (tipos de waypoint VTOL, Smart-Flies recibiendo el
-   modelo en vez del nombre de categoría). Decidirlo al empezar.
+1. VTOL por MAVLink en PX4 está volado en SITL (`npm run test:e2e:vtol`). Pendiente chico: no armar si PX4
+   marcó la misión inválida; los tests escriben en los logs reales del server.
+2. Lo que queda de F4/F5 (ArduPlane/ArduRover, `vtolState` por ROS2/mavros, USV/UGV, perfil ∩ vehicleType)
+   o F6 (Smart-Flies recibiendo el modelo).
 
 **Trampas del proyecto** (no repetirlas): `Map.groupBy`/`Object.groupBy` no existen en Node 20 (el server);
 `SelectField` con `emptyValue={null}` auto-selecciona pasando el ITEM entero, no su key; correr tests SIEMPRE
@@ -327,6 +328,51 @@ sin poder CREAR una categoría (`EditItemView` hace `POST /api/category` sin nom
 - El perfil de `mission_schema.yaml` pasa a ser la intersección encoder ∩ `vehicleType`: sin `Hover` en
   `mode_landing` para ala fija, sin `stay` donde no puede quedarse quieto.
 - Encoders MAVLink para VTOL (`NAV_VTOL_TAKEOFF`/`DO_VTOL_TRANSITION`/`NAV_VTOL_LAND`).
+
+#### Estado F4 + F5 VTOL (2026-10-25): PX4 por MAVLink, VOLADO en SITL
+
+**Volado de punta a punta** (`npm run test:e2e:vtol`, `test/e2e/test-vtol-mission-sitl.js`, `gz_standard_vtol`):
+flujo manual (`/missions/load` + `/command`) → despegue MC → transición a FW (3 s, 17.5 m/s) → dos piernas de
+500/400 m en FW → transición a MC → aterrizaje y desarme → tarea `complete`. A 40 m sobre el home (altura relativa).
+`vtolState` del GCS coincidió con PX4 en cada estado. Sin RTL, sin advertencias de PX4. El script falla en el
+primer hito que no ocurre y, si está en el aire, manda ReturnHome (Land si no) y guarda el ULog. La misión manual
+del usuario no transicionaba por geometría: piernas de ~10 m a 5 m de altura no le sirven a un ala fija.
+
+Decidido por el usuario: probar el VTOL por MAVLink en el SITL de PX4, con una misión manual. Comportamiento de
+PX4 leído en `~/PX4-Autopilot` (v1.18-dev; navigator `mission.cpp`, `mission_block.cpp`, `FeasibilityChecker.cpp`).
+
+- **Telemetría:** `VTOL_STATE` (MC, FW, TRANSITION_TO_FW, TRANSITION_TO_MC, UNKNOWN) en `config/status.js` + espejo
+  en el cliente. `EXTENDED_SYS_STATE.vtol_state` (MAV_VTOL_STATE) → `vtolState`/`vtolStateRaw`
+  (`mavlinkVtolState`); UNDEFINED (0, lo que manda todo no-VTOL) no escribe nada: un multirrotor no tiene eje
+  VTOL, ni siquiera UNKNOWN. Se ve en la fila de la lista y en el header del device. Los modos de PX4 no
+  necesitaban nada: `custom_mode` es el mismo en MC y en FW.
+- **Misión (decisión: A + acción):** el despegue sigue siendo `NAV_TAKEOFF` (PX4 despega y SE QUEDA en MC). La
+  transición es una acción por waypoint, `vtol_transition` (select: a FW / a MC, `mission_schema.yaml`, perfil
+  `mavlink`) → `DO_VTOL_TRANSITION` después de ese waypoint (último item del grupo: la foto va antes). Antes de
+  pasar a FW, PX4 se orienta al SIGUIENTE waypoint. Auto landing en un VTOL → `NAV_VTOL_LAND`. No se usa
+  `NAV_VTOL_TAKEOFF` (descartado: no deja hacer misiones solo-MC y exige el wp lejos del despegue).
+- El `vehicleType` del modelo llega al encoder como `task.vehicle_type` (`commands.sendToDevice` → contexto →
+  `missionTaskForDevice`; no se resuelve en `commandRegistry` porque cerraría un ciclo de imports con
+  `deviceModels`). Una transición en un device que no es VTOL (o de tipo desconocido) se rechaza en el GCS.
+  ArduPilot no hace falta: `ardupilot_mavlink` no sirve `vtol`.
+- **Trampa del SITL:** los airframes VTOL cargan `rc.vtol_defaults` → `MIS_TKO_LAND_REQ=2`: una misión que no
+  termina en aterrizaje se RECHAZA (un RTL no cuenta). En el SITL VTOL usar `mode_landing = Auto landing`; el
+  encoder lo avisa en el log.
+- **Primer intento en SITL (2026-10-25):** PX4 rechazó la misión del editor ("Takeoff altitude below home
+  altitude!"). No era VTOL: el editor escribe altura relativa al despegue y el encoder la mandaba como AMSL
+  (5 m AMSL con el home a 488 m). Le pasaba a TODA misión del editor por MAVLink; los vuelos anteriores eran
+  scripts con AMSL. Arreglado con `altitude_ref` por tarea (relativa por defecto, decisión del usuario) →
+  frame `GLOBAL_RELATIVE_ALT`/`GLOBAL`. Hoy TODO es relativo (dato del usuario, verificado:
+  `calculateLocalOrigin` da `alt: 0`, así que `convertMissionXYZToLatLong` entrega z tal cual); `amsl` existe
+  para un productor futuro, que tiene que marcarlo. Sin verificar: la referencia del planner externo de
+  `planning.js` (`/get_plan`).
+  El GCS informó bien el rechazo (`DO_SET_MODE: TEMPORARILY_REJECTED`), pero armó ANTES de pedir el modo:
+  PX4 desarmó solo. Pendiente: no armar sobre una misión que PX4 marcó inválida.
+- **Sin verificar (SITL):** qué pasa con `stay` (hold) en FW; transiciones más largas que el poll de 1 s (la de
+  MC→FW duró ~3 s y se vio). El resto (feasibility, `wp_reached`, fin de misión, `vtol_state`) quedó verificado.
+- **Fuera de alcance:** un VTOL por `px4_ros2`/`px4_mavros` (su perfil no tiene la acción: `missionEncodeConfig`
+  la descarta con un warning y el vehículo no transiciona), `vtolState` por esos transportes, el editor ofreciendo la acción solo a VTOL (hoy un
+  x500 la ve y el server se la rechaza), ArduPlane/ArduRover.
 
 ### F6 · Planificación y seguridad
 

@@ -8,6 +8,7 @@ import {
   armLabel,
   modeLabel,
   phaseLabel,
+  vtolLabel,
 } from '../../common/util/vehicleState';
 import { blink } from './animations';
 
@@ -120,6 +121,10 @@ const DeviceHeader = ({
     },
     { label: 'Armed', value: armLabel(attributes.armState) ?? '—' },
     { label: 'Phase', value: phaseLabel(attributes.flightPhase) ?? '—' },
+    // Only a VTOL reports it (MC / FW / transitioning): no stat at all for any other vehicle.
+    ...(vtolLabel(attributes.vtolState)
+      ? [{ label: 'VTOL', value: vtolLabel(attributes.vtolState) }]
+      : []),
     {
       label: 'Last update',
       value: position?.deviceTime ? dayjs(position.deviceTime).format('HH:mm:ss') : '—',

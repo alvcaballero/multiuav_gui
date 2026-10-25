@@ -251,9 +251,10 @@ label (see `server/CLAUDE.md` › Message Decoding):
 - `armState`: `ARMED | DISARMED | UNKNOWN`
 - `flightPhase`: where it is — `ON_GROUND | TAKEOFF | IN_AIR | LANDING | UNKNOWN`
 - `flightMode`: how it is flown — `MANUAL | ASSISTED | HOLD | MISSION | RTL | OFFBOARD | …`
+- `vtolState`, only a VTOL has it (absent on anything else): `MC | FW | TRANSITION_TO_FW | TRANSITION_TO_MC | UNKNOWN`
 
 `common/util/vehicleState.js` mirrors those constants (`server/test/test-vehicle-state-mirror.js` fails
-if they drift) and owns the text to show: `armLabel` / `phaseLabel` / `modeLabel`, which return `null`
+if they drift) and owns the text to show: `armLabel` / `phaseLabel` / `modeLabel` / `vtolLabel`, which return `null`
 for `UNKNOWN` or an absent attribute — the caller picks a dash (stats) or nothing (captions). Compare
 against the constants (`flightMode === FLIGHT_MODE.RTL`), never against a string or the label. The
 old `navState` and `landed_state` no longer exist.
