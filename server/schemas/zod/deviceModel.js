@@ -34,10 +34,29 @@ const battery = z
   })
   .strict();
 
-const speeds = z.object({ mission: positive.optional(), navigation: positive.optional() }).strict(); // m/s
+// m/s. `mission`: cruise as it flies its missions (a multicopter's, or a VTOL on its rotors);
+// `fixed_wing`: cruise on the wing (a fixed wing, or a VTOL after its transition).
+const speeds = z
+  .object({ mission: positive.optional(), navigation: positive.optional(), fixed_wing: positive.optional() })
+  .strict();
 
-// What a planner must respect; the GCS publishes them, it does not check the flight dynamics.
-const limits = z.object({ min_turn_radius: positive.optional() /* m */ }).strict();
+// What a planner must respect, and what the mission validator warns about (missionValidator.js
+// geometry: estimates, never a refusal).
+const limits = z
+  .object({
+    min_turn_radius: positive.optional(), // m, on the wing
+    min_fixed_wing_altitude: positive.optional(), // m over the takeoff, while on the wing
+  })
+  .strict();
+
+// A VTOL's transitions (PX4 VT_* parameters): how much room switching between rotors and wing takes.
+const vtol = z
+  .object({
+    transition_airspeed: positive.optional(), // m/s: the transition to the wing ends here (VT_ARSP_TRANS)
+    front_transition_duration: positive.optional(), // s (VT_F_TRANS_DUR)
+    back_transition_deceleration: positive.optional(), // m/s² braking back to the rotors (VT_B_DEC_MSS)
+  })
+  .strict();
 
 // Range of each obstacle sensor, [min, max] in metres.
 const range = z.tuple([z.number().min(0), z.number().positive()]);
@@ -73,6 +92,7 @@ export const deviceModelSchema = z
     battery: battery.optional(),
     speeds: speeds.optional(),
     limits: limits.optional(),
+    vtol: vtol.optional(),
     obstacle_sensor: obstacleSensor.optional(),
   })
   .strict();

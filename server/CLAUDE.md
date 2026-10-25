@@ -496,6 +496,12 @@ not offered, a number out of range, an unknown key → ERROR, located (`{ level,
 `problems`), automatic (`initMission` → mission error) and the bare `LoadMission` command (MCP; in
 `sendToDevice`). A device that does not exist is a WARNING (the task fails and skips its dependents, as before).
 `POST /missions/check` returns `{ ok, problems }` without loading: the editor's Validate button.
+**Geometry on the wing** (VTOL / fixed wing) is a WARNING, never a refusal: estimates from the device model's
+`speeds.fixed_wing`, `limits.min_turn_radius` / `min_fixed_wing_altitude` and `vtol.*` (standard_vtol: PX4 SITL
+parameter values, each named in its file). Walking the route with its `vtol_transition`s, it checks room for the
+transition to the wing (airspeed × duration), each turn on the wing (R·tan(θ/2) of both legs; past 150° it needs a
+loiter), braking back to the rotors (v²/2a) and the height on the wing (relative heights only). A check whose
+numbers the model lacks is skipped, never guessed.
 
 The category editor (Settings › Category) edits these four blocks (`subscribers`, `services`,
 `actions`, `publishers`). The keys and types it offers come from `GET /api/category/messages`

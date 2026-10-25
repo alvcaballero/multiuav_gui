@@ -11,3 +11,18 @@ capabilities:
   camera_stream: optional
 label: 'Standard VTOL'
 icon: plane
+# From PX4's SITL standard VTOL (gz_standard_vtol: its airframe, rc.vtol_defaults and the parameter
+# defaults, read in ~/PX4-Autopilot, v1.18-dev). A real airframe's parameters may differ: check them.
+speeds:
+  mission: 5 # MPC_XY_CRUISE, on its rotors
+  fixed_wing: 15 # FW_AIRSPD_TRIM (flown in SITL: ~17.5 m/s over the ground)
+limits:
+  # v² / (g · tan(FW_R_LIM)) at FW_AIRSPD_TRIM: 15² / (9.81 · tan 50°) ≈ 19.2 m
+  min_turn_radius: 19.2
+  # PX4 has none (VT_FW_MIN_ALT = 0, off): MIS_TAKEOFF_ALT of rc.vtol_defaults, the height PX4 takes
+  # off to by default on a VTOL
+  min_fixed_wing_altitude: 20
+vtol:
+  transition_airspeed: 10 # VT_ARSP_TRANS
+  front_transition_duration: 5 # VT_F_TRANS_DUR (flown in SITL: ~3 s)
+  back_transition_deceleration: 2 # VT_B_DEC_MSS

@@ -8,7 +8,7 @@ import { CommandType } from '../../config/commandTypes.js';
 import { logger } from '../../common/logger.js';
 import { commandSchema, resolveCommand, validateAttributes } from './commandSchema.js';
 import { commandRegistry, missionTaskForDevice } from './commandRegistry.js';
-import { formatProblem, taskProblems } from '../mission/missionValidator.js';
+import { formatProblem, PROBLEM_LEVEL, taskProblems } from '../mission/missionValidator.js';
 import { contentsOf } from './commandEncoders.js';
 import { encodeMsg, hasMsgEncoder } from '../msgEncode.js';
 
@@ -140,7 +140,9 @@ export class commandsModel {
     // validator's per-task rules (what this device can carry) refuse it before anything is sent.
     if (type === CommandType.LOAD_MISSION) {
       try {
-        const errors = taskProblems(missionTaskForDevice(attributes, device, vehicleType), device);
+        const task = missionTaskForDevice(attributes, device, vehicleType);
+        // Only errors refuse: the geometry warnings (estimates) never block a load.
+        const errors = taskProblems(task, device).filter((p) => p.level === PROBLEM_LEVEL.ERROR);
         if (errors.length > 0) {
           return { state: 'error', msg: `Mission refused: ${errors.map(formatProblem).join('; ')}` };
         }

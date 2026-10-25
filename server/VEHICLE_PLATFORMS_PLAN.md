@@ -368,6 +368,14 @@ se rechaza. Grabar un waypoint desde la posición ya no mete `gimbal` si el devi
 Pendiente: validar mientras se edita; marcar el waypoint con error en el propio editor (hoy: lista + click); que el
 server rechace `camera[]`/`files[]` de un device sin la capacidad (hoy solo se ocultan en el formulario).
 
+**Geometría en ala (2026-10-25, decidido por el usuario: números en el modelo (A), los 4 chequeos; warning).**
+`standard_vtol` declara los valores del SITL de PX4 (cada uno con su parámetro: `FW_AIRSPD_TRIM` 15 m/s,
+`FW_R_LIM` 50° → radio 19.2 m, `VT_ARSP_TRANS` 10, `VT_F_TRANS_DUR` 5 s, `VT_B_DEC_MSS` 2 m/s²). PX4 no tiene altura
+mínima en FW (`VT_FW_MIN_ALT` = 0): se usan los 20 m de `MIS_TAKEOFF_ALT` de `rc.vtol_defaults`. Chequeos:
+recta tras pasar a FW, giros en FW, frenado al volver a MC, altura en FW. La misión e2e no da ningún aviso; la
+primera misión manual del usuario (piernas de ~12 m a 5 m) da cinco. Pendiente: leer los parámetros del vehículo
+por MAVLink para verificar el modelo (B); mostrar los warnings también al cargar (hoy solo con Validar).
+
 #### Estado F4 + F5 VTOL (2026-10-25): PX4 por MAVLink, VOLADO en SITL
 
 **Volado de punta a punta** (`npm run test:e2e:vtol`, `test/e2e/test-vtol-mission-sitl.js`, `gz_standard_vtol`):
