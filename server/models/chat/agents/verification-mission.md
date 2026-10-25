@@ -173,12 +173,10 @@ path_x_at_entry/exist = positions (x) where original path would enter/exit dange
         "name": "verified_route",
         "uav": "px4_1",
         "id": 0,
-        "uav_type": "px4_ros2",
         "attributes": {
           "max_vel": 12,
           "idle_vel": 3,
           "mode_yaw": 3,
-          "mode_gimbal": 0,
           "mode_trace": 0,
           "mode_landing": 2
         },

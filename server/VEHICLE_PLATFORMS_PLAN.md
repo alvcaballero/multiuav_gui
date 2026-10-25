@@ -67,24 +67,29 @@ que el vehículo puede** (capacidades efectivas + `vehicleType`).
 3. Validar mientras se edita (con debounce) y marcar el waypoint con error dentro del editor (hoy: lista + click).
 4. Que el server rechace `camera[]` / `files[]` de un device sin `camera_stream` / `file_download` (hoy solo se ocultan
    en el formulario, sin borrarlos).
-5. `verification-mission.md` tiene un ejemplo con `mode_gimbal`, que el perfil `mavlink` no tiene: con el validador
-   nuevo, una misión así para un MAVLink se rechaza.
-6. Leer los parámetros del vehículo por MAVLink (`PARAM_REQUEST_READ`) para verificar el modelo contra el vehículo
+5. Leer los parámetros del vehículo por MAVLink (`PARAM_REQUEST_READ`) para verificar el modelo contra el vehículo
    real; con eso, la geometría en ala podría pasar de warning a error.
-7. Sin verificar: `stay` (hold) en FW; en qué referencia de altura manda el planner externo de `planning.js`
+6. Sin verificar: `stay` (hold) en FW; en qué referencia de altura manda el planner externo de `planning.js`
    (`/get_plan`; sin marca se toma relativa); el total de tests varía entre corridas (941–976) sin fallos nuevos
    (el único inestable conocido es el de `test-raw-tap.js`, ver "Cómo probar").
 
 **En curso — F6 · Planificación y seguridad.** Los planners reciben el modelo y planifican con los mismos números
 que valida el GCS. Estado de partida (2026-10-25): TODOS recibían solo `category` y la usaban como modelo.
-- **F6.1 · GCS (hecho, sin commit):** `planningProfileOf(device)` → `vehicle` en el request a Smart-Flies y en
+- **F6.1 · GCS (hecho, `c967c9a`; lidar a bordo `4acb9ca`):** `planningProfileOf(device)` → `vehicle` en el request a Smart-Flies y en
   `geodetic-to-xyz`; la identidad en `geodetic-to-xyz` es nombre + id (ya no `category`); los tipos de misión de
   `config/planning/config.yaml` piden `vehicleTypes` + `capabilities` (`planningRequirements.js`), no categorías.
-- **F6.2 · Camino LLM:** `get_devices` del MCP muestra tipo/modelo/capacidades (hoy las tira); los prompts eligen
-  por tipo y capacidades (`planner.md` fuente de verdad, `plannerFast.md` en sync, skill `mission-planning.md` de
-  eve); velocidad acotada por device (fuera "every drone accepts"); limpiar los ejemplos `px4_ros2`/`px4_sitl` del
-  MCP y `verification-mission.md` (**R4**: solo texto, ningún código ramifica por categoría); el sandbox de eve
-  pone `uav_type = category` (y su copia vieja en `subagents/` sigue en `route[]`).
+- **F6.2 · Camino LLM (hecho, sin commit; MCP + prompts del GCS):** `get_devices` muestra `Vehicle` (tipo +
+  modelo) y `Capabilities`; `default.md`/`defaultFast.md` eligen solo multirrotor/VTOL con `autonomous_mission` +
+  `camera` (si ninguno califica, frenan y dicen qué falta); velocidad: `cruise_speed: vehicle` por defecto → el
+  planner pone en cada ruta el `vehicle.speeds.mission` de su dron (5 si no lo declara), un número del usuario vale
+  para todos (`planner.md` y `plannerFast.md`, misma línea); el planner LLM recibe `vehicle` recortado (sin
+  `physics`/`battery`/sensores ni `category`, `plannerDeviceView` en el MCP); `selected_devices` ya no lleva
+  `category`; `uav_type` opcional (lo llena el GCS); ejemplo de `verification-mission.md` sin `uav_type` ni
+  `mode_gimbal` (era el pendiente 5). El planner LLM NO emite transiciones VTOL: un VTOL vuela todo en
+  multicóptero.
+- **F6.2b · eve (siguiente):** skill `mission-planning.md` (mismas reglas de selección y velocidad),
+  `request_mission_plan.ts` (`DeviceSchema.category` sobra), el sandbox pone `uav_type = category` y su copia vieja
+  en `subagents/` sigue en `route[]`. Después, sacar la línea `Category` de `get_devices` (la skill de eve la lee).
 - **F6.3 · Smart-Flies** (`~/work/px4/Smart-Flies-MUAVPlanner`, la que lanza `run.yml`): usar `vehicle` si viene,
   su `files/devices.yaml` si no (hoy busca por `category` y cae en el M300 SIN avisar); la rama de ala fija por
   `vehicleType` (hoy `category == "px4"`, que no existe: muerta); emitir `vtol_transition` en vez de `{command: N}`.

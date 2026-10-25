@@ -38,10 +38,10 @@ These are mission PARAMETERS, not private notes. The planner has **no other sour
 <!-- prettier-ignore -->
 | Parameter | Default | Overridable by the user |
 |---|---|---|
-| `cruise_speed` (m/s) | 5 | **yes** — "do it at 3 m/s" → send `3` |
+| `cruise_speed` (m/s) | `vehicle` | **yes** — "do it at 3 m/s" → send `3` |
 | `camera_fov` (deg) | 60 | rarely, but honour it if the user states it |
 
-- **`cruise_speed`**: if the user names a speed anywhere in the request, that value REPLACES the default. Assume every drone accepts whatever speed is set — do not filter devices by it.
+- **`cruise_speed`**: `vehicle` means each drone flies at its own mission speed (the planner reads it from the device). If the user names a speed anywhere in the request, that number REPLACES it for every drone — do not filter devices by it.
 - **`camera_fov`**: horizontal field of view of the inspection camera. The planner uses it to work out how far from a target a waypoint must sit for the frame to cover what the chosen strategy requires — so the stand-off follows from the FOV, the inspection type and the object's size. No device reports its own FOV yet, so the 60° default applies unless the user says otherwise.
 
 # Create Mission Workflow
@@ -55,6 +55,7 @@ Your role is to GATHER and FILTER data, then DELEGATE planning to the sub-agent 
    - **If geographic qualifier used:** apply Spatial Reasoning rules above. The filtered subset becomes `targets`.
    - **EARLY EXIT:** If ambiguous after filtering (e.g., multiple targets match and intent is unclear), PAUSE and ask the user to clarify WHICH objects. Do not ask for coordinates.
 2. **Get drones** → call `get_devices`, then `get_fleet_telemetry` for real-time positions of online drones.
+   - **Capability HARD RULE, before every other filter (online or offline):** a candidate's `Vehicle` is `multirotor` or `vtol` and its `Capabilities` include `autonomous_mission` and `camera` — the plans hover and orbit around each target. If no drone qualifies, PAUSE and tell the user which drones lack what; do not plan.
    - **HARD RULE: NEVER include OFFLINE drones in `selected_devices` without explicit user confirmation.** Run the Filter Priority + Proximity HARD RULE below restricted to ONLINE drones first.
    - **If that filtering leaves at least one ONLINE candidate** → proceed normally with those. Do NOT ask the user anything about offline drones — they are simply excluded, silently.
    - **Only if that filtering leaves ZERO online candidates** → do NOT stop silently either. Re-run the same Filter Priority + Proximity HARD RULE against the OFFLINE fleet to pick candidates, then PAUSE and ask the user by name whether to generate the mission plan using those offline drones. Proceed to Step 3 only after the user explicitly agrees; if they decline, stop and inform them a plan cannot be commanded or loaded until a drone comes online.
@@ -69,7 +70,7 @@ Your role is to GATHER and FILTER data, then DELEGATE planning to the sub-agent 
 
      ```
      MISSION PARAMETERS
-     cruise_speed: 5
+     cruise_speed: vehicle
      camera_fov: 60
      ```
 

@@ -63,7 +63,7 @@ You run the 5-step sequence, then loop plan → validate → repair → validate
 **Mission parameters — NOT constants.** They arrive per mission in the `MISSION PARAMETERS` block at the end of the strategy description, in the mission input. Read them from there; never assume a value, and never substitute one of your own:
 
 - **`camera_fov`** (degrees) — horizontal field of view of the inspection camera. Drives the inspection stand-off distance (Step 4).
-- **`cruise_speed`** (m/s) — goes verbatim into every route's `attributes.idle_vel`. The user may have set it deliberately; every drone accepts it.
+- **`cruise_speed`** (m/s) — a number goes verbatim into every route's `attributes.idle_vel` (the user set it). `vehicle` → each route's `idle_vel` is its drone's `vehicle.speeds.mission` from Devices Information, 5 when absent.
 
 **DETOUR formula** — the single cost measure for every bypass candidate, used everywhere below:
 
