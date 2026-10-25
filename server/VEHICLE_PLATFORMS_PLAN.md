@@ -78,7 +78,7 @@ que valida el GCS. Estado de partida (2026-10-25): TODOS recibían solo `categor
 - **F6.1 · GCS (hecho, `c967c9a`; lidar a bordo `4acb9ca`):** `planningProfileOf(device)` → `vehicle` en el request a Smart-Flies y en
   `geodetic-to-xyz`; la identidad en `geodetic-to-xyz` es nombre + id (ya no `category`); los tipos de misión de
   `config/planning/config.yaml` piden `vehicleTypes` + `capabilities` (`planningRequirements.js`), no categorías.
-- **F6.2 · Camino LLM (hecho, sin commit; MCP + prompts del GCS):** `get_devices` muestra `Vehicle` (tipo +
+- **F6.2 · Camino LLM (hecho: mcp_server `87875e2` en la rama `feat/vehicle-aware-planning`, GCS `d1ae2cb`):** `get_devices` muestra `Vehicle` (tipo +
   modelo) y `Capabilities`; `default.md`/`defaultFast.md` eligen solo multirrotor/VTOL con `autonomous_mission` +
   `camera` (si ninguno califica, frenan y dicen qué falta); velocidad: `cruise_speed: vehicle` por defecto → el
   planner pone en cada ruta el `vehicle.speeds.mission` de su dron (5 si no lo declara), un número del usuario vale
@@ -87,9 +87,16 @@ que valida el GCS. Estado de partida (2026-10-25): TODOS recibían solo `categor
   `category`; `uav_type` opcional (lo llena el GCS); ejemplo de `verification-mission.md` sin `uav_type` ni
   `mode_gimbal` (era el pendiente 5). El planner LLM NO emite transiciones VTOL: un VTOL vuela todo en
   multicóptero.
-- **F6.2b · eve (siguiente):** skill `mission-planning.md` (mismas reglas de selección y velocidad),
-  `request_mission_plan.ts` (`DeviceSchema.category` sobra), el sandbox pone `uav_type = category` y su copia vieja
-  en `subagents/` sigue en `route[]`. Después, sacar la línea `Category` de `get_devices` (la skill de eve la lee).
+- **F6.2b · eve (hecho, sin commit; `gcs_eevee_assistant` + `get_devices` del MCP):** la skill `mission-planning.md`
+  con las mismas reglas de selección y velocidad; `request_mission_plan.ts` sin `category` y con la misma vista
+  recortada del device que el MCP (copia profunda por JSON: toon encodea `null` un objeto de otro realm); el planner
+  LLM (`subagents/planner`) con la línea de velocidad de `planner.md`; los DOS sandbox resuelven `cruise_speed:
+  vehicle` por dron (`cruise_speed()` en su `build_mission.py`, desde `vehicle.speeds.mission` de `devices.json`) y
+  ya no piden `category`; el nuevo (`agents/planner_sandbox`) no emite `uav_type` (el GCS lo pisa al cargar,
+  `commandRegistry.js`). `get_devices` ya no muestra `Category`.
+  Visto y NO tocado: el asistente delega en `subagents/planner_sandbox` (el viejo, `route[]`); el que emite
+  `tasks[]` (`agents/planner_sandbox`) es un agente de prueba. Y su `DEFAULT_PARAMS` lleva `mode_gimbal: 0`, que el
+  validador del GCS rechaza en un dron sin `gimbal` (un x500 sin habilitarlo).
 - **F6.3 · Smart-Flies** (`~/work/px4/Smart-Flies-MUAVPlanner`, la que lanza `run.yml`): usar `vehicle` si viene,
   su `files/devices.yaml` si no (hoy busca por `category` y cae en el M300 SIN avisar); la rama de ala fija por
   `vehicleType` (hoy `category == "px4"`, que no existe: muerta); emitir `vtol_transition` en vez de `{command: N}`.
