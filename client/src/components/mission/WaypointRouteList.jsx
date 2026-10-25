@@ -10,6 +10,10 @@ import {
   AccordionDetails,
   Typography,
   Stack,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { makeStyles } from 'tss-react/mui';
@@ -21,6 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import useWaypoint from './useWaypoint';
 
 const useStyles = makeStyles()((theme) => ({
@@ -207,6 +212,7 @@ const WaypointRouteList = ({
   const [newactionmenu, setNewactionmenu] = useState(true);
   const [newactionid, setNewactionid] = useState(0);
   const [posInput, setPosInput] = useState({ lat: '', lon: '', alt: '' });
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   // Action metadata (payload type/range/unit) keyed by action name, from the catalog
   const [actionDefs, setActionDefs] = useState({});
   // Per-waypoint param defs (speed, gimbal, mode_turn...) from the catalog profile
@@ -255,34 +261,17 @@ const WaypointRouteList = ({
     updatePos([+posInput.lat, +posInput.lon, +posInput.alt]);
   };
 
+  const handleMenuAction = (action) => {
+    setMenuAnchorEl(null);
+    action();
+  };
+
   return (
     <Accordion expanded={isOpen} onChange={handleChange_wp}>
       <AccordionSummary expandIcon={<ExpandMore />} component="div">
         <Typography sx={{ width: '33%', flexShrink: 0 }}>{`WP - ${indexWp}`}</Typography>
-        {!NoEdit && (
-          <>
-            <IconButton
-              sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                move(1);
-              }}
-            >
-              <ArrowDownwardIcon />
-            </IconButton>
-            <IconButton
-              sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                move(-1);
-              }}
-            >
-              <ArrowUpwardIcon />
-            </IconButton>
-          </>
-        )}
         <IconButton
-          sx={{ py: 0, pr: 0, flexShrink: 0 }}
+          sx={{ py: 0, pr: 0, flexShrink: 0, marginLeft: 'auto' }}
           onClick={(e) => {
             e.stopPropagation();
             map.flyTo({
@@ -294,15 +283,46 @@ const WaypointRouteList = ({
           <MyLocationIcon />
         </IconButton>
         {!NoEdit && (
-          <IconButton
-            sx={{ py: 0, pr: 2, marginLeft: 'auto' }}
-            onClick={(e) => {
-              e.stopPropagation();
-              remove();
-            }}
-          >
-            <DeleteIcon />
-          </IconButton>
+          <>
+            <IconButton
+              sx={{ py: 0, pr: 2, flexShrink: 0 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuAnchorEl(e.currentTarget);
+              }}
+            >
+              <MoreVertIcon />
+            </IconButton>
+            {/* The menu is portaled, but React still bubbles its clicks to AccordionSummary */}
+            <Menu
+              open={!!menuAnchorEl}
+              anchorEl={menuAnchorEl}
+              onClose={() => setMenuAnchorEl(null)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MenuItem dense onClick={() => handleMenuAction(() => move(-1))}>
+                <ListItemIcon>
+                  <ArrowUpwardIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Move up</ListItemText>
+              </MenuItem>
+              <MenuItem dense onClick={() => handleMenuAction(() => move(1))}>
+                <ListItemIcon>
+                  <ArrowDownwardIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Move down</ListItemText>
+              </MenuItem>
+              <Divider />
+              <MenuItem dense onClick={() => handleMenuAction(remove)}>
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" color="error" />
+                </ListItemIcon>
+                <ListItemText slotProps={{ primary: { color: 'error' } }}>
+                  Delete waypoint
+                </ListItemText>
+              </MenuItem>
+            </Menu>
+          </>
         )}
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
