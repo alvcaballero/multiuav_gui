@@ -5,12 +5,10 @@
 #   MCP_ENABLE=true
 #   MCP_CONFIG='{"transport":"http","url":"http://127.0.0.1:3001/mcp/"}'
 #
-# El MCP server se arranca en modo dev con nvm — no tiene imagen Docker propia.
-# Este override reserva el servicio para cuando se containerice.
-# Por ahora arrancar manualmente:
-#   cd mcp_server && nvm use 22 && npm run dev:http
+# El MCP server (submódulo hermano: llm_planner_gcs/mcp_server) no tiene imagen propia: corre su código
+# montado en node:22. Sin Docker: infra/tmuxinator/gcs-mcp.yml, o `cd ../mcp_server && nvm use && npm run dev:http`.
 #
-# Uso (cuando esté containerizado):
+# Uso:
 #   docker compose \
 #     -f infra/compose/compose.base.yaml \
 #     -f infra/compose/compose.mcp.yaml up
@@ -21,6 +19,6 @@ services:
     user: 'node'
     working_dir: /home/node/app
     volumes:
-      - ../../mcp_server/:/home/node/app
+      - ../../../mcp_server/:/home/node/app
     command: 'npm run dev:http'
     network_mode: host

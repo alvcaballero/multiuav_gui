@@ -5,11 +5,12 @@
 #   docker compose -f infra/compose/compose.base.yaml up
 #
 # El server lee server/.env — copiarlo desde server/.env.example antes de arrancar.
-# Variables de entorno para Docker (ROS, etc.) vienen del .env de la raíz.
+# Compose interpola `${VAR}` con el entorno del shell o con infra/compose/.env (la carpeta del primer -f), NUNCA
+# con un .env de la raíz del repo.
 
 services:
   node:
-    image: 'node:18'
+    image: 'node:20' # server/.nvmrc: el server usa APIs de Node 20
     user: 'node'
     working_dir: /home/node/app
     environment:

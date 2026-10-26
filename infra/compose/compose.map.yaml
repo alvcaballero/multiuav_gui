@@ -2,9 +2,12 @@
 #
 # MapServer requiere volumen con datos pre-importados:
 #   docker volume create osm-data-andalucia
-#   Ver infra/Offline-map.md para importar datos de la región.
+#   Ver infra/guides/offline-map.md para importar datos de la región.
 #
 # Sin el volumen el MapServer arranca pero no sirve tiles.
+#
+# glyphserver (github.com/Geodan/glyphserver) es otro repo: por defecto se busca al lado de llm_planner_gcs
+# (`../../../../glyphserver` desde esta carpeta); GLYPHSERVER_DIR para otro lugar.
 #
 # Activar en server/.env:
 #   LOCAL_GLYPHS=true   (para glyphServer)
@@ -20,7 +23,7 @@ services:
     user: 'node'
     working_dir: /home/node/app
     volumes:
-      - ../../glyphserver/:/home/node/app
+      - ${GLYPHSERVER_DIR:-../../../../glyphserver}/:/home/node/app
     ports:
       - '8484:8484'
     command: 'npm run start'

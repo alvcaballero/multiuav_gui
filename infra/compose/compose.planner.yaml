@@ -1,7 +1,8 @@
-# compose.planner.yaml — Planner MIP (FastAPI / solver PuLP-CBC)
+# compose.planner.yaml — Smart-Flies-MUAVPlanner (Flask), el planner al que el GCS le pide misiones
+# (`/mission_request`, `/get_plan`). NO es mip_planner: ese solo lo usa llm_mission_evaluator.
 #
-# Requiere imagen construida desde mip_planner/:
-#   cd mip_planner && docker build -t muavgcs:planner .
+# Requiere imagen construida desde el submódulo hermano (su Dockerfile escucha en 8080):
+#   cd ../Smart-Flies-MUAVPlanner && docker build -t muavgcs:planner .
 # Ver infra/README.md → Planner
 #
 # Activar en server/.env:
@@ -17,4 +18,4 @@ services:
   Planner:
     image: 'muavgcs:planner'
     ports:
-      - '8004:8004'
+      - '8004:8080'

@@ -1,9 +1,9 @@
-<% gcs = File.expand_path('../..', __FILE__) %>
+<% gcs = ENV['GCS_DIR'] || `git rev-parse --show-toplevel`.strip %>
 # gcs-simple.yml — backend + frontend, sin ROS ni Docker
-# Uso: tmuxinator start -p infra/tmuxinator/gcs-simple.yml
+# Uso (desde cualquier carpeta del repo): tmuxinator start -p infra/tmuxinator/gcs-simple.yml
 name: gcs-simple
 root: <%= gcs %>
-on_project_exit: tmux kill-window
+on_project_exit: tmux kill-session -t gcs-simple
 
 windows:
   - GCS:
@@ -11,10 +11,7 @@ windows:
       panes:
         - backend:
             - cd <%= gcs %>/server
-            - nvm use 20
-            - npm run server
+            - nvm use && npm run server
         - frontend:
             - cd <%= gcs %>/client
-            - nvm use 20
-            - sleep 3
-            - npm run start
+            - sleep 3; nvm use && npm run start

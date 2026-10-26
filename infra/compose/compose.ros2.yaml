@@ -3,6 +3,8 @@
 # Requiere imagen construida localmente:
 #   docker build -t muavgcs:ros2 -f <repo-ros2-workspace>/Dockerfile .
 # Ver infra/README.md → ROS Bridge
+# `$${ROS_DISTRO}` lo expande el bash del CONTENEDOR; con un solo `$` lo interpolaba Compose en el host
+# (vacío → `source /opt/ros//setup.bash`).
 #
 # Uso:
 #   docker compose \
@@ -13,5 +15,5 @@ services:
   RosBridge:
     image: 'muavgcs:ros2'
     command: >
-      bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && ros2 launch rosbridge_server rosbridge_websocket_launch.xml"
+      bash -c "source /opt/ros/$${ROS_DISTRO}/setup.bash && ros2 launch rosbridge_server rosbridge_websocket_launch.xml"
     network_mode: host

@@ -1,9 +1,11 @@
-<% gcs = File.expand_path('../..', __FILE__) %>
-# gcs-dev.yml — stack completo de desarrollo: GCS + ROS1 + Planner + MCP + rosbag
-# Uso: tmuxinator start -p infra/tmuxinator/gcs-dev.yml
+<% gcs = ENV['GCS_DIR'] || `git rev-parse --show-toplevel`.strip %>
+<% mcp = ENV['MCP_DIR'] || File.expand_path('../mcp_server', gcs) %>
+<% compose = "docker compose -f #{gcs}/infra/compose/compose.base.yaml" %>
+# gcs-dev.yml — stack completo de desarrollo con todo en Docker: GCS + ROS1 + Planner + MCP + rosbag
+# Uso (desde cualquier carpeta del repo): tmuxinator start -p infra/tmuxinator/gcs-dev.yml
 name: gcs-dev
 root: <%= gcs %>
-on_project_exit: tmux kill-window
+on_project_exit: tmux kill-session -t gcs-dev
 
 windows:
   - GCS:
@@ -11,32 +13,23 @@ windows:
       panes:
         - backend:
             - cd <%= gcs %>/server
-            - nvm use 20
-            - sleep 3
-            - npm run server
+            - nvm use && npm run server
         - mcp:
-            - cd <%= gcs %>/mcp_server
-            - nvm use 22
-            - npm run dev:http
+            - cd <%= mcp %>
+            - nvm use && npm run dev:http
         - frontend:
             - cd <%= gcs %>/client
-            - nvm use 20
-            - sleep 3
-            - npm run start
+            - sleep 3; nvm use && npm run start
 
   - Docker:
       layout: tiled
       panes:
         - rosbridge:
-            - docker compose \
-                -f <%= gcs %>/infra/compose/compose.base.yaml \
-                -f <%= gcs %>/infra/compose/compose.ros1.yaml up RosBridge
+            - <%= compose %> -f <%= gcs %>/infra/compose/compose.ros1.yaml up RosBridge
         - planner:
-            - docker compose \
-                -f <%= gcs %>/infra/compose/compose.base.yaml \
-                -f <%= gcs %>/infra/compose/compose.planner.yaml up Planner
+            - <%= compose %> -f <%= gcs %>/infra/compose/compose.planner.yaml up Planner
         - video:
-            - docker compose -f <%= gcs %>/infra/compose/compose.base.yaml up VideoServer
+            - <%= compose %> up VideoServer
         - aux:
             - sleep 8
             - docker exec -it $(docker ps -qf "ancestor=muavgcs:ros1") bash
