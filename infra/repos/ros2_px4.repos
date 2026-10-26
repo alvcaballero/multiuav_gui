@@ -1,0 +1,23 @@
+# Workspace ROS 2 del lado dron: lo que el GCS necesita a bordo (ver infra/external.md).
+#   vcs import $ROS2_WS/src < infra/repos/ros2_px4.repos
+repositories:
+  px4_msgs:
+    type: git
+    url: https://github.com/PX4/px4_msgs.git
+    version: main
+  Micro-XRCE-DDS-Agent:
+    type: git
+    url: https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
+    version: v2.4.3
+  MUAV_GCS_interfaces:
+    type: git
+    url: https://github.com/arpoma16/MUAV_GCS_interfaces.git
+    version: main
+  psdk_ros2:
+    type: git
+    url: https://github.com/arpoma16/psdk_ros2.git
+    version: dev/integration
+  mqtt_client:
+    type: git
+    url: https://github.com/arpoma16/mqtt_client.git
+    version: muav/service-bridge

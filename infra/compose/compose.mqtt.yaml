@@ -1,0 +1,18 @@
+# compose.mqtt.yaml — broker MQTT (mosquitto) para el protocolo `mqtt` (docs/decisions/mqtt.md)
+#
+# Activar en server/.env:
+#   MQTT_CONNECTION=true
+#   MQTT_URL=mqtt://127.0.0.1:1883
+#
+# Con la config por defecto de la imagen, mosquitto 2 escucha SOLO en localhost ("local only mode"): sirve para
+# SITL y para un mqtt_client en esta máquina. Un dron real no se puede conectar hasta montar una config con
+# `listener 1883` y autenticación/ACL (pendiente en TODO.md › mqtt_client: un request a command_mission arma un dron).
+#
+# Uso:
+#   docker compose -f infra/compose/compose.base.yaml -f infra/compose/compose.mqtt.yaml up
+#   (o solo el broker: docker compose -f infra/compose/compose.mqtt.yaml up)
+
+services:
+  Mosquitto:
+    image: 'eclipse-mosquitto:2'
+    network_mode: host

@@ -1,0 +1,20 @@
+# Workspace catkin (ROS 1 Noetic) del ROS bridge: DJI OSDK y robofleet (ver infra/external.md).
+#   vcs import <catkin_ws>/src < infra/repos/ros1_noetic.repos
+# DJI Onboard-SDK (no es catkin) se instala aparte: infra/guides/ros1-workspace.md.
+repositories:
+  multiUAV_system:
+    type: git
+    url: https://github.com/alvcaballero/multiUAV_system.git
+    version: main
+  Onboard-SDK-ROS:
+    type: git
+    url: https://github.com/miggilcas/Onboard-SDK-ROS.git
+    version: dev
+  robofleet_client:
+    type: git
+    url: https://github.com/arpoma16/robofleet_client.git
+    version: master
+  grvc-utils:
+    type: git
+    url: https://github.com/grvcTeam/grvc-utils.git
+    version: noetic

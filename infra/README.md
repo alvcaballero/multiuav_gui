@@ -5,11 +5,25 @@ Todo lo necesario para LEVANTAR el GCS vive en esta carpeta, y en ningún otro l
 | Qué | Dónde |
 |---|---|
 | Setup inicial (prereqs, `server/.env`, imágenes, submódulos) | `setup.sh` |
+| Piezas externas: QUÉ repo y versión necesita el GCS | `external.md` |
+| Piezas externas: DÓNDE están en tu máquina (gitignored) | `local.env` (plantilla `local.env.example`) |
+| Workspaces ROS reproducibles (vcstool) | `repos/*.repos` |
 | Servicios en Docker, uno por archivo | `compose/` |
+| Imágenes propias (ArduPilot SITL) | `docker/` |
 | Sesiones de desarrollo (GCS con Node/npm, el resto en Docker) | `tmuxinator/` |
 | Guías de piezas externas (cámaras, mapa offline, SITL) | `guides/` |
 
 Cómo funciona el GCS (no cómo se levanta) está en los `CLAUDE.md` y en `docs/`.
+
+## Primera vez en una máquina
+
+```bash
+bash infra/setup.sh
+cp infra/local.env.example infra/local.env      # y poné tus rutas
+vcs import <ROS2_WS>/src < infra/repos/ros2_px4.repos   # si vas a correr el lado dron en esta máquina
+```
+
+Ninguna ruta de una máquina concreta va en un archivo versionado: va en `infra/local.env`.
 
 ---
 
@@ -73,6 +87,7 @@ Se combinan con `-f`. `compose.base.yaml` va siempre primero.
 | `compose.planner.yaml` | `Planner` (Smart-Flies) | 8004 | `PLANNING_SERVER=true` |
 | `compose.mcp.yaml` | `MCP` | 3001 (host) | `MCP_ENABLE=true` + LLM |
 | `compose.map.yaml` | `MapServer` (OSM), `glyphServer` | 8080, 8484 | Mapa offline |
+| `compose.mqtt.yaml` | `Mosquitto` | 1883 (host, solo localhost) | `MQTT_CONNECTION=true` |
 
 ```bash
 C=infra/compose
@@ -88,9 +103,24 @@ docker compose -f $C/compose.base.yaml -f $C/compose.ros1.yaml -f $C/compose.pla
   -f $C/compose.mcp.yaml -f $C/compose.map.yaml up
 ```
 
-> **`.env` de Compose:** las `${VAR}` de estos archivos (por ejemplo `GLYPHSERVER_DIR`) se toman del shell o de
-> `infra/compose/.env` (la carpeta del primer `-f`). Un `.env` en la raíz del repo NO se lee. No confundir con
+> **Variables de Compose:** las `${VAR}` de estos archivos (`GLYPHSERVER_DIR`, `ROS1_IMAGE`) salen de tus rutas
+> con `docker compose --env-file infra/local.env -f ...`. Sin `--env-file` se toman del shell o de
+> `infra/compose/.env` (la carpeta del primer `-f`); un `.env` en la raíz del repo NO se lee. No confundir con
 > `server/.env`, que es la configuración del server.
+
+### ArduPilot SITL
+
+ArduPilot es un solo repo con un tag por vehículo (`Copter-4.7.2`, `Rover-4.7.2`); el vehículo se elige al
+compilar. Una imagen por vehículo desde el mismo Dockerfile:
+
+```bash
+docker build -t muav-arducopter-sitl:4.7.2 infra/docker/ardupilot-sitl
+docker build -t muav-ardurover-sitl:4.7.2 --build-arg AP_TAG=Rover-4.7.2 --build-arg AP_VEHICLE=rover \
+  infra/docker/ardupilot-sitl
+
+# SYSID = attributes.systemId del device en el GCS
+docker run --rm --network=host -e SYSID=2 -e GCS_OUT=udpclient:127.0.0.1:14550 muav-arducopter-sitl:4.7.2
+```
 
 ### MapServer offline
 
@@ -119,7 +149,7 @@ pisa).
 | `gcs-ros1.yml` | + ROS Bridge Noetic (compose) |
 | `gcs-mcp.yml` | + MCP server (flujo LLM); `MCP_DIR` para otro lugar |
 | `gcs-dev.yml` | GCS + MCP + ROS 1, planner y video en compose + rosbag |
-| `gcs-full.yml` | El de laburo diario: GCS + glyphserver + Smart-Flies sin Docker + ROS 1 por `container_run.sh` + mediamtx + mapa con martin. Lo de fuera del repo, por variables (ver su cabecera) |
+| `gcs-full.yml` | El de laburo diario: GCS + glyphserver + Smart-Flies sin Docker + ROS 1 por `container_run.sh` + mediamtx + mapa con martin. Lo de fuera del repo sale de `infra/local.env` |
 
 ```bash
 tmuxinator start -p infra/tmuxinator/gcs-simple.yml

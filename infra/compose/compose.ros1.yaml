@@ -2,7 +2,7 @@
 #
 # Requiere imagen construida localmente:
 #   docker build -t muavgcs:ros1 -f <repo-ros-workspace>/Dockerfile .
-# Ver infra/README.md → ROS Bridge
+# Ver infra/README.md → ROS Bridge. Otro nombre de imagen: ROS1_IMAGE en infra/local.env (--env-file).
 #
 # Uso:
 #   docker compose \
@@ -11,7 +11,7 @@
 
 services:
   RosBridge:
-    image: 'muavgcs:ros1'
+    image: '${ROS1_IMAGE:-muavgcs:ros1}'
     command: >
       bash -c "source /root/catkin_ws/devel/setup.bash && roslaunch aerialcore_gui connect_uas.launch"
     network_mode: host

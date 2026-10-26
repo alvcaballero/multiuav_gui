@@ -1,13 +1,15 @@
 <% gcs = ENV['GCS_DIR'] || `git rev-parse --show-toplevel`.strip %>
 <% workspace = File.expand_path('..', gcs) %>
-<% glyphserver = ENV['GLYPHSERVER_DIR'] || File.expand_path('~/work/px4/glyphserver') %>
-<% ros_docker = ENV['ROS_DOCKER_DIR'] || File.expand_path('~/work/ros_docker_volume') %>
-<% tiles = ENV['MAP_TILES_DIR'] || File.expand_path('~/work/data') %>
+<% local_env = File.join(gcs, 'infra/local.env') %>
+<% local = File.exist?(local_env) ? File.readlines(local_env).grep(/\A[A-Z0-9_]+=/).to_h { |l| l.chomp.split('=', 2) } : {} %>
+<% need = ->(key) { File.expand_path(ENV[key] || local[key] || raise("gcs-full.yml: falta #{key} en infra/local.env (plantilla: infra/local.env.example)")) } %>
+<% glyphserver = need.('GLYPHSERVER_DIR') %>
+<% ros_docker = need.('ROS1_DOCKER_DIR') %>
+<% tiles = need.('MAP_TILES_DIR') %>
 # gcs-full.yml — stack completo de laburo diario: GCS + glyphserver + Smart-Flies + ROS 1 + video + mapa (martin)
 # Uso (desde cualquier carpeta del repo): tmuxinator start -p infra/tmuxinator/gcs-full.yml
-# Lo que vive fuera del repo se pisa por variable de entorno:
-#   GLYPHSERVER_DIR (default ~/work/px4/glyphserver), ROS_DOCKER_DIR (default ~/work/ros_docker_volume, con su
-#   container_run.sh), MAP_TILES_DIR (default ~/work/data, con tiles.mbtiles; ver infra/guides/offline-map.md)
+# Lo que vive fuera del repo sale de infra/local.env (una variable de entorno la pisa): GLYPHSERVER_DIR,
+# ROS1_DOCKER_DIR (con su container_run.sh) y MAP_TILES_DIR (con tiles.mbtiles; infra/guides/offline-map.md).
 name: gcs-full
 root: <%= gcs %>
 on_project_exit: tmux kill-session -t gcs-full

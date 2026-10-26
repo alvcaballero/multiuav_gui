@@ -48,6 +48,10 @@ Reglas:
 5. **Cómo levantar el proyecto se escribe UNA vez, en `infra/README.md`.** El README y los `CLAUDE.md` apuntan
    ahí, no lo copian: la copia es la que se pudre (pasó con `cd docker`, `docker-compose run bridge` y
    `muav-gui.yml`, que no existían).
+6. **Ninguna ruta de una máquina concreta en un archivo versionado.** QUÉ pieza externa necesita el proyecto (repo,
+   rama, versión) va en `infra/external.md` y `infra/repos/*.repos`; DÓNDE está en esta máquina, en
+   `infra/local.env` (gitignored). Para encontrar PX4, ArduPilot, el workspace ROS, mqtt_client, psdk_ros2… leer
+   `infra/local.env`; si no existe o le falta la variable, preguntar, no adivinar ni buscar por el disco.
 
 
 ## Development Commands

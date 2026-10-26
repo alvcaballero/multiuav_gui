@@ -76,6 +76,8 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+# This machine's paths to external pieces (template: infra/local.env.example)
+infra/local.env
 
 # Python virtual environments (e.g. uv-managed thermal image processor)
 .venv/
