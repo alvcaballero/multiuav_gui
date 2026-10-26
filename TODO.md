@@ -39,6 +39,16 @@ Triage contra el código: 2026-10-26. Las rutas son relativas a `multiuav_gcs/`.
 - [ ] **Probar un request real GCS → Smart-Flies con `vehicle`**
   - Los tests de Smart-Flies pasan (`uv run pytest tests/`, 20) pero nunca se corrió el camino completo
 
+- [ ] **Smart-Flies emite las mismas claves para todos los drones** (GCS + Smart-Flies)
+  - El validador rechaza todo param fuera del perfil de la interfaz. Smart-Flies manda siempre `mode_yaw`,
+    `mode_landing`, `mode_gimbal` (0), `idle_vel`, `max_vel` y `speed` por waypoint: pasa en `v2` (`px4_ros2`,
+    `dji_M300` OSDK) y `psdk` (ofrece solo `mode_gimbal` FREE, lo que hace WaypointV2); falla en `mavlink`
+    (`mode_gimbal`, `max_vel`) y `v1` (`mode_gimbal`, `max_vel`, `speed`)
+  - Arreglo: `/mission_request` manda por dron el perfil efectivo (`categoryModel.missionProfile` restringido por
+    modelo, junto a `vehicle.physics`) y Smart-Flies escribe solo esas claves (`modules/yaml.py:print_Route`)
+  - No es de capacidades: `dji_M300` (OSDK y PSDK, mismo modelo) ya tiene `camera`, `gimbal` y `camera_stream`
+  - `mavlink` podría hacer lo mismo que `psdk` (solo FREE: mueve el gimbal por waypoint con `DO_MOUNT_CONTROL`)
+
 - [ ] **eve: el asistente delega en el planner sandbox viejo** (eve repo)
   - Delega en `subagents/planner_sandbox` (emite `route[]`, sin dependencias); el que emite `tasks[]`
     (`agents/planner_sandbox`) es un agente de prueba
@@ -304,6 +314,12 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
     `client/src/pages/PlanningPage.jsx:144-190`, `client/src/pages/Scene3DEditorPage.jsx:401`,
     `server/data/*.yaml` y lo que consumen planner y MCP. Todo en un commit (contrato WS)
 
+- [ ] **Tránsito e inspección en el 3D y en el editor**
+  - El mapa 2D ya dibuja punteado el tramo hacia un wp `type: transit` (`routesToLineFeatures`). Falta en
+    `MapMissions3D.js` y `scene3d/scene/R3FMission.jsx` (partir la polilínea por `type`, línea dashed) y en el
+    editor `MapMissionsCreate.js` (sigue con `routesToFeature`). Marcador distinto para los wps de inspección:
+    pide una variante de icono por color de ruta (`map/core/mapInstance.js`)
+
 - [ ] **Suelo 3D que siga a la cámara**
   - `client/src/scene3d/core/MapTileGround.jsx:81-100` (7x7) y `MapVectorGround.jsx` (5x5) cargan una grilla fija
     alrededor de `scene3d.origin`: pasados ~2.6 km el dron vuela sobre el vacío
@@ -338,6 +354,13 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
 ---
 
 ## Flota y lado dron (fuera de este repo)
+
+- [ ] **M300 por OSDK: el nodo WaypointV2 ignora `mode_gimbal` y no manda pitch 0** (`multiUAV_system/onboard_dji`)
+  - `dji_waypointV2_node.cpp:768` solo imprime `gimbalPitchMode`: un `mode_gimbal: 1` (interpolar el pitch) que el
+    perfil `v2` acepta vuela como FREE sin avisar. En el GCS, `dji_M300` podría ofrecer solo FREE como `psdk`
+    (pide un `mission:` propio o separar el perfil, `v2` lo comparten `px4_ros2` y M210)
+  - `:282` emite el gimbal solo si el pitch `!= 0`: el pitch es absoluto, 0 = nivelado. Mismo bug que tenía
+    `missionEncodePsdk.js` (ya arreglado: se emite cuando cambia, 0 incluido)
 
 - [ ] **Probar el translation node de PX4 con el GCS en SITL**
   - Decisión y uso en `infra/external.md` › Versiones de mensajes de PX4: una sola interfaz `px4_ros2` (`px4_msgs`
