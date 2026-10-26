@@ -31,6 +31,36 @@ en el lado ROS, rosbridge no puede (de)serializar el mensaje.
 `sensor_msgs`, `std_msgs`, `geometry_msgs`, `std_srvs`, `nav_msgs` vienen con ROS. `mavlink/*` no es ROS: es
 `node-mavlink` (npm, en el server).
 
+### Versiones de mensajes de PX4: una sola interfaz + translation node
+
+Desde PX4 1.16 cada mensaje versiona por su cuenta y el topic lleva la versión (`<topic>_v<N>`; versión 0 = sin
+sufijo, como en 1.15). Con el PX4 que espera el GCS (`main`, 1.18): `vehicle_status_v4`; `battery_status`,
+`vehicle_command_ack`, `vehicle_local_position` en `_v1`; `vehicle_global_position` y `vehicle_command` sin sufijo.
+
+**Decisión: el GCS fija UNA versión de mensajes y NO hay una interfaz por versión de PX4.** rosbridge deserializa
+con el único `px4_msgs` que tiene compilado; un `VehicleStatus` de 1.15 y uno de 1.18 tienen el mismo nombre de
+tipo y estructuras distintas, así que interfaces separadas no harían convivir drones de versiones distintas.
+
+- La interfaz `px4_ros2` y el `px4_msgs` del rosbridge van en `main` (tabla de arriba).
+- Cada dron con otro PX4 corre el **message translation node** de PX4
+  ([docs](https://docs.px4.io/main/en/ros2/px4_ros2_msg_translation_node.html), `PX4-Autopilot/msg/translation_node`):
+  traduce cada topic entre la versión que publica el firmware y la que espera el GCS (v0↔v1↔…↔v4), 1.15 incluido.
+- **Uno por dron**: resuelve los topics con su propio namespace (`get_effective_namespace()`), así que va con el
+  namespace del dron, al lado del Agent XRCE-DDS en su companion:
+  ```bash
+  cd <ws> && $PX4_DIR/Tools/copy_to_ros_ws.sh . && colcon build && source install/setup.bash
+  ros2 run translation_node translation_node_bin --ros-args -r __ns:=/<device>
+  ```
+- Compilarlo desde un PX4 **igual o más nuevo** que el más nuevo de los dos lados (firmware o GCS): solo traduce las
+  versiones que conoce (`msg/px4_msgs_old/`).
+- **Subir de versión** (sale un PX4 nuevo): se actualizan una sola vez `px4_msgs` y los topics de `px4_ros2`, y se
+  recompila el translation node en los drones. Los firmwares viejos de la flota no se tocan.
+- Límites (docs de PX4): es **experimental**; la traducción de **servicios no funciona en Humble** (topics sí; el
+  GCS por `px4_ros2` solo usa topics); al traducir a una versión más nueva, los campos que la vieja no tenía
+  llegan con su default, no con un error.
+- Una interfaz aparte (`extends: px4_ros2`, solo los nombres de topic) queda como último recurso para un dron que
+  no pueda correr el nodo, y arrastra el problema del `px4_msgs` del rosbridge.
+
 ## Transportes alternativos a rosbridge (a bordo)
 
 | Pieza | Repo | Versión | Para qué |

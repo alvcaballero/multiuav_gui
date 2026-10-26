@@ -528,6 +528,16 @@ writing (an edit must not leave an invalid file nor break another interface): `4
 errors: [{path, message}] }`, `404` unknown, `409` already exists. Saving rewrites only that
 category's file, so its comments (and only its) are lost.
 
+**PX4 message versions (`px4_ros2`, ROS 2).** Since PX4 1.16 each message has its own version and the topic
+carries it (`/fmu/out/vehicle_status_v4`; version 0 = no suffix, as in 1.15). The GCS does NOT handle versions:
+`px4_ros2.yaml` hardcodes ONE set of topic names (`_v4`, `_v1`…), the one of the `px4_msgs` compiled on the
+rosbridge side (`main`), and nothing detects or tries another suffix. `messageType` carries no version, so the
+decoders are untouched. A drone running another PX4 runs PX4's message translation node in its namespace, which
+serves the GCS the versions it expects; without it, those slots go `missing` in the watchdog. One interface per PX4
+version would not help: rosbridge has a single `px4_msgs`, so it cannot deserialize two structures of one type
+name. Adopting a new PX4 = edit the suffixes here once, update `px4_msgs` on the rosbridge side, rebuild the drones'
+translation nodes. Decision, versions and limits: `infra/external.md` › Versiones de mensajes de PX4.
+
 **Message Decoding** (`models/msgDecode.js`, NOT under `ros/`, the mirror of `msgEncode`): a
 registry, not an if-chain. `decodeMsg` serves every transport: rosbridge (`ros.js`) and MQTT
 (`MqttServer.js`) with ROS-shaped JSON, robofleet with the ROS message unpacked from its Flatbuffer

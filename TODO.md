@@ -344,6 +344,14 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
   - Decidir qué checkouts duplicados sobran (`px4_msgs` ×4, `psdk_ros2` ×3, `PX4-Autopilot` ×2,
     `multiUAV_system` ×2)
 
+- [ ] **Probar el translation node de PX4 con el GCS en SITL**
+  - Decisión y uso en `infra/external.md` › Versiones de mensajes de PX4: una sola interfaz `px4_ros2` (`px4_msgs`
+    `main`) y el nodo en cada dron con otro PX4. Solo está leído en el código, nunca probado
+  - Probar: PX4 1.15 o 1.16 en SITL con namespace (`/uav_1`) + translation node compilado desde PX4 `main`, contra
+    el GCS con `px4_msgs` `main`. Ver que lleguen `status`, `battery`, `local_position` y `vehicle_command_ack`
+    (el watchdog de slots marca `missing` si no) y que un comando (Arm) llegue al firmware viejo
+  - Si funciona: sumarlo al despliegue del companion de cada dron (al lado del Agent XRCE-DDS)
+
 - [ ] **Completar `infra/external.md` con los repos `MUAV_*` del lado dron**
   - `MUAV_px4_offboard`, `MUAV_psdk_offboard`, `MUAV_GCS_gz`, `MUAV_psdk_gz` (en `px4_ros2_docker`): no están en el
     manifiesto porque ninguna interfaz del GCS los nombra; decir cuáles hacen falta para que un dron hable con el
