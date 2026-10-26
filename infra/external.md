@@ -53,6 +53,10 @@ tipo y estructuras distintas, así que interfaces separadas no harían convivir 
   ```
 - Compilarlo desde un PX4 **igual o más nuevo** que el más nuevo de los dos lados (firmware o GCS): solo traduce las
   versiones que conoce (`msg/px4_msgs_old/`).
+- **Lo que corre a bordo usa el mismo `px4_msgs` que el GCS (`main`).** `MUAV_px4_offboard` arma los nombres
+  versionados con el `MESSAGE_VERSION` del `px4_msgs` con que se compiló (`core/px4_topics.py`, `fmu_out_topic`),
+  así que pide la versión correcta solo; pero la ESTRUCTURA que reenvía al GCS es la de ese `px4_msgs`. Compilado
+  contra otro, el GCS recibiría otra forma de mensaje.
 - **Subir de versión** (sale un PX4 nuevo): se actualizan una sola vez `px4_msgs` y los topics de `px4_ros2`, y se
   recompila el translation node en los drones. Los firmwares viejos de la flota no se tocan.
 - Límites (docs de PX4): es **experimental**; la traducción de **servicios no funciona en Humble** (topics sí; el
@@ -66,6 +70,7 @@ tipo y estructuras distintas, así que interfaces separadas no harían convivir 
 | Pieza | Repo | Versión | Para qué |
 |---|---|---|---|
 | mqtt_client | [arpoma16/mqtt_client](https://github.com/arpoma16/mqtt_client) (fork de [ika-rwth-aachen](https://github.com/ika-rwth-aachen/mqtt_client)) | `muav/service-bridge` | Protocolo `mqtt`: telemetría + bridge de servicios (`docs/decisions/mqtt.md`). El broker corre en el GCS: `infra/compose/compose.mqtt.yaml` |
+| MUAV_px4_offboard | [arpoma16/MUAV_px4_offboard](https://github.com/arpoma16/MUAV_px4_offboard) | `main` | Offboard de PX4 a bordo. Su `gcs/mqtt_bridge_config.py` configura el `mqtt_client` que le manda la telemetría al GCS: slots `position_global`, `local_position`, `battery`, `vehicle_status`, `vehicle_command_ack` (las claves de `px4_ros2`) |
 | robofleet_client | [arpoma16/robofleet_client](https://github.com/arpoma16/robofleet_client) | `master` | Protocolo `robofleet` (FlatBuffers, ROS 1). Los `.fbs` del GCS están en `server/fbmsglib/` |
 | Micro-XRCE-DDS Agent | [eProsima/Micro-XRCE-DDS-Agent](https://github.com/eProsima/Micro-XRCE-DDS-Agent) | `v2.4.3` | Puente uORB ↔ ROS 2 de PX4 (`px4_ros2`) |
 

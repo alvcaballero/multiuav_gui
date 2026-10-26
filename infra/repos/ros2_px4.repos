@@ -21,3 +21,7 @@ repositories:
     type: git
     url: https://github.com/arpoma16/mqtt_client.git
     version: muav/service-bridge
+  MUAV_px4_offboard:
+    type: git
+    url: https://github.com/arpoma16/MUAV_px4_offboard.git
+    version: main
