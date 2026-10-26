@@ -7,7 +7,7 @@ A GCS for multi UAV & long range inspection
 This repository prvides an GCS software that allow command and monitoring multiple UAVs for a heterogeneous fleet of unmannned Aerial Vehicles (UAVs).
 This project is part of [Multi Project](https://github.com/alvcaballero/multiUAV_system)
 
-<img src="docs/Rosbag.gif" alt="Example of the GCS interface">
+<img src="docs/images/rosbag.gif" alt="Example of the GCS interface">
 
 #### Table of Contents
 
@@ -225,7 +225,7 @@ The documentation of this project is [Documentation HERE](https://arpoma16.githu
 
 - [ ] **Mavlink integration**: Actually allow integration to mavlink through ros packages mavros, in future use directly mavlink.
 
-<img src="docs/RealMission.png" alt="Screenshot in real Mission">
+<img src="docs/images/real-mission.png" alt="Screenshot in real Mission">
 
 ## ⚙️ Installation
 
@@ -299,10 +299,11 @@ you can see the documentacion for integration in [Documentation HERE](https://ar
 
 additional docs
 
-1. [Dependencias e instalacion de GCS](docs/HOWRUN.md)
-1. [simulation PX4 Vtool](docs/Simulation-PX4.md)
-1. [simulation PX4 Vtool](docs/Simulation-Ardupilot.md)
-1. [UAV camera Stream](docs/CameraStream.md)
+1. [Dependencias e instalacion de GCS](infra/README.md)
+1. [simulation PX4 Vtool](infra/Simulation-PX4.md)
+1. [UAV camera Stream](infra/CameraStream.md)
+1. [Video streaming (WebRTC)](docs/reference/video-streaming.md)
+1. [File transfer](docs/reference/file-transfer.md)
 
 ## Future Work
 

@@ -23,8 +23,13 @@ Tres tipos de documento, cada uno en UN lugar:
 | --- | ----- | ---- |
 | Qué falta (backlog) | `TODO.md` (raíz) | Cambia siempre. Es el ÚNICO |
 | Por qué se hizo así | `docs/decisions/<tema>.md` | Plan cerrado: no cambia más |
-| Plan en curso | `docs/plans/<tema>.md` | Temporal: se cierra cuando termina |
-| Cómo funciona hoy | `CLAUDE.md` de cada carpeta, `docs/` | Se actualiza con el código |
+| Plan en curso o propuesta sin decidir | `docs/plans/<tema>.md` | Temporal: se cierra cuando termina |
+| Cómo funciona hoy (para Claude) | `CLAUDE.md` de cada carpeta | Se actualiza con el código |
+| Cómo funciona hoy (para personas) | `docs/reference/` | Se actualiza con el código |
+| Cómo levantarlo (docker, tmuxinator, SITL) | `infra/` (junto a sus scripts) | Se actualiza con la infra |
+| Imágenes del README y de los docs | `docs/images/` | — |
+
+Nombres de archivo en kebab-case (`vehicle-platforms.md`). Nada de `.md` sueltos en la raíz de `docs/`.
 
 Reglas:
 1. **Un solo backlog.** No crear otro `TODO*.md` ni listas de pendientes en otro archivo. Un pendiente sin plan

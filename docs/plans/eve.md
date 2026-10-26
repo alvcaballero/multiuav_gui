@@ -4,7 +4,7 @@ Estado (2026-10-22): **fase 1 implementada y testeada con fixtures; NO verificad
 (el MCP del GCS estaba caído, así que no hubo una aprobación real de punta a punta). Ver §12.
 Rama `feat/eve-agent-integration`. Fecha del plan: 2026-10-21.
 
-Complementa `docs/ChatProtocol.md` (contrato de eventos, aún "proposed") y la sección
+Complementa `docs/plans/chat-protocol.md` (contrato de eventos, aún "proposed") y la sección
 "eve Agent Bridge" de `server/CLAUDE.md` (las correcciones de §9 ya están aplicadas).
 
 **Plan ACTIVO (2026-10-26):** sus pendientes viven acá hasta cerrarlo (§4, §10.7, §11, §12 y las fases 2–3);
@@ -346,9 +346,9 @@ Docs: corregir `server/CLAUDE.md` (§9).
 
 ### Fase 3: convergencia con el legacy
 
-- Reducer de eventos único en el cliente (cumple `docs/ChatProtocol.md`).
+- Reducer de eventos único en el cliente (cumple `chat-protocol.md`).
 - Adaptador que hace que el orquestador legacy emita los mismos eventos, sin reescribir su
-  loop. Requiere decidir `ChatProtocol.md` (cambia el esquema de persistencia).
+  loop. Requiere decidir `chat-protocol.md` (cambia el esquema de persistencia).
 - Antes: leer `handlers/` para medir el costo.
 
 ## 9. Documentación a corregir
@@ -366,7 +366,7 @@ Docs: corregir `server/CLAUDE.md` (§9).
    items existentes porque el historial por REST los necesita igual y `ChatMessages` ya los
    renderiza. Contra: se retrasa el reducer único (fase 3) y se pierde información (deltas,
    `turnId`). Alternativa: persistir eventos crudos y proyectar en el cliente: más fiel a
-   `ChatProtocol.md`, pero obliga a decidir ese documento antes.
+   `chat-protocol.md`, pero obliga a decidir ese documento antes.
 2. **Auditoría:** DECIDIDO tabla mínima `ChatInputAudit` para legacy y eve (§7.1.1);
    `metadata` descartada. DECIDIDO política de fallo: **fail-closed solo para `decided` en el
    camino eve** (se escribe antes del `POST` a eve; si falla, no se envía y la aprobación

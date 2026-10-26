@@ -442,7 +442,7 @@ is 100%, not 1px — write `'1px'`.
 Pure logic (`chatMessage.js`, `chatHistory.js`, `inputRequest.js`) is tested from `server/test`
 (`test-chat-transcript.js`, `test-input-request-client.js`).
 
-Design rationale and the rest of the protocol work this belongs to: `docs/ChatProtocol.md`.
+Design rationale and the rest of the protocol work this belongs to: `docs/plans/chat-protocol.md`.
 
 ## Known Issues Needing Architectural Decisions
 
@@ -459,7 +459,7 @@ These are symptoms of one root cause: `loadHistory` (REST) and the WebSocket emi
 separate pipelines producing different shapes.
 
 Full diagnosis, the proposed event-based contract, and the flight-safety requirements for
-human-in-the-loop tool approval are in `docs/ChatProtocol.md`. That document is **proposed,
+human-in-the-loop tool approval are in `docs/plans/chat-protocol.md`. That document is **proposed,
 not accepted** — it needs a decision before implementation, since it changes the chat
 persistence schema.
 
