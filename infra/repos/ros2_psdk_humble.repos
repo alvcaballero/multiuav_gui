@@ -1,0 +1,16 @@
+# Workspace ROS 2 HUMBLE del lado dron DJI por PSDK (ver infra/external.md). psdk_ros2 está probado y compilado
+# solo para Humble (su README), así que NO va en el workspace Jazzy de PX4.
+#   vcs import $ROS2_PSDK_WS/src < infra/repos/ros2_psdk_humble.repos
+repositories:
+  psdk_ros2:
+    type: git
+    url: https://github.com/arpoma16/psdk_ros2.git
+    version: dev/integration
+  MUAV_GCS_interfaces:
+    type: git
+    url: https://github.com/arpoma16/MUAV_GCS_interfaces.git
+    version: main
+  MUAV_psdk_offboard:
+    type: git
+    url: https://github.com/arpoma16/MUAV_psdk_offboard.git
+    version: main

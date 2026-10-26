@@ -1,5 +1,6 @@
-# Workspace ROS 2 del lado dron: lo que el GCS necesita a bordo (ver infra/external.md).
+# Workspace ROS 2 JAZZY del lado dron PX4: lo que el GCS necesita a bordo (ver infra/external.md).
 #   vcs import $ROS2_WS/src < infra/repos/ros2_px4.repos
+# Lo de DJI PSDK va aparte, en Humble: infra/repos/ros2_psdk_humble.repos.
 repositories:
   px4_msgs:
     type: git
@@ -13,10 +14,6 @@ repositories:
     type: git
     url: https://github.com/arpoma16/MUAV_GCS_interfaces.git
     version: main
-  psdk_ros2:
-    type: git
-    url: https://github.com/arpoma16/psdk_ros2.git
-    version: dev/integration
   mqtt_client:
     type: git
     url: https://github.com/arpoma16/mqtt_client.git
@@ -24,8 +21,4 @@ repositories:
   MUAV_px4_offboard:
     type: git
     url: https://github.com/arpoma16/MUAV_px4_offboard.git
-    version: main
-  MUAV_psdk_offboard:
-    type: git
-    url: https://github.com/arpoma16/MUAV_psdk_offboard.git
     version: main

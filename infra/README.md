@@ -20,7 +20,8 @@ Cómo funciona el GCS (no cómo se levanta) está en los `CLAUDE.md` y en `docs/
 ```bash
 bash infra/setup.sh
 cp infra/local.env.example infra/local.env      # y poné tus rutas
-vcs import <ROS2_WS>/src < infra/repos/ros2_px4.repos   # si vas a correr el lado dron en esta máquina
+vcs import <ROS2_WS>/src < infra/repos/ros2_px4.repos   # lado dron PX4 (Jazzy), si corre en esta máquina
+# DJI PSDK va en su propio workspace Humble: infra/repos/ros2_psdk_humble.repos (infra/external.md)
 ```
 
 Ninguna ruta de una máquina concreta va en un archivo versionado: va en `infra/local.env`.

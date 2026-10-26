@@ -1,7 +1,8 @@
-# Workspace catkin (ROS 1 Noetic) del ROS bridge: DJI OSDK y robofleet (ver infra/external.md).
+# Workspace catkin (ROS 1 Noetic): ROS bridge, DJI OSDK, PX4 por mavros y robofleet (ver infra/external.md).
 #   vcs import <catkin_ws>/src < infra/repos/ros1_noetic.repos
 # DJI Onboard-SDK (no es catkin) se instala aparte: infra/guides/ros1-workspace.md.
 repositories:
+  # aerialcore_common (mensajes del GCS), aerialcore_gui, onboard_dji, onboard_px4
   multiUAV_system:
     type: git
     url: https://github.com/alvcaballero/multiUAV_system.git
@@ -14,6 +15,7 @@ repositories:
     type: git
     url: https://github.com/arpoma16/robofleet_client.git
     version: master
+  # mission_lib, del que depende onboard_px4
   grvc-utils:
     type: git
     url: https://github.com/grvcTeam/grvc-utils.git

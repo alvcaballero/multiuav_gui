@@ -354,8 +354,8 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
 
 - [ ] **Completar `infra/external.md` con los repos `MUAV_*` del lado dron**
   - `MUAV_px4_offboard` y `MUAV_psdk_offboard` ya están. Faltan `MUAV_GCS_gz` y `MUAV_psdk_gz` (en
-    `px4_ros2_docker`): decir si hacen falta para que un dron (o su simulación) hable con el GCS y sumarlos a
-    `infra/repos/ros2_px4.repos`
+    `px4_ros2_docker`): decir si hacen falta para que un dron (o su simulación) hable con el GCS y sumarlos al
+    `.repos` de su distro (`ros2_px4.repos` Jazzy, `ros2_psdk_humble.repos` Humble)
 
 - [ ] **Imagen del ROS bridge: `muavgcs:ros1` vs `muavgcs:noetic`**
   - `compose.ros1.yaml` espera `muavgcs:ros1`; la imagen local es `muavgcs:noetic` (no verificado que tenga

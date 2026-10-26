@@ -7,9 +7,13 @@ tmuxinator, compose (`--env-file infra/local.env`) y Claude.
 Los workspaces ROS se reconstruyen con [vcstool](https://github.com/dirk-thomas/vcstool) (`pip install vcstool`):
 
 ```bash
-vcs import $ROS2_WS/src < infra/repos/ros2_px4.repos      # lado dron, ROS 2 (PX4, DJI PSDK, MQTT)
-vcs import <catkin_ws>/src < infra/repos/ros1_noetic.repos  # ROS bridge ROS 1 (DJI OSDK, robofleet)
+vcs import $ROS2_WS/src < infra/repos/ros2_px4.repos               # lado dron PX4: ROS 2 Jazzy (+ MQTT)
+vcs import $ROS2_PSDK_WS/src < infra/repos/ros2_psdk_humble.repos  # lado dron DJI PSDK: ROS 2 Humble
+vcs import <catkin_ws>/src < infra/repos/ros1_noetic.repos         # ROS bridge ROS 1 (DJI OSDK, robofleet)
 ```
+
+Un workspace por distro: `psdk_ros2` está probado y compilado solo para **Humble** (su README) y el de PX4 es
+**Jazzy**, así que PSDK y PX4 no comparten workspace.
 
 La versión que figura acá es la que el GCS espera: si un workspace tiene otra, el que está mal es el workspace.
 
@@ -21,10 +25,24 @@ en el lado ROS, rosbridge no puede (de)serializar el mensaje.
 | Paquete | Repo | Versión | Interfaces del GCS |
 |---|---|---|---|
 | `px4_msgs` | [PX4/px4_msgs](https://github.com/PX4/px4_msgs) | `main` (= PX4 1.18) | `px4_ros2`. Usa topics versionados (`vehicle_status_v4`, `battery_status_v1`), que NO existen en `release/1.15` |
-| `psdk_interfaces` | [arpoma16/psdk_ros2](https://github.com/arpoma16/psdk_ros2) (fork de umdlife) | `dev/integration` | `dji_M300_PSDK` |
+| `psdk_interfaces` | [arpoma16/psdk_ros2](https://github.com/arpoma16/psdk_ros2) (fork de umdlife) | `dev/integration`, ROS 2 **Humble** | `dji_M300_PSDK` |
 | `muav_gcs_interfaces` | [arpoma16/MUAV_GCS_interfaces](https://github.com/arpoma16/MUAV_GCS_interfaces) | `main` | `px4_ros2`, PSDK |
 | `dji_osdk_ros` | [miggilcas/Onboard-SDK-ROS](https://github.com/miggilcas/Onboard-SDK-ROS) | `dev` | `dji_M210_*`, `dji_M300` (ROS 1). Necesita [DJI Onboard-SDK](https://github.com/dji-sdk/Onboard-SDK) `master` instalado (cmake, no catkin) |
-| `aerialcore_common` | [alvcaballero/multiUAV_system](https://github.com/alvcaballero/multiUAV_system) | `main` | DJI ROS 1 (misiones). Trae `aerialcore_gui` (`connect_uas.launch`) |
+| `aerialcore_common` | [alvcaballero/multiUAV_system](https://github.com/alvcaballero/multiUAV_system) | `main` | Los mensajes ROS 1 del GCS: `dji_M210_*`, `dji_M300`, `px4_mavros`, `griffin` (`ConfigMission`, `BatteryState`). También los tipos de los servicios que publica el GCS: `/GCS/FinishMission` (`finishMission`) y `/GCS/FinishDownload` (`finishGetFiles`), `models/ros/ros.js`. El repo trae además `aerialcore_gui` (`connect_uas.launch`) |
+
+**DJI por ROS 1 (OSDK) son tres piezas**, todas Noetic, en el workspace catkin del ROS bridge
+(`$ROS1_DOCKER_DIR`, `infra/repos/ros1_noetic.repos`):
+
+1. [dji-sdk/Onboard-SDK](https://github.com/dji-sdk/Onboard-SDK) `master` (base 4.1.0): la librería C++ del OSDK. Se
+   compila e instala con cmake, FUERA del workspace catkin (`guides/ros1-workspace.md`).
+2. `Onboard-SDK-ROS` (miggilcas, `dev`): el wrapper ROS, paquete `dji_osdk_ros`.
+3. `multiUAV_system/onboard_dji` (alvcaballero, `main`): el nodo a bordo del proyecto (misiones, INSPECTOR) sobre
+   `dji_osdk_ros` y `aerialcore_common`.
+
+**PX4 por ROS 1 (mavros, interfaz `px4_mavros`):** `multiUAV_system/onboard_px4` es el nodo a bordo, sobre `mavros`
+(apt), `aerialcore_common` y `mission_lib`, que viene de
+[grvcTeam/grvc-utils](https://github.com/grvcTeam/grvc-utils) `noetic`; por eso `grvc-utils` está en
+`ros1_noetic.repos`. (PX4 por ROS 2 es otro camino: `MUAV_px4_offboard`, Jazzy.)
 | `mavros_msgs` | apt (`ros-noetic-mavros-msgs`) | — | `px4_mavros`, `griffin` |
 | `nav2_msgs` | apt (`ros-<distro>-nav2-msgs`) | — | UGV con Nav2 |
 
@@ -71,8 +89,8 @@ tipo y estructuras distintas, así que interfaces separadas no harían convivir 
 |---|---|---|---|
 | mqtt_client | [arpoma16/mqtt_client](https://github.com/arpoma16/mqtt_client) (fork de [ika-rwth-aachen](https://github.com/ika-rwth-aachen/mqtt_client)) | `muav/service-bridge` | Protocolo `mqtt`: telemetría + bridge de servicios (`docs/decisions/mqtt.md`). El broker corre en el GCS: `infra/compose/compose.mqtt.yaml` |
 | MUAV_px4_offboard | [arpoma16/MUAV_px4_offboard](https://github.com/arpoma16/MUAV_px4_offboard) | `main` | Offboard de PX4 a bordo. Su `gcs/mqtt_bridge_config.py` configura el `mqtt_client` que le manda la telemetría al GCS: slots `position_global`, `local_position`, `battery`, `vehicle_status`, `vehicle_command_ack` (las claves de `px4_ros2`) |
-| MUAV_psdk_offboard | [arpoma16/MUAV_psdk_offboard](https://github.com/arpoma16/MUAV_psdk_offboard) | `main` | Nodos a bordo de un DJI por PSDK (`dji_M300_PSDK`, junto a `psdk_ros2`): `downloader_node` sirve la acción `offboard/download_files_by_date_range` que el GCS usa para bajar archivos; `mission_notifier_node` le avisa al GCS por `/GCS/GCSCommand` (servicio que publica el GCS, `models/ros/ros.js`); `rtsp_bridge_node` pasa la cámara a RTSP |
-| robofleet_client | [arpoma16/robofleet_client](https://github.com/arpoma16/robofleet_client) | `master` | Protocolo `robofleet` (FlatBuffers, ROS 1). Los `.fbs` del GCS están en `server/fbmsglib/` |
+| MUAV_psdk_offboard | [arpoma16/MUAV_psdk_offboard](https://github.com/arpoma16/MUAV_psdk_offboard) | `main`, ROS 2 **Humble** (depende de `psdk_ros2`) | Nodos a bordo de un DJI por PSDK (`dji_M300_PSDK`, junto a `psdk_ros2`): `downloader_node` sirve la acción `offboard/download_files_by_date_range` que el GCS usa para bajar archivos; `mission_notifier_node` le avisa al GCS por `/GCS/GCSCommand` (servicio que publica el GCS, `models/ros/ros.js`); `rtsp_bridge_node` pasa la cámara a RTSP |
+| robofleet_client | [arpoma16/robofleet_client](https://github.com/arpoma16/robofleet_client) | `master` | Protocolo `robofleet`: cliente FlatBuffers de **ROS 1** (Noetic, en el workspace catkin de `$ROS1_DOCKER_DIR`). Los `.fbs` del GCS están en `server/fbmsglib/` |
 | Micro-XRCE-DDS Agent | [eProsima/Micro-XRCE-DDS-Agent](https://github.com/eProsima/Micro-XRCE-DDS-Agent) | `v2.4.3` | Puente uORB ↔ ROS 2 de PX4 (`px4_ros2`) |
 
 ## Autopilotos y simuladores
