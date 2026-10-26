@@ -353,8 +353,8 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
   - Si funciona: sumarlo al despliegue del companion de cada dron (al lado del Agent XRCE-DDS)
 
 - [ ] **Completar `infra/external.md` con los repos `MUAV_*` del lado dron**
-  - `MUAV_px4_offboard` ya está (arma la telemetría MQTT al GCS). Faltan `MUAV_psdk_offboard`, `MUAV_GCS_gz`,
-    `MUAV_psdk_gz` (en `px4_ros2_docker`): decir cuáles hacen falta para que un dron hable con el GCS y sumarlos a
+  - `MUAV_px4_offboard` y `MUAV_psdk_offboard` ya están. Faltan `MUAV_GCS_gz` y `MUAV_psdk_gz` (en
+    `px4_ros2_docker`): decir si hacen falta para que un dron (o su simulación) hable con el GCS y sumarlos a
     `infra/repos/ros2_px4.repos`
 
 - [ ] **Imagen del ROS bridge: `muavgcs:ros1` vs `muavgcs:noetic`**

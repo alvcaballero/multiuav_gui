@@ -25,3 +25,7 @@ repositories:
     type: git
     url: https://github.com/arpoma16/MUAV_px4_offboard.git
     version: main
+  MUAV_psdk_offboard:
+    type: git
+    url: https://github.com/arpoma16/MUAV_psdk_offboard.git
+    version: main
