@@ -33,6 +33,8 @@ Triage contra el código: 2026-10-26. Las rutas son relativas a `multiuav_gcs/`.
 
 - [ ] **Mergear `feat/vehicle-aware-planning` del `mcp_server`** (`87875e2`, `cb4cb02`)
   - En ese repo el usuario commitea directo en `main`; la rama la abrió una sesión
+  - Lo mismo en `gcs_eevee_assistant`: el lado eve de F6 (`421865e`) está en su rama `feat/vehicle-aware-planning`.
+    Ahí hay cambios ajenos sin commitear (`package.json`, `test/fixtures/`): no mezclarlos
 
 - [ ] **Probar un request real GCS → Smart-Flies con `vehicle`**
   - Los tests de Smart-Flies pasan (`uv run pytest tests/`, 20) pero nunca se corrió el camino completo

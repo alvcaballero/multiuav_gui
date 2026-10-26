@@ -107,5 +107,6 @@ tipo y estructuras distintas, así que interfaces separadas no harían convivir 
 |---|---|---|---|
 | Smart-Flies-MUAVPlanner | submódulo hermano de `llm_planner_gcs` | el puntero del submódulo | `compose.planner.yaml` o `gcs-full.yml` |
 | mcp_server | submódulo hermano de `llm_planner_gcs` | el puntero del submódulo | `compose.mcp.yaml` o `gcs-mcp.yml` |
+| gcs_eevee_assistant (eve) | [arpoma16/gcs_eevee_assistant](https://github.com/arpoma16/gcs_eevee_assistant), checkout hermano de `llm_planner_gcs` (no submódulo; `EVE_DIR`) | eve `0.81.1` fijo; Node 24 (`.nvmrc`; el server corre en 20) | Motor de chat alternativo (`chat.metadata.engine === 'eve'`): agentes `assistant`, `monitor`, `planner_sandbox`. `npm run dev:assistant` (`:2000`) o `dev:all` (`:3300`, un path por agente). Necesita el MCP en http (`:3001`). Plan activo: `docs/plans/eve.md`; config: `server/CLAUDE.md` › eve Agent Bridge |
 | glyphserver | [Geodan/glyphserver](https://github.com/Geodan/glyphserver) | `master` | `compose.map.yaml` (`GLYPHSERVER_DIR`) |
 | Imagen ROS bridge `muavgcs:ros1` | Dockerfile del workspace ROS 1 | — | `compose.ros1.yaml`. Lo que lleva: `guides/ros1-workspace.md` |
