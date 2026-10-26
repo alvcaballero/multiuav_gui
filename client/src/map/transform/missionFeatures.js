@@ -35,6 +35,7 @@ const createFeature = (myroute, point) => {
     altitude: myroute[point.routeid].wp[point.id].pos[2],
     yaw: myroute[point.routeid].wp[point.id].yaw,
     speed: mySpeed,
+    type: myroute[point.routeid].wp[point.id].type,
     gimbal: myroute[point.routeid].wp[point.id].gimbal,
     actions: myroute[point.routeid].wp[point.id].action,
     attributes: myroute[point.routeid].attributes,
@@ -90,6 +91,9 @@ const textPopUp = ({ properties, attributes, actions }) => {
   html = properties.hasOwnProperty('speed')
     ? `${html} <div style="display:inline"><span>Speed: </span><span>${escapeHtml(properties.speed)} m/s </span></div>`
     : html;
+  html = properties.type
+    ? `${html} <div style="display:inline"><span>Type: </span><span>${escapeHtml(properties.type)} </span></div>`
+    : html;
   html = properties.hasOwnProperty('yaw')
     ? `${html} <div style="display:inline"><span>Yaw: </span><span>${escapeHtml(properties.yaw)}° </span></div>`
     : html;
@@ -122,6 +126,58 @@ function routesToFeature(item) {
   };
 }
 
+/**
+ * The route as map line features, styled by the type of the waypoint each segment flies TO
+ * (same meaning as the waypoint's `speed`): `transit` is dashed, anything else is solid.
+ *
+ * - `kind: 'title'`: the whole route, only to place its name.
+ * - `kind: 'segment'`: a run of consecutive segments of the same style (`dashed`).
+ *
+ * A route with no `type` in any waypoint (old missions, other planners) is ONE solid
+ * segment, exactly the line drawn before.
+ */
+function routesToLineFeatures(item) {
+  const coordinates = item.wp.map((it) => [it.pos[1], it.pos[0]]);
+  const color = routeColor(item.id);
+  const title = {
+    id: item.id,
+    type: 'Feature',
+    geometry: { type: 'LineString', coordinates },
+    properties: { kind: 'title', name: item.uav, color },
+  };
+
+  const typed = item.wp.some((it) => it.type != null);
+  if (!typed || coordinates.length < 2) {
+    return [
+      title,
+      {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates },
+        properties: { kind: 'segment', dashed: false, color },
+      },
+    ];
+  }
+
+  const runs = [];
+  for (let i = 1; i < coordinates.length; i += 1) {
+    const dashed = item.wp[i].type === 'transit';
+    const last = runs[runs.length - 1];
+    if (last && last.dashed === dashed) {
+      last.coordinates.push(coordinates[i]);
+    } else {
+      runs.push({ dashed, coordinates: [coordinates[i - 1], coordinates[i]] });
+    }
+  }
+  return [
+    title,
+    ...runs.map((run) => ({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: run.coordinates },
+      properties: { kind: 'segment', dashed: run.dashed, color },
+    })),
+  ];
+}
+
 function routeTowaypoints(myroute) {
   const waypoint = [];
   myroute.forEach((rt, indexRt) => {
@@ -147,4 +203,11 @@ function cleanRoute(myroute) {
   return myRoutes;
 }
 
-export { createFeature, textPopUp, routesToFeature, routeTowaypoints, cleanRoute };
+export {
+  createFeature,
+  textPopUp,
+  routesToFeature,
+  routesToLineFeatures,
+  routeTowaypoints,
+  cleanRoute,
+};

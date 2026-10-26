@@ -97,6 +97,8 @@ export const RuteConvertv3 = (route) => {
           latlongError = true;
         }
         if ('speed' in wpSrc) wpDst.speed = wpSrc.speed;
+        // transit | inspection (set by the planner): the map draws transit segments dashed
+        if ('type' in wpSrc) wpDst.type = wpSrc.type;
         if ('action' in wpSrc) wpDst.action = wpSrc.action;
         dst.wp.push(wpDst);
       }

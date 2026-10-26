@@ -11,7 +11,7 @@ import { findFonts } from '../core/mapUtil';
 import {
   createFeature,
   textPopUp,
-  routesToFeature,
+  routesToLineFeatures,
   routeTowaypoints,
   cleanRoute,
 } from '../transform/missionFeatures';
@@ -82,10 +82,12 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
         features: [],
       },
     });
+    // Segments are styled by the type of the waypoint they fly to: transit dashed, the rest solid.
     map.addLayer({
       source: id,
       id: 'mission-line',
       type: 'line',
+      filter: ['all', ['==', ['get', 'kind'], 'segment'], ['!=', ['get', 'dashed'], true]],
       paint: {
         'line-color': ['get', 'color'],
         'line-width': 2,
@@ -93,8 +95,20 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
     });
     map.addLayer({
       source: id,
+      id: 'mission-line-transit',
+      type: 'line',
+      filter: ['all', ['==', ['get', 'kind'], 'segment'], ['==', ['get', 'dashed'], true]],
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 2,
+        'line-dasharray': [2, 2],
+      },
+    });
+    map.addLayer({
+      source: id,
       id: 'mission-title',
       type: 'symbol',
+      filter: ['==', ['get', 'kind'], 'title'],
       layout: {
         'text-field': '{name}',
         'text-font': findFonts(map),
@@ -150,6 +164,9 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
       if (map.getLayer('mission-line')) {
         map.removeLayer('mission-line');
       }
+      if (map.getLayer('mission-line-transit')) {
+        map.removeLayer('mission-line-transit');
+      }
       if (map.getLayer('mission-title')) {
         map.removeLayer('mission-title');
       }
@@ -195,7 +212,7 @@ export const MapMissions = ({ filteredDeviceId = -1, routes = EMPTY_ROUTES }) =>
 
     map.getSource(id).setData({
       type: 'FeatureCollection',
-      features: routerFiltered.map((route) => routesToFeature(route)),
+      features: routerFiltered.flatMap((route) => routesToLineFeatures(route)),
     });
   }, [routes, filteredDeviceName, filteredDeviceId, id, routePoints]);
 
