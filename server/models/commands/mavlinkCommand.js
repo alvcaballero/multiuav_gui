@@ -10,7 +10,7 @@
 // The dialect is the endpoint's messageType: the category says which firmware the device runs,
 // and MavlinkServer refuses to send when the vehicle's heartbeat reports another autopilot.
 //
-// Verified in SITL (PX4 1.18.0, ArduCopter 4.7.2) and in their sources, MAVLINK_PLAN.md › F0:
+// Verified in SITL (PX4 1.18.0, ArduCopter 4.7.2) and in their sources, docs/decisions/mavlink.md › F0:
 //   - Anything with a lat/lon goes as COMMAND_INT: COMMAND_LONG floats quantise the position (0.18 m
 //     here) and ArduPilot answers UNSUPPORTED to DO_REPOSITION over COMMAND_LONG.
 //   - NAV_TAKEOFF altitude: PX4 reads it as AMSL and IGNORES the COMMAND_INT frame

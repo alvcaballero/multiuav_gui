@@ -90,7 +90,7 @@ export const CONFIG_SYMBOLS = Object.freeze({
 
 // MAVLink mission protocol (PX4 and ArduPilot, missionEncodeMavlink.js). Not firmware numbers:
 // each symbol says the encoder implements the option, with mission items of its own. Only what
-// was flown in SITL is mapped (MAVLINK_PLAN.md › F4); the rest is filtered out of the UI.
+// was flown in SITL is mapped (docs/decisions/mavlink.md › F4); the rest is filtered out of the UI.
 export const MAVLINK_SYMBOLS = Object.freeze({
   mode_yaw: {
     HEADING_MODE_AUTO: 0, // the autopilot faces the next waypoint (its default)

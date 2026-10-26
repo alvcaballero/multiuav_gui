@@ -1,4 +1,10 @@
-# MAVLink protocol — plan
+# MAVLink protocol — plan (CERRADO 2026-10-26)
+
+**Estado:** F0–F6 hechas. Lo que queda (enlaces serie/SiK, timeouts por enlace, pruebas en SITL de KillMotors,
+gimbal y pausa en PX4, formularios en el navegador) está en `TODO.md` › MAVLink. Este archivo queda como
+registro: decisiones, mediciones en SITL y hallazgos; el código lo cita por sección (`› Resultados F0`, `› F4`).
+Las secciones de diseño de F1–F6 describen el plan, no necesariamente el código actual: lo vigente está en
+`server/CLAUDE.md` › MAVLink Protocol.
 
 Cuarto protocolo de device (`protocol: 'mavlink'`), al lado de `ros`, `robofleet` y `mqtt`.
 Objetivo: un drone PX4 o ArduPilot conectado por MAVLink (UDP/TCP o radio SiK por serie) tiene
@@ -622,7 +628,7 @@ device van a `TODO.md` (raíz del GCS).
 - **R1 · DESACTUALIZADO (2026-10-25):** `calculateLocalOrigin` hoy suma `0` (`sumAlt += 0`): `origin.alt`
   es 0 y la altura de una misión es RELATIVA al despegue, no AMSL. El encoder MAVLink manda
   `MAV_FRAME_GLOBAL_RELATIVE_ALT` salvo que la tarea diga `altitude_ref: amsl`
-  (VEHICLE_PLATFORMS_PLAN.md › Estado F4 + F5 VTOL). Lo de abajo describe el código anterior.
+  (`vehicle-platforms.md` › F4/F5 VTOL). Lo de abajo describe el código anterior.
   Texto original: Verificado: `ENUToGeodetic` hace
   `alt = origin.alt + z` (`coordinateConverter.js:118`), y `origin.alt` es el **promedio** de
   `position.altitude` de todos los devices de la misión (`calculateLocalOrigin`). Para un device

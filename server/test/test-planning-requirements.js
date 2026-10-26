@@ -5,7 +5,7 @@ import { requirementMismatch, requirementProblems, requirementsOf } from '../mod
 import { deviceModelsModel } from '../models/deviceModels/deviceModels.js';
 
 // What a mission type of config/planning/config.yaml asks of a device: vehicle types + capabilities,
-// never category names (VEHICLE_PLATFORMS_PLAN.md › F6).
+// never category names (docs/decisions/vehicle-platforms.md › F6).
 
 const capabilityNames = Object.keys(deviceModelsModel.getCapabilities());
 const profile = (deviceModel, category, capabilities) =>

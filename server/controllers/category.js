@@ -17,8 +17,8 @@ async function respondWrite(res, write) {
 
 // The mission getters (actions, params, waypoint params…) answer for an interface (`:type`) or, with
 // `?deviceId=`, for ONE device: its interface narrowed to what it can do (capabilities, vehicle type;
-// VEHICLE_PLATFORMS_PLAN.md › F5 · Contenido de la misión). Then the device's own interface is used,
-// not `:type`. An unknown device is a 404, never the unfiltered answer.
+// docs/decisions/vehicle-platforms.md › F5 · Contenido de la misión). Then the device's own interface
+// is used, not `:type`. An unknown device is a 404, never the unfiltered answer.
 async function withMissionScope(req, res, answer) {
   const { deviceId } = req.query;
   if (deviceId == null || deviceId === '') return res.json(await answer({ type: req.params.type, restrict: null }));

@@ -5,7 +5,10 @@ Estado (2026-10-22): **fase 1 implementada y testeada con fixtures; NO verificad
 Rama `feat/eve-agent-integration`. Fecha del plan: 2026-10-21.
 
 Complementa `docs/ChatProtocol.md` (contrato de eventos, aún "proposed") y la sección
-"eve Agent Bridge" de `server/CLAUDE.md`, que está desactualizada (ver §9).
+"eve Agent Bridge" de `server/CLAUDE.md` (las correcciones de §9 ya están aplicadas).
+
+**Plan ACTIVO (2026-10-26):** sus pendientes viven acá hasta cerrarlo (§4, §10.7, §11, §12 y las fases 2–3);
+entonces pasan a `TODO.md` y las decisiones a `docs/decisions/eve.md`.
 
 ---
 

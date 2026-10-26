@@ -5,7 +5,7 @@
 // Validate button: the rules live here once, never in the client.
 //
 // A mission may only carry what its interface encodes AND its vehicle can do
-// (VEHICLE_PLATFORMS_PLAN.md › F5 · Contenido de la misión): an action, route param or waypoint param
+// (docs/decisions/vehicle-platforms.md › F5 · Contenido de la misión): an action, route param or waypoint param
 // owned by a capability the device lacks (capabilities.yaml `mission`), meant for other vehicle types
 // (mission_schema.yaml `vehicleTypes`), or that its interface does not encode, is an ERROR and the load
 // is refused, with where (task, waypoint, field) and why. A device that does not exist is a WARNING:

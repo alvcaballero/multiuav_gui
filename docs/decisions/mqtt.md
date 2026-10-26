@@ -1,6 +1,9 @@
-# Plan: MQTT como tercer protocolo de la GCS
+# Plan: MQTT como tercer protocolo de la GCS (CERRADO 2026-10-26)
 
-Estado: **propuesto, sin implementar**. Fecha: 2026-10-14.
+Estado: **lado GCS terminado** (F0, F2, F4: `server/models/mqtt/`, documentado en `server/CLAUDE.md` › MQTT
+Protocol). Lo que queda es del dron (fork de `mqtt_client`: F1, F3a, F3b, broker/ACL, F6 en SITL) y dos huecos
+del GCS (presencia LWT, cache de `_getDevice`): todo en `TODO.md` › MQTT. Este archivo queda como registro de
+decisiones y del diseño del lado dron, que no está documentado en ningún otro lado. Fecha del plan: 2026-10-14.
 
 ## Objetivo
 

@@ -5,7 +5,7 @@ import { commandsModel } from '../models/commands/commands.js';
 import { CommandType } from '../config/commandTypes.js';
 
 // A mission may only carry what its interface encodes AND its vehicle can do
-// (VEHICLE_PLATFORMS_PLAN.md › F5 · Contenido de la misión). Devices are plain objects: no DB.
+// (docs/decisions/vehicle-platforms.md › F5 · Contenido de la misión). Devices are plain objects: no DB.
 const DEVICES = {
   x500_1: { id: 901, name: 'x500_1', category: 'px4_mavlink', protocol: 'mavlink', deviceModel: 'x500', attributes: { systemId: 1 } },
   vtol_1: { id: 902, name: 'vtol_1', category: 'px4_mavlink', protocol: 'mavlink', deviceModel: 'standard_vtol', attributes: { systemId: 2 } },

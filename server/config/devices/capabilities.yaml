@@ -1,4 +1,4 @@
-# ─── Capability catalog (VEHICLE_PLATFORMS_PLAN.md › F3) ────────────────────────
+# ─── Capability catalog (docs/decisions/vehicle-platforms.md › F3) ──────────────
 #
 # WHAT a vehicle can do, and which commands / telemetry slots implement it. A device model declares
 # its capabilities (standard / optional); an interface IMPLEMENTS one when it declares an endpoint

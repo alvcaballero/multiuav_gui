@@ -3,7 +3,7 @@ import { minimal, standard, common, ardupilotmega } from 'node-mavlink';
 // What the GCS knows about MAVLink messages: which classes it can decode, its own identity, and
 // how a message is named in devices_msg.yaml. Pure: no sockets, no device lookups.
 //
-// node-mavlink 2.3.0 gotchas verified against PX4/ArduPilot SITL (MAVLINK_PLAN.md › Resultados F0):
+// node-mavlink 2.3.0 gotchas verified against PX4/ArduPilot SITL (docs/decisions/mavlink.md › Resultados F0):
 //   - the header fields are `sysid` / `compid` / `msgid` (there is no `srcSystem`)
 //   - AUTOPILOT_VERSION lives in `standard`, not `common`: every dialect below is needed
 //   - in CommandLong/CommandInt the params (and x/y/z) are `_param1.._param7`; assigning

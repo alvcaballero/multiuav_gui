@@ -19,7 +19,7 @@ import { ALTITUDE_REF } from './taskGraph.js';
 // without this map `wp_reached` would count the extra items as waypoints and the task graph
 // would complete early, or never.
 //
-// Dialect differences (MAVLINK_PLAN.md › F4):
+// Dialect differences (docs/decisions/mavlink.md › F4):
 //   - ArduPilot: seq 0 is the HOME, overwritten by the vehicle. A placeholder goes there.
 //   - PX4: item 0 is flagged `current`, or the mission resumes where the last one ended.
 //   - Waypoint yaw: PX4 reads NAV_WAYPOINT param4 (deg). ArduCopter ignores it: a CONDITION_YAW

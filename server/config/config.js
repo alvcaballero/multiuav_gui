@@ -17,7 +17,7 @@ export const FbEnable = typeof process.env.FB_CONNECTION === 'undefined' ? true 
 export const MqttEnable = process.env.MQTT_CONNECTION === 'true';
 export const MqttUrl = process.env.MQTT_URL || 'mqtt://127.0.0.1:1883';
 // MAVLink is opt-in. MAVLINK_LINKS: comma-separated links, `udp:<bind host>:<port>` (listen,
-// PX4/ArduPilot send to it) or `tcp:<host>:<port>` (connect). See MAVLINK_PLAN.md.
+// PX4/ArduPilot send to it) or `tcp:<host>:<port>` (connect). See docs/decisions/mavlink.md.
 export const MavlinkEnable = process.env.MAVLINK_CONNECTION === 'true';
 export const MavlinkLinks = process.env.MAVLINK_LINKS || 'udp:0.0.0.0:14550';
 export const StreamServer = process.env.STREAM_SERVER === 'true'; //if use mediamtx server in local host

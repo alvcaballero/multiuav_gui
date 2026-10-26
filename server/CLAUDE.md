@@ -384,7 +384,7 @@ time, so per-task report windows (events, flown track) of two tasks on one devic
 
 **Device Configuration** (`server/config/devices/interfaces/<category>.yaml`, one file per
 category). A "category" is an INTERFACE — how the GCS talks to a device (message set + topics +
-encoders of one software stack), not a kind of vehicle (plan: `VEHICLE_PLATFORMS_PLAN.md`). The
+encoders of one software stack), not a kind of vehicle (decisions: `docs/decisions/vehicle-platforms.md`). The
 name `devices_msg` survives in code and comments for this catalog (it was one `devices_msg.yaml`).
 
 ```yaml
@@ -745,7 +745,7 @@ The project includes an external MCP server as a git submodule (`mcp_server/`):
 - **Purpose**: Provides UAV-specific tools for LLM integration (mission planning, device control, telemetry queries)
 - **Protocol**: Supports both STDIO and SSE transport modes
 - **Features**:
-  - Auto-reconnection with exponential backoff (1s → 16s over 5 attempts)
+  - Auto-reconnection with exponential backoff (2s → 32s over 5 attempts)
   - Detects connection errors (ECONNREFUSED, ECONNRESET, socket hang up)
   - Integrated with server via `mcpClient.js`
 - **Development**: Can be debugged independently using VS Code Debug panel or MCP Inspector
@@ -753,7 +753,7 @@ The project includes an external MCP server as a git submodule (`mcp_server/`):
 
 **Tool Calling Loop:**
 
-- Max 6 iterations to prevent infinite recursion
+- Max 25 iterations (18 for `capability: high` agents such as the planner) to prevent infinite recursion (`chat.js`)
 - Tools: Mission planning, device control, sensor queries
 - Tool results fed back to LLM for context-aware responses
 
@@ -795,8 +795,8 @@ checkout at `../gcs_eevee_assistant` relative to `llm_planner_gcs/`) over its `<
 API. Opt-in per chat via `chat.metadata.engine === 'eve'` (set at creation, `POST /api/chat/chats
 {engine:"eve", agent?}`); everything else keeps using `MessageOrchestrator`/`mcpClient.js` unchanged and
 `chatController._resolveEngine` is the only branch point. eve is its own full orchestrator (tool loop,
-sub-agents, sandbox): this bridge does not reimplement any of that. Plan, decisions and what is still
-unverified: `eve-implementation.md` (repo root of `multiuav_gcs/`).
+sub-agents, sandbox): this bridge does not reimplement any of that. Plan (active), decisions and what is
+still unverified: `docs/plans/eve.md` (in `multiuav_gcs/`).
 
 **It does not wait for the answer.** A turn can wait on a human for hours, so `EveOrchestrator.processMessage`
 only sends the message and makes sure `EveRelay` is reading; what comes back reaches the client through the
@@ -862,7 +862,7 @@ cancel button (`EveOrchestrator.cancel` exists, no route), activity after a page
 The MCP client implements automatic reconnection:
 
 - Detects disconnections from server restart or network issues
-- Exponential backoff: 1s, 2s, 4s, 8s, 16s (configurable)
+- Exponential backoff: 2s, 4s, 8s, 16s, 32s (configurable)
 - Max 5 reconnection attempts (configurable)
 - Retries failed tool executions after successful reconnection
 - Manual reconnect/reset via `mcpClient.reconnect()` and `mcpClient.resetReconnectAttempts()`
@@ -973,14 +973,14 @@ the camera is `Websocket`; `camera.js` builds the RTSP URL from it, the client's
 
 **MQTT Protocol** (`protocol: 'mqtt'`, opt-in with `MQTT_CONNECTION=true`, broker at `MQTT_URL`, default `mqtt://127.0.0.1:1883`):
 
-- `models/mqtt/MqttServer.js` (started from `server.js` via `initMqttServer`), mirror of `FlatbufferServer`. Plan and open risks: `MQTT_PLAN.md`.
+- `models/mqtt/MqttServer.js` (started from `server.js` via `initMqttServer`), mirror of `FlatbufferServer`. Decisions and drone-side design: `docs/decisions/mqtt.md`; open items in `TODO.md`.
 - Topic contract lives ONLY in `models/mqtt/mqttTopics.js`: `muav/<device>/pub/<slot>` (telemetry), `muav/<device>/srv/<name>/{request,response}` (service calls), `muav/<device>/status` (retained presence, plain `online`/`offline`). `<slot>` / `<name>` are the keys of `subscribers` / `services` in `devices_msg.yaml`.
 - Telemetry reuses `decodeMsg` unchanged: the drone publishes the same JSON shape rosbridge does. A payload with bare `NaN`/`Infinity` is parsed with those as `null` instead of being dropped.
 - Service calls are enveloped (`{id, ts, request}` → `{id, success, response, error}`) and correlated by `id`. Unlike robofleet, `sendCommand` resolves only when the drone answers or the GCS timeout fires. `envelope.success=false` means the CALL failed; the service's own verdict (`response.success || response.result`) stays inside `response`.
 - Only `services` are bridged. Publishers and actions on an `mqtt` device answer a warning (out of scope for v1).
 - Tests: `test/test-mqtt-server.js` runs against a fake client (no broker).
 
-**MAVLink Protocol** (`protocol: 'mavlink'`, opt-in with `MAVLINK_CONNECTION=true`, links in `MAVLINK_LINKS`, default `udp:0.0.0.0:14550`). PX4 and ArduCopter on `node-mavlink` (pinned: its traps below were measured on 2.3.0). Plan, SITL results and open items: `MAVLINK_PLAN.md` — read its "Resultados F0" and "Estado Fn" before changing anything here.
+**MAVLink Protocol** (`protocol: 'mavlink'`, opt-in with `MAVLINK_CONNECTION=true`, links in `MAVLINK_LINKS`, default `udp:0.0.0.0:14550`). PX4 and ArduCopter on `node-mavlink` (pinned: its traps below were measured on 2.3.0). Decisions and SITL results: `docs/decisions/mavlink.md` — read its "Resultados F0" and "Estado Fn" before changing anything here; open items in `TODO.md`.
 
 - `models/mavlink/`: `links.js` (UDP listens, one parser per remote `address:port`; TCP connects; serial not yet), `MavlinkServer.js`, `mavlinkMessages.js` (registry, GCS identity 255/190, builders). Started from `server.js` via `initMavlinkServer`.
 - **A vehicle is its `device.attributes.systemId`** (1..254), on ANY link: the route back is learned from the autopilot HEARTBEAT (`autopilot != INVALID`, `type != GCS`; components and other GCS are ignored). Presence from that heartbeat (offline after 5 s); `device.status` still comes from positions (`DeviceHealthMonitor`). The GCS heartbeats at 1 Hz; PX4 answers TEMPORARILY_REJECTED to commands until it heard it for ~1 s, so commands wait for that.

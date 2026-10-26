@@ -15,6 +15,27 @@ MultiUAV-GUI is a Ground Control Station (GCS) for commanding and monitoring het
 | `client/`     | Web UI (React 19/Vite/MUI v7) | `client/AGENTS.md`     |
 | `server/`     | Backend server                | `server/AGENTS.md`     |
 
+## Docs y backlog
+
+Tres tipos de documento, cada uno en UN lugar:
+
+| Qué | Dónde | Vida |
+| --- | ----- | ---- |
+| Qué falta (backlog) | `TODO.md` (raíz) | Cambia siempre. Es el ÚNICO |
+| Por qué se hizo así | `docs/decisions/<tema>.md` | Plan cerrado: no cambia más |
+| Plan en curso | `docs/plans/<tema>.md` | Temporal: se cierra cuando termina |
+| Cómo funciona hoy | `CLAUDE.md` de cada carpeta, `docs/` | Se actualiza con el código |
+
+Reglas:
+1. **Un solo backlog.** No crear otro `TODO*.md` ni listas de pendientes en otro archivo. Un pendiente sin plan
+   activo va a `TODO.md`.
+2. **Cerrar un plan es un solo commit**: sus pendientes pasan a `TODO.md` (verificados contra el código), el plan
+   se mueve a `docs/decisions/` y queda solo con decisiones, mediciones e historial; lo que repite un `CLAUDE.md`
+   se borra. El código cita el plan por sección (`docs/decisions/mavlink.md › F4`): al mover o recortar uno,
+   `rg` el nombre y actualizar las referencias.
+3. **Lo terminado se borra, no se tilda**: queda en `git log`.
+4. **Nada de TODO gitignored**: si es privado, es una nota personal, no un backlog.
+
 
 ## Development Commands
 

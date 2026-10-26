@@ -4,7 +4,8 @@
 # when the vehicle comes online (and again while it is not arriving): ArduPilot sends no
 # telemetry until asked, and PX4 sends position at ~50 Hz. Keep the rates low: a SiK radio
 # carries ~1-2 KB/s. HEARTBEAT has no rate: it is always 1 Hz. The interface is MAVLink + one
-# dialect: `firmware` says which, and the HEARTBEAT (autopilot) only checks it. See MAVLINK_PLAN.md.
+# dialect: `firmware` says which, and the HEARTBEAT (autopilot) only checks it. See
+# docs/decisions/mavlink.md.
 
 firmwares: [ px4 ]
 vehicleTypes: [ multirotor, vtol, fixed_wing ]

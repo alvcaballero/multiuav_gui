@@ -1,5 +1,5 @@
-// Device models at runtime: what each vehicle is (VEHICLE_PLATFORMS_PLAN.md › F2). A device is a
-// model + one of the interfaces that model lists (its `category`); this module says which pairs work.
+// Device models at runtime: what each vehicle is (docs/decisions/vehicle-platforms.md › F2). A device
+// is a model + one of the interfaces that model lists (its `category`); this module says which pairs work.
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { capabilitiesFile, deviceModelsDir } from '../../config/config.js';
@@ -214,7 +214,7 @@ export class deviceModelsModel {
   }
 
   /**
-   * What a planner is told about THIS device (VEHICLE_PLATFORMS_PLAN.md › F6): what it is, what it can
+   * What a planner is told about THIS device (docs/decisions/vehicle-platforms.md › F6): what it is, what it can
    * do (effective capabilities, as getAll) and its model's numbers. A block the model does not declare
    * is left out, never filled with a default: the planner then uses its own, as it does when it runs
    * without the GCS. An unknown model gives only the capabilities.

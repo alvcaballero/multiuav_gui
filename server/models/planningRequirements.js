@@ -1,6 +1,7 @@
 // What a mission type of config/planning/config.yaml asks of a device (`data.devices`): the vehicle
 // types that can fly it and the capabilities it needs. It replaced a list of category NAMES, which
-// named interfaces (how a device is talked to), not what can do the job (VEHICLE_PLATFORMS_PLAN.md › F6).
+// named interfaces (how a device is talked to), not what can do the job
+// (docs/decisions/vehicle-platforms.md › F6).
 // Pure: decodeMissionRequest filters with it, the boot checks the config with it.
 import { VEHICLE_TYPE } from '../config/status.js';
 

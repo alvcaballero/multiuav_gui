@@ -1,4 +1,4 @@
-// MQTT topic contract (see MQTT_PLAN.md). The drone side (mqtt_client fork) and the GCS
+// MQTT topic contract (see docs/decisions/mqtt.md). The drone side (mqtt_client fork) and the GCS
 // agree on these shapes; keep this file as the only place that builds or parses them.
 //
 //   muav/<device>/pub/<slot>                 telemetry   drone -> GCS

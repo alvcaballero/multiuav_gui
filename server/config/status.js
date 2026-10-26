@@ -54,7 +54,7 @@ export const TASK_TERMINAL_STATUS = Object.freeze([
 // Terminal tasks that never flew to completion: they make a finished mission "with errors".
 export const TASK_FAILED_STATUS = Object.freeze([TASK_STATUS.CANCELLED, TASK_STATUS.ERROR, TASK_STATUS.SKIPPED]);
 
-// --- What a device is and what talks to it (VEHICLE_PLATFORMS_PLAN.md) ---
+// --- What a device is and what talks to it (docs/decisions/vehicle-platforms.md) ---
 // How a vehicle moves: what its missions can contain. An interface lists the ones it can serve
 // (`vehicleTypes`); a device model will declare the one it is.
 export const VEHICLE_TYPE = Object.freeze({
