@@ -1,4 +1,4 @@
-# SITL Ardupilot
+# SITL PX4
 
 A little guide for simulate px4 with gazebo using docker
 

@@ -11,199 +11,32 @@ This project is part of [Multi Project](https://github.com/alvcaballero/multiUAV
 
 #### Table of Contents
 
-- [Documentation](#documentation)
+- [Getting started](#getting-started)
 - [Features](#-features)
-- [Development Setup](#development-setup)
-  - [Local setup (Linux & Windows)](#local-setup-linux--windows)
-  - [Run locally](#run-locally)
-    - [Backend](#backend)
-    - [Frontend](#frontend)
-  - [Docker (Linux)](#docker-linux)
-  - [Run on Docker containers](#run-on-docker-containers)
-- [Production Setup](#production-setup)
-  - [Local (Linux & Windows)](#local-linux--windows)
-    - [Backend](#backend-1)
-    - [Frontend](#frontend-1)
-  - [Docker (Linux)](#docker-linux-1)
+- [Documentation](#documentation)
+- [Future Work](#future-work)
+- [Releases](#releases)
 
-## Development Setup
+## Getting started
 
-First, clone the repo and cd into the project:
+Requirements: Node 20 (`nvm use` reads each folder's `.nvmrc`), npm and Docker.
 
 ```bash
-git clone https://github.com/alvcaballero/multiuav_gui.git
+git clone --recursive https://github.com/alvcaballero/multiuav_gui.git
 cd multiuav_gui
+bash infra/setup.sh                 # server/.env, Docker images, submodules
+
+# in two terminals, from the repo root:
+cd server && nvm use && npm install && npm run server    # backend on http://localhost:4000
+cd client && nvm use && npm install && npm run start     # dev frontend on http://localhost:3000
 ```
 
-### Local setup (Linux & Windows)
+Or both at once: `tmuxinator start -p infra/tmuxinator/gcs-simple.yml`.
 
-Install dependencies:
+Devices are created from the web interface (they live in the database, not in a config file).
 
-```bash
-cd server
-npm i
-cd ..
-```
-
-For case you comunicate through ros do you have to setup a docker container
-
-1. Install Docker container and prepare the container
-
-```bash
-cd docker
-docker build -t muavgcs:noetic .
-```
-
-or build with non root user
-
-```
-docker build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) -t muavgcs:noetic .
-
-```
-
-2. modify the docker/container_run.sh and change the PROJECT_DIR value and run
-
-```bash
-cd docker
-nano ./container_run.sh
-```
-
-3. put repos and in catkin
-
-```
-git clone https://github.com/dji-sdk/Onboard-SDK.git
-cd Onboard-SDK
-mkdir build
-cd build
-cmake ..
-sudo make -j7 install
-cd ../..
-
-mkdir catkin_ws && cd catkin_ws
-mkdir src && cd src
-catkin_init_workspace
-
-git clone --recurse-submodules --branch GimbalPitch -j8 https://github.com/alvcaballero/multiUAV_system.git
-git clone https://github.com/miggilcas/Onboard-SDK-ROS
-// git clone https://github.com/alvcaballero/multiUAV_system.git
-// git clone https://github.com/alvcaballero/multiuav_gui.git
-// git clone https://github.com/dji-sdk/Onboard-SDK-ROS
-git clone --branch noetic https://github.com/grvcTeam/grvc-utils.git
-// git clone https://github.com/CircusMonkey/ros_rtsp.git
-// git clone https://github.com/miggilcas/simple_vs.git
-
-cd ..
-catkin_make
-
-```
-
-if use wsl you need maping the ports [like](https://learn.microsoft.com/en-us/windows/wsl/networking)
-
-```
-netsh interface portproxy add v4tov4 listenport=4000 listenaddress=0.0.0.0 connectport=4000 connectaddress=(wsl ho
-stname -I)
- netsh interface portproxy add v4tov4 listenport=4000 listenaddress=0.0.0.0 connectport=8 connectaddress=172.21.74.249
-```
-
-### Run locally
-
-#### Backend
-
-Move to the server directory:
-
-```bash
-cd server
-```
-
-Open **.env.example** and copy its content into a new file named **.env**,
-then set the correct value for all things. Now start the server:
-
-```bash
-npm run server
-```
-
-#### Frontend
-
-Move to the client directory and run :
-
-```bash
-cd client
-npm run start
-```
-
-Backend will be running on port **5000** and frontend on port **3000** (if not
-already in use).
-
-### RosBridge
-
-Mode to the docker directory and run:
-
-```bash
-cd docker
-./container_run.sh
-```
-
-In the container run for enable the rosbridge and GCS can connect with de UAVs
-
-```bash
-roslaunch aerialcore_gui connect_uas.launch
-```
-
-### Docker (Linux)
-
-Open **.env.example** and copy its content into a new file named **.env**,
-then set the correct value for all things.
-Install dependencies:
-
-```bash
-docker-compose run server npm i
-docker-compose run bridge roslaunch aerialcore_gui connect_uas.launch
-```
-
-### Run on Docker containers
-
-```bash
-docker-compose up
-```
-
-## Production Setup
-
-### Local (Linux & Windows)
-
-#### Frontend
-
-Move to **./client/**
-
-```bash
-npm i -g serve
-```
-
-Build the app:
-
-```bash
-npm run build # Or yarn build
-```
-
-#### Backend
-
-Move to **./server/** and open **.env.example** and copy its content into a new file named **.env**,
-then set the correct value for all things. Now start the server:
-
-```bash
-npm run server
-```
-
-### Docker (Linux)
-
-Build images and run containers:
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
-```
-
-## Documentation
-
-The documentation of this project is [Documentation HERE](https://arpoma16.github.io/multiuav_gui_doc/)
+Everything else (ROS bridge, planner, MCP, video, offline map, Docker compose and tmuxinator profiles) is in
+**[infra/README.md](infra/README.md)**.
 
 ## 📋 Features
 
@@ -227,71 +60,7 @@ The documentation of this project is [Documentation HERE](https://arpoma16.githu
 
 <img src="docs/images/real-mission.png" alt="Screenshot in real Mission">
 
-## ⚙️ Installation
-
-1. To install MultiUAV-GUI need node 18 and npm and docker, I remend use nvm for use npm .
-
-2. Clone the repository.
-
-```bash
-git clone https://github.com/alvcaballero/multiuav_gui.git
-cd multiuav_gui
-```
-
-3. Install the requirements of server.
-
-```bash
-cd server
-npm install
-```
-
-## 🖥️ Usage
-
 The web interface use [openStreatMaps](https://tile.openstreetmap.org/) and for elevation profile use [OpentopoData](https://www.opentopodata.org/)
-
-1. Configure the server to modifi and edit .env and devices_init.yaml
-
-```bash
-cp multiuav_gui/server/.env.example multiuav_gui/server/.env
-cp /multiuav_gui/server/config/devices/.devices_init.yaml' /multiuav_gui/server/config/devices/devices_init.yaml'
-
-```
-
-2. Run server
-
-```bash
-cd multiuav_gui/server
-npm run server
-```
-
-3. Run rosbridge in docker
-
-```
-./container_run.sh
-roslaunch aerialcore_gui connect_uas.launch
-
-```
-
-3. Open the interfaz in browser http://localhost:4000/
-
-### optional use tmuxinator
-
-Interface for control and monitoring of multiple UAV in mision
-
-```
-tmuxinator start -p muav-gui.yml
-```
-
-### optional develop web interface
-
-for development of MUAV-GUI can access to http://localhost:3000/
-
-```
-cd multiuav_gui/client
-nvm use 20
-npm install
-npm run start
-```
 
 ## Documentation
 
@@ -299,9 +68,11 @@ you can see the documentacion for integration in [Documentation HERE](https://ar
 
 additional docs
 
-1. [Dependencias e instalacion de GCS](infra/README.md)
-1. [simulation PX4 Vtool](infra/Simulation-PX4.md)
-1. [UAV camera Stream](infra/CameraStream.md)
+1. [Install and run the GCS](infra/README.md)
+1. [ROS 1 workspace for the bridge](infra/guides/ros1-workspace.md)
+1. [simulation PX4 Vtool](infra/guides/sitl-px4.md)
+1. [UAV camera Stream](infra/guides/camera-stream.md)
+1. [Offline map](infra/guides/offline-map.md)
 1. [Video streaming (WebRTC)](docs/reference/video-streaming.md)
 1. [File transfer](docs/reference/file-transfer.md)
 

@@ -1096,18 +1096,18 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `TOOL_APPROVAL_TTL_MS` / `TOOL_APPROVAL_SWEEP_INTERVAL_MS`: how long an approval stays answerable (default 5 min) and how often expired ones are swept (default 30s)
 - `MCP_ENABLE`: Enable/disable MCP server integration (default false)
 - `MCP_CONFIG`: JSON configuration for MCP transport (`{"transport":"stdio","url":"http://localhost:3000/mcp"}`)
-- `PLANNING_SERVER` / `PLANNING_HOST`: enable + point to the `mip_planner` FastAPI service (see root `CLAUDE.md`)
+- `PLANNING_SERVER` / `PLANNING_HOST`: enable + point to Smart-Flies-MUAVPlanner (`/mission_request`, `/get_plan`, `models/planning.js`; default port 8004). NOT `mip_planner`, which only `llm_mission_evaluator` uses
 - `PROCESS_THERMAL_IMG`: enable thermal image post-processing pipeline
 - `WS_PING_INTERVAL_MS` / `WS_POSITIONS_INTERVAL_MS` / `WS_STATE_INTERVAL_MS`: client WS timers (heartbeat, position-batch flush, server-state broadcast)
 - `DEVICE_CHECK_INTERVAL_MS` / `DEVICE_UPDATE_INTERVAL_MS` / `DEVICE_TIMEOUT_MS`: device health-check cadence and OFFLINE threshold
 - `TELEMETRY_CHECK_INTERVAL_MS` / `TELEMETRY_SLOT_TIMEOUT_MS`: per-slot telemetry watchdog tick (default 2s) and silence threshold (default 5s; per slot: `timeout_s`)
 - `MAP_LATITUDE` / `MAP_LONGITUDE` / `MAP_ZOOM`: default map center for the local-origin ENU conversion
 
-**Device Configuration** (`server/config/devices/devices_init.yaml`):
+**Devices** live in the DB (`Device` model), created from the UI or `POST /api/devices`; there is no device
+file. What a device is and how it is talked to: `config/devices/device_models/` and `config/devices/interfaces/`
+(see ROS Integration).
 
-- Device registry on server startup
-- Protocol, credentials, camera endpoints
-- ROS topic mappings per device category
+How to run the server with its dependencies (Docker, ROS bridge, planner, MCP): `infra/README.md` in `multiuav_gcs/`.
 
 **MCP Server Configuration** (`mcp_server/.aitk/mcp.json`):
 
@@ -1154,7 +1154,8 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 ## External Dependencies
 
 - **ROS Noetic / ROS2**: For UAV communication (optional, based on protocol — see `models/ros/` for the ROS1→ROS2 split)
-- **MIP Planner** (`mip_planner/`, sibling FastAPI service, port 8000): python-mip/CBC solver that replaces the LLM sub-agent for mission planning; enabled via `PLANNING_SERVER`/`PLANNING_HOST` (see root `CLAUDE.md`)
+- **Smart-Flies-MUAVPlanner** (sibling submodule, Flask, port 8004): the external planner the GCS asks for missions (`/mission_request`, `/get_plan`); enabled via `PLANNING_SERVER`/`PLANNING_HOST`. It receives each device's `vehicle` profile (see Device models)
+- **MIP Planner** (`mip_planner/`, sibling FastAPI service, port 8000): python-mip/CBC solver, used by `llm_mission_evaluator` to evaluate the LLM planner; not called by the GCS server
 - **PostgreSQL/SQLite**: Device and mission persistence (optional, based on DB config)
 - **MediaMTX**: Video streaming server
 - **OpenStreetMap**: Map tiles (can be self-hosted for offline use)

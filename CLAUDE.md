@@ -10,14 +10,19 @@ MultiUAV-GUI is a Ground Control Station (GCS) for commanding and monitoring het
 
 ## Project Structure
 
-| Directory     | Purpose                       | Local Docs             |
-| ------------- | ----------------------------- | ---------------------- |
-| `client/`     | Web UI (React 19/Vite/MUI v7) | `client/AGENTS.md`     |
-| `server/`     | Backend server                | `server/AGENTS.md`     |
+| Directory | Purpose                                                     | Local Docs         |
+| --------- | ----------------------------------------------------------- | ------------------ |
+| `client/` | Web UI (React 19/Vite/MUI v7)                               | `client/CLAUDE.md` |
+| `server/` | Backend server                                              | `server/CLAUDE.md` |
+| `infra/`  | Cómo LEVANTARLO: compose, tmuxinator, `setup.sh`, guías     | `infra/README.md`  |
+| `docs/`   | Decisiones, planes, referencia para personas, imágenes      | ver abajo          |
+
+La raíz no lleva infraestructura (nada de `compose.yaml`, perfiles de tmuxinator ni `.env.example` sueltos): todo
+eso va en `infra/`.
 
 ## Docs y backlog
 
-Tres tipos de documento, cada uno en UN lugar:
+Cada tipo de documento, en UN lugar:
 
 | Qué | Dónde | Vida |
 | --- | ----- | ---- |
@@ -26,7 +31,7 @@ Tres tipos de documento, cada uno en UN lugar:
 | Plan en curso o propuesta sin decidir | `docs/plans/<tema>.md` | Temporal: se cierra cuando termina |
 | Cómo funciona hoy (para Claude) | `CLAUDE.md` de cada carpeta | Se actualiza con el código |
 | Cómo funciona hoy (para personas) | `docs/reference/` | Se actualiza con el código |
-| Cómo levantarlo (docker, tmuxinator, SITL) | `infra/` (junto a sus scripts) | Se actualiza con la infra |
+| Cómo levantarlo (docker, tmuxinator, SITL) | `infra/README.md`, `infra/guides/` (junto a sus scripts) | Se actualiza con la infra |
 | Imágenes del README y de los docs | `docs/images/` | — |
 
 Nombres de archivo en kebab-case (`vehicle-platforms.md`). Nada de `.md` sueltos en la raíz de `docs/`.
@@ -40,6 +45,9 @@ Reglas:
    `rg` el nombre y actualizar las referencias.
 3. **Lo terminado se borra, no se tilda**: queda en `git log`.
 4. **Nada de TODO gitignored**: si es privado, es una nota personal, no un backlog.
+5. **Cómo levantar el proyecto se escribe UNA vez, en `infra/README.md`.** El README y los `CLAUDE.md` apuntan
+   ahí, no lo copian: la copia es la que se pudre (pasó con `cd docker`, `docker-compose run bridge` y
+   `muav-gui.yml`, que no existían).
 
 
 ## Development Commands
@@ -60,14 +68,11 @@ npm install
 cd client
 npm install
 
-
-# Copy environment configuration
-cp server/.env.example server/.env
-# Edit server/.env with appropriate values
-
-# Copy device configuration template
-cp server/config/devices/.devices_init.yaml server/config/devices/devices_init.yaml
+# server/.env, Docker images, submodules (from the repo root)
+bash infra/setup.sh
 ```
+
+Devices are not configured by file: they live in the DB and are created from the UI or `POST /api/devices`.
 
 ### Running the Application
 
@@ -100,29 +105,9 @@ npm run format          # Format code with Prettier
 npm run format:check    # Check formatting without changes
 ```
 
-### Docker Setup
+### Docker, tmuxinator, ROS bridge, planner, offline map
 
-```bash
-# Build ROS bridge container
-cd docker
-docker build -t muavgcs:noetic .
-
-# Or build with non-root user
-docker build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) -t muavgcs:noetic .
-
-# Run all services with docker-compose
-docker-compose up
-
-# Run ROS bridge only
-docker-compose run bridge roslaunch aerialcore_gui connect_uas.launch
-```
-
-### Tmuxinator (Optional)
-
-```bash
-# Launch full stack with tmuxinator
-tmuxinator start -p muav-gui.yml
-```
+All in `infra/README.md` (rule 5 above).
 
 ### Error Handling
 
