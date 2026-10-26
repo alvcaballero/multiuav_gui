@@ -39,6 +39,12 @@ export const PSDK_SYMBOLS = Object.freeze({
     TURN_MODE_COUNTER_CLOCKWISE: 1,
     TURN_MODE_AUTO: 2,
   },
+  // WaypointV2 has no gimbal field: the gimbal moves only with ROTATE_GIMBAL actions, which is FREE. There is
+  // no pitch interpolation between waypoints, so GIMBAL_MODE_WAYPOINT is not offered. No firmware number either:
+  // the encoder only checks the mode is FREE.
+  mode_gimbal: {
+    GIMBAL_MODE_FREE: 0,
+  },
   actions: {
     ACTION_STAY: 0,
     ACTION_PHOTO: 1,

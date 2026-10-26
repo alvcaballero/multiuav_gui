@@ -203,7 +203,10 @@ function pushAction(actions, trigger, resolver) {
 //   [1] StopFlying         ← trigger: reach WP     (only if stay)
 //   [2] StartRecording?    ← trigger: reach WP     (only if video_start)
 //   [3] RotateYaw          ← trigger: after [2] or [1]
-//   [4] RotateGimbal?      ← trigger: after [3]    (only if gimbal != 0)
+//   [4] RotateGimbal?      ← trigger: after [3]    (only if gimbalPitch != null: the effective pitch,
+//                                                   action.gimbal else wp.gimbal, differs from the last one
+//                                                   emitted in the mission; 0 is a real value — see
+//                                                   effectiveGimbalPitch / buildPsdkActions)
 //        flight_anchor_id  = last of yaw / gimbal
 //   [5] StopRecording?     ← trigger: after flight_anchor  (if recording && take_photo)
 //   [5b] SetZoom?          ← trigger: after [5] or flight_anchor  (only if zoom_camera)
@@ -212,11 +215,12 @@ function pushAction(actions, trigger, resolver) {
 //   [7] StartRecording?    ← trigger: after [6]    (if was recording and took photo)
 //   [8] StartFlying        ← trigger: after flight_anchor_id  (NEVER after camera)
 //
-function buildActionsForWaypoint(actions, wpIdx, item, isRecording) {
-  const act = item.action;
+// `gimbalPitch` is the pitch to emit at this waypoint (degrees) or null when no RotateGimbal is needed.
+function buildActionsForWaypoint(actions, wpIdx, item, isRecording, gimbalPitch = null) {
+  const act = item.action ?? {};
   const hasStay = Object.prototype.hasOwnProperty.call(act, 'stay') || true; // default is stay, even if not present
   const hasYaw = Object.prototype.hasOwnProperty.call(act, 'yaw');
-  const hasGimbal = Object.prototype.hasOwnProperty.call(act, 'gimbal') && Number(act.gimbal) !== 0;
+  const hasGimbal = gimbalPitch !== null;
   const hasTakePhoto = Object.prototype.hasOwnProperty.call(act, 'photo');
   const hasVideoStart = Object.prototype.hasOwnProperty.call(act, 'video_start');
   const hasVideoStop = Object.prototype.hasOwnProperty.call(act, 'video_stop');
@@ -254,7 +258,7 @@ function buildActionsForWaypoint(actions, wpIdx, item, isRecording) {
   // [4] RotateGimbal — chains after [3]
   if (hasGimbal) {
     const gimbalTrigger = flightAnchorId !== null ? setTriggers(null, flightAnchorId) : wpTrigger;
-    flightAnchorId = pushAction(actions, gimbalTrigger, ACTION_RESOLVERS[ACTION_TYPE.gimbal](Number(act.gimbal)));
+    flightAnchorId = pushAction(actions, gimbalTrigger, ACTION_RESOLVERS[ACTION_TYPE.gimbal](gimbalPitch));
   }
 
   // flight_anchor_id is now set — camera actions chain from here, StartFlying also uses it
@@ -310,16 +314,35 @@ function buildActionsForWaypoint(actions, wpIdx, item, isRecording) {
   }
 }
 
+// Effective gimbal pitch of a waypoint: the ACTION's value wins, else the WAYPOINT param (same precedence as
+// MAVLink); null when neither is defined. 0 is a real value (level).
+function effectiveGimbalPitch(item) {
+  const raw = item.action?.gimbal ?? item.gimbal;
+  if (raw == null) return null;
+  const pitch = Number(raw);
+  return Number.isFinite(pitch) ? pitch : null;
+}
+
 function buildPsdkActions(waypoints) {
   const actions = [];
   let isRecording = false;
+  // Last pitch emitted in the mission (null = unknown, so the first defined pitch is always emitted).
+  // RotateGimbal is ABSOLUTE, so repeating the same pitch is redundant; a waypoint without pitch keeps it.
+  let lastPitch = null;
   for (let wpIdx = 0; wpIdx < waypoints.length; wpIdx++) {
     const item = waypoints[wpIdx];
-    if (!Object.prototype.hasOwnProperty.call(item, 'action')) continue;
-    buildActionsForWaypoint(actions, wpIdx, item, isRecording);
+    const pitch = effectiveGimbalPitch(item);
+    const gimbalPitch = pitch !== null && pitch !== lastPitch ? pitch : null;
+    const hasActionKey = Object.prototype.hasOwnProperty.call(item, 'action');
+    // A wp with neither `action` nor a gimbal to emit has nothing to sequence
+    if (!hasActionKey && gimbalPitch === null) continue;
+    buildActionsForWaypoint(actions, wpIdx, item, isRecording, gimbalPitch);
+    if (gimbalPitch !== null) lastPitch = gimbalPitch;
     // update recording state for next waypoints
-    if (Object.prototype.hasOwnProperty.call(item.action, 'video_start')) isRecording = true;
-    if (Object.prototype.hasOwnProperty.call(item.action, 'video_stop')) isRecording = false;
+    if (hasActionKey) {
+      if (Object.prototype.hasOwnProperty.call(item.action, 'video_start')) isRecording = true;
+      if (Object.prototype.hasOwnProperty.call(item.action, 'video_stop')) isRecording = false;
+    }
   }
   return actions;
 }
@@ -332,7 +355,7 @@ function buildPsdkActions(waypoints) {
 // ─── Encoder: task crudo → psdk_interfaces/srv/InitWaypointV2Setting ─────────
 
 export function MissionToPsdkV2(task, { missionId = 1 } = {}) {
-  const { idle_vel, max_vel, mode_yaw, mode_trace, mode_landing } = extractRouteAttributes(
+  const { idle_vel, max_vel, mode_yaw, mode_trace, mode_landing, mode_gimbal } = extractRouteAttributes(
     task.params ?? {},
     task.uav_type
   );
@@ -342,6 +365,8 @@ export function MissionToPsdkV2(task, { missionId = 1 } = {}) {
   const headingMode = psdkParamFromValue('mode_yaw', mode_yaw);
   const traceMode = psdkParamFromValue('mode_trace', mode_trace);
   const finishAction = psdkParamFromValue('mode_landing', mode_landing);
+  // Only checked: FREE is what this encoder does (gimbal by actions); WAYPOINT throws, never flown as FREE.
+  if (mode_gimbal != null) psdkParamFromValue('mode_gimbal', mode_gimbal);
 
   // mode_turn is per-waypoint: each wp may carry its own wp.mode_turn (wire number);
   // fall back to the catalog default when absent. Resolved via symbol like the rest.

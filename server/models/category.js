@@ -173,7 +173,10 @@ function filterParamOptions(param, symbols) {
   if (param.type !== 'select' || !symbols) return param;
   const supported = symbols[param.id];
   if (!supported) return param; // no table for this param → leave options as-is
-  return { ...param, options: param.options.filter((opt) => opt.key in supported) };
+  const options = param.options.filter((opt) => opt.key in supported);
+  // A default the family does not offer would be refused by the validator: its first option instead.
+  if (options.length === 0 || options.some((opt) => opt.value === param.default)) return { ...param, options };
+  return { ...param, options, default: options[0].value };
 }
 
 // Resolves the actions/params a category exposes by filtering the global catalog

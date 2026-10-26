@@ -243,5 +243,6 @@ profiles:
 
   psdk:
     actions: [stay, photo, video_start, video_stop, yaw, gimbal, focus_camara, zoom_camera]
-    params: [mode_yaw, mode_trace, mode_landing, mode_goto_first, idle_vel, max_vel, mode_speed]
+    # mode_gimbal: only GIMBAL_MODE_FREE (PSDK_SYMBOLS), what WaypointV2 does
+    params: [mode_yaw, mode_trace, mode_landing, mode_goto_first, mode_gimbal, idle_vel, max_vel, mode_speed]
     waypoint_params: [mode_turn, gimbal, speed]
