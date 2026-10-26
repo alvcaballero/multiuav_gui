@@ -337,17 +337,13 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
 
 ## Flota y lado dron (fuera de este repo)
 
-- [ ] **Alinear `px4_ros2_docker` con la versión de PX4 que espera el GCS**
-  - Su README dice PX4 1.15.4 + `px4_msgs` `release/1.15`, y hay un checkout así en `~/work/px4_ros2_docker`. La
-    interfaz `px4_ros2` del GCS usa topics versionados (`vehicle_status_v4`, `battery_status_v1`) que solo existen
-    en `px4_msgs` `main` (PX4 1.18): con 1.15 no llega la telemetría. Versión esperada: `infra/external.md`
-  - Decidir qué checkouts duplicados sobran (`px4_msgs` ×4, `psdk_ros2` ×3, `PX4-Autopilot` ×2,
-    `multiUAV_system` ×2)
-
 - [ ] **Probar el translation node de PX4 con el GCS en SITL**
   - Decisión y uso en `infra/external.md` › Versiones de mensajes de PX4: una sola interfaz `px4_ros2` (`px4_msgs`
     `main`) y el nodo en cada dron con otro PX4. Solo está leído en el código, nunca probado
-  - Probar: PX4 1.15 o 1.16 en SITL con namespace (`/uav_1`) + translation node compilado desde PX4 `main`, contra
+  - Entorno para el firmware viejo: `px4_ros2_docker` (PX4 1.15.4 + `px4_msgs` `release/1.15`, A PROPÓSITO: es el
+    que permite probar versiones viejas). Sin el translation node, el GCS no recibe su telemetría (sus topics no
+    llevan `_vN`)
+  - Probar: ese PX4 1.15 en SITL con namespace (`/uav_1`) + translation node compilado desde PX4 `main`, contra
     el GCS con `px4_msgs` `main`. Ver que lleguen `status`, `battery`, `local_position` y `vehicle_command_ack`
     (el watchdog de slots marca `missing` si no) y que un comando (Arm) llegue al firmware viejo
   - Si funciona: sumarlo al despliegue del companion de cada dron (al lado del Agent XRCE-DDS)
