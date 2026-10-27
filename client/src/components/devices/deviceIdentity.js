@@ -44,26 +44,48 @@ export const systemIdError = (systemId) =>
     ? null
     : `Required: an integer between ${SYSTEM_ID_MIN} and ${SYSTEM_ID_MAX}`;
 
+// The radio on board (server ATTRIBUTE_GROUPS 'radio') and the onboard computer to ping ('companion'): all
+// optional, empty means "none".
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+const MAC = /^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i;
+
+const ipv4Error = (ip) => (!ip || IPV4.test(ip.trim()) ? null : 'An IPv4 address like 10.20.0.64');
+export const radioIpError = ipv4Error;
+export const companionIpError = ipv4Error;
+export const radioMacError = (mac) =>
+  !mac || MAC.test(mac.trim()) ? null : 'A MAC like aa:bb:cc:dd:ee:ff';
+
 /** True when the server would accept the identity fields of `item`. */
 export function isDeviceIdentityValid(item) {
   if (!item?.name || !item.deviceModel || !item.category || !item.protocol) return false;
+  const { radioIp, radioMac, companionIp } = item.attributes ?? {};
+  if (radioIpError(radioIp) || radioMacError(radioMac) || companionIpError(companionIp)) {
+    return false;
+  }
   return !isMavlink(item.protocol) || systemIdError(item.attributes?.systemId) === null;
 }
 
-// `attributes.capabilities` belongs to the MODEL (which of its capabilities this unit has), every
-// other key to the protocol (mavlink: systemId).
-const capabilityOverrides = (item) =>
-  item.attributes?.capabilities ? { capabilities: item.attributes.capabilities } : {};
+// `attributes.capabilities` belongs to the MODEL (which of its capabilities this unit has) and the radio and
+// companion keys to the unit's hardware: none of them depends on the protocol. Every other key belongs to the
+// protocol (mavlink: systemId).
+const HARDWARE_KEYS = ['radioIp', 'radioMac', 'companionIp'];
+const unitAttributes = (item) => {
+  const attributes = item.attributes ?? {};
+  const kept = {};
+  if (attributes.capabilities) kept.capabilities = attributes.capabilities;
+  for (const key of HARDWARE_KEYS) if (attributes[key]) kept[key] = attributes[key];
+  return kept;
+};
 
 /**
  * The item after a protocol change: the protocol's attributes are kept only while it stays the same,
- * the capability switches always. {} (not undefined) so an edit clears them in the database too.
+ * the capability switches and the radio always. {} (not undefined) so an edit clears them in the database too.
  */
 export function withProtocol(item, protocol) {
   return {
     ...item,
     protocol,
-    attributes: protocol === item.protocol ? (item.attributes ?? {}) : capabilityOverrides(item),
+    attributes: protocol === item.protocol ? (item.attributes ?? {}) : unitAttributes(item),
   };
 }
 
@@ -113,10 +135,12 @@ export function withCategory(item, category, format) {
 
 /**
  * The item after a model change: its interfaces are another list, so the category (and with it the
- * protocol) is chosen again, and the capability switches were the old model's.
+ * protocol) is chosen again, and the capability switches were the old model's. The radio is the unit's.
  */
 export function withModel(item, deviceModel) {
   if (deviceModel === item.deviceModel) return item;
   const cleared = withCategory(item, null, null);
-  return { ...cleared, deviceModel, attributes: {} };
+  const attributes = unitAttributes(item);
+  delete attributes.capabilities;
+  return { ...cleared, deviceModel, attributes };
 }

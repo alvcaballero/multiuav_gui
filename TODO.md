@@ -229,6 +229,24 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
 
 ## Server — Arquitectura
 
+- [ ] **Enlace de radio (Ubiquiti): lo que quedó sin hacer**
+  - Los umbrales de SNR (`linkQuality.js`: bueno ≥25 dB, regular ≥15, pobre debajo, histéresis 2 dB) son una primera
+    aproximación: ajustarlos con vuelo real, a distancia, antes de creerle al color
+  - `device.link` llega con el broadcast de 10 s (`DEVICE_UPDATED` periódico) y de inmediato solo al CAMBIAR de nivel:
+    el SNR del chip puede ir 10 s atrasado. Si molesta, mandar el enlace por su propio batcher como las posiciones
+  - Un solo AP (`RADIO_AP_HOST`). Con más de uno hay que poder indicar a cuál se asocia cada device
+  - AirOS 8 de 2018 contesta SNMP v1 (v2c da timeout), por eso es el default; no probado en AirOS más nuevo ni en línea
+    Wave/airFiber. La community va en `RADIO_AP_COMMUNITY`; con SNMPv3 habría que cambiar `ubiquitiSnmp.js`
+  - Sin leer: CCQ (col. 6, vale 333 en AirOS 8 AC y no se sabe qué es), distancia (parece el mínimo del AP, no la real)
+    ni los contadores de bytes (Counter64, SNMPv1 no los tiene)
+  - Falta la mirada desde el otro lado: el radio del dron ve su propia señal (la potencia de tx es distinta en cada
+    extremo). Haría falta un slot publicado por la companion (ROS/MQTT)
+  - Ping a la computadora de a bordo (`hostPingMonitor.js`): sus umbrales (bueno <50 ms y ≤5 % de pérdida, regular
+    <150 ms y ≤15 %) también son estimaciones. Es ICMP de iputils en Linux: verificar que `ping` exista en la imagen
+    `node:20` de `compose.base.yaml` (no lo comprobé) y que el contenedor llegue a la red de los radios
+  - El ping mide el camino hasta la companion, no la latencia de los comandos/telemetría que ve el piloto (ese
+    número saldría del propio tráfico: heartbeat MAVLink, roundtrip de servicios ROS)
+
 - [ ] **Renombrar `category` → `interface`**
   - `category` (`config/devices/interfaces/`, `Device.category`) es la INTERFAZ, el conjunto de mensajes + topics +
     encoders de un stack, nunca fue una categoría de dispositivo. NO reutilizar "categoría" para el tipo de vehículo

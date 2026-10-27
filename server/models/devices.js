@@ -12,6 +12,8 @@ import { logger } from '../common/logger.js';
 import { readDataFile } from '../common/utils.js';
 import { DEVICE_STATUS } from '../config/status.js';
 import { telemetryWatchdog } from './inspect/telemetryWatchdog.js';
+import { radioLinkMonitor } from './radio/radioLinkMonitor.js';
+import { hostPingMonitor } from './radio/hostPingMonitor.js';
 import { categoryModel } from './category.js';
 import { deviceModelsModel } from './deviceModels/deviceModels.js';
 
@@ -113,6 +115,8 @@ export class DevicesModel {
       where: { deletedAt: null },
     });
     // `telemetry`: the slots that stopped (or never started) arriving — see telemetryWatchdog.js
+    // `link`: radio link to the GCS's access point (null when the device has no radio set) — see radioLinkMonitor.js
+    // `latency`: ping to its onboard computer (null without `companionIp`) — see hostPingMonitor.js
     // `platform`: what the client draws it as (vehicle type, icon, 3D model), from its device model.
     // `capabilities`: what this unit can do (its model's, switched by its own overrides, that its
     // interface implements); null when its category is unknown.
@@ -121,6 +125,8 @@ export class DevicesModel {
       return {
         ...d.dataValues,
         telemetry: telemetryWatchdog.statusOf(d.id),
+        link: radioLinkMonitor.statusOf(d.id),
+        latency: hostPingMonitor.statusOf(d.id),
         platform: deviceModelsModel.platformOf(d.deviceModel),
         capabilities: capabilities ? [...capabilities].sort() : null,
       };

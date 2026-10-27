@@ -162,6 +162,18 @@ export const DEVICE_UPDATE_INTERVAL_MS = Number(process.env.DEVICE_UPDATE_INTERV
 export const DEVICE_TIMEOUT_MS = Number(process.env.DEVICE_TIMEOUT_MS) || 30000;
 export const TELEMETRY_CHECK_INTERVAL_MS = Number(process.env.TELEMETRY_CHECK_INTERVAL_MS) || 2000; // per-slot watchdog tick (see models/inspect/telemetryWatchdog.js)
 export const TELEMETRY_SLOT_TIMEOUT_MS = Number(process.env.TELEMETRY_SLOT_TIMEOUT_MS) || 5000; // a slot silent this long is stale; a subscriber may override it with `timeout_s`
+// Radio link quality (models/radio/): the GCS's Ubiquiti AP is polled over SNMP and each station (the radio on board a
+// drone) is matched to a device by `attributes.radioIp` / `radioMac`. Off while RADIO_AP_HOST is empty.
+export const RADIO_AP_HOST = process.env.RADIO_AP_HOST || '';
+export const RADIO_AP_COMMUNITY = process.env.RADIO_AP_COMMUNITY || 'public';
+export const RADIO_SNMP_VERSION = process.env.RADIO_SNMP_VERSION === '2c' ? '2c' : '1'; // AirOS 8 of 2018 answers v1 only
+export const RADIO_POLL_INTERVAL_MS = Number(process.env.RADIO_POLL_INTERVAL_MS) || 3000;
+export const RADIO_SNMP_TIMEOUT_MS = Number(process.env.RADIO_SNMP_TIMEOUT_MS) || 2000;
+// Ping to the onboard computer of each device that has `attributes.companionIp` (models/radio/hostPingMonitor.js).
+// Opt-out: it only touches devices that set the address, and needs Linux `ping` on the server host.
+export const PING_ENABLE = process.env.PING_ENABLE !== 'false';
+export const PING_INTERVAL_MS = Number(process.env.PING_INTERVAL_MS) || 2000;
+export const PING_WINDOW = Number(process.env.PING_WINDOW) || 20; // samples kept per device
 // config files
 // One file per interface ("category"), named after its key: models/interfaces/interfaceStore.js.
 export const interfacesDir = path.join(__dirname, 'devices', 'interfaces');

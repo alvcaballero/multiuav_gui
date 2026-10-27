@@ -610,6 +610,34 @@ smoothed per-slot rate: `GET /api/devices/:id/telemetry` → `{ slot: { health, 
 by the device messages page. Timestamps and counts only, never content — the content is `rawTap`'s. Dependencies are injected in
 `start()` from `server.js`: `models/devices.js` imports the watchdog, so it cannot import back.
 
+**Radio link quality** (`models/radio/`; test `test/test-radio-link.js`). The GCS's Ubiquiti is an access point
+(AirOS 8, PtMP): ONE SNMP walk of its station table (`ubntStaTable`, `1.3.6.1.4.1.41112.1.4.7.1`, indexed
+`<wlan>.<MAC>`) gives signal, noise floor, rates and capacity of EVERY drone associated to it, so nothing is asked of
+the drones. `ubiquitiSnmp.js` (`fetchStations`/`parseStations`, `net-snmp`), `linkQuality.js` (pure: SNR = signal -
+noise, `LINK_LEVEL` good/fair/poor/lost/unknown with hysteresis, `findStation`), `radioLinkMonitor.js` (poller started
+from `server.js`, dependencies injected like `telemetryWatchdog`). A device is found in the table by
+`attributes.radioMac` (wins) or `radioIp` (attribute group `radio`, the radio's own address, NOT the companion's); a
+device with neither is not tracked and `device.link` is null. **SNMP v1**: the 2018 AirOS 8 answers it and times out on
+v2c (`RADIO_SNMP_VERSION`). Env: `RADIO_AP_HOST` (empty = the whole thing is off), `RADIO_AP_COMMUNITY`,
+`RADIO_POLL_INTERVAL_MS`, `RADIO_SNMP_TIMEOUT_MS`. `lost` = the AP answers and the station is absent; `unknown` = the
+AP does not answer; both only after 3 polls in a row. Events (`RadioLink`) only for poor/lost and the way back, never
+for good↔fair, and none for a drone that is simply off when the server boots. It reaches the client as
+`device.link` (`DevicesModel.getAll`) and a level change is re-broadcast at once as `DEVICE_UPDATED`. Read: CCQ and
+distance are not (see `TODO.md`); the byte counters are Counter64, which v1 does not have.
+
+**Ping to the onboard computer** (`models/radio/hostPingMonitor.js` + pure `pingStats.js`; test `test/test-host-ping.js`).
+The radio's SNR is only the radio hop; this measures the real path to the companion computer and works with any radio.
+A device with `attributes.companionIp` (attribute group `companion`, an IPv4; NOT a connection address, a device has
+none) is pinged every `PING_INTERVAL_MS` (2 s) with Linux iputils `ping -c 1 -W 1` through `execFile` (no shell), over a
+window of `PING_WINDOW` (20) samples: RTT, jitter (mean |Δ| of consecutive answers) and loss. Levels reuse `LINK_LEVEL`
+(good: loss ≤5 % and avg <50 ms; fair: ≤15 % and <150 ms; else poor; 3 pings in a row without answer = lost; first
+pings = unknown), same Event policy as the radio (poor/lost and the way back, nothing for a computer that is off at
+boot, action `PingLink`). It reaches the client as `device.latency` and a level change is re-broadcast at once as
+`DEVICE_UPDATED`. **Needs `ping` on the host that runs the server** (`PING_ENABLE=false` turns it off): if it is
+missing (ENOENT) it logs once and stops itself. `infra/compose/compose.base.yaml` runs the stock `node:20` image, whose
+`ping` is not verified; `server/Dockerfile` (not used by the compose files) is `node:slim` and has none. Linux flags
+only: `-W` is milliseconds on macOS.
+
 **Message Encoding** (`models/msgEncode.js`, NOT under `ros/`): a registry by msgType, the mirror of
 `msgDecode` on the way out. The structure of a message depends only on its msgType and is the same for
 every protocol (rosbridge JSON, the same JSON over MQTT, robofleet = ROS messages packed in Flatbuffers),

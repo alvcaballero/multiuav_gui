@@ -27,6 +27,8 @@ import PendingIcon from '@mui/icons-material/Pending';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
 import SensorsOffIcon from '@mui/icons-material/SensorsOff';
+import WifiIcon from '@mui/icons-material/Wifi';
+import NetworkPingIcon from '@mui/icons-material/NetworkPing';
 
 import PositionValue from '../../common/components/PositionValue';
 import RemoveDialog from '../../common/components/RemoveDialog';
@@ -177,6 +179,80 @@ const TelemetryChip = ({ telemetry }) => {
   );
 };
 
+// Radio link to the GCS's access point, as the server's radioLinkMonitor reports it in `device.link` (null when
+// the device has no radio set: no chip). `level` is the server's LINK_LEVEL; colours by meaning (STATUS).
+const LINK_STYLE = {
+  good: { color: 'success', text: 'Good' },
+  fair: { color: 'warning', text: 'Fair' },
+  poor: { color: 'error', text: 'Poor' },
+  lost: { color: 'error', text: 'Lost' },
+  unknown: { color: 'default', text: 'Unknown' },
+};
+
+const dbm = (value) => (Number.isFinite(value) ? `${value} dBm` : '–');
+const mbps = (value) => (Number.isFinite(value) ? `${value} Mbps` : '–');
+
+const LinkChip = ({ link }) => {
+  if (!link) return null;
+  const style = LINK_STYLE[link.level] ?? LINK_STYLE.unknown;
+  const measured = Number.isFinite(link.snr);
+  const stale = link.level === 'lost' || link.level === 'unknown';
+  const tooltip = !measured
+    ? link.level === 'lost'
+      ? "Not in the access point's station table"
+      : 'The access point does not answer'
+    : [
+        `Signal ${dbm(link.signal)} · noise ${dbm(link.noise)}`,
+        `Rate tx ${mbps(link.txRate)} / rx ${mbps(link.rxRate)}`,
+        `Capacity tx ${mbps(link.txCapacity)} / rx ${mbps(link.rxCapacity)}`,
+        stale ? `Last reading ${Math.round((link.ageMs ?? 0) / 1000)} s ago` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+  return (
+    <Tooltip title={tooltip}>
+      <Chip
+        icon={<WifiIcon />}
+        color={style.color}
+        size="small"
+        variant="outlined"
+        label={
+          measured && !stale ? `Radio ${style.text} · SNR ${link.snr} dB` : `Radio ${style.text}`
+        }
+        sx={{ mx: 2, mt: 1, maxWidth: 'calc(100% - 32px)' }}
+      />
+    </Tooltip>
+  );
+};
+
+// Ping to the onboard computer, as the server's hostPingMonitor reports it in `device.latency` (null without a
+// `companionIp`: no chip). Same levels and colours as the radio chip.
+const LatencyChip = ({ latency }) => {
+  if (!latency) return null;
+  const style = LINK_STYLE[latency.level] ?? LINK_STYLE.unknown;
+  const answered = Number.isFinite(latency.avgMs) && latency.level !== 'lost';
+  const ms = (value) => (Number.isFinite(value) ? `${value} ms` : '–');
+  const tooltip = answered
+    ? `Last ${ms(latency.rttMs)} · avg ${ms(latency.avgMs)} · jitter ${ms(latency.jitterMs)} · loss ${latency.lossPct}% over the last ${latency.samples} pings`
+    : 'The onboard computer does not answer ping';
+  return (
+    <Tooltip title={tooltip}>
+      <Chip
+        icon={<NetworkPingIcon />}
+        color={style.color}
+        size="small"
+        variant="outlined"
+        label={
+          answered
+            ? `Computer ${ms(latency.avgMs)} · ${latency.lossPct}% loss`
+            : `Computer ${style.text}`
+        }
+        sx={{ mx: 2, mt: 1, maxWidth: 'calc(100% - 32px)' }}
+      />
+    </Tooltip>
+  );
+};
+
 const serverCommand = async (deviceId, command, attributes) => {
   console.log('send command uavud: ' + deviceId + command);
   try {
@@ -264,6 +340,8 @@ const StatusCard = ({ deviceId, position, onClose, desktopPadding = 0, is3d = fa
               mapFollow={mapFollow}
             />
             <TelemetryChip telemetry={device.telemetry} />
+            <LinkChip link={device.link} />
+            <LatencyChip latency={device.latency} />
             {position && (
               <CardContent className={classes.content}>
                 <Table size="small" classes={{ root: classes.table }}>

@@ -321,7 +321,11 @@ no group applies to any more.
 The client does NOT read those groups: it mirrors them by hand in `components/devices/` —
 `DeviceIdentityEditor` shows the field (`isMavlink(protocol)` → system id), `deviceIdentity.js` validates it
 (`systemIdError`, `isDeviceIdentityValid`) and `withProtocol()` resets `attributes` to `{}` when the protocol
-changes (`{}`, not `undefined`, so an edit clears them in the database too). **A new group on the server needs
+changes (`{}`, not `undefined`, so an edit clears them in the database too) — except the unit's own keys, which
+survive a protocol or model change (`unitAttributes`: `capabilities`, and the on-board radio `radioIp` / `radioMac`,
+whose fields `DeviceIdentityEditor` shows for any protocol, and the onboard computer's `companionIp`; `StatusCard`'s
+`LinkChip` draws `device.link`, the server's radio link quality, and `LatencyChip` draws `device.latency`, the ping to
+that computer, each only when the device has the address set). **A new group on the server needs
 its field and rule added here**, or the form never sends it (or sends a key the server rejects). The server stays
 the authority; the client only avoids sending what it would refuse.
 

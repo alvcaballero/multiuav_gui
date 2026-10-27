@@ -70,6 +70,32 @@ export const ATTRIBUTE_GROUPS = [
       capabilities: z.record(z.string(), z.boolean()).optional(),
     },
   },
+  {
+    id: 'radio',
+    appliesTo: () => true,
+    shape: {
+      // The radio on board (a Ubiquiti station) whose link to the GCS's access point is watched
+      // (models/radio/radioLinkMonitor.js). Either one finds it in the AP's station table: the IP is the
+      // radio's own, NOT the companion computer's; the MAC survives an address change, so it wins when both
+      // are given. null clears it (a PUT merges, it never drops a key by omission).
+      radioIp: z.string().trim().ip({ version: 'v4' }).nullish(),
+      radioMac: z
+        .string()
+        .trim()
+        .regex(/^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i, 'a MAC address like aa:bb:cc:dd:ee:ff')
+        .transform((mac) => mac.toLowerCase().replaceAll('-', ':'))
+        .nullish(),
+    },
+  },
+  {
+    id: 'companion',
+    appliesTo: () => true,
+    shape: {
+      // The onboard computer, pinged from the GCS to measure the real path to it (models/radio/hostPingMonitor.js).
+      // Not the device's connection address (a device has none): this only feeds the link quality. null clears it.
+      companionIp: z.string().trim().ip({ version: 'v4' }).nullish(),
+    },
+  },
 ];
 
 /**

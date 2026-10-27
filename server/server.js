@@ -28,6 +28,8 @@ import { WebsocketManager } from './WebsocketManager.js';
 import { WebsocketInboundRouter } from './WebsocketInboundRouter.js';
 import { rawTap } from './models/inspect/rawTap.js';
 import { telemetryWatchdog } from './models/inspect/telemetryWatchdog.js';
+import { radioLinkMonitor } from './models/radio/radioLinkMonitor.js';
+import { hostPingMonitor } from './models/radio/hostPingMonitor.js';
 import { DevicesModel } from './models/devices.js';
 import { eventsController } from './controllers/events.js';
 import { initWebsocketController } from './controllers/websocket.js';
@@ -150,6 +152,13 @@ positionBroadcastBatcher.start();
 // Avisa cuando a un device le falta un slot de telemetría de su categoría (ver telemetryWatchdog.js).
 telemetryWatchdog.start({ getDevices: () => DevicesModel.getAll(), addEvent: (e) => eventsController.addEvent(e) });
 
+// Calidad del enlace de radio de cada drone contra el AP Ubiquiti de la GCS, por SNMP (ver radioLinkMonitor.js).
+// No hace nada mientras RADIO_AP_HOST esté vacío.
+radioLinkMonitor.start({ getDevices: () => DevicesModel.getAll(), addEvent: (e) => eventsController.addEvent(e) });
+
+// Ping a la computadora de a bordo de los devices con `companionIp` (ver hostPingMonitor.js).
+hostPingMonitor.start({ getDevices: () => DevicesModel.getAll(), addEvent: (e) => eventsController.addEvent(e) });
+
 // Vence las aprobaciones de herramientas de vuelo que nadie contestó y desbloquea
 // el turno que quedó esperándolas (ver approvalSweeper.js).
 approvalSweeper.start();
@@ -269,6 +278,8 @@ process.on('SIGTERM', () => {
   positionHistorySampler.stop();
   positionBroadcastBatcher.stop();
   telemetryWatchdog.stop();
+  radioLinkMonitor.stop();
+  hostPingMonitor.stop();
   approvalSweeper.stop();
   eveRelay.stopAll();
   wsSubscriber.cleanup();
@@ -288,6 +299,8 @@ process.on('SIGINT', () => {
   positionHistorySampler.stop();
   positionBroadcastBatcher.stop();
   telemetryWatchdog.stop();
+  radioLinkMonitor.stop();
+  hostPingMonitor.stop();
   approvalSweeper.stop();
   eveRelay.stopAll();
   wsSubscriber.cleanup();

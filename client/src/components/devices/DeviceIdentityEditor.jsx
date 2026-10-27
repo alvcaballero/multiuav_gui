@@ -20,7 +20,10 @@ import {
   hasCapability,
   isMavlink,
   vehicleTypesOf,
+  companionIpError,
   protocolsFor,
+  radioIpError,
+  radioMacError,
   systemIdError,
   withCapability,
   withCategory,
@@ -255,6 +258,46 @@ const DeviceIdentityEditor = ({ value, onChange }) => {
             }
           />
         )}
+        {/* The radio on board (server ATTRIBUTE_GROUPS 'radio'), for any protocol: the link quality to the GCS's
+            access point is read from the AP's station table. Empty = no radio watched. */}
+        <TextField
+          label="Radio IP (optional)"
+          value={value.attributes?.radioIp ?? ''}
+          onChange={(event) =>
+            setAttribute({ radioIp: event.target.value === '' ? null : event.target.value })
+          }
+          error={Boolean(radioIpError(value.attributes?.radioIp))}
+          helperText={
+            radioIpError(value.attributes?.radioIp) ??
+            "The Ubiquiti on board, NOT the companion computer's address. Used to find it in the access point's station table."
+          }
+        />
+        <TextField
+          label="Radio MAC (optional)"
+          value={value.attributes?.radioMac ?? ''}
+          onChange={(event) =>
+            setAttribute({ radioMac: event.target.value === '' ? null : event.target.value })
+          }
+          error={Boolean(radioMacError(value.attributes?.radioMac))}
+          helperText={
+            radioMacError(value.attributes?.radioMac) ??
+            'Wins over the IP when both are given: an address can change, the MAC does not.'
+          }
+        />
+        {/* The onboard computer, pinged from the GCS (server ATTRIBUTE_GROUPS 'companion'): the real path to it,
+            whatever the radio. Empty = not pinged. */}
+        <TextField
+          label="Onboard computer IP (optional)"
+          value={value.attributes?.companionIp ?? ''}
+          onChange={(event) =>
+            setAttribute({ companionIp: event.target.value === '' ? null : event.target.value })
+          }
+          error={Boolean(companionIpError(value.attributes?.companionIp))}
+          helperText={
+            companionIpError(value.attributes?.companionIp) ??
+            'The GCS pings it to show latency and packet loss. Needs `ping` on the server host.'
+          }
+        />
       </AccordionDetails>
     </Accordion>
   );
