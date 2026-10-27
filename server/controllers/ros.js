@@ -94,7 +94,7 @@ export class rosController {
       return res.status(400).json({ error: 'El parámetro "type" es obligatorio y debe ser una cadena' });
     }
     try {
-      const response = await rosModel.getServiceRequestDetails(type);
+      const response = await rosModel.getServiceResponseDetails(type);
       res.json(response);
     } catch (error) {
       logger.error(`Error getting service details: ${error}`);

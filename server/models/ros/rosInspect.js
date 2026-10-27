@@ -36,7 +36,7 @@ export function getMessageDetails(message, ros) {
       message,
       (messageDetails) => {
         if (!messageDetails || (Array.isArray(messageDetails) && messageDetails.length === 0)) {
-          reject(new Error('Message type not found'));
+          return reject(new Error(typeUnknownMsg(message)));
         }
         resolve(messageDetails);
       },
@@ -93,14 +93,23 @@ export async function getServicesType(service, ros) {
   });
 }
 
+// rosapi answers an empty typedefs (not an error) when the package of the type
+// is not built/sourced in the rosbridge's own workspace, even if the node that
+// serves it is up and the graph reports the type.
+function typeUnknownMsg(type) {
+  return `rosbridge does not know type '${type}': its package is not built/sourced in the rosbridge workspace (infra/external.md)`;
+}
+
+// Unlike getMessageDetails (which gets `typedefs`), roslib hands these two
+// callbacks the whole rosapi response `{ typedefs }`.
 export async function getServiceRequestDetails(type, ros) {
   if (!ros || !ros.isConnected) throw new Error('ROS not connected');
   return new Promise((resolve, reject) => {
     ros.getServiceRequestDetails(
       type,
       (serviceDetails) => {
-        if (!serviceDetails || serviceDetails.length === 0) {
-          reject(new Error('Service type not found'));
+        if (!serviceDetails?.typedefs?.length) {
+          return reject(new Error(typeUnknownMsg(type)));
         }
         resolve(serviceDetails);
       },
@@ -115,8 +124,8 @@ export async function getServiceResponseDetails(type, ros) {
     ros.getServiceResponseDetails(
       type,
       (serviceDetails) => {
-        if (!serviceDetails || serviceDetails.length === 0) {
-          reject(new Error('Service type not found'));
+        if (!serviceDetails?.typedefs?.length) {
+          return reject(new Error(typeUnknownMsg(type)));
         }
         resolve(serviceDetails);
       },
