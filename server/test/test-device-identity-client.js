@@ -1,10 +1,14 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { validateDeviceAttributes } from '../schemas/zod/devices.js';
 import {
   capabilityEnabled,
+  companionIpError,
   hasCapability,
   isDeviceIdentityValid,
   protocolsFor,
+  radioIpError,
+  radioMacError,
   withCapability,
   withCategory,
   withModel,
@@ -116,4 +120,139 @@ describe('VEHICLE_TYPE_LABELS mirrors the server', () => {
     const { VEHICLE_TYPE } = await import('../config/status.js');
     assert.deepEqual(Object.keys(VEHICLE_TYPE_LABELS).sort(), Object.values(VEHICLE_TYPE).sort());
   });
+});
+
+describe('on-board hardware attributes (client)', () => {
+  // The radio (radioIp / radioMac) and the onboard computer (companionIp) belong to the unit, not to the
+  // protocol: changing the protocol or the model must not wipe the address the operator typed.
+  const radio = { radioIp: '10.20.0.64', radioMac: 'ac:8b:a9:c0:a1:cb', companionIp: '10.20.0.51' };
+  const onMavlink = { ...x500OnMavlink, attributes: { systemId: 1, ...radio } };
+
+  test('a new protocol drops the protocol attributes but keeps the radio and the computer', () => {
+    assert.deepEqual(withProtocol(onMavlink, 'ros').attributes, radio);
+    assert.deepEqual(
+      withProtocol(onMavlink, 'mavlink').attributes,
+      { systemId: 1, ...radio },
+      'same protocol: all kept'
+    );
+  });
+
+  test('a new protocol keeps the capability switches next to the hardware', () => {
+    const item = { ...onMavlink, attributes: { ...onMavlink.attributes, capabilities: { rtk: true } } };
+    assert.deepEqual(withProtocol(item, 'ros').attributes, { ...radio, capabilities: { rtk: true } });
+  });
+
+  test('a new model drops the capability switches and the protocol attributes, not the hardware', () => {
+    const item = { ...onMavlink, attributes: { ...onMavlink.attributes, capabilities: { rtk: true } } };
+    const changed = withModel(item, 'standard_vtol');
+    assert.deepEqual(changed.attributes, radio);
+    assert.equal(changed.category, null);
+    assert.equal(changed.protocol, null);
+  });
+
+  test('a new interface that cannot keep the protocol keeps the hardware too', () => {
+    const onRos = { ...x500OnMavlink, category: 'px4_ros2', protocol: 'ros', attributes: { ...radio } };
+    assert.deepEqual(withCategory(onRos, 'px4_mavlink', 'mavlink').attributes, radio);
+  });
+
+  test('a cleared field (null or empty) is not carried over', () => {
+    const cleared = {
+      ...onMavlink,
+      attributes: { systemId: 1, radioIp: null, radioMac: '', companionIp: '10.20.0.51' },
+    };
+    assert.deepEqual(withProtocol(cleared, 'ros').attributes, { companionIp: '10.20.0.51' });
+  });
+
+  test('the identity is invalid with a malformed address, valid with none or a good one', () => {
+    const base = { ...x500OnMavlink };
+    for (const bad of [
+      { radioIp: '10.20.0.300' },
+      { radioIp: '10.20.0' },
+      { radioMac: 'aa:bb:cc' },
+      { radioMac: 'not a mac' },
+      { companionIp: 'drone.local' },
+      { companionIp: '10.20.0.51; rm -rf /' },
+    ]) {
+      assert.ok(!isDeviceIdentityValid({ ...base, attributes: { systemId: 1, ...bad } }), JSON.stringify(bad));
+    }
+    assert.ok(isDeviceIdentityValid({ ...base, attributes: { systemId: 1, ...radio } }));
+    assert.ok(
+      isDeviceIdentityValid({ ...base, attributes: { systemId: 1, radioIp: null, radioMac: '', companionIp: null } })
+    );
+    assert.ok(
+      isDeviceIdentityValid({ ...base, attributes: { systemId: 1, radioMac: 'AC-8B-A9-C0-A1-CB' } }),
+      'dashes, upper case'
+    );
+    assert.ok(
+      isDeviceIdentityValid({ ...base, attributes: { systemId: 1, radioIp: ' 10.20.0.64 ' } }),
+      'surrounding spaces'
+    );
+  });
+
+  test('a bad address does not hide the missing system id, nor the other way round', () => {
+    assert.ok(!isDeviceIdentityValid({ ...x500OnMavlink, attributes: { ...radio } }), 'mavlink without systemId');
+    assert.ok(!isDeviceIdentityValid({ ...x500OnMavlink, attributes: { systemId: 1, radioIp: 'x' } }));
+  });
+
+  test('each error is a message to show under the field, null when fine', () => {
+    assert.equal(radioIpError('10.20.0.64'), null);
+    assert.equal(companionIpError(''), null);
+    assert.equal(radioMacError(undefined), null);
+    assert.match(radioIpError('10.20'), /IPv4/);
+    assert.match(companionIpError('abc'), /IPv4/);
+    assert.match(radioMacError('abc'), /MAC/);
+  });
+});
+
+describe('the address validators agree with the server schema', () => {
+  // The client only avoids sending what the server would refuse (client/CLAUDE.md › Device attributes): if the two
+  // drift, the form either blocks a good address or lets a bad one through to a 400.
+  const device = { protocol: 'ros', category: 'px4_ros2' };
+  const server = (key, value) => validateDeviceAttributes(device, { [key]: value }).success;
+
+  const IPS = [
+    '10.20.0.64',
+    '0.0.0.0',
+    '255.255.255.255',
+    '192.168.1.1',
+    '10.20.0.300',
+    '256.1.1.1',
+    '10.20.0',
+    '10.20.0.1.5',
+    '01.2.3.4',
+    '10.020.0.1',
+    '1.2.3.-4',
+    '1..2.3',
+    'drone.local',
+    '::1',
+    ' 10.20.0.64 ',
+    '10.20.0.64; ls',
+    '',
+  ];
+  const MACS = [
+    'ac:8b:a9:c0:a1:cb',
+    'AC:8B:A9:C0:A1:CB',
+    'ac-8b-a9-c0-a1-cb',
+    'ac:8b:a9:c0:a1',
+    'ac:8b:a9:c0:a1:cb:00',
+    'ac8b.a9c0.a1cb',
+    'gg:8b:a9:c0:a1:cb',
+    'ac:8b-a9:c0-a1:cb',
+    ' ac:8b:a9:c0:a1:cb ',
+    '',
+  ];
+
+  for (const ip of IPS) {
+    test(`IPv4 ${JSON.stringify(ip)}`, () => {
+      const accepted = server('radioIp', ip === '' ? null : ip); // the form sends null for an empty field
+      assert.equal(radioIpError(ip) === null, accepted, 'radioIp');
+      assert.equal(companionIpError(ip) === null, server('companionIp', ip === '' ? null : ip), 'companionIp');
+    });
+  }
+
+  for (const mac of MACS) {
+    test(`MAC ${JSON.stringify(mac)}`, () => {
+      assert.equal(radioMacError(mac) === null, server('radioMac', mac === '' ? null : mac));
+    });
+  }
 });

@@ -46,7 +46,8 @@ export const systemIdError = (systemId) =>
 
 // The radio on board (server ATTRIBUTE_GROUPS 'radio') and the onboard computer to ping ('companion'): all
 // optional, empty means "none".
-const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+// No leading zeros (01.2.3.4), like the server's zod: `test-device-identity-client.js` compares the two.
+const IPV4 = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/;
 const MAC = /^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i;
 
 const ipv4Error = (ip) => (!ip || IPV4.test(ip.trim()) ? null : 'An IPv4 address like 10.20.0.64');
