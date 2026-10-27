@@ -23,6 +23,7 @@ server/
 │   ├── commands/                # Device commands: sendCommand, command schema, encoder registry, PX4 VehicleCommand builder
 │   ├── mission/                 # Mission/route state machines, XYZ<->geodetic conversion, encoders
 │   ├── collision/                # UAV-to-UAV and obstacle collision detection/validation
+│   ├── radio/                   # Link quality per drone: SNR from the Ubiquiti AP over SNMP + ping to the onboard computer (see Radio link quality)
 │   ├── markers/                 # Inspection element catalog: bases, groups, items, assignments
 │   └── positions/               # Position cache, history sampler, broadcast batcher
 ├── schemas/                     # Data schemas
@@ -973,7 +974,8 @@ ones this server does not run. The server state on the WS carries `mqttState` on
 enabled (`controllers/websocket.js` `serverState()`).
 
 **Per-device attributes** (`Device.attributes`, JSON): settings specific to each robot that depend on
-something else about it (mavlink: `{ systemId }`). They are declared as GROUPS in `ATTRIBUTE_GROUPS`
+something else about it (mavlink: `{ systemId }`; ros: `slow`; every protocol: `capabilities`, the on-board radio's `radioIp` /
+`radioMac` and the onboard computer's `companionIp`, which feed the link quality below). They are declared as GROUPS in `ATTRIBUTE_GROUPS`
 (`schemas/zod/devices.js`): `appliesTo({protocol, category, attributes})` says when a group applies and `shape`
 (zod fields) which keys it adds, so a parameter can depend on the protocol, the category or another attribute's
 value. A device's attributes are the strict union of the groups that apply to it (an unknown key is a 400, path
@@ -1139,6 +1141,8 @@ curl -X POST http://localhost:4000/api/markers/types/custom_1712345678/model \
 - `WS_PING_INTERVAL_MS` / `WS_POSITIONS_INTERVAL_MS` / `WS_STATE_INTERVAL_MS`: client WS timers (heartbeat, position-batch flush, server-state broadcast)
 - `DEVICE_CHECK_INTERVAL_MS` / `DEVICE_UPDATE_INTERVAL_MS` / `DEVICE_TIMEOUT_MS`: device health-check cadence and OFFLINE threshold
 - `TELEMETRY_CHECK_INTERVAL_MS` / `TELEMETRY_SLOT_TIMEOUT_MS`: per-slot telemetry watchdog tick (default 2s) and silence threshold (default 5s; per slot: `timeout_s`)
+- `RADIO_AP_HOST`: IP of the GCS's Ubiquiti access point, polled over SNMP for each drone's SNR. **Empty (default) = off**. `RADIO_AP_COMMUNITY` (default `public`), `RADIO_SNMP_VERSION` (`1` default, `2c`: the 2018 AirOS 8 answers v1 only), `RADIO_POLL_INTERVAL_MS` (3000), `RADIO_SNMP_TIMEOUT_MS` (2000). See Radio link quality
+- `PING_ENABLE`: ping to the onboard computer of every device with `attributes.companionIp` (default **on**, opt-out `'false'`; it needs Linux `ping` on the host) / `PING_INTERVAL_MS` (2000) / `PING_WINDOW`: samples kept per device (20)
 - `MAP_LATITUDE` / `MAP_LONGITUDE` / `MAP_ZOOM`: default map center for the local-origin ENU conversion
 
 **Devices** live in the DB (`Device` model), created from the UI or `POST /api/devices`; there is no device

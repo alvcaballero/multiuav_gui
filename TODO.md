@@ -246,6 +246,18 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
     `node:20` de `compose.base.yaml` (no lo comprobé) y que el contenedor llegue a la red de los radios
   - El ping mide el camino hasta la companion, no la latencia de los comandos/telemetría que ve el piloto (ese
     número saldría del propio tráfico: heartbeat MAVLink, roundtrip de servicios ROS)
+  - **Los dos chips no están verificados en el navegador** (`LinkChip` y `LatencyChip` de `StatusCard`, ni los tres
+    campos de `DeviceIdentityEditor`): lo único probado contra hardware es la lectura del AP y el ping
+  - Los chips viven solo en `StatusCard`. No están en la lista de devices (`DeviceRow`), ni en el mapa/3D, ni en la
+    página del device: decidir dónde se quiere ver el enlace sin abrir la tarjeta
+  - Sin historia: el nivel y el SNR no se guardan, solo queda el Event cuando el enlace es pobre o se pierde. Para
+    correlacionar una caída de enlace con un vuelo (replay, reporte de misión) habría que muestrearlo como
+    `positionHistorySampler`
+  - Los umbrales están fijos en código (`linkQuality.js`, `pingStats.js`). Una antena omni y una direccional no
+    deberían medirse igual: evaluar ponerlos por device model o por env
+  - Costo del ping: un proceso `ping` por device cada 2 s, y los dos monitores llaman a `DevicesModel.getAll()` (una
+    consulta a la DB) en cada tick. Con una flota grande, ICMP propio o compartir la lista de devices
+  - SNMP v1 va con la community en claro: aceptable en la red aislada de los radios, no si el AP se expone
 
 - [ ] **Renombrar `category` → `interface`**
   - `category` (`config/devices/interfaces/`, `Device.category`) es la INTERFAZ, el conjunto de mensajes + topics +
