@@ -154,4 +154,20 @@ export class ToolApprovalStore {
     );
     return updated;
   }
+
+  /** Prevent a queued approval resume from executing calls stopped before dispatch. */
+  static async cancelUnexecuted(chatId, callIds, now = new Date()) {
+    const [updated] = await model().update(
+      { status: 'cancelled', resolvedAt: now },
+      {
+        where: {
+          chatId,
+          callId: { [Op.in]: callIds },
+          executedAt: null,
+          status: { [Op.in]: ['pending', 'approved', 'denied', 'expired'] },
+        },
+      }
+    );
+    return updated;
+  }
 }

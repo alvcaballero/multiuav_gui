@@ -27,6 +27,10 @@ const iconButtonSx = { width: 30, height: 30 };
  */
 const ChatInput = ({
   onSendMessage,
+  onStopMessage,
+  processing = false,
+  canStop = false,
+  stopping = false,
   loading,
   isRecording,
   onStartRecording,
@@ -38,10 +42,15 @@ const ChatInput = ({
   const [attachedImages, setAttachedImages] = useState([]);
   const fileInputRef = useRef(null);
 
-  const canSend = (inputValue.trim() || attachedImages.length > 0) && !loading && !isRecording;
+  const canSend =
+    (inputValue.trim() || attachedImages.length > 0) &&
+    !loading &&
+    !isRecording &&
+    !processing &&
+    !stopping;
 
   const handleSend = () => {
-    if (!inputValue.trim() && attachedImages.length === 0) return;
+    if (!canSend) return;
 
     if (attachedImages.length > 0) {
       const content = [
@@ -230,26 +239,47 @@ const ChatInput = ({
             </IconButton>
           </span>
         </Tooltip>
-        <Button
-          variant="contained"
-          aria-label="Send"
-          onClick={handleSend}
-          disabled={!canSend}
-          sx={{
-            minWidth: 34,
-            width: 34,
-            height: 30,
-            minHeight: 30,
-            p: 0,
-            ml: 0.5,
-          }}
-        >
-          {loading ? (
-            <CircularProgress size={14} color="inherit" />
-          ) : (
-            <SendOutlinedIcon sx={{ fontSize: 16 }} />
-          )}
-        </Button>
+        {canStop && (
+          <Tooltip title={stopping ? 'Stopping…' : 'Stop generating'}>
+            <span>
+              <Button
+                variant="contained"
+                aria-label="Stop generating"
+                onClick={onStopMessage}
+                disabled={stopping}
+                sx={{ minWidth: 34, width: 34, height: 30, minHeight: 30, p: 0, ml: 0.5 }}
+              >
+                {stopping ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <StopIcon sx={{ fontSize: 18 }} />
+                )}
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+        {!processing && (
+          <Button
+            variant="contained"
+            aria-label="Send"
+            onClick={handleSend}
+            disabled={!canSend}
+            sx={{
+              minWidth: 34,
+              width: 34,
+              height: 30,
+              minHeight: 30,
+              p: 0,
+              ml: 0.5,
+            }}
+          >
+            {loading ? (
+              <CircularProgress size={14} color="inherit" />
+            ) : (
+              <SendOutlinedIcon sx={{ fontSize: 16 }} />
+            )}
+          </Button>
+        )}
       </Box>
     </Box>
   );

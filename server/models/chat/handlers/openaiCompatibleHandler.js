@@ -357,7 +357,7 @@ class OpenAICompatibleHandler extends BaseLLMHandler {
 
     try {
       chatLogger.info(`→ Sending message to ${this.providerName} (model: ${modelId})...`);
-      const response = await this.client.chat.completions.create(params);
+      const response = await this.client.chat.completions.create(params, { signal: options.signal });
       const output = this._parseResponse(response);
 
       return {

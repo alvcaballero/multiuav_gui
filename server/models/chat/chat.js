@@ -62,12 +62,37 @@ export const previewOf = (items) => {
 let mcpClient = null;
 let llmHandler = null;
 
+// Injectable collaborators, shared with the turn-cancellation tests.
+export const legacyDeps = {
+  get llmHandler() {
+    return llmHandler;
+  },
+  set llmHandler(value) {
+    llmHandler = value;
+  },
+  get mcpClient() {
+    return mcpClient;
+  },
+  set mcpClient(value) {
+    mcpClient = value;
+  },
+};
+
 const maxIterations = 25; // Prevenir loops infinitos
 const maxIterations_planner = 18; // Prevenir loops infinitos
 
 // Per-chatId mutex: ensures only one processMessage runs at a time per chat.
 // Concurrent requests for the same chatId queue behind the active one.
 const chatLocks = new Map();
+const activeTurns = new Map();
+
+const cancelledToolResult = (call) => ({
+  type: 'function_call_output',
+  call_id: call.call_id,
+  name: call.name,
+  status: 'cancelled',
+  output: JSON.stringify({ code: 'chat_cancelled', error: 'Processing stopped by the operator.' }),
+});
 
 export class MessageOrchestrator {
   static initializeLLMProvider(provider, apiKey, options = {}) {
@@ -161,14 +186,100 @@ export class MessageOrchestrator {
   static async processMessage(chatId, input, options = {}) {
     const turnInput = this._normalizeInput(input);
 
-    const release = await this._acquireChatLock(chatId);
+    const unlock = await this._acquireChatLock(chatId);
+    const { signal, release } = this._registerTurn(chatId, unlock);
 
     try {
-      return await this._startTurn(chatId, turnInput, options, release);
+      return await this._startTurn(chatId, turnInput, { ...options, signal }, release);
     } catch (error) {
       release();
       throw error;
     }
+  }
+
+  static _registerTurn(chatId, unlock) {
+    const controller = new AbortController();
+    let finish;
+    const done = new Promise((resolve) => {
+      finish = resolve;
+    });
+    const turn = { controller, done };
+    activeTurns.set(chatId, turn);
+    return {
+      signal: controller.signal,
+      release: () => {
+        if (activeTurns.get(chatId) === turn) activeTurns.delete(chatId);
+        unlock();
+        finish();
+      },
+    };
+  }
+
+  /** Stop the current turn without releasing its mutex until cleanup finishes. */
+  static async cancel(chatId) {
+    const active = activeTurns.get(chatId);
+    if (active) {
+      active.controller.abort();
+      await active.done;
+      if (active.cancelError) throw active.cancelError;
+      return { cancelled: true };
+    }
+
+    const release = await this._acquireChatLock(chatId);
+    try {
+      return { cancelled: await this._finishCancellation(chatId) };
+    } finally {
+      release();
+    }
+  }
+
+  static async _finishCancellation(chatId, { active = false } = {}) {
+    try {
+      return await this._cleanupCancelledTurn(chatId, { active });
+    } catch (error) {
+      const turn = activeTurns.get(chatId);
+      if (turn) turn.cancelError = error;
+      throw error;
+    }
+  }
+
+  static async _cleanupCancelledTurn(chatId, { active }) {
+    const pending = await ToolApprovalStore.listPending(chatId);
+    await ToolApprovalStore.cancelPending(chatId);
+    for (const row of pending) {
+      await InputAudit.recordSafe({
+        engine: 'legacy',
+        chatId,
+        requestId: row.requestId,
+        callId: row.callId,
+        toolName: row.toolName,
+        kind: 'decided',
+        source: 'operator',
+        outcome: 'cancelled',
+      });
+    }
+    emitToolApprovalResolved(
+      chatId,
+      pending.map((row) => ({ requestId: row.requestId, outcome: 'cancelled' }))
+    );
+
+    // A provider rejects history with unanswered tool calls. Close only the calls
+    // still missing results; completed tools keep their actual persisted result.
+    const history = await ChatHistoryManager.loadHistory(chatId, { limit: null, all: true });
+    const open = new Map();
+    for (const { message } of history) {
+      if (message.type === 'function_call' || message.type === 'tool_call') open.set(message.call_id, message);
+      if (message.type === 'function_call_output') open.delete(message.call_id);
+    }
+    if (!active && !pending.length && !open.size) return false;
+    if (open.size) await ToolApprovalStore.cancelUnexecuted(chatId, [...open.keys()]);
+    for (const call of open.values()) {
+      const item = await ChatHistoryManager.addMessage(chatId, 'assistant', cancelledToolResult(call));
+      this.emitAssistantMessage(item);
+    }
+    // An interrupted provider conversation may contain output we never received.
+    await ChatHistoryManager.clearSession(chatId);
+    return true;
   }
 
   /**
@@ -222,27 +333,41 @@ export class MessageOrchestrator {
       await ChatHistoryManager.clearSession(chatId);
     }
 
-    const ctx = await TurnContext.build(chatId, {
-      allowedTools: options.allowedTools ?? null,
-      getTools: (allowed) => this.getToolsForProvider(allowed),
-      llmHandler,
-    });
-
+    const { signal } = options;
+    let ctx;
     try {
+      signal?.throwIfAborted();
+      ctx = await TurnContext.build(chatId, {
+        allowedTools: options.allowedTools ?? null,
+        getTools: (allowed) => this.getToolsForProvider(allowed),
+        llmHandler,
+        signal,
+      });
+
+      signal?.throwIfAborted();
       const result = await this._runTurn(chatId, turnInput, ctx, {
         turnId,
         phase: 'initial',
         iteration: 0,
         release,
+        signal,
       });
 
       chatLogger.info('✓ Procesamiento completado para chat:', chatId);
       return llmHandler.normalizeResponse(result.raw);
     } catch (error) {
+      if (signal?.aborted) {
+        try {
+          await this._finishCancellation(chatId, { active: true });
+        } finally {
+          release();
+        }
+        return { chatId, cancelled: true };
+      }
       chatLogger.error('Error procesando mensaje:', error);
 
       // Let the handler handle session-related errors
-      await llmHandler.handleSessionError(chatId, error, ctx.persistence);
+      if (ctx) await llmHandler.handleSessionError(chatId, error, ctx.persistence);
       emitAssistantError(chatId, error.userMessage || `Error: ${error.message}`);
 
       throw error;
@@ -269,7 +394,8 @@ export class MessageOrchestrator {
    * @returns {Promise<{output: Array, responseId: string, raw: object}>}
    */
   static async _runTurn(chatId, turnInput, ctx, meta) {
-    const { turnId, phase, iteration, release } = meta;
+    const { turnId, phase, iteration, release, signal } = meta;
+    if (turnInput.kind !== 'tool_output') signal?.throwIfAborted();
 
     // Read fresh HERE — before `_applyInput` persists this turn's own input below —
     // so it never contains what this turn is about to write. That write travels
@@ -280,6 +406,7 @@ export class MessageOrchestrator {
     const history = await ChatHistoryManager.loadHistory(chatId);
 
     const providerInput = await this._applyInput(chatId, turnInput);
+    signal?.throwIfAborted();
 
     // forceFinish rides inside providerInput.items instead of a separate flag —
     // each handler picks the 'directive' item out and inserts it wherever its
@@ -293,12 +420,15 @@ export class MessageOrchestrator {
       sessionId: ctx.sessionId,
       instructions: ctx.systemInstructions,
       agent: ctx.agent,
+      signal,
     });
+    signal?.throwIfAborted();
 
     const { output, responseId } = await this._persistTurnResult(chatId, result, ctx, {
       turnId,
       phase,
       iteration,
+      signal,
     });
 
     const hasToolCalls = output.some((res) => res.type === 'function_call' || res.type === 'tool_call');
@@ -306,7 +436,13 @@ export class MessageOrchestrator {
       // Fire-and-forget from here on: the caller gets the first response while the
       // loop keeps going and streams over the EventBus. The lock stays held until
       // the recursion bottoms out, so a queued message cannot interleave with it.
-      this._continueWithTools(chatId, output, ctx, { turnId, iteration }).finally(release);
+      const continuation = this._continueWithTools(chatId, output, ctx, { turnId, iteration, signal });
+      if (phase === 'initial')
+        continuation.finally(release).catch((error) => chatLogger.error('Tool cleanup failed:', error));
+      else {
+        await continuation;
+        release();
+      }
       return { output, responseId, raw: result };
     }
 
@@ -318,7 +454,13 @@ export class MessageOrchestrator {
     const isRetryable = output.some((res) => res.retryable);
     const maxIter = ctx.agent?.capability === 'high' ? maxIterations_planner : maxIterations;
     if (isRetryable && iteration + 1 < maxIter) {
-      this._continueAsRetry(chatId, ctx, { turnId, iteration }).finally(release);
+      const continuation = this._continueAsRetry(chatId, ctx, { turnId, iteration, signal });
+      if (phase === 'initial')
+        continuation.finally(release).catch((error) => chatLogger.error('Retry cleanup failed:', error));
+      else {
+        await continuation;
+        release();
+      }
       return { output, responseId, raw: result };
     }
 
@@ -332,18 +474,23 @@ export class MessageOrchestrator {
    * `_applyInput`'s `system_message` path since there is no tool result to feed
    * and this isn't a subagent's doing either.
    */
-  static async _continueAsRetry(chatId, ctx, { turnId, iteration }) {
+  static async _continueAsRetry(chatId, ctx, { turnId, iteration, signal }) {
     const next = iteration + 1;
     chatLogger.debug(`[ToolLoop: ${chatId}] Iteration ${next} - Retrying after recoverable provider error...`);
 
     try {
-      await this._runTurn(
-        chatId,
-        { kind: 'system_message', content: RETRY_AFTER_TOOL_ERROR_MESSAGE },
-        ctx,
-        { turnId, phase: 'tool_loop', iteration: next, release: () => {} }
-      );
+      await this._runTurn(chatId, { kind: 'system_message', content: RETRY_AFTER_TOOL_ERROR_MESSAGE }, ctx, {
+        turnId,
+        phase: 'tool_loop',
+        iteration: next,
+        release: () => {},
+        signal,
+      });
     } catch (error) {
+      if (signal?.aborted) {
+        await this._finishCancellation(chatId, { active: true });
+        return;
+      }
       chatLogger.error(`[ToolLoop: ${chatId}] Error retrying after provider error:`, error);
       emitAssistantError(chatId, `Error retrying tool call: ${error.message}`);
     }
@@ -354,7 +501,7 @@ export class MessageOrchestrator {
    * Split out of `_runTurn` so the fire-and-forget boundary is explicit: this is
    * the part that outlives the caller's turn.
    */
-  static async _continueWithTools(chatId, output, ctx, { turnId, iteration }) {
+  static async _continueWithTools(chatId, output, ctx, { turnId, iteration, signal }) {
     const maxIter = ctx.agent?.capability === 'high' ? maxIterations_planner : maxIterations;
     const next = iteration + 1;
     const isLastIteration = next >= maxIter;
@@ -368,9 +515,12 @@ export class MessageOrchestrator {
       // A gated call parks the WHOLE batch: running the read-only calls now and
       // the flight call minutes later would hand the operator a decision based on
       // telemetry that no longer holds.
-      if (await this._parkForApproval(chatId, output, ctx, { turnId, iteration: next })) return;
+      signal?.throwIfAborted();
+      const parked = await this._parkForApproval(chatId, output, ctx, { turnId, iteration: next, signal });
+      signal?.throwIfAborted();
+      if (parked) return;
 
-      const results = await this.executeToolCalls(output, chatId);
+      const results = await this.executeToolCalls(output, chatId, { signal });
 
       await this._runTurn(
         chatId,
@@ -378,9 +528,13 @@ export class MessageOrchestrator {
         ctx,
         // The last iteration must not recurse again: `release` is a no-op here
         // because THIS call's `.finally(release)` already owns it.
-        { turnId, phase: 'tool_loop', iteration: next, release: () => {} }
+        { turnId, phase: 'tool_loop', iteration: next, release: () => {}, signal }
       );
     } catch (error) {
+      if (signal?.aborted) {
+        await this._finishCancellation(chatId, { active: true });
+        return;
+      }
       chatLogger.error(`[ToolLoop: ${chatId}] Error in tool calls loop:`, error);
       emitAssistantError(chatId, `Error processing tool results: ${error.message}`);
     }
@@ -393,7 +547,7 @@ export class MessageOrchestrator {
    * `.finally(release)` as usual, so the operator can still talk to the chat —
    * and, more to the point, still answer.
    */
-  static async _parkForApproval(chatId, output, ctx, { turnId, iteration }) {
+  static async _parkForApproval(chatId, output, ctx, { turnId, iteration, signal }) {
     if (!TOOL_APPROVAL_ENFORCE) return false;
 
     const toolCalls = output.filter((r) => r.type === 'function_call' || r.type === 'tool_call');
@@ -407,6 +561,7 @@ export class MessageOrchestrator {
 
     const requests = [];
     for (const call of gated) {
+      signal?.throwIfAborted();
       const args = JSON.parse(call.arguments);
       const frozen = freezeToolCall({
         callId: call.call_id,
@@ -519,7 +674,7 @@ export class MessageOrchestrator {
    *
    * @returns {Promise<{output: Array, responseId: string}>}
    */
-  static async _persistTurnResult(chatId, result, ctx, { turnId, phase, iteration }) {
+  static async _persistTurnResult(chatId, result, ctx, { turnId, phase, iteration, signal }) {
     const { output, responseId, model, sessionCleared, usage } = result;
     chatLogger.info(`✓ Parsed ${output.length} output parts from LLM response`);
 
@@ -549,6 +704,7 @@ export class MessageOrchestrator {
     }
 
     for (const res of output) {
+      signal?.throwIfAborted();
       const chatItem = await ChatHistoryManager.addMessage(chatId, 'assistant', res, responseId);
       this.emitAssistantMessage(chatItem);
     }
@@ -564,18 +720,23 @@ export class MessageOrchestrator {
    * @param {object} [options]
    * @param {Map<string, object>} [options.approvals] - Frozen approvals by call_id
    */
-  static async executeToolCalls(toolCalls, chatId, { approvals = null } = {}) {
+  static async executeToolCalls(toolCalls, chatId, { approvals = null, signal } = {}) {
     const results = [];
     const contextParams = getContextParams(chatId);
     const hasContext = Object.keys(contextParams).length > 0;
 
     for (const toolCall of toolCalls) {
       if (toolCall.type == 'function_call' || toolCall.type == 'tool_call') {
+        if (signal?.aborted) {
+          results.push(cancelledToolResult(toolCall));
+          continue;
+        }
         const approval = approvals?.get(toolCall.call_id) ?? null;
 
         // An approved call replays the input the operator actually saw. Resolving
         // it again here would re-derive a value nobody authorised.
-        const call = approval?.status === 'approved' ? { ...toolCall, arguments: JSON.stringify(approval.input) } : toolCall;
+        const call =
+          approval?.status === 'approved' ? { ...toolCall, arguments: JSON.stringify(approval.input) } : toolCall;
 
         // Handlers turn any throw from the executor into a generic error result,
         // so the denial is captured here instead: a refused call never ran, and
@@ -583,6 +744,7 @@ export class MessageOrchestrator {
         let denial = null;
 
         const result = await llmHandler.handleToolCall(call, async (name, args) => {
+          signal?.throwIfAborted();
           // Fixed context params win over whatever the LLM passes, so it can't
           // override a subagent's injected context even if it hallucinates the same key.
           const input = approval ? args : hasContext ? { ...args, ...contextParams } : args;
@@ -590,10 +752,17 @@ export class MessageOrchestrator {
           denial = await this._denyUnapprovedToolCall({ callId: toolCall.call_id, name, input, approval });
           if (denial) throw new Error(denial.message);
 
-          return await mcpClient.executeTool(name, input);
+          signal?.throwIfAborted();
+          return await mcpClient.executeTool(name, input, { signal });
         });
 
-        results.push(denial ? { ...result, status: 'rejected', error: denial } : result);
+        results.push(
+          signal?.aborted
+            ? cancelledToolResult(toolCall)
+            : denial
+              ? { ...result, status: 'rejected', error: denial }
+              : result
+        );
       }
     }
 
@@ -775,7 +944,7 @@ export class MessageOrchestrator {
     if ((await ToolApprovalStore.listPendingForTurn(chatId, turnId)).length > 0) return;
 
     const decided = await ToolApprovalStore.listForTurn(chatId, turnId);
-    if (decided.length === 0) return;
+    if (decided.length === 0 || decided.some((row) => row.status === 'cancelled')) return;
 
     const resumeContext = decided.find((row) => row.resumeContext)?.resumeContext;
     if (!resumeContext?.toolCalls) {
@@ -783,17 +952,25 @@ export class MessageOrchestrator {
       return;
     }
 
-    const release = await this._acquireChatLock(chatId);
+    const unlock = await this._acquireChatLock(chatId);
+    const { signal, release } = this._registerTurn(chatId, unlock);
 
     try {
+      // A Stop request may have won the lock while this resume was queued.
+      const current = await ToolApprovalStore.listForTurn(chatId, turnId);
+      if (current.some((row) => row.status === 'cancelled')) {
+        release();
+        return;
+      }
       const ctx = await TurnContext.build(chatId, {
         allowedTools: resumeContext.allowedTools ?? null,
         getTools: (allowed) => this.getToolsForProvider(allowed),
         llmHandler,
+        signal,
       });
 
-      const approvals = new Map(decided.map((row) => [row.callId, row]));
-      const results = await this.executeToolCalls(resumeContext.toolCalls, chatId, { approvals });
+      const approvals = new Map(current.map((row) => [row.callId, row]));
+      const results = await this.executeToolCalls(resumeContext.toolCalls, chatId, { approvals, signal });
 
       chatLogger.info(`[ToolApproval] Resuming turn ${turnId} on chat ${chatId}`);
 
@@ -802,8 +979,17 @@ export class MessageOrchestrator {
         phase: 'tool_loop',
         iteration: decided[0].iteration,
         release,
+        signal,
       });
     } catch (error) {
+      if (signal.aborted) {
+        try {
+          await this._finishCancellation(chatId, { active: true });
+        } finally {
+          release();
+        }
+        return;
+      }
       release();
       chatLogger.error(`[ToolApproval] Error resuming turn ${turnId}:`, error);
       emitAssistantError(chatId, `Error resuming after approval: ${error.message}`);

@@ -53,7 +53,7 @@ export class TurnContext {
    * @param {object} options.llmHandler - Active LLM handler (for ensureSession)
    * @returns {Promise<TurnContext>}
    */
-  static async build(chatId, { allowedTools: optionsAllowedTools = null, getTools, llmHandler } = {}) {
+  static async build(chatId, { allowedTools: optionsAllowedTools = null, getTools, llmHandler, signal } = {}) {
     const persistence = ChatHistoryManager.getSessionPersistence();
 
     const agent = await resolveAgentForChat(chatId);
@@ -61,7 +61,9 @@ export class TurnContext {
     chatLogger.debug(`Using agent '${agent.name}' with tools: ${allowedTools ? allowedTools.join(', ') : 'all'}`);
 
     const tools = getTools(allowedTools);
-    const sessionId = await this._resolveSession(chatId, persistence, llmHandler);
+    signal?.throwIfAborted();
+    const sessionId = await this._resolveSession(chatId, persistence, llmHandler, signal);
+    signal?.throwIfAborted();
     const systemInstructions = await this._resolveSystemPrompt(chatId, agent);
 
     return new TurnContext({
@@ -82,7 +84,7 @@ export class TurnContext {
    * turn of a fork the session is bypassed so the whole snapshot is sent;
    * after that turn the provider holds a session seeded with full context.
    */
-  static async _resolveSession(chatId, persistence, llmHandler) {
+  static async _resolveSession(chatId, persistence, llmHandler, signal) {
     const chatMeta = await ChatHistoryManager.getChatMetadata(chatId);
     const isUnseededFork = !!(chatMeta.forkedFrom && !chatMeta.sessionId);
 
@@ -90,7 +92,7 @@ export class TurnContext {
       chatLogger.info(`[fork] First turn of forked chat ${chatId} — using full-history path to seed provider context`);
       return null;
     }
-    return llmHandler.ensureSession(chatId, persistence);
+    return llmHandler.ensureSession(chatId, persistence, { signal });
   }
 
   /**

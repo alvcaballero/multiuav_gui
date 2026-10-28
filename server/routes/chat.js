@@ -13,6 +13,7 @@ chatRouter.get('/history/:chatId', chatController.getChatHistory);
 chatRouter.get('/approvals/:chatId', chatController.getPendingApprovals);
 chatRouter.get('/chats', chatController.listChats);
 chatRouter.post('/chats', chatController.createChat);
+chatRouter.post('/chats/:chatId/cancel', chatController.cancelMessage);
 chatRouter.delete('/chats/:chatId', chatController.deleteChat);
 chatRouter.patch('/chats/:chatId', chatController.renameChat);
 chatRouter.post('/chats/:chatId/fork', chatController.forkChat);

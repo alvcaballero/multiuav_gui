@@ -112,6 +112,20 @@ export class chatController {
     }
   }
 
+  static async cancelMessage(req, res) {
+    const { chatId } = req.params;
+    try {
+      const engine = await chatController._resolveEngine(chatId);
+      const result = await (engine === 'eve' ? EveOrchestrator : MessageOrchestrator).cancel(chatId);
+      // Eve confirms termination over the durable stream; the HTTP response only
+      // acknowledges that its cancellation request was accepted.
+      return res.json({ chatId, ...result });
+    } catch (error) {
+      logger.error('Error cancelling chat processing:', error);
+      return res.status(500).json({ error: error.message || 'Failed to stop processing.' });
+    }
+  }
+
   static async getChatHistory(req, res) {
     const { chatId } = req.params;
     const { limit, before } = req.query;
@@ -156,7 +170,7 @@ export class chatController {
       return res.status(400).json({ error: `Invalid engine '${engine}'. Only 'eve' is a valid opt-in.` });
     }
     if (engine === 'eve' && !EveEnable) {
-      return res.status(400).json({ error: "The eve engine is disabled (set EVE_ENABLE=true to allow it)." });
+      return res.status(400).json({ error: 'The eve engine is disabled (set EVE_ENABLE=true to allow it).' });
     }
     // Which eve agent talks. Only the ones configured: eve cannot list them, the registry is ours.
     const eveAgent = agent ?? EveDefaultAgent;

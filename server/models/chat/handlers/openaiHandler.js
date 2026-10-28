@@ -35,16 +35,19 @@ class OpenAIHandler extends BaseLLMHandler {
    * @param {Object} persistence - Adapter with { getSessionId, setSessionId, clearSession }
    * @returns {Promise<string|null>} OpenAI conversation ID or null on failure
    */
-  async ensureSession(chatId, persistence) {
+  async ensureSession(chatId, persistence, { signal } = {}) {
     let sessionId = await persistence.getSessionId(chatId);
     if (sessionId) return sessionId;
 
     try {
-      sessionId = await this._createConversation({ chatId });
+      signal?.throwIfAborted();
+      sessionId = await this._createConversation({ chatId }, { signal });
+      signal?.throwIfAborted();
       await persistence.setSessionId(chatId, sessionId);
       chatLogger.info(`Created OpenAI conversation for chat ${chatId}: ${sessionId}`);
       return sessionId;
     } catch (error) {
+      signal?.throwIfAborted();
       chatLogger.error('Failed to create OpenAI conversation, will use full history:', error);
       return null;
     }
@@ -87,11 +90,11 @@ class OpenAIHandler extends BaseLLMHandler {
    * @returns {Promise<string>} The conversation ID
    * @private
    */
-  async _createConversation(metadata = {}) {
+  async _createConversation(metadata = {}, { signal } = {}) {
     if (!this.client) {
       throw new Error('OpenAI client not initialized');
     }
-    const conversation = await this.client.conversations.create({ metadata });
+    const conversation = await this.client.conversations.create({ metadata }, { signal });
     chatLogger.info(`✓ OpenAI conversation created: ${conversation.id}`);
     return conversation.id;
   }
@@ -366,7 +369,7 @@ class OpenAIHandler extends BaseLLMHandler {
       if (Array.isArray(params.input) && params.input.length === 0 && !params.conversation) {
         throw new Error('params.input is empty and no conversation/session — cannot send request to OpenAI');
       }
-      const response = await this.client.responses.create(params);
+      const response = await this.client.responses.create(params, { signal: options.signal });
 
       // Verificar el estado de la respuesta
       if (response.status !== 'completed') {
@@ -395,6 +398,7 @@ class OpenAIHandler extends BaseLLMHandler {
         usage: this.normalizeUsage(response.usage),
       };
     } catch (error) {
+      options.signal?.throwIfAborted();
       chatLogger.error('Error in OpenAI:', error);
 
       // If conversation_locked error (concurrent access), signal to continue without conversation
@@ -412,6 +416,7 @@ class OpenAIHandler extends BaseLLMHandler {
       if (sessionId && (this._isConversationError(error) || this._isResponseIdError(error))) {
         chatLogger.warn(`sessionId failed (${error.message}), falling back to full history`);
         const result = await this.processMessage(turnInput, tools, conversationHistory, {
+          ...options,
           sessionId: null,
           previousResponseId: null,
           instructions,
@@ -424,6 +429,7 @@ class OpenAIHandler extends BaseLLMHandler {
       if (previousResponseId && this._isResponseIdError(error)) {
         chatLogger.warn(`previous_response_id failed (${error.message}), falling back to full history`);
         const result = await this.processMessage(turnInput, tools, conversationHistory, {
+          ...options,
           sessionId: null,
           previousResponseId: null,
           instructions,

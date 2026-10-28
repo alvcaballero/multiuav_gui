@@ -404,6 +404,15 @@ answer it says so (`approvalFailures`, `CHAT_TOOL_APPROVAL_FAILED`) and the card
 turn's activity (`Thinking…` / `Working on <task>…`, `state.chat.activity`) is only reported by eve. Typing in the
 chat while an eve approval is open CANCELS it (eve outcome `ignored`); it never approves.
 
+The composer shows **Stop generating** while either engine processes a message, including the
+first response: both engines create their chat row just before sending, so cancellation has a chat ID.
+`chatBusy` WebSocket messages populate `state.chat.busy` per conversation; Eve also reports activity.
+Stop calls `POST /api/chat/chats/:chatId/cancel`; the button is disabled while that request is pending,
+and a failed request shows an error in that conversation and can be retried. A parked approval also
+offers Stop, alongside Send so free-text replies remain available. Interrupted tool rows show a
+Stopped icon. Busy/activity are transient and are not rehydrated on reload; pending approval cards
+are restored from the server. Stop cancels chat processing, not already dispatched vehicle commands.
+
 What answers the open chat is shown in the composer and in the assistant label of the thread (`agentInfo` in
 `useChatLogic`): `eve · <agent>`, or `<agent profile> · <provider> · <model>` for the legacy engine. `chat.agent`
 is the eve agent or the legacy profile (`agents/*.md`, `default` when none was chosen); the server state's

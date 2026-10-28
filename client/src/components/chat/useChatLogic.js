@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { chatActions } from '../../store';
 import { sendChatMessage } from '../../common/util/sendChatMessage';
+import { cancelChatMessage } from '../../common/util/cancelChatMessage';
 import { fetchPendingApprovals } from '../../common/util/toolApproval';
 
 const EMPTY_MESSAGES = [];
@@ -69,6 +70,9 @@ const useChatLogic = (open = true) => {
   );
   // What the open turn is doing (only the eve engine reports it): a plan can take minutes.
   const activity = useSelector((state) => state.chat.activity[activeChatId] ?? null);
+  const busy = useSelector((state) => Boolean(state.chat.busy[activeChatId]));
+  const stopping = useSelector((state) => Boolean(state.chat.stopping[activeChatId]));
+  const processing = busy || (Boolean(activity) && activity.phase !== 'awaiting_input');
 
   // 'chat' is the thread; 'history' replaces it with the list of conversations.
   const [view, setView] = useState('chat');
@@ -384,7 +388,7 @@ const useChatLogic = (open = true) => {
     const isEmpty = Array.isArray(messageToSend)
       ? messageToSend.length === 0
       : !messageToSend.trim();
-    if (isEmpty || loading.sendingMessage) return;
+    if (isEmpty || loading.sendingMessage || processing || stopping) return;
 
     // Sending is an explicit "I want to see what happens next" — re-pin to the
     // bottom even if the user had scrolled up to read something older.
@@ -393,8 +397,8 @@ const useChatLogic = (open = true) => {
     let targetChatId = activeChatId;
     try {
       dispatch(chatActions.setLoading({ key: 'sendingMessage', value: true }));
-      if (awaitingEveChat) {
-        targetChatId = await createEveChat();
+      if (!targetChatId) {
+        targetChatId = await createChat(awaitingEveChat ? 'eve' : 'legacy');
         setPendingEveChat(false);
       }
       const chatIdForMessage = targetChatId || '_pending';
@@ -434,7 +438,26 @@ const useChatLogic = (open = true) => {
     }
   };
 
-  // A new legacy chat is created lazily by the server on the first message.
+  const handleStopMessage = async () => {
+    if (!activeChatId || stopping) return;
+    const chatId = activeChatId;
+    dispatch(chatActions.setChatStopping({ chatId, stopping: true }));
+    try {
+      await cancelChatMessage(chatId);
+    } catch (error) {
+      dispatch(chatActions.setError(error.message));
+      dispatch(
+        chatActions.addMessage({
+          chatId,
+          message: { role: 'assistant', type: 'text', content: `Error: ${error.message}` },
+        }),
+      );
+    } finally {
+      dispatch(chatActions.setChatStopping({ chatId, stopping: false }));
+    }
+  };
+
+  // Both engines create their chat lazily, immediately before the first message.
   const handleNewLegacyChat = () => {
     setPendingEveChat(false);
     dispatch(chatActions.setActiveChat(null));
@@ -443,22 +466,21 @@ const useChatLogic = (open = true) => {
   };
 
   /**
-   * Creates the chat row of an eve chat. Unlike a legacy chat (the server makes it on the first WS
-   * message), it has to exist before that message: `chatController._resolveEngine` only knows a
-   * chat is 'eve' from its DB row.
+   * Creates the chat before sending: Stop needs an identity even for the first
+   * legacy response, and the server resolves Eve's engine from this row.
    * @returns {Promise<string>} the new chat id, already active
    */
-  const createEveChat = async () => {
+  const createChat = async (engine) => {
     dispatch(chatActions.setLoading({ key: 'creatingChat', value: true }));
     try {
       const response = await fetch('/api/chat/chats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ engine: 'eve', name: 'Eve chat' }),
+        body: JSON.stringify(engine === 'eve' ? { engine: 'eve', name: 'Eve chat' } : {}),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'Failed to create eve chat');
+        throw new Error(err.error || 'Failed to create chat');
       }
       const chat = await response.json();
       // Refresh BEFORE switching so activeEngine (looked up from availableChats)
@@ -649,6 +671,8 @@ const useChatLogic = (open = true) => {
     activeEngine,
     agentInfo,
     activity,
+    processing,
+    stopping,
     view,
     historyQuery,
     activeChat,
@@ -660,6 +684,7 @@ const useChatLogic = (open = true) => {
     resolvedApprovals,
     // Handlers
     handleSendMessage,
+    handleStopMessage,
     handleSelectChat,
     handleMessagesScroll,
     handleUserScrollIntent,

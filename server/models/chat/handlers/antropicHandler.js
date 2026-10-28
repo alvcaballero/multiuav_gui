@@ -229,7 +229,7 @@ class AnthropicHandler extends BaseLLMHandler {
     try {
       chatLogger.info(`→ Sending message to Anthropic (model: ${modelId})...`);
 
-      const response = await this.client.messages.create(params);
+      const response = await this.client.messages.create(params, { signal: options.signal });
 
       // Check stop reason
       if (response.stop_reason === 'end_turn' || response.stop_reason === 'tool_use') {

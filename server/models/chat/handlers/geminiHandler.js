@@ -284,7 +284,12 @@ class GeminiHandler extends BaseLLMHandler {
     const modelId = profile.model || this.model;
 
     // Build config
-    const config = { temperature: 1, systemInstruction: instructions || this.systemPrompt, tools: [] };
+    const config = {
+      temperature: 1,
+      systemInstruction: instructions || this.systemPrompt,
+      tools: [],
+      abortSignal: options.signal,
+    };
 
     // Add tools if available (empty allowedTools array = no tools for forced text response)
     if (tools.length > 0 && (!allowedTools || allowedTools.length > 0)) {

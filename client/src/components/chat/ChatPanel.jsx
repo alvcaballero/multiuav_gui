@@ -65,6 +65,8 @@ const ChatPanel = ({
   activeEngine,
   agentInfo,
   activity,
+  processing,
+  stopping,
   view,
   historyQuery,
   parentChat,
@@ -74,6 +76,7 @@ const ChatPanel = ({
   pendingApprovals,
   resolvedApprovals,
   handleSendMessage,
+  handleStopMessage,
   handleSelectChat,
   handleMessagesScroll,
   handleUserScrollIntent,
@@ -106,7 +109,7 @@ const ChatPanel = ({
       : (activeChat?.name ?? activeConversation?.name ?? 'New chat');
 
   const assistantLabel = [agentInfo.name, agentInfo.model].filter(Boolean).join(' · ');
-  const working = loading.sendingMessage || Boolean(activity);
+  const working = loading.sendingMessage || processing || Boolean(activity);
   const repliesToApproval = activeEngine === 'eve' && pendingApprovals.length > 0;
 
   const openSubagentMenu = (event) => {
@@ -220,6 +223,10 @@ const ChatPanel = ({
 
               <ChatInput
                 onSendMessage={handleSendMessage}
+                onStopMessage={handleStopMessage}
+                processing={processing}
+                canStop={Boolean(activeChatId) && (processing || pendingApprovals.length > 0)}
+                stopping={stopping}
                 loading={loading.sendingMessage}
                 isRecording={isRecording}
                 onStartRecording={startRecording}

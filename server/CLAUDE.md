@@ -842,6 +842,17 @@ Pending requests live in the DB, so they survive a reload and a server restart.
 - `CHAT_CREATED` → notifies the client a new chat was created (outbound via subscriber)
 - `CHAT_ASSISTANT_MESSAGE` → Broadcasts response to clients via WebSocket
 
+**Stopping a response (both engines):** `POST /api/chat/chats/:chatId/cancel` routes through
+`chatController._resolveEngine`, like sending. Legacy owns one `AbortController` per active turn;
+its signal reaches session creation, all provider requests (including fallbacks), and MCP calls.
+The same signal follows the entire tool/retry recursion. Stop prevents later tool dispatch and
+assistant output, closes unanswered tool calls with cancelled results, cancels pending/unexecuted
+approvals and drops the interrupted provider session. The per-chat mutex remains held until
+cleanup finishes. Eve uses its existing cancel endpoint and keeps the relay reading until the
+durable `turn.cancelled` event confirms termination; a Stop during initial session creation waits
+for the accepted message before cancelling it. Errors return HTTP 500 so the UI can retry.
+Cancelling processing does not reverse device commands already dispatched or completed tool effects.
+
 **eve Agent Bridge (`eveClient.js`, `eveEvents.js`, `eveRelay.js`, `eveOrchestrator.js`):**
 
 A second, parallel orchestrator that talks to an `eve` agent (`gcs_eevee_assistant`, a sibling
@@ -917,8 +928,7 @@ or, for the single `dev:assistant` agent, `EVE_URL` (default `http://127.0.0.1:2
 if missing); `EVE_DEFAULT_AGENT`. In production eve rejects everything but Vercel OIDC unless the agent's
 `channels/eve.ts` configures `eveChannel({auth})` with service auth.
 
-Not implemented yet: text streaming (deltas), the child session of a subagent (`agent.started.sessionId`), the
-cancel button (`EveOrchestrator.cancel` exists, no route), activity after a page reload, free-text questions.
+Not implemented yet: text streaming (deltas), activity after a page reload, free-text questions.
 `subagent.called`/`childSessionId` do NOT exist any more in eve (removed): a subagent shows as `task.started`
 (+ `agent.started` when it opens a session).
 

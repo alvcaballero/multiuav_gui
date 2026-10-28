@@ -42,6 +42,8 @@ const initialState = {
   // chatId -> { phase: 'running' | 'planning' | 'awaiting_input' | 'idle', label } of an open
   // turn, as the server reports it (only the eve engine does). Transient: not rebuilt on reload.
   activity: {},
+  busy: {},
+  stopping: {},
 
   // Loading states
   loading: {
@@ -247,6 +249,18 @@ const chatSlice = createSlice({
       else state.activity[chatId] = { phase, label: label ?? null };
     },
 
+    setChatBusy(state, action) {
+      const { chatId, busy } = action.payload;
+      if (busy) state.busy[chatId] = true;
+      else delete state.busy[chatId];
+    },
+
+    setChatStopping(state, action) {
+      const { chatId, stopping } = action.payload;
+      if (stopping) state.stopping[chatId] = true;
+      else delete state.stopping[chatId];
+    },
+
     // Update loading state
     setLoading(state, action) {
       const { key, value } = action.payload;
@@ -268,6 +282,9 @@ const chatSlice = createSlice({
       state.conversations = {};
       state.activeChatId = null;
       state.error = null;
+      state.busy = {};
+      state.stopping = {};
+      state.activity = {};
     },
 
     // Set available chats list from server

@@ -127,6 +127,9 @@ const SocketController = () => {
       if (data.chatActivity) {
         dispatch(chatActions.setChatActivity(data.chatActivity));
       }
+      if (data.chatBusy) {
+        dispatch(chatActions.setChatBusy(data.chatBusy));
+      }
       if (data.missionPlan) {
         console.log(data.missionPlan);
         dispatch(missionActions.updateMission(data.missionPlan));

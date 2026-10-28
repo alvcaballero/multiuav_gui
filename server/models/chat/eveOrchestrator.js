@@ -85,6 +85,7 @@ const explain = (error, agent) => {
 
 /** Requests answered but not yet confirmed by eve, so a double click cannot send the answer twice. */
 const answered = new Map();
+const sending = new Map();
 
 /**
  * Bridges chats whose `metadata.engine === 'eve'` to an eve agent (`gcs_eevee_assistant`), running
@@ -157,6 +158,22 @@ export class EveOrchestrator {
    * @returns {Promise<{chatId: string, accepted: true}>}
    */
   static async processMessage(chatId, message) {
+    // A Stop click during session creation must wait for the session identity
+    // and accepted message, then cancel that turn instead of silently doing nothing.
+    const previous = sending.get(chatId);
+    const operation = (async () => {
+      if (previous) await previous;
+      return this._sendMessage(chatId, message);
+    })();
+    sending.set(chatId, operation);
+    try {
+      return await operation;
+    } finally {
+      if (sending.get(chatId) === operation) sending.delete(chatId);
+    }
+  }
+
+  static async _sendMessage(chatId, message) {
     emitChatBusy(chatId, true);
 
     let agent = null;
@@ -292,10 +309,12 @@ export class EveOrchestrator {
 
   /** Asks eve to stop the open turn. Asynchronous: the end shows up in the stream as `turn.cancelled`. */
   static async cancel(chatId) {
+    await sending.get(chatId);
     const { agent, sessionId } = await deps.store.load(chatId);
-    if (!sessionId) return;
+    if (!sessionId) return { cancelled: false };
     await deps.client.cancelSession(agent, sessionId);
     this._startReader(chatId);
+    return { cancelled: true };
   }
 
   /** Approvals the chat is waiting on, as the client renders them (it survives a reload). */

@@ -3,6 +3,7 @@ import { Box, Button, ButtonBase, CircularProgress, Collapse, Typography } from 
 import { alpha } from '@mui/material/styles';
 import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
 import CheckIcon from '@mui/icons-material/Check';
+import StopIcon from '@mui/icons-material/Stop';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { MONO_FONT, OFFSCREEN_SKIP } from './chatTheme';
@@ -51,6 +52,7 @@ const showMission = async (args, name) => {
 
 const StatusIcon = ({ status }) => {
   if (status === 'running') return <CircularProgress size={14} thickness={4} />;
+  if (status === 'cancelled') return <StopIcon sx={{ fontSize: 14 }} titleAccess="Stopped" />;
   if (status === 'error') return <ErrorOutlineIcon sx={{ fontSize: 14 }} color="error" />;
   if (status === 'done') return <CheckIcon sx={{ fontSize: 14, color: 'success.main' }} />;
   return null;
@@ -72,7 +74,16 @@ const ToolCallRow = ({ call, output, running = false }) => {
   const args = callView?.content;
   const result = outputView?.content;
   const hasError = outputView ? getCachedResultSummary(result).hasError : false;
-  const status = hasError ? 'error' : outputView ? 'done' : running ? 'running' : null;
+  const status =
+    outputView?.status === 'cancelled'
+      ? 'cancelled'
+      : hasError
+        ? 'error'
+        : outputView
+          ? 'done'
+          : running
+            ? 'running'
+            : null;
   const duration = call && output ? durationLabel(call.timestamp, output.timestamp) : null;
 
   const imageSrc = result?.image_data

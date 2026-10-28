@@ -8,7 +8,12 @@ import { freezeToolCall } from '../models/chat/toolApproval.js';
 // the UPDATE ... WHERE status='pending' — an in-memory fake would prove nothing.
 const CHAT_ID = `test-approval-${process.pid}-${Date.now()}`;
 
-const pending = async ({ toolName = 'start_mission', input = { uav: 3, altitude: 40 }, turnId = 'turn-1', ttlMs = 60000 } = {}) =>
+const pending = async ({
+  toolName = 'start_mission',
+  input = { uav: 3, altitude: 40 },
+  turnId = 'turn-1',
+  ttlMs = 60000,
+} = {}) =>
   ToolApprovalStore.createPending({
     chatId: CHAT_ID,
     turnId,
@@ -108,6 +113,21 @@ describe('ToolApprovalStore', () => {
     const row = await pending();
 
     assert.equal(await ToolApprovalStore.claimExecution(row.requestId), false);
+  });
+
+  it('cancels approved calls before dispatch without changing already executed or unrelated calls', async () => {
+    const stopped = await pending();
+    const executed = await pending();
+    const unrelated = await pending();
+    for (const row of [stopped, executed, unrelated]) {
+      await ToolApprovalStore.resolve(row.requestId, { outcome: 'approved' });
+    }
+    await ToolApprovalStore.claimExecution(executed.requestId);
+    assert.equal(await ToolApprovalStore.cancelUnexecuted(CHAT_ID, [stopped.callId, executed.callId]), 1);
+    assert.equal(await ToolApprovalStore.claimExecution(stopped.requestId), false);
+    assert.equal((await ToolApprovalStore.getByRequestId(stopped.requestId)).status, 'cancelled');
+    assert.equal((await ToolApprovalStore.getByRequestId(executed.requestId)).status, 'approved');
+    assert.equal((await ToolApprovalStore.getByRequestId(unrelated.requestId)).status, 'approved');
   });
 
   it('reports a turn as fully decided only once nothing is pending', async () => {

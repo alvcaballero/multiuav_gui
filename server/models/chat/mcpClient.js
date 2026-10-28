@@ -227,7 +227,8 @@ class MCPclient {
    * @param {Object} args - Arguments for the tool
    * @returns {Promise<any>} Execution result
    */
-  async executeTool(toolName, args = {}) {
+  async executeTool(toolName, args = {}, { signal } = {}) {
+    signal?.throwIfAborted();
     if (!this.client || !this.isConnected) {
       chatLogger.warn('⚠️  MCP client not connected, attempting to reconnect...');
       const reconnected = await this.reconnect();
@@ -240,17 +241,23 @@ class MCPclient {
     if (!tool) throw new Error(`Tool not found: ${toolName}`);
 
     try {
+      signal?.throwIfAborted();
       chatLogger.info(`→ Executing MCP tool: ${toolName}`);
       //chatLogger.debug(`  Arguments:`, args);
 
-      const result = await this.client.callTool({
-        name: toolName,
-        arguments: args,
-      });
+      const result = await this.client.callTool(
+        {
+          name: toolName,
+          arguments: args,
+        },
+        undefined,
+        { signal }
+      );
 
       chatLogger.info(`✓ Tool executed: ${toolName}`);
       return result;
     } catch (error) {
+      signal?.throwIfAborted();
       chatLogger.error(`Error executing tool ${toolName}:`, error);
 
       // Detect connection errors and attempt to reconnect
@@ -274,7 +281,7 @@ class MCPclient {
         if (reconnected) {
           // Retry tool execution after reconnection
           chatLogger.info('🔄 Retrying tool execution after reconnection...');
-          return await this.executeTool(toolName, args);
+          return await this.executeTool(toolName, args, { signal });
         }
       }
 
