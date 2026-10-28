@@ -65,6 +65,10 @@ const PositionValue = ({ position, property, attribute }) => {
         if (typeof value === 'boolean') {
           return formatBoolean(value);
         }
+        // An object or a list of them (missionEvents, position_gnss) is not a valid React child.
+        if (value !== null && typeof value === 'object') {
+          return JSON.stringify(value);
+        }
         return value || '';
     }
   };
