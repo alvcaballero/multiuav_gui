@@ -29,7 +29,9 @@ import { forceFinishItem, RETRY_AFTER_TOOL_ERROR_MESSAGE } from './handlers/base
  * header of the chat shows it.
  */
 const agentOf = (metadata = {}) =>
-  metadata.engine === 'eve' ? (metadata.eveAgent ?? EveDefaultAgent) : (metadata.agentProfile ?? DEFAULT_AGENT);
+  metadata.engine === 'eve'
+    ? (metadata.eveAgentName ?? metadata.eveAgent ?? EveDefaultAgent)
+    : (metadata.agentProfile ?? DEFAULT_AGENT);
 
 /** Chats that get a preview line in the list: the history view shows the recent ones. */
 const PREVIEW_CHATS = 60;

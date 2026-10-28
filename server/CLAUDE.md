@@ -874,6 +874,16 @@ same events the legacy path uses (`CHAT_ASSISTANT_MESSAGE`, `CHAT_BUSY`, `CHAT_T
 **eve's stream is durable and replays from event 0 on every `GET .../stream` unless a `startIndex` is
 passed.** The relay always passes its cursor. Without it every follow-up re-reads the previous turn.
 
+**Child sessions.** `agent.started` attaches the existing Eve child session as a persisted chat with
+`parentChatId`; it also handles delegation inside workflow tools such as `request_mission_plan`.
+The child ID is derived from parent chat ID and session ID, so discovery replay preserves its cursor.
+`eveAgent` remains the parent's configured endpoint; `eveAgentName` is the child's display name.
+Each child has its own relay, history and cursor. Its initial `message.received` brief is stored once.
+`GET /api/chat/subagents/:parentChatId` includes persisted Eve children and resumes unread/running
+children after a restart. History access also resumes these readers. Completed or parked readers
+are not restarted by polling. Chat creation uses `findCreateFind` to avoid implicit SQLite transactions
+overlapping between parent and child readers. Existing chats are not backfilled.
+
 **Approvals.** `input.requested` → `CHAT_TOOL_APPROVAL_REQUESTED` with the same `InputRequest` the legacy
 engine sends, plus `options` (eve: `approve`/`cancel`) and no `expiresAt`/`inputHash`. The answer goes
 `chat:tool_approval_response` → `chatController.respondToApproval` → (eve) `EveOrchestrator.respondToInput` →

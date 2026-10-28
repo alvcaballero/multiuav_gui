@@ -443,6 +443,10 @@ is 100%, not 1px — write `'1px'`.
 - **Subagents** are chats with `metadata.parentChatId`. The title-bar switcher lists them (the DB list plus the
   server's in-memory registry, which knows which are running); opening one is just `handleSelectChat`. Rows reach
   that action through `ChatNavigationContext`, not props, so the `memo` of the transcript rows survives.
+  Eve children are discovered by polling the subagent endpoint every four seconds while an Eve chat is
+  open, including before the first child appears. Discovery refreshes the persisted chat list without
+  changing the selected conversation. The switcher shows running, waiting, failed and completed states;
+  selecting a child uses the same transcript and history loader as its parent.
 - **A tool call and its result are one row** (`groupTranscript` in `common/util/chatMessage.js`, paired by
   `call_id`). Collapsed rows keep `content-visibility: auto`.
 - **Approval card**: Approve / Reject / "Do this instead…". The last is a rejection that carries the operator's text

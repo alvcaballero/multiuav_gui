@@ -14,6 +14,7 @@ import {
 import { EveDefaultAgent } from '../../config/config.js';
 import { chatLogger } from '../../common/logger.js';
 import { TURN_PHASE } from './eveEvents.js';
+import { createHash } from 'node:crypto';
 
 /**
  * Where the relay keeps what it must not lose across a restart, in the chat's metadata:
@@ -29,6 +30,7 @@ const store = {
       sessionId: metadata.sessionId ?? null,
       cursor: metadata.eveStreamIndex ?? 0,
       turn: metadata.eveTurn ?? null,
+      parentChatId: metadata.parentChatId ?? null,
     };
   },
   async save(chatId, { cursor, turn }) {
@@ -39,7 +41,11 @@ const store = {
 export const eveRelay = new EveRelay({
   client: eveClient,
   store,
-  items: { add: (chatId, message) => ChatHistoryManager.addMessage(chatId, 'assistant', message) },
+  items: {
+    add: (chatId, message) => ChatHistoryManager.addMessage(chatId, 'assistant', message),
+    initialUserMessage: (chatId, text) => ChatHistoryManager.saveEveChildBrief(chatId, text),
+  },
+  onChildSession: (chatId, child) => EveOrchestrator.attachChildSession(chatId, child),
   emit: {
     assistantMessage: emitAssistantMessage,
     assistantError: emitAssistantError,
@@ -90,6 +96,61 @@ const answered = new Map();
  * through the same events the legacy path uses (assistant messages, busy, approvals).
  */
 export class EveOrchestrator {
+  /** Attach to Eve's existing session. Never create or send a second delegation. */
+  static async attachChildSession(parentChatId, { sessionId, name, callId, taskId }) {
+    const parent = await ChatHistoryManager.getChatMetadata(parentChatId);
+    const digest = createHash('sha256')
+      .update(JSON.stringify([parentChatId, sessionId]))
+      .digest('hex');
+    const chat = await ChatHistoryManager.getOrCreateChat(`chat_eve_${digest}`, {
+      name: name ?? 'Subagent',
+      engine: 'eve',
+      parentChatId,
+      eveAgent: parent.eveAgent ?? EveDefaultAgent,
+      eveAgentName: name ?? 'Subagent',
+      sessionId,
+      eveStreamIndex: 0,
+      eveTurn: null,
+      parentCallId: callId,
+      parentTaskId: taskId,
+    });
+    // Do not wait for the child turn: the parent must keep consuming its own stream.
+    if (chat.status === 'active') await this.resumeChat(chat.id);
+    return chat;
+  }
+
+  /** Read-only access also recovers children whose reader had not started before a restart. */
+  static async resumeChat(chatId) {
+    const metadata = await ChatHistoryManager.getChatMetadata(chatId);
+    if (metadata.engine !== 'eve' || !metadata.sessionId || deps.relay.isRunning(chatId)) return;
+    if (!metadata.eveTurn || metadata.eveTurn.phase === TURN_PHASE.RUNNING) this._startReader(chatId);
+  }
+
+  static async listChildSessions(parentChatId) {
+    const chats = await ChatHistoryManager.getAllChats({ limit: 1000 });
+    const children = chats.filter(
+      (chat) => chat.metadata?.engine === 'eve' && chat.metadata.parentChatId === parentChatId
+    );
+    for (const chat of children) await this.resumeChat(chat.id);
+    return children.map((chat) => {
+      const phase = chat.metadata.eveTurn?.phase;
+      return {
+        chatId: chat.id,
+        parentChatId,
+        agentType: chat.metadata.eveAgentName ?? 'Subagent',
+        createdAt: chat.createdAt,
+        status:
+          phase === TURN_PHASE.FAILED
+            ? 'error'
+            : phase === TURN_PHASE.AWAITING_INPUT
+              ? 'waiting'
+              : !phase || phase === TURN_PHASE.RUNNING
+                ? 'running'
+                : 'done',
+      };
+    });
+  }
+
   /**
    * @param {string} chatId
    * @param {string} message
@@ -251,7 +312,10 @@ export class EveOrchestrator {
   static async resumeOpenTurns() {
     const chats = await ChatHistoryManager.getAllChats({ status: 'active', limit: 1000 });
     const open = chats.filter(
-      (chat) => chat.metadata?.engine === 'eve' && chat.metadata?.eveTurn?.phase === TURN_PHASE.RUNNING
+      (chat) =>
+        chat.metadata?.engine === 'eve' &&
+        chat.metadata.sessionId &&
+        (chat.metadata.eveTurn?.phase === TURN_PHASE.RUNNING || (chat.metadata.parentChatId && !chat.metadata.eveTurn))
     );
     for (const chat of open) {
       chatLogger.info(`EveOrchestrator: resuming the open turn of chat ${chat.id}`);

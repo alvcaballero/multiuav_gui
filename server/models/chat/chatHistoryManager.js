@@ -4,6 +4,25 @@ import { chatLogger } from '../../common/logger.js';
 import { projectMessage } from './messageProjection.js';
 
 export class ChatHistoryManager {
+  /** The delegated brief exists only in Eve. One reader per chat and a stable marker make replay safe. */
+  static async saveEveChildBrief(chatId, content) {
+    if (typeof content !== 'string') return;
+    const messageData = { role: 'user', type: 'text', content };
+    const where = { chatId, responseId: 'eve-child-brief' };
+    if (await sequelize.models.ChatMessage.findOne({ where })) return;
+    // A single relay owns this chat. Avoid findOrCreate's SQLite transaction while the parent writes.
+    await sequelize.models.ChatMessage.create({
+      chatId,
+      responseId: 'eve-child-brief',
+      from: 'user',
+      role: 'user',
+      type: 'text',
+      content,
+      messageData,
+      timestamp: new Date(),
+    });
+  }
+
   /**
    * Records the token usage of ONE LLM request.
    *
@@ -157,7 +176,9 @@ export class ChatHistoryManager {
    * @returns {Promise<object>} Chat record
    */
   static async getOrCreateChat(chatId, metadata = {}) {
-    const [chat, created] = await sequelize.models.Chat.findOrCreate({
+    // No implicit transaction: independent parent/child readers share SQLite's connection.
+    // The primary key still resolves concurrent creation through findCreateFind's unique retry.
+    const [chat, created] = await sequelize.models.Chat.findCreateFind({
       where: { id: chatId },
       defaults: {
         id: chatId,

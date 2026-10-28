@@ -26,6 +26,17 @@ const run = (events, state = initialTurnState()) => {
 
 const kinds = (effects) => effects.map((effect) => effect.kind);
 
+describe('eve child session discovery', () => {
+  it('discovers a child even when a workflow tool delegates internally', () => {
+    const data = { sessionId: 'wrun_child', name: 'planner_sandbox', callId: 'c1', taskId: 'plan-1' };
+    assert.deepEqual(run([eveEvent('agent.started', data)]).effects, [{ kind: 'child_session', ...data }]);
+  });
+
+  it('ignores a child event without a session identity', () => {
+    assert.deepEqual(run([eveEvent('agent.started', { name: 'planner' })]).effects, []);
+  });
+});
+
 describe('eve turn reducer — a turn with a subagent task (real capture)', () => {
   const events = loadEveFixture('subagent');
   const { state, effects, phases } = run(events);

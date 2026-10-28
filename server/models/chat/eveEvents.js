@@ -146,6 +146,23 @@ export function reduceEvent(state, event) {
   const eveEventId = event.meta?.id ?? null;
 
   switch (event.type) {
+    case 'agent.started':
+      return {
+        state,
+        effects:
+          typeof data.sessionId === 'string' && data.sessionId
+            ? [
+                {
+                  kind: 'child_session',
+                  sessionId: data.sessionId,
+                  name: data.name,
+                  callId: data.callId,
+                  taskId: data.taskId,
+                },
+              ]
+            : [],
+      };
+
     case 'message.received':
     case 'turn.started': {
       // A new turn: forget the last one's text, or a turn that says nothing would repeat it.

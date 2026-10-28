@@ -7,6 +7,12 @@ import { formatTimestamp } from '../../common/util/chatMessage';
 
 // The colour says how it went: the accent while it runs, teal once it finished, red when it failed.
 const STATUS_LOOK = {
+  waiting: {
+    tone: 'attention',
+    label: 'Waiting for input',
+    line: 'warning.main',
+    strip: 'warning.tint',
+  },
   running: {
     tone: 'running',
     label: 'Running',

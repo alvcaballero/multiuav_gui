@@ -263,11 +263,13 @@ const useChatLogic = (open = true) => {
       if (response.ok) {
         const data = await response.json();
         setSubagentRuntime(data.subagents ?? []);
+        // Navigation needs the persisted row (engine, endpoint display name and parent link).
+        if (data.subagents?.length) await fetchAvailableChats();
       }
     } catch (error) {
       console.error('Error fetching subagents:', error);
     }
-  }, [rootChatId]);
+  }, [rootChatId, fetchAvailableChats]);
 
   const knownSubagents = new Map();
   // A chat that has no row yet has no root: matching `null` against the top-level chats' own
@@ -305,10 +307,11 @@ const useChatLogic = (open = true) => {
   useEffect(() => {
     if (!open || view !== 'chat') return undefined;
     refreshSubagents();
-    if (!subagentsRunning) return undefined;
+    // Eve can discover its first child before any transcript message is appended.
+    if (!subagentsRunning && activeEngine !== 'eve') return undefined;
     const poll = setInterval(refreshSubagents, 4000);
     return () => clearInterval(poll);
-  }, [open, view, refreshSubagents, subagentsRunning, messages.length]);
+  }, [open, view, refreshSubagents, subagentsRunning, activeEngine, messages.length]);
 
   useEffect(() => {
     if (activeChatId && !availableChats.find((c) => c.id === activeChatId)) {

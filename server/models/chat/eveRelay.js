@@ -83,6 +83,7 @@ export class EveRelay {
     items,
     emit,
     audit,
+    onChildSession = async () => {},
     sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   }) {
     this.client = client;
@@ -90,6 +91,7 @@ export class EveRelay {
     this.items = items;
     this.emit = emit;
     this.audit = audit;
+    this.onChildSession = onChildSession;
     this.sleep = sleep;
     /** @type {Map<string, {controller: AbortController, again: boolean, promise: Promise<void>}>} */
     this.running = new Map();
@@ -142,7 +144,7 @@ export class EveRelay {
 
   async _read(chatId, entry) {
     const { signal } = entry.controller;
-    const { agent, sessionId, cursor, turn } = await this.store.load(chatId);
+    const { agent, sessionId, cursor, turn, parentChatId } = await this.store.load(chatId);
     if (!sessionId) throw new Error(`chat ${chatId} has no eve session to read`);
 
     let state = restoreTurn(turn);
@@ -194,6 +196,10 @@ export class EveRelay {
               continue;
             }
 
+            // Only the child's initial brief comes from Eve; GCS-originated input is already stored.
+            if (parentChatId && event.type === 'message.received' && event.data?.sequence === 0) {
+              await this.items.initialUserMessage?.(chatId, event.data.message);
+            }
             const result = reduceEvent(state, event);
             state = result.state;
             for (const effect of result.effects) await this._apply(chatId, effect);
@@ -251,6 +257,10 @@ export class EveRelay {
 
   async _apply(chatId, effect) {
     switch (effect.kind) {
+      case 'child_session':
+        await this.onChildSession(chatId, effect);
+        break;
+
       case 'tool_call': {
         const item = await this.items.add(chatId, {
           type: 'function_call',

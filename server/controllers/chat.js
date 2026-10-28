@@ -117,6 +117,7 @@ export class chatController {
     const { limit, before } = req.query;
 
     try {
+      await EveOrchestrator.resumeChat(chatId);
       const { messages: history, hasMore } = await MessageOrchestrator.getHistory(chatId, {
         limit: limit ? parseInt(limit, 10) : undefined,
         before: before || null,
@@ -307,7 +308,10 @@ export class chatController {
   static async getSubAgentsStatus(req, res) {
     const { parentChatId } = req.params;
     try {
-      const subagents = SubAgentManager.listSubAgents(parentChatId);
+      const subagents = [
+        ...SubAgentManager.listSubAgents(parentChatId),
+        ...(await EveOrchestrator.listChildSessions(parentChatId)),
+      ];
       res.json({ subagents });
     } catch (error) {
       logger.error('Error in chatController.getSubAgentsStatus:', error);
