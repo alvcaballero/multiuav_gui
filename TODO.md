@@ -104,6 +104,9 @@ Triage contra el código: 2026-10-26. Las rutas son relativas a `multiuav_gcs/`.
 - [ ] **Orden de ejes de la telemetría del gimbal DJI**
   - `server/models/msgDecode.js:222-229` copia `vector.x/y/z` de `Vector3Stamped` como pitch/roll/yaw sin mapear.
     Verificar contra dji_osdk_ros y psdk_ros2; si está mal, el mapeo va como param del subscriber (como `unit`)
+  - **psdk_ros2: está mal** (`psdk_wrapper/src/modules/telemetry.cpp:1360`): `x` = roll, `y` = −pitch (FLU), `z` =
+    yaw ENU. El GCS lee el roll como pitch, y `gimbalRequest` manda de roll el pitch actual en cada `Gimbal`.
+    Falta OSDK
 
 - [ ] **CameraFileDownload: params que el encoder lee y el schema rechaza**
   - `server/models/msgEncode.js:113-127` lee `payload_index`, `file_type`, `delete_after_download`, que no están en
@@ -462,6 +465,14 @@ Decisiones y mediciones en SITL: `docs/decisions/mavlink.md`.
   completa tareas en todos los protocolos, nunca corrió con ellos: vigilarlo en la próxima misión real
 - [ ] **Planner externo de `planning.js` (`/get_plan`)**: en qué referencia de altura manda (sin marca se toma
   relativa)
+- [ ] **PSDK (M300) — estado y eventos de la misión WaypointV2 en el GCS** (`server/CLAUDE.md` › Control authority…)
+  - Que lleguen `mission_state` / `mission_event` / `control_mode` / `flight_status` / `display_mode` por rosbridge
+    (antes del commit `4d41295` de psdk_ros2 los dos de misión dependen de `mission_notifier`)
+  - `waypoint_index` del evento 0x10: base 0 supuesta (`wp_reached = index + 1`); si es base 1 la task se completa
+    un waypoint antes
+  - Un Stop desde el RC o un preempt (setpoint joystick en pausa) cierra la task en ERROR y libera el dron; un
+    `waypointV2_stopMission` la deja CANCELLED
+  - Si el evento 0x03 también llega con reason 0 en un final normal (hoy se ignora: el fin lo da `mission_notifier`)
 
 ---
 
