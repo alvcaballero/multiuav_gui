@@ -29,6 +29,27 @@ subscribers:
   obstacle_info:
     name: '/psdk_ros2/relative_obstacle_info'
     messageType: 'psdk_interfaces/msg/RelativeObstacleInfo'
+  # 1 Hz by default (psdk_params.yaml: data_frequency.flight_status, control_information)
+  flight_status:
+    name: '/psdk_ros2/flight_status'
+    messageType: 'psdk_interfaces/msg/FlightStatus'
+  display_mode:
+    name: '/psdk_ros2/display_mode'
+    messageType: 'psdk_interfaces/msg/DisplayMode'
+  control_mode:
+    # who holds the authority: device_mode 0 RC, 1 MSDK, 4 PSDK
+    name: '/psdk_ros2/control_mode'
+    messageType: 'psdk_interfaces/msg/ControlMode'
+  # Published only once the wrapper subscribed the FC push (psdk_ros2 on_activate since 4d41295, before
+  # that mission_notifier). Not latched: after a GCS restart the state shows up with the next push.
+  mission_state:
+    name: '/psdk_ros2/waypointV2_mission_state'
+    messageType: 'psdk_interfaces/msg/WaypointV2MissionStatePush'
+    watchdog: false
+  mission_event:
+    name: '/psdk_ros2/waypointV2_mission_event'
+    messageType: 'psdk_interfaces/msg/WaypointV2MissionEventPush'
+    watchdog: false # one message per event
 
 publishers:
   gimbal_control:

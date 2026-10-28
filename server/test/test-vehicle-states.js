@@ -6,10 +6,25 @@ import {
   FLIGHT_MODE,
   COMMAND_RESULT,
   CONTROL_LEVEL,
+  CONTROL_SOURCE,
+  MISSION_EXEC_STATE,
+  MISSION_EVENT,
+  MISSION_STOP_REASON,
   controlLevelOf,
   isAutonomous,
 } from '../config/status.js';
-import { px4ArmState, px4FlightMode, px4FlightPhase, px4CommandResult, djiFlightStatus, djiFlightMode } from '../models/vehicleStates.js';
+import {
+  px4ArmState,
+  px4FlightMode,
+  px4FlightPhase,
+  px4CommandResult,
+  djiFlightStatus,
+  djiFlightMode,
+  djiControlMode,
+  djiWaypointV2State,
+  djiWaypointV2Event,
+  djiWaypointV2StopReason,
+} from '../models/vehicleStates.js';
 
 const values = (o) => Object.values(o);
 
@@ -120,5 +135,39 @@ describe('DJI adapter', () => {
 
   test('every display_mode lands on a canonical mode', () => {
     for (let code = 0; code <= 43; code++) assert.ok(values(FLIGHT_MODE).includes(djiFlightMode(code)), `display_mode ${code}`);
+  });
+});
+
+describe('DJI PSDK adapter', () => {
+  test('control_mode: who the authority belongs to, and whether it holds it', () => {
+    assert.deepEqual(djiControlMode(4, 1), { controlSource: CONTROL_SOURCE.ONBOARD, controlAuthority: true });
+    assert.deepEqual(djiControlMode(0, 0), { controlSource: CONTROL_SOURCE.PILOT, controlAuthority: false });
+    assert.deepEqual(djiControlMode(1, 1), { controlSource: CONTROL_SOURCE.MOBILE_APP, controlAuthority: true });
+    assert.deepEqual(djiControlMode(2, 1), { controlSource: CONTROL_SOURCE.UNKNOWN, controlAuthority: true });
+  });
+
+  // The .msg comment lists 0-2 only; the SDK enum goes to 6, and PAUSED (4) is what the GCS needs.
+  test('WaypointV2 state follows the SDK enum, not the .msg comment', () => {
+    assert.equal(djiWaypointV2State(0), MISSION_EXEC_STATE.IDLE);
+    assert.equal(djiWaypointV2State(3), MISSION_EXEC_STATE.RUNNING);
+    assert.equal(djiWaypointV2State(4), MISSION_EXEC_STATE.PAUSED);
+    assert.equal(djiWaypointV2State(6), MISSION_EXEC_STATE.EXITING);
+    assert.equal(djiWaypointV2State(7), MISSION_EXEC_STATE.UNKNOWN);
+  });
+
+  test('WaypointV2 events, with the action switch (0x30) as OTHER', () => {
+    assert.equal(djiWaypointV2Event(0x01), MISSION_EVENT.INTERRUPTED);
+    assert.equal(djiWaypointV2Event(0x03), MISSION_EVENT.STOPPED);
+    assert.equal(djiWaypointV2Event(0x10), MISSION_EVENT.WP_REACHED);
+    assert.equal(djiWaypointV2Event(0x11), MISSION_EVENT.FINISHED);
+    assert.equal(djiWaypointV2Event(0x30), MISSION_EVENT.OTHER);
+  });
+
+  test('stop reasons: 36 is the preempt a joystick setpoint causes during a pause', () => {
+    assert.equal(djiWaypointV2StopReason(0), MISSION_STOP_REASON.COMPLETED);
+    assert.equal(djiWaypointV2StopReason(16), MISSION_STOP_REASON.USER);
+    assert.equal(djiWaypointV2StopReason(36), MISSION_STOP_REASON.PREEMPTED);
+    assert.equal(djiWaypointV2StopReason(37), MISSION_STOP_REASON.UNKNOWN); // the SDK's own "unknown"
+    assert.equal(djiWaypointV2StopReason(99), MISSION_STOP_REASON.UNKNOWN);
   });
 });

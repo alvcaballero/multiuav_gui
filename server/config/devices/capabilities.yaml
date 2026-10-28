@@ -24,7 +24,7 @@ autonomous_mission:
   label: 'Autonomous missions'
   description: 'Loads and flies a waypoint mission on its own'
   commands: [LoadMission, CommandMission, UploadMission, PauseMission, ResumeMission, StopMission]
-  slots: [mission_state]
+  slots: [mission_state, mission_event]
 
 flight_control:
   label: 'Flight commands'

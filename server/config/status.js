@@ -169,6 +169,52 @@ export const COMMAND_RESULT = Object.freeze({
   UNKNOWN: 'UNKNOWN',
 });
 
+// Who holds the vehicle's control authority, as the vehicle itself reports it (DJI control_mode).
+// Not derived from the mode: during a paused DJI mission the mode says little, the authority is the fact.
+export const CONTROL_SOURCE = Object.freeze({
+  PILOT: 'PILOT', // the remote controller
+  MOBILE_APP: 'MOBILE_APP', // an app on the RC's phone/tablet (DJI MSDK)
+  ONBOARD: 'ONBOARD', // the onboard computer the GCS talks to (DJI PSDK/OSDK)
+  UNKNOWN: 'UNKNOWN',
+});
+
+// Where the mission the vehicle runs ON ITS OWN is (DJI WaypointV2 state push). Not the GCS task status:
+// a task is the GCS's view, this is what the autopilot says about the mission it holds.
+export const MISSION_EXEC_STATE = Object.freeze({
+  IDLE: 'IDLE', // no mission running
+  PREPARED: 'PREPARED', // uploaded, not started
+  STARTING: 'STARTING', // heading to the first waypoint
+  RUNNING: 'RUNNING',
+  PAUSED: 'PAUSED',
+  RESUMING: 'RESUMING', // leaving the pause
+  EXITING: 'EXITING',
+  UNKNOWN: 'UNKNOWN',
+});
+
+// What happened to the mission the vehicle runs (DJI WaypointV2 event push).
+export const MISSION_EVENT = Object.freeze({
+  INTERRUPTED: 'INTERRUPTED', // paused by something other than the GCS (the RC)
+  RESUMED: 'RESUMED',
+  STOPPED: 'STOPPED', // ended before its last waypoint, or by a stop: see MISSION_STOP_REASON
+  WP_REACHED: 'WP_REACHED',
+  FINISHED: 'FINISHED',
+  AVOIDING_OBSTACLE: 'AVOIDING_OBSTACLE',
+  OTHER: 'OTHER',
+});
+
+// Why the vehicle stopped its mission (MISSION_EVENT.STOPPED).
+export const MISSION_STOP_REASON = Object.freeze({
+  COMPLETED: 'COMPLETED',
+  USER: 'USER', // a stop asked from outside (the GCS, an app)
+  MOTORS_STARTING: 'MOTORS_STARTING', // the route was asked while the motors were starting on the ground
+  TAKEOFF_TIMEOUT: 'TAKEOFF_TIMEOUT',
+  TAKEOFF_ALTITUDE: 'TAKEOFF_ALTITUDE', // the auto takeoff did not reach its height
+  TAKEOFF_ABNORMAL: 'TAKEOFF_ABNORMAL',
+  PREEMPTED: 'PREEMPTED', // a task of higher priority took over: joystick control from the onboard computer
+  PATH_PLANNING: 'PATH_PLANNING', // the route could not be planned
+  UNKNOWN: 'UNKNOWN',
+});
+
 /** True when something other than the pilot's sticks is flying: the autopilot or an external computer. */
 export const isAutonomous = (mode) => {
   const level = controlLevelOf(mode);

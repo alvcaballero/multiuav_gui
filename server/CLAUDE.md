@@ -585,6 +585,21 @@ the keys a message carries (DJI `flight_status` brings arm + phase, DJI `display
 `vehicle_status` arm + mode). Two slots can share a messageType (`flight_status` and `display_mode`
 are both `std_msgs/UInt8`): the slot, not the type, says which axis it is, so give each its own.
 
+**Control authority and the vehicle's own mission (DJI PSDK).** Same rule, more vocabulary in `config/status.js`:
+`controlSource` (`CONTROL_SOURCE`: PILOT / MOBILE_APP / ONBOARD, from `control_mode.device_mode`) + `controlAuthority`
+(bool), and `missionExecState` (`MISSION_EXEC_STATE`, the WaypointV2 state push, the SDK enum 0-6, NOT the outdated
+`.msg` comment) with `missionExecWp` / `missionExecSpeed`. The event push (`mission_event`, slot of `autonomous_mission`)
+becomes `missionEvent` (`MISSION_EVENT`, a stop with its `MISSION_STOP_REASON`); 0x30 (action switch) is dropped by the
+decoder. The wrapper delivers every event TWICE: the reducer drops a repeat of `(raw, stamp)` within
+`MISSION_EVENT_REPEAT_MS` and keeps the last `MISSION_EVENTS_KEPT` in `attributes.missionEvents` (newest first). A
+WP_REACHED sets `wp_reached = waypoint_index + 1` (⚠ 0-based ASSUMED, not verified on the drone); PREPARED / STARTING
+reset it to 0. **A stop before the end closes the task**: the reducer returns a `{ missionStopped }` effect,
+`positionsModel` emits `EVENTS.DEVICE_MISSION_STOPPED`, `missionSMModel` (`init()` from `server.js`) sends
+`deviceStopped` to the task's actor in `RunningMission` → `DeviceStopped` → the task ERROR (CANCELLED for a stop asked
+from outside, `USER`), no download, device released. Without it a mission the FC ended (a joystick setpoint during a
+pause preempts it, reason 36) left its task running forever. The normal end still comes from `mission_notifier`
+(`/GCS/GCSCommand`); the topic's FINISHED is shown, not acted on.
+
 **What differs per category is a param, never a branch on the category name.** `ros.js` hands the
 decoder the category's own subscriber entry as `params`; the decoder reads, with defaults:
 `battery.scale` (× to percent, default 1 — `100` when the message is 0-1), `gimbal.unit`

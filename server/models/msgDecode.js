@@ -1,5 +1,5 @@
 import { getDatetime, round } from '../common/utils.js';
-import { getVehicleCommand } from '../config/status.js';
+import { getVehicleCommand, MISSION_EVENT, MISSION_EXEC_STATE } from '../config/status.js';
 import {
   px4ArmState,
   px4FlightMode,
@@ -7,6 +7,10 @@ import {
   px4CommandResult,
   djiFlightStatus,
   djiFlightMode,
+  djiControlMode,
+  djiWaypointV2State,
+  djiWaypointV2Event,
+  djiWaypointV2StopReason,
   catecFlightState,
   landedStateOf,
   mavlinkArmState,
@@ -203,6 +207,48 @@ register('mission_state', 'dji_osdk_ros/WaypointV2MissionStatePush', ({ msg, dev
   speed: round(msg.velocity * 0.01, 1),
 }));
 
+// A new mission is about to fly: the previous one's wp_reached is still cached, and with it the new task
+// would jump ahead (missionSignals). Same reset MavlinkServer does on every load.
+const MISSION_STARTING = new Set([MISSION_EXEC_STATE.PREPARED, MISSION_EXEC_STATE.STARTING]);
+
+// DJI PSDK WaypointV2. `velocity` is the mission's own speed (0.01 m/s), not the ground speed the
+// velocity slot already gives, so it does not overwrite `speed`.
+register('mission_state', 'psdk_interfaces/msg/WaypointV2MissionStatePush', ({ msg, deviceId }) => {
+  const missionExecState = djiWaypointV2State(msg.state);
+  return {
+    deviceId,
+    missionExecState,
+    missionExecStateRaw: msg.state,
+    missionExecWp: msg.cur_waypoint_index,
+    missionExecSpeed: round(msg.velocity * 0.01, 1),
+    ...(MISSION_STARTING.has(missionExecState) ? { uav_state: 'ok', mission_state: 'loaded', wp_reached: 0 } : {}),
+  };
+});
+
+// DJI PSDK WaypointV2. Only the fields of the event's own kind are filled; the rest arrive as 0. The
+// wrapper delivers each event twice: the reducer drops the repeat by (raw, stamp).
+register('mission_event', 'psdk_interfaces/msg/WaypointV2MissionEventPush', ({ msg, deviceId }) => {
+  const kind = djiWaypointV2Event(msg.event);
+  if (kind === MISSION_EVENT.OTHER) return null;
+  const missionEvent = { kind, raw: msg.event, stamp: msg.f_c_timestamp };
+  if (kind === MISSION_EVENT.STOPPED) {
+    missionEvent.reason = djiWaypointV2StopReason(msg.finish_reason);
+    missionEvent.reasonRaw = msg.finish_reason;
+  }
+  if (kind === MISSION_EVENT.INTERRUPTED) missionEvent.reasonRaw = msg.interrupt_reason; // 0 = the RC
+  if (kind === MISSION_EVENT.WP_REACHED) missionEvent.wp = msg.waypoint_index;
+  if (kind === MISSION_EVENT.FINISHED) missionEvent.allDone = msg.finished_all_exec_num === 1;
+  return {
+    deviceId,
+    missionEvent,
+    // wp_reached counts reached waypoints (missionSignals jumps the task to it). ⚠ ASSUMED: waypoint_index is
+    // 0-based, as the waypoints of the mission MissionToPsdkV2 uploads (one per task wp).
+    ...(kind === MISSION_EVENT.WP_REACHED
+      ? { uav_state: 'ok', mission_state: 'running', wp_reached: msg.waypoint_index + 1 }
+      : {}),
+  };
+});
+
 // ─── battery ───────────────────────────────────────────────────────────────────
 
 register('battery', 'px4_msgs/msg/BatteryStatus', ({ msg, deviceId }) => ({
@@ -298,6 +344,25 @@ register('display_mode', 'std_msgs/UInt8', ({ msg, deviceId }) => ({
   deviceId,
   flightMode: djiFlightMode(msg.data),
   flightModeRaw: msg.data,
+}));
+
+// DJI PSDK: the same codes as the OSDK ones above, in their own messages.
+register('flight_status', 'psdk_interfaces/msg/FlightStatus', ({ msg, deviceId }) => ({
+  deviceId,
+  ...djiFlightStatus(msg.flight_status),
+  flightPhaseRaw: msg.flight_status,
+}));
+
+register('display_mode', 'psdk_interfaces/msg/DisplayMode', ({ msg, deviceId }) => ({
+  deviceId,
+  flightMode: djiFlightMode(msg.display_mode),
+  flightModeRaw: msg.display_mode,
+}));
+
+register('control_mode', 'psdk_interfaces/msg/ControlMode', ({ msg, deviceId }) => ({
+  deviceId,
+  ...djiControlMode(msg.device_mode, msg.control_auth),
+  controlSourceRaw: msg.device_mode,
 }));
 
 register('state_machine', 'std_msgs/String',({ msg, deviceId }) => ({

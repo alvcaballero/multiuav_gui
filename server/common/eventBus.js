@@ -123,6 +123,7 @@ export const EVENTS = Object.freeze({
   MISSION_UPDATED: 'mission:updated', // Mission DB row created/edited (status, endTime, etc.)
   TASK_UPDATED: 'mission:task:updated', // MissionTask DB row created/edited (status, currentWp, etc.)
   TASK_DEVICE_RELEASED: 'mission:task:device_released', // Internal: a task's state machine ended, its device is free for the next task
+  DEVICE_MISSION_STOPPED: 'mission:device_stopped', // Internal: the vehicle itself ended its mission before the last waypoint ({deviceId, reason, message})
 
   // Eventos del sistema
   EVENT_CREATED: 'event:created',

@@ -1,4 +1,15 @@
-import { ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE, COMMAND_RESULT, VEHICLE_TYPE, VTOL_STATE } from '../config/status.js';
+import {
+  ARM_STATE,
+  FLIGHT_PHASE,
+  FLIGHT_MODE,
+  COMMAND_RESULT,
+  VEHICLE_TYPE,
+  VTOL_STATE,
+  CONTROL_SOURCE,
+  MISSION_EXEC_STATE,
+  MISSION_EVENT,
+  MISSION_STOP_REASON,
+} from '../config/status.js';
 
 // A firmware's own state codes -> the GCS vocabulary (ARM_STATE, FLIGHT_PHASE, FLIGHT_MODE, VTOL_STATE in
 // config/status.js). One adapter per message that carries them, used by that message's decoder.
@@ -205,6 +216,60 @@ const DJI_MODE = {
 };
 
 export const djiFlightMode = (code) => DJI_MODE[code] ?? FLIGHT_MODE.OTHER;
+
+// ─── DJI control_mode (psdk_interfaces/msg/ControlMode) ────────────────────────
+// device_mode: who the authority belongs to (0 RC, 1 MSDK, 4 PSDK); control_auth: 1 = that device HOLDS it.
+
+const DJI_CONTROL_DEVICE = { 0: CONTROL_SOURCE.PILOT, 1: CONTROL_SOURCE.MOBILE_APP, 4: CONTROL_SOURCE.ONBOARD };
+
+/** @returns {{controlSource: string, controlAuthority: boolean}} */
+export const djiControlMode = (deviceMode, controlAuth) => ({
+  controlSource: DJI_CONTROL_DEVICE[deviceMode] ?? CONTROL_SOURCE.UNKNOWN,
+  controlAuthority: controlAuth === 1,
+});
+
+// ─── DJI WaypointV2 state push (dji_waypoint_v2_type.h) ────────────────────────
+// The comment in WaypointV2MissionStatePush.msg (0-2 only) is outdated: these are the SDK's values.
+
+const DJI_WPV2_STATE = [
+  MISSION_EXEC_STATE.IDLE, // GROUND_STATION_NOT_START
+  MISSION_EXEC_STATE.PREPARED, // MISSION_PREPARED
+  MISSION_EXEC_STATE.STARTING, // ENTER_MISSION
+  MISSION_EXEC_STATE.RUNNING, // EXECUTE_FLYING_ROUTE_MISSION
+  MISSION_EXEC_STATE.PAUSED, // PAUSED_STATE
+  MISSION_EXEC_STATE.RESUMING, // ENTER_MISSION_AFTER_ENDING_PAUSE
+  MISSION_EXEC_STATE.EXITING, // EXIT_MISSION
+];
+
+export const djiWaypointV2State = (code) => DJI_WPV2_STATE[code] ?? MISSION_EXEC_STATE.UNKNOWN;
+
+// ─── DJI WaypointV2 event push (psdk_ros2 waypoint_flying.cpp) ─────────────────
+// 0x30 (action switch) arrives over and over and says nothing to an operator: OTHER, dropped by the reducer.
+
+const DJI_WPV2_EVENT = {
+  0x01: MISSION_EVENT.INTERRUPTED,
+  0x02: MISSION_EVENT.RESUMED,
+  0x03: MISSION_EVENT.STOPPED,
+  0x10: MISSION_EVENT.WP_REACHED,
+  0x11: MISSION_EVENT.FINISHED,
+  0x12: MISSION_EVENT.AVOIDING_OBSTACLE,
+};
+
+export const djiWaypointV2Event = (code) => DJI_WPV2_EVENT[code] ?? MISSION_EVENT.OTHER;
+
+// finish_reason of the stop event (0x03).
+const DJI_WPV2_STOP_REASON = {
+  0x00: MISSION_STOP_REASON.COMPLETED,
+  0x10: MISSION_STOP_REASON.USER,
+  0x20: MISSION_STOP_REASON.MOTORS_STARTING,
+  0x21: MISSION_STOP_REASON.TAKEOFF_TIMEOUT,
+  0x22: MISSION_STOP_REASON.TAKEOFF_ALTITUDE,
+  0x23: MISSION_STOP_REASON.TAKEOFF_ABNORMAL,
+  0x24: MISSION_STOP_REASON.PREEMPTED,
+  0x26: MISSION_STOP_REASON.PATH_PLANNING,
+};
+
+export const djiWaypointV2StopReason = (code) => DJI_WPV2_STOP_REASON[code] ?? MISSION_STOP_REASON.UNKNOWN;
 
 // ─── CATEC state_machine (std_msgs/String) ─────────────────────────────────────
 // Free text from the CATEC state machine. Only the phase is known: it says nothing about arming.

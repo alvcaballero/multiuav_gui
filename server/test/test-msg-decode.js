@@ -158,6 +158,74 @@ describe('decodeMsg: speed', () => {
   });
 });
 
+describe('decodeMsg: DJI PSDK mission and control authority', () => {
+  const PUSH = 'psdk_interfaces/msg/WaypointV2MissionStatePush';
+  const EVENT = 'psdk_interfaces/msg/WaypointV2MissionEventPush';
+  // Every field of the event push: the wrapper fills only the event's own, the rest arrive as 0.
+  const event = (fields) => ({
+    event: 0,
+    f_c_timestamp: 1234,
+    interrupt_reason: 0,
+    recover_process: 0,
+    finish_reason: 0,
+    waypoint_index: 0,
+    current_mission_exec_num: 0,
+    finished_all_exec_num: 0,
+    ...fields,
+  });
+
+  test('mission_state: the canonical state, the waypoint and the mission speed; the ground speed is not touched', () => {
+    const r = dec({ type: 'mission_state', msgType: PUSH, msg: { state: 4, cur_waypoint_index: 3, velocity: 250 } });
+    assert.deepEqual(r, {
+      deviceId: 7,
+      missionExecState: 'PAUSED',
+      missionExecStateRaw: 4,
+      missionExecWp: 3,
+      missionExecSpeed: 2.5,
+    });
+  });
+
+  test('mission_state: a mission about to fly resets the previous wp_reached', () => {
+    for (const state of [1, 2]) {
+      const r = dec({ type: 'mission_state', msgType: PUSH, msg: { state, cur_waypoint_index: 0, velocity: 0 } });
+      assert.equal(r.wp_reached, 0, `state ${state}`);
+      assert.equal(r.uav_state, 'ok');
+    }
+    assert.equal(dec({ type: 'mission_state', msgType: PUSH, msg: { state: 3, velocity: 0 } }).wp_reached, undefined);
+  });
+
+  test('mission_event: a stop carries its reason', () => {
+    const r = dec({ type: 'mission_event', msgType: EVENT, msg: event({ event: 0x03, finish_reason: 0x24 }) });
+    assert.deepEqual(r, {
+      deviceId: 7,
+      missionEvent: { kind: 'STOPPED', raw: 3, stamp: 1234, reason: 'PREEMPTED', reasonRaw: 36 },
+    });
+  });
+
+  test('mission_event: a waypoint reached counts reached waypoints for the task (index + 1)', () => {
+    const r = dec({ type: 'mission_event', msgType: EVENT, msg: event({ event: 0x10, waypoint_index: 2 }) });
+    assert.deepEqual(r.missionEvent, { kind: 'WP_REACHED', raw: 16, stamp: 1234, wp: 2 });
+    assert.equal(r.wp_reached, 3);
+  });
+
+  test('mission_event: the action switch (0x30) is dropped', () => {
+    assert.equal(dec({ type: 'mission_event', msgType: EVENT, msg: event({ event: 0x30 }) }), null);
+  });
+
+  test('control_mode: who holds the authority, with the raw device_mode', () => {
+    const msg = { control_mode: 0, device_mode: 4, control_auth: 1 };
+    const r = dec({ type: 'control_mode', msgType: 'psdk_interfaces/msg/ControlMode', msg });
+    assert.deepEqual(r, { deviceId: 7, controlSource: 'ONBOARD', controlAuthority: true, controlSourceRaw: 4 });
+  });
+
+  test('flight_status / display_mode: the PSDK messages give the same canonical state as the OSDK UInt8', () => {
+    const status = dec({ type: 'flight_status', msgType: 'psdk_interfaces/msg/FlightStatus', msg: { flight_status: 2 } });
+    assert.deepEqual(status, { deviceId: 7, armState: 'ARMED', flightPhase: 'IN_AIR', flightPhaseRaw: 2 });
+    const mode = dec({ type: 'display_mode', msgType: 'psdk_interfaces/msg/DisplayMode', msg: { display_mode: 17 } });
+    assert.deepEqual(mode, { deviceId: 7, flightMode: 'OFFBOARD', flightModeRaw: 17 });
+  });
+});
+
 describe('decodeMsg: battery (the category only contributes params.scale)', () => {
   const bat = (msgType, msg, params) => dec({ type: 'battery', msgType, msg, params });
 

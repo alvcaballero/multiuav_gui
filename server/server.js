@@ -48,6 +48,7 @@ import { approvalSweeper } from './models/chat/approvalSweeper.js';
 import { EveOrchestrator, eveRelay } from './models/chat/eveOrchestrator.js';
 import { missionWpTracking } from './models/mission/missionWpTracking.js';
 import { taskScheduler } from './models/mission/taskScheduler.js';
+import { missionSMModel } from './models/mission/missionSM.js';
 
 // comunications with devices
 import { initFlatbufferServer } from './models/flatbuffer/index.js';
@@ -179,6 +180,9 @@ missionWpTracking.init().catch((err) => {
 // Task-graph scheduler: dispatches a task once its dependencies completed and its
 // device is free; skips the dependents of a task that failed.
 taskScheduler.init();
+
+// A vehicle that ends its mission on its own before the last waypoint (DJI WaypointV2 stop) closes its task.
+missionSMModel.init();
 
 // connect to  devices
 if (RosEnable) {

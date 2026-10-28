@@ -3,6 +3,7 @@ import { createActor } from 'xstate';
 import { missionController } from '../../controllers/mission.js';
 import { missionLogger as logger } from '../../common/logger.js';
 import { eventBus, EVENTS } from '../../common/eventBus.js';
+import { MISSION_STOP_REASON } from '../../config/status.js';
 
 const listSM = {}; // state-machine actors keyed by taskId (a device can run several tasks per mission)
 
@@ -60,6 +61,29 @@ export class missionSMModel {
       return false;
     }
     listSM[taskId].send({ type: 'downloadFilesUAV' });
+    return true;
+  }
+
+  /** Wires the vehicle's own end-of-mission signals. Call once at server startup (server.js). */
+  static init() {
+    eventBus.onSafe(EVENTS.DEVICE_MISSION_STOPPED, (stop) => this.deviceStoppedMission(stop));
+  }
+
+  /**
+   * The vehicle ended its mission before the last waypoint (DJI WaypointV2 stop event): the task
+   * closes instead of waiting in RunningMission for a finish that never comes.
+   * @param {{deviceId: number, reason: string, message: string}} stop - reason: MISSION_STOP_REASON
+   */
+  static deviceStoppedMission({ deviceId, reason, message }) {
+    const taskId = this._taskIdForDevice(deviceId, 'RunningMission');
+    if (taskId == null) {
+      logger.warn(`Device id=${deviceId} stopped its mission (${reason}) with no running task`);
+      return false;
+    }
+    listSM[taskId].send({
+      type: 'deviceStopped',
+      value: { cancelled: reason === MISSION_STOP_REASON.USER, message },
+    });
     return true;
   }
 

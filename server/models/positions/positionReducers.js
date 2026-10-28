@@ -1,9 +1,10 @@
 import { round } from '../../common/utils.js';
-import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
+import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE, MISSION_EVENT, MISSION_STOP_REASON } from '../../config/status.js';
 
 // Pure merge rules for one telemetry patch into one cached position. No controller
-// imports, so it runs in a test without opening the database: side effects (events)
-// are RETURNED by `applyPatch`, and `positionsModel` is the one that executes them.
+// imports, so it runs in a test without opening the database: side effects (events, and
+// `{ missionStopped }` signals) are RETURNED by `applyPatch`, and `positionsModel` is the one
+// that executes them.
 
 /**
  * A telemetry patch: what `positionsModel.updatePosition` accepts. It is a contract
@@ -43,6 +44,15 @@ import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../../config/status.js';
  * @property {number} [commandAckRaw] - the firmware's own command id
  * @property {string} [resultCmdAck] - COMMAND_RESULT (config/status.js)
  * @property {number} [resultCmdAckRaw] - the firmware's own result code
+ * @property {string} [controlSource] - CONTROL_SOURCE, who holds the control authority
+ * @property {boolean} [controlAuthority] - that source holds it (DJI control_auth)
+ * @property {number} [controlSourceRaw] - the firmware's own code (DJI device_mode)
+ * @property {string} [missionExecState] - MISSION_EXEC_STATE, the mission the vehicle runs on its own
+ * @property {number} [missionExecStateRaw] - the firmware's own state code
+ * @property {number} [missionExecWp] - the waypoint it is flying to, as the vehicle counts them
+ * @property {number} [missionExecSpeed] - m/s, the mission's own speed
+ * @property {{kind:string, raw:number, stamp:number, reason?:string, reasonRaw?:number, wp?:number, allDone?:boolean}} [missionEvent]
+ *   - MISSION_EVENT; a repeat of the last ones (same raw + stamp) is dropped
  * @property {string} [uav_state] - with `mission_state`, `wp_reached`
  * @property {string} [mission_state]
  * @property {string} [wp_reached]
@@ -149,11 +159,72 @@ const VEHICLE_STATE_KEYS = [
   'failsafe',
   'flightCheck',
   'systemId',
+  'controlSource',
+  'controlSourceRaw',
+  'controlAuthority',
 ];
 
+const MISSION_EXEC_KEYS = ['missionExecState', 'missionExecStateRaw', 'missionExecWp', 'missionExecSpeed'];
+
+// ─── mission events ────────────────────────────────────────────────────────────
+// The DJI wrapper delivers every event twice (same code and flight-controller stamp). A repeat within
+// MISSION_EVENT_REPEAT_MS is dropped; the window, not the stamp alone, so a stamp the wrapper leaves at 0
+// does not swallow two real events seconds apart.
+export const MISSION_EVENT_REPEAT_MS = 2000;
+// How many the device page shows, newest first, in `attributes.missionEvents`.
+export const MISSION_EVENTS_KEPT = 8;
+
+const missionEventsSeen = new WeakMap(); // position -> Map(`${raw}|${stamp}` -> ms)
+
+function isRepeat(position, { raw, stamp }, now) {
+  const seen = missionEventsSeen.get(position) ?? missionEventsSeen.set(position, new Map()).get(position);
+  for (const [key, at] of seen) if (now - at > MISSION_EVENT_REPEAT_MS) seen.delete(key);
+  const key = `${raw}|${stamp}`;
+  if (seen.has(key)) return true;
+  seen.set(key, now);
+  return false;
+}
+
+const STOP_REASON_TEXT = {
+  [MISSION_STOP_REASON.USER]: 'stopped from outside',
+  [MISSION_STOP_REASON.MOTORS_STARTING]: 'route asked while the motors were starting',
+  [MISSION_STOP_REASON.TAKEOFF_TIMEOUT]: 'auto takeoff timed out',
+  [MISSION_STOP_REASON.TAKEOFF_ALTITUDE]: 'auto takeoff did not reach its height',
+  [MISSION_STOP_REASON.TAKEOFF_ABNORMAL]: 'auto takeoff failed',
+  [MISSION_STOP_REASON.PREEMPTED]: 'preempted by a task of higher priority (joystick control)',
+  [MISSION_STOP_REASON.PATH_PLANNING]: 'the route could not be planned',
+};
+
+export const stopReasonText = (reason, raw) => STOP_REASON_TEXT[reason] ?? `unknown reason (${raw})`;
+
+// The Event (DB row + snackbar) an operator must see; WP_REACHED and FINISHED have their own paths
+// (task progress, the finish service), a COMPLETED stop is the normal end.
+function missionEventLog(event) {
+  switch (event.kind) {
+    case MISSION_EVENT.INTERRUPTED:
+      return {
+        type: 'warning',
+        message:
+          event.reasonRaw === 0 ? 'Mission paused by the remote controller' : `Mission interrupted (${event.reasonRaw})`,
+      };
+    case MISSION_EVENT.RESUMED:
+      return { type: 'info', message: 'Mission resumed' };
+    case MISSION_EVENT.AVOIDING_OBSTACLE:
+      return { type: 'warning', message: 'Mission avoiding an obstacle' };
+    case MISSION_EVENT.STOPPED:
+      if (event.reason === MISSION_STOP_REASON.COMPLETED) return null;
+      return {
+        type: event.reason === MISSION_STOP_REASON.USER ? 'info' : 'warning',
+        message: `Mission stopped: ${stopReasonText(event.reason, event.reasonRaw)}`,
+      };
+    default:
+      return null;
+  }
+}
+
 // Order matters where one reducer reads what an earlier one wrote (`setHome` reads
-// latitude/longitude/altitude). `apply(position, patch, effects)` mutates `position`
-// and may push events to `effects`.
+// latitude/longitude/altitude). `apply(position, patch, effects, now)` mutates `position`
+// and may push events (or a `{ missionStopped }` signal) to `effects`.
 export const REDUCERS = [
   {
     when: (p) => has(p, 'latitude'),
@@ -206,6 +277,34 @@ export const REDUCERS = [
     when: (p) => VEHICLE_STATE_KEYS.some((key) => has(p, key)),
     apply: (pos, p) => {
       for (const key of VEHICLE_STATE_KEYS) if (p[key] != null) pos.attributes[key] = p[key];
+    },
+  },
+  {
+    when: (p) => MISSION_EXEC_KEYS.some((key) => has(p, key)),
+    apply: (pos, p) => {
+      for (const key of MISSION_EXEC_KEYS) if (p[key] != null) pos.attributes[key] = p[key];
+    },
+  },
+  {
+    // A stop that is not the normal end leaves the GCS task flying forever unless somebody closes it:
+    // `missionStopped` is that signal (positionsModel → EVENTS.DEVICE_MISSION_STOPPED → missionSM).
+    when: (p) => has(p, 'missionEvent'),
+    apply: (pos, p, effects, now) => {
+      const event = p.missionEvent;
+      if (isRepeat(pos, event, now)) return;
+      const entry = { ...event, at: new Date(now).toISOString() };
+      pos.attributes.missionEvents = [entry, ...(pos.attributes.missionEvents ?? [])].slice(0, MISSION_EVENTS_KEPT);
+      const log = missionEventLog(event);
+      if (log) {
+        effects.push({
+          type: log.type,
+          deviceId: p.deviceId,
+          attributes: { action: 'MissionEvent', message: log.message },
+        });
+      }
+      if (event.kind === MISSION_EVENT.STOPPED && event.reason !== MISSION_STOP_REASON.COMPLETED) {
+        effects.push({ missionStopped: { deviceId: p.deviceId, reason: event.reason, message: log.message } });
+      }
     },
   },
   {
@@ -262,13 +361,14 @@ export const REDUCERS = [
  * @param {object} position
  * @param {TelemetryPatch} patch
  * @param {number} [now] - ms; injected so a test can move the clock
- * @returns {object[]} events for `eventsController.addEvent`
+ * @returns {object[]} events for `eventsController.addEvent`, and `{ missionStopped: {deviceId, reason, message} }`
+ *   for a vehicle that stopped its mission before the end
  */
 export function applyPatch(position, patch, now = Date.now()) {
   const effects = [];
   gatePosition(position, patch, now);
   for (const reducer of REDUCERS) {
-    if (reducer.when(patch)) reducer.apply(position, patch, effects);
+    if (reducer.when(patch)) reducer.apply(position, patch, effects, now);
   }
   return effects;
 }

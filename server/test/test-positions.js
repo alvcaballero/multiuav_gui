@@ -1,9 +1,15 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { positionsModel } from '../models/positions/positions.js';
-import { applyPatch, createDefaultPosition } from '../models/positions/positionReducers.js';
-import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE } from '../config/status.js';
+import {
+  applyPatch,
+  createDefaultPosition,
+  MISSION_EVENT_REPEAT_MS,
+  MISSION_EVENTS_KEPT,
+} from '../models/positions/positionReducers.js';
+import { ARM_STATE, FLIGHT_MODE, FLIGHT_PHASE, MISSION_EVENT, MISSION_STOP_REASON } from '../config/status.js';
 import { eventsController } from '../controllers/events.js';
+import { eventBus, EVENTS } from '../common/eventBus.js';
 
 // What positionsModel.updatePosition does with each kind of telemetry patch. Born as
 // characterization tests (to prove the reducer extraction changed nothing), then the known
@@ -306,5 +312,95 @@ describe('positionReducers: pure module', () => {
     a.attributes.obstacle_info[0] = 99;
     assert.deepEqual(b.attributes.gimbal, [0, 0, 0]);
     assert.equal(b.attributes.obstacle_info[0], 100);
+  });
+});
+
+describe('positionReducers: mission events (DJI WaypointV2)', () => {
+  const T0 = 1_000_000;
+  const stop = (reason, stamp = 50) => ({ kind: MISSION_EVENT.STOPPED, raw: 3, stamp, reason, reasonRaw: 0 });
+  const patch = (missionEvent) => ({ deviceId: 1, missionEvent });
+
+  test('the repeat the wrapper sends is dropped: one timeline entry, one Event', () => {
+    const pos = createDefaultPosition(1);
+    const first = applyPatch(pos, patch({ kind: MISSION_EVENT.RESUMED, raw: 2, stamp: 7 }), T0);
+    const again = applyPatch(pos, patch({ kind: MISSION_EVENT.RESUMED, raw: 2, stamp: 7 }), T0 + 100);
+    assert.equal(first.length, 1);
+    assert.equal(again.length, 0);
+    assert.equal(pos.attributes.missionEvents.length, 1);
+  });
+
+  test('the same code and stamp past the window is a new event (a stamp left at 0)', () => {
+    const pos = createDefaultPosition(1);
+    applyPatch(pos, patch({ kind: MISSION_EVENT.RESUMED, raw: 2, stamp: 0 }), T0);
+    applyPatch(pos, patch({ kind: MISSION_EVENT.RESUMED, raw: 2, stamp: 0 }), T0 + MISSION_EVENT_REPEAT_MS + 1);
+    assert.equal(pos.attributes.missionEvents.length, 2);
+  });
+
+  test('the timeline keeps the newest first, and only the last few', () => {
+    const pos = createDefaultPosition(1);
+    for (let i = 0; i < MISSION_EVENTS_KEPT + 3; i++) {
+      applyPatch(pos, patch({ kind: MISSION_EVENT.WP_REACHED, raw: 16, stamp: i, wp: i }), T0 + i);
+    }
+    assert.equal(pos.attributes.missionEvents.length, MISSION_EVENTS_KEPT);
+    assert.equal(pos.attributes.missionEvents[0].wp, MISSION_EVENTS_KEPT + 2);
+  });
+
+  test('a waypoint reached is in the timeline but raises no Event (the task progress shows it)', () => {
+    const pos = createDefaultPosition(1);
+    assert.deepEqual(applyPatch(pos, patch({ kind: MISSION_EVENT.WP_REACHED, raw: 16, stamp: 1, wp: 0 }), T0), []);
+  });
+
+  test('a stop before the end raises a warning AND the signal that closes the task', () => {
+    const pos = createDefaultPosition(1);
+    const effects = applyPatch(pos, patch(stop(MISSION_STOP_REASON.PREEMPTED)), T0);
+    assert.equal(effects[0].type, 'warning');
+    assert.match(effects[0].attributes.message, /preempted/);
+    assert.deepEqual(effects[1], {
+      missionStopped: { deviceId: 1, reason: MISSION_STOP_REASON.PREEMPTED, message: effects[0].attributes.message },
+    });
+  });
+
+  test('a stop asked from outside is info, still closing the task', () => {
+    const effects = applyPatch(createDefaultPosition(1), patch(stop(MISSION_STOP_REASON.USER)), T0);
+    assert.equal(effects[0].type, 'info');
+    assert.equal(effects[1].missionStopped.reason, MISSION_STOP_REASON.USER);
+  });
+
+  test('a stop that is the normal end says nothing: the finish has its own path', () => {
+    assert.deepEqual(applyPatch(createDefaultPosition(1), patch(stop(MISSION_STOP_REASON.COMPLETED)), T0), []);
+  });
+
+  test('updatePosition sends the stop to the eventBus, not to the Event log', async () => {
+    const id = newId();
+    const stops = [];
+    const onStop = (s) => stops.push(s);
+    eventBus.on(EVENTS.DEVICE_MISSION_STOPPED, onStop);
+    try {
+      await update(id, { missionEvent: stop(MISSION_STOP_REASON.PREEMPTED, 99) });
+    } finally {
+      eventBus.off(EVENTS.DEVICE_MISSION_STOPPED, onStop);
+    }
+    assert.equal(stops.length, 1);
+    assert.equal(stops[0].deviceId, id);
+    assert.equal(emitted.length, 1); // the warning
+    assert.equal(emitted[0].attributes.action, 'MissionEvent');
+  });
+});
+
+describe('positionReducers: control authority and the mission the vehicle runs', () => {
+  test('control_auth 0 is written: a false must not be skipped as "absent"', () => {
+    const pos = createDefaultPosition(1);
+    applyPatch(pos, { deviceId: 1, controlSource: 'ONBOARD', controlAuthority: true, controlSourceRaw: 4 });
+    applyPatch(pos, { deviceId: 1, controlSource: 'PILOT', controlAuthority: false, controlSourceRaw: 0 });
+    assert.equal(pos.attributes.controlSource, 'PILOT');
+    assert.equal(pos.attributes.controlAuthority, false);
+  });
+
+  test('the mission state keys are kept', () => {
+    const pos = createDefaultPosition(1);
+    const state = { missionExecState: 'PAUSED', missionExecStateRaw: 4, missionExecWp: 3, missionExecSpeed: 2.5 };
+    applyPatch(pos, { deviceId: 1, ...state });
+    assert.equal(pos.attributes.missionExecState, 'PAUSED');
+    assert.equal(pos.attributes.missionExecWp, 3);
   });
 });

@@ -361,6 +361,28 @@
       "obstacle_info": {
         "name": "/psdk_ros2/relative_obstacle_info",
         "messageType": "psdk_interfaces/msg/RelativeObstacleInfo"
+      },
+      "flight_status": {
+        "name": "/psdk_ros2/flight_status",
+        "messageType": "psdk_interfaces/msg/FlightStatus"
+      },
+      "display_mode": {
+        "name": "/psdk_ros2/display_mode",
+        "messageType": "psdk_interfaces/msg/DisplayMode"
+      },
+      "control_mode": {
+        "name": "/psdk_ros2/control_mode",
+        "messageType": "psdk_interfaces/msg/ControlMode"
+      },
+      "mission_state": {
+        "name": "/psdk_ros2/waypointV2_mission_state",
+        "messageType": "psdk_interfaces/msg/WaypointV2MissionStatePush",
+        "watchdog": false
+      },
+      "mission_event": {
+        "name": "/psdk_ros2/waypointV2_mission_event",
+        "messageType": "psdk_interfaces/msg/WaypointV2MissionEventPush",
+        "watchdog": false
       }
     },
     "publishers": {

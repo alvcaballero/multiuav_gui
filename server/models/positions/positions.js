@@ -1,5 +1,6 @@
 import { eventsController } from '../../controllers/events.js';
 import { logger } from '../../common/logger.js';
+import { eventBus, EVENTS } from '../../common/eventBus.js';
 import { applyPatch, createDefaultPosition } from './positionReducers.js';
 const positions = {};
 const camera = {};
@@ -65,7 +66,11 @@ export class positionsModel {
 
     positions[payload.deviceId] ??= createDefaultPosition(payload.deviceId);
     const position = positions[payload.deviceId];
-    for (const event of applyPatch(position, payload)) eventsController.addEvent(event);
+    for (const effect of applyPatch(position, payload)) {
+      // Who closes the task is the mission's business (missionSMModel), not the position cache's.
+      if (effect.missionStopped) eventBus.emitSafe(EVENTS.DEVICE_MISSION_STOPPED, effect.missionStopped);
+      else eventsController.addEvent(effect);
+    }
     return position;
   }
 }

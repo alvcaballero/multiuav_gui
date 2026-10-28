@@ -101,6 +101,18 @@ const MarkTaskFailedSM = async (context) => {
   });
 };
 
+// The vehicle ended the mission itself before its last waypoint (a stop, a preempt, a failed takeoff):
+// it will not fly the rest, so the task closes here. A stop asked from outside is CANCELLED, anything
+// else ERROR, so the scheduler skips its dependents either way.
+const MarkTaskStoppedSM = async (context) => {
+  await missionController.editTask({
+    id: context.taskId,
+    status: context.stop.cancelled ? TASK_STATUS.CANCELLED : TASK_STATUS.ERROR,
+    errorMessage: context.stop.message,
+    endTime: new Date(),
+  });
+};
+
 const DownloadGCS = async (context) => {
   logger.info(`Download files from UAV id ${context.uavId}`);
   await missionController.updateTaskFiles(context.taskId);
@@ -138,7 +150,7 @@ const DownloadGCSPromise = (context) =>
 export const deviceSM = createMachine(
   {
     id: 'GCS-UAV',
-    context: { uavId: 1, missionId: 1, taskId: 1, failure: null },
+    context: { uavId: 1, missionId: 1, taskId: 1, failure: null, stop: null },
     initial: 'Initial state',
     states: {
       'Initial state': {
@@ -199,6 +211,16 @@ export const deviceSM = createMachine(
           downloadFilesUAV: { target: 'DecideDownload' },
           cancelMission: { target: 'return2home' },
           stopMission: { target: 'stopMission' },
+          deviceStopped: { target: 'DeviceStopped', actions: assign({ stop: ({ event }) => event.value }) },
+        },
+      },
+      // No download: the files of a mission cut short are picked up by the device's next task, or by hand.
+      DeviceStopped: {
+        invoke: {
+          src: fromPromise(({ input }) => MarkTaskStoppedSM(input)),
+          input: ({ context: { taskId, stop } }) => ({ taskId, stop }),
+          onDone: [{ target: 'END' }],
+          onError: [{ target: 'END' }],
         },
       },
       UAVready: {

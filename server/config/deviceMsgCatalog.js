@@ -43,6 +43,10 @@ export const SubscriberKey = Object.freeze({
   IMU: 'imu',
   HEADING: 'heading',
   MISSION_STATE: 'mission_state',
+  // What happened to the mission the vehicle runs (DJI WaypointV2 event push): pause, stop, wp reached.
+  MISSION_EVENT: 'mission_event',
+  // Who holds the control authority (DJI control_mode: RC / app / onboard computer).
+  CONTROL_MODE: 'control_mode',
   SPEED: 'speed',
   BATTERY: 'battery',
   GIMBAL: 'gimbal',
@@ -80,6 +84,8 @@ export const SUBSCRIBER_CATALOG = {
   [SubscriberKey.IMU]: { decoded: true },
   [SubscriberKey.HEADING]: { decoded: true },
   [SubscriberKey.MISSION_STATE]: { decoded: true },
+  [SubscriberKey.MISSION_EVENT]: { decoded: true },
+  [SubscriberKey.CONTROL_MODE]: { decoded: true },
   [SubscriberKey.SPEED]: { decoded: true },
   [SubscriberKey.BATTERY]: { decoded: true },
   [SubscriberKey.GIMBAL]: { decoded: true },
