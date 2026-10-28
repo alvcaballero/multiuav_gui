@@ -1,10 +1,43 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Bounds } from '@react-three/drei';
+import { OrbitControls, Bounds, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import useModelLoader from '../scene3d/models/ModelLoader.jsx';
 import DefinitionModelTree from '../scene3d/models/DefinitionModelTree.jsx';
+
+const SceneReferences = () => (
+  <group>
+    <gridHelper args={[20, 20, '#64748b', '#cbd5e1']} />
+    <axesHelper args={[5]} />
+    <mesh renderOrder={1}>
+      <sphereGeometry args={[0.06, 16, 16]} />
+      <meshBasicMaterial color="#334155" depthTest={false} depthWrite={false} />
+    </mesh>
+    {[
+      { label: 'X', position: [5, 0, 0], color: '#dc2626' },
+      { label: 'Y', position: [0, 5, 0], color: '#15803d' },
+      { label: 'Z', position: [0, 0, 5], color: '#2563eb' },
+      { label: '(0, 0, 0)', position: [0, 0, 0], color: '#334155' },
+    ].map(({ label, position, color }) => (
+      <Html key={label} position={position} style={{ pointerEvents: 'none' }}>
+        <span
+          style={{
+            color,
+            background: 'rgba(255, 255, 255, 0.85)',
+            borderRadius: 3,
+            padding: '2px 4px',
+            fontSize: 12,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {label}
+        </span>
+      </Html>
+    ))}
+  </group>
+);
 
 const GlbModel = ({ typeId, onSizeX }) => {
   const { model } = useModelLoader(typeId);
@@ -151,10 +184,11 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
               overflow: 'hidden',
             }}
           >
-            <Canvas camera={{ fov: 40 }}>
+            <Canvas camera={{ fov: 40, position: [6, 4, 6] }}>
               <ambientLight intensity={0.6} />
               <directionalLight position={[5, 8, 5]} intensity={1.5} />
               <directionalLight position={[-5, 3, -5]} intensity={0.5} />
+              <SceneReferences />
               <CompareScene typeId={item.id} model={model} hasGlb={hasGlb} />
               <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
             </Canvas>
