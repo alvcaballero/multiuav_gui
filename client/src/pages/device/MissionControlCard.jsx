@@ -33,8 +33,8 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-// Task status (server TASK_STATUS) → label + palette key. "Paused" is local: the server has no
-// paused state, the page knows it because it sent the pause.
+// Task status (server TASK_STATUS) → label + palette key. "Paused" is not a task status: it comes from
+// the vehicle (or from this page having sent the pause), see useMissionActions.
 const STATUS = {
   paused: ['Paused', 'warning'],
   running: ['Running', 'success'],

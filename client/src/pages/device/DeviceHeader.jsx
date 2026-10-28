@@ -3,9 +3,11 @@ import { makeStyles } from 'tss-react/mui';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import dayjs from 'dayjs';
 import {
+  CONTROL_SOURCE,
   FLIGHT_MODE,
   FLIGHT_PHASE,
   armLabel,
+  controlLabel,
   modeLabel,
   phaseLabel,
   vtolLabel,
@@ -112,6 +114,10 @@ const DeviceHeader = ({
   const statusColor = theme.palette[status.color]?.main ?? theme.palette.text.disabled;
   const battery = attributes.batteryLevel;
   const battColor = battery != null ? batteryColor(battery) : null;
+  const control = controlLabel(attributes.controlSource);
+  // Only the onboard computer holding the authority executes what the GCS sends.
+  const gcsHasControl =
+    attributes.controlSource === CONTROL_SOURCE.ONBOARD && attributes.controlAuthority === true;
 
   const stats = [
     {
@@ -124,6 +130,16 @@ const DeviceHeader = ({
     // Only a VTOL reports it (MC / FW / transitioning): no stat at all for any other vehicle.
     ...(vtolLabel(attributes.vtolState)
       ? [{ label: 'VTOL', value: vtolLabel(attributes.vtolState) }]
+      : []),
+    // Only a vehicle that reports who holds the control authority (DJI control_mode).
+    ...(control
+      ? [
+          {
+            label: 'Control',
+            value: attributes.controlAuthority ? control : `${control} · no authority`,
+            color: gcsHasControl ? theme.palette.success.main : theme.palette.warning.main,
+          },
+        ]
       : []),
     {
       label: 'Last update',

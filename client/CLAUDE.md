@@ -304,6 +304,12 @@ label (see `server/CLAUDE.md` › Message Decoding):
 - `flightMode`: how it is flown — `MANUAL | ASSISTED | HOLD | MISSION | RTL | OFFBOARD | …`
 - `vtolState`, only a VTOL has it (absent on anything else): `MC | FW | TRANSITION_TO_FW | TRANSITION_TO_MC | UNKNOWN`
 
+A vehicle that reports them (DJI PSDK) also has `controlSource` + `controlAuthority` (who holds the control
+authority: the device header's "Control" stat, green only when the onboard computer holds it), `missionExecState`
+(its own mission: the "Mission" cell of `TelemetryGrid`, and `paused` in `useMissionActions`, so a pause from the RC
+shows) and `missionEvents` (newest first, the last few under `TelemetryGrid`; a stop before the end in red). They
+live there and not in `MissionControlCard` because that card leaves when the stop closes the task.
+
 `common/util/vehicleState.js` mirrors those constants (`server/test/test-vehicle-state-mirror.js` fails
 if they drift) and owns the text to show: `armLabel` / `phaseLabel` / `modeLabel` / `vtolLabel`, which return `null`
 for `UNKNOWN` or an absent attribute — the caller picks a dash (stats) or nothing (captions). Compare

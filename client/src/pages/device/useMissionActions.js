@@ -1,18 +1,29 @@
 import { useState } from 'react';
 import { CommandType } from '../../common/util/commandTypes';
+import { MISSION_EXEC_STATE } from '../../common/util/vehicleState';
 
 const missionTitle = (mission) => mission.name || `Mission ${mission.id}`;
 
 /**
  * Pause/Resume/Stop/Abort for the device's open mission task. An action is null when the device
- * doesn't support the command behind it. The server has no "paused" task status, so `paused`
- * is local: this page knows because it sent the pause.
+ * doesn't support the command behind it. The server has no "paused" task status: `paused` is what
+ * the vehicle reports about its own mission (`vehicleMissionState`, DJI WaypointV2), so a pause from
+ * the RC shows too; a vehicle that reports nothing falls back to "this page sent the pause".
  */
-export const useMissionActions = ({ missionInfo, capabilities, send, askConfirm, deviceName }) => {
+export const useMissionActions = ({
+  missionInfo,
+  vehicleMissionState,
+  capabilities,
+  send,
+  askConfirm,
+  deviceName,
+}) => {
   const [pausedTaskId, setPausedTaskId] = useState(null);
 
   const task = missionInfo?.task;
-  const paused = task != null && pausedTaskId === task.id;
+  const vehiclePaused =
+    vehicleMissionState != null ? vehicleMissionState === MISSION_EXEC_STATE.PAUSED : null;
+  const paused = task != null && (vehiclePaused ?? pausedTaskId === task.id);
   const running = task?.status === 'running' && !paused;
   const canReturn = capabilities.has(CommandType.RETURN_HOME);
   const canStop = capabilities.has(CommandType.STOP_MISSION);

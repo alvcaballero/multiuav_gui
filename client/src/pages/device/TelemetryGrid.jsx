@@ -1,7 +1,13 @@
 import { Paper, Typography } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import dayjs from 'dayjs';
-import { armLabel, phaseLabel } from '../../common/util/vehicleState';
+import {
+  armLabel,
+  isAbnormalStop,
+  missionEventLabel,
+  missionExecLabel,
+  phaseLabel,
+} from '../../common/util/vehicleState';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -54,7 +60,28 @@ const useStyles = makeStyles()((theme) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
+  events: {
+    display: 'grid',
+    gridTemplateColumns: 'max-content minmax(0, 1fr)',
+    columnGap: theme.spacing(1),
+    rowGap: 2,
+    fontSize: 12,
+  },
+  eventRow: {
+    display: 'contents',
+  },
+  eventTime: {
+    color: theme.palette.text.secondary,
+  },
+  eventText: {
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
 }));
+
+// The newest of `attributes.missionEvents` shown under the grid (the server keeps a few more).
+const EVENTS_SHOWN = 4;
 
 const fixed = (value, digits = 1) =>
   value == null || Number.isNaN(Number(value)) ? '—' : Number(value).toFixed(digits);
@@ -80,6 +107,10 @@ const TelemetryGrid = ({ position }) => {
   const relAltitude = home && position?.altitude != null ? position.altitude - home[2] : null;
   const toHome = home && position?.latitude != null ? homeVector(position, home) : null;
   const gimbal = Array.isArray(a.gimbal) ? a.gimbal : null;
+  // What the vehicle says about the mission it holds (DJI WaypointV2), when it says it: it wins over
+  // the GCS-side mission_state, which a PSDK vehicle never reports.
+  const missionExec = missionExecLabel(a.missionExecState);
+  const missionEvents = (a.missionEvents ?? []).slice(0, EVENTS_SHOWN);
 
   const cells = [
     {
@@ -115,11 +146,17 @@ const TelemetryGrid = ({ position }) => {
       sub: gimbal ? `pitch · yaw ${fixed(gimbal[2], 0)}°` : '',
     },
     { label: 'Flight', value: phaseLabel(a.flightPhase) ?? '—', sub: armLabel(a.armState) ?? '' },
-    {
-      label: 'Mission',
-      value: a.mission_state ?? '—',
-      sub: a.wp_reached != null ? `wp ${a.wp_reached}` : '',
-    },
+    missionExec
+      ? {
+          label: 'Mission',
+          value: missionExec,
+          sub: `wp ${a.missionExecWp ?? '—'} · ${fixed(a.missionExecSpeed)} m/s`,
+        }
+      : {
+          label: 'Mission',
+          value: a.mission_state ?? '—',
+          sub: a.wp_reached != null ? `wp ${a.wp_reached}` : '',
+        },
   ];
 
   return (
@@ -144,6 +181,25 @@ const TelemetryGrid = ({ position }) => {
           </div>
         ))}
       </div>
+      {missionEvents.length > 0 && (
+        <div className={classes.events}>
+          {missionEvents.map((event) => (
+            <div key={`${event.raw}-${event.stamp}-${event.at}`} className={classes.eventRow}>
+              <span className={classes.eventTime}>{dayjs(event.at).format('HH:mm:ss')}</span>
+              <span
+                className={classes.eventText}
+                style={
+                  isAbnormalStop(event)
+                    ? { color: theme.palette.error.main, fontWeight: 600 }
+                    : undefined
+                }
+              >
+                {missionEventLabel(event)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </Paper>
   );
 };

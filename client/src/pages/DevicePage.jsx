@@ -170,6 +170,7 @@ const DevicePage = () => {
 
   const mission = useMissionActions({
     missionInfo,
+    vehicleMissionState: attributes.missionExecState,
     capabilities,
     send,
     askConfirm,
