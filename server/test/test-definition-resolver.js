@@ -31,14 +31,14 @@ describe('resolveDefinitionModel — windTurbine (real stored file)', () => {
     assert.ok(Number.isFinite(shell.length) && shell.length > 0);
   });
 
-  test('nacelle is revolute around Z with angle derived from nacelle_heading_deg=240', () => {
+  test('nacelle is revolute around Z with angle derived from nacelle_heading_deg=90', () => {
     const model = resolveDefinitionModel('windTurbine', WIND_TURBINE_YAML);
     const nacelle = model.links.find((l) => l.name === 'nacelle');
     assert.equal(nacelle.parent, 'tower');
     assert.equal(nacelle.joint.type, 'revolute');
     assert.deepEqual(nacelle.joint.axis, [0, 0, 1]);
-    // value = "90 - nacelle_heading_deg" = 90 - 240 = -150 deg
-    assert.ok(Math.abs(nacelle.joint.angleRad - (-150 * Math.PI) / 180) < 1e-9);
+    // value = "90 - nacelle_heading_deg" = 90 - 90 = 0 deg
+    assert.ok(Math.abs(nacelle.joint.angleRad) < 1e-9);
   });
 
   test('blade_A/B/C each resolve a swept_box into N box segments', () => {
@@ -109,6 +109,35 @@ describe('resolveDefinitionModel — content override (unsaved preview)', () => 
     const child = model.links.find((l) => l.name === 'child');
     assert.equal(child.parent, 'pole');
     assert.equal(child.geometry[0].radius, 1);
+  });
+
+  test('state overrides are applied before derived values and link resolution', () => {
+    const previewable = [
+      'format: insem/0.2',
+      'state: { yaw: 30 }',
+      'derived: { doubled_yaw: "yaw * 2" }',
+      'links:',
+      '  - name: arm',
+      '    parent: world',
+      '    joint: { type: revolute, axis: [0, 0, 1], value: yaw }',
+      '    geometry: [{ type: box, size: [1, 1, doubled_yaw] }]',
+    ].join('\n');
+
+    const model = resolveDefinitionModel('windTurbine', previewable, { yaw: 45 });
+    const arm = model.links[0];
+    assert.ok(Math.abs(arm.joint.angleRad - Math.PI / 4) < 1e-9);
+    assert.deepEqual(arm.geometry[0].size, [1, 1, 90]);
+  });
+
+  test('rejects unknown and non-numeric state overrides', () => {
+    assert.throws(
+      () => resolveDefinitionModel('windTurbine', MINIMAL_YAML, { missing: 10 }),
+      /Unknown state override "missing"/
+    );
+    assert.throws(
+      () => resolveDefinitionModel('windTurbine', MINIMAL_YAML, { yaw: 'east' }),
+      /State override "yaw" must be a finite number/
+    );
   });
 });
 

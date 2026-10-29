@@ -12,7 +12,7 @@ const toNumber = (raw) => {
  * parameters. The type owns the schema (what parameters exist, their data
  * type/options); the item only owns its values, never the schema itself.
  */
-const ItemParametersFields = ({ parameterDefs, attributes, onChange }) => {
+const ItemParametersFields = ({ parameterDefs, attributes, onChange, title = 'Parámetros' }) => {
   if (!parameterDefs || parameterDefs.length === 0) return null;
 
   const setValue = (key, rawValue) => {
@@ -22,7 +22,7 @@ const ItemParametersFields = ({ parameterDefs, attributes, onChange }) => {
   return (
     <Grid container spacing={2}>
       <Grid size={12}>
-        <Typography variant="subtitle2">Parámetros</Typography>
+        <Typography variant="subtitle2">{title}</Typography>
       </Grid>
       {parameterDefs.map((def) => {
         const value = attributes?.[def.key] ?? def.default ?? '';

@@ -129,12 +129,14 @@ export const elementTypesController = {
   // evaluated) for the "Comprobar YAML" 3D comparison viewer. `content` in
   // the body, when present, is evaluated directly instead of the file on
   // disk — an unsaved edit in the client's YAML editor doesn't need to be
-  // saved first to be checked.
+  // saved first to be checked. Numeric `overrides` temporarily replace YAML
+  // state values for this preview only; they are never persisted.
   async resolveDefinition(req, res) {
     try {
       const { id } = req.params;
       const content = typeof req.body?.content === 'string' ? req.body.content : undefined;
-      const model = resolveDefinitionModel(id, content);
+      const overrides = req.body?.overrides;
+      const model = resolveDefinitionModel(id, content, overrides);
       if (!model) return res.status(404).json({ error: 'No definition file for this type' });
       res.json(model);
     } catch (error) {

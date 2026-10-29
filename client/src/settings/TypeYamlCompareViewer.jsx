@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Box, Button, Checkbox, FormControlLabel, Typography } from '@mui/material';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Bounds, Html } from '@react-three/drei';
 import useModelLoader from '../scene3d/models/ModelLoader.jsx';
 import DefinitionModelTree from '../scene3d/models/DefinitionModelTree.jsx';
 import GeometryWireframe from '../scene3d/models/GeometryWireframe.jsx';
+import ItemParametersFields from '../common/components/ItemParametersFields.jsx';
 
 const SceneReferences = () => (
   <group>
@@ -81,20 +82,45 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
   const [status, setStatus] = useState('idle'); // idle | loading | error
   const [error, setError] = useState(null);
   const [visibleLayers, setVisibleLayers] = useState({ glb: true, yaml: true, geometry: true });
+  const [previewParameters, setPreviewParameters] = useState({});
+  const requestSequenceRef = useRef(0);
 
   const hasGlb = Boolean(item?.model3d);
   const canCompare = Boolean(yamlContent);
+  const numericParameterDefs = useMemo(
+    () => (item.attributes?.parameterDefs || []).filter((def) => def.dataType === 'number'),
+    [item.attributes?.parameterDefs],
+  );
+  const defaultPreviewParameters = useMemo(
+    () =>
+      Object.fromEntries(
+        numericParameterDefs
+          .filter((def) => typeof def.default === 'number' && Number.isFinite(def.default))
+          .map((def) => [def.key, def.default]),
+      ),
+    [numericParameterDefs],
+  );
+  const numericParameterKeys = useMemo(
+    () => new Set(numericParameterDefs.map((def) => def.key)),
+    [numericParameterDefs],
+  );
+  const currentPreviewParameters = Object.fromEntries(
+    Object.entries(previewParameters).filter(([key]) => numericParameterKeys.has(key)),
+  );
+  const effectivePreviewParameters = { ...defaultPreviewParameters, ...currentPreviewParameters };
 
-  const handleCompare = async () => {
+  const handleCompare = async (overrides = effectivePreviewParameters) => {
+    const requestId = ++requestSequenceRef.current;
     setStatus('loading');
     setError(null);
     try {
       const response = await fetch(`/api/markers/types/${item.id}/definition/model`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: yamlContent }),
+        body: JSON.stringify({ content: yamlContent, overrides }),
       });
       const data = await response.json();
+      if (requestId !== requestSequenceRef.current) return;
       if (!response.ok) {
         setError(data);
         setModel(null);
@@ -104,9 +130,18 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
       setModel(data);
       setStatus('idle');
     } catch (err) {
+      if (requestId !== requestSequenceRef.current) return;
       setError({ error: err.message });
       setStatus('error');
     }
+  };
+
+  const handlePreviewParametersChange = (nextParameters) => {
+    const currentParameters = Object.fromEntries(
+      Object.entries(nextParameters).filter(([key]) => numericParameterKeys.has(key)),
+    );
+    setPreviewParameters(currentParameters);
+    handleCompare({ ...defaultPreviewParameters, ...currentParameters });
   };
 
   return (
@@ -120,7 +155,7 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Button
           variant="contained"
-          onClick={handleCompare}
+          onClick={() => handleCompare()}
           disabled={!canCompare || status === 'loading'}
         >
           {hasGlb ? 'Comprobar YAML vs modelo 3D' : 'Ver modelo derivado del YAML'}
@@ -137,6 +172,17 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
           {error.link ? `Error en "${error.link}"` : 'Error'}
           {error.expression ? ` (expresión: ${error.expression})` : ''}: {error.error}
         </Typography>
+      )}
+
+      {numericParameterDefs.length > 0 && (
+        <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
+          <ItemParametersFields
+            parameterDefs={numericParameterDefs}
+            attributes={effectivePreviewParameters}
+            onChange={handlePreviewParametersChange}
+            title="Parámetros de previsualización"
+          />
+        </Box>
       )}
 
       {model && (

@@ -180,7 +180,29 @@ function resolveTables(doc, ns) {
 // within the same file). Only NUMERIC entries join the arithmetic namespace
 // — a string like `operational_status: parked` can't be used in an
 // expression, same as insem.py's `ns` construction (line 341).
-function buildNamespace(doc) {
+function applyStateOverrides(state, ns, overrides) {
+  if (overrides === undefined) return;
+  if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) {
+    throw new DefinitionResolveError('State overrides must be an object');
+  }
+
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!Object.hasOwn(state, key)) {
+      throw new DefinitionResolveError(`Unknown state override "${key}"`, { link: `state.${key}` });
+    }
+    const entry = state[key];
+    const originalValue =
+      entry && typeof entry === 'object' && !Array.isArray(entry) && 'value' in entry ? entry.value : entry;
+    if (typeof originalValue !== 'number' || typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new DefinitionResolveError(`State override "${key}" must be a finite number`, {
+        link: `state.${key}`,
+      });
+    }
+    ns[key] = value;
+  }
+}
+
+function buildNamespace(doc, overrides) {
   const ns = {};
   for (const [key, value] of Object.entries(doc.parameters || {})) {
     ns[key] = evalScalar(value, ns);
@@ -190,6 +212,7 @@ function buildNamespace(doc) {
     const value = entry && typeof entry === 'object' && !Array.isArray(entry) && 'value' in entry ? entry.value : entry;
     if (typeof value === 'number') ns[key] = value;
   }
+  applyStateOverrides(state, ns, overrides);
   for (const [key, expr] of Object.entries(doc.derived || {})) {
     try {
       ns[key] = evalScalar(expr, ns);
@@ -312,7 +335,7 @@ function resolveLink(link, ns, resolvedTables) {
  * DefinitionResolveError with `{link, expression, message}` on the first
  * evaluation failure — never a partial/best-effort result.
  */
-export function resolveDefinitionModel(id, content) {
+export function resolveDefinitionModel(id, content, overrides) {
   let source = content;
   if (source === undefined) {
     const filePath = elementTypesModel.getAssetPath(id, 'definition');
@@ -332,7 +355,7 @@ export function resolveDefinitionModel(id, content) {
     throw new DefinitionResolveError(`Invalid YAML: ${err.message}`);
   }
 
-  const ns = buildNamespace(doc);
+  const ns = buildNamespace(doc, overrides);
   const resolvedTables = resolveTables(doc, ns);
   const links = (doc.links || []).map((link) => resolveLink(link, ns, resolvedTables));
 
