@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Typography } from '@mui/material';
+import React, { useMemo, useState } from 'react';
+import { Box, Button, Checkbox, FormControlLabel, Typography } from '@mui/material';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Bounds, Html } from '@react-three/drei';
-import * as THREE from 'three';
 import useModelLoader from '../scene3d/models/ModelLoader.jsx';
 import DefinitionModelTree from '../scene3d/models/DefinitionModelTree.jsx';
+import GeometryWireframe from '../scene3d/models/GeometryWireframe.jsx';
 
 const SceneReferences = () => (
   <group>
@@ -39,53 +39,34 @@ const SceneReferences = () => (
   </group>
 );
 
-const GlbModel = ({ typeId, onSizeX }) => {
+const GlbModel = ({ typeId }) => {
   const { model } = useModelLoader(typeId);
   const clone = useMemo(() => (model ? model.scene.clone() : null), [model]);
-
-  useEffect(() => {
-    if (!clone) return;
-    const size = new THREE.Box3().setFromObject(clone).getSize(new THREE.Vector3());
-    onSizeX?.(size.x);
-  }, [clone, onSizeX]);
 
   if (!clone) return null;
   return <primitive object={clone} />;
 };
 
-// Both models share ONE <Bounds> instead of each getting its own — fitting
-// them independently would make a tiny model and a huge one fill their own
-// frame equally, which defeats "do these coincide in scale". The offset
-// comes from the GLB's own measured bounding box, not a guessed constant,
-// and the YAML-derived model only mounts once that size is known, so it
-// never briefly overlaps the GLB at x=0 before settling into place.
+// Both models share ONE <Bounds> and the same origin so the YAML-derived
+// wireframe overlays the GLB. This makes scale, orientation, and coverage
+// differences directly visible.
 //
 // Without a GLB (no `model3d` uploaded yet) there's nothing to share a frame
 // with — just show the YAML-derived model on its own, fit to itself.
-const CompareScene = ({ typeId, model, hasGlb }) => {
-  const [glbSizeX, setGlbSizeX] = useState(null);
-  const offsetX = glbSizeX != null ? glbSizeX + Math.max(glbSizeX, 10) * 0.3 : 0;
-
-  if (!hasGlb) {
-    return (
-      <Bounds fit clip observe margin={1.3}>
-        <DefinitionModelTree model={model} />
-      </Bounds>
-    );
-  }
-
-  return (
-    <Bounds fit clip observe margin={1.3}>
-      <GlbModel typeId={typeId} onSizeX={setGlbSizeX} />
-      {glbSizeX != null && <DefinitionModelTree model={model} position={[offsetX, 0, 0]} />}
-    </Bounds>
-  );
-};
+const CompareScene = ({ typeId, model, hasGlb, geometry, visibleLayers }) => (
+  <Bounds fit clip observe margin={1.3}>
+    {hasGlb && visibleLayers.glb && <GlbModel typeId={typeId} />}
+    {visibleLayers.yaml && <DefinitionModelTree model={model} />}
+    {geometry && visibleLayers.geometry && (
+      <GeometryWireframe geometry={geometry} color="#2563eb" />
+    )}
+  </Bounds>
+);
 
 /**
  * "Comprobar YAML vs modelo 3D" — resolves the type's definition.yaml
  * (current editor content, saved or not) into a link tree server-side
- * (POST .../definition/model) and renders it next to the real GLB, at
+ * (POST .../definition/model) and overlays it on the real GLB, at
  * matching relative scale, for a visual sanity check of whether they
  * coincide in shape/proportions. Not a numeric comparison (see the boolean-
  * subtraction volume check this is a first step towards) — this is "does it
@@ -99,6 +80,7 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
   const [model, setModel] = useState(null);
   const [status, setStatus] = useState('idle'); // idle | loading | error
   const [error, setError] = useState(null);
+  const [visibleLayers, setVisibleLayers] = useState({ glb: true, yaml: true, geometry: true });
 
   const hasGlb = Boolean(item?.model3d);
   const canCompare = Boolean(yamlContent);
@@ -159,21 +141,45 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
 
       {model && (
         <>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {hasGlb ? (
-              <>
-                <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-                  Izquierda: modelo GLB real
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-                  Derecha: derivado del YAML (naranja, wireframe)
-                </Typography>
-              </>
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                Derivado del YAML (naranja, wireframe) — sin modelo GLB para comparar todavía
-              </Typography>
-            )}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={visibleLayers.glb}
+                  disabled={!hasGlb}
+                  onChange={(event) =>
+                    setVisibleLayers((current) => ({ ...current, glb: event.target.checked }))
+                  }
+                />
+              }
+              label="Modelo GLB real"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={visibleLayers.yaml}
+                  onChange={(event) =>
+                    setVisibleLayers((current) => ({ ...current, yaml: event.target.checked }))
+                  }
+                />
+              }
+              label="Derivado del YAML (naranja)"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={visibleLayers.geometry}
+                  disabled={!item.attributes?.geometry}
+                  onChange={(event) =>
+                    setVisibleLayers((current) => ({ ...current, geometry: event.target.checked }))
+                  }
+                />
+              }
+              label="Geometría por defecto (azul)"
+            />
           </Box>
           <Box
             sx={{
@@ -189,7 +195,13 @@ const TypeYamlCompareViewer = ({ item, yamlContent }) => {
               <directionalLight position={[5, 8, 5]} intensity={1.5} />
               <directionalLight position={[-5, 3, -5]} intensity={0.5} />
               <SceneReferences />
-              <CompareScene typeId={item.id} model={model} hasGlb={hasGlb} />
+              <CompareScene
+                typeId={item.id}
+                model={model}
+                hasGlb={hasGlb}
+                geometry={item.attributes?.geometry}
+                visibleLayers={visibleLayers}
+              />
               <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
             </Canvas>
           </Box>

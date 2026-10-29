@@ -56,7 +56,10 @@ const DefinitionModelTree = ({ model, position = [0, 0, 0] }) => {
   const roots = childrenByParent.world || [];
 
   return (
-    <group position={position}>
+    // INSEM definitions are Z-up, while the Three.js scene is Y-up with
+    // Z pointing backwards. Rotating the whole tree maps [x, y, z] to
+    // [x, z, -y] without changing any link-local transforms.
+    <group position={position} rotation={[-Math.PI / 2, 0, 0]}>
       {roots.map((link) => (
         <LinkNode key={link.name} link={link} childrenByParent={childrenByParent} />
       ))}

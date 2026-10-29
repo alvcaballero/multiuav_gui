@@ -1,51 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useModelLoader } from '../models/ModelLoader.jsx';
-import { WIRE_COLOR } from '../models/definitionPrimitives';
+import GeometryWireframe, { FALLBACK_GEOMETRY } from '../models/GeometryWireframe.jsx';
 import { useSelector } from 'react-redux';
 import { LatLon2XYZ } from '../core/convertion';
 import { useMarkerTypes } from '../../common/util/useMarkerTypes';
 
-// heading: degrees from North, clockwise (0=N, 90=E, 180=S, 270=W)
-// Three.js axes: X=East, Y=up, Z=-North → rotY = -heading_rad
 const headingToRotationY = (heading = 0) => -(heading * Math.PI) / 180;
-
-// Used when the ElementType doesn't carry a geometry yet (not migrated /
-// never set) so the wireframe still renders something sane.
-const FALLBACK_GEOMETRY = { geometry_type: 'circle', dimensions: { radius: 2, height: 5 } };
-
-// Wireframe bounding box for an item's ElementType geometry (dimensions are
-// catalog-only, never a per-item override). Horizontal center matches the
-// model's XZ position; the base sits on the ground (y=0) and extrudes upward
-// by dimensions.height — combining the "center = geometry center" requirement
-// (XY) with the real-world fact that objects sit on the ground, not float
-// centered on it (Z). Rotation comes from the item's own `azimFront`, not
-// from the (now dimensions-only) geometry.
-const GeometryWireframe = ({ position, geometry, azimFront = 0 }) => {
-  const { geometry_type: geometryType, dimensions } = geometry;
-  const height = dimensions?.height ?? FALLBACK_GEOMETRY.dimensions.height;
-  const meshPosition = [position[0], position[1] + height / 2, position[2]];
-  const rotationY = headingToRotationY(azimFront);
-
-  if (geometryType === 'rectangle') {
-    const width = dimensions?.width ?? FALLBACK_GEOMETRY.dimensions.radius * 2;
-    const length = dimensions?.length ?? FALLBACK_GEOMETRY.dimensions.radius * 2;
-    return (
-      <mesh position={meshPosition} rotation={[0, rotationY, 0]}>
-        <boxGeometry args={[width, height, length]} />
-        <meshBasicMaterial color={WIRE_COLOR} wireframe />
-      </mesh>
-    );
-  }
-
-  const radius = dimensions?.radius ?? FALLBACK_GEOMETRY.dimensions.radius;
-  return (
-    <mesh position={meshPosition}>
-      <cylinderGeometry args={[radius, radius, height, 32]} />
-      <meshBasicMaterial color={WIRE_COLOR} wireframe />
-    </mesh>
-  );
-};
 
 const Marker = ({ item, onPick, showBoundingBox }) => {
   // react-doctor/no-event-handler false positive: useModelLoader's internal effect
