@@ -1,32 +1,46 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# ---- builder: git, pip and the SDK zip live here and never reach the final image ----
+FROM python:3.9-slim AS builder
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /build
 
-# Copy the current directory contents into the container at /usr/src/app
-
-COPY requirements.txt ./
-
-
-# Install any needed packages specified in requirements.txt
 RUN apt-get update && \
-    apt-get install -y git libgl1 libglib2.0-0 libimage-exiftool-perl libgomp1 && \
+    apt-get install -y --no-install-recommends git && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt ./
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt && \
+    # thermal_base pulls the full opencv-python (needs libGL/mesa/llvm). Both wheels share cv2/,
+    # so remove both and put back only the headless one.
+    /opt/venv/bin/pip uninstall -y opencv-python opencv-python-headless && \
+    /opt/venv/bin/pip install --no-cache-dir opencv-python-headless && \
+    /opt/venv/bin/pip uninstall -y pip setuptools wheel
 
+# Pre-download DJI Thermal SDK so the container works offline.
+# thermal_base only uses linux/release_x64 on a 64-bit interpreter: drop the rest.
+RUN /opt/venv/bin/python -c "\
+import requests, zipfile, io; \
+r = requests.get('https://dtpl-ai-public.s3.ap-south-1.amazonaws.com/Thermal_Image_Analysis/DJI_SDK/dji_executables.zip'); \
+zipfile.ZipFile(io.BytesIO(r.content)).extractall('sdk'); \
+" && \
+    mkdir -p /out/dji_executables/linux && \
+    mv sdk/dji_executables/linux/release_x64 /out/dji_executables/linux/ && \
+    chmod +x /out/dji_executables/linux/release_x64/dji_irp
+
+# ---- runtime ----
+FROM python:3.9-slim
+
+WORKDIR /usr/src/app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libglib2.0-0 libimage-exiftool-perl libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /out/dji_executables ./dji_executables
 COPY ./processThermalGen.py .
 
-# Pre-download DJI Thermal SDK so the container works offline
-RUN python -c "\
-import requests, zipfile, io; \
-from pathlib import Path; \
-r = requests.get('https://dtpl-ai-public.s3.ap-south-1.amazonaws.com/Thermal_Image_Analysis/DJI_SDK/dji_executables.zip', stream=True); \
-zipfile.ZipFile(io.BytesIO(r.content)).extractall(); \
-" && \
-    chmod +x dji_executables/linux/release_x64/dji_irp && \
-    chmod +x dji_executables/linux/release_x86/dji_irp
+ENV PATH="/opt/venv/bin:$PATH"
 
 RUN exiftool -ver
 
